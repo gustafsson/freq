@@ -125,6 +125,8 @@ public:
       it will approximately take more than 10 ms but less than 40 ms. However, _samples_per_chunk will
       always be greater than 2.5*_wavelet_std_samples.
 
+      Call nextFrame each frame that workOne is not called.
+
       @return true if some work was done and false otherwise
       */
     bool workOne(bool skip_if_low_fps = true);
@@ -183,8 +185,6 @@ public:
 	*/
     void				samples_per_chunk_hint(unsigned);
 
-    void                nextFrame();
-    float               get_current_fps() const;
     float               min_fps() const;
     void                min_fps(float);
 
@@ -211,6 +211,15 @@ public:
 
 
 private:
+    /**
+      Call nextFrame if workOne is not called.
+      @return current frames per second
+      */
+    float               nextFrame();
+
+
+    bool doWorkOne( bool skip_if_low_fps );
+
     void updateLength();
 
     /**
@@ -297,7 +306,6 @@ private:
 
     /**
       highest measured fps when actually computing something. If requested fps is higher workOne doesn't do anything.
-      _highest_fps is guaranteed to be >= _min_fps.
     */
     float _highest_fps;
 

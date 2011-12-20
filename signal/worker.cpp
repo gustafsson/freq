@@ -59,13 +59,12 @@ Worker::
                     // But a framerate of 1 makes it barely usable. 2 is also
                     // questionable, but ok since we get so much gain from
                     // large chunks.
-    current_fps( 1 ),
+    _highest_fps( 0 ),
+    current_fps( 0 ),
     _disabled( false ),
     _caught_exception( "" ),
     _caught_invalid_argument("")
 {
-    _highest_fps = _min_fps;
-
     if (t)
         target( t );
 }
@@ -89,7 +88,7 @@ Worker::
 
 
 bool Worker::
-        workOne( bool skip_if_low_fps )
+        doWorkOne( bool skip_if_low_fps )
 {
     if (_disabled)
     {
@@ -97,36 +96,61 @@ bool Worker::
         return false;
     }
 
+    WORKER_INFO TaskInfo("Worker::workOne%s on target %s",
+                         skip_if_low_fps?" (skip if low fps)":"",
+                         _target->name().c_str());
+
     updateLength();
 
     //Signal::Intervals todo_list = this->fetch_todo_list();
     Signal::Intervals todo_list = _todo_list;// this->fetch_todo_list();
+    if (todo_list.empty())
+        return false;
+
     unsigned center_sample = source()->sample_rate() * center;
-
-    Signal::Intervals centerinterval(center_sample, center_sample+1);
-    centerinterval = centerinterval.enlarge(_samples_per_chunk*4);
-
-    if ((todo_list & centerinterval).count()>2*_samples_per_chunk)
-        _requested_fps = std::min(_highest_fps, _requested_cheat_fps);
 
     if (_target->post_sink()->isUnderfed())
         _requested_fps = _min_fps;
+    else if (skip_if_low_fps && _requested_fps > std::max(_min_fps, _highest_fps))
+    {
+        _samples_per_chunk = _target->next_good_size( 1 );
 
-    if (skip_if_low_fps)
-        if (_requested_fps>_highest_fps)
+        Signal::Intervals centerinterval(center_sample, center_sample+1);
+        centerinterval = centerinterval.enlarge(_samples_per_chunk*4);
+
+        if ((todo_list & centerinterval).empty())
         {
-            _samples_per_chunk = _target->next_good_size( 1 );
+            WORKER_INFO TaskInfo("_requested_fps (%g) > _highest_fps (%g)",
+                                 _requested_fps,
+                                 _highest_fps);
             return false;
         }
+        else
+        {
+            WORKER_INFO TaskInfo("_requested_fps (%g) >_highest_fps (%g) but todo_list (%s) & centerinterval (%s) is not empty",
+                                 _requested_fps,
+                                 _highest_fps,
+                                 todo_list.toString().c_str(),
+                                 centerinterval.toString().c_str());
+        }
+    }
 
-    if (todo_list.empty())
-        return false;
 
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
 
-
+    unsigned prev_samples_per_chunk = _samples_per_chunk;
     _samples_per_chunk = _target->next_good_size( _samples_per_chunk - 1 );
+
+    WORKER_INFO
+    {
+        if (_samples_per_chunk != prev_samples_per_chunk)
+            TaskInfo("samples_per_chunk was %u, target %s suggests %u instead",
+                     prev_samples_per_chunk, _target->name().c_str(), _samples_per_chunk);
+        else
+            TaskInfo("target validated samples_per_chunk: %u", _samples_per_chunk);
+    }
+
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
     if (is_cheating() && interval.last > _number_of_samples)
     {
@@ -232,52 +256,75 @@ bool Worker::
         throw;
     }
 
-    if (b && !_last_work_one.is_not_a_date_time()) if (!TESTING_PERFORMANCE) {
-        unsigned prev_samples_per_chunk = _samples_per_chunk;
-        if (current_fps < _requested_fps)
-        {
-            float diff = current_fps/_requested_fps;
-            while(diff*prev_samples_per_chunk > _samples_per_chunk)
-            {
-                _samples_per_chunk = _target->prev_good_size( _samples_per_chunk );
-                if (_samples_per_chunk == prev_samples_per_chunk)
-                {
-                    _highest_fps = current_fps;
-                    break;
-                }
-            }
+    return true;
+}
 
+
+bool Worker::
+        workOne( bool skip_if_low_fps )
+{
+    bool r = doWorkOne( skip_if_low_fps );
+
+    // get current fps and update requested_fps
+    float current_fps = nextFrame();
+
+    if (!r)
+        return r;
+
+    TIME_WORKER TaskInfo("Running at %.1f fps, requested %.1f fps (highest %.1f fps, min requestable %.1f fps)",
+                         current_fps, _requested_fps, _highest_fps, _min_fps);
+
+    if (TESTING_PERFORMANCE)
+        return r;
+
+    unsigned prev_samples_per_chunk = _samples_per_chunk;
+    if (current_fps < _requested_fps)
+    {
+        float diff = current_fps/_requested_fps;
+        while(diff*prev_samples_per_chunk > _samples_per_chunk)
+        {
+            _samples_per_chunk = _target->prev_good_size( _samples_per_chunk );
+            if (_samples_per_chunk == prev_samples_per_chunk)
+            {
+                // reset _highest_fps, the previous value can be regarded as old
+                _highest_fps = current_fps;
+                break;
+            }
+        }
+
+        if (prev_samples_per_chunk != _samples_per_chunk) {
             WORKER_INFO TaskInfo(
-                    "Low framerate (%.1f fps). Decreased samples per chunk to %u",
+                    "Low framerate (%.1f fps). Decreased samples per chunk to %u (was %u)",
+                    current_fps, _samples_per_chunk, prev_samples_per_chunk);
+        } else {
+            WORKER_INFO TaskInfo(
+                    "Low framerate (%.1f fps). But %u samples per chunk is the lowest possible",
                     current_fps, _samples_per_chunk);
         }
-        else if (current_fps > 1.2f*_requested_fps)
+    }
+    else if (current_fps > 1.2f*_requested_fps)
+    {
+        unsigned new_samples_per_chunk = _target->next_good_size( _samples_per_chunk );
+        float p = new_samples_per_chunk / (float)prev_samples_per_chunk;
+        if ( current_fps/p >= _requested_fps )
         {
-            unsigned new_samples_per_chunk = _target->next_good_size( _samples_per_chunk );
-            float p = new_samples_per_chunk / (float)prev_samples_per_chunk;
-            if ( current_fps/p >= _requested_fps )
-            {
-                _samples_per_chunk = new_samples_per_chunk;
-                if (_samples_per_chunk>_max_samples_per_chunk)
-                    _samples_per_chunk=_max_samples_per_chunk;
-                else
-                    WORKER_INFO TaskInfo(
-                            "High framerate (%.1f fps). Increased samples per chunk to %u",
-                            current_fps, _samples_per_chunk);
-            }
-		} else {
-			TIME_WORKER TaskTimer("Current framerate = %.1f fps", current_fps).suppressTiming();
-		}
+            _samples_per_chunk = new_samples_per_chunk;
+            if (_samples_per_chunk>_max_samples_per_chunk)
+                _samples_per_chunk=_max_samples_per_chunk;
+        }
 
-        if (_highest_fps < current_fps)
-            _highest_fps = current_fps;
-        if (_highest_fps < _min_fps)
-            _highest_fps = _min_fps;
+        if (prev_samples_per_chunk != _samples_per_chunk) {
+            WORKER_INFO TaskInfo(
+                    "High framerate (%.1f fps). Increased samples per chunk to %u (was %u)",
+                    current_fps, _samples_per_chunk, prev_samples_per_chunk);
+        } else {
+            WORKER_INFO TaskInfo(
+                    "High framerate (%.1f fps). But %u samples per chunk would be to much. Samples per chunk is still %u",
+                    current_fps, new_samples_per_chunk, _samples_per_chunk);
+        }
     }
 
-    current_fps = -1;
-
-    return true;
+    return r;
 }
 
 
@@ -381,7 +428,7 @@ void Worker::
     }
 
     if (_target != value)
-        _highest_fps = _min_fps;
+        _highest_fps = 0; // have no information for what fps we can reach with this target
 
     _target = value;
 
@@ -409,13 +456,6 @@ void Worker::
 
 
 float Worker::
-        get_current_fps() const
-{
-    return current_fps;
-}
-
-
-float Worker::
         min_fps() const
 {
     return _min_fps;
@@ -426,13 +466,10 @@ void Worker::
         min_fps(float f)
 {
     _min_fps = f;
-
-    if (_highest_fps < _min_fps)
-        _highest_fps = _min_fps;
 }
 
 
-void Worker::
+float Worker::
         nextFrame()
 {
     _requested_fps *= 0.8f;
@@ -442,17 +479,20 @@ void Worker::
         _requested_fps = _min_fps;
 
     ptime now = microsec_clock::local_time();
+    float current_fps = 0;
     if (!_last_work_one.is_not_a_date_time())
     {
         time_duration diff = now - _last_work_one;
-        if (current_fps<0)
-            current_fps = 1000000.0/diff.total_microseconds();
-        else
-            current_fps = 0;
+        current_fps = 1000000.0/diff.total_microseconds();
+
+        if (_highest_fps < current_fps)
+            _highest_fps = current_fps;
     }
     _last_work_one = now;
 
     Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+
+    return current_fps;
 }
 
 

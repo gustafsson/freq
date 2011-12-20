@@ -78,6 +78,7 @@ public:
         return r;
     }
 
+
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
         validateSize();

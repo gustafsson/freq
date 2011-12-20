@@ -1095,39 +1095,46 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
+        Signal::pTarget oldTarget = worker.target();
+
         emit populateTodoList();
 
         if (!worker.target()->post_sink()->isUnderfed())
         {
-            // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
-            Signal::pTarget populated_target = worker.target();
-            worker.target( model->renderSignalTarget );
-            if (!worker.todo_list())
-            {
-                // Use the populated target (set in populateTodoList) if
-                // renderSignalTarget has nothing to work on
-                worker.target( populated_target );
+            std::vector<Signal::pTarget> targetsToTry;
+            targetsToTry.push_back( model->renderSignalTarget );
 
-                if (worker.todo_list().empty())
-                {
-                    // Search for something to work on
-                    foreach(Signal::pTarget t, model->project()->targets)
-                    {
-                        worker.target( t );
-                        if (worker.todo_list())
-                            break;
-                    }
-                }
-            }
-            else
+            // Use the populated target (possibly set in populateTodoList) if
+            // renderSignalTarget has nothing to work on
+            if (model->renderSignalTarget != worker.target() )
+                targetsToTry.push_back( worker.target() );
+
+            foreach(Signal::pTarget t, model->project()->targets)
+                if (std::find(targetsToTry.begin(), targetsToTry.end(), t) == targetsToTry.end())
+                    targetsToTry.push_back( t );
+
+            // Search for something to work on
+            foreach(Signal::pTarget t, targetsToTry)
             {
-                worker.center = model->_qx;
+                // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
+                worker.target( t );
+                if (worker.todo_list())
+                    break;
             }
+
+            if (!worker.todo_list() && worker.target() != model->renderSignalTarget)
+                worker.target( model->renderSignalTarget );
+
+            if (worker.target() == model->renderSignalTarget)
+                worker.center = model->_qx;
         }
         else
         {
-            // fetch_todo_list
-            worker.target(worker.target());
+            if (worker.target() == oldTarget)
+            {
+                // make sure the todo list is updated
+                worker.target(worker.target());
+            }
         }
     }
 
@@ -1159,6 +1166,11 @@ void RenderView::
             emit postUpdate();
 #endif
         } else {
+#ifdef SAWE_NO_MUTEX
+            // will only update interal stats and not do any work since worker.todo_list() is empty.
+            worker.workOne(true);
+#endif
+
             static unsigned workcount = 0;
             if (_work_timer) {
                 float worked_time = worker.worked_samples.count()/worker.source()->sample_rate();
@@ -1201,7 +1213,6 @@ void RenderView::
         }
     }
 
-    worker.nextFrame();
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post check errors");
