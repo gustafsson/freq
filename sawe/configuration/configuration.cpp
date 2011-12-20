@@ -43,8 +43,8 @@ Configuration::
             min_hz_( 80 ), // the CPU version is so much slower, so ease it up a bit as default
 #endif
             samples_per_chunk_hint_( 1 ),
-            samples_per_block_( 1<<7 ),
-            scales_per_block_( 1<<7 ),
+            samples_per_block_( 1<<8 ),
+            scales_per_block_( 1<<8 ),
             get_hdf_( (unsigned)-1 ),
             get_csv_( (unsigned)-1 ),
             get_chunk_count_( false ),
