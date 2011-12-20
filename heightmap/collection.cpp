@@ -880,151 +880,68 @@ pBlock Collection::
 
         if ( 1 /* create from others */ )
         {
+#ifndef SAWE_NO_MUTEX
+            l.unlock();
+#endif
+            std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.spannedInterval(), false );
+#ifndef SAWE_NO_MUTEX
+            l.relock();
+#endif
+
+            const Region& r = block->getRegion();
+
+            int merge_levels = 10;
+            VERBOSE_COLLECTION TaskTimer tt("Checking %u blocks out of %u blocks, %d times", gib.size(), _cache.size(), merge_levels);
+
+            for (int merge_level=0; merge_level<merge_levels; ++merge_level)
             {
-                if (1) {
+                VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
+
+                std::vector<pBlock> next;
+                foreach( const pBlock& bl, gib )
+                {
+                    // The switch from high resolution blocks to low resolution blocks (or
+                    // the other way around) should be as invisible as possible. Therefor
+                    // the contents should be stubbed from whatever contents the previous
+                    // blocks already have, even if the contents are out-of-date.
+                    //
+                    // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
+                    Interval v = bl->getInterval();
+
+                    // Check if these samples are still considered for update
+                    if ( (things_to_update & v & bl->non_zero).count() <= 1)
+                        continue;
+
+                    int d = bl->reference().log2_samples_size[0];
+                    d -= ref.log2_samples_size[0];
+                    d += bl->reference().log2_samples_size[1];
+                    d -= ref.log2_samples_size[1];
+
+                    if (d==merge_level || -d==merge_level)
                     {
-#ifndef SAWE_NO_MUTEX
-                        l.unlock();
-#endif
-                        std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.spannedInterval(), false );
-#ifndef SAWE_NO_MUTEX
-                        l.relock();
-#endif
-
-                        const Region& r = block->getRegion();
-
-                        int merge_levels = 10;
-                        VERBOSE_COLLECTION TaskTimer tt("Checking %u blocks out of %u blocks, %d times", gib.size(), _cache.size(), merge_levels);
-
-                        for (int merge_level=0; merge_level<merge_levels; ++merge_level)
+                        const Region& r2 = bl->getRegion();
+                        if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale )
                         {
-                            VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
-
-                            std::vector<pBlock> next;
-                            foreach( const pBlock& bl, gib )
-                            {
-                                // The switch from high resolution blocks to low resolution blocks (or
-                                // the other way around) should be as invisible as possible. Therefor
-                                // the contents should be stubbed from whatever contents the previous
-                                // blocks already have, even if the contents are out-of-date.
-                                //
-                                // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
-                                Interval v = bl->getInterval();
-
-                                // Check if these samples are still considered for update
-                                if ( (things_to_update & v & bl->non_zero).count() <= 1)
-                                    continue;
-
-                                int d = bl->reference().log2_samples_size[0];
-                                d -= ref.log2_samples_size[0];
-                                d += bl->reference().log2_samples_size[1];
-                                d -= ref.log2_samples_size[1];
-
-                                if (d==merge_level || -d==merge_level)
-                                {
-                                    const Region& r2 = bl->getRegion();
-                                    if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale )
-                                    {
-                                        // 'bl' covers all scales in 'block' (not necessarily all time samples though)
-                                        things_to_update -= v;
-                                        mergeBlock( block, bl, 0 );
-                                    }
-                                    else if (bl->reference().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
-                                    {
-                                        // mergeBlock makes sure that their scales overlap more or less
-                                        //mergeBlock( block, bl, 0 ); takes time
-                                    }
-                                    else
-                                    {
-                                        // don't bother with things that doesn't match very well
-                                    }
-                                }
-                                else
-                                {
-                                    next.push_back( bl );
-                                }
-                            }
-                            gib = next;
+                            // 'bl' covers all scales in 'block' (not necessarily all time samples though)
+                            things_to_update -= v;
+                            mergeBlock( block, bl, 0 );
                         }
+                        else if (bl->reference().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
+                        {
+                            // mergeBlock makes sure that their scales overlap more or less
+                            //mergeBlock( block, bl, 0 ); takes time
+                        }
+                        else
+                        {
+                            // don't bother with things that doesn't match very well
+                        }
+                    }
+                    else
+                    {
+                        next.push_back( bl );
                     }
                 }
-
-                if (0) {
-                    VERBOSE_COLLECTION TaskTimer tt("Fetching low resolution");
-                    // then try to upscale other blocks
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        const pBlock& b = c.second;
-                        if (block->reference().log2_samples_size[0] < b->reference().log2_samples_size[0]-1 ||
-                            block->reference().log2_samples_size[1] < b->reference().log2_samples_size[1]-1 )
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
-                }
-
-
-                // TODO compute at what log2_samples_size[1] stft is more accurate
-                // than low resolution blocks. So that Cwt is not needed.
-                if (0) {
-                    VERBOSE_COLLECTION TaskTimer tt("Fetching details");
-                    // then try to upscale blocks that are just slightly less detailed
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        const pBlock& b = c.second;
-                        if (block->reference().log2_samples_size[0] == b->reference().log2_samples_size[0] &&
-                            block->reference().log2_samples_size[1]+1 == b->reference().log2_samples_size[1])
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        const pBlock& b = c.second;
-                        if (block->reference().log2_samples_size[0]+1 == b->reference().log2_samples_size[0] &&
-                            block->reference().log2_samples_size[1] == b->reference().log2_samples_size[1])
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
-                }
-
-                if (0) {
-                    VERBOSE_COLLECTION TaskTimer tt("Fetching more details");
-                    // then try using the blocks that are even more detailed
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        const pBlock& b = c.second;
-                        if (block->reference().log2_samples_size[0] > b->reference().log2_samples_size[0] +1 ||
-                            block->reference().log2_samples_size[1] > b->reference().log2_samples_size[1] +1)
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
-                }
-
-                if (0) {
-                    VERBOSE_COLLECTION TaskTimer tt("Fetching details");
-                    // start with the blocks that are just slightly more detailed
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        const pBlock& b = c.second;
-                        if (block->reference().log2_samples_size[0] == b->reference().log2_samples_size[0]  &&
-                            block->reference().log2_samples_size[1] == b->reference().log2_samples_size[1] +1)
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
-                    foreach( const cache_t::value_type& c, _cache )
-                    {
-                        const pBlock& b = c.second;
-                        if (block->reference().log2_samples_size[0] == b->reference().log2_samples_size[0] +1 &&
-                            block->reference().log2_samples_size[1] == b->reference().log2_samples_size[1] )
-                        {
-                            mergeBlock( block, b, 0 );
-                        }
-                    }
-                }
+                gib = next;
             }
         }
 
