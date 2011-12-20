@@ -141,7 +141,9 @@ public:
 
     virtual void invalidate_samples(const Signal::Intervals& I)
     {
-        largestApplied = 0;
+        if ((FilterKind::getInterval() - I).empty())
+            largestApplied = 0;
+
         FilterKind::invalidate_samples( I );
     }
 
