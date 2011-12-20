@@ -1530,7 +1530,7 @@ void Renderer::drawAxes( float T )
                         glRotatef(angle,0,0,1);
                         char a[100];
                         char b[100];
-                        sprintf(b,"%%d:%%02.%df", st<0?-1-st:0);
+                        sprintf(b,"%%d:%%0%d.%df", 2+(st<-1?-st:0), st<0?-1-st:0);
                         int minutes = (int)(t*DT/60);
                         sprintf(a, b, minutes,t*DT-60*minutes);
                         float w=0;
