@@ -328,7 +328,7 @@ void RenderController::
     Tfr::Cwt& c = Tfr::Cwt::Singleton();
 
     // keep in sync with receiveSetTimeFrequencyResolution
-    float f = log(c.scales_per_octave()/2.L)/8;
+    float f = log(c.scales_per_octave()/2.L)/6;
     int value = f * tf_resolution->maximum() + .5;
 
     this->tf_resolution->setValue( value );
@@ -395,7 +395,7 @@ void RenderController::
 
     bool isCwt = dynamic_cast<Tfr::Cwt*>(model()->collections[0]->transform().get());
     // Validate scales per octave if transform is Cwt. CwtFilter will validate scales per octave when Cwt is used again.
-    c.scales_per_octave( 2*exp( 8.L*f ), isCwt?FS:0 ); // scales_per_octave >= 2
+    c.scales_per_octave( 2*exp( 6.L*f ), isCwt?FS:0 ); // scales_per_octave >= 2
 
     float wavelet_default_time_support = c.wavelet_default_time_support();
     float wavelet_fast_time_support = c.wavelet_time_support();
@@ -403,7 +403,7 @@ void RenderController::
 
     Tfr::Stft& s = Tfr::Stft::Singleton();
     unsigned prev_chunk_size = s.chunk_size();
-    s.set_approximate_chunk_size( 0.25f*c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
 
     c.wavelet_fast_time_support( wavelet_fast_time_support );
 
