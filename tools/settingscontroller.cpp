@@ -11,7 +11,8 @@ namespace Tools {
 SettingsController::
         SettingsController(Sawe::Project*project)
             :
-            project(project)
+            project_(project),
+            initialized_(false)
 {
     showSettingsAction = new QAction( "&Settings", project->mainWindowWidget() );
     showSettingsAction->setObjectName( "showSettingsAction" );
@@ -21,7 +22,9 @@ SettingsController::
     project->mainWindow()->getItems()->menuTools->addAction( showSettingsAction );
     project->mainWindowWidget()->addAction( showSettingsAction );
 
-    connect(showSettingsAction, SIGNAL(triggered()), SLOT(showSettings()));
+    connect(showSettingsAction, SIGNAL(triggered()), SLOT(showSettings()), Qt::QueuedConnection);
+
+    showSettingsAction->trigger();
 }
 
 
@@ -36,7 +39,15 @@ void SettingsController::
         showSettings()
 {
     // the pointer is owned by project->mainWindowWidget(), the dialog has WA_DeleteOnClose
-    SettingsDialog* settingsDialog = new SettingsDialog(project, project->mainWindowWidget());
+    SettingsDialog* settingsDialog = new SettingsDialog(project_, project_->mainWindowWidget());
+
+    if (!initialized_)
+    {
+        settingsDialog->close(); // destroys settingsDialog
+        initialized_ = true;
+        return;
+    }
+
     connect(settingsDialog, SIGNAL(finished(int)), SLOT(dialogFinished(int)));
 
     settingsDialog->show();

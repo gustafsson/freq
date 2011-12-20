@@ -27,7 +27,8 @@ private slots:
 private:
     QAction* showSettingsAction;
 
-    Sawe::Project*project;
+    Sawe::Project* project_;
+    bool initialized_;
 };
 
 } // namespace Tools
