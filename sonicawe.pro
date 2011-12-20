@@ -78,6 +78,13 @@ gcc-4.3 {
     QMAKE_LINK = g++-4.3
 }
 
+#gold-linker {
+#    QMAKE_LINK = gold
+#    QMAKE_LINK = ld
+# TODO add system libraries which are included by g++-4.3, but not by 'gold' (nor 'ld'), could use output from compiling with "g++-4.3 -v"
+#    QMAKE_LFLAGS += -L/usr/lib -L/usr/X11R6/lib -shared-libgcc -mtune=generic /usr/lib/gcc/x86_64-linux-gnu/4.3.4/collect2 --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=both -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o sonicawe -z relro /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crt1.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/crtbegin.o -L/usr/local/cuda/lib64 -L/usr/lib -L/usr/X11R6/lib -L../gpumisc -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../.. -L/usr/lib/x86_64-linux-gnu
+#    QMAKE_LFLAGS += -rpath=/usr/share/sonicawe/
+#}
 
 ####################
 # Source code
