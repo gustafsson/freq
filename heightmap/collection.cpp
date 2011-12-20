@@ -4,8 +4,8 @@
 #include "renderer.h"
 #include "glblock.h"
 
-#include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
+#include "tfr/stft.h"
 #include "signal/operationcache.h"
 
 // Gpumisc
@@ -1137,13 +1137,17 @@ bool Collection::
     INFO_COLLECTION ComputationSynchronize();
     }
 
-    // Validate region of block if inBlock was source of higher resolution than outBlock
-    bool enable_subtexel_aggregation = renderer ? renderer->redundancy()<=1 : false;
-    if (!enable_subtexel_aggregation) // blockMerge doesn't support subtexel aggregation
-    if (inBlock->reference().log2_samples_size[0] < outBlock->reference().log2_samples_size[0] &&
-        inBlock->reference().log2_samples_size[1] == outBlock->reference().log2_samples_size[1])
+    outBlock->valid_samples -= inBlock->getInterval();
+
+    bool isCwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
+
+    if (!using_subtexel_aggregation) // blockMerge doesn't support subtexel aggregation
     {
-        if (ri.b.scale==ro.b.scale && ri.a.scale==ro.a.scale)
+        // Validate region of block if inBlock was source of higher resolution than outBlock
+        if (inBlock->reference().log2_samples_size[0] < outBlock->reference().log2_samples_size[0] &&
+            inBlock->reference().log2_samples_size[1] == outBlock->reference().log2_samples_size[1] &&
+            ri.b.scale==ro.b.scale && ri.a.scale==ro.a.scale)
         {
             outBlock->valid_samples -= inBlock->getInterval();
             outBlock->valid_samples |= inBlock->valid_samples;
