@@ -20,10 +20,10 @@ qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
   "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
-else
-  rm -f gpumisc/release/gpumisc.lib
-  touch sonicawe/sawe/configuration/configuration.cpp
 fi
+
+rm -f gpumisc/release/gpumisc.lib
+touch sonicawe/sawe/configuration/configuration.cpp
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
@@ -40,10 +40,10 @@ qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
   "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
-else
-  rm -f gpumisc/release/gpumisc.lib
-  touch sonicawe/sawe/configuration/configuration.cpp
 fi
+
+rm -f gpumisc/release/gpumisc.lib
+touch sonicawe/sawe/configuration/configuration.cpp
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe

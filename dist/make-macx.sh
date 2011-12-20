@@ -13,11 +13,11 @@ qmake $qmaketarget -spec macx-g++ CONFIG+=release
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
-else
-  touch sonicawe/sawe/configuration/configuration.cpp
-  rm -f gpumisc/libgpumisc.a
-  rm -f {sonicawe,gpumisc}/Makefile
 fi
+
+touch sonicawe/sawe/configuration/configuration.cpp
+rm -f gpumisc/libgpumisc.a
+rm -f {sonicawe,gpumisc}/Makefile
 
 no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
 make -j${no_cores}
@@ -33,11 +33,11 @@ qmake $qmaketarget -spec macx-g++ CONFIG+=release
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
-else
-  touch sonicawe/sawe/configuration/configuration.cpp
-  rm -f gpumisc/libgpumisc.a
-  rm -f {sonicawe,gpumisc}/Makefile
 fi
+
+touch sonicawe/sawe/configuration/configuration.cpp
+rm -f gpumisc/libgpumisc.a
+rm -f {sonicawe,gpumisc}/Makefile
 
 make -j${no_cores}
 

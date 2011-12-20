@@ -15,11 +15,11 @@ qmake $qmaketarget CONFIG+=gcc-4.3
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
-else
-  touch sonicawe/sawe/configuration/configuration.cpp
-  rm -f gpumisc/libgpumisc.a
-  rm -f {sonicawe,gpumisc}/Makefile
 fi
+
+touch sonicawe/sawe/configuration/configuration.cpp
+rm -f gpumisc/libgpumisc.a
+rm -f {sonicawe,gpumisc}/Makefile
 
 # We need to create multiple packages that can't depend on packages outside the ubuntu repos. So shared things between our packages need to be duplicated.
 LD_RUN_PATH=/usr/share/${packagename}
@@ -37,11 +37,11 @@ qmake $qmaketarget CONFIG+=gcc-4.3
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
-else
-  touch sonicawe/sawe/configuration/configuration.cpp
-  rm -f gpumisc/libgpumisc.a
-  rm -f {sonicawe,gpumisc}/Makefile
 fi
+
+touch sonicawe/sawe/configuration/configuration.cpp
+rm -f gpumisc/libgpumisc.a
+rm -f {sonicawe,gpumisc}/Makefile
 
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
