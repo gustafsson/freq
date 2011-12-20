@@ -2,7 +2,7 @@
 #include "brushfiltersupport.h"
 
 #include "brushfilterkernel.h"
-#include "tfr/cwt.h"
+#include "tfr/chunk.h"
 #include "heightmap/collection.h"
 
 #include "cpumemorystorage.h"

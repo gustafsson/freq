@@ -2,6 +2,7 @@
 
 #include "sawe/project.h"
 #include "tfr/cwt.h"
+#include "tfr/stft.h"
 #include "tfr/cwtfilter.h"
 #include "tfr/stftfilter.h"
 #include "tfr/cepstrum.h"

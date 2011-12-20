@@ -16,6 +16,7 @@
 #include "heightmap/renderer.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
+#include "tfr/stft.h"
 #include "tfr/cepstrum.h"
 #include "graphicsview.h"
 #include "sawe/application.h"

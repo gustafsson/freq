@@ -7,6 +7,7 @@
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
+#include "tfr/stft.h"
 
 #include <computationkernel.h>
 #include <GlException.h>

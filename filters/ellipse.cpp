@@ -2,6 +2,7 @@
 #include "ellipsekernel.h"
 
 #include "tfr/cwt.h"
+#include "tfr/chunk.h"
 
 // gpumisc
 #include <TaskTimer.h>

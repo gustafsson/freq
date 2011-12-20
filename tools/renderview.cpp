@@ -18,6 +18,7 @@
 #include "support/drawwatermark.h"
 #include "support/drawworking.h"
 #include "tfr/cwt.h"
+#include "tfr/stft.h"
 #include "toolfactory.h"
 
 // gpumisc

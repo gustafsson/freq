@@ -2,8 +2,7 @@
 #define TFRCWT_H
 
 #include "transform.h"
-#include "signal/source.h"
-#include "stft.h"
+#include "signal/buffer.h"
 
 namespace Tfr {
 
