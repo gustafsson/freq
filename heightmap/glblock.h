@@ -4,10 +4,6 @@
 // gpumisc
 #include <mappedvbo.h>
 
-// std
-#include <stdio.h>
-#include <complex>
-
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort

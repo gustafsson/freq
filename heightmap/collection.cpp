@@ -2,6 +2,7 @@
 #include "blockkernel.h"
 #include "blockfilter.h"
 #include "renderer.h"
+#include "glblock.h"
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cwt.h"
@@ -157,7 +158,7 @@ unsigned Collection::
 
     // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
 
-    boost::scoped_ptr<TaskTimer> tt;
+    boost::shared_ptr<TaskTimer> tt;
     if (_unfinished_count)
     {
         VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u, %u", _unfinished_count, _created_count));

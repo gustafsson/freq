@@ -1,3 +1,5 @@
+#include <gl.h>
+
 #include "glblock.h"
 
 // sonicawe
@@ -5,7 +7,6 @@
 
 // Heightmap namespace
 #include "collection.h"
-#include "renderer.h"
 
 // gpumisc
 #include "vbo.h"
@@ -20,6 +21,7 @@
 
 // Qt
 #include <QResource>
+
 
 #define TIME_COMPILESHADER
 //#define TIME_COMPILESHADER if(0)
@@ -186,7 +188,7 @@ GlBlock( Collection* collection, float width, float height )
 GlBlock::
 ~GlBlock()
 {
-    boost::scoped_ptr<TaskTimer> tt;
+    boost::shared_ptr<TaskTimer> tt;
     TIME_GLBLOCK tt.reset( new TaskTimer ("~GlBlock() _height=%u", _height?*_height:0u ));
 
     // no point in doing a proper unmapping when it might fail and the textures
@@ -290,7 +292,7 @@ void GlBlock::
 
 
 GlBlock::pHeight GlBlock::
-height()
+        height()
 {
     if (_mapped_height) return _mapped_height;
 

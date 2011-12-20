@@ -2,29 +2,27 @@
 #define HEIGHTMAPRENDERER_H
 
 // Heightmap namespace
-#include "glblock.h"
 #include "reference.h"
 
 // gpumisc
 #include <tmatrix.h>
 
 // std
-#include <sstream>
 #include <vector>
 
-// OpenGL
-#include "gl.h"
-
 // boost
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
-typedef tvector<3,GLdouble> GLvector;
+typedef tvector<3,double> GLvector;
 class GlTexture;
+
+class Vbo;
+typedef boost::shared_ptr<Vbo> pVbo;
 
 namespace Heightmap {
 
-    GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
-    GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r=0);
+    GLvector gluProject(GLvector obj, const double* model, const double* proj, const int *view, bool *r=0);
+    GLvector gluUnProject(GLvector win, const double* model, const double* proj, const int *view, bool *r=0);
 
     class Collection;
 
@@ -70,8 +68,8 @@ public:
     bool isInitialized();
     void init();
 
-    GLdouble modelview_matrix[16], projection_matrix[16];
-    GLint viewport_matrix[4];
+    double modelview_matrix[16], projection_matrix[16];
+    int viewport_matrix[4];
 
     GLvector gluProject(GLvector obj, bool *r=0);
     GLvector gluUnProject(GLvector win, bool *r=0);
@@ -95,14 +93,14 @@ private:
     };
 
     std::vector<GLvector> clippedFrustum;
-    GLuint _mesh_index_buffer;
+    unsigned _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
     unsigned _mesh_fraction_width;
     unsigned _mesh_fraction_height;
     unsigned _vbo_size;
     pVbo _mesh_position;
-    GLuint _shader_prog;
+    unsigned _shader_prog;
     InitializedLevel _initialized;
     bool _draw_flat;
     float _redundancy;
@@ -115,9 +113,7 @@ private:
         bottomPlane, bottomNormal;
 
     ColorMode _color_texture_colors;
-    boost::scoped_ptr<GlTexture> colorTexture;
-
-    friend class Heightmap::GlBlock;
+    boost::shared_ptr<GlTexture> colorTexture;
 
     void setSize( unsigned w, unsigned h);
     void createMeshIndexBuffer(unsigned w, unsigned h);

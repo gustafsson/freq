@@ -12,6 +12,7 @@
 #include "heightmap/renderer.h"
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
+#include "heightmap/glblock.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"
 
