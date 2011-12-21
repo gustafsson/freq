@@ -528,7 +528,10 @@ void MatlabController::
     bool noscript = settings->scriptname().empty();
 
     if (!noscript)
+    {
         project_->appendOperation( matlaboperation );
+        settings->ownOperation = project_->head->head_source();
+    }
 }
 
 

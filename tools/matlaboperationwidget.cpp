@@ -274,7 +274,7 @@ bool MatlabOperationWidget::
         foreach (Signal::pChain c, project->layers.layers())
         {
             if (c!=matlabChain)
-                isreferenced |= c->isInChain( matlabChain->root_source() );
+                isreferenced |= c->isInChain( ownOperation );
         }
 
         // If the matlab operation is only needed by the MatlabOperationWidget it has been removed, delete this

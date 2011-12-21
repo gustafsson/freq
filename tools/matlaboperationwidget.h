@@ -50,6 +50,13 @@ public:
     virtual int overlap() const;
     virtual void overlap(int);
 
+    /**
+      For console 'ownOperation' is the only instance of a shared_ptr to the MatlabOperation
+      that communicates with Matlab/Octave.
+
+      For scripts (common usage) 'ownOperation' is the composite operation that is added
+      to the tree of operations. Including all cache layers and including any filtering.
+      */
     Signal::pOperation ownOperation;
 
     QDockWidget* getOctaveWindow();
