@@ -4,46 +4,25 @@
 #
 #-------------------------------------------------
 
-QT += testlib
-QT += opengl
-TEMPLATE = app
-win32:TEMPLATE = vcapp
-win32:CONFIG += debug_and_release
+QT -= core
+QT -= gui
 
-TARGET = tst_mappedvbotest
 CONFIG   += console
 CONFIG   -= app_bundle
 
-!win32:QMAKE_CXXFLAGS_RELEASE -= -O2
-!win32:QMAKE_CXXFLAGS_RELEASE += -O3
-win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
-win32:QMAKE_LFLAGS_DEBUG += \
-#    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
-    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
-#    /NODEFAULTLIB:MSVCRT \
+TEMPLATE = app
+win32:TEMPLATE = vcapp
 
-win32:QMAKE_LFLAGS_RELEASE += \
-    /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
-    /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
 
-SOURCES += *.cpp
+#SOURCES += *.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
 INCLUDEPATH += \
-    ../../../../sonic/gpumisc \
-    ../../../../sonic/sonicawe \
+#    ../../../../sonic/gpumisc \
+#    ../../../../sonic/sonicawe \
 
-unix:!macx {
-LIBS = \
-    -lGLEW \
-    -lGLU \
-    -lGL \
-#    -lglut \
-    -L../../../gpumisc -lgpumisc \
-#    -L../../../sonicawe -lsonicawe
-}
 
 CUDA_SOURCES += \
     *.cu
@@ -52,36 +31,44 @@ CUDA_SOURCES += \
 OTHER_FILES += \
     $$CUDA_SOURCES \
 
+
+unix:!macx {
+LIBS = \
+    -lGLU \
+    -lGL \
+    -lglut \
+
+}
+
 win32 {
 INCLUDEPATH += \
-#	../../../../winlib/glut \
-	../../../../winlib/glew/include \
+	../../../../winlib/glut \
+#	../../../../winlib/glew/include \
 #	../../../../winlib/portaudio/include \
 #	../../../../winlib/libsndfile/include \
 #	../../../../winlib/hdf5lib/include \
 #	../../../../winlib/zlib/include \
-	../../../../winlib
-	
+#	../../../../winlib
+
 LIBS += \
-    -L../../../gpumisc/Release -lgpumisc \
-#	-l../../../../winlib/glut/glut32 \
-	-l../../../../winlib/glew/lib/glew32 \
+	-l../../../../winlib/glut/glut32 \
 #	-l../../../../winlib/libsndfile/libsndfile-1 \
 #	-l../../../../winlib/hdf5lib/dll/hdf5dll \
 #	-l../../../../winlib/hdf5lib/dll/hdf5_hldll \
-	-L../../../../winlib/boostlib
-	
+#	-L../../../../winlib/boostlib
+
 win32:QMAKE_LFLAGS_RELEASE += \
 #	../../../../winlib/portaudio/portaudio.lib \
 #	../../../../winlib/portaudio/portaudio_x86_mt.lib \
 #	../../../../winlib/portaudio/portaudiocpp_mt.lib
-	
+
 win32:QMAKE_LFLAGS_DEBUG += \
 #	../../../../winlib/portaudio/portaudio.lib \
 #	../../../../winlib/portaudio/portaudio_x86_mt_gd.lib \
 #	../../../../winlib/portaudio/portaudiocpp_mt_gd.lib
-	
+
 }
+
 ####################
 # Temporary output
 
@@ -97,25 +84,39 @@ else:OBJECTS_DIR = tmp/release/
 # CUDA
 # #######################################################################
 
+unix:!macx {
+	QMAKE_CXX = g++-4.3
+	QMAKE_CC = gcc-4.3
+	QMAKE_LINK = g++-4.3
+}
+
+DEFINES += USE_CUDA
+
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
+#CUDA_FLAGS += --ptxas-options=-v
 
 
-win32 {
+CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
+CONFIG(debug, debug|release):CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_DEBUG
+else:CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_RELEASE
+win32 { 
     INCLUDEPATH += "$(CUDA_INC_PATH)"
     LIBS += -L"$(CUDA_LIB_PATH)"
-    QMAKE_CXXFLAGS -= -Zc:wchar_t-
-    QMAKE_CXXFLAGS += -Zc:wchar_t
-    cuda.output = $$OBJECTS_DIR/${QMAKE_FILE_BASE}_cuda.obj
+    CUDA_CXXFLAGS -= -Zc:wchar_t-
+    CUDA_CXXFLAGS += -Zc:wchar_t
+    CUDA_CXXFLAGS += /EHsc
+    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.obj
     cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
+		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        \"$$join(QMAKE_CXXFLAGS," ")\" \
+        \"$$join(CUDA_CXXFLAGS," ")\" \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
-        -o \
+		-o \
         "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
@@ -126,10 +127,11 @@ unix:!macx {
     QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
+		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../../../../sonic/sonicawe/tests/MappedVbo/','-I "../../../../sonic/sonicawe/tests/MappedVbo/','"') \
+        $$join(CUDA_CXXFLAGS,",") \
+        $$join(INCLUDEPATH,'" -I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','-I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \
@@ -138,7 +140,7 @@ unix:!macx {
     cuda.depend_command_dosntwork = nvcc \
         -M \
         -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(CUDA_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         ${QMAKE_FILE_NAME} \
         | \
@@ -155,7 +157,7 @@ unix:!macx {
 
 # cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 
-macx {
+macx { 
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     # manual
@@ -164,9 +166,10 @@ macx {
     QMAKE_LIBDIR += $$CUDA_DIR/lib
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
+		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        $$join(QMAKE_CXXFLAGS,",") \
+        $$join(CUDA_CXXFLAGS,",") \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
@@ -177,4 +180,5 @@ macx {
 
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
+
 # end of cuda section #######################################################################

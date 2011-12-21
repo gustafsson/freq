@@ -1,5 +1,6 @@
 #include "sawe/project_header.h"
 #include <redirectstdout.h>
+#include <cuda_gl_interop.h>
 #include <QtCore/QString>
 #include <QtTest/QtTest>
 #include <QtCore/QCoreApplication>
@@ -30,7 +31,7 @@ MappedVboTestNoCopy::MappedVboTestNoCopy()
 #include "cudaPitchedPtrType.h"
 #include "CudaException.h"
 
-void mappedVboTestCuda( cudaPitchedPtrType<float> data );
+void mappedVboTestCuda( DataStorage<float>::Ptr datap );
 
 void MappedVboTestNoCopy::initTestCase()
 {
@@ -45,9 +46,9 @@ void MappedVboTestNoCopy::testCase1()
 {
     QVERIFY( cudaSuccess == cudaGLSetGLDevice( 0 ) );
     QVERIFY( 0==glewInit() );
-    pVbo vbo( new Vbo(1024));
-    MappedVbo<float> mapping(vbo, make_cudaExtent(256,1,1));
-    mappedVboTestCuda( mapping.data->getCudaGlobal() );
+    pVbo vbo( new Vbo(1024, GL_ARRAY_BUFFER, GL_STATIC_DRAW));
+    MappedVbo<float> mapping(vbo, DataStorageSize(256,1,1));
+    mappedVboTestCuda( mapping.data );
     QVERIFY2(true, "Failure");
 }
 

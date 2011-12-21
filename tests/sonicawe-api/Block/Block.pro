@@ -8,7 +8,7 @@ QT       += testlib
 
 QT       -= gui
 
-TARGET = tst_blocktest
+TARGET = Block
 CONFIG   += console
 CONFIG   -= app_bundle
 

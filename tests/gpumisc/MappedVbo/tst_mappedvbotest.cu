@@ -1,3 +1,4 @@
+#include "cudaglobalstorage.h"
 #include "cudaPitchedPtrType.h"
 
 __global__ void mappedVboTestKernel(
@@ -15,8 +16,10 @@ __global__ void mappedVboTestKernel(
 }
 
 
-void mappedVboTestCuda( cudaPitchedPtrType<float> data )
+void mappedVboTestCuda( DataStorage<float>::Ptr datap )
 {
+    cudaPitchedPtrType<float> data(CudaGlobalStorage::ReadOnly<2>( datap ).getCudaPitchedPtr());
+
     elemSize3_t sz_output = data.getNumberOfElements();
     dim3 block( 128 );
     dim3 grid( int_div_ceil( sz_output.x, block.x ), sz_output.y );

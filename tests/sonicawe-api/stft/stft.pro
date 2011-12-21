@@ -10,10 +10,13 @@
 QT += testlib
 QT += opengl
 
+TARGET = stft
 CONFIG   += console
 CONFIG   -= app_bundle
+win32:CONFIG += debug_and_release
 
 TEMPLATE = app
+win32:TEMPLATE = vcapp
 
 
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
@@ -24,22 +27,39 @@ win32:QMAKE_CXXFLAGS_RELEASE += /openmp
 ####################
 # Source code
 
-
 SOURCES += *.cpp
+
+
+####################
+# Compiler flags
 
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
 INCLUDEPATH += \
-    ../../../../sonic/gpumisc \
-    ../../../../sonic/sonicawe \
+    ../../../../../sonic/gpumisc \
+    ../../../../../sonic/sonicawe \
 
-# build sonicawe with qmake CONFIG+=testlib
-LIBS = -L../../../sonicawe -lsonicawe
+win32 {
+    INCLUDEPATH += \
+        ../../../../../winlib/glut \
+        ../../../../../winlib/glew/include \
+        ../../../../../winlib \
+    LIBS += \
+        -l../../../../winlib/glut/glut32 \
+        -l../../../../winlib/glew/lib/glew32 \
 
-# find libsonicawe when executing from project path
-QMAKE_LFLAGS += -Wl,-rpath=../../
+    LIBS += \
+        -L../../../../sonicawe/debug -lsonicawe \
+} else {
+    # build sonicawe with qmake CONFIG+=testlib
+    LIBS += -L../../../../sonicawe -lsonicawe \
+
+    # find libsonicawe when executing from project path
+    QMAKE_LFLAGS += -Wl,-rpath=../../../
+}
+
 
 ####################
 # Temporary output
