@@ -73,6 +73,8 @@ public:
     static unsigned samples_per_block();
     static unsigned scales_per_block();
 
+    static bool skip_update_check();
+
 private:
     friend class HasSingleton<Configuration>;
     Configuration();

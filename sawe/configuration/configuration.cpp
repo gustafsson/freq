@@ -605,4 +605,12 @@ unsigned Configuration::
     return Singleton().scales_per_block_;
 }
 
+
+bool Configuration::
+        skip_update_check()
+{
+    return false;
+}
+
+
 } // namespace Sawe
