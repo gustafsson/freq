@@ -12,7 +12,6 @@ class MappedVboTest : public QObject
 
 public:
     MappedVboTest();
-    RedirectStdout rs;
 
     QGLWidget a;
 
@@ -23,7 +22,6 @@ private Q_SLOTS:
 };
 
 MappedVboTest::MappedVboTest()
-: rs(__FILE__ " log.txt")
 {
 }
 

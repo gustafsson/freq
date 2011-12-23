@@ -24,15 +24,14 @@ int main(int argc, char *argv[])
 	
 	cudaError sync = cudaThreadSynchronize();
 
+    bool all_success = (mallocd == cudaSuccess)
+		&& (freed == cudaSuccess)
+        && (sync == cudaSuccess);
+
     cout << "mallocd = " << (mallocd == cudaSuccess) << endl
          << "freed = " << (freed == cudaSuccess) << endl
          << "sync = " << (sync == cudaSuccess) << endl;
 	
-    string name = __FILE__ " log.txt";
-
-    ofstream tst(name.c_str());
-    tst  << name.c_str() << endl
-         << "mallocd = " << (mallocd == cudaSuccess) << endl
-         << "freed = " << (freed == cudaSuccess) << endl
-         << "sync = " << (sync == cudaSuccess) << endl;
+    bool any_failed = !all_success;
+    exit(any_failed);
 }

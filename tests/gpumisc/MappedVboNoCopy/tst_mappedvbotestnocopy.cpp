@@ -12,7 +12,6 @@ class MappedVboTestNoCopy : public QObject
 
 public:
     MappedVboTestNoCopy();
-    RedirectStdout rs;
 
     QGLWidget a;
 
@@ -23,7 +22,6 @@ private Q_SLOTS:
 };
 
 MappedVboTestNoCopy::MappedVboTestNoCopy()
-: rs(__FILE__ " log.txt")
 {
 }
 

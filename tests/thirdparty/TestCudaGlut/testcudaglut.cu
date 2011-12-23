@@ -34,17 +34,17 @@ void display()
     cudaError freed = cudaFree( g_data );
 	cudaError sync = cudaThreadSynchronize();
 
-    cout << "mallocd = " << (mallocd == cudaSuccess) << endl
-         << "freed = " << (freed == cudaSuccess) << endl
-         << "sync = " << (sync == 0) << endl;
-	
-    string name = __FILE__ " log.txt";
+    bool all_success = (mallocd == cudaSuccess)
+		&& (freed == cudaSuccess)
+        && (sync == cudaSuccess);
 
-    ofstream tst(name.c_str());
-    tst << name.c_str() << endl
+    cout << "all_success = " << all_success << endl
          << "mallocd = " << (mallocd == cudaSuccess) << endl
          << "freed = " << (freed == cudaSuccess) << endl
          << "sync = " << (sync == 0) << endl;
+	
+    bool any_failed = !all_success;
+    exit(any_failed);
 }
 
 

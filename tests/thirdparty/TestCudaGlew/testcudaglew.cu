@@ -49,31 +49,32 @@ void display()
     cudaError unreg = cudaGraphicsUnregisterResource( positionsVBO_CUDA );
 	cudaError sync = cudaThreadSynchronize();
 
-    cout << "cuda_inited = " << (cuda_inited == cudaSuccess) << endl
+    bool all_success = (cuda_inited == cudaSuccess)
+        && (glew_inited == 0)
+        && (is_registered == cudaSuccess)
+        && (is_mapped == cudaSuccess)
+        && (size == num_bytes)
+        && (0 != g_data)
+        && (got_pointer == cudaSuccess)
+        && (unmapped == cudaSuccess)
+        && (unreg == cudaSuccess)
+        && (sync == cudaSuccess);
+
+    cout<< "all_success = " << all_success << endl
+        << "cuda_inited = " << (cuda_inited == cudaSuccess) << endl
         << "glew_inited = " << (glew_inited == 0) << endl
         << "is_registered = "<< (is_registered == cudaSuccess) << endl
         << "is_mapped = "<< (is_mapped == cudaSuccess) << endl
         << "num_bytes = " << num_bytes << endl
+        << "size = " << size << endl
         << "g_data = " << g_data << endl
         << "got_pointer = "<< (got_pointer == cudaSuccess) << endl
         << "unmapped = "<< (unmapped == cudaSuccess) << endl
         << "unreg = "<< (unreg == cudaSuccess) << endl
         << "sync = "<< (sync == cudaSuccess) << endl;
 	
-    string name = __FILE__ " log.txt";
-
-    ofstream tst(name.c_str());
-    tst << name.c_str() << endl
-        << "cuda_inited = " << (cuda_inited == cudaSuccess) << endl
-        << "glew_inited = " << (glew_inited == 0) << endl
-        << "is_registered = "<< (is_registered == cudaSuccess) << endl
-        << "is_mapped = "<< (is_mapped == cudaSuccess) << endl
-        << "num_bytes = " << num_bytes << endl
-        << "g_data = " << g_data << endl
-        << "got_pointer = "<< (got_pointer == cudaSuccess) << endl
-        << "unmapped = "<< (unmapped == cudaSuccess) << endl
-        << "unreg = "<< (unreg == cudaSuccess) << endl
-        << "sync = "<< (sync == cudaSuccess) << endl;
+    bool any_failed = !all_success;
+    exit(any_failed);
 }
 
 
