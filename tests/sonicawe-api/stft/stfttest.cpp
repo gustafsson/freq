@@ -11,6 +11,14 @@ using namespace std;
 using namespace Tfr;
 using namespace Signal;
 
+namespace QTest {
+template<>
+char * toString ( const Signal::Interval & value )
+{
+    return qstrdup( value.toString().c_str() );
+}
+}
+
 class StftTest : public QObject
 {
     Q_OBJECT
@@ -382,6 +390,7 @@ float StftTest::
 
     return ft_diff;
 }
+
 
 QTEST_MAIN(StftTest);
 #include "stfttest.moc"
