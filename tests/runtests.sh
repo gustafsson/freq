@@ -7,7 +7,7 @@ if [ "`pwd | grep 'sonic/sonicawe/tests$'`" == "" ]; then
 fi
 
 startdir=`pwd`
-dirs=`ls -R | tr -d : | grep ^./ | sed 's/^.\// /'`
+dirs=`ls -R | tr -d : | grep ^./ | sed 's/^.\// /' | sort`
 failed=
 success=
 testtimestamp=`date --rfc-3339=seconds | sed "s/ /_/" | sed "s/://g"`
@@ -28,7 +28,7 @@ for configname in $configurations; do
   (
     cd ../.. &&
     touch sonicawe/sawe/configuration/configuration.cpp &&
-    rm -f gpumisc/libgpumisc.a && 
+    rm -f gpumisc/libgpumisc.a &&
     rm -f {gpumisc,sonicawe}/Makefile &&
     qmake CONFIG+=testlib CONFIG+=gcc-4.3 CONFIG+=${configname} &&
     make -j2
@@ -42,6 +42,10 @@ for configname in $configurations; do
   fi
 
   for name in $dirs; do
+    if [ "" != "$*" ] && [ -z "$( echo ${name} | grep $* )" ]; then
+      continue
+    fi
+
     cd "$name"
 
     if [ -f *.pro ]; then
@@ -49,6 +53,7 @@ for configname in $configurations; do
 
       rm -f Makefile
       qmake CONFIG+=gcc-4.3 CONFIG+=${configname}
+      rm -f ./$testname
 
       ret=0
       (
@@ -56,14 +61,14 @@ for configname in $configurations; do
         echo "======================" &&
         echo "Running '$testname', config: ${configname}" &&
         echo "======================" &&
-        ./$testname
+        ${startdir}/timeout3.sh -t 10 ./$testname
       ) >& ${logdir}/${testname}.log || ret=$?
 
 	  if [ 0 -ne $ret ]; then
         rm -f ${startdir}/${testname}_failed.log
         ln -s ${logdir}/${testname}.log ${startdir}/${testname}_failed.log
         failed="${failed}${name} ${configname}. See ${startdir}/${testname}_failed.log\n"
-        echo -n "X"
+        echo -n "x"
       else
         success="${success}${name} ${configname}\n"
         echo -n "."
@@ -82,7 +87,7 @@ echo Succeeded tests:
 if [ -z "$success" ]; then
   echo No tests succeeded.
 else
-  echo -e $success | sort
+  echo -e $success
 fi
 
 echo
@@ -91,7 +96,7 @@ echo Failed tests:
 if [ -z "$failed" ]; then
   echo No tests failed.
 else
-  echo -e $failed | sort
+  echo -e $failed
 fi
 
 echo
