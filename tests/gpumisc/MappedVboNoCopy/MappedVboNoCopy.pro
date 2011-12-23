@@ -82,21 +82,37 @@ win32:QMAKE_LFLAGS_DEBUG += \
 #	../../../../winlib/portaudio/portaudiocpp_mt_gd.lib
 	
 }
+
+
 ####################
 # Temporary output
 
-win32:RCC_DIR = tmp
-MOC_DIR = tmp
-OBJECTS_DIR = tmp/
-UI_DIR = tmp
+TMPDIR=
 
-CONFIG(debug, debug|release):OBJECTS_DIR = tmp/debug/
-else:OBJECTS_DIR = tmp/release/
+usecuda {
+  TMPDIR = $${TMPDIR}/cuda
+} else:useopencl {
+  TMPDIR = $${TMPDIR}/opencl
+} else {
+  TMPDIR = $${TMPDIR}/cpu
+}
+
+TMPDIR = tmp/$${TMPDIR}
+
+win32:RCC_DIR = $${TMPDIR}
+MOC_DIR = $${TMPDIR}
+OBJECTS_DIR = $${TMPDIR}/
+UI_DIR = $${TMPDIR}
+
+
+CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
+else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 
 
 # #######################################################################
 # CUDA
 # #######################################################################
+usecuda {
 
 unix:!macx {
 	QMAKE_CXX = g++-4.3
@@ -195,4 +211,5 @@ macx {
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
 
+} # usecuda
 # end of cuda section #######################################################################

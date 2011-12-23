@@ -48,7 +48,7 @@ for configname in $configurations; do
       testname=`echo $name | sed 's/.*\///'`
 
       rm -f Makefile
-      qmake CONFIG+=gcc-4.3
+      qmake CONFIG+=gcc-4.3 CONFIG+=${configname}
 
       ret=0
       (

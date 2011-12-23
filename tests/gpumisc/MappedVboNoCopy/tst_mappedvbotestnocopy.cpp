@@ -1,10 +1,11 @@
 #include "sawe/project_header.h"
 #include <redirectstdout.h>
-#include <cuda_gl_interop.h>
+
 #include <QtCore/QString>
 #include <QtTest/QtTest>
 #include <QtCore/QCoreApplication>
 #include <QGLWidget>
+
 
 class MappedVboTestNoCopy : public QObject
 {
@@ -25,9 +26,13 @@ MappedVboTestNoCopy::MappedVboTestNoCopy()
 {
 }
 
+#ifdef USE_CUDA
+#include <cuda_gl_interop.h>
+
 #include "mappedvbo.h"
 #include "cudaPitchedPtrType.h"
 #include "CudaException.h"
+#endif
 
 void mappedVboTestCuda( DataStorage<float>::Ptr datap );
 
@@ -42,12 +47,14 @@ void MappedVboTestNoCopy::cleanupTestCase()
 
 void MappedVboTestNoCopy::testCase1()
 {
+#ifdef USE_CUDA
     QVERIFY( cudaSuccess == cudaGLSetGLDevice( 0 ) );
     QVERIFY( 0==glewInit() );
     pVbo vbo( new Vbo(1024, GL_ARRAY_BUFFER, GL_STATIC_DRAW));
     MappedVbo<float> mapping(vbo, DataStorageSize(256,1,1));
     mappedVboTestCuda( mapping.data );
     QVERIFY2(true, "Failure");
+#endif
 }
 
 QTEST_MAIN(MappedVboTestNoCopy);
