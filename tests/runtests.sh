@@ -61,7 +61,7 @@ for configname in $configurations; do
         echo "======================" &&
         echo "Running '$testname', config: ${configname}" &&
         echo "======================" &&
-        ${startdir}/timeout3.sh -t 10 ./$testname
+        ${startdir}/timeout3.sh -t 30 ./$testname
       ) >& ${logdir}/${testname}.log || ret=$?
 
 	  if [ 0 -ne $ret ]; then

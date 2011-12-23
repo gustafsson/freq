@@ -12,26 +12,29 @@
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "tools/renderview.h"
+#include "ui/mainwindow.h"
+#include "ui_mainwindow.h"
 
 using namespace std;
 using namespace Tfr;
 using namespace Signal;
 
-class OpenGui : public QObject
+class OpenAudio : public QObject
 {
     Q_OBJECT
 
 public:
-    OpenGui();
+    OpenAudio();
 
 private slots:
     void initTestCase();
     void cleanupTestCase();
-    void openGui();
+    void openAudio();
     void compareImages();
 
 protected slots:
     void setInitialized();
+    void postSaveImage();
     void saveImage();
 
 private:
@@ -41,14 +44,17 @@ private:
 
     QString resultFileName, goldFileName, diffFileName;
 
-    bool initialized;
+    QString sourceAudio;
+
+    bool initialized, hasPostedScreenshot;
 };
 
 
-OpenGui::
-        OpenGui()
+OpenAudio::
+        OpenAudio()
             :
-            initialized(false)
+            initialized(false),
+            hasPostedScreenshot(false)
 {
 #ifdef USE_CUDA
     resultFileName = "opengui-result-cuda.png";
@@ -59,19 +65,22 @@ OpenGui::
     goldFileName = "opengui-gold-cpu.png";
     diffFileName = "opengui-diff-cpu.png";
 #endif
+
+    sourceAudio = "music-1.ogg";
 }
 
 
-void OpenGui::
+void OpenAudio::
         initTestCase()
 {
-    p = Sawe::Application::global_ptr()->slotNew_recording( -1 ).get();
+    p = Sawe::Application::global_ptr()->slotOpen_file( sourceAudio.toStdString() ).get();
     connect( p->tools().render_view(), SIGNAL(postPaint()), SLOT(setInitialized()));
+    connect( p->tools().render_view(), SIGNAL(finishedWorkSection()), SLOT(postSaveImage()));
     QFile::remove(resultFileName);
 }
 
 
-void OpenGui::
+void OpenAudio::
         setInitialized()
 {
     if (initialized)
@@ -79,11 +88,24 @@ void OpenGui::
 
     initialized = true;
 
+    if (!p->mainWindow()->getItems()->actionToggleTimelineWindow->isChecked())
+        p->mainWindow()->getItems()->actionToggleTimelineWindow->trigger();
+}
+
+
+void OpenAudio::
+    postSaveImage()
+{
+    if (hasPostedScreenshot)
+        return;
+
+    hasPostedScreenshot = true;
+
     QTimer::singleShot(0, this, SLOT(saveImage()));
 }
 
 
-void OpenGui::
+void OpenAudio::
         saveImage()
 {
     TaskTimer ti("saveImage");
@@ -107,7 +129,7 @@ void OpenGui::
 }
 
 
-void OpenGui::
+void OpenAudio::
         compareImages()
 {
     QImage openguigold(goldFileName);
@@ -125,34 +147,31 @@ void OpenGui::
             float result = QColor(resultImage.pixel(x,y)).lightnessF();
             diff += std::fabs( gold - result );
             float hue = fmod(10 + (gold - result)*0.5f, 1.f);
-            diffImage.setPixel( x, y, QColor::fromHsvF( hue, std::min(1.f, gold - result == 0 ? 0 : 0.25f+0.75f*std::fabs( gold - result )), 0.25f+0.75f*gold ).rgba() );
+            diffImage.setPixel( x, y, QColor::fromHsvF( hue, std::min(1.f, gold - result == 0 ? 0 : 0.5f+0.5f*std::fabs( gold - result )), 0.5f+0.5f*gold ).rgba() );
         }
     }
 
     diffImage.save( diffFileName );
 
-    double limit = 10.;
-    if (! (diff < limit))
-    {
-        TaskInfo("OpenGui::compareImages, ligtness difference between '%s' and '%s' was %g, tolerated max difference is %g. Saved diff image in '%s'",
-                 goldFileName.toStdString().c_str(), resultFileName.toStdString().c_str(),
-                 diff, limit, diffFileName.toStdString().c_str() );
-    }
+    double limit = 30.;
+    TaskInfo("OpenGui::compareImages, ligtness difference between '%s' and '%s' was %g, tolerated max difference is %g. Saved diff image in '%s'",
+             goldFileName.toStdString().c_str(), resultFileName.toStdString().c_str(),
+             diff, limit, diffFileName.toStdString().c_str() );
 
     QVERIFY(diff < limit);
 }
 
 
-void OpenGui::
+void OpenAudio::
         cleanupTestCase()
 {
 }
 
 
-void OpenGui::
-        openGui()
+void OpenAudio::
+        openAudio()
 {
-    TaskTimer ti("openGui");
+    TaskTimer ti("openAudio");
 
     Sawe::Application::global_ptr()->exec();
 }
@@ -162,8 +181,8 @@ int main(int argc, char *argv[])
 {
     Sawe::Application application(argc, argv, false);
     QTEST_DISABLE_KEYPAD_NAVIGATION
-    OpenGui tc;
+    OpenAudio tc;
     return QTest::qExec(&tc, argc, argv);
 }
 
-#include "opengui.moc"
+#include "openaudio.moc"
