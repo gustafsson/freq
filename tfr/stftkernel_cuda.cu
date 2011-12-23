@@ -45,9 +45,12 @@ void stftNormalizeInverse(
     dim3 block(128);
     dim3 grid = wrapCudaMaxGrid( outwave.getNumberOfElements(), block);
 
-    if(inwave.getTotalBytes()!=2*outwave.getTotalBytes()) {
+    if(inwave.getNumberOfElements().x!=outwave.getNumberOfElements().x ||
+       inwave.getNumberOfElements().y!=outwave.getNumberOfElements().y ||
+       inwave.getNumberOfElements().z!=outwave.getNumberOfElements().z)
+    {
         throw std::runtime_error(printfstring(
-                "stftNormalizeInverse: inwave.getTotalBytes() != 2*outwave.getTotalBytes(), (%u, %u, %u) != (%u, %u, %u)",
+                "stftNormalizeInverse: inwave.getNumberOfElements() != getNumberOfElements.getTotalBytes(), (%u, %u, %u) != (%u, %u, %u)",
                 inwave.getNumberOfElements().x, inwave.getNumberOfElements().y, inwave.getNumberOfElements().z,
                 outwave.getNumberOfElements().x, outwave.getNumberOfElements().y, outwave.getNumberOfElements().z
                 ));
@@ -63,6 +66,7 @@ __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float2> inwave, 
     if( !outwave.unwrapGlobalThreadNumber3D(n))
         return;
 
+    // pitch doesn't matter as this is given as one big vector only
     outwave.ptr()[n] = inwave.ptr()[n].x * v;
 }
 
