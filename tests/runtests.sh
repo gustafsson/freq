@@ -55,13 +55,21 @@ for configname in $configurations; do
       qmake CONFIG+=gcc-4.3 CONFIG+=${configname}
       rm -f ./$testname
 
+      timeout=10
+      if [ -f timeoutseconds ]; then
+        timeout=`cat timeoutseconds`;
+      fi
+      if [ -f timeoutseconds-${configname} ]; then
+        timeout=`cat timeoutseconds-${configname}`;
+      fi
+
       ret=0
       (
         make && 
         echo "======================" &&
         echo "Running '$testname', config: ${configname}" &&
         echo "======================" &&
-        ${startdir}/timeout3.sh -t 30 ./$testname
+        time ${startdir}/timeout3.sh -t ${timeout} ./$testname
       ) >& ${logdir}/${testname}.log || ret=$?
 
 	  if [ 0 -ne $ret ]; then
