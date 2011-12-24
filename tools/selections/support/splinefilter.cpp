@@ -76,7 +76,8 @@ void SplineFilter::operator()( Chunk& chunk)
 
         ::applyspline(
                 chunk.transform_data,
-                pts, _save_inside );
+                pts, _save_inside,
+                chunk.sample_rate );
     }
 
     TIME_SPLINEFILTER ComputationSynchronize();
@@ -104,20 +105,21 @@ Signal::Intervals SplineFilter::
         return Signal::Intervals::Intervals_ALL;
 
     float
-        start_time = std::max(0.f, std::max(0.f, v.front().t)),
-        end_time = std::max(0.f, v.front().t);
+        start_time = v.front().t,
+        end_time = v.front().t;
 
     BOOST_FOREACH( SplineVertex const& p, v )
     {
-        start_time = std::min(start_time, std::max(0.f, p.t));
+        start_time = std::min(start_time, p.t);
         end_time = std::max(end_time, p.t);
     }
 
     double FS = sample_rate();
     Signal::Intervals sid;
-    Signal::Interval sidint(start_time*FS, end_time*FS);
+    Signal::Interval sidint(std::max(0.f, start_time)*FS, std::max(0.f, end_time)*FS);
     if (sidint.count())
         sid = sidint;
+    sid = sid.enlarge( sample_rate()*0.1f );
 
     return ~sid;
 }

@@ -7,7 +7,7 @@
 
 void applyspline(
         Tfr::ChunkData::Ptr data,
-        DataStorage<Tfr::ChunkElement>::Ptr splinep, bool save_inside )
+        DataStorage<Tfr::ChunkElement>::Ptr splinep, bool save_inside, float fs )
 {
     cudaPitchedPtrType<float2> spline( CudaGlobalStorage::ReadOnly<1>(splinep).getCudaPitchedPtr());
 
@@ -21,7 +21,7 @@ void applyspline(
     Spliner< Read1D<float2>, float2 > spliner(
             Read1D_Create<float2>( spline ),
             spline.getNumberOfElements().x,
-            save_inside );
+            save_inside, 1/fs );
 
     element_operate<float2>( data2, ResampleArea(0, 0, data2->size().width, data2->size().height), spliner );
 

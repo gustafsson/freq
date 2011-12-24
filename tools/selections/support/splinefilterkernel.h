@@ -4,4 +4,4 @@
 
 void applyspline(
         Tfr::ChunkData::Ptr data,
-        DataStorage<Tfr::ChunkElement>::Ptr spline, bool save_inside );
+        DataStorage<Tfr::ChunkElement>::Ptr spline, bool save_inside, float fs );

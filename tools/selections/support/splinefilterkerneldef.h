@@ -8,10 +8,11 @@ template<typename Reader, typename T>
 class Spliner
 {
 public:
-    Spliner(Reader reader, unsigned N, bool save_inside)
+    Spliner(Reader reader, unsigned N, bool save_inside, float inv_fs)
         :   reader(reader),
             N(N),
-            save_inside(save_inside)
+            save_inside(save_inside),
+            inv_fs(inv_fs)
     {}
 
 
@@ -33,7 +34,7 @@ public:
             ResamplePos p(pr.real(), pr.imag()), q(qr.real(), qr.imag());
 #endif
             float r = (v.x - p.x)/(q.x - p.x);
-            if (0 <= r && 1 > r)
+            if (0.f <= r && 1.f > r)
             {
                 float y = p.y + (q.y-p.y)*r;
                 if (y > v.y)
@@ -43,8 +44,9 @@ public:
                 if (mindisty > fabsf(y-v.y))
                     mindisty = fabsf(y-v.y);
             }
+
             r = (v.y - p.y)/(q.y - p.y);
-            if (0 <= r && 1 > r)
+            if (0.f <= r && 1.f > r)
             {
                 float x = p.x + (q.x-p.x)*r;
                 if (mindistx > fabsf(x-v.x))
@@ -52,14 +54,20 @@ public:
             }
         }
 
-        if (inside != save_inside)
+        float d = 1.f;
+        if (inside)
         {
-            float d = 1 - min(mindisty*(1/1.f), mindistx*(1/4.f));
-            if (d < 0)
-                d = 0;
+            d = 1 - mindisty*.25f - mindistx*inv_fs*20.f;
 
-            e *= d;
+            if (d < 0.f)
+                d = 0.f;
         }
+
+        if (save_inside)
+            d = 1.f - d;
+
+        if (1.f != d)
+            e *= d;
     }
 
 
@@ -67,6 +75,7 @@ private:
     Reader reader;
     unsigned N;
     bool save_inside;
+    float inv_fs;
 };
 
 
