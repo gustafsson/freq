@@ -20,6 +20,7 @@
 #include <QGLWidget>
 #include <QSettings>
 #include <QDesktopServices>
+#include <QMouseEvent>
 
 #ifdef USE_CUDA
 // gpumisc
@@ -154,6 +155,32 @@ bool Application::
         if (e)
         {
             QEvent::Type t = e->type();
+            switch (t)
+            {
+                case QEvent::MouseButtonPress:
+                {
+                    QMouseEvent* m = static_cast<QMouseEvent*>(e);
+                    TaskInfo("QEvent::MouseButtonPress button=%d at %d, %d (%d, %d) on %s %s %p",
+                             m->button(), m->x(), m->y(), m->globalX(), m->globalY(), vartype(*receiver).c_str(), receiver->objectName().toStdString().c_str(), receiver);
+                    break;
+                }
+                case QEvent::MouseButtonRelease:
+                {
+                    QMouseEvent* m = static_cast<QMouseEvent*>(e);
+                    TaskInfo("QEvent::MouseButtonRelease button=%d at %d, %d (%d, %d) from %s %s %p",
+                             m->button(), m->pos().x(), m->pos().y(), m->globalX(), m->globalY(), vartype(*receiver).c_str(), receiver->objectName().toStdString().c_str(), receiver);
+                    break;
+                }
+                case QEvent::KeyPress:
+                {
+                    QKeyEvent* m = static_cast<QKeyEvent*>(e);
+                    TaskInfo("QEvent::KeyPress key=%d on %s %s %p", m->key(), vartype(*receiver).c_str(), receiver->objectName().toStdString().c_str(), receiver);
+                    break;
+                }
+                default:
+                    break;
+            }
+
             switch (t)
             {
                 case QEvent::MouseButtonPress:
