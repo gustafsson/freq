@@ -278,6 +278,7 @@ void SaweMainWindow::
         emit onMainWindowCloseEvent( this );
     }
 
+    if (Sawe::Configuration::use_saved_gui_state())
     {
         TaskInfo ti("Saving settings");
         QSettings().setValue("GuiState", saveSettings());

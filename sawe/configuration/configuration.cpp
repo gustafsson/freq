@@ -33,6 +33,8 @@ namespace Sawe
 Configuration::
         Configuration()
             :
+            skip_update_check_( false ),
+            use_saved_gui_state_( true ),
             channel_( 0 ),
             scales_per_octave_( 20 ),
             wavelet_time_support_( 3 ),
@@ -438,6 +440,8 @@ int Configuration::
         else if (readarg(&cmd, get_csv));
         else if (readarg(&cmd, min_hz));
         else if (readarg(&cmd, version));
+        else if (readarg(&cmd, use_saved_gui_state));
+        else if (readarg(&cmd, skip_update_check));
 #ifndef QT_NO_THREAD
         else if (readarg(&cmd, multithread));
 #endif
@@ -609,7 +613,14 @@ unsigned Configuration::
 bool Configuration::
         skip_update_check()
 {
-    return false;
+    return Singleton().skip_update_check_;
+}
+
+
+bool Configuration::
+        use_saved_gui_state()
+{
+    return Singleton().use_saved_gui_state_;
 }
 
 

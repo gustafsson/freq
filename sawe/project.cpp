@@ -327,7 +327,9 @@ void Project::
     }
 
     defaultGuiState = saweMain->saveSettings();
-    saweMain->restoreSettings( QSettings().value("GuiState").toByteArray() );
+
+    if (Sawe::Configuration::use_saved_gui_state())
+        saweMain->restoreSettings( QSettings().value("GuiState").toByteArray() );
 
     // don't start in fullscreen mode
     saweMain->disableFullscreen();

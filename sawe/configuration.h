@@ -74,6 +74,7 @@ public:
     static unsigned scales_per_block();
 
     static bool skip_update_check();
+    static bool use_saved_gui_state();
 
 private:
     friend class HasSingleton<Configuration>;
@@ -83,6 +84,8 @@ private:
     std::string branch_;
     std::string revision_;
     bool mono_;
+    bool skip_update_check_;
+    bool use_saved_gui_state_;
 
     std::string uname_;
     std::string computing_platform_;
