@@ -160,10 +160,17 @@ void OpenGui::
 // expanded QTEST_MAIN but for Sawe::Application
 int main(int argc, char *argv[])
 {
-    Sawe::Application application(argc, argv, false);
+    std::vector<const char*> argvector(argc+2);
+    for (int i=0; i<argc; ++i)
+        argvector[i] = argv[i];
+
+    argvector[argc++] = "--use_saved_gui_state=0";
+    argvector[argc++] = "--skip_update_check=1";
+
+    Sawe::Application application(argc, (char**)&argvector[0], false);
     QTEST_DISABLE_KEYPAD_NAVIGATION
     OpenGui tc;
-    return QTest::qExec(&tc, argc, argv);
+    return QTest::qExec(&tc, argc, (char**)&argvector[0]);
 }
 
 #include "opengui.moc"
