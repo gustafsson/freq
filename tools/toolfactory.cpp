@@ -61,7 +61,8 @@ ToolFactory::
     {
 
     _render_view = new RenderView(&render_model);
-    _render_controller.reset( new RenderController(_render_view) );
+
+    _objects.push_back( QPointer<QObject>( new RenderController(_render_view)));
 
     _timeline_view = new TimelineView(p, _render_view);
     _timeline_controller = new TimelineController(_timeline_view);
@@ -212,9 +213,6 @@ ToolFactory::
 
     BOOST_ASSERT( _timeline_view );
     delete _timeline_view;
-
-    BOOST_ASSERT( _render_controller );
-    _render_controller.reset();
 
     BOOST_ASSERT( _render_view );
     delete _render_view;

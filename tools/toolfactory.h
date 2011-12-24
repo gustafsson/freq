@@ -36,6 +36,15 @@ namespace Tools
         virtual RenderView* render_view() { return _render_view; }
 
 
+        template<typename T>
+        T* getObject()
+        {
+            for (int i=0; i<_objects.size(); ++i)
+                if (T* t = dynamic_cast<T*>(_objects.at(i).data()))
+                    return t;
+            return 0;
+        }
+
     private:
         friend class boost::serialization::access;
         ToolFactory(); // required by serialization, should never be called
@@ -65,7 +74,6 @@ namespace Tools
         // when the main window is closed.
 
         QPointer<RenderView> _render_view; // owned by centralwidget
-        QScopedPointer<class RenderController> _render_controller;
 
         QPointer<class TimelineView> _timeline_view; // owned by timelinedock which is owned by mainwindow
         QPointer<class TimelineController> _timeline_controller; // owned by _timeline_view

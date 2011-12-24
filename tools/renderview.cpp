@@ -1183,10 +1183,10 @@ void RenderView::
                 worker.worked_samples.clear();
                 workcount++;
                 _work_timer.reset();
-            }
 
-            // Useful when debugging to close application or do something else after finishing first work chunk
-            emit finishedWorkSection();
+                // Useful when debugging to close application or do something else after finishing first work chunk
+                emit finishedWorkSection();
+            }
         }
     }
 

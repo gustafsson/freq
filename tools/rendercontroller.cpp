@@ -424,13 +424,13 @@ void RenderController::
 
 
 void RenderController::yscaleIncrease()
-{    yscale->triggerAction( QAbstractSlider::SliderPageStepAdd ); }
+{    yscale->triggerAction( QAbstractSlider::SliderPageStepAdd ); stateChanged(); }
 void RenderController::yscaleDecrease()
-{    yscale->triggerAction( QAbstractSlider::SliderPageStepSub ); }
+{    yscale->triggerAction( QAbstractSlider::SliderPageStepSub ); stateChanged(); }
 void RenderController::tfresolutionIncrease()
-{    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepAdd ); }
+{    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepAdd ); stateChanged(); }
 void RenderController::tfresolutionDecrease()
-{    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepSub ); }
+{    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepSub ); stateChanged(); }
 
 
 Signal::PostSink* RenderController::
@@ -862,6 +862,7 @@ void RenderController::
         yscale->setValue( 5000 );
         yscale->setToolTip( "Intensity level" );
         yscale->setPageStep( 100 );
+        yscale->setSingleStep( 20 );
         toolbar_render->addWidget( yscale );
 
         connect(yscale, SIGNAL(valueChanged(int)), SLOT(receiveSetYScale(int)));
