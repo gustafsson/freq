@@ -199,6 +199,11 @@ void SettingsDialog::
     bool isCwt = dynamic_cast<Tfr::Cwt*>(project->tools().render_model.collections[0]->transform().get());
     bool subtexelAggregationChanged = isCwt && (prevRedundancy == 1.f) != (resolution == 1.f);
 
+#ifndef CWT_SUBTEXEL_AGGREGATION
+    // subtexel aggregation is way to slow
+    subtexelAggregationChanged = false;
+#endif
+
     if (subtexelAggregationChanged)
         project->head->head_source()->invalidate_samples( project->head->head_source()->getInterval() );
 

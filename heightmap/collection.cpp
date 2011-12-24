@@ -1142,6 +1142,11 @@ bool Collection::
     bool isCwt = dynamic_cast<Tfr::Cwt*>(transform().get());
     bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
 
+#ifndef CWT_SUBTEXEL_AGGREGATION
+    // subtexel aggregation is way to slow
+    using_subtexel_aggregation = false;
+#endif
+
     if (!using_subtexel_aggregation) // blockMerge doesn't support subtexel aggregation
     {
         // Validate region of block if inBlock was source of higher resolution than outBlock
