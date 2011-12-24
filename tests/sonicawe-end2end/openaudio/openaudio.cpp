@@ -153,7 +153,11 @@ void OpenAudio::
 
     diffImage.save( diffFileName );
 
+#ifdef USE_CUDA
     double limit = 50.;
+#else
+    double limit = 100.;
+#endif
     TaskInfo("OpenGui::compareImages, ligtness difference between '%s' and '%s' was %g, tolerated max difference is %g. Saved diff image in '%s'",
              goldFileName.toStdString().c_str(), resultFileName.toStdString().c_str(),
              diff, limit, diffFileName.toStdString().c_str() );
