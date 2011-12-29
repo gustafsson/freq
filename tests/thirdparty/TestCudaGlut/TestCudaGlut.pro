@@ -4,25 +4,22 @@
 #
 #-------------------------------------------------
 
+####################
+# Build settings
+
 QT -= core
 QT -= gui
 
 CONFIG   += console
-CONFIG   -= app_bundle
+win32:CONFIG += debug_and_release
+macx:CONFIG   -= app_bundle
 
 TEMPLATE = app
 win32:TEMPLATE = vcapp
 
 
-#SOURCES += *.cpp
-DEFINES += SRCDIR=\\\"$$PWD/\\\"
-
-unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
-
-INCLUDEPATH += \
-#    ../../../../sonic/gpumisc \
-#    ../../../../sonic/sonicawe \
-
+####################
+# Source code
 
 CUDA_SOURCES += \
     *.cu
@@ -32,40 +29,28 @@ OTHER_FILES += \
     $$CUDA_SOURCES \
 
 
+####################
+# Compiler flags
+
+DEFINES += SRCDIR=\\\"$$PWD/\\\"
+
+unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
+
+
 unix:!macx {
-LIBS = \
-    -lGLU \
-    -lGL \
-    -lglut \
+    LIBS = \
+        -lGLU \
+        -lGL \
+        -lglut \
 
 }
 
 win32 {
-INCLUDEPATH += \
-	../../../../winlib/glut \
-#	../../../../winlib/glew/include \
-#	../../../../winlib/portaudio/include \
-#	../../../../winlib/libsndfile/include \
-#	../../../../winlib/hdf5lib/include \
-#	../../../../winlib/zlib/include \
-#	../../../../winlib
+    INCLUDEPATH += \
+        ../../../../../winlib/glut \
 
-LIBS += \
-	-l../../../../winlib/glut/glut32 \
-#	-l../../../../winlib/libsndfile/libsndfile-1 \
-#	-l../../../../winlib/hdf5lib/dll/hdf5dll \
-#	-l../../../../winlib/hdf5lib/dll/hdf5_hldll \
-#	-L../../../../winlib/boostlib
-
-win32:QMAKE_LFLAGS_RELEASE += \
-#	../../../../winlib/portaudio/portaudio.lib \
-#	../../../../winlib/portaudio/portaudio_x86_mt.lib \
-#	../../../../winlib/portaudio/portaudiocpp_mt.lib
-
-win32:QMAKE_LFLAGS_DEBUG += \
-#	../../../../winlib/portaudio/portaudio.lib \
-#	../../../../winlib/portaudio/portaudio_x86_mt_gd.lib \
-#	../../../../winlib/portaudio/portaudiocpp_mt_gd.lib
+    LIBS += \
+        -l../../../../../winlib/glut/glut32 \
 
 }
 
