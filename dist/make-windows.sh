@@ -11,6 +11,8 @@ licensefile="license.txt"
 # make vcbuild called by msbuild detect changes in headers
 PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
+msbuildparams="//property:Configuration=Release //verbosity:detailed sonic.sln"
+
 cd ../..
 echo "========================== Building ==========================="
 echo "Building ${packagename} ${versiontag}"
@@ -21,13 +23,13 @@ echo qmaketarget: $qmaketarget
 qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
-  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean $msbuildparams
 fi
 
 rm -f gpumisc/release/gpumisc.lib
 touch sonicawe/sawe/configuration/configuration.cpp
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //property:Configuration=Release //verbosity:detailed sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
 
 
@@ -41,13 +43,13 @@ echo qmaketarget: $qmaketarget
 qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
-  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release sonic.sln
+  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean $msbuildparams
 fi
 
 rm -f gpumisc/release/gpumisc.lib
 touch sonicawe/sawe/configuration/configuration.cpp
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe
 
 
