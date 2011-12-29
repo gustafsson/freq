@@ -95,7 +95,8 @@ void CompareImages::
             float gold = QColor(goldimage.pixel(x,y)).lightnessF();
             float result = QColor(resultimage.pixel(x,y)).lightnessF();
             diff += std::fabs( gold - result );
-            float hue = fmod(10 + (gold - result)*0.5f, 1.f);
+            float greenoffset = 1./3;
+            float hue = fmod(10 + greenoffset + (gold - result)*0.5f, 1.f);
             diffImage.setPixel( x, y,
                                 QColor::fromHsvF(
                                         hue,
