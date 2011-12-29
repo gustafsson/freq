@@ -1,13 +1,15 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+#include "sawedll.h"
+
 #include <HasSingleton.h>
 #include <sstream>
 
 namespace Sawe
 {
 
-class Configuration: private HasSingleton<Configuration>
+class SaweDll Configuration: private HasSingleton<Configuration>
 {
 public:
     static std::string version();

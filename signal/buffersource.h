@@ -7,7 +7,7 @@
 namespace Signal
 {
 
-class BufferSource: public FinalSource
+class SaweDll BufferSource: public FinalSource
 {
 public:
     BufferSource( pBuffer _waveform = pBuffer() );

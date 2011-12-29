@@ -5,7 +5,7 @@
 
 namespace Tfr {
 
-class SuperSample
+class SaweDll SuperSample
 {
 public:
     static Signal::pBuffer supersample( Signal::pBuffer b, float requested_sample_rate );

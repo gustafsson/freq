@@ -10,7 +10,7 @@ namespace Signal {
 Signal::Source is the single most important class in the Signal namespace. It
 declares an interface through which buffers can be read.
 */
-class SourceBase
+class SaweDll SourceBase
 {
 public:
     /**

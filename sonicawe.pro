@@ -12,15 +12,19 @@ TARGET = sonicawe
 }
 
 
-TEMPLATE = app
-win32:TEMPLATE = vcapp
 testlib {
     TEMPLATE = lib
     win32:TEMPLATE = vclib
+    CONFIG += sharedlib
+    DEFINES += SAWE_EXPORTDLL
+} else {
+    DEFINES += SAWE_NODLL
+    TEMPLATE = app
+    win32:TEMPLATE = vcapp
+    win32:CONFIG -= embed_manifest_dll
+    win32:CONFIG += embed_manifest_exe
 }
 win32:CONFIG += debug_and_release
-win32:CONFIG -= embed_manifest_dll
-win32:CONFIG += embed_manifest_exe
 macx:CONFIG -= app_bundle
 
 CONFIG += warn_on
@@ -238,13 +242,12 @@ LIBS += \
 	-l../../winlib/hdf5lib/dll/hdf5dll \
 	-l../../winlib/hdf5lib/dll/hdf5_hldll \
 	-L../../winlib/boostlib
+
 win32:QMAKE_LFLAGS_RELEASE += \
 	../../winlib/portaudio/portaudio.lib \
-#	../../winlib/portaudio/portaudio_x86_mt.lib \
 	../../winlib/portaudio/portaudiocpp_mt.lib
 win32:QMAKE_LFLAGS_DEBUG += \
 	../../winlib/portaudio/portaudio.lib \
-#	../../winlib/portaudio/portaudio_x86_mt_gd.lib \
 	../../winlib/portaudio/portaudiocpp_mt_gd.lib
 }
 
@@ -324,7 +327,7 @@ CUDA_FLAGS += --use_fast_math
 
 
 CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
-testlib:CUDA_CXXFLAGS += -fPIC
+unix:testlib:CUDA_CXXFLAGS += -fPIC
 CONFIG(debug, debug|release):CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_DEBUG
 else:CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_RELEASE
 win32 { 
@@ -427,7 +430,7 @@ else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE
 win32:CONFIGURATION_FLAGS += /EHsc
 win32:CXX_OUTPARAM = /Fo
 else:CXX_OUTPARAM = "-o "
-testlib:CONFIGURATION_FLAGS += -fPIC
+unix:testlib:CONFIGURATION_FLAGS += -fPIC
 configuration.commands = $${QMAKE_CXX} \
     $${CONFIGURATION_FLAGS} \
     $$join(CONFIGURATION_DEFINES,'" -D"','-D"','"') \

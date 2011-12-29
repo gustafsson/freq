@@ -1,6 +1,8 @@
 #ifndef SAMPLESINTERVALDESCRIPTOR_H
 #define SAMPLESINTERVALDESCRIPTOR_H
 
+#include "sawe/sawedll.h"
+
 #include <list>
 #include <string>
 
@@ -16,7 +18,7 @@ typedef long unsigned IntervalType;
      I = [first, last)
 
   */
-class Interval {
+class SaweDll Interval {
 public:
     static const IntervalType IntervalType_MIN;
     static const IntervalType IntervalType_MAX;

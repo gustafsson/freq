@@ -24,7 +24,7 @@ A Signal::Operation is a Signal::Source which reads data from another
 Signal::Source and performs some operation on that data before returning it to
 the caller.
  */
-class Operation: public SourceBase
+class SaweDll Operation: public SourceBase
 {
 public:
     /**

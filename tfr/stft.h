@@ -30,7 +30,7 @@ Computes the complex Fast Fourier Transform of a Signal::Buffer.
 TODO remove HasSingleton
 
 */
-class Fft: public Transform, public HasSingleton<Fft, Transform>
+class SaweDll Fft: public Transform, public HasSingleton<Fft, Transform>
 {
 public:
     Fft( bool computeRedundant=false );
@@ -89,7 +89,7 @@ TODO remove HasSingleton
 
 @see Stft::operator()
 */
-class Stft: public Transform, public HasSingleton<Stft,Transform>
+class SaweDll Stft: public Transform, public HasSingleton<Stft,Transform>
 {
 public:
     enum WindowType

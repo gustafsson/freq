@@ -46,7 +46,7 @@ namespace Sawe {
   RenderController controls the lifetime of RenderView and ToolSelector is used
   to move RenderView around in the Qt object tree.
 */
-class Project
+class SaweDll Project
 {
 public:
 /**

@@ -20,7 +20,7 @@ namespace. A Buffer can contain an entire song as when created by
 Signal::Audiofile, or a Buffer can contain sound as fractions of a second
 as when created by Signal::MicrophoneRecorder.
 */
-class Buffer : public boost::noncopyable {
+class SaweDll Buffer : public boost::noncopyable {
 public:
     Buffer(UnsignedF firstSample,
            IntervalType numberOfSamples,

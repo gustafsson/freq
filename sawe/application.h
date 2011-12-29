@@ -15,7 +15,7 @@ class RedirectStdout;
 
 namespace Sawe {
 
-class Application: public QApplication
+class SaweDll Application: public QApplication
 {
     Q_OBJECT
 

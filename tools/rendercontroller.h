@@ -18,7 +18,7 @@ namespace Ui { class ComboBoxAction; }
 
 namespace Tools
 {
-    class RenderController: public QObject // This should not be a QWidget. User input is handled by tools.
+    class SaweDll RenderController: public QObject // This should not be a QWidget. User input is handled by tools.
     {
         Q_OBJECT
     public:
