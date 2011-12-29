@@ -1,112 +1,226 @@
 #!/bin/bash
 set -e
 
-if [ "`pwd | grep 'sonic/sonicawe/tests$'`" == "" ]; then
+configurations="nocuda usecuda"
+defaulttimeout=10
+
+if [ "$1" = "--help" ]; then
+  scriptName="${0##*/}"
+  echo "Run this script from sonic/sonicawe/tests"
+  echo
+  echo "${scriptName} searches through the subdirectories for tests,"
+  echo "compiles them, and executes the binaries produced. All folders"
+  echo "containing a .pro file are interpreted as tests named by their"
+  echo "folder."
+  echo
+  echo "When all binaries have been executed a report is printed of"
+  echo "which binaries that succeeded (produced an exit code of 0)"
+  echo "and which binaries that failed (exit code not equal to 0)."
+  echo
+  echo "Each project is built with these configurations: "
+  echo "{${configurations}} separatedly."
+  echo
+  echo "To run just one test or a a few tests you can execute ${0##*/}"
+  echo "with wildcards that are passed on to grep to match against"
+  echo 'relative-path configuration-name'
+  echo
+  echo "The outputs from the binaries are stored in a folder 'logs'"
+  echo "with timestamps. The output from the last run is also copied"
+  echo "to the folder 'logs-latest'."
+  echo
+  echo "You can specify a timeout different than the default ${defaulttimeout} seconds."
+  echo "Create a file named timeoutseconds in the project folder"
+  echo "containing the number of seconds to use as timeout as text."
+  echo "More specified timeouts can be specified using this pattern:"
+  echo "timeoutseconds-{cuda,nocuda}-{windows,debian,macx}"
+  echo "Note however that if you want a test to succeed or fail "
+  echo "depending on the execution time you should check that within"
+  echo "the test. This timeout value is just to abort execution of"
+  echo "a test that gets stuck and doesn't quit by itself."
+  echo
+  echo "${0##*/} interprets the name of the folder for each test as"
+  echo "the name of the test. The executable in windows is expected to"
+  echo "be testname/release/testname.exe, and testname/testname in"
+  echo "ubuntu and osx. Tests without such an executable can instead"
+  echo "have a script in testname/testname.sh. If neither is found the"
+  echo "test fails."
+  exit
+fi
+
+if [ "`pwd | grep 'sonic/sonicawe/tests$'`" = "" ]; then
   echo "Run this script from sonic/sonicawe/tests"
   exit
 fi
 
 startdir=`pwd`
-dirs=`ls -R | tr -d : | grep ^./ | sed 's/^.\// /' | sort`
+dirs=`ls -R | tr -d : | grep '^\./' | sed 's/^\.\// /' | sort`
 failed=
 success=
-testtimestamp=`date --rfc-3339=seconds | sed "s/ /_/" | sed "s/://g"`
+skipped=0
+
+if [ "$(uname -s)" = "MINGW32_NT-6.1" ]; then
+    platform=windows
+elif [ "$(uname -s)" = "Linux" ]; then
+    platform=debian
+elif [ "$(uname -s)" = "Darwin" ]; then
+    platform=macx
+else
+    echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
+    platform=unknown
+fi
+
+if [ "$platform" = "windows" ]; then
+    timestamp(){ echo `date --iso-8601=second`; }
+	linkcmd="cp"
+	makecmd='"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //verbosity:detailed //p:Configuration=Release $( if [ -f *.sln ]; then echo *.sln; elif [ -f *.vcproj ]; then echo *.vcproj; else echo *.vcxproj; fi )'
+	makeonecmd='"C:\Program Files (x86)\Microsoft Visual Studio 9.0\vc\vcpackages\vcbuild.exe" //logcommands //time $( if [ -f *.vcproj ]; then echo *.vcproj; else echo *.vcxproj; fi ) "Release|Win32"'
+
+	# make vcbuild called by msbuild detect changes in headers
+	PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
+
+	PATH="${PATH}:$(cd ../release; pwd)"
+	PATH="${PATH}:$(cd ..; pwd)"
+	outputdir="release"
+else
+    timestamp(){ echo `date --rfc-3339=seconds`; }
+	qmakeargs="CONFIG+=gcc-4.3"
+	linkcmd="ln -s"
+	makecmd="make -j2"
+	makeonecmd=$makecmd
+	outputdir="."
+fi
+
+formatedtimestamp() {
+	timestamp | sed "s/ /_/" | sed "s/://g"
+}
+testtimestamp=`formatedtimestamp`
 rm -f *_failed.log
 
+logbasedir="${startdir}/logs/${testtimestamp}"
+echo "Sawing logs in $logbasedir for {$configurations}"
 
-configurations="usecuda nocuda"
 for configname in $configurations; do
-  logdir="${startdir}/log/${testtimestamp}-${configname}"
+  logdir="${logbasedir}/${configname}"
   mkdir -p ${logdir}
 
   # build sonicawe as testlib
   echo
-  echo "Running tests for configuration '${configname}':"
+  echo "Building and running tests for configuration '${configname}':"
   build_logname=build-${configname}
 
   ret=0
   (
     cd ../.. &&
+    echo $now &&
+    pwd &&
+
+	# need to relink both gpumisc and sonicawe when switching configurations
     touch sonicawe/sawe/configuration/configuration.cpp &&
+	rm -f {gpumisc,sonicawe}/Makefile &&
     rm -f gpumisc/libgpumisc.a &&
-    rm -f {gpumisc,sonicawe}/Makefile &&
-    qmake CONFIG+=testlib CONFIG+=gcc-4.3 CONFIG+=${configname} &&
-    make -j2
+    rm -f gpumisc/{debug,release}/gpumisc.lib &&
+
+    qmakecmd="qmake CONFIG+=testlib $qmakeargs CONFIG+=${configname}" &&
+    echo $qmakecmd &&
+    $qmakecmd &&
+    (cd gpumisc && $qmakecmd) &&
+    (cd sonicawe && $qmakecmd) &&
+    eval echo $makecmd &&
+    eval time $makecmd &&
+    ls -l gpumisc/release/gpumisc.lib sonicawe/release/sonicawe.lib
   ) >& ${logdir}/${build_logname}.log || ret=$?
 
-  if [ 0 -ne $ret ]; then
-    ln -s ${logdir}/${build_logname}.log ${build_logname}_failed.log
+  if (( 0 != $ret )); then
+    $linkcmd ${logdir}/${build_logname}.log ${build_logname}_failed.log
     echo "X!"
-    failed="${failed}${configname}. See ${build_logname}_failed.log\n"
-    continue
-  fi
+    failed="${failed}${configname}\n"
+
+  else
+
+  echo -n "["
 
   for name in $dirs; do
-    if [ "" != "$*" ] && [ -z "$( echo ${name} | grep $* )" ]; then
+    if ! [ -f $name/*.pro ] || [ -f $name/notest ]; then
+	  continue
+	fi
+
+    if [ "" != "$*" ] && [ -z "$( echo "${name} ${configname}" | eval grep $* )" ]; then
+	  echo -n "_"
+	  skipped=$((skipped + 1))
       continue
     fi
 
     cd "$name"
 
-    if [ -f *.pro ]; then
-      testname=`echo $name | sed 's/.*\///'`
+    testname=`echo $name | sed 's/.*\///'`
+	testname=`basename $name`
 
-      rm -f Makefile
-      qmake CONFIG+=gcc-4.3 CONFIG+=${configname}
-      rm -f ./$testname
+    timeout=$defaulttimeout
+    if [ -f timeoutseconds ]; then
+      timeout=`cat timeoutseconds`;
+    fi
+    if [ -f timeoutseconds-${configname} ]; then
+      timeout=`cat timeoutseconds-${configname}`;
+    fi
+    if [ -f timeoutseconds-${configname}-${platform} ]; then
+      timeout=`cat timeoutseconds-${configname}-${platform}`;
+    fi
 
-      timeout=10
-      if [ -f timeoutseconds ]; then
-        timeout=`cat timeoutseconds`;
-      fi
-      if [ -f timeoutseconds-${configname} ]; then
-        timeout=`cat timeoutseconds-${configname}`;
-      fi
+    ret=0
+    (
+      echo $now &&
+      pwd &&
+      rm -f Makefile &&
+      rm -f $outputdir/$testname &&
+	  echo qmake $qmakeargs CONFIG+=${configname} &&
+      qmake $qmakeargs CONFIG+=${configname} &&
+	  eval echo $makeonecmd &&
+      eval time $makeonecmd &&
+      (([ -f $testname.sh ] && $testname.sh) ||
+	  (echo "===========" &&
+      echo "Running '$testname', config: ${configname}, timeout: ${timeout}" &&
+      echo "===========" &&
+	  ls -l $outputdir/$testname &&
+      time ${startdir}/timeout3.sh -t ${timeout} $outputdir/$testname))
+    ) >& ${logdir}/${testname}.log || ret=$?
 
-      ret=0
-      (
-        make && 
-        echo "======================" &&
-        echo "Running '$testname', config: ${configname}" &&
-        echo "======================" &&
-        time ${startdir}/timeout3.sh -t ${timeout} ./$testname
-      ) >& ${logdir}/${testname}.log || ret=$?
-
-	  if [ 0 -ne $ret ]; then
-        rm -f ${startdir}/${testname}_failed.log
-        ln -s ${logdir}/${testname}.log ${startdir}/${testname}_failed.log
-        failed="${failed}${name} ${configname}. See ${startdir}/${testname}_failed.log\n"
-        echo -n "x"
-      else
-        success="${success}${name} ${configname}\n"
-        echo -n "."
-      fi
+    if (( 0 != $ret )); then
+      rm -f ${startdir}/${testname}_failed.log
+      $linkcmd ${logdir}/${testname}.log ${startdir}/${testname}-${configname}_failed.log
+      failed="${failed}${name} ${configname}\n"
+      echo -n "x"
+    else
+      success="${success}${name} ${configname}\n"
+      echo -n "."
     fi
 
     cd "$startdir"
   done
 
-  echo
+  echo "]"
+  fi
+
+  latestlog="${startdir}/logs-latest/${configname}"
+  rm -rf "${latestlog}"
+  mkdir -p "${latestlog}"
+  cp -r "${logdir}" "${latestlog}"
+
 done # for configname
 
-echo
-echo
-echo Succeeded tests:
-if [ -z "$success" ]; then
-  echo No tests succeeded.
-else
-  echo -e $success
+if (( 0 < $skipped )); then
+  echo
+  echo $skipped tests were skipped.
 fi
 
 echo
 echo
-echo Failed tests:
-if [ -z "$failed" ]; then
-  echo No tests failed.
-else
-  echo -e $failed
-fi
+echo $(echo -e $success | grep -c .) tests succeeded:
+echo -e $success
 
 echo
-echo Test run timestamp: $testtimestamp
+echo $(echo -e $failed | grep -c .) tests failed:
+echo -e $failed
 
+echo
+echo "Test run timestamp: $testtimestamp"
+echo "Test finished at:   $(formatedtimestamp)"

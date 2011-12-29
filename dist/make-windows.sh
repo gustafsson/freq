@@ -8,6 +8,8 @@ nsisscript="sonic/sonicawe/dist/package-win/Sonicawe.nsi"
 nsiswriter="sonic/sonicawe/dist/package-win/Nsi_Writer.exe"
 licensefile="license.txt"
 
+# make vcbuild called by msbuild detect changes in headers
+PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
 cd ../..
 echo "========================== Building ==========================="
@@ -25,7 +27,7 @@ fi
 rm -f gpumisc/release/gpumisc.lib
 touch sonicawe/sawe/configuration/configuration.cpp
 
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release sonic.sln
+"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //property:Configuration=Release //verbosity:detailed sonic.sln
 cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
 
 
