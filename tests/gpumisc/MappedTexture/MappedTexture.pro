@@ -40,11 +40,22 @@ LIBS += \
 
 }
 
+macx {
+INCLUDEPATH += \
+    ../../../../../maclib/boost_1_45_0
+LIBS += \
+    -framework GLUT
+}
+
 unix:!macx {
 LIBS += \
     -lGLEW \
 
 }
+
+macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
+macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 
 ####################
 # Temporary output

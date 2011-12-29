@@ -14,6 +14,9 @@ TARGET = MappedVboNoCopy
 CONFIG   += console
 CONFIG   -= app_bundle
 
+macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
+macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
 win32:DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
@@ -46,7 +49,7 @@ unix:!macx {
   LIBS += \
       -lglut \
       -lGLEW \
-	  -L../../../../../sonic/gpumisc -lgpumisc \
+      -L../../../../../sonic/gpumisc -lgpumisc \
 
 }
 
@@ -62,6 +65,12 @@ win32 {
 	
 }
 
+macx {
+INCLUDEPATH += \
+    ../../../../../maclib/boost_1_45_0
+LIBS += \
+    -L../../../../gpumisc -lgpumisc
+}
 
 ####################
 # Temporary output

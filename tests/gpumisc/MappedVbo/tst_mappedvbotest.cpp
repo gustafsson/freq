@@ -45,7 +45,9 @@ void MappedVboTest::testCase1()
 {
 #ifdef USE_CUDA
     QVERIFY( cudaSuccess == cudaGLSetGLDevice( 0 ) );
+#ifndef __APPLE__ // glewInit is not needed on Mac
     QVERIFY( 0==glewInit() );
+#endif
     pVbo vbo( new Vbo(1024, GL_ARRAY_BUFFER, GL_STATIC_DRAW));
     MappedVbo<float> mapping(vbo, DataStorageSize(256,1,1));
     DataStorage<float>::Ptr copy( new DataStorage<float>(*mapping.data) );

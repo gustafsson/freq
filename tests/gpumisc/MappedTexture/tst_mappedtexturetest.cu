@@ -1,6 +1,10 @@
-#include <GL/glew.h>
+#include "gl.h"
+#ifndef __APPLE__
+#   include <GL/glut.h>
+#else
+#   include <GLUT/glut.h>
+#endif
 #include "cudaPitchedPtrType.h"
-#include <GL/glut.h>
 #include <iostream>
 #include <cuda_gl_interop.h>
 #include "vbo.h"
@@ -32,7 +36,9 @@ cudaGraphicsResource* positionsVBO_CUDA;
 void display()
 {
     cudaError cuda_inited = cudaGLSetGLDevice(0);
+#ifndef __APPLE__ // glewInit is not needed on Mac
     int glew_inited = glewInit();
+#endif
 
     unsigned N = BLOCK_SIZE;
     unsigned size = N*sizeof(float);
@@ -55,7 +61,9 @@ void display()
     cudaError unreg = cudaGraphicsUnregisterResource( positionsVBO_CUDA );
 
     cout << "cuda_inited = " << (cuda_inited == cudaSuccess) << endl;
+#ifndef __APPLE__ // glewInit is not needed on Mac
     cout << "glew_inited = " << (glew_inited == 0) << endl;
+#endif
     cout << "is_registered = "<< (is_registered == cudaSuccess) << endl;
     cout << "is_mapped = "<< (is_mapped == cudaSuccess) << endl;
     cout << "num_bytes = " << num_bytes << endl;
@@ -71,9 +79,11 @@ void displayOld()
 {
     cout << "disp" << endl;
     cudaError cuda_inited = cudaGLSetGLDevice(0);
-    int glew_inited = glewInit();
     cout << "cuda_inited = " << (cuda_inited == cudaSuccess) << endl;
+#ifndef __APPLE__ // glewInit is not needed on Mac
+    int glew_inited = glewInit();
     cout << "glew_inited = " << (glew_inited == 0) << endl;
+#endif
 
     unsigned N = 256;
     unsigned size = N*sizeof(float);
