@@ -38,13 +38,13 @@ unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 INCLUDEPATH += \
     ../../../../../sonic/gpumisc \
     ../../../../../sonic/sonicawe \
+    ../common \
 
 win32 {
     INCLUDEPATH += \
         ../../../../../winlib/glut \
         ../../../../../winlib/glew/include \
         ../../../../../winlib \
-        ../common \
 		
     LIBS += \
         -l../../../../../winlib/glut/glut32 \

@@ -29,6 +29,7 @@ MappedVboTestNoCopy::MappedVboTestNoCopy()
 }
 
 #ifdef USE_CUDA
+#include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
 #include "mappedvbo.h"

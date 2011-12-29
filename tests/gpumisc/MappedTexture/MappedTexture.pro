@@ -38,6 +38,11 @@ LIBS += \
 	-l../../../../../winlib/glut/glut32
 }
 
+unix:!macx {
+LIBS += \
+    -lGLEW \
+}
+
 ####################
 # Temporary output
 
@@ -101,7 +106,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../../../../../sonic/sonicawe/','-I "../../../../../sonic/sonicawe/','"') \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \

@@ -45,7 +45,9 @@ INCLUDEPATH += ../../../../../sonic/gpumisc
 unix:!macx {
   LIBS += \
       -lglut \
+      -lGLEW \
 	  -L../../../../../sonic/gpumisc -lgpumisc \
+
 }
 
 win32 {

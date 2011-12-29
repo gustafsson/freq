@@ -118,6 +118,7 @@ for configname in $configurations; do
     touch sonicawe/sawe/configuration/configuration.cpp &&
 	rm -f {gpumisc,sonicawe}/Makefile &&
     rm -f gpumisc/libgpumisc.a &&
+    rm -f sonicawe/libsonicawe.so &&
     rm -f gpumisc/{debug,release}/gpumisc.lib &&
 
     qmakecmd="qmake CONFIG+=testlib $qmakeargs CONFIG+=${configname}" &&
@@ -127,7 +128,11 @@ for configname in $configurations; do
     (cd sonicawe && $qmakecmd) &&
     eval echo $makecmd &&
     eval time $makecmd &&
-    ls -l gpumisc/release/gpumisc.lib sonicawe/release/sonicawe.lib
+    if [ "$platform" = "windows" ]; then
+      ls -l gpumisc/release/gpumisc.lib sonicawe/release/sonicawe.lib
+    else
+      ls -l gpumisc/libgpumisc.a sonicawe/libsonicawe.so
+    fi
   ) >& ${logdir}/${build_logname}.log || ret=$?
 
   if (( 0 != $ret )); then
@@ -176,7 +181,7 @@ for configname in $configurations; do
       qmake $qmakeargs CONFIG+=${configname} &&
 	  eval echo $makeonecmd &&
       eval time $makeonecmd &&
-      (([ -f $testname.sh ] && $testname.sh) ||
+      (([ -f $testname.sh ] && ./$testname.sh) ||
 	  (echo "===========" &&
       echo "Running '$testname', config: ${configname}, timeout: ${timeout}" &&
       echo "===========" &&
