@@ -34,7 +34,7 @@ Configuration::
         Configuration()
             :
             skip_update_check_( false ),
-            use_saved_gui_state_( true ),
+            use_saved_state_( true ),
             channel_( 0 ),
             scales_per_octave_( 20 ),
             wavelet_time_support_( 3 ),
@@ -346,11 +346,13 @@ static const char _sawe_usage_string[] =
     "                        rendering, this gives the number of samples per block.\n"
     "    --scales_per_block  Number of scales per block, se samples_per_block.\n"
 
-/*    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
+/*
+    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
     "                       filters are being used as the GUI won't be locked during\n"
     "                       computation.\n"
-*/    "\n"
-    "Sonic AWE, 2011\n";
+*/
+    "\n"
+    "Sonic AWE is a product developed by MuchDifferent\n";
 
 stringstream commandline_message_;
 
@@ -440,7 +442,7 @@ int Configuration::
         else if (readarg(&cmd, get_csv));
         else if (readarg(&cmd, min_hz));
         else if (readarg(&cmd, version));
-        else if (readarg(&cmd, use_saved_gui_state));
+        else if (readarg(&cmd, use_saved_state));
         else if (readarg(&cmd, skip_update_check));
 #ifndef QT_NO_THREAD
         else if (readarg(&cmd, multithread));
@@ -493,6 +495,13 @@ string Configuration::
         }
     }
 
+    return parseCommandLineMessage();
+}
+
+
+std::string Configuration::
+        parseCommandLineMessage()
+{
     return commandline_message_.str();
 }
 
@@ -618,9 +627,9 @@ bool Configuration::
 
 
 bool Configuration::
-        use_saved_gui_state()
+        use_saved_state()
 {
-    return Singleton().use_saved_gui_state_;
+    return Singleton().use_saved_state_;
 }
 
 

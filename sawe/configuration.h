@@ -58,6 +58,7 @@ public:
 
 
     static std::string parseCommandLineOptions( int& argc, char* argv[] );
+    static std::string parseCommandLineMessage();
     static std::string commandLineUsageString();
     static std::string input_file();
     static std::string selection_output_file();
@@ -76,7 +77,7 @@ public:
     static unsigned scales_per_block();
 
     static bool skip_update_check();
-    static bool use_saved_gui_state();
+    static bool use_saved_state();
 
 private:
     friend class HasSingleton<Configuration>;
@@ -87,7 +88,7 @@ private:
     std::string revision_;
     bool mono_;
     bool skip_update_check_;
-    bool use_saved_gui_state_;
+    bool use_saved_state_;
 
     std::string uname_;
     std::string computing_platform_;

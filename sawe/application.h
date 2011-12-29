@@ -20,9 +20,10 @@ class SaweDll Application: public QApplication
     Q_OBJECT
 
 public:
-    Application( int& argc, char **argv, bool dont_parse_sawe_argument = false);
+    Application( int& argc, char **argv, bool prevent_log_system_and_execute_args = false);
     ~Application();
 
+    static void         logSystemInfo(int& argc, char **argv);
     static QString      log_directory();
     static QGLWidget*   shared_glwidget();
     static void         display_fatal_exception();
@@ -37,7 +38,7 @@ public:
     int					default_record_device;
     unsigned            count_projects() { return _projects.size(); }
 
-    void parse_command_line_options( int& argc, char **argv );
+    void execute_command_line_options();
 
     void clearCaches();
 

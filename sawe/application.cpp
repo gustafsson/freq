@@ -21,6 +21,11 @@
 #include <QSettings>
 #include <QDesktopServices>
 #include <QMouseEvent>
+#include <QHostInfo>
+
+// boost
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 
 #ifdef USE_CUDA
 // gpumisc
@@ -29,6 +34,7 @@
 // cuda
 #include "cuda.h"
 #endif
+
 
 using namespace std;
 
@@ -74,7 +80,7 @@ static string fatal_unknown_exception_string() {
 }
 
 Application::
-        Application(int& argc, char **argv, bool dont_parse_sawe_argument )
+        Application(int& argc, char **argv, bool prevent_log_system_and_execute_args )
 :   QApplication(argc, argv),
     default_record_device(-1)
 {
@@ -91,9 +97,21 @@ Application::
         setApplicationName("Sonic AWE Reader");
     #endif
 
+    Sawe::Configuration::parseCommandLineOptions(argc, argv);
 
-    if (!dont_parse_sawe_argument)
-        parse_command_line_options(argc, argv); // will call 'exit(0)' on invalid arguments
+    if (!Sawe::Configuration::use_saved_state())
+    {
+        QVariant value = QSettings().value("value");
+        setApplicationName(applicationName() + " temp");
+        QSettings().clear();
+        QSettings().setValue("value", value);
+    }
+
+    if (!prevent_log_system_and_execute_args)
+    {
+        logSystemInfo(argc, argv);
+        execute_command_line_options(); // will call 'exit(0)' on invalid arguments
+    }
 }
 
 Application::
@@ -106,6 +124,41 @@ Application::
 
     delete shared_glwidget_;
 }
+
+
+void Application::
+     logSystemInfo(int& argc, char **argv)
+{
+    TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
+    TaskInfo("Organization: %s", organizationName().toStdString().c_str());
+    TaskInfo("Organization domain: %s", organizationDomain().toStdString().c_str());
+    TaskInfo("Application name: %s", applicationName().toStdString().c_str());
+    TaskInfo("OS: %s", Sawe::Configuration::operatingSystemName().c_str());
+    TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
+    TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
+    TaskInfo("Build timestamp for %s: %s, %s. Revision %s",
+        Sawe::Configuration::uname().c_str(),
+        Sawe::Configuration::build_date().c_str(), Sawe::Configuration::build_time().c_str(),
+        Sawe::Configuration::revision().c_str());
+    TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
+    {
+        TaskInfo ti("OpenGL information");
+        TaskInfo("vendor: %s", glGetString(GL_VENDOR));
+        TaskInfo("renderer: %s", glGetString(GL_RENDERER));
+        TaskInfo("version: %s", glGetString(GL_VERSION));
+        TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+        TaskInfo("extensions/capabilities/caps: %s", glGetString(GL_EXTENSIONS));
+    }
+
+    boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+    boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
+    ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
+    ti.tt().getStream() << "Program started " << today;
+    TaskInfo ti2("%u command line argument%s", argc, argc==1?"":"s");
+    for (int i=0; i<argc; ++i)
+        TaskInfo("%s", argv[i]);
+}
+
 
 Application* Application::
         global_ptr() 

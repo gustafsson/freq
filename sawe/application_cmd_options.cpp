@@ -35,9 +35,9 @@ namespace Sawe {
 
 
 void Application::
-        parse_command_line_options(int& argc, char **argv)
+        execute_command_line_options()
 {
-    string message = Sawe::Configuration::parseCommandLineOptions(argc, argv);
+    string message = Sawe::Configuration::parseCommandLineMessage();
 
     if (!message.empty())
     {

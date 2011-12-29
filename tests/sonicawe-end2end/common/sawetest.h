@@ -103,19 +103,19 @@ protected slots:
 
 // expanded QTEST_MAIN but for Sawe::Application
 #define SAWETEST_MAIN(TestClass)                               \
-	int main(int argc, char *argv[])                           \
-	{                                                          \
-		std::vector<const char*> argvector(argc+2);            \
-		for (int i=0; i<argc; ++i)                             \
-			argvector[i] = argv[i];                            \
-	                                                           \
-		argvector[argc++] = "--use_saved_gui_state=0";         \
-		argvector[argc++] = "--skip_update_check=1";           \
-	                                                           \
-		Sawe::Application application(argc, (char**)&argvector[0], false); \
-		QTEST_DISABLE_KEYPAD_NAVIGATION                        \
-		TestClass tc;                                          \
-		return QTest::qExec(&tc, argc, (char**)&argvector[0]); \
-	}
+    int main(int argc, char *argv[])                           \
+    {                                                          \
+        std::vector<const char*> argvector(argc+2);            \
+        for (int i=0; i<argc; ++i)                             \
+            argvector[i] = argv[i];                            \
+                                                               \
+        argvector[argc++] = "--use_saved_state=0";             \
+        argvector[argc++] = "--skip_update_check=1";           \
+                                                               \
+        Sawe::Application application(argc, (char**)&argvector[0]); \
+        QTEST_DISABLE_KEYPAD_NAVIGATION                        \
+        TestClass tc;                                          \
+        return QTest::qExec(&tc, argc, (char**)&argvector[0]); \
+    }
 
 #endif // SAWETEST
