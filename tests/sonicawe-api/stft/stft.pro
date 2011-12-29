@@ -18,6 +18,9 @@ TEMPLATE = app
 win32:TEMPLATE = vcapp
 
 
+macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
+macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
 unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 win32:QMAKE_CXXFLAGS_RELEASE += /openmp
@@ -73,13 +76,17 @@ win32 {
         -L../../../../sonicawe/release -lsonicawe \
         -L../../../../gpumisc/release -lgpumisc \
 		
-} else {
-    # build sonicawe with qmake CONFIG+=testlib
-    LIBS += -L../../../../sonicawe -lsonicawe \
-
-    # find libsonicawe when executing from project path
-    QMAKE_LFLAGS += -Wl,-rpath=../../../
 }
+
+# build sonicawe with qmake CONFIG+=testlib
+unix:LIBS += \
+        -L../../../../sonicawe -lsonicawe \
+
+# find libsonicawe when executing from project path
+unix:!macx:QMAKE_LFLAGS += -Wl,-rpath=../../../
+
+macx:INCLUDEPATH += \
+        ../../../../../maclib/boost_1_45_0 \
 
 
 ####################
