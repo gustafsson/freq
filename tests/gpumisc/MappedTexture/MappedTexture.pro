@@ -35,12 +35,15 @@ win32 {
 INCLUDEPATH += \
     ../../../../../winlib
 LIBS += \
-	-l../../../../../winlib/glut/glut32
+    -l../../../../../winlib/glut/glut32 \
+    -l../../../../../winlib/glew/lib/glew32 \
+
 }
 
 unix:!macx {
 LIBS += \
     -lGLEW \
+
 }
 
 ####################
