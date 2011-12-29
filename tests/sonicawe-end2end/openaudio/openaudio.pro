@@ -12,10 +12,10 @@ QT += opengl
 QT += network
 
 win32:CONFIG += debug_and_release
+macx:CONFIG   -= app_bundle
 
 TEMPLATE = app
 win32:TEMPLATE = vcapp
-
 
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
 unix:QMAKE_LFLAGS_RELEASE += -fopenmp
@@ -38,21 +38,28 @@ unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 INCLUDEPATH += \
     ../../../../../sonic/gpumisc \
     ../../../../../sonic/sonicawe \
+    ../common \
 
 win32 {
     INCLUDEPATH += \
         ../../../../../winlib/glut \
         ../../../../../winlib/glew/include \
         ../../../../../winlib \
+		
     LIBS += \
-        -l../../../../winlib/glut/glut32 \
-        -l../../../../winlib/glew/lib/glew32 \
+        -l../../../../../winlib/glut/glut32 \
+        -l../../../../../winlib/glew/lib/glew32 \
+        -L../../../../../winlib/boostlib \
 
     LIBS += \
-        -L../../../../sonicawe/debug -lsonicawe \
+        -L../../../../sonicawe/release -lsonicawe \
+        -L../../../../gpumisc/release -lgpumisc \
+        -L../common/release -lcommon \
+
 } else {
     # build sonicawe with qmake CONFIG+=testlib
     LIBS += -L../../../../sonicawe -lsonicawe \
+            -L../common -lcommon \
 
     # find libsonicawe when executing from project path
     QMAKE_LFLAGS += -Wl,-rpath=../../../
@@ -85,6 +92,12 @@ INCLUDEPATH += ../../../../../sonic/sonicawe/$${SONICAWEMOCDIR}
 CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
 else:OBJECTS_DIR = $${OBJECTS_DIR}release/
 
+
+unix:!macx {
+    QMAKE_CXX = g++-4.3
+    QMAKE_CC = gcc-4.3
+    QMAKE_LINK = g++-4.3
+}
 
 # #######################################################################
 # CUDA

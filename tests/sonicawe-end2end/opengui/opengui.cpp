@@ -9,6 +9,9 @@
 #include <QPainter>
 #include <QRgb>
 
+#include "sawetest.h"
+#include "compareimages.h"
+
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "tools/renderview.h"
@@ -17,7 +20,7 @@ using namespace std;
 using namespace Tfr;
 using namespace Signal;
 
-class OpenGui : public QObject
+class OpenGui : public SaweTestClass
 {
     Q_OBJECT
 
@@ -25,59 +28,53 @@ public:
     OpenGui();
 
 private slots:
-    void initTestCase();
-    void cleanupTestCase();
+    void initOpenGui();
     void openGui();
-    void compareImages();
+    void verifyResult();
 
 protected slots:
-    void setInitialized();
     void saveImage();
 
 private:
-    int n;
-    Sawe::Project* p;
-    QImage resultImage, goldImage;
+    virtual void projectOpened();
+    virtual void finishedWorkSection(int workSectionCounter);
 
-    QString resultFileName, goldFileName, diffFileName;
-
-    bool initialized;
+    CompareImages compareImages;
 };
 
 
 OpenGui::
         OpenGui()
-            :
-            initialized(false)
 {
-#ifdef USE_CUDA
-    resultFileName = "opengui-result-cuda.png";
-    goldFileName = "opengui-gold-cuda.png";
-    diffFileName = "opengui-diff-cuda.png";
-#else
-    resultFileName = "opengui-result-cpu.png";
-    goldFileName = "opengui-gold-cpu.png";
-    diffFileName = "opengui-diff-cpu.png";
-#endif
 }
 
 
 void OpenGui::
-        initTestCase()
+        initOpenGui()
 {
-    p = Sawe::Application::global_ptr()->slotNew_recording( -1 ).get();
-    connect( p->tools().render_view(), SIGNAL(postPaint()), SLOT(setInitialized()));
-    QFile::remove(resultFileName);
+    project( Sawe::Application::global_ptr()->slotNew_recording( -1 ) );
 }
 
 
 void OpenGui::
-        setInitialized()
+        openGui()
 {
-    if (initialized)
+    exec();
+}
+
+
+void OpenGui::
+        projectOpened()
+{
+    SaweTestClass::projectOpened();
+}
+
+
+void OpenGui::
+        finishedWorkSection(int workSectionCounter)
+{
+    if (0!=workSectionCounter)
         return;
-
-    initialized = true;
 
     QTimer::singleShot(0, this, SLOT(saveImage()));
 }
@@ -86,91 +83,19 @@ void OpenGui::
 void OpenGui::
         saveImage()
 {
-    TaskTimer ti("saveImage");
+    compareImages.saveImage( project() );
 
-    QGLWidget* glwidget = p->tools().render_view()->glwidget;
-    glwidget->makeCurrent();
-
-    QPixmap pixmap(p->mainWindowWidget()->size());
-    QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
-    QPainter painter(&pixmap);
-    p->mainWindowWidget()->render(&painter);
-    QImage glimage = glwidget->grabFrameBuffer();
-
-    QPoint p2 = glwidget->mapTo( p->mainWindowWidget(), QPoint() );
-    painter.drawImage(p2, glimage);
-
-    resultImage = pixmap.toImage();
-    resultImage.save(resultFileName);
-
-    Sawe::Application::global_ptr()->slotClosed_window( p->mainWindowWidget() );
+    Sawe::Application::global_ptr()->slotClosed_window( project()->mainWindowWidget() );
 }
 
 
 void OpenGui::
-        compareImages()
+        verifyResult()
 {
-    QImage openguigold(goldFileName);
-
-    QCOMPARE( openguigold.size(), resultImage.size() );
-
-    QImage diffImage( openguigold.size(), openguigold.format() );
-
-    double diff = 0;
-    for (int y=0; y<openguigold.height(); ++y)
-    {
-        for (int x=0; x<openguigold.width(); ++x)
-        {
-            float gold = QColor(openguigold.pixel(x,y)).lightnessF();
-            float result = QColor(resultImage.pixel(x,y)).lightnessF();
-            diff += std::fabs( gold - result );
-            float hue = fmod(10 + (gold - result)*0.5f, 1.f);
-            diffImage.setPixel( x, y, QColor::fromHsvF( hue, std::min(1.f, gold - result == 0 ? 0 : 0.25f+0.75f*std::fabs( gold - result )), 0.25f+0.75f*gold ).rgba() );
-        }
-    }
-
-    diffImage.save( diffFileName );
-
-    double limit = 10.;
-    if (! (diff < limit))
-    {
-        TaskInfo("OpenGui::compareImages, ligtness difference between '%s' and '%s' was %g, tolerated max difference is %g. Saved diff image in '%s'",
-                 goldFileName.toStdString().c_str(), resultFileName.toStdString().c_str(),
-                 diff, limit, diffFileName.toStdString().c_str() );
-    }
-
-    QVERIFY(diff < limit);
+    compareImages.verifyResult();
 }
 
 
-void OpenGui::
-        cleanupTestCase()
-{
-}
-
-
-void OpenGui::
-        openGui()
-{
-    TaskTimer ti("openGui");
-
-    Sawe::Application::global_ptr()->exec();
-}
-
-// expanded QTEST_MAIN but for Sawe::Application
-int main(int argc, char *argv[])
-{
-    std::vector<const char*> argvector(argc+2);
-    for (int i=0; i<argc; ++i)
-        argvector[i] = argv[i];
-
-    argvector[argc++] = "--use_saved_gui_state=0";
-    argvector[argc++] = "--skip_update_check=1";
-
-    Sawe::Application application(argc, (char**)&argvector[0], false);
-    QTEST_DISABLE_KEYPAD_NAVIGATION
-    OpenGui tc;
-    return QTest::qExec(&tc, argc, (char**)&argvector[0]);
-}
+SAWETEST_MAIN(OpenGui)
 
 #include "opengui.moc"

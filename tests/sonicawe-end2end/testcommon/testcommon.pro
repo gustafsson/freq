@@ -26,7 +26,7 @@ win32:QMAKE_CXXFLAGS_RELEASE += /openmp
 # Source code
 
 SOURCES += *.cpp
-
+HEADERS += *.h
 
 ####################
 # Compiler flags
@@ -38,13 +38,13 @@ unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 INCLUDEPATH += \
     ../../../../../sonic/gpumisc \
     ../../../../../sonic/sonicawe \
-    ../common \
 
 win32 {
     INCLUDEPATH += \
         ../../../../../winlib/glut \
         ../../../../../winlib/glew/include \
         ../../../../../winlib \
+        ../common \
 		
     LIBS += \
         -l../../../../../winlib/glut/glut32 \
@@ -55,11 +55,11 @@ win32 {
         -L../../../../sonicawe/release -lsonicawe \
         -L../../../../gpumisc/release -lgpumisc \
         -L../common/release -lcommon \
-
+		
 } else {
     # build sonicawe with qmake CONFIG+=testlib
     LIBS += -L../../../../sonicawe -lsonicawe \
-            -L../common -lcommon \
+            -L../common -lcommon
 
     # find libsonicawe when executing from project path
     QMAKE_LFLAGS += -Wl,-rpath=../../../

@@ -91,7 +91,7 @@ namespace Tools
         // GUI
         void setupGui();
         void toolfactory();
-        Ui::ComboBoxAction * selectionComboBox_;
+        ::Ui::ComboBoxAction * selectionComboBox_;
         boost::scoped_ptr<Support::ToolSelector> tool_selector_;
 
         // State
