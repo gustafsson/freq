@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     dim3 grid( 1 );
     simpleKernel<<< grid, block>>>(g_data);
     cudaError freed = cudaFree( g_data );
-	
+
 	cudaError sync = cudaThreadSynchronize();
 
     bool all_success = (mallocd == cudaSuccess)

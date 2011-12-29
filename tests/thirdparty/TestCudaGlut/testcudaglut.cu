@@ -1,4 +1,8 @@
-#include <GL/glut.h>
+#ifndef __APPLE__
+#   include <GL/glut.h>
+#else
+#   include <GLUT/glut.h>
+#endif
 #include <iostream>
 #include <fstream>
 

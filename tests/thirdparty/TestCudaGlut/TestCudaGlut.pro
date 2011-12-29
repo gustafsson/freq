@@ -36,6 +36,9 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
+macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
+macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
+macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 
 unix:!macx {
     LIBS = \
@@ -51,6 +54,13 @@ win32 {
 
     LIBS += \
         -l../../../../../winlib/glut/glut32 \
+
+}
+
+macx {
+    LIBS += \
+        -framework GLUT \
+        -framework OpenGL \
 
 }
 
@@ -151,7 +161,7 @@ macx {
     QMAKE_LIBDIR += $$CUDA_DIR/lib
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
-		-ccbin $${QMAKE_CC} \
+                -ccbin $${QMAKE_CXX} \
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \

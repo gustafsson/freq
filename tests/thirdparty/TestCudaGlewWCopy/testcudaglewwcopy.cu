@@ -1,5 +1,9 @@
-#include <GL/glew.h>
-#include <GL/glut.h>
+#include "gl.h"
+#ifndef __APPLE__
+#   include <GL/glut.h>
+#else
+#   include <GLUT/glut.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <cuda_gl_interop.h>
@@ -26,7 +30,9 @@ void display()
     once = false;
 	
     cudaError cuda_inited = cudaGLSetGLDevice(0);
+#ifndef __APPLE__ // glewInit is not needed on Mac
     int glew_inited = glewInit();
+#endif
 
     unsigned N = BLOCK_SIZE;
     unsigned size = N*sizeof(float);
@@ -55,7 +61,9 @@ void display()
 	cudaError sync = cudaThreadSynchronize();
 
     bool all_success = (cuda_inited == cudaSuccess)
+#ifndef __APPLE__ // glewInit is not needed on Mac
         && (glew_inited == 0)
+#endif
         && (is_registered == cudaSuccess)
         && (is_mapped == cudaSuccess)
         && (size == num_bytes)
@@ -71,7 +79,9 @@ void display()
 
     cout<< "all_success = " << all_success << endl
         << "cuda_inited = " << (cuda_inited == cudaSuccess) << endl
+#ifndef __APPLE__ // glewInit is not needed on Mac
         << "glew_inited = " << (glew_inited == 0) << endl
+#endif
         << "is_registered = "<< (is_registered == cudaSuccess) << endl
         << "is_mapped = "<< (is_mapped == cudaSuccess) << endl
         << "num_bytes = " << num_bytes << endl
