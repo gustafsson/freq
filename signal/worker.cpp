@@ -141,6 +141,8 @@ bool Worker::
 
     unsigned prev_samples_per_chunk = _samples_per_chunk;
     _samples_per_chunk = _target->next_good_size( _samples_per_chunk - 1 );
+    if (_samples_per_chunk > _max_samples_per_chunk)
+        _samples_per_chunk = _target->prev_good_size( _max_samples_per_chunk + 1 );
 
     WORKER_INFO
     {
@@ -193,6 +195,8 @@ bool Worker::
         worked_samples |= latest_result;
 
         _samples_per_chunk = b->number_of_samples();
+        if (_samples_per_chunk>_max_samples_per_chunk)
+            _samples_per_chunk=_max_samples_per_chunk;
 
         WORKER_INFO {
             tt->info("Worker got %s x %d, [%g, %g) s. %g or %g x realtime",
