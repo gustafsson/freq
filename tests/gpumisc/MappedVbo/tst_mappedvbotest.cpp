@@ -28,8 +28,6 @@ MappedVboTest::MappedVboTest()
 #include <cuda_gl_interop.h>
 
 #include "mappedvbo.h"
-#include "cudaPitchedPtrType.h"
-#include "CudaException.h"
 #endif
 
 void mappedVboTestCuda( DataStorage<float>::Ptr datap );

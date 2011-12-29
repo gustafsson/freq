@@ -27,23 +27,6 @@ win32:QMAKE_LFLAGS_RELEASE += \
     /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
 
 SOURCES += *.cpp
-DEFINES += SRCDIR=\\\"$$PWD/\\\"
-
-unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
-
-INCLUDEPATH += \
-    ../../../../../sonic/gpumisc \
-    ../../../../../sonic/sonicawe \
-
-unix:!macx {
-LIBS = \
-    -lGLEW \
-    -lGLU \
-    -lGL \
-#    -lglut \
-    -L../../../../gpumisc -lgpumisc \
-#    -L../../../../sonicawe -lsonicawe
-}
 
 CUDA_SOURCES += \
     *.cu
@@ -52,34 +35,28 @@ CUDA_SOURCES += \
 OTHER_FILES += \
     $$CUDA_SOURCES \
 
+	
+DEFINES += SRCDIR=\\\"$$PWD/\\\"
+
+unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
+
+INCLUDEPATH += ../../../../../sonic/gpumisc
+
+unix:!macx {
+  LIBS += \
+      -lglut \
+	  -L../../../../../sonic/gpumisc -lgpumisc \
+}
+
 win32 {
-INCLUDEPATH += \
-#	../../../../winlib/glut \
-	../../../../winlib/glew/include \
-#	../../../../winlib/portaudio/include \
-#	../../../../winlib/libsndfile/include \
-#	../../../../winlib/hdf5lib/include \
-#	../../../../winlib/zlib/include \
-	../../../../winlib
+  INCLUDEPATH += \
+      ../../../../../winlib \
 	
-LIBS += \
-    -L../../../gpumisc/Release -lgpumisc \
-#	-l../../../../winlib/glut/glut32 \
-	-l../../../../winlib/glew/lib/glew32 \
-#	-l../../../../winlib/libsndfile/libsndfile-1 \
-#	-l../../../../winlib/hdf5lib/dll/hdf5dll \
-#	-l../../../../winlib/hdf5lib/dll/hdf5_hldll \
-	-L../../../../winlib/boostlib
-	
-win32:QMAKE_LFLAGS_RELEASE += \
-#	../../../../winlib/portaudio/portaudio.lib \
-#	../../../../winlib/portaudio/portaudio_x86_mt.lib \
-#	../../../../winlib/portaudio/portaudiocpp_mt.lib
-	
-win32:QMAKE_LFLAGS_DEBUG += \
-#	../../../../winlib/portaudio/portaudio.lib \
-#	../../../../winlib/portaudio/portaudio_x86_mt_gd.lib \
-#	../../../../winlib/portaudio/portaudiocpp_mt_gd.lib
+  LIBS += \
+      -L../../../../../winlib/boostlib \
+      -l../../winlib/glew/lib/glew32 \
+      -l../../../../../winlib/glut/glut32 \
+      -l../../../../../sonic/gpumisc/release/gpumisc \
 	
 }
 

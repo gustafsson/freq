@@ -1,6 +1,8 @@
-#include "sawe/project_header.h"
-#include <redirectstdout.h>
+// gpumisc
+#include "gl.h"
+#include "datastorage.h"
 
+// Qt
 #include <QtCore/QString>
 #include <QtTest/QtTest>
 #include <QtCore/QCoreApplication>

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += testlib
+QT += testlib
 QT += opengl
 
 TARGET = MappedTexture
@@ -12,24 +12,9 @@ CONFIG   += console
 CONFIG   -= app_bundle
 
 TEMPLATE = app
-
+win32:TEMPLATE = vcapp
 
 SOURCES += *.cpp
-DEFINES += SRCDIR=\\\"$$PWD/\\\"
-
-unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
-
-INCLUDEPATH += \
-    ../../sonic/gpumisc \
-    ../../sonic/sonicawe \
-
-LIBS = \
-    -lGLEW \
-    -lGLU \
-    -lGL \
-    -lglut \
-    -L../../../../gpumisc -lgpumisc \
-#    -L../../../../sonicawe -lsonicawe
 
 CUDA_SOURCES += \
     *.cu
@@ -37,6 +22,21 @@ CUDA_SOURCES += \
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
+
+DEFINES += SRCDIR=\\\"$$PWD/\\\"
+
+unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
+
+INCLUDEPATH += ../../../../../sonic/gpumisc
+
+unix:!macx: LIBS += -lglut
+
+win32 {
+INCLUDEPATH += \
+    ../../../../../winlib
+LIBS += \
+	-l../../../../../winlib/glut/glut32
+}
 
 ####################
 # Temporary output
