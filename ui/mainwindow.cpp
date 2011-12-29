@@ -68,7 +68,6 @@ void SaweMainWindow::
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(triggered(bool)), SLOT(toggleFullscreenNoMenus(bool)));
     connect(ui->actionReset_layout, SIGNAL(triggered()), SLOT(resetLayout()));
     connect(ui->actionReset_view, SIGNAL(triggered()), SLOT(resetView()));
-    connect(ui->actionClear_settings, SIGNAL(triggered()), SLOT(clearSettings()));
     connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
     connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
     connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
@@ -421,22 +420,6 @@ void SaweMainWindow::
         resetView()
 {
     project->resetView();
-}
-
-
-void SaweMainWindow::
-        clearSettings()
-{
-    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear all user defined settings?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
-    {
-        QSettings settings;
-        QString value = settings.value("value").toString();
-        settings.clear();
-        settings.setValue("value", value);
-
-        resetLayout();
-        resetView();
-    }
 }
 
 

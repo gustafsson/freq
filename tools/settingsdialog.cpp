@@ -9,8 +9,11 @@
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
 
+#include "ui/mainwindow.h"
+
 #include <QSettings>
 #include <QFileDialog>
+#include <QMessageBox>
 
 namespace Tools {
 
@@ -93,6 +96,7 @@ void SettingsDialog::
 
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(accept()));
     connect(ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
+    connect(ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), SLOT(abstractButtonClicked(QAbstractButton*)));
 }
 
 
@@ -212,6 +216,16 @@ void SettingsDialog::
 
 
 void SettingsDialog::
+        abstractButtonClicked(QAbstractButton* b)
+{
+    if (QDialogButtonBox::ResetRole == ui->buttonBox->buttonRole(b))
+    {
+        clearSettings();
+    }
+}
+
+
+void SettingsDialog::
         updateResolutionSlider()
 {
     float resolution = project->tools().render_view()->model->renderer->redundancy();
@@ -222,6 +236,22 @@ void SettingsDialog::
     float p = (resolution - 1)/5;
     int value = (1 - p)*(ui->horizontalSliderResolution->maximum()-ui->horizontalSliderResolution->minimum()) + ui->horizontalSliderResolution->minimum();
     ui->horizontalSliderResolution->setValue( value );
+}
+
+
+void SettingsDialog::
+        clearSettings()
+{
+    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear all user defined settings?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    {
+        QSettings settings;
+        QString value = settings.value("value").toString();
+        settings.clear();
+        settings.setValue("value", value);
+
+        project->mainWindow()->resetLayout();
+        project->mainWindow()->resetView();
+    }
 }
 
 } // namespace Tools

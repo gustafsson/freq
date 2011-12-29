@@ -3,6 +3,8 @@
 
 #include <QDialog>
 
+class QAbstractButton;
+
 namespace Sawe {
     class Project;
 }
@@ -31,6 +33,7 @@ private slots:
     void octavePathChanged(QString text);
     void matlabPathChanged(QString text);
     void resolutionChanged(int);
+    void abstractButtonClicked(QAbstractButton*);
 
 private:
     Ui::SettingsDialog *ui;
@@ -38,6 +41,7 @@ private:
 
     void setupGui();
     void updateResolutionSlider();
+    void clearSettings();
 };
 
 } // namespace Tools

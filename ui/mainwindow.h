@@ -71,8 +71,11 @@ protected:
 //signals:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
-private slots:
+public slots:
+    void resetLayout();
+    void resetView();
 
+private slots:
     void openRecentFile();
 #if !defined(TARGET_reader)
     bool askSaveChanges();
@@ -81,15 +84,13 @@ private slots:
 #endif
     void toggleFullscreen( bool );
     void toggleFullscreenNoMenus( bool fullscreen );
-    void resetLayout();
-    void resetView();
-    void clearSettings();
     void reenterProductKey();
     void gotomuchdifferent();
     void gotosonicaweforum();
     void findplugins();
 
     void checkVisibilityToolProperties(bool visible);
+
 private:
     Sawe::Project* project;
     MainWindow *ui;
