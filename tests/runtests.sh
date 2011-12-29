@@ -135,7 +135,7 @@ for configname in $configurations; do
     fi
   ) >& ${logdir}/${build_logname}.log || ret=$?
 
-  if (( 0 != $ret )); then
+  if (( 0 != ret )); then
     $linkcmd ${logdir}/${build_logname}.log ${build_logname}_failed.log
     echo "X!"
     failed="${failed}${configname}\n"
@@ -151,7 +151,7 @@ for configname in $configurations; do
 
     if [ "" != "$*" ] && [ -z "$( echo "${name} ${configname}" | eval grep $* )" ]; then
 	  echo -n "_"
-	  skipped=$((skipped + 1))
+	  skipped=$(( skipped + 1 ))
       continue
     fi
 
@@ -179,17 +179,33 @@ for configname in $configurations; do
       rm -f $outputdir/$testname &&
 	  echo qmake $qmakeargs CONFIG+=${configname} &&
       qmake $qmakeargs CONFIG+=${configname} &&
-	  eval echo $makeonecmd &&
+      eval echo $makeonecmd &&
       eval time $makeonecmd &&
-      (([ -f $testname.sh ] && ./$testname.sh) ||
-	  (echo "===========" &&
-      echo "Running '$testname', config: ${configname}, timeout: ${timeout}" &&
-      echo "===========" &&
-	  ls -l $outputdir/$testname &&
-      time ${startdir}/timeout3.sh -t ${timeout} $outputdir/$testname))
-    ) >& ${logdir}/${testname}.log || ret=$?
+      (
+        [ -f $testname.sh ] && ./$testname.sh
+      ) || (
+        echo "===============================================================================" &&
+        echo "$(timestamp): Running '$testname', config: ${configname}, timeout: ${timeout} s." &&
+        echo "===============================================================================" &&
+        ls -l $outputdir/$testname &&
+        time ${startdir}/timeout3.sh -t ${timeout} $outputdir/$testname &&
+        echo "===============================================================================" &&
+        echo "$(timestamp): Test '$testname' succeeded." &&
+        echo "==============================================================================="
+      ) || (
+	    exitcode=$?
+        echo "==============================================================================="
+		if (( 143 == exitcode )); then
+          echo "$(timestamp): Test '$testname' failed due to time out after ${timeout} seconds and was killed prior to normal exit."
+		else
+          echo "$(timestamp): Test '$testname' failed with exit code $exitcode."
+		fi
+        echo "==============================================================================="
+	    exit $exitcode
+	  )
+	) >& ${logdir}/${testname}.log || ret=$?
 
-    if (( 0 != $ret )); then
+    if (( 0 != ret )); then
       rm -f ${startdir}/${testname}_failed.log
       $linkcmd ${logdir}/${testname}.log ${startdir}/${testname}-${configname}_failed.log
       failed="${failed}${name} ${configname}\n"
@@ -212,7 +228,7 @@ for configname in $configurations; do
 
 done # for configname
 
-if (( 0 < $skipped )); then
+if (( 0 < skipped )); then
   echo
   echo $skipped tests were skipped.
 fi
