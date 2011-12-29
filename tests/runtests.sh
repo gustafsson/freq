@@ -70,24 +70,37 @@ else
 fi
 
 if [ "$platform" = "windows" ]; then
-    timestamp(){ echo `date --iso-8601=second`; }
-	linkcmd="cp"
-	makecmd='"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //verbosity:detailed //p:Configuration=Release $( if [ -f *.sln ]; then echo *.sln; elif [ -f *.vcproj ]; then echo *.vcproj; else echo *.vcxproj; fi )'
-	makeonecmd='"C:\Program Files (x86)\Microsoft Visual Studio 9.0\vc\vcpackages\vcbuild.exe" //logcommands //time $( if [ -f *.vcproj ]; then echo *.vcproj; else echo *.vcxproj; fi ) "Release|Win32"'
+    timestamp(){ date --iso-8601=second; }
+    staticlibname(){ echo release/${1}.lib; }
+    dynamiclibname(){ echo release/${1}.dll; }
+    linkcmd="cp"
+    makecmd='"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //verbosity:detailed //p:Configuration=Release $( if [ -f *.sln ]; then echo *.sln; elif [ -f *.vcproj ]; then echo *.vcproj; else echo *.vcxproj; fi )'
+    makeonecmd='"C:\Program Files (x86)\Microsoft Visual Studio 9.0\vc\vcpackages\vcbuild.exe" //logcommands //time $( if [ -f *.vcproj ]; then echo *.vcproj; else echo *.vcxproj; fi ) "Release|Win32"'
 
-	# make vcbuild called by msbuild detect changes in headers
-	PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
+    # make vcbuild called by msbuild detect changes in headers
+    PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
-	PATH="${PATH}:$(cd ../release; pwd)"
-	PATH="${PATH}:$(cd ..; pwd)"
-	outputdir="release"
+    PATH="${PATH}:$(cd ../release; pwd)"
+    PATH="${PATH}:$(cd ..; pwd)"
+    outputdir="release"
+    qmakeargs=
 else
-    timestamp(){ echo `date --rfc-3339=seconds`; }
-	qmakeargs="CONFIG+=gcc-4.3"
-	linkcmd="ln -s"
-	makecmd="make -j2"
-	makeonecmd=$makecmd
-	outputdir="."
+    if [ "$platform" = "macx" ]; then
+        timestamp(){ date "+%Y-%m-%d %H:%M:%S"; }
+        staticlibname(){ echo lib${1}.a; }
+        dynamiclibname(){ echo lib${1}.dylib; }
+        qmakeargs="-spec macx-g++ CONFIG+=release"
+        export DYLD_LIBRARY_PATH="$(cd ../../../maclib; pwd):$(cd ..; pwd):/usr/local/cuda/lib"
+    else
+        timestamp(){ date --rfc-3339=seconds; }
+        staticlibname(){ echo lib${1}.a; }
+        dynamiclibname(){ echo lib${1}.so; }
+        qmakeargs="CONFIG+=gcc-4.3"
+    fi
+    linkcmd="ln -s"
+    makecmd="make -j2"
+    makeonecmd=$makecmd
+    outputdir="."
 fi
 
 formatedtimestamp() {
@@ -114,12 +127,11 @@ for configname in $configurations; do
     echo $now &&
     pwd &&
 
-	# need to relink both gpumisc and sonicawe when switching configurations
+    # need to relink both gpumisc and sonicawe when switching configurations
     touch sonicawe/sawe/configuration/configuration.cpp &&
 	rm -f {gpumisc,sonicawe}/Makefile &&
-    rm -f gpumisc/libgpumisc.a &&
-    rm -f sonicawe/libsonicawe.so &&
-    rm -f gpumisc/{debug,release}/gpumisc.lib &&
+    rm -f gpumisc/$(staticlibname gpumisc) &&
+    rm -f sonicawe/$(dynamiclibname sonicawe) &&
 
     qmakecmd="qmake CONFIG+=testlib $qmakeargs CONFIG+=${configname}" &&
     echo $qmakecmd &&
@@ -128,11 +140,7 @@ for configname in $configurations; do
     (cd sonicawe && $qmakecmd) &&
     eval echo $makecmd &&
     eval time $makecmd &&
-    if [ "$platform" = "windows" ]; then
-      ls -l gpumisc/release/gpumisc.lib sonicawe/release/sonicawe.lib
-    else
-      ls -l gpumisc/libgpumisc.a sonicawe/libsonicawe.so
-    fi
+    ls -l gpumisc/$(staticlibname gpumisc) sonicawe/$(dynamiclibname sonicawe)
   ) >& ${logdir}/${build_logname}.log || ret=$?
 
   if (( 0 != ret )); then
@@ -195,7 +203,7 @@ for configname in $configurations; do
       ) || (
 	    exitcode=$?
         echo "==============================================================================="
-		if (( 143 == exitcode )); then
+		if (( 143 == exitcode || 134 == exitcode )); then
           echo "$(timestamp): Test '$testname' failed due to time out after ${timeout} seconds and was killed prior to normal exit."
 		else
           echo "$(timestamp): Test '$testname' failed with exit code $exitcode."

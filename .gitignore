@@ -43,3 +43,4 @@ project_header.h.cpp
 *setup.exe
 image_works
 *.nsi.backup
+*.dylib
