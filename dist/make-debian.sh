@@ -53,5 +53,3 @@ filename="${packagename}_${versiontag}_$(uname -m).deb"
 echo "Creating debian archive: $filename version ${version}"
 cd sonicawe/dist
 fakeroot ./package-debian.sh ${versiontag} ${version} ${packagename}
-
-passiveftp=passive
