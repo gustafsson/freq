@@ -103,7 +103,6 @@ void DeleteSelection::
             ui->actionPeakSelection->trigger();
 
             QTestEventList tel;
-            tel.addMouseClick(Qt::LeftButton, 0, QPoint(636, 177), 100);
 #ifdef _MSC_VER
     #ifdef USE_CUDA
             tel.addMouseMove(QPoint(661, 202), 100);
@@ -122,11 +121,11 @@ void DeleteSelection::
     #endif
 #else
     #ifdef USE_CUDA
-            tel.addMouseMove(QPoint(940, 319), 100);
-            tel.addMouseClick(Qt::LeftButton, 0, QPoint(940, 319), 100);
+            tel.addMouseMove(QPoint(671, 214), 100);
+            tel.addMouseClick(Qt::LeftButton, 0, QPoint(671, 214), 100);
     #else
-            tel.addMouseMove(QPoint(621, 187), 100);
-            tel.addMouseClick(Qt::LeftButton, 0, QPoint(621, 187), 100);
+            tel.addMouseMove(QPoint(661, 234), 100);
+            tel.addMouseClick(Qt::LeftButton, 0, QPoint(661, 234), 100);
     #endif
 #endif
             tel.simulate(glwidget);
