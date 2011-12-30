@@ -253,3 +253,6 @@ echo -e $failed
 echo
 echo "Test run timestamp: $testtimestamp"
 echo "Test finished at:   $(formatedtimestamp)"
+
+# exit with a successfull return code if failed is empty
+[ -z "$failed" ]
