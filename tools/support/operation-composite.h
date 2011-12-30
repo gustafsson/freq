@@ -76,7 +76,6 @@ protected:
 
     friend class boost::serialization::access;
     OperationSubOperations():Operation(Signal::pOperation()) {} // only used by deserialization
-
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
@@ -86,6 +85,32 @@ protected:
            & BOOST_SERIALIZATION_NVP(source_sub_operation_)
            & BOOST_SERIALIZATION_NVP(name_);
     }
+
+
+};
+
+class DummyOperation: public Signal::Operation
+{
+public:
+    DummyOperation(Signal::pOperation o):
+            Operation(o)
+    {}
+
+    virtual Signal::Intervals affected_samples()
+    {
+        return Signal::Intervals();
+    }
+private:
+
+    friend class boost::serialization::access;
+    DummyOperation():Operation(Signal::pOperation()) {} // only used by deserialization
+
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
+
 };
 
 
