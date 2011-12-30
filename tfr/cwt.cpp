@@ -102,7 +102,7 @@ pTransform Cwt::
 
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
-{    
+{
 #ifdef USE_CUDA
     try {
 #endif

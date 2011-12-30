@@ -127,10 +127,16 @@ std::string Audiofile::
   */
 Audiofile::
         Audiofile(std::string filename)
+        :
+        Signal::OperationCache(Signal::pOperation()),
+        _tried_load(false),
+        _sample_rate(0),
+        _number_of_samples(0)
 {
     _original_relative_filename = filename;
-    load(filename);
-    rawdata = getRawFileData(filename);
+    _original_absolute_filename = QFileInfo(filename.c_str()).absoluteFilePath().toStdString();
+
+    file.reset(new QFile(_original_absolute_filename.c_str()));
 }
 
 
@@ -144,60 +150,161 @@ std::string Audiofile::
 }
 
 
-void Audiofile::
-        load(std::string filename )
+Signal::IntervalType Audiofile::
+        number_of_samples()
 {
-    TaskTimer tt("Loading '%s' (this=%p)", filename.c_str(), this);
+    tryload();
 
-    SndfileHandle source(filename);
+    return _number_of_samples;
+}
 
-    if (0==source || 0 == source.frames()) {
-        stringstream ss;
 
-        ss << "Couldn't open '" << filename << "'" << endl
-           << endl
-           << "Supported audio file formats through Sndfile:" << endl
-           << getSupportedFileFormats();
+unsigned Audiofile::
+        num_channels()
+{
+    if ( !tryload() )
+        return Signal::OperationCache::num_channels();
 
-        throw std::ios_base::failure(ss.str());
+    return sndfile->channels();
+}
+
+
+float Audiofile::
+        sample_rate()
+{
+    tryload();
+
+    return _sample_rate;;
+}
+
+
+std::string Audiofile::
+        filename() const
+{
+    return _original_relative_filename;
+}
+
+
+Audiofile:: // for deserialization
+        Audiofile()
+            :
+            Signal::OperationCache(Signal::pOperation()),
+            file(new QTemporaryFile()),
+            _tried_load(false),
+            _sample_rate(0),
+            _number_of_samples(0)
+{}
+
+
+bool Audiofile::
+        tryload()
+{
+    if (!sndfile)
+    {
+        if (_tried_load)
+            return false;
+
+        _tried_load = true;
+
+        sndfile.reset( new SndfileHandle(file->fileName().toStdString()));
+
+        if (0==*sndfile || 0 == sndfile->frames())
+        {
+            sndfile.reset();
+
+            stringstream ss;
+
+            ss << "Couldn't open '" << file->fileName().toStdString() << "'" << endl
+               << endl
+               << "Supported audio file formats through Sndfile:" << endl
+               << getSupportedFileFormats();
+
+            throw std::ios_base::failure(ss.str());
+        }
+
+        _sample_rate = sndfile->samplerate();
+        _number_of_samples = sndfile->frames();
+
+        invalidate_samples( getInterval() );
     }
 
-    DataStorage<float> completeFile(DataStorageSize( source.channels(), source.frames(), 1));
-    source.read(completeFile.getCpuMemory(), source.channels()*source.frames()); // yes float
-    float* data = completeFile.getCpuMemory();
+    return true;
+}
 
-	Signal::pBuffer waveform( new Signal::Buffer(0, source.frames(), source.samplerate(), source.channels()));
+
+Signal::pBuffer Audiofile::
+        readRaw( const Signal::Interval& J )
+
+{
+    if (!tryload())
+    {
+        TaskInfo("Loading '%s' failed (this=%p), requested %s",
+                     filename().c_str(), this, J.toString().c_str());
+
+        return zeros( J );
+    }
+
+    Signal::Interval I = J;
+    Signal::IntervalType maxReadLength = 1<<18;
+    if (I.count() > maxReadLength)
+        I.last = I.first + maxReadLength;
+
+    if (I.last > number_of_samples())
+        I.last = number_of_samples();
+
+    if (!I.valid())
+    {
+        TaskInfo("Couldn't load %s from '%s', getInterval is %s (this=%p)",
+                     J.toString().c_str(), filename().c_str(), getInterval().toString().c_str(), this);
+        return zeros( J );
+    }
+
+    TaskTimer tt("Loading %s from '%s' (this=%p)",
+                 J.toString().c_str(), filename().c_str(), this);
+
+    DataStorage<float> partialfile(DataStorageSize( num_channels(), I.count(), 1));
+    sndfile->seek(I.first, SEEK_SET);
+    sf_count_t readframes = sndfile->read(partialfile.getCpuMemory(), num_channels()*I.count()); // yes float
+    if ((sf_count_t)I.count() > readframes)
+        I.last = I.first + readframes;
+
+    float* data = partialfile.getCpuMemory();
+
+    Signal::pBuffer waveform( new Signal::Buffer(I.first, I.count(), sample_rate(), num_channels()));
     float* target = waveform->waveform_data()->getCpuMemory();
 
     // Compute transpose of signal
-    for (unsigned i=0; i<source.frames(); i++) {
-        for (int c=0; c<source.channels(); c++) {
-            target[i + c*source.frames()] = data[i*source.channels() + c];
+    unsigned C = waveform->channels();
+    for (unsigned i=0; i<I.count(); i++) {
+        for (unsigned c=0; c<C; c++) {
+            target[i + c*I.count()] = data[i*C + c];
         }
     }
 
-	setBuffer( waveform );
-
-    //_waveform = getChunk( 0, number_of_samples(), 0, Waveform_chunk::Only_Real );
-    //Statistics<float> waveform( _waveform->waveform_data.get() );
-
-    tt << "Signal length: " << lengthLongFormat();
+    tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
 
     tt.flushStream();
 
-    tt.info("Data size: %lu samples, %lu channels", (size_t)source.frames(), (size_t)source.channels() );
-    tt.info("Sample rate: %lu samples/second", source.samplerate() );
+    tt.info("Data size: %lu samples, %lu channels", (size_t)sndfile->frames(), (size_t)sndfile->channels() );
+    tt.info("Sample rate: %lu samples/second", sndfile->samplerate() );
+
+    if ((invalid_samples() - I).empty())
+    {
+        // Don't need this anymore
+        sndfile.reset();
+    }
+
+    return waveform;
 }
 
 
 std::vector<char> Audiofile::
-        getRawFileData(std::string filename)
+        getRawFileData()
 {
-    QFile f(QString::fromLocal8Bit( filename.c_str() ));
-    if (!f.open(QIODevice::ReadOnly))
-        throw std::ios_base::failure("Couldn't get raw data from " + filename);
+    if (!file->open(QIODevice::ReadOnly))
+        throw std::ios_base::failure("Couldn't get raw data from " + file->fileName().toStdString() + " (original name '" + filename() + "')");
 
-    QByteArray bytes = f.readAll();
+    QByteArray bytes = file->readAll();
     std::vector<char>rawFileData;
     rawFileData.resize( bytes.size() );
     memcpy(&rawFileData[0], bytes.constData(), bytes.size());
@@ -211,15 +318,12 @@ void Audiofile::
 {
     TaskInfo ti("Audiofile::load(rawFile)");
 
-    QTemporaryFile file;
-    if (!file.open())
-        throw std::ios_base::failure("Couldn't create raw data");
+    // file is a QTemporaryFile during deserialization
+    if (!file->open(QIODevice::WriteOnly))
+        throw std::ios_base::failure("Couldn't create raw data in " + file->fileName().toStdString() + " (original name '" + filename() + "')");
 
-    std::string filename = file.fileName().toStdString();
-    file.write(QByteArray::fromRawData(&rawFileData[0], rawFileData.size()));
-    file.close();
-
-    load(filename);
+    file->write(QByteArray::fromRawData(&rawFileData[0], rawFileData.size()));
+    file->close();
 }
 
 } // namespace Adapters

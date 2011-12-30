@@ -230,7 +230,7 @@
    available cpu memory.
 */
 
-#include "signal/buffersource.h"
+#include "signal/operationcache.h"
 #include "sawe/reader.h"
 
 // boost
@@ -252,12 +252,16 @@ typedef unsigned __int32 uint32_t;
 
 // Qt
 #include <QByteArray>
+#include <QFile>
+
+
+class SndfileHandle;
 
 
 namespace Adapters
 {
 
-class Audiofile: public Signal::BufferSource
+class Audiofile: public Signal::OperationCache
 {
 private:
     template<class Archive>
@@ -322,16 +326,26 @@ public:
     Audiofile(std::string filename);
 
     virtual std::string name();
-    std::string filename() const { return _original_relative_filename; }
+    virtual Signal::IntervalType number_of_samples();
+    virtual unsigned num_channels();
+    virtual float sample_rate();
+    std::string filename() const;
 
 private:
-	Audiofile() {} // for deserialization
-    void load(std::string filename );
+    Audiofile();
+    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
+    bool tryload();
+
+    boost::shared_ptr<QFile> file; // for serialization
+    boost::shared_ptr<SndfileHandle> sndfile;
 
     std::string _original_relative_filename;
+    std::string _original_absolute_filename;
+    bool _tried_load;
+    float _sample_rate;
+    Signal::IntervalType _number_of_samples;
 
-    std::vector<char> rawdata;
-    static std::vector<char> getRawFileData(std::string filename);
+    std::vector<char> getRawFileData();
     void load(std::vector<char> rawFileData);
 
     friend class boost::serialization::access;
@@ -341,6 +355,10 @@ private:
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
 
         ar & make_nvp("Original_filename", _original_relative_filename);
+
+        std::vector<char> rawdata;
+        if (typename archive::is_saving())
+            rawdata = getRawFileData();
 
         if (version <= 0)
         {
@@ -366,16 +384,17 @@ private:
             load( rawdata );
 
         uint64_t X = 0;
-        for (unsigned c=0; c<_waveforms.size(); ++c)
-        {
-            unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly<1>(_waveforms[c]->waveform_data()).ptr();
-            unsigned N = _waveforms[c]->waveform_data()->numberOfBytes();
+        Signal::Interval i = getInterval();
+        if (version >= 2)
+            i.last = std::min(i.last, (Signal::IntervalType)(1<<20));
 
-            for (unsigned i=0; i<N; ++i)
-            {
-                X = *p*X + *p;
-                ++p;
-            }
+        Signal::pBuffer b = readFixedLengthAllChannels( i );
+        unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly<1>(b->waveform_data()).ptr();
+        size_t N = b->waveform_data()->numberOfBytes();
+        for (size_t i=0; i<N; ++i)
+        {
+            X = *p*X + *p;
+            ++p;
         }
 
         const uint32_t checksum = (uint32_t)X;
@@ -393,6 +412,6 @@ private:
 
 } // namespace Adapters
 
-BOOST_CLASS_VERSION(Adapters::Audiofile, 1)
+BOOST_CLASS_VERSION(Adapters::Audiofile, 2)
 
 #endif // ADAPTERS_AUDIOFILE_H
