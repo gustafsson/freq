@@ -184,19 +184,19 @@ for configname in $configurations; do
       echo $now &&
       pwd &&
       rm -f Makefile &&
-      rm -f $outputdir/$testname &&
-	  echo qmake $qmakeargs CONFIG+=${configname} &&
+      rm -f "$outputdir/$testname" &&
+      echo qmake $qmakeargs CONFIG+=${configname} &&
       qmake $qmakeargs CONFIG+=${configname} &&
       eval echo $makeonecmd &&
       eval time $makeonecmd &&
+      testcommand=$([ -f "$testname.sh" ] && echo $testname.sh || echo $outputdir/$testname) &&
+
       (
-        [ -f $testname.sh ] && ./$testname.sh
-      ) || (
         echo "===============================================================================" &&
-        echo "$(timestamp): Running '$testname', config: ${configname}, timeout: ${timeout} s." &&
+        echo "$(timestamp): Running '$testcommand', config: ${configname}, timeout: ${timeout} s." &&
         echo "===============================================================================" &&
-        ls -l $outputdir/$testname &&
-        time ${startdir}/timeout3.sh -t ${timeout} $outputdir/$testname &&
+        ls -l "$testcommand" &&
+        time ${startdir}/timeout3.sh -t ${timeout} "$testcommand" &&
         echo "===============================================================================" &&
         echo "$(timestamp): Test '$testname' succeeded." &&
         echo "==============================================================================="
