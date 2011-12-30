@@ -44,7 +44,7 @@ void SaweTestClass::
 void SaweTestClass::
         exec()
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     Sawe::Application::global_ptr()->exec();
 }
@@ -80,7 +80,7 @@ void SaweTestClass::
 
     project_is_opened_ = true;
 
-    TaskTimer tt("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer tt("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     if (project_.expired())
     {
@@ -111,7 +111,7 @@ void SaweTestClass::
 void SaweTestClass::
         renderViewFinishedWorkSection()
 {
-    TaskTimer tt("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer tt("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     if (project_.expired())
     {

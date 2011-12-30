@@ -15,7 +15,7 @@ CallSlotEvent::
 void CallSlotEvent::
         simulate(QWidget *)
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     QTimer::singleShot(1, receiver, slotname);
 }
@@ -24,7 +24,7 @@ void CallSlotEvent::
 QTestEvent *CallSlotEvent::
         clone() const
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     return new CallSlotEvent(receiver, slotname);
 }

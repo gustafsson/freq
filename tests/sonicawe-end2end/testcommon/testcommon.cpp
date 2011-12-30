@@ -46,7 +46,7 @@ TestCommon::
 void TestCommon::
         saweTestClassTest()
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     project( Sawe::Application::global_ptr()->slotNew_recording( -1 ) );
 
@@ -65,7 +65,7 @@ void TestCommon::
 void TestCommon::
         projectOpened()
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     SaweTestClass::projectOpened();
 
@@ -90,7 +90,7 @@ void TestCommon::
 void TestCommon::
         compareImagesTestResult()
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     compare.verifyResult();
 }
@@ -115,7 +115,7 @@ void TestCommon::
 void TestCommon::
         hasCalledSlotTestSlot()
 {
-    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
     has_called_slot_ = true;
 
