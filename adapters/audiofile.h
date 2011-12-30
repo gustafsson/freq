@@ -336,7 +336,7 @@ private:
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     bool tryload();
 
-    boost::shared_ptr<QFile> file; // for serialization
+    boost::shared_ptr<QFile> file;
     boost::shared_ptr<SndfileHandle> sndfile;
 
     std::string _original_relative_filename;
@@ -345,8 +345,8 @@ private:
     float _sample_rate;
     Signal::IntervalType _number_of_samples;
 
-    std::vector<char> getRawFileData();
-    void load(std::vector<char> rawFileData);
+    std::vector<char> getRawFileData(unsigned i, unsigned bytes_per_chunk);
+    void appendToTempfile(std::vector<char> rawFileData, unsigned i, unsigned bytes_per_chunk);
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int version) {
@@ -356,32 +356,42 @@ private:
 
         ar & make_nvp("Original_filename", _original_relative_filename);
 
-        std::vector<char> rawdata;
-        if (typename archive::is_saving())
-            rawdata = getRawFileData();
+        unsigned bytes_per_chunk = 1<<18;
 
-        if (version <= 0)
+        for (unsigned i=0; true; ++i)
         {
-            typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
-                BOOST_DEDUCED_TYPENAME archive::is_saving,
-                boost::mpl::identity<save_binary_type<archive> >,
-                boost::mpl::identity<load_binary_type<archive> >
-            >::type typex;
-            typex::invoke(ar, rawdata);
-        }
-        else
-        {
-            typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
-                BOOST_DEDUCED_TYPENAME archive::is_saving,
-                boost::mpl::identity<compress_binary_type<archive> >,
-                boost::mpl::identity<uncompress_binary_type<archive> >
-            >::type typex;
-            typex::invoke(ar, rawdata);
-        }
-        //ar & make_nvp("Rawdata", rawdata);
+            std::vector<char> rawdata;
+            if (typename archive::is_saving())
+                rawdata = getRawFileData(i, bytes_per_chunk);
 
-        if (typename archive::is_loading())
-            load( rawdata );
+            if (version <= 0)
+            {
+                typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
+                    BOOST_DEDUCED_TYPENAME archive::is_saving,
+                    boost::mpl::identity<save_binary_type<archive> >,
+                    boost::mpl::identity<load_binary_type<archive> >
+                >::type typex;
+                typex::invoke(ar, rawdata);
+            }
+            else
+            {
+                typedef BOOST_DEDUCED_TYPENAME boost::mpl::eval_if<
+                    BOOST_DEDUCED_TYPENAME archive::is_saving,
+                    boost::mpl::identity<compress_binary_type<archive> >,
+                    boost::mpl::identity<uncompress_binary_type<archive> >
+                >::type typex;
+                typex::invoke(ar, rawdata);
+            }
+
+            if (typename archive::is_loading())
+                appendToTempfile( rawdata, i, bytes_per_chunk );
+
+            if (rawdata.empty())
+                break;
+
+            if (version < 3)
+                break;
+        }
 
         uint64_t X = 0;
         Signal::Interval i = getInterval();
@@ -412,6 +422,6 @@ private:
 
 } // namespace Adapters
 
-BOOST_CLASS_VERSION(Adapters::Audiofile, 2)
+BOOST_CLASS_VERSION(Adapters::Audiofile, 3)
 
 #endif // ADAPTERS_AUDIOFILE_H

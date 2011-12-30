@@ -299,13 +299,20 @@ Signal::pBuffer Audiofile::
 
 
 std::vector<char> Audiofile::
-        getRawFileData()
+        getRawFileData(unsigned i, unsigned bytes_per_chunk)
 {
     if (!file->open(QIODevice::ReadOnly))
         throw std::ios_base::failure("Couldn't get raw data from " + file->fileName().toStdString() + " (original name '" + filename() + "')");
 
-    QByteArray bytes = file->readAll();
-    std::vector<char>rawFileData;
+    std::vector<char> rawFileData;
+
+    if (bytes_per_chunk*i >= file->size())
+        return rawFileData;
+
+    file->seek(bytes_per_chunk*i);
+    QByteArray bytes = file->read(bytes_per_chunk);
+    file->close();
+
     rawFileData.resize( bytes.size() );
     memcpy(&rawFileData[0], bytes.constData(), bytes.size());
 
@@ -314,14 +321,18 @@ std::vector<char> Audiofile::
 
 
 void Audiofile::
-        load( std::vector<char>rawFileData)
+        appendToTempfile( std::vector<char> rawFileData, unsigned i, unsigned bytes_per_chunk)
 {
-    TaskInfo ti("Audiofile::load(rawFile)");
+    TaskInfo ti("Audiofile::appendToTempfile(%u bytes at %u=%u*%u)", (unsigned)rawFileData.size(), i*bytes_per_chunk, i, bytes_per_chunk);
+
+    if (rawFileData.empty())
+        return;
 
     // file is a QTemporaryFile during deserialization
     if (!file->open(QIODevice::WriteOnly))
         throw std::ios_base::failure("Couldn't create raw data in " + file->fileName().toStdString() + " (original name '" + filename() + "')");
 
+    file->seek(i*bytes_per_chunk);
     file->write(QByteArray::fromRawData(&rawFileData[0], rawFileData.size()));
     file->close();
 }
