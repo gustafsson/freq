@@ -189,7 +189,7 @@ for configname in $configurations; do
       qmake $qmakeargs CONFIG+=${configname} &&
       eval echo $makeonecmd &&
       eval time $makeonecmd &&
-      testcommand=$([ -f "$testname.sh" ] && echo $testname.sh || echo $outputdir/$testname) &&
+      testcommand=$([ -f "$testname.sh" ] && echo ./$testname.sh || echo $outputdir/$testname) &&
 
       (
         echo "===============================================================================" &&
