@@ -87,7 +87,7 @@ void OpenAudio::
     if (0!=workSectionCounter)
         return;
 
-    QTimer::singleShot(0, this, SLOT(saveImage()));
+    QTimer::singleShot(1, this, SLOT(saveImage()));
 }
 
 

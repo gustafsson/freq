@@ -1,4 +1,6 @@
 #include "callslotevent.h"
+#include "TaskTimer.h"
+#include "demangle.h"
 
 #include <QTimer>
 
@@ -13,11 +15,16 @@ CallSlotEvent::
 void CallSlotEvent::
         simulate(QWidget *)
 {
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
     QTimer::singleShot(1, receiver, slotname);
 }
+
 
 QTestEvent *CallSlotEvent::
         clone() const
 {
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
     return new CallSlotEvent(receiver, slotname);
 }

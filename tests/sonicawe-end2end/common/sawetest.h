@@ -92,7 +92,10 @@ private:
     /// @see finishedWorkSection
     int work_sections_;
 
-protected slots:
+    /// @see projectOpened
+    bool project_is_opened_;
+
+protected slots: // not private because that would make them execute as test cases by QTest::qExec
     /// @see projectOpened
     void postPaint();
 

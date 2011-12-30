@@ -67,6 +67,8 @@ void OpenGui::
         projectOpened()
 {
     SaweTestClass::projectOpened();
+
+    QTimer::singleShot(1, this, SLOT(saveImage()));
 }
 
 
@@ -75,8 +77,6 @@ void OpenGui::
 {
     if (0!=workSectionCounter)
         return;
-
-    QTimer::singleShot(0, this, SLOT(saveImage()));
 }
 
 

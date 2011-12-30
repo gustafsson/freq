@@ -46,30 +46,37 @@ TestCommon::
 void TestCommon::
         saweTestClassTest()
 {
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
     project( Sawe::Application::global_ptr()->slotNew_recording( -1 ) );
 
     exec();
 
     QVERIFY( project_was_opened_ );
-    QVERIFY( has_done_work_ );
     QVERIFY( has_called_slot_ );
+#ifdef __APPLE__
+    QVERIFY( !has_done_work_ );
+#else
+    QVERIFY( has_done_work_ );
+#endif
 }
 
 
 void TestCommon::
         projectOpened()
 {
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
+    SaweTestClass::projectOpened();
+
     project_was_opened_ = true;
 
-    compare.saveImage( project() );
-
     QWidget* glwidget = project()->tools().render_view()->glwidget;
-
     QTestEventList tel;
     tel.push_back( new CallSlotEvent(this, SLOT(hasCalledSlotTestSlot())) );
     tel.simulate(glwidget);
 
-    SaweTestClass::projectOpened();
+    compare.saveImage( project() );
 }
 
 
@@ -83,6 +90,8 @@ void TestCommon::
 void TestCommon::
         compareImagesTestResult()
 {
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
     compare.verifyResult();
 }
 
@@ -106,6 +115,8 @@ void TestCommon::
 void TestCommon::
         hasCalledSlotTestSlot()
 {
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
     has_called_slot_ = true;
 
     Sawe::Application::global_ptr()->slotClosed_window( project()->mainWindowWidget() );

@@ -94,6 +94,9 @@ void DeleteSelection::
     case 0:
         {
             Ui::SaweMainWindow* main = project()->mainWindow();
+            main->activateWindow();
+            main->raise();
+
             Ui::MainWindow* ui = main->getItems();
             QWidget* glwidget = project()->tools().render_view()->glwidget;
 
@@ -101,18 +104,7 @@ void DeleteSelection::
 
             QTestEventList tel;
             tel.addMouseClick(Qt::LeftButton, 0, QPoint(636, 177), 100);
-//            tel.addMousePress(Qt::LeftButton, 0, QPoint(636, 176), 100);
-//            tel.addMouseMove(QPoint(636, 177), 100);
-//            tel.addMouseRelease(Qt::LeftButton, 0, QPoint(636, 178), 100);
-#ifndef _MSC_VER
-    #ifdef USE_CUDA
-            tel.addMouseMove(QPoint(940, 319), 100);
-            tel.addMouseClick(Qt::LeftButton, 0, QPoint(940, 319), 100);
-    #else
-            tel.addMouseMove(QPoint(621, 187), 100);
-            tel.addMouseClick(Qt::LeftButton, 0, QPoint(621, 187), 100);
-    #endif
-#else
+#ifdef _MSC_VER
     #ifdef USE_CUDA
             tel.addMouseMove(QPoint(661, 202), 100);
             tel.addMouseClick(Qt::LeftButton, 0, QPoint(661, 202), 100);
@@ -120,19 +112,26 @@ void DeleteSelection::
             tel.addMouseMove(QPoint(650, 219), 100);
             tel.addMouseClick(Qt::LeftButton, 0, QPoint(650, 219), 100);
     #endif
+#elif defined(__APPLE__)
+    #ifdef USE_CUDA
+            tel.addMouseMove(QPoint(657, 205), 100);
+            tel.addMouseClick(Qt::LeftButton, 0, QPoint(657-2, 205-3), 100);
+    #else
+            tel.addMouseMove(QPoint(604, 237), 100);
+            tel.addMouseClick(Qt::LeftButton, 0, QPoint(650, 219), 100);
+    #endif
+#else
+    #ifdef USE_CUDA
+            tel.addMouseMove(QPoint(940, 319), 100);
+            tel.addMouseClick(Qt::LeftButton, 0, QPoint(940, 319), 100);
+    #else
+            tel.addMouseMove(QPoint(621, 187), 100);
+            tel.addMouseClick(Qt::LeftButton, 0, QPoint(621, 187), 100);
+    #endif
 #endif
             tel.simulate(glwidget);
 
-//            QTestMouseEvent(QTest::MousePress, Qt::LeftButton, 0, QPoint(940, 318), 100).simulate(glwidget);
-//            QTestMouseEvent(QTest::MouseMove, Qt::LeftButton, 0, QPoint(940, 319), 100).simulate(glwidget);
-//            QTestMouseEvent(QTest::MouseRelease, Qt::LeftButton, 0, QPoint(940, 320), 100).simulate(glwidget);
-//            QTestMouseEvent(QTest::MouseClick, Qt::LeftButton, 0, QPoint(940, 319), 100).simulate(glwidget);
-
             ui->actionActionRemove_selection->trigger();
-
-            QTestMouseEvent(QTest::MouseMove, Qt::NoButton, 0, QPoint(440, 150), 100).simulate(glwidget);
-            QTestMouseEvent(QTest::MouseClick, Qt::LeftButton, 0, QPoint(440, 150), 100).simulate(glwidget);
-            ui->actionActivateNavigation->trigger();
 
             break;
         }

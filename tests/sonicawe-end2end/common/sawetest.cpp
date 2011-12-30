@@ -7,10 +7,10 @@
 #include "ui_mainwindow.h"
 #include "TaskTimer.h"
 
-
 SaweTestClass::
         SaweTestClass()
-            : work_sections_( 0 )
+            : work_sections_( 0 ),
+              project_is_opened_( false )
 {}
 
 
@@ -36,15 +36,16 @@ void SaweTestClass::
 
     project_ = p;
 
-    connect( p->tools().render_view(), SIGNAL(postPaint()), this, SLOT(postPaint()));
-    connect( p->tools().render_view(), SIGNAL(finishedWorkSection()), this, SLOT(renderViewFinishedWorkSection()));
+    connect( p->tools().render_view(), SIGNAL(postPaint()), this, SLOT(postPaint()), Qt::QueuedConnection);
+    connect( p->tools().render_view(), SIGNAL(finishedWorkSection()), this, SLOT(renderViewFinishedWorkSection()), Qt::QueuedConnection);
 }
 
 
 void SaweTestClass::
         exec()
 {
-    TaskTimer ti("%s exec", vartype(*this).c_str());
+    TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
     Sawe::Application::global_ptr()->exec();
 }
 
@@ -74,8 +75,26 @@ void SaweTestClass::
 void SaweTestClass::
         postPaint()
 {
-    TaskTimer tt("SaweTestClass::postPaint");
-    disconnect( sender(), SIGNAL(postPaint()), this, SLOT(postPaint()));
+    if (project_is_opened_)
+        return;
+
+    project_is_opened_ = true;
+
+    TaskTimer tt("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
+    if (project_.expired())
+    {
+        TaskInfo("%s::%s: project_ has expired", vartype(*this).c_str(), __FUNCTION__);
+        return;
+    }
+    Sawe::pProject p = project();
+    if (!p)
+    {
+        TaskInfo("%s::%s: project() was null", vartype(*this).c_str(), __FUNCTION__);
+        return;
+    }
+
+    disconnect( p->tools().render_view(), SIGNAL(postPaint()), this, SLOT(postPaint()));
 
     projectOpened();
 }
@@ -92,5 +111,19 @@ void SaweTestClass::
 void SaweTestClass::
         renderViewFinishedWorkSection()
 {
+    TaskTimer tt("%s::%s", vartype(*this).c_str(), __FUNCTION__);
+
+    if (project_.expired())
+    {
+        TaskInfo("%s::%s: project_ has expired", vartype(*this).c_str(), __FUNCTION__);
+        return;
+    }
+    Sawe::pProject p = project();
+    if (!p)
+    {
+        TaskInfo("%s::%s: project() was null", vartype(*this).c_str(), __FUNCTION__);
+        return;
+    }
+
     finishedWorkSection(work_sections_++);
 }
