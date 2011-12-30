@@ -10,6 +10,33 @@ namespace Tools {
     namespace Support {
 
 /**
+  DummyOperation is used internally in operation-composite.cpp
+*/
+class DummyOperation: public Signal::Operation
+{
+public:
+    DummyOperation(Signal::pOperation o):
+            Operation(o)
+    {}
+
+    virtual Signal::Intervals affected_samples()
+    {
+        return Signal::Intervals();
+    }
+
+private:
+    friend class boost::serialization::access;
+    DummyOperation():Operation(Signal::pOperation()) {} // only used by deserialization
+
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+    }
+};
+
+
+/**
   OperationSubOperations is used by complex Operations that are built
   by combining sequences of several other Operations.
 

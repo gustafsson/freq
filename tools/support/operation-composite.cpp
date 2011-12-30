@@ -10,19 +10,6 @@ using namespace Signal;
 namespace Tools {
     namespace Support {
 
-class DummyOperation: public Signal::Operation
-{
-public:
-    DummyOperation(Signal::pOperation o):
-            Operation(o)
-    {}
-
-    virtual Signal::Intervals affected_samples()
-    {
-        return Signal::Intervals();
-    }
-};
-
     // OperationSubOperations  /////////////////////////////////////////////////////////////////
 
 OperationSubOperations::
