@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include <QSysInfo>
+#include <QString>
 
 #ifdef Q_OS_LINUX
 #include <QProcess>
@@ -207,7 +208,7 @@ string Configuration::
     case QSysInfo::WV_2003: return "Windows Server 2003 (or in the same family)";
     case QSysInfo::WV_VISTA: return "Windows Vista";
     case QSysInfo::WV_WINDOWS7: return "Windows 7";
-    default: return "unrecognized Windows version";
+    default: return QString("unrecognized Windows version (%1)").arg(QSysInfo::WindowsVersion).toStdString();
     }
 #endif
 #ifdef Q_OS_MAC
@@ -222,7 +223,7 @@ string Configuration::
     case QSysInfo::MV_10_4: return "Mac OS X 10.4 (Tiger)";
     case QSysInfo::MV_10_5: return "Mac OS X 10.5 (Leopard)";
     case QSysInfo::MV_10_6: return "Mac OS X 10.6 (Snow Leopard)";
-    default: return "unrecognized Mac OS X version";
+    default: return QString("unrecognized Mac OS X version (%1)").arg(QSysInfo::MacintoshVersion).toStdString();
     }
 #endif
 #ifdef Q_OS_LINUX
