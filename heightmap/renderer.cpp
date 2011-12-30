@@ -68,7 +68,18 @@ Renderer::Renderer( Collection* collection )
     _mesh_fraction_height(1),
     _initialized(NotInitialized),
     _draw_flat(false),
-    _redundancy(2.5f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
+    /*
+     reasoning about the default _redundancy value.
+     The thing about Sonic AWE is a good visualization. In this there is value
+     booth in smooth navigation and high resolution. As the navigation is fast
+     on new computers even with high resolution we set this value to give most
+     people a good first impression. For people with older computers it's
+     possible to suggest that they lower the resolution for faster navigation.
+
+     This could be done through a dropdownnotification if plain rendering
+     takes too long.
+     */
+    _redundancy(1.0f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true),
     _drawcrosseswhen0( Sawe::Configuration::version().empty() ),
     _color_texture_colors( (ColorMode)-1 )
