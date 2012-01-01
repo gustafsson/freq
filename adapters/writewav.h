@@ -1,7 +1,9 @@
 #ifndef ADAPTERS_WRITEWAV_H
 #define ADAPTERS_WRITEWAV_H
 
-#include "signal/sinksourcechannels.h"
+#include "signal/sink.h"
+
+class SndfileHandle;
 
 namespace Adapters {
 
@@ -15,7 +17,6 @@ public:
     virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
     virtual void reset();
     virtual void invalidate_samples( const Signal::Intervals& s );
-    virtual void set_channel(unsigned c);
     virtual Signal::Intervals invalid_samples();
     virtual bool deleteMe();
 
@@ -24,16 +25,23 @@ public:
 
     static void writeToDisk(std::string filename, Signal::pBuffer b, bool normalize = true);
 
-    void put( Signal::pBuffer );
-
-    static Signal::pBuffer crop(Signal::pBuffer b);
+    /// @overload Operation::read()
+    virtual Signal::pBuffer read(const Signal::Interval& I);
+    virtual void put( Signal::pBuffer );
 
 private:
-    Signal::SinkSourceChannels _data;
     std::string _filename;
     bool _normalize;
+    boost::shared_ptr<SndfileHandle> _sndfile;
 
-    void writeToDisk();
+    Signal::Intervals _invalid_samples;
+    long double _sum;
+    float _high, _low;
+    Signal::IntervalType _sumsamples;
+    Signal::IntervalType _offset;
+
+    void appendBuffer(Signal::pBuffer b);
+    void rewriteNormalized();
 };
 
 } // namespace Adapters

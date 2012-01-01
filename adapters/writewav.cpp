@@ -6,11 +6,16 @@ typedef __int64 __int64_t;
 #include <stdint.h> // defines __int64_t which is expected by sndfile.h
 #endif
 
+#include <float.h>
+
 #include <sndfile.hh> // for writing various formats
  
-#include <Statistics.h>
-
+#include "Statistics.h"
 #include "cpumemorystorage.h"
+
+#include <boost/foreach.hpp>
+
+#include <QTemporaryFile>
 
 #define TIME_WRITEWAV
 //#define TIME_WRITEWAV if(0)
@@ -19,23 +24,64 @@ namespace Adapters {
 
 WriteWav::
         WriteWav( std::string filename )
-:   _filename(filename)
+:   _filename(filename),
+    _normalize(false)
 {
     TaskInfo("WriteWav %s", _filename.c_str());
+    reset();
 }
 
 
 WriteWav::
         ~WriteWav()
 {
-    TaskInfo("~WriteWav %s", _filename.c_str());
+    TaskInfo tt("~WriteWav %s", _filename.c_str());
+    _sndfile.reset();
 }
 
 
-void WriteWav::
-        set_channel(unsigned c)
+Signal::pBuffer WriteWav::
+        read(const Signal::Interval& J)
 {
-    _data.set_channel( c );
+    BOOST_ASSERT(source());
+    BOOST_ASSERT(J.count());
+
+    if (_invalid_samples.empty())
+    {
+        TaskInfo("WriteWav(%s) didn't expect any data. You need to call invalidate_samples first to prepare WriteWav. Skips reading %s",
+                 _filename.c_str(), J.toString().c_str());
+
+        return zeros(J);
+    }
+
+    Signal::Interval I = J;
+
+    if (J - _invalid_samples)
+    {
+        Signal::Interval expected = (J & _invalid_samples).spannedInterval();
+        if (!expected)
+        {
+            TaskInfo("WriteWav(%s) didn't expect %s. Invalid samples are %s",
+                     _filename.c_str(), expected.toString().c_str(), _invalid_samples.toString().c_str());
+            return zeros(J);
+        }
+
+        I = expected;
+    }
+
+    unsigned samples_per_chunk = 1<<16;
+    if (I.count() > samples_per_chunk)
+        I.last = I.first + samples_per_chunk;
+
+    Signal::pBuffer b = source()->readAllChannels(I);
+
+    // Check if read contains I.first
+    BOOST_ASSERT(b->sample_offset <= I.first);
+    BOOST_ASSERT(b->sample_offset + b->number_of_samples() > I.first);
+
+    put(b);
+
+    return b;
 }
 
 
@@ -44,36 +90,69 @@ void WriteWav::
 {
     TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
 
-    //Statistics<float>(buffer->waveform_data());
-    _data.putExpectedSamples( buffer );
+    // Make sure that all of buffer is expected
 
-    if (!_data.invalid_samples())
-        writeToDisk();
+    if (buffer->getInterval() - _invalid_samples)
+    {
+        Signal::Interval expected = (buffer->getInterval() & _invalid_samples).spannedInterval();
+        BOOST_ASSERT( expected );
+
+        buffer = Signal::BufferSource(buffer).readFixedLength( expected );
+    }
+
+    if (!_sndfile)
+    {
+        const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+        _sndfile.reset(new SndfileHandle(_filename, SFM_WRITE, format, num_channels(), sample_rate()));
+
+        if (!*_sndfile)
+        {
+            TaskInfo("WriteWav(%s) libsndfile couldn't create a file for %u channels and sample rate %f",
+                     _filename.c_str(), num_channels(), sample_rate());
+            return;
+        }
+    }
+
+    _invalid_samples -= buffer->getInterval();
+
+    buffer->sample_offset;
+    appendBuffer(buffer);
+
+    if (!_invalid_samples)
+    {
+        _sndfile.reset();
+
+        if (_normalize)
+            rewriteNormalized();
+    }
 }
 
 
 void WriteWav::
         reset()
 {
-    if (!_data.empty())
-        writeToDisk();
-
-    _data.clear();
+    _sndfile.reset();
+    _invalid_samples.clear();
+    _sum = 0;
+    _sumsamples = 0;
+    _offset = 0;
+    _low = FLT_MAX;
+    _high = -FLT_MAX;
 }
 
 
 void WriteWav::
         invalidate_samples( const Signal::Intervals& s )
 {
-    _data.invalidate_samples( s );
-    _data.setNumChannels( num_channels() );
+    _invalid_samples |= s;
+    _offset = _invalid_samples.spannedInterval().first;
 }
 
 
 Signal::Intervals WriteWav::
         invalid_samples()
 {
-    return _data.invalid_samples(); 
+    return _invalid_samples;
 }
 
 
@@ -93,129 +172,133 @@ void WriteWav::
 
     _normalize = v;
 
-    if (!_data.invalid_samples())
-        writeToDisk();
-}
-
-
-void WriteWav::
-        writeToDisk()
-{
-    Signal::Interval i = _data.samplesDesc().spannedInterval();
-
-    BOOST_ASSERT(i.count());
-
-    TIME_WRITEWAV TaskTimer tt("Writing data %s", i.toString().c_str());
-    Signal::pBuffer b = _data.readAllChannelsFixedLength( i );
-    writeToDisk( _filename, b, _normalize );
+    if (!_invalid_samples)
+        rewriteNormalized();
 }
 
 
 void WriteWav::
         writeToDisk(std::string filename, Signal::pBuffer b, bool normalize)
 {
-    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, filename.c_str(),
+    Signal::pOperation source(new Signal::BufferSource(b));
+    WriteWav* w = 0;
+    Signal::pOperation writer(w = new WriteWav(filename));
+    writer->source( source );
+    w->normalize( normalize );
+
+    writer->invalidate_samples(b->getInterval());
+    writer->readFixedLength(b->getInterval());
+}
+
+
+void WriteWav::
+        appendBuffer(Signal::pBuffer b)
+{
+    TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, _filename.c_str(),
                                b->getInterval().toString().c_str());
 
-    const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-    //const int format=SF_FORMAT_WAV | SF_FORMAT_FLOAT;
+    BOOST_ASSERT( _sndfile );
+    BOOST_ASSERT( *_sndfile );
 
-    int C = b->waveform_data()->size().height;
-    SndfileHandle outfile(filename.c_str(), SFM_WRITE, format, C, b->sample_rate);
-
-    if (!outfile) return;
+    int C = b->channels();
 
     Signal::IntervalType Nsamples_per_channel = b->number_of_samples();
     Signal::IntervalType N = Nsamples_per_channel*C;
     float* data = CpuMemoryStorage::ReadWrite<2>( b->waveform_data() ).ptr();
 
-    if (normalize) // Normalize
-    {
-        long double mean = 0;
-        for (unsigned k=0; k<N; k++)
-            mean += data[k]/N;
-
-        float high=0, low=0;
-        long double var = 0;
-        for (unsigned k=0; k<N; k++) {
-            if (data[k]>high) high = data[k];
-            if (data[k]<low) low = data[k];
-            var += (data[k]-mean)*(data[k]-mean)/N;
-        }
-
-        if (0 == "Move DC")
-        {
-            for (unsigned k=0; k<N; k++) {
-                float v = (data[k]-low)/(high-low)*2-1;
-                if (v>1) v = 1;
-                if (v<-1) v = -1;
-                data[k] = v;
-            }
-        }
-        else
-        {
-            high = std::max( high, -low );
-
-            for (unsigned k=0; k<N; k++) {
-                float v = data[k]/high;
-                if (v>1) v = 1;
-                if (v<-1) v = -1;
-                data[k] = v;
-            }
-        }
-    }
-
     std::vector<float> interleaved_data(N);
+    long double sum = 0;
     for (Signal::IntervalType i=0; i<Nsamples_per_channel; ++i)
     {
         for (int c=0; c<C; ++c)
         {
-            interleaved_data[i*C+c] = data[i + c*Nsamples_per_channel];
+            float &v = data[i + c*Nsamples_per_channel];
+            interleaved_data[i*C + c] = v;
+            sum += v;
+            _high = std::max(_high, v);
+            _low = std::min(_low, v);
         }
     }
+    _sum += sum;
+    _sumsamples += N;
 
-    outfile.write( &interleaved_data[0], N ); // sndfile will convert float to short it
+    _sndfile->seek( b->sample_offset - _offset, SEEK_SET);
+    _sndfile->write( &interleaved_data[0], N ); // sndfile will convert float to short int
 }
 
 
-Signal::pBuffer WriteWav::
-        crop(Signal::pBuffer buffer)
+void WriteWav::
+        rewriteNormalized()
 {
-    /// Remove zeros from the beginning and end
-    //GpuCpuData<float>* waveform_data = buffer->waveform_data();
-    DataStorage<float>::Ptr waveform_data = buffer->waveform_data();
-    unsigned num_frames = waveform_data->size().width;
-    unsigned channel_count = waveform_data->size().height;
-    float *fdata = CpuMemoryStorage::ReadOnly<2>( waveform_data ).ptr();
+    _sndfile.reset();
 
-    long unsigned firstNonzero = 0;
-    long unsigned lastNonzero = 0;
+    std::string tempfilename;
+    {
+        QTemporaryFile tempname("XXXXXX.wav");
 
-    for (unsigned f=0; f<num_frames; f++)
-        for (unsigned c=0; c<channel_count; c++)
-            if (fdata[f*channel_count + c])
-                lastNonzero = f;
-            else if (firstNonzero==f)
-                firstNonzero = f+1;
+        tempname.open();
 
-    if (firstNonzero > lastNonzero)
-        return Signal::pBuffer();
+        tempfilename = tempname.fileName().toStdString();
+    }
 
-    Signal::pBuffer result(new Signal::Buffer(firstNonzero, lastNonzero-firstNonzero+1, buffer->sample_rate ));
-    float *data = result->waveform_data()->getCpuMemory();
+    bool renamestatus = QFile::rename( _filename.c_str(), tempfilename.c_str() );
 
+    TaskInfo ti("renaming '%s' to '%s': %s",
+                _filename.c_str(), tempfilename.c_str(),
+                renamestatus?"success":"failed");
+    if (!renamestatus)
+        return;
 
-    for (unsigned f=firstNonzero; f<=lastNonzero; f++)
-        for (unsigned c=0; c<channel_count; c++) {
-            float u = std::min(1.f, (f-firstNonzero)/(buffer->sample_rate*0.01f));
-            float d = std::min(1.f, (lastNonzero-f )/(buffer->sample_rate*0.01f));
-            float rampup   = 3*u*u - 2*u*u*u;
-            float rampdown = 3*d*d - 2*d*d*d;
+    SndfileHandle inputfile(tempfilename);
+    if (!inputfile || 0 == inputfile.frames())
+    {
+        TaskInfo("Couldn't read from %s", tempfilename.c_str());
+        return;
+    }
+    SndfileHandle outputfile(_filename, SFM_WRITE, inputfile.format(), inputfile.channels(), inputfile.samplerate());
+    if (!outputfile)
+    {
+        TaskInfo("Couldn't write to %s", _filename.c_str());
+        return;
+    }
 
-            data[f-firstNonzero + c*num_frames] = 0.5f*rampup*rampdown*fdata[ f + c*num_frames];
-        }
+    float mean = _sum/_sumsamples;
 
-    return result;
+    //    -1 + 2*(v - low)/(high-low);
+    //    -1 + (v - low)/std::max(_high-mean, mean-_low)
+
+    float affine_s = 1.L/std::max(_high-mean, mean-_low);
+    float affine_d = -1 - _low/std::max(_high-mean, mean-_low);
+
+    if (!_normalize)
+    {
+        // (high+low)/2 + v*(high-low)/2
+        // mean + v*(high-low)/2
+
+        affine_d = mean;
+        affine_s = (_high-_low)/2.f;
+    }
+
+    sf_count_t frames = inputfile.frames();
+    TaskInfo ti2("rewriting %u frames", (unsigned)frames);
+    size_t frames_per_buffer = 1 << 18;
+    std::vector<float> buffer(num_channels() * frames_per_buffer);
+    float* p = &buffer[0];
+
+    while (true)
+    {
+        sf_count_t items_read = inputfile.read(p, buffer.size());
+        if (0 == items_read)
+            break;
+
+        for (int x=0; x<items_read; ++x)
+            p[x] = affine_d + affine_s*p[x];
+
+        outputfile.write(p, items_read );
+    }
+
+    QFile::remove(tempfilename.c_str());
 }
+
 
 } // namespace Adapters

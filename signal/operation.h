@@ -51,6 +51,7 @@ public:
       Merges num_channels() calls to readFixedLength.
       */
     virtual pBuffer readFixedLengthAllChannels( const Interval& I );
+    virtual pBuffer readAllChannels( const Interval& I );
 
     /**
       sample_rate is invalid to call if _source is null.
