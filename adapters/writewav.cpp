@@ -69,7 +69,7 @@ Signal::pBuffer WriteWav::
         I = expected;
     }
 
-    unsigned samples_per_chunk = 1<<16;
+    unsigned samples_per_chunk = (4 << 20)/sizeof(float)/num_channels(); // 4 MB per chunk
     if (I.count() > samples_per_chunk)
         I.last = I.first + samples_per_chunk;
 
@@ -249,52 +249,59 @@ void WriteWav::
     if (!renamestatus)
         return;
 
-    SndfileHandle inputfile(tempfilename);
-    if (!inputfile || 0 == inputfile.frames())
+    try
     {
-        TaskInfo("Couldn't read from %s", tempfilename.c_str());
-        return;
-    }
-    SndfileHandle outputfile(_filename, SFM_WRITE, inputfile.format(), inputfile.channels(), inputfile.samplerate());
-    if (!outputfile)
-    {
-        TaskInfo("Couldn't write to %s", _filename.c_str());
-        return;
-    }
+        SndfileHandle inputfile(tempfilename);
+        if (!inputfile || 0 == inputfile.frames())
+        {
+            TaskInfo("Couldn't read from %s", tempfilename.c_str());
+            return;
+        }
+        SndfileHandle outputfile(_filename, SFM_WRITE, inputfile.format(), inputfile.channels(), inputfile.samplerate());
+        if (!outputfile)
+        {
+            TaskInfo("Couldn't write to %s", _filename.c_str());
+            return;
+        }
 
-    float mean = _sum/_sumsamples;
+        float mean = _sum/_sumsamples;
 
-    //    -1 + 2*(v - low)/(high-low);
-    //    -1 + (v - low)/std::max(_high-mean, mean-_low)
+        //    -1 + 2*(v - low)/(high-low);
+        //    -1 + (v - low)/std::max(_high-mean, mean-_low)
 
-    float affine_s = 1.L/std::max(_high-mean, mean-_low);
-    float affine_d = -1 - _low/std::max(_high-mean, mean-_low);
+        float affine_s = 1.L/std::max(_high-mean, mean-_low);
+        float affine_d = -1 - _low/std::max(_high-mean, mean-_low);
 
-    if (!_normalize)
-    {
-        // (high+low)/2 + v*(high-low)/2
-        // mean + v*(high-low)/2
+        if (!_normalize)
+        {
+            // (high+low)/2 + v*(high-low)/2
+            // mean + v*(high-low)/2
 
-        affine_d = mean;
-        affine_s = (_high-_low)/2.f;
-    }
+            affine_d = mean;
+            affine_s = (_high-_low)/2.f;
+        }
 
-    sf_count_t frames = inputfile.frames();
-    TaskInfo ti2("rewriting %u frames", (unsigned)frames);
-    size_t frames_per_buffer = 1 << 18;
-    std::vector<float> buffer(num_channels() * frames_per_buffer);
-    float* p = &buffer[0];
+        sf_count_t frames = inputfile.frames();
+        TaskInfo ti2("rewriting %u frames", (unsigned)frames);
+        size_t frames_per_buffer = (4 << 20)/sizeof(float)/num_channels(); // 4 MB buffer
+        std::vector<float> buffer(num_channels() * frames_per_buffer);
+        float* p = &buffer[0];
 
-    while (true)
-    {
-        sf_count_t items_read = inputfile.read(p, buffer.size());
-        if (0 == items_read)
-            break;
+        while (true)
+        {
+            sf_count_t items_read = inputfile.read(p, buffer.size());
+            if (0 == items_read)
+                break;
 
-        for (int x=0; x<items_read; ++x)
-            p[x] = affine_d + affine_s*p[x];
+            for (int x=0; x<items_read; ++x)
+                p[x] = affine_d + affine_s*p[x];
 
-        outputfile.write(p, items_read );
+            outputfile.write(p, items_read );
+        }
+
+    } catch (...) {
+        QFile::remove(tempfilename.c_str());
+        throw;
     }
 
     QFile::remove(tempfilename.c_str());

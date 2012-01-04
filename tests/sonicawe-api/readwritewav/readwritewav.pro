@@ -39,9 +39,27 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
+win32 {
+    QMAKE_CXXFLAGS_RELEASE += /openmp
+    QMAKE_CXXFLAGS += /MP
+    DEFINES += _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS
+    QMAKE_CXXFLAGS_DEBUG -= /Zi
+    QMAKE_CXXFLAGS_DEBUG += /ZI
+    QMAKE_LFLAGS_DEBUG += /OPT:NOICF /OPT:NOREF
+    QMAKE_LFLAGS_DEBUG += \
+        /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+        /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT and MSVCRT too, but LINK.EXE ignores them even without explicit NODEFAULTLIB
+        /NODEFAULTLIB:MSVCRT
+    QMAKE_LFLAGS_RELEASE += \
+        /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
+        /NODEFAULTLIB:LIBCMT # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
+}
+
+
 INCLUDEPATH += \
     ../../../../../sonic/gpumisc \
     ../../../../../sonic/sonicawe \
+
 	
 win32 {
     INCLUDEPATH += \

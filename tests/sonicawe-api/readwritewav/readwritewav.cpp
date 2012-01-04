@@ -57,14 +57,28 @@ void ReadWriteWav::
 void ReadWriteWav::
         readWriteWav()
 {
+    try
+    {
+    TaskTimer tt("%s", __FUNCTION__);
+    if (!QFile::exists(source.c_str()))
+    {
+        QFAIL("You need to run the script source.m to create some source data first");
+    }
+
     Signal::pOperation audiofile(new Adapters::Audiofile(source));
     {
+        TaskTimer t2("Writing audiofile '%s' while copying source '%s'",
+                 output.c_str(), source.c_str());
+
         Signal::pOperation wavwrite(new Adapters::WriteWav(output));
         wavwrite->source(audiofile);
         wavwrite->invalidate_samples(wavwrite->getInterval());
 
         wavwrite->readFixedLength(audiofile->getInterval());
     }
+
+    TaskTimer t2("Reading output '%s' and verifying against original input '%s'",
+             output.c_str(), source.c_str());
 
     Signal::pOperation audiofile2(new Adapters::Audiofile(output));
 
@@ -76,16 +90,32 @@ void ReadWriteWav::
     QCOMPARE( b->waveform_data()->numberOfBytes(), b2->waveform_data()->numberOfBytes() );
     int bufferdiff = memcmp(b->waveform_data()->getCpuMemory(), b2->waveform_data()->getCpuMemory(), b2->waveform_data()->numberOfBytes() );
     QVERIFY( 0 == bufferdiff );
+    }
+    catch (std::exception &x)
+    {
+        TaskInfo("%s, %s caught %s: %s",
+                 vartype(*this).c_str(), __FUNCTION__,
+                 vartype(x).c_str(), x.what());
+        throw;
+    }
 }
 
 
 void ReadWriteWav::
         writeNormalized()
 {
+    try
+    {
+    TaskTimer ti("ReadWriteWav::writeNormalized");
     Signal::pOperation audiofile(new Adapters::Audiofile(source));
+    if (!QFile::exists(source.c_str()))
+    {
+        QFAIL("You need to run the script source.m to create some source data first");
+    }
 
     Adapters::WriteWav* w = 0;
     Signal::pOperation wavwrite(w = new Adapters::WriteWav(normalizedOutput));
+
     wavwrite->source(audiofile);
     wavwrite->invalidate_samples(audiofile->getInterval());
     for (int i=0; i<4; ++i)
@@ -97,7 +127,19 @@ void ReadWriteWav::
         wavwrite->readFixedLength(audiofile->getInterval());
 
         Signal::pOperation normalizedAudiofile(new Adapters::Audiofile(normalizedOutput));
-        Signal::pOperation normalizedAudiofileGold(new Adapters::Audiofile(w->normalize() ? normalizedGold : source));
+        std::string goldname = w->normalize() ? normalizedGold : source;
+        Signal::pOperation normalizedAudiofileGold(new Adapters::Audiofile(goldname));
+        if (!QFile::exists(normalizedOutput.c_str()))
+        {
+            QFAIL(QString("Couldn't write '%1'")
+                  .arg(normalizedOutput.c_str()).toStdString().c_str());
+        }
+        if (!QFile::exists(goldname.c_str()))
+        {
+            QFAIL(QString("You need to validate the output of the previous test manually and rename '%1' to '%2'")
+                  .arg(normalizedOutput.c_str())
+                  .arg(goldname.c_str()).toStdString().c_str());
+        }
 
         QCOMPARE( normalizedAudiofile->getInterval(), audiofile->getInterval() );
         QCOMPARE( normalizedAudiofile->getInterval(), normalizedAudiofileGold->getInterval() );
@@ -121,6 +163,14 @@ void ReadWriteWav::
 
         if (maxdiff > 3e-4)
             QCOMPARE( maxdiff, 0.f );
+    }
+    }
+    catch (std::exception &x)
+    {
+        TaskInfo("%s, %s caught %s: %s",
+                 vartype(*this).c_str(), __FUNCTION__,
+                 vartype(x).c_str(), x.what());
+        throw;
     }
 }
 

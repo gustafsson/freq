@@ -14,7 +14,7 @@ namespace Signal {
   Otherwise, cached result from previous reads are immediately
   returned.
   */
-class OperationCache: public Operation
+class SaweDll OperationCache: public Operation
 {
 public:
     OperationCache( pOperation source );

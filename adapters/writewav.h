@@ -7,7 +7,7 @@ class SndfileHandle;
 
 namespace Adapters {
 
-class WriteWav: public Signal::Sink
+class SaweDll WriteWav: public Signal::Sink
 {
 public:
     WriteWav( std::string filename );

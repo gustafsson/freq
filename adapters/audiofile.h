@@ -261,7 +261,7 @@ class SndfileHandle;
 namespace Adapters
 {
 
-class Audiofile: public Signal::OperationCache
+class SaweDll Audiofile: public Signal::OperationCache
 {
 private:
     template<class Archive>

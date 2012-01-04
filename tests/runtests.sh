@@ -254,7 +254,7 @@ for configname in $configurations; do
   latestlog="${startdir}/logs-latest/${configname}"
   rm -rf "${latestlog}"
   mkdir -p "${latestlog}"
-  cp -r "${logdir}/" "${latestlog}"
+  cp -r "${logdir}/." "${latestlog}"
 
 done # for configname
 

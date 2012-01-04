@@ -16,6 +16,13 @@ const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Int
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
 
 Interval::
+        Interval()
+    :
+    first(0),last(0)
+{}
+
+
+Interval::
         Interval( IntervalType first, IntervalType last )
     :
     first(first), last(last)

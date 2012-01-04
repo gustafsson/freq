@@ -24,6 +24,8 @@ public:
     static const IntervalType IntervalType_MAX;
     static const Interval Interval_ALL;
 
+    Interval();
+
     /**
       Failes with assertion if first>last.
       */
@@ -52,6 +54,13 @@ public:
 };
 
 
+#pragma warning (push)
+// warning C4251: 'Signal::Intervals::base_' : class 'std::list<_Ty>' needs to
+// have dll-interface to be used by clients of class 'Signal::Intervals'
+//
+// As long as the .dll is only used internally for testing, this is not a problem.
+#pragma warning (disable:4251)
+
 /**
   Describes a bunch of discrete intervals. Always in the same sample rate as the
   signal they are referring to. So, one 'Interval' is given an including
@@ -60,7 +69,7 @@ public:
      I = [first, last)
 
   */
-class Intervals: private std::list<Interval>
+class SaweDll Intervals: private std::list<Interval>
 {
     typedef std::list<Interval> base;
 public:
@@ -123,5 +132,7 @@ Intervals  operator &  (const Interval& a, const Intervals& b);
 Intervals  operator ^  (const Interval& a, const Intervals& b);
 
 } // namespace Signal
+
+#pragma warning (pop)
 
 #endif // SAMPLESINTERVALDESCRIPTOR_H
