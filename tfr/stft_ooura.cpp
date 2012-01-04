@@ -15,27 +15,37 @@
 //extern "C" { void cdft(int, int, double *, int *, double *); }
 extern "C" { void cdft(int, int, float *, int *, float *); }
 
+const int magicNumber = 123456;
+const bool magicCheck = true;
 
 namespace Tfr {
 
 
 void Fft::
-        computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+        computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction, bool expectPrepared )
 {
     TIME_STFT TaskTimer tt("Fft Ooura");
 
-    unsigned n = input->getNumberOfElements().width;
     unsigned N = output->getNumberOfElements().width;
+    unsigned n = input->getNumberOfElements().width;
 
     BOOST_ASSERT( n == N );
 
-    if (w.size() != N/2)
+    if (w.size() != N/2 + magicCheck && !expectPrepared)
     {
-        w.resize(N/2);
-        ip.resize(2+(1<<(int)(log2f(N+0.5)-1)));
+        TIME_STFT TaskInfo("Recopmuting helper vectors for Ooura fft");
+        w.resize(N/2 + magicCheck);
+        ip.resize(2+(1<<(int)(log2f(N+0.5)-1)) + magicCheck);
         ip[0] = 0;
+
+        if (magicCheck)
+        {
+            ip.back() = magicNumber;
+            w.back() = magicNumber;
+        }
     }
 
+    BOOST_ASSERT( w.size() == N/2 + magicCheck );
 
     *output = *input;
     float* q = (float*)CpuMemoryStorage::ReadWrite<1>( output ).ptr();
@@ -43,7 +53,14 @@ void Fft::
 
     {
         TIME_STFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
-        cdft(2*N, direction, &q[0], &ip[0], &w[0]);
+        cdft(2*N, direction, &q[0], const_cast<int*>(&ip[0]), const_cast<float*>(&w[0]));
+    }
+
+
+    if (magicCheck)
+    {
+        BOOST_ASSERT( magicNumber == ip.back() );
+        BOOST_ASSERT( magicNumber == w.back() );
     }
 }
 
@@ -134,7 +151,8 @@ void Stft::
                                                                 input + i*n.width),
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
                                                                 output + i*n.width),
-                direction
+                direction,
+                true
         );
     }
 

@@ -952,7 +952,8 @@ void Stft::
             for (unsigned x=0; x<signal->size().width; ++x)
                 o[x] = 0;
 
-#pragma omp parallel for
+// TODO figure out how to parallelize this... subsequent iterations of 'w' access overlapping regions of o which might work and might fail, depending on timing issues
+//#pragma omp parallel for
             for (int w=0; w<windowCount; ++w)
             {
                 float *o = &out.ref(pos);

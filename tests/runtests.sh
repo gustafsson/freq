@@ -44,6 +44,28 @@ if [ "$1" = "--help" ]; then
   echo "ubuntu and osx. Tests without such an executable can instead"
   echo "have a script in testname/testname.sh. If neither is found the"
   echo "test fails."
+  echo
+  echo
+  echo "To run a single test with a single configurations multiple times"
+  echo "it might be more convenient to use this script only to recompile"
+  echo "and then execute the specific test directly from the test folder."
+  echo "A neat function to rerun a script 100 times is this:"
+  echo
+  echo " looptest() {"
+  echo "   time ("
+  echo "     ("
+  echo '       for i in {1..100}; do '
+  echo '         $1 > /dev/null || exit $i'
+  echo "       done"
+  echo '     ) && echo Success || echo Failed on $?'
+  echo "   ) || echo Aborted"
+  echo " }"
+  echo
+  echo "Copy-paste it to a terminal and execute it for instance as:"
+  echo
+  echo "  looptest ./release/stft.exe"
+  echo
+  echo "To run the stft test 100 times from the stft test folder."
   exit
 fi
 

@@ -70,7 +70,7 @@ private:
 
     bool _compute_redundant;
 
-    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction, bool expectPrepared=false );
     void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
     void computeWithClFft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
