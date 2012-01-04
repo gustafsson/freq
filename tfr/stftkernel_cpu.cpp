@@ -52,14 +52,17 @@ void stftToComplex(
     CpuMemoryReadOnly<float, 2> in_wt = CpuMemoryStorage::ReadOnly<2>( inwave );
     CpuMemoryWriteOnly<Tfr::ChunkElement, 2> out_wt = CpuMemoryStorage::WriteAll<2>( outwave );
 
+    int h = in_wt.numberOfElements().height,
+        w = in_wt.numberOfElements().width;
+
+    float *in = in_wt.ptr();
+    Tfr::ChunkElement *out = out_wt.ptr();
+
 #pragma omp parallel for
-    for (int y=0; y<(int)in_wt.numberOfElements().height; ++y)
+    for (int y=0; y<h; ++y)
     {
-        CpuMemoryReadWrite<Tfr::ChunkElement, 2>::Position pos( 0, y );
-        for (pos.x=0; pos.x<in_wt.numberOfElements().width; ++pos.x)
-        {
-            out_wt.write(pos, Tfr::ChunkElement(in_wt.ref(pos), 0.f));
-        }
+        for (int x=0; x<w; ++x)
+            out[y*w+x] = Tfr::ChunkElement(in[y*w+x], 0.f);
     }
 }
 
