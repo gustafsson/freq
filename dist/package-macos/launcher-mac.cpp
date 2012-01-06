@@ -9,6 +9,8 @@
 #include <dlfcn.h>
 #include <sys/wait.h>
 
+using namespace std;
+
 // Windows specific code!
 
 
@@ -32,27 +34,29 @@ const char *bundlePath(char *path)
     return path;
 }
 
+string get_mac_origin()
+{
+    char p[2048];
+    string s = bundlePath(p);
+    s += "/Contents/MacOS/sonicawe";
+    return s;
+}
+
 // Application paths for Sonic AWE
-char *get_app_path_cuda()
+string get_app_path_cuda()
 {
-    char p[2048];
-    char *path = new char[2048];
-    sprintf(path, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(p));
-    return path;
+    string s = get_mac_origin() + "-cuda";
+    return s;
 }
-char *get_app_path_cpu()
+string get_app_path_cpu()
 {
-    char p[2048];
-    char *path = new char[2048];
-    sprintf(path, "%s/Contents/MacOS/sonicawe", bundlePath(p));
-    return path;
+    string s = get_mac_origin();
+    return s;
 }
-char *get_app_path_opencl()
+string get_app_path_opencl()
 {
-    char p[2048];
-    char *path = new char[2048];
-    sprintf(path, "%s/Contents/MacOS/sonicawe-opencl", bundlePath(p));
-    return path;
+    string s = get_mac_origin() + "-opencl";
+    return s;
 }
 
 // Test different environments
@@ -75,7 +79,7 @@ int test_cuda_func()
 }
 int test_opencl_func()
 {
-    return 1;
+    return 0;
 }
 
 // Run the Sonic AWE application

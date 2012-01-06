@@ -1,7 +1,9 @@
+#include <string>
+
 // Application paths for Sonic AWE
-char *get_app_path_cuda();
-char *get_app_path_cpu();
-char *get_app_path_opencl();
+std::string get_app_path_cuda();
+std::string get_app_path_cpu();
+std::string get_app_path_opencl();
 
 // Test different environments
 int test_cuda_func();
