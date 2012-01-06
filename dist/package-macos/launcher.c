@@ -1,64 +1,44 @@
-//gcc -framework CoreFoundation -o launcher launcher.c
+//g++ -c -o launcher.o launcher.c
+//g++ -framework CoreFoundation -o launcher launcher.o launcher-mac.o
 
-#include <CoreFoundation/CFUserNotification.h>
-#include <CoreFoundation/CFBundle.h>
-#include <unistd.h>
+#include "launcher.h"
 #include <stdio.h>
-#include <dlfcn.h>
-
-#include "common_message.h"
-
-// Gets application bundle path
-const char *bundlePath(char *path)
-{
-    CFBundleRef mainBundle = CFBundleGetMainBundle();
-     
-    CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
-     
-    CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
-     
-    CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
-     
-    CFRelease(mainBundleURL);
-    CFRelease(cfStringRef);
-     
-    return path;
-}
+#include <string.h>
 
 int main(int argc, char *argv[])
 {
-    char path[2048];
-    char app_path_cuda[2048];
-    char app_path_cpu[2048];
-    
-    // Get the sonicawe application path.
-    sprintf(app_path_cuda, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
-    sprintf(app_path_cpu, "%s/Contents/MacOS/sonicawe", bundlePath(path));
+    // Set up application paths
+    char *app_path_cuda = get_app_path_cuda();
+    char *app_path_cpu = get_app_path_cpu();
+    char *app_path_opencl = get_app_path_opencl();
     
 	char* app_path = app_path_cpu;
 
-    // Option flags for notification
-    CFOptionFlags options = kCFUserNotificationStopAlertLevel | kCFUserNotificationNoDefaultButtonFlag;
-    
-    // The response from the notification
-    CFOptionFlags responseFlags = 0;
-    
-    // Try to load the CUDA library (Checking for CUDA enabled drivers)
-    void* nvcuda = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_LAZY);
-    
-    if (nvcuda) {
-        typedef int (*cuInitFunction)(int*);
-        
-        cuInitFunction cuInit = (cuInitFunction)dlsym(nvcuda, "cuInit"); 
-        if (cuInit && cuInit(0)==0) 
-            app_path = app_path_cuda;
-        
-        dlclose(nvcuda);
+
+    // Checking which platform to load
+    if(test_cuda_func())
+    {
+        app_path = app_path_cuda;
+    }
+    else if(test_opencl_func())
+    {
+        app_path = app_path_opencl;
+    }
+    else
+    {
+        app_path = app_path_cpu;
     }
 
+    // Running the application
     printf("Starting %s\n", app_path);
     argv[0] = app_path;
-	execv(app_path, argv);
+    int return_code = run(argc, argv);
+
+    if (return_code==1337 && strcmp(app_path, app_path_cuda)==0) 
+    {
+        argv[0] = app_path_cpu;
+        run(argc, argv);
+    }
     
     return 0;
 }
