@@ -34,7 +34,8 @@ int main(int argc, char *argv[])
     // Get the sonicawe application path.
     sprintf(app_path_cuda, "%s/Contents/MacOS/sonicawe-cuda", bundlePath(path));
     sprintf(app_path_cpu, "%s/Contents/MacOS/sonicawe", bundlePath(path));
-	char* app_path = app_path_cuda;
+    
+	char* app_path = app_path_cpu;
 
     // Option flags for notification
     CFOptionFlags options = kCFUserNotificationStopAlertLevel | kCFUserNotificationNoDefaultButtonFlag;
@@ -43,58 +44,21 @@ int main(int argc, char *argv[])
     CFOptionFlags responseFlags = 0;
     
     // Try to load the CUDA library (Checking for CUDA enabled drivers)
-    void* test = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_LAZY);
+    void* nvcuda = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_LAZY);
     
-    if ( test == NULL )
-    {
+    if (nvcuda) {
+        typedef int (*cuInitFunction)(int*);
         
-        // Notify the user that CUDA drivers could not be found.
-        /*CFUserNotificationDisplayAlert(0, options, NULL, NULL, NULL,
-            CFStringCreateWithCString(NULL, get_error_title(), kCFStringEncodingASCII),
-            CFStringCreateWithCString(NULL, get_error_message(), kCFStringEncodingASCII),
-            CFStringCreateWithCString(NULL, get_quit(), kCFStringEncodingASCII),
-            CFStringCreateWithCString(NULL, get_check_requirements(), kCFStringEncodingASCII),
-            CFStringCreateWithCString(NULL, get_get_driver(), kCFStringEncodingASCII),
-            &responseFlags);
+        cuInitFunction cuInit = (cuInitFunction)dlsym(nvcuda, "cuInit"); 
+        if (cuInit && cuInit(0)==0) 
+            app_path = app_path_cuda;
         
-        if( (unsigned long)responseFlags == 0)
-        {
-            // Quit and do nothing
-            printf("Quitting.\n");
-            return 1;
-        }
-        else if( (unsigned long)responseFlags == 2)
-        {
-            // Quit and load the driver download site
-            char *a[3];
-            a[0] = (char*)get_browser_bin();
-            a[1] = (char*)get_driver_download();
-            a[2] = NULL;
-    
-            printf("Getting CUDA drivers.\n");
-            execv(a[0], a);
-        }
-        else
-        {
-            // Quit and load the availablity site
-            char *a[3];
-            a[0] = (char*)get_browser_bin();
-            a[1] = (char*)get_requirements_page();
-            a[2] = NULL;
-    
-            printf("Checking requirements.\n");
-            execv(a[0], a);
-        }*/
-		app_path = app_path_cpu;
+        dlclose(nvcuda);
     }
-    else
-	{
-		dlclose(test);
-	}
 
     printf("Starting %s\n", app_path);
     argv[0] = app_path;
-	_execv(app_path, argv);
+	execv(app_path, argv);
     
     return 0;
 }
