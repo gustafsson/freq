@@ -1206,11 +1206,6 @@ void Renderer::drawAxes( float T )
 
     float w = borderw/screen_width, h=borderh/screen_height;
 
-    if (!left_handed_axes)
-    {
-        swap( h, w );
-    }
-
     if (0) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
         glPushMatrixContext push_proj(GL_PROJECTION);
@@ -1592,8 +1587,6 @@ void Renderer::drawAxes( float T )
 
                     float sign = (v0^x)%(v0^( p - inside))>0 ? 1.f : -1.f;
                     float o = size*ST*.003f*sign;
-                    if (!left_handed_axes)
-                        sign *= -1;
 
                     (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
                     (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0.f, p[2], 1.f));
