@@ -25,7 +25,7 @@ Additional test information.
 
 When running a test using an image diff based evaluation, do note that the current version of Sonic AWE could produce a difference in the visualization which can be ignored. This 
 only concerns the very first few chuncks of the visualization though. The reason for this is because the first frequency sample is taken at time 0 and the result of the transform 
-could vary.  
+could vary. So although the result of the test might be Failed, have a look at the produced diff file a judge for yourself. 
 
 Concerned tests : 
 	-sonicawe-end2end\deleteselection
