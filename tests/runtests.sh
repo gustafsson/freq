@@ -23,6 +23,7 @@ if [ "$1" = "--help" ]; then
   echo "To run just one test or a a few tests you can execute ${0##*/}"
   echo "with wildcards that are passed on to grep to match against"
   echo 'relative-path configuration-name'
+  echo "for example, use runtest.sh MappedVbo to run all MappedVbo tests" 
   echo
   echo "The outputs from the binaries are stored in a folder 'logs'"
   echo "with timestamps. The output from the last run is also copied"
@@ -132,7 +133,7 @@ testtimestamp=`formatedtimestamp`
 rm -f *_failed.log
 
 logbasedir="${startdir}/logs/${testtimestamp}"
-echo "Sawing logs in $logbasedir for {$configurations}"
+echo "Saving logs in $logbasedir for {$configurations}"
 
 for configname in $configurations; do
   logdir="${logbasedir}/${configname}"

@@ -33,7 +33,10 @@ unix:!macx: LIBS += -lglut
 
 win32 {
 INCLUDEPATH += \
-    ../../../../../winlib
+    ../../../../../winlib \
+    ../../../../../winlib/glew/include \
+    ../../../../../winlib/glut \
+
 LIBS += \
     -l../../../../../winlib/glut/glut32 \
     -l../../../../../winlib/glew/lib/glew32 \

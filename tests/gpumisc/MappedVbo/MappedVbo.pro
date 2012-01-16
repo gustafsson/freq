@@ -56,11 +56,14 @@ LIBS += \
 	
 win32 {
   INCLUDEPATH += \
-      ../../../../../winlib
+      ../../../../../winlib \
+      ../../../../../winlib/glew/include \
+      ../../../../../winlib/glut \
 
   LIBS += \
       -l../../../../gpumisc/Release/gpumisc \
       -l../../../../../winlib/glew/lib/glew32 \
+      -l../../../../../winlib/glut/glut32 \
       -L../../../../../winlib/boostlib \
 	
 }
