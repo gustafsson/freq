@@ -104,7 +104,7 @@ if [ "$platform" = "windows" ]; then
     PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
     PATH="${PATH}:$(cd ../release; pwd)"
-    PATH="${PATH}:$(cd ..; pwd)"
+    PATH="${PATH}:$(cd ../../../winlib/sonicawe_snapshot_win32_base; pwd)"
     outputdir="release"
     qmakeargs=
 else
