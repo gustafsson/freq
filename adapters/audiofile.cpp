@@ -16,6 +16,7 @@ typedef __int64 __int64_t;
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/weak_ptr.hpp>
 
 #if LEKA_FFT
 #include <cufft.h>
@@ -346,9 +347,26 @@ Signal::pBuffer Audiofile::
 }
 
 
+class CloseAfterScope
+{
+public:
+    CloseAfterScope(boost::weak_ptr<QFile> file):file(file) {}
+    ~CloseAfterScope() {
+        boost::shared_ptr<QFile> filep = file.lock();
+        if(filep && filep->isOpen()) filep->close();
+    }
+private:
+    boost::weak_ptr<QFile> file;
+};
+
 std::vector<char> Audiofile::
         getRawFileData(unsigned i, unsigned bytes_per_chunk)
 {
+    TaskInfo ti("Audiofile::getRawFileData(at %u=%u*%u from %s)",
+                bytes_per_chunk*i, i, bytes_per_chunk,
+                file->fileName().toStdString().c_str());
+
+    CloseAfterScope cas(file);
     if (!file->open(QIODevice::ReadOnly))
         throw std::ios_base::failure("Couldn't get raw data from " + file->fileName().toStdString() + " (original name '" + filename() + "')");
 
@@ -359,7 +377,6 @@ std::vector<char> Audiofile::
 
     file->seek(bytes_per_chunk*i);
     QByteArray bytes = file->read(bytes_per_chunk);
-    file->close();
 
     rawFileData.resize( bytes.size() );
     memcpy(&rawFileData[0], bytes.constData(), bytes.size());
@@ -369,20 +386,22 @@ std::vector<char> Audiofile::
 
 
 void Audiofile::
-        appendToTempfile( std::vector<char> rawFileData, unsigned i, unsigned bytes_per_chunk)
+        appendToTempfile(std::vector<char> rawFileData, unsigned i, unsigned bytes_per_chunk)
 {
-    TaskInfo ti("Audiofile::appendToTempfile(%u bytes at %u=%u*%u)", (unsigned)rawFileData.size(), i*bytes_per_chunk, i, bytes_per_chunk);
+    TaskInfo ti("Audiofile::appendToTempfile(%u bytes at %u=%u*%u)",
+                (unsigned)rawFileData.size(), i*bytes_per_chunk, i, bytes_per_chunk);
 
     if (rawFileData.empty())
         return;
 
     // file is a QTemporaryFile during deserialization
+    CloseAfterScope cas(file);
+
     if (!file->open(QIODevice::WriteOnly))
         throw std::ios_base::failure("Couldn't create raw data in " + file->fileName().toStdString() + " (original name '" + filename() + "')");
 
     file->seek(i*bytes_per_chunk);
     file->write(QByteArray::fromRawData(&rawFileData[0], rawFileData.size()));
-    file->close();
 }
 
 } // namespace Adapters
