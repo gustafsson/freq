@@ -322,6 +322,7 @@ private:
 
 public:
     static std::string getFileFormatsQtFilter( bool split );
+    static bool hasExpectedSuffix( const std::string& suffix );
 
     Audiofile(std::string filename);
 
@@ -336,6 +337,7 @@ private:
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     bool tryload();
 
+    /// file can be a QTemporaryFile that deletes itself upon destruction
     boost::shared_ptr<QFile> file;
     boost::shared_ptr<SndfileHandle> sndfile;
 
@@ -362,7 +364,7 @@ private:
         {
             std::vector<char> rawdata;
             if (typename archive::is_saving())
-                rawdata = getRawFileData(i, bytes_per_chunk);
+                rawdata = getRawFileData( i, bytes_per_chunk );
 
             if (version <= 0)
             {

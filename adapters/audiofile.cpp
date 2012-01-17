@@ -55,7 +55,12 @@ static std::string getSupportedFileFormats (bool detailed=false) {
     for (m = 0 ; m < major_count ; m++)
     {	info.format = m ;
             sf_command (NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info)) ;
-            ss << info.name << "  (extension \"" << info.extension << "\")" << endl;
+            //ss << info.name << "  (extension \"" << info.extension << "\")" << endl;
+            ss << info.name;
+            if (m+2 < major_count)
+                ss << ", ";
+            else if ( m+2 == major_count)
+                ss << " and ";
 
             format = info.format ;
 
@@ -122,6 +127,45 @@ std::string Audiofile::
 }
 
 
+// static
+bool Audiofile::
+        hasExpectedSuffix( const std::string& suffix )
+{
+    SF_FORMAT_INFO	info;
+    SF_INFO 		sfinfo;
+    char            buffer[128];
+
+    int major_count, subtype_count, m;
+
+    memset( &sfinfo, 0, sizeof (sfinfo) );
+    buffer [0] = 0;
+    sf_command( NULL, SFC_GET_LIB_VERSION, buffer, sizeof (buffer) );
+    if (strlen(buffer) < 1)
+    {
+        return false;
+    }
+
+    sf_command( NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof (int) );
+    sf_command( NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int) );
+
+    sfinfo.channels = 1;
+    for (m = 0 ; m < major_count ; m++)
+    {
+        info.format = m;
+        sf_command( NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof (info));
+
+        std::string extension = info.extension;
+        for (unsigned i=0; i<extension.size(); ++i)
+            extension[i] = std::tolower(extension[i]);
+
+        if (extension == suffix)
+            return true;
+    }
+
+    return false;
+}
+
+
 /**
   Reads an audio file using libsndfile
   */
@@ -137,6 +181,9 @@ Audiofile::
     _original_absolute_filename = QFileInfo(filename.c_str()).absoluteFilePath().toStdString();
 
     file.reset(new QFile(_original_absolute_filename.c_str()));
+
+    // Read the header and throw an exception if it can't be read
+    tryload();
 }
 
 
@@ -193,7 +240,8 @@ Audiofile:: // for deserialization
             _tried_load(false),
             _sample_rate(0),
             _number_of_samples(0)
-{}
+{
+}
 
 
 bool Audiofile::

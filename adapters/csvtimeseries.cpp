@@ -33,6 +33,14 @@ std::string CsvTimeseries::
 }
 
 
+// static
+bool CsvTimeseries::
+        hasExpectedSuffix( const std::string& suffix )
+{
+    return "csv" == suffix;
+}
+
+
 /**
   Reads a datafile
   */
@@ -124,7 +132,7 @@ void CsvTimeseries::
     }
 
     if (ssc.empty())
-        throw std::ios_base::failure("File '" + filename + "' didn't contain any data");
+        throw std::ios_base::failure("Couldn't read any CSV data from '" + filename + "'");
 
     _waveforms.resize( ssc.num_channels());
     for (unsigned c=0; c<ssc.num_channels(); c++)
