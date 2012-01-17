@@ -131,7 +131,7 @@ public:
 
 #if !defined(TARGET_reader)
     /**
-      If 'project_file_name' is empty, calls saveAs.
+      If 'project_filename_' is empty, calls saveAs.
 
       @returns true if the project was saved.
      */
@@ -139,11 +139,12 @@ public:
 
 
     /**
-      Opens a Qt Save File dialog and renames 'project_file_name'.
+      Opens a Qt Save File dialog and renames 'project_filename_'.
 
       @returns true if the project was saved.
      */
     bool saveAs();
+    bool saveAs(std::string newprojectfilename);
 #endif
 
     /**

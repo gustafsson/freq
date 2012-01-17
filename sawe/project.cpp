@@ -426,7 +426,14 @@ bool Project::
     if (0 != QString::compare(qfilename.mid(qfilename.length() - extension.length()), extension, Qt::CaseInsensitive))
         qfilename += extension;
 
-    project_filename_ = qfilename.toLocal8Bit().data();
+    return saveAs( qfilename.toLocal8Bit().data() );
+}
+
+
+bool Project::
+        saveAs(std::string newprojectfilename)
+{
+    project_filename_ = newprojectfilename;
 
     updateWindowTitle();
 
@@ -437,6 +444,7 @@ bool Project::
     return r;
 }
 #endif
+
 
 #if !defined(TARGET_reader)
 pProject Project::
