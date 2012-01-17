@@ -5,12 +5,12 @@
 #include <QtCore/QCoreApplication>
 #include <QGLWidget>
 
-class MappedVboTest : public QObject
+class NetworkAccessTest : public QObject
 {
     Q_OBJECT
 
 public:
-    MappedVboTest();
+    NetworkAccessTest();
 
     QGLWidget a;
 
@@ -20,7 +20,7 @@ private Q_SLOTS:
     void testCase1();
 };
 
-MappedVboTest::MappedVboTest()
+NetworkAccessTest::NetworkAccessTest()
 {
 }
 
@@ -32,16 +32,16 @@ MappedVboTest::MappedVboTest()
 
 void mappedVboTestCuda( DataStorage<float>::Ptr datap );
 
-void MappedVboTest::initTestCase()
+void NetworkAccessTest::initTestCase()
 {
     a.show(); // glew needs an OpenGL context
 }
 
-void MappedVboTest::cleanupTestCase()
+void NetworkAccessTest::cleanupTestCase()
 {
 }
 
-void MappedVboTest::testCase1()
+void NetworkAccessTest::testCase1()
 {
 #ifdef USE_CUDA
     QVERIFY( cudaSuccess == cudaGLSetGLDevice( 0 ) );
@@ -56,6 +56,6 @@ void MappedVboTest::testCase1()
 #endif
 }
 
-QTEST_MAIN(MappedVboTest);
+QTEST_MAIN(NetworkAccessTest);
 
 #include "tst_mappedvbotest.moc"
