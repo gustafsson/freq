@@ -35,6 +35,7 @@ void SaweTestClass::
     }
 
     project_ = p;
+    project_is_opened_ = false;
 
     connect( p->tools().render_view(), SIGNAL(postPaint()), this, SLOT(postPaint()), Qt::QueuedConnection);
     connect( p->tools().render_view(), SIGNAL(finishedWorkSection()), this, SLOT(renderViewFinishedWorkSection()), Qt::QueuedConnection);
