@@ -8,6 +8,7 @@
 #include "support/operation-composite.h"
 #include "support/toolbar.h"
 #include "commands/changeselectioncommand.h"
+#include "sawe/configuration.h"
 
 #include "selections/ellipsecontroller.h"
 #include "selections/ellipsemodel.h"
@@ -290,6 +291,15 @@ namespace Tools
     void SelectionController::
             receiveCropSelection()
     {
+        if (!Sawe::Configuration::version().empty())
+        {
+            if (!_model->current_selection())
+            {
+                TaskInfo("Error: SelectionController::receiveCropSelection was called without any current selection being active");
+                return;
+            }
+        }
+
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
         o->source( _worker->source() );
 
