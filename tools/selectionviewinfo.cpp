@@ -121,8 +121,8 @@ pBuffer SelectionViewInfoSink::
     QString text;
     text += QString("Mean intensity: %1 db").arg(db);
     if (not_processed)
-        text += QString(" (%1%)")
-                       .arg(1.f - not_processed.count()/(float)all.count());
+        text += QString(" (%1%%)")
+                       .arg((1.f - not_processed.count()/(float)all.count())*100);
     text +="\n";
     text += QString("Selection length: %1").arg(QString::fromStdString(SourceBase::lengthLongFormat(all.count()/sample_rate())));
     text += "\n";
