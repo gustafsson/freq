@@ -25,7 +25,7 @@ namespace Tools
 {
     class GraphicsView;
 
-    class RenderView: public QGraphicsScene
+    class SaweDll RenderView: public QGraphicsScene
     {
         Q_OBJECT
     public:

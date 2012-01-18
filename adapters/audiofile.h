@@ -295,7 +295,9 @@ private:
             Archive & ar,
             const std::vector<char> & data
         ){
-            QByteArray zlibUncompressed = QByteArray::fromRawData(&data[0], data.size());
+            QByteArray zlibUncompressed;
+            if (!data.empty())
+                zlibUncompressed = QByteArray::fromRawData(&data[0], data.size());
             QByteArray zlibCompressed = qCompress(zlibUncompressed);
             unsigned N = zlibCompressed.size();
             ar & BOOST_SERIALIZATION_NVP( N );
@@ -316,7 +318,8 @@ private:
             ar.load_binary( zlibCompressed.data(), N );
             QByteArray zlibUncompressed = qUncompress(zlibCompressed);
             data.resize(zlibUncompressed.size());
-            memcpy(&data[0], zlibUncompressed.constData(), data.size());
+            if (!data.empty())
+                memcpy(&data[0], zlibUncompressed.constData(), data.size());
         }
     };
 

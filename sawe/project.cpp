@@ -54,10 +54,15 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    _tools.reset();
+    {
+        TaskInfo ti("releasing tool resources");
+        _tools.reset();
+    }
 
     if (_mainWindow)
         delete _mainWindow;
+
+    TaskInfo("Closed project");
 }
 
 

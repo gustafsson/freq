@@ -81,7 +81,8 @@ void OpenProject::
 {
     project( projectAudio = Sawe::Application::global_ptr()->slotOpen_file( sourceAudio.toStdString() ) );
 
-    Tools::RenderModel* model = projectAudio->toolRepo().render_view()->model;
+    Tools::RenderView* view = projectAudio->toolRepo().render_view();
+    Tools::RenderModel* model = view->model;
 
     model->renderer->y_scale = 0.01f;
     model->_qx = 63.4565;
@@ -93,7 +94,10 @@ void OpenProject::
     model->_rx = 46.2;
     model->_ry = 253.186;
     model->_rz = 0;
+
     model->orthoview.reset( model->_rx >= 90 );
+
+    view->emitTransformChanged();
 }
 
 
