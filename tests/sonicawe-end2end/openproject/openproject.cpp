@@ -67,10 +67,10 @@ OpenProject::
     compareProjectImages.goldFileName = compareAudioImages.goldFileName;
 
 #ifdef USE_CUDA
-    compareAudioImages.limit = 0.;
-    compareProjectImages.limit = 60.;
+    compareAudioImages.limit = 60.;
+    compareProjectImages.limit = 100.;
 #else
-    compareAudioImages.limit = 0.;
+    compareAudioImages.limit = 60.;
     compareProjectImages.limit = 100.;
 #endif
 }
