@@ -67,7 +67,7 @@ ChunkAndInverse DrawnWaveformFilter::
         w->maxValue = maxValue;
     }
 
-    // Compute the continous wavelet transform
+    // Draw the waveform to on a matrix for drawing
     ci.chunk = (*transform())( ci.inverse );
 
 #ifdef _DEBUG

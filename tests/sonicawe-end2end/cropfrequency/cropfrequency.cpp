@@ -146,7 +146,6 @@ void CropFrequency::
             ui->actionFrequencySelection->trigger();
 
             QTestEventList tel;
-            tel.addMouseMove(QPoint(661, 174), 100);
             tel.addMousePress(Qt::LeftButton, 0, QPoint(661, 174), 100);
             for (int y=174; y<=204; y++)
             {

@@ -939,7 +939,6 @@ void Stft::
         out0 = 0;
 
     TaskInfo("signal->size().width = %u", signal->size().width);
-    TaskInfo("c->n_valid_samples*increment = %u", c->n_valid_samples*increment );
 
     BOOST_ASSERT( c->n_valid_samples*increment + (0 == c->chunk_offset?increment/2:0) == signal->size().width );
 

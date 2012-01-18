@@ -75,7 +75,7 @@ ChunkAndInverse StftFilter::
 
     ci.inverse = source()->readFixedLength( requiredInterval( I ) );
 
-    // Compute the continous wavelet transform
+    // Compute the stft transform
     ci.chunk = (*transform())( ci.inverse );
 
     return ci;
