@@ -5,8 +5,8 @@
 #include <stringprintf.h>
 #include <memory.h>
 
-//#define TIME_StftFilter
-#define TIME_StftFilter if(0)
+#define TIME_StftFilter
+//#define TIME_StftFilter if(0)
 
 using namespace Signal;
 
