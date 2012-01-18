@@ -50,6 +50,17 @@ Signal::Interval StftFilter::
     else if (last_chunk*increment < window_size + increment)
         last_chunk = (window_size + increment)/increment;
 
+
+    // for inverse STFT
+    first_chunk = 0;
+    last_chunk = (I.last + 2*window_size - increment - 1)/increment;
+
+    if (I.first >= window_size-increment)
+        first_chunk = (I.first - (window_size-increment))/increment;
+    else if (last_chunk*increment < window_size + increment)
+        last_chunk = (window_size + increment)/increment;
+
+
     Interval chunk_interval (
                 first_chunk*increment,
                 last_chunk*increment);
