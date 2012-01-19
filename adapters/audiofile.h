@@ -335,6 +335,7 @@ public:
     virtual float sample_rate();
     std::string filename() const;
 
+    virtual void invalidate_samples(const Signal::Intervals& I);
 private:
     Audiofile();
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );

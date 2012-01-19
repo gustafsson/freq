@@ -233,6 +233,16 @@ std::string Audiofile::
 }
 
 
+void Audiofile::
+        invalidate_samples(const Signal::Intervals& I)
+{
+    if (!sndfile && _tried_load)
+        _tried_load = false;
+
+    Signal::OperationCache::invalidate_samples( I );
+}
+
+
 Audiofile:: // for deserialization
         Audiofile()
             :
