@@ -60,6 +60,13 @@ void SelectionViewInfo::
 
 
 void SelectionViewInfo::
+        append(QString text)
+{
+    ui_->textEdit->append(text);
+}
+
+
+void SelectionViewInfo::
         selectionChanged()
 {
     if (target_)
@@ -99,7 +106,8 @@ void SelectionViewInfo::
 SelectionViewInfoSink::
         SelectionViewInfoSink( SelectionViewInfo* info )
             :
-            info_(info)
+            info_(info),
+            searchingformaximas_(false)
 {
     mixchannels_.reset(new OperationSuperpositionChannels(pOperation()));
     rms_.reset(new Support::ComputeRms(mixchannels_));
@@ -110,92 +118,103 @@ SelectionViewInfoSink::
 pBuffer SelectionViewInfoSink::
         read( const Interval& I )
 {
-    pBuffer b = Operation::read(I); // note: Operation::source() == rms_
-    Support::ComputeRms* rms = dynamic_cast<Support::ComputeRms*>(rms_.get());
-    Intervals all = this->getInterval() - this->zeroed_samples_recursive();
-    Intervals processed = rms->rms_I;
-    Intervals not_processed = all - processed;
-    double P0 = 1;
-    double P = rms->rms;
-    double db = 10*log10(P/P0);
-    QString text;
-    text += QString("Mean intensity: %1 db").arg(db,0,'f',1);
-    if (not_processed)
-        text += QString(" (%1%)")
-                       .arg((1.f - not_processed.count()/(float)all.count())*100,0,'f',0);
-    text +="\n";
-    text += QString("Selection length: %1").arg(QString::fromStdString(SourceBase::lengthLongFormat(all.count()/sample_rate())));
-    text += "\n";
-    text += QString("Total signal length: %1").arg(QString::fromStdString(lengthLongFormat()));
+    pBuffer b;
 
-    missing_ -= b->getInterval();
-
-    if (missing_.empty())
+    if (!searchingformaximas_)
     {
+        b = Operation::read(I); // note: Operation::source() == rms_
+        Support::ComputeRms* rms = dynamic_cast<Support::ComputeRms*>(rms_.get());
+        Intervals all = this->getInterval() - this->zeroed_samples_recursive();
+        Intervals processed = rms->rms_I;
+        Intervals not_processed = all - processed;
+        double P0 = 1;
+        double P = rms->rms;
+        double db = 10*log10(P/P0);
+        QString text;
+        text += QString("Mean intensity: %1 db").arg(db,0,'f',1);
+        if (not_processed)
+            text += QString(" (%1%)")
+                           .arg((1.f - not_processed.count()/(float)all.count())*100,0,'f',0);
         text +="\n";
-        while(!all.empty())
+        text += QString("Selection length: %1").arg(QString::fromStdString(SourceBase::lengthLongFormat(all.count()/sample_rate())));
+        text += "\n";
+        text += QString("Total signal length: %1").arg(QString::fromStdString(lengthLongFormat()));
+
+        missing_ -= b->getInterval();
+
+        if (missing_.empty())
         {
-            Interval f = all.fetchInterval( sample_rate() );
-            Interval centerInterval = f;
-            all-=f;
-            f = Intervals(f).enlarge(sample_rate()/2).spannedInterval() & getInterval();
-            f.last = f.first + Tfr::Fft::lChunkSizeS( f.count() + 1, 4 );
-
-            Tfr::Stft stft;
-            stft.setWindow(Tfr::Stft::WindowType_Hann, 0.5);
-            stft.set_approximate_chunk_size( f.count() );
-            stft.compute_redundant(false);
-            BOOST_ASSERT(stft.chunk_size() == f.count());
-
-            pBuffer a = Operation::source()->readFixedLength(f);
-            Tfr::pChunk c = stft( a );
-            Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
-            BOOST_ASSERT( 1 == c->nSamples() );
-            BOOST_ASSERT( c->nScales() == f.count()/2+1 );
-
-            unsigned N = c->nScales();
-            std::vector<float> absValues(N);
-            float* q = &absValues[0];
-            for (unsigned i=0; i<N; ++i)
-                q[i] = norm(p[i]);
-
-            unsigned max_i = 0;
-            float max_v = 0;
-            // use i=1 to skip DC component of ft
-            for (unsigned i=1; i<N; ++i)
-            {
-                if (q[i]>max_v)
-                {
-                    max_v = q[i];
-                    max_i = i;
-                }
-            }
-
             text +="\n";
-            if (0 == max_i)
-            {
-                text += QString("[%1 s, %2) s, peak n/a").arg(f.first/sample_rate(), 0, 'f', 2).arg(f.last/sample_rate(), 0, 'f', 2);
-            }
-            else
-            {
-                float interpolated_i = 0;
-                quad_interpol(max_i, q, N, 1, &interpolated_i);
-                float hz = c->freqAxis.getFrequency( interpolated_i );
-                float hz2 = c->freqAxis.getFrequency( max_i + 1);
-                float hz1 = c->freqAxis.getFrequency( max_i - 1);
-                float dhz = (hz2 - hz1)*.5; // distance between bins
-                dhz = sqrtf(1.f/12)*dhz;
-                text += QString("[%1, %2) s, peak %3 %4 %5 Hz")
-                        .arg(centerInterval.first/sample_rate(), 0, 'f', 2)
-                        .arg(centerInterval.last/sample_rate(), 0, 'f', 2)
-                        .arg(hz, 0, 'f', 2)
-                        .arg(QChar(0xB1))
-                        .arg(dhz, 0, 'f', 2);
-            }
+            searchingformaximas_ = true;
+            missing_ = all;
         }
+
+        info_->setText(text);
     }
 
-    info_->setText(text);
+    if (searchingformaximas_)
+    {
+        Interval f = missing_.fetchInterval( sample_rate() );
+        Interval centerInterval = f;
+        missing_-=f;
+        f = Intervals(f).enlarge(sample_rate()/2).spannedInterval() & getInterval();
+        f.last = f.first + Tfr::Fft::lChunkSizeS( f.count() + 1, 4 );
+
+        Tfr::Stft stft;
+        stft.setWindow(Tfr::Stft::WindowType_Hann, 0.5);
+        stft.set_approximate_chunk_size( f.count() );
+        stft.compute_redundant(false);
+        BOOST_ASSERT(stft.chunk_size() == f.count());
+
+        b = Operation::source()->readFixedLength(f);
+        Tfr::pChunk c = stft( b );
+        Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
+        BOOST_ASSERT( 1 == c->nSamples() );
+        BOOST_ASSERT( c->nScales() == f.count()/2+1 );
+
+        unsigned N = c->nScales();
+        std::vector<float> absValues(N);
+        float* q = &absValues[0];
+        for (unsigned i=0; i<N; ++i)
+            q[i] = norm(p[i]);
+
+        unsigned max_i = 0;
+        float max_v = 0;
+        // use i=1 to skip DC component of ft
+        for (unsigned i=1; i<N; ++i)
+        {
+            if (q[i]>max_v)
+            {
+                max_v = q[i];
+                max_i = i;
+            }
+        }
+
+        QString text;
+        if (0 == max_i)
+        {
+            text += QString("[%1 s, %2) s, peak n/a").arg(f.first/sample_rate(), 0, 'f', 2).arg(f.last/sample_rate(), 0, 'f', 2);
+        }
+        else
+        {
+            float interpolated_i = 0;
+            quad_interpol(max_i, q, N, 1, &interpolated_i);
+            float hz = c->freqAxis.getFrequency( interpolated_i );
+            float hz2 = c->freqAxis.getFrequency( max_i + 1);
+            float hz1 = c->freqAxis.getFrequency( max_i - 1);
+            float dhz = (hz2 - hz1)*.5; // distance between bins
+            dhz = sqrtf(1.f/12)*dhz;
+            text += QString("[%1, %2) s, peak %3 %4 %5 Hz")
+                    .arg(centerInterval.first/sample_rate(), 0, 'f', 2)
+                    .arg(centerInterval.last/sample_rate(), 0, 'f', 2)
+                    .arg(hz, 0, 'f', 2)
+                    .arg(QChar(0xB1))
+                    .arg(dhz, 0, 'f', 2);
+        }
+
+        info_->append(text);
+    }
+
 
     return b;
 }
