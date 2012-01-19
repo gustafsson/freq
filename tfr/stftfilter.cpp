@@ -14,9 +14,10 @@ namespace Tfr {
 
 
 StftFilter::
-        StftFilter(pOperation source, pTransform t)
+        StftFilter(pOperation source, pTransform t, bool no_affected_samples)
 :   Filter(source),
-    exclude_end_block(false)
+    exclude_end_block(false),
+    no_affected_samples(no_affected_samples)
 {
     if (!t)
         t = Stft::SingletonP();

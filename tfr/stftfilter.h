@@ -9,7 +9,8 @@ class StftFilter : public Filter
 {
 public:
     StftFilter( Signal::pOperation source=Signal::pOperation(),
-                Tfr::pTransform transform=Tfr::pTransform() );
+                Tfr::pTransform transform=Tfr::pTransform(),
+                bool no_affected_samples=false);
 
 
     /**
@@ -38,7 +39,20 @@ public:
     void transform( Tfr::pTransform m );
 
 
+    /// @overload Signal::Operation::affected_samples()
+    virtual Signal::Intervals affected_samples()
+    {
+        if (no_affected_samples)
+            return Signal::Intervals::Intervals();
+        return Signal::Operation::affected_samples();
+    }
+
+
     bool exclude_end_block;
+
+private:
+    /// @def false
+    bool no_affected_samples;
 };
 
 } // namespace Tfr

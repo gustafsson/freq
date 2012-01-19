@@ -119,10 +119,10 @@ pBuffer SelectionViewInfoSink::
     double P = rms->rms;
     double db = 10*log10(P/P0);
     QString text;
-    text += QString("Mean intensity: %1 db").arg(db);
+    text += QString("Mean intensity: %1 db").arg(db,0,'f',1);
     if (not_processed)
-        text += QString(" (%1%%)")
-                       .arg((1.f - not_processed.count()/(float)all.count())*100);
+        text += QString(" (%1%)")
+                       .arg((1.f - not_processed.count()/(float)all.count())*100,0,'f',0);
     text +="\n";
     text += QString("Selection length: %1").arg(QString::fromStdString(SourceBase::lengthLongFormat(all.count()/sample_rate())));
     text += "\n";
@@ -136,12 +136,24 @@ pBuffer SelectionViewInfoSink::
         while(!all.empty())
         {
             Interval f = all.fetchInterval( sample_rate() );
-            f.last = f.first + Tfr::Fft::sChunkSizeG( f.count() - 1, 4 );
+            Interval centerInterval = f;
             all-=f;
+            f = Intervals(f).enlarge(sample_rate()/2).spannedInterval() & getInterval();
+            f.last = f.first + Tfr::Fft::lChunkSizeS( f.count() + 1, 4 );
+
+            Tfr::Stft stft;
+            stft.setWindow(Tfr::Stft::WindowType_Hann, 0.5);
+            stft.set_approximate_chunk_size( f.count() );
+            stft.compute_redundant(false);
+            BOOST_ASSERT(stft.chunk_size() == f.count());
+
             pBuffer a = Operation::source()->readFixedLength(f);
-            Tfr::pChunk c = Tfr::Fft::Singleton().forward(a);
+            Tfr::pChunk c = stft( a );
             Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
-            unsigned N = f.count()/2;
+            BOOST_ASSERT( 1 == c->nSamples() );
+            BOOST_ASSERT( c->nScales() == f.count()/2+1 );
+
+            unsigned N = c->nScales();
             std::vector<float> absValues(N);
             float* q = &absValues[0];
             for (unsigned i=0; i<N; ++i)
@@ -167,15 +179,15 @@ pBuffer SelectionViewInfoSink::
             else
             {
                 float interpolated_i = 0;
-                quad_interpol(max_i, q, f.count()/2, 1, &interpolated_i);
+                quad_interpol(max_i, q, N, 1, &interpolated_i);
                 float hz = c->freqAxis.getFrequency( interpolated_i );
                 float hz2 = c->freqAxis.getFrequency( max_i + 1);
                 float hz1 = c->freqAxis.getFrequency( max_i - 1);
                 float dhz = (hz2 - hz1)*.5; // distance between bins
                 dhz = sqrtf(1.f/12)*dhz;
                 text += QString("[%1, %2) s, peak %3 %4 %5 Hz")
-                        .arg(f.first/sample_rate(), 0, 'f', 2)
-                        .arg(f.last/sample_rate(), 0, 'f', 2)
+                        .arg(centerInterval.first/sample_rate(), 0, 'f', 2)
+                        .arg(centerInterval.last/sample_rate(), 0, 'f', 2)
                         .arg(hz, 0, 'f', 2)
                         .arg(QChar(0xB1))
                         .arg(dhz, 0, 'f', 2);
