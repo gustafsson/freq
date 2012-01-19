@@ -39,6 +39,8 @@ public:
     void transform( Tfr::pTransform m );
 
 
+    virtual void invalidate_samples(const Signal::Intervals& I);
+
     /// @overload Signal::Operation::affected_samples()
     virtual Signal::Intervals affected_samples()
     {

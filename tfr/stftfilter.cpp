@@ -124,4 +124,16 @@ void StftFilter::
     _transform = t;
 }
 
+
+void StftFilter::
+        invalidate_samples(const Signal::Intervals& I)
+{
+    unsigned window_size = ((Stft*)transform().get())->chunk_size();
+    unsigned increment   = ((Stft*)transform().get())->increment();
+
+    // include_time_support
+    Signal::Intervals J = I.enlarge(window_size-increment);
+    Operation::invalidate_samples( J );
+}
+
 } // namespace Signal
