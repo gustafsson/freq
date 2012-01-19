@@ -245,8 +245,9 @@ Tfr::pChunk Stft::
     double increment = this->increment();
     chunk->chunk_offset = (b->sample_offset + (_window_size/2 - increment/2))/increment;
     chunk->first_valid_sample = ceil((_window_size/2 - increment/2)/increment);
-    if (chunk->nSamples() > 2*chunk->first_valid_sample)
-        chunk->n_valid_samples = chunk->nSamples() - 2*chunk->first_valid_sample;
+    unsigned nSamples = chunk->nSamples();
+    if (nSamples > 2*chunk->first_valid_sample)
+        chunk->n_valid_samples = nSamples - 2*chunk->first_valid_sample;
     else
         chunk->n_valid_samples = 0;
     chunk->sample_rate = b->sample_rate / increment;
@@ -938,7 +939,6 @@ void Stft::
         out0 = 0;
 
     TaskInfo("signal->size().width = %u", signal->size().width);
-    TaskInfo("c->n_valid_samples*increment = %u", c->n_valid_samples*increment );
 
     BOOST_ASSERT( c->n_valid_samples*increment + (0 == c->chunk_offset?increment/2:0) == signal->size().width );
 

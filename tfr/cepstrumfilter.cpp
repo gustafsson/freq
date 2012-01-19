@@ -60,7 +60,7 @@ ChunkAndInverse CepstrumFilter::
     }
     ci.inverse = source()->readFixedLength( chunk_interval );
 
-    // Compute the continous wavelet transform
+    // Compute the cepstrum transform
     ci.chunk = (*transform())( ci.inverse );
 
     return ci;
