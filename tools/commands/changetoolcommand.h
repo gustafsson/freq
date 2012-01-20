@@ -22,6 +22,7 @@ public:
     virtual std::string toString();
 
 private:
+    virtual bool addToList() { return false; }
     QWidget* newTool, *prevTool;
     Support::ToolSelector* selector;
 };
