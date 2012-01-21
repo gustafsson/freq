@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
@@ -1137,10 +1137,10 @@
      <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
    </property>
    <property name="text">
-    <string>Grayscale</string>
+    <string>Gray scale</string>
    </property>
    <property name="toolTip">
-    <string>Grayscale</string>
+    <string>Gray scale</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1290,10 +1290,10 @@
      <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
-    <string>Colorscale</string>
+    <string>Color scale</string>
    </property>
    <property name="toolTip">
-    <string>Colorscale</string>
+    <string>Color scale</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
