@@ -65,10 +65,11 @@ void PlaybackMarkersController::
     PlaybackMarkersModel::Markers::iterator next_itr = itr;
     next_itr++;
 
-    float pos = *next_itr;
+    float pos;
     if (next_itr != model()->markers().end())
     {
         model()->setCurrentMaker( next_itr );
+        pos = *next_itr;
     }
     else
     {
