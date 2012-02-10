@@ -14,9 +14,10 @@ namespace Tfr {
 
 
 StftFilter::
-        StftFilter(pOperation source, pTransform t)
+        StftFilter(pOperation source, pTransform t, bool no_affected_samples)
 :   Filter(source),
-    exclude_end_block(false)
+    exclude_end_block(false),
+    no_affected_samples(no_affected_samples)
 {
     if (!t)
         t = Stft::SingletonP();
@@ -37,30 +38,47 @@ Signal::Interval StftFilter::
     unsigned window_size = ((Stft*)transform().get())->chunk_size();
     unsigned increment   = ((Stft*)transform().get())->increment();
 
-    // Add a margin to make sure that the STFT is computed for one block before
-    // and one block after the signal. This makes it possible to do proper
-    // interpolations so that there won't be any edges between blocks
 
-    // enough for blockfilter, but not for inverse STFT
+    // Add a margin to make sure that the inverse of the STFT will cover I
     unsigned first_chunk = 0,
-             last_chunk = (I.last + window_size/2 + increment - 1)/increment;
+             last_chunk = (I.last + window_size)/increment;
 
-    if (I.first >= window_size/2)
-        first_chunk = (I.first - window_size/2)/increment;
+    if (I.first >= window_size-increment)
+        first_chunk = (I.first - (window_size-increment))/increment;
     else if (last_chunk*increment < window_size + increment)
         last_chunk = (window_size + increment)/increment;
 
-    Interval chunk_interval (
+    Interval chunk_interval(
                 first_chunk*increment,
                 last_chunk*increment);
 
-    if (exclude_end_block)
+    if (!(affected_samples() & chunk_interval))
     {
-        if (chunk_interval.last>number_of_samples())
+        // Add a margin to make sure that the STFT is computed for one block before
+        // and one block after the signal. This makes it possible to do proper
+        // interpolations so that there won't be any edges between blocks
+
+        // enough for blockfilter, but not for inverse STFT
+        first_chunk = 0;
+        last_chunk = (I.last + window_size/2 + increment - 1)/increment;
+
+        if (I.first >= window_size/2)
+            first_chunk = (I.first - window_size/2)/increment;
+        else if (last_chunk*increment < window_size + increment)
+            last_chunk = (window_size + increment)/increment;
+
+        chunk_interval = Interval(
+                    first_chunk*increment,
+                    last_chunk*increment);
+
+        if (exclude_end_block)
         {
-            last_chunk = number_of_samples()/window_size;
-            if (1+first_chunk<last_chunk)
-                chunk_interval.last = last_chunk*window_size;
+            if (chunk_interval.last>number_of_samples())
+            {
+                last_chunk = number_of_samples()/window_size;
+                if (1+first_chunk<last_chunk)
+                    chunk_interval.last = last_chunk*window_size;
+            }
         }
     }
 
@@ -75,7 +93,7 @@ ChunkAndInverse StftFilter::
 
     ci.inverse = source()->readFixedLength( requiredInterval( I ) );
 
-    // Compute the continous wavelet transform
+    // Compute the stft transform
     ci.chunk = (*transform())( ci.inverse );
 
     return ci;
@@ -104,6 +122,18 @@ void StftFilter::
     invalidate_samples( Signal::Interval(0, number_of_samples() ));
 
     _transform = t;
+}
+
+
+void StftFilter::
+        invalidate_samples(const Signal::Intervals& I)
+{
+    unsigned window_size = ((Stft*)transform().get())->chunk_size();
+    unsigned increment   = ((Stft*)transform().get())->increment();
+
+    // include_time_support
+    Signal::Intervals J = I.enlarge(window_size-increment);
+    Operation::invalidate_samples( J );
 }
 
 } // namespace Signal

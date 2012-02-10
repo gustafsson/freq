@@ -53,13 +53,14 @@ public:
     std::string toString() const;
 };
 
-
+#ifdef _MSC_VER
 #pragma warning (push)
 // warning C4251: 'Signal::Intervals::base_' : class 'std::list<_Ty>' needs to
 // have dll-interface to be used by clients of class 'Signal::Intervals'
 //
 // As long as the .dll is only used internally for testing, this is not a problem.
 #pragma warning (disable:4251)
+#endif
 
 /**
   Describes a bunch of discrete intervals. Always in the same sample rate as the
@@ -133,6 +134,8 @@ Intervals  operator ^  (const Interval& a, const Intervals& b);
 
 } // namespace Signal
 
+#ifdef _MSC_VER
 #pragma warning (pop)
+#endif
 
 #endif // SAMPLESINTERVALDESCRIPTOR_H

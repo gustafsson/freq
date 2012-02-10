@@ -112,11 +112,12 @@ private:
         WriteWav::writeToDisk(_filename, b, false);
 
         boost::shared_ptr<Audiofile> wavfile( new Audiofile(_filename) );
-        ::remove( _filename.c_str() );
 
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
+
+        ::remove( _filename.c_str() );
     }
 
     template<class archive>

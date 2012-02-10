@@ -84,6 +84,9 @@ namespace Tools
                     & boost::serialization::make_nvp("color_mode", renderer->color_mode)
                     & boost::serialization::make_nvp("y_scale", renderer->y_scale);
 
+            if (typename Archive::is_loading())
+                orthoview.reset( _rx >= 90 );
+
             if (version <= 0)
                 ar & boost::serialization::make_nvp("draw_height_lines", renderer->draw_contour_plot);
             else

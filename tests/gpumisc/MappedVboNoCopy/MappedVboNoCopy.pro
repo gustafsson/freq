@@ -56,6 +56,8 @@ unix:!macx {
 win32 {
   INCLUDEPATH += \
       ../../../../../winlib \
+    ../../../../../winlib/glew/include \
+    ../../../../../winlib/glut \
 	
   LIBS += \
       -L../../../../../winlib/boostlib \

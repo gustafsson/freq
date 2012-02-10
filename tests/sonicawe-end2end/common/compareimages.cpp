@@ -114,5 +114,5 @@ void CompareImages::
              goldFileName.toStdString().c_str(), resultFileName.toStdString().c_str(),
              diff, limit, diffFileName.toStdString().c_str() );
 
-    QVERIFY(diff < limit);
+    QVERIFY(diff <= limit);
 }

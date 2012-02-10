@@ -219,7 +219,7 @@ void NavigationController::
         wheelEvent ( QWheelEvent *e )
 {
     static bool canScrollHorizontal = false;
-    if( e->orientation() == Qt::Horizontal )
+    if( e->orientation() == Qt::Horizontal && 0 == e->modifiers())
         canScrollHorizontal = true;
 
     if (!canScrollHorizontal)

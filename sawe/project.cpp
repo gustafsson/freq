@@ -54,10 +54,15 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    _tools.reset();
+    {
+        TaskInfo ti("releasing tool resources");
+        _tools.reset();
+    }
 
     if (_mainWindow)
         delete _mainWindow;
+
+    TaskInfo("Closed project");
 }
 
 
@@ -170,7 +175,20 @@ pProject Project::
     #if !defined(TARGET_reader)
         availableFileTypes+=2;
     #endif
-        for (int i=0; i<availableFileTypes; i++) try
+
+        string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
+        int expected = -1;
+        if (suffix == "sonicawe") expected = 0;
+#if !defined(TARGET_reader)
+        if (Adapters::Audiofile::hasExpectedSuffix(suffix)) expected = 1;
+        if (Adapters::CsvTimeseries::hasExpectedSuffix(suffix)) expected = 2;
+#endif
+
+        int i = 0;
+        if (expected >= 0)
+            i = expected, availableFileTypes=expected+1;
+
+        for (; i<availableFileTypes; i++) try
         {
             switch(i) {
                 case 0: p = Project::openProject( filename ); break;
@@ -396,7 +414,12 @@ bool Project::
 {
     QString filter = "SONICAWE - Sonic AWE project (*.sonicawe)";
 
-    QString qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", QString::fromStdString(project_filename_), filter);
+    QString qfilename = QString::fromStdString(project_filename_);
+    do
+    {
+        qfilename = QFileDialog::getSaveFileName(mainWindow(), "Save project", qfilename, filter);
+    } while (!qfilename.isEmpty() && QDir(qfilename).exists()); // try again if a directory was selected
+
     if (0 == qfilename.length()) {
         // User pressed cancel
         return false;
@@ -408,7 +431,14 @@ bool Project::
     if (0 != QString::compare(qfilename.mid(qfilename.length() - extension.length()), extension, Qt::CaseInsensitive))
         qfilename += extension;
 
-    project_filename_ = qfilename.toLocal8Bit().data();
+    return saveAs( qfilename.toLocal8Bit().data() );
+}
+
+
+bool Project::
+        saveAs(std::string newprojectfilename)
+{
+    project_filename_ = newprojectfilename;
 
     updateWindowTitle();
 
@@ -419,6 +449,7 @@ bool Project::
     return r;
 }
 #endif
+
 
 #if !defined(TARGET_reader)
 pProject Project::

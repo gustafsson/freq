@@ -353,7 +353,7 @@ void TransformInfoForm::
 
         stft->setWindow( (Tfr::Stft::WindowType)windowtype, overlap );
 
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();
     }
 }
@@ -372,7 +372,7 @@ void TransformInfoForm::
         Tfr::Stft::WindowType windowtype = stft->windowType();
         stft->setWindow( windowtype, newValue );
 
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
+        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();
     }
 }

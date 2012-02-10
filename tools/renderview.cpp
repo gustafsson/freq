@@ -1318,10 +1318,7 @@ void RenderView::
     if (model->renderer->left_handed_axes)
         glScaled(-1, 1, 1);
     else
-    {
         glRotated(-90,0,1,0);
-        glScaled(0.35, 1, 2.6);
-    }
 
     glScaled(model->xscale, 1, model->zscale);
 

@@ -62,7 +62,7 @@ string get_app_path_opencl()
 // Test different environments
 int test_cuda_func()
 {
-    bool test = false;
+    bool test = 0;
     // Try to load the CUDA library (Checking for CUDA enabled drivers)
     void* nvcuda = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_LAZY);
     
@@ -77,6 +77,8 @@ int test_cuda_func()
     }
     return test;
 }
+
+
 int test_opencl_func()
 {
     return 0;

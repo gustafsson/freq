@@ -26,6 +26,7 @@ public:
 
 public slots:
     void setText(QString text);
+    void append(QString text);
     void selectionChanged();
     virtual void setVisible(bool visible);
 
@@ -55,6 +56,7 @@ private:
     Signal::pOperation rms_;
     Signal::pOperation mixchannels_;
     Signal::Intervals missing_;
+    bool searchingformaximas_;
 };
 
 } // namespace Tools

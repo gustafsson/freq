@@ -49,6 +49,7 @@ private:
 
 public:
     static std::string getFileFormatsQtFilter( bool split );
+    static bool hasExpectedSuffix( const std::string& suffix );
 
     CsvTimeseries(std::string filename);
 

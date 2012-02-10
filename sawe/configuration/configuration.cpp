@@ -223,6 +223,7 @@ string Configuration::
     case QSysInfo::MV_10_4: return "Mac OS X 10.4 (Tiger)";
     case QSysInfo::MV_10_5: return "Mac OS X 10.5 (Leopard)";
     case QSysInfo::MV_10_6: return "Mac OS X 10.6 (Snow Leopard)";
+    case QSysInfo::MV_10_7: return "Mac OS X 10.7 (Lion)";
     default: return QString("unrecognized Mac OS X version (%1)").arg(QSysInfo::MacintoshVersion).toStdString();
     }
 #endif

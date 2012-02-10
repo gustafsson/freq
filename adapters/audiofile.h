@@ -295,7 +295,9 @@ private:
             Archive & ar,
             const std::vector<char> & data
         ){
-            QByteArray zlibUncompressed = QByteArray::fromRawData(&data[0], data.size());
+            QByteArray zlibUncompressed;
+            if (!data.empty())
+                zlibUncompressed = QByteArray::fromRawData(&data[0], data.size());
             QByteArray zlibCompressed = qCompress(zlibUncompressed);
             unsigned N = zlibCompressed.size();
             ar & BOOST_SERIALIZATION_NVP( N );
@@ -316,12 +318,14 @@ private:
             ar.load_binary( zlibCompressed.data(), N );
             QByteArray zlibUncompressed = qUncompress(zlibCompressed);
             data.resize(zlibUncompressed.size());
-            memcpy(&data[0], zlibUncompressed.constData(), data.size());
+            if (!data.empty())
+                memcpy(&data[0], zlibUncompressed.constData(), data.size());
         }
     };
 
 public:
     static std::string getFileFormatsQtFilter( bool split );
+    static bool hasExpectedSuffix( const std::string& suffix );
 
     Audiofile(std::string filename);
 
@@ -331,11 +335,13 @@ public:
     virtual float sample_rate();
     std::string filename() const;
 
+    virtual void invalidate_samples(const Signal::Intervals& I);
 private:
     Audiofile();
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     bool tryload();
 
+    /// file can be a QTemporaryFile that deletes itself upon destruction
     boost::shared_ptr<QFile> file;
     boost::shared_ptr<SndfileHandle> sndfile;
 
@@ -362,7 +368,7 @@ private:
         {
             std::vector<char> rawdata;
             if (typename archive::is_saving())
-                rawdata = getRawFileData(i, bytes_per_chunk);
+                rawdata = getRawFileData( i, bytes_per_chunk );
 
             if (version <= 0)
             {
