@@ -44,7 +44,8 @@ Download and install Wizou's XML plugin from : http://wiz0u.free.fr/prog/nsisXML
 *3. Sonic Awe*
 *3.1 Get source code*
 Go to the same directory as where you put 'sonicawe-winlib' and run the following commands.
-<pre>$ git clone path-to-sonic-repo
+<pre>$ git clone ssh://git@jovia.net:2232/sonic.git
+-- If you are asked a password at this point, use "git"
 $ cd sonic
 $ git submodule update ----init
 $ cd sonicawe; git pull origin master
