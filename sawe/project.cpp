@@ -8,6 +8,7 @@
 #include "adapters/csvtimeseries.h"
 #endif
 #include "adapters/microphonerecorder.h"
+#include "adapters/networkrecorder.h"
 #include "signal/operationcache.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
@@ -132,6 +133,14 @@ pProject Project::
         open(std::string project_file_or_audio_file )
 {
     string filename; filename.swap( project_file_or_audio_file );
+
+    QUrl url(filename.c_str());
+    if (url.isValid())
+    {
+        Signal::pOperation s( new Adapters::NetworkRecorder(url) );
+        return pProject( new Project( s, "New network recording" ));
+    }
+
 
     struct stat dummy;
     // QFile::exists doesn't work as expected can't handle unicode names
