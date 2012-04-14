@@ -7,7 +7,7 @@
 #include "ui/mainwindow.h"
 
 // Sonic AWE
-#include "adapters/microphonerecorder.h"
+#include "adapters/recorder.h"
 #include "heightmap/renderer.h"
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
@@ -1028,7 +1028,7 @@ void RenderView::
             QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
     }
 
-    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
+    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
     {
         isRecording = true;

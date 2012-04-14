@@ -96,10 +96,10 @@ OperationGraph::vertex_descriptor populateGraph( Signal::pOperation s, Operation
 
     Signal::pOperation childSource;
     // Signal::pOperation childFilter;
-    if (Adapters::MicrophoneRecorder* mic = dynamic_cast<Adapters::MicrophoneRecorder*>(s.get()))
+    if (Adapters::Recorder* mic = dynamic_cast<Adapters::Recorder*>(s.get()))
     {
-        title << "Microphone";
-        tooltip << "Microphone recording, FS=" << mic->sample_rate();
+        title << "Recording";
+        tooltip << mic->name() << ", FS=" << mic->sample_rate();
     }
     else if (Adapters::Audiofile* file = dynamic_cast<Adapters::Audiofile*>(s.get()))
     {

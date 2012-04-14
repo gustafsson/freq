@@ -1,14 +1,17 @@
 #include "matlaboperation.h"
 #include "hdf5.h"
-#include "microphonerecorder.h"
+#include "recorder.h"
 #include "tools/support/plotlines.h"
+
+#include "tfr/chunk.h"
+
+// gpumisc
+#include "cpumemorystorage.h"
 
 #if defined(__GNUC__)
     #include <unistd.h>
     #include <sys/time.h>
 #endif
-
-#include "tfr/chunk.h"
 
 using namespace std;
 using namespace Signal;
@@ -207,7 +210,7 @@ bool MatlabOperation::
         if (samples_to_invalidate)
             OperationCache::invalidate_samples( samples_to_invalidate );
 
-        MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+        Recorder* recorder = dynamic_cast<Recorder*>(root());
         bool isrecording = 0!=recorder;
         if (isrecording)
         {
@@ -265,7 +268,7 @@ Interval MatlabOperation::
 
     if (need_data_after_end)
     {
-        MicrophoneRecorder* recorder = dynamic_cast<MicrophoneRecorder*>(root());
+        Recorder* recorder = dynamic_cast<Recorder*>(root());
         bool isrecording = 0!=recorder;
         if (isrecording)
         {

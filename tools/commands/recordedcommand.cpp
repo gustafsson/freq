@@ -1,7 +1,7 @@
 #include "recordedcommand.h"
 
 #include "tools/rendermodel.h"
-#include "adapters/microphonerecorder.h"
+#include "adapters/recorder.h"
 
 namespace Tools {
 namespace Commands {
@@ -14,7 +14,7 @@ RecordedCommand::
             undone(false),
             prev_qx(-1)
 {
-    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>(recording);
+    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(recording);
     recordedData = r->data().readAllChannelsFixedLength(Signal::Interval(prevLength, recording->number_of_samples()) );
 }
 
@@ -31,7 +31,7 @@ void RecordedCommand::
 {
     if (undone)
     {
-        Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>(recording);
+        Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(recording);
         recordedData->sample_offset = r->number_of_samples();
         r->data().put(recordedData);
         r->invalidate_samples(recordedData->getInterval());
@@ -45,7 +45,7 @@ void RecordedCommand::
 void RecordedCommand::
         undo()
 {
-    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>(recording);
+    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(recording);
     r->data().invalidate_and_forget_samples(recordedData->getInterval());
     prev_qx = model->_qx;
     r->invalidate_samples(recordedData->getInterval());

@@ -4,8 +4,7 @@
 #include "writewav.h"
 #include "audiofile.h"
 
-#include "signal/sinksourcechannels.h"
-#include "signal/postsink.h"
+#include "adapters/recorder.h"
 
 #include <vector>
 #include <sstream>
@@ -16,65 +15,42 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/shared_ptr.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-#include <QMutex>
 
 namespace Adapters {
 
-class MicrophoneRecorder: public Signal::FinalSource
+class MicrophoneRecorder: public Recorder
 {
 public:
     MicrophoneRecorder(int inputDevice/*=-1*/);
     ~MicrophoneRecorder();
 
-    void startRecording();
-    void stopRecording();
-    bool isStopped();
-    void setProjectName(std::string, int);
-    bool canRecord();
-    long unsigned actual_number_of_samples();
+    virtual void startRecording();
+    virtual void stopRecording();
+    virtual bool isStopped();
+    virtual bool canRecord();
+
     void changeInputDevice( int inputDevice );
+    void setProjectName(std::string, int);
 
     virtual std::string name();
-    virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual float sample_rate();
-    virtual long unsigned number_of_samples();
-    virtual unsigned num_channels();
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel();
-    virtual float length();
-
-    unsigned recording_itr() { return number_of_samples(); }
-    float time_since_last_update();
-
-    Signal::PostSink* getPostSink() { return &_postsink; }
-
-    Signal::SinkSourceChannels& data() { return _data; }
 
 private:
     MicrophoneRecorder()
         :
         input_device_(-1),
-        _offset(0),
         _sample_rate(1),
         _is_interleaved(false)
     {} // for deserialization
 
-    float time();
     std::string deviceName();
     void init();
 
     int input_device_;
-    boost::posix_time::ptime _start_recording, _last_update;
-    float _offset;
     float _sample_rate;
     bool _is_interleaved;
     bool _has_input_device;
-    QMutex _data_lock;
-    Signal::SinkSourceChannels _data;
     std::vector<float> _rolling_mean;
-    Signal::PostSink _postsink;
 
     // todo remove Sink* _callback;
     portaudio::AutoSystem _autoSys;
@@ -102,7 +78,7 @@ private:
     template<class archive>
     void save_recording(archive& ar, const unsigned int /*version*/)
     {
-        // Save a microphonerecording as if it where an audiofile, save single channeled for now
+        // Save a microphonerecording as if it were an audiofile, save single channeled for now
         Signal::IntervalType N = number_of_samples();
         if (0==N) // workaround for the special case of saving an empty recording.
             N = 1;

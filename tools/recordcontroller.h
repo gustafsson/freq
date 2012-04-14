@@ -5,9 +5,6 @@
 
 #include "recordview.h"
 
-namespace Ui { class MainWindow; }
-namespace Adapters { class MicrophoneRecorder; }
-
 namespace Tools
 {
     class RecordModel;

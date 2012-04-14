@@ -4,7 +4,7 @@
 #include <signal/operation.h>
 
 namespace Sawe { class Project; }
-namespace Adapters { class MicrophoneRecorder; }
+namespace Adapters { class Recorder; }
 
 namespace Tools
 {
@@ -20,7 +20,7 @@ public:
     static bool canCreateRecordModel( Sawe::Project* project );
 
 
-    Adapters::MicrophoneRecorder* recording;
+    Adapters::Recorder* recording;
     Sawe::Project* project;
     RenderView* render_view;
 };

@@ -6,7 +6,7 @@
 
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
-#include "adapters/microphonerecorder.h"
+#include "adapters/recorder.h"
 #include "support/sinksignalproxy.h"
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
@@ -51,7 +51,7 @@ void RecordController::
 void RecordController::
         receiveRecord(bool active)
 {
-    Adapters::MicrophoneRecorder* r = model()->recording;
+    Adapters::Recorder* r = model()->recording;
     if (active)
     {
         Support::SinkSignalProxy* proxy;
@@ -119,7 +119,7 @@ void RecordController::
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>(model()->project->head->head_source()->root());
+    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(model()->project->head->head_source()->root());
     if (r)
     {
         if (r->canRecord())
