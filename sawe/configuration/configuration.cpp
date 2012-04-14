@@ -348,11 +348,10 @@ static const char _sawe_usage_string[] =
     "                        rendering, this gives the number of samples per block.\n"
     "    --scales_per_block  Number of scales per block, se samples_per_block.\n"
 
-/*
-    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
-    "                       filters are being used as the GUI won't be locked during\n"
-    "                       computation.\n"
-*/
+//    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
+//    "                       filters are being used as the GUI won't be locked during\n"
+//    "                       computation.\n"
+
     "\n"
     "Sonic AWE is a product developed by MuchDifferent\n";
 

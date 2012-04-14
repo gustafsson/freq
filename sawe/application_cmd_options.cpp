@@ -61,7 +61,7 @@ void Application::
         p = Sawe::Application::slotOpen_file( Sawe::Configuration::input_file() );
 
     if (!p)
-        p = Sawe::Application::slotNew_recording( -1 );
+        p = Sawe::Application::slotNew_recording( );
 
     if (!p)
         ::exit(-1);

@@ -253,8 +253,9 @@ void Project::
 
 
 pProject Project::
-        createRecording(int record_device)
+        createRecording()
 {
+    int record_device = QSettings().value("inputdevice", -1).toInt();
     Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
     return pProject( new Project( s, "New recording" ));
 }
