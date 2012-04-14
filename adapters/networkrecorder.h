@@ -10,7 +10,7 @@
 namespace Adapters {
 
 /**
-  To use 'NetworkRecorder' start Sonic AWE with this syntax
+  To use 'NetworkRecorder' start Sonic AWE with the syntax below and hit the regular 'record' button.
 
   sonicawe s16bursts://hostname:hostport
 
