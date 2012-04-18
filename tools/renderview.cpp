@@ -42,8 +42,8 @@
 #include <QGraphicsView>
 
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 //#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
