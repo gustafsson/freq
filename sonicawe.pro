@@ -351,7 +351,7 @@ win32 {
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
-		-o \
+        -m32 -o \
         "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
