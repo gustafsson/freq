@@ -105,6 +105,9 @@ void RecordController::
         return;
 
     model()->recording->invalidate_samples( I );
+
+    if (model()->recording->isStopped())
+        receiveStop();
 }
 
 

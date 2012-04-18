@@ -43,10 +43,11 @@ long unsigned Recorder::
 long unsigned Recorder::
         number_of_samples()
 {
-    if (isStopped())
+    return actual_number_of_samples();
+/*    if (isStopped())
         return actual_number_of_samples();
     else
-        return time() * sample_rate();
+        return time() * sample_rate();*/
 }
 
 unsigned Recorder::

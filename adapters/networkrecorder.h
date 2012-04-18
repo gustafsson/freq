@@ -35,16 +35,23 @@ public:
 
     virtual std::string name();
     virtual float sample_rate();
+    virtual float length();
 
 private:
     QUrl url;
     QTcpSocket tcpSocket;
     float samplerate;
 
-    void receivedData(const void*data, int byteCount);
+    virtual float time();
+    int receivedData(const void*data, int byteCount);
 
 private slots:
-    void readData();
+    void readyRead();
+    void connected();
+    void disconnected();
+    void hostFound();
+    void error(QAbstractSocket::SocketError);
+    void stateChanged(QAbstractSocket::SocketState);
 };
 
 } // namespace Adapters

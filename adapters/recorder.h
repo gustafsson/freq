@@ -45,8 +45,7 @@ protected:
     boost::posix_time::ptime _start_recording, _last_update;
     long unsigned actual_number_of_samples();
 
-private:
-    float time();
+    virtual float time();
 };
 
 }
