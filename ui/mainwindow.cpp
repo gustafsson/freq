@@ -503,6 +503,13 @@ void SaweMainWindow::
     }
 
     restoreState(state["MainWindow/windowState"].toByteArray());
+
+    // Always start stopped
+    state["actionRecord"] = false;
+    state["actionPlayEntireSound"] = false;
+    state["actionPlaySection"] = false;
+    state["actionPlaySelection"] = false;
+
     restoreGuiState( this, state );
 
     // Always start with the navigation tool activated
