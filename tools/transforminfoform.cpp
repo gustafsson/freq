@@ -68,12 +68,16 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->windowTypeComboBox->addItem(Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)i).c_str(), i);
     }
 
+    ui->normalizationComboBox->addItem("No normalization", false);
+    ui->normalizationComboBox->addItem("Standard normalization", true);
+
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
     connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
     connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
+    connect(ui->normalizationComboBox, SIGNAL(currentIndexChanged(int)), SLOT(normalizationChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
@@ -197,6 +201,9 @@ void TransformInfoForm::
         Tfr::Stft::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
+        bool normalize = stft->normalize();
+        if (windowtype != ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toInt() && !ui->normalizationComboBox->hasFocus())
+            ui->normalizationComboBox->setCurrentIndex(ui->normalizationComboBox->findData(normalize));
     }
     else if (cepstrum)
     {
@@ -387,12 +394,26 @@ void TransformInfoForm::
 {
     float newValue = ui->averagingEdit->text().toFloat();
 
-    // Tfr::Stft::setWindow validates value range
-
     Tfr::Stft* stft = &Tfr::Stft::Singleton();
     if (stft->averaging() != newValue)
     {
         stft->averaging( newValue );
+
+        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        normalizationChanged()
+{
+    bool newValue = ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toBool();
+
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    if (stft->normalize() != newValue)
+    {
+        stft->normalize( newValue );
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();

@@ -142,6 +142,9 @@ public:
     bool compute_redundant() { return _compute_redundant; }
     void compute_redundant(bool);
 
+    bool normalize() { return _normalize; }
+    void normalize(bool);
+
     unsigned averaging() { return _averaging; }
     void averaging(unsigned);
 
@@ -179,7 +182,7 @@ private:
         Default value: chunk_size=1<<11
     */
     unsigned _window_size;
-    bool _compute_redundant;
+    bool _compute_redundant, _normalize;
     unsigned _averaging;
     float _overlap;
     WindowType _window_type;

@@ -101,7 +101,7 @@ void stftAverage(
     BOOST_ASSERT( height > 1 );
 
     float as = 1.f/averaging;
-    #pragma omp parallel for
+#pragma omp parallel for
     for (unsigned k=0; k<height; ++k)
     {
         for (unsigned j=0; j<width; ++j)
@@ -110,6 +110,35 @@ void stftAverage(
             for (unsigned a=0; a<averaging; ++a)
                 elem += abs(in[(k*averaging + a)*width + j]);
             out[k*width + j] = Tfr::ChunkElement(elem*as, 0);
+        }
+    }
+}
+
+
+void stftNormalizeTransform(
+        Tfr::ChunkData::Ptr input,
+        unsigned scales )
+{
+    unsigned height = input->size().width/scales;
+
+    Tfr::ChunkElement* p = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
+
+#pragma omp parallel for
+    for (unsigned k=0; k<height; ++k)
+    {
+        float sum = .0f;
+        for (unsigned scale=0; scale<scales; ++scale)
+        {
+            Tfr::ChunkElement v = p[k*scales + scale];
+            sum += abs(v);
+        }
+
+        float normalize = scales / sum;
+
+        for (unsigned scale=0; scale<scales; ++scale)
+        {
+            Tfr::ChunkElement& v = p[k*scales + scale];
+            v *= normalize;
         }
     }
 }

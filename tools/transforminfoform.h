@@ -34,6 +34,7 @@ public slots:
     void windowTypeChanged();
     void overlapChanged();
     void averagingChanged();
+    void normalizationChanged();
 
 private:
     Ui::TransformInfoForm *ui;
