@@ -56,6 +56,7 @@ Renderer::Renderer( Collection* collection )
     draw_contour_plot(false),
     color_mode( ColorMode_Rainbow ),
     fixed_color( 1,0,0,1 ),
+    clear_color( 1,1,1,1 ),
     y_scale( 1 ),
     last_ysize( 1 ),
     last_axes_length( 0 ),
@@ -504,6 +505,8 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
             { 1, 0, 0 }}; */
     }
 
+    if (wavelengthScalar<0)
+        return tvector<4,float>( 1, 1, 1, 1 );
 
     float f = float(count)*wavelengthScalar;
     int i1 = int(floor(max(0.f, min(f-1.f, float(count)))));
@@ -530,6 +533,8 @@ void Renderer::createColorTexture(unsigned N) {
         texture[i] = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
     }
     colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
+
+    clear_color = getWavelengthColorCompute( -1.f, _color_texture_colors );
 }
 
 Reference Renderer::
@@ -626,12 +631,17 @@ void Renderer::beginVboRendering()
     //unsigned meshW = collection->samples_per_block();
     //unsigned meshH = collection->scales_per_block();
 
+    createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
+    glActiveTexture(GL_TEXTURE2);
+    colorTexture->bindTexture2D();
+    glActiveTexture(GL_TEXTURE0);
+
     glUseProgram(_shader_prog);
 
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
         TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorTextureFactor, uniFixedColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
+        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorTextureFactor, uniFixedColor, uniClearColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -648,11 +658,20 @@ void Renderer::beginVboRendering()
         else
             glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
 
+        uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
+        glUniform4f(uniClearColor, clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+
         uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
-        glUniform1f(uniColorTextureFactor,
-                    color_mode == ColorMode_Rainbow
-                    || color_mode == ColorMode_GreenRed
-                    ? 1.f : 0.f );
+        switch(color_mode)
+        {
+        case ColorMode_Rainbow:
+        case ColorMode_GreenRed:
+            glUniform1f(uniColorTextureFactor, 1.f);
+            break;
+        default:
+            glUniform1f(uniColorTextureFactor, 0.f);
+            break;
+        }
 
         uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
         glUniform1f(uniContourPlot, draw_contour_plot ? 1.f : 0.f );
@@ -670,11 +689,6 @@ void Renderer::beginVboRendering()
         uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
         glUniform2f(uniOffsTex, .5f/w, .5f/h);
     }
-
-    createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
-    glActiveTexture(GL_TEXTURE2);
-    colorTexture->bindTexture2D();
-    glActiveTexture(GL_TEXTURE0);
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     glVertexPointer(4, GL_FLOAT, 0, 0);

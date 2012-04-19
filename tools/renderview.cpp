@@ -737,7 +737,8 @@ void RenderView::
 
     glShadeModel(GL_SMOOTH);
 
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    tvector<4,float> a = model->renderer->clear_color;
+    glClearColor(a[0], a[1], a[2], a[3]);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
