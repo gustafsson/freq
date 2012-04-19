@@ -251,23 +251,7 @@ Tfr::pChunk Stft::
         Tfr::ChunkData::Ptr averagedOutput(
                 new Tfr::ChunkData( height*width ));
 
-        Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( chunk->transform_data ).ptr();
-        Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( averagedOutput ).ptr();
-
-        BOOST_ASSERT( height > 1 );
-
-        float as = 1.f/_averaging;
-#pragma omp parallel for
-        for (unsigned k=0; k<height; ++k)
-        {
-            for (unsigned j=0; j<width; ++j)
-            {
-                float elem = 0.f;
-                for (unsigned a=0; a<_averaging; ++a)
-                    elem += abs(in[(k*_averaging + a)*width + j]);
-                out[k*width + j] = ChunkElement(elem*as, 0);
-            }
-        }
+        stftAverage( chunk->transform_data, averagedOutput, width );
 
         chunk->transform_data = averagedOutput;
     }
