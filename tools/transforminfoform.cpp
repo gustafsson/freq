@@ -73,6 +73,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
     connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
+    connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
@@ -150,6 +151,8 @@ void TransformInfoForm::
     ui->maxHzEdit->setVisible(false);
     ui->binResolutionLabel->setVisible(stft);
     ui->binResolutionEdit->setVisible(stft);
+    ui->averagingLabel->setVisible(stft);
+    ui->averagingEdit->setVisible(stft);
     ui->windowSizeLabel->setVisible(stft || cepstrum);
     ui->windowSizeEdit->setVisible(stft || cepstrum);
     ui->windowTypeLabel->setVisible(stft || cepstrum);
@@ -190,6 +193,7 @@ void TransformInfoForm::
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
+        setEditText( ui->averagingEdit, QString("%1").arg(stft->averaging()) );
         Tfr::Stft::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
@@ -371,6 +375,24 @@ void TransformInfoForm::
     {
         Tfr::Stft::WindowType windowtype = stft->windowType();
         stft->setWindow( windowtype, newValue );
+
+        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        averagingChanged()
+{
+    float newValue = ui->averagingEdit->text().toFloat();
+
+    // Tfr::Stft::setWindow validates value range
+
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    if (stft->averaging() != newValue)
+    {
+        stft->averaging( newValue );
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();

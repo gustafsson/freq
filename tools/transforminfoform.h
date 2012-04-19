@@ -33,6 +33,7 @@ public slots:
     void sampleRateChanged();
     void windowTypeChanged();
     void overlapChanged();
+    void averagingChanged();
 
 private:
     Ui::TransformInfoForm *ui;

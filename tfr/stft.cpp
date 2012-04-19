@@ -220,6 +220,7 @@ Stft::
 :
     _window_size( 1<<11 ),
     _compute_redundant(false),
+    _averaging(1),
     _overlap(0.f),
     _window_type(WindowType_Rectangular)
 {
@@ -241,16 +242,48 @@ Tfr::pChunk Stft::
     else
         chunk = ComputeChunk(windowedInput);
 
+
+    if (1 != _averaging)
+    {
+        unsigned width = chunk->nScales();
+        unsigned height = chunk->nSamples()/_averaging;
+
+        Tfr::ChunkData::Ptr averagedOutput(
+                new Tfr::ChunkData( height*width ));
+
+        Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( chunk->transform_data ).ptr();
+        Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( averagedOutput ).ptr();
+
+        BOOST_ASSERT( height > 1 );
+
+        float as = 1.f/_averaging;
+#pragma omp parallel for
+        for (unsigned k=0; k<height; ++k)
+        {
+            for (unsigned j=0; j<width; ++j)
+            {
+                float elem = 0.f;
+                for (unsigned a=0; a<_averaging; ++a)
+                    elem += abs(in[(k*_averaging + a)*width + j]);
+                out[k*width + j] = ChunkElement(elem*as, 0);
+            }
+        }
+
+        chunk->transform_data = averagedOutput;
+    }
+
     chunk->freqAxis = freqAxis( b->sample_rate );
     double increment = this->increment();
-    chunk->chunk_offset = (b->sample_offset + (_window_size/2 - increment/2))/increment;
-    chunk->first_valid_sample = ceil((_window_size/2 - increment/2)/increment);
+    double alignment = _window_size;
+    chunk->chunk_offset = (b->sample_offset + (alignment/2 - increment/2))/(increment*_averaging);
+    // chunk->first_valid_sample only makes sense if the transform is invertible, which it isn't if _averaging!=1
+    chunk->first_valid_sample = ceil((alignment/2 - increment/2)/increment);
     unsigned nSamples = chunk->nSamples();
     if (nSamples > 2*chunk->first_valid_sample)
         chunk->n_valid_samples = nSamples - 2*chunk->first_valid_sample;
     else
         chunk->n_valid_samples = 0;
-    chunk->sample_rate = b->sample_rate / increment;
+    chunk->sample_rate = b->sample_rate / (increment*_averaging);
     chunk->original_sample_rate = b->sample_rate;
 
     if (0 == b->sample_offset)
@@ -259,6 +292,7 @@ Tfr::pChunk Stft::
         chunk->first_valid_sample = 0;
         chunk->chunk_offset = 0;
     }
+
 
     TEST_FT_INVERSE
     {
@@ -359,6 +393,8 @@ Tfr::pChunk Stft::
 Signal::pBuffer Stft::
         inverse( pChunk chunk )
 {
+    BOOST_ASSERT( _averaging == 1 );
+
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
     BOOST_ASSERT( stftchunk );
     BOOST_ASSERT( 0<stftchunk->n_valid_samples );
@@ -519,7 +555,8 @@ unsigned Stft::
 
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
     maxsize = std::max((size_t)_window_size, maxsize/(3*sizeof(ChunkElement)));
-    return std::min((unsigned)maxsize, spo2g(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size);
+    unsigned alignment = _window_size*_averaging;
+    return std::min((unsigned)maxsize, spo2g(align_up(current_valid_samples_per_chunk, alignment)/alignment)*alignment);
 }
 
 
@@ -531,7 +568,8 @@ unsigned Stft::
 
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
     maxsize = std::max((size_t)_window_size, maxsize/(3*sizeof(ChunkElement)));
-    return std::min((unsigned)maxsize, lpo2s(align_up(current_valid_samples_per_chunk, _window_size)/_window_size)*_window_size);
+    unsigned alignment = _window_size*_averaging;
+    return std::min((unsigned)maxsize, lpo2s(align_up(current_valid_samples_per_chunk, alignment)/alignment)*alignment);
 }
 
 
@@ -728,6 +766,18 @@ void Stft::
         // free unused memory
         //_handle_ctx_c2c(0,0);
     }
+}
+
+
+void Stft::
+        averaging(unsigned value)
+{
+    if (1 > value)
+        value = 1;
+    if (10 < value)
+        value = 10;
+
+    _averaging = value;
 }
 
 
@@ -1287,7 +1337,8 @@ Signal::Interval StftChunk::
     if (0 == chunk_offset)
     {
         I.first = 0;
-        I.last = std::floor((nSamples() - 1) * scale + 0.5 + window_size()/2);
+        //I.last = std::floor((nSamples() - 1) * scale + 0.5 + window_size()/2);
+        I.last = std::floor((nSamples() - 0.5) * scale + 0.5);
     }
 
     return I;
