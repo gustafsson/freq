@@ -11,7 +11,7 @@ url=
 unset targets
 #targets[${#targets[*]}]="addiva"
 #targets[${#targets[*]}]="sd"
-#targets[${#targets[*]}]="sss"
+targets[${#targets[*]}]="hast"
 targets[${#targets[*]}]="reader"
 targets[${#targets[*]}]="" # this is the default build
 

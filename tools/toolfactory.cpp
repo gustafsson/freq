@@ -75,7 +75,7 @@ ToolFactory::
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
 
-#ifndef TARGET_sss
+#ifndef TARGET_hast
     // No brushes for Sjostridsskolan, the Swedish Naval Academy
         _brush_model.reset( new BrushModel(p, &render_model) );
         _brush_view.reset( new BrushView(_brush_model.data() ));
