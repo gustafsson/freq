@@ -449,8 +449,9 @@ tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
 tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::ColorMode scheme ) {
     tvector<4,float> spectrum[12];
     int count = 0;
-    if (Renderer::ColorMode_GreenRed == scheme)
+    switch (scheme)
     {
+    case Renderer::ColorMode_GreenRed:
         spectrum[0] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[1] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[2] = tvector<4,float>( 0, 1, 0, 0 ),
@@ -464,9 +465,22 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         spectrum[10] = tvector<4,float>( -0.5, 0, 0, 0 ); // dark line, almost black
         spectrum[11] = tvector<4,float>( 0.75, 0, 0, 0 ); // dark red when over the top
         count = 11;
-    }
-    else
-    {
+        break;
+    case Renderer::ColorMode_GreenWhite:
+        if (wavelengthScalar<0)
+            return tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[0] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[1] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[2] = tvector<4,float>( 0, 1, 0, 0 ),
+        spectrum[3] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[4] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[5] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[6] = tvector<4,float>( 1, 1, 1, 0 );
+        //spectrum[7] = tvector<4,float>( -0.5, -0.5, -0.5, 0 ); // dark line, almost black
+        spectrum[7] = tvector<4,float>( 1, 1, 1, 0 ); // darker when over the top
+        count = 7;
+        break;
+    default:
         /* for white background */
         float a = 1/255.f;
         // rainbow http://en.wikipedia.org/wiki/Rainbow#Spectrum
@@ -503,6 +517,7 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
             { 0, 1, 0 },
             { 1, 1, 0 },
             { 1, 0, 0 }}; */
+        break;
     }
 
     if (wavelengthScalar<0)
@@ -666,6 +681,7 @@ void Renderer::beginVboRendering()
         {
         case ColorMode_Rainbow:
         case ColorMode_GreenRed:
+        case ColorMode_GreenWhite:
             glUniform1f(uniColorTextureFactor, 1.f);
             break;
         default:

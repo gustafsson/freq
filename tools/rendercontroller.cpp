@@ -254,6 +254,14 @@ void RenderController::
 
 
 void RenderController::
+        receiveSetGreenWhiteColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenWhite;
+    stateChanged();
+}
+
+
+void RenderController::
         receiveToogleHeightlines(bool value)
 {
     model()->renderer->draw_contour_plot = value;
@@ -716,16 +724,20 @@ void RenderController::
     {   color = new ComboBoxAction(toolbar_render);
         color->setObjectName("ComboBoxActioncolor");
         color->decheckable( false );
-        color->addActionItem( ui->actionSet_rainbow_colors );
-        color->addActionItem( ui->actionSet_grayscale );
+#if !defined(TARGET_hast)
         color->addActionItem( ui->actionSet_colorscale );
         color->addActionItem( ui->actionSet_greenred_colors );
+        color->addActionItem( ui->actionSet_rainbow_colors );
+#endif
+        color->addActionItem( ui->actionSet_greenwhite_colors );
+        color->addActionItem( ui->actionSet_grayscale );
         toolbar_render->addWidget( color );
 
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
         connect(ui->actionSet_greenred_colors, SIGNAL(triggered()), SLOT(receiveSetGreenRedColors()));
+        connect(ui->actionSet_greenwhite_colors, SIGNAL(triggered()), SLOT(receiveSetGreenWhiteColors()));
         color->setCheckedAction(ui->actionSet_colorscale);
     }
 
