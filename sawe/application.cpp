@@ -358,13 +358,11 @@ void Application::
 }
 
 pProject Application::
-        slotNew_recording( int record_device )
+        slotNew_recording()
 {
     TaskTimer tt("New recording");
-    if (record_device<0)
-        record_device = QSettings().value("inputdevice", -1).toInt();
 
-    pProject p = Project::createRecording( record_device );
+    pProject p = Project::createRecording();
     if (p)
         openadd_project(p);
 

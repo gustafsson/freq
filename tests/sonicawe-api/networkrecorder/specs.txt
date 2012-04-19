@@ -1,0 +1,3 @@
+Så fort någon ansluter börjar den skicka iväg data. Datan är 16-bits signed integers, sample raten är 32768 hz.
+Den samplar en sekund, skickar iväg resultatet, samplar en sekund, skickar... etc.
+Bryter du anslutningen får du vänta en stund (~20 sekunder) på att den ska tima ur och bli redo att skicka igen.

@@ -7,7 +7,7 @@
 #include "ui/mainwindow.h"
 
 // Sonic AWE
-#include "adapters/microphonerecorder.h"
+#include "adapters/recorder.h"
 #include "heightmap/renderer.h"
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
@@ -42,8 +42,8 @@
 #include <QGraphicsView>
 
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 //#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
@@ -1028,7 +1028,7 @@ void RenderView::
             QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
     }
 
-    Adapters::MicrophoneRecorder* r = dynamic_cast<Adapters::MicrophoneRecorder*>( first_source );
+    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>( first_source );
     if(r != 0 && !(r->isStopped()))
     {
         isRecording = true;

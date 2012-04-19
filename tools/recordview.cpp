@@ -2,10 +2,10 @@
 
 #include "recordmodel.h"
 #include "renderview.h"
-#include "adapters/microphonerecorder.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "adapters/microphonerecorder.h"
 #include "tfr/cwt.h"
 #include "sawe/project.h"
 
@@ -52,7 +52,9 @@ void RecordView::
             // invalid by newly recorded data).
             model_->render_view->model->_qx = std::max(model_->render_view->model->_qx, limit);
 
-            if ( model_->recording->time_since_last_update() > 5 )
+            Adapters::MicrophoneRecorder* microphonerecorder = dynamic_cast<Adapters::MicrophoneRecorder*>(model_->recording);
+            bool ismicrophonerecorder = 0!=microphonerecorder;
+            if ( ismicrophonerecorder && model_->recording->time_since_last_update() > 5 )
             {
                 QErrorMessage::qtHandler()->showMessage(
                     "It looks like your recording device doesn't report any "

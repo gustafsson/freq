@@ -1,6 +1,6 @@
 #include "recordmodel.h"
 
-#include "adapters/microphonerecorder.h"
+#include "adapters/recorder.h"
 #include "sawe/project.h"
 
 namespace Tools
@@ -12,7 +12,7 @@ RecordModel::
     project(project),
     render_view(render_view)
 {
-    recording = dynamic_cast<Adapters::MicrophoneRecorder*>
+    recording = dynamic_cast<Adapters::Recorder*>
                 (project->head->head_source()->root());
 
     BOOST_ASSERT( recording );
@@ -30,7 +30,7 @@ RecordModel::
 bool RecordModel::
         canCreateRecordModel( Sawe::Project* project )
 {
-    return dynamic_cast<Adapters::MicrophoneRecorder*>
+    return dynamic_cast<Adapters::Recorder*>
                 (project->head->head_source()->root());
 }
 

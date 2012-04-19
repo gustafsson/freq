@@ -109,9 +109,9 @@ public:
 
 
     /**
-      Creates a new recording on 'record_device'.
+      Creates a new recording on QSettings().value("inputdevice").
      */
-    static boost::shared_ptr<Project> createRecording(int record_device=-1);
+    static boost::shared_ptr<Project> createRecording();
 
 
     /**

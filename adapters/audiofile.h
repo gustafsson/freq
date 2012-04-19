@@ -25,7 +25,7 @@
         Signal::pBuffer b = Signal::Source::read( firstSample, number_of_samples )
 
         The base class Signal doesn't have any pBuffers, it's up to each implementation
-        to provide them when requested for. A Signal::MicrophoneRecorder might for
+        to provide them when requested for. A Signal::Recorder might for
         instance have a member std::list<Signal::pBuffer> to store recordings in,
         internally. These would be assembled to another Buffer when requested by read.
 
@@ -160,7 +160,7 @@
         Heightmap::TfrHeightmap
             implements abstract HeightCollection
             implements abstract ChunkCompleteCallback
-            takes a Signal::pOperation as constructing argument, source can be Signal::MicrophoneRecorder,
+            takes a Signal::pOperation as constructing argument, source can be Signal::Recorder,
                 multiple sources is implemented after layer have been implemented
             also takes a Tfr::ChunkQueue
 

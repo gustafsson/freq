@@ -52,7 +52,7 @@ OpenGui::
 void OpenGui::
         initOpenGui()
 {
-    project( Sawe::Application::global_ptr()->slotNew_recording( -1 ) );
+    project( Sawe::Application::global_ptr()->slotNew_recording( ) );
 }
 
 

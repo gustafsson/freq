@@ -1,6 +1,5 @@
 #include "microphonerecorder.h"
 #include "playback.h"
-#include "sawe/configuration.h"
 
 #include <iostream>
 #include <memory.h>
@@ -255,15 +254,6 @@ bool MicrophoneRecorder::
 }
 
 
-long unsigned MicrophoneRecorder::
-        actual_number_of_samples()
-{
-    QMutexLocker lock(&_data_lock);
-    long unsigned N = _data.number_of_samples();
-    return N;
-}
-
-
 void MicrophoneRecorder::
         changeInputDevice( int inputDevice )
 {
@@ -284,82 +274,12 @@ std::string MicrophoneRecorder::
     return "Recording mic " + deviceName();
 }
 
-Signal::pBuffer MicrophoneRecorder::
-        read( const Signal::Interval& I )
-{
-    QMutexLocker lock(&_data_lock);
-    // TODO why? return _data[channel].readFixedLength( I );
-    return _data.read( I );
-}
 
 float MicrophoneRecorder::
         sample_rate()
 {
     return _sample_rate;
 }
-
-long unsigned MicrophoneRecorder::
-        number_of_samples()
-{
-    if (isStopped())
-        return actual_number_of_samples();
-    else
-        return time() * sample_rate();
-}
-
-unsigned MicrophoneRecorder::
-        num_channels()
-{
-    QMutexLocker lock(&_data_lock);
-    if (Sawe::Configuration::mono())
-        return _data.num_channels()?1:0;
-    else
-        return _data.num_channels();
-}
-
-void MicrophoneRecorder::
-        set_channel(unsigned channel)
-{
-    QMutexLocker lock(&_data_lock);
-    //TIME_MICROPHONERECORDER TaskTimer("MicrophoneRecorder::set_channel(%u)", channel).suppressTiming();
-    _data.set_channel(channel);
-}
-
-
-unsigned MicrophoneRecorder::
-        get_channel()
-{
-    return _data.get_channel();
-}
-
-
-float MicrophoneRecorder::
-        length()
-{
-    return isStopped() ? Signal::FinalSource::length() : time();
-}
-
-
-float MicrophoneRecorder::
-        time()
-{
-    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _start_recording;
-    float dt = d.total_milliseconds()*0.001f;
-    return dt + _offset;
-}
-
-
-float MicrophoneRecorder::
-        time_since_last_update()
-{
-    if (isStopped())
-        return 0;
-    QMutexLocker lock(&_data_lock);
-    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _last_update;
-    float dt = d.total_milliseconds()*0.001f;
-    return std::min( dt, time() - _offset);
-}
-
 
 
 int MicrophoneRecorder::

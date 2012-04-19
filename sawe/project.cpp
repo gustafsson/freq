@@ -8,6 +8,7 @@
 #include "adapters/csvtimeseries.h"
 #endif
 #include "adapters/microphonerecorder.h"
+#include "adapters/networkrecorder.h"
 #include "signal/operationcache.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
@@ -133,6 +134,14 @@ pProject Project::
 {
     string filename; filename.swap( project_file_or_audio_file );
 
+    QUrl url(filename.c_str());
+    if (url.isValid())
+    {
+        Signal::pOperation s( new Adapters::NetworkRecorder(url) );
+        return pProject( new Project( s, "New network recording" ));
+    }
+
+
     struct stat dummy;
     // QFile::exists doesn't work as expected can't handle unicode names
     if (!filename.empty() && 0!=stat( filename.c_str(),&dummy))
@@ -253,8 +262,9 @@ void Project::
 
 
 pProject Project::
-        createRecording(int record_device)
+        createRecording()
 {
+    int record_device = QSettings().value("inputdevice", -1).toInt();
     Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
     return pProject( new Project( s, "New recording" ));
 }
