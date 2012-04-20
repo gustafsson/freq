@@ -158,17 +158,34 @@ Buffer& Buffer::
     if (!toCpu && !toGpu)
     {
         toGpu = fromGpu;
-        if (fromGpu)
-            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
-                DataStorageSize(i.count()),
-                make_cudaPitchedPtr(
-                                CudaGlobalStorage::WriteAll<1>( waveform_data_ ).device_ptr() + offs_write,
-                                i.count()*sizeof(float),
-                                i.count()*sizeof(float), 1), false);
+        if (i.count() == getInterval().count())
+        {
+            if (fromGpu)
+                write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                    DataStorageSize(i.count()),
+                    make_cudaPitchedPtr(
+                                    CudaGlobalStorage::WriteAll<1>( waveform_data_ ).device_ptr() + offs_write,
+                                    i.count()*sizeof(float),
+                                    i.count()*sizeof(float), 1), false);
+            else
+                write = CpuMemoryStorage::BorrowPtr(
+                    DataStorageSize(i.count()),
+                    CpuMemoryStorage::WriteAll<1>( waveform_data_ ).ptr() + offs_write, false);
+        }
         else
-            write = CpuMemoryStorage::BorrowPtr(
-                DataStorageSize(i.count()),
-                CpuMemoryStorage::WriteAll<1>( waveform_data_ ).ptr() + offs_write, false);
+        {
+            if (fromGpu)
+                write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                    DataStorageSize(i.count()),
+                    make_cudaPitchedPtr(
+                                    CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
+                                    i.count()*sizeof(float),
+                                    i.count()*sizeof(float), 1), false);
+            else
+                write = CpuMemoryStorage::BorrowPtr(
+                    DataStorageSize(i.count()),
+                    CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ptr() + offs_write, false);
+        }
     }
 
     if (!fromCpu && !fromGpu)
