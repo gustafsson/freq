@@ -53,65 +53,38 @@ ChunkAndInverse CwtFilter::
 
     unsigned chunk_alignment = cwt.chunk_alignment( sample_rate() );
     Signal::IntervalType firstSample = I.first;
-    firstSample = firstSample/chunk_alignment*chunk_alignment;
+    firstSample = align_down(firstSample, chunk_alignment);
 
     unsigned time_support = cwt.wavelet_time_support_samples( sample_rate() );
-
-    // wavelet_std_samples gets stored in cwt so that inverse_cwt can take it
-    // into account and create an inverse that is of the desired size.
-    unsigned redundant_samples = time_support;
-    if (firstSample < time_support)
-        redundant_samples = firstSample;
-
-    //unsigned first_valid_sample = firstSample;
-    firstSample -= redundant_samples;
-
+    firstSample -= time_support;
     unsigned numberOfSamples = cwt.next_good_size( I.count()-1, sample_rate() );
-    if (firstSample == 0)
-        numberOfSamples = cwt.next_good_size( 1, sample_rate() );
 
     // hack to make it work without subsampling
 #ifdef CWT_NOBINS
     numberOfSamples = cwt.next_good_size( 1, sample_rate() );
 #endif
 
-    unsigned L = redundant_samples + numberOfSamples + time_support;
-
-    DEBUG_CwtFilter TaskTimer tt("L=%u, redundant=%u, num=%u, support=%u, first=%u",
-                 L, redundant_samples, numberOfSamples, time_support, firstSample);
-
     ChunkAndInverse ci;
 
     {
+        unsigned L = time_support + numberOfSamples + time_support;
+
         TIME_CwtFilterRead TaskTimer tt2("CwtFilter reading %s for '%s'",
                                          Interval(firstSample, firstSample+L).toString().c_str(),
                                      vartype(*this).c_str());
 
-        ci.inverse = Operation::source()->readFixedLength( Interval(firstSample,
-                                                        firstSample+L) );
+        ci.inverse = Operation::source()->readFixedLength(
+                Interval(firstSample, firstSample+L) );
     }
 
     TIME_CwtFilter TaskTimer tt2("CwtFilter transforming %s for '%s'",
                                  ci.inverse->getInterval().toString().c_str(),
                                  vartype(*this).c_str());
 
-    size_t free=0, total=0;
-#ifdef USE_CUDA
-    DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
-#endif
-    DEBUG_CwtFilter TaskInfo("free = %g, total = %g, inverse_size=%u, estimated = %g",
-            free/1024./1024., total/1024./1024.,
-            ci.inverse->number_of_samples(),
-            cwt.required_gpu_bytes( numberOfSamples, sample_rate() )/1024./1024);
 
     // Compute the continous wavelet transform
     ci.chunk = (*transform())( ci.inverse );
 
-#ifdef USE_CUDA
-    DEBUG_CwtFilter cudaMemGetInfo(&free, &total);
-    DEBUG_CwtFilter TaskInfo("free = %g, total = %g",
-             free/1024./1024., total/1024./1024. );
-#endif
 
 #ifdef _DEBUG
     Signal::Interval chunkInterval = ci.chunk->getInterval();
