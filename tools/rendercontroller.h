@@ -116,6 +116,9 @@ namespace Tools
         void windowLostFocus();
         void windowGotFocus();
         virtual bool eventFilter(QObject*, QEvent*);
+
+        void toolbarWidgetVisible(QWidget*, bool);
+        static void toolbarWidgetVisible(QToolBar*, QWidget*, bool);
     };
 } // namespace Tools
 

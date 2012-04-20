@@ -133,6 +133,8 @@ void RecordController::
         #if defined(TARGET_hast)
             ui->actionSave_project->setVisible( false );
             ui->actionSave_project_as->setVisible( false );
+            ui->actionExport_audio->setVisible( false );
+            ui->actionExport_selection->setVisible( false );
         #endif
     }
     else

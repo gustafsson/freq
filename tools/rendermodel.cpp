@@ -41,20 +41,6 @@ RenderModel::
 
     for (unsigned c=0; c<o->num_channels(); ++c)
         collections[c]->renderer = renderer.get();
-
-#ifdef TARGET_hast
-    _pz = -6;
-    xscale = 0.1f;
-
-    float L = p->worker.length();
-    if (L)
-    {
-        xscale = 14/L;
-        _qx = 0.5*L;
-    }
-
-    renderer->left_handed_axes = false;
-#endif
 }
 
 
@@ -82,6 +68,18 @@ void RenderModel::
     _rz = 0;
     xscale = -_pz*0.1f;
     zscale = -_pz*0.75f;
+
+#ifdef TARGET_hast
+    _pz = -6;
+    xscale = 0.1f;
+
+    float L = _project->worker.length();
+    if (L)
+    {
+        xscale = 14/L;
+        _qx = 0.5*L;
+    }
+#endif
 }
 
 

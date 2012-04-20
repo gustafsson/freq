@@ -1282,11 +1282,15 @@ void RenderView::
         // model->renderer might be 0 if we're about to close the application
         // and don't bother recreating renderer if initialization has previously failed
 
-        Heightmap::Renderer::ColorMode old_color_mode = model->renderer->color_mode;
+        Heightmap::Renderer::ColorMode color_mode = model->renderer->color_mode;
+        float last_ysize = model->renderer->last_ysize;
+        bool left_handed_axes = model->renderer->left_handed_axes;
 
         model->renderer.reset();
         model->renderer.reset(new Heightmap::Renderer( model->collections[0].get() ));
-        model->renderer->color_mode = old_color_mode;
+        model->renderer->color_mode = color_mode;
+        model->renderer->last_ysize = last_ysize;
+        model->renderer->left_handed_axes = left_handed_axes;
 
         userinput_update();
     }
