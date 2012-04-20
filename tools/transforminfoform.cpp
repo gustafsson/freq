@@ -156,6 +156,10 @@ void TransformInfoForm::
     if (-1.f != ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat() && !ui->normalizationComboBox->hasFocus())
         ui->normalizationComboBox->setCurrentIndex(ui->normalizationComboBox->findData(-1.f));
 
+#ifdef TARGET_hast
+    {
+        bool cwt = false, stft = false, cepstrum = false;
+#endif
     ui->minHzLabel->setVisible(cwt);
     ui->minHzEdit->setVisible(cwt);
     ui->maxHzLabel->setVisible(false);
@@ -170,6 +174,9 @@ void TransformInfoForm::
     ui->windowTypeComboBox->setVisible(stft || cepstrum);
     ui->overlapLabel->setVisible(stft || cepstrum);
     ui->overlapEdit->setVisible(stft || cepstrum);
+#ifdef TARGET_hast
+    }
+#endif
 
     if (cwt)
     {

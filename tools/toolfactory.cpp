@@ -119,9 +119,9 @@ ToolFactory::
             _playbackmarkers_view.data(), _render_view );
     playback_model.markers = _playbackmarkers_model.data();
 
-#ifndef TARGET_hast
     _transform_info_form = new TransformInfoForm(p, _render_view );
 
+#ifndef TARGET_hast
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
 #endif
 
