@@ -129,6 +129,11 @@ void RecordController::
             ui->actionRecord->setEnabled( true );
         else
             ui->actionRecord->setToolTip("Can't record, no record devices found");
+
+        #if defined(TARGET_hast)
+            ui->actionSave_project->setVisible( false );
+            ui->actionSave_project_as->setVisible( false );
+        #endif
     }
     else
         ui->actionRecord->setToolTip("Can only record on recordings");

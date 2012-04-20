@@ -92,7 +92,7 @@ ToolFactory::
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
 
-#if !defined(TARGET_sd) && !defined(TARGET_reader)
+#if !defined(TARGET_sd) && !defined(TARGET_reader) && !defined(TARGET_hast)
     // no matlab for sound design version, nor reader
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
@@ -103,9 +103,11 @@ ToolFactory::
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
     tool_controllers_.push_back( _tooltip_controller );
 
+#ifndef TARGET_hast
     _fantracker_model.reset( new FanTrackerModel( &render_model ) );
     _fantracker_view.reset(new FanTrackerView( _fantracker_model.data() ,_render_view ));
     _fantracker_controller = new FanTrackerController(_fantracker_view.data(), _render_view );
+#endif
 
     _about_dialog = new AboutDialog( p );
 
@@ -115,9 +117,11 @@ ToolFactory::
             _playbackmarkers_view.data(), _render_view );
     playback_model.markers = _playbackmarkers_model.data();
 
+#ifndef TARGET_hast
     _transform_info_form = new TransformInfoForm(p, _render_view );
 
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
+#endif
 
     _harmonics_info_form = new HarmonicsInfoForm(
             p,

@@ -158,12 +158,16 @@ pProject Project::
         string filter;
 #if !defined(TARGET_reader)
         filter += " " + Adapters::Audiofile::getFileFormatsQtFilter( false );
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
         filter += " " + Adapters::CsvTimeseries::getFileFormatsQtFilter( false );
 #endif
         filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
 #if !defined(TARGET_reader)
         filter += ";;" + Adapters::Audiofile::getFileFormatsQtFilter( true );
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
         filter += ";;" + Adapters::CsvTimeseries::getFileFormatsQtFilter( true );
 #endif
 
@@ -420,7 +424,7 @@ bool Project::
 }
 
 
-#if !defined(TARGET_reader)
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
 bool Project::
         saveAs()
 {
@@ -471,7 +475,9 @@ pProject Project::
     Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     return pProject( new Project( s, a->name() ));
 }
+#endif
 
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
 pProject Project::
         openCsvTimeseries(std::string audio_file)
 {
