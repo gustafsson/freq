@@ -1,6 +1,7 @@
 #include "cwtfilter.h"
 #include "cwtchunk.h"
 #include "cwt.h"
+#include "neat_math.h"
 
 #include <stringprintf.h>
 #include <computationkernel.h>

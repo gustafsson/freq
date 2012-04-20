@@ -924,15 +924,6 @@ void RenderController::
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()));
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(transformChanged()));
 
-#ifdef TARGET_hast
-    channelselector->setVisible(false);
-    tf_resolution->setVisible(false);
-    amplitude_scale->setVisible(false);
-    hz_scale->setVisible(false);
-    transform->setVisible(false);
-    receiveToggleOrientation(true);
-#endif
-
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
     connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
@@ -960,6 +951,15 @@ void RenderController::
     main->centralWidget()->layout()->addWidget(view->graphicsview);
 
     view->emitTransformChanged();
+
+#ifdef TARGET_hast
+    channelselector->setVisible(false);
+    tf_resolution->setVisible(false);
+    amplitude_scale->setVisible(false);
+    hz_scale->setVisible(false);
+    transform->setVisible(false);
+    receiveToggleOrientation(true);
+#endif
 }
 
 

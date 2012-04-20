@@ -271,6 +271,9 @@ string Reader::
 #if defined(TARGET_reader)
     name = "Sonic AWE Reader";
     return "Sonic AWE Reader";
+#elif defined(TARGET_hast)
+    name = "Sonic AWE Hast";
+    return "Sonic AWE Hast";
 #else
     while (true)
     {

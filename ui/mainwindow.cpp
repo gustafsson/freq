@@ -61,10 +61,6 @@ void SaweMainWindow::
     ui->actionSave_project->setEnabled( false );
     ui->actionSave_project_as->setEnabled( false );
 #endif
-#if defined(TARGET_hast)
-    ui->actionSave_project->setVisible( false );
-    ui->actionSave_project_as->setVisible( false );
-#endif
     connect(ui->actionExit, SIGNAL(triggered()), SLOT(close()));
     connect(ui->actionToggleFullscreen, SIGNAL(toggled(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));

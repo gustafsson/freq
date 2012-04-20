@@ -188,7 +188,10 @@ pProject Project::
     {
         int availableFileTypes = 1;
     #if !defined(TARGET_reader)
-        availableFileTypes+=2;
+        availableFileTypes++;
+    #endif
+    #if !defined(TARGET_reader) && !defined(TARGET_hast)
+        availableFileTypes++;
     #endif
 
         string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
@@ -196,6 +199,8 @@ pProject Project::
         if (suffix == "sonicawe") expected = 0;
 #if !defined(TARGET_reader)
         if (Adapters::Audiofile::hasExpectedSuffix(suffix)) expected = 1;
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
         if (Adapters::CsvTimeseries::hasExpectedSuffix(suffix)) expected = 2;
 #endif
 
@@ -209,6 +214,8 @@ pProject Project::
                 case 0: p = Project::openProject( filename ); break;
     #if !defined(TARGET_reader)
                 case 1: p = Project::openAudio( filename ); break;
+    #endif
+    #if !defined(TARGET_reader) && !defined(TARGET_hast)
                 case 2: p = Project::openCsvTimeseries( filename ); break;
     #endif
             }
@@ -424,7 +431,7 @@ bool Project::
 }
 
 
-#if !defined(TARGET_reader) && !defined(TARGET_hast)
+#if !defined(TARGET_reader)
 bool Project::
         saveAs()
 {

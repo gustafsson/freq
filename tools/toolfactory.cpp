@@ -97,7 +97,9 @@ ToolFactory::
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
 
+#ifndef TARGET_hast
     _graph_controller = new GraphController( _render_view );
+#endif
 
     _tooltip_controller = new TooltipController(
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
