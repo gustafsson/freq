@@ -71,7 +71,7 @@ Buffer::Buffer(Signal::Interval subinterval, pBuffer other, unsigned channel )
     waveform_data_ .reset( new DataStorage<float>(subinterval.count()));
     bitor_channel_ = channel;
     *this |= *other_;
-    other_.reset(); // TODO what is the point of other_?
+    other_.reset(); // TODO other_ was used before but isn't anymore
 }
 
 

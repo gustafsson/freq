@@ -220,7 +220,6 @@ Stft::
 :
     _window_size( 1<<11 ),
     _compute_redundant(false),
-    _normalize(false),
     _averaging(1),
     _overlap(0.f),
     _window_type(WindowType_Rectangular)
@@ -234,6 +233,7 @@ Tfr::pChunk Stft::
 {
     TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s, computeredundant = %s",
                            _window_size, b->getInterval().toString().c_str(), compute_redundant()?"true":"false");
+
     DataStorage<float>::Ptr windowedInput = prepareWindow( b->waveform_data() );
 
     // @see compute_redundant()
@@ -255,13 +255,6 @@ Tfr::pChunk Stft::
         stftAverage( chunk->transform_data, averagedOutput, width );
 
         chunk->transform_data = averagedOutput;
-    }
-
-    if (normalize())
-    {
-        unsigned scales = chunk->nScales();
-
-        stftNormalizeTransform( chunk->transform_data, scales );
     }
 
     chunk->freqAxis = freqAxis( b->sample_rate );
@@ -758,13 +751,6 @@ void Stft::
         // free unused memory
         //_handle_ctx_c2c(0,0);
     }
-}
-
-
-void Stft::
-        normalize(bool value)
-{
-    _normalize = value;
 }
 
 

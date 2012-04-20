@@ -13,6 +13,7 @@
 #include "tfr/cepstrum.h"
 #include "tfr/drawnwaveform.h"
 #include "adapters/csvtimeseries.h"
+#include "filters/normalize.h"
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -68,8 +69,11 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->windowTypeComboBox->addItem(Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)i).c_str(), i);
     }
 
-    ui->normalizationComboBox->addItem("No normalization", false);
-    ui->normalizationComboBox->addItem("Standard normalization", true);
+    ui->normalizationComboBox->addItem("Select normalization to apply", -1.f);
+    ui->normalizationComboBox->addItem("0 s normalization", 0.f);
+    ui->normalizationComboBox->addItem("1 s normalization", 1.f);
+    ui->normalizationComboBox->addItem("10 s normalization", 10.f);
+    ui->normalizationComboBox->addItem("100 s normalization", 100.f);
 
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
@@ -149,6 +153,9 @@ void TransformInfoForm::
     }
     addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
 
+    if (-1.f != ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat() && !ui->normalizationComboBox->hasFocus())
+        ui->normalizationComboBox->setCurrentIndex(ui->normalizationComboBox->findData(-1.f));
+
     ui->minHzLabel->setVisible(cwt);
     ui->minHzEdit->setVisible(cwt);
     ui->maxHzLabel->setVisible(false);
@@ -201,9 +208,6 @@ void TransformInfoForm::
         Tfr::Stft::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
-        bool normalize = stft->normalize();
-        if (windowtype != ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toInt() && !ui->normalizationComboBox->hasFocus())
-            ui->normalizationComboBox->setCurrentIndex(ui->normalizationComboBox->findData(normalize));
     }
     else if (cepstrum)
     {
@@ -408,15 +412,13 @@ void TransformInfoForm::
 void TransformInfoForm::
         normalizationChanged()
 {
-    bool newValue = ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toBool();
+    float newValue = ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat();
 
-    Tfr::Stft* stft = &Tfr::Stft::Singleton();
-    if (stft->normalize() != newValue)
+    if (0.f <= newValue)
     {
-        stft->normalize( newValue );
-
-        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        renderview->emitTransformChanged();
+        float fs = project->head->head_source()->sample_rate();
+        project->appendOperation(Signal::pOperation(
+                new Filters::Normalize(newValue*fs)));
     }
 }
 

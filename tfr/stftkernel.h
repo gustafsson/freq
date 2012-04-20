@@ -13,6 +13,5 @@ inline void stftDiscardImag( Tfr::ChunkData::Ptr inwavep, DataStorage<float>::Pt
 void        stftToComplex( DataStorage<float>::Ptr inwavep, Tfr::ChunkData::Ptr outwavep );
 void        cepstrumPrepareCepstra( Tfr::ChunkData::Ptr chunk, float normalization );
 void        stftAverage( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, unsigned scales );
-void        stftNormalizeTransform( Tfr::ChunkData::Ptr input, unsigned scales );
 
 #endif // STFTKERNEL_H
