@@ -35,21 +35,26 @@ Signal::Interval StftFilter::
         requiredInterval( const Signal::Interval& I )
 {
     //((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
-    unsigned averaging = ((Stft*)transform().get())->averaging();
-    unsigned window_size = ((Stft*)transform().get())->chunk_size();
-    unsigned window_increment = ((Stft*)transform().get())->increment();
-    unsigned chunk_size  = window_size*averaging;
-    unsigned increment   = window_increment*averaging;
+    long averaging = ((Stft*)transform().get())->averaging();
+    long window_size = ((Stft*)transform().get())->chunk_size();
+    long window_increment = ((Stft*)transform().get())->increment();
+    long chunk_size  = window_size*averaging;
+    long increment   = window_increment*averaging;
 
 
     // Add a margin to make sure that the inverse of the STFT will cover I
-    unsigned first_chunk = 0,
-             last_chunk = (I.last + chunk_size)/increment;
+    long first_chunk = 0,
+         last_chunk = (I.last + chunk_size)/increment;
 
     if (I.first >= window_size-window_increment)
         first_chunk = (I.first - (window_size-window_increment))/increment;
-    else if (last_chunk*increment < chunk_size + increment)
-        last_chunk = (chunk_size + increment)/increment;
+    else
+    {
+        first_chunk = floor((I.first - float(window_size-window_increment))/increment);
+
+        if (last_chunk*increment < chunk_size + increment)
+            last_chunk = (chunk_size + increment)/increment;
+    }
 
     Interval chunk_interval(
                 first_chunk*increment,
@@ -65,8 +70,13 @@ Signal::Interval StftFilter::
 
         if (I.first >= chunk_size/2)
             first_chunk = (I.first - chunk_size/2)/increment;
-        else if (last_chunk*increment < chunk_size + increment)
-            last_chunk = (chunk_size + increment)/increment;
+        else
+        {
+            first_chunk = floor((I.first - chunk_size/2.f)/increment);
+
+            if (last_chunk*increment < chunk_size + increment)
+                last_chunk = (chunk_size + increment)/increment;
+        }
 
         chunk_interval = Interval(
                     first_chunk*increment,

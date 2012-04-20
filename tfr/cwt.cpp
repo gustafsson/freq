@@ -126,7 +126,7 @@ pChunk Cwt::
     unsigned long offset = buffer->sample_offset;
     unsigned std_samples = wavelet_time_support_samples( buffer->sample_rate );
     //unsigned std_samples0 = time_support_bin0( buffer->sample_rate );
-    unsigned long first_valid_sample = std_samples;
+    Signal::IntervalType first_valid_sample = std_samples;
     unsigned added_silence = 0;
 
     if (0!=offset)

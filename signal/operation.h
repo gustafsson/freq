@@ -58,13 +58,13 @@ public:
 
       @see read(const Interval&)
       */
-    virtual float sample_rate() { return _source->sample_rate(); }
+    virtual float sample_rate() { return _source?_source->sample_rate():1.f; }
     virtual IntervalType number_of_samples(); /// @see read(const Interval&)
     virtual float length();
 
-    virtual unsigned num_channels() { return _source->num_channels(); }
+    virtual unsigned num_channels() { return _source?_source->num_channels():0; }
     virtual void set_channel(unsigned c) { if(_source) _source->set_channel(c); }
-    virtual unsigned get_channel() { return _source->get_channel(); }
+    virtual unsigned get_channel() { return _source?_source->get_channel():0; }
 
 
     /**

@@ -17,6 +17,7 @@ public:
     Normalize( unsigned normalizationRadius, Signal::pOperation source = Signal::pOperation() );
 
     virtual std::string name();
+    virtual void invalidate_samples(const Signal::Intervals& I);
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
 private:

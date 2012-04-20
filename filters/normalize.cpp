@@ -24,6 +24,13 @@ std::string Normalize::
 }
 
 
+void Normalize::
+        invalidate_samples(const Intervals& I)
+{
+    Operation::invalidate_samples(I.enlarge(normalizationRadius));
+}
+
+
 pBuffer Normalize::
         read( const Interval& I )
 {
@@ -32,6 +39,8 @@ pBuffer Normalize::
     IntervalType silenceLength = normalizationRadius - (I.first-J.first);
     if (0 < silenceLength)
     {
+        BOOST_ASSERT( 0 == J.first );
+
         OperationInsertSilence silence( source(), Interval(0, silenceLength) );
         J.last += silenceLength;
         b = silence.readFixedLength(J);

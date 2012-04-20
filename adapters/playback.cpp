@@ -598,9 +598,9 @@ int Playback::
 
     float FS;
     TIME_PLAYBACK FS = _data.sample_rate();
-    TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading [%u, %u)%u# from %u. [%g, %g)%g s%s",
-                           _playback_itr, _playback_itr+framesPerBuffer, framesPerBuffer,
-                           _data.number_of_samples(),
+    TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading [%d, %d)%u# from %d. [%g, %g)%g s%s",
+                           (int)_playback_itr, (int)(_playback_itr+framesPerBuffer),
+                           (unsigned)framesPerBuffer, (int)_data.number_of_samples(),
                            _playback_itr/ FS, (_playback_itr + framesPerBuffer)/ FS,
                            framesPerBuffer/ FS, msg);
 
