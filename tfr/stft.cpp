@@ -271,14 +271,6 @@ Tfr::pChunk Stft::
     chunk->sample_rate = b->sample_rate / (increment*_averaging);
     chunk->original_sample_rate = b->sample_rate;
 
-    if (0 == b->sample_offset)
-    {
-        chunk->n_valid_samples += chunk->first_valid_sample + chunk->chunk_offset;
-        chunk->first_valid_sample = 0;
-        chunk->chunk_offset = 0;
-    }
-
-
     TEST_FT_INVERSE
     {
         Signal::pBuffer breal = b;
@@ -1318,13 +1310,6 @@ Signal::Interval StftChunk::
             std::floor((chunk_offset + .5f).asFloat() * scale + 0.5),
             std::floor((chunk_offset + nSamples() - .5f).asFloat() * scale + 0.5)
     );
-
-    if (0 == chunk_offset)
-    {
-        I.first = 0;
-        //I.last = std::floor((nSamples() - 1) * scale + 0.5 + window_size()/2);
-        I.last = std::floor((nSamples() - 0.5) * scale + 0.5);
-    }
 
     return I;
 }

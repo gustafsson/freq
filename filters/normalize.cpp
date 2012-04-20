@@ -35,26 +35,14 @@ pBuffer Normalize::
         read( const Interval& I )
 {
     Interval J = Intervals(I).enlarge(normalizationRadius).spannedInterval();
-    pBuffer b;
-    IntervalType silenceLength = normalizationRadius - (I.first-J.first);
-    if (0 < silenceLength)
-    {
-        BOOST_ASSERT( 0 == J.first );
-
-        OperationInsertSilence silence( source(), Interval(0, silenceLength) );
-        J.last += silenceLength;
-        b = silence.readFixedLength(J);
-    }
-    else
-        b = source()->readFixedLength(J);
+    pBuffer b = source()->readFixedLength(J);
 
     normalizedata( b->waveform_data(), normalizationRadius );
     // normalizedata moved the data (and made the last 2*normalizationRadius elements invalid)
     b->sample_offset = J.first + normalizationRadius;
 
-    pBuffer r( new Buffer(I.first + silenceLength, I.count(), b->sample_rate ));
+    pBuffer r( new Buffer(I.first, I.count(), b->sample_rate ));
     *r |= *b;
-    r->sample_offset = I.first;
 
     return r;
 }
