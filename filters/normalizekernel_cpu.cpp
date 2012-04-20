@@ -3,6 +3,10 @@
 #include "normalizekernel.h"
 #include <cpumemorystorage.h>
 
+#define VAL(v) fabsf(v)
+#define INVVAL(v) (v)
+//#define VAL(v) (v*v)
+//#define INVVAL(v) sqrt(v)
 
 // TODO could optimize this by computing the rms more sparesly and interpolate the rms value on a spline, would work really well in cuda as well
 void normalizedata(
@@ -17,25 +21,25 @@ void normalizedata(
 #pragma omp parallel for
     for (int c=0; c<channels; ++c)
     {
-        double squaresum = 0.f;
-        int N = radius + 1 + radius;
+        double sum = 0.f;
+        double N = radius + 1 + radius;
         for (int t=-radius; t<radius; ++t)
         {
             float v = p[radius+t];
-            squaresum += v*v;
+            sum += VAL(v);
         }
 
         for (unsigned x=radius; x<width-radius; ++x)
         {
             float v = p[x+radius];
-            squaresum += v*v;
+            sum += VAL(v);
 
-            float invrms = sqrt(N / squaresum);
+            float invsum = INVVAL(N / sum);
 
             v = p[x-radius];
-            squaresum -= v*v;
+            sum -= VAL(v);
 
-            p[x-radius] = p[x]*invrms;
+            p[x-radius] = p[x]*invsum;
         }
     }
 }
