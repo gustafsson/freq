@@ -134,25 +134,27 @@ pProject Project::
 {
     string filename; filename.swap( project_file_or_audio_file );
 
-    QUrl url(filename.c_str());
-    if (url.isValid())
-    {
-        Signal::pOperation s( new Adapters::NetworkRecorder(url) );
-        return pProject( new Project( s, "New network recording" ));
-    }
-
-
+    // QFile::exists doesn't work as expected with unicode names
     struct stat dummy;
-    // QFile::exists doesn't work as expected can't handle unicode names
-    if (!filename.empty() && 0!=stat( filename.c_str(),&dummy))
+    bool fileExists = 0==stat( filename.c_str(),&dummy);
+
+    if (!filename.empty() && !fileExists)
     {
+        QUrl url(filename.c_str());
+        if (url.isValid())
+        {
+            std::string scheme = url.scheme().toStdString();
+            Signal::pOperation s( new Adapters::NetworkRecorder(url) );
+            return pProject( new Project( s, "New network recording" ));
+        }
+
         QMessageBox::warning( 0,
                      QString("Can't find file"),
                      QString("Can't find file '") + QString::fromLocal8Bit(filename.c_str()) + "'");
         filename.clear();
     }
 
-    if (0 == filename.length()) {
+    if (filename.empty()) {
         string filter;
 #if !defined(TARGET_reader)
         filter += " " + Adapters::Audiofile::getFileFormatsQtFilter( false );
