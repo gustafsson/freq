@@ -21,7 +21,17 @@ public:
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
 private:
+    Normalize(); // used by deserialization
     unsigned normalizationRadius;
+
+    friend class boost::serialization::access;
+    template<class archive> void serialize(archive& ar, const unsigned int) {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+
+        ar & BOOST_SERIALIZATION_NVP(normalizationRadius);
+    }
 };
 
 } // namespace Filters

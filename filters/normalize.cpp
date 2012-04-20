@@ -17,6 +17,13 @@ Normalize::
 }
 
 
+Normalize::
+        Normalize()
+            :
+            Operation(pOperation())
+{}
+
+
 std::string Normalize::
         name()
 {

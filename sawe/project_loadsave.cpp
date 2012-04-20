@@ -8,6 +8,7 @@
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
+#include "filters/normalize.h"
 #include "signal/operationcache.h"
 #include "signal/chain.h"
 #include "signal/target.h"
@@ -77,6 +78,7 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::Support::OperationOnSelection>();
     ar.template register_type<Tools::Support::OperationCrop>();
     ar.template register_type<Tools::Support::DummyOperation>();
+    ar.template register_type<Filters::Normalize>();
 
     // add new types at the end to preserve backwards compatibility
 	
