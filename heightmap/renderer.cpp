@@ -1,3 +1,5 @@
+#include <cstdio>
+
 // gpusmisc/OpenGL
 #include <gl.h>
 
