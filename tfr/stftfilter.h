@@ -45,7 +45,7 @@ public:
     virtual Signal::Intervals affected_samples()
     {
         if (no_affected_samples)
-            return Signal::Intervals::Intervals();
+            return Signal::Intervals();
         return Signal::Operation::affected_samples();
     }
 
