@@ -102,7 +102,7 @@ public:
     /// @overload Signal::Operation::affected_samples()
     virtual Signal::Intervals affected_samples()
     {
-        return Signal::Intervals::Intervals();
+        return Signal::Intervals();
     }
 
 
