@@ -122,7 +122,9 @@ void ReadMatlabSettings::
         return;
     }
 
-    QByteArray ba = function_->getProcess()->readAllStandardOutput();
+    QByteArray ba;
+    if (function_->getProcess())
+        ba = function_->getProcess()->readAllStandardOutput();
     QString s( ba );
     s = s.trimmed();
     if (s.isEmpty())
