@@ -59,12 +59,10 @@ fi
 if [ "Y" == "${verifyRepos}" ]; then
 	echo "==================== Updating local repos ====================="
 	cd ../../gpumisc
-	git pull --rebase origin master
-	git fetch origin
+	git pull --rebase
 
 	cd ../sonicawe
-	git pull --rebase origin $branch
-	git fetch origin
+	git pull --rebase
 
 	cd dist
 fi
