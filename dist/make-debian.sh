@@ -31,7 +31,11 @@ cp sonicawe/${packagename} sonicawe/${packagename}org
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
 
-qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+if [ ! -z "`which nvcc`" ]; then
+    qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+else
+    echo "Couldn't find nvcc, doesn't build CUDA version";
+fi
 echo "qmaketarget: $qmaketarget"
 qmake $qmaketarget CONFIG+=gcc-4.3
 
