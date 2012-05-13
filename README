@@ -82,9 +82,6 @@ Run qmake when you've changed the project files to generate new Makefiles or pro
 
 Development environment for Ubuntu
 ----------------------------------
-"sudo apt-get install" the following
-libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git git-gui git-doc
-
 Edit, build and debug using Qt Creator.
 
 
@@ -94,8 +91,6 @@ To build and run CUDA on OS X you need atleast Mac OS 10.5.x or later. Download 
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
-Go to dep and fetch sonicawe-maclib.
-
 Edit, build and debug using Qt Creator.
 
 
@@ -104,8 +99,6 @@ Development environment for Windows
 Download and install Nokia open source QT Toolkit and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
-
-Go to sonicawe/dep and fetch sonicawe-winlib.
 
 Edit using qt creator. Build using Visual Studio 2008 express for Win32. Other versions of Visual Studio requires you to get the equivalent versions of the libraries in sonicawe-winlib.
 
@@ -120,15 +113,9 @@ http://rajorshi.net/blog/2009/01/using-qt-with-msvc-express-2008/
 
 
 
-Source code
------------
-Run init to setup the repositories
-./init.sh
-
-
-
 Build and run
 -------------
+This commant will also fetch the required submodules (dependancy git repositories):
 ./buildandrun.sh
 
 
