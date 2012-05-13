@@ -1,0 +1,148 @@
+Sonic AWE source code
+/===================\
+|Scalograms are cool|
+\===================/
+
+
+Setting up the development environment requires quite a few steps. Please read through this document in its entirety.
+
+Make sure you have a public release of Sonic AWE up an running on your computer first. To make sure your computer can actually run the program to start with.
+
+
+
+Working with GIT
+----------------
+We're using git for revision control. We strongly suggest you read through this document even if you have used git before:
+http://git-scm.com/book/ch1-3.html
+
+(advanced: When you've started using git a bit and have played around with the basic ideas in your head you might want to have a look at these pages)
+http://nvie.com/posts/a-successful-git-branching-model/?
+http://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
+http://git-scm.com/doc
+http://git-scm.com/book
+
+
+Github has some neat guides on how to install git:
+http://help.github.com/linux-set-up-git/
+http://help.github.com/mac-set-up-git/
+http://help.github.com/win-set-up-git/
+
+As mentioned in the above guide you need a pair if ssh keys. To make life easier working with these take a look at this page:
+http://help.github.com/working-with-key-passphrases/
+
+Instead of adding the public ssh key to a github account, add it to your bitbucket account:
+http://confluence.atlassian.com/display/BITBUCKET/How+to+install+a+public+key+on+your+bitbucket+account
+
+Send your bitbucket account name to johan.gustafsson@muchdifferent.com to get access to the repositories.
+
+
+
+CUDA
+----
+Download and install the CUDA Toolkit and Devdrivers from nvidia. You might also want to install the SDK to experiment with CUDA development:
+http://www.nvidia.com/object/cuda_get.html
+
+
+
+CUDA in Ubuntu
+--------------
+(advanced: the devdrivers are needed for building because they include 'libcuda.so'. If you don't need to run the program but want to compile it you can extract libcuda.so from the devdriver installation package with the flag -x).
+
+Create link to nvidia cuda compiler (nvcc) in path, and set library path for Cuda:
+
+sudo su
+ln -s /usr/local/cuda/bin/nvcc /usr/local/bin/nvcc
+echo /usr/local/cuda/lib > /etc/ld.so.conf.d/cuda.conf
+echo /usr/local/cuda/lib64 >> /etc/ld.so.conf.d/cuda.conf
+ldconfig
+exit
+
+
+CUDA in Mac
+-----------
+To run the binary you need to make sure your LD_LIBRARY_PATH includes the path to the CUDA libraries. You can add an entry to your bash profile or just use the following command before you run the binary. Your library path might differ slightly so check it out before you do it.
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib/
+
+
+CUDA in Windows
+---------------
+Set these environment variables unless the CUDA Toolkit installation program did so
+CUDA_BIN_PATH = c:\CUDA\bin
+CUDA_LIB_PATH = c:\CUDA\lib
+CUDA_INC_PATH = c:\CUDA\include
+Please note that the installer sometimes messes up and sets paths to bin64 and lib64, eventho the 32bit version is installed. So check this manually!
+
+
+Developing Sonic AWE
+--------------------
+We use Qt Creator to edit the source code.
+Run qmake when you've changed the project files to generate new Makefiles or project files for visual studio. This needs to be done once after downloading the source code to set them up as well.
+
+
+Development environment for Ubuntu
+----------------------------------
+"sudo apt-get install" the following
+libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git git-gui git-doc
+
+Edit, build and debug using Qt Creator.
+
+
+Development environment for Mac OS X
+------------------------------------
+To build and run CUDA on OS X you need atleast Mac OS 10.5.x or later. Download and install Nokia open source QT Toolkit and QT Creator
+http://qt.nokia.com/downloads/downloads#qt-lib
+http://qt.nokia.com/downloads/downloads#qt-creator
+
+Go to dep and fetch sonicawe-maclib.
+
+Edit, build and debug using Qt Creator.
+
+
+Development environment for Windows
+-----------------------------------
+Download and install Nokia open source QT Toolkit and QT Creator
+http://qt.nokia.com/downloads/downloads#qt-lib
+http://qt.nokia.com/downloads/downloads#qt-creator
+
+Go to sonicawe/dep and fetch sonicawe-winlib.
+
+Edit using qt creator. Build using Visual Studio 2008 express for Win32. Other versions of Visual Studio requires you to get the equivalent versions of the libraries in sonicawe-winlib.
+
+Use git-bash (mingw) to run the .sh scripts under Windows.
+
+Running 'qmake' creates Visual C++ project files gpumisc.vcproj and sonicawe.vcproj. These files are linked to by the Visual Studio solution at '/path/to/sonicawe/src/sonicawe.sln'. Note that you need to redo these steps each time a .pro file have changed. Also, project settings are managed through .pro files. Visual Studio project files should be regared as temporary files.
+
+(optional: there is a QT integration for Visual Studio. This doesn't work with the Express version!)
+http://qt.nokia.com/downloads/visual-studio-add-in
+http://qt.nokia.com/developer/faqs/what-is-the-visual-studio-add-in/view
+http://rajorshi.net/blog/2009/01/using-qt-with-msvc-express-2008/
+
+
+
+Source code
+-----------
+Run init to setup the repositories
+./init.sh
+
+
+
+Build and run
+-------------
+./buildandrun.sh
+
+
+
+Packaging/deployment
+--------------------
+To make a full release, merge into the master branch and run ./deploy-all-targets.sh from sonicawe/dist.
+
+
+Packaging on Windows
+--------------------
+Install NSIS installer. Make sure you have the NSIS folder in your path environment variable. 
+http://nsis.sourceforge.net/Main_Page
+
+Download and install Wizou's XML plugin. To install the plugin, unzip the nsisXML.dll file from the bin directory into the corresponding directory of your NSIS installation. 
+http://wiz0u.free.fr/prog/nsisXML/
+
