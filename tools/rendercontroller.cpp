@@ -178,14 +178,12 @@ RenderController::
         // Default values for rendercontroller
         Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
         Ui::MainWindow* ui = main->getItems();
-#ifdef TARGET_sss
+#ifdef TARGET_hast
         tf_resolution->setValue( 10 );
-        ui->actionToggleOrientation->setChecked(true);
         transform->actions().at(0)->trigger();
 #else
         transform->actions().at(1)->trigger();
 #endif
-        ui->actionSet_colorscale->trigger();
 
         ui->actionTransform_Stft->trigger();
         logScale->trigger();
@@ -249,6 +247,14 @@ void RenderController::
         receiveSetGreenRedColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenRed;
+    stateChanged();
+}
+
+
+void RenderController::
+        receiveSetGreenWhiteColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenWhite;
     stateChanged();
 }
 
@@ -355,6 +361,7 @@ void RenderController::
     case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
     case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
     case Heightmap::Renderer::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
+    case Heightmap::Renderer::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
@@ -716,17 +723,27 @@ void RenderController::
     {   color = new ComboBoxAction(toolbar_render);
         color->setObjectName("ComboBoxActioncolor");
         color->decheckable( false );
-        color->addActionItem( ui->actionSet_rainbow_colors );
-        color->addActionItem( ui->actionSet_grayscale );
+#if !defined(TARGET_hast)
         color->addActionItem( ui->actionSet_colorscale );
         color->addActionItem( ui->actionSet_greenred_colors );
+        color->addActionItem( ui->actionSet_rainbow_colors );
+#endif
+        color->addActionItem( ui->actionSet_greenwhite_colors );
+        color->addActionItem( ui->actionSet_grayscale );
         toolbar_render->addWidget( color );
 
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
         connect(ui->actionSet_greenred_colors, SIGNAL(triggered()), SLOT(receiveSetGreenRedColors()));
+        connect(ui->actionSet_greenwhite_colors, SIGNAL(triggered()), SLOT(receiveSetGreenWhiteColors()));
+#if defined(TARGET_hast)
+        color->setCheckedAction(ui->actionSet_greenwhite_colors);
+        ui->actionSet_greenwhite_colors->trigger();
+#else
         color->setCheckedAction(ui->actionSet_colorscale);
+        ui->actionSet_colorscale->trigger();
+#endif
     }
 
     // ComboBoxAction* channels
@@ -939,6 +956,16 @@ void RenderController::
     main->centralWidget()->layout()->addWidget(view->graphicsview);
 
     view->emitTransformChanged();
+
+#ifdef TARGET_hast
+    toolbarWidgetVisible(channelselector, false);
+    toolbarWidgetVisible(tf_resolution, false);
+    toolbarWidgetVisible(amplitude_scale, false);
+    toolbarWidgetVisible(hz_scale, false);
+    toolbarWidgetVisible(transform, false);
+    ui->actionToggleOrientation->setChecked(true);
+    ui->actionToggleOrientation->setVisible(false);
+#endif
 }
 
 
@@ -1066,5 +1093,20 @@ void RenderController::
     model()->project()->worker.min_fps( 2 );
 }
 
+
+void RenderController::
+        toolbarWidgetVisible(QWidget* w, bool v)
+{
+    toolbarWidgetVisible(toolbar_render, w, v);
+}
+
+
+void RenderController::
+        toolbarWidgetVisible(QToolBar* t, QWidget* w, bool v)
+{
+    foreach(QAction*a, t->actions())
+        if (t->widgetForAction(a) == w)
+            a->setVisible(v);
+}
 
 } // namespace Tools

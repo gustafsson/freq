@@ -97,6 +97,13 @@ void SettingsDialog::
     connect(ui->buttonBox, SIGNAL(accepted()), SLOT(accept()));
     connect(ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
     connect(ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), SLOT(abstractButtonClicked(QAbstractButton*)));
+
+#if !defined(TARGET_sd) && !defined(TARGET_reader) && !defined(TARGET_hast)
+    ui->radioButtonMatlab->setVisible(false);
+    ui->radioButtonOctave->setVisible(false);
+    ui->lineEditMatlab->setVisible(false);
+    ui->lineEditOctave->setVisible(false);
+#endif
 }
 
 

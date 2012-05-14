@@ -33,7 +33,8 @@ public:
         ColorMode_Rainbow = 0,
         ColorMode_Grayscale = 1,
         ColorMode_FixedColor = 2,
-        ColorMode_GreenRed = 3
+        ColorMode_GreenRed = 3,
+        ColorMode_GreenWhite = 4
     };
 
     Renderer( Collection* collection );
@@ -56,6 +57,7 @@ public:
     bool draw_contour_plot;
     ColorMode color_mode;
     tvector<4, float> fixed_color;
+    tvector<4, float> clear_color;
     float y_scale;
     float last_ysize;
     float last_axes_length;

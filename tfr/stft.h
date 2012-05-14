@@ -142,6 +142,8 @@ public:
     bool compute_redundant() { return _compute_redundant; }
     void compute_redundant(bool);
 
+    unsigned averaging() { return _averaging; }
+    void averaging(unsigned);
 
     float overlap() { return _overlap; }
     WindowType windowType() { return _window_type; }
@@ -178,6 +180,7 @@ private:
     */
     unsigned _window_size;
     bool _compute_redundant;
+    unsigned _averaging;
     float _overlap;
     WindowType _window_type;
 

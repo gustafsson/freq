@@ -75,7 +75,7 @@ private:
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<Playback> > streamPlayback;
 
-    long unsigned _playback_itr;
+    Signal::IntervalType _playback_itr;
     int _output_device;
     bool _is_interleaved;
 };

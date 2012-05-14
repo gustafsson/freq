@@ -35,6 +35,7 @@ namespace Tools
         void receiveSetGrayscaleColors();
         void receiveSetColorscaleColors();
         void receiveSetGreenRedColors();
+        void receiveSetGreenWhiteColors();
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);
@@ -115,6 +116,9 @@ namespace Tools
         void windowLostFocus();
         void windowGotFocus();
         virtual bool eventFilter(QObject*, QEvent*);
+
+        void toolbarWidgetVisible(QWidget*, bool);
+        static void toolbarWidgetVisible(QToolBar*, QWidget*, bool);
     };
 } // namespace Tools
 

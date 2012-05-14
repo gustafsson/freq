@@ -76,6 +76,9 @@ void SaweMainWindow::
 #else
     ui->action_Enter_product_key->setVisible( false );
 #endif
+#if defined(TARGET_hast)
+    ui->actionOperation_details->setVisible( false );
+#endif
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
     connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));

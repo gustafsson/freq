@@ -30,17 +30,17 @@ float Recorder::
 }
 
 
-long unsigned Recorder::
+Signal::IntervalType Recorder::
         actual_number_of_samples()
 {
     QMutexLocker lock(&_data_lock);
-    long unsigned N = _data.number_of_samples();
+    Signal::IntervalType N = _data.number_of_samples();
     return N;
 }
 
 
 
-long unsigned Recorder::
+Signal::IntervalType Recorder::
         number_of_samples()
 {
     return actual_number_of_samples();

@@ -75,7 +75,7 @@ ToolFactory::
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
 
-#ifndef TARGET_sss
+#ifndef TARGET_hast
     // No brushes for Sjostridsskolan, the Swedish Naval Academy
         _brush_model.reset( new BrushModel(p, &render_model) );
         _brush_view.reset( new BrushView(_brush_model.data() ));
@@ -92,20 +92,24 @@ ToolFactory::
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
 
-#if !defined(TARGET_sd) && !defined(TARGET_reader)
+#if !defined(TARGET_sd) && !defined(TARGET_reader) && !defined(TARGET_hast)
     // no matlab for sound design version, nor reader
     _matlab_controller = new MatlabController( p, _render_view );
 #endif
 
+#ifndef TARGET_hast
     _graph_controller = new GraphController( _render_view );
+#endif
 
     _tooltip_controller = new TooltipController(
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
     tool_controllers_.push_back( _tooltip_controller );
 
+#ifndef TARGET_hast
     _fantracker_model.reset( new FanTrackerModel( &render_model ) );
     _fantracker_view.reset(new FanTrackerView( _fantracker_model.data() ,_render_view ));
     _fantracker_controller = new FanTrackerController(_fantracker_view.data(), _render_view );
+#endif
 
     _about_dialog = new AboutDialog( p );
 
@@ -117,7 +121,9 @@ ToolFactory::
 
     _transform_info_form = new TransformInfoForm(p, _render_view );
 
+#ifndef TARGET_hast
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);
+#endif
 
     _harmonics_info_form = new HarmonicsInfoForm(
             p,

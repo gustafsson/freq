@@ -134,34 +134,40 @@ pProject Project::
 {
     string filename; filename.swap( project_file_or_audio_file );
 
-    QUrl url(filename.c_str());
-    if (url.isValid())
-    {
-        Signal::pOperation s( new Adapters::NetworkRecorder(url) );
-        return pProject( new Project( s, "New network recording" ));
-    }
-
-
+    // QFile::exists doesn't work as expected with unicode names
     struct stat dummy;
-    // QFile::exists doesn't work as expected can't handle unicode names
-    if (!filename.empty() && 0!=stat( filename.c_str(),&dummy))
+    bool fileExists = 0==stat( filename.c_str(),&dummy);
+
+    if (!filename.empty() && !fileExists)
     {
+        QUrl url(filename.c_str());
+        if (url.isValid())
+        {
+            std::string scheme = url.scheme().toStdString();
+            Signal::pOperation s( new Adapters::NetworkRecorder(url) );
+            return pProject( new Project( s, "New network recording" ));
+        }
+
         QMessageBox::warning( 0,
                      QString("Can't find file"),
                      QString("Can't find file '") + QString::fromLocal8Bit(filename.c_str()) + "'");
         filename.clear();
     }
 
-    if (0 == filename.length()) {
+    if (filename.empty()) {
         string filter;
 #if !defined(TARGET_reader)
         filter += " " + Adapters::Audiofile::getFileFormatsQtFilter( false );
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
         filter += " " + Adapters::CsvTimeseries::getFileFormatsQtFilter( false );
 #endif
         filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
         filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
 #if !defined(TARGET_reader)
         filter += ";;" + Adapters::Audiofile::getFileFormatsQtFilter( true );
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
         filter += ";;" + Adapters::CsvTimeseries::getFileFormatsQtFilter( true );
 #endif
 
@@ -182,7 +188,10 @@ pProject Project::
     {
         int availableFileTypes = 1;
     #if !defined(TARGET_reader)
-        availableFileTypes+=2;
+        availableFileTypes++;
+    #endif
+    #if !defined(TARGET_reader) && !defined(TARGET_hast)
+        availableFileTypes++;
     #endif
 
         string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
@@ -190,6 +199,8 @@ pProject Project::
         if (suffix == "sonicawe") expected = 0;
 #if !defined(TARGET_reader)
         if (Adapters::Audiofile::hasExpectedSuffix(suffix)) expected = 1;
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
         if (Adapters::CsvTimeseries::hasExpectedSuffix(suffix)) expected = 2;
 #endif
 
@@ -203,6 +214,8 @@ pProject Project::
                 case 0: p = Project::openProject( filename ); break;
     #if !defined(TARGET_reader)
                 case 1: p = Project::openAudio( filename ); break;
+    #endif
+    #if !defined(TARGET_reader) && !defined(TARGET_hast)
                 case 2: p = Project::openCsvTimeseries( filename ); break;
     #endif
             }
@@ -469,7 +482,9 @@ pProject Project::
     Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     return pProject( new Project( s, a->name() ));
 }
+#endif
 
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
 pProject Project::
         openCsvTimeseries(std::string audio_file)
 {

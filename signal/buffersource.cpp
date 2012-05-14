@@ -83,7 +83,7 @@ void BufferSource::
 }
 
 
-long unsigned BufferSource::
+Signal::IntervalType BufferSource::
         number_of_samples()
 {
     return _waveforms[0]->number_of_samples();
