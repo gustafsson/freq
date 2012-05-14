@@ -41,7 +41,7 @@ fi
 package=dist/package-debian~
 share=$package/usr/share/${packagename}/.
 
-pushd ..
+pushd ../src
 rm -rf $package
 cp -r dist/package-debian $package
 if [ -n "${versionnumber}" ]; then
