@@ -92,7 +92,7 @@ gcc-4.3 {
 #    QMAKE_LINK = gold
 #    QMAKE_LINK = ld
 # TODO add system libraries which are included by g++-4.3, but not by 'gold' (nor 'ld'), could use output from compiling with "g++-4.3 -v"
-#    QMAKE_LFLAGS += -L/usr/lib -L/usr/X11R6/lib -shared-libgcc -mtune=generic /usr/lib/gcc/x86_64-linux-gnu/4.3.4/collect2 --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=both -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o sonicawe -z relro /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crt1.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/crtbegin.o -L/usr/local/cuda/lib64 -L/usr/lib -L/usr/X11R6/lib -L../gpumisc -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../.. -L/usr/lib/x86_64-linux-gnu
+#    QMAKE_LFLAGS += -L/usr/lib -L/usr/X11R6/lib -shared-libgcc -mtune=generic /usr/lib/gcc/x86_64-linux-gnu/4.3.4/collect2 --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=both -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o sonicawe -z relro /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crt1.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/crtbegin.o -L/usr/local/cuda/lib64 -L/usr/lib -L/usr/X11R6/lib -L../lib/gpumisc -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../.. -L/usr/lib/x86_64-linux-gnu
 #    QMAKE_LFLAGS += -rpath=/usr/share/sonicawe/
 #}
 
@@ -195,8 +195,8 @@ win32 {
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
 INCLUDEPATH += \
-    ../../sonic/gpumisc \
-    ../../sonic/sonicawe \
+    ../lib/gpumisc \
+    ../sonicawe \
 
 unix:!macx {
 LIBS = \
@@ -208,53 +208,53 @@ LIBS = \
     -lglut \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
-    -L../gpumisc -lgpumisc
+    -L../lib/gpumisc -lgpumisc
 
 QMAKE_LFLAGS += -Wl,-rpath=/usr/share/sonicawe/
 }
 
 macx {
 INCLUDEPATH += \
-    ../../maclib/include \
-    ../../maclib/boost_1_45_0 \
-    ../../maclib/hdf5/include \
-    ../../maclib/zlib/include \
-    ../../maclib/include/sndfile
+    ../lib/sonicawe-maclib/include \
+    ../lib/sonicawe-maclib/boost_1_45_0 \
+    ../lib/sonicawe-maclib/hdf5/include \
+    ../lib/sonicawe-maclib/zlib/include \
+    ../lib/sonicawe-maclib/include/sndfile
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
-    -L../../maclib -lportaudiocpp -lportaudio \
-    -L../../maclib/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../../maclib/zlib/lib -lz \
-    -L../gpumisc -lgpumisc \
-    -L../../maclib/boost_1_45_0/stage/lib \
+    -L../lib/sonicawe-maclib -lportaudiocpp -lportaudio \
+    -L../lib/sonicawe-maclib/hdf5/bin -lhdf5 -lhdf5_hl \
+    -L../lib/sonicawe-maclib/zlib/lib -lz \
+    -L../lib/gpumisc -lgpumisc \
+    -L../lib/sonicawe-maclib/boost_1_45_0/stage/lib \
     -lboost_serialization
 }
 
 win32 {
 INCLUDEPATH += \
-	../../winlib/glut \
-	../../winlib/glew/include \
-	../../winlib/portaudio/include \
-	../../winlib/libsndfile/include \
-	../../winlib/hdf5lib/include \
-	../../winlib/zlib/include \
-	../../winlib
+	../lib/sonicawe-winlib/glut \
+	../lib/sonicawe-winlib/glew/include \
+	../lib/sonicawe-winlib/portaudio/include \
+	../lib/sonicawe-winlib/libsndfile/include \
+	../lib/sonicawe-winlib/hdf5lib/include \
+	../lib/sonicawe-winlib/zlib/include \
+	../lib/sonicawe-winlib
 LIBS += \
-	-l../../winlib/glut/glut32 \
-	-l../../winlib/glew/lib/glew32 \
-	-l../../winlib/libsndfile/libsndfile-1 \
-	-l../../winlib/hdf5lib/dll/hdf5dll \
-	-l../../winlib/hdf5lib/dll/hdf5_hldll \
-	-L../../winlib/boostlib
+	-l../lib/sonicawe-winlib/glut/glut32 \
+	-l../lib/sonicawe-winlib/glew/lib/glew32 \
+	-l../lib/sonicawe-winlib/libsndfile/libsndfile-1 \
+	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
+	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
+	-L../lib/sonicawe-winlib/boostlib
 
 win32:QMAKE_LFLAGS_RELEASE += \
-	../../winlib/portaudio/portaudio.lib \
-	../../winlib/portaudio/portaudiocpp_mt.lib
+	../lib/sonicawe-winlib/portaudio/portaudio.lib \
+	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
 win32:QMAKE_LFLAGS_DEBUG += \
-	../../winlib/portaudio/portaudio.lib \
-	../../winlib/portaudio/portaudiocpp_mt_gd.lib
+	../lib/sonicawe-winlib/portaudio/portaudio.lib \
+	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
 }
 
 
