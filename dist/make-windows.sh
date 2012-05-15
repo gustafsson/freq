@@ -92,7 +92,7 @@ echo "========================== Installer =========================="
 echo "Creating Windows installer file: $(pwd)/tmp/$filename for package $packagefullname"
 rm -rf tmp/$filename
 rm -rf $packagefullname
-#mkdir -p tmp
+mkdir -p tmp
 cp -r lib/sonicawe-winlib/sonicawe_snapshot_win32_base $packagefullname
 cp src/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
 cp src/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
