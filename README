@@ -15,12 +15,14 @@ Working with GIT
 We're using git for revision control. We strongly suggest you read through this document even if you have used git before:
 http://git-scm.com/book/ch1-3.html
 
-(advanced: When you've started using git a bit and have played around with the basic ideas in your head you might want to have a look at these pages)
+When you've started to make commits and fiddle around with branches it's time to read through these one as well to understand when to branch, when to merge and when to rebase:
 http://nvie.com/posts/a-successful-git-branching-model/?
 http://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
+
+For reference:
 http://git-scm.com/doc
 http://git-scm.com/book
-
+git help [insert git command here]
 
 Github has some neat guides on how to install git:
 http://help.github.com/linux-set-up-git/
@@ -101,8 +103,10 @@ http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
 Edit using qt creator. Build using Visual Studio 2008 express for Win32. Other versions of Visual Studio requires you to get the equivalent versions of the libraries in sonicawe-winlib.
+http://www.microsoft.com/visualstudio/en-us/products/2008-editions/express
 
 Use git-bash (mingw) to run the .sh scripts under Windows.
+https://code.google.com/p/msysgit/downloads/list
 
 Running 'qmake' creates Visual C++ project files gpumisc.vcproj and sonicawe.vcproj. These files are linked to by the Visual Studio solution at '/path/to/sonicawe/src/sonicawe.sln'. Note that you need to redo these steps each time a .pro file have changed. Also, project settings are managed through .pro files. Visual Studio project files should be regared as temporary files.
 
