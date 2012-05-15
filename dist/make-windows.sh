@@ -9,8 +9,31 @@ nsisscript="dist/package-win/Sonicawe.nsi"
 nsiswriter="dist/package-win/Nsi_Writer.exe"
 licensefile="license.txt"
 
+if ls "/c/Program Files (x86)" >& /dev/null; then
+	programfiles="/c/Program Files (x86)";
+else
+	programfiles="/c/Program Files";
+fi
+
 # make vcbuild called by msbuild detect changes in headers
-PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
+if ls "$programfiles/Microsoft Visual Studio 9.0/Common7" >& /dev/null; then
+	PATH="$programfiles/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
+else
+	echo "Couldn't find Visual Studio 2008."
+	echo "Visual Studio 2008 Express can downloaded at:"
+	echo "http://www.microsoft.com/visualstudio/en-us/products/2008-editions/express"
+	false
+fi
+
+if ls "$programfiles/NSIS" >& /dev/null; then
+	PATH="$programfiles/NSIS:${PATH}"
+else
+	echo "Couldn't find NSIS (Nullsoft Scriptable Install System)."
+	echo "NSIS can be downloaded at:"
+	echo "http://nsis.sourceforge.net/Download"
+	false
+fi
+
 
 msbuildparams="//property:Configuration=Release //verbosity:detailed sonicawe.sln"
 
@@ -141,9 +164,6 @@ $sed "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE
 
 
 echo " - compiling installer"
-#Check for NSIS
-type -P makensis >& /dev/null || { echo "NSIS is not installed.  Aborting installer compilation. Please install Nsis to avoid this error" >&2; exit 1; }
-
 #compile & move installer
 makensis $nsisscript
 mv dist/package-win/$filename tmp/$filename
