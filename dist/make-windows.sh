@@ -4,8 +4,8 @@ set -e
 packagename="${packagename}_${versiontag}_win32"
 filename="${packagename}_setup.exe"
 packagefullname="tmp/${packagename}"
-nsistemplate="dist/package-win/Sonicawe_template.nsi"
-nsisscript="dist/package-win/Sonicawe.nsi"
+nsistemplate="dist/package-win/sonicawe_template.nsi"
+nsisscript="dist/package-win/sonicawe.nsi"
 nsiswriter="dist/package-win/Nsi_Writer.exe"
 licensefile="license.txt"
 
@@ -126,9 +126,7 @@ instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
 $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
 
-#sed="sed -i.backup -e"
-sed="sed -i.backup"
-#sed="sed -i"" --regexp-extended"
+sed="sed -i"
 
 # append \ to paths for ${File}
 $sed -r "s/(^\\$\{File\}.*) (.*$)/\1\\\\ \2/g" $nsisscript
@@ -159,7 +157,6 @@ $sed "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscri
 licensepath=`pwd`\/$packagefullname\/license.txt
 licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 licensepath=`echo $licensepath | sed 's@\\/@\\\\\\\@g'`
-echo "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 $sed "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 
 
@@ -168,8 +165,8 @@ echo " - compiling installer"
 makensis $nsisscript
 mv dist/package-win/$filename tmp/$filename
 
-#clean sonicawe.nsi for git consistency
-rm $nsisscript
+#clean sonicawe.nsi
+rm -f $nsisscript
 
 
 echo "installer compiled"
