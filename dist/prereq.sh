@@ -57,7 +57,8 @@ if [ "Y" == "${verifyRepos}" ]; then
 	git pull --rebase
 
 	# Make sure each submodule points to the correct commit
-	git submodule update
-
-	cd dist
+	(
+		cd ..
+		git submodule update
+	) || false
 fi
