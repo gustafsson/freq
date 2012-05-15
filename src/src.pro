@@ -196,7 +196,7 @@ unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
 INCLUDEPATH += \
     ../lib/gpumisc \
-    ../sonicawe \
+    ../src \
 
 unix:!macx {
 LIBS = \

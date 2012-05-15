@@ -1,36 +1,37 @@
 #!/bin/bash
 set -e
 
-packagefullname="${packagename}_${versiontag}_win32"
-filename="${packagefullname}_setup.exe"
-nsistemplate="sonic/sonicawe/dist/package-win/Sonicawe_template.nsi"
-nsisscript="sonic/sonicawe/dist/package-win/Sonicawe.nsi"
-nsiswriter="sonic/sonicawe/dist/package-win/Nsi_Writer.exe"
+packagename="${packagename}_${versiontag}_win32"
+filename="${packagename}_setup.exe"
+packagefullname="tmp/${packagename}"
+nsistemplate="dist/package-win/Sonicawe_template.nsi"
+nsisscript="dist/package-win/Sonicawe.nsi"
+nsiswriter="dist/package-win/Nsi_Writer.exe"
 licensefile="license.txt"
 
 # make vcbuild called by msbuild detect changes in headers
 PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
-msbuildparams="//property:Configuration=Release //verbosity:detailed sonic.sln"
+msbuildparams="//property:Configuration=Release //verbosity:detailed sonicawe.sln"
 
-cd ../..
+pushd ..
 echo "========================== Building ==========================="
 echo "Building ${packagename} ${versiontag}"
 
 echo qmaketarget: $qmaketarget
-(cd gpumisc && qmake $qmaketarget)
-(cd sonicawe && qmake $qmaketarget)
+(cd lib/gpumisc && qmake $qmaketarget) || false
+(cd src && qmake $qmaketarget) || false
 qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
   "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean $msbuildparams
 fi
 
-rm -f gpumisc/release/gpumisc.lib
-touch sonicawe/sawe/configuration/configuration.cpp
+rm -f lib/gpumisc/release/gpumisc.lib
+touch src/sawe/configuration/configuration.cpp
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
-cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cpu.exe
+cp src/release/sonicawe.exe src/release/sonicawe-cpu.exe
 
 
 echo "========================== Building ==========================="
@@ -38,43 +39,44 @@ echo "Building ${packagename} cuda ${versiontag}"
 qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 
 echo qmaketarget: $qmaketarget
-(cd gpumisc && qmake $qmaketarget)
-(cd sonicawe && qmake $qmaketarget)
+(cd lib/gpumisc && qmake $qmaketarget) || false
+(cd src && qmake $qmaketarget) || false
 qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
   "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean $msbuildparams
 fi
 
-rm -f gpumisc/release/gpumisc.lib
-touch sonicawe/sawe/configuration/configuration.cpp
+rm -f lib/gpumisc/release/gpumisc.lib
+touch src/sawe/configuration/configuration.cpp
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
-cp sonicawe/release/sonicawe.exe sonicawe/release/sonicawe-cuda.exe
+cp src/release/sonicawe.exe src/release/sonicawe-cuda.exe
 
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename} Launcher"
 
-cd sonicawe/dist/package-win/launcher
-qmake "DEFINES+=PACKAGE=\"${packagename}\""
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release launcher.sln
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release launcher.sln
-cd ../../../..
+(
+	cd dist/package-win/launcher
+	qmake "DEFINES+=PACKAGE=\"${packagename}\""
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean //p:Configuration=Release launcher.sln
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //p:Configuration=Release launcher.sln
+) || false
 
 
 echo "========================== Installer =========================="
-echo "Creating Windows installer file: $(pwd)/$filename for package $packagefullname"
-cd ..
-rm -rf $filename
+echo "Creating Windows installer file: $(pwd)/tmp/$filename for package $packagefullname"
+rm -rf tmp/$filename
 rm -rf $packagefullname
-cp -r winlib/sonicawe_snapshot_win32_base $packagefullname
-cp sonic/sonicawe/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
-cp sonic/sonicawe/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
-cp sonic/sonicawe/dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"
-cp -r sonic/sonicawe/matlab $packagefullname/matlab
-cp sonic/sonicawe/license/$licensefile $packagefullname
-cp sonic/sonicawe/dist/package-win/awe_256.ico $packagefullname
+#mkdir -p tmp
+cp -r lib/sonicawe-winlib/sonicawe_snapshot_win32_base $packagefullname
+cp src/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
+cp src/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
+cp dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"
+cp -r matlab $packagefullname/matlab
+cp license/$licensefile $packagefullname
+cp dist/package-win/awe_256.ico $packagefullname
 
 
 #echo " - Executing dxdiag for Nvidia driver version minimum requirement"
@@ -101,12 +103,12 @@ instfilepath=`echo $instfilepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 instfilepath=`echo $instfilepath | sed 's@\\/@\\\\\\\@g'`
 $nsiswriter "$nsistemplate" "$nsisscriptwin" "$instfilepathwin"
 
-# append \ to paths for ${File}
-sed -i.backup -r "s/(^\\$\{File\}.*) (.*$)/\1\\\\ \2/g" $nsisscript
-
 #sed="sed -i.backup -e"
 sed="sed -i.backup"
 #sed="sed -i"" --regexp-extended"
+
+# append \ to paths for ${File}
+$sed -r "s/(^\\$\{File\}.*) (.*$)/\1\\\\ \2/g" $nsisscript
 
 prettyname=
 for word in $(echo ${packagename} | sed "s/-/ /g"); do
@@ -134,6 +136,7 @@ $sed "s/\!define FILE\_NAME \".*\"/\!define FILE\_NAME \"$filename\"/" $nsisscri
 licensepath=`pwd`\/$packagefullname\/license.txt
 licensepath=`echo $licensepath | sed 's@\\/c\\/@C:\\\\\\\@'`
 licensepath=`echo $licensepath | sed 's@\\/@\\\\\\\@g'`
+echo "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 $sed "s/\!insertmacro MUI\_PAGE\_LICENSE \".*\"/\!insertmacro MUI\_PAGE\_LICENSE \"$licensepath\"/" $nsisscript 
 
 
@@ -143,7 +146,7 @@ type -P makensis >& /dev/null || { echo "NSIS is not installed.  Aborting instal
 
 #compile & move installer
 makensis $nsisscript
-mv sonic/sonicawe/dist/package-win/$filename sonic/sonicawe/dist/$filename
+mv dist/package-win/$filename tmp/$filename
 
 #clean sonicawe.nsi for git consistency
 rm $nsisscript
@@ -151,6 +154,4 @@ rm $nsisscript
 
 echo "installer compiled"
 
-cd sonic/sonicawe/dist
-
-
+popd

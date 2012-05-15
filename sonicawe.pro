@@ -1,3 +1,3 @@
 TEMPLATE = subdirs
-SUBDIRS = dep/gpumisc src
+SUBDIRS = lib/gpumisc src
 CONFIG += ordered

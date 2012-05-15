@@ -17,18 +17,14 @@ echo "branch: ${branch}"
 echo "version: ${version}"
 echo "release: sonicawe_${version}${snapshot}"
 
-read -p "Verify repositories? (Y/n) " verifyRepos; echo
+read -p "Verify and update repositories? (Y/n) " verifyRepos; echo
 if [ "N" == "${verifyRepos}" ] || [ "n" == "${verifyRepos}" ]; then
 	verifyRepos=N;
 else
 	verifyRepos=Y;
 fi
 if [ "Y" == "${verifyRepos}" ]; then
-	cd ../../gpumisc
-	if [ -n "$(git status -uno --porcelain)" ]; then echo "In gpumisc: local git repo is not clean."; exit 1; fi
-	cd ../sonicawe
-	if [ -n "$(git status -uno --porcelain)" ]; then echo "In sonicawe: local git repo is not clean."; exit 1; fi
-	cd dist
+	if [ -n "$(git status -uno --porcelain)" ]; then echo "Local git repo is not clean."; exit 1; fi
 fi
 
 if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? (y/N) " rebuildall; echo; fi
@@ -58,11 +54,10 @@ fi
 
 if [ "Y" == "${verifyRepos}" ]; then
 	echo "==================== Updating local repos ====================="
-	cd ../../gpumisc
 	git pull --rebase
 
-	cd ../sonicawe
-	git pull --rebase
+	# Make sure each submodule points to the correct commit
+	git submodule update
 
 	cd dist
 fi
