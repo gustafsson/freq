@@ -370,7 +370,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../../sonic/sonicawe/','-I "../../sonic/sonicawe/','"') \
+        $$join(INCLUDEPATH,'" -I "../src/','-I "../src/','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \
