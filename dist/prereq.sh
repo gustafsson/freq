@@ -63,17 +63,24 @@ then
     exit
 fi
 
-# Check if the submodules have been initialized
-(
-	cd ..
+if [ "Y" == "${verifyRepos}" ]; then
+	echo "==================== Updating local repos ====================="
+	git pull --rebase
 
-	if ! grep submodule .git/config > /dev/null; then
+	# Make sure the submodules are initialized and points to the correct commit
+	(
+		cd ..
+
+		# note, if they are already initialized this command would do:
+		#git submodule update
+
 		git submodule update --init lib/gpumisc
 
 		if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
 			git submodule update --init lib/sonicawe-winlib
 		elif [ "$(uname -s)" == "Linux" ]; then
 			if [ -z `which colorgcc` ]; then
+				# In Ubuntu we're using packages from the Ubuntu repo instead of a specific precompiled set of binaries.
 				echo "Some required and recommended libraries seem to be missing, running apt-get"
 				glewpkg=libglew1.6-dev
 				if [ -z `apt-cache search $glewdeb` ]; then
@@ -86,16 +93,5 @@ fi
 		else
 			echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
 		fi
-	fi
-) || false
-
-if [ "Y" == "${verifyRepos}" ]; then
-	echo "==================== Updating local repos ====================="
-	git pull --rebase
-
-	# Make sure each submodule points to the correct commit
-	(
-		cd ..
-		git submodule update
 	) || false
 fi
