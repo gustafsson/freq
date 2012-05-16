@@ -92,6 +92,8 @@ if [ "Y" == "${verifyRepos}" ]; then
 		if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
 			git submodule update --init lib/sonicawe-winlib
 		elif [ "$(uname -s)" == "Linux" ]; then
+			git submodule update --init lib/sonicawe-ubuntulib
+
 			if [ -z `which colorgcc` ]; then
 				# In Ubuntu we're using packages from the Ubuntu repo instead of a specific precompiled set of binaries.
 				echo "Some required and recommended libraries seem to be missing, running apt-get"
@@ -99,7 +101,7 @@ if [ "Y" == "${verifyRepos}" ]; then
 				if [ -z `apt-cache search $glewdeb` ]; then
 					glewpkg=libglew1.5-dev
 				fi
-				sudo apt-get install libsndfile1-dev portaudio19-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc
+				sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc
 			fi
 		elif [ "$(uname -s)" == "Darwin" ]; then
 			git submodule update --init lib/sonicawe-maclib

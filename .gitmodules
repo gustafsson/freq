@@ -7,3 +7,6 @@
 [submodule "lib/sonicawe-maclib"]
 	path = lib/sonicawe-maclib
 	url = git@bitbucket.org:MuchDifferent/sonicawe-maclib.git
+[submodule "lib/sonicawe-ubuntulib"]
+	path = lib/sonicawe-ubuntulib
+	url = git@bitbucket.org:MuchDifferent/sonicawe-ubuntulib.git

@@ -199,6 +199,9 @@ INCLUDEPATH += \
     ../src \
 
 unix:!macx {
+INCLUDEPATH += \
+    ../lib/sonicawe-ubuntulib/include \
+
 LIBS = \
     -lsndfile \
     -lGLEW \
@@ -206,6 +209,7 @@ LIBS = \
     -lGL \
     -lboost_serialization \
     -lglut \
+    -L../lib/sonicawe-ubuntulib/lib \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
     -L../lib/gpumisc -lgpumisc
