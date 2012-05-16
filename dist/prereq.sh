@@ -36,7 +36,20 @@ else
 	verifyRepos=Y;
 fi
 if [ "Y" == "${verifyRepos}" ]; then
-	if [ -n "$(git status -uno --porcelain)" ]; then echo "Local git repo is not clean."; exit 1; fi
+	if [ -n "$(git status -uno --porcelain)" ]; then
+		echo "Local git repo is not clean."
+		echo
+		echo "Commit your changes or run git stash to temporarily store them in the stash."
+		echo "Run git submodule update to bring submodules up-to-date."
+		echo
+		echo "If you have changed the files in a submodule you must first commit to to that"
+		echo "submodules repo. Then you must also update the reference in the sonicawe repo"
+		echo "by 'git add'-ing that folder and make a new commit in the sonicawe repo."
+		echo
+		echo "Or to build anyways, run buildandrun.sh again and answer n (no) to the previous"
+		echo "question."
+		false
+	fi
 fi
 
 if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? (y/N) " rebuildall; echo; fi
