@@ -57,7 +57,7 @@ namespace Support {
         TaskInfo("Cepstrum size: %u bins",window_size);
         TaskInfo("Cepstrum peak: %u at %g Hz",peak,point.Hz);
 
-        unsigned pos = c.chunk_offset+i*window_size;
+        unsigned pos = c.chunk_offset.asInteger() + i*window_size;
 
         PointsT& track = this->track[ get_channel() ];
 

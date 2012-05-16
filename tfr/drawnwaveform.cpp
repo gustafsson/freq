@@ -60,7 +60,7 @@ pChunk DrawnWaveform::
             readstop = signal_length - b->getInterval().first;
     }
 
-    float writeposoffs = float(b->sample_offset / blobsize) - floorf(b->sample_offset / blobsize);
+    float writeposoffs = ((b->sample_offset / blobsize) - floorf((b->sample_offset / blobsize).asFloat())).asFloat();
     ::drawWaveform(
             b->waveform_data(),
             c->transform_data,
@@ -123,7 +123,7 @@ unsigned DrawnWaveform::
     if (current_valid_samples_per_chunk<drawWaveform_BLOCK_SIZE)
         return drawWaveform_BLOCK_SIZE;
 
-    return spo2g(align_up(current_valid_samples_per_chunk, drawWaveform_BLOCK_SIZE)/drawWaveform_BLOCK_SIZE)*drawWaveform_BLOCK_SIZE;
+    return spo2g(align_up(current_valid_samples_per_chunk, (unsigned) drawWaveform_BLOCK_SIZE)/drawWaveform_BLOCK_SIZE)*drawWaveform_BLOCK_SIZE;
 }
 
 
@@ -133,7 +133,7 @@ unsigned DrawnWaveform::
     if (current_valid_samples_per_chunk<2*drawWaveform_BLOCK_SIZE)
         return drawWaveform_BLOCK_SIZE;
 
-    return lpo2s(align_up(current_valid_samples_per_chunk, drawWaveform_BLOCK_SIZE)/drawWaveform_BLOCK_SIZE)*drawWaveform_BLOCK_SIZE;
+    return lpo2s(align_up(current_valid_samples_per_chunk, (unsigned) drawWaveform_BLOCK_SIZE)/drawWaveform_BLOCK_SIZE)*drawWaveform_BLOCK_SIZE;
 }
 
 

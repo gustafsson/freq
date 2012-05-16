@@ -33,8 +33,8 @@ public:
         pBuffer b = source()->read(I);
 
         // Check if read contains I.first
-        BOOST_ASSERT(b->sample_offset <= I.first);
-        BOOST_ASSERT(b->sample_offset + b->number_of_samples() > I.first);
+        BOOST_ASSERT(b->sample_offset.asInteger() <= I.first);
+        BOOST_ASSERT((b->sample_offset + b->number_of_samples()).asInteger() > I.first);
 
         put(b);
         //_invalid_samples -= b->getInterval();

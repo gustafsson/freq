@@ -123,14 +123,14 @@ pChunk Cwt::
 
     Signal::BufferSource bs( buffer );
 
-    Signal::IntervalType offset = buffer->sample_offset;
+    Signal::IntervalType offset = buffer->sample_offset.asInteger();
     unsigned std_samples = wavelet_time_support_samples( buffer->sample_rate );
     //unsigned std_samples0 = time_support_bin0( buffer->sample_rate );
     Signal::IntervalType first_valid_sample = std_samples;
 
     BOOST_ASSERT(buffer->number_of_samples() > 2*std_samples);
     // Align first_valid_sample with chunks (round upwards)
-    first_valid_sample = align_up(offset + first_valid_sample, chunk_alignment(buffer->sample_rate)) - offset;
+    first_valid_sample = align_up(offset + first_valid_sample, (Signal::IntervalType) chunk_alignment(buffer->sample_rate)) - offset;
 
     BOOST_ASSERT( std_samples + first_valid_sample < buffer->number_of_samples());
 
@@ -499,7 +499,7 @@ pChunk Cwt::
         time_support >>= half_sizes;
         intermediate_wt->first_valid_sample = time_support;
 
-        if (0==ft->chunk_offset)
+        if (0 == ft->chunk_offset.asFloat())
             intermediate_wt->first_valid_sample=0;
 
         DEBUG_CWT {
@@ -872,7 +872,7 @@ unsigned Cwt::
         L = align_down(nL, alignment);
         if (current_valid_samples_per_chunk >= L || alignment > L)
         {
-            L = std::max((size_t)alignment, align_up(nL, alignment));
+            L = std::max(alignment, align_up(nL, alignment));
             T = L + 2*r;
             if (testPo2)
                 nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
@@ -968,7 +968,7 @@ unsigned Cwt::
         while (true)
         {
             if (testPo2)
-                T = align_up( lpo2s(T), 2);
+                T = align_up( lpo2s(T), (unsigned) 2);
             else
                 T = Fft::lChunkSizeS(T, 2);
 
@@ -977,7 +977,7 @@ unsigned Cwt::
                 return smallest_L;
 
             unsigned L = T - 2*r;
-            L = std::max((size_t)alignment, align_down(L, alignment));
+            L = std::max(alignment, align_down(L, alignment));
 
             size_t required = required_gpu_bytes(L, fs);
 

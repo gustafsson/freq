@@ -98,7 +98,7 @@ void Buffer::
 float Buffer::
         start() const
 {
-    return sample_offset/sample_rate;
+    return (sample_offset/sample_rate).asFloat();
 }
 
 
@@ -112,7 +112,7 @@ float Buffer::
 Interval Buffer::
         getInterval() const
 {
-    return Interval(sample_offset, sample_offset + number_of_samples());
+    return Interval(sample_offset.asInteger(), (sample_offset + number_of_samples()).asInteger());
 }
 
 
@@ -131,8 +131,8 @@ Buffer& Buffer::
     if (0 == i.count())
         return *this;
 
-    unsigned offs_write = i.first - sample_offset;
-    unsigned offs_read = i.first - b.sample_offset;
+    unsigned offs_write = i.first - sample_offset.asInteger();
+    unsigned offs_read = i.first - b.sample_offset.asInteger();
 
     if (bitor_channel_)
     {
@@ -238,8 +238,8 @@ Buffer& Buffer::
     if (0 == i.count())
         return *this;
 
-    unsigned offs_write = i.first - sample_offset;
-    unsigned offs_read = i.first - b.sample_offset;
+    unsigned offs_write = i.first - sample_offset.asInteger();
+    unsigned offs_read = i.first - b.sample_offset.asInteger();
     unsigned length = i.count();
 
     float* write = waveform_data_->getCpuMemory();

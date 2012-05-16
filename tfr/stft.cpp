@@ -88,7 +88,7 @@ pChunk Fft::
         BOOST_ASSERT(output_n.width == input_n.width);
 
         if (output_n.width != input_n.width)
-            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset, real_buffer->sample_offset + output_n.width));
+            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset.asInteger(), (real_buffer->sample_offset + output_n.width).asInteger()));
 
         chunk.reset( new StftChunk(output_n.width, Stft::WindowType_Rectangular, output_n.width, false) );
         output_n.width = ((StftChunk*)chunk.get())->nScales();
@@ -394,8 +394,8 @@ Signal::pBuffer Stft::
     int
             firstSample = 0;
 
-    if (chunk->chunk_offset != 0)
-        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
+    if (chunk->chunk_offset.asFloat() != 0)
+        firstSample = (chunk->chunk_offset - (UnsignedF)(chunk_window_size/2)).asInteger();
 
     BOOST_ASSERT( 0!= chunk_window_size );
 
@@ -454,8 +454,8 @@ Signal::pBuffer Stft::
     int
             firstSample = 0;
 
-    if (chunk->chunk_offset != 0)
-        firstSample = chunk->chunk_offset - (UnsignedF)(chunk_window_size/2);
+    if (chunk->chunk_offset.asFloat() != 0)
+        firstSample = (chunk->chunk_offset - (UnsignedF)(chunk_window_size/2)).asInteger();
 
     BOOST_ASSERT( 0!= chunk_window_size );
 
@@ -962,12 +962,12 @@ void Stft::
 
     int out0 = _window_size/2 - increment/2 + c->first_valid_sample*increment;
     int N = signal->size().width;
-    if (0 == c->chunk_offset)
+    if (0 == c->chunk_offset.asFloat())
         out0 = 0;
 
     TaskInfo("signal->size().width = %u", signal->size().width);
 
-    BOOST_ASSERT( c->n_valid_samples*increment + (0 == c->chunk_offset?increment/2:0) == signal->size().width );
+    BOOST_ASSERT( c->n_valid_samples*increment + (0 == c->chunk_offset.asFloat() ? increment/2:0) == signal->size().width );
 
     for (pos.z=0; pos.z<windowedSignal->size().depth; ++pos.z)
     {
@@ -1080,7 +1080,7 @@ DataStorage<float>::Ptr Stft::
 
 
     unsigned L = c->n_valid_samples*increment;
-    if (0 == c->chunk_offset)
+    if (0 == c->chunk_offset.asFloat())
     {
         L += increment/2;
     }

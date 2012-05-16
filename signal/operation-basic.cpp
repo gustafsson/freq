@@ -235,10 +235,10 @@ pBuffer OperationSuperposition::
         superPosition( pBuffer a, pBuffer b )
 {
     BOOST_ASSERT( a->sample_rate == b->sample_rate );
-    IntervalType offset = std::max( (IntervalType)a->sample_offset, (IntervalType)b->sample_offset );
+    IntervalType offset = std::max(a->sample_offset.asInteger(), b->sample_offset.asInteger());
     IntervalType length = std::min(
-            (IntervalType)a->sample_offset + a->number_of_samples(),
-            (IntervalType)b->sample_offset + b->number_of_samples() );
+            a->sample_offset.asInteger() + a->number_of_samples(),
+            b->sample_offset.asInteger() + b->number_of_samples() );
     length -= offset;
 
     pBuffer r(new Buffer( offset, length, a->sample_rate ));
@@ -247,8 +247,8 @@ pBuffer OperationSuperposition::
     float *pb = b->waveform_data()->getCpuMemory();
     float *pr = r->waveform_data()->getCpuMemory();
 
-    pa += (IntervalType)(r->sample_offset - a->sample_offset);
-    pb += (IntervalType)(r->sample_offset - b->sample_offset);
+    pa += (r->sample_offset - a->sample_offset).asInteger();
+    pb += (r->sample_offset - b->sample_offset).asInteger();
 
     for (unsigned i=0; i<r->number_of_samples(); i++)
         pr[i] = pa[i] + pb[i];

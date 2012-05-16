@@ -45,8 +45,8 @@ void SplineFilter::operator()( Chunk& chunk)
     std::vector<ChunkElement> p(N);
 
 	unsigned j=0;
-    float t1 = chunk.chunk_offset/chunk.sample_rate,
-          t2 = (chunk.chunk_offset + chunk.nSamples())/chunk.sample_rate;
+    float t1 = (chunk.chunk_offset/chunk.sample_rate).asFloat(),
+          t2 = ((chunk.chunk_offset + chunk.nSamples())/chunk.sample_rate).asFloat();
 
     for (unsigned i=0; i<N; ++i)
     {

@@ -57,8 +57,8 @@ Signal::Interval Chunk::
         getInversedInterval() const
 {
     return Signal::Interval(
-        chunk_offset + first_valid_sample,
-        chunk_offset + first_valid_sample + n_valid_samples
+        chunk_offset.asInteger() + first_valid_sample,
+        chunk_offset.asInteger() + first_valid_sample + n_valid_samples
     );
 }
 

@@ -427,7 +427,7 @@ void Hdf5Buffer::
     Hdf5Output h5(filename);
 
     h5.add<Signal::Buffer>( dsetBuffer, cb );
-    h5.add<double>( dsetOffset, cb.sample_offset );
+    h5.add<double>( dsetOffset, cb.sample_offset.asFloat());
     h5.add<double>( dsetSamplerate, cb.sample_rate );
     h5.add<double>( dsetOverlap, overlap );
 }
@@ -438,7 +438,7 @@ void Hdf5Chunk::
 {
     Hdf5Output h5(filename);
     h5.add<Tfr::Chunk>( dsetChunk, chunk );
-    h5.add<double>( dsetOffset, chunk.chunk_offset );
+    h5.add<double>( dsetOffset, chunk.chunk_offset.asFloat());
     h5.add<double>( dsetSamplerate, chunk.sample_rate );
 }
 

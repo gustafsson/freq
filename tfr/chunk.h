@@ -105,7 +105,7 @@ public:
     float maxHz() const {              return freqAxis.max_hz(); }
 
     float timeInterval() const {       return n_valid_samples/sample_rate; }
-    float startTime() const {          return (chunk_offset+first_valid_sample)/sample_rate; }
+    float startTime() const {          return ((chunk_offset+first_valid_sample)/sample_rate).asFloat(); }
     float endTime() const {            return startTime() + timeInterval(); }
 
     virtual unsigned nSamples() const {        return order==Order_row_major ? transform_data->getNumberOfElements().width : transform_data->getNumberOfElements().height; }

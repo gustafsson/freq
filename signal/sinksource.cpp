@@ -242,7 +242,7 @@ pBuffer SinkSource::
         }
 
         BOOST_FOREACH( const pBuffer& s, _cache) {
-            if (s->sample_offset <= I.first && s->sample_offset + s->number_of_samples() > I.first )
+            if (s->sample_offset.asInteger() <= I.first && (s->sample_offset + s->number_of_samples()).asInteger() > I.first )
             {
                 if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
                              __FUNCTION__,
@@ -254,8 +254,8 @@ pBuffer SinkSource::
 
                 return s;
             }
-            if (s->sample_offset > I.first && s->sample_offset<not_found.last)
-                not_found.last = s->sample_offset;
+            if (s->sample_offset.asInteger() > I.first && s->sample_offset.asInteger() < not_found.last)
+                not_found.last = s->sample_offset.asInteger();
         }
     }
 

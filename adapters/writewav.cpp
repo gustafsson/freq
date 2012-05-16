@@ -76,8 +76,8 @@ Signal::pBuffer WriteWav::
     Signal::pBuffer b = source()->readAllChannels(I);
 
     // Check if read contains I.first
-    BOOST_ASSERT(b->sample_offset <= I.first);
-    BOOST_ASSERT(b->sample_offset + b->number_of_samples() > I.first);
+    BOOST_ASSERT(b->sample_offset.asInteger() <= I.first);
+    BOOST_ASSERT(b->sample_offset.asInteger() + b->number_of_samples() > I.first);
 
     put(b);
 
@@ -88,7 +88,7 @@ Signal::pBuffer WriteWav::
 void WriteWav::
         put( Signal::pBuffer buffer )
 {
-    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", (long unsigned)buffer->sample_offset, (long unsigned)(buffer->sample_offset + buffer->number_of_samples()));
+    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", buffer->sample_offset.asInteger(), (buffer->sample_offset + buffer->number_of_samples()));
 
     // Make sure that all of buffer is expected
 
@@ -222,7 +222,7 @@ void WriteWav::
     _sum += sum;
     _sumsamples += N;
 
-    _sndfile->seek( b->sample_offset - _offset, SEEK_SET);
+    _sndfile->seek((b->sample_offset - _offset).asInteger(), SEEK_SET);
     _sndfile->write( &interleaved_data[0], N ); // sndfile will convert float to short int
 }
 

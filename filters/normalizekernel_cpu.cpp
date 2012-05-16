@@ -1,3 +1,5 @@
+#include <cmath>
+
 //#ifndef USE_CUDA
 
 #include "normalizekernel.h"
