@@ -4,23 +4,10 @@ Section: non-free/audio
 Priority: optional
 Architecture: amd64
 Essential: no
-Installed-Size: 32332
+Installed-Size: 44
 Replaces: sonicawe-stable-candidate
 Conflicts: 
-Depends: libsndfile1, libglew1.5, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.40.0, libqt4-network
+Depends: libsndfile1, libglew1.6, freeglut3, libqtgui4, libportaudio2, libportaudiocpp0, libqt4-opengl, libhdf5-serial-1.8.4, libboost-serialization1.48.0, libqt4-network
 Maintainer: Johan Gustafsson [johan.gustafsson@sonicawe.com]
 Description: Visualization based signal analysis
- 
- Sonic AWE is a signal analysis tool based on visualization that runs on GNU/Linux, Windows and Mac OS X. Sonic AWE navigates large spectrums as map software navigates earth so you can seemlessly zoom in anywhere and scale the spectrum to focus on your points of interest. It is easy to change spectrum parameters and transform methods interactively. This workflow makes it easy to understand signal components fast.
- 
- :
- 
- I N S T A L L A T I O N : F A Q
- 
- "Couldn't find CUDA, cannot start Sonic AWE"
- 
- Sonic AWE is built using CUDA technology from NVIDIA. You need to have a CUDA compatible graphics card with the latest drivers installed. There is a guide at http://sonicawe.com on how to install drivers. A complete list of CUDA compatible can be found at http://www.nvidia.com/object/cuda_gpus.html.
- 
- "Dependency is not satisfiable: libglew1.5, libportaudiocpp0, libhdf5-serial-1.8.4"
- 
- Sonic AWE is built using several community developed open source libraries. In Ubuntu, some of these libraries (such as libglew1.5) are contained in the 'universe' repository. Start 'synaptic' and enable settings->repositories->universe, then press the reload button in synaptic and try to install this package again.
+ Sonic AWE is a signal analysis tool based on visualization that runs on GNU/Linux, Windows and Mac OS X. Sonic AWE navigates large spectrums as map software navigates earth so you can seemlessly zoom in anywhere and scale the spectrum to focus on your points of interest. It is easy to change spectrum parameters and transform methods interactively. This workflow is intended to make it easy to understand signal components fast.

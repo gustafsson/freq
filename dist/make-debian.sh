@@ -50,7 +50,7 @@ rm -f {src,lib/gpumisc}/Makefile
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
 
-cp src/${packagename}org src/${packagename}
+mv src/${packagename}org src/${packagename}
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_$(uname -m).deb"
