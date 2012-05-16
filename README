@@ -38,6 +38,13 @@ http://confluence.atlassian.com/display/BITBUCKET/How+to+install+a+public+key+on
 Send your bitbucket account name to johan.gustafsson@muchdifferent.com to get access to the repositories.
 
 
+Working with GIT in Ubuntu
+--------------------------
+Add the following to your .bashrc to know which branch your currently on:
+PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
+PS2='\[\e[0;2m\]\t\[\e[m\]> '
+
+
 
 CUDA
 ----
