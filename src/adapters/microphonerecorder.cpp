@@ -38,6 +38,8 @@ void MicrophoneRecorder::
 {
     try
     {
+        // To avoid division with zero and compute the actual length as 0 when
+        // dividing the number of samples with sample rate.
         _offset = 0;
         _sample_rate = 1;
 

@@ -767,7 +767,8 @@ void Cwt::
 unsigned Cwt::
         nScales(float fs) const
 {
-    BOOST_ASSERT( _min_hz <= get_max_hz(fs) );
+    if (_min_hz > get_max_hz(fs))
+        return 0;
     float number_of_octaves = log2f(get_max_hz(fs)) - log2f(_min_hz);
     return 1 + ceil(number_of_octaves * scales_per_octave());
 }
