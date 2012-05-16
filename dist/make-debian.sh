@@ -11,15 +11,15 @@ echo "========================== Building ==========================="
 echo "Building ${packagename} ${versiontag}"
 
 echo "qmaketarget: $qmaketarget"
-qmake $qmaketarget CONFIG+=gcc-4.3
+qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
 fi
 
-touch sonicawe/sawe/configuration/configuration.cpp
+touch src/sawe/configuration/configuration.cpp
 rm -f lib/gpumisc/libgpumisc.a
-rm -f {sonicawe,lib/gpumisc}/Makefile
+rm -f {src,lib/gpumisc}/Makefile
 
 # We need to create multiple packages that can't depend on packages outside the ubuntu repos. So shared things between our packages need to be duplicated.
 LD_RUN_PATH=/usr/share/${packagename}
@@ -37,7 +37,7 @@ else
     echo "Couldn't find nvcc, doesn't build CUDA version";
 fi
 echo "qmaketarget: $qmaketarget"
-qmake $qmaketarget CONFIG+=gcc-4.3
+qmake $qmaketarget
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
@@ -45,7 +45,7 @@ fi
 
 touch src/sawe/configuration/configuration.cpp
 rm -f lib/gpumisc/libgpumisc.a
-rm -f {sonicawe,lib/gpumisc}/Makefile
+rm -f {src,lib/gpumisc}/Makefile
 
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
