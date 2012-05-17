@@ -214,7 +214,7 @@ LIBS = \
     -lhdf5 -lhdf5_hl \
     -L../lib/gpumisc -lgpumisc
 
-QMAKE_LFLAGS += -Wl,-rpath=/usr/share/sonicawe/
+QMAKE_LFLAGS += -Wl,-rpath=/opt/muchdifferent/sonicawe/
 }
 
 macx {

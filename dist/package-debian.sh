@@ -39,7 +39,7 @@ if [ $versionname == "def" ] ; then
 fi
 
 package=tmp/package-debian~
-share=$package/usr/share/${packagename}/.
+share=$package/opt/muchdifferent/sonicawe/.
 
 pushd ..
 rm -rf $package
@@ -76,12 +76,14 @@ fi
 
 
 mkdir -p $package/usr/bin
-cp src/${packagename} $package/usr/bin/${packagename}-cpu
-cp src/${packagename}-cuda $package/usr/bin/${packagename}-cuda
-cp src/sonicawe-launcher.sh $package/usr/bin/${packagename}
-sed -i "s/sonicawe/${packagename}/g" $package/usr/bin/${packagename}
+ln -s ../../opt/muchdifferent/sonicawe/sonicawe $package/usr/bin/${packagename}
 
 mkdir -p $share
+cp src/${packagename} $share/${packagename}-cpu
+cp src/${packagename}-cuda $share/${packagename}-cuda
+cp src/sonicawe-launcher.sh $share/${packagename}
+sed -i "s/sonicawe/${packagename}/g" $share/${packagename}
+
 if [ "`uname -m`" = "x86_64" ]; then
 	sed -i "s/Architecture: .*$/Architecture: amd64/g" $package/DEBIAN/control
 	cp -r /usr/local/cuda/lib64/libcudart.so* $share/.
@@ -119,7 +121,7 @@ pushd $package
 gzip -f usr/local/share/man/man1/${packagename}.1
 rm -f DEBIAN/md5sums
 for i in `find -name *~`; do rm $i; done
-for i in `find usr -type f`; do md5sum $i >> DEBIAN/md5sums; done
+for i in `find usr opt -type f`; do md5sum $i >> DEBIAN/md5sums; done
 for i in `find usr -type l`; do md5sum $i >> DEBIAN/md5sums; done
 popd
 installedsize=`du -l | grep "[0-9]*.*\\.$" | sed "s/\t.*//g"`
