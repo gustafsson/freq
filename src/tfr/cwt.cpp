@@ -27,12 +27,10 @@
 #include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
-#include <msc_stdc.h>
-#endif
+    #include <msc_stdc.h>
 
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#include <math.h>
+    #define _USE_MATH_DEFINES
+    #include <math.h>
 #endif
 
 //#define TIME_CWT if(0)
@@ -123,46 +121,12 @@ pChunk Cwt::
 
     Signal::BufferSource bs( buffer );
 
-    unsigned long offset = buffer->sample_offset;
+    Signal::IntervalType offset = buffer->sample_offset;
     unsigned std_samples = wavelet_time_support_samples( buffer->sample_rate );
     //unsigned std_samples0 = time_support_bin0( buffer->sample_rate );
-    unsigned long first_valid_sample = std_samples;
-    unsigned added_silence = 0;
+    Signal::IntervalType first_valid_sample = std_samples;
 
-    if (0!=offset)
-    {
-        BOOST_ASSERT(buffer->number_of_samples() > 2*std_samples);
-    }
-    else
-    {
-        // Take care to do a proper calculation without requiring a larger fft
-        // than would have been required if the same buffer size was used with
-        // offset != 0
-        BOOST_ASSERT(buffer->number_of_samples() > std_samples);
-
-        unsigned L;
-        if (buffer->number_of_samples() > 2*std_samples)
-        {
-            unsigned valid_samples = buffer->number_of_samples() - 2*std_samples;
-            L = next_good_size( valid_samples - 1, buffer->sample_rate );
-        }
-        else
-        {
-            // compute smallest possible chunk, this will violate the above and
-            // require a larger fft than would have been required if the same
-            // buffer size was used with offset != 0. We'll take the smallest
-            // possible that still makes any sense though.
-            L = next_good_size( 0, buffer->sample_rate );
-        }
-
-        added_silence = L + 2*std_samples - buffer->number_of_samples();
-
-        if (std_samples < added_silence)
-            first_valid_sample = 0;
-        else
-            first_valid_sample = std_samples - added_silence;
-    }
-
+    BOOST_ASSERT(buffer->number_of_samples() > 2*std_samples);
     // Align first_valid_sample with chunks (round upwards)
     first_valid_sample = align_up(offset + first_valid_sample, chunk_alignment(buffer->sample_rate)) - offset;
 
@@ -192,11 +156,10 @@ pChunk Cwt::
              DataStorageVoid::getMemorySizeText( required_gpu_bytes(valid_samples, buffer->sample_rate ) ).c_str());
     }
 
-    DEBUG_CWT TaskTimer("offset = %lu", offset).suppressTiming();
+    DEBUG_CWT TaskTimer("offset = %l", (long)offset).suppressTiming();
     DEBUG_CWT TaskTimer("std_samples = %lu", std_samples).suppressTiming();
-    DEBUG_CWT TaskTimer("first_valid_sample = %lu", first_valid_sample).suppressTiming();
+    DEBUG_CWT TaskTimer("first_valid_sample = %l", (long)first_valid_sample).suppressTiming();
     DEBUG_CWT TaskTimer("valid_samples = %u", valid_samples).suppressTiming();
-    DEBUG_CWT TaskTimer("added_silence = %u", added_silence).suppressTiming();
 
     // find all sub chunks
     unsigned prev_j = 0;
@@ -269,20 +232,11 @@ pChunk Cwt::
         unsigned sub_std_samples = wavelet_time_support_samples( buffer->sample_rate, hz );
         BOOST_ASSERT( sub_std_samples <= std_samples );
 
-        unsigned sub_first_valid = sub_std_samples;
-        unsigned sub_silence = 0;
-
-        if (sub_first_valid > first_valid_sample)
-        {
-            sub_silence = sub_first_valid - first_valid_sample;
-            sub_first_valid = first_valid_sample;
-        }
-
         DEBUG_CWT TaskTimer("sub_std_samples=%u", sub_std_samples).suppressTiming();
-        BOOST_ASSERT( sub_first_valid <= first_valid_sample );
+        BOOST_ASSERT( sub_std_samples <= first_valid_sample );
 
-        unsigned sub_start = offset + first_valid_sample - sub_first_valid;
-        unsigned sub_length = sub_first_valid + valid_samples + sub_std_samples + sub_silence;
+        Signal::IntervalType sub_start = offset + first_valid_sample - sub_std_samples;
+        unsigned sub_length = sub_std_samples + valid_samples + sub_std_samples;
         BOOST_ASSERT( sub_length == valid_samples + 2*sub_std_samples );
 
         // Add some extra length to make length align with fast fft calculations
@@ -298,22 +252,13 @@ pChunk Cwt::
                 BOOST_ASSERT( 0 == extra );
 
 #ifdef _DEBUG
-        unsigned sub_start_org = sub_start;
+        Signal::IntervalType sub_start_org = sub_start;
         unsigned sub_std_samples_org = sub_std_samples;
-        unsigned sub_silence_org = sub_silence;
         unsigned sub_length_org = sub_length;
 #endif
 
         sub_std_samples += extra/2;
-
-        if (sub_start >= extra/2)
-            sub_start -= extra/2;
-        else
-        {
-            sub_silence += extra/2 - sub_start;
-            sub_start = 0;
-        }
-
+        sub_start -= extra/2;
         sub_length += extra;
 
         Signal::Interval subinterval(sub_start, sub_start + sub_length );
@@ -330,25 +275,10 @@ pChunk Cwt::
 
             Signal::pBuffer data;
 
-            if (0<sub_silence)
-            {
-                //this can be asserted if we compute valid interval based on the widest chunk
-                if (!AdjustToBin0)
-                    BOOST_ASSERT(offset==0);
-                TIME_CWTPART TaskTimer("Adding silence %u", sub_silence ).suppressTiming();
-                Signal::Interval actualData = subinterval;
-                actualData.last -= sub_silence;
-                //this can be asserted if we compute valid interval based on the widest chunk
-                if (!AdjustToBin0)
-                    BOOST_ASSERT( (Signal::Interval(actualData.first, actualData.last) - buffer->getInterval()).empty() );
-                Signal::BufferSource addSilence( bs.readFixedLength( actualData ) );
-                data = addSilence.readFixedLength( subinterval );
-            } else {
-                //this can be asserted if we compute valid interval based on the widest chunk
-                if (!AdjustToBin0)
-                    BOOST_ASSERT( (Signal::Intervals(subinterval) - buffer->getInterval()).empty() );
-                data = bs.readFixedLength( subinterval );
-            }
+            //this can be asserted if we compute valid interval based on the widest chunk
+            if (!AdjustToBin0)
+                BOOST_ASSERT( (Signal::Intervals(subinterval) - buffer->getInterval()).empty() );
+            data = bs.readFixedLength( subinterval );
 
             ComputationSynchronize();
 
@@ -941,7 +871,7 @@ unsigned Cwt::
         L = align_down(nL, alignment);
         if (current_valid_samples_per_chunk >= L || alignment > L)
         {
-            L = std::max((size_t)alignment, align_up(nL, alignment));
+            L = std::max(alignment, align_up(nL, alignment));
             T = L + 2*r;
             if (testPo2)
                 nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
@@ -1046,7 +976,7 @@ unsigned Cwt::
                 return smallest_L;
 
             unsigned L = T - 2*r;
-            L = std::max((size_t)alignment, align_down(L, alignment));
+            L = std::max(alignment, align_down(L, alignment));
 
             size_t required = required_gpu_bytes(L, fs);
 

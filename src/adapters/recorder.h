@@ -31,7 +31,7 @@ public:
 
     // overloaded from Signal::FinalSource
     virtual Signal::pBuffer read( const Signal::Interval& I );
-    virtual long unsigned number_of_samples();
+    virtual Signal::IntervalType number_of_samples();
     virtual unsigned num_channels();
     virtual void set_channel(unsigned c);
     virtual unsigned get_channel();
@@ -43,7 +43,7 @@ protected:
     Signal::PostSink _postsink;
     float _offset;
     boost::posix_time::ptime _start_recording, _last_update;
-    long unsigned actual_number_of_samples();
+    Signal::IntervalType actual_number_of_samples();
 
     virtual float time();
 };

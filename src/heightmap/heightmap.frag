@@ -12,6 +12,7 @@ uniform float colorTextureFactor;
 uniform float contourPlot;
 uniform float yScale;
 uniform vec4 fixedColor;
+uniform vec4 clearColor;
 
 void main()
 {
@@ -30,7 +31,7 @@ void main()
 
     //float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
-    curveColor = mix(vec4(1.0), curveColor, f);
+    curveColor = mix(clearColor, curveColor, f);
 
     v = 0.0==vertex_height ? v : vertex_height;
     float isarithm1 = fract( v * 25.0) < 0.93 ? 1.0 : 0.8;

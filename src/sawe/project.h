@@ -200,6 +200,8 @@ private:
     static boost::shared_ptr<Project> openProject(std::string project_file);
 #if !defined(TARGET_reader)
     static boost::shared_ptr<Project> openAudio(std::string audio_file);
+#endif
+#if !defined(TARGET_reader) && !defined(TARGET_hast)
     static boost::shared_ptr<Project> openCsvTimeseries(std::string audio_file);
 #endif
 

@@ -13,6 +13,7 @@
 #include "tfr/cepstrum.h"
 #include "tfr/drawnwaveform.h"
 #include "adapters/csvtimeseries.h"
+#include "filters/normalize.h"
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -68,11 +69,19 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->windowTypeComboBox->addItem(Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)i).c_str(), i);
     }
 
+    ui->normalizationComboBox->addItem("Select normalization to apply", -1.f);
+    ui->normalizationComboBox->addItem("0 s normalization", 0.f);
+    ui->normalizationComboBox->addItem("1 s normalization", 1.f);
+    ui->normalizationComboBox->addItem("10 s normalization", 10.f);
+    ui->normalizationComboBox->addItem("100 s normalization", 100.f);
+
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
     connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
+    connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
+    connect(ui->normalizationComboBox, SIGNAL(currentIndexChanged(int)), SLOT(normalizationChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
@@ -144,18 +153,30 @@ void TransformInfoForm::
     }
     addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
 
+    if (-1.f != ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat() && !ui->normalizationComboBox->hasFocus())
+        ui->normalizationComboBox->setCurrentIndex(ui->normalizationComboBox->findData(-1.f));
+
+#ifdef TARGET_hast
+    {
+        bool cwt = false, stft = false, cepstrum = false;
+#endif
     ui->minHzLabel->setVisible(cwt);
     ui->minHzEdit->setVisible(cwt);
     ui->maxHzLabel->setVisible(false);
     ui->maxHzEdit->setVisible(false);
     ui->binResolutionLabel->setVisible(stft);
     ui->binResolutionEdit->setVisible(stft);
+    ui->averagingLabel->setVisible(stft);
+    ui->averagingEdit->setVisible(stft);
     ui->windowSizeLabel->setVisible(stft || cepstrum);
     ui->windowSizeEdit->setVisible(stft || cepstrum);
     ui->windowTypeLabel->setVisible(stft || cepstrum);
     ui->windowTypeComboBox->setVisible(stft || cepstrum);
     ui->overlapLabel->setVisible(stft || cepstrum);
     ui->overlapEdit->setVisible(stft || cepstrum);
+#ifdef TARGET_hast
+    }
+#endif
 
     if (cwt)
     {
@@ -190,6 +211,7 @@ void TransformInfoForm::
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
+        setEditText( ui->averagingEdit, QString("%1").arg(stft->averaging()) );
         Tfr::Stft::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
@@ -374,6 +396,36 @@ void TransformInfoForm::
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        averagingChanged()
+{
+    float newValue = ui->averagingEdit->text().toFloat();
+
+    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    if (stft->averaging() != newValue)
+    {
+        stft->averaging( newValue );
+
+        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+        renderview->emitTransformChanged();
+    }
+}
+
+
+void TransformInfoForm::
+        normalizationChanged()
+{
+    float newValue = ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat();
+
+    if (0.f <= newValue)
+    {
+        float fs = project->head->head_source()->sample_rate();
+        project->appendOperation(Signal::pOperation(
+                new Filters::Normalize(newValue*fs)));
     }
 }
 

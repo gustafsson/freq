@@ -117,3 +117,44 @@ __global__ void kernel_cepstrumPrepareCepstra( cudaPitchedPtrType<float2> cepstr
     float2& d = cepstra.ptr()[n];
     d = make_float2(logf( 0.001f + sqrt(d.x*d.x + d.y*d.y))*normalization, 0);
 }
+
+
+__global__ void kernel_stftAverage( cudaPitchedPtrType<float2> input,
+                                    cudaPitchedPtrType<float2> output,
+                                    unsigned width, unsigned averaging, float as )
+{
+    unsigned n;
+    if( !output.unwrapGlobalThreadNumber3D(n))
+        return;
+
+    unsigned k = n/width;
+    unsigned j = n%width;
+
+    float elem = .0f;
+    for (unsigned a=0; a<averaging; ++a)
+    {
+        float2 v = input.ptr()[(k*averaging + a)*width + j];
+        elem += hypot(v.x,v.y);
+    }
+    output.ptr()[n] = make_float2(as*elem, 0.f);
+}
+
+
+void stftAverage(
+        Tfr::ChunkData::Ptr input,
+        Tfr::ChunkData::Ptr output,
+        unsigned scales )
+{
+    unsigned width = scales;
+    unsigned height = output->size().width/scales;
+    unsigned input_height = input->size().width/scales;
+    unsigned averaging = input_height / height;
+
+    cudaPitchedPtrType<float2> in(CudaGlobalStorage::ReadOnly<1>( input ).getCudaPitchedPtr());
+    cudaPitchedPtrType<float2> out(CudaGlobalStorage::WriteAll<1>( output ).getCudaPitchedPtr());
+
+    dim3 block(128);
+    dim3 grid = wrapCudaMaxGrid( out.getNumberOfElements(), block);
+
+    kernel_stftAverage<<<grid, block, 0>>>( in, out, width, averaging, 1.f/averaging );
+}

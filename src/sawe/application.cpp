@@ -91,10 +91,12 @@ Application::
     setOrganizationName("MuchDifferent");
     setOrganizationDomain("muchdifferent.com");
 
-    #if !defined(TARGET_reader)
-        setApplicationName("Sonic AWE");
-    #else
+    #if defined(TARGET_reader)
         setApplicationName("Sonic AWE Reader");
+    #elif defined(TARGET_hast)
+        setApplicationName("Sonic AWE LOFAR");
+    #else
+        setApplicationName("Sonic AWE");
     #endif
 
     Sawe::Configuration::parseCommandLineOptions(argc, argv);

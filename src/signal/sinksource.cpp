@@ -278,7 +278,7 @@ float SinkSource::
 }
 
 
-long unsigned SinkSource::
+IntervalType SinkSource::
         number_of_samples()
 {
     return samplesDesc().spannedInterval().count();

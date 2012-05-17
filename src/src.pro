@@ -391,7 +391,7 @@ unix:!macx {
         | \
         tr \
         -d \
-        '\\\n'
+        \\\\\\n
 }
 
 # cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'

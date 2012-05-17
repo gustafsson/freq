@@ -293,7 +293,7 @@ int MicrophoneRecorder::
 {
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
 
-    long unsigned offset = actual_number_of_samples();
+    Signal::IntervalType offset = actual_number_of_samples();
     QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
     unsigned prev_channel = _data.get_channel();

@@ -60,7 +60,7 @@ pChunk DrawnWaveform::
             readstop = signal_length - b->getInterval().first;
     }
 
-    float writeposoffs = b->sample_offset / blobsize - ((Signal::IntervalType)(b->sample_offset / blobsize));
+    float writeposoffs = float(b->sample_offset / blobsize) - floorf(b->sample_offset / blobsize);
     ::drawWaveform(
             b->waveform_data(),
             c->transform_data,

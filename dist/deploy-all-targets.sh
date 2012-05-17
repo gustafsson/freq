@@ -11,12 +11,16 @@ url=
 unset targets
 #targets[${#targets[*]}]="addiva"
 #targets[${#targets[*]}]="sd"
-#targets[${#targets[*]}]="sss"
+targets[${#targets[*]}]="hast"
 targets[${#targets[*]}]="reader"
 targets[${#targets[*]}]="" # this is the default build
 
+if [ -n "$1" ]; then
+	targets="$@"
+fi
+
 for target in "${targets[@]}"; do
-	. ./deploy.sh
+	. ./deploy.sh $target
 	urls="${urls}\n$url"
 done
 

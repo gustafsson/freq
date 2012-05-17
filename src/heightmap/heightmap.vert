@@ -34,8 +34,6 @@ void main()
     vec3 worldSpaceNormal = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
                                    vec3(tex2.x-tex1.x,  slope.x, 0.0));
 
-    height = vertex==gl_Vertex.xz ? height : 0.0;
-
     vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
 
     // transform to homogeneous clip space
@@ -51,6 +49,8 @@ void main()
     float facing    = max(0.0, dot(eyeSpaceNormal, -eyeSpacePos));
     float diffuse   = max(0.0, worldSpaceNormal.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
 
-    shadow = min(0.7, ((diffuse+facing+2.0)*.25)); // + vec4(fresnel);
+    //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
+    shadow = min( 0.5 + (diffuse+facing)*0.5, 1.0);
+
     vertex_height = height;
 }

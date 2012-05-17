@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+target="$1"
+
 if [ -z "$verifyRepos" ]; then
   . ./prereq.sh
 fi

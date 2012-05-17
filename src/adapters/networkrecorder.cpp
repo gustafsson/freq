@@ -118,7 +118,7 @@ int NetworkRecorder::
     if (0 == sampleCount)
         return 0;
 
-    long unsigned offset = actual_number_of_samples();
+    Signal::IntervalType offset = actual_number_of_samples();
 
     // convert shortdata to normalized floats
     Signal::pBuffer b( new Signal::Buffer(offset, sampleCount, sample_rate() ) );

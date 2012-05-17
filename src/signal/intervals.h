@@ -8,7 +8,7 @@
 
 namespace Signal {
 
-typedef long unsigned IntervalType;
+typedef long long IntervalType;
 
 /**
   Describes one discrete intervals. Always in the same sample rate as the

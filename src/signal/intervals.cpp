@@ -5,13 +5,20 @@
 #include <cfloat>
 #include <TaskTimer.h>
 #include <sstream>
+#include <limits.h>
 
 #include <QtGlobal> // foreach
 
 namespace Signal {
 
-const IntervalType Interval::IntervalType_MIN = (IntervalType)0;
-const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
+// long unsigned
+//const IntervalType Interval::IntervalType_MIN = (IntervalType)0;
+//const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
+
+// long long
+const IntervalType Interval::IntervalType_MIN = LLONG_MIN;
+const IntervalType Interval::IntervalType_MAX = LLONG_MAX;
+
 const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
 
@@ -436,10 +443,10 @@ Intervals Intervals::
     Intervals I;
     foreach (Interval r, *this)
     {
-        if (r.first > dt)
+        if (r.first > Interval::IntervalType_MIN + dt)
             r.first -= dt;
         else
-            r.first = 0;
+            r.first = Interval::IntervalType_MIN;
 
         if (r.last < Interval::IntervalType_MAX - dt)
             r.last += dt;
@@ -458,7 +465,7 @@ Intervals Intervals::
     Intervals I;
     foreach (Interval r, *this)
     {
-        if (r.first > 0)
+        if (r.first > Interval::IntervalType_MIN)
         {
             if (r.first < Interval::IntervalType_MAX - dt)
                 r.first += dt;
@@ -466,10 +473,10 @@ Intervals Intervals::
                 r.first = Interval::IntervalType_MAX;
         }
 
-        if (r.last > dt)
+        if (r.last > Interval::IntervalType_MIN + dt)
             r.last -= dt;
         else
-            r.last = 0;
+            r.last = Interval::IntervalType_MIN;
 
         if (r.valid() && r.count())
             I |= r;

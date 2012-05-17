@@ -81,7 +81,7 @@ public:
       Total number of sampels in cached interval, equal to
         'samplesDesc().spannedInterval().count'.
       */
-    virtual long unsigned number_of_samples();
+    virtual IntervalType number_of_samples();
 
 
     /**

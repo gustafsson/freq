@@ -32,7 +32,7 @@ public:
     virtual pBuffer read( const Interval& I );
     pBuffer readAllChannelsFixedLength( const Interval& I );
     virtual float sample_rate();
-    virtual long unsigned number_of_samples();
+    virtual IntervalType number_of_samples();
     virtual Interval getInterval();
 
     virtual unsigned num_channels();
