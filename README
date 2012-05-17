@@ -15,12 +15,14 @@ Working with GIT
 We're using git for revision control. We strongly suggest you read through this document even if you have used git before:
 http://git-scm.com/book/ch1-3.html
 
-(advanced: When you've started using git a bit and have played around with the basic ideas in your head you might want to have a look at these pages)
+When you've started to make commits and fiddle around with branches it's time to read through these one as well to understand when to branch, when to merge and when to rebase:
 http://nvie.com/posts/a-successful-git-branching-model/?
 http://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
+
+For reference:
 http://git-scm.com/doc
 http://git-scm.com/book
-
+git help [insert git command here]
 
 Github has some neat guides on how to install git:
 http://help.github.com/linux-set-up-git/
@@ -34,6 +36,13 @@ Instead of adding the public ssh key to a github account, add it to your bitbuck
 http://confluence.atlassian.com/display/BITBUCKET/How+to+install+a+public+key+on+your+bitbucket+account
 
 Send your bitbucket account name to johan.gustafsson@muchdifferent.com to get access to the repositories.
+
+
+Working with GIT in Ubuntu
+--------------------------
+Add the following to your .bashrc to know which branch your currently on:
+PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
+PS2='\[\e[0;2m\]\t\[\e[m\]> '
 
 
 
@@ -82,9 +91,6 @@ Run qmake when you've changed the project files to generate new Makefiles or pro
 
 Development environment for Ubuntu
 ----------------------------------
-"sudo apt-get install" the following
-libsndfile1-dev portaudio19-dev libglew1.5-dev freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git git-gui git-doc
-
 Edit, build and debug using Qt Creator.
 
 
@@ -94,22 +100,20 @@ To build and run CUDA on OS X you need atleast Mac OS 10.5.x or later. Download 
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
-Go to dep and fetch sonicawe-maclib.
-
 Edit, build and debug using Qt Creator.
 
 
 Development environment for Windows
 -----------------------------------
-Download and install Nokia open source QT Toolkit and QT Creator
+Download and install Nokia open source QT Toolkit and QT Creator for VS 2008.
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
-Go to sonicawe/dep and fetch sonicawe-winlib.
-
 Edit using qt creator. Build using Visual Studio 2008 express for Win32. Other versions of Visual Studio requires you to get the equivalent versions of the libraries in sonicawe-winlib.
+http://www.microsoft.com/visualstudio/en-us/products/2008-editions/express
 
 Use git-bash (mingw) to run the .sh scripts under Windows.
+https://code.google.com/p/msysgit/downloads/list
 
 Running 'qmake' creates Visual C++ project files gpumisc.vcproj and sonicawe.vcproj. These files are linked to by the Visual Studio solution at '/path/to/sonicawe/src/sonicawe.sln'. Note that you need to redo these steps each time a .pro file have changed. Also, project settings are managed through .pro files. Visual Studio project files should be regared as temporary files.
 
@@ -120,15 +124,9 @@ http://rajorshi.net/blog/2009/01/using-qt-with-msvc-express-2008/
 
 
 
-Source code
------------
-Run init to setup the repositories
-./init.sh
-
-
-
 Build and run
 -------------
+This commant will also fetch the required submodules (dependancy git repositories):
 ./buildandrun.sh
 
 

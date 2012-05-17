@@ -27,12 +27,10 @@
 #include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
-#include <msc_stdc.h>
-#endif
+    #include <msc_stdc.h>
 
-#ifdef _MSC_VER
-#define _USE_MATH_DEFINES
-#include <math.h>
+    #define _USE_MATH_DEFINES
+    #include <math.h>
 #endif
 
 //#define TIME_CWT if(0)
@@ -699,7 +697,8 @@ void Cwt::
 unsigned Cwt::
         nScales(float fs) const
 {
-    BOOST_ASSERT( _min_hz <= get_max_hz(fs) );
+    if (_min_hz > get_max_hz(fs))
+        return 0;
     float number_of_octaves = log2f(get_max_hz(fs)) - log2f(_min_hz);
     return 1 + ceil(number_of_octaves * scales_per_octave());
 }

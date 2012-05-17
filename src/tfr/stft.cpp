@@ -675,6 +675,9 @@ unsigned Fft::
 
 unsigned oksz(unsigned x)
 {
+    if (0 == x)
+        x = 1;
+
     unsigned ls = Fft::lChunkSizeS(x+1, 4);
     unsigned sg = Fft::sChunkSizeG(x-1, 4);
     if (x-ls < sg-x)

@@ -44,3 +44,5 @@ project_header.h.cpp
 image_works
 *.nsi.backup
 *.dylib
+*.sln.cache
+*.suo

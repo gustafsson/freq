@@ -11,6 +11,7 @@
 #if defined(__GNUC__)
     #include <unistd.h>
     #include <sys/time.h>
+    #include <stdio.h>
 #endif
 
 using namespace std;

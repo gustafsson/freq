@@ -17,18 +17,39 @@ echo "branch: ${branch}"
 echo "version: ${version}"
 echo "release: sonicawe_${version}${snapshot}"
 
-read -p "Verify repositories? (Y/n) " verifyRepos; echo
+# Check if git user name has been specified
+if [ -z "`git config --global user.name`" ]; then
+	echo "git has not yet been configured. Configure now or press ^C"
+	read -p "Please enter your name, such as Donald Duck: " username
+	read -p "Please enter your email, such as donald@duck.com: " usermail
+	git config --global user.name "$username"
+	git config --global user.email "$usermail"
+fi
+
+# Enforce this (being a bit intrusive here)
+git config merge.ff false
+
+read -p "Verify and update repositories? (Y/n) " verifyRepos; echo
 if [ "N" == "${verifyRepos}" ] || [ "n" == "${verifyRepos}" ]; then
 	verifyRepos=N;
 else
 	verifyRepos=Y;
 fi
 if [ "Y" == "${verifyRepos}" ]; then
-	cd ../../gpumisc
-	if [ -n "$(git status -uno --porcelain)" ]; then echo "In gpumisc: local git repo is not clean."; exit 1; fi
-	cd ../sonicawe
-	if [ -n "$(git status -uno --porcelain)" ]; then echo "In sonicawe: local git repo is not clean."; exit 1; fi
-	cd dist
+	if [ -n "$(git status -uno --porcelain)" ]; then
+		echo "Local git repo is not clean."
+		echo
+		echo "Commit your changes or run 'git stash' to temporarily store them in the stash."
+		echo "Run 'git submodule update' to bring submodules up-to-date."
+		echo
+		echo "If you have changed the files in a submodule you must first commit to to that"
+		echo "submodule's repo. Then you must also update the reference in the sonicawe repo"
+		echo "by 'git add'-ing that submodule and make a new commit in the sonicawe repo."
+		echo
+		echo "Or to build anyways, run buildandrun.sh again and answer n (no) to the previous"
+		echo "question."
+		false
+	fi
 fi
 
 if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? (y/N) " rebuildall; echo; fi
@@ -55,14 +76,37 @@ then
     exit
 fi
 
-
 if [ "Y" == "${verifyRepos}" ]; then
 	echo "==================== Updating local repos ====================="
-	cd ../../gpumisc
 	git pull --rebase
 
-	cd ../sonicawe
-	git pull --rebase
+	# Make sure the submodules are initialized and points to the correct commit
+	(
+		cd ..
 
-	cd dist
+		# note, if they are already initialized this command would do:
+		#git submodule update
+
+		git submodule update --init lib/gpumisc
+
+		if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
+			git submodule update --init lib/sonicawe-winlib
+		elif [ "$(uname -s)" == "Linux" ]; then
+			git submodule update --init lib/sonicawe-ubuntulib
+
+			if [ -z `which colorgcc` ]; then
+				# In Ubuntu we're using packages from the Ubuntu repo instead of a specific precompiled set of binaries.
+				echo "Some required and recommended libraries seem to be missing, running apt-get"
+				glewpkg=libglew1.6-dev
+				if [ -z `apt-cache search $glewdeb` ]; then
+					glewpkg=libglew1.5-dev
+				fi
+				sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc
+			fi
+		elif [ "$(uname -s)" == "Darwin" ]; then
+			git submodule update --init lib/sonicawe-maclib
+		else
+			echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
+		fi
+	) || false
 fi

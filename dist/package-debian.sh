@@ -38,11 +38,12 @@ if [ $versionname == "def" ] ; then
 	versionname="$(date +0.%Y.%m.%d-snapshot)"
 fi
 
-package=dist/package-debian~
+package=tmp/package-debian~
 share=$package/usr/share/${packagename}/.
 
 pushd ..
 rm -rf $package
+mkdir -p tmp
 cp -r dist/package-debian $package
 if [ -n "${versionnumber}" ]; then
 	sed -i "s/Version: .*$/Version: ${versionnumber}/g" $package/DEBIAN/control
@@ -75,9 +76,9 @@ fi
 
 
 mkdir -p $package/usr/bin
-cp ${packagename} $package/usr/bin/${packagename}-cpu
-cp ${packagename}-cuda $package/usr/bin/${packagename}-cuda
-cp sonicawe-launcher.sh $package/usr/bin/${packagename}
+cp src/${packagename} $package/usr/bin/${packagename}-cpu
+cp src/${packagename}-cuda $package/usr/bin/${packagename}-cuda
+cp src/sonicawe-launcher.sh $package/usr/bin/${packagename}
 sed -i "s/sonicawe/${packagename}/g" $package/usr/bin/${packagename}
 
 mkdir -p $share
@@ -126,8 +127,8 @@ sed -i "s/Installed-Size: .*$/Installed-Size: ${installedsize}/g" $package/DEBIA
 
 output_deb="${packagename}_"$versionname"_`uname -m`.deb"
 #http://www.debian.org/doc/debian-policy/ch-controlfields.html
-dpkg -b $package dist/$output_deb
+dpkg -b $package tmp/$output_deb
 echo "OUTPUT"
-echo "    `pwd`/dist/$output_deb"
+echo "    `pwd`/tmp/$output_deb"
 popd
 

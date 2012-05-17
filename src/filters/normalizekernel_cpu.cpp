@@ -5,6 +5,10 @@
 #include "normalizekernel.h"
 #include <cpumemorystorage.h>
 
+#if defined(__GNUC__)
+    #include <cmath>
+#endif
+
 #define VAL(v) fabsf(v)
 #define INVVAL(v) (v)
 //#define VAL(v) (v*v)

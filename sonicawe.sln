@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sonicawe", "src\sonicawe.vcproj", "{900E1FFA-F932-324B-A3B8-DB5D102F4081}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1ACE9CE5-96C2-39FB-9609-972D4679A42E} = {1ACE9CE5-96C2-39FB-9609-972D4679A42E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpumisc", "lib\gpumisc\gpumisc.vcproj", "{1ACE9CE5-96C2-39FB-9609-972D4679A42E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{900E1FFA-F932-324B-A3B8-DB5D102F4081}.Debug|Win32.ActiveCfg = Debug|Win32
+		{900E1FFA-F932-324B-A3B8-DB5D102F4081}.Debug|Win32.Build.0 = Debug|Win32
+		{900E1FFA-F932-324B-A3B8-DB5D102F4081}.Release|Win32.ActiveCfg = Release|Win32
+		{900E1FFA-F932-324B-A3B8-DB5D102F4081}.Release|Win32.Build.0 = Release|Win32
+		{1ACE9CE5-96C2-39FB-9609-972D4679A42E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1ACE9CE5-96C2-39FB-9609-972D4679A42E}.Debug|Win32.Build.0 = Debug|Win32
+		{1ACE9CE5-96C2-39FB-9609-972D4679A42E}.Release|Win32.ActiveCfg = Release|Win32
+		{1ACE9CE5-96C2-39FB-9609-972D4679A42E}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
