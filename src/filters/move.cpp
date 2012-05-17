@@ -23,7 +23,7 @@ void Move::
     float df = _df * chunk.nScales();
 
     ::moveFilter( chunk.transform_data,
-                  df, chunk.minHz(), chunk.maxHz(), chunk.sample_rate, (unsigned long)chunk.chunk_offset );
+                  df, chunk.minHz(), chunk.maxHz(), chunk.sample_rate, chunk.chunk_offset.asInteger() );
 }
 
 } // namespace Filters
