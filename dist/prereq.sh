@@ -65,7 +65,7 @@ else
 fi
 
 
-read -s -p "Enter password for ftp.sonicawe.com (leave empty to skip uploading): " pass; echo
+read -s -p "Enter password for ftp.sonicawe.com (leave empty to skip upload): " pass; echo
 expectedpass=d0f085d2cfdee0b2128bf80226f6bee5
 if [ -z "$pass" ]; then
     echo "Missing password for ftp.sonicawe.com. Won't upload any data."
