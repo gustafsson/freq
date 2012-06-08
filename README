@@ -130,6 +130,15 @@ This commant will also fetch the required submodules (dependancy git repositorie
 ./buildandrun.sh
 
 
+Tests
+-----
+To run the test suite. Execute in the folder ./tests:
+./update-integration-tests.sh
+./runtests.sh
+
+For more info on running tests, see the runtests help:
+./runtests.sh --help
+
 
 Packaging/deployment
 --------------------
