@@ -10,3 +10,6 @@
 [submodule "lib/sonicawe-ubuntulib"]
 	path = lib/sonicawe-ubuntulib
 	url = git@bitbucket.org:MuchDifferent/sonicawe-ubuntulib.git
+[submodule "tests/integration"]
+	path = tests/integration
+	url = git@bitbucket.org:MuchDifferent/sonicawe-integration-tests.git
