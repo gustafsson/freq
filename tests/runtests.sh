@@ -6,7 +6,7 @@ defaulttimeout=10
 
 if [ "$1" = "--help" ]; then
   scriptName="${0##*/}"
-  echo "Run this script from sonic/sonicawe/tests"
+  echo "Run this script from sonicawe/tests"
   echo
   echo "${scriptName} searches through the subdirectories for tests,"
   echo "compiles them, and executes the binaries produced. All folders"
@@ -70,8 +70,8 @@ if [ "$1" = "--help" ]; then
   exit
 fi
 
-if [ "`pwd | grep 'sonic/sonicawe/tests$'`" = "" ]; then
-  echo "Run this script from sonic/sonicawe/tests"
+if [ "`pwd | grep 'sonicawe/tests$'`" = "" ]; then
+  echo "Run this script from sonicawe/tests"
   exit
 fi
 
@@ -93,7 +93,7 @@ else
 fi
 
 if [ "$platform" = "windows" ]; then
-    timestamp(){ date --iso-8601=second; }
+    timestamp(){ date "+%Y-%m-%d %H:%M:%S"; }
     staticlibname(){ echo release/${1}.lib; }
     dynamiclibname(){ echo release/${1}.dll; }
     linkcmd="cp"
@@ -103,8 +103,8 @@ if [ "$platform" = "windows" ]; then
     # make vcbuild called by msbuild detect changes in headers
     PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
-    PATH="$(cd ../release; pwd):${PATH}"
-    PATH="$(cd ../../../winlib/sonicawe_snapshot_win32_base; pwd):${PATH}"
+    PATH="$(cd ../src/release; pwd):${PATH}"
+    PATH="$(cd ../lib/sonicawe-winlib/sonicawe_snapshot_win32_base; pwd):${PATH}"
     outputdir="release"
     qmakeargs=
 else
@@ -113,7 +113,7 @@ else
         staticlibname(){ echo lib${1}.a; }
         dynamiclibname(){ echo lib${1}.dylib; }
         qmakeargs="-spec macx-g++ CONFIG+=release"
-        export DYLD_LIBRARY_PATH="$(cd ../../../maclib; pwd):$(cd ..; pwd):/usr/local/cuda/lib"
+        export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib; pwd):$(cd ..; pwd):/usr/local/cuda/lib"
     else
         timestamp(){ date --rfc-3339=seconds; }
         staticlibname(){ echo lib${1}.a; }
@@ -146,24 +146,24 @@ for configname in $configurations; do
 
   ret=0
   (
-    cd ../.. &&
+    cd .. &&
     echo $now &&
     pwd &&
 
     # need to relink both gpumisc and sonicawe when switching configurations
-    touch sonicawe/sawe/configuration/configuration.cpp &&
-	rm -f {gpumisc,sonicawe}/Makefile &&
-    rm -f gpumisc/$(staticlibname gpumisc) &&
-    rm -f sonicawe/$(dynamiclibname sonicawe) &&
+    touch src/sawe/configuration/configuration.cpp
+    rm -f {lib/gpumisc,src}/Makefile &&
+    rm -f lib/gpumisc/$(staticlibname gpumisc) &&
+    rm -f src/$(dynamiclibname sonicawe) &&
 
     qmakecmd="qmake CONFIG+=testlib $qmakeargs CONFIG+=${configname}" &&
     echo $qmakecmd &&
     $qmakecmd &&
-    (cd gpumisc && $qmakecmd) &&
-    (cd sonicawe && $qmakecmd) &&
+    (cd lib/gpumisc && $qmakecmd) &&
+    (cd src && $qmakecmd) &&
     eval echo $makecmd &&
     eval time $makecmd &&
-    ls -l gpumisc/$(staticlibname gpumisc) sonicawe/$(dynamiclibname sonicawe)
+    ls -l lib/gpumisc/$(staticlibname gpumisc) src/$(dynamiclibname sonicawe)
   ) >& ${logdir}/${build_logname}.log || ret=$?
 
   if (( 0 != ret )); then
@@ -253,7 +253,7 @@ for configname in $configurations; do
   fi
 
   latestlog="${startdir}/logs-latest/${configname}"
-  rm -rf "${latestlog}"
+  rm -rf "${latestlog}" || echo "An old file might still be open in ${latestlog}, will attempt to replace."
   mkdir -p "${latestlog}"
   cp -r "${logdir}/." "${latestlog}"
 

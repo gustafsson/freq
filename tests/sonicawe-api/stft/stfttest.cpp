@@ -390,7 +390,7 @@ float StftTest::
         {
             float diff = expectedp[i] - p2[i]*norm;
             float frac = expectedp[i] / p2[i]*norm;
-            cout << b2->sample_offset+i << ", " << expectedp[i] << ", " << p2[i]*norm <<  ", " << diff << ", " << frac<< ";" << endl;
+            cout << (b2->sample_offset+i).asFloat() << ", " << expectedp[i] << ", " << p2[i]*norm <<  ", " << diff << ", " << frac<< ";" << endl;
         }
     }
 

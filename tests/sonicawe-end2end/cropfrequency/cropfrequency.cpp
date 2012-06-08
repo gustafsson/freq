@@ -160,7 +160,7 @@ void CropFrequency::
 
             {
                 TaskInfo ti("Triggering actionActionRemove_selection");
-                //ui->actionActionRemove_selection->trigger();
+
                 ui->actionCropSelection->trigger();
             }
 

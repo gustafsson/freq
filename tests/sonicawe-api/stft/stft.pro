@@ -56,37 +56,44 @@ win32 {
 }
 
 
+AUXLIB = ../../../lib
+WINLIB = $$AUXLIB/sonicawe-winlib
+MACLIB = $$AUXLIB/sonicawe-maclib
+GPUMISC = $$AUXLIB/gpumisc
+SONICAWE = ../../../src
+
+
 INCLUDEPATH += \
-    ../../../../../sonic/gpumisc \
-    ../../../../../sonic/sonicawe \
+    $$GPUMISC \
+    $$SONICAWE \
 
 	
 win32 {
     INCLUDEPATH += \
-        ../../../../../winlib/glut \
-        ../../../../../winlib/glew/include \
-        ../../../../../winlib \
+        $$WINLIB/glut \
+        $$WINLIB/glew/include \
+        $$WINLIB \
 
     LIBS += \
-        -l../../../../../winlib/glut/glut32 \
-        -l../../../../../winlib/glew/lib/glew32 \
-        -L../../../../../winlib/boostlib \
+        -l$$WINLIB/glut/glut32 \
+        -l$$WINLIB/glew/lib/glew32 \
+        -L$$WINLIB/boostlib \
 
     LIBS += \
-        -L../../../../sonicawe/release -lsonicawe \
-        -L../../../../gpumisc/release -lgpumisc \
+        -L$$SONICAWE/release -lsonicawe \
+        -L$$GPUMISC/release -lgpumisc \
 		
 }
 
 # build sonicawe with qmake CONFIG+=testlib
 unix:LIBS += \
-        -L../../../../sonicawe -lsonicawe \
+        -L$$SONICAWE -lsonicawe \
 
 # find libsonicawe when executing from project path
 unix:!macx:QMAKE_LFLAGS += -Wl,-rpath=../../../
 
 macx:INCLUDEPATH += \
-        ../../../../../maclib/boost_1_45_0 \
+        $$MACLIB/boost_1_45_0 \
 
 
 ####################

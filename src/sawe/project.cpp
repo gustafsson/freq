@@ -141,7 +141,7 @@ pProject Project::
     if (!filename.empty() && !fileExists)
     {
         QUrl url(filename.c_str());
-        if (url.isValid())
+        if (url.isValid() && !url.scheme().isEmpty())
         {
             std::string scheme = url.scheme().toStdString();
             Signal::pOperation s( new Adapters::NetworkRecorder(url) );

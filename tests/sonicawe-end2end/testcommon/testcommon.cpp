@@ -48,7 +48,7 @@ void TestCommon::
 {
     TaskTimer ti("%s::%s", vartype(*this).c_str(), __FUNCTION__, NULL);
 
-    project( Sawe::Application::global_ptr()->slotNew_recording( -1 ) );
+    project( Sawe::Application::global_ptr()->slotNew_recording() );
 
     exec();
 

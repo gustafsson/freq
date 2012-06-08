@@ -42,37 +42,42 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
+GPUMISC = ../../../lib/gpumisc
+SONICAWE = ../../../src
+WINLIB = ../../../lib/sonicawe-winlib
+MACLIB = ../../../lib/sonicawe-maclib
+
 INCLUDEPATH += \
-    ../../../../../sonic/gpumisc \
-    ../../../../../sonic/sonicawe \
+    $$GPUMISC \
+    $$SONICAWE \
 
 unix:!macx {
 LIBS += \
     -lGLEW \
     -lGLU \
     -lGL \
-    -L../../../../gpumisc -lgpumisc \
+    -L$$GPUMISC -lgpumisc \
 }
 	
 win32 {
   INCLUDEPATH += \
-      ../../../../../winlib \
-      ../../../../../winlib/glew/include \
-      ../../../../../winlib/glut \
+      $$WINLIB \
+      $$WINLIB/glew/include \
+      $$WINLIB/glut \
 
   LIBS += \
-      -l../../../../gpumisc/Release/gpumisc \
-      -l../../../../../winlib/glew/lib/glew32 \
-      -l../../../../../winlib/glut/glut32 \
-      -L../../../../../winlib/boostlib \
+      -l$$GPUMISC/Release/gpumisc \
+      -l$$WINLIB/glew/lib/glew32 \
+      -l$$WINLIB/glut/glut32 \
+      -L$$WINLIB/boostlib \
 	
 }
 
 macx {
 INCLUDEPATH += \
-    ../../../../../maclib/boost_1_45_0
+    $$MACLIB/boost_1_45_0
 LIBS += \
-    -L../../../../gpumisc -lgpumisc
+    -L$$GPUMISC -lgpumisc
 }
 
 ####################
@@ -137,7 +142,7 @@ win32 {
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
-		-o \
+		-m32 -o \
         "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
@@ -152,7 +157,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','-I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','"') \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \

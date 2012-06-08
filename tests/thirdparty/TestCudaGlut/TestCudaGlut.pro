@@ -40,6 +40,10 @@ macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-m
 macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -Wfatal-errors
 
+GPUMISC = ../../../lib/gpumisc
+WINLIB = ../../../lib/sonicawe-winlib
+MACLIB = ../../../lib/sonicawe-maclib
+
 unix:!macx {
     LIBS = \
         -lGLU \
@@ -50,10 +54,10 @@ unix:!macx {
 
 win32 {
     INCLUDEPATH += \
-        ../../../../../winlib/glut \
+        $$WINLIB/glut \
 
     LIBS += \
-        -l../../../../../winlib/glut/glut32 \
+        -l$$WINLIB/glut/glut32 \
 
 }
 
@@ -111,7 +115,7 @@ win32 {
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
-		-o \
+		-m32 -o \
         "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
@@ -126,7 +130,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','-I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','"') \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \

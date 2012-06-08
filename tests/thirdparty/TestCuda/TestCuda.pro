@@ -19,9 +19,6 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
-INCLUDEPATH += \
-#    ../../../../sonic/gpumisc \
-#    ../../../../sonic/sonicawe \
 
 
 CUDA_SOURCES += \
@@ -30,42 +27,6 @@ CUDA_SOURCES += \
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
-
-
-unix:!macx {
-LIBS = \
-#    -L../../../sonicawe -lsonicawe
-
-}
-
-win32 {
-INCLUDEPATH += \
-#	../../../../winlib/glut \
-#	../../../../winlib/glew/include \
-#	../../../../winlib/portaudio/include \
-#	../../../../winlib/libsndfile/include \
-#	../../../../winlib/hdf5lib/include \
-#	../../../../winlib/zlib/include \
-#	../../../../winlib
-
-LIBS += \
-#	-l../../../../winlib/glut/glut32 \
-#	-l../../../../winlib/libsndfile/libsndfile-1 \
-#	-l../../../../winlib/hdf5lib/dll/hdf5dll \
-#	-l../../../../winlib/hdf5lib/dll/hdf5_hldll \
-#	-L../../../../winlib/boostlib
-
-win32:QMAKE_LFLAGS_RELEASE += \
-#	../../../../winlib/portaudio/portaudio.lib \
-#	../../../../winlib/portaudio/portaudio_x86_mt.lib \
-#	../../../../winlib/portaudio/portaudiocpp_mt.lib
-
-win32:QMAKE_LFLAGS_DEBUG += \
-#	../../../../winlib/portaudio/portaudio.lib \
-#	../../../../winlib/portaudio/portaudio_x86_mt_gd.lib \
-#	../../../../winlib/portaudio/portaudiocpp_mt_gd.lib
-
-}
 
 
 macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386
@@ -99,7 +60,6 @@ DEFINES += USE_CUDA
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
 CUDA_FLAGS += --use_fast_math
-#CUDA_FLAGS += --ptxas-options=-v
 
 
 CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
@@ -120,7 +80,7 @@ win32 {
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
-		-o \
+		-m32 -o \
         "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
@@ -135,7 +95,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','-I "../../../../../sonic/sonicawe/tests/gpumisc/MappedVbo/','"') \
+        $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \

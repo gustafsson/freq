@@ -301,14 +301,8 @@ namespace Tools
     void SelectionController::
             receiveCropSelection()
     {
-        if (!Sawe::Configuration::version().empty())
-        {
-            if (!_model->current_selection())
-            {
-                TaskInfo("Error: SelectionController::receiveCropSelection was called without any current selection being active");
-                return;
-            }
-        }
+        if (!_model->current_selection())
+            return;
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
         o->source( _worker->source() );

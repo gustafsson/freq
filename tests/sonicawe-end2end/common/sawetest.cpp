@@ -7,6 +7,8 @@
 #include "ui_mainwindow.h"
 #include "TaskTimer.h"
 
+#include <QtTest/QtTest>
+
 SaweTestClass::
         SaweTestClass()
             : work_sections_( 0 ),
@@ -36,6 +38,8 @@ void SaweTestClass::
 
     project_ = p;
     project_is_opened_ = false;
+
+    QVERIFY( p );
 
     connect( p->tools().render_view(), SIGNAL(postPaint()), this, SLOT(postPaint()), Qt::QueuedConnection);
     connect( p->tools().render_view(), SIGNAL(finishedWorkSection()), this, SLOT(renderViewFinishedWorkSection()), Qt::QueuedConnection);

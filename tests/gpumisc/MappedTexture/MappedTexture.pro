@@ -27,25 +27,29 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
 
-INCLUDEPATH += ../../../../../sonic/gpumisc
+AUXLIB = ../../../lib
+WINLIB = $$AUXLIB/sonicawe-winlib
+MACLIB = $$AUXLIB/sonicawe-maclib
+GPUMISC = $$AUXLIB/gpumisc
 
+INCLUDEPATH += $$GPUMISC
 unix:!macx: LIBS += -lglut
 
 win32 {
 INCLUDEPATH += \
-    ../../../../../winlib \
-    ../../../../../winlib/glew/include \
-    ../../../../../winlib/glut \
+    $$WINLIB \
+    $$WINLIB/glew/include \
+    $$WINLIB/glut \
 
 LIBS += \
-    -l../../../../../winlib/glut/glut32 \
-    -l../../../../../winlib/glew/lib/glew32 \
+    -l$$WINLIB/glut/glut32 \
+    -l$$WINLIB/glew/lib/glew32 \
 
 }
 
 macx {
 INCLUDEPATH += \
-    ../../../../../maclib/boost_1_45_0
+    $$MACLIB/boost_1_45_0
 LIBS += \
     -framework GLUT
 }
@@ -108,7 +112,7 @@ win32 {
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         "${QMAKE_FILE_NAME}" \
-		-o \
+		-m32 -o \
         "${QMAKE_FILE_OUT}"
 }
 unix:!macx {
