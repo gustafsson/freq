@@ -154,6 +154,7 @@ FORMS += \
     tools/dropnotifyform.ui \
     tools/sendfeedback.ui \
     tools/commands/commandhistory.ui \
+    tools/splashscreen.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

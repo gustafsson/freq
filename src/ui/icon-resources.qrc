@@ -50,4 +50,7 @@
         <file alias="heightmap.vert">../heightmap/heightmap.vert</file>
         <file alias="heightmap_noshadow.vert">../heightmap/heightmap_noshadow.vert</file>
     </qresource>
+    <qresource prefix="/splash">
+        <file>splash/brickwall.jpg</file>
+    </qresource>
 </RCC>

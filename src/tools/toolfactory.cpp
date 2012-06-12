@@ -36,6 +36,7 @@
 #include "checkupdates.h"
 #include "undoredo.h"
 #include "commands/commandhistory.h"
+#include "splashscreen.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -151,6 +152,8 @@ ToolFactory::
     _objects.push_back( QPointer<QObject>( new UndoRedo( p )));
 
     _objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->commandInvoker() )));
+
+    _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
     //
     // Insert new tools here, and delete things in the destructor in the
