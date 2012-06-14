@@ -74,13 +74,7 @@ pChunk Fft::
         chunk.reset( new StftChunk( output_n.width, Stft::WindowType_Rectangular, output_n.width, true ) );
         chunk->transform_data.reset( new ChunkData( output_n ));
 
-#ifdef USE_CUFFT
-        computeWithCufft( input, chunk->transform_data, FftDirection_Forward );
-#elif defined(USE_OPENCL)
-        computeWithClFft( input, chunk->transform_data, FftDirection_Forward );
-#else
-        computeWithOoura( input, chunk->transform_data, FftDirection_Forward );
-#endif
+        FftImplementation::Singleton().compute( input, chunk->transform_data, FftDirection_Forward );
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
     }
     else
@@ -94,13 +88,7 @@ pChunk Fft::
         output_n.width = ((StftChunk*)chunk.get())->nScales();
         chunk->transform_data.reset( new ChunkData( output_n ));
 
-#ifdef USE_CUFFT
-        computeWithCufftR2C( real_buffer->waveform_data(), chunk->transform_data );
-#elif defined(USE_OPENCL)
-        computeWithClFftR2C( real_buffer->waveform_data(), chunk->transform_data );
-#else
-        computeWithOouraR2C( real_buffer->waveform_data(), chunk->transform_data );
-#endif
+        FftImplementation::Singleton().computeR2C( real_buffer->waveform_data(), chunk->transform_data );
         chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
     }
 
@@ -173,13 +161,7 @@ Signal::pBuffer Fft::
         // original_sample_rate == fs * scales
         Tfr::ChunkData::Ptr output( new Tfr::ChunkData( scales ));
 
-#ifdef USE_CUFFT
-        computeWithCufft( chunk->transform_data, output, FftDirection_Inverse );
-#elif defined(USE_OPENCL)
-        computeWithClFft( chunk->transform_data, output, FftDirection_Inverse );
-#else
-        computeWithOoura( chunk->transform_data, output, FftDirection_Inverse );
-#endif
+        FftImplementation::Singleton().compute( chunk->transform_data, output, FftDirection_Inverse );
 
         r.reset( new Signal::Buffer(0, scales, fs ));
         ::stftDiscardImag( output, r->waveform_data() );
@@ -190,13 +172,7 @@ Signal::pBuffer Fft::
 
         r.reset( new Signal::Buffer(0, scales, fs ));
 
-#ifdef USE_CUFFT
-        computeWithCufftC2R(chunk->transform_data, r->waveform_data());
-#elif defined(USE_OPENCL)
-        computeWithClFftC2R(chunk->transform_data, r->waveform_data());
-#else
-        computeWithOouraC2R(chunk->transform_data, r->waveform_data());
-#endif
+        FftImplementation::Singleton().computeC2R( chunk->transform_data, r->waveform_data() );
     }
 
     unsigned original_sample_count = chunk->original_sample_rate/chunk->sample_rate + .5f;
@@ -210,6 +186,18 @@ Signal::pBuffer Fft::
     return r;
 }
 
+
+unsigned Fft::
+        lChunkSizeS(unsigned x, unsigned m)
+{
+    return FftImplementation::Singleton().lChunkSizeS(x,m);
+}
+
+unsigned Fft::
+        sChunkSizeG(unsigned x, unsigned m)
+{
+    return FftImplementation::Singleton().sChunkSizeG(x,m);
+}
 
 /// STFT
 
@@ -317,13 +305,7 @@ Tfr::pChunk Stft::
     Tfr::pChunk chunk( new Tfr::StftChunk(_window_size, _window_type, increment(), false) );
     chunk->transform_data.reset( new Tfr::ChunkData( n ));
 
-#ifdef USE_CUFFT
-    computeWithCufft(inputbuffer, chunk->transform_data, actualSize);
-#elif defined(USE_OPENCL)
-    computeWithClFft(inputbuffer, chunk->transform_data, actualSize);
-#else
-    computeWithOoura(inputbuffer, chunk->transform_data, actualSize);
-#endif
+    FftImplementation::Singleton().compute( inputbuffer, chunk->transform_data, DataStorageSize(_window_size, actualSize.height) );
 
     TIME_STFT ComputationSynchronize();
 
@@ -353,13 +335,7 @@ Tfr::pChunk Stft::
 
     chunk->transform_data.reset( new ChunkData( n.width*n.height ));
 
-#ifdef USE_CUFFT
-    computeWithCufft(input, chunk->transform_data, n, FftDirection_Forward);
-#elif defined(USE_OPENCL)
-    computeWithClFft(input, chunk->transform_data, n, FftDirection_Forward);
-#else
-    computeWithOoura(input, chunk->transform_data, n, FftDirection_Forward);
-#endif
+    FftImplementation::Singleton().compute( input, chunk->transform_data, n, FftDirection_Forward );
 
     TIME_STFT ComputationSynchronize();
 
@@ -410,13 +386,8 @@ Signal::pBuffer Stft::
             nwindows );
 
     DataStorage<float>::Ptr windowedOutput(new DataStorage<float>(nwindows*chunk_window_size));
-#ifdef USE_CUFFT
-    inverseWithCufft( chunk->transform_data, windowedOutput, n );
-#elif defined(USE_OPENCL)
-    inverseWithClFft( chunk->transform_data, windowedOutput, n );
-#else
-    inverseWithOoura( chunk->transform_data, windowedOutput, n );
-#endif
+
+    FftImplementation::Singleton().inverse( chunk->transform_data, windowedOutput, n );
 
     TIME_STFT ComputationSynchronize();
 
@@ -471,13 +442,7 @@ Signal::pBuffer Stft::
 
     Tfr::ChunkData::Ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
 
-#ifdef USE_CUFFT
-    computeWithCufft(chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse);
-#elif defined(USE_OPENCL)
-    computeWithClFft(chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse);
-#else
-    computeWithOoura(chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse);
-#endif
+    FftImplementation::Singleton().compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
 
     TIME_STFT ComputationSynchronize();
 
@@ -567,111 +532,6 @@ std::string Stft::
 //    return a < b ? b - a : a - b;
 //}
 
-
-unsigned powerprod(const unsigned*bases, const unsigned*b, unsigned N)
-{
-    unsigned v = 1;
-    for (unsigned i=0; i<N; i++)
-        for (unsigned x=0; x<b[i]; x++)
-            v*=bases[i];
-    return v;
-}
-
-unsigned findLargestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, unsigned x, unsigned n, unsigned N)
-{
-    unsigned i = 0;
-    while(true)
-    {
-        a[n] = i;
-
-        unsigned v = powerprod(bases, a, N);
-        if (v >= x)
-            break;
-
-        if (n+1<N)
-            maxv = findLargestSmaller(bases, a, maxv, x, n+1, N);
-        else if (v > maxv)
-            maxv = v;
-
-        ++i;
-    }
-    a[n] = 0;
-
-    return maxv;
-}
-
-unsigned findSmallestGreater(const unsigned* bases, unsigned* a, unsigned minv, unsigned x, unsigned n, unsigned N)
-{
-    unsigned i = 0;
-    while(true)
-    {
-        a[n] = i;
-
-        unsigned v = powerprod(bases, a, N);
-        if (n+1<N)
-            minv = findSmallestGreater(bases, a, minv, x, n+1, N);
-        else if (v > x && (v < minv || minv==0))
-            minv = v;
-
-        if (v > x)
-            break;
-
-        ++i;
-    }
-    a[n] = 0;
-
-    return minv;
-}
-
-#ifndef USE_CUFFT
-unsigned Fft::
-        lChunkSizeS(unsigned x, unsigned)
-{
-    return lpo2s(x);
-}
-#else
-unsigned Fft::
-        lChunkSizeS(unsigned x, unsigned multiple)
-{
-    // It's faster but less flexible to only accept powers of 2
-    //return lpo2s(x);
-
-    multiple = std::max(1u, multiple);
-    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
-
-    unsigned bases[]={2, 3, 5, 7};
-    unsigned a[]={0, 0, 0, 0};
-    unsigned N_bases = 4; // could limit to 2 bases
-    unsigned x2 = multiple*findLargestSmaller(bases, a, 0, int_div_ceil(x, multiple), 0, N_bases);
-    BOOST_ASSERT( x2 < x );
-    return x2;
-}
-#endif
-
-#ifndef USE_CUFFT
-unsigned Fft::
-        sChunkSizeG(unsigned x, unsigned)
-{
-    return spo2g(x);
-}
-#else
-unsigned Fft::
-        sChunkSizeG(unsigned x, unsigned multiple)
-{
-    // It's faster but less flexible to only accept powers of 2
-    //return spo2g(x);
-
-    multiple = std::max(1u, multiple);
-    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
-
-    unsigned bases[]={2, 3, 5, 7};
-    unsigned a[]={0, 0, 0, 0};
-    unsigned N_bases = 4;
-    unsigned x2 = multiple*findSmallestGreater(bases, a, 0, x/multiple, 0, N_bases);
-    BOOST_ASSERT( x2 > x );
-    return x2;
-}
-#endif
 
 unsigned oksz(unsigned x)
 {
@@ -821,13 +681,7 @@ void Stft::
         compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
     DataStorageSize size( _window_size, input->numberOfElements()/_window_size);
-#ifdef USE_CUFFT
-    computeWithCufft( input, output, size, direction );
-#elif defined(USE_OPENCL)
-    computeWithClFft( input, output, size, direction );
-#else
-    computeWithOoura( input, output, size, direction );
-#endif
+    FftImplementation::Singleton().compute( input, output, size, direction );
 }
 
 

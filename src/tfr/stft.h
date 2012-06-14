@@ -3,6 +3,7 @@
 
 #include "transform.h"
 #include "chunk.h"
+#include "fftimplementation.h"
 
 // std
 #include <vector>
@@ -12,13 +13,6 @@
 #include "HasSingleton.h"
 
 namespace Tfr {
-
-
-enum FftDirection
-{
-    FftDirection_Forward = -1,
-    FftDirection_Inverse = 1
-};
 
 
 class StftChunk;
@@ -49,37 +43,11 @@ public:
     pChunk forward( Signal::pBuffer );
     Signal::pBuffer backward( pChunk );
 
-    /**
-      Returns the smallest ok chunk size strictly greater than x that also is
-      a multiple of 'multiple'.
-      'multiple' must be a power of 2.
-      */
+    static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
     static unsigned sChunkSizeG(unsigned x, unsigned multiple=1);
 
-    /**
-      Returns the largest ok chunk size strictly smaller than x that also is
-      a multiple of 'multiple'.
-      'multiple' must be a power of 2.
-      */
-    static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
-
 private:
-    std::vector<float> w;
-    std::vector<int> ip;
-    friend class Stft;
-
     bool _compute_redundant;
-
-    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction, bool expectPrepared=false );
-    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
-    void computeWithClFft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
-
-    void computeWithOouraR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
-    void computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
-    void computeWithClFftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
-    void computeWithOouraC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
-    void computeWithCufftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
-    void computeWithClFftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
 };
 
 /**
@@ -200,18 +168,6 @@ private:
 
     template<WindowType>
     float computeWindowValue( float p );
-
-    void computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction );
-    void computeWithCufft( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
-    void inverseWithCufft( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
-
-    void computeWithClFft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction );
-    void computeWithClFft( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
-    void inverseWithClFft( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
-
-    void computeWithOoura( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction );
-    void computeWithOoura( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
-    void inverseWithOoura( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
 };
 
 class StftChunk: public Chunk

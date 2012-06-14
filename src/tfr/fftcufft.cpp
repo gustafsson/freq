@@ -1,5 +1,6 @@
 #ifdef USE_CUDA
 #include "stft.h"
+#include "stft_cufft.h"
 
 #include <cufft.h>
 #include "cudaMemsetFix.cu.h"
@@ -18,8 +19,8 @@
 namespace Tfr {
 
 
-void Fft::
-        computeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+void FftCufft::
+        compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
     TIME_STFT TaskTimer tt("FFt cufft");
 
@@ -50,8 +51,8 @@ void Fft::
 }
 
 
-void Fft::
-        computeWithCufftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
+void FftCufft::
+        computeR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
 {
     cufftReal* i = CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
     cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
@@ -64,8 +65,8 @@ void Fft::
 }
 
 
-void Fft::
-        computeWithCufftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
+void FftCufft::
+        computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
 {
     cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
     cufftReal* o = CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
@@ -78,8 +79,8 @@ void Fft::
 }
 
 
-//void Stft::
-//        canonicalComputeWithCufft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction )
+//void FftCufft::
+//        canonicalCompute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction )
 //{
 //    cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
 //    cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
@@ -93,8 +94,8 @@ void Fft::
 
 
 
-void Stft::
-        computeWithCufft(Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n, FftDirection direction)
+void FftCufft::
+        compute(Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n, FftDirection direction )
 {
     cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>(inputdata).device_ptr();
     cufftComplex* output = (cufftComplex*)CudaGlobalStorage::WriteAll<1>(outputdata).device_ptr();
@@ -113,9 +114,9 @@ void Stft::
     // never use more than 64 MB
     if (free > 64<<20)
         free = 64<<20;
-    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    if (slices * n.width*2*sizeof(cufftComplex) > free)
     {
-        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = free/(n.width*2*sizeof(cufftComplex));
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
@@ -129,7 +130,7 @@ void Stft::
         try
         {
             CufftException_SAFE_CALL(cufftExecC2C(
-                    _handle_ctx_c2c(_window_size, slices),
+                    _handle_ctx_c2c(n.width, slices),
                     input + i*n.width,
                     output + i*n.width,
                     direction==FftDirection_Forward?CUFFT_FORWARD:CUFFT_INVERSE));
@@ -148,9 +149,11 @@ void Stft::
 }
 
 
-void Stft::
-        computeWithCufft(DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize)
+void FftCufft::
+        compute(DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize n)
 {
+    DataStorageSize actualSize(n.width/2 + 1, n.height);
+
     cufftReal* input;
     cufftComplex* output;
 
@@ -182,9 +185,9 @@ void Stft::
     multiple++; // output
     multiple++; // overhead during computaion
 
-    if (slices * _window_size*multiple*sizeof(cufftComplex) > free)
+    if (slices * window_size*multiple*sizeof(cufftComplex) > free)
     {
-        slices = free/(_window_size*multiple*sizeof(cufftComplex));
+        slices = free/(window_size*multiple*sizeof(cufftComplex));
         slices = std::min(512u, std::min((unsigned)actualSize.height, slices));
 
         if (0 == slices) // happens when 'free' is low (migth even be 0)
@@ -210,8 +213,8 @@ void Stft::
         try
         {
             CufftException_SAFE_CALL(cufftExecR2C(
-                    _handle_ctx_r2c(_window_size, slices),
-                    input + i*_window_size,
+                    _handle_ctx_r2c(window_size, slices),
+                    input + i*window_size,
                     output + i*actualSize.width));
 
             i += slices;
@@ -228,8 +231,8 @@ void Stft::
 }
 
 
-void Stft::
-        inverseWithCufft( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n )
+void FftCufft::
+        inverse( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n )
 {
     const int actualSize = n.width/2 + 1;
     cufftComplex* input = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( inputdata ).device_ptr();
@@ -251,9 +254,9 @@ void Stft::
     // and never use more than 64 MB
     if (free > 64<<20)
         free = 64<<20;
-    if (slices * _window_size*2*sizeof(cufftComplex) > free)
+    if (slices * n.width*2*sizeof(cufftComplex) > free)
     {
-        slices = free/(_window_size*2*sizeof(cufftComplex));
+        slices = free/(n.width*2*sizeof(cufftComplex));
         slices = std::min(512u, std::min((unsigned)n.height, slices));
     }
 
@@ -269,7 +272,7 @@ void Stft::
         try
         {
             CufftException_SAFE_CALL(cufftExecC2R(
-                    _handle_ctx_c2r(_window_size, slices),
+                    _handle_ctx_c2r(n.width, slices),
                     input + i*actualSize,
                     output + i*n.width));
 
@@ -289,6 +292,99 @@ void Stft::
     TIME_STFT CudaException_ThreadSynchronize();
 }
 
+
+unsigned powerprod(const unsigned*bases, const unsigned*b, unsigned N)
+{
+    unsigned v = 1;
+    for (unsigned i=0; i<N; i++)
+        for (unsigned x=0; x<b[i]; x++)
+            v*=bases[i];
+    return v;
+}
+
+
+unsigned findLargestSmaller(const unsigned* bases, unsigned* a, unsigned maxv, unsigned x, unsigned n, unsigned N)
+{
+    unsigned i = 0;
+    while(true)
+    {
+        a[n] = i;
+
+        unsigned v = powerprod(bases, a, N);
+        if (v >= x)
+            break;
+
+        if (n+1<N)
+            maxv = findLargestSmaller(bases, a, maxv, x, n+1, N);
+        else if (v > maxv)
+            maxv = v;
+
+        ++i;
+    }
+    a[n] = 0;
+
+    return maxv;
+}
+
+
+unsigned findSmallestGreater(const unsigned* bases, unsigned* a, unsigned minv, unsigned x, unsigned n, unsigned N)
+{
+    unsigned i = 0;
+    while(true)
+    {
+        a[n] = i;
+
+        unsigned v = powerprod(bases, a, N);
+        if (n+1<N)
+            minv = findSmallestGreater(bases, a, minv, x, n+1, N);
+        else if (v > x && (v < minv || minv==0))
+            minv = v;
+
+        if (v > x)
+            break;
+
+        ++i;
+    }
+    a[n] = 0;
+
+    return minv;
+}
+
+
+unsigned FftCufft::
+        lChunkSizeS(unsigned x, unsigned multiple)
+{
+    // It's faster but less flexible to only accept powers of 2
+    //return lpo2s(x);
+
+    multiple = std::max(1u, multiple);
+    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
+
+    unsigned bases[]={2, 3, 5, 7};
+    unsigned a[]={0, 0, 0, 0};
+    unsigned N_bases = 4; // could limit to 2 bases
+    unsigned x2 = multiple*findLargestSmaller(bases, a, 0, int_div_ceil(x, multiple), 0, N_bases);
+    BOOST_ASSERT( x2 < x );
+    return x2;
+}
+
+
+unsigned FftCufft::
+        sChunkSizeG(unsigned x, unsigned multiple)
+{
+    // It's faster but less flexible to only accept powers of 2
+    //return spo2g(x);
+
+    multiple = std::max(1u, multiple);
+    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
+
+    unsigned bases[]={2, 3, 5, 7};
+    unsigned a[]={0, 0, 0, 0};
+    unsigned N_bases = 4;
+    unsigned x2 = multiple*findSmallestGreater(bases, a, 0, x/multiple, 0, N_bases);
+    BOOST_ASSERT( x2 > x );
+    return x2;
+}
 
 } // namespace Tfr
 #endif // #ifdef USE_CUDA

@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include "stft.h"
+#include "stft_clfft.h"
 #include "stftkernel.h"
 #include "openclcontext.h"
 
@@ -21,8 +22,8 @@
 namespace Tfr {
 
 
-void Fft::
-        computeWithClFft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+void FftClFft::
+        compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
     TIME_STFT TaskTimer tt("Fft ClFft");
 
@@ -56,8 +57,8 @@ void Fft::
 }
 
 
-void Fft::
-        computeWithClFftR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
+void FftClFft::
+        computeR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
 {
     unsigned denseWidth = output->size().width;
     unsigned redundantWidth = input->size().width;
@@ -85,8 +86,8 @@ void Fft::
 }
 
 
-void Fft::
-        computeWithClFftC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
+void FftClFft::
+        computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
 {
     unsigned denseWidth = input->size().width;
     unsigned redundantWidth = output->size().width;
@@ -113,8 +114,8 @@ void Fft::
 }
 
 
-void Stft::
-        computeWithClFft( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction )
+void FftClFft::
+        compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction )
 {
     TaskTimer tt("Stft::computeWithClFft( matrix[%d, %d], %s )",
                  input->size().width,
@@ -148,24 +149,23 @@ void Stft::
 }
 
 
-void Stft::
-        computeWithClFft(DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n)
+void FftClFft::
+        compute(DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n )
 {
-    unsigned denseWidth = n.width;
+    unsigned denseWidth = n.width/2+1;
 
     BOOST_ASSERT( output->numberOfElements()/denseWidth == n.height );
-    BOOST_ASSERT( input->numberOfElements()/_window_size == n.height );
-    BOOST_ASSERT( denseWidth == _window_size/2+1 );
+    BOOST_ASSERT( input->numberOfElements()/n.width == n.height );
 
     // interleave input to complex data
     Tfr::ChunkData::Ptr complexinput( new Tfr::ChunkData( input->size()));
     ::stftToComplex( input, complexinput );
 
     // make room for full output
-    Tfr::ChunkData::Ptr redundantOutput( new Tfr::ChunkData( _window_size*n.height ));
+    Tfr::ChunkData::Ptr redundantOutput( new Tfr::ChunkData( n.width*n.height ));
 
     // compute
-    computeWithClFft(complexinput, redundantOutput, DataStorageSize( _window_size, n.height ), FftDirection_Forward);
+    computeWithClFft(complexinput, redundantOutput, n, FftDirection_Forward);
 
     // discard redundant output
     Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( redundantOutput ).ptr();
@@ -175,13 +175,13 @@ void Stft::
     {
         unsigned x;
         for (x=0; x<denseWidth; ++x)
-            out[i*denseWidth + x] = in[i*_window_size+x];
+            out[i*denseWidth + x] = in[i*n.width + x];
     }
 }
 
 
-void Stft::
-        inverseWithClFft(Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output, DataStorageSize n)
+void FftClFft::
+        inverse(Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output, DataStorageSize n )
 {
     unsigned denseWidth = n.width/2+1;
     unsigned redundantWidth = n.width;
