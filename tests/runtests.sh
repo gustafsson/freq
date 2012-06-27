@@ -118,7 +118,8 @@ else
         timestamp(){ date --rfc-3339=seconds; }
         staticlibname(){ echo lib${1}.a; }
         dynamiclibname(){ echo lib${1}.so; }
-        qmakeargs="CONFIG+=gcc-4.3"
+        #qmakeargs="CONFIG+=gcc-4.3"
+        qmakeargs=
     fi
     linkcmd="ln -s"
     makecmd="make -j2"
