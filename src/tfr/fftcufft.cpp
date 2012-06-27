@@ -1,6 +1,6 @@
 #ifdef USE_CUDA
 #include "stft.h"
-#include "stft_cufft.h"
+#include "fftcufft.h"
 
 #include <cufft.h>
 #include "cudaMemsetFix.cu.h"
@@ -153,6 +153,8 @@ void FftCufft::
         compute(DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize n)
 {
     DataStorageSize actualSize(n.width/2 + 1, n.height);
+
+    int window_size = n.width;
 
     cufftReal* input;
     cufftComplex* output;

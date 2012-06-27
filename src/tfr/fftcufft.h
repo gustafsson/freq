@@ -11,8 +11,11 @@ namespace Tfr {
         void computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
 
         void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction );
-        void compute( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize, unsigned window_size );
+        void compute( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize actualSize );
         void inverse( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
+
+        unsigned sChunkSizeG(unsigned x, unsigned multiple=1);
+        unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
     };
 }
 

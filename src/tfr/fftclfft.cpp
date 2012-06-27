@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 #include "stft.h"
-#include "stft_clfft.h"
+#include "fftclfft.h"
 #include "stftkernel.h"
 #include "openclcontext.h"
 
