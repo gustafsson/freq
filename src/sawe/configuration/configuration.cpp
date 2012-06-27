@@ -258,6 +258,33 @@ string Configuration::
 }
 
 
+Configuration::OperatingSystemFamily Configuration::
+        operatingSystemFamily()
+{
+#ifdef Q_WS_WIN
+    return OperatingSystemFamily_Windows;
+#endif
+#ifdef Q_OS_MAC
+    return OperatingSystemFamily_Mac;
+#endif
+#ifdef Q_OS_LINUX
+    return OperatingSystemFamily_Ubuntu;
+#endif
+}
+
+
+std::string Configuration::
+        operatingSystemFamilyName()
+{
+    switch(operatingSystemFamily())
+    {
+    case OperatingSystemFamily_Windows: return "win";
+    case OperatingSystemFamily_Mac: return "mac";
+    case OperatingSystemFamily_Ubuntu: return "ubuntu";
+    default: return "unknown";
+    }
+}
+
 int Configuration::
         cpuCores()
 {

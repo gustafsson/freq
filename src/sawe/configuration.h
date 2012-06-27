@@ -43,6 +43,21 @@ public:
       */
     static std::string operatingSystemNameWithoutBits();
 
+    enum OperatingSystemFamily
+    {
+        OperatingSystemFamily_Windows = 0x1,
+        OperatingSystemFamily_Ubuntu = 0x2,
+        OperatingSystemFamily_Mac = 0x3
+    };
+    static OperatingSystemFamily operatingSystemFamily();
+
+    /**
+      ex:
+      win
+      ubuntu
+      mac
+      */
+    static std::string operatingSystemFamilyName();
 
     enum DeviceType
     {

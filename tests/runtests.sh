@@ -120,6 +120,7 @@ else
         dynamiclibname(){ echo lib${1}.so; }
         #qmakeargs="CONFIG+=gcc-4.3"
         qmakeargs=
+        export LD_LIBRARY_PATH="$(cd ../src; pwd):${PATH}"
     fi
     linkcmd="ln -s"
     makecmd="make -j2"
