@@ -21,7 +21,7 @@ Setup name and email to identify your commits:
 git config --global user.name "Your Name Here"
 git config --global user.email "your_email@muchdifferent.com"
 
-Tip: you could use the following prompt to know which branch your currently on:
+Tip: you could use the following prompt to know which branch you're currently on:
 $ source /usr/local/git/contrib/completion/git-completion.bash
 $ PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
 $ PS2='\[\e[0;2m\]\t\[\e[m\]> '
@@ -37,7 +37,7 @@ Install GIT in Linux
 --------------------
 http://help.github.com/linux-set-up-git/
 
-Tip: you could use the following prompt to know which branch your currently on:
+Tip: you could use the following prompt to know which branch you're currently on:
 $ PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
 $ PS2='\[\e[0;2m\]\t\[\e[m\]> '
 Add those two lines to your ~/.bashrc to make the prompt stay that way.
