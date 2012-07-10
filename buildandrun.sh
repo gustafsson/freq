@@ -12,8 +12,8 @@ sonicawebranch=`git rev-parse --abbrev-ref HEAD`
 echo "Running Sonic AWE with sonicawe@${sonicawebranch}"
 if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
 	(
-		cd lib/sonicawe-winlib/sonicawe_snapshot_win32_base
-		../../../tmp/$packagename/$packagename.exe
+		cd tmp/$packagename
+		$packagename.exe
 	) || false
 elif [ "$(uname -s)" == "Linux" ]; then
     src/sonicawe-cuda || src/sonicawe
