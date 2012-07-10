@@ -4,6 +4,7 @@
 !include WordFunc.nsh
 !include MUI2.nsh
 ; get UninstallLog.nsh from http://nsis.sourceforge.net/Uninstall_only_installed_files
+!addincludedir include
 !include UninstallLog.nsh
 
 ;Defining compile time constants and necessary variables
