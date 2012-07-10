@@ -12,7 +12,6 @@ We're using git for revision control. It's strongly recommended to take a look a
 
 
 
-
 Install GIT in Mac Os X
 ---------------------
 Download and install git from:
@@ -21,6 +20,12 @@ http://git-scm.com/downloads
 Setup name and email to identify your commits:
 git config --global user.name "Your Name Here"
 git config --global user.email "your_email@muchdifferent.com"
+
+Tip: you could use the following prompt to know which branch your currently on:
+$ source /usr/local/git/contrib/completion/git-completion.bash
+$ PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
+$ PS2='\[\e[0;2m\]\t\[\e[m\]> '
+Add those three lines to your ~/.bash_profile to make the prompt stay that way.
 
 
 Install GIT in Windows
@@ -35,7 +40,7 @@ http://help.github.com/linux-set-up-git/
 Tip: you could use the following prompt to know which branch your currently on:
 $ PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
 $ PS2='\[\e[0;2m\]\t\[\e[m\]> '
-Add those two lines to your .bashrc to make the prompt stay that way.
+Add those two lines to your ~/.bashrc to make the prompt stay that way.
 
 
 Configure bitbucket access
