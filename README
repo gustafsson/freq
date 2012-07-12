@@ -3,12 +3,13 @@ Sonic AWE source code
 |Scalograms are cool|
 \===================/
 
+The intention of this document is to explain how to fetch the source code with all the dependences, how to setup a functional development environment, how to build the source code, how to run Sonic AWE and eventually how to distribute an installer.
 
 Setting up the development environment requires quite a few steps. Please read through this document in its entirety.
 
-Make sure you have a public release of Sonic AWE up an running on your computer first. To make sure your computer can actually run the program to start with.
+Make sure you have a public release of Sonic AWE up an running on your computer before you start, to make sure your computer can actually run the program.
 
-We're using git for revision control. It's strongly recommended to take a look at the links in the "Learning GIT" section below even if you have previously been using git.
+We're using git for revision control and to download the source code. It's strongly recommended to take a look at the links in the "Learning GIT" section below even if you have previously been using git.
 
 
 
@@ -93,6 +94,8 @@ exit
 
 CUDA in Mac
 -----------
+To build and run CUDA applications on OS X you need at least Mac OS 10.5.x or later.
+
 To run the binary you need to make sure your LD_LIBRARY_PATH includes the path to the CUDA libraries. You can add an entry to your bash profile or just use the following command before you run the binary. Your library path might differ slightly so check it out before you do it.
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib/
@@ -107,33 +110,29 @@ CUDA_INC_PATH = c:\CUDA\include
 Please note that the installer sometimes messes up and sets paths to bin64 and lib64, eventho the 32bit version is installed. So check this manually!
 
 
-Developing Sonic AWE
---------------------
-We use Qt Creator to edit the source code.
-Run qmake when you've changed the project files to generate new Makefiles or project files for visual studio. This needs to be done once after downloading the source code to set them up as well.
-
-
-Development environment for Ubuntu
-----------------------------------
+Build environment for Ubuntu
+----------------------------
 Edit, build and debug using Qt Creator.
 
 
-Development environment for Mac OS X
-------------------------------------
-To build and run CUDA on OS X you need atleast Mac OS 10.5.x or later. Download and install Nokia open source QT Toolkit and QT Creator
+Build environment for Mac OS X
+------------------------------
+Install "Command line tools for Xcode" (called "Developer Tools Essentials" prior to Xcode 4.3) from http://developer.apple.com/downloads. You could also get these tools through Xcode on the 'Download' pane under 'Preferences'.
+
+Download and install Nokia open source QT Toolkit and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
 Edit, build and debug using Qt Creator.
 
 
-Development environment for Windows
------------------------------------
+Build  environment for Windows
+------------------------------
 Download and install Nokia open source QT Toolkit and QT Creator for VS 2008.
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
-Edit using qt creator. Build using Visual Studio 2008 express for Win32. Other versions of Visual Studio requires you to get the equivalent versions of the libraries in sonicawe-winlib.
+Edit using qt creator. Build using Visual C++ 2008 Express for Win32. Other versions of Visual Studio requires you to get the equivalent versions of the libraries in sonicawe-winlib. And later version of Visual C++ Express doesn't seem to work with OpenMP.
 http://www.microsoft.com/visualstudio/en-us/products/2008-editions/express
 
 Use git-bash (mingw) to run the .sh scripts under Windows.
@@ -147,33 +146,96 @@ http://qt.nokia.com/developer/faqs/what-is-the-visual-studio-add-in/view
 http://rajorshi.net/blog/2009/01/using-qt-with-msvc-express-2008/
 
 
-
 Build and run
 -------------
-This commant will also fetch the required submodules (dependancy git repositories):
+This command will also fetch the required submodules (dependancy git repositories):
 ./buildandrun.sh
+
+The intention of this document is that if you get an error while running this the instructions above are missing something. Please document a fix if you find one or document under what circumstances this guide doesn't work.
+
+
+Developing Sonic AWE
+--------------------
+We use Qt Creator to edit the source code, the Qt framework for cross-platform GUI and cross-platform project configurations.
+
+Strongly recommended reading (it's short): http://classes.soe.ucsc.edu/cmps160/Fall10/resources/qtexcerpt.pdf
+
+Projects based on the Qt framework are defined by .pro-files. These are then compiled by 'qmake' into other platform-specific projects before they are sent to the compiler; i.e Makefiles for the GNU Toolchain and .vcproj or .vcxproj for Visual C++.
+
+When you first open the project in Qt Creator it will create some user specific build preferences. This doesn't apply to Windows as you don't build within Qt Creator. Under Mac OS X and Ubuntu these preferences are not of crucial importance but the most convenient setup for Sonic AWE development is probably to select options like this:
+- Select a toolchain that is known to work with Sonic AWE on your platform. (i.e most toolchains under Ubuntu but only 'GCC (x86 32bit)' under Mac OS X).
+- Select "Desktop" to do setup a desktop build.
+- If it asks for you to import a build don't.
+- Create build configurations: select "For Each Qt Version One Debug and And One Release".
+- De-select "Shadow build".
+- De-select "Embedded linux".
+
+You will also want to add QMAKESPEC to your ~/.bash_profile like this:
+export QMAKESPEC='macx-g++'
+
+Note that builds created through the deploy scripts (in the 'dist' folder) have explicit settings and build configurations for pretty much everything to ensure that two releases from the same code base behave the same. This is not the case for your user settings in Qt Creator or builds from within Visual Studio. Another difference is that the deploy scripts are adding some extra predefined C/C++ DEFINES in addition to your local 'default' build.
+
+
+Developing Sonic AWE in Mac OS X
+--------------------------------
+We're using the GNU Toolchain on Mac, we're not using Xcode. qmake is however capable of generating .xcodeproj files for Xcode and defaults to that on Mac. So if you see such files it's an indication that something is wrong with your .pro files. You may of course feel free to experiment with the Xcode environment if you prefer that. We're using the GNU Toolchain simply because it is less work to maintain due to all the similarities to the equivalent toolchain under Linux (Ubuntu).
+
+Build and debug using Qt Creator.
+
+
+Developing Sonic AWE in Windows
+-------------------------------
+You need to manually run qmake whenever you've changed the Qt .pro project files to generate new project files for Visual C++ (this can be done from within Qt Creator as well as running 'qmake' in a 'git bash' window). This needs to be done once after downloading the source code to set them up as well.
+
+Run qmake using Qt Creator whenever the project has changed. This needs to be done for each subproject (gpumisc.pro and src.pro). The project is also changed when it's build configuration changes (i.e switching between building for CUDA to OpenCL to CPU or switching target from default to reader to hast). See more below regarding build configurations.
+
+Build and debug using Visual C++.
+
+
+Developing Sonic AWE in Ubuntu
+------------------------------
+Build and debug using Qt Creator.
 
 
 Tests
 -----
-To run the test suite. Execute in the folder ./tests:
+To run the test suite. Execute this in the folder 'tests':
 ./update-integration-tests.sh
 ./runtests.sh
 
 For more info on running tests, see the runtests help:
 ./runtests.sh --help
 
+For instance, to only run the test 'mytest' you can run:
+./runtests.sh mytest
+(this also runs tests with the string 'mytest' in their name, such as 'thingmytest2')
+
 
 Packaging/deployment
 --------------------
-To make a full release, merge into the master branch and run ./deploy-all-targets.sh from sonicawe/dist.
+To make a full release, merge into the master branch and run ./deploy-all-targets.sh from the folder 'dist'.
 
 
 Packaging on Windows
 --------------------
-Install NSIS installer. Make sure you have the NSIS folder in your path environment variable. 
+Install NSIS installer. Make sure you have the NSIS folder in your PATH.
 http://nsis.sourceforge.net/Main_Page
 
 Download and install Wizou's XML plugin. To install the plugin, unzip the nsisXML.dll file from the bin directory into the corresponding directory of your NSIS installation. 
 http://wiz0u.free.fr/prog/nsisXML/
 
+
+Build configurations
+--------------------
+Sonic AWE is build with several different build targets during a full deployment. For instance Sonic AWE is built as 'reader' and the full default version among others (see 'dist/deploy-all-targets.sh').
+
+You can select a target other than the default target by adding to qmake (for the 'reader' target): CONFIG+=TARGET_reader
+
+Sonic AWE is also built with CUDA support, OpenCL support and CPU fallback independently. This will likely change in the future. For instance, to build with cuda support add this to qmake: CONFIG+=usecuda
+
+The the arguments to qmake change you need to do the same change to gpumisc (and to test projects or other projects based on those assumptions that you're working with). Remember in Windows that you need to run qmake for each project separately to create new Visual C++ project files.
+
+
+Further questions
+-----------------
+Our mailing list is sonicawe@googlegroups.com
