@@ -34,14 +34,21 @@ DEFINES += SAWE_NO_MUTEX
 QT += opengl
 QT += network
 
-macosx105 {
-macx:QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5
-macx:QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5
-macx:QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5
+macx {
+    macosx105 {
+        QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk
+        QMAKE_CXXFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk
+        QMAKE_CFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk
+    }
+    macosx32bit {
+        QMAKE_LFLAGS += -m32 -arch i386
+        QMAKE_CXXFLAGS += -m32 -arch i386
+        QMAKE_CFLAGS += -m32 -arch i386
+    }
+    QMAKE_LFLAGS += -mmacosx-version-min=10.5
+    QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -Wfatal-errors
+    QMAKE_CFLAGS += -mmacosx-version-min=10.5 -Wfatal-errors
 }
-macx:QMAKE_LFLAGS += -m32 -arch i386
-macx:QMAKE_CXXFLAGS += -m32 -arch i386 -Wfatal-errors
-macx:QMAKE_CFLAGS += -m32 -arch i386 -Wfatal-errors
 
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
 unix:QMAKE_LFLAGS_RELEASE += -fopenmp
@@ -404,12 +411,13 @@ macx {
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
+    CUDA_CXXFLAGS += --no-align-double
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
 		-ccbin $${QMAKE_CC} \
         -c \
         -Xcompiler \
-        $$join(CUDA_CXXFLAGS,",") \
+        $$join(CUDA_CXXFLAGS,","),-m64,-arch,x86_64  \
         $$join(INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \

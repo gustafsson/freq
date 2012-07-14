@@ -3,7 +3,7 @@ set -e
 
 if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 
-cd ../..
+cd ..
 
 echo "========================== Building ==========================="
 echo "Building ${packagename} ${versiontag}"
@@ -15,13 +15,19 @@ if [ "Y" == "${rebuildall}" ]; then
   make clean
 fi
 
-touch sonicawe/sawe/configuration/configuration.cpp
-rm -f gpumisc/libgpumisc.a
-rm -f {sonicawe,gpumisc}/Makefile
+touch src/sawe/configuration/configuration.cpp
+rm -f lib/gpumisc/libgpumisc.a
+rm -f {src,lib/gpumisc}/Makefile
 
-no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep "Number Of Cores" | sed "s/.*: //g"`
+typeset -i no_cores
+no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+no_cores=2*$no_cores
+if [ $no_cores -eq 8 ]; then
+  no_cores=14;
+fi
+
 make -j${no_cores}
-cp sonicawe/${packagename} sonicawe/${packagename}org
+cp src/${packagename} src/${packagename}org
 
 
 echo "========================== Building ==========================="
@@ -35,25 +41,30 @@ if [ "Y" == "${rebuildall}" ]; then
   make clean
 fi
 
-touch sonicawe/sawe/configuration/configuration.cpp
-rm -f gpumisc/libgpumisc.a
-rm -f {sonicawe,gpumisc}/Makefile
+touch src/sawe/configuration/configuration.cpp
+rm -f lib/gpumisc/libgpumisc.a
+rm -f {src,lib/gpumisc}/Makefile
 
 make -j${no_cores}
 
-cp sonicawe/${packagename}org sonicawe/${packagename}
+mv src/${packagename}org src/${packagename}
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE Launcher"
-cd sonicawe/dist
-cp -r package-macos package-macos~
+mkdir -p tmp
+cd tmp
+rm -rf package-macos~
+cp -r ../dist/package-macos package-macos~
 cd package-macos~
-g++ -c -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -o launcher.o launcher.c
-g++ -c -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -o launcher-mac.o launcher-mac.cpp
-g++ -framework CoreFoundation -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386 -o launcher launcher.o launcher-mac.o
+#SYSROOT="-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386"
+SYSROOT="-mmacosx-version-min=10.5"
+g++ -c $SYSROOT -o launcher.o launcher.cpp
+g++ -c $SYSROOT -o launcher-mac.o launcher-mac.cpp
+g++ -framework CoreFoundation $SYSROOT -o launcher launcher.o launcher-mac.o
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_macos_i386.zip"
 echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
-ruby package-macx.rb ${packagename}_${versiontag} macos_i386 ../${packagename}
+ruby ../dist/package-macx.rb ${packagename}_${versiontag} macos_i386 ../src/${packagename}
+cd ../dist
