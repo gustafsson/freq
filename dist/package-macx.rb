@@ -6,7 +6,7 @@ $command_line_width = 80
 # Configuration
 $custom_exec = "../sonicawe"
 $custom_exec = ARGV[2] if( ARGV[1] and !ARGV[1].match(/^--/) )
-$platform = "macos_i386"
+$platform = "osx"
 $platform = ARGV[1] if( ARGV[1] and !ARGV[1].match(/^--/) )
 $version = "sonicawe_dev"
 $version = ARGV[0] if( ARGV[0] and !ARGV[0].match(/^--/) )
