@@ -2,6 +2,7 @@
 #define SPLASHSCREEN_H
 
 #include <QDialog>
+#include <QMap>
 
 namespace Tools {
 
@@ -22,6 +23,7 @@ private slots:
 
 private:
     Ui::SplashScreen *ui;
+    QMap<float,QString> labels;
 };
 
 

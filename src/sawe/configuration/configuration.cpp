@@ -11,6 +11,7 @@
 
 #include <QSysInfo>
 #include <QString>
+#include <QSettings>
 
 #ifdef Q_OS_LINUX
 #include <QProcess>
@@ -658,6 +659,17 @@ bool Configuration::
         use_saved_state()
 {
     return Singleton().use_saved_state_;
+}
+
+
+void Configuration::
+        resetDefaultSettings()
+{
+#ifndef TARGETNAME
+    QSettings().setValue("target","");
+#else
+    QSettings().setValue("target",##TARGETNAME);
+#endif
 }
 
 

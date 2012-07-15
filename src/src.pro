@@ -8,9 +8,13 @@
 
 TARGET = sonicawe
 !win32:customtarget {
+    # Chaning the target would also change the name of the genereated VC++ project file which would break the configuration in the .sln-file. Therefore, in windows, rename the generated executable afterwards instead.
     TARGET = $$CUSTOMTARGET
 }
 
+customtarget {
+    DEFINES += TARGETNAME=$${TARGETNAME}
+}
 
 testlib {
     TEMPLATE = lib

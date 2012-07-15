@@ -51,6 +51,7 @@
         <file alias="heightmap_noshadow.vert">../heightmap/heightmap_noshadow.vert</file>
     </qresource>
     <qresource prefix="/splash">
-        <file>splash/brickwall.jpg</file>
+        <file alias="brickwall.jpg">splash/brickwall.jpg</file>
+        <file alias="muchdifferent.jpg">splash/muchdifferent.jpg</file>
     </qresource>
 </RCC>

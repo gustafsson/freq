@@ -155,6 +155,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
+
     //
     // Insert new tools here, and delete things in the destructor in the
     // opposite order that they were created

@@ -4,6 +4,8 @@
 #include <math.h>
 
 #include <QTimer>
+#include <QResource>
+#include <QSettings>
 
 namespace Tools {
 
@@ -17,7 +19,24 @@ SplashScreen
 
     setWindowFlags(Qt::FramelessWindowHint);
 
+    QString splashImage;
+    if (QSettings().value("target","") == "brickwall")
+    {
+        splashImage = ":/splash/brickwall.jpg";
+        labels[0.f] = "Please wait while Brickwall Audio is taking over the world...";
+        labels[.6f] = "Establishing power through brick building";
+        labels[1.f] = "World domination complete";
+    }
+    else
+    {
+        splashImage = ":/splash/muchdifferent.jpg";
+        labels[0.f] = "Please wait while Sonic AWE is loading..";
+        labels[1.f] = "Launching Sonic AWE";
+    }
+
     ui->progressBar->setValue(0);
+    ui->progressBar->setMaximum(100);
+    ui->labelSplash->setPixmap(QPixmap(splashImage));
 
     tickLoader();
 
@@ -46,20 +65,20 @@ void SplashScreen::
     float v = (ui->progressBar->value() - ui->progressBar->minimum())
             / (float)(ui->progressBar->maximum()  - ui->progressBar->minimum());
 
-    if (.6 < v)
-    {
-        ui->labelText->setText("Establishing power through brick building");
+    QMapIterator<float,QString> i(labels);
+    QString last;
+    while (i.hasNext()) {
+        i.next();
+        if (i.key() <= v)
+            last = i.value();
     }
+    if (ui->labelText->text() != last)
+        ui->labelText->setText(last);
 
     this->setWindowOpacity(0.9 + 0.1*fabs(fmodf(v*10, 2)-1));
 
-    if (1 > v)
-        QTimer::singleShot(10, this, SLOT(tickLoader()));
-    else
-    {
-        ui->labelText->setText("World domination complete");
-        QTimer::singleShot(1000, this, SLOT(tickLoader()));
-    }
+    bool isLast = 1.f > v;
+    QTimer::singleShot( isLast ? 10 : 400, this, SLOT(tickLoader()));
 }
 
 } // namespace Tools

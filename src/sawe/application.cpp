@@ -99,6 +99,7 @@ Application::
         setApplicationName("Sonic AWE");
     #endif
 
+    Sawe::Configuration::resetDefaultSettings();
     Sawe::Configuration::parseCommandLineOptions(argc, argv);
 
     if (!Sawe::Configuration::use_saved_state())

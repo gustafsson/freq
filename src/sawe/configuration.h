@@ -94,6 +94,8 @@ public:
     static bool skip_update_check();
     static bool use_saved_state();
 
+    static void resetDefaultSettings();
+
 private:
     friend class HasSingleton<Configuration>;
     Configuration();
