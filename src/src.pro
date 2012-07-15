@@ -49,15 +49,18 @@ macx {
         QMAKE_CXXFLAGS += -m32 -arch i386
         QMAKE_CFLAGS += -m32 -arch i386
     }
-    QMAKE_LFLAGS += -mmacosx-version-min=10.5
-    QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -Wfatal-errors
-    QMAKE_CFLAGS += -mmacosx-version-min=10.5 -Wfatal-errors
+    #-mmacosx-version-min=10.5 is added by default by Qt
+    #QMAKE_LFLAGS += -mmacosx-version-min=10.5
+    #QMAKE_CXXFLAGS += -mmacosx-version-min=10.5
+    #QMAKE_CFLAGS += -mmacosx-version-min=10.5
+    QMAKE_CXXFLAGS += -Wfatal-errors
+    QMAKE_CFLAGS += -Wfatal-errors
 }
 
 unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
 unix:QMAKE_LFLAGS_RELEASE += -fopenmp
 win32:QMAKE_CXXFLAGS_RELEASE += /openmp
-unix:QMAKE_CXXFLAGS_DEBUG += -ggdb
+unix:!macx:QMAKE_CXXFLAGS_DEBUG += -ggdb
 win32:QMAKE_CXXFLAGS += /MP
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
 !win32:QMAKE_CXXFLAGS_RELEASE += -O3
