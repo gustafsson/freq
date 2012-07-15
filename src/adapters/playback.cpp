@@ -463,7 +463,7 @@ bool Playback::
     // the first buffer.
     float incoming_samples_per_sec = (nAccumulated_samples - _first_buffer_size) / accumulation_time;
 
-    long unsigned marker = _playback_itr;
+    Signal::IntervalType marker = _playback_itr;
     if (0==marker)
         marker = _data.getInterval().first;
 
@@ -585,11 +585,11 @@ int Playback::
 
     const char* msg = "";
     int ret = paContinue;
-    if ((unsigned long)(_data.getInterval().last + framesPerBuffer) < _playback_itr ) {
+    if (_data.getInterval().last + (Signal::IntervalType)framesPerBuffer < _playback_itr ) {
         msg = ". DONE";
         ret = paComplete;
     } else {
-        if ( (unsigned long)(_data.getInterval().last) < _playback_itr ) {
+        if (_data.getInterval().last < _playback_itr ) {
             msg = ". PAST END";
             // TODO if !_data.invalid_samples().empty() should pause playback here and continue when data is made available
         } else {

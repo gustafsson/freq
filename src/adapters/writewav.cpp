@@ -88,7 +88,7 @@ Signal::pBuffer WriteWav::
 void WriteWav::
         put( Signal::pBuffer buffer )
 {
-    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", buffer->sample_offset.asInteger(), (buffer->sample_offset + buffer->number_of_samples()));
+    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", buffer->sample_offset.asInteger(), (buffer->sample_offset + buffer->number_of_samples()).asInteger());
 
     // Make sure that all of buffer is expected
 
