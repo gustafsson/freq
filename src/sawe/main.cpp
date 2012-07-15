@@ -44,8 +44,7 @@ using namespace Signal;
 static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream ss;
     void* ptr=(void*)0;
-    CudaException namedError(cudaSuccess);
-
+    cudaError namedError = cudaSuccess;
 
     try {
         CudaProperties::getCudaDeviceProp();
@@ -102,7 +101,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
             return true;
         }
     } catch (const CudaException& x) {
-        namedError = x;
+        namedError = x.getCudaError();
 
         ss << x.what() << endl << "Cuda error code " << x.getCudaError() << endl << endl;
 
@@ -122,8 +121,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
     stringstream msg;
     stringstream title;
-
-    switch (namedError.getCudaError())
+    switch (namedError)
     {
     case cudaErrorInsufficientDriver:
         title << "Display drivers to old";
