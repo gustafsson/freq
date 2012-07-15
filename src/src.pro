@@ -227,21 +227,16 @@ QMAKE_LFLAGS += -Wl,-rpath=/opt/muchdifferent/sonicawe/
 
 macx {
 INCLUDEPATH += \
-    ../lib/sonicawe-maclib/include \
-    ../lib/sonicawe-maclib/boost_1_45_0 \
-    ../lib/sonicawe-maclib/hdf5/include \
-    ../lib/sonicawe-maclib/zlib/include \
-    ../lib/sonicawe-maclib/include/sndfile
+    ../lib/sonicawe-maclib/include
 LIBS = -lsndfile \
     -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
-    -L../lib/sonicawe-maclib -lportaudiocpp -lportaudio \
-    -L../lib/sonicawe-maclib/hdf5/bin -lhdf5 -lhdf5_hl \
-    -L../lib/sonicawe-maclib/zlib/lib -lz \
-    -L../lib/gpumisc -lgpumisc \
-    -L../lib/sonicawe-maclib/boost_1_45_0/stage/lib \
-    -lboost_serialization
+    -L../lib/sonicawe-maclib/lib \
+    -lportaudiocpp -lportaudio \
+    -lhdf5 -lhdf5_hl \
+    -lboost_serialization \
+    -L../lib/gpumisc -lgpumisc
 }
 
 win32 {
@@ -411,7 +406,7 @@ macx {
     CUDA_DIR = /usr/local/cuda
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
-    CUDA_CXXFLAGS += --no-align-double
+    CUDA_FLAGS += --no-align-double
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
 		-ccbin $${QMAKE_CC} \
