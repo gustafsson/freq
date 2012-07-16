@@ -108,12 +108,14 @@ if [ "$platform" = "windows" ]; then
     outputdir="release"
     qmakeargs=
 else
+    typeset -i no_cores
     if [ "$platform" = "macx" ]; then
         timestamp(){ date "+%Y-%m-%d %H:%M:%S"; }
         staticlibname(){ echo lib${1}.a; }
         dynamiclibname(){ echo lib${1}.dylib; }
         qmakeargs="-spec macx-g++ CONFIG+=release"
         export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib; pwd):$(cd ..; pwd):/usr/local/cuda/lib"
+        no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
     else
         timestamp(){ date --rfc-3339=seconds; }
         staticlibname(){ echo lib${1}.a; }
@@ -121,9 +123,10 @@ else
         #qmakeargs="CONFIG+=gcc-4.3"
         qmakeargs=
         export LD_LIBRARY_PATH="$(cd ../src; pwd):${PATH}"
+        no_cores=$(cat /proc/cpuinfo | grep -c processor)
     fi
     linkcmd="ln -s"
-    makecmd="make -j2"
+    makecmd="make -j$no_cores"
     makeonecmd=$makecmd
     outputdir="."
 fi
