@@ -1,0 +1,61 @@
+INCLUDEPATH += \
+    ../lib/gpumisc \
+    ../src \
+
+unix:!macx {
+INCLUDEPATH += \
+    ../lib/sonicawe-ubuntulib/include \
+
+LIBS += \
+    -lsndfile \
+    -lGLEW \
+    -lGLU \
+    -lGL \
+    -lboost_serialization \
+    -lglut \
+    -L../lib/sonicawe-ubuntulib/lib \
+    -lportaudiocpp -lportaudio \
+    -lhdf5 -lhdf5_hl \
+    -L../lib/gpumisc -lgpumisc
+
+QMAKE_LFLAGS += -Wl,-rpath=/opt/muchdifferent/sonicawe/
+}
+
+macx {
+INCLUDEPATH += \
+    ../lib/sonicawe-maclib/include
+LIBS += -lsndfile \
+    -L/usr/local/cuda/lib \
+    -framework GLUT \
+    -framework OpenGL \
+    -L../lib/sonicawe-maclib/lib \
+    -lportaudiocpp -lportaudio \
+    -lhdf5 -lhdf5_hl \
+    -lboost_serialization \
+    -L../lib/gpumisc -lgpumisc
+}
+
+win32 {
+INCLUDEPATH += \
+	../lib/sonicawe-winlib/glut \
+	../lib/sonicawe-winlib/glew/include \
+	../lib/sonicawe-winlib/portaudio/include \
+	../lib/sonicawe-winlib/libsndfile/include \
+	../lib/sonicawe-winlib/hdf5lib/include \
+	../lib/sonicawe-winlib/zlib/include \
+	../lib/sonicawe-winlib
+LIBS += \
+	-l../lib/sonicawe-winlib/glut/glut32 \
+	-l../lib/sonicawe-winlib/glew/lib/glew32 \
+	-l../lib/sonicawe-winlib/libsndfile/libsndfile-1 \
+	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
+	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
+	-L../lib/sonicawe-winlib/boostlib
+
+win32:QMAKE_LFLAGS_RELEASE += \
+	../lib/sonicawe-winlib/portaudio/portaudio.lib \
+	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
+win32:QMAKE_LFLAGS_DEBUG += \
+	../lib/sonicawe-winlib/portaudio/portaudio.lib \
+	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
+}

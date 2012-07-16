@@ -1,0 +1,6 @@
+# Make OTHER_FILES_VS show up in project file list in Visual Studio
+win32 {
+    otherfilesvs.input = OTHER_FILES_VS
+    otherfilesvs.output = $QMAKE_FILE_NAME
+    QMAKE_EXTRA_COMPILERS += otherfilesvs
+}

@@ -3,12 +3,16 @@
 # -------------------------------------------------
 
 
+# features directory
+qtfeatures = ../qtfeatures
+
+
 ####################
-# Compiler settings
+# Project settings
 
 TARGET = sonicawe
 !win32:customtarget {
-    # Chaning the target would also change the name of the genereated VC++ project file which would break the configuration in the .sln-file. Therefore, in windows, rename the generated executable afterwards instead.
+    # Changing the target would also change the name of the genereated VC++ project file which would break the configuration in the .sln-file. Therefore, in windows, rename the generated executable afterwards instead.
     TARGET = $$CUSTOMTARGET
 }
 
@@ -28,15 +32,14 @@ testlib {
     win32:CONFIG -= embed_manifest_dll
     win32:CONFIG += embed_manifest_exe
 }
+
+
+#CONFIG += $$qtfeatures/buildflags
+#CONFIG += console # console output
+############################
 win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
-
 CONFIG += warn_on
-#CONFIG += console # console output
-DEFINES += SAWE_NO_MUTEX
-#DEFINES += CUDA_MEMCHECK_TEST
-QT += opengl
-QT += network
 
 macx {
     macosx105 {
@@ -49,10 +52,6 @@ macx {
         QMAKE_CXXFLAGS += -m32 -arch i386
         QMAKE_CFLAGS += -m32 -arch i386
     }
-    #-mmacosx-version-min=10.5 is added by default by Qt
-    #QMAKE_LFLAGS += -mmacosx-version-min=10.5
-    #QMAKE_CXXFLAGS += -mmacosx-version-min=10.5
-    #QMAKE_CFLAGS += -mmacosx-version-min=10.5
     QMAKE_CXXFLAGS += -Wfatal-errors
     QMAKE_CFLAGS += -Wfatal-errors
 }
@@ -130,6 +129,7 @@ SOURCES += \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
     ui/*.cpp \
+    sawe/configuration/configuration.cpp \
 
 #Windows Icon
 win32:SOURCES += sonicawe.rc \
@@ -183,7 +183,7 @@ SHADER_SOURCES += \
     heightmap/heightmap_noshadow.vert \
 
 CONFIGURATION_SOURCES = \
-    sawe/configuration/configuration.cpp
+#    sawe/configuration/configuration.cpp
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
@@ -193,83 +193,20 @@ OTHER_FILES += \
     sonicawe.rc \
 
 # "Other files" for Visual Studio
-OTHER_SOURCES += \
+OTHER_FILES_VS += \
     $$SHADER_SOURCES \
     *.pro \
 
-# Make OTHER_SOURCES show up in project file list in Visual Studio
-win32 {
-    othersources.input = OTHER_SOURCES
-    othersources.output = ${QMAKE_FILE_NAME}
-    QMAKE_EXTRA_COMPILERS += othersources
-}
+CONFIG += $$qtfeatures/otherfilesvs
+
 
 ####################
 # Build settings
-
-unix:IS64 = $$system(if [ "`uname -m`" = "x86_64" ]; then echo 64; fi)
-
-INCLUDEPATH += \
-    ../lib/gpumisc \
-    ../src \
-
-unix:!macx {
-INCLUDEPATH += \
-    ../lib/sonicawe-ubuntulib/include \
-
-LIBS = \
-    -lsndfile \
-    -lGLEW \
-    -lGLU \
-    -lGL \
-    -lboost_serialization \
-    -lglut \
-    -L../lib/sonicawe-ubuntulib/lib \
-    -lportaudiocpp -lportaudio \
-    -lhdf5 -lhdf5_hl \
-    -L../lib/gpumisc -lgpumisc
-
-QMAKE_LFLAGS += -Wl,-rpath=/opt/muchdifferent/sonicawe/
-}
-
-macx {
-INCLUDEPATH += \
-    ../lib/sonicawe-maclib/include
-LIBS = -lsndfile \
-    -L/usr/local/cuda/lib \
-    -framework GLUT \
-    -framework OpenGL \
-    -L../lib/sonicawe-maclib/lib \
-    -lportaudiocpp -lportaudio \
-    -lhdf5 -lhdf5_hl \
-    -lboost_serialization \
-    -L../lib/gpumisc -lgpumisc
-}
-
-win32 {
-INCLUDEPATH += \
-	../lib/sonicawe-winlib/glut \
-	../lib/sonicawe-winlib/glew/include \
-	../lib/sonicawe-winlib/portaudio/include \
-	../lib/sonicawe-winlib/libsndfile/include \
-	../lib/sonicawe-winlib/hdf5lib/include \
-	../lib/sonicawe-winlib/zlib/include \
-	../lib/sonicawe-winlib
-LIBS += \
-	-l../lib/sonicawe-winlib/glut/glut32 \
-	-l../lib/sonicawe-winlib/glew/lib/glew32 \
-	-l../lib/sonicawe-winlib/libsndfile/libsndfile-1 \
-	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
-	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
-	-L../lib/sonicawe-winlib/boostlib
-
-win32:QMAKE_LFLAGS_RELEASE += \
-	../lib/sonicawe-winlib/portaudio/portaudio.lib \
-	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
-win32:QMAKE_LFLAGS_DEBUG += \
-	../lib/sonicawe-winlib/portaudio/portaudio.lib \
-	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
-}
+CONFIG += $$qtfeatures/sawelibs
+QT += opengl
+QT += network
+DEFINES += SAWE_NO_MUTEX
+#DEFINES += CUDA_MEMCHECK_TEST
 
 
 ####################
@@ -281,157 +218,27 @@ testlib {
     TMPDIR = lib/$${TMPDIR}
 }
 
-usecuda {
-  TMPDIR = $${TMPDIR}/cuda
-} else:useopencl {
-  TMPDIR = $${TMPDIR}/opencl
-} else {
-  TMPDIR = $${TMPDIR}/cpu
-}
-
-TMPDIR = tmp/$${TMPDIR}
-
-win32:RCC_DIR = $${TMPDIR}
-MOC_DIR = $${TMPDIR}
-OBJECTS_DIR = $${TMPDIR}/
-UI_DIR = $${TMPDIR}
-
-
-CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
-else:OBJECTS_DIR = $${OBJECTS_DIR}release/
+CONFIG += $$qtfeatures/tmpdir
 
 
 # #######################################################################
 # OpenCL
 # #######################################################################
 useopencl {
-DEFINES += USE_OPENCL
+    SOURCES += \
+        tfr/clfft/*.cpp
 
-SOURCES += \
-    tfr/clfft/*.cpp
+    HEADERS += \
+        tfr/clfft/*.h
 
-HEADERS += \
-    tfr/clfft/*.h
-
-macx: LIBS += -framework OpenCL
-!macx: LIBS += -lOpenCL
-
-win32 {
-    # use OpenCL headers from Cuda Gpu Computing SDK
-    INCLUDEPATH += "$(CUDA_INC_PATH)"
-    LIBS += -L"$(CUDA_LIB_PATH)"
-}
-
-unix:!macx {
-    OPENCL_DIR = /usr/local/cuda
-    INCLUDEPATH += $$OPENCL_DIR/include
-}
-
-macx {
-    OPENCL_DIR = /usr/local/cuda
-    INCLUDEPATH += $$OPENCL_DIR/include
-}
+    CONFIG += $$qtfeatures/opencl
 }
 
 
 # #######################################################################
 # CUDA
 # #######################################################################
-usecuda {
-DEFINES += USE_CUDA
-
-LIBS += -lcufft -lcudart -lcuda
-CONFIG(debug, debug|release): CUDA_FLAGS += -g
-CUDA_FLAGS += --use_fast_math
-#CUDA_FLAGS += --ptxas-options=-v
-
-
-CUDA_CXXFLAGS = $$QMAKE_CXXFLAGS
-unix:testlib:CUDA_CXXFLAGS += -fPIC
-CONFIG(debug, debug|release):CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_DEBUG
-else:CUDA_CXXFLAGS += $$QMAKE_CXXFLAGS_RELEASE
-win32 { 
-    INCLUDEPATH += "$(CUDA_INC_PATH)"
-    LIBS += -L"$(CUDA_LIB_PATH)"
-    CUDA_CXXFLAGS -= -Zc:wchar_t-
-    CUDA_CXXFLAGS += -Zc:wchar_t
-    CUDA_CXXFLAGS += /EHsc
-    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.obj
-    cuda.commands = \"$(CUDA_BIN_PATH)/nvcc.exe\" \
-		-ccbin $${QMAKE_CC} \
-        -c \
-        -Xcompiler \
-        \"$$join(CUDA_CXXFLAGS," ")\" \
-        $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        $$CUDA_FLAGS \
-        "${QMAKE_FILE_NAME}" \
-        -m32 -o \
-        "${QMAKE_FILE_OUT}"
-}
-unix:!macx {
-    # auto-detect CUDA path
-    # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
-    CUDA_DIR = /usr/local/cuda
-    INCLUDEPATH += $$CUDA_DIR/include
-    QMAKE_LIBDIR += $$CUDA_DIR/lib$$IS64
-    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
-    cuda.commands = $${CUDA_DIR}/bin/nvcc \
-		-ccbin $${QMAKE_CC} \
-        -c \
-        -Xcompiler \
-        $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "../src/','-I "../src/','"') \
-        $$CUDA_FLAGS \
-        ${QMAKE_FILE_NAME} \
-        -o \
-        ${QMAKE_FILE_OUT}
-    cuda.dependcy_type = TYPE_C
-    cuda.depend_command_dosntwork = nvcc \
-        -M \
-        -Xcompiler \
-        $$join(CUDA_CXXFLAGS,",") \
-        $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        ${QMAKE_FILE_NAME} \
-        | \
-        sed \
-        "s,^.*: ,," \
-        | \
-        sed \
-        "s,^ *,," \
-        | \
-        tr \
-        -d \
-        \\\\\\n
-}
-
-# cuda.depends = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
-
-macx { 
-    # auto-detect CUDA path
-    # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
-    # manual
-    CUDA_DIR = /usr/local/cuda
-    INCLUDEPATH += $$CUDA_DIR/include
-    QMAKE_LIBDIR += $$CUDA_DIR/lib
-    CUDA_FLAGS += --no-align-double
-    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
-    cuda.commands = $${CUDA_DIR}/bin/nvcc \
-		-ccbin $${QMAKE_CC} \
-        -c \
-        -Xcompiler \
-        $$join(CUDA_CXXFLAGS,","),-m64,-arch,x86_64  \
-        $$join(INCLUDEPATH,'" -I "','-I "','"') \
-        $$CUDA_FLAGS \
-        ${QMAKE_FILE_NAME} \
-        -o \
-        ${QMAKE_FILE_OUT}
-    cuda.dependcy_type = TYPE_C
-}
-
-cuda.input = CUDA_SOURCES
-QMAKE_EXTRA_COMPILERS += cuda
-
-} #usecuda
+usecuda: CONFIG += $$qtfeatures/cuda
 
 
 # #######################################################################
