@@ -123,9 +123,17 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     stringstream title;
     switch (namedError)
     {
+    case cudaErrorMemoryAllocation:
+        title << "Out of graphics memory";
+        msg << "Cuda error: " << cudaGetErrorString(namedError) << endl
+                << endl
+                << "If you're currently running other graphics intensive applications or computational software powered by CUDA it might help to close them. " << endl
+                << endl
+                << "Sonic AWE cannot start. Restart your computer and try again.";
+        break;
     case cudaErrorInsufficientDriver:
         title << "Display drivers to old";
-        msg << "Cuda error: " << cudaGetErrorString(cudaErrorInsufficientDriver) << endl
+        msg << "Cuda error: " << cudaGetErrorString(namedError) << endl
                 << endl
                 << "Sonic AWE requires you to have installed more recent display drivers from NVIDIA. "
                 << "Display drivers from NVIDIA are installed on this computer but they are too old. "
@@ -153,7 +161,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
         cerr.flush();
 
         title << "Could not find CUDA, cannot start Sonic AWE";
-        msg   << "Sonic AWE requires you to have installed recent display drivers from NVIDIA, and no such driver was found." << endl
+        msg     << "Your computer can't run GPGPU accelerated Sonic AWE" << endl
                 << endl
                 << "Hardware requirements: You need to have one of these graphics cards from NVIDIA:" << endl
                 << "   www.nvidia.com/object/cuda_gpus.html" << endl
@@ -162,7 +170,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                 << endl
                 << nvidia_url << endl
                 << endl
-                << "Sonic AWE cannot start. Please try again with updated drivers.";
+                << "Sonic AWE cannot start. Ensure you've fulfilled the hardware requirements and try again with updated drivers.";
     }
     }
 
