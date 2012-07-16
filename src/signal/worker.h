@@ -204,10 +204,12 @@ public:
     Signal::IntervalType number_of_samples() const { return _number_of_samples; }
     float length() const { return _length; }
 
+#ifndef SAWE_NO_MUTEX
     /**
 	  Throws an std::exception if one has been caught by run()
 	  */
 	void				checkForErrors();
+#endif
 
 
 private:
@@ -319,13 +321,15 @@ private:
       */
     bool _disabled;
 
-	/**
+#ifndef SAWE_NO_MUTEX
+    /**
       Worker::run is intended to be executed by a separate worker thread. To
       simplify error handling in the GUI thread exceptions are caught by
       Worker::run and stored. A client may poll with: caught_exception.what()
       */
-    std::runtime_error _caught_exception;
-	std::invalid_argument _caught_invalid_argument;
+    std::string _caught_exception;
+    std::string _caught_invalid_argument;
+#endif
 };
 // typedef boost::shared_ptr<Worker> pWorker;
 

@@ -61,9 +61,7 @@ Worker::
                     // large chunks.
     _highest_fps( 0 ),
     current_fps( 0 ),
-    _disabled( false ),
-    _caught_exception( "" ),
-    _caught_invalid_argument("")
+    _disabled( false )
 {
     if (t)
         target( t );
@@ -553,21 +551,23 @@ void Worker::
 }
 
 
+#ifndef SAWE_NO_MUTEX
 void Worker::
 		checkForErrors()
 {
-	if (_caught_invalid_argument.what() && 0 != *_caught_invalid_argument.what()) {
-		invalid_argument x = _caught_invalid_argument;
-		_caught_invalid_argument = invalid_argument("");
-		throw x;
+    if (!_caught_invalid_argument.empty ()) {
+        string str = _caught_invalid_argument;
+        _caught_invalid_argument.clear ();
+        throw invalid_argument(str);
 	}
 	
-	if (_caught_exception.what() && 0 != *_caught_exception.what()) {
-                runtime_error x = _caught_exception;
-                _caught_exception = runtime_error("");
-		throw x;
+    if (!_caught_exception.empty ()) {
+        string str = _caught_exception;
+        _caught_exception.clear ();
+        throw runtime_error(str);
 	}
 }
+#endif
 
 
 
@@ -584,17 +584,17 @@ void Worker::
             while (fetch_todo_list())
 			{
 				workOne( false );
-				msleep(1);
+                //msleep(1);
 			}
 		} catch ( const std::invalid_argument& x ) {
-			if (0 == *_caught_invalid_argument.what())
-				_caught_invalid_argument = x;
+            if (_caught_invalid_argument.empty())
+                _caught_invalid_argument = x.what();
 		} catch ( const std::exception& x ) {
-			if (0 == _caught_exception.what())
-                                _caught_exception = runtime_error(x.what());
+            if (_caught_exception.empty())
+                _caught_exception = x.what();
 		} catch ( ... ) {
-			if (0 == _caught_exception.what())
-				_caught_exception = std::runtime_error("Unknown exception");
+            if (_caught_exception.empty())
+                _caught_exception = "Unknown exception";
 		}
 
 		try {
@@ -604,7 +604,7 @@ void Worker::
 #endif
 			_todo_condition.wait( &_todo_lock );}
 		} catch ( const std::exception& x ) {
-                        _caught_exception = runtime_error(x.what());
+            _caught_exception = x.what();
 			return;
 		}
 	}
