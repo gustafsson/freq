@@ -17,7 +17,7 @@ Tests which need a "gold" comparison file:
 	-sonicawe-end2end\openaudio
 	-sonicawe-end2end\opengui
 	-sonicawe-end2end\testcommon
-	
+	-sonicawe-end2end\cropfrequency
 Run the tests once to produce the original image to test against. This file will be named test-cpu/cuda-result.png. Rename this file in each concerned test folder to test-cpu/cuda-gold.png. Run the test again.
 **************************************************************************************
 
