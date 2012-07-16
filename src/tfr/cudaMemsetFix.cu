@@ -2,10 +2,10 @@
 
 __global__ void kernel_memset_fix(
         float2* p,
-        unsigned N)
+        int N)
 {
-    const unsigned
-            i = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
+    const int
+            i = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (i>=N)
         return;
@@ -14,7 +14,7 @@ __global__ void kernel_memset_fix(
 }
 
 
-void cudaMemsetFix(void* p, unsigned N)
+void cudaMemsetFix(void* p, int N)
 {
     if (N%sizeof(float2))
     {
@@ -27,9 +27,10 @@ void cudaMemsetFix(void* p, unsigned N)
     dim3 block(64,1,1);
     dim3 grid( int_div_ceil(N, block.x), 1, 1);
 
-    unsigned L = 32768;
+    int L = 32768;
     if(grid.x>L) {
-        cudaMemsetFix( ((char*)p) + block.x*L, (N-block.x*L)*sizeof(float2));
+        int skipBytes = block.x*L*sizeof(float2);
+        cudaMemsetFix( ((char*)p) + skipBytes, N*sizeof(float2) - skipBytes);
         grid.x = L;
     }
 

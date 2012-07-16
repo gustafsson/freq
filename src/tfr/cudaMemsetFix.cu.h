@@ -1,3 +1,3 @@
 #pragma once
 
-void cudaMemsetFix(void* p, unsigned N);
+void cudaMemsetFix(void* p, int N);
