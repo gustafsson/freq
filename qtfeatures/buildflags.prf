@@ -17,9 +17,6 @@ macx {
     QMAKE_CFLAGS += -Wfatal-errors
 }
 
-unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
-unix:QMAKE_LFLAGS_RELEASE += -fopenmp
-win32:QMAKE_CXXFLAGS_RELEASE += /openmp
 unix:!macx:QMAKE_CXXFLAGS_DEBUG += -ggdb
 win32:QMAKE_CXXFLAGS += /MP
 !win32:QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -38,8 +35,6 @@ win32:QMAKE_LFLAGS_DEBUG += \
 win32:QMAKE_LFLAGS_RELEASE += \
     /NODEFAULTLIB:LIBCPMT \ # LIBCPMT is linked by boost_serialization but we don't want it to, this row is required to link successfully
     /NODEFAULTLIB:LIBCMT \ # some other lib links LIBCMT too, but LINK.EXE ignores it even without explicit NODEFAULTLIB
-
-QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 unix:!macx: QMAKE_CXX = colorgcc
 
