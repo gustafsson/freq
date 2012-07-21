@@ -29,7 +29,7 @@ fi
 # Enforce this (being a bit intrusive here)
 git config merge.ff false
 
-read -p "Verify and update repositories? (Y/n) " verifyRepos; echo
+read -p "Verify and update repositories? [Y/n] " verifyRepos; echo
 if [ "N" == "${verifyRepos}" ] || [ "n" == "${verifyRepos}" ]; then
 	verifyRepos=N;
 else
@@ -52,20 +52,20 @@ if [ "Y" == "${verifyRepos}" ]; then
 	fi
 fi
 
-if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? (y/N) " rebuildall; echo; fi
+if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? [y/N] " rebuildall; echo; fi
 if [ "Y" == "${rebuildall}" ] || [ "y" == "${rebuildall}" ]; then
 	rebuildall=Y;
 else
 	rebuildall=N;
 
-	if [ -z "${rebuildcuda}" ]; then read -p ".cu-files (CUDA kernels) are not rebuilt when included .h-files are changed. \"touch\" all .cu-files? (y/N) " rebuildcuda; echo; fi
+	if [ -z "${rebuildcuda}" ]; then read -p ".cu-files (CUDA kernels) are not rebuilt when included .h-files are changed. \"touch\" all .cu-files? [y/N] " rebuildcuda; echo; fi
 	if [ "Y" == "${rebuildcuda}" ] || [ "y" == "${rebuildcuda}" ]; then
 		(cd ..; touch `find . -name *.cu`)
 	fi
 fi
 
 
-read -s -p "Enter password for ftp.sonicawe.com (leave empty to skip upload): " pass; echo
+read -s -p "Enter password for ftp.sonicawe.com (leave empty to skip upload) []: " pass; echo
 expectedpass=d0f085d2cfdee0b2128bf80226f6bee5
 if [ -z "$pass" ]; then
     echo "Missing password for ftp.sonicawe.com. Won't upload any data."
@@ -98,7 +98,7 @@ if [ "Y" == "${verifyRepos}" ]; then
 				# In Ubuntu we're using packages from the Ubuntu repo instead of a specific precompiled set of binaries.
 				echo "Some required and recommended libraries seem to be missing, running apt-get"
 				glewpkg=libglew1.6-dev
-				if [ -z `apt-cache search $glewdeb` ]; then
+				if [ -z "`apt-cache search $glewpkg`" ]; then
 					glewpkg=libglew1.5-dev
 				fi
 				sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc
