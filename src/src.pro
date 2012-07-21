@@ -119,17 +119,24 @@ SHADER_SOURCES += \
 CONFIGURATION_SOURCES = \
 #    sawe/configuration/configuration.cpp
 
+FEATURE_SOURCES += \
+    $$qtfeatures/*.prf
+
 # "Other files" for Qt Creator
 OTHER_FILES += \
     $$CUDA_SOURCES \
     $$SHADER_SOURCES \
     $$CONFIGURATION_SOURCES \
+    $$FEATURE_SOURCES \
     sonicawe.rc \
+    ../README \
 
 # "Other files" for Visual Studio
 OTHER_FILES_VS += \
     $$SHADER_SOURCES \
+    $$FEATURE_SOURCES \
     *.pro \
+    ../README \
 
 CONFIG += $$qtfeatures/otherfilesvs
 
