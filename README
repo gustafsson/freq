@@ -30,8 +30,8 @@ git help 'command'
 
 
 Install GIT in Mac Os X
----------------------
-Download and install git from:
+-----------------------
+Install git from:
 http://git-scm.com/downloads
 
 Tip: you could use the following prompt to know which branch you're currently on:
@@ -43,12 +43,13 @@ Add those three lines to your ~/.bash_profile to make the prompt stay that way.
 
 Install GIT in Windows
 ----------------------
-http://help.github.com/win-set-up-git/
+Install git from:
+http://git-scm.com/downloads
 
 
-Install GIT in Linux
---------------------
-git is included in your distribution's package manager. For instance, in Ubuntu run
+Install GIT in Ubuntu
+---------------------
+Run
 sudo apt-get install git
 
 Tip: you could use the following prompt to know which branch you're currently on:
@@ -84,7 +85,7 @@ CUDA
 ----
 If you don't intend to build releases with CUDA support you can skip this section.
 
-Download and install the CUDA Toolkit and Devdrivers from nvidia. You might also want to install the SDK to experiment with CUDA development:
+Install the CUDA Toolkit and Devdrivers from Nvidia. You might also want to install the SDK to experiment with CUDA development:
 http://www.nvidia.com/object/cuda_get.html
 
 
@@ -124,12 +125,15 @@ Build environment for Ubuntu
 ----------------------------
 The build environment will be initialized during 'Build and run'.
 
+If you know want a more recent version of Qt Creator than the one in the Ubuntu repositories you can install it from here (later versions of Qt Creator usually work with prior versions of Qt libraries as well). If you choose this path you might want to uninstall the package 'qtcreator' after finishing 'Build and run'.
+http://qt.nokia.com/downloads/downloads#qt-creator
+
 
 Build environment for Mac OS X
 ------------------------------
 Install "Command line tools for Xcode" (called "Developer Tools Essentials" prior to Xcode 4.3) from http://developer.apple.com/downloads. You could also get these tools through Xcode on the 'Download' pane under 'Preferences'.
 
-Download and install Nokia open source QT Toolkit and QT Creator
+Install Nokia open source QT Toolkit and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
@@ -138,7 +142,7 @@ Edit, build and debug using Qt Creator. Refer to 'Developing Sonic AWE' below fo
 
 Build environment for Windows
 -----------------------------
-Download and install Nokia open source QT Toolkit and QT Creator for VS 2008.
+Install Nokia open source QT Toolkit and QT Creator for VS 2008.
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
@@ -180,7 +184,7 @@ Strongly recommended reading (it's short): http://classes.soe.ucsc.edu/cmps160/F
 
 Projects based on the Qt framework are defined by .pro-files. These are then compiled by 'qmake' into other platform-specific projects before they are sent to the compiler; i.e into Makefiles for the GNU Toolchain and into .vcproj or .vcxproj projects for Visual C++.
 
-When you first open the project in Qt Creator it will create some user specific build preferences. This doesn't apply to Windows as you don't build within Qt Creator. Under Mac OS X and Ubuntu these preferences are not of crucial importance but the most convenient setup for Sonic AWE development is probably to select options like this:
+When you first open the project in Qt Creator it will create some user specific build preferences. In Windows it doesn't matter what you choose as you don't build within Qt Creator. Under Mac OS X and Ubuntu it does however matter. Different preferences may work, but the most convenient setup for Sonic AWE development is probably to select options like this (note that different versions of Qt Creator look different):
 - Select a toolchain that is known to work with Sonic AWE on your platform. (i.e most toolchains under Ubuntu but only 'GCC (x86 32bit)' under Mac OS X).
 - Select "Desktop" to do setup a desktop build.
 - If it asks for you to import a build don't.
@@ -242,7 +246,7 @@ Packaging on Windows
 Install NSIS installer. Make sure you have the NSIS folder in your PATH.
 http://nsis.sourceforge.net/Main_Page
 
-Download and install Wizou's XML plugin. To install the plugin, unzip the nsisXML.dll file from the bin directory into the corresponding directory of your NSIS installation.
+Install Wizou's XML plugin. To install the plugin, unzip the nsisXML.dll file from the bin directory into the corresponding directory of your NSIS installation.
 http://wiz0u.free.fr/prog/nsisXML/
 
 

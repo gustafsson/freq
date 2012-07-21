@@ -63,7 +63,6 @@ SOURCES += \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
     ui/*.cpp \
-    sawe/configuration/configuration.cpp \
 
 #Windows Icon
 win32:SOURCES += sonicawe.rc \
@@ -117,7 +116,7 @@ SHADER_SOURCES += \
     heightmap/heightmap_noshadow.vert \
 
 CONFIGURATION_SOURCES = \
-#    sawe/configuration/configuration.cpp
+    sawe/configuration/configuration.cpp
 
 FEATURE_SOURCES += \
     $$qtfeatures/*.prf

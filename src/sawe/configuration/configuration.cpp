@@ -668,7 +668,7 @@ void Configuration::
 #ifndef TARGETNAME
     QSettings().setValue("target","");
 #else
-    QSettings().setValue("target",##TARGETNAME);
+    QSettings().setValue("target",TOSTR(TARGETNAME));
 #endif
 }
 
