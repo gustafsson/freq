@@ -79,19 +79,25 @@ mkdir -p $package/usr/bin
 ln -s ../../opt/muchdifferent/sonicawe/sonicawe $package/usr/bin/${packagename}
 
 mkdir -p $share
-cp src/${packagename} $share/${packagename}-cpu
-cp src/${packagename}-cuda $share/${packagename}-cuda
-cp src/sonicawe-launcher.sh $share/${packagename}
+stat src/${packagename}-cuda 2> /dev/null && CUDA=1
+if [ $CUDA ]; then
+    cp src/${packagename} $share/${packagename}-cpu
+    cp src/${packagename}-cuda $share/${packagename}-cuda
+    cp src/sonicawe-launcher.sh $share/${packagename}
+else
+    cp src/${packagename} $share/${packagename}
+fi
 sed -i "s/sonicawe/${packagename}/g" $share/${packagename}
+cp -r lib/sonicawe-ubuntulib/lib/* $share/.
 
 if [ "`uname -m`" = "x86_64" ]; then
-	sed -i "s/Architecture: .*$/Architecture: amd64/g" $package/DEBIAN/control
-	cp -r /usr/local/cuda/lib64/libcudart.so* $share/.
-	cp -r /usr/local/cuda/lib64/libcufft.so* $share/.
+    sed -i "s/Architecture: .*$/Architecture: amd64/g" $package/DEBIAN/control
+    [ $CUDA ] && cp -r /usr/local/cuda/lib64/libcudart.so* $share/.
+    [ $CUDA ] && cp -r /usr/local/cuda/lib64/libcufft.so* $share/.
 else
-	sed -i "s/Architecture: .*$/Architecture: i386/g" $package/DEBIAN/control
-	cp -r /usr/local/cuda/lib/libcudart.so* $share/.
-	cp -r /usr/local/cuda/lib/libcufft.so* $share/.
+    sed -i "s/Architecture: .*$/Architecture: i386/g" $package/DEBIAN/control
+    [ $CUDA ] && cp -r /usr/local/cuda/lib/libcudart.so* $share/.
+    [ $CUDA ] && cp -r /usr/local/cuda/lib/libcufft.so* $share/.
 fi
 bury_copy sonicawe.1 $package/usr/local/share/man/man1/${packagename}.1
 mkdir -p $share/examples

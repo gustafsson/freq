@@ -18,7 +18,7 @@ LIBS += \
     -lhdf5 -lhdf5_hl \
     -L../lib/gpumisc -lgpumisc
 
-QMAKE_LFLAGS += -Wl,-rpath=/opt/muchdifferent/sonicawe/
+QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
 }
 
 macx {

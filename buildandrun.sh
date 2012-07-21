@@ -16,7 +16,10 @@ if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
 		$packagename.exe
 	) || false
 elif [ "$(uname -s)" == "Linux" ]; then
-    src/sonicawe-cuda || src/sonicawe
+    (
+        cd tmp/package-debian~/opt/muchdifferent/sonicawe
+        ./sonicawe
+    )
 elif [ "$(uname -s)" == "Darwin" ]; then
     pushd src
     ruby sandboxsonicawe.rb

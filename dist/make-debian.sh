@@ -33,24 +33,26 @@ echo "Building ${packagename} cuda ${versiontag}"
 
 if [ ! -z "`which nvcc`" ]; then
     qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+
+    echo "qmaketarget: $qmaketarget"
+    qmake $qmaketarget
+
+    if [ "Y" == "${rebuildall}" ]; then
+      make clean
+    fi
+
+    touch src/sawe/configuration/configuration.cpp
+    rm -f lib/gpumisc/libgpumisc.a
+    rm -f {src,lib/gpumisc}/Makefile
+
+    LD_RUN_PATH=/usr/share/${packagename}
+    time make -j`cat /proc/cpuinfo | grep -c processor`
 else
-    echo "Couldn't find nvcc, doesn't build CUDA version";
+    echo "Couldn't find nvcc, skipping build of \'${packagename}-cuda\'.";
 fi
-echo "qmaketarget: $qmaketarget"
-qmake $qmaketarget
-
-if [ "Y" == "${rebuildall}" ]; then
-  make clean
-fi
-
-touch src/sawe/configuration/configuration.cpp
-rm -f lib/gpumisc/libgpumisc.a
-rm -f {src,lib/gpumisc}/Makefile
-
-LD_RUN_PATH=/usr/share/${packagename}
-time make -j`cat /proc/cpuinfo | grep -c processor`
 
 mv src/${packagename}org src/${packagename}
+
 
 echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_$(uname -m).deb"
