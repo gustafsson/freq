@@ -50,12 +50,11 @@ LIBS += \
 	-l../lib/sonicawe-winlib/libsndfile/libsndfile-1 \
 	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
 	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
-	-L../lib/sonicawe-winlib/boostlib
+        -L../lib/sonicawe-winlib/boostlib \
+        ../lib/sonicawe-winlib/portaudio/portaudio.lib \
 
-win32:QMAKE_LFLAGS_RELEASE += \
-	../lib/sonicawe-winlib/portaudio/portaudio.lib \
-	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
-win32:QMAKE_LFLAGS_DEBUG += \
-	../lib/sonicawe-winlib/portaudio/portaudio.lib \
-	../lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
-}
+CONFIG(debug, debug|release): LIBS += \
+        ../lib/sonicawe-winlib/portaudio/portaudiocpp_mt_gd.lib
+else: LIBS += \
+        ../lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
+
