@@ -46,6 +46,12 @@ Install GIT in Windows
 Install git from:
 http://git-scm.com/downloads
 
+Select default settings for line-endings (check out windows style, commit unix style).
+git is most easily accessible through "Git Bash" which is installed to your start menu.
+
+All commands that follow in this document are intended to be typed in "Git Bash".
+
+
 
 Install GIT in Ubuntu
 ---------------------
@@ -118,7 +124,6 @@ Set these environment variables unless the CUDA Toolkit installation program did
 CUDA_BIN_PATH = c:\CUDA\bin
 CUDA_LIB_PATH = c:\CUDA\lib
 CUDA_INC_PATH = c:\CUDA\include
-Please note that the installer sometimes messes up and sets paths to bin64 and lib64, eventho the 32bit version is installed. So check this manually!
 
 
 Build environment for Ubuntu
@@ -133,7 +138,7 @@ Build environment for Mac OS X
 ------------------------------
 Install "Command line tools for Xcode" (called "Developer Tools Essentials" prior to Xcode 4.3) from http://developer.apple.com/downloads. You could also get these tools through Xcode on the 'Download' pane under 'Preferences'.
 
-Install Nokia open source QT Toolkit and QT Creator
+Install Nokia open source QT Libraries and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
@@ -142,19 +147,31 @@ Edit, build and debug using Qt Creator. Refer to 'Developing Sonic AWE' below fo
 
 Build environment for Windows
 -----------------------------
-Install Nokia open source QT Toolkit and QT Creator for VS 2008.
+Install Visual C++ 2008 Express:
+http://www.microsoft.com/visualstudio/en-us/products/2008-editions/express
+
+Install Nokia open source Qt Libraries and Qt Creator for VS 2008:
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
-Edit using qt creator. Build using Visual C++ 2008 Express for Win32. Other versions of Visual C++ than 2008 requires you to get the equivalent versions of the libraries in sonicawe-winlib. And later version of Visual C++ Express doesn't seem to work with OpenMP.
-http://www.microsoft.com/visualstudio/en-us/products/2008-editions/express
+Install NSIS:
+http://nsis.sourceforge.net/Download
 
-Use git-bash (mingw) to run the .sh scripts under Windows.
-https://code.google.com/p/msysgit/downloads/list
+Add the Qt bin folder to your path, for instance by adding this line to ~/.bashrc
+PATH=$PATH:/c/Qt/4.8.2/bin
 
-Refer to 'Developing Sonic AWE' and 'Developing Sonic AWE in Windows' below for details.
+You might find it handy to also add an alias in ~/.bashrc for your favourite editor, like so:
+alias edit='"C:\Program Files (x86)\Notepad++\notepad++.exe"'
 
-(optional: there is a QT integration for Visual Studio. This doesn't work with the Express version!)
+Edit using qt creator. Build using Visual C++ 2008 Express for Win32. Other versions of Visual C++ than 2008 requires you to get the equivalent versions of the libraries in sonicawe-winlib.
+
+Refer to 'Developing Sonic AWE' and 'Developing Sonic AWE in Windows' below for details on how to work with Qt Libraries, Qt Creator, and Visual C++.
+
+Optional: Building with OpenMP;
+http://kenny-tm.xanga.com/651048063/parallel-programming-using-openmp-with-visual-c-2008-express/
+This trick doesn't seem to work with versions of Visual C++ Express later than 2008.
+
+Optional: There is a Qt integration for Visual Studio but it doesn't work with the Express version;
 http://qt.nokia.com/downloads/visual-studio-add-in
 http://qt-project.org/faq/answer/what_is_the_qt_visual_studio_add-in
 
