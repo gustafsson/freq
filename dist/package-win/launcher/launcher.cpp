@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     argv[0] = app_path;
     int return_code = run(argc, argv);
 
-    if (return_code==1337 && strcmp(app_path, app_path_cuda)==0) 
+    if (return_code == -1 || return_code==1337 && strcmp(app_path, app_path_cuda)==0)
     {
         argv[0] = app_path_cpu;
         run(argc, argv);

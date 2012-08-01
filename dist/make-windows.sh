@@ -56,26 +56,27 @@ touch src/sawe/configuration/configuration.cpp
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
 cp src/release/sonicawe.exe src/release/sonicawe-cpu.exe
 
-
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
-qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+if [ ! -z "$CUDA_BIN_PATH" ]; then
+	qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 
-echo qmaketarget: $qmaketarget
-(cd lib/gpumisc && qmake $qmaketarget) || false
-(cd src && qmake $qmaketarget) || false
-qmake $qmaketarget
+	echo qmaketarget: $qmaketarget
+	qmake -r $qmaketarget
 
-if [ "Y" == "${rebuildall}" ]; then
-  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean $msbuildparams
+	if [ "Y" == "${rebuildall}" ]; then
+	  "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" //t:Clean $msbuildparams
+	fi
+
+	rm -f lib/gpumisc/release/gpumisc.lib
+	touch src/sawe/configuration/configuration.cpp
+
+	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
+	cp src/release/sonicawe.exe src/release/sonicawe-cuda.exe
+else
+    echo "Couldn't find nvcc, skipping build of \'${packagename}-cuda\'.";
+	rm -f src/release/sonicawe-cuda.exe
 fi
-
-rm -f lib/gpumisc/release/gpumisc.lib
-touch src/sawe/configuration/configuration.cpp
-
-"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
-cp src/release/sonicawe.exe src/release/sonicawe-cuda.exe
-
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE ${packagename} Launcher"
@@ -95,7 +96,7 @@ rm -rf $packagefullname
 mkdir -p tmp
 cp -r lib/sonicawe-winlib/sonicawe_snapshot_win32_base $packagefullname
 cp src/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
-cp src/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
+[ -e src/release/sonicawe-cuda.exe ] && cp src/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
 cp dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"
 cp -r matlab $packagefullname/matlab
 cp license/$licensefile $packagefullname
