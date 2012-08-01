@@ -10,7 +10,7 @@ cd ..
 sonicawebranch=`git rev-parse --abbrev-ref HEAD`
 
 echo "Running Sonic AWE with sonicawe@${sonicawebranch}"
-if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
+if uname -s | grep MINGW32_NT > /dev/null; then
 	(
 		cd tmp/$packagename
 		$packagename.exe
@@ -25,4 +25,6 @@ elif [ "$(uname -s)" == "Darwin" ]; then
     ruby sandboxsonicawe.rb
     popd
     echo "TODO: Locate the binary and make it work"
+else
+	echo "Don't know hos to start Sonic AWE on this platform"
 fi

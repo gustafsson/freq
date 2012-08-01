@@ -185,6 +185,10 @@ usecuda: CONFIG += $${qtfeatures}cuda
 # #######################################################################
 # Deploy configuration
 # #######################################################################
+# This whole configuration construct is rather unstable as it doesn't
+# necessarily use the same compiler flags as the rest of the project. A
+# proposed solutions is to crate a new project with the file
+# configuration.cpp only.
 CONFIGURATION_DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
 CONFIGURATION_DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
 
