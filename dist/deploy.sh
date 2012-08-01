@@ -22,7 +22,7 @@ fi
 
 qmaketarget="${qmaketarget} CONFIGURATION_DEFINES+=SONICAWE_VERSION=${versiontag} CONFIGURATION_DEFINES+=SONICAWE_UNAME=`uname -s` CONFIG+=customtarget CUSTOMTARGET=$packagename TARGETNAME+=$target"
 
-if uname -s | grep MINGW32_NT; then
+if uname -s | grep MINGW32_NT > /dev/null; then
     platform=windows
 elif [ "$(uname -s)" == "Linux" ]; then
     platform=debian

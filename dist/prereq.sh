@@ -89,7 +89,7 @@ if [ "Y" == "${verifyRepos}" ]; then
 
 		git submodule update --init lib/gpumisc
 
-		if [ "$(uname -s)" == "MINGW32_NT-6.1" ]; then
+		if uname -s | grep MINGW32_NT > /dev/null; then
 			git submodule update --init lib/sonicawe-winlib
 		elif [ "$(uname -s)" == "Linux" ]; then
 			git submodule update --init lib/sonicawe-ubuntulib
@@ -107,6 +107,7 @@ if [ "Y" == "${verifyRepos}" ]; then
 			git submodule update --init lib/sonicawe-maclib
 		else
 			echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
+			false
 		fi
 	) || false
 fi
