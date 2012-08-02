@@ -29,9 +29,9 @@ git help 'command'
 
 
 
-Install GIT in Mac Os X
------------------------
-Install git from:
+Install GIT in OS X
+-------------------
+git is probably included in 'Command line tools' from Xcode (see 'Build environment' below. If not install git from:
 http://git-scm.com/downloads
 
 Tip: you could use the following prompt to know which branch you're currently on:
@@ -39,6 +39,9 @@ source /usr/local/git/contrib/completion/git-completion.bash
 PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
 PS2='\[\e[0;2m\]\t\[\e[m\]> '
 Add those three lines to your ~/.bash_profile to make the prompt stay that way.
+
+OS X 10.8 Mountain Lion specific: "git gui" and other neat git tools are not automatically added to your path. Add this line to your ~/.bash_profile:
+PATH=$PATH:/usr/local/git/libexec/git-core
 
 
 Install GIT in Windows
@@ -111,7 +114,7 @@ exit
 
 CUDA in Mac
 -----------
-To build and run CUDA applications on OS X you need at least Mac OS 10.5.x or later.
+To build and run CUDA applications on OS X you need at least OS X 10.5.x or later.
 
 To run the binary you need to make sure your LD_LIBRARY_PATH includes the path to the CUDA libraries. You can add an entry to your bash profile or just use the following command before you run the binary.
 
@@ -131,8 +134,10 @@ If you know want a more recent version of Qt Creator than the one in the Ubuntu 
 http://qt.nokia.com/downloads/downloads#qt-creator
 
 
-Build environment for Mac OS X
-------------------------------
+Build environment for OS X
+--------------------------
+OS X 10.8 Mountain Lion is not yet supported as development platform.
+
 Install "Command line tools for Xcode" (called "Developer Tools Essentials" prior to Xcode 4.3) from http://developer.apple.com/downloads. You could also get these tools through Xcode on the 'Download' pane under 'Preferences'.
 
 Install Nokia open source QT Libraries and QT Creator
@@ -140,6 +145,14 @@ http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
 Edit, build and debug using Qt Creator. Refer to 'Developing Sonic AWE' below for details.
+
+! Notes for OS X 10.8 Mountain Lion and Xcode 4.4
+QT libraries <= version 4.8.2 defaults to use the compiler flag -mmacosx-version-min=10.5. This is not supported by the 10.8 SDK so essentially nothing will compile. This can be solved by either reverting to Xcode 4.3 or changing -mmacosx-version-min to 10.6 in:
+$QT/mkspecs/common/g++-macx.conf
+
+Where $QT is typically one of:
+/usr/local/Trolltech/Qt-*
+/usr/local/Qt*
 
 
 Build environment for Windows
@@ -194,8 +207,8 @@ Strongly recommended reading (it's short): http://classes.soe.ucsc.edu/cmps160/F
 
 Projects based on the Qt framework are defined by .pro-files. These are then compiled by 'qmake' into other platform-specific projects before they are sent to the compiler; i.e into Makefiles for the GNU Toolchain and into .vcproj or .vcxproj projects for Visual C++.
 
-When you first open the project in Qt Creator it will create some user specific build preferences. In Windows it doesn't matter what you choose as you don't build within Qt Creator. Under Mac OS X and Ubuntu it does however matter. Different preferences may work, but the most convenient setup for Sonic AWE development is probably to select options like this (note that different versions of Qt Creator look different):
-- Select a toolchain that is known to work with Sonic AWE on your platform. (i.e most toolchains under Ubuntu but only 'GCC (x86 32bit)' under Mac OS X).
+When you first open the project in Qt Creator it will create some user specific build preferences. In Windows it doesn't matter what you choose as you don't build within Qt Creator. Under OS X and Ubuntu it does however matter. Different preferences may work, but the most convenient setup for Sonic AWE development is probably to select options like this (note that different versions of Qt Creator look different):
+- Select a toolchain that is known to work with Sonic AWE on your platform. (i.e most toolchains under Ubuntu but only 'GCC (x86 32bit)' under OS X).
 - Select "Desktop" to do setup a desktop build.
 - If it asks for you to import a build don't.
 - Create build configurations: select "For Each Qt Version One Debug and And One Release".
@@ -208,8 +221,8 @@ export QMAKESPEC='macx-g++'
 Note that builds created through the deploy scripts (in the 'dist' folder) have explicit settings and build configurations for pretty much everything to ensure that two releases from the same code base behave the same. This is not the case for your user settings in Qt Creator or builds from within Visual C++. Another difference is that the deploy scripts are adding some extra predefined C/C++ DEFINES in addition to your local 'default' build.
 
 
-Developing Sonic AWE in Mac OS X
---------------------------------
+Developing Sonic AWE in OS X
+----------------------------
 We're using the GNU Toolchain on Mac, we're not using Xcode. qmake is however capable of generating .xcodeproj files for Xcode and defaults to that on Mac. So if you see such files it's an indication that something is wrong with your .pro files. You may of course feel free to experiment with the Xcode environment if you prefer that. We're using the GNU Toolchain simply because it is less work to maintain due to all the similarities to the equivalent toolchain under Linux (Ubuntu).
 
 Build and debug using Qt Creator.

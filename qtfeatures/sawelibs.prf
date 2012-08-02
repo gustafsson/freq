@@ -58,3 +58,4 @@ CONFIG(debug, debug|release): LIBS += \
 else: LIBS += \
         ../lib/sonicawe-winlib/portaudio/portaudiocpp_mt.lib
 
+}
