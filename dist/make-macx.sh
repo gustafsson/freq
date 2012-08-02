@@ -66,5 +66,5 @@ echo "========================== Packaging =========================="
 filename="${packagename}_${versiontag}_macos_i386.zip"
 echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
-ruby ../dist/package-macx.rb ${packagename}_${versiontag} macos_i386 ../src/${packagename}
+ruby ../dist/package-macx.rb ${packagename} ${versiontag} osx ../src/${packagename}
 cd ../dist

@@ -21,10 +21,10 @@ elif [ "$(uname -s)" == "Linux" ]; then
         ./sonicawe
     )
 elif [ "$(uname -s)" == "Darwin" ]; then
-    pushd src
-    ruby sandboxsonicawe.rb
-    popd
-    echo "TODO: Locate the binary and make it work"
+    (
+        cd tmp
+        open sonicawe.app
+    )
 else
 	echo "Don't know hos to start Sonic AWE on this platform"
 fi
