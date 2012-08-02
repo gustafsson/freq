@@ -191,6 +191,7 @@ usecuda: CONFIG += $${qtfeatures}cuda
 # configuration.cpp only.
 CONFIGURATION_DEFINES += SONICAWE_BRANCH="$$system(git rev-parse --abbrev-ref HEAD)"
 CONFIGURATION_DEFINES += SONICAWE_REVISION="$$system(git rev-parse --short HEAD)"
+usecuda: CONFIGURATION_DEFINES += USE_CUDA
 
 configuration.name = configuration
 configuration.input = CONFIGURATION_SOURCES

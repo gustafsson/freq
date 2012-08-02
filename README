@@ -120,10 +120,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib/
 
 CUDA in Windows
 ---------------
-Set these environment variables unless the CUDA Toolkit installation program did so
-CUDA_BIN_PATH = c:\CUDA\bin
-CUDA_LIB_PATH = c:\CUDA\lib
-CUDA_INC_PATH = c:\CUDA\include
+Install the toolkit for 32-bit development, we don't have any 64-bit builds for Windows. If you want to try out the 64-bit toolkit you will need to change to value of the environment variable CUDA_LIB_PATH (created by the CUDA Toolkit installation program) to point 32-bit library files (also included in the 64-bit toolkit). Like so: %CUDA_PATH%lib\win32
 
 
 Build environment for Ubuntu
