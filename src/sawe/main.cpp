@@ -46,7 +46,15 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
     void* ptr=(void*)0;
     cudaError namedError = cudaSuccess;
 
+    int runtimeVersion = CUDART_VERSION;
+    int driverVersion = -2;
+
     try {
+        CudaException_SAFE_CALL( cudaDriverGetVersion (&driverVersion) );
+
+        if (driverVersion < runtimeVersion)
+            throw CudaException(cudaErrorInsufficientDriver);
+
         CudaProperties::getCudaDeviceProp();
 
         {
@@ -140,6 +148,21 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
                 << "Please download new drivers from NVIDIA:" << endl
                 << endl
                 << nvidia_url << endl
+                << endl;
+        if (driverVersion > 0)
+        {
+            msg
+                << "Found cuda driver: v" << (driverVersion/1000) << "." << (driverVersion%1000)/10;
+            if (driverVersion%10)
+                msg << "." << driverVersion%10;
+            msg << endl;
+        }
+        msg
+                << "Minimum required cuda driver: v" << (runtimeVersion/1000) << "." << (runtimeVersion%1000)/10;
+        if (runtimeVersion%10)
+           msg << "." << runtimeVersion%10;
+        msg
+                << endl
                 << endl
                 << "Sonic AWE cannot start. Please try again with updated drivers.";
         break;
