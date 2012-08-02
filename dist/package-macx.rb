@@ -1,3 +1,7 @@
+####
+# http://doc.qt.nokia.com/4.7-snapshot/deployment-mac.html
+####
+
 $framework_path = "/Library/Frameworks"
 $cuda_library_path = "/usr/local/cuda/lib"
 $custom_library_path = "../lib/sonicawe-maclib/lib"
