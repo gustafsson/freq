@@ -64,6 +64,7 @@ Renderer::Renderer( Collection* collection )
     last_axes_length( 0 ),
     drawn_blocks(0),
     left_handed_axes(true),
+    vertex_texture(false),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -195,7 +196,8 @@ void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
 
     std::vector<float> posdata( (x2-x1)*(y2-y1)*4 );
     float *pos = &posdata[0];
-    if (pos) for(int y=y1; y<y2; y++) {
+
+    for(int y=y1; y<y2; y++) {
         for(int x=x1; x<x2; x++) {
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
@@ -383,8 +385,10 @@ void Renderer::init()
     }
 
     // load shader
-    _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
-    //_shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
+    if (vertex_texture)
+        _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
+    else
+        _shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
     if (0 == _shader_prog)
         return;
@@ -746,7 +750,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
-            block->glblock->draw( _vbo_size, !_draw_flat );
+            block->glblock->draw( _vbo_size, _draw_flat ? GlBlock::HeightMode_Flat : vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
 
     } else if ( 0 == "render red warning cross" || y_scale < yscalelimit) {
         endVboRendering();

@@ -63,6 +63,7 @@ public:
     float last_axes_length;
     unsigned drawn_blocks;
     bool left_handed_axes;
+    bool vertex_texture;
 
     void setFractionSize( unsigned divW=1, unsigned divH=1);
     bool fullMeshResolution();

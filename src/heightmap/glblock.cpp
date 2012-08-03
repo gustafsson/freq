@@ -204,6 +204,7 @@ GlBlock::
     if (tt) tt->partlyDone();
 
     _height.reset();
+    _mesh.reset();
     if (tt) tt->partlyDone();
 
     unmap();
@@ -286,6 +287,7 @@ void GlBlock::
     {
         TIME_GLBLOCK TaskTimer tt("Heightmap, creating vbo");
         unsigned elems = _collection->samples_per_block()*_collection->scales_per_block();
+        // PIXEL_UNPACK_BUFFER, to be used with glTexSubImage2D
         _height.reset( new Vbo(elems*sizeof(float), GL_PIXEL_UNPACK_BUFFER, GL_STATIC_DRAW) );
     }
 }
@@ -336,17 +338,17 @@ void GlBlock::
 }
 
 
-void GlBlock::
-        create_texture(bool create_nearest)
+bool GlBlock::
+        create_texture( GlBlock::HeightMode heightMode )
 {
+    int w = _collection->samples_per_block();
+    int h = _collection->scales_per_block();
     static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
 
     if (0==_tex_height)
     {
         glGenTextures(1, &_tex_height);
         glBindTexture(GL_TEXTURE_2D, _tex_height);
-        unsigned w = _collection->samples_per_block();
-        unsigned h = _collection->scales_per_block();
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -363,12 +365,10 @@ void GlBlock::
         TIME_GLBLOCK TaskInfo("Created tex_height=%u", _tex_height);
     }
 
-    if (create_nearest && 0==_tex_height_nearest)
+    if (heightMode==HeightMode_VertexTexture && 0==_tex_height_nearest)
     {
         glGenTextures(1, &_tex_height_nearest);
         glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
-        unsigned w = _collection->samples_per_block();
-        unsigned h = _collection->scales_per_block();
 
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -378,61 +378,114 @@ void GlBlock::
         glBindTexture(GL_TEXTURE_2D, 0);
 
         TIME_GLBLOCK TaskInfo("Created tex_height_nearest=%d", _tex_height_nearest);
+
+        return true;
     }
 
+    if (heightMode==HeightMode_VertexBuffer && 0==_mesh)
+    {
+        _mesh.reset( new Vbo( (w+2)*(h+2)*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW) );
+
+        return true;
+    }
+
+    return false;
 }
 
 
 void GlBlock::
-        update_texture( bool create_nearest )
+        update_texture( GlBlock::HeightMode heightMode )
 {
-    bool got_new_height_nearest_data = create_nearest && 0==_tex_height_nearest;
-    create_texture( create_nearest );
+    bool got_new_vertex_data = create_texture( heightMode );
 
     _got_new_height_data |= (bool)_mapped_height;
-    got_new_height_nearest_data |= _got_new_height_data && 0!=_tex_height_nearest;
+    got_new_vertex_data |= _got_new_height_data && HeightMode_Flat != heightMode;
 
-    if (_got_new_height_data || got_new_height_nearest_data)
+    if (!_got_new_height_data && !got_new_vertex_data)
+        return;
+
+    int w = _collection->samples_per_block();
+    int h = _collection->scales_per_block();
+    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
+
+    if (!hasTextureFloat)
+        glPixelTransferf( GL_RED_SCALE, 0.1f );
+
+    if (_got_new_height_data)
     {
         unmap();
 
         TIME_GLBLOCK TaskTimer tt("Updating heightmap texture=%u, vbo=%u", _tex_height, (unsigned)*_height);
 
-        unsigned texture_width = _collection->samples_per_block();
-        unsigned texture_height = _collection->scales_per_block();
-
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height);
 
-        static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
-        if (!hasTextureFloat)
-            glPixelTransferf( GL_RED_SCALE, 0.1f );
-
         // See method comment in header file if you get an error on this row
-        GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+        GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, w, h, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
 
-        if (got_new_height_nearest_data)
-        {
-            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
-            glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
-
-            // See method comment in header file if you get an error on this row
-            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, texture_width, texture_height, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
-
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
-        }
-
-        if (!hasTextureFloat)
-            glPixelTransferf( GL_RED_SCALE, 1.0f );
-
-        TIME_GLBLOCK ComputationSynchronize();
-
         _got_new_height_data = false;
     }
+
+    if (got_new_vertex_data && HeightMode_VertexTexture == heightMode)
+    {
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
+        glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
+
+        // See method comment in header file if you get an error on this row
+        GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, w, h, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
+    }
+
+    if (got_new_vertex_data && HeightMode_VertexBuffer == heightMode)
+    {
+        glBindBuffer (_height->vbo_type(), *_height);
+        float *cpu_height = (float *) glMapBuffer (_height->vbo_type(), GL_READ_ONLY);
+
+        GlException_CHECK_ERROR ();
+
+        // update vertex buffer to store mesh vertices
+        int y1 = 0, x1 = 0, y2 = h, x2 = w;
+
+        // edge dropout to eliminate visible glitches
+        if (w>2) x1--, x2++;
+        if (h>2) y1--, y2++;
+
+        glBindBuffer (_mesh->vbo_type(), *_mesh);
+        float *pos = (float *) glMapBuffer (_mesh->vbo_type(), GL_WRITE_ONLY);
+
+        GlException_CHECK_ERROR ();
+
+        for(int y=y1; y<y2; y++) {
+            float v = y / (float) (h-1);
+            int ry = min (h-1, max (0, y));
+            for(int x=x1; x<x2; x++) {
+                int rx = min (w-1, max (0, x));
+                float H = cpu_height[rx + ry*w];
+
+                float u = x / (float) (w-1);
+                *pos++ = u;
+                *pos++ = H;
+                *pos++ = v;
+                *pos++ = 1.0f;
+            }
+        }
+
+        GlException_SAFE_CALL( glUnmapBuffer(_mesh->vbo_type()) );
+        glBindBuffer(_mesh->vbo_type(), 0);
+
+        GlException_SAFE_CALL( glUnmapBuffer(_height->vbo_type()) );
+        glBindBuffer(_height->vbo_type(), 0);
+    }
+
+    if (!hasTextureFloat)
+        glPixelTransferf( GL_RED_SCALE, 1.0f );
+
+    TIME_GLBLOCK ComputationSynchronize();
 }
 
 
@@ -468,18 +521,29 @@ void GlBlock::
 
 
 void GlBlock::
-        draw( unsigned vbo_size, bool withHeightMap )
+        draw( unsigned vbo_size, GlBlock::HeightMode withHeightMap )
 {
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
     update_texture( withHeightMap );
 
-    if (withHeightMap)
+    switch(withHeightMap)
     {
+    case HeightMode_Flat:
+        break;
+
+    case HeightMode_VertexTexture:
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, _tex_height_nearest );
         glActiveTexture(GL_TEXTURE0);
+        break;
+
+    case HeightMode_VertexBuffer:
+        glBindBuffer(GL_ARRAY_BUFFER, *_mesh);
+        glVertexPointer(4, GL_FLOAT, 0, 0);
+        glEnableClientState(GL_VERTEX_ARRAY);
+        break;
     }
     glBindTexture(GL_TEXTURE_2D, _tex_height);
 
@@ -497,11 +561,20 @@ void GlBlock::
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    if (withHeightMap)
+    switch(withHeightMap)
     {
+    case HeightMode_Flat:
+        break;
+
+    case HeightMode_VertexTexture:
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE0);
+        break;
+
+    case HeightMode_VertexBuffer:
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        break;
     }
 
     TIME_GLBLOCK ComputationCheckError();

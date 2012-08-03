@@ -47,7 +47,14 @@ public:
     bool has_texture();
     void delete_texture();
 
-    void draw( unsigned vbo_size, bool withHeightMap=true );
+    enum HeightMode
+    {
+        HeightMode_Flat=0,
+        HeightMode_VertexTexture=1,
+        HeightMode_VertexBuffer=2
+    };
+
+    void draw( unsigned vbo_size, HeightMode heightMode=HeightMode_VertexTexture );
     //void draw_directMode( );
 
     unsigned allocated_bytes_per_element();
@@ -55,8 +62,8 @@ public:
 private:
     void createHeightVbo();
 
-    void create_texture( bool create_slope );
-    void update_texture( bool create_slope );
+    bool create_texture( HeightMode heightMode );
+    void update_texture( HeightMode heightMode );
 
     Collection* _collection;
 
@@ -65,6 +72,7 @@ private:
     //HeightReadOnlyArray _read_only_array;
 
     pVbo _height;
+    pVbo _mesh;
 
     pHeight _mapped_height;
 
