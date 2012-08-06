@@ -31,11 +31,11 @@ git help 'command'
 
 Install GIT in OS X
 -------------------
-git is probably included in 'Command line tools' from Xcode (see 'Build environment' below. If not install git from:
-http://git-scm.com/downloads
+git is included in the "Command line tools" through Xcode on the 'Download' pane in 'Preferences'. The same tools can also be installed from:
+http://developer.apple.com/
 
 Tip: you could use the following prompt to know which branch you're currently on:
-source /usr/local/git/contrib/completion/git-completion.bash
+source /usr/share/git-core/git-completion.bash
 PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
 PS2='\[\e[0;2m\]\t\[\e[m\]> '
 Add those three lines to your ~/.bash_profile to make the prompt stay that way.
@@ -74,8 +74,8 @@ git config --global user.name "Given_name Family_name"
 git config --global user.email "given_name.family_name@muchdifferent.com"
 
 Create an account at bitbucket and send your username to someone in the team. You also need to give your computer SSH access to your bitbucket user. Create/locate SSH keys for your computer and add them to your bitbucket account on the account->settings->SSH page.
-https://help.github.com/articles/ssh-key-setup
-http://help.github.com/working-with-key-passphrases/
+https://help.github.com/articles/generating-ssh-keys
+https://help.github.com/articles/working-with-ssh-key-passphrases
 
 
 Get the code
@@ -94,8 +94,10 @@ CUDA
 ----
 If you don't intend to build releases with CUDA support you can skip this section.
 
-Install the CUDA Toolkit and Devdrivers from Nvidia. You might also want to install the SDK to experiment with CUDA development:
-http://www.nvidia.com/object/cuda_get.html
+Install the CUDA Toolkit from Nvidia. You might also want to install the SDK to experiment with CUDA development. Skip the "Drivers" on OS X 10.8!
+http://developer.nvidia.com/cuda/cuda-downloads
+
+The Drivers from the cuda-downloads page breaks Cuda in Mac!
 
 
 CUDA in Ubuntu
@@ -114,11 +116,11 @@ exit
 
 CUDA in Mac
 -----------
-To build and run CUDA applications on OS X you need at least OS X 10.5.x or later.
-
-To run the binary you need to make sure your LD_LIBRARY_PATH includes the path to the CUDA libraries. You can add an entry to your bash profile or just use the following command before you run the binary.
+To run the binary you need to make sure your LD_LIBRARY_PATH includes the path to the CUDA libraries. Add this line to ~/.bash_profile
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib/
+
+OS X 10.8 Mountain Lion requires Cuda 5.0. This is not yet supported.
 
 
 CUDA in Windows
@@ -136,9 +138,7 @@ http://qt.nokia.com/downloads/downloads#qt-creator
 
 Build environment for OS X
 --------------------------
-OS X 10.8 Mountain Lion is not yet supported as development platform.
-
-Install "Command line tools for Xcode" (called "Developer Tools Essentials" prior to Xcode 4.3) from http://developer.apple.com/downloads. You could also get these tools through Xcode on the 'Download' pane under 'Preferences'.
+Make sure "Command line tools for Xcode" are installed (see "Install GIT in OS X" above).
 
 Install Nokia open source QT Libraries and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
@@ -184,10 +184,10 @@ http://qt-project.org/faq/answer/what_is_the_qt_visual_studio_add-in
 
 Build and run
 -------------
-The default branch after a clone is 'master', this branch should contain the last stable release of Sonic AWE. All development is however based on a branch named 'develop'. See 'a-successful-git-branching-model' under 'Learning git' above. To change branch run:
+The default branch after a 'git clone' is 'master', this branch should contain the last stable release of Sonic AWE. All development is however based on a branch named 'develop'. See 'a-successful-git-branching-model' under 'Learning git' above. To change branch run:
 git checkout develop
 
-This command will fetch the required libraries for your system and then build and run Sonic AWE (this command performs initial setup. To build during development it's recommended to follow "Developing Sonic AWE" below):
+This command will fetch the required libraries for your system and then build and run Sonic AWE (this command performs initial setup. To build during everyday development it's recommended to follow "Developing Sonic AWE" further down instead):
 ./buildandrun.sh
 
 Press enter to accept the default answer to the 4 initial questions about verifying repositories, making a clean build and uploading a compiled package.
@@ -196,7 +196,7 @@ In Linux you will be asked for your password when 'buildandrun.sh' tries to perf
 
 When 'buildandrun.sh' has finished compiling it will start Sonic AWE. A complete rebuild may take between 1 and 15 minutes depending on the performance of your computer.
 
-The intention of this document is that if you get an error while running this (i.e if Sonic AWE doesn't start), the instructions above are missing something. Please document a fix if you find one, or document under what circumstances this guide doesn't work.
+The intention of this document is that if you get an error while running this (i.e if 'buildandrun.sh' doesn't start Sonic AWE), the instructions above are missing something. Please document a fix if you find one, or document under what circumstances this guide doesn't work.
 
 
 Developing Sonic AWE
