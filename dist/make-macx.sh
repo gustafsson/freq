@@ -33,19 +33,23 @@ cp src/${packagename} src/${packagename}org
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
 
-qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
-echo "qmaketarget: $qmaketarget"
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
+if [ -e /usr/local/cuda/bin/nvcc ] && [ -z $NOCUDA ]; then
+    qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+    echo "qmaketarget: $qmaketarget"
+    qmake $qmaketarget -spec macx-g++ CONFIG+=release
 
-if [ "Y" == "${rebuildall}" ]; then
-  make clean
+    if [ "Y" == "${rebuildall}" ]; then
+      make clean
+    fi
+
+    touch src/sawe/configuration/configuration.cpp
+    rm -f lib/gpumisc/libgpumisc.a
+    rm -f {src,lib/gpumisc}/Makefile
+
+    make -j${no_cores}
+else
+    echo "Skipping build of \'${packagename}-cuda\'.";
 fi
-
-touch src/sawe/configuration/configuration.cpp
-rm -f lib/gpumisc/libgpumisc.a
-rm -f {src,lib/gpumisc}/Makefile
-
-make -j${no_cores}
 
 mv src/${packagename}org src/${packagename}
 

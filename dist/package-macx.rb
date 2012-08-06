@@ -58,8 +58,9 @@ def package_macos(app_name, version, packagename, zip = false)
                    "Contents/plugins"]
 
     executables = [[$custom_exec, "sonicawe"],
-                   [$custom_exec + "-cuda", "sonicawe-cuda"],
                    ["package-macos~/launcher", "launcher"]]
+
+    additionals = [[$custom_exec + "-cuda", "sonicawe-cuda"]]
 
     resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
                  "package-macos~/aweicon-project.icns",
@@ -103,6 +104,17 @@ def package_macos(app_name, version, packagename, zip = false)
         unless system("cp #{executable[0]} #{local_exec}")
             puts "Error: Could not copy executable, #{executable[0]}"
             exit(1)
+        end
+    end
+
+    # Copying additionals
+    puts " Copying executables ".center($command_line_width, "=")
+    additionals.each do |additional|
+        puts " copying: #{additional[0]}"
+        local_name = "#{app_name}.app/Contents/MacOS/#{File.basename(additional[1])}"
+        use_bin.push(local_name)
+        unless system("cp #{additional[0]} #{local_name}")
+            puts "Warning: Could not copy #{additional[0]}"
         end
     end
 
