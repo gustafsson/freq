@@ -37,6 +37,13 @@ def custom_lib_path(name, path = nil)
     return "#{$custom_library_path}/#{"#{path}/" if(path)}lib#{name}.dylib"
 end
 
+def run(cmd)
+    unless system(cmd)
+        puts "Error: Could not run #{cmd}"
+        exit(1)
+    end
+end
+
 def package_macos(app_name, version, packagename, zip = false)
     libraries = [cuda_lib_path("cufft"),
                  cuda_lib_path("cudart"),
@@ -68,19 +75,13 @@ def package_macos(app_name, version, packagename, zip = false)
 
     use_bin = Array.new()
 
-    unless system("rm -rf #{app_name}.app")
-        puts "Error: Could not clear #{app_name}.app"
-        exit(1)
-    end
+    run("rm -rf #{app_name}.app")
 
     # Creating directories
     puts " Creating application directories ".center($command_line_width, "=")
     directories.each do |directory|
         puts " creating: #{app_name}.app/#{directory}"
-        unless system("mkdir -p #{app_name}.app/#{directory}")
-            puts "Error: Could not create directory, #{directory}"
-            exit(1)
-        end
+        run("mkdir -p #{app_name}.app/#{directory}")
     end
 
     # Copying libraries
@@ -89,10 +90,7 @@ def package_macos(app_name, version, packagename, zip = false)
         puts " copying: #{library}"
         local_lib = "#{app_name}.app/Contents/Frameworks/#{File.basename(library)}"
         use_bin.push(local_lib)
-        unless system("cp #{library} #{local_lib}")
-            puts "Error: Could not copy library, #{library}"
-            exit(1)
-        end
+        run("cp #{library} #{local_lib}")
     end
 
     # Copying executables
@@ -101,10 +99,7 @@ def package_macos(app_name, version, packagename, zip = false)
         puts " copying: #{executable[0]}"
         local_exec = "#{app_name}.app/Contents/MacOS/#{File.basename(executable[1])}"
         use_bin.push(local_exec)
-        unless system("cp #{executable[0]} #{local_exec}")
-            puts "Error: Could not copy executable, #{executable[0]}"
-            exit(1)
-        end
+        run("cp #{executable[0]} #{local_exec}")
     end
 
     # Copying additionals
@@ -122,19 +117,10 @@ def package_macos(app_name, version, packagename, zip = false)
     puts " Copying resources ".center($command_line_width, "=")
     resources.each do |resource|
         puts " copying: #{resource}"
-        unless system("cp -r #{resource} #{app_name}.app/Contents/Resources/#{File.basename(resource)}")
-            puts "Error: Could not copy resource, #{resource}"
-            exit(1)
-        end
+        run("cp -r #{resource} #{app_name}.app/Contents/Resources/#{File.basename(resource)}")
     end
-    unless system("cp -r ../matlab #{app_name}.app/Contents/MacOS/matlab")
-        puts "Error: Could not copy resource, matlab directory"
-        exit(1)
-    end
-    unless system("cp -r ../plugins #{app_name}.app/Contents/MacOS/plugins/examples")
-        puts "Error: Could not copy resource, plugins directory"
-        exit(1)
-    end
+    run("cp -r ../matlab #{app_name}.app/Contents/MacOS/matlab")
+    run("cp -r ../plugins #{app_name}.app/Contents/MacOS/plugins/examples")
 
     # Add application information
     puts " Adding application information ".center($command_line_width, "=")
@@ -160,32 +146,23 @@ def package_macos(app_name, version, packagename, zip = false)
         targetid = `otool -DX #{libfile}`.strip
         newtargetid = "#{newlibpath}/#{libname}"
 
-        unless system("install_name_tool -id #{newtargetid} #{libfile}")
-            puts "Error: Could not set id #{newtargetid} in binary #{libfile}"
-            exit(1)
-        end
+        # set id #{newtargetid} in binary #{libfile}
+        run("install_name_tool -id #{newtargetid} #{libfile}")
 
         use_bin.each do |path|
             binary_uses_this_lib = !`otool -L #{path} | grep #{targetid}`.empty?
             next unless binary_uses_this_lib
 
             puts "  in binary: #{File.basename(path)}"
-            unless system("install_name_tool -change #{targetid} #{newtargetid} #{path}")
-                puts "Error: Could not change install name for #{libpath}/#{libname} from #{targetid} to #{newtargetid} in binary #{path}"
-                exit(1)
-            end
+            # change install name for #{libpath}/#{libname} from #{targetid} to #{newtargetid} in binary #{path}
+            run("install_name_tool -change #{targetid} #{newtargetid} #{path}")
         end
     end
 
-    unless system("macdeployqt #{app_name}.app -dmg -executable=#{app_name}.app/Contents/MacOS/#{app_name}-cuda")
-        puts "Error: Could not run macdeployqt #{app_name}.app"
-        exit(1)
-    end
+    run("macdeployqt #{app_name}.app -executable=#{app_name}.app/Contents/MacOS/#{app_name}-cuda")
 
-    unless system("mv #{app_name}.dmg #{packagename}.dmg")
-        puts "Error: Could not run mv #{app_name}.dmg #{packagename}.dmg"
-        exit(1)
-    end
+	# macdeployqt can create a dmg with the -dmg argument, rename the resulting dmg:
+    # run("mv #{app_name}.dmg #{packagename}.dmg")
 
     # Generating zip file
     #if( zip )
@@ -201,8 +178,15 @@ def package_macos(app_name, version, packagename, zip = false)
     #    end
     #end
 
-    # TODO create nice looking dmg
+    # create nice looking dmg
     # http://stackoverflow.com/questions/96882/how-do-i-create-a-nice-looking-dmg-for-mac-os-x-using-command-line-tools
+	run("rm -rf pack")
+	run("mkdir pack")
+	run("cp -r \"#{app_name}.app\" \"pack/Sonic AWE.app\"")
+	run("ln -s /Applications pack/Applications")
+	run("rm -f #{packagename}.dmg")
+	run("hdiutil create -srcfolder pack -volname \"Sonic AWE\" -fs HFS+ #{packagename}.dmg")
+	run("rm -rf pack")
 end
 
 package_macos($build_name, $version, $packagename, $zip)

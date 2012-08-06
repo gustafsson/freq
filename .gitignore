@@ -46,3 +46,4 @@ image_works
 *.dylib
 *.sln.cache
 *.suo
+.DS_Store
