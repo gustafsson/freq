@@ -54,6 +54,8 @@ git is most easily accessible through "Git Bash" which is installed to your star
 
 All commands that follow in this document are intended to be typed in "Git Bash".
 
+Also add 'C:\Program Files (x86)\Git\cmd' to the Environment variable Path. 
+
 
 
 Install GIT in Ubuntu
