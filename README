@@ -49,13 +49,10 @@ Install GIT in Windows
 Install git from:
 http://git-scm.com/downloads
 
-Select default settings for line-endings (check out windows style, commit unix style).
+Select default settings for everything except when it comes to "Adjusting your PATH environment" select "Run Git from Windows Command Prompt". Make sure you leave line-endings to their default as well (Checkout Windows-style, commit Unix-style).
 git is most easily accessible through "Git Bash" which is installed to your start menu.
 
-All commands that follow in this document are intended to be typed in "Git Bash".
-
-Also add 'C:\Program Files (x86)\Git\cmd' to the Environment variable Path. 
-
+All commands that follow in this document are intended to be typed in "Git Bash". But you still need to adjust your PATH environment variable, if you didn't do so in the installer make sure you add 'C:\Program Files (x86)\Git\cmd'.
 
 
 Install GIT in Ubuntu
