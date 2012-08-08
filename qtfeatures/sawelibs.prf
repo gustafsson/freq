@@ -42,8 +42,9 @@ INCLUDEPATH += \
 	../lib/sonicawe-winlib/portaudio/include \
 	../lib/sonicawe-winlib/libsndfile/include \
 	../lib/sonicawe-winlib/hdf5lib/include \
-	../lib/sonicawe-winlib/zlib/include \
-	../lib/sonicawe-winlib
+        ../lib/sonicawe-winlib/zlib/include \
+        ../lib/sonicawe-winlib/omp \
+        ../lib/sonicawe-winlib
 LIBS += \
 	-l../lib/sonicawe-winlib/glut/glut32 \
 	-l../lib/sonicawe-winlib/glew/lib/glew32 \
@@ -51,6 +52,7 @@ LIBS += \
 	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5dll \
 	-l../lib/sonicawe-winlib/hdf5lib/dll/hdf5_hldll \
         -L../lib/sonicawe-winlib/boostlib \
+        -L../lib/sonicawe-winlib/omp \
         ../lib/sonicawe-winlib/portaudio/portaudio.lib \
 
 CONFIG(debug, debug|release): LIBS += \
