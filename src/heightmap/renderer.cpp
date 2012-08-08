@@ -64,7 +64,7 @@ Renderer::Renderer( Collection* collection )
     last_axes_length( 0 ),
     drawn_blocks(0),
     left_handed_axes(true),
-    vertex_texture(false),
+    vertex_texture(true),
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
