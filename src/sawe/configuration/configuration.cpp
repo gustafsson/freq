@@ -209,10 +209,12 @@ string Configuration::
     case QSysInfo::WV_2003: return "Windows Server 2003 (or in the same family)";
     case QSysInfo::WV_VISTA: return "Windows Vista";
     case QSysInfo::WV_WINDOWS7: return "Windows 7";
+    case QSysInfo::WV_NT_based: return "Windows 8 (or otherwise NT-based)";
     default: return QString("unrecognized Windows version (%1)").arg(QSysInfo::WindowsVersion).toStdString();
     }
 #endif
 #ifdef Q_OS_MAC
+#define xMV_10_8 (QSysInfo::MV_10_7+1)
     switch(QSysInfo::MacintoshVersion)
     {
     case QSysInfo::MV_Unknown: return "unknown Mac version";
@@ -224,7 +226,8 @@ string Configuration::
     case QSysInfo::MV_10_4: return "Mac OS X 10.4 (Tiger)";
     case QSysInfo::MV_10_5: return "Mac OS X 10.5 (Leopard)";
     case QSysInfo::MV_10_6: return "Mac OS X 10.6 (Snow Leopard)";
-    case QSysInfo::MV_10_7: return "Mac OS X 10.7 (Lion)";
+    case QSysInfo::MV_10_7: return "OS X 10.7 (Lion)";
+    case xMV_10_8: return "OS X 10.8 (Mountain Lion)";
     default: return QString("unrecognized Mac OS X version (%1)").arg(QSysInfo::MacintoshVersion).toStdString();
     }
 #endif
