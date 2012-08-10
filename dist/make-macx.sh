@@ -67,7 +67,7 @@ g++ -c $SYSROOT -o launcher-mac.o launcher-mac.cpp
 g++ -framework CoreFoundation $SYSROOT -o launcher launcher.o launcher-mac.o
 
 echo "========================== Packaging =========================="
-filename="${packagename}_${versiontag}_macos_i386.zip"
+filename="${packagename}_${versiontag}.dmg"
 echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
 ruby ../dist/package-macx.rb ${packagename} ${versiontag} osx ../src/${packagename}
