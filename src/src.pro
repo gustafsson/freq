@@ -5,7 +5,7 @@
 
 # features directory
 qtfeatures = ../qtfeatures/
-win32:qtfeatures = ..\\\\qtfeatures\\\\
+win32:qtfeatures = "..\\qtfeatures\\"
 
 ####################
 # Project settings

@@ -10,7 +10,8 @@ SAWEROOT=$${qtfeatures}..
 
 win32 {
     LIBS += \
-        -L$$SAWEROOT/src/release -lsonicawe
+        -L$$SAWEROOT/src/release -lsonicawe \
+        -L$$SAWEROOT/lib/gpumisc/release -lgpumisc
 		
 }
 
