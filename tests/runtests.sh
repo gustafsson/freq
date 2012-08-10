@@ -81,7 +81,7 @@ failed=
 success=
 skipped=0
 
-if [ "$(uname -s)" = "MINGW32_NT-6.1" ]; then
+if [ -n "$(uname -s | grep MINGW32_NT)" ]; then
     platform=windows
 elif [ "$(uname -s)" = "Linux" ]; then
     platform=debian
