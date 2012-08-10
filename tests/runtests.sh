@@ -122,7 +122,7 @@ else
         dynamiclibname(){ echo lib${1}.so; }
         #qmakeargs="CONFIG+=gcc-4.3"
         qmakeargs=
-        export LD_LIBRARY_PATH="$(cd ../src; pwd):${PATH}"
+        export LD_LIBRARY_PATH="$(cd ../src; pwd):$(cd ../lib/sonicawe-ubuntulib/lib; pwd)"
         no_cores=$(cat /proc/cpuinfo | grep -c processor)
     fi
     linkcmd="ln -s"
