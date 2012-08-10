@@ -81,6 +81,8 @@ public:
 
     float redundancy();
     void redundancy(float value);
+
+    void clearCaches();
 private:
     enum LevelOfDetal {
         Lod_NeedBetterF,

@@ -306,6 +306,17 @@ void Application::
     p->setModified( false );
 }
 
+bool Application::
+        has_other_projects_than(Project*p)
+{
+    for (set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
+    {
+        if (&**i != p)
+            return true;
+    }
+    return false;
+}
+
 void Application::
         clearCaches()
 {
@@ -373,7 +384,7 @@ pProject Application::
 }
 
 pProject Application::
-        slotOpen_file( string project_file_or_audio_file )
+         slotOpen_file( string project_file_or_audio_file )
 {
     pProject p = Project::open( project_file_or_audio_file );
     if (p)

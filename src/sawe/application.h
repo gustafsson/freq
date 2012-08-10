@@ -36,7 +36,7 @@ public:
 
     void				openadd_project( pProject p );
     int					default_record_device;
-    unsigned            count_projects() { return _projects.size(); }
+    bool                has_other_projects_than( Project* p4 );
 
     void execute_command_line_options();
 

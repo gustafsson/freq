@@ -598,7 +598,7 @@ int main(int argc, char *argv[])
         }
 
         int r = 0;
-        if (0 < a.count_projects())
+        if (a.has_other_projects_than(0))
         {
             if( 0 == QGLContext::currentContext())
             {

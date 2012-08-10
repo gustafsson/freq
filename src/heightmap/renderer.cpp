@@ -70,6 +70,7 @@ Renderer::Renderer( Collection* collection )
     _mesh_height(0),
     _mesh_fraction_width(1),
     _mesh_fraction_height(1),
+    _shader_prog(0),
     _initialized(NotInitialized),
     _draw_flat(false),
     /*
@@ -447,6 +448,21 @@ void Renderer::
 }
 
 
+void Renderer::
+        clearCaches()
+{
+    _mesh_width = 0;
+    _mesh_height = 0;
+    _initialized = NotInitialized;
+    _mesh_position.reset();
+    glDeleteProgram(_shader_prog);
+    _shader_prog = 0;
+    _invalid_frustum = true;
+    colorTexture.reset();
+    _color_texture_colors = (ColorMode)-1;
+}
+
+
 tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
 {
     return a*(1-f) + b*f;
@@ -544,7 +560,7 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
 }
 
 void Renderer::createColorTexture(unsigned N) {
-    if (_color_texture_colors == color_mode && colorTexture->getWidth()==N)
+    if (_color_texture_colors == color_mode && colorTexture && colorTexture->getWidth()==N)
         return;
 
     _color_texture_colors = color_mode;
