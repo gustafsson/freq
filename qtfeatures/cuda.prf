@@ -1,4 +1,6 @@
+usecuda {
 DEFINES += USE_CUDA
+SAWEROOT = $${qtfeatures}..
 
 win32 {
     usecuda {
@@ -23,11 +25,11 @@ win32 {
 
 CUDA_INCLUDEPATH = $$INCLUDEPATH
 CUDA_INCLUDEPATH += \
-    ../lib/gpumisc \
-    ../src \
+    $$SAWEROOT/lib/gpumisc \
+    $$SAWEROOT/src \
 
-macx:CUDA_INCLUDEPATH += ../lib/sonicawe-maclib/include
-win32:CUDA_INCLUDEPATH += ../lib/sonicawe-winlib
+macx:CUDA_INCLUDEPATH += $$SAWEROOT/lib/sonicawe-maclib/include
+win32:CUDA_INCLUDEPATH += $$SAWEROOT/lib/sonicawe-winlib
 
 LIBS += -lcufft -lcudart -lcuda
 CONFIG(debug, debug|release): CUDA_FLAGS += -g
@@ -70,7 +72,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(CUDA_INCLUDEPATH,'" -I "../src/','-I "../src/','"') \
+        $$join(CUDA_INCLUDEPATH,'" -I "$$SAWEROOT/src/','-I "$$SAWEROOT/src/','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \
@@ -104,7 +106,7 @@ macx {
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
     CUDA_FLAGS += --no-align-double
-    CUDA_CXXFLAGS += -m64 -arch x86_64
+    #CUDA_CXXFLAGS += -m64 -arch x86_64
     cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
 		-ccbin $${QMAKE_CC} \
@@ -121,3 +123,4 @@ macx {
 
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda
+} # usecuda

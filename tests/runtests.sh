@@ -48,7 +48,7 @@ if [ "$1" = "--help" ]; then
   echo
   echo
   echo "To run a single test with a single configurations multiple times"
-  echo "it might be more convenient to use this script only to recompile"
+  echo "it might be more convenient to use this script only to recompile,"
   echo "and then execute the specific test directly from the test folder."
   echo "A neat function to rerun a script 100 times is this:"
   echo
@@ -114,7 +114,7 @@ else
         staticlibname(){ echo lib${1}.a; }
         dynamiclibname(){ echo lib${1}.dylib; }
         qmakeargs="-spec macx-g++ CONFIG+=release"
-        export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib; pwd):$(cd ..; pwd):/usr/local/cuda/lib"
+        export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib/lib; pwd):$(cd ../src; pwd):/usr/local/cuda/lib"
         no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
     else
         timestamp(){ date --rfc-3339=seconds; }

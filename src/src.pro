@@ -143,8 +143,6 @@ CONFIG += $${qtfeatures}otherfilesvs
 ####################
 # Build settings
 CONFIG += $${qtfeatures}sawelibs
-QT += opengl
-QT += network
 DEFINES += SAWE_NO_MUTEX
 #DEFINES += CUDA_MEMCHECK_TEST
 

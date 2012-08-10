@@ -1,0 +1,5 @@
+DEFINES += sawedefault
+CONFIG += $${qtfeatures}sawelibs
+CONFIG += $${qtfeatures}buildflags
+CONFIG += $${qtfeatures}tmpdir
+usecuda:CONFIG += $${qtfeatures}cuda
