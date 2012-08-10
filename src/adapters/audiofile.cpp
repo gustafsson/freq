@@ -29,6 +29,9 @@ typedef __int64 __int64_t;
 #include <QByteArray>
 #include <QTemporaryFile>
 
+//#define VERBOSE_AUDIOFILE
+#define VERBOSE_AUDIOFILE if(0)
+
 using namespace std;
 
 namespace Adapters {
@@ -318,8 +321,9 @@ Signal::pBuffer Audiofile::
         return zeros( J );
     }
 
-    TaskTimer tt("Loading %s from '%s' (this=%p)",
-                 J.toString().c_str(), filename().c_str(), this);
+    boost::shared_ptr<TaskTimer> tt;
+    VERBOSE_AUDIOFILE tt.reset(new TaskTimer("Loading %s from '%s' (this=%p)",
+                 J.toString().c_str(), filename().c_str(), this));
 
     DataStorage<float> partialfile(DataStorageSize( num_channels(), I.count(), 1));
     sndfile->seek(I.first, SEEK_SET);
@@ -340,12 +344,12 @@ Signal::pBuffer Audiofile::
         }
     }
 
-    tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
+    VERBOSE_AUDIOFILE *tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
 
-    tt.flushStream();
+    VERBOSE_AUDIOFILE tt->flushStream();
 
-    tt.info("Data size: %lu samples, %lu channels", (size_t)sndfile->frames(), (size_t)sndfile->channels() );
-    tt.info("Sample rate: %lu samples/second", sndfile->samplerate() );
+    VERBOSE_AUDIOFILE tt->info("Data size: %lu samples, %lu channels", (size_t)sndfile->frames(), (size_t)sndfile->channels() );
+    VERBOSE_AUDIOFILE tt->info("Sample rate: %lu samples/second", sndfile->samplerate() );
 
     if ((invalid_samples() - I).empty())
     {

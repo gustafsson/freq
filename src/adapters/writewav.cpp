@@ -14,12 +14,14 @@ typedef __int64 __int64_t;
 #include "cpumemorystorage.h"
 
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 
 #include <QTemporaryFile>
 
 #define TIME_WRITEWAV
 //#define TIME_WRITEWAV if(0)
 
+using namespace boost;
 namespace Adapters {
 
 WriteWav::
@@ -48,10 +50,9 @@ Signal::pBuffer WriteWav::
 
     if (_invalid_samples.empty())
     {
-        TaskInfo("WriteWav(%s) didn't expect any data. You need to call invalidate_samples first to prepare WriteWav. Skips reading %s",
-                 _filename.c_str(), J.toString().c_str());
-
-        return zeros(J);
+        throw std::logic_error(str(format(
+                "WriteWav(%s) didn't expect any data. You need to call invalidate_samples first to prepare WriteWav. Skips reading %s")
+                 % _filename.c_str() % J.toString().c_str()));
     }
 
     Signal::Interval I = J;
@@ -61,8 +62,9 @@ Signal::pBuffer WriteWav::
         Signal::Interval expected = (J & _invalid_samples).spannedInterval();
         if (!expected)
         {
-            TaskInfo("WriteWav(%s) didn't expect %s. Invalid samples are %s",
-                     _filename.c_str(), expected.toString().c_str(), _invalid_samples.toString().c_str());
+            throw std::logic_error(str(format(
+                    "WriteWav(%s) didn't expect %s. Invalid samples are %s")
+                    % _filename.c_str() % expected.toString().c_str() % _invalid_samples.toString().c_str()));
             return zeros(J);
         }
 
@@ -264,22 +266,23 @@ void WriteWav::
             return;
         }
 
-        float mean = _sum/_sumsamples;
+        long double mean = _sum/_sumsamples;
 
         //    -1 + 2*(v - low)/(high-low);
         //    -1 + (v - low)/std::max(_high-mean, mean-_low)
 
-        float affine_s = 1.L/std::max(_high-mean, mean-_low);
-        float affine_d = -1 - _low/std::max(_high-mean, mean-_low);
+        long double k = std::max(_high-mean, mean-_low);
+        float affine_s = 1/k;
+        float affine_d = -1 - _low/k;
 
         if (!_normalize)
         {
-            // (high+low)/2 + v*(high-low)/2
-            // mean + v*(high-low)/2
-
             affine_d = mean;
-            affine_s = (_high-_low)/2.f;
+            affine_s = k;
         }
+
+        // when sndfile converts float to 16-bit integers it doesn't bother with rounding to nearest. Adding an offset in advance accomodates for that.
+        affine_d += 1.f/(1<<16);
 
         sf_count_t frames = inputfile.frames();
         TaskInfo ti2("rewriting %u frames", (unsigned)frames);
