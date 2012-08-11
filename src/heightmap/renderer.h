@@ -121,8 +121,8 @@ private:
     boost::shared_ptr<GlTexture> colorTexture;
 
     void setSize( unsigned w, unsigned h);
-    void createMeshIndexBuffer(unsigned w, unsigned h);
-    void createMeshPositionVBO(unsigned w, unsigned h);
+    void createMeshIndexBuffer(int w, int h);
+    void createMeshPositionVBO(int w, int h);
     void createColorTexture(unsigned N);
 
     void beginVboRendering();

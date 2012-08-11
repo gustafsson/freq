@@ -54,7 +54,8 @@ ChunkAndInverse DrawnWaveformFilter::
 
     float *p = ci.inverse->waveform_data()->getCpuMemory();
     float maxValue=0;
-    for(unsigned i=0; i<ci.inverse->number_of_samples(); ++i)
+    Signal::IntervalType N = ci.inverse->number_of_samples();
+    for(Signal::IntervalType i=0; i<N; ++i)
         maxValue = std::max(std::abs(p[i]), maxValue);
     maxValue *= 1.1;
 

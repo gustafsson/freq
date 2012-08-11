@@ -39,17 +39,17 @@ void reassignFilter( Tfr::ChunkData::Ptr chunkp, float min_hz, float max_hz, flo
 
 __global__ void kernel_reassign(cudaPitchedPtrType<float2> chunk, float start, float steplogsize, float sample_rate )
 {
-    unsigned
+    int
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
-    unsigned nSamples = chunk.getNumberOfElements().x;
-    unsigned nFrequencies = chunk.getNumberOfElements().y;
+    int nSamples = chunk.getNumberOfElements().x;
+    int nFrequencies = chunk.getNumberOfElements().y;
     int s = threadIdx.x%2?1:-1;
     s*=1;
     if( x >= nSamples-abs(s) )
         return;
 
-    for( unsigned fi = 0; fi < nFrequencies; fi ++)
+    for( int fi = 0; fi < nFrequencies; fi ++)
     {
         float2 base = chunk.elem( make_elemSize3_t(x,fi,0) );
         float2 base2 = chunk.elem( make_elemSize3_t(x+s,fi,0) );
@@ -62,7 +62,7 @@ __global__ void kernel_reassign(cudaPitchedPtrType<float2> chunk, float start, f
 
         __syncthreads();
 
-        unsigned root_row = (unsigned)(log(hz_root/start)/steplogsize*nFrequencies);
+        int root_row = (unsigned)(log(hz_root/start)/steplogsize*nFrequencies);
         if (root_row != fi)
         {
             float2 target = chunk.elem( make_elemSize3_t(x,root_row,0) );
@@ -95,17 +95,17 @@ void tonalizeFilter( Tfr::ChunkData::Ptr chunkp, float min_hz, float max_hz, flo
 
 __global__ void kernel_tonalize(cudaPitchedPtrType<float2> chunk, float start, float steplogsize, float sample_rate )
 {
-    unsigned
+    int
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
-    unsigned nSamples = chunk.getNumberOfElements().x;
-    unsigned nFrequencies = chunk.getNumberOfElements().y;
+    int nSamples = chunk.getNumberOfElements().x;
+    int nFrequencies = chunk.getNumberOfElements().y;
     int s = threadIdx.x%2?1:-1;
     s*=1;
     if( x >= nSamples-abs(s) )
         return;
 
-    for( unsigned fi = 0; fi < nFrequencies; fi ++)
+    for( int fi = 0; fi < nFrequencies; fi ++)
     {
         float ff_root = fi/(float)nFrequencies;
         float hz_root = start*exp(ff_root*steplogsize);
@@ -120,14 +120,14 @@ __global__ void kernel_tonalize(cudaPitchedPtrType<float2> chunk, float start, f
         //float hz_root = abs(da * (sample_rate/s) / (2*M_PIf));
         //__syncthreads();
 
-        unsigned root_row = (unsigned)(log(hz_root/start)/steplogsize*nFrequencies);
+        int root_row = (int)(log(hz_root/start)/steplogsize*nFrequencies);
         //if (root_row == fi)
         {
 
             float global_max = sqrt(base.x*base.x + base.y*base.y);
 
             // Loop through overtones
-            for( unsigned t = 2; t < 20; t ++)
+            for( int t = 2; t < 20; t ++)
             {
                 float hz_overtone = hz_root*t;
 

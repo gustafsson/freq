@@ -35,10 +35,10 @@
   */
 template<typename T>
 inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
-        unsigned w_bin,
+        int w_bin,
         T* in_waveform_ft,
         T* out_wavelet_ft,
-        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, float sigma_t0,
+        int nFrequencyBins, int nScales, float first_scale, float v, float sigma_t0,
         const float& normalization_factor )
 {
     const float pi = 3.141592654f;
@@ -53,7 +53,7 @@ inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
     // Find period for this thread
     const float log2_a = 1.f / v; // a = 2^(1/v)
 
-    for( unsigned j=0; j<nScales; j++)
+    for( int j=0; j<nScales; j++)
     {
         // Compute the child wavelet
         // a = 2^(1/v)
@@ -75,7 +75,7 @@ inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
         // Find offset for this wavelet coefficient. Writes the scale
         // corresponding to the lowest frequency on the first row of the
         // output matrix
-        unsigned offset = (nScales-1-j)*nFrequencyBins;
+        int offset = (nScales-1-j)*nFrequencyBins;
 
         // Write wavelet coefficient in output matrix
         out_wavelet_ft[offset + w_bin] = waveform_ft * phi_star;

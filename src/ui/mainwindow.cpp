@@ -194,7 +194,7 @@ void SaweMainWindow::
 void SaweMainWindow::slotCheckWindowStates(bool)
 {
     unsigned int size = controlledWindows.size();
-    for(unsigned int i = 0; i < size; i++)
+    for(int i = 0; i < size; i++)
     {
         controlledWindows[i].a->setChecked(!(controlledWindows[i].w->isHidden()));
     }
@@ -202,7 +202,7 @@ void SaweMainWindow::slotCheckWindowStates(bool)
 void SaweMainWindow::slotCheckActionStates(bool)
 {
     unsigned int size = controlledWindows.size();
-    for(unsigned int i = 0; i < size; i++)
+    for(int i = 0; i < size; i++)
     {
         controlledWindows[i].w->setVisible(controlledWindows[i].a->isChecked());
     }

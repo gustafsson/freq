@@ -41,20 +41,20 @@ void moveFilter( Tfr::ChunkData::Ptr c, float df, float min_hz, float max_hz, fl
 
 __global__ void kernel_move(cudaPitchedPtrType<float2> chunk, float df, float start, float steplogsize, float sample_rate, unsigned sample_offset )
 {
-    const unsigned
+    const int
             x = blockIdx.x*blockDim.x + threadIdx.x;
 
-    unsigned nSamples = chunk.getNumberOfElements().x;
-    unsigned nFrequencies = chunk.getNumberOfElements().y;
+    int nSamples = chunk.getNumberOfElements().x;
+    int nFrequencies = chunk.getNumberOfElements().y;
     if( x >= nSamples )
         return;
 
-    for( unsigned fc = 0<df ? 1:nFrequencies ;
+    for( int fc = 0<df ? 1:nFrequencies ;
                        0<df ? fc<=nFrequencies : fc>0;
                        0<df?fc++:fc--)
     {
         // fc is a counter that is off by one, it goes [1,nFrequencies] or [nFrequencies,1]
-        unsigned fi = fc-1; // fi=write index
+        int fi = fc-1; // fi=write index
 
         float ri = fi + df; // read index
         float ff_read = ri/(float)nFrequencies;

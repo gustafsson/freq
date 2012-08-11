@@ -90,10 +90,10 @@ void stftAverage(
         Tfr::ChunkData::Ptr output,
         unsigned scales )
 {
-    unsigned width = scales;
+    int width = scales;
     int height = output->size().width/scales;
-    unsigned input_height = input->size().width/scales;
-    unsigned averaging = input_height / height;
+    int input_height = input->size().width/scales;
+    int averaging = input_height / height;
 
     Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
     Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( output ).ptr();
@@ -104,10 +104,10 @@ void stftAverage(
 #pragma omp parallel for
     for (int k=0; k<height; ++k)
     {
-        for (unsigned j=0; j<width; ++j)
+        for (int j=0; j<width; ++j)
         {
             float elem = 0.f;
-            for (unsigned a=0; a<averaging; ++a)
+            for (int a=0; a<averaging; ++a)
                 elem += abs(in[(k*averaging + a)*width + j]);
             out[k*width + j] = Tfr::ChunkElement(elem*as, 0);
         }

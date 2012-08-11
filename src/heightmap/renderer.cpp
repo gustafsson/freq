@@ -144,7 +144,7 @@ void Renderer::setSize( unsigned w, unsigned h)
 }
 
 // create index buffer for rendering quad mesh
-void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
+void Renderer::createMeshIndexBuffer(int w, int h)
 {
     GlException_CHECK_ERROR();
 
@@ -163,9 +163,9 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 
     std::vector<BLOCKindexType> indicesdata(_vbo_size);
     BLOCKindexType *indices = &indicesdata[0];
-    if (indices) for(unsigned y=0; y<h-1; y++) {
+    if (indices) for(int y=0; y<h-1; y++) {
         *indices++ = y*w;
-        for(unsigned x=0; x<w; x++) {
+        for(int x=0; x<w; x++) {
             *indices++ = y*w+x;
             *indices++ = (y+1)*w+x;
         }
@@ -187,7 +187,7 @@ void Renderer::createMeshIndexBuffer(unsigned w, unsigned h)
 }
 
 // create fixed vertex buffer to store mesh vertices
-void Renderer::createMeshPositionVBO(unsigned w, unsigned h)
+void Renderer::createMeshPositionVBO(int w, int h)
 {
     int y1 = 0, x1 = 0, y2 = h, x2 = w;
 

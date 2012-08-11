@@ -102,12 +102,12 @@ void wtCompute(
 __global__ void kernel_compute_wavelet_coefficients(
         float2* in_waveform_ft,
         float2* out_wavelet_ft,
-        unsigned nFrequencyBins, unsigned nScales, float first_scale, float v, float sigma_t0,
+        int nFrequencyBins, int nScales, float first_scale, float v, float sigma_t0,
         float normalization_factor )
 {
     // Which frequency bin in the discrete fourier transform this thread
     // should work with
-    const unsigned
+    const int
             w_bin = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
 
     // Negative frequencies are defined as 0 and are not stored in in_waveform_ft
@@ -126,9 +126,9 @@ __global__ void kernel_compute_wavelet_coefficients(
     }
     else if (w_bin<nFrequencyBins)
     {
-        for( unsigned j=0; j<nScales; j++)
+        for( int j=0; j<nScales; j++)
         {
-            unsigned offset = (nScales-1-j)*nFrequencyBins;
+            int offset = (nScales-1-j)*nFrequencyBins;
             out_wavelet_ft[offset + w_bin] = make_float2(0,0);
         }
     }

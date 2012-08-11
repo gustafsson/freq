@@ -76,7 +76,7 @@ void wtCompute(
 
         // Find period for this thread
 
-        unsigned offset = (nScales-1-j)*nFrequencyBins;
+        int offset = (nScales-1-j)*nFrequencyBins;
         float aj = exp2f(log2_a * (j + first_scale) ) * wscale;
         for (int w_bin=0; w_bin<N; ++w_bin)
         {
