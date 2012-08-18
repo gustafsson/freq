@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
 
         // Check if a cuda context can be created, but don't require OpenGL bindings just yet
         if (!check_cuda( false ))
-            return 1337;
+            return -17;
 
         TaskInfo("computation device: %s", Sawe::Configuration::computationDeviceName().c_str());
 

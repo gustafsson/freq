@@ -36,7 +36,7 @@ int run(int argc, char *argv[])
     )
     {
         OutputDebugString( L"CreateProcess failed\n" );
-        return -1;
+        return -17;
     }
 
     // Wait until child process exits.
@@ -50,7 +50,7 @@ int run(int argc, char *argv[])
     CloseHandle( pi.hProcess );
     CloseHandle( pi.hThread );
 
-    return exitCode;
+    return (char)exitCode;
 }
 
 int main(int argc, char *argv[])
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     argv[0] = app_path;
     int return_code = run(argc, argv);
 
-    if (return_code == -1 || return_code==1337 && strcmp(app_path, app_path_cuda)==0)
+    if (return_code == -1 || return_code==-17 && strcmp(app_path, app_path_cuda)==0)
     {
         argv[0] = app_path_cpu;
         run(argc, argv);

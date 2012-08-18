@@ -87,19 +87,20 @@ int test_opencl_func()
 // Run the Sonic AWE application
 int run(int argc, char *argv[])
 {
-    int pid, status;
-    pid = fork();
+    const int launch_failed = -17;
     
-    if(pid != 0)
+    if(0 == fork())
     {
-        execv(argv[0], argv);
+        if (execv(argv[0], argv) < 0)
+            exit(launch_failed);
     }
+
+    int status;
+    wait(&status);
+    if (WIFEXITED(status))
+        return (char)WEXITSTATUS(status);
     else
-    {
-        wait(&status);
-    }
-    
-    return status;
+        return -1;
 }
 
 // Report errors

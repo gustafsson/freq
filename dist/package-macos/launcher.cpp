@@ -36,10 +36,10 @@ int main(int argc, char *argv[])
     argv[0] = (char*)(app_path.c_str());
     int return_code = run(argc, argv);
 
-    if (return_code == 1337 && app_path.compare(app_path_cuda) == 0) 
+    if (return_code == -17 && app_path.compare(app_path_cuda) == 0)
     {
-        argv[0] = (char*)(app_path.c_str());
-        run(argc, argv);
+        argv[0] = (char*)(app_path_cpu.c_str());
+        int a = run(argc, argv);
     }
     
     return 0;
