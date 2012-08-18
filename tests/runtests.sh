@@ -185,7 +185,7 @@ for configname in $configurations; do
 	  continue
 	fi
 
-    if [ "" != "$*" ] && [ -z "$( echo "${name} ${configname}" | eval grep $* )" ]; then
+    if [ "" != "$*" ] && [ -z "$( echo "${name} ${configname}" | eval grep \"$*\" )" ]; then
 	  echo -n "_"
 	  skipped=$(( skipped + 1 ))
       continue
@@ -213,6 +213,7 @@ for configname in $configurations; do
       pwd &&
       rm -f Makefile &&
       rm -f "$outputdir/$testname" &&
+      rm -f "$outputdir/$(staticlibname $testname)" &&
       echo qmake $qmakeargs CONFIG+=${configname} &&
       qmake $qmakeargs CONFIG+=${configname} &&
       eval echo $makeonecmd &&
