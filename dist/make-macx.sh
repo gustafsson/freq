@@ -33,7 +33,7 @@ cp src/${packagename} src/${packagename}org
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
 
-if [ -e /usr/local/cuda/bin/nvcc ] && [ -z $NOCUDA ]; then
+if ( [ -e /usr/local/cuda/bin/nvcc ] || [ -e /Developer/NVIDIA/CUDA-5.0/bin/nvcc ] ) && [ -z $NOCUDA ]; then
     qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
     echo "qmaketarget: $qmaketarget"
     qmake $qmaketarget -spec macx-g++ CONFIG+=release

@@ -102,12 +102,11 @@ macx {
     # auto-detect CUDA path
     # CUDA_DIR = $$system(which nvcc | sed 's,/bin/nvcc$,,')
     # manual
-    CUDA_DIR = /usr/local/cuda
+    CUDA_DIR = $$system(if [ -e /usr/local/cuda/bin/nvcc ]; then echo /usr/local/cuda; else echo /Developer/NVIDIA/CUDA-5.0; fi)
     INCLUDEPATH += $$CUDA_DIR/include
     QMAKE_LIBDIR += $$CUDA_DIR/lib
-    CUDA_FLAGS += --no-align-double
-    #CUDA_CXXFLAGS += -m64 -arch x86_64
-    cuda.output = $${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
+    CUDA_FLAGS += --no-align-double -m64
+    cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
     cuda.commands = $${CUDA_DIR}/bin/nvcc \
 		-ccbin $${QMAKE_CC} \
         -c \

@@ -30,7 +30,6 @@ macx {
 INCLUDEPATH += \
     $$SAWEROOT/lib/sonicawe-maclib/include
 LIBS += -lsndfile \
-    -L/usr/local/cuda/lib \
     -framework GLUT \
     -framework OpenGL \
     -L$$SAWEROOT/lib/sonicawe-maclib/lib \
