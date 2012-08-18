@@ -13,6 +13,7 @@ namespace Tfr {
     class FftImplementation {
     public:
         static FftImplementation& Singleton();
+        virtual ~FftImplementation() {}
 
         /**
          * @brief compute Computes a fast fourier transform of input and stores

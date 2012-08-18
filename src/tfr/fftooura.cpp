@@ -1,4 +1,3 @@
-#if !defined(USE_CUDA) && !defined(USE_OPENCL)
 #include "stft.h"
 #include "stftkernel.h"
 #include "fftooura.h"
@@ -230,4 +229,3 @@ void FftOoura::
 
 
 } // namespace Tfr
-#endif // #if !defined(USE_CUDA) && !defined(USE_OPENCL)

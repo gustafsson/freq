@@ -107,9 +107,7 @@ void FftCufft::
             slices = n.height,
             i = 0;
 
-    // check for available memory
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
+    size_t free = availableMemoryForSingleAllocation();
     free /= 2; // Don't even try to get close to use all memory
     // never use more than 64 MB
     if (free > 64<<20)
@@ -250,8 +248,7 @@ void FftCufft::
             i = 0;
 
     // check for available memory
-    size_t free=0, total=0;
-    cudaMemGetInfo(&free, &total);
+    size_t free = availableMemoryForSingleAllocation();
     free /= 2; // Don't even try to get close to use all memory
     // and never use more than 64 MB
     if (free > 64<<20)
