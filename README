@@ -22,6 +22,9 @@ Highly suggested reading: when to branch, merge, or rebase:
 http://nvie.com/posts/a-successful-git-branching-model/?
 http://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
 
+There are plenty of tips and tricks "on the internet", here is one page:
+http://wiki.videolan.org/Git
+
 For reference:
 http://git-scm.com/doc
 http://git-scm.com/book
@@ -83,10 +86,16 @@ git clone git@bitbucket.org:MuchDifferent/sonicawe.git
 cd sonicawe
 ls
 
-FAQ:
+When running clone you might this message:
 > Permission denied (publickey).
 > fatal: The remote end hung up unexpectedly
 If you get this message it probably means your bitbucket account haven't been given access to the source code yet. You also get this if your system's public SSH key doesn't match the SSH key you added to your bitbucket account.
+
+When getting new code from the server you want to rebase in most cases. To simplify this you can create an alias, like so:
+git config --global alias.up "pull --rebase"
+
+And to get new commits, run:
+git up
 
 
 CUDA
@@ -253,9 +262,10 @@ To run the test suite. Execute this in the folder 'tests':
 For more info on running tests, see the runtests help:
 ./runtests.sh --help
 
-For instance, to only run the test 'mytest' you can run:
+For instance, to only run tests with 'mytest' in their name you can run:
 ./runtests.sh mytest
-(this also runs tests with the string 'mytest' in their name, such as 'thingmytest2')
+
+The argument to runtests.sh is parsed as regexp against the test name as it is written in the result list by runtests.sh.
 
 
 Packaging/deployment
