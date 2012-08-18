@@ -10,9 +10,10 @@ void stftNormalizeInverse(
     CpuMemoryReadWrite<float, 2> in_wt = CpuMemoryStorage::ReadWrite<2>( wavep );
 
     float v = 1.f/length;
+    int h = (int)in_wt.numberOfElements().height;
 
 #pragma omp parallel for
-    for (int y=0; y<(int)in_wt.numberOfElements().height; ++y)
+    for (int y=0; y<h; ++y)
     {
         CpuMemoryReadWrite<float, 2>::Position pos( 0, y );
         for (pos.x=0; pos.x<in_wt.numberOfElements().width; ++pos.x)
@@ -32,9 +33,10 @@ void stftNormalizeInverse(
     CpuMemoryWriteOnly<float, 2> out_wt = CpuMemoryStorage::WriteAll<2>( outwave );
 
     float v = 1.f/length;
+    int h = (int)in_wt.numberOfElements().height;
 
 #pragma omp parallel for
-    for (int y=0; y<(int)in_wt.numberOfElements().height; ++y)
+    for (int y=0; y<h; ++y)
     {
         CpuMemoryReadWrite<Tfr::ChunkElement, 2>::Position pos( 0, y );
         for (pos.x=0; pos.x<in_wt.numberOfElements().width; ++pos.x)

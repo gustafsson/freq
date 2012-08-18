@@ -25,7 +25,7 @@ namespace Sawe {
 
 namespace Tools {
 
-namespace Support { class ToolSelector; };
+namespace Support { class ToolSelector; }
 
 class RenderView;
 

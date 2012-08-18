@@ -7,24 +7,24 @@
 template<typename Reader, typename Writer>
 __global__ void kernel_draw_waveform(
         Reader in_waveform,
-        Writer out_waveform_matrix, float blob, unsigned readstop, float scaling, float writeposoffs );
+        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs );
 
 
 template<typename Reader, typename Writer>
 __global__ void kernel_draw_waveform_with_lines(
         Reader in_waveform,
-        Writer out_waveform_matrix, float blob, unsigned readstop, float scaling, float writeposoffs );
+        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs );
 
 
 void drawWaveform(
         DataStorage<float>::Ptr in_waveformp,
         Tfr::ChunkData::Ptr out_waveform_matrixp,
-        float blob, unsigned readstop, float maxValue, float writeposoffs )
+        float blob, int readstop, float maxValue, float writeposoffs )
 {
     CudaGlobalReadOnly<float, 1> in_waveform = CudaGlobalStorage::ReadOnly<1>( in_waveformp );
     CudaGlobalReadWrite<float2, 2> out_waveform_matrix( CudaGlobalStorage::ReadWrite<2>( out_waveform_matrixp ).getCudaPitchedPtr() );
 
-    unsigned w = out_waveform_matrixp->size().width;
+    int w = out_waveform_matrixp->size().width;
     dim3 block(drawWaveform_BLOCK_SIZE, 1, 1);
     dim3 grid(int_div_ceil(w, block.x), 1, 1);
 
@@ -49,9 +49,9 @@ void drawWaveform(
 template<typename Reader, typename Writer>
 __global__ void kernel_draw_waveform(
         Reader in_waveform,
-        Writer out_waveform_matrix, float blob, unsigned readstop, float scaling, float writeposoffs )
+        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs )
 {
-    unsigned writePos_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int writePos_x = blockIdx.x * blockDim.x + threadIdx.x;
 
     draw_waveform_elem(
             writePos_x,
@@ -63,9 +63,9 @@ __global__ void kernel_draw_waveform(
 template<typename Reader, typename Writer>
 __global__ void kernel_draw_waveform_with_lines(
         Reader in_waveform,
-        Writer out_waveform_matrix, float blob, unsigned readstop, float scaling, float writeposoffs )
+        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs )
 {
-    unsigned writePos_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int writePos_x = blockIdx.x * blockDim.x + threadIdx.x;
 
     draw_waveform_with_lines_elem(
             writePos_x,
