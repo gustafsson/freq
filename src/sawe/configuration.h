@@ -112,7 +112,7 @@ private:
     std::string distcodename_;
 
     unsigned channel_;
-    unsigned scales_per_octave_;
+    float scales_per_octave_;
     float wavelet_time_support_;
     float wavelet_scale_support_;
     float min_hz_;

@@ -903,10 +903,10 @@ void RenderController::
     {   tf_resolution = new QSlider( toolbar_render );
         tf_resolution->setObjectName("tf_resolution");
         tf_resolution->setOrientation( Qt::Horizontal );
-        tf_resolution->setMaximum( 10000 );
-        tf_resolution->setValue( 3000 );
+        tf_resolution->setMaximum( 100000 );
+        tf_resolution->setValue( 30000 );
         tf_resolution->setToolTip( "Time/frequency resolution." );
-        tf_resolution->setPageStep( 100 );
+        tf_resolution->setPageStep( 1000 );
         toolbar_render->addWidget( tf_resolution );
 
         connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));

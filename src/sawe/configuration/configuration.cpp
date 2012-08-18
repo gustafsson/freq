@@ -38,14 +38,10 @@ Configuration::
             skip_update_check_( false ),
             use_saved_state_( true ),
             channel_( 0 ),
-            scales_per_octave_( 20 ),
+            scales_per_octave_( 27.f+2.f/3 ), // this gives an stft window size of 4096 samples (with default cwt settings) due to the combined slider in RenderController::receiveSetTimeFrequencyResolution
             wavelet_time_support_( 3 ),
             wavelet_scale_support_( 3 ),
-#ifdef USE_CUDA
             min_hz_( 60 ),
-#else
-            min_hz_( 80 ), // the CPU version is so much slower, so ease it up a bit as default
-#endif
             samples_per_chunk_hint_( 1 ),
             samples_per_block_( 1<<8 ),
             scales_per_block_( 1<<8 ),
