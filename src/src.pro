@@ -39,9 +39,17 @@ CONFIG += $${qtfeatures}buildflags
 # QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
-unix:QMAKE_LFLAGS_RELEASE += -fopenmp
-win32:QMAKE_CXXFLAGS_RELEASE += /openmp
+debugwithomp {
+    DEFINES += DEBUG_WITH_OMP
+
+    unix:QMAKE_CXXFLAGS += -fopenmp
+    unix:QMAKE_LFLAGS += -fopenmp
+    win32:QMAKE_CXXFLAGS += /openmp
+} else {
+    unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
+    unix:QMAKE_LFLAGS_RELEASE += -fopenmp
+    win32:QMAKE_CXXFLAGS_RELEASE += /openmp
+}
 
 ####################
 # Source code

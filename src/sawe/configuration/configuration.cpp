@@ -2,7 +2,7 @@
 
 #include "sawe/reader.h"
 
-#ifndef _DEBUG
+#if !defined(_DEBUG) || defined(DEBUG_WITH_OMP)
 #include <omp.h>
 #endif
 
@@ -288,10 +288,10 @@ std::string Configuration::
 int Configuration::
         cpuCores()
 {
-#ifdef _DEBUG
-    return 1;
-#else
+#if !defined(_DEBUG) || defined(DEBUG_WITH_OMP)
     return omp_get_max_threads();
+#else
+    return 1;
 #endif
 }
 
