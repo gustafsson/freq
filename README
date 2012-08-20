@@ -223,15 +223,15 @@ When you first open the project in Qt Creator it will create some user specific 
 - De-select "Shadow build".
 - De-select "Embedded linux".
 
-You will also want to add QMAKESPEC to your ~/.bash_profile like this:
-export QMAKESPEC='macx-g++'
-
 Note that builds created through the deploy scripts (in the 'dist' folder) have explicit settings and build configurations for pretty much everything to ensure that two releases from the same code base behave the same. This is not the case for your user settings in Qt Creator or builds from within Visual C++. Another difference is that the deploy scripts are adding some extra predefined C/C++ DEFINES in addition to your local 'default' build.
 
 
 Developing Sonic AWE in OS X
 ----------------------------
 We're using the GNU Toolchain on Mac, we're not using Xcode. qmake is however capable of generating .xcodeproj files for Xcode and defaults to that on Mac. So if you see such files it's an indication that something is wrong with your .pro files. You may of course feel free to experiment with the Xcode environment if you prefer that. We're using the GNU Toolchain simply because it is less work to maintain due to all the similarities to the equivalent toolchain under Linux (Ubuntu).
+
+To build using the GNU Toolchain, add QMAKESPEC to your ~/.bash_profile like this:
+export QMAKESPEC='macx-g++'
 
 Build and debug using Qt Creator.
 It's suggested to use Qt Creator to edit as well.
