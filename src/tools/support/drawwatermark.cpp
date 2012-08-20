@@ -83,7 +83,6 @@ void DrawWatermark::
 void DrawWatermark::
         drawWatermark(int viewport_width, int viewport_height)
 {
-    TaskTimer("%s", __FUNCTION__);
     loadImage();
 
     glPushAttribContext push_attribs;
