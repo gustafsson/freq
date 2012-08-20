@@ -109,6 +109,8 @@ Renderer::Renderer( Collection* collection )
         c = 1;
 #endif
     }
+
+    init();
 }
 
 
