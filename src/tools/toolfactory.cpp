@@ -37,9 +37,11 @@
 #include "undoredo.h"
 #include "commands/commandhistory.h"
 #include "splashscreen.h"
+#include "widgets/widgetoverlaycontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
+#include "sawe/configuration.h"
 #include "ui/mainwindow.h"
 
 // gpumisc
@@ -70,7 +72,7 @@ ToolFactory::
 
     _selection_controller = new SelectionController(&selection_model, _render_view );
 
-    _navigation_controller = new NavigationController(_render_view);
+    //_navigation_controller = new NavigationController(_render_view);
 
     playback_model.selection = &selection_model;
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
@@ -155,6 +157,8 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
+    if (Sawe::Configuration::feature("overlay_navigation"))
+        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view ) ));
 
     //
     // Insert new tools here, and delete things in the destructor in the
