@@ -2,23 +2,16 @@ Debugging tests
 ---------------
 It's quite possible to mix libraries built for debug with those built for release. So to debug a test, make sure sonicawe, gpumisc, your test, and sonicawe-end2end/common are built with debug symbols turned on.
 
-For instance in mac, these commands (where 'yourtest' is your test) should ensure all libraries are built for debugging;
-
-cd sonicawe
-make distclean
-qmake -r CONFIG+=debug CONFIG+=cpuonly -spec macx-g++ CONFIG+=testlib
-make -j8
-cd tests/integration/sonicawe-end2end
-make distclean
-qmake -r CONFIG+=debug CONFIG+=cpuonly -spec macx-g++
-make -j8
-cd yourtest
-make distclean
-qmake -r CONFIG+=debug CONFIG+=cpuonly -spec macx-g++
-make -j8
-
 
 When running individual tests outside runtests.sh you need to make sure it can find required dynamic libraries. Either by changing the PATH in windows, LD_LIBRARY_PATH in Linux and DYLD_LIBRARY_PATH in OS X. Like so:
+
 export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib/lib; pwd):$(cd ../src; pwd):/usr/local/cuda/lib"
 echo $DYLD_LIBRARY_PATH
-This path can then be added to the "Run Environment" in Qt Creator.
+
+export PATH="$PATH:$(cd ../lib/sonicawe-winlib/sonicawe_snapshot_win32_base; pwd):$(cd ../src; pwd)"
+echo $PATH
+
+export LD_LIBRARY_PATH="$(cd ../lib/sonicawe-ubuntulib/lib; pwd):$(cd ../src; pwd)"
+echo $LD_LIBRARY_PATH
+
+This path can also be added to the "Run Environment" in Qt Creator.
