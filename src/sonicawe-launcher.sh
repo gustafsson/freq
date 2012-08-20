@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
-
-sonicawe-cuda $* || sonicawe-cpu $*
+mypath=$(dirname "$0")
+"$mypath/sonicawe-cuda" $* || "$mypath/sonicawe-cpu" $*

@@ -17,8 +17,7 @@ if uname -s | grep MINGW32_NT > /dev/null; then
 	) || false
 elif [ "$(uname -s)" == "Linux" ]; then
     (
-        cd tmp/package-debian~/opt/muchdifferent/sonicawe
-        ./sonicawe
+        tmp/package-debian~/opt/muchdifferent/sonicawe/sonicawe
     )
 elif [ "$(uname -s)" == "Darwin" ]; then
     (

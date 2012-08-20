@@ -79,7 +79,7 @@ mkdir -p $package/usr/bin
 ln -s ../../opt/muchdifferent/sonicawe/sonicawe $package/usr/bin/${packagename}
 
 mkdir -p $share
-stat src/${packagename}-cuda 2> /dev/null && CUDA=1
+stat src/${packagename}-cuda >& /dev/null && CUDA=1
 if [ $CUDA ]; then
     cp src/${packagename} $share/${packagename}-cpu
     cp src/${packagename}-cuda $share/${packagename}-cuda
