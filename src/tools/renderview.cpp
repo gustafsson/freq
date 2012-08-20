@@ -1060,7 +1060,7 @@ void RenderView::
             collection->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections( _renderview_fbo.get(), model->_rx==90 ? 1 - model->orthoview : 1 );
+        drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
         last_ysize = model->renderer->last_ysize;
         glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
