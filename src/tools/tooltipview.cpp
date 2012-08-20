@@ -1,10 +1,9 @@
 #include "tooltipview.h"
 #include "commentview.h"
 #include "tooltipcontroller.h"
+#include "support/toolglbrush.h"
 
 //#include <sawe/project.h>
-
-#include <glPushContext.h>
 
 namespace Tools {
 
@@ -61,10 +60,7 @@ void TooltipView::
 void TooltipView::
         drawMarker( Heightmap::Position p )
 {
-    glPushAttribContext ac;
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(false);
+    Support::ToolGlBrush tgb(enabled);
     glColor4f( 0.7, 0.2, 0.2, enabled ? .5 : 0.2);
 
     float sz = -0.01/render_view_->model->xscale*render_view_->model->_pz;
@@ -87,7 +83,6 @@ void TooltipView::
         glVertex3f( x2, 0, p.scale );
     glEnd();
     glLineWidth(0.5f);
-    glDepthMask(true);
 }
 
 

@@ -1,9 +1,9 @@
 #include "splineview.h"
 #include "splinemodel.h"
 
-#include <gl.h>
+#include "tools/support/toolglbrush.h"
+
 #include <TaskTimer.h>
-#include <glPushContext.h>
 
 namespace Tools { namespace Selections
 {
@@ -39,11 +39,7 @@ void SplineView::
 {
     float y = 1;
 
-    glPushAttribContext ac;
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(false);
-    glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
+    Support::ToolGlBrush tgb(enabled);
 
     if (!model_->v.empty())
     {
@@ -69,7 +65,6 @@ void SplineView::
         glEnd();
         glLineWidth(0.5f);
     }
-    glDepthMask(true);
 }
 
 

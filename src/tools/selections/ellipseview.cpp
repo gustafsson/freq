@@ -1,14 +1,14 @@
 #include "ellipseview.h"
 #include "ellipsemodel.h"
 
+#include "tools/support/toolglbrush.h"
+
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
 #include <math.h>
 #endif
 
-#include <gl.h>
 #include <TaskTimer.h>
-#include <glPushContext.h>
 
 namespace Tools { namespace Selections
 {
@@ -47,11 +47,7 @@ void EllipseView::
         _rz = fabs(model_->centrePlusRadius.scale - model_->centre.scale);
     float y = 1;
 
-    glPushAttribContext ac;
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(false);
-    glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
+    Support::ToolGlBrush tgb(enabled);
 
     glBegin(GL_TRIANGLE_STRIP);
     for (unsigned k=0; k<=360; k++) {
@@ -71,7 +67,6 @@ void EllipseView::
     }
     glEnd();
     glLineWidth(0.5f);
-    glDepthMask(true);
 }
 
 
