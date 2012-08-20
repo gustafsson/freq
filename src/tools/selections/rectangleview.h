@@ -19,18 +19,19 @@ public:
     RectangleView(RectangleModel* model, Signal::Worker* worker);
     ~RectangleView();
 
-    void drawSelectionRectangle();
-    void drawSelectionRectangle2();
-
     bool enabled;
     bool visible;
+
+    RectangleModel* model() { return model_; }
 
 public slots:
     /// Connected in RectangleController
     virtual void draw();
 
 private:
-    friend class RectangleController;
+    void drawSelectionRectangle();
+    void drawSelectionRectangle2();
+
     RectangleModel* model_;
     Signal::Worker* worker_;
 };
