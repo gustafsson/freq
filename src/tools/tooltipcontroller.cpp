@@ -24,6 +24,8 @@ TooltipController::
             comments_(comments),
             current_view_(0)
 {
+    setEnabled( false );
+
     setupGui();
 }
 
@@ -204,7 +206,8 @@ void TooltipController::
     {
         if (!isEnabled())
         {
-            hover_info_action_->setChecked( false );
+            if (hover_info_action_)
+                hover_info_action_->setChecked( false );
             setCurrentView(0);
         }
 

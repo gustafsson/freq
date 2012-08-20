@@ -43,7 +43,7 @@ private:
     // View
     RectangleView* view_;
     QPointer<RectangleForm> rectangleForm_;
-    RectangleModel* model() { return view_->model_; }
+    RectangleModel* model() { return view_->model(); }
 
     // GUI
     void setupGui();

@@ -45,9 +45,11 @@ GraphicsView::
 
     tool_proxy_ ->setWidget( layout_widget_ );
     tool_proxy_ ->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+
     setToolFocus( false );
 
-    layout_widget_->setWindowOpacity( 0 );
+    // Transparent Widget background (alpha-channel is 0)
+    layout_widget_->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
 
     scene->addItem( tool_proxy_  );
     tool_proxy_->setParent( scene );
@@ -189,7 +191,6 @@ Support::ToolSelector* GraphicsView::
         QWidget* parent = new QWidget();
         parent->setLayout(new QVBoxLayout());
         parent->layout()->setMargin(0);
-        parent->setWindowOpacity( 0 );
 
         Support::ToolSelector* tool_selector = new Support::ToolSelector( state, parent );
         tool_selector->setParent( parent );

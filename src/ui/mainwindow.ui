@@ -251,9 +251,6 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="actionActivateNavigation"/>
-   <addaction name="actionZoom"/>
-   <addaction name="separator"/>
    <addaction name="actionActivateInfoTool"/>
    <addaction name="actionAddComment"/>
    <addaction name="actionShowComments"/>

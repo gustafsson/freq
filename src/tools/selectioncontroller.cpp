@@ -39,10 +39,9 @@ namespace Tools
                 selectionComboBox_(0),
                 tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this))
     {
-        setupGui();
-
-        setAttribute(Qt::WA_DontShowOnScreen, true);
         setEnabled( false );
+
+        setupGui();
     }
 
 
@@ -106,6 +105,8 @@ namespace Tools
         setCurrentSelection(Signal::pOperation());
 
         toolfactory();
+
+        _render_view->tool_selector->default_tool = this;
 
 #ifdef TARGET_hast
         ui->actionActionRemove_selection->setVisible(false);
@@ -202,6 +203,8 @@ namespace Tools
         {
             Commands::pCommand p( new Commands::ChangeSelectionCommand(this, selection));
             this->model()->project()->commandInvoker()->invokeCommand( p );
+
+            model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
         }
     }
 

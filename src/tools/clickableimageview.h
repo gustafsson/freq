@@ -2,7 +2,8 @@
 #define CLICKABLEIMAGEVIEW_H
 
 #include <QWidget>
-#include <QScopedPointer>
+
+#include "support/drawimage.h"
 
 class QImage;
 class QGraphicsProxyWidget;
@@ -15,19 +16,22 @@ class ClickableImageView : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ClickableImageView(RenderView *parent, QString image, QString url);
+    explicit ClickableImageView(RenderView *parent, QString image=":/icons/muchdifferent.png", QString url="http://muchdifferent.com/?page=signals");
 
     virtual void mousePressEvent(QMouseEvent*);
     virtual void paintEvent(QPaintEvent *e);
     virtual bool eventFilter(QObject *o, QEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *);
 
+private slots:
+    void paintGl();
+
 private:
-    QString url;
     QWidget *parentwidget;
     QGraphicsProxyWidget* proxy;
 
-    QScopedPointer<QImage> image;
+    Support::DrawImage image;
+    QString url;
 };
 
 } // namespace Tools

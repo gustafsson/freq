@@ -1,7 +1,5 @@
 #include "paintline.h"
-
-// gpumisc
-#include <glPushContext.h>
+#include "toolglbrush.h"
 
 namespace Tools {
 namespace Support {
@@ -14,11 +12,8 @@ void PaintLine::
 
     GlException_CHECK_ERROR();
 
-    glPushAttribContext ac;
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(false);
-    glColor4f( r, g, b, a); // enabled ? .5 : 0.2
+    ToolGlBrush tgb;
+    glColor4f( r, g, b, a);
     float y = 1;
 
     glBegin(GL_TRIANGLE_STRIP);
@@ -37,7 +32,6 @@ void PaintLine::
     }
     glEnd();
     glLineWidth(0.5f);
-    glDepthMask(true);
 
     GlException_CHECK_ERROR();
 }

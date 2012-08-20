@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 #include <QSysInfo>
 #include <QString>
@@ -102,6 +103,8 @@ Configuration::
 #else
     mono_ = false;
 #endif
+
+    set_basic_features();
 }
 
 
@@ -452,6 +455,7 @@ int Configuration::
     handle_options(char ***argv, int *argc)
 {
     int handled = 0;
+    std::string skipfeature_;
 
     while (*argc > 0) {
         const char *cmd = (*argv)[0];
@@ -480,10 +484,30 @@ int Configuration::
 #ifndef QT_NO_THREAD
         else if (readarg(&cmd, multithread));
 #endif
+        else if (readarg(&cmd, skipfeature))
+        {
+            vector<string>::iterator featureitr = find(features_.begin(), features_.end(), skipfeature_);
+            if (features_.end() != featureitr)
+                features_.erase( featureitr );
+            else
+            {
+                commandline_message_ << "Unknown features: " << skipfeature_ << endl;
+                bool first = true;
+                foreach(string f, features_)
+                {
+                    if (!first)
+                        commandline_message_ << ", " << f;
+                    first = false;
+                }
+                commandline_message_ << endl;
+            }
+        }
+
         // TODO use _selectionfile
+
         else {
             commandline_message_ << "Unknown option: " << cmd << endl
-                    << "See the logfile sonicawe.log for a list of valid command line options.";
+                    << "See the logfile sonicawe.log for a list of valid command line options." << endl;
             break;
         }
 
@@ -663,6 +687,26 @@ bool Configuration::
         use_saved_state()
 {
     return Singleton().use_saved_state_;
+}
+
+
+bool Configuration::
+        feature(const std::string& v)
+{
+    return Singleton().features_.end() != find(Singleton().features_.begin(), Singleton().features_.end(), v);
+}
+
+
+void Configuration::
+        set_basic_features()
+{
+    features_.push_back("overlay_navigation");
+}
+
+
+void Configuration::
+        set_default_features(const std::string& style)
+{
 }
 
 

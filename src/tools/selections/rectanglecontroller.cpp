@@ -29,10 +29,9 @@ namespace Tools { namespace Selections
             selection_button_( Qt::LeftButton ),
             selection_controller_( selection_controller )
     {
-        setupGui();
-
-        setAttribute( Qt::WA_DontShowOnScreen, true );
         setEnabled( false );
+
+        setupGui();
     }
 
 
@@ -81,6 +80,8 @@ namespace Tools { namespace Selections
         one_action_at_a_time_->addActionItem( ui->actionRectangleSelection );
         one_action_at_a_time_->addActionItem( ui->actionTimeSelection );
         one_action_at_a_time_->addActionItem( ui->actionFrequencySelection );
+
+        ui->actionRectangleSelection->trigger();
     }
 
 

@@ -19,9 +19,9 @@ CommentController::
         CommentController(RenderView* view)
             :   view_(view)
 {
-    setupGui();
-
     setEnabled( false );
+
+    setupGui();
 }
 
 
@@ -118,11 +118,15 @@ void CommentController::
 {
     if (event->type() & QEvent::EnabledChange)
     {
-        view_->graphicsview->setToolFocus( isEnabled() );
+        if (isEnabled())
+        {
+            view_->graphicsview->setToolFocus( true );
+            view_->toolSelector()->setCurrentToolCommand( this );
+        }
+        else
+            view_->toolSelector()->setCurrentTool( this, false );
 
-        view_->toolSelector()->setCurrentTool( this, isEnabled() );
-
-        emit enabledChanged(isEnabled());
+        emit enabledChanged( isEnabled() );
     }
 }
 

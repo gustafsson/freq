@@ -67,9 +67,10 @@ SOURCES += \
     tfr/*.cpp \
     tools/*.cpp \
     tools/commands/*.cpp \
-    tools/support/*.cpp \
     tools/selections/*.cpp \
     tools/selections/support/*.cpp \
+    tools/support/*.cpp \
+    tools/widgets/*.cpp \
     ui/*.cpp \
 
 #Windows Icon
@@ -84,9 +85,10 @@ HEADERS += \
     tfr/*.h \
     tools/*.h \
     tools/commands/*.h \
-    tools/support/*.h \
     tools/selections/*.h \
     tools/selections/support/*.h \
+    tools/support/*.h \
+    tools/widgets/*.h \
     ui/*.h \
 
 PRECOMPILED_HEADER += sawe/project_header.h

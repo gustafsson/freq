@@ -1,8 +1,7 @@
 #include "playbackmarkersview.h"
 
 #include "sawe/project.h"
-
-#include "glPushContext.h"
+#include "support/toolglbrush.h"
 
 #include <boost/foreach.hpp>
 
@@ -39,11 +38,7 @@ void PlaybackMarkersView::
 {
     float y = 1;
 
-    glPushAttribContext ac;
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(false);
-    glColor4f( 0, 0, 0, enabled ? .2f : 0.15f);
+    Support::ToolGlBrush tgb(enabled);
 
     glBegin(GL_QUADS);
 
@@ -138,7 +133,6 @@ void PlaybackMarkersView::
 
     glEnd();
     glLineWidth(0.5f);
-    glDepthMask(true);
 }
 
 
