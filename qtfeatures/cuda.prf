@@ -72,7 +72,7 @@ unix:!macx {
         -c \
         -Xcompiler \
         $$join(CUDA_CXXFLAGS,",") \
-        $$join(CUDA_INCLUDEPATH,'" -I "$$SAWEROOT/src/','-I "$$SAWEROOT/src/','"') \
+        $$join(CUDA_INCLUDEPATH,'" -I "','-I "','"') \
         $$CUDA_FLAGS \
         ${QMAKE_FILE_NAME} \
         -o \
