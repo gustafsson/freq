@@ -30,7 +30,7 @@ SplashScreen
     else
     {
         splashImage = ":/splash/muchdifferent.jpg";
-        labels[0.f] = "Please wait while Sonic AWE is loading..";
+        labels[0.f] = "Please wait while Sonic AWE is loading...";
         labels[1.f] = "Launching Sonic AWE";
     }
 
