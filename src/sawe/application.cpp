@@ -309,7 +309,7 @@ void Application::
 bool Application::
         has_other_projects_than(Project*p)
 {
-    for (set<pProject>::iterator i = _projects.begin(); i!=_projects.end();)
+    for (set<pProject>::iterator i = _projects.begin(); i!=_projects.end(); ++i)
     {
         if (&**i != p)
             return true;
