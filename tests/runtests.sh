@@ -103,8 +103,8 @@ if [ "$platform" = "windows" ]; then
     # make vcbuild called by msbuild detect changes in headers
     PATH="/c/Program Files (x86)/Microsoft Visual Studio 9.0/Common7/IDE:${PATH}"
 
-    PATH="$(cd ../src/release; pwd):${PATH}"
-    PATH="$(cd ../lib/sonicawe-winlib/sonicawe_snapshot_win32_base; pwd):${PATH}"
+    PATH="${PATH}:$(cd ../src/release; pwd)"
+    PATH="${PATH}:$(cd ../lib/sonicawe-winlib/sonicawe_snapshot_win32_base; pwd)"
     outputdir="release"
     qmakeargs=
 else
