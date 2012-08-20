@@ -50,9 +50,10 @@ Signal::pBuffer WriteWav::
 
     if (_invalid_samples.empty())
     {
-        throw std::logic_error(str(format(
-                "WriteWav(%s) didn't expect any data. You need to call invalidate_samples first to prepare WriteWav. Skips reading %s")
-                 % _filename.c_str() % J.toString().c_str()));
+        TaskInfo("%s", str(format(
+                "ERROR: WriteWav(%s) didn't expect any data. You need to call invalidate_samples first to prepare WriteWav. Skips reading %s")
+                 % _filename % J.toString()).c_str());
+        return zeros(J);
     }
 
     Signal::Interval I = J;
@@ -62,9 +63,9 @@ Signal::pBuffer WriteWav::
         Signal::Interval expected = (J & _invalid_samples).spannedInterval();
         if (!expected)
         {
-            throw std::logic_error(str(format(
-                    "WriteWav(%s) didn't expect %s. Invalid samples are %s")
-                    % _filename.c_str() % expected.toString().c_str() % _invalid_samples.toString().c_str()));
+            TaskInfo("%s", str(format(
+                    "ERROR: WriteWav(%s) didn't expect %s. Invalid samples are %s")
+                               % _filename % expected.toString() % _invalid_samples.toString()).c_str());
             return zeros(J);
         }
 
@@ -109,7 +110,7 @@ void WriteWav::
 
         if (!*_sndfile)
         {
-            TaskInfo("WriteWav(%s) libsndfile couldn't create a file for %u channels and sample rate %f",
+            TaskInfo("ERROR: WriteWav(%s) libsndfile couldn't create a file for %u channels and sample rate %f",
                      _filename.c_str(), num_channels(), sample_rate());
             return;
         }
@@ -256,13 +257,13 @@ void WriteWav::
         SndfileHandle inputfile(tempfilename);
         if (!inputfile || 0 == inputfile.frames())
         {
-            TaskInfo("Couldn't read from %s", tempfilename.c_str());
+            TaskInfo("ERROR: Couldn't read from %s", tempfilename.c_str());
             return;
         }
         SndfileHandle outputfile(_filename, SFM_WRITE, inputfile.format(), inputfile.channels(), inputfile.samplerate());
         if (!outputfile)
         {
-            TaskInfo("Couldn't write to %s", _filename.c_str());
+            TaskInfo("ERROR: Couldn't write to %s", _filename.c_str());
             return;
         }
 
