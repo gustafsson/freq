@@ -52,7 +52,7 @@ public:
     ChunkData::Ptr transform_data;
 
 
-    unsigned offset(unsigned sample, unsigned f_index);
+    Signal::IntervalType offset(Signal::IntervalType sample, int f_index);
 
 
     /**
@@ -77,13 +77,13 @@ public:
       @see chunk_offset
       @see getInterval
       */
-    unsigned first_valid_sample;
+    int first_valid_sample;
 
 
     /**
         @see first_valid_sample
       */
-    unsigned n_valid_samples;
+    int n_valid_samples;
 
 
     /**

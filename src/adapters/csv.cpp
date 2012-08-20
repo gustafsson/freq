@@ -52,9 +52,9 @@ void Csv::
     std::complex<float>* p = chunk->transform_data->getCpuMemory();
     DataStorageSize s = chunk->transform_data->getNumberOfElements();
 
-    for (unsigned y = 0; y<s.height; y++) {
+    for (int y = 0; y<s.height; y++) {
         stringstream ss;
-        for (unsigned x = 0; x<s.width; x++) {
+        for (int x = 0; x<s.width; x++) {
             std::complex<float>& v = p[x + y*s.width];
             ss << v.real() << " " << v.imag() << " ";
         }

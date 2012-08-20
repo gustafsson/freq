@@ -7,7 +7,7 @@
 template<typename T>
 inline RESAMPLE_CALL void remove_rect_elem(DataPos p, T* wavelet, DataStorageSize numElem, Area area, float save_inside )
 {
-    const unsigned
+    const int
             x = p.x,
             fi = p.y;
 

@@ -104,7 +104,7 @@ void blockMerge( BlockData::Ptr inBlock,
 
 extern "C"
 void blockClearPart( BlockData::Ptr block,
-                 unsigned start_t );
+                 int start_t );
 
 /*
 extern "C"

@@ -50,7 +50,7 @@ Signal::pBuffer SuperSample::
 
 
     float normalize = 1.f/src_window_size;
-    for (unsigned i=0; i<src_sz.width; ++i)
+    for (int i=0; i<src_sz.width; ++i)
     {
         (dest[i] = src[i])*=normalize;
     }

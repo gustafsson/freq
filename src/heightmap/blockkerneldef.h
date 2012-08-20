@@ -264,7 +264,7 @@ public:
             }
             else
             {
-                unsigned stopy = min(q.y+ystep, ymax);
+                int stopy = min(q.y+ystep, ymax);
 
                 for (DataPos getp(q.x, q.y); getp.y<stopy; ++getp.y)
                     v = max(v, get( getp, reader));
@@ -279,7 +279,7 @@ public:
         else
         {
             qx1 = floor(min(qx2, qx1));
-            unsigned stopx = qx1+xdiff;
+            int stopx = qx1+xdiff;
 
             if (ystep <= 1)
             {
@@ -296,7 +296,7 @@ public:
             else
             {
                 DataPos getp(0, 0);
-                unsigned stopy = min(q.y+ystep, ymax);
+                int stopy = min(q.y+ystep, ymax);
 
                 for (getp.y = q.y; getp.y<stopy; ++getp.y)
                 {
@@ -321,8 +321,8 @@ public:
     Tfr::FreqAxis outputAxis;
 
     float xstep;
-    unsigned ystep;
-    unsigned ymax;
+    int ystep;
+    int ymax;
 };
 
 
@@ -417,7 +417,7 @@ public:
 //    writePos.y = blockIdx.y * 1 + threadIdx.y;
 //    if (writePos.x<sz.x && writePos.y < sz.y)
 //    {
-//        unsigned o = writePos.x  +  writePos.y * sz.x;
+//        int o = writePos.x  +  writePos.y * sz.x;
 //        o = o % 32;
 //        output[o] = 0;
 //    }
@@ -737,7 +737,7 @@ private:
 
 extern "C"
 void blockClearPart( BlockData::Ptr block,
-                 unsigned start_t )
+                 int start_t )
 {
     element_operate(block, ResampleArea(0,0, block->size().width, 1), SetZero(start_t));
 }

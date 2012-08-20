@@ -146,9 +146,9 @@ private:
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
-    unsigned _window_size;
+    int _window_size;
     bool _compute_redundant;
-    unsigned _averaging;
+    int _averaging;
     float _overlap;
     WindowType _window_type;
 

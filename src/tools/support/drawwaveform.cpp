@@ -63,12 +63,12 @@ void DrawWaveform::
     glDepthMask(false);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    unsigned c=0;
+    int c=0;
     //    for (unsigned c=0; c<n.height; c++)
     {
         glBegin(GL_TRIANGLE_STRIP);
         //glBegin(GL_POINTS);
-        for (unsigned t=0; t<n.width; t+=std::max( 1u, (n.width/2000) )) {
+        for (int t=0; t<n.width; t+=std::max( 1, (n.width/2000) )) {
             /*float lmin,lmax = (lmin = data[t + c*n.width]);
              for (unsigned j=0; j<std::max((size_t)2, (n.width/1000)) && t<n.width;j++, t++) {
              const float &a = data[t + c*n.width];
@@ -79,7 +79,7 @@ void DrawWaveform::
              glVertex3f( ifs*t, 0, s*lmin);*/
             glVertex3f( ifs*t, 0, s*data[t + c*n.width]);
             float pt = t;
-            t+=std::max( 1u, n.width/2000 );
+            t+=std::max( 1, n.width/2000 );
             if (t<n.width)
                 glVertex3f( ifs*pt, 0, s*data[t + c*n.width]);
         }

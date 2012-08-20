@@ -28,12 +28,12 @@ void FftOoura::
 
     TIME_STFT TaskTimer tt("Fft Ooura");
 
-    unsigned N = output->getNumberOfElements().width;
-    unsigned n = input->getNumberOfElements().width;
+    int N = output->getNumberOfElements().width;
+    int n = input->getNumberOfElements().width;
 
     BOOST_ASSERT( n == N );
 
-    if (w.size() != N/2 + magicCheck && !expectPrepared)
+    if ((int)w.size() != N/2 + magicCheck && !expectPrepared)
     {
         TIME_STFT TaskInfo("Recopmuting helper vectors for Ooura fft");
         w.resize(N/2 + magicCheck);
@@ -47,7 +47,7 @@ void FftOoura::
         }
     }
 
-    BOOST_ASSERT( w.size() == N/2 + magicCheck );
+    BOOST_ASSERT( (int)w.size() == N/2 + magicCheck );
 
     *output = *input;
     float* q = (float*)CpuMemoryStorage::ReadWrite<1>( output ).ptr();
@@ -70,8 +70,8 @@ void FftOoura::
 void FftOoura::
         computeR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
 {
-    unsigned denseWidth = output->size().width;
-    unsigned redundantWidth = input->size().width;
+    int denseWidth = output->size().width;
+    int redundantWidth = input->size().width;
 
    BOOST_ASSERT( denseWidth == redundantWidth/2+1 );
 
@@ -89,7 +89,7 @@ void FftOoura::
     {
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( redundantOutput ).ptr();
         Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( output ).ptr();
-        unsigned x;
+        int x;
         for (x=0; x<denseWidth; ++x)
             out[x] = in[x];
     }
@@ -99,8 +99,8 @@ void FftOoura::
 void FftOoura::
         computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
 {
-    unsigned denseWidth = input->size().width;
-    unsigned redundantWidth = output->size().width;
+    int denseWidth = input->size().width;
+    int redundantWidth = output->size().width;
 
     BOOST_ASSERT( denseWidth == redundantWidth/2+1 );
 
@@ -109,7 +109,7 @@ void FftOoura::
     {
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
         Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( redundantInput ).ptr();
-        unsigned x;
+        int x;
         for (x=0; x<denseWidth; ++x)
             out[x] = in[x];
         for (; x<redundantWidth; ++x)
@@ -144,7 +144,7 @@ void FftOoura::
     );
 
 #pragma omp parallel for
-    for (i=1; i < (int)n.height; ++i)
+    for (i=1; i < n.height; ++i)
     {
         compute(
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
@@ -164,8 +164,8 @@ void FftOoura::
 {
     DataStorageSize actualSize(n.width/2 + 1, n.height);
 
-    BOOST_ASSERT( output->numberOfElements()/actualSize.width == n.height );
-    BOOST_ASSERT( input->numberOfElements()/n.width == n.height );
+    BOOST_ASSERT( (int)output->numberOfElements()/actualSize.width == n.height );
+    BOOST_ASSERT( (int)input->numberOfElements()/n.width == n.height );
 
     // interleave input to complex data
     Tfr::ChunkData::Ptr complexinput( new Tfr::ChunkData( input->size()));
@@ -182,9 +182,9 @@ void FftOoura::
     Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
 #pragma omp parallel for
-    for (int i=0; i < (int)actualSize.height; ++i)
+    for (int i=0; i < actualSize.height; ++i)
     {
-        unsigned x;
+        int x;
         for (x=0; x<actualSize.width; ++x)
             out[i*actualSize.width + x] = in[i*n.width+x];
     }
@@ -194,9 +194,9 @@ void FftOoura::
 void FftOoura::
         inverse(Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output, DataStorageSize n )
 {
-    unsigned denseWidth = n.width/2+1;
-    unsigned redundantWidth = n.width;
-    unsigned batchcount1 = output->numberOfElements()/redundantWidth,
+    int denseWidth = n.width/2+1;
+    int redundantWidth = n.width;
+    int batchcount1 = output->numberOfElements()/redundantWidth,
              batchcount2 = input->numberOfElements()/denseWidth;
 
     BOOST_ASSERT( batchcount1 == batchcount2 );
@@ -208,9 +208,9 @@ void FftOoura::
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
         Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( redundantInput ).ptr();
 #pragma omp parallel for
-        for (int i=0; i<(int)n.height; ++i)
+        for (int i=0; i<n.height; ++i)
         {
-            unsigned x;
+            int x;
             for (x=0; x<denseWidth; ++x)
                 out[i*redundantWidth + x] = in[i*denseWidth + x];
             for (; x<redundantWidth; ++x)

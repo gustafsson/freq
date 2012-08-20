@@ -37,7 +37,7 @@ public:
         Data data;
     };
 
-    typedef unsigned LineIdentifier;
+    typedef int LineIdentifier;
 
     typedef std::map<LineIdentifier, Line> Lines;
     const Lines& lines() const { return lines_; }

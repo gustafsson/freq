@@ -49,12 +49,12 @@ void ComplexBuffer::
     std::complex<float>*complex = _complex_waveform_data->getCpuMemory();
     float *real = real_waveform->getCpuMemory();
 
-    for (unsigned z=0; z<sz.depth; z++)
-        for (unsigned y=0; y<sz.height; y++)
+    for (int z=0; z<sz.depth; z++)
+        for (int y=0; y<sz.height; y++)
         {
-            unsigned o = (y + z*sz.height)*sz.width;
+            int o = (y + z*sz.height)*sz.width;
 
-            for (unsigned x=0; x<sz.width; x++)
+            for (int x=0; x<sz.width; x++)
             {
                 // set .y component to 0
                 complex[ x + o ] = std::complex<float>( real[ x + o ], 0 );
@@ -84,9 +84,9 @@ Signal::pBuffer ComplexBuffer::
     std::complex<float> *complex = CpuMemoryStorage::ReadOnly<1>( _complex_waveform_data ).ptr();
     float *real = CpuMemoryStorage::WriteAll<1>( real_waveform ).ptr();
 
-    for (unsigned z=0; z<sz.depth; z++)
-        for (unsigned y=0; y<sz.height; y++)
-            for (size_t x=0; x<sz.width; x++)
+    for (int z=0; z<sz.depth; z++)
+        for (int y=0; y<sz.height; y++)
+            for (int x=0; x<sz.width; x++)
             {
                 Signal::IntervalType o = x + (y + z*sz.height)*sz.width;
                 real[ o ] = complex[ o ].real(); // discard .y component

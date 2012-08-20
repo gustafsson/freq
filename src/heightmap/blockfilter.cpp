@@ -15,6 +15,7 @@
 #include <Statistics.h>
 
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 
 #include <float.h>
 
@@ -31,6 +32,7 @@
 #define DEBUG_CWTTOBLOCK if(0)
 
 using namespace Tfr;
+using namespace boost;
 
 namespace Heightmap
 {
@@ -112,7 +114,7 @@ void BlockFilter::
 #ifdef _DEBUG
     if (!spannedBlockSamples && transfer)
     {
-        int stopp = 1;
+        TaskInfo("%s", str(format("Warning: !spannedBlockSamples && transfer.~\nspannedBlockSamples=%s\ntransfer=%s") % spannedBlockSamples.toString() % transfer.toString()).c_str());
     }
 #endif
 

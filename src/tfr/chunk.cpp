@@ -15,14 +15,16 @@ Chunk::
     sample_rate(0)
 {}
 
-unsigned Chunk::
-        offset(unsigned sample, unsigned f_index)
+Signal::IntervalType Chunk::
+        offset(Signal::IntervalType sample, int f_index)
 {
     if (sample >= nSamples())
         sample =  nSamples()-1;
 
-    if (f_index >= nScales())
+    if (f_index >= (int)nScales())
         f_index =  nScales()-1;
+    else if (f_index < 0)
+        f_index = 0;
 
     switch(order) {
     case Order_row_major:

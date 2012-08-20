@@ -8,12 +8,12 @@
 template<typename T>
 inline RESAMPLE_ANYCALL void remove_disc_elem(const DataPos& p, T* wavelet, const DataStorageSize& numElem, const Area& area, bool save_inside, float fs )
 {
-    unsigned x = p.x, fi = p.y;
+    int x = p.x, fi = p.y;
 
     bool complex = x%2;
     x/=2;
 
-    if (x>=numElem.width )
+    if ( x>=numElem.width )
         return;
 
     float rx = fabs(area.x2 - area.x1);

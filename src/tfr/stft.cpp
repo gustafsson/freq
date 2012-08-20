@@ -251,7 +251,7 @@ Tfr::pChunk Stft::
     chunk->chunk_offset = (b->sample_offset + (alignment/2 - increment/2))/(increment*_averaging);
     // chunk->first_valid_sample only makes sense if the transform is invertible, which it isn't if _averaging!=1
     chunk->first_valid_sample = ceil((alignment/2 - increment/2)/increment);
-    unsigned nSamples = chunk->nSamples();
+    int nSamples = chunk->nSamples();
     if (nSamples > 2*chunk->first_valid_sample)
         chunk->n_valid_samples = nSamples - 2*chunk->first_valid_sample;
     else
@@ -492,7 +492,7 @@ float Stft::
 unsigned Stft::
         next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
 {
-    if (current_valid_samples_per_chunk<_window_size)
+    if ((int)current_valid_samples_per_chunk<_window_size)
         return _window_size;
 
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
@@ -505,7 +505,7 @@ unsigned Stft::
 unsigned Stft::
         prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
 {
-    if (current_valid_samples_per_chunk<2*_window_size)
+    if ((int)current_valid_samples_per_chunk<2*_window_size)
         return _window_size;
 
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
@@ -565,7 +565,7 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
         _window_size = Fft::lChunkSizeS(max_size+1, 4);
     }
 
-    _window_size = std::max(4u, _window_size);
+    _window_size = std::max(4, _window_size);
 
     return _window_size;
 
@@ -691,13 +691,13 @@ unsigned Stft::
     float wanted_increment = _window_size*(1.f-_overlap);
 
     // _window_size must be a multiple of increment for inverse to be correct
-    unsigned divs = std::max(1.f, std::floor(_window_size/wanted_increment));
+    int divs = std::max(1.f, std::floor(_window_size/wanted_increment));
     while (_window_size/divs*divs != _window_size && divs < _window_size)
     {
-        unsigned s = _window_size/divs;
+        int s = _window_size/divs;
         divs = (_window_size + s - 1)/s;
     }
-    divs = std::min( _window_size, std::max( 1u, divs ));
+    divs = std::min( _window_size, std::max( 1, divs ));
 
     return _window_size/divs;
 }
@@ -768,7 +768,7 @@ void Stft::
                 float *o = &out.ref(pos) + w*_window_size;
                 float *i = &in.ref(pos) + w*increment;
 
-                for (unsigned x=0; x<_window_size; ++x)
+                for (int x=0; x<_window_size; ++x)
                     o[x] = window[x] * i[x] * norm;
             }
         }
@@ -833,7 +833,7 @@ void Stft::
             float *o = &out.ref(pos);
             for (int x=0; x<increment; ++x)
                 if (x>=out0 && x<N+out0) o[x-out0] = 0;
-            for (unsigned x=0; x<signal->size().width; ++x)
+            for (int x=0; x<signal->size().width; ++x)
                 o[x] = 0;
 
 // TODO figure out how to parallelize this... subsequent iterations of 'w' access overlapping regions of o which might work and might fail, depending on timing issues
@@ -933,7 +933,7 @@ DataStorage<float>::Ptr Stft::
     unsigned increment = c->increment();
     unsigned window_size = c->window_size();
     unsigned windowCount = windowedSignal->size().width / window_size;
-    BOOST_ASSERT( windowCount*c->window_size() == windowedSignal->size().width );
+    BOOST_ASSERT( int(windowCount*c->window_size()) == windowedSignal->size().width );
 
 
     unsigned L = c->n_valid_samples*increment;
@@ -1014,7 +1014,7 @@ unsigned Stft::
         if(writeOutput) tt.reset( new TaskTimer("Filling test buffer with random data (%.1f kB or %.1f s with fs=44100)", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
 
         float* p = B->waveform_data()->getCpuMemory();
-        for (unsigned i = 0; i < B->number_of_samples(); i++)
+        for (int i = 0; i < B->number_of_samples(); i++)
             p[i] = rand() / (float)RAND_MAX;
     }
 
@@ -1026,7 +1026,7 @@ unsigned Stft::
     unsigned max_base = 3;
     //double base[] = {2,3,5,7};
     double base[] = {2};
-    for (unsigned n = 128; n < B->number_of_samples(); n++ )
+    for (int n = 128; n < B->number_of_samples(); n++ )
     {
         unsigned N = -1;
         unsigned selectedBase = 0;

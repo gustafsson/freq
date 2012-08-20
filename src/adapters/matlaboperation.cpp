@@ -146,18 +146,18 @@ bool MatlabOperation::
                 float length = ready_data->length();
 
                 DataStorageSize N = plot_pts->waveform_data()->size();
-                for (unsigned id=0; id<N.depth; ++id)
+                for (int id=0; id<N.depth; ++id)
                 {
                     float* p = CpuMemoryStorage::ReadOnly<1>( plot_pts->waveform_data() ).ptr() + id*N.width*N.height;
 
                     if (3 <= N.height)
-                        for (unsigned x=0; x<N.width; ++x)
+                        for (int x=0; x<N.width; ++x)
                             plotlines.set( id, p[ x ], p[ x + N.width ], p[ x + 2*N.width ] );
                     else if (2 == N.height)
-                        for (unsigned x=0; x<N.width; ++x)
+                        for (int x=0; x<N.width; ++x)
                             plotlines.set( id, p[ x ], p[ x + N.width ] );
                     else if (1 == N.height)
-                        for (unsigned x=0; x<N.width; ++x)
+                        for (int x=0; x<N.width; ++x)
                             plotlines.set( id, start + (x+0.5)*length/N.width, p[ x ] );
 
                     TaskInfo("Line plot %u now has %u points", id, plotlines.line( id ).data.size());

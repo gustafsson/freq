@@ -84,15 +84,15 @@ inline RESAMPLE_CALL void compute_wavelet_coefficients_elem(
 
 
 template<typename T>
-inline RESAMPLE_CALL void inverse_elem( unsigned x, T* in_wavelet, float* out_inverse_waveform, DataStorageSize numElem )
+inline RESAMPLE_CALL void inverse_elem( int x, T* in_wavelet, float* out_inverse_waveform, DataStorageSize numElem )
 {
-    if (x>=numElem.width )
+    if ( x>=numElem.width )
         return;
 
     float a = 0;
 
     // no selection
-    for (unsigned fi=0; fi<numElem.height; fi++)
+    for (int fi=0; fi<numElem.height; fi++)
     {
         T v = in_wavelet[ x + fi*numElem.width ];
 #ifdef __CUDACC__
