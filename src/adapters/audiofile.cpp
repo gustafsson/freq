@@ -17,6 +17,7 @@ typedef __int64 __int64_t;
 #include <boost/scoped_ptr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/format.hpp>
 
 #if LEKA_FFT
 #include <cufft.h>
@@ -33,6 +34,7 @@ typedef __int64 __int64_t;
 #define VERBOSE_AUDIOFILE if(0)
 
 using namespace std;
+using namespace boost;
 
 namespace Adapters {
 
@@ -302,7 +304,7 @@ Signal::pBuffer Audiofile::
     {
         TaskInfo("Loading '%s' failed (this=%p), requested %s",
                      filename().c_str(), this, J.toString().c_str());
-
+        bool booooooo = true;
         return zeros( J );
     }
 
@@ -314,7 +316,10 @@ Signal::pBuffer Audiofile::
     if (I.last > number_of_samples())
         I.last = number_of_samples();
 
-    if (!I.valid())
+    if (I.first < 0)
+        I.first = 0;
+
+	if (!I.valid() || 0==I.count())
     {
         TaskInfo("Couldn't load %s from '%s', getInterval is %s (this=%p)",
                      J.toString().c_str(), filename().c_str(), getInterval().toString().c_str(), this);
@@ -326,7 +331,18 @@ Signal::pBuffer Audiofile::
                  J.toString().c_str(), filename().c_str(), this));
 
     DataStorage<float> partialfile(DataStorageSize( num_channels(), I.count(), 1));
-    sndfile->seek(I.first, SEEK_SET);
+    sf_count_t sndfilepos = sndfile->seek(I.first, SEEK_SET);
+    if (sndfilepos < 0)
+    {
+        TaskInfo("%s", str(format("ERROR! Couldn't set read position to %d. An error occured (%d)") % I.first % sndfilepos).c_str());
+        return zeros( J );
+    }
+    if (sndfilepos != I.first)
+    {
+        TaskInfo("%s", str(format("ERROR! Couldn't set read position to %d. sndfilepos was %d") % I.first % sndfilepos).c_str());
+        return zeros( J );
+    }
+
     sf_count_t readframes = sndfile->read(partialfile.getCpuMemory(), num_channels()*I.count()); // yes float
     if ((sf_count_t)I.count() > readframes)
         I.last = I.first + readframes;

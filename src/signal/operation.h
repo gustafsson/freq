@@ -37,6 +37,13 @@ public:
     Operation( const Operation& o );
     Operation& operator=(const Operation& o);
 
+    /**
+     * @brief name() human readable text description of *this
+     * Returns a user friendly representation of this instance with a text
+     * string to be displayed within the user interface (i.e in the window
+     * with a list of Operations).
+     * @return a human readable text string.
+     */
     virtual std::string name();
 
     /**

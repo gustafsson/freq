@@ -109,7 +109,12 @@ pBuffer OperationCache::
     }
 
     _invalid_returns[c] |= missing;
-    b = source()->readFixedLength( missing );
+
+    if (source())
+        b = source()->readFixedLength( missing );
+    else
+        b = zeros( missing );
+
     _cache.put(b);
     return b;
 }
