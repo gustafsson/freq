@@ -104,6 +104,9 @@ namespace Tools
                 renderer->redundancy(redundancy);
             }
         }
+
+
+        void setTestCamera();
     };
 } // namespace Tools
 

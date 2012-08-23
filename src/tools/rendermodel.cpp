@@ -41,6 +41,9 @@ RenderModel::
 
     for (unsigned c=0; c<o->num_channels(); ++c)
         collections[c]->renderer = renderer.get();
+
+
+//    setTestCamera();
 }
 
 
@@ -80,6 +83,24 @@ void RenderModel::
         _qx = 0.5*L;
     }
 #endif
+}
+
+
+void RenderModel::
+        setTestCamera()
+{
+    renderer->y_scale = 0.01f;
+    _qx = 63.4565;
+    _qy = 0;
+    _qz = 0.37;
+    _px = 0;
+    _py = 0;
+    _pz = -10;
+    _rx = 46.2;
+    _ry = 253.186;
+    _rz = 0;
+
+    orthoview.reset( _rx >= 90 );
 }
 
 
