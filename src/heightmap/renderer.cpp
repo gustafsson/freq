@@ -798,7 +798,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
             glVertex3f( 1, 0, 1 );
             glVertex3f( 0, 0, 1 );
         glEnd();
-        float y = projectionPlane[1]*.5;
+        float y = projectionPlane[1]*.05;
         glColor4f( 0.2f, 0.8f, 0.8f, 0.5f );
         glBegin(GL_LINE_STRIP);
             glVertex3f( 0, y, 0 );
