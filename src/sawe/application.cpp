@@ -277,7 +277,7 @@ bool Application::
     {
         _fatal_error = err;
         show_fatal_exception( err );
-        this->exit(-2);
+        this->exit(2);
     }
 
     return v;

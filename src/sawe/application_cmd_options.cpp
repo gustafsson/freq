@@ -47,10 +47,9 @@ void Application::
         cerr    << message << endl    // Want output in console window, if any
                 << Sawe::Configuration::commandLineUsageString();
         QErrorMessage::qtHandler()->showMessage( QString::fromStdString( message ) );
-        ::exit(-1);
+        ::exit(1);
         //mb.setWindowModality( Qt::ApplicationModal );
         //mb.show();
-
         return;
     }
 
@@ -64,7 +63,7 @@ void Application::
         p = Sawe::Application::slotNew_recording( );
 
     if (!p)
-        ::exit(-1);
+        ::exit(3);
 
     Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
     Signal::pOperation source = p->tools().render_model.renderSignalTarget->post_sink()->source();
@@ -77,7 +76,7 @@ void Application::
     if (get_csv != (unsigned)-1) {
         if (0==source->number_of_samples()) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
-            ::exit(-1);
+            ::exit(4);
         }
 
         Adapters::Csv csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString());
@@ -91,7 +90,7 @@ void Application::
     if (get_hdf != (unsigned)-1) {
         if (0==source->number_of_samples()) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
-            ::exit(-1);
+            ::exit(5);
         }
 
         Adapters::Hdf5Chunk hdf5(QString("sonicawe-%1.h5").arg(get_hdf).toStdString());

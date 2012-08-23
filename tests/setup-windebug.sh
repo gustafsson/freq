@@ -1,1 +1,1 @@
-PATH=$PATH:`cd ~/dev/sonicawe/src;pwd`:$(cd ~/dev/sonicawe/lib/sonicawe-winlib/sonicawe_snapshot_win32_base;pwd)
+PATH=$PATH:`cd ~/dev/sonicawe/src/release;pwd`:$(cd ~/dev/sonicawe/lib/sonicawe-winlib/sonicawe_snapshot_win32_base;pwd)
