@@ -9,10 +9,13 @@ CONFIG += $${qtfeatures}sawedefault
 SAWEROOT=$${qtfeatures}..
 
 win32 {
+    LIB_OUTPUT_FOLDER=release
+    CONFIG(debug, debug|release):LIB_OUTPUT_FOLDER=debug
+
     LIBS += \
-        -L$$SAWEROOT/src/release -lsonicawe \
-        -L$$SAWEROOT/lib/gpumisc/release -lgpumisc
-		
+        -L$$SAWEROOT/src/$$LIB_OUTPUT_FOLDER -lsonicawe \
+        -L$$SAWEROOT/lib/gpumisc/$$LIB_OUTPUT_FOLDER -lgpumisc
+
 }
 
 # build sonicawe with qmake CONFIG+=testlib
