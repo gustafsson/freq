@@ -137,20 +137,6 @@ bool Worker::
     if (TESTING_PERFORMANCE) _samples_per_chunk = _max_samples_per_chunk;
     work_chunks++;
 
-    unsigned prev_samples_per_chunk = _samples_per_chunk;
-    _samples_per_chunk = _target->prev_good_size( _samples_per_chunk + 1 );
-    if (_samples_per_chunk > _max_samples_per_chunk)
-        _samples_per_chunk = _target->prev_good_size( _max_samples_per_chunk + 1 );
-
-    WORKER_INFO
-    {
-        if (_samples_per_chunk != prev_samples_per_chunk)
-            TaskInfo("samples_per_chunk was %u, target %s suggests %u instead",
-                     prev_samples_per_chunk, _target->name().c_str(), _samples_per_chunk);
-        else
-            TaskInfo("target validated samples_per_chunk: %u", _samples_per_chunk);
-    }
-
     Interval interval = todo_list.fetchInterval( _samples_per_chunk, center_sample );
     if (is_cheating() && interval.last > _number_of_samples)
     {
