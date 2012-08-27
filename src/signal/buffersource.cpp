@@ -49,8 +49,9 @@ pBuffer BufferSource::
 {
     BOOST_ASSERT( channel < num_channels() );
 
-    const Interval& myInterval = _waveforms[channel]->getInterval();
-    if (Intervals(I.first, I.first+1) & myInterval)
+    Interval myInterval = _waveforms[channel]->getInterval();
+    Intervals i(I.first, I.first+1);
+    if (i & myInterval)
     {
         return _waveforms[channel];
     }

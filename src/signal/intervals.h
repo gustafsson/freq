@@ -42,9 +42,9 @@ public:
     IntervalType count() const { return valid() ? last - first : 0; }
 
     bool valid() const { return first <= last; }
-    Interval operator|(const Interval& r) { Interval I(*this); return I|=r; }
+    Interval operator|(const Interval& r) const { Interval I(*this); return I|=r; }
     Interval& operator|=(const Interval& r);
-    Interval operator&(const Interval& r) { Interval I(*this); return I&=r; }
+    Interval operator&(const Interval& r) const { Interval I(*this); return I&=r; }
     Interval& operator&=(const Interval& r);
     bool operator==(const Interval& r) const;
     bool operator!=(const Interval& r) const;

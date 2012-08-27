@@ -23,7 +23,7 @@ std::string OperationSetSilent::
 pBuffer OperationSetSilent::
         read( const Interval& I )
 {
-    Interval t = (I & section_).fetchFirstInterval();
+    Interval t = I & section_;
     if ( t.first == I.first && t.count() )
         return zeros( t );
     return source()->readFixedLength( (I - section_).fetchFirstInterval() );

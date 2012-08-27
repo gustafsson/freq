@@ -9,7 +9,7 @@ namespace Signal {
 
         // Check if read returned the first sample in interval I
         Interval i(I.first, I.first + 1);
-        BOOST_ASSERT( i & b->getInterval() == i );
+        BOOST_ASSERT( (i & b->getInterval()) == i );
 
         put(b);
         //_invalid_samples -= b->getInterval();
