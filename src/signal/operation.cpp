@@ -4,6 +4,14 @@
 
 #include <boost/foreach.hpp>
 
+
+//#define TIME_OPERATION
+#define TIME_OPERATION if(0)
+
+//#define TIME_OPERATION_LINE(x) TIME(x)
+#define TIME_OPERATION_LINE(x) x
+
+
 namespace Signal {
 
 Operation::Operation(pOperation s )
@@ -117,7 +125,12 @@ pBuffer Operation::
 pBuffer Operation::
         readAllChannels( const Interval& J )
 {
-    pBuffer b1 = read( J );
+    TIME_OPERATION TaskTimer tt("%s.%s %s",
+                  vartype(*this).c_str(), __FUNCTION__ ,
+                  J.toString().c_str() );
+
+    pBuffer b1;
+    TIME_OPERATION_LINE(b1 = read( J ));
     if (1 >= num_channels())
         return b1;
 
@@ -142,7 +155,7 @@ pBuffer Operation::
         unsigned C = r->channels();
         BOOST_ASSERT( 0 < C );
         BOOST_ASSERT( i + C <= num_channels() );
-        memcpy( dst + i*I.count(), src, I.count()*C*sizeof(float));
+        TIME_OPERATION_LINE(memcpy( dst + i*I.count(), src, I.count()*C*sizeof(float)));
         i += C - 1;
     }
     this->set_channel( current_channel );

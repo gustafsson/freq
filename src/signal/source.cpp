@@ -66,8 +66,15 @@ pBuffer SourceBase::
     // Doesn't span all of I, prepare new Buffer
     pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
 
-//    if ( p->waveform_data()->getMemoryLocation() == GpuCpuVoidData::CudaGlobal )
-//        r->waveform_data()->getCudaGlobal();
+#ifndef USE_CUDA
+    // Allocate cpu memory and prevent calling an unnecessary clear by flagging the store as up-to-date
+    CpuMemoryStorage::WriteAll<3>( r->waveform_data() );
+#else
+    if (p->waveform_data()->HasValidContent<CudaGlobalStorage>())
+        CudaGlobalStorage::WriteAll<3>( r->waveform_data() );
+    else
+        CpuMemoryStorage::WriteAll<3>( r->waveform_data() );
+#endif
 
     Intervals sid(I);
 
@@ -77,7 +84,7 @@ pBuffer SourceBase::
             p = readChecked( sid.fetchFirstInterval() );
 
         sid -= p->getInterval();
-        (*r) |= *p; // Fill buffer
+        TIME_SOURCEBASE_LINE((*r) |= *p); // Fill buffer
         p.reset();
     }
 
