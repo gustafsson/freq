@@ -8,16 +8,27 @@
 
 #include <boost/foreach.hpp>
 
+
+// Set to 'true' to enable debugging output
 static const bool D = false;
+
+//#define TIME_SINKSOURCE
+#define TIME_SINKSOURCE if(0)
+
 
 using namespace std;
 
 namespace Signal {
 
+
+bool cache_search( IntervalType t, const pBuffer& b )
+{
+    return t < b->getInterval().last;
+}
+
+
 SinkSource::
         SinkSource()
-            :
-        _need_self_merge( false )
 {
 }
 
@@ -27,7 +38,6 @@ SinkSource::
             :
         Sink(b),
         _cache( b._cache ),
-        _need_self_merge( b._need_self_merge ),
         _invalid_samples( b._invalid_samples )
 {
 }
@@ -37,7 +47,6 @@ SinkSource& SinkSource::
         operator=( const SinkSource& b)
 {
     _cache = b._cache;
-    _need_self_merge = b._need_self_merge;
     _invalid_samples = b._invalid_samples;
     return *this;
 }
@@ -46,6 +55,8 @@ SinkSource& SinkSource::
 void SinkSource::
         put( pBuffer b )
 {
+    TIME_SINKSOURCE TaskTimer tt("%s %s", __FUNCTION__, b->getInterval().toString().c_str());
+
     /* CANONICAL {
         QMutexLocker l(&_mutex);
 
@@ -86,56 +97,76 @@ void SinkSource::
 void SinkSource::
         selfmerge( Signal::Intervals forget )
 {
-	{
+    TIME_SINKSOURCE TaskTimer tt("%s %s %d", __FUNCTION__, forget.toString().c_str(), _cache.size());
+
+    {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-		QMutexLocker l(&_cache_mutex);
+        QMutexLocker l(&_cache_mutex);
 #endif
-        _need_self_merge = false;
+        if (_cache.empty())
+            return;
+    }
 
-		if (_cache.empty())
-			return;
-	}
-
-    //TaskTimer tt("SinkSource::selfmerge");
-    //samplesDesc().print("selfmerged start");
-    //tt.info("_cache.size()=%u", _cache.size());
+    // const int chunkSize = 1<<22; // 16 MB = sizeof(float)*(1<<22)
+    const int chunkSize = 0; // Chunks are disabled, Buffer:s are cached as they are computed
+    if (0==chunkSize && forget.empty())
+        return;
 
     const Intervals sid = samplesDesc() - forget;
-	std::vector<pBuffer> new_cache;
+    std::vector<pBuffer> new_cache;
+    new_cache.reserve(_cache.size());
 
-    BOOST_FOREACH( Interval i, sid )
-	{
-        for (unsigned L=0; i.first < i.last; i.first+=L)
-		{
-            L = lpo2s( i.count() + 1);
+    BOOST_FOREACH( const Interval& i, sid )
+    {
+        IntervalType j=i.first;
+        while (j < i.last)
+        {
+            Interval J(j,j+chunkSize);
+            if (0 == chunkSize)
+                J.last = i.last;
+            else
+                J.last = min(i.last, align_down(J.last, chunkSize));
 
-            // don't bother with small intervals
-            if (L < (1<<13))
-                L = i.count();
+            pBuffer b;
+            if (J.count() == chunkSize)
+            {
+                b = readFixedLength( J );
+            }
+            else
+            {
+                b = read(J);
+                // assume b was a valid read (i.e that J.first is spanned by b->getInterval())
+                if ((b->getInterval() & J) != b->getInterval())
+                {
+                    // If b is smaller than or equal to J, that's ok as long as it spans J.first (which is should by contract).
+                    // If b is bigger than J it needs to be shrinked. Let readFixedLength do the job.
+                    b = BufferSource(b).readFixedLength(J & b->getInterval());
+                }
+            }
+            new_cache.push_back( b );
+            j = b->getInterval().last;
+        }
+    }
 
-            // no point in allocating memory chunks bigger than, say, 16 MB = sizeof(float)*(1<<22), this also allows for swapping
-            if (L >= (1<<22))
-                L = 1<<22;
-
-            new_cache.push_back(readFixedLength( Interval( i.first, i.first + L) ));
-		}
-	}
-
-	{
+    {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-		QMutexLocker l(&_cache_mutex);
+        QMutexLocker l(&_cache_mutex);
 #endif
         _cache = new_cache;
-	}
-
-    //samplesDesc().print("selfmerged finished");
-    //tt.info("_cache.size()=%u", _cache.size());
+    }
 }
 
 
 void SinkSource::
         merge( pBuffer bp )
 {
+    TIME_SINKSOURCE
+            TaskTimer tt("%s %s & %s = %s. %d buffers", __FUNCTION__,
+                         bp->getInterval().toString().c_str(),
+                         samplesDesc().toString().c_str(),
+                         (bp->getInterval() & samplesDesc()).toString().c_str(),
+                         _cache.size());
+
     bp->release_extra_resources();
 
     const Buffer& b = *bp;
@@ -153,23 +184,28 @@ void SinkSource::
         BOOST_ASSERT(_cache.front()->sample_rate == b.sample_rate);
 
     // REMOVE caches that become outdated by this new buffer 'b'
-    for ( std::vector<pBuffer>::iterator itr = _cache.begin(); itr!=_cache.end(); )
+    std::vector<pBuffer>::const_iterator itr = upper_bound(_cache.begin(), _cache.end(), b.getInterval().first, cache_search);
+
+    while( itr!=_cache.end() )
     {
         pBuffer s = *itr;
 
-        Intervals toKeep = s->getInterval();
-        toKeep -= b.getInterval();
+        if (s->getInterval().first >= b.getInterval().last )
+            break;
 
-        Intervals toRemove = s->getInterval();
+        Interval toRemove = s->getInterval();
         toRemove &= b.getInterval();
 
         if (toRemove)
         {
+            TIME_SINKSOURCE TaskTimer tt("Removing %s from %s", toRemove.toString(), s->getInterval().toString().c_str());
             if(D) ss << " -" << s->getInterval().toString();
 
-            // '_cache' is a vector but itr is most often the last element of the vector
-            // thus making this operation inexpensive.
+            // expensive, should possibly change type to list instead of vector.
             itr = _cache.erase(itr); // Note: 'pBuffer s' stores a copy for the scope of the for-loop
+
+            Intervals toKeep = s->getInterval();
+            toKeep -= b.getInterval();
 
             BOOST_FOREACH( const Interval& i, toKeep )
             {
@@ -180,6 +216,9 @@ void SinkSource::
                 itr = _cache.insert(itr, n );
                 itr++; // Move past inserted element
             }
+
+            if (itr != _cache.begin())
+                itr--;
         } else {
             itr++;
         }
@@ -187,7 +226,7 @@ void SinkSource::
 
     n = pBuffer( new Buffer( b.sample_offset, b.number_of_samples(), b.sample_rate));
     *n |= b;
-    _cache.push_back( n );
+    itr = _cache.insert(itr, bp );
     } //cache_locker.unlock(); // finished working with _cache, samplesDesc() below needs the lock
 
     if(D) if (!ss.str().empty())
@@ -198,8 +237,7 @@ void SinkSource::
 
     _invalid_samples -= b.getInterval();
 
-    // can't clear cache directly as it might contain references to gpu memory
-    _need_self_merge = true;
+    selfmerge();
 
     //samplesDesc().print("SinkSource received samples");
     //_expected_samples.print("SinkSource expected samples");
@@ -228,36 +266,38 @@ void SinkSource::
 pBuffer SinkSource::
         read( const Interval& I )
 {
-    Interval not_found = I;
+    TIME_SINKSOURCE TaskInfo tt("%s %s from %s", __FUNCTION__, I.toString().c_str(), samplesDesc().toString().c_str());
 
-    {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-        QMutexLocker l(&_cache_mutex);
+    QMutexLocker l(&_cache_mutex);
 #endif
-        if (_need_self_merge)
-        {
-            l.unlock();
-            selfmerge();
-            l.relock();
-        }
-
-        BOOST_FOREACH( const pBuffer& s, _cache) {
-            if (s->sample_offset.asInteger() <= I.first && (s->sample_offset + s->number_of_samples()).asInteger() > I.first )
-            {
-                if(D) TaskTimer("%s: sinksource [%u, %u] got [%u, %u]",
-                             __FUNCTION__,
-                             I.first,
-                             I.last,
-                             s->getInterval().first,
-                             s->getInterval().last).suppressTiming();
-                // cudaExtent sz = s->waveform_data()->getNumberOfElements();
-
-                return s;
-            }
-            if (s->sample_offset.asInteger() > I.first && s->sample_offset.asInteger() < not_found.last)
-                not_found.last = s->sample_offset.asInteger();
-        }
+    if(D) BOOST_FOREACH( const pBuffer& b, _cache )
+    {
+        TaskInfo("%s", b->getInterval().toString().c_str());
     }
+
+    std::vector<pBuffer>::const_iterator itr = upper_bound(_cache.begin(), _cache.end(), I.first, cache_search);
+
+    Interval not_found = I;
+    if (itr != _cache.end())
+    {
+        Interval j = (**itr).getInterval();
+        if (Interval(I.first, I.first+1) & j)
+        {
+            if(D) TaskInfo("Found %d in %s", (int)I.first, j.toString().c_str());
+
+            return *itr;
+        }
+        if (j.first < not_found.last)
+            not_found.last = j.first;
+    }
+
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    l.unlock();
+#endif
+
+    BOOST_ASSERT( (samplesDesc() & not_found).empty() );
+    if(D) TaskInfo("zeros %s", not_found.toString().c_str());
 
     // Return silence
     return zeros(not_found);
