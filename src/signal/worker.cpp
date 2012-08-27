@@ -138,7 +138,7 @@ bool Worker::
     work_chunks++;
 
     unsigned prev_samples_per_chunk = _samples_per_chunk;
-    _samples_per_chunk = _target->next_good_size( _samples_per_chunk - 1 );
+    _samples_per_chunk = _target->prev_good_size( _samples_per_chunk + 1 );
     if (_samples_per_chunk > _max_samples_per_chunk)
         _samples_per_chunk = _target->prev_good_size( _max_samples_per_chunk + 1 );
 
