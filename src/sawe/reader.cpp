@@ -95,7 +95,7 @@ static inline void pseudoseed(unsigned long long seed)
 static inline unsigned char pseudorand()
 {
     X = A*X + B;
-    return X / (2^56);
+    return (X / (2^56)) & 0xFF;
 }
 
 static inline string backward(const std::vector<unsigned char>& mash)
