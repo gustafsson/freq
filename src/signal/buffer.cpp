@@ -153,13 +153,6 @@ Buffer& Buffer::
         bitor_channel_ = 0;
     }
 
-    DataStorage<float>::Ptr write, read;
-
-    if (i == getInterval() && 1 == channels())
-        write = waveform_data_;
-    if (i == b.getInterval() && 1 == b.channels())
-        read = b.waveform_data();
-
     bool toCpu = waveform_data_->HasValidContent<CpuMemoryStorage>();
     bool fromCpu = b.waveform_data_->HasValidContent<CpuMemoryStorage>();
     bool toGpu = false;
@@ -168,6 +161,13 @@ Buffer& Buffer::
 #ifdef USE_CUDA
     toGpu = waveform_data_->HasValidContent<CudaGlobalStorage>();
     fromGpu = b.waveform_data_->HasValidContent<CudaGlobalStorage>();
+
+    // if no data is allocated in *this, take the gpu if 'b' has gpu storage
+    if (!toCpu && !toGpu)
+        toGpu = fromGpu;
+
+    if (!fromCpu && !fromGpu)
+        fromGpu = toGpu;
 #endif
 
     if (!toCpu && !toGpu && !fromCpu && !fromGpu)
@@ -176,46 +176,46 @@ Buffer& Buffer::
         return *this;
     }
 
+    DataStorage<float>::Ptr write, read;
+
+    if (i == getInterval() && 1 == channels())
+    {
+        write = waveform_data_;
 #ifdef USE_CUDA
-    // if no data is allocated in *this, take the gpu if 'b' has gpu storage
-    if (!toCpu && !toGpu && !write)
-    {
-        toGpu = fromGpu;
-        if (fromGpu)
-            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
-                DataStorageSize(i.count()),
-                make_cudaPitchedPtr(
-                                CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
-                                i.count()*sizeof(float),
-                                i.count()*sizeof(float), 1), false);
+        if (toGpu)
+            CudaGlobalStorage::WriteAll<1>(write);
         else
-            write = CpuMemoryStorage::BorrowPtr(
-                DataStorageSize(i.count()),
-                CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ptr() + offs_write, false);
+#endif
+            CpuMemoryStorage::WriteAll<1>(write);
     }
-
-    if (!fromCpu && !fromGpu)
-        fromGpu = toGpu;
-
-    if (toGpu || fromGpu)
+    if (i == b.getInterval() && 1 == b.channels())
     {
-        if (toGpu && !write)
-            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
-                DataStorageSize(i.count()),
-                make_cudaPitchedPtr(
-                                CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
-                                i.count()*sizeof(float),
-                                i.count()*sizeof(float), 1), false);
-
-
-        if (fromGpu && !read)
-            read = CudaGlobalStorage::BorrowPitchedPtr<float>(
-                DataStorageSize(i.count()),
-                make_cudaPitchedPtr(
-                        CudaGlobalStorage::ReadOnly<1>( b.waveform_data_ ).device_ptr() + offs_read,
-                        i.count()*sizeof(float),
-                        i.count()*sizeof(float), 1), false);
+        read = b.waveform_data();
+#ifdef USE_CUDA
+        if (fromGpu)
+            CudaGlobalStorage::ReadOnly<1>(read);
+        else
+#endif
+            CpuMemoryStorage::ReadOnly<1>(read);
     }
+
+#ifdef USE_CUDA
+    if (toGpu && !write)
+        write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+            DataStorageSize(i.count()),
+            make_cudaPitchedPtr(
+                            CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
+                            i.count()*sizeof(float),
+                            i.count()*sizeof(float), 1), false);
+
+
+    if (fromGpu && !read)
+        read = CudaGlobalStorage::BorrowPitchedPtr<float>(
+            DataStorageSize(i.count()),
+            make_cudaPitchedPtr(
+                    CudaGlobalStorage::ReadOnly<1>( b.waveform_data_ ).device_ptr() + offs_read,
+                    i.count()*sizeof(float),
+                    i.count()*sizeof(float), 1), false);
 #endif
 
     if (!write)
