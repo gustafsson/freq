@@ -701,6 +701,7 @@ void Configuration::
         set_basic_features()
 {
     features_.push_back("overlay_navigation");
+    features_.push_back("compute_device_info_in_menu");
 }
 
 

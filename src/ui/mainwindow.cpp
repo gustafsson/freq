@@ -182,7 +182,8 @@ void SaweMainWindow::
 
 
     ui->menuDevicename->setTitle( ("Using " + Sawe::Configuration::computationDeviceName()).c_str() );
-
+    if (!Sawe::Configuration::feature("compute_device_info_in_menu"))
+        ui->menuDevicename->menuAction()->setVisible(false);
 
     connect(this, SIGNAL(onMainWindowCloseEvent(QWidget*)),
         Sawe::Application::global_ptr(), SLOT(slotClosed_window( QWidget*)),
