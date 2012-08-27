@@ -30,7 +30,7 @@ BrushView::
         BrushView(BrushModel* model)
             :
             enabled( false ),
-            gauss( ResamplePos(0,0), ResamplePos(0,0) ),
+            gauss( ResamplePos(0,0), ResamplePos(1,1) ),
             model_( model )
 {
 }
