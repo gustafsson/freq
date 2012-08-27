@@ -38,7 +38,7 @@ void BufferSource::
         pBuffer w(new Buffer(waveform->sample_offset, number_of_samples, waveform->sample_rate));
         memcpy( w->waveform_data()->getCpuMemory(),
                 waveform->waveform_data()->getCpuMemory() + c*number_of_samples,
-                w->waveform_data()->getSizeInBytes1D() );
+                w->waveform_data()->numberOfBytes() );
         _waveforms[c] = w;
     }
 }

@@ -108,12 +108,12 @@ public:
     float startTime() const {          return ((chunk_offset+first_valid_sample)/sample_rate).asFloat(); }
     float endTime() const {            return startTime() + timeInterval(); }
 
-    virtual unsigned nSamples() const {        return order==Order_row_major ? transform_data->getNumberOfElements().width : transform_data->getNumberOfElements().height; }
-    virtual unsigned nScales() const {         return order==Order_row_major ? transform_data->getNumberOfElements().height: transform_data->getNumberOfElements().width;  }
-    virtual unsigned nChannels() const {       return transform_data->getNumberOfElements().depth; }
+    virtual unsigned nSamples() const {        return order==Order_row_major ? transform_data->size().width : transform_data->size().height; }
+    virtual unsigned nScales() const {         return order==Order_row_major ? transform_data->size().height: transform_data->size().width;  }
+    virtual unsigned nChannels() const {       return transform_data->size().depth; }
 
     bool valid() const {
-        return 0 != transform_data->getSizeInBytes1D() &&
+        return 0 != transform_data->numberOfBytes() &&
                0 != sample_rate &&
                minHz() < maxHz() &&
                (order == Order_row_major || order == Order_column_major);

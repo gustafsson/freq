@@ -43,7 +43,7 @@ void DrawWaveform::
         drawWaveform_chunk_directMode( Signal::pBuffer chunk)
 {
     TaskTimer tt(__FUNCTION__);
-    DataStorageSize n = chunk->waveform_data()->getNumberOfElements();
+    DataStorageSize n = chunk->waveform_data()->size();
     const float* data = chunk->waveform_data()->getCpuMemory();
 
     n.height = 1;

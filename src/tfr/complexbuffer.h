@@ -39,7 +39,7 @@ public:
     /**
         Overloaded from buffer
     */
-    unsigned number_of_samples() const { return _complex_waveform_data->getNumberOfElements().width; }
+    unsigned number_of_samples() const { return _complex_waveform_data->size().width; }
 
 
     UnsignedF       sample_offset;

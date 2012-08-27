@@ -50,7 +50,7 @@ void Csv::
         chunk = &c;
 
     std::complex<float>* p = chunk->transform_data->getCpuMemory();
-    DataStorageSize s = chunk->transform_data->getNumberOfElements();
+    DataStorageSize s = chunk->transform_data->size();
 
     for (int y = 0; y<s.height; y++) {
         stringstream ss;

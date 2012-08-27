@@ -67,12 +67,12 @@ private:
 
             if (version<=0)
             {
-                boost::serialization::binary_object Data( bv.second->getCpuMemory(), bv.second->getSizeInBytes1D() );
+                boost::serialization::binary_object Data( bv.second->getCpuMemory(), bv.second->numberOfBytes() );
                 ar & BOOST_SERIALIZATION_NVP(Data);
             }
             else
             {
-                QByteArray zlibUncompressed = QByteArray::fromRawData( (char*)bv.second->getCpuMemory(), bv.second->getSizeInBytes1D() );
+                QByteArray zlibUncompressed = QByteArray::fromRawData( (char*)bv.second->getCpuMemory(), bv.second->numberOfBytes() );
                 QByteArray zlibCompressed = qCompress(zlibUncompressed);
                 unsigned compressedN = zlibCompressed.size();
                 ar & BOOST_SERIALIZATION_NVP(compressedN);
@@ -98,7 +98,7 @@ private:
             BrushImageDataP img(new DataStorage<float>(sz));
             if (version<=0)
             {
-                boost::serialization::binary_object Data( img->getCpuMemory(), img->getSizeInBytes1D() );
+                boost::serialization::binary_object Data( img->getCpuMemory(), img->numberOfBytes() );
                 ar & BOOST_SERIALIZATION_NVP(Data);
             }
             else
@@ -109,8 +109,8 @@ private:
                 zlibCompressed.resize(compressedN);
                 ar.load_binary( zlibCompressed.data(), compressedN );
                 QByteArray zlibUncompressed = qUncompress(zlibCompressed);
-                BOOST_ASSERT( img->getSizeInBytes1D() == (size_t)zlibUncompressed.size() );
-                memcpy(img->getCpuMemory(), zlibUncompressed.constData(), img->getSizeInBytes1D());
+                BOOST_ASSERT( img->numberOfBytes() == (size_t)zlibUncompressed.size() );
+                memcpy(img->getCpuMemory(), zlibUncompressed.constData(), img->numberOfBytes());
             }
 
             (*images)[ ref ] = img;

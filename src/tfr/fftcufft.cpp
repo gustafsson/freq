@@ -159,7 +159,7 @@ void FftCufft::
 
     if (!inputbuffer->HasValidContent<CudaGlobalStorage>())
     {
-        TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", inputbuffer->getSizeInBytes1D()/1024.f/1024.f);
+        TIME_STFT TaskTimer tt("fetch input from Cpu to Gpu, %g MB", inputbuffer->numberOfBytes()/1024.f/1024.f);
         input = CudaGlobalStorage::ReadOnly<1>( inputbuffer ).device_ptr();
         TIME_STFT CudaException_ThreadSynchronize();
     }

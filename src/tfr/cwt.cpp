@@ -332,7 +332,7 @@ pChunk Cwt::
         size_t alt = 0;
         BOOST_FOREACH( const pChunk& chunkpart, ((CwtChunk*)wt.get())->chunks )
         {
-            size_t s = chunkpart->transform_data->getSizeInBytes1D();
+            size_t s = chunkpart->transform_data->numberOfBytes();
             sum += s;
             size_t tmp_stft_and_fft = s + sizeof(Tfr::ChunkElement)*chunkpart->nSamples()*chunkpart->original_sample_rate/chunkpart->sample_rate;
             if (sum + tmp_stft_and_fft > alt)
@@ -601,7 +601,7 @@ Signal::pBuffer Cwt::
 
     Signal::Interval v = pchunk->getInterval();
     Signal::pBuffer r( new Signal::Buffer( v.first, v.count(), pchunk->original_sample_rate ));
-    memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D() );
+    memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->numberOfBytes() );
 
     BOOST_FOREACH( pChunk& part, pchunk->chunks )
     {

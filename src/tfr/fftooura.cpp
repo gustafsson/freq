@@ -28,8 +28,8 @@ void FftOoura::
 
     TIME_STFT TaskTimer tt("Fft Ooura");
 
-    int N = output->getNumberOfElements().width;
-    int n = input->getNumberOfElements().width;
+    int N = output->size().width;
+    int n = input->size().width;
 
     BOOST_ASSERT( n == N );
 

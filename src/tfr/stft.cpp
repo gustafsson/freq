@@ -56,7 +56,7 @@ pChunk Fft::
     // cufft is faster for larger ffts, but as the GPU is the bottleneck we can
     // just as well offload it some and do it on the CPU instead
 
-    DataStorageSize input_n = real_buffer->waveform_data()->getNumberOfElements();
+    DataStorageSize input_n = real_buffer->waveform_data()->size();
     DataStorageSize output_n = input_n;
 
     // The in-signal is padded to a power of 2 (cufft manual suggest a "multiple

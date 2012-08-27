@@ -192,7 +192,7 @@ void Hdf5Output::
     VERBOSE_HDF5 TaskTimer tt("Adding chunk '%s'", name.c_str());
 
     std::complex<float>* p = chunk.transform_data->getCpuMemory();
-    DataStorageSize s = chunk.transform_data->getNumberOfElements();
+    DataStorageSize s = chunk.transform_data->size();
 
     const unsigned RANK=2;
     hsize_t     dims[RANK]={s.height,s.width};

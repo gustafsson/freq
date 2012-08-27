@@ -33,7 +33,7 @@ Signal::pBuffer SuperSample::
     biggerchunk->first_valid_sample = chunk->first_valid_sample << multiple;
     biggerchunk->n_valid_samples = chunk->n_valid_samples;
 
-    DataStorageSize src_sz = chunk->transform_data->getNumberOfElements();
+    DataStorageSize src_sz = chunk->transform_data->size();
     DataStorageSize dest_sz(1);
     if (redundant)
         dest_sz.width = src_sz.width << multiple;

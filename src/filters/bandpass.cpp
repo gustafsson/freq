@@ -49,7 +49,7 @@ void Bandpass::
     // assuming STFT is not redundant (meaning that R2C and C2R transforms are being used)
     unsigned window = (unsigned)(c.freqAxis.max_frequency_scalar*2 + 0.5f);
     unsigned actualSize = window/2 + 1;
-    unsigned windows = c.transform_data->getNumberOfElements().width / actualSize;
+    unsigned windows = c.transform_data->size().width / actualSize;
 
     BOOST_ASSERT( c.nScales() == actualSize );
     BOOST_ASSERT( c.nSamples() == windows );

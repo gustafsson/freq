@@ -321,7 +321,7 @@ void BlockFilter::
             s.scale / schunk.scale * chunk.nScales() + .5f)
         );
 
-    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->getNumberOfElements().width );
+    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->size().width );
 
     enable_subtexel_aggregation &= full_resolution;
 

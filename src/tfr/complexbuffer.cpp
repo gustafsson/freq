@@ -41,7 +41,7 @@ ComplexBuffer::
 void ComplexBuffer::
         setData(DataStorage<float>::Ptr real_waveform)
 {
-    DataStorageSize sz = real_waveform->getNumberOfElements();
+    DataStorageSize sz = real_waveform->size();
     TIME_COMPLEX_BUFFER TaskTimer tt("ComplexBuffer of %lu x %lu x %lu elements", sz.width, sz.height, sz.depth );
 
     _complex_waveform_data.reset( new DataStorage<std::complex<float> >( sz ));
@@ -80,7 +80,7 @@ Signal::pBuffer ComplexBuffer::
 
     DataStorage<float>::Ptr real_waveform = buffer->waveform_data();
 
-    DataStorageSize sz = real_waveform->getNumberOfElements();
+    DataStorageSize sz = real_waveform->size();
     std::complex<float> *complex = CpuMemoryStorage::ReadOnly<1>( _complex_waveform_data ).ptr();
     float *real = CpuMemoryStorage::WriteAll<1>( real_waveform ).ptr();
 
