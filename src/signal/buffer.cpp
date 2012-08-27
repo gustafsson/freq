@@ -7,6 +7,14 @@
 #include "cudaglobalstorage.h"
 #endif
 
+
+//#define TIME_BUFFER
+#define TIME_BUFFER if(0)
+
+//#define TIME_BUFFER_LINE(x) TIME(x)
+#define TIME_BUFFER_LINE(x) x
+
+
 namespace Signal {
 
 
@@ -134,6 +142,10 @@ Buffer& Buffer::
     unsigned offs_write = i.first - sample_offset.asInteger();
     unsigned offs_read = i.first - b.sample_offset.asInteger();
 
+    TIME_BUFFER TaskTimer tt("%s %s = %s & %s",
+                  __FUNCTION__ ,
+                  i.toString().c_str(), getInterval().toString().c_str(), b.getInterval().toString().c_str() );
+
     if (bitor_channel_)
     {
         offs_read += bitor_channel_*b.number_of_samples();
@@ -142,11 +154,20 @@ Buffer& Buffer::
 
     DataStorage<float>::Ptr write, read;
 
+    if (i == getInterval() && 1 == channels())
+        write = waveform_data_;
+    if (i == b.getInterval() && 1 == b.channels())
+        read = b.waveform_data();
+
+    bool toCpu = waveform_data_->HasValidContent<CpuMemoryStorage>();
+    bool fromCpu = b.waveform_data_->HasValidContent<CpuMemoryStorage>();
+    bool toGpu = false;
+    bool fromGpu = false;
+
 #ifdef USE_CUDA
-    bool toGpu = 0 != waveform_data_->FindStorage<CudaGlobalStorage>();
-    bool toCpu = 0 != waveform_data_->FindStorage<CpuMemoryStorage>();
-    bool fromCpu = 0 != b.waveform_data_->FindStorage<CpuMemoryStorage>();
-    bool fromGpu = 0 != b.waveform_data_->FindStorage<CudaGlobalStorage>();
+    toGpu = waveform_data_->HasValidContent<CudaGlobalStorage>();
+    fromGpu = b.waveform_data_->HasValidContent<CudaGlobalStorage>();
+#endif
 
     if (!toCpu && !toGpu && !fromCpu && !fromGpu)
     {
@@ -154,38 +175,22 @@ Buffer& Buffer::
         return *this;
     }
 
+#ifdef USE_CUDA
     // if no data is allocated in *this, take the gpu if 'b' has gpu storage
-    if (!toCpu && !toGpu)
+    if (!toCpu && !toGpu && !write)
     {
         toGpu = fromGpu;
-        if (i.count() == getInterval().count())
-        {
-            if (fromGpu)
-                write = CudaGlobalStorage::BorrowPitchedPtr<float>(
-                    DataStorageSize(i.count()),
-                    make_cudaPitchedPtr(
-                                    CudaGlobalStorage::WriteAll<1>( waveform_data_ ).device_ptr() + offs_write,
-                                    i.count()*sizeof(float),
-                                    i.count()*sizeof(float), 1), false);
-            else
-                write = CpuMemoryStorage::BorrowPtr(
-                    DataStorageSize(i.count()),
-                    CpuMemoryStorage::WriteAll<1>( waveform_data_ ).ptr() + offs_write, false);
-        }
+        if (fromGpu)
+            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                DataStorageSize(i.count()),
+                make_cudaPitchedPtr(
+                                CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
+                                i.count()*sizeof(float),
+                                i.count()*sizeof(float), 1), false);
         else
-        {
-            if (fromGpu)
-                write = CudaGlobalStorage::BorrowPitchedPtr<float>(
-                    DataStorageSize(i.count()),
-                    make_cudaPitchedPtr(
-                                    CudaGlobalStorage::ReadWrite<1>( waveform_data_ ).device_ptr() + offs_write,
-                                    i.count()*sizeof(float),
-                                    i.count()*sizeof(float), 1), false);
-            else
-                write = CpuMemoryStorage::BorrowPtr(
-                    DataStorageSize(i.count()),
-                    CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ptr() + offs_write, false);
-        }
+            write = CpuMemoryStorage::BorrowPtr(
+                DataStorageSize(i.count()),
+                CpuMemoryStorage::ReadWrite<1>( waveform_data_ ).ptr() + offs_write, false);
     }
 
     if (!fromCpu && !fromGpu)
@@ -202,7 +207,7 @@ Buffer& Buffer::
                                 i.count()*sizeof(float), 1), false);
 
 
-        if (fromGpu)
+        if (fromGpu && !read)
             read = CudaGlobalStorage::BorrowPitchedPtr<float>(
                 DataStorageSize(i.count()),
                 make_cudaPitchedPtr(
@@ -223,7 +228,7 @@ Buffer& Buffer::
             CpuMemoryStorage::ReadOnly<1>( b.waveform_data_ ).ptr() + offs_read, false);
 
     // Let DataStorage manage all memcpying
-    *write = *read;
+    TIME_BUFFER_LINE( *write = *read );
 
     return *this;
 }
