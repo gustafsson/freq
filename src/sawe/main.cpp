@@ -33,8 +33,8 @@ using namespace Signal;
 #else
 
 // gpumisc
-#include <CudaProperties.h>
-#include <CudaException.h>
+#include "CudaProperties.h"
+#include "CudaException.h"
 #include "GpuCpuData.h"
 
 // cuda

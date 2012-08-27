@@ -2,9 +2,9 @@
 #include "resampletest.h"
 #include "resampletest.cu.h"
 
-#include <TaskTimer.h>
-#include <demangle.h>
-#include <CudaException.h>
+#include "TaskTimer.h"
+#include "demangle.h"
+#include "CudaException.h"
 
 #include <string.h>
 #include <sstream>

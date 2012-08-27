@@ -4,8 +4,8 @@
 #include "intervals.h"
 
 // gpumisc
-#include <datastorage.h>
-#include <unsignedf.h>
+#include "datastorage.h"
+#include "unsignedf.h"
 
 // boost
 #include <boost/noncopyable.hpp>

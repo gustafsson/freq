@@ -25,7 +25,7 @@
 #endif
 
 #ifdef USE_CUFFT
-#include <CudaProperties.h>
+#include "CudaProperties.h"
 #endif
 
 using namespace boost::posix_time;

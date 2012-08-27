@@ -6,9 +6,9 @@
 
 // gpumisc
 #ifdef USE_CUDA
-#include <CudaProperties.h>
+#include "CudaProperties.h"
 #endif
-#include <cpuproperties.h>
+#include "cpuproperties.h"
 
 // license
 #include "sawe/reader.h"
