@@ -12,14 +12,20 @@ typedef __int64 __int64_t;
  
 #include "Statistics.h"
 #include "cpumemorystorage.h"
+#include "signal/transpose.h"
 
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 
 #include <QTemporaryFile>
 
-#define TIME_WRITEWAV
-//#define TIME_WRITEWAV if(0)
+
+//#define TIME_WRITEWAV
+#define TIME_WRITEWAV if(0)
+
+//#define TIME_WRITEWAV_LINE(x) TIME(x)
+#define TIME_WRITEWAV_LINE(x) x
+
 
 using namespace boost;
 namespace Adapters {
@@ -91,7 +97,7 @@ Signal::pBuffer WriteWav::
 void WriteWav::
         put( Signal::pBuffer buffer )
 {
-    TIME_WRITEWAV TaskTimer tt("WriteWav::put [%lu,%lu]", buffer->sample_offset.asInteger(), (buffer->sample_offset + buffer->number_of_samples()).asInteger());
+    TIME_WRITEWAV TaskTimer tt("WriteWav::put %s", buffer->getInterval().toString().c_str());
 
     // Make sure that all of buffer is expected
 
@@ -203,30 +209,34 @@ void WriteWav::
     BOOST_ASSERT( _sndfile );
     BOOST_ASSERT( *_sndfile );
 
-    int C = b->channels();
+    DataStorage<float> interleaved_data(b->channels(), b->number_of_samples());
+    TIME_WRITEWAV_LINE(Signal::transpose( &interleaved_data, b->waveform_data().get() ));
 
-    Signal::IntervalType Nsamples_per_channel = b->number_of_samples();
-    Signal::IntervalType N = Nsamples_per_channel*C;
-    float* data = CpuMemoryStorage::ReadWrite<2>( b->waveform_data() ).ptr();
+    double sum = 0;
+    float high = _high;
+    float low = _low;
 
-    std::vector<float> interleaved_data(N);
-    long double sum = 0;
-    for (Signal::IntervalType i=0; i<Nsamples_per_channel; ++i)
+    float* p = CpuMemoryStorage::ReadOnly<float,2>( &interleaved_data ).ptr();
+    int N = b->channels() * b->number_of_samples();
+
     {
-        for (int c=0; c<C; ++c)
-        {
-            float &v = data[i + c*Nsamples_per_channel];
-            interleaved_data[i*C + c] = v;
-            sum += v;
-            _high = std::max(_high, v);
-            _low = std::min(_low, v);
-        }
+    TaskTimer ta("sum/high/low");
+    for (int i=0; i<N; ++i)
+    {
+        const float v = p[i];
+        sum += v;
+        high = std::max(high, v);
+        low = std::min(low, v);
     }
+    }
+
+    _high = high;
+    _low = low;
     _sum += sum;
     _sumsamples += N;
 
     _sndfile->seek((b->sample_offset - _offset).asInteger(), SEEK_SET);
-    _sndfile->write( &interleaved_data[0], N ); // sndfile will convert float to short int
+    TIME_WRITEWAV_LINE(_sndfile->write( p, N )); // sndfile will convert float to short int
 }
 
 

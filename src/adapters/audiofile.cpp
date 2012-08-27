@@ -6,6 +6,7 @@ typedef __int64 __int64_t;
 
 #include "audiofile.h"
 #include "Statistics.h" // to play around for debugging
+#include "signal/transpose.h"
 
 #include <sndfile.hh> // for reading various formats
 #include <math.h>
@@ -30,8 +31,13 @@ typedef __int64 __int64_t;
 #include <QByteArray>
 #include <QTemporaryFile>
 
+
 //#define VERBOSE_AUDIOFILE
 #define VERBOSE_AUDIOFILE if(0)
+
+//#define TIME_AUDIOFILE_LINE(x) TIME(x)
+#define TIME_AUDIOFILE_LINE(x) x
+
 
 using namespace std;
 using namespace boost;
@@ -343,22 +349,14 @@ Signal::pBuffer Audiofile::
         return zeros( J );
     }
 
-    sf_count_t readframes = sndfile->read(partialfile.getCpuMemory(), num_channels()*I.count()); // yes float
+    float* data = CpuMemoryStorage::WriteAll<float,3>( &partialfile ).ptr();
+    sf_count_t readframes;
+    TIME_AUDIOFILE_LINE( readframes = sndfile->read(data, num_channels()*I.count())); // read float
     if ((sf_count_t)I.count() > readframes)
         I.last = I.first + readframes;
 
-    float* data = partialfile.getCpuMemory();
-
     Signal::pBuffer waveform( new Signal::Buffer(I.first, I.count(), sample_rate(), num_channels()));
-    float* target = waveform->waveform_data()->getCpuMemory();
-
-    // Compute transpose of signal
-    unsigned C = waveform->channels();
-    for (unsigned i=0; i<I.count(); i++) {
-        for (unsigned c=0; c<C; c++) {
-            target[i + c*I.count()] = data[i*C + c];
-        }
-    }
+    TIME_AUDIOFILE_LINE( Signal::transpose( waveform->waveform_data().get(), &partialfile ) );
 
     VERBOSE_AUDIOFILE *tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
 

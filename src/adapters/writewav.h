@@ -14,12 +14,12 @@ public:
     ~WriteWav();
 
     // Overloaded from Sink
-    virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
-    virtual void reset();
+    virtual void put( Signal::pBuffer );
     virtual void invalidate_samples( const Signal::Intervals& s );
     virtual Signal::Intervals invalid_samples();
     virtual bool deleteMe();
 
+    void reset();
     bool normalize() { return _normalize; }
     void normalize(bool v);
 
@@ -27,7 +27,6 @@ public:
 
     /// @overload Operation::read()
     virtual Signal::pBuffer read(const Signal::Interval& I);
-    virtual void put( Signal::pBuffer );
 
 private:
     std::string _filename;
