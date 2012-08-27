@@ -131,7 +131,7 @@ pBuffer SourceBase::
 {
     BOOST_ASSERT( I.count() );
 
-    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+    TIME_SOURCEBASE TaskTimer tt("%s.%s %s",
                   vartype(*this).c_str(), __FUNCTION__ ,
                   I.toString().c_str() );
 
