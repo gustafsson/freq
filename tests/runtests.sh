@@ -151,23 +151,23 @@ for configname in $configurations; do
 
   ret=0
   (
-    cd .. &&
-    echo $timestamp &&
-    pwd &&
+    cd ..
+    timestamp
+    pwd
 
-    echo &&
-    git show-ref HEAD &&
-    git submodule status &&
-    git status &&
-    echo &&
-    git diff &&
-    echo &&
+    echo
+    git show-ref HEAD --head
+    git submodule status
+    git status
+    echo
+    git diff
+    echo
 
     # need to relink both gpumisc and sonicawe when switching configurations
     touch src/sawe/configuration/configuration.cpp
-    rm -f {lib/gpumisc,src}/Makefile &&
-    rm -f lib/gpumisc/$(staticlibname gpumisc) &&
-    rm -f src/$(dynamiclibname sonicawe) &&
+    rm -f {lib/gpumisc,src}/Makefile
+    rm -f lib/gpumisc/$(staticlibname gpumisc)
+    rm -f src/$(dynamiclibname sonicawe)
 
     qmakecmd="qmake CONFIG+=testlib $qmakeargs CONFIG+=${configname}" &&
     echo $qmakecmd &&
@@ -215,7 +215,7 @@ for configname in $configurations; do
 
     ret=0
     (
-      echo $now &&
+      timestamp &&
       pwd &&
       rm -f Makefile &&
       rm -f "$outputdir/$testname" &&
