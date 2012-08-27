@@ -1,8 +1,9 @@
 #include "buffer.h"
 
 #include <string.h> //memcpy
-#include "cpumemorystorage.h"
 
+#include "TaskTimer.h"
+#include "cpumemorystorage.h"
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"
 #endif
