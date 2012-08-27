@@ -184,7 +184,7 @@ void SinkSource::
         BOOST_ASSERT(_cache.front()->sample_rate == b.sample_rate);
 
     // REMOVE caches that become outdated by this new buffer 'b'
-    std::vector<pBuffer>::const_iterator itr = upper_bound(_cache.begin(), _cache.end(), b.getInterval().first, cache_search);
+    std::vector<pBuffer>::iterator itr = upper_bound(_cache.begin(), _cache.end(), b.getInterval().first, cache_search);
 
     while( itr!=_cache.end() )
     {
@@ -198,7 +198,7 @@ void SinkSource::
 
         if (toRemove)
         {
-            TIME_SINKSOURCE TaskTimer tt("Removing %s from %s", toRemove.toString(), s->getInterval().toString().c_str());
+            TIME_SINKSOURCE TaskTimer tt("Removing %s from %s", toRemove.toString().c_str(), s->getInterval().toString().c_str());
             if(D) ss << " -" << s->getInterval().toString();
 
             // expensive, should possibly change type to list instead of vector.
