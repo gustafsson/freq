@@ -1,13 +1,22 @@
 #include "source.h"
 
-#include <demangle.h>
-#include <TaskTimer.h>
+#include "demangle.h"
+#include "TaskTimer.h"
+#include "cpumemorystorage.h"
+#ifdef USE_CUDA
+#include "cudaglobalstorage.h"
+#endif
 
 #include <sstream>
 #include <iomanip>
 
-//#define TIME_READCHECKED
-#define TIME_READCHECKED if(0)
+
+//#define TIME_SOURCEBASE
+#define TIME_SOURCEBASE if(0)
+
+//#define TIME_SOURCEBASE_LINE(x) TIME(x)
+#define TIME_SOURCEBASE_LINE(x) x
+
 
 using namespace std;
 
@@ -17,13 +26,15 @@ namespace Signal {
 pBuffer SourceBase::
         readChecked( const Interval& I )
 {
+    TIME_SOURCEBASE TaskTimer tt("%s::readChecked( %s )", vartype(*this).c_str(), I.toString().c_str());
+
     BOOST_ASSERT( I.count() );
 
     pBuffer r = read(I);
 
-    // Check if read returned any samples form the interval I
-    BOOST_ASSERT(r->sample_offset.asInteger() < I.last);
-    BOOST_ASSERT(r->sample_offset.asInteger() + r->number_of_samples() > I.first);
+    // Check if read returned the first sample in interval I
+    Interval i(I.first, I.first + 1);
+    BOOST_ASSERT( i & b->getInterval() == i );
 
     return r;
 }
@@ -31,7 +42,7 @@ pBuffer SourceBase::
 pBuffer SourceBase::
         readFixedLength( const Interval& I )
 {
-    TIME_READCHECKED TaskTimer tt("%s.%s %s",
+    TIME_SOURCEBASE TaskTimer tt("%s.%s %s",
                   vartype(*this).c_str(), __FUNCTION__ ,
                   I.toString().c_str() );
 
