@@ -103,6 +103,8 @@ void SettingsDialog::
     ui->radioButtonOctave->setVisible(false);
     ui->lineEditMatlab->setVisible(false);
     ui->lineEditOctave->setVisible(false);
+    ui->pushButtonMatlab->setVisible(false);
+    ui->pushButtonOctave->setVisible(false);
 #endif
 }
 
