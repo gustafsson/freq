@@ -38,12 +38,10 @@ Interval::
 }
 
 
-Interval& Interval::
-        operator|=(const Interval& r)
+Interval Interval::
+        spanned(const Interval& r) const
 {
-    first = std::min(first, r.first);
-    last = std::max(last, r.last);
-    return *this;
+    return Interval(std::min(first, r.first), std::max(last, r.last));
 }
 
 
@@ -60,7 +58,7 @@ Interval& Interval::
 bool Interval::
         operator==(const Interval& r) const
 {
-    return first==r.first && last==r.last;
+    return valid() && r.valid() && ((first==r.first && last==r.last) || (r.count()==0 && count()==0));
 }
 
 
@@ -143,7 +141,7 @@ Intervals& Intervals::
     for (base::iterator itr=first; itr!=last; itr++)
     {
         Interval& i = *itr;
-        b |= i;
+        b = b.spanned(i);
     }
 
     base::erase( first, last );
@@ -565,5 +563,6 @@ Intervals  operator |  (const Interval& a, const Intervals& b) { return Interval
 Intervals  operator -  (const Interval& a, const Intervals& b) { return Intervals(a)-=b; }
 Intervals  operator &  (const Interval& a, const Intervals& b) { return Intervals(a)&=b; }
 Intervals  operator ^  (const Interval& a, const Intervals& b) { return Intervals(a)^=b; }
+Intervals  operator |  (const Interval& a, const Interval& b)  { return a|Intervals(b); }
 
 } // namespace Signal
