@@ -54,7 +54,7 @@ public:
     }
 
     virtual Intervals invalid_samples() { return _invalid_samples; }
-    virtual void invalidate_samples(const Intervals& I) { _invalid_samples |= I; }
+    virtual void invalidate_samples(const Intervals& I);
     void invalidate_and_forget_samples(const Intervals& I);
     void validate_samples( const Intervals& I ) { _invalid_samples -= I; }
 
@@ -96,7 +96,7 @@ public:
     bool empty();
 
     /// Get what samples that are described in the containing buffer
-    Intervals samplesDesc();
+    Intervals samplesDesc() { return _valid_samples; }
 
 private:
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
@@ -110,7 +110,7 @@ private:
     void putExpectedSamples( pBuffer b, const Intervals& expected );
 
     /**
-      _invalid_samples describes which samples that should be put into this
+      _expected_samples describes which samples that should be put into this
       SinkSource. It is initialized to an empty interval and can be used through
       invalidate_samples() to say that certain samples are missing before
       calling putExpectedSamples.
@@ -119,11 +119,27 @@ private:
       */
     Intervals _invalid_samples;
 
+    /**
+     * @brief _valid_samples explains the samples that can be fetched from
+     * this instance. Trying to read anything outside of this will yield an
+     * empty buffer with zeroes.
+     */
+    Intervals _valid_samples;
+
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 
-    void selfmerge( Signal::Intervals forget = Signal::Intervals() );
+    void allocateCache( Signal::Interval, float fs );
+    //void selfmerge( Signal::Intervals forget = Signal::Intervals() );
     void merge( pBuffer );
+
+    /**
+     * @brief findBuffer finds the buffer containing 'sample'.
+     * Assumes that the _cache_mutex is locked already.
+     * @return The buffer containing 'sample' or the next following buffer if
+     * no buffer contains 'sample'. Might be _cache.end()
+     */
+    std::vector<pBuffer>::iterator findBuffer( Signal::IntervalType sample );
 };
 
 typedef boost::shared_ptr<Sink> pSink;
