@@ -681,6 +681,9 @@ void Stft::
         compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
     DataStorageSize size( _window_size, input->numberOfElements()/_window_size);
+    TIME_STFT TaskTimer ti("Stft::compute %s, size = %d, %d",
+                           direction == FftDirection_Forward ? "forward" : "inverse",
+                           size.width, size.height);
     FftImplementation::Singleton().compute( input, output, size, direction );
 }
 

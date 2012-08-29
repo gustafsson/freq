@@ -266,7 +266,7 @@ void SinkSource::
 pBuffer SinkSource::
         read( const Interval& I )
 {
-    TIME_SINKSOURCE TaskInfo tt("%s %s from %s", __FUNCTION__, I.toString().c_str(), samplesDesc().toString().c_str());
+    TIME_SINKSOURCE TaskTimer tt("%s %s from %s", __FUNCTION__, I.toString().c_str(), samplesDesc().toString().c_str());
 
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
