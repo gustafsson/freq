@@ -16,6 +16,8 @@ echo "===================== Deploying Sonic AWE ====================="
 echo "branch: ${branch}"
 echo "version: ${version}"
 echo "release: sonicawe_${version}${snapshot}"
+echo
+echo "(press enter for default answer)"
 
 # Check if git user name has been specified
 if [ -z "`git config --global user.name`" ]; then
@@ -52,16 +54,25 @@ if [ "Y" == "${verifyRepos}" ]; then
 	fi
 fi
 
+if [ -z "${buildcuda}" ]; then read -p "Build CUDA target? [y/N] " buildcuda; echo; fi
+if [ "Y" == "${buildcuda}" ] || [ "y" == "${buildcuda}" ]; then
+    buildcuda=Y;
+else
+    buildcuda=N;
+fi
+
 if [ -z "${rebuildall}" ]; then read -p "Rebuild all code? [y/N] " rebuildall; echo; fi
 if [ "Y" == "${rebuildall}" ] || [ "y" == "${rebuildall}" ]; then
 	rebuildall=Y;
 else
 	rebuildall=N;
 
-	if [ -z "${rebuildcuda}" ]; then read -p ".cu-files (CUDA kernels) are not rebuilt when included .h-files are changed. \"touch\" all .cu-files? [y/N] " rebuildcuda; echo; fi
-	if [ "Y" == "${rebuildcuda}" ] || [ "y" == "${rebuildcuda}" ]; then
-		(cd ..; touch `find . -name *.cu`)
-	fi
+    if [ "Y" == "$buildcuda" ]; then
+        if [ -z "${rebuildcuda}" ]; then read -p ".cu-files (CUDA kernels) are not rebuilt when included .h-files are changed. \"touch\" all .cu-files? [y/N] " rebuildcuda; echo; fi
+        if [ "Y" == "${rebuildcuda}" ] || [ "y" == "${rebuildcuda}" ]; then
+            (cd ..; touch `find . -name *.cu`)
+        fi
+    fi
 fi
 
 

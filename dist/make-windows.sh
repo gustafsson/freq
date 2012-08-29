@@ -58,7 +58,7 @@ cp src/release/sonicawe.exe src/release/sonicawe-cpu.exe
 
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
-if [ ! -z "$CUDA_BIN_PATH" ]; then
+if [ ! -z "$CUDA_BIN_PATH" ] && [ "Y" == "$buildcuda" ]; then
 	qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 
 	echo qmaketarget: $qmaketarget

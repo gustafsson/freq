@@ -31,7 +31,7 @@ cp src/${packagename} src/${packagename}org
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
 
-if [ ! -z "`which nvcc`" ]; then
+if [ ! -z "`which nvcc`" ] && [ "Y" == "$buildcuda" ]; then
     qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
 
     echo "qmaketarget: $qmaketarget"

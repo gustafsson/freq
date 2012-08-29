@@ -18,6 +18,8 @@ fi
 touch src/sawe/configuration/configuration.cpp
 rm -f lib/gpumisc/libgpumisc.a
 rm -f {src,lib/gpumisc}/Makefile
+rm -f src/sonicawe
+rm -f src/sonicawe-cuda
 
 typeset -i no_cores
 no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
@@ -33,7 +35,7 @@ cp src/${packagename} src/${packagename}org
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
 
-if ( [ -e /usr/local/cuda/bin/nvcc ] || [ -e /Developer/NVIDIA/CUDA-5.0/bin/nvcc ] ) && [ -z $NOCUDA ]; then
+if ( [ -e /usr/local/cuda/bin/nvcc ] || [ -e /Developer/NVIDIA/CUDA-5.0/bin/nvcc ] ) && [ "Y" == "$buildcuda" ]; then
     qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
     echo "qmaketarget: $qmaketarget"
     qmake $qmaketarget -spec macx-g++ CONFIG+=release
