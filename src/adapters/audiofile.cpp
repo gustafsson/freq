@@ -7,6 +7,7 @@ typedef __int64 __int64_t;
 #include "audiofile.h"
 #include "Statistics.h" // to play around for debugging
 #include "signal/transpose.h"
+#include "neat_math.h"
 
 #include <sndfile.hh> // for reading various formats
 #include <math.h>
@@ -315,9 +316,10 @@ Signal::pBuffer Audiofile::
     }
 
     Signal::Interval I = J;
-    Signal::IntervalType maxReadLength = 1<<18;
-    if (I.count() > maxReadLength)
-        I.last = I.first + maxReadLength;
+    Signal::IntervalType fixedReadLength = 1<<20;
+
+    I.first = align_down(I.first,fixedReadLength);
+    I.last = I.first + fixedReadLength;
 
     if (I.last > number_of_samples())
         I.last = number_of_samples();
@@ -334,10 +336,11 @@ Signal::pBuffer Audiofile::
 
     boost::shared_ptr<TaskTimer> tt;
     VERBOSE_AUDIOFILE tt.reset(new TaskTimer("Loading %s from '%s' (this=%p)",
-                 J.toString().c_str(), filename().c_str(), this));
+                 I.toString().c_str(), filename().c_str(), this));
 
     DataStorage<float> partialfile(DataStorageSize( num_channels(), I.count(), 1));
-    sf_count_t sndfilepos = sndfile->seek(I.first, SEEK_SET);
+    sf_count_t sndfilepos;
+    TIME_AUDIOFILE_LINE( sndfilepos = sndfile->seek(I.first, SEEK_SET) );
     if (sndfilepos < 0)
     {
         TaskInfo("%s", str(format("ERROR! Couldn't set read position to %d. An error occured (%d)") % I.first % sndfilepos).c_str());
