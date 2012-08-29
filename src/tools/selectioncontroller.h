@@ -81,7 +81,9 @@ namespace Tools
         void renderModelChanged(Tools::ToolModel* model);
 
     private:
+        // Event handlers
         virtual void changeEvent ( QEvent * event );
+        virtual void mousePressEvent ( QMouseEvent * e );
 
         // View
         SelectionModel* _model;

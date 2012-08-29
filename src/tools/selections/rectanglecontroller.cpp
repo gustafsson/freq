@@ -90,6 +90,7 @@ namespace Tools { namespace Selections
     {
         if (e->button() == selection_button_)
         {
+            view_->visible = true;
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
@@ -105,9 +106,10 @@ namespace Tools { namespace Selections
 
             model()->validate();
             rectangleForm_->updateGui();
+            selection_controller_->render_view()->userinput_update();
         }
-
-        selection_controller_->render_view()->userinput_update();
+        else
+            e->ignore();
     }
 
 
@@ -214,10 +216,14 @@ namespace Tools { namespace Selections
         {
             bool currentTool = model()->tryFilter( o );
             rectangleForm_->showAsCurrentTool( currentTool );
+            if (currentTool)
+                view_->visible = true;
 
             if (model()->replaceFilter( o ))
                 selection_controller_->model()->set_current_selection( model()->updateFilter() );
         }
+        else
+            view_->visible = false;
     }
 
 }} // namespace Tools::Selections

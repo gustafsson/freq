@@ -1,5 +1,7 @@
 #include "selectioncontroller.h"
 
+#include <QMouseEvent>
+
 // Sonic AWE
 #include "renderview.h"
 #include "sawe/project.h"
@@ -271,6 +273,16 @@ namespace Tools
         }
     }
 
+
+    void SelectionController::
+            mousePressEvent ( QMouseEvent * e )
+    {
+        if (Qt::RightButton == e->button())
+        {
+            this->setCurrentSelection(Signal::pOperation());
+            render_view()->userinput_update();
+        }
+    }
 
 //    void SelectionController::
 //            receiveAddSelection()
