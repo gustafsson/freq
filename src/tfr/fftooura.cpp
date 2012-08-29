@@ -7,8 +7,13 @@
 #include "TaskTimer.h"
 #include "computationkernel.h"
 
+
 //#define TIME_STFT
 #define TIME_STFT if(0)
+
+//#define TIME_FFT
+#define TIME_FFT if(0)
+
 
 // TODO translate cdft to take floats instead of doubles
 //extern "C" { void cdft(int, int, double *); }
@@ -26,7 +31,7 @@ void FftOoura::
 {
     bool expectPrepared = false;
 
-    TIME_STFT TaskTimer tt("Fft Ooura");
+    TIME_FFT TaskTimer tt("Fft Ooura");
 
     int N = output->size().width;
     int n = input->size().width;
@@ -54,7 +59,7 @@ void FftOoura::
 
 
     {
-        TIME_STFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
+        TIME_FFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
         cdft(2*N, direction, &q[0], const_cast<int*>(&ip[0]), const_cast<float*>(&w[0]));
     }
 
@@ -127,6 +132,8 @@ void FftOoura::
 void FftOoura::
         compute( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n, FftDirection direction )
 {
+    TIME_STFT TaskTimer tt("Stft Ooura");
+
     Tfr::ChunkElement* input = CpuMemoryStorage::ReadOnly<1>( inputdata ).ptr();
     Tfr::ChunkElement* output = CpuMemoryStorage::WriteAll<1>( outputdata ).ptr();
 
@@ -162,6 +169,8 @@ void FftOoura::
 void FftOoura::
         compute(DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n )
 {
+    TIME_STFT TaskTimer tt("Stft Ooura R2C");
+
     DataStorageSize actualSize(n.width/2 + 1, n.height);
 
     BOOST_ASSERT( (int)output->numberOfElements()/actualSize.width == n.height );
@@ -194,6 +203,8 @@ void FftOoura::
 void FftOoura::
         inverse(Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output, DataStorageSize n )
 {
+    TIME_STFT TaskTimer tt("Stft Ooura C2R");
+
     int denseWidth = n.width/2+1;
     int redundantWidth = n.width;
     int batchcount1 = output->numberOfElements()/redundantWidth,

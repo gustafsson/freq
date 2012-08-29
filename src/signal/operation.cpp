@@ -93,8 +93,18 @@ pBuffer Operation::
         read( const Interval& I )
 {
     if (_source && Intervals(I) - zeroed_samples())
-        return _source->read( I );
+    {
+        TIME_OPERATION TaskTimer tt("%s.%s(%s) from %s",
+                      vartype(*this).c_str(), __FUNCTION__ ,
+                      I.toString().c_str(),
+                      vartype(*_source).c_str());
 
+        return _source->read( I );
+    }
+
+    TIME_OPERATION TaskTimer tt("%s.%s(%s) zeros",
+                  vartype(*this).c_str(), __FUNCTION__ ,
+                  I.toString().c_str());
     return zeros(I);
 }
 

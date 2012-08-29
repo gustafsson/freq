@@ -14,11 +14,13 @@
 #include <msc_stdc.h>
 #endif
 
+
 //#define TIME_STFT
 #define TIME_STFT if(0)
 
 //#define TEST_FT_INVERSE
 #define TEST_FT_INVERSE if(0)
+
 
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
 #define USE_CUFFT
@@ -279,10 +281,12 @@ Tfr::pChunk Stft::
         TaskInfo("Difftest %s (value %g)", maxd<1e-9*_window_size?"passed":"failed", maxd);
     }
 
-    TIME_STFT TaskInfo("Stft chunk %s, %s, %s",
+    TIME_STFT TaskInfo("Stft chunk %s, %s, %s. (%u x %u)",
                        chunk->getInterval().toString().c_str(),
                        chunk->getInversedInterval().toString().c_str(),
-                       chunk->getCoveredInterval().toString().c_str());
+                       chunk->getCoveredInterval().toString().c_str(),
+                       chunk->nSamples(),
+                       chunk->nScales());
 
     return chunk;
 }

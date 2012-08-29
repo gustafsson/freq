@@ -96,8 +96,6 @@ void BlockFilter::
 void BlockFilter::
         mergeColumnMajorChunk( pBlock block, Chunk& chunk, Block::pData outData, float normalization_factor )
 {
-    TIME_BLOCKFILTER ComputationSynchronize();
-
     Region r = block->getRegion();
 
     Position chunk_a, chunk_b;
@@ -164,6 +162,8 @@ void BlockFilter::
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
+    {
+    TIME_BLOCKFILTER TaskTimer tt("resampleStft");
     ::resampleStft( chunk.transform_data,
                     chunk.nScales(),
                     chunk.nSamples(),
@@ -178,11 +178,11 @@ void BlockFilter::
                   _collection->amplitude_axis(),
                   normalization_factor,
                   true);
+    TIME_BLOCKFILTER ComputationSynchronize();
+    }
 
     block->valid_samples |= transfer;
     block->non_zero |= transfer;
-
-    TIME_BLOCKFILTER ComputationSynchronize();
 }
 
 
@@ -331,6 +331,8 @@ void BlockFilter::
 #endif
 
     // Invoke kernel execution to merge chunk into block
+    {
+    TIME_BLOCKFILTER TaskTimer tt("blockResampleChunk");
     ::blockResampleChunk( chunk.transform_data,
                      outData,
                      ValidInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
@@ -347,7 +349,7 @@ void BlockFilter::
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
-
+    }
 
     ComputationCheckError();
     GlException_CHECK_ERROR();
