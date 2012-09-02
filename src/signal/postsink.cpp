@@ -185,7 +185,7 @@ void PostSink::
 
     Operation::set_channel( c );
 
-//    source()->set_channel_is_recursive( false );
+    source()->set_channel_is_recursive( false );
 
     if (_filter)
         _filter->set_channel( c );
@@ -193,7 +193,7 @@ void PostSink::
     BOOST_FOREACH( pOperation s, sinks() )
         s->set_channel( c );
 
-  //  source()->set_channel_is_recursive( true );
+    source()->set_channel_is_recursive( true );
 }
 
 
