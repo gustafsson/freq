@@ -30,10 +30,72 @@ PostSink::
 }
 
 
-Signal::pBuffer PostSink::
-        read( const Signal::Interval& I )
+pBuffer PostSink::
+        read( const Interval& I )
 {
-    DEBUG_POSTSINK TaskTimer tt("PostSink( %s )", I.toString().c_str());
+    gcSinks();
+
+    pBuffer b;
+#ifndef SAWE_NO_MUTEX
+    b = readSimple( I );
+#else
+    b = readActivePassive( I );
+#endif
+
+    return b;
+}
+
+
+void PostSink::
+        gcSinks()
+{
+#ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_sinks_lock);
+#endif
+
+    for(std::vector<pOperation>::iterator i = _sinks.begin(); i!=_sinks.end(); )
+    {
+        Sink* s = dynamic_cast<Sink*>(i->get());
+
+        if (s && s->deleteMe())
+        {
+            TaskTimer tt("Removing %s from postsink", demangle( typeid(*s) ).c_str());
+            i = _sinks.erase( i );
+        }
+        else
+            i++;
+    }
+}
+
+
+pBuffer PostSink::
+        readSimple( const Interval& I )
+{
+    DEBUG_POSTSINK TaskTimer tt("%s( %s )", __FUNCTION__, I.toString().c_str());
+
+    pOperation prev = source();
+    DEBUG_POSTSINK TaskTimer("Source %s", vartype(*prev).c_str()).suppressTiming();
+
+    if (_filter)
+    {
+        DEBUG_POSTSINK TaskTimer("Filter %s", vartype(*_filter).c_str()).suppressTiming();
+        prev = _filter;
+    }
+
+    pBuffer b = prev->read( I );
+
+    BOOST_FOREACH( pOperation c, sinks() ) {
+        c->read( I );
+    }
+
+    return b;
+}
+
+
+pBuffer PostSink::
+        readActivePassive( const Interval& I )
+{
+    DEBUG_POSTSINK TaskTimer tt("%s( %s )", __FUNCTION__, I.toString().c_str());
 
     if (_sinks.empty())
         return source()->read(I);
@@ -45,19 +107,6 @@ Signal::pBuffer PostSink::
 #ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_sinks_lock);
 #endif
-
-        for(std::vector<pOperation>::iterator i = _sinks.begin(); i!=_sinks.end(); )
-        {
-            Sink* s = dynamic_cast<Sink*>(i->get());
-
-            if (s && s->deleteMe())
-            {
-                TaskTimer tt("Removing %s from postsink", demangle( typeid(*s) ).c_str());
-                i = _sinks.erase( i );
-            }
-            else
-                i++;
-        }
 
         DEBUG_POSTSINK TaskTimer tt("Adding %u operations", _sinks.size());
 
@@ -122,88 +171,57 @@ Signal::pBuffer PostSink::
     return b;
 }
 
-/* TODO remove
-void PostSink::
-        operator()( Chunk& chunk )
-{
-    Signal::Intervals expected = expected_samples();
-    if ( !(expected & chunk.getInterval()) )
-        return;  // Don't forward data that wasn't requested
-
-    if (_inverse_cwt.filter.get())
-    {
-        // Get a chunk for this block
-        Tfr::pChunk chunk = getChunk(b,s);
-
-        if ( (expected & chunk->getInterval()).isEmpty() )
-            return; // Don't forward data that wasn't requested
-
-        // Discard given buffer
-        b.reset();
-
-        b = _inverse_cwt( *chunk );
-    }
-
-    foreach( pSink sink, sinks() )
-        sink->put(b, s);
-}*/
-
-
-/* TODO remove
-void PostSink::
-        reset()
-{
-    foreach( pSink s, sinks() )
-        s->reset( );
-
-    Tfr::ChunkSink::reset();
-}*/
-
-
-/* TODO remove
-bool PostSink::
-        isFinished()
-{
-    bool r = true;
-
-    foreach( pSink s, sinks() )
-        r &= s->isFinished( );
-
-    return r;
-}
-*/
-
 
 void PostSink::
         set_channel(unsigned c)
 {
+    // TODO remove set_channel and set_channel_is_recursive altogether. Return
+    // all channels instead. If the user wants to process the channels
+    // individually they could split them into different chains, the end of the
+    // chains could be rendered superpositioned though.
+    // Used to temporarily disable that by 's->source( pOperation() )',
+    // 's->source( source() )', but that doesn't work in a multithreaded
+    // environment which might need that source somewhere else.
+
     Operation::set_channel( c );
 
+//    source()->set_channel_is_recursive( false );
+
     if (_filter)
-    {
-        _filter->source( pOperation() );
         _filter->set_channel( c );
-        _filter->source( source() );
-    }
 
     BOOST_FOREACH( pOperation s, sinks() )
-    {
-        s->source( pOperation() );
         s->set_channel( c );
-        s->source( source() );
-    }
+
+  //  source()->set_channel_is_recursive( true );
 }
 
 
 void PostSink::
         source(pOperation v)
 {
+#ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_sinks_lock);
+#endif
     Operation::source( v );
 
-    if (_filter)
-        _filter->source( v );
+    update_source();
+}
 
-    BOOST_FOREACH( pOperation s, sinks() )
+
+void PostSink::
+        update_source()
+{
+    // make sure to lock _sinks_lock outside this
+    pOperation v = source();
+
+    if (_filter)
+    {
+        _filter->source( v );
+        v = _filter;
+    }
+
+    BOOST_FOREACH( pOperation s, _sinks )
     {
         s->source( v );
     }
@@ -267,17 +285,29 @@ bool PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
-    // If this->invalidate_samples is called from source() all sinks will also
-    // be called from source() as they are registered as outputs in source()
-    // In that case invalidate_samples will be called twice for all sinks.
-    BOOST_FOREACH( pOperation o, sinks() )
+    pOperation s = source();
+    if (s)
     {
-        o->invalidate_samples( I );
+        // prevent endless recursion calls with 'noop'
+        static bool noop = false;
+        if (noop)
+            return;
+
+    #ifndef SAWE_NO_MUTEX
+        QMutexLocker l(&_sinks_lock);
+    #endif
+
+        noop = true;
+        s->Operation::invalidate_samples( I );
+        noop = false;
     }
+    else
+    {
+        if (_filter) _filter->invalidate_samples( I );
 
-    if (filter()) filter()->invalidate_samples( I );
-
-    Operation::invalidate_samples( I );
+        BOOST_FOREACH( pOperation o, sinks() )
+            o->invalidate_samples( I );
+    }
 }
 
 
@@ -325,14 +355,16 @@ void PostSink::
     QMutexLocker l(&_sinks_lock);
 #endif
 
+    // validate that they are all sinks
     BOOST_FOREACH( pOperation o, v )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
         BOOST_ASSERT( s );
-        s->source( source() );
     }
 
     _sinks = v;
+
+    update_source();
 
     // The new sinks should not be invalidated, neither should the parents be
 }
@@ -351,6 +383,10 @@ void PostSink::
     if (f == _filter)
         return;
 
+#ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_sinks_lock);
+#endif
+
     Intervals I;
 
     if (f)          f->source(source());
@@ -366,10 +402,16 @@ void PostSink::
     else if(_filter)
         I -= _filter->zeroed_samples_recursive();
 
-    invalidate_samples( I );
-
     // Change filter
     _filter = f;
+
+    update_source();
+
+#ifndef SAWE_NO_MUTEX
+    l.unlock();
+#endif
+
+    invalidate_samples( I );
 }
 
 } // namespace Signal

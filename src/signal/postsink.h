@@ -74,9 +74,9 @@ public:
 
 
     /**
-      Will call invalidate_samples on all instances of Signal::Sink in sinks().
+      Call source()::Operation::invalidate_samples() to invalidate all instances of Signal::Sink in sinks().
       */
-    virtual void invalidate_samples( const Intervals& I );
+    virtual void invalidate_samples( const Intervals& );
 
     virtual std::string toString();
 
@@ -94,6 +94,10 @@ public:
     void                    filter(pOperation f);
 
 private:
+    void                    update_source();
+    void                    gcSinks();
+    Signal::pBuffer         readSimple( const Signal::Interval& I );
+    Signal::pBuffer         readActivePassive( const Signal::Interval& I );
 
     pOperation              _filter;
 #ifndef SAWE_NO_MUTEX
