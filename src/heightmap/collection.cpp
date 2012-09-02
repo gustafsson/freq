@@ -106,6 +106,10 @@ void Collection::
     _cache.clear();
     _recent.clear();
 
+#ifndef SAWE_NO_MUTEX
+    l.unlock();
+#endif
+
     invalidate_samples(Signal::Intervals::Intervals_ALL);
 }
 
@@ -300,14 +304,13 @@ pBlock Collection::
             TaskInfo("Delaying creation of block %s", ref.toString().c_str());
         }
     } else {
-			#ifndef SAWE_NO_MUTEX
-        if (block->new_data_available) {
-            QMutexLocker l(&block->cpu_copy_mutex);
-            cudaMemcpy(block->glblock->height()->data->getCudaGlobal().ptr(),
-                       block->cpu_copy->getCpuMemory(), block->cpu_copy->getNumberOfElements1D(), cudaMemcpyHostToDevice);
-            block->new_data_available = false;
-        }
-			#endif
+        #ifndef SAWE_NO_MUTEX
+            if (block->new_data_available) {
+                QMutexLocker l(&block->cpu_copy_mutex);
+                *block->glblock->height()->data = *block->cpu_copy;
+                block->new_data_available = false;
+            }
+        #endif
     }
 
     if (0 != block.get())
@@ -485,6 +488,10 @@ void Collection::
 void Collection::
         discardOutside(Signal::Interval I)
 {
+    #ifndef SAWE_NO_MUTEX
+        QMutexLocker l(&_cache_mutex);
+    #endif
+
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
     {
         Signal::Interval blockInterval = itr->first.getInterval();
@@ -507,9 +514,16 @@ void Collection::
                     Region ir = itr->first.getRegion();
                     float t = I.last / target->sample_rate() - ir.a.time;
 
+#ifdef SAWE_NO_MUTEX
                     GlBlock::pHeight block = itr->second->glblock->height();
+                    Block::pData data = block->data;
+#else
+                    QMutexLocker l(&itr->second->cpu_copy_mutex);
+                    Block::pData data = itr->second->cpu_copy;
+                    itr->second->new_data_available;
+#endif
 
-                    ::blockClearPart( block->data,
+                    ::blockClearPart( data,
                                   ceil(t * itr->first.sample_rate()) );
 
                     itr->second->valid_samples &= I;
@@ -565,10 +579,10 @@ void Collection::
                                  sid.toString().c_str());
 
 #ifndef SAWE_NO_MUTEX
-	QMutexLocker l(&_cache_mutex);
+    QMutexLocker l(&_cache_mutex);
 #endif
     foreach ( const cache_t::value_type& c, _cache )
-		c.second->valid_samples -= sid;
+        c.second->valid_samples -= sid;
 
     // validate length
     Interval wholeSignal = target->getInterval();
@@ -598,7 +612,7 @@ void Collection::
 
 
 Intervals Collection::
-        invalid_samples() const
+        invalid_samples()
 {
     Intervals r;
 
@@ -690,6 +704,10 @@ pBlock Collection::
         Region r = ref.getRegion();
         BOOST_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( this, r.time(), r.scale() ));
+
+#ifndef SAWE_NO_MUTEX
+        attempt->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
+#endif
 /*        {
             GlBlock::pHeight h = attempt->glblock->height();
             //GlBlock::pSlope sl = attempt->glblock->slope();
@@ -869,10 +887,10 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
-        bool stubWithStft = true;
+        bool stubWithStft = false;
         BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
         if (blockFilter)
-            stubWithStft = blockFilter->stubWithStft();
+            stubWithStft &= blockFilter->stubWithStft();
 
         VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
 
@@ -1119,18 +1137,29 @@ bool Collection::
     INFO_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
                                  inBlock->reference().toString().c_str(), outBlock->reference().toString().c_str());
 
+    BOOST_ASSERT( outBlock.get() != inBlock.get() );
+
+#ifdef SAWE_NO_MUTEX
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
-
     BOOST_ASSERT( in_h.get() != out_h.get() );
-    BOOST_ASSERT( outBlock.get() != inBlock.get() );
+
+    Block::pData out_data = out_h->data;
+    Block::pData in_data = in_h->data;
+#else
+    Block::pData out_data = outBlock->cpu_copy;
+    Block::pData in_data = inBlock->cpu_copy;
+    QMutexLocker ol(&outBlock->cpu_copy_mutex);
+    QMutexLocker il(&inBlock->cpu_copy_mutex);
+    outBlock->new_data_available = true;
+#endif
 
     INFO_COLLECTION ComputationSynchronize();
 
     {
     INFO_COLLECTION TaskTimer tt("blockMerge");
-    ::blockMerge( in_h->data,
-                  out_h->data,
+    ::blockMerge( in_data,
+                  out_data,
 
                   ResampleArea( ri.a.time, ri.a.scale, ri.b.time, ri.b.scale ),
                   ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );

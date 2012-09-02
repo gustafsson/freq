@@ -78,8 +78,7 @@ void BlockFilter::
 
             mergeChunk( block, chunk, block->cpu_copy );
 
-            block->cpu_copy->getCpuMemory();
-            block->cpu_copy->freeUnused();
+            block->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 
             block->new_data_available = true;
         }
