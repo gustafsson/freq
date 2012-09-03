@@ -180,10 +180,11 @@ RenderController::
         Ui::MainWindow* ui = main->getItems();
 #ifdef TARGET_hast
         tf_resolution->setValue( 10 );
-        transform->actions().at(0)->trigger();
+//        transform->actions().at(0)->trigger();
 #else
-        transform->actions().at(1)->trigger();
+//        transform->actions().at(1)->trigger();
 #endif
+        transform->actions().at(0)->trigger();
 
         ui->actionTransform_Stft->trigger();
         logScale->trigger();
