@@ -14,11 +14,20 @@
 //#define TIME_FFT
 #define TIME_FFT if(0)
 
+// TODO Use the proper transform for different FftTransform methods
 
-// TODO translate cdft to take floats instead of doubles
-//extern "C" { void cdft(int, int, double *); }
-//extern "C" { void cdft(int, int, double *, int *, double *); }
+//cdft: Complex Discrete Fourier Transform
 extern "C" { void cdft(int, int, float *, int *, float *); }
+//rdft: Real Discrete Fourier Transform
+extern "C" { void rdft(int, int, float *, int *, float *); }
+//ddct: Discrete Cosine Transform
+extern "C" { void ddct(int, int, float *, int *, float *); }
+//ddst: Discrete Sine Transform
+extern "C" { void ddst(int, int, float *, int *, float *); }
+//dfct: Cosine Transform of RDFT (Real Symmetric DFT)
+extern "C" { void dfct(int, float *, float *, int *, float *); }
+//dfst: Sine Transform of RDFT (Real Anti-symmetric DFT)
+extern "C" { void dfst(int, float *, float *, int *, float *); }
 
 const int magicNumber = 123456;
 const bool magicCheck = true;
