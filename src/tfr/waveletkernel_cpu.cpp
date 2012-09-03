@@ -19,8 +19,6 @@ void wtCompute(
         float sigma_t0,
         float normalization_factor )
 {
-    TaskTimer tt("wtCompute");
-
     Tfr::ChunkElement* in_waveform_ft = CpuMemoryStorage::ReadOnly<1>( in_waveform_ftp ).ptr();
     Tfr::ChunkElement* out_wavelet_ft = CpuMemoryStorage::WriteAll<2>( out_wavelet_ftp ).ptr();
 

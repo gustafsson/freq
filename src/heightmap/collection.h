@@ -283,11 +283,6 @@ private:
 
 
     /**
-      Add block information from Cwt transform. Returns whether any information was merged.
-      */
-    bool        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
-
-    /**
       Add block information from another block. Returns whether any information was merged.
       */
     bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );

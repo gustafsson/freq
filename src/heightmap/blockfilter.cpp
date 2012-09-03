@@ -10,7 +10,6 @@
 #include "tfr/stft.h"
 
 #include <computationkernel.h>
-#include <GlException.h>
 #include <TaskTimer.h>
 #include <Statistics.h>
 
@@ -351,7 +350,6 @@ void BlockFilter::
     }
 
     ComputationCheckError();
-    GlException_CHECK_ERROR();
 
     if( full_resolution )
     {
