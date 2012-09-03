@@ -39,17 +39,17 @@ CONFIG += $${qtfeatures}buildflags
 # QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-debugwithomp {
-    DEFINES += DEBUG_WITH_OMP
+# Macports gcc 4.7 is necessary to build for openmp on Mac
+macx: system(which /opt/local/bin/g++-mp-4.7): CONFIG(release, debug|release) : CONFIG += useomp
 
+useomp {
+    DEFINES += USE_OMP
+    win32:QMAKE_CXXFLAGS += /openmp
     unix:QMAKE_CXXFLAGS += -fopenmp
     unix:QMAKE_LFLAGS += -fopenmp
-    win32:QMAKE_CXXFLAGS += /openmp
-} else {
-    unix:QMAKE_CXXFLAGS_RELEASE += -fopenmp
-    unix:QMAKE_LFLAGS_RELEASE += -fopenmp
-    win32:QMAKE_CXXFLAGS_RELEASE += /openmp
+    macx:LIBS += -lgomp
 }
+
 
 ####################
 # Source code
@@ -153,7 +153,6 @@ CONFIG += $${qtfeatures}otherfilesvs
 ####################
 # Build settings
 CONFIG += $${qtfeatures}sawelibs
-DEFINES += SAWE_NO_MUTEX
 #DEFINES += CUDA_MEMCHECK_TEST
 
 
