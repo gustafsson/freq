@@ -174,6 +174,16 @@ unsigned Collection::
     _created_count = 0;
 
 
+    foreach(const recent_t::value_type& b, _to_remove)
+    {
+        const Region& r = b->getRegion();
+        TaskTimer tt("Release block [%g, %g]", r.a.time, r.b.time);
+
+        _recent.remove(b);
+        _cache.erase(b->reference());
+    }
+    _to_remove.clear();
+
     /*foreach(const recent_t::value_type& b, _recent)
     {
         if (b->frame_number_last_used != _frame_counter)
@@ -258,6 +268,9 @@ Signal::Intervals inline Collection::
     cache_t::const_iterator itr = _cache.find( r );
     if (itr != _cache.end())
     {
+#ifndef SAWE_NO_MUTEX
+        QMutexLocker l(&itr->second->cpu_copy_mutex);
+#endif
         return itr->second->getInterval() - itr->second->valid_samples;
     }
 
@@ -307,7 +320,7 @@ pBlock Collection::
         #ifndef SAWE_NO_MUTEX
             if (block->new_data_available) {
                 QMutexLocker l(&block->cpu_copy_mutex);
-                *block->glblock->height()->data = *block->cpu_copy;
+                *block->glblock->height()->data = *block->cpu_copy; // really small memcpy
                 block->new_data_available = false;
             }
         #endif
@@ -464,44 +477,31 @@ void Collection::
     printCacheSize();
     TaskInfo("Of which %u are recently used", _recent.size());
 
-    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
+    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); itr++ )
     {
         if (_frame_counter != itr->second->frame_number_last_used ) {
-            const Region& r = itr->second->getRegion();
-            TaskTimer tt("Release block [%g, %g]", r.a.time, r.b.time);
-
-            _recent.remove(itr->second);
-            itr = _cache.erase(itr);
-        } else {
-            itr++;
+            _to_remove.push_back( itr->second );
         }
     }
-
-    TaskInfo("Now has %u cached blocks, %s",
-             _cache.size(),
-             DataStorageVoid::getMemorySizeText(
-                     _cache.size() * scales_per_block()*samples_per_block()*(1+2)*sizeof(float) ).c_str()
-             );
 }
 
 
 void Collection::
         discardOutside(Signal::Interval I)
 {
-    #ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&_cache_mutex);
-    #endif
+#ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_cache_mutex);
+#endif
 
-    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
+    for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
         Signal::Interval blockInterval = itr->first.getInterval();
-        if ( 0 == (I & blockInterval).count() )
+        Signal::Interval toKeep = I & blockInterval;
+        if ( !toKeep )
         {
-            _recent.remove(itr->second);
-            itr = _cache.erase(itr);
-            continue;
+            _to_remove.push_back(itr->second);
         }
-        else if ( blockInterval == (I & blockInterval))
+        else if ( blockInterval == toKeep )
         {
         }
         else
@@ -531,7 +531,6 @@ void Collection::
                 }
             }
         }
-        itr++;
     }
 }
 
@@ -578,11 +577,13 @@ void Collection::
     INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
+    {
 #ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
+        QMutexLocker l(&_cache_mutex);
 #endif
-    foreach ( const cache_t::value_type& c, _cache )
-        c.second->valid_samples -= sid;
+        foreach ( const cache_t::value_type& c, _cache )
+            c.second->valid_samples -= sid;
+    }
 
     // validate length
     Interval wholeSignal = target->getInterval();
@@ -592,20 +593,7 @@ void Collection::
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
     if (_prev_length > length)
-    {
-        for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); )
-        {
-            Signal::Interval blockInterval = itr->second->getInterval();
-            if ( !(blockInterval & wholeSignal) )
-            {
-                _recent.remove(itr->second);
-                itr = _cache.erase(itr);
-            } else {
-                itr->second->valid_samples &= wholeSignal;
-                itr++;
-            }
-        }
-    }
+        discardOutside( wholeSignal );
 
     _prev_length = length;
 }
@@ -629,10 +617,14 @@ Intervals Collection::
 
     foreach ( const recent_t::value_type& a, _recent )
     {
-        Block const& b = *a;
+        Block& b = *a;
         unsigned framediff = _frame_counter - b.frame_number_last_used;
         if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
         {
+#ifndef SAWE_NO_MUTEX
+            QMutexLocker l(&b.cpu_copy_mutex);
+#endif
+
             counter++;
             Intervals i = b.getInterval();
 
@@ -648,7 +640,7 @@ Intervals Collection::
     }
     }
 
-    //TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
+    TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
 
     // If all recently used block are up-to-date then also update all their children, if any children are allocated
     if (false) if (!r)
@@ -780,6 +772,9 @@ pBlock Collection::
 
                     if (allocatedMemory+memForNewBlock+margin > _free_memory*MAX_FRACTION_FOR_CACHES)
                     {
+#ifndef SAWE_NO_MUTEX
+                        QMutexLocker l(&stealedBlock->cpu_copy_mutex);
+#endif
                         pBlock stealedBlock = _recent.back();
                         const Region& stealed_r = stealedBlock->getRegion();
 
@@ -871,6 +866,10 @@ pBlock Collection::
             TaskTimer tt("Failed creating new block %s", ref.toString().c_str());
             return pBlock(); // return null-pointer
         }
+
+#ifndef SAWE_NO_MUTEX
+        QMutexLocker cpul(&block->cpu_copy_mutex);
+#endif
 
         VERBOSE_COLLECTION ComputationSynchronize();
 
@@ -1115,6 +1114,11 @@ void Collection::
 bool Collection::
         mergeBlock( pBlock outBlock, pBlock inBlock, unsigned /*cuda_stream*/ )
 {
+#ifndef SAWE_NO_MUTEX
+    BOOST_ASSERT( !outBlock->cpu_copy_mutex.tryLock() );
+    QMutexLocker il(&inBlock->cpu_copy_mutex);
+#endif
+
     const Interval outInterval = outBlock->getInterval();
 
     // Find out what intervals that match
@@ -1149,8 +1153,6 @@ bool Collection::
 #else
     Block::pData out_data = outBlock->cpu_copy;
     Block::pData in_data = inBlock->cpu_copy;
-    QMutexLocker ol(&outBlock->cpu_copy_mutex);
-    QMutexLocker il(&inBlock->cpu_copy_mutex);
     outBlock->new_data_available = true;
 #endif
 

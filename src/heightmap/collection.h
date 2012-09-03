@@ -256,6 +256,7 @@ private:
 #endif
     cache_t _cache;
     recent_t _recent; /// Ordered with the most recently accessed blocks first
+    recent_t _to_remove;
 
     ThreadChecker _constructor_thread;
 
