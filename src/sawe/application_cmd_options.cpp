@@ -132,10 +132,9 @@ void Application::
     cwt.set_wanted_min_hz( Sawe::Configuration::min_hz() );
     cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
     cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
-    //cwt.set_wanted_min_hz( _min_hz );
 
 #ifndef SAWE_NO_MUTEX
-    if (_multithread)
+    if (Sawe::Configuration::feature("worker_thread"))
         p->worker.start();
 #endif
 

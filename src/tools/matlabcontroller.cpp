@@ -629,7 +629,7 @@ void MatlabController::
 
 #ifndef SAWE_NO_MUTEX
         // Make sure the worker runs in a separate thread
-        project_->worker_->start();
+        project_->worker.start();
 #endif
     }
 
