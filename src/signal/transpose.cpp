@@ -1,6 +1,8 @@
 #include "transpose.h"
 #include "cpumemorystorage.h"
 
+#include <string.h>
+
 namespace Signal {
 
 void transpose(DataStorage<float>* dest, DataStorage<float>* src)
