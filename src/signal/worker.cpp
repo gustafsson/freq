@@ -94,6 +94,9 @@ bool Worker::
         return false;
     }
 
+    pTarget t = target();
+    QMutexLocker l(&t->main_chain_head()->chain()->mutex);
+
     WORKER_INFO TaskInfo("Worker::workOne%s on target %s",
                          skip_if_low_fps?" (skip if low fps)":"",
                          _target->name().c_str());
