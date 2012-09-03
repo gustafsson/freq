@@ -33,6 +33,7 @@
     #include <math.h>
 #endif
 
+
 //#define TIME_CWT if(0)
 #define TIME_CWT
 
@@ -269,7 +270,7 @@ pChunk Cwt::
         if (!ft || ft->getInterval() != subinterval)
         {
             TIME_CWTPART TaskTimer tt(
-                    "Computing forward fft on GPU of interval %s, was %s",
+                    "Computing forward fft of interval %s, was %s",
                     subinterval.toString().c_str(),
                     ft?ft->getInterval().toString().c_str():0 );
 
@@ -415,9 +416,11 @@ pChunk Cwt::
 
     {
         DataStorageSize requiredWtSz( dynamic_cast<StftChunk*>(ft.get())->transformSize(), n_scales, 1 );
+#ifdef USE_CUDA
         TIME_CWTPART TaskTimer tt("Allocating chunk part (%u, %u, %u), %g kB",
                               requiredWtSz.width, requiredWtSz.height, requiredWtSz.depth,
                               requiredWtSz.width* requiredWtSz.height* requiredWtSz.depth * sizeof(Tfr::ChunkElement) / 1024.f);
+#endif
 
         // allocate a new chunk
         intermediate_wt->transform_data.reset(new ChunkData( requiredWtSz ));
@@ -1197,15 +1200,16 @@ unsigned Cwt::
 unsigned Cwt::
         time_support_bin0( float fs ) const
 {
-    float lowesthz_inBin0;
+//    return wavelet_time_support_samples( fs, j_to_hz( fs, 0 ) );
+    float highesthz_inBin0;
     for (unsigned j=0; ;j++)
         if (0 != find_bin(j))
         {
-            lowesthz_inBin0 = j_to_hz( fs, j-1 );
+            highesthz_inBin0 = j_to_hz( fs, j-1 );
             break;
         }
 
-    return wavelet_time_support_samples( fs, lowesthz_inBin0 );
+    return wavelet_time_support_samples( fs, highesthz_inBin0 );
 }
 
 
