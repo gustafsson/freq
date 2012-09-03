@@ -2,7 +2,7 @@
 
 #include "sawe/reader.h"
 
-#if !defined(_DEBUG) || defined(DEBUG_WITH_OMP)
+#if defined(USE_OMP)
 #include <omp.h>
 #endif
 
@@ -50,8 +50,7 @@ Configuration::
             get_csv_( (unsigned)-1 ),
             get_chunk_count_( false ),
             selectionfile_( "selection.wav" ),
-            soundfile_( "" ),
-            multithread_( false )
+            soundfile_( "" )
 {
 #ifdef SONICAWE_VERSION
     version_ = TOSTR(SONICAWE_VERSION);
@@ -291,7 +290,7 @@ std::string Configuration::
 int Configuration::
         cpuCores()
 {
-#if !defined(_DEBUG) || defined(DEBUG_WITH_OMP)
+#if defined(USE_OMP)
     return omp_get_max_threads();
 #else
     return 1;
@@ -382,11 +381,6 @@ static const char _sawe_usage_string[] =
     "    --samples_per_block The transform chunks are downsampled to blocks for\n"
     "                        rendering, this gives the number of samples per block.\n"
     "    --scales_per_block  Number of scales per block, se samples_per_block.\n"
-
-//    "    multithread        If set, starts a parallell worker thread. Good if heavy \n"
-//    "                       filters are being used as the GUI won't be locked during\n"
-//    "                       computation.\n"
-
     "\n"
     "Sonic AWE is a product developed by MuchDifferent\n";
 
@@ -481,9 +475,6 @@ int Configuration::
         else if (readarg(&cmd, version));
         else if (readarg(&cmd, use_saved_state));
         else if (readarg(&cmd, skip_update_check));
-#ifndef QT_NO_THREAD
-        else if (readarg(&cmd, multithread));
-#endif
         else if (readarg(&cmd, skipfeature))
         {
             vector<string>::iterator featureitr = find(features_.begin(), features_.end(), skipfeature_);
@@ -700,6 +691,7 @@ bool Configuration::
 void Configuration::
         set_basic_features()
 {
+    features_.push_back("worker_thread");
     features_.push_back("overlay_navigation");
     features_.push_back("compute_device_info_in_menu");
 }

@@ -80,7 +80,6 @@ Intervals::
 {
     if (r.count())
     {
-        BOOST_ASSERT( r.valid() );
         base::push_back( r );
     }
 }

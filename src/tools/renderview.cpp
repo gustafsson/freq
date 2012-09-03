@@ -712,7 +712,6 @@ void RenderView::
 void RenderView::
         drawCollection(int i, float yscale )
 {
-    model->renderSignalTarget->source()->set_channel( i );
     model->renderer->collection = model->collections[i].get();
     model->renderer->fixed_color = channel_colors[i];
     glDisable(GL_BLEND);

@@ -1133,7 +1133,7 @@ bool Renderer::
     Region r = ref.getRegion();
     const Position p[2] = { r.a, r.b };
 
-    float y[]={0, projectionPlane[1]*.5};
+    float y[]={0, float(projectionPlane[1]*.5)};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
         GLvector corner[]=

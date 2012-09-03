@@ -5,6 +5,8 @@
 
 #include <QObject>
 #include <QString>
+#include <QMutex>
+
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -38,6 +40,12 @@ public:
     std::string name;
 
     bool isInChain(Signal::pOperation) const;
+
+    /**
+     * @brief 'mutex' is used to prevent changes to the chain of operations
+     * in 'this' while they are being processed.
+     */
+    QMutex mutex;
 
 signals:
     void chainChanged();

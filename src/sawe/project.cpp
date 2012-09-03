@@ -55,6 +55,10 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
+#ifndef SAWE_NO_MUTEX
+    worker.stopRunning();
+#endif
+
     {
         TaskInfo ti("releasing tool resources");
         _tools.reset();

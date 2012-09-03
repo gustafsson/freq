@@ -89,10 +89,10 @@ public:
     Intervals& operator &= (const Interval&);
     Intervals  operator ^  (const Intervals& b) const { return Intervals(*this)^=b; }
     Intervals& operator ^= (const Intervals&);
-    Intervals operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
-    Intervals& operator >>= (const IntervalType&);
-    Intervals operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
-    Intervals& operator <<= (const IntervalType&);
+    Intervals  operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
+    Intervals& operator >>=(const IntervalType&);
+    Intervals  operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
+    Intervals& operator <<=(const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
     operator   bool        () const { return !empty(); }

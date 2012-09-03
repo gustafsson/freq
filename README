@@ -162,6 +162,8 @@ Where $QT is typically one of:
 /usr/local/Trolltech/Qt-*
 /usr/local/Qt*
 
+To build with openmp (which makes Sonic AWE way faster) you need to get a later version of g++ than Xcode provides. Install macports and run "sudo port install gcc47". This also requires you to remove -Xarch_x86_64 from g++-macx.conf.
+
 
 Build environment for Windows
 -----------------------------

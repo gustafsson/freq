@@ -10,7 +10,6 @@
 #include "tfr/stft.h"
 
 #include <computationkernel.h>
-#include <GlException.h>
 #include <TaskTimer.h>
 #include <Statistics.h>
 
@@ -78,8 +77,7 @@ void BlockFilter::
 
             mergeChunk( block, chunk, block->cpu_copy );
 
-            block->cpu_copy->getCpuMemory();
-            block->cpu_copy->freeUnused();
+            block->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 
             block->new_data_available = true;
         }
@@ -352,7 +350,6 @@ void BlockFilter::
     }
 
     ComputationCheckError();
-    GlException_CHECK_ERROR();
 
     if( full_resolution )
     {

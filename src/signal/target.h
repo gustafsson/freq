@@ -23,10 +23,10 @@ public:
 
     Sawe::Project* project();
 
-    std::set<pChain> layers();
+    const std::set<pChain>& layers();
 
-    virtual void addLayer(pChain);
-    virtual void removeLayer(pChain);
+    void addLayer(pChain);
+    void removeLayer(pChain);
 
     bool isInSet(pChain) const;
 
@@ -133,6 +133,10 @@ public:
     /**
       */
     unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
+
+    /**
+     */
+    pChainHead main_chain_head();
 
 private:
     void rebuildSource();

@@ -11,8 +11,13 @@
 #include <boost/foreach.hpp>
 #include <boost/noncopyable.hpp>
 
-#define DEBUG_Target if(0)
+
+//#define TIME_FORALLCHANNELS
+#define TIME_FORALLCHANNELS if(0)
+
 //#define DEBUG_Target
+#define DEBUG_Target if(0)
+
 
 namespace Signal {
 
@@ -33,11 +38,18 @@ public:
     virtual pBuffer read( const Interval& I )
     {
         unsigned N = num_channels();
+        TIME_FORALLCHANNELS TaskTimer t("Processing %u channels", N);
         Signal::pBuffer r;
         for (unsigned i=0; i<N; ++i)
         {
-            set_channel( i );
-            r = Signal::Operation::read( I );
+            {
+                TIME_FORALLCHANNELS TaskTimer t("Set channel %u", i);
+                set_channel( i );
+            }
+            {
+                TIME_FORALLCHANNELS TaskTimer t("Read channel %u", i);
+                r = Signal::Operation::read( I );
+            }
         }
 
         return r;
@@ -165,7 +177,7 @@ Sawe::Project* Layers::
 }
 
 
-std::set<pChain> Layers::
+const std::set<pChain>& Layers::
         layers()
 {
     return layers_;
@@ -411,6 +423,13 @@ unsigned Target::
         return minsize;
 
     return lpo2s(align_up(current_valid_samples_per_chunk, minsize)/minsize)*minsize;
+}
+
+
+pChainHead Target::
+        main_chain_head()
+{
+    return *layerHeads.begin();
 }
 
 

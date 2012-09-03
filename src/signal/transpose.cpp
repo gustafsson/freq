@@ -1,7 +1,7 @@
 #include "transpose.h"
 #include "cpumemorystorage.h"
 
-#include "string.h" // memcpy
+#include <string.h> // memcpy
 
 namespace Signal {
 

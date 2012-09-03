@@ -167,7 +167,7 @@ void PlaybackController::
         std::vector<Signal::pOperation> sinks;
         postsink_operations->sinks( sinks ); // empty
         sinks.push_back( model()->adapter_playback );
-        sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
+        //sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
 
         postsink_operations->filter( Signal::pOperation() );
         postsink_operations->sinks( sinks );

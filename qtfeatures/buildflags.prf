@@ -2,6 +2,11 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 CONFIG += warn_on
 
+usecuda {
+    DEFINES += SAWE_NO_MUTEX
+    DEFINES += THREADCHECKER_NO_CHECK
+}
+
 macx {
     macosx105 {
         QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk
@@ -81,6 +86,14 @@ gcc-4.3 {
     QMAKE_CXX = g++-4.3
     QMAKE_CC = gcc-4.3
     QMAKE_LINK = g++-4.3
+}
+
+# Use macports gcc 4.7 if available, necessary to build for openmp on Mac
+system(which /opt/local/bin/g++-mp-4.7): CONFIG += gcc-mp-4.7
+gcc-mp-4.7 {
+    QMAKE_CXX = /opt/local/bin/g++-mp-4.7
+    QMAKE_CC = /opt/local/bin/gcc-mp-4.7
+    QMAKE_LINK = /opt/local/bin/g++-mp-4.7
 }
 
 #gold-linker {

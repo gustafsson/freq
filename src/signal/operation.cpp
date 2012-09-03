@@ -15,7 +15,7 @@
 namespace Signal {
 
 Operation::Operation(pOperation s )
-//:   _enabled( true ) // TODO remove _enabled
+    :   _set_channel_is_recursive( true )
 {
     source( s );
 }
@@ -41,7 +41,23 @@ Operation& Operation::
         operator=(const Operation& o )
 {
     Operation::source( o.Operation::source() );
+    _set_channel_is_recursive = o._set_channel_is_recursive;
     return *this;
+}
+
+
+void Operation::
+        set_channel(unsigned c)
+{
+    if(_source && _set_channel_is_recursive)
+        _source->set_channel(c);
+}
+
+
+void Operation::
+        set_channel_is_recursive(bool b)
+{
+    _set_channel_is_recursive = b;
 }
 
 

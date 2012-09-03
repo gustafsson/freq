@@ -70,8 +70,9 @@ public:
     virtual float length();
 
     virtual unsigned num_channels() { return _source?_source->num_channels():0; }
-    virtual void set_channel(unsigned c) { if(_source) _source->set_channel(c); }
+    virtual void set_channel(unsigned c);
     virtual unsigned get_channel() { return _source?_source->get_channel():0; }
+    virtual void set_channel_is_recursive(bool b);
 
 
     /**
@@ -210,6 +211,9 @@ private:
     std::set<Operation*> _outputs; /// @see Operation::parent()
     pOperation _source; /// @see Operation::source()
     //bool _enabled; /// @see Operation::enabled()
+
+    // TODO remove set_channel altogether
+    bool _set_channel_is_recursive;
 
     friend class boost::serialization::access;
     Operation() /// only used by deserialization, call Operation(pOperation) instead

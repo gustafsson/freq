@@ -21,6 +21,8 @@ AppendOperationCommand::
 void AppendOperationCommand::
         execute()
 {
+    QMutexLocker l(&p->head->chain()->mutex);
+
     prevHead = p->head->head_source();
 
     Tools::SelectionModel& m = p->tools().selection_model;

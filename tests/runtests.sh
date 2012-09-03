@@ -67,12 +67,16 @@ if [ "$1" = "--help" ]; then
   echo "  looptest ./release/stft.exe"
   echo
   echo "To run the stft test 100 times from the stft test folder."
-  exit
+  false
 fi
 
-if [ "`pwd | grep 'sonicawe/tests$'`" = "" ]; then
+if [ `dirname $0` == "tests" ] && [ -d tests ]; then
+  cd tests
+fi
+
+if [ "`pwd | grep 'sonicawe/tests$'`" == "" ]; then
   echo "Run this script from sonicawe/tests"
-  exit
+  false
 fi
 
 startdir=`pwd`

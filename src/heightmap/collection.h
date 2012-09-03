@@ -115,12 +115,12 @@ public:
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
-    virtual void reset();
-    virtual bool empty();
+    void reset();
+    bool empty();
 
 
-    virtual Signal::Intervals invalid_samples() const;
-    virtual void invalidate_samples( const Signal::Intervals& );
+    Signal::Intervals invalid_samples();
+    void invalidate_samples( const Signal::Intervals& );
 
 
     /**
@@ -135,7 +135,7 @@ public:
 
     /**
       getBlock increases a counter for each block that hasn't been computed yet.
-      next_frame returns that counter. next_frame also calls applyUpdates().
+      next_frame returns that counter.
       */
     unsigned    next_frame();
 
@@ -161,6 +161,8 @@ public:
     /**
       Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
       all existing blocks that intersect with the chunk interval.
+
+      This method is called by working threads.
       */
     std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible );
 
@@ -250,13 +252,12 @@ private:
     typedef std::list<pBlock> recent_t;
 
 #ifndef SAWE_NO_MUTEX
-    QMutex _cache_mutex; // Mutex for _cache and _recent
+    QMutex _cache_mutex; /// Mutex for _cache and _recent, see getIntersectingBlocks
 #endif
     cache_t _cache;
-    recent_t _recent; // Ordered with the most recently accessed blocks first
+    recent_t _recent; /// Ordered with the most recently accessed blocks first
+    recent_t _to_remove;
 
-    // QMutex _updates_mutex;
-    // QWaitCondition _updates_condition;
     ThreadChecker _constructor_thread;
 
     /**
@@ -277,21 +278,10 @@ private:
 
 
     /**
-      Work of the _updates queue of chunks to merge.
-      */
-    // void        applyUpdates();
-
-
-    /**
       TODO comment
       */
     void        mergeStftBlock( boost::shared_ptr<Tfr::Chunk> stft, pBlock block );
 
-
-    /**
-      Add block information from Cwt transform. Returns whether any information was merged.
-      */
-    bool        mergeBlock( Block* outBlock, Tfr::Chunk* inChunk, unsigned cuda_stream, bool save_in_prepared_data = false );
 
     /**
       Add block information from another block. Returns whether any information was merged.

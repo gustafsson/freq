@@ -54,6 +54,7 @@ private:
     class FetchData
     {
     public:
+        virtual ~FetchData() {}
         virtual float operator()( float t, float hz, bool* is_valid_value ) = 0;
         virtual float nextFrequency( float hz ) = 0;
 

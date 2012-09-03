@@ -9,6 +9,9 @@
 // boost
 #include <boost/shared_ptr.hpp>
 
+#ifndef SAWE_NO_MUTEX
+#include <QMutex>
+#endif
 
 namespace Heightmap {
 
@@ -37,7 +40,7 @@ namespace Heightmap {
         /**
             TODO test this in a multi gpu environment
             For multi-GPU or (just multithreaded) environments, each GPU-thread have
-            its own cuda context and data can't be  transfered between cuda contexts
+            its own cuda context and data can't be transfered between cuda contexts
             without first going to the cpu. Therefore a 'cpu_copy' is kept in CPU
             memory so that the block data is readily available for merging new
             blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
@@ -46,6 +49,7 @@ namespace Heightmap {
             For single-GPU environments, 'cpu_copy' is not used.
         */
     #ifndef SAWE_NO_MUTEX
+        // TODO make glblock private and create some interface here instead
         pData cpu_copy;
         bool new_data_available;
         QMutex cpu_copy_mutex;
