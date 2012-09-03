@@ -37,8 +37,12 @@ public:
     virtual Signal::pBuffer read( const Signal::Interval& I );
 
 
+    /// @see readDirect
+    pOperation readDirectSource();
+
+
     /// @overload Operation::source()
-    virtual pOperation source() { return Sink::source(); }
+    virtual pOperation source();
 
 
     /// @overload Operation::source(pOperation)
@@ -96,6 +100,7 @@ public:
 private:
     void                    update_source();
     void                    gcSinks();
+    Signal::pBuffer         readDirect( const Signal::Interval& I );
     Signal::pBuffer         readSimple( const Signal::Interval& I );
     Signal::pBuffer         readActivePassive( const Signal::Interval& I );
 

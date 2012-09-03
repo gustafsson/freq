@@ -37,7 +37,8 @@ pBuffer PostSink::
 
     pBuffer b;
 #ifndef SAWE_NO_MUTEX
-    b = readSimple( I );
+    b = readDirect( I );
+    //b = readSimple( I );
 #else
     b = readActivePassive( I );
 #endif
@@ -65,6 +66,13 @@ void PostSink::
         else
             i++;
     }
+}
+
+
+pBuffer PostSink::
+        readDirect( const Interval& I )
+{
+    return readDirectSource()->read( I );
 }
 
 
@@ -183,7 +191,8 @@ void PostSink::
     // 's->source( source() )', but that doesn't work in a multithreaded
     // environment which might need that source somewhere else.
 
-    Operation::set_channel( c );
+    readDirectSource()->set_channel( c );
+/*    Operation::set_channel( c );
 
     source()->set_channel_is_recursive( false );
 
@@ -194,6 +203,30 @@ void PostSink::
         s->set_channel( c );
 
     source()->set_channel_is_recursive( true );
+*/
+}
+
+
+pOperation PostSink::
+        readDirectSource()
+{
+    vector<pOperation> s = sinks();
+    if (!s.empty())
+        return s.back();
+
+    BOOST_ASSERT( false );
+
+    if (!_filter)
+        return _filter;
+
+    return source();
+}
+
+
+pOperation PostSink::
+        source()
+{
+    return Sink::source();
 }
 
 
@@ -212,7 +245,11 @@ void PostSink::
 void PostSink::
         update_source()
 {
+#ifndef SAWE_NO_MUTEX
     // make sure to lock _sinks_lock outside this
+    BOOST_ASSERT( false == _sinks_lock.tryLock() );
+#endif
+
     pOperation v = source();
 
     if (_filter)
@@ -224,6 +261,7 @@ void PostSink::
     BOOST_FOREACH( pOperation s, _sinks )
     {
         s->source( v );
+        v = s;
     }
 }
 
@@ -351,6 +389,8 @@ std::vector<pOperation> PostSink::
 void PostSink::
         sinks(std::vector<pOperation> v)
 {
+    BOOST_ASSERT( v.size() <= 1 );
+
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
 #endif
