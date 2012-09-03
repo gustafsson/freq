@@ -18,4 +18,4 @@ fi
 
 touch `find . -name *.cpp` `find . -name *.cu` `find . -name *.pro`
 
-tests/runtests.sh
+tests/runtests.sh $*
