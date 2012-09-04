@@ -37,6 +37,10 @@ def custom_lib_path(name, path = nil)
     return "#{$custom_library_path}/#{"#{path}/" if(path)}lib#{name}.dylib"
 end
 
+def gcc47_lib_path(name)
+    return "/opt/local/lib/gcc47/lib#{name}.dylib"
+end
+
 def run(cmd)
     unless system(cmd)
         puts "Error: Could not run #{cmd}"
@@ -56,7 +60,10 @@ def package_macos(app_name, version, packagename, zip = false)
                  custom_lib_path("vorbis"),
                  custom_lib_path("vorbisenc"),
                  custom_lib_path("hdf5"),
-                 custom_lib_path("hdf5_hl")];
+                 custom_lib_path("hdf5_hl"),
+                 gcc47_lib_path("gomp.1"),
+                 gcc47_lib_path("gcc_s.1"),
+                 gcc47_lib_path("stdc++.6")];
 
     directories = ["Contents/Frameworks",
                    "Contents/MacOS",
