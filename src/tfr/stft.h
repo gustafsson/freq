@@ -12,6 +12,9 @@
 // gpumisc
 #include "HasSingleton.h"
 
+// qt
+#include <QReadWriteLock>
+
 namespace Tfr {
 
 
@@ -80,6 +83,7 @@ public:
     };
 
     Stft();
+    Stft(Stft&s);
 
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
@@ -93,12 +97,12 @@ public:
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
     virtual std::string toString();
 
-    unsigned increment();
-    unsigned chunk_size() { return _window_size; }
-    unsigned set_approximate_chunk_size( unsigned preferred_size );
+    int increment();
+    int chunk_size();
+    int set_approximate_chunk_size( unsigned preferred_size );
 
     /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
-    void set_exact_chunk_size( unsigned chunk_size ) { _window_size = chunk_size; }
+    void set_exact_chunk_size( unsigned chunk_size );
 
     /**
         If false (default), operator() will do a real-to-complex transform
@@ -107,15 +111,15 @@ public:
         (also known as R2C and C2R transforms are being used instead of C2C
         forward and C2C backward)
     */
-    bool compute_redundant() { return _compute_redundant; }
+    bool compute_redundant();
     void compute_redundant(bool);
 
-    unsigned averaging() { return _averaging; }
-    void averaging(unsigned);
+    int averaging();
+    void averaging(int);
 
-    float overlap() { return _overlap; }
-    WindowType windowType() { return _window_type; }
-    std::string windowTypeName() { return windowTypeName(_window_type); }
+    float overlap();
+    WindowType windowType();
+    std::string windowTypeName() { return windowTypeName(windowType()); }
     static std::string windowTypeName(WindowType);
     void setWindow(WindowType type, float overlap);
 
@@ -146,6 +150,7 @@ private:
         Default window size for the windowed fourier transform, or short-time fourier transform, stft
         Default value: chunk_size=1<<11
     */
+    QReadWriteLock _lock;
     int _window_size;
     bool _compute_redundant;
     int _averaging;

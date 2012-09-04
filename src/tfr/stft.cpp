@@ -218,9 +218,23 @@ Stft::
 }
 
 
+Stft::
+        Stft(Stft& s)
+:
+    _window_size( s.chunk_size()),
+    _compute_redundant( s.compute_redundant() ),
+    _averaging( s.averaging() ),
+    _overlap( s.overlap() ),
+    _window_type( s.windowType() )
+{
+    compute_redundant( _compute_redundant );
+}
+
+
 Tfr::pChunk Stft::
         operator() (Signal::pBuffer b)
 {
+    QReadLocker l(&_lock);
     TIME_STFT TaskTimer ti("Stft::operator, _window_size = %d, b = %s, computeredundant = %s",
                            _window_size, b->getInterval().toString().c_str(), compute_redundant()?"true":"false");
 
@@ -478,9 +492,9 @@ FreqAxis Stft::
     FreqAxis fa;
 
     if (compute_redundant())
-        fa.setLinear( FS, _window_size-1 );
+        fa.setLinear( FS, chunk_size()-1 );
     else
-        fa.setLinear( FS, _window_size/2 );
+        fa.setLinear( FS, chunk_size()/2 );
 
     return fa;
 }
@@ -489,19 +503,22 @@ FreqAxis Stft::
 float Stft::
         displayedTimeResolution( float FS, float /*hz*/ )
 {
-    return 0.125f*_window_size / FS;
+    return 0.125f*chunk_size() / FS;
 }
 
 
 unsigned Stft::
         next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
 {
-    if ((int)current_valid_samples_per_chunk<_window_size)
-        return _window_size;
+    int window_size = chunk_size();
+    int averaging = this->averaging();
+
+    if ((int)current_valid_samples_per_chunk<window_size)
+        return window_size;
 
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
-    maxsize = std::max((size_t)_window_size, maxsize/(3*sizeof(ChunkElement)));
-    unsigned alignment = _window_size*_averaging;
+    maxsize = std::max((size_t)window_size, maxsize/(3*sizeof(ChunkElement)));
+    unsigned alignment = window_size*averaging;
     return std::min((unsigned)maxsize, spo2g(align_up(current_valid_samples_per_chunk, alignment)/alignment)*alignment);
 }
 
@@ -509,12 +526,15 @@ unsigned Stft::
 unsigned Stft::
         prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
 {
-    if ((int)current_valid_samples_per_chunk<2*_window_size)
-        return _window_size;
+    int window_size = chunk_size();
+    int averaging = this->averaging();
+
+    if ((int)current_valid_samples_per_chunk<2*window_size)
+        return window_size;
 
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
-    maxsize = std::max((size_t)_window_size, maxsize/(3*sizeof(ChunkElement)));
-    unsigned alignment = _window_size*_averaging;
+    maxsize = std::max((size_t)window_size, maxsize/(3*sizeof(ChunkElement)));
+    unsigned alignment = window_size*averaging;
     return std::min((unsigned)maxsize, lpo2s(align_up(current_valid_samples_per_chunk, alignment)/alignment)*alignment);
 }
 
@@ -524,9 +544,9 @@ std::string Stft::
 {
     std::stringstream ss;
     ss << "Tfr::Stft, "
-       << "window_size=" << _window_size
-       << ", redundant=" << (_compute_redundant?"C2C":"R2C")
-       << ", overlap=" << _overlap
+       << "window_size=" << chunk_size()
+       << ", redundant=" << (compute_redundant()?"C2C":"R2C")
+       << ", overlap=" << overlap()
        << ", window_type=" << windowTypeName();
     return ss.str();
 }
@@ -550,8 +570,10 @@ unsigned oksz(unsigned x)
         return sg;
 }
 
-unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
+int Stft::set_approximate_chunk_size( unsigned preferred_size )
 {
+    QWriteLocker l(&_lock);
+
     //_window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
     _window_size = oksz( preferred_size );
 
@@ -596,8 +618,25 @@ unsigned Stft::set_approximate_chunk_size( unsigned preferred_size )
 
 
 void Stft::
+        set_exact_chunk_size( unsigned chunk_size )
+{
+    QWriteLocker l(&_lock);
+    _window_size = chunk_size;
+}
+
+
+bool Stft::
+        compute_redundant()
+{
+    QReadLocker l(&_lock);
+    return _compute_redundant;
+}
+
+
+void Stft::
         compute_redundant(bool value)
 {
+    QWriteLocker l(&_lock);
     _compute_redundant = value;
     if (_compute_redundant)
     {
@@ -613,15 +652,39 @@ void Stft::
 }
 
 
-void Stft::
-        averaging(unsigned value)
+int Stft::
+        averaging()
 {
+    QReadLocker l(&_lock);
+    return _averaging;
+}
+
+void Stft::
+        averaging(int value)
+{    
     if (1 > value)
         value = 1;
     if (10 < value)
         value = 10;
 
+    QWriteLocker l(&_lock);
     _averaging = value;
+}
+
+
+float Stft::
+        overlap()
+{
+    QReadLocker l(&_lock);
+    return _overlap;
+}
+
+
+Stft::WindowType Stft::
+        windowType()
+{
+    QReadLocker l(&_lock);
+    return _window_type;
 }
 
 
@@ -676,6 +739,7 @@ bool Stft::
 void Stft::
         setWindow(WindowType type, float overlap)
 {
+    QWriteLocker l(&_lock);
     _window_type = type;
     _overlap = std::max(0.f, std::min(0.98f, overlap));
 }
@@ -684,7 +748,8 @@ void Stft::
 void Stft::
         compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
 {
-    DataStorageSize size( _window_size, input->numberOfElements()/_window_size);
+    int window_size = chunk_size();
+    DataStorageSize size( window_size, input->numberOfElements()/window_size);
     TIME_STFT TaskTimer ti("Stft::compute %s, size = %d, %d",
                            direction == FftDirection_Forward ? "forward" : "inverse",
                            size.width, size.height);
@@ -692,24 +757,32 @@ void Stft::
 }
 
 
-unsigned Stft::
+int Stft::
         increment()
 {
-    float wanted_increment = _window_size*(1.f-_overlap);
+    int window_size = chunk_size();
+    float overlap = this->overlap();
+    float wanted_increment = window_size*(1.f-overlap);
 
     // _window_size must be a multiple of increment for inverse to be correct
-    int divs = std::max(1.f, std::floor(_window_size/wanted_increment));
-    while (_window_size/divs*divs != _window_size && divs < _window_size)
+    int divs = std::max(1.f, std::floor(window_size/wanted_increment));
+    while (window_size/divs*divs != window_size && divs < window_size)
     {
-        int s = _window_size/divs;
-        divs = (_window_size + s - 1)/s;
+        int s = window_size/divs;
+        divs = (window_size + s - 1)/s;
     }
-    divs = std::min( _window_size, std::max( 1, divs ));
+    divs = std::min( window_size, std::max( 1, divs ));
 
-    return _window_size/divs;
+    return window_size/divs;
 }
 
 
+int Stft::
+        chunk_size()
+{
+    QReadLocker l(&_lock);
+    return _window_size;
+}
 
 template<> float Stft::computeWindowValue<Stft::WindowType_Hann>( float p )         { return 1.f  + cos(M_PI*p); }
 template<> float Stft::computeWindowValue<Stft::WindowType_Hamming>( float p )      { return 0.54f  + 0.46f*cos(M_PI*p); }
@@ -733,11 +806,6 @@ void Stft::
 {
     unsigned increment = this->increment();
     int windowCount = windowedData->size().width/_window_size;
-
-    CpuMemoryReadOnly<float, 3> in = CpuMemoryStorage::ReadOnly<3>(source);
-    CpuMemoryWriteOnly<float, 3> out = CpuMemoryStorage::WriteAll<3>(windowedData);
-
-    CpuMemoryWriteOnly<float, 3>::Position pos(0,0,0);
 
     std::vector<float> windowfunction(_window_size);
     float* window = &windowfunction[0];
@@ -765,10 +833,26 @@ void Stft::
         norm = _window_size / norm;
     }
 
+    CpuMemoryReadOnly<float, 3> in = CpuMemoryStorage::ReadOnly<3>(source);
+    CpuMemoryWriteOnly<float, 3> out = CpuMemoryStorage::WriteAll<3>(windowedData);
+    CpuMemoryWriteOnly<float, 3>::Position pos(0,0,0);
+
     for (pos.z=0; pos.z<source->size().depth; ++pos.z)
     {
         for (pos.y=0; pos.y<source->size().height; ++pos.y)
         {
+            if (pos.z + 1 == source->size().depth && pos.y + 1 == source->size().height)
+            {
+                long in0 = &in.ref(pos) - in.ptr();
+                long in1 = &in.ref(pos) + windowCount*increment - in.ptr();
+                long in2 = source->numberOfElements();
+                TaskInfo("in0 %dl", in0);
+                TaskInfo("in1 %dl", in1);
+                TaskInfo("in2 %dl", in2);
+                BOOST_ASSERT(&out.ref(pos) + windowCount*_window_size - out.ptr() == (long)windowedData->numberOfElements());
+                BOOST_ASSERT(in1 < in2);
+            }
+
 #pragma omp parallel for
             for (int w=0; w<windowCount; ++w)
             {
