@@ -99,6 +99,9 @@ Application::
         setApplicationName("Sonic AWE");
     #endif
 
+    if (!prevent_log_system_and_execute_args)
+        logSystemInfo(argc, argv);
+
     Sawe::Configuration::resetDefaultSettings();
     Sawe::Configuration::parseCommandLineOptions(argc, argv);
 
@@ -112,7 +115,6 @@ Application::
 
     if (!prevent_log_system_and_execute_args)
     {
-        logSystemInfo(argc, argv);
         execute_command_line_options(); // will call 'exit(0)' on invalid arguments
     }
 }
