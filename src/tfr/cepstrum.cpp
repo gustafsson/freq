@@ -10,10 +10,20 @@
 using namespace Signal;
 namespace Tfr {
 
-Cepstrum::
-        Cepstrum()
+
+CepstrumParams init(CepstrumParams p)
 {
-    stft_ = Stft::SingletonP();
+    CepstrumParams r = p;
+    r.compute_redundant( true );
+    return r;
+}
+
+Cepstrum::
+        Cepstrum(const CepstrumParams& p)
+    :
+      p(init(p))
+{
+    stft_ = p.StftParams::createTransform();
 }
 
 
@@ -21,14 +31,13 @@ pChunk Cepstrum::
         operator()( pBuffer b )
 {
     TaskTimer tt("Cepstrum");
-    Stft ft = *stft();
-    ft.compute_redundant( true );
+    Stft& ft = *stft();
     pChunk cepstra = ft(b);
 
-    ::cepstrumPrepareCepstra( cepstra->transform_data, 4.f/ft.chunk_size() );
+    ::cepstrumPrepareCepstra( cepstra->transform_data, 4.f/p.chunk_size() );
 
     ft.compute( cepstra->transform_data, cepstra->transform_data, FftDirection_Forward );
-    cepstra->freqAxis = freqAxis( cepstra->original_sample_rate );
+    cepstra->freqAxis = p.freqAxis( cepstra->original_sample_rate );
 
     TaskInfo("Cepstrum debug. Was %s , returned %s ",
         b->getInterval().toString().c_str(),
@@ -39,52 +48,6 @@ pChunk Cepstrum::
 }
 
 
-FreqAxis Cepstrum::
-        freqAxis( float FS )
-{
-    FreqAxis fa;
-    fa.setQuefrency( FS, chunk_size());
-    return fa;
-}
-
-
-float Cepstrum::
-        displayedTimeResolution( float FS, float hz )
-{
-    return Stft::Singleton().displayedTimeResolution( FS, hz );
-}
-
-
-unsigned Cepstrum::
-        next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate )
-{
-    return stft()->next_good_size(current_valid_samples_per_chunk, sample_rate);
-}
-
-
-unsigned Cepstrum::
-        prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate )
-{
-    return stft()->prev_good_size(current_valid_samples_per_chunk, sample_rate);
-}
-
-
-std::string Cepstrum::
-        toString()
-{
-    std::stringstream ss;
-    ss << "Tfr::Cepstrum (" << stft()->toString() << ")";
-    return ss.str();
-}
-
-
-unsigned Cepstrum::
-        chunk_size()
-{
-    return stft()->chunk_size();
-}
-
-
 Signal::pBuffer Cepstrum::
         inverse( pChunk )
 {
@@ -92,9 +55,26 @@ Signal::pBuffer Cepstrum::
 }
 
 
-Stft* Cepstrum::stft()
+Stft* Cepstrum::
+        stft()
 {
     return dynamic_cast<Stft*>(stft_.get());
+}
+
+
+pTransform CepstrumParams::
+        createTransform() const
+{
+    return pTransform(new Cepstrum(*this));
+}
+
+
+FreqAxis CepstrumParams::
+        freqAxis( float FS ) const
+{
+    FreqAxis fa;
+    fa.setQuefrency( FS, chunk_size());
+    return fa;
 }
 
 

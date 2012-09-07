@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
             TaskTimer tt("Cwt inverse");
             Adapters::Audiofile file("chirp.wav");
 
-            Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+            Tfr::Cwt cwt;
 
             unsigned firstSample = 44100*2;
             unsigned chunk_alignment = cwt.chunk_alignment( file.sample_rate() );
@@ -492,7 +492,7 @@ int main(int argc, char *argv[])
 
             pBuffer data = file.readFixedLength(Interval(firstSample,firstSample+65536));
 
-            Tfr::pChunk chunk = Tfr::Cwt::Singleton()( data );
+            Tfr::pChunk chunk = cwt( data );
             pBuffer inv = cwt.inverse( chunk );
 
             TaskTimer("%s", inv->getInterval().toString().c_str()).suppressTiming();

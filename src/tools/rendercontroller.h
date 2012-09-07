@@ -78,17 +78,23 @@ namespace Tools
         void receiveFifthAmplitude();
 
         void transformChanged();
+        void updateTransformParams();
 
     private slots:
         void clearCachedHeightmap();
         void updateFreqAxis();
         void updateChannels();
         void reroute();
+        void clearCaches();
 
     private:
         void stateChanged();
+        void setCurrentFilterTransform(Tfr::pTransform);
         Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
+        Tfr::Filter* currentFilter();
         Tfr::Transform* currentTransform();
+        float headSampleRate();
+        float currentTransformMinHz();
 
         QPointer<RenderView> view;
 

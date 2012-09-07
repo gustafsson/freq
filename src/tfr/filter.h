@@ -4,10 +4,14 @@
 #include "signal/intervals.h"
 #include "signal/operation.h"
 
+#include <QMutex>
+
 namespace Tfr {
 
 class Transform;
 typedef boost::shared_ptr<Transform> pTransform;
+class TransformParams;
+typedef boost::shared_ptr<TransformParams> pTransformParams;
 
 class Chunk;
 typedef boost::shared_ptr<Chunk> pChunk;
@@ -63,15 +67,26 @@ public:
     /**
       Filters are applied to chunks that are computed using some transform.
       transform()/transform(pTransform) gets/sets that transform.
+
+      For thread safety it is important to only call transform() once during
+      a computation pass. Subsequent calls to transform() might return
+      different transforms.
       */
-    virtual Tfr::pTransform transform() const = 0;
+    Tfr::pTransform transform() const;
 
 
-    /// @see transform()
-    virtual void transform( Tfr::pTransform m ) = 0;
+    /**
+      Set the Tfr::Transform for this operation and call invalidate_samples.
+      Will throw throw std::invalid_argument if the type of 'm' is not equal to
+      the previous type of transform().
+      */
+    void transform( Tfr::pTransform m );
 
 
-    /// @see transform()
+    /**
+      If _try_shortcuts is true. This method from Operation will be used to
+      try to avoid computing any actual transform.
+      */
     virtual Operation* affecting_source( const Signal::Interval& I );
 
 
@@ -131,6 +146,7 @@ protected:
     bool _try_shortcuts;
 
 
+private:
     /**
       The Tfr::Transform used for computing chunks and inverse Buffers.
       */

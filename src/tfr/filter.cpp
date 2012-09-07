@@ -3,7 +3,9 @@
 #include "tfr/chunk.h"
 #include "tfr/transform.h"
 
-#include <demangle.h>
+#include "demangle.h"
+
+#include <boost/format.hpp>
 
 //#define TIME_Filter
 #define TIME_Filter if(0)
@@ -11,7 +13,10 @@
 //#define TIME_FilterReturn
 #define TIME_FilterReturn if(0)
 
+
 using namespace Signal;
+using namespace boost;
+
 
 namespace Tfr {
 
@@ -106,14 +111,14 @@ Operation* Filter::
 unsigned Filter::
         prev_good_size( unsigned current_valid_samples_per_chunk )
 {
-    return transform()->prev_good_size( current_valid_samples_per_chunk, sample_rate() );
+    return transform()->transformParams()->prev_good_size( current_valid_samples_per_chunk, sample_rate() );
 }
 
 
 unsigned Filter::
         next_good_size( unsigned current_valid_samples_per_chunk )
 {
-    return transform()->next_good_size( current_valid_samples_per_chunk, sample_rate() );
+    return transform()->transformParams()->next_good_size( current_valid_samples_per_chunk, sample_rate() );
 }
 
 
@@ -183,6 +188,31 @@ void Filter::
         applyFilter( ChunkAndInverse& chunk )
 {
     (*this)( *chunk.chunk );
+}
+
+
+Tfr::pTransform Filter::
+        transform() const
+{
+    return _transform;
+}
+
+
+void Filter::
+        transform( Tfr::pTransform t )
+{
+    if (_transform)
+    {
+        if (typeid(*_transform) != typeid(*t))
+            throw std::invalid_argument(str(format("'transform' must be an instance of %s") % vartype(*t)));
+    }
+
+    if (_transform == t )
+        return;
+
+    _transform = t;
+
+    invalidate_samples( getInterval() );
 }
 
 } // namespace Tfr

@@ -957,10 +957,11 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
     Signal::Worker& worker = model->project()->worker;
-    Signal::Operation* first_source = worker.source()->root();
+    Signal::pOperation source = worker.source();
+    Signal::Operation* first_source = source ? source->root() : 0;
 
     TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
-                              first_source->name().c_str(), first_source);
+                              first_source?first_source->name().c_str():0, first_source);
 
     unsigned N = model->collections.size();
     unsigned long sumsize = 0;
@@ -1009,10 +1010,10 @@ void RenderView::
         // use various GPU resources the application will crash, for
         // instance when another RenderView is closed and releases
         // the context.
-        Tfr::Stft a;
+        Tfr::StftParams a;
         a.set_approximate_chunk_size(4);
         Signal::pBuffer b(new Signal::Buffer(0,a.chunk_size(),1));
-        a(b);
+        (Tfr::Stft(a))(b);
     }
 
     // TODO move to rendercontroller
@@ -1099,7 +1100,8 @@ void RenderView::
 
         emit populateTodoList();
 
-        if (!worker.target()->post_sink()->isUnderfed())
+        Signal::pTarget populatedTarget = worker.target();
+        if (!populatedTarget || !populatedTarget->post_sink()->isUnderfed())
         {
             std::vector<Signal::pTarget> targetsToTry;
             targetsToTry.push_back( model->renderSignalTarget );
@@ -1130,10 +1132,10 @@ void RenderView::
         }
         else
         {
-            if (worker.target() == oldTarget)
+            if (populatedTarget == oldTarget)
             {
                 // make sure the todo list is updated
-                worker.target(worker.target());
+                worker.target(oldTarget);
             }
         }
     }
@@ -1234,12 +1236,13 @@ void RenderView::
 
             if (cudaErrorMemoryAllocation == x.getCudaError() && _try_gc == 0)
             {
-                TaskInfo("scales_per_octave was %g", Tfr::Cwt::Singleton().scales_per_octave());
+                Tfr::Cwt* cwt = model->getParam<Tfr::Cwt>();
+                TaskInfo("scales_per_octave was %g", cwt->scales_per_octave());
 
                 float fs = worker.target()->source()->sample_rate();
-                Tfr::Cwt::Singleton().scales_per_octave( Tfr::Cwt::Singleton().scales_per_octave() , fs );
+                cwt->scales_per_octave( cwt->scales_per_octave() , fs );
 
-                TaskInfo("scales_per_octave is %g", Tfr::Cwt::Singleton().scales_per_octave());
+                TaskInfo("scales_per_octave is %g", cwt->scales_per_octave());
 
                 model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
             }

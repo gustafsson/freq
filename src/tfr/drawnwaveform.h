@@ -4,30 +4,34 @@
 #include "transform.h"
 #include "chunk.h"
 
-// gpumisc
-#include "HasSingleton.h"
-
 namespace Tfr {
 
-//    TODO remove HasSingleton
-class DrawnWaveform : public Transform
+class DrawnWaveform : public Transform, public TransformParams
 {
 public:
     DrawnWaveform();
+
+    virtual const TransformParams* transformParams() const { return this; }
 
     virtual pChunk operator()( Signal::pBuffer b );
 
     virtual Signal::pBuffer inverse( pChunk chunk );
 
-    virtual float displayedTimeResolution( float FS, float hz );
 
-    virtual FreqAxis freqAxis( float FS );
+    virtual pTransform createTransform() const;
 
-    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual float displayedTimeResolution( float FS, float hz ) const;
 
-    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
+    virtual FreqAxis freqAxis( float FS ) const;
 
-    virtual std::string toString();
+    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
+
+    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
+
+    virtual std::string toString() const;
+
+    virtual bool operator==(const TransformParams& b) const;
+
 
     float blob(float FS);
 

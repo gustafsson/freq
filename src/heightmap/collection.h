@@ -91,7 +91,7 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 
 namespace Tfr {
     class Chunk;
-    class Transform;
+    class TransformParams;
 }
 
 namespace Heightmap {
@@ -177,7 +177,7 @@ public:
     /**
       Extract the transform from the current filter.
       */
-    boost::shared_ptr<Tfr::Transform> transform();
+    const Tfr::TransformParams* transform();
 
 
     unsigned long cacheByteSize();

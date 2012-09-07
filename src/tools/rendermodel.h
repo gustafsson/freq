@@ -6,6 +6,7 @@
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
 #include "sawe/toolmodel.h"
+#include "tfr/transform.h"
 
 // gpumisc
 #include <TAni.h>
@@ -43,6 +44,17 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
+        template<typename T>
+        T* getParam() {
+            foreach(Tfr::pTransformParams p, params)
+                if (dynamic_cast<T*>(p.get()))
+                    return dynamic_cast<T*>(p.get());
+
+            Tfr::pTransformParams p(new T());
+            params.insert(p);
+            return dynamic_cast<T*>(p.get());
+        }
+
         Tfr::Filter* block_filter();
 
         Signal::pTarget renderSignalTarget;
@@ -64,6 +76,7 @@ namespace Tools
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
+        std::set<Tfr::pTransformParams> params;
 
         friend class boost::serialization::access;
         RenderModel() { BOOST_ASSERT( false ); } // required for serialization to compile, is never called

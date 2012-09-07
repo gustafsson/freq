@@ -31,24 +31,21 @@ CwtFilter::
 :   Filter(source),
     _previous_scales_per_octave(0)
 {
-//    if (!t)
-//        t = Tfr::Cwt::SingletonP();
+    if (!t)
+        t = pTransform(new Cwt());
 
-    if (t)
-    {
-        BOOST_ASSERT( false );
+    Cwt* c = dynamic_cast<Cwt*>(t.get());
+    BOOST_ASSERT( c );
 
-        BOOST_ASSERT( dynamic_cast<Tfr::Cwt*>(t.get()));
-
-        _transform = t;
-    }
+    transform( t );
 }
 
 
 ChunkAndInverse CwtFilter::
         computeChunk( const Signal::Interval& I )
 {
-    Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(transform().get());
+    Tfr::pTransform t = transform();
+    Tfr::Cwt& cwt = *dynamic_cast<Tfr::Cwt*>(t.get());
 
     verify_scales_per_octave();
 
@@ -84,7 +81,7 @@ ChunkAndInverse CwtFilter::
 
 
     // Compute the continous wavelet transform
-    ci.chunk = (*transform())( ci.inverse );
+    ci.chunk = cwt( ci.inverse );
 
 
 #ifdef _DEBUG
@@ -145,31 +142,6 @@ Signal::Intervals CwtFilter::
     I.shrink( n );
 
     return r;
-}
-
-
-Tfr::pTransform CwtFilter::
-        transform() const
-{
-    return _transform ? _transform : Tfr::Cwt::SingletonP();
-}
-
-
-void CwtFilter::
-        transform( Tfr::pTransform t )
-{
-    if (0 == dynamic_cast<Tfr::Cwt*>( t.get()) )
-        throw std::invalid_argument("'transform' must be an instance of Tfr::Cwt");
-
-    if ( t == transform() && !_transform )
-        t.reset();
-
-    if (_transform == t )
-        return;
-
-    invalidate_samples( getInterval() );
-
-    _transform = t;
 }
 
 

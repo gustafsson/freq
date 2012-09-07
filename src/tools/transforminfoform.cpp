@@ -64,9 +64,9 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
-    for (int i=0;i<Tfr::Stft::WindowType_NumberOfWindowTypes; ++i)
+    for (int i=0;i<Tfr::StftParams::WindowType_NumberOfWindowTypes; ++i)
     {
-        ui->windowTypeComboBox->addItem(Tfr::Stft::windowTypeName((Tfr::Stft::WindowType)i).c_str(), i);
+        ui->windowTypeComboBox->addItem(Tfr::StftParams::windowTypeName((Tfr::StftParams::WindowType)i).c_str(), i);
     }
 
     ui->normalizationComboBox->addItem("Select normalization to apply", -1.f);
@@ -128,11 +128,12 @@ void TransformInfoForm::
     if (renderview->model->collections.empty())
         return;
 
-    Tfr::Filter* f = renderview->model->block_filter();
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(!f?0:f->transform().get());
-    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(!f?0:f->transform().get());
-    Tfr::Cepstrum* cepstrum = dynamic_cast<Tfr::Cepstrum*>(!f?0:f->transform().get());
-    Tfr::DrawnWaveform* waveform = dynamic_cast<Tfr::DrawnWaveform*>(!f?0:f->transform().get());
+    const Tfr::Filter* f = renderview->model->block_filter();
+    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(!f?0:f->transform()->transformParams());
+    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(!f?0:f->transform()->transformParams());
+    const Tfr::CepstrumParams* cepstrum = dynamic_cast<const Tfr::CepstrumParams*>(!f?0:f->transform()->transformParams());
+    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformParams());
+    if (cepstrum) stft = 0; // CepstrumParams inherits StftParams
 
     Signal::pOperation head = project->head->head_source();
     float fs = head->sample_rate();
@@ -212,7 +213,7 @@ void TransformInfoForm::
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
         setEditText( ui->averagingEdit, QString("%1").arg(stft->averaging()) );
-        Tfr::Stft::WindowType windowtype = stft->windowType();
+        Tfr::StftParams::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
@@ -229,8 +230,8 @@ void TransformInfoForm::
 
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/cepstrum->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(cepstrum->chunk_size()) );
-        setEditText( ui->overlapEdit, QString("%1").arg(cepstrum->stft()->overlap()) );
-        Tfr::Stft::WindowType windowtype = cepstrum->stft()->windowType();
+        setEditText( ui->overlapEdit, QString("%1").arg(cepstrum->overlap()) );
+        Tfr::StftParams::WindowType windowtype = cepstrum->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
@@ -280,7 +281,7 @@ void TransformInfoForm::
     if (newValue>fs/2)
         newValue=fs/2;
 
-    Tfr::Cwt* cwt = &Tfr::Cwt::Singleton();
+    Tfr::Cwt* cwt = project->tools().render_model.getParam<Tfr::Cwt>();
 
     if (cwt->wanted_min_hz() != newValue)
     {
@@ -301,7 +302,7 @@ void TransformInfoForm::
     if (newValue>fs/4)
         newValue=fs/4;
 
-    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
     Signal::IntervalType new_chunk_size = fs/newValue;
 
     if (new_chunk_size != stft->chunk_size())
@@ -323,13 +324,12 @@ void TransformInfoForm::
     if ((unsigned)newValue>N*2)
         newValue=N*2;
 
-    Tfr::Stft* stft = &Tfr::Stft::Singleton();
-    unsigned new_chunk_size = newValue;
+    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
 
-    if (new_chunk_size != stft->chunk_size())
+    if (newValue != stft->chunk_size())
     {
         project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        stft->set_approximate_chunk_size( new_chunk_size );
+        stft->set_approximate_chunk_size( newValue );
         renderview->emitTransformChanged();
     }
 }
@@ -348,7 +348,7 @@ void TransformInfoForm::
     if (minHz>newValue/2)
         minHz=newValue/2;
     if (orgMinHz != minHz)
-        Tfr::Cwt::Singleton().set_wanted_min_hz(minHz);
+        project->tools().render_model.getParam<Tfr::Cwt>()->set_wanted_min_hz(minHz);
 
     Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
     if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
@@ -366,14 +366,14 @@ void TransformInfoForm::
 {
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
-    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
     if (stft->windowType() != windowtype)
     {
         float overlap = stft->overlap();
-        if (stft->windowType() == Tfr::Stft::WindowType_Rectangular && overlap == 0.f)
+        if (stft->windowType() == Tfr::StftParams::WindowType_Rectangular && overlap == 0.f)
             overlap = 0.5f;
 
-        stft->setWindow( (Tfr::Stft::WindowType)windowtype, overlap );
+        stft->setWindow( (Tfr::StftParams::WindowType)windowtype, overlap );
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();
@@ -388,10 +388,10 @@ void TransformInfoForm::
 
     // Tfr::Stft::setWindow validates value range
 
-    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
     if (stft->overlap() != newValue)
     {
-        Tfr::Stft::WindowType windowtype = stft->windowType();
+        Tfr::StftParams::WindowType windowtype = stft->windowType();
         stft->setWindow( windowtype, newValue );
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
@@ -405,7 +405,7 @@ void TransformInfoForm::
 {
     float newValue = ui->averagingEdit->text().toFloat();
 
-    Tfr::Stft* stft = &Tfr::Stft::Singleton();
+    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
     if (stft->averaging() != newValue)
     {
         stft->averaging( newValue );

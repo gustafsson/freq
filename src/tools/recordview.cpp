@@ -21,7 +21,7 @@ RecordView::
             model_(model),
             prev_limit_(0)
 {
-    float l = model->project->worker.source()->length();
+    float l = model->project->worker.length();
     prev_limit_ = l;
 }
 

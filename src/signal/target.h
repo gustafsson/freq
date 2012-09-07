@@ -71,6 +71,13 @@ public:
     ~Target();
 
     /**
+     * @brief Returns the project that owns this Target.
+     * TODO Target should preferably be independent of project.
+     * @return
+     */
+    Sawe::Project* project();
+
+    /**
       //It is an error to add a layer that is not in 'all_layers_'
       */
     void addLayerHead(pChainHead);

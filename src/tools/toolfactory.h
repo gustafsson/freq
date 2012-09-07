@@ -28,6 +28,10 @@ namespace Tools
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
 
+        /**
+         * TODO render_model should not be public. And a session could have more than one render model.
+         * TODO add the concept of sessions.
+         */
         RenderModel render_model;
         SelectionModel selection_model;
         PlaybackModel playback_model;

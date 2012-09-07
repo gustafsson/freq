@@ -332,10 +332,6 @@ void Application::
     GpuCpuDataCollection::moveAllDataToCpuMemory();
 #endif
 
-    TaskInfo("Reset CWT");
-    Tfr::Cwt::Singleton().resetSingleton();
-
-
     if ( !QGLContext::currentContext() ) // See RenderView::~RenderView()
         return;
 

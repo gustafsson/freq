@@ -18,6 +18,7 @@
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
+#include "tfr/drawnwaveform.h"
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
@@ -36,11 +37,15 @@
 #include <QGLContext>
 #include <QSettings>
 
+// boost
+#include <boost/format.hpp>
+
 // todo remove
 #include "navigationcontroller.h"
 #include <QTimer>
 
 using namespace Ui;
+using namespace boost;
 
 #ifdef min
 #undef min
@@ -91,6 +96,8 @@ public:
         }
 
         Operation::invalidate_samples( I );
+
+        view_->update();
     }
 
 
@@ -196,6 +203,9 @@ RenderController::
 //        ui->actionTransform_Cwt->trigger();
 //        logScale->trigger();
 //#endif
+
+        Tfr::StftParams* p = model()->getParam<Tfr::StftParams>();
+        p->setWindow(Tfr::StftParams::WindowType_Hann, 0.75f);
 
         main->getItems()->actionToggleTransformToolBox->setChecked( true );
     }
@@ -334,7 +344,7 @@ void RenderController::
 void RenderController::
         transformChanged()
 {
-    Tfr::Cwt& c = Tfr::Cwt::Singleton();
+    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
 
     // keep in sync with receiveSetTimeFrequencyResolution
     float f = log(c.scales_per_octave()/2.L)/6;
@@ -342,6 +352,17 @@ void RenderController::
 
     this->tf_resolution->setValue( value );
 
+    {
+        float wavelet_default_time_support = c.wavelet_default_time_support();
+        float wavelet_fast_time_support = c.wavelet_time_support();
+        c.wavelet_time_support(wavelet_default_time_support);
+
+        Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
+        float FS = headSampleRate();
+        s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+
+        c.wavelet_fast_time_support( wavelet_fast_time_support );
+    }
 
     // keep in sync with receiveSetYScale
     f = log(model()->renderer->y_scale)/8.f;
@@ -369,11 +390,10 @@ void RenderController::
 
 
     // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
-    if (dynamic_cast<Tfr::Cwt*>(model()->collections[0]->transform().get()))
+    if (dynamic_cast<const Tfr::Cwt*>(model()->collections[0]->transform()))
         model()->project()->worker.min_fps( 2 );
     else
         model()->project()->worker.min_fps( 15 );
-
 
     // clear worker assumptions of target
     model()->project()->worker.target(model()->renderSignalTarget);
@@ -396,38 +416,20 @@ void RenderController::
 void RenderController::
         receiveSetTimeFrequencyResolution( int value )
 {
-    float FS = model()->project()->worker.source()->sample_rate();
+    float FS = headSampleRate();
 
-    Tfr::Cwt& c = Tfr::Cwt::Singleton();
+    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
 
     // Keep in sync with transformChanged()
     float f = value / (float)tf_resolution->maximum();
 
-    bool isCwt = dynamic_cast<Tfr::Cwt*>(model()->collections[0]->transform().get());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
     // Validate scales per octave if transform is Cwt. CwtFilter will validate scales per octave when Cwt is used again.
     c.scales_per_octave( 2*exp( 6.L*f ), isCwt?FS:0 ); // scales_per_octave >= 2
 
-    float wavelet_default_time_support = c.wavelet_default_time_support();
-    float wavelet_fast_time_support = c.wavelet_time_support();
-    c.wavelet_time_support(wavelet_default_time_support);
+    stateChanged();
 
-    Tfr::Stft& s = Tfr::Stft::Singleton();
-    unsigned prev_chunk_size = s.chunk_size();
-    s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
-
-    c.wavelet_fast_time_support( wavelet_fast_time_support );
-
-
-    if (isCwt || prev_chunk_size!=s.chunk_size())
-    {
-        model()->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-
-        stateChanged();
-
-        view->emitTransformChanged();
-    }
-
-    tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1 (%2 scales/octave)\nSTFT window: %3 samples").arg(c.sigma(), 0, 'f', 1).arg(c.scales_per_octave(), 0, 'f', 1).arg(s.chunk_size()));
+    view->emitTransformChanged();
 }
 
 
@@ -439,6 +441,58 @@ void RenderController::tfresolutionIncrease()
 {    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepAdd ); stateChanged(); }
 void RenderController::tfresolutionDecrease()
 {    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepSub ); stateChanged(); }
+
+
+void RenderController::
+        updateTransformParams()
+{
+    Tfr::Transform* t = currentTransform();
+    if (!t)
+        return;
+
+    if (Tfr::Stft* s = dynamic_cast<Tfr::Stft*>(t))
+    {
+        Tfr::StftParams* sp = model()->getParam<Tfr::StftParams>();
+        if (*s->transformParams() != *sp)
+            setCurrentFilterTransform(sp->createTransform());
+        return;
+    }
+    if (Tfr::Cwt* s = dynamic_cast<Tfr::Cwt*>(t))
+    {
+        Tfr::Cwt* sp = model()->getParam<Tfr::Cwt>();
+        if (*s->transformParams() != *sp)
+            setCurrentFilterTransform(sp->createTransform());
+        return;
+    }
+    if (Tfr::Cepstrum* s = dynamic_cast<Tfr::Cepstrum*>(t))
+    {
+        Tfr::CepstrumParams* sp = model()->getParam<Tfr::CepstrumParams>();
+        if (*s->transformParams() != *sp)
+            setCurrentFilterTransform(sp->createTransform());
+        return;
+    }
+    if (Tfr::DrawnWaveform* s = dynamic_cast<Tfr::DrawnWaveform*>(t))
+    {
+        Tfr::DrawnWaveform* sp = model()->getParam<Tfr::DrawnWaveform>();
+        if (*s->transformParams() != *sp)
+            setCurrentFilterTransform(sp->createTransform());
+        return;
+    }
+
+    throw std::logic_error(str(format("updateTransformParams, unkown transform: %s") % vartype(*t)).c_str());
+}
+
+
+void RenderController::
+        setCurrentFilterTransform( Tfr::pTransform t )
+{
+    Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
+    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+    tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1 (%2 scales/octave)\nSTFT window: %3 samples").arg(c.sigma(), 0, 'f', 1).arg(c.scales_per_octave(), 0, 'f', 1).arg(s.chunk_size()));
+
+    // TODO should do some little tiny lock here for access to a pTransform ...
+    currentFilter()->transform( t );
+}
 
 
 Signal::PostSink* RenderController::
@@ -471,8 +525,8 @@ Signal::PostSink* RenderController::
 }
 
 
-Tfr::Transform* RenderController::
-        currentTransform()
+Tfr::Filter* RenderController::
+        currentFilter()
 {
     Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
     if (ps->sinks().empty())
@@ -480,7 +534,31 @@ Tfr::Transform* RenderController::
     BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
     BOOST_ASSERT( bfs != 0 );
     Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->Operation::source().get());
-    return filter->transform().get();
+    return filter;
+}
+
+
+Tfr::Transform* RenderController::
+        currentTransform()
+{
+    Tfr::Filter* f = currentFilter();
+    return f?f->transform().get():0;
+}
+
+
+float RenderController::
+        headSampleRate()
+{
+    return model()->project()->head->head_source()->sample_rate();
+}
+
+
+float RenderController::
+        currentTransformMinHz()
+{
+    Tfr::Transform* t = currentTransform();
+    BOOST_ASSERT(t);
+    return t->transformParams()->freqAxis(headSampleRate()).min_hz;
 }
 
 
@@ -581,14 +659,14 @@ void RenderController::
 void RenderController::
         receiveLinearScale()
 {
-    float fs = model()->project()->head->head_source()->sample_rate();
+    float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
     fa.setLinear( fs );
 
-    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
-        fa.min_hz = currentTransform()->freqAxis(fs).min_hz;
+        fa.min_hz = currentTransformMinHz();
         fa.f_step = fs/2 - fa.min_hz;
     }
 
@@ -602,19 +680,20 @@ void RenderController::
 void RenderController::
         receiveLogScale()
 {
-    float fs = model()->project()->head->head_source()->sample_rate();
+    float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
+    Tfr::Cwt* cwt = model()->getParam<Tfr::Cwt>();
     fa.setLogarithmic(
-            Tfr::Cwt::Singleton().wanted_min_hz(),
-            Tfr::Cwt::Singleton().get_max_hz(fs) );
+            cwt->wanted_min_hz(),
+            cwt->get_max_hz(fs) );
 
-    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
         // Happens typically when currentTransform is a cepstrum transform with a short window size
         fa.setLogarithmic(
-                currentTransform()->freqAxis(fs).min_hz,
-                Tfr::Cwt::Singleton().get_max_hz(fs) );
+                currentTransformMinHz(),
+                cwt->get_max_hz(fs) );
     }
 
     model()->display_scale( fa );
@@ -627,16 +706,16 @@ void RenderController::
 void RenderController::
         receiveCepstraScale()
 {
-    float fs = model()->project()->head->head_source()->sample_rate();
+    float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
-    fa.setQuefrencyNormalized( fs, Tfr::Cepstrum::Singleton().chunk_size() );
+    fa.setQuefrencyNormalized( fs, model()->getParam<Tfr::CepstrumParams>()->chunk_size() );
 
-    if (currentTransform() && fa.min_hz < currentTransform()->freqAxis(fs).min_hz)
+    if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
         // min_hz = 2*fs/window_size;
         // window_size = 2*fs/min_hz;
-        fa.setQuefrencyNormalized( fs, 2*fs/currentTransform()->freqAxis(fs).min_hz );
+        fa.setQuefrencyNormalized( fs, 2*fs/currentTransformMinHz() );
     }
 
     model()->display_scale( fa );
@@ -926,13 +1005,20 @@ void RenderController::
         tf_resolution->addAction( tfresolutionDecrease );
     }
 
-    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()));
-    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()));
-    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(transformChanged()));
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()), Qt::QueuedConnection);
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()), Qt::QueuedConnection);
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
+
+    // Validate the current transform used for rendering before each rendering.
+    // Lazy updating with easier and direct access to transform parameters.
+    connect(this->view.data(), SIGNAL(prePaint()), SLOT(updateTransformParams()), Qt::DirectConnection);
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
-    connect(view, SIGNAL(destroying()), SLOT(clearCachedHeightmap()));
+    connect(this->view.data(), SIGNAL(destroying()), SLOT(clearCachedHeightmap()), Qt::DirectConnection);
+
+    connect(Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCachedHeightmap()), Qt::DirectConnection);
+    connect(Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()), Qt::DirectConnection);
 
     // Create the OpenGL rendering context early. Because we want to create the
     // cuda context (in main.cpp) and bind it to an OpenGL context before the
@@ -1057,6 +1143,13 @@ void RenderController::
             stateChanged();
         }
     }
+}
+
+
+void RenderController::
+        clearCaches()
+{
+    // TODO clear stuff from FftImplementations somewhere not here
 }
 
 

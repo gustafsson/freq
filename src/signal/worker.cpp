@@ -6,7 +6,7 @@
 #include "operationcache.h"
 
 // Sonic AWE
-#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory, should use transform instead
+#include "tfr/cwt.h" // hack to make chunk sizes adapt to computer speed and memory, should use target instead
 #include "sawe/application.h"
 
 // gpumisc
@@ -65,10 +65,9 @@ Worker::
                     // large chunks.
     _highest_fps( 0 ),
     current_fps( 0 ),
-    _disabled( false )
+    _disabled( true )
 {
-    if (t)
-        target( t );
+    target( t );
 }
 
 
@@ -217,7 +216,8 @@ bool Worker::
             cudaGetLastError(); // consume error
             TaskInfo("Samples per chunk was %u", _samples_per_chunk);
             TaskInfo("Max samples per chunk was %u", _max_samples_per_chunk);
-            TaskInfo("Scales per octave is %g", Tfr::Cwt::Singleton().scales_per_octave() );
+            Tfr::Cwt* cwt = t->project()->tools().render_model.getParam<Tfr::Cwt>();
+            TaskInfo("Scales per octave is %g", cwt->scales_per_octave() );
 
             _samples_per_chunk = t->prev_good_size( _samples_per_chunk );
 
@@ -347,25 +347,17 @@ void Worker::
     bool is_cheating = this->is_cheating();
     if (is_cheating && !c)
     {
+        // TODO handle cheating through signals instead (which could also be thread safe)
         // Not cheating anymore as there would have been nothing left to work on
-        WORKER_INFO TaskInfo("Restoring time suppor");
-        Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+        WORKER_INFO TaskInfo("Restoring time support");
+        Tfr::Cwt* cwt = t->project()->tools().render_model.getParam<Tfr::Cwt>();
+        cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
     }
 
     if (!is_cheating || !c)
     {
         _cheat_work.clear();
         c = todoinv;
-    }
-
-
-    BOOST_FOREACH(Signal::Interval const &b, c)
-    {
-        if (b.count() == 0) {
-            TaskInfo ti("Worker interval debug. ");
-            ti.tt().getStream() << "\nInvalid samples: " << t->post_sink()->invalid_samples() << "\nPS interval: "
-                    << t->post_sink()->getInterval() << "\nCheat interval:" << _cheat_work;
-        }
     }
 
 
@@ -389,7 +381,8 @@ Intervals Worker::
 pOperation Worker::
         source()
 {
-    return target()->source();
+    pTarget t = target();
+    return t?t->source():pOperation();
 }
 
 
@@ -421,8 +414,11 @@ void Worker::
 
             _target = value;
 
-            if (!_target->allow_cheat_resolution())
-                Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+            if (!_target->allow_cheat_resolution() && false)
+            {
+                Tfr::Cwt* cwt = _target->project()->tools().render_model.getParam<Tfr::Cwt>();
+                cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
+            }
         }
 
         updateLength();
@@ -489,7 +485,8 @@ float Worker::
     }
     _last_work_one = now;
 
-    Tfr::Cwt::Singleton().wavelet_time_support( Tfr::Cwt::Singleton().wavelet_default_time_support() );
+    Tfr::Cwt* cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
+    cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
 
     return current_fps;
 }
@@ -505,15 +502,19 @@ float Worker::
 void Worker::
         requested_fps(float value, float cheat_value)
 {
+    if (_disabled)
+        return;
+
     if (_min_fps>value) value=_min_fps;
     if (_min_fps>cheat_value) cheat_value=_min_fps;
 
 
     if (value>_requested_fps) {
         _max_samples_per_chunk = (unsigned)-1;
-        if (target()->allow_cheat_resolution())
+        // TODO setting cheat resolution is a property of target. Not something worker should know this much about.
+        if (target()->allow_cheat_resolution() && false)
         {
-            Tfr::Cwt& cwt = Tfr::Cwt::Singleton();
+            Tfr::Cwt& cwt = *target()->project()->tools().render_model.getParam<Tfr::Cwt>();
             float fs = target()->source()->sample_rate();
             float fast_support_samples = 0.01f *fs;
             float fast_support = fast_support_samples / cwt.morlet_sigma_samples( fs, cwt.wanted_min_hz() );
@@ -536,7 +537,8 @@ void Worker::
 bool Worker::
         is_cheating()
 {
-    return Tfr::Cwt::Singleton().wavelet_time_support() < Tfr::Cwt::Singleton().wavelet_default_time_support();
+    const Tfr::Cwt* cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
+    return cwt->wavelet_time_support() < cwt->wavelet_default_time_support();
 }
 
 

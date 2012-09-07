@@ -410,13 +410,13 @@ std::vector<pBlock> Collection::
 }
 
 
-Tfr::pTransform Collection::
+const Tfr::TransformParams* Collection::
         transform()
 {
     Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
     if (filter)
-        return filter->transform();
-    return Tfr::pTransform();
+        return filter->transform()->transformParams();
+    return 0;
 }
 
 
@@ -1073,10 +1073,11 @@ static pOperation
 void Collection::
         fillBlock( pBlock block, const Signal::Intervals& to_update )
 {
+    Tfr::StftParams params;
+    params.set_approximate_chunk_size(1 << 12); // 4096
+
     StftToBlock stftmerger(this);
-    Tfr::Stft* transp;
-    stftmerger.transform( Tfr::pTransform( transp = new Tfr::Stft() ));
-    transp->set_approximate_chunk_size(1 << 12); // 4096
+    stftmerger.transform( params.createTransform() );
     stftmerger.exclude_end_block = true;
 
     // Only take 1 MB of signal data at a time
@@ -1090,7 +1091,7 @@ void Collection::
     while (sections)
     {
         Interval section = sections.fetchInterval(section_size);
-        Interval needed = stftmerger.requiredInterval( section );
+        Interval needed = stftmerger.requiredInterval( section, stftmerger.transform() );
         pOperation fast_source = Heightmap::fast_source( target, needed );
         stftmerger.source( fast_source );
         Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
@@ -1170,7 +1171,7 @@ bool Collection::
 
     outBlock->valid_samples -= inBlock->getInterval();
 
-    bool isCwt = dynamic_cast<Tfr::Cwt*>(transform().get());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
     bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
 
 #ifndef CWT_SUBTEXEL_AGGREGATION

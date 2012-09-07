@@ -140,7 +140,9 @@ void CsvTimeseries::
         ssc.set_channel( c );
         _waveforms[c] = ssc.readFixedLength( ssc.getInterval() );
     }
-    Tfr::Cwt::Singleton().set_wanted_min_hz( sample_rate/1000 );
+
+    // TODO adjust default wanted min hz to sample rate of opened signal
+    //Tfr::Cwt::Singleton().set_wanted_min_hz( sample_rate/1000 );
 
     tt << "Signal length: " << lengthLongFormat();
 

@@ -18,13 +18,17 @@ CepstrumFilter::
 :   Filter(source),
     exclude_end_block(false)
 {
-
-    if (t)
+    if (!t)
     {
-        BOOST_ASSERT( dynamic_cast<Cepstrum*>(t.get()));
-
-        _transform = t;
+        CepstrumParams p;
+        p.setWindow(StftParams::WindowType_Hann, 0.75f);
+        t = pTransform(new Cepstrum(p));
     }
+
+    Cepstrum* c = dynamic_cast<Cepstrum*>(t.get());
+    BOOST_ASSERT( c );
+
+    transform( t );
 }
 
 
@@ -32,8 +36,9 @@ ChunkAndInverse CepstrumFilter::
         computeChunk( const Signal::Interval& I )
 {
     TIME_CepstrumFilter TaskTimer tt("Cepstrum filter");
+    Tfr::pTransform t = transform();
 
-    unsigned chunk_size = dynamic_cast<Cepstrum*>(transform().get())->chunk_size();
+    unsigned chunk_size = dynamic_cast<Cepstrum*>(t.get())->params().chunk_size();
     // Add a margin to make sure that the STFT is computed for one block before
     // and one block after the signal. This makes it possible to do proper
     // interpolations so that there won't be any edges between blocks
@@ -61,34 +66,10 @@ ChunkAndInverse CepstrumFilter::
     ci.inverse = source()->readFixedLength( chunk_interval );
 
     // Compute the cepstrum transform
-    ci.chunk = (*transform())( ci.inverse );
+    ci.chunk = (*t)( ci.inverse );
 
     return ci;
 }
 
-
-pTransform CepstrumFilter::
-        transform() const
-{
-    return _transform ? _transform : Cepstrum::SingletonP();
-}
-
-
-void CepstrumFilter::
-        transform( pTransform t )
-{
-    if (0 == dynamic_cast<Cepstrum*>(t.get ()))
-        throw std::invalid_argument("'transform' must be an instance of Tfr::Cepstrum");
-
-    if ( t == transform() && !_transform )
-        t.reset();
-
-    if (_transform == t )
-        return;
-
-    invalidate_samples( Signal::Interval(0, number_of_samples() ));
-
-    _transform = t;
-}
 
 } // namespace Signal

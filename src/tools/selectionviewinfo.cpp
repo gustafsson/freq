@@ -160,14 +160,14 @@ pBuffer SelectionViewInfoSink::
         f = Intervals(f).enlarge(sample_rate()/2).spannedInterval() & getInterval();
         f.last = f.first + Tfr::Fft::lChunkSizeS( f.count() + 1, 4 );
 
-        Tfr::Stft stft;
-        stft.setWindow(Tfr::Stft::WindowType_Hann, 0.5);
+        Tfr::StftParams stft;
+        stft.setWindow(Tfr::StftParams::WindowType_Hann, 0.5);
         stft.set_approximate_chunk_size( f.count() );
         stft.compute_redundant(false);
         BOOST_ASSERT(stft.chunk_size() == f.count());
 
         b = Operation::source()->readFixedLength(f);
-        Tfr::pChunk c = stft( b );
+        Tfr::pChunk c = (Tfr::Stft(stft))( b );
         Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
         BOOST_ASSERT( 1 == c->nSamples() );
         BOOST_ASSERT( c->nScales() == f.count()/2+1 );

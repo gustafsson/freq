@@ -20,24 +20,26 @@ StftFilter::
     no_affected_samples(no_affected_samples)
 {
     if (!t)
-        t = Stft::SingletonP();
+    {
+        Tfr::StftParams p;
+        p.setWindow(Tfr::StftParams::WindowType_Hann, 0.75f);
+        t = pTransform(new Stft(p));
+    }
 
     Stft* s = dynamic_cast<Stft*>(t.get());
     BOOST_ASSERT( s );
 
-    s->setWindow(Stft::WindowType_Hann, 0.75f);
-
-    _transform = t;
+    transform( t );
 }
 
 
 Signal::Interval StftFilter::
-        requiredInterval( const Signal::Interval& I )
+        requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    //((Stft*)transform().get())->set_approximate_chunk_size( 1 << 12 );
-    long averaging = ((Stft*)transform().get())->averaging();
-    long window_size = ((Stft*)transform().get())->chunk_size();
-    long window_increment = ((Stft*)transform().get())->increment();
+    const StftParams& p = ((Stft*)t.get())->params();
+    long averaging = p.averaging();
+    long window_size = p.chunk_size();
+    long window_increment = p.increment();
     long chunk_size  = window_size*averaging;
     long increment   = window_increment*averaging;
 
@@ -102,45 +104,22 @@ ChunkAndInverse StftFilter::
 {
     ChunkAndInverse ci;
 
-    ci.inverse = source()->readFixedLength( requiredInterval( I ) );
+    pTransform t = transform();
+    ci.inverse = source()->readFixedLength( requiredInterval( I, t ) );
 
     // Compute the stft transform
-    ci.chunk = (*transform())( ci.inverse );
+    ci.chunk = (*t)( ci.inverse );
 
     return ci;
-}
-
-
-pTransform StftFilter::
-        transform() const
-{
-    return _transform ? _transform : Stft::SingletonP();
-}
-
-
-void StftFilter::
-        transform( pTransform t )
-{
-    if (0 == dynamic_cast<Stft*>(t.get ()))
-        throw std::invalid_argument("'transform' must be an instance of Tfr::Stft");
-
-    if ( t == transform() && !_transform )
-        t.reset();
-
-    if (_transform == t )
-        return;
-
-    invalidate_samples( Signal::Interval(0, number_of_samples() ));
-
-    _transform = t;
 }
 
 
 void StftFilter::
         invalidate_samples(const Signal::Intervals& I)
 {
-    unsigned window_size = ((Stft*)transform().get())->chunk_size();
-    unsigned increment   = ((Stft*)transform().get())->increment();
+    const StftParams& p = ((Stft*)transform().get())->params();
+    int window_size = p.chunk_size();
+    int increment   = p.increment();
 
     // include_time_support
     Signal::Intervals J = I.enlarge(window_size-increment);

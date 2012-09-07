@@ -81,24 +81,6 @@ Cwt::
 }
 
 
-// static
-Cwt& Cwt::
-        Singleton()
-{
-    return *dynamic_cast<Cwt*>(SingletonP().get());
-}
-
-
-// static
-pTransform Cwt::
-        SingletonP()
-{
-    if (!static_singleton)
-        static_singleton.reset( new Cwt() );
-    return static_singleton;
-}
-
-
 pChunk Cwt::
         operator()( Signal::pBuffer buffer )
 {
@@ -378,8 +360,15 @@ pChunk Cwt::
 }
 
 
+pTransform Cwt::
+        createTransform() const
+{
+    return pTransform(new Cwt(*this));
+}
+
+
 FreqAxis Cwt::
-        freqAxis( float FS )
+        freqAxis( float FS ) const
 {
     FreqAxis fa;
     fa.setLogarithmic(
@@ -391,7 +380,7 @@ FreqAxis Cwt::
 
 
 float Cwt::
-        displayedTimeResolution( float FS, float hz )
+        displayedTimeResolution( float FS, float hz ) const
 {
     return morlet_sigma_samples(FS, hz) / FS;
 }
@@ -402,6 +391,25 @@ float Cwt::
 //{
 //    return Signal::Intervals(buffer->getInterval()).shrink( wavelet_time_support_samples(buffer->sample_rate) ).spannedInterval();
 //}
+
+
+bool Cwt::
+        operator==(const TransformParams& b) const
+{
+    const Cwt* p = dynamic_cast<const Cwt*>(&b);
+    if (!p)
+        return false;
+
+    return _min_hz == p->_min_hz &&
+            _scales_per_octave == p->_scales_per_octave &&
+            _tf_resolution == p->_tf_resolution &&
+            _least_meaningful_fraction_of_r == p->_least_meaningful_fraction_of_r &&
+            _least_meaningful_samples_per_chunk == p->_least_meaningful_samples_per_chunk &&
+            _wavelet_time_suppport == p->_wavelet_time_suppport &&
+            _wavelet_def_time_suppport == p->_wavelet_def_time_suppport &&
+            _wavelet_scale_suppport == p->_wavelet_scale_suppport &&
+            _jibberish_normalization == p->_jibberish_normalization;
+}
 
 
 pChunk Cwt::
@@ -513,9 +521,9 @@ pChunk Cwt::
 
         intermediate_wt->n_valid_samples = ft->getInterval().count() - time_support - intermediate_wt->first_valid_sample;
 
-        Stft stft;
+        StftParams stft;
         stft.set_exact_chunk_size(n.width);
-        stft.compute( g, g, Tfr::FftDirection_Inverse );
+        Stft(stft).compute( g, g, Tfr::FftDirection_Inverse );
 
 //        if (0 /* cpu version */ ) {
 //            TIME_CWTPART TaskTimer tt("inverse ooura, redundant=%u+%u valid=%u",
@@ -819,7 +827,7 @@ unsigned Cwt::
 
 
 unsigned Cwt::
-        required_length( unsigned current_valid_samples_per_chunk, float fs, unsigned &r )
+        required_length( unsigned current_valid_samples_per_chunk, float fs, unsigned &r ) const
 {
     unsigned alignment = chunk_alignment( fs );
     if (AdjustToBin0)
@@ -842,7 +850,7 @@ unsigned Cwt::
 
 
 unsigned Cwt::
-        next_good_size( unsigned current_valid_samples_per_chunk, float fs )
+        next_good_size( unsigned current_valid_samples_per_chunk, float fs ) const
 {
     DEBUG_CWT TaskInfo ti("next_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
     unsigned r, T0 = required_length( 0, fs, r );
@@ -929,7 +937,7 @@ unsigned Cwt::
 
 
 unsigned Cwt::
-        prev_good_size( unsigned current_valid_samples_per_chunk, float fs )
+        prev_good_size( unsigned current_valid_samples_per_chunk, float fs ) const
 {
     DEBUG_CWT TaskInfo ti("prev_good_size(%u, %g)", current_valid_samples_per_chunk, fs);
 
@@ -991,20 +999,23 @@ unsigned Cwt::
 
     DEBUG_CWT TaskInfo("prev_good_size: scales_per_octave was %g", scales_per_octave());
 
-    // No, the current size doesn't fit in memory, find something smaller.
-    largest_scales_per_octave( fs, scales_per_octave() );
+    // No, the current size doesn't fit in memory
+    return 0;
 
-    // scales per octave has been changed here, recompute 'r' and return
-    // the smallest possible L
-    smallest_T = required_length( 1, fs, r );
-    smallest_L = smallest_T - 2*r;
+//    // decrease scales per octave to the largest possible value
+//    largest_scales_per_octave( fs, scales_per_octave() );
 
-    smallest_required = required_gpu_bytes(smallest_L, fs);
-    DEBUG_CWT TaskInfo("prev_good_size: scales_per_octave is %g, smallest_L = %u, required = %f MB",
-                       scales_per_octave(), smallest_L,
-                       DataStorageVoid::getMemorySizeText( smallest_required ).c_str());
+//    // scales per octave has been changed here, recompute 'r' and return
+//    // the smallest possible L
+//    smallest_T = required_length( 1, fs, r );
+//    smallest_L = smallest_T - 2*r;
 
-    return smallest_L;
+//    smallest_required = required_gpu_bytes(smallest_L, fs);
+//    DEBUG_CWT TaskInfo("prev_good_size: scales_per_octave is %g, smallest_L = %u, required = %f MB",
+//                       scales_per_octave(), smallest_L,
+//                       DataStorageVoid::getMemorySizeText( smallest_required ).c_str());
+
+//    return smallest_L;
 }
 
 
@@ -1043,7 +1054,7 @@ void Cwt::
 
 
 bool Cwt::
-        is_small_enough( float fs )
+        is_small_enough( float fs ) const
 {
     unsigned r, T = required_length( 1, fs, r );
     unsigned L = T - 2*r;
@@ -1143,7 +1154,7 @@ size_t Cwt::
 
 
 std::string Cwt::
-        toString()
+        toString() const
 {
     std::stringstream ss;
     ss << "Tfr::Cwt"

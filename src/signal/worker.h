@@ -194,7 +194,7 @@ public:
     float               requested_fps() const;
     void                requested_fps(float, float cheat=-1);
 
-    static bool         is_cheating();
+    bool                is_cheating();
 
     /**
       source()->number_of_samples() may change during a workOne() call. This

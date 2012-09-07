@@ -91,15 +91,22 @@ Signal::pBuffer DrawnWaveform::
 }
 
 
+pTransform DrawnWaveform::
+        createTransform() const
+{
+    return pTransform(new DrawnWaveform());
+}
+
+
 float DrawnWaveform::
-        displayedTimeResolution( float FS, float /*hz*/ )
+        displayedTimeResolution( float FS, float /*hz*/ ) const
 {
     return .25f/(FS);
 }
 
 
 FreqAxis DrawnWaveform::
-        freqAxis( float /*FS*/ )
+        freqAxis( float /*FS*/ ) const
 {
     FreqAxis a;
     a.axis_scale = AxisScale_Linear;
@@ -118,7 +125,7 @@ static const unsigned DrawnWaveform_step_constant = 1024;
 
 
 unsigned DrawnWaveform::
-        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+        next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ ) const
 {
     if (current_valid_samples_per_chunk<drawWaveform_BLOCK_SIZE)
         return drawWaveform_BLOCK_SIZE;
@@ -128,7 +135,7 @@ unsigned DrawnWaveform::
 
 
 unsigned DrawnWaveform::
-        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ )
+        prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ ) const
 {
     if (current_valid_samples_per_chunk<2*drawWaveform_BLOCK_SIZE)
         return drawWaveform_BLOCK_SIZE;
@@ -138,11 +145,24 @@ unsigned DrawnWaveform::
 
 
 std::string DrawnWaveform::
-        toString()
+        toString() const
 {
     std::stringstream ss;
     ss << "Tfr::DrawnWaveform, block_fs=" << block_fs << ", maxValue=" << maxValue;
     return ss.str();
+}
+
+
+bool DrawnWaveform::
+        operator==(const TransformParams& b) const
+{
+    const DrawnWaveform* p = dynamic_cast<const DrawnWaveform*>(&b);
+    if (!p)
+        return false;
+
+    return block_fs == p->block_fs &&
+           signal_length == p->signal_length &&
+           maxValue == p->maxValue;
 }
 
 

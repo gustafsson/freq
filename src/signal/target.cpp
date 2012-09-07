@@ -263,6 +263,13 @@ Target::
 }
 
 
+Sawe::Project* Target::
+        project()
+{
+    return all_layers_->project();
+}
+
+
 void Target::
         addLayerHead(pChainHead p)
 {

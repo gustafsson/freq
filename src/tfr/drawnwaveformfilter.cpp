@@ -13,17 +13,13 @@ DrawnWaveformFilter::
         DrawnWaveformFilter(Signal::pOperation source, pTransform t)
 :   Filter(source)
 {
-//    if (!t)
-//        t = DrawnWaveform::SingletonP();
+    if (!t)
+        t = pTransform(new DrawnWaveform());
 
-    if (t)
-    {
-        BOOST_ASSERT( dynamic_cast<DrawnWaveform*>(t.get()));
+    DrawnWaveform* c = dynamic_cast<DrawnWaveform*>(t.get());
+    BOOST_ASSERT( c );
 
-        _transform = t;
-    }
-    else
-        _transform.reset( new DrawnWaveform() );
+    transform( t );
 }
 
 
@@ -59,7 +55,8 @@ ChunkAndInverse DrawnWaveformFilter::
         maxValue = std::max(std::abs(p[i]), maxValue);
     maxValue *= 1.1;
 
-    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(transform().get());
+    Tfr::pTransform t = transform();
+    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(t.get());
     if (0 == w)
         throw std::invalid_argument("'transform' must be an instance of Tfr::DrawnWaveform");
     if (maxValue > w->maxValue)
@@ -69,7 +66,7 @@ ChunkAndInverse DrawnWaveformFilter::
     }
 
     // Draw the waveform to on a matrix for drawing
-    ci.chunk = (*transform())( ci.inverse );
+    ci.chunk = (*t)( ci.inverse );
 
 #ifdef _DEBUG
     Signal::Interval cii = ci.chunk->getInterval();
@@ -80,29 +77,5 @@ ChunkAndInverse DrawnWaveformFilter::
     return ci;
 }
 
-
-pTransform DrawnWaveformFilter::
-        transform() const
-{
-    return _transform;
-}
-
-
-void DrawnWaveformFilter::
-        transform( pTransform t )
-{
-    if (0 == dynamic_cast<DrawnWaveform*>(t.get ()))
-        throw std::invalid_argument("'transform' must be an instance of Tfr::DrawnWaveform");
-
-    if ( t == transform() && !_transform )
-        t.reset();
-
-    if (_transform == t )
-        return;
-
-    invalidate_samples( Signal::Interval(0, number_of_samples() ));
-
-    _transform = t;
-}
 
 } // namespace Tfr

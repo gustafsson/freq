@@ -2,35 +2,38 @@
 #define CEPSTRUM_H
 
 #include "transform.h"
-#include "HasSingleton.h"
+#include "stftparams.h"
 
 namespace Tfr {
 
 class Stft;
 
-// TODO remove HasSingleton
-class Cepstrum : public Tfr::Transform, public HasSingleton<Cepstrum,Transform>
+class CepstrumParams : public StftParams
 {
 public:
-    Cepstrum();
+    pTransform createTransform() const;
+    virtual FreqAxis freqAxis( float FS ) const;
+};
+
+
+class Cepstrum : public Tfr::Transform
+{
+public:
+    Cepstrum(const CepstrumParams& p = CepstrumParams());
+
+    CepstrumParams params() const { return p; }
+    virtual const TransformParams* transformParams() const { return &p; }
 
     virtual pChunk operator()( Signal::pBuffer b );
-
     virtual Signal::pBuffer inverse( pChunk chunk );
-    virtual FreqAxis freqAxis( float FS );
-    virtual float displayedTimeResolution( float FS, float hz );
-    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
-    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate );
-    virtual std::string toString();
-
-    unsigned chunk_size();
 
     Stft* stft();
 
 private:
-
+    const CepstrumParams p;
     Tfr::pTransform stft_;
 };
+
 
 } // namespace Tfr
 
