@@ -81,7 +81,7 @@ namespace Tools
         void updateTransformParams();
 
     private slots:
-        void clearCachedHeightmap();
+        void deleteTarget();
         void updateFreqAxis();
         void updateChannels();
         void reroute();

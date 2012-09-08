@@ -216,7 +216,7 @@ RenderController::
         ~RenderController()
 {
     if (QGLContext::currentContext())
-        clearCachedHeightmap();
+        deleteTarget();
 }
 
 
@@ -528,7 +528,8 @@ Signal::PostSink* RenderController::
 Tfr::Filter* RenderController::
         currentFilter()
 {
-    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
+    Signal::pTarget t = model()->renderSignalTarget;
+    Signal::PostSink* ps = t->post_sink();
     if (ps->sinks().empty())
         return 0;
     BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
@@ -1015,9 +1016,7 @@ void RenderController::
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.
-    connect(this->view.data(), SIGNAL(destroying()), SLOT(clearCachedHeightmap()), Qt::DirectConnection);
-
-    connect(Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCachedHeightmap()), Qt::DirectConnection);
+    connect(this->view.data(), SIGNAL(destroying()), SLOT(deleteTarget()), Qt::DirectConnection);
     connect(Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()), Qt::DirectConnection);
 
     // Create the OpenGL rendering context early. Because we want to create the
@@ -1057,13 +1056,21 @@ void RenderController::
 
 
 void RenderController::
-        clearCachedHeightmap()
+        deleteTarget()
+{
+    clearCaches();
+
+    model()->renderSignalTarget.reset();
+}
+
+
+void RenderController::
+        clearCaches()
 {
     // Stop worker from producing any more heightmaps by disconnecting
     // the collection callback from worker.
     if (model()->renderSignalTarget == model()->project()->worker.target())
         model()->project()->worker.target(Signal::pTarget());
-    model()->renderSignalTarget.reset();
 
 
     // Assuming calling thread is the GUI thread.
@@ -1072,6 +1079,9 @@ void RenderController::
     // context
     foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
         collection->reset();
+
+
+    // TODO clear stuff from FftImplementations somewhere not here
 }
 
 
@@ -1143,13 +1153,6 @@ void RenderController::
             stateChanged();
         }
     }
-}
-
-
-void RenderController::
-        clearCaches()
-{
-    // TODO clear stuff from FftImplementations somewhere not here
 }
 
 
