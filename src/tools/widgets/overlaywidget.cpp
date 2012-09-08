@@ -12,7 +12,9 @@ namespace Widgets {
 OverlayWidget::OverlayWidget(RenderView *scene)
     :   scene_(scene)
 {
-    setAttribute(Qt::WA_NoBackground);
+    // Qt::WA_NoBackground messes up caches, mimic Qt::WA_NoBackground
+    setPalette(QPalette(QPalette::Window, QColor(0,0,0,0)));
+    //setAttribute(Qt::WA_NoBackground);
 
     proxy_ = new QGraphicsProxyWidget(0, Qt::Window);
     proxy_->setFlag(QGraphicsItem::ItemSendsGeometryChanges);
