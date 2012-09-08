@@ -118,17 +118,8 @@ void CommentController::
         changeEvent ( QEvent * event )
 {
     if (event->type() == QEvent::EnabledChange)
-    {
-        if (isEnabled())
-        {
-            view_->graphicsview->setToolFocus( true );
-            view_->toolSelector()->setCurrentToolCommand( this );
-        }
-        else
-            view_->toolSelector()->setCurrentTool( this, false );
-
-        emit enabledChanged( isEnabled() );
-    }
+        if (!isEnabled())
+            emit enabledChanged( isEnabled() );
 }
 
 
@@ -136,6 +127,7 @@ void CommentController::
         enableCommentAdder(bool active)
 {
     view_->toolSelector()->setCurrentTool( this, active );
+    view_->graphicsview->setToolFocus( active );
 
     if (active)
     {
@@ -201,6 +193,8 @@ void CommentController::
 {
     if (comment_)
     {
+        mouseMoveEvent( e );
+
         comment_->model()->screen_pos[0] = UpdateModelPositionFromScreen;
 
         // keep in sync with CommentView::updatePosition()

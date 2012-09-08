@@ -103,6 +103,7 @@ namespace Tools
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
         connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
         connect(selectionComboBox_, SIGNAL(toggled(bool)), SLOT(selectionComboBoxToggled()));
+        connect(this, SIGNAL(enabledChanged(bool)), selectionComboBox_, SLOT(setChecked(bool)));
 
         setCurrentSelection(Signal::pOperation());
 
