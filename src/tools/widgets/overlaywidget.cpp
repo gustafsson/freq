@@ -12,14 +12,12 @@ namespace Widgets {
 OverlayWidget::OverlayWidget(RenderView *scene)
     :   scene_(scene)
 {
-    // Transparent Widget background (alpha-channel is 0)
-    this->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
+    setAttribute(Qt::WA_NoBackground);
 
     proxy_ = new QGraphicsProxyWidget(0, Qt::Window);
-    proxy_->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
+    proxy_->setFlag(QGraphicsItem::ItemSendsGeometryChanges);
     proxy_->setWidget( this );
-    proxy_->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
-    proxy_->setCacheMode(QGraphicsItem::ItemCoordinateCache);
+    proxy_->setWindowFlags( Qt::FramelessWindowHint );
     proxy_->setZValue( 1e10 );
     scene->addItem( proxy_ );
 
@@ -40,7 +38,12 @@ bool OverlayWidget::
         eventFilter(QObject *o, QEvent *e)
 {
     if (o == sceneSection_ && e->type()==QEvent::Resize)
+    {
         updatePosition();
+        // recreate the cache
+        //proxy_->setCacheMode(QGraphicsItem::ItemCoordinateCache);
+        proxy_->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
+    }
 
     return false;
 }

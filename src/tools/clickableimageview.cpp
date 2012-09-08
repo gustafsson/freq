@@ -29,13 +29,12 @@ ClickableImageView::
 //    parentwidget = parent->toolSelector()->parentTool();
 //    this->setParent(parentwidget);
 
-    // Transparent Widget background (alpha-channel is 0)
-    this->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
+    this->setAttribute(Qt::WA_NoBackground);
 
     proxy = new QGraphicsProxyWidget(0, Qt::Window);
     proxy->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
     proxy->setWidget( this );
-    proxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    proxy->setWindowFlags(Qt::FramelessWindowHint);
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     proxy->setZValue( 1e10 );
     parent->addItem( proxy );
@@ -60,6 +59,7 @@ bool ClickableImageView::
         image.move(QPointF(
                        parentwidget->width() - width(),
                        0.f));
+        proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     }
 
     return false;

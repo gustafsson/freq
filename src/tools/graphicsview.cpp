@@ -34,22 +34,25 @@ GraphicsView::
     setRenderHints(renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    // Caching slows down rendering of animated frames.
+    setCacheMode(QGraphicsView::CacheNone);
 
-    tool_proxy_ = new QGraphicsProxyWidget();
-    layout_widget_ = new QWidget();
+    tool_proxy_ = new QGraphicsProxyWidget;
+    layout_widget_ = new QWidget;
 
     // Make all child widgets occupy the entire area
     layout_widget_->setLayout(new QBoxLayout(QBoxLayout::TopToBottom));
     layout_widget_->layout()->setMargin(0);
     layout_widget_->layout()->setSpacing(0);
 
-    tool_proxy_ ->setWidget( layout_widget_ );
-    tool_proxy_ ->setWindowFlags( Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    tool_proxy_->setWidget( layout_widget_ );
+    tool_proxy_->setWindowFlags( Qt::FramelessWindowHint );
 
     setToolFocus( false );
 
-    // Transparent Widget background (alpha-channel is 0)
-    layout_widget_->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
+    // would prefer WA_NoBackground to hide the background, but some cache (which we're not using) isn't cleared while resizing without more work. Setting alpha to 0 also works
+    //layout_widget_->setAttribute(Qt::WA_NoBackground);
+    layout_widget_->setPalette(QPalette(QPalette::Window, QColor(0,0,0,0)));
 
     scene->addItem( tool_proxy_  );
     tool_proxy_->setParent( scene );

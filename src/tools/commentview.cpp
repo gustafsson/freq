@@ -59,7 +59,7 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy = new QGraphicsProxyWidget(0, Qt::Window);
     proxy->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
     proxy->setWidget( this );
-    proxy->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint );
+    proxy->setWindowFlags(Qt::FramelessWindowHint);
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
