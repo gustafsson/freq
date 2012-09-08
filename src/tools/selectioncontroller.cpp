@@ -39,6 +39,8 @@ namespace Tools
                 _render_view(render_view),
                 _worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
+                deselect_action_(0),
+                selecting(false),
                 tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this))
     {
         setEnabled( false );
@@ -105,6 +107,12 @@ namespace Tools
         connect(selectionComboBox_, SIGNAL(toggled(bool)), SLOT(selectionComboBoxToggled()));
         connect(this, SIGNAL(enabledChanged(bool)), selectionComboBox_, SLOT(setChecked(bool)));
 
+        deselect_action_ = new QAction(this);
+        connect(deselect_action_, SIGNAL(triggered()), SLOT(deselect()));
+        deselect_action_->setShortcut(Qt::Key_Escape);
+        addAction(deselect_action_);
+
+
         setCurrentSelection(Signal::pOperation());
 
         toolfactory();
@@ -165,6 +173,13 @@ namespace Tools
         ui->actionPolygonSelection->setEnabled( !ortho1D );
         ui->actionTimeSelection->setEnabled( timeSelection || !ortho1D );
         ui->actionFrequencySelection->setEnabled( frequencySelection || !ortho1D );
+    }
+
+
+    void SelectionController::
+            deselect()
+    {
+        setCurrentSelection(Signal::pOperation());
     }
 
 

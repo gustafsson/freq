@@ -13,7 +13,7 @@ namespace Tools { namespace Selections
 RectangleView::RectangleView(RectangleModel* model, Signal::Worker* worker)
     :
     enabled(false),
-    visible(true),
+    visible(false),
     model_(model),
     worker_(worker)
 {
@@ -77,7 +77,7 @@ void RectangleView::
 void RectangleView::
         drawSelectionRectangle2()
 {
-    float l = worker_->source()->length();
+    float l = worker_->length();
     glDepthMask(false);
     glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
     float

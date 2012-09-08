@@ -80,6 +80,8 @@ namespace Tools
 
         void renderModelChanged(Tools::ToolModel* model);
 
+        void deselect();
+
     private:
         // Event handlers
         virtual void changeEvent ( QEvent * event );
@@ -95,6 +97,7 @@ namespace Tools
         void toolfactory();
         ::Ui::ComboBoxAction * selectionComboBox_;
         boost::scoped_ptr<Support::ToolSelector> tool_selector_;
+        QAction* deselect_action_;
 
         // State
         bool selecting;

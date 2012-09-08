@@ -158,7 +158,6 @@ namespace Tools { namespace Selections
     {
         if (event->type() == QEvent::ParentChange)
         {
-            view_->visible = 0!=parent();
         }
 
         if (event->type() == QEvent::EnabledChange)
@@ -217,7 +216,9 @@ namespace Tools { namespace Selections
             bool currentTool = model()->tryFilter( o );
             rectangleForm_->showAsCurrentTool( currentTool );
             if (currentTool)
-                view_->visible = true;
+            {
+                view_->visible = model()->a != model()->b;
+            }
 
             if (model()->replaceFilter( o ))
                 selection_controller_->model()->set_current_selection( model()->updateFilter() );
