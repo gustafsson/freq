@@ -39,6 +39,8 @@ public:
 
     void setEditFocus(bool focus);
     bool isThumbnail();
+    void resize(int w, int h);
+    void resize(QSize);
 
 signals:
     void thumbnailChanged( bool );
@@ -56,6 +58,8 @@ private:
     ::Ui::CommentView *ui;
 
     QGraphicsProxyWidget* proxy;
+    QWidget* containerWidget;
+
     QPoint ref_point;
     QPolygonF poly;
     bool keep_pos;

@@ -39,9 +39,9 @@ namespace Tools
                 _render_view(render_view),
                 _worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
+                tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this)),
                 deselect_action_(0),
-                selecting(false),
-                tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this))
+                selecting(false)
     {
         setEnabled( false );
 

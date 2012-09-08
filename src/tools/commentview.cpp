@@ -16,6 +16,7 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QScrollBar>
+#include <QVBoxLayout>
 
 namespace Tools {
 
@@ -32,9 +33,16 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
 {
     ui->setupUi(this);
 
-    BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
+    containerWidget = new QWidget;
+    containerWidget->setCursor(Qt::CrossCursor);
+    containerWidget->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
+    containerWidget->setLayout(new QVBoxLayout());
+    containerWidget->layout()->addWidget(this);
+    containerWidget->layout()->setMargin(0);
+    containerWidget->layout()->setSpacing(0);
+    containerWidget->setMinimumSize(70,40);
 
-    this->setPalette(QPalette(QPalette::Window, QColor(255,0,0,0)));
+    BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
 
     QAction *closeAction = new QAction(tr("D&elete"), this);
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));
@@ -53,17 +61,18 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
 
     connect(render_view, SIGNAL(painting()), SLOT(updatePosition()));
 
-    move(0, 0);
     resize( model()->window_size[0], model()->window_size[1] );
 
     proxy = new QGraphicsProxyWidget(0, Qt::Window);
     proxy->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
-    proxy->setWidget( this );
+    proxy->setWidget( containerWidget );
     proxy->setWindowFlags(Qt::FramelessWindowHint);
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
     render_view->addItem( proxy );
+
+    setCursor(Qt::ArrowCursor);
 }
 
 
@@ -240,7 +249,7 @@ void CommentView::
 
         if (moving)
         {
-            move(event->pos() - dragPosition);
+            containerWidget->move(event->pos() - dragPosition);
             QPoint global_ref_pt = proxy->sceneTransform().map(ref_point);
 
             model()->screen_pos[0] = global_ref_pt.x();
@@ -301,6 +310,10 @@ void CommentView::
 void CommentView::
         wheelEvent(QWheelEvent *e)
 {
+    bool wheelZoomDisabled = true;
+    if (wheelZoomDisabled)
+        return;
+
     if (!maskedRegion.contains( e->pos() ))
     {
         e->setAccepted( false );
@@ -409,7 +422,7 @@ void CommentView::
     if (create_thumbnail)
         maskedRegion |= QRegion(0,0,1,1);
 
-    //setMask(maskedRegion);
+    setMask(maskedRegion);
 
     update();
     proxy->update();
@@ -498,6 +511,20 @@ bool CommentView::
 
 
 void CommentView::
+        resize(int w, int h)
+{
+    resize(QSize(w,h));
+}
+
+
+void CommentView::
+        resize(QSize s)
+{
+    containerWidget->resize(s);
+}
+
+
+void CommentView::
         updatePosition()
 {
     bool use_heightmap_value = true;
@@ -521,7 +548,7 @@ void CommentView::
 
         keep_pos = false;
 
-        move(0,0);
+        containerWidget->move(0,0);
         proxy->scene()->update();
         update();
         view->userinput_update();

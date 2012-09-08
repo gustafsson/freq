@@ -20,7 +20,7 @@ OverlayWidget::OverlayWidget(RenderView *scene)
     proxy_->setFlag(QGraphicsItem::ItemSendsGeometryChanges);
     proxy_->setWidget( this );
     proxy_->setWindowFlags( Qt::FramelessWindowHint );
-    proxy_->setZValue( 1e10 );
+    proxy_->setZValue( -10 );
     scene->addItem( proxy_ );
 
     sceneSection_ = scene->toolSelector()->parentTool();
