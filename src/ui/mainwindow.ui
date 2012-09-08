@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>886</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
@@ -224,16 +224,11 @@
     <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>false</bool>
+    <bool>true</bool>
    </attribute>
    <addaction name="actionPausePlayBack"/>
-   <addaction name="actionPlaySelection"/>
-   <addaction name="actionPlaySection"/>
    <addaction name="actionPlayEntireSound"/>
    <addaction name="actionStopPlayBack"/>
-   <addaction name="actionJumpBackward"/>
-   <addaction name="actionSetPlayMarker"/>
-   <addaction name="actionJumpForward"/>
    <addaction name="actionRecord"/>
    <addaction name="separator"/>
    <addaction name="actionFollowPlayMarker"/>
@@ -249,7 +244,7 @@
     <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionActivateInfoTool"/>
    <addaction name="actionAddComment"/>
