@@ -134,12 +134,12 @@ namespace Tools { namespace Selections
     void EllipseController::
             changeEvent ( QEvent * event )
     {
-        if (event->type() & QEvent::ParentChange)
+        if (event->type() == QEvent::ParentChange)
         {
             view_->visible = 0!=parent();
         }
 
-        if (event->type() & QEvent::EnabledChange)
+        if (event->type() == QEvent::EnabledChange)
         {
             view_->enabled = isEnabled();
             emit enabledChanged(isEnabled());

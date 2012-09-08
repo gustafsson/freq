@@ -202,7 +202,7 @@ void TooltipController::
 void TooltipController::
         changeEvent(QEvent *event)
 {
-    if (event->type() & QEvent::EnabledChange)
+    if (event->type() == QEvent::EnabledChange)
     {
         if (!isEnabled())
         {

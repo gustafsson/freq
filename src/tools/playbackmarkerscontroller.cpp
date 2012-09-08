@@ -175,7 +175,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         changeEvent(QEvent *event)
 {
-    if (event->type() & QEvent::EnabledChange)
+    if (event->type() == QEvent::EnabledChange)
     {
         if (!isEnabled())
             view_->setHighlightMarker( -1, false );

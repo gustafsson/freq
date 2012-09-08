@@ -266,7 +266,7 @@ namespace Tools
     void SelectionController::
             changeEvent ( QEvent * event )
     {
-        if (event->type() & QEvent::EnabledChange)
+        if (event->type() == QEvent::EnabledChange)
         {
             setThisAsCurrentTool( isEnabled() );
             emit enabledChanged(isEnabled());

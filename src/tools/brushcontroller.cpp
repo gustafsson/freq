@@ -165,7 +165,7 @@ void BrushController::
 void BrushController::
         changeEvent ( QEvent * event )
 {
-    if (event->type() & QEvent::EnabledChange)
+    if (event->type() == QEvent::EnabledChange)
     {
         view_->enabled = isEnabled();
 

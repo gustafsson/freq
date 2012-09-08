@@ -364,7 +364,7 @@ void NavigationController::
 void NavigationController::
         changeEvent(QEvent * event)
 {
-    if (event->type() & QEvent::EnabledChange)
+    if (event->type() == QEvent::EnabledChange)
     {
         if (!isEnabled())
             emit enabledChanged(isEnabled());
