@@ -17,7 +17,8 @@ namespace Tools
 
 CommentController::
         CommentController(RenderView* view)
-            :   view_(view)
+            :   view_(view),
+                comment_(0)
 {
     setEnabled( false );
 
@@ -154,7 +155,8 @@ void CommentController::
         if (comment_)
         {
             // didn't place new comment before tool was disabled
-            comment_->getProxy()->deleteLater();
+            QGraphicsProxyWidget* proxy = comment_->getProxy();
+            proxy->deleteLater();
             comment_ = 0;
             setVisible( false );
         }
