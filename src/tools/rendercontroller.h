@@ -14,7 +14,7 @@ class QToolButton;
 
 namespace Tfr { class Transform; }
 
-namespace Ui { class ComboBoxAction; }
+namespace Ui { class ComboBoxAction; class MainWindow; }
 
 namespace Tools
 {
@@ -95,6 +95,7 @@ namespace Tools
         Tfr::Transform* currentTransform();
         float headSampleRate();
         float currentTransformMinHz();
+        ::Ui::MainWindow* getItems();
 
         QPointer<RenderView> view;
 

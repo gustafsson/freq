@@ -57,10 +57,10 @@ namespace Tools
 
         // State
         bool zoom_only_;
-        Ui::MouseControl moveButton;
-        Ui::MouseControl rotateButton;
-        Ui::MouseControl scaleButton;
-        QScopedPointer<Ui::ComboBoxAction> one_action_at_a_time_;
+        ::Ui::MouseControl moveButton;
+        ::Ui::MouseControl rotateButton;
+        ::Ui::MouseControl scaleButton;
+        QScopedPointer< ::Ui::ComboBoxAction> one_action_at_a_time_;
 
         enum ZoomMode {
             Zoom,

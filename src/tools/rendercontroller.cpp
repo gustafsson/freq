@@ -183,8 +183,7 @@ RenderController::
 
     {
         // Default values for rendercontroller
-        Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-        Ui::MainWindow* ui = main->getItems();
+        ::Ui::MainWindow* ui = getItems();
 #ifdef TARGET_hast
         tf_resolution->setValue( 10 );
 //        transform->actions().at(0)->trigger();
@@ -207,7 +206,7 @@ RenderController::
         Tfr::StftParams* p = model()->getParam<Tfr::StftParams>();
         p->setWindow(Tfr::StftParams::WindowType_Hann, 0.75f);
 
-        main->getItems()->actionToggleTransformToolBox->setChecked( true );
+        ui->actionToggleTransformToolBox->setChecked( true );
     }
 }
 
@@ -296,8 +295,7 @@ void RenderController::
 {
     model()->renderer->draw_piano = value;
 
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    Ui::MainWindow* ui = main->getItems();
+    ::Ui::MainWindow* ui = getItems();
 
     ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
 
@@ -310,8 +308,7 @@ void RenderController::
 {
     model()->renderer->draw_hz = value;
 
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    Ui::MainWindow* ui = main->getItems();
+    ::Ui::MainWindow* ui = getItems();
 
     ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
 
@@ -324,8 +321,7 @@ void RenderController::
 {
     model()->renderer->draw_t = value;
 
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    Ui::MainWindow* ui = main->getItems();
+    ::Ui::MainWindow* ui = getItems();
 
     ui->actionToggle_cursor_marker->setEnabled( ui->actionToggle_t_grid->isChecked() || ui->actionToggle_hz_grid->isChecked() || ui->actionToggle_piano_grid->isChecked() );
 
@@ -373,8 +369,7 @@ void RenderController::
 
 
     // keep buttons in sync
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    Ui::MainWindow* ui = main->getItems();
+    ::Ui::MainWindow* ui = getItems();
     if (model()->renderer->draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
     if (model()->renderer->draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
     switch( model()->renderer->color_mode )
@@ -515,8 +510,7 @@ Signal::PostSink* RenderController::
 
     view->emitTransformChanged();
 
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    Ui::MainWindow* ui = main->getItems();
+    ::Ui::MainWindow* ui = getItems();
 
     ui->actionToggle_piano_grid->setVisible( true );
     hz_scale->setEnabled( true );
@@ -560,6 +554,14 @@ float RenderController::
     Tfr::Transform* t = currentTransform();
     BOOST_ASSERT(t);
     return t->transformParams()->freqAxis(headSampleRate()).min_hz;
+}
+
+
+::Ui::MainWindow* RenderController::
+        getItems()
+{
+    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    return main->getItems();
 }
 
 
@@ -644,8 +646,7 @@ void RenderController::
 
     setBlockFilter( drawnwaveformblock );
 
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
-    Ui::MainWindow* ui = main->getItems();
+    ::Ui::MainWindow* ui = getItems();
 
     hz_scale->setEnabled( false );
     if (ui->actionToggle_piano_grid->isChecked())
@@ -764,7 +765,7 @@ RenderModel *RenderController::
 void RenderController::
         setupGui()
 {
-    Ui::SaweMainWindow* main = dynamic_cast<Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(model()->project()->mainWindow());
     toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
     toolbar_render->setWindowTitle(QApplication::translate("MainWindow", "toolBar", 0, QApplication::UnicodeUTF8));
@@ -773,13 +774,13 @@ void RenderController::
     toolbar_render->setToolButtonStyle(Qt::ToolButtonIconOnly);
     main->addToolBar(Qt::BottomToolBarArea, toolbar_render);
 
-    connect(main->getItems()->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
-    connect((Support::ToolBar*)toolbar_render, SIGNAL(visibleChanged(bool)), main->getItems()->actionToggleTransformToolBox, SLOT(setChecked(bool)));
+    // Find Qt Creator managed actions
+    ::Ui::MainWindow* ui = main->getItems();
+
+    connect(ui->actionToggleTransformToolBox, SIGNAL(toggled(bool)), toolbar_render, SLOT(setVisible(bool)));
+    connect((Support::ToolBar*)toolbar_render, SIGNAL(visibleChanged(bool)), ui->actionToggleTransformToolBox, SLOT(setChecked(bool)));
 
     main->installEventFilter( this );
-
-    // Find Qt Creator managed actions
-    Ui::MainWindow* ui = main->getItems();
 
 
     // ComboBoxAction* hzmarker
