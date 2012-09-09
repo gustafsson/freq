@@ -18,6 +18,8 @@ namespace Ui { class ComboBoxAction; class MainWindow; }
 
 namespace Tools
 {
+    namespace Widgets { class ValueSlider; }
+
     class SaweDll RenderController: public QObject // This should not be a QWidget. User input is handled by tools.
     {
         Q_OBJECT
@@ -48,8 +50,8 @@ namespace Tools
         void receiveToggleCursorMarker(bool);
 
         // Sliders
-        void receiveSetYScale(int);
-        void receiveSetTimeFrequencyResolution(int);
+        void receiveSetYScale(qreal);
+        void receiveSetTimeFrequencyResolution(qreal);
         void yscaleIncrease();
         void yscaleDecrease();
         void tfresolutionIncrease();
@@ -116,8 +118,8 @@ namespace Tools
         QToolButton* channelselector;
         Ui::ComboBoxAction* transform;
 
-        QSlider * yscale;
-        QSlider * tf_resolution;
+        Widgets::ValueSlider* yscale;
+        Widgets::ValueSlider* tf_resolution;
 
         void setupGui();
         void windowLostFocus();

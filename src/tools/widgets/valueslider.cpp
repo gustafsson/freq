@@ -4,6 +4,10 @@
 #include <QDialog>
 #include <QLineEdit>
 #include <QEvent>
+#include <QApplication>
+#include <QDesktopWidget>
+
+#include <math.h>
 
 namespace Tools {
 namespace Widgets {
@@ -13,8 +17,14 @@ ValueSlider::
     QComboBox(parent),
     popup_(0),
     slider_(0),
-    resolution_(0)
+    resolution_(1000000),
+    decimals_(0),
+    is_logaritmic_(false),
+    value_(0),
+    slider_is_pressed_(false)
 {
+    setMinimumWidth (40);
+
     popup_ = new QDialog(this);
     slider_ = new QSlider(Qt::Horizontal, popup_);
     popup_->setWindowFlags(Qt::Popup);
@@ -32,11 +42,16 @@ ValueSlider::
     connect(slider_, SIGNAL(valueChanged(int)), SLOT(valueChanged(int)));
     connect(slider_, SIGNAL(rangeChanged(int,int)), SLOT(rangeChanged(int,int)));
     connect(slider_, SIGNAL(sliderMoved(int)), SLOT(sliderMoved(int)));
+    connect(slider_, SIGNAL(sliderPressed()), SLOT(sliderPressed()));
+    connect(slider_, SIGNAL(sliderReleased()), SLOT(sliderReleased()));
     connect(lineEdit(), SIGNAL(editingFinished()), SLOT(editingFinished()));
+    connect(lineEdit(), SIGNAL(returnPressed()), SLOT(returnPressed()));
 
-    setDecimals(3);
-    setMin(0);
-    setMax(100);
+    updateLineEditOnValueChanged (true);
+
+    setDecimals(0);
+    setMinimum(0);
+    setMaximum(100);
     setValue(50);
 }
 
@@ -51,8 +66,41 @@ ValueSlider::
 void ValueSlider::
         showPopup()
 {
-    popup_->move(mapToGlobal(QPoint(0,height())));
-    popup_->show(); // hidden by WindowFlags Qt::Popup
+    QDesktopWidget* desktop = QApplication::desktop();
+    QRect currentScreen = desktop->screenGeometry (this);
+    QPoint p = mapToGlobal(QPoint());
+
+    QRect popup(p, popup_->size ());
+
+    QRect belowLeftAlign = popup;
+    belowLeftAlign.moveTop(p.y () + height());
+
+    QRect belowRightAlign = belowLeftAlign;
+    belowRightAlign.moveRight (p.x () + width());
+
+    QRect aboveRightAlign = belowRightAlign;
+    aboveRightAlign.moveBottom (p.y ());
+
+    QRect aboveLeftAlign = belowLeftAlign;
+    aboveLeftAlign.moveBottom (p.y ());
+
+    QList<QRect> l;
+    l.push_back (belowLeftAlign);
+    l.push_back (belowRightAlign);
+    l.push_back (aboveLeftAlign);
+    l.push_back (aboveRightAlign);
+
+    popup_->move (p);
+    foreach(const QRect& t, l)
+    {
+        if (currentScreen.contains (t, true))
+        {
+            popup_->move (t.topLeft ());
+            break;
+        }
+    }
+
+    popup_->show(); // hidden afterwards by WindowFlags Qt::Popup
 }
 
 
@@ -81,30 +129,34 @@ bool ValueSlider::
 
 
 qreal ValueSlider::
-        min() const
+        minimum() const
 {
     return toReal(slider_->minimum());
 }
 
 
 void ValueSlider::
-        setMin(qreal m)
+        setMinimum(qreal m)
 {
-    slider_->setMinimum(toInt(m));
+    qreal max = maximum();
+    if (max < m) max = m;
+    setRange(m, max, isLogaritmic());
 }
 
 
 qreal ValueSlider::
-        max() const
+        maximum() const
 {
     return toReal(slider_->maximum());
 }
 
 
 void ValueSlider::
-        setMax(qreal m)
+        setMaximum(qreal m)
 {
-    slider_->setMaximum(toInt(m));
+    qreal min = minimum();
+    if (min > m) min = m;
+    setRange(min, m, isLogaritmic());
 }
 
 
@@ -118,49 +170,184 @@ qreal ValueSlider::
 void ValueSlider::
         setValue(qreal v)
 {
-    slider_->setValue(toInt(v));
+    if (value_ == v)
+        return;
+
+    value_ = v;
+    updateLineEdit ();
+
+    if (!slider_is_pressed_)
+        slider_->setValue(toInt(v));
+
+    emit valueChanged(v);
 }
 
+
+void ValueSlider::
+        setRange(qreal min, qreal max, bool logaritmic)
+{
+    qreal v = value_;
+
+    qreal d;
+    if (logaritmic)
+        d = log(max) - log(min);
+    else
+        d = max - min;
+    if (isnan(d) || isinf(d) || d<100)
+        d = 100;
+
+    resolution_ = INT_MAX / d;
+
+    is_logaritmic_ = logaritmic;
+    slider_->setMinimum (toInt(min));
+    slider_->setMaximum (toInt(max));
+    slider_->setValue (toInt(v));
+}
+
+
+Qt::Orientation ValueSlider::
+        orientation()
+{
+    return slider_->orientation ();
+}
+
+
+void ValueSlider::
+        setOrientation( Qt::Orientation orientation )
+{
+    if (orientation != this->orientation())
+    {
+        QSize sz = slider_->size ();
+        slider_->setOrientation ( orientation );
+        sz.transpose ();
+        slider_->resize (sz);
+    }
+}
+
+
+QString ValueSlider::
+        toolTip()
+{
+    return slider_->toolTip ();
+}
+
+
+void ValueSlider::
+        setToolTip( QString str )
+{
+    slider_->setToolTip ( str );
+    rangeChanged(slider_->minimum (), slider_->maximum ());
+}
+
+
+void ValueSlider::
+        triggerAction ( QAbstractSlider::SliderAction action )
+{
+    qreal v = value();
+    qreal f, d;
+    if (isLogaritmic ())
+    {
+        d = log(maximum()) - log(minimum());
+        f = log(v) - log(minimum());
+    }
+    else
+    {
+        d = maximum() - minimum();
+        f = v - minimum();
+    }
+
+    f /= d;
+
+    switch(action)
+    {
+    case QAbstractSlider::SliderNoAction:       break;
+    case QAbstractSlider::SliderSingleStepAdd:  f+=0.01; break;
+    case QAbstractSlider::SliderSingleStepSub:  f-=0.01; break;
+    case QAbstractSlider::SliderPageStepAdd:    f+=0.1; break;
+    case QAbstractSlider::SliderPageStepSub:    f-=0.1; break;
+    case QAbstractSlider::SliderToMinimum:      f=0; break;
+    case QAbstractSlider::SliderToMaximum:      f=1; break;
+    case QAbstractSlider::SliderMove:           break;
+    }
+
+    f *= d;
+
+    if (isLogaritmic ())
+    {
+        f += log(minimum());
+        v = exp(f);
+    }
+    else
+    {
+        v = f + minimum();
+    }
+
+    setValue( v );
+}
+
+
+bool ValueSlider::
+        isLogaritmic()
+{
+    return is_logaritmic_;
+}
+
+
+void ValueSlider::
+        setLogaritmic(bool l)
+{
+    qreal min = minimum ();
+    qreal max = maximum ();
+    if (min <= 0) min = 1;
+    if (max < min) max = 1;
+    setRange(min, max, l);
+}
 
 
 int ValueSlider::
         decimals() const
 {
-    int r = resolution_;
-    int d = 0;
-    while(r>0)
-    {
-        r/=10;
-        d++;
-    }
-    return d;
+    return decimals_;
 }
 
 
 void ValueSlider::
         setDecimals(int d)
 {
-    if (d > 10)
-        d = 10;
+    decimals_ = d;
 
-    resolution_ = 1;
-    while(d>0)
-    {
-        resolution_*=10;
-        d--;
-    }
-
-    setValue(value());
-    setMin(min());
-    setMax(max());
+    lineEdit()->setText(QString("%1").arg(value_,0,'f',decimals(value_)));
+    lineEdit()->setToolTip(QString("%3 [%1, %2]")
+                           .arg(minimum(),0,'f',decimals(minimum()))
+                           .arg(maximum(),0,'f',decimals(maximum()))
+                           .arg(toolTip()));
 }
 
 
 void ValueSlider::
-        valueChanged(int v)
+        setSliderSize(int s)
 {
-    sliderMoved(v);
-    emit valueChanged(toReal(v));
+    QSize sz( s, 22 );
+    if (orientation() == Qt::Vertical)
+        sz.transpose ();
+    slider_->resize ( sz );
+}
+
+
+void ValueSlider::
+        updateLineEditOnValueChanged(bool v)
+{
+    if (v)
+        connect(this, SIGNAL(valueChanged(qreal)), this, SLOT(updateLineEdit()));
+    else
+        disconnect(this, SIGNAL(valueChanged(qreal)), this, SLOT(updateLineEdit()));
+}
+
+
+void ValueSlider::
+        valueChanged(int)
+{
+    // don't do anything if the value is programmatically set on the slider. SIGNAL(valueChanged(qreal)) is emitted in setValue and sliderMoved instead
 }
 
 
@@ -169,17 +356,42 @@ void ValueSlider::
 {
     emit rangeChanged(toReal(min), toReal(max));
 
-    lineEdit()->setToolTip(QString("Enter a value between %1 and %2").arg(this->min()).arg(this->max()));
-    setValidator(new QDoubleValidator(this->min(), this->max(), decimals()));
+    lineEdit()->setToolTip(QString("%3 [%1, %2]")
+                           .arg(minimum(),0,'f',decimals(minimum()))
+                           .arg(maximum(),0,'f',decimals(maximum()))
+                           .arg(toolTip()));
+    setValidator(new QDoubleValidator(minimum(), maximum(), 1000));
 }
 
 
 void ValueSlider::
         sliderMoved(int v)
 {
-    qreal r = toReal(v);
-    lineEdit()->setText(QString("%1").arg(r));
-    emit sliderMoved(r);
+    value_ = toReal(v);
+    emit valueChanged(value_);
+}
+
+
+void ValueSlider::
+        sliderPressed()
+{
+    slider_is_pressed_ = true;
+}
+
+
+void ValueSlider::
+        sliderReleased()
+{
+    slider_is_pressed_ = false;
+    slider_->setValue (toInt(value_));
+}
+
+
+void ValueSlider::
+        updateLineEdit()
+{
+    lineEdit()->setText(QString("%1")
+                        .arg(value_,0,'f',decimals(value_)));
 }
 
 
@@ -197,16 +409,57 @@ void ValueSlider::
 }
 
 
+void ValueSlider::
+        returnPressed()
+{
+    setValue(value_);
+}
+
+
+int ValueSlider::
+        decimals(qreal r) const
+{
+    int d = decimals();
+
+    r = fabs(r);
+
+    if (r>0)
+    {
+        while(r<0.1)
+        {
+            r*=10;
+            d++;
+        }
+        while(r>=1 && d>0)
+        {
+            r/=10;
+            d--;
+        }
+    }
+
+    return d;
+
+}
+
+
 qreal ValueSlider::
         toReal(int v) const
 {
-    return qreal(v)/resolution_;
+    qreal f = qreal(v)/resolution_;
+
+    if (is_logaritmic_)
+        f = exp(f);
+
+    return f;
 }
 
 
 int ValueSlider::
         toInt(qreal v) const
 {
+    if (is_logaritmic_)
+        v = log(v);
+
     return v*resolution_ + 0.5;
 }
 

@@ -3,6 +3,7 @@
 // tools
 #include "support/sinksignalproxy.h"
 #include "support/toolbar.h"
+#include "widgets/valueslider.h"
 
 // ui
 #include "ui/comboboxaction.h"
@@ -185,7 +186,7 @@ RenderController::
         // Default values for rendercontroller
         ::Ui::MainWindow* ui = getItems();
 #ifdef TARGET_hast
-        tf_resolution->setValue( 10 );
+        tf_resolution->setValue( 1<<14 );
 //        transform->actions().at(0)->trigger();
 #else
 //        transform->actions().at(1)->trigger();
@@ -340,32 +341,20 @@ void RenderController::
 void RenderController::
         transformChanged()
 {
-    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
 
-    // keep in sync with receiveSetTimeFrequencyResolution
-    float f = log(c.scales_per_octave()/2.L)/6;
-    int value = f * tf_resolution->maximum() + .5;
-
-    this->tf_resolution->setValue( value );
-
+    if (isCwt)
     {
-        float wavelet_default_time_support = c.wavelet_default_time_support();
-        float wavelet_fast_time_support = c.wavelet_time_support();
-        c.wavelet_time_support(wavelet_default_time_support);
-
+        Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+        tf_resolution->setValue (c.scales_per_octave ());
+    }
+    else
+    {
         Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
-        float FS = headSampleRate();
-        s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
-
-        c.wavelet_fast_time_support( wavelet_fast_time_support );
+        tf_resolution->setValue (s.chunk_size ());
     }
 
-    // keep in sync with receiveSetYScale
-    f = log(model()->renderer->y_scale)/8.f;
-    f = (f > 0 ? 1 : -1) * sqrtf( f > 0 ? f : -f );
-    value = (f + 1)/2 * yscale->maximum() + .5;
-
-    this->yscale->setValue( value );
+    this->yscale->setValue( model()->renderer->y_scale );
 
 
     // keep buttons in sync
@@ -396,11 +385,11 @@ void RenderController::
 
 
 void RenderController::
-        receiveSetYScale( int value )
+        receiveSetYScale( qreal value )
 {
     // Keep in sync with transformChanged()
-    float f = 2.f * value / yscale->maximum() - 1.f;
-    model()->renderer->y_scale = exp( 8.f*f*f * (f>0?1:-1));
+    //float f = 2.f * value / yscale->maximum() - 1.f;
+    model()->renderer->y_scale = value; //exp( 8.f*f*f * (f>0?1:-1));
 
     stateChanged();
 
@@ -409,18 +398,13 @@ void RenderController::
 
 
 void RenderController::
-        receiveSetTimeFrequencyResolution( int value )
+        receiveSetTimeFrequencyResolution( qreal value )
 {
-    float FS = headSampleRate();
-
-    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
-
-    // Keep in sync with transformChanged()
-    float f = value / (float)tf_resolution->maximum();
-
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
-    // Validate scales per octave if transform is Cwt. CwtFilter will validate scales per octave when Cwt is used again.
-    c.scales_per_octave( 2*exp( 6.L*f ), isCwt?FS:0 ); // scales_per_octave >= 2
+    if (isCwt)
+        model()->getParam<Tfr::Cwt>()->scales_per_octave ( value );
+    else
+        model()->getParam<Tfr::StftParams>()->set_approximate_chunk_size( value );
 
     stateChanged();
 
@@ -483,7 +467,12 @@ void RenderController::
 {
     Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
     Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
-    tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1 (%2 scales/octave)\nSTFT window: %3 samples").arg(c.sigma(), 0, 'f', 1).arg(c.scales_per_octave(), 0, 'f', 1).arg(s.chunk_size()));
+
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(t.get ());
+    if (isCwt)
+        tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1\nScales per octave").arg(c.sigma(), 0, 'f', 1));
+    else
+        tf_resolution->setToolTip(QString("Time/frequency resolution\nSTFT window: %1 samples").arg(s.chunk_size()));
 
     // TODO should do some little tiny lock here for access to a pTransform ...
     currentFilter()->transform( t );
@@ -493,6 +482,8 @@ void RenderController::
 Signal::PostSink* RenderController::
         setBlockFilter(Signal::Operation* blockfilter)
 {
+    bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
+
     BlockFilterSink* bfs;
     Signal::pOperation blockop( blockfilter );
     Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), view, this));
@@ -508,13 +499,41 @@ Signal::PostSink* RenderController::
 
     stateChanged();
 
-    view->emitTransformChanged();
-
     ::Ui::MainWindow* ui = getItems();
 
     ui->actionToggle_piano_grid->setVisible( true );
     hz_scale->setEnabled( true );
 
+
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
+
+    Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
+    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+    float FS = headSampleRate();
+
+    float wavelet_default_time_support = c.wavelet_default_time_support();
+    float wavelet_fast_time_support = c.wavelet_time_support();
+    c.wavelet_time_support(wavelet_default_time_support);
+
+    if (isCwt && !wasCwt)
+    {
+        tf_resolution->setRange (2, 40, false);
+        tf_resolution->setDecimals (1);
+        c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.scales_per_octave ()));
+        // transformChanged updates value accordingly
+    }
+
+    if (!isCwt && wasCwt)
+    {
+        tf_resolution->setRange (1<<8, 1<<20, true);
+        tf_resolution->setDecimals (0);
+        s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+        // transformChanged updates value accordingly
+    }
+
+    c.wavelet_fast_time_support( wavelet_fast_time_support );
+
+    view->emitTransformChanged();
     return ps;
 }
 
@@ -955,17 +974,17 @@ void RenderController::
 
 
     // QSlider * yscale
-    {   yscale = new QSlider( toolbar_render );
+    {   yscale = new Widgets::ValueSlider( toolbar_render );
         yscale->setObjectName("yscale");
         yscale->setOrientation( Qt::Horizontal );
-        yscale->setMaximum( 10000 );
-        yscale->setValue( 5000 );
+        yscale->setRange (0.0003, 2000, true );
+        yscale->setValue ( 1 );
+        yscale->setDecimals (2);
         yscale->setToolTip( "Intensity level" );
-        yscale->setPageStep( 100 );
-        yscale->setSingleStep( 20 );
+        yscale->setSliderSize ( 300 );
         toolbar_render->addWidget( yscale );
 
-        connect(yscale, SIGNAL(valueChanged(int)), SLOT(receiveSetYScale(int)));
+        connect(yscale, SIGNAL(valueChanged(qreal)), SLOT(receiveSetYScale(qreal)));
         receiveSetYScale(yscale->value());
 
         QAction* yscaleIncrease = new QAction(yscale);
@@ -983,16 +1002,18 @@ void RenderController::
 
 
     // QSlider * tf_resolution
-    {   tf_resolution = new QSlider( toolbar_render );
-        tf_resolution->setObjectName("tf_resolution");
-        tf_resolution->setOrientation( Qt::Horizontal );
-        tf_resolution->setMaximum( 100000 );
-        tf_resolution->setValue( 30000 );
-        tf_resolution->setToolTip( "Time/frequency resolution." );
-        tf_resolution->setPageStep( 1000 );
-        toolbar_render->addWidget( tf_resolution );
+    {   tf_resolution = new Widgets::ValueSlider( toolbar_render );
+        tf_resolution->setObjectName ("tf_slider");
+        tf_resolution->setLogaritmic (true);
+        tf_resolution->setMinimum (1<<8);
+        tf_resolution->setMaximum (1<<20);
+        tf_resolution->setValue ( 4096 );
+        tf_resolution->setToolTip ("Window size (time/frequency resolution) ");
+        tf_resolution->setSliderSize ( 300 );
+        tf_resolution->updateLineEditOnValueChanged (false); // RenderController does that instead
+        toolbar_render->addWidget (tf_resolution);
 
-        connect(tf_resolution, SIGNAL(valueChanged(int)), SLOT(receiveSetTimeFrequencyResolution(int)));
+        connect(tf_resolution, SIGNAL(valueChanged(qreal)), SLOT(receiveSetTimeFrequencyResolution(qreal)));
         receiveSetTimeFrequencyResolution(tf_resolution->value());
 
         QAction* tfresolutionIncrease = new QAction(yscale);
