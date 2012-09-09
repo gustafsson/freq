@@ -101,6 +101,8 @@ void PlaybackView::
     }
 
     _playbackMarker = model->playback()->time();
+    if (_playbackMarker<=0)
+        _playbackMarker = -1;
 
     if (follow_play_marker && 0<_playbackMarker)
     {
