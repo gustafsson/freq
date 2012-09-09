@@ -830,12 +830,13 @@ void RenderController::
 
     // ComboBoxAction* channels
     {   channelselector = new QToolButton(toolbar_render);
+        channelselector->setVisible (false);
         channelselector->setObjectName("channelselector");
         channelselector->setCheckable( false );
         channelselector->setText("Channels");
         channelselector->setContextMenuPolicy( Qt::ActionsContextMenu );
         channelselector->setToolTip("Press to get a list of channels (or right click)");
-        toolbar_render->addWidget( channelselector );
+        if(0) toolbar_render->addWidget( channelselector );
     }
 
     // QAction *actionSet_heightlines
