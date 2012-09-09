@@ -144,7 +144,7 @@ ToolFactory::
     // _objects.push_back( QPointer<QObject>( new ClickableImageView( _render_view )));
 
 #if !defined(USE_CUDA) && !defined(USE_OPENCL)
-    _objects.push_back( QPointer<QObject>( new DropNotifyForm( p->mainWindow()->centralWidget(), _render_view )));
+//    _objects.push_back( QPointer<QObject>( new DropNotifyForm( p->mainWindow()->centralWidget(), _render_view )));
 #endif
 
     _objects.push_back( QPointer<QObject>( new SendFeedback( p->mainWindow() )));
