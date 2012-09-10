@@ -163,7 +163,7 @@ void ValueSlider::
 qreal ValueSlider::
         value() const
 {
-    return toReal(slider_->value());
+    return value_;
 }
 
 
@@ -243,17 +243,17 @@ void ValueSlider::
 void ValueSlider::
         triggerAction ( QAbstractSlider::SliderAction action )
 {
-    qreal v = value();
+    qreal v = value(), min = minimum(), max = maximum();
     qreal f, d;
     if (isLogaritmic ())
     {
-        d = log(maximum()) - log(minimum());
-        f = log(v) - log(minimum());
+        d = log(max) - log(min);
+        f = log(v) - log(min);
     }
     else
     {
-        d = maximum() - minimum();
-        f = v - minimum();
+        d = max - min;
+        f = v - min;
     }
 
     f /= d;
@@ -270,19 +270,27 @@ void ValueSlider::
     case QAbstractSlider::SliderMove:           break;
     }
 
+    if (f<0) f = 0;
+    if (f>1) f = 1;
+
     f *= d;
 
     if (isLogaritmic ())
     {
-        f += log(minimum());
+        f += log(min);
         v = exp(f);
     }
     else
     {
-        v = f + minimum();
+        v = f + min;
     }
 
-    setValue( v );
+    if (value_ == v)
+        return;
+
+    value_ = v;
+
+    emit valueChanged(v);
 }
 
 
@@ -390,8 +398,7 @@ void ValueSlider::
 void ValueSlider::
         updateLineEdit()
 {
-    lineEdit()->setText(QString("%1")
-                        .arg(value_,0,'f',decimals(value_)));
+    lineEdit()->setText(valueAsString());
 }
 
 
@@ -399,6 +406,9 @@ void ValueSlider::
         editingFinished()
 {
     QString text = currentText();
+    if (text == valueAsString())
+        return;
+
     bool ok = false;
     qreal v = text.toDouble(&ok);
 
@@ -416,6 +426,13 @@ void ValueSlider::
 }
 
 
+QString ValueSlider::
+        valueAsString() const
+{
+    return QString("%1").arg(value_,0,'f',decimals(value_));
+}
+
+
 int ValueSlider::
         decimals(qreal r) const
 {
@@ -425,12 +442,12 @@ int ValueSlider::
 
     if (r>0)
     {
-        while(r<0.1)
+        while(r<0.099)
         {
             r*=10;
             d++;
         }
-        while(r>=1 && d>0)
+        while(r>=1.1 && d>0)
         {
             r/=10;
             d--;

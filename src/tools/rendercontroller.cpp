@@ -1063,6 +1063,7 @@ void RenderController::
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
+    main->centralWidget()->setFocus ();
 
     view->emitTransformChanged();
 

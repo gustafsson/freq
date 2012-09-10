@@ -76,6 +76,7 @@ private:
     qreal value_;
     bool slider_is_pressed_;
 
+    QString valueAsString() const;
     int decimals(qreal) const;
     qreal toReal(int) const;
     int toInt(qreal) const;
