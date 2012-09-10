@@ -125,13 +125,13 @@ private:
     base::iterator firstIntersecting( const Interval& b );
 };
 
-std::ostream& operator<< (std::ostream& o, const Interval& I);
-std::ostream& operator<< (std::ostream& o, const Intervals& I);
-Intervals  operator |  (const Interval& a, const Intervals& b);
-Intervals  operator -  (const Interval& a, const Intervals& b);
-Intervals  operator &  (const Interval& a, const Intervals& b);
-Intervals  operator ^  (const Interval& a, const Intervals& b);
-Intervals  operator |  (const Interval& a, const Interval& b);
+SaweDll std::ostream& operator<< (std::ostream& o, const Interval& I);
+SaweDll std::ostream& operator<< (std::ostream& o, const Intervals& I);
+SaweDll Intervals  operator |  (const Interval& a, const Intervals& b);
+SaweDll Intervals  operator -  (const Interval& a, const Intervals& b);
+SaweDll Intervals  operator &  (const Interval& a, const Intervals& b);
+SaweDll Intervals  operator ^  (const Interval& a, const Intervals& b);
+SaweDll Intervals  operator |  (const Interval& a, const Interval& b);
 
 } // namespace Signal
 

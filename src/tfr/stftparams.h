@@ -5,7 +5,7 @@
 
 namespace Tfr {
 
-class StftParams: public TransformParams
+class SaweDll StftParams: public TransformParams
 {
 public:
     enum WindowType
