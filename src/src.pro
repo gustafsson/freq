@@ -41,6 +41,7 @@ QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 # Macports gcc 4.7 is necessary to build for openmp on Mac
 macx: system(which /opt/local/bin/g++-mp-4.7): CONFIG(release, debug|release) : CONFIG += useomp
+!macx: CONFIG(release, debug|release) : CONFIG += useomp
 
 useomp {
     DEFINES += USE_OMP
