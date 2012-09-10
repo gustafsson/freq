@@ -332,7 +332,7 @@ pChunk Cwt::
 
     DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->maxHz(), wt->minHz()).suppressTiming();
 
-    TIME_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
+    TIME_CWT STAT_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
     TIME_CWT ComputationSynchronize();
     ComputationCheckError();
 

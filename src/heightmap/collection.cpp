@@ -23,8 +23,8 @@
 #include <msc_stdc.h>
 
 
-#define TIME_COLLECTION
-//#define TIME_COLLECTION if(0)
+//#define TIME_COLLECTION
+#define TIME_COLLECTION if(0)
 
 //#define INFO_COLLECTION
 #define INFO_COLLECTION if(0)
