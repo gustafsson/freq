@@ -413,9 +413,9 @@ void RenderController::
 
 
 void RenderController::yscaleIncrease()
-{    yscale->triggerAction( QAbstractSlider::SliderPageStepAdd ); stateChanged(); }
+{    yscale->triggerAction( QAbstractSlider::SliderSingleStepAdd ); stateChanged(); }
 void RenderController::yscaleDecrease()
-{    yscale->triggerAction( QAbstractSlider::SliderPageStepSub ); stateChanged(); }
+{    yscale->triggerAction( QAbstractSlider::SliderSingleStepSub ); stateChanged(); }
 void RenderController::tfresolutionIncrease()
 {    tf_resolution->triggerAction( QAbstractSlider::SliderPageStepAdd ); stateChanged(); }
 void RenderController::tfresolutionDecrease()
