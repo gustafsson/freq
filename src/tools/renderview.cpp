@@ -980,7 +980,7 @@ void RenderView::
 
     TIME_PAINTGL_DETAILS TaskInfo("Drawing (%s cache for %u*%u blocks) of %s (%p) %s",
         DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
-        N, cacheCount, vartype(*first_source).c_str(), first_source, first_source->name().c_str());
+        N, cacheCount, first_source?vartype(*first_source).c_str():0, first_source, first_source?first_source->name().c_str():0);
 
     if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {
@@ -1175,7 +1175,8 @@ void RenderView::
 
             static unsigned workcount = 0;
             if (_work_timer) {
-                float worked_time = worker.worked_samples.count()/worker.source()->sample_rate();
+                Signal::IntervalType wsc = worker.worked_samples.count();
+                float worked_time = wsc/worker.source()->sample_rate();
                 _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
                                   worker.work_chunks,
                                   worked_time,
@@ -1186,8 +1187,12 @@ void RenderView::
                 workcount++;
                 _work_timer.reset();
 
-                // Useful when debugging to close application or do something else after finishing first work chunk
-                emit finishedWorkSection();
+                // Might be 0 due to race conditions
+                if (0<wsc)
+                {
+                    // Useful when debugging to close application or do something else after finishing first work chunk
+                    emit finishedWorkSection();
+                }
             }
         }
     }
