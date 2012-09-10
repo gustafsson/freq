@@ -295,10 +295,10 @@ void Playback::
                         _playback_itr,
                         Signal::Interval::IntervalType_MAX);
 
-    _data.invalidate_samples( s & whatsLeft );
-
     if (0 == _data.num_channels())
         _data.setNumChannels( source()->num_channels() );
+
+    _data.invalidate_samples( s & whatsLeft );
 }
 
 
