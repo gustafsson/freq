@@ -203,8 +203,7 @@ for configname in $configurations; do
 
     cd "$name"
 
-    testname=`echo $name | sed 's/.*\///'`
-	testname=`basename $name`
+    testname=`basename "$name" | sed 's/^[-0-9]*//'`
 
     timeout=$defaulttimeout
     if [ -f timeoutseconds ]; then
