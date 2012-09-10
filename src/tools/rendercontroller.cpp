@@ -375,9 +375,9 @@ void RenderController::
 
     // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
     if (dynamic_cast<const Tfr::Cwt*>(model()->collections[0]->transform()))
-        model()->project()->worker.min_fps( 2 );
+        model()->project()->worker.min_fps( 1 );
     else
-        model()->project()->worker.min_fps( 15 );
+        model()->project()->worker.min_fps( 4 );
 
     // clear worker assumptions of target
     model()->project()->worker.target(model()->renderSignalTarget);
@@ -1211,7 +1211,7 @@ void RenderController::
 void RenderController::
         windowGotFocus()
 {
-    model()->project()->worker.min_fps( 2 );
+    model()->project()->worker.min_fps( 4 );
 }
 
 

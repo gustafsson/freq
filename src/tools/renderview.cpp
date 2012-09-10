@@ -80,7 +80,7 @@ RenderView::
             _last_x(0),
             _last_y(0),
             _try_gc(0),
-            _target_fps(30.0f)
+            _target_fps(10.0f)
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -198,6 +198,8 @@ void RenderView::
 void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
+    _last_frame.restart();
+
     painter->beginNativePainting();
 
     glMatrixMode(GL_MODELVIEW);
@@ -863,6 +865,8 @@ void RenderView::
 void RenderView::
         userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
 {
+    TaskInfo("userinput_update");
+
     if (request_high_fps)
     {
         model->project()->worker.requested_fps(30, cheat_also_high?30:-1);
@@ -879,14 +883,11 @@ void RenderView::
 void RenderView::
         restartUpdateTimer()
 {
-    boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-    float dt = _last_frame.is_not_a_date_time()? 0 :
-        (now - _last_frame).total_microseconds()*1e-6;
-
+    float dt = _last_frame.elapsed();
     float wait = 1.f/_target_fps;
+
     if (!_update_timer->isActive())
     {
-        _last_frame = now;
         if (wait < dt)
             wait = dt;
 
@@ -898,7 +899,7 @@ void RenderView::
 
         // allow others to jump in before the next update if ms=0
         // most visible in windows message loop
-        ms = std::min( 10u, std::max((unsigned)(1000*reqdt), ms));
+        ms = std::max( 10u, std::max((unsigned)(1000*reqdt), ms));
 
         _update_timer->start(ms);
     }
@@ -1159,7 +1160,7 @@ void RenderView::
             } else {
                 //project->worker.todo_list().print("Work to do");
                 // Wait a bit while the other thread work
-                QTimer::singleShot(200, this, SLOT(update()));
+                restartUpdateTimer();
 
                 worker.checkForErrors();
             }
@@ -1269,7 +1270,7 @@ void RenderView::
 
 	{
 		TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
-		emit postPaint();
+        emit postPaint();
 	}
 }
 

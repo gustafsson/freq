@@ -56,13 +56,9 @@ Worker::
     _max_samples_per_chunk( (unsigned)-1 ),
     _requested_fps( 20 ),
     _requested_cheat_fps( 20 ),
-    _min_fps( 2 ),  // Always request at least 2 fps.
-                    // At least 1 is required to minimize the risk that CUDA
-                    // will screw up playback by blocking the OS and causing audio
-                    // starvation and kernel timeouts.
-                    // But a framerate of 1 makes it barely usable. 2 is also
-                    // questionable, but ok since we get so much gain from
-                    // large chunks.
+    _min_fps( 0.5f ), // Computing really large chunks (low fps) increases the
+                      // risk that CUDA will screw up playback by blocking the
+                      // OS and causing audio starvation and kernel timeouts.
     _highest_fps( 0 ),
     current_fps( 0 ),
     _disabled( true )
