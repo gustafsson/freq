@@ -43,7 +43,6 @@ Signal::Interval StftFilter::
     long chunk_size  = window_size*averaging;
     long increment   = window_increment*averaging;
 
-
     // Add a margin to make sure that the inverse of the STFT will cover I
     long first_chunk = 0,
          last_chunk = (I.last + chunk_size)/increment;
@@ -52,7 +51,7 @@ Signal::Interval StftFilter::
         first_chunk = (I.first - (window_size-window_increment))/increment;
     else
     {
-        first_chunk = floor((I.first - float(window_size-window_increment))/increment);
+        first_chunk = floor((I.first - float(window_size-window_increment))/increment) - 1;
 
         if (last_chunk*increment < chunk_size + increment)
             last_chunk = (chunk_size + increment)/increment;
