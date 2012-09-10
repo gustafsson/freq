@@ -25,6 +25,7 @@ public:
     virtual void set_channel(unsigned c);
     virtual Signal::Intervals invalid_samples();
 
+    void setExpectedSamples( const Signal::Interval& I );
     void stop();
     void reset();
     void onFinished();
@@ -56,6 +57,7 @@ public:
     void        restart_playback();
 private:
     Signal::SinkSourceChannels _data;
+    Signal::Interval _expected;
     boost::posix_time::ptime
             _first_timestamp,
             _last_timestamp,

@@ -230,6 +230,14 @@ void Playback::
 
 
 void Playback::
+        setExpectedSamples(const Signal::Interval &I)
+{
+    _expected = I;
+    invalidate_samples (_expected);
+}
+
+
+void Playback::
         stop()
 {
     if (streamPlayback)
@@ -271,10 +279,8 @@ bool Playback::
 
 
 void Playback::
-        invalidate_samples( const Signal::Intervals& I )
+        invalidate_samples( const Signal::Intervals& s )
 {
-    Signal::Intervals s = I - zeroed_samples_recursive();
-
     // If the CwtFilter runs out of memory and changes the number of scales per
     // octave it will invalidate all samples. Discard that and keep the samples
     // we've received for playback so far.
@@ -319,7 +325,7 @@ void Playback::
 Signal::Intervals Playback::
         invalid_samples()
 {
-    return _data.invalid_samples() & getInterval();
+    return _data.invalid_samples() & getInterval() & _expected;
 }
 
 

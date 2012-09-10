@@ -175,8 +175,7 @@ void PlaybackController::
 
         //Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
         Signal::Intervals expected_data = ~filter->zeroed_samples();
-        expected_data &= Signal::Interval(0, filter->number_of_samples());
-        postsink_operations->invalidate_samples( expected_data );
+        model()->playback ()->setExpectedSamples (expected_data.fetchFirstInterval ());
     }
     else
     {
