@@ -155,11 +155,7 @@ void PlaybackController::
     Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
     if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
-        int playback_device;
-        {
-            QSettings settings;
-            playback_device = settings.value("outputdevice", -1).toInt();
-        }
+        int playback_device = QSettings().value("outputdevice", -1).toInt();
 
         model()->adapter_playback.reset();
         model()->adapter_playback.reset( new Adapters::Playback( playback_device ));
