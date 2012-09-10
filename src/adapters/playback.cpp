@@ -439,7 +439,7 @@ bool Playback::
     if (_data.empty())
         return false;
 
-    if (_data.invalid_samples())
+    if (invalid_samples())
         return false;
 
     return time()*_data.sample_rate() > _data.getInterval().last;
@@ -451,7 +451,7 @@ bool Playback::
 {
     unsigned nAccumulated_samples = _data.number_of_samples();
 
-    if (!_data.empty() && !_data.invalid_samples()) {
+    if (!_data.empty() && !invalid_samples()) {
         TIME_PLAYBACK TaskInfo("Not underfed");
         return false; // No more expected samples, not underfed
     }
@@ -474,7 +474,7 @@ bool Playback::
     if (0==marker)
         marker = _data.getInterval().first;
 
-    Signal::Interval cov = _data.invalid_samples().spannedInterval();
+    Signal::Interval cov = invalid_samples().spannedInterval();
     float time_left =
             (cov.last - marker) / _data.sample_rate();
 

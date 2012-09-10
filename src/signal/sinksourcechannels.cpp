@@ -189,7 +189,7 @@ void SinkSourceChannels::
     if (C == prevC)
         return;
 
-    Intervals I = samplesDesc() | invalid_samples();
+    Intervals I = samplesDesc_all_channels() | invalid_samples();
 
     sinksources_.resize( C );
     for (unsigned i=prevC; i<C; ++i )
