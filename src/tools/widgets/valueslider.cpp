@@ -8,6 +8,7 @@
 #include <QDesktopWidget>
 
 #include <math.h>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 namespace Tools {
 namespace Widgets {
@@ -193,7 +194,7 @@ void ValueSlider::
         d = log(max) - log(min);
     else
         d = max - min;
-    if (isnan(d) || isinf(d) || d<100)
+    if (boost::math::isnan(d) || boost::math::isinf(d) || d<100)
         d = 100;
 
     resolution_ = INT_MAX / d;
