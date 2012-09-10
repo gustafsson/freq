@@ -28,8 +28,8 @@
 
 #undef max
 
-#define TIME_PAINTGL
-//#define TIME_PAINTGL if(0)
+//#define TIME_PAINTGL
+#define TIME_PAINTGL if(0)
 
 using namespace Signal;
 
