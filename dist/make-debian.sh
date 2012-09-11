@@ -48,7 +48,7 @@ if [ ! -z "`which nvcc`" ] && [ "Y" == "$buildcuda" ]; then
     LD_RUN_PATH=/usr/share/${packagename}
     time make -j`cat /proc/cpuinfo | grep -c processor`
 else
-    echo "Couldn't find nvcc, skipping build of \'${packagename}-cuda\'.";
+    echo "Couldn't find nvcc, skipping build of '${packagename}-cuda'.";
 fi
 
 mv src/${packagename}org src/${packagename}
