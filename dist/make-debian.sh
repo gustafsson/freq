@@ -25,8 +25,6 @@ rm -f {src,lib/gpumisc}/Makefile
 LD_RUN_PATH=/usr/share/${packagename}
 time make -j`cat /proc/cpuinfo | grep -c processor`
 
-cp src/${packagename} src/${packagename}org
-
 
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
@@ -48,10 +46,9 @@ if [ ! -z "`which nvcc`" ] && [ "Y" == "$buildcuda" ]; then
     LD_RUN_PATH=/usr/share/${packagename}
     time make -j`cat /proc/cpuinfo | grep -c processor`
 else
+    rm -f src/${packagename}-cuda
     echo "Couldn't find nvcc, skipping build of '${packagename}-cuda'.";
 fi
-
-mv src/${packagename}org src/${packagename}
 
 
 echo "========================== Packaging =========================="
