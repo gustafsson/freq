@@ -643,26 +643,6 @@ void Stft::
     {
         for (pos.y=0; pos.y<source->size().height; ++pos.y)
         {
-            if (pos.z + 1 == source->size().depth && pos.y + 1 == source->size().height)
-            {
-                long in0 = &in.ref(pos) - in.ptr();
-                long in1 = &in.ref(pos) + windowCount*increment - in.ptr();
-                long in2 = source->numberOfElements();
-                long in3 = &in.ref(pos) + (windowCount-1)*increment + p.chunk_size() - 1 - in.ptr();
-                if (!(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements()) || !(in3 < in2))
-                {
-                    TaskInfo("in0 %d", in0);
-                    TaskInfo("in1 %d", in1);
-                    TaskInfo("in2 %d", in2);
-                    TaskInfo("in3 %d", in3);
-                    TaskInfo("windowCount %d", windowCount);
-                    TaskInfo("p.chunk_size() %d", p.chunk_size());
-                    TaskInfo("increment %d", increment);
-                    STFT_ASSERT(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements());
-                    STFT_ASSERT(in3 < in2);
-                }
-            }
-
 #pragma omp parallel for
             for (int w=0; w<windowCount; ++w)
             {
