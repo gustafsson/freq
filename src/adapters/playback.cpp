@@ -158,9 +158,12 @@ float Playback::
     float dt = d.total_milliseconds()*0.001f;
     float t = dt;
     t += _data.getInterval().first / sample_rate();
+
 #ifdef _WIN32
-    t -= outputLatency();
+// TODO deal with output latency some other way. Such as adjusting 'dt' and keep updating in playbackview.
+//    t -= outputLatency();
 #endif
+
     return std::max(0.f, t);
 }
 
