@@ -29,10 +29,10 @@ public:
 
     // Implementing Transform
     virtual const TransformParams* transformParams() const { return this; }
-    virtual pChunk operator()( Signal::pBuffer b ) { return forward(b); }
+    virtual pChunk operator()( Signal::pMonoBuffer b ) { return forward(b); }
 
     /// Fft::inverse does not normalize the result. To normalize it you have to divide each element with the length of the buffer.
-    virtual Signal::pBuffer inverse( pChunk c ) { return backward(c); }
+    virtual Signal::pMonoBuffer inverse( pChunk c ) { return backward(c); }
 
 
     // Implementing TransformParams
@@ -45,8 +45,8 @@ public:
     virtual bool operator==(const TransformParams&) const;
 
 
-    pChunk forward( Signal::pBuffer );
-    Signal::pBuffer backward( pChunk );
+    pChunk forward( Signal::pMonoBuffer );
+    Signal::pMonoBuffer backward( pChunk );
 
     static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
     static unsigned sChunkSizeG(unsigned x, unsigned multiple=1);
@@ -73,9 +73,9 @@ public:
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
       */
-    virtual pChunk operator()( Signal::pBuffer );
+    virtual pChunk operator()( Signal::pMonoBuffer );
     /// Stft::inverse does normalize the result (to the contrary of Fft::inverse)
-    virtual Signal::pBuffer inverse( pChunk );
+    virtual Signal::pMonoBuffer inverse( pChunk );
 
     void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
 
@@ -90,7 +90,7 @@ private:
       @see compute_redundant()
       */
     Tfr::pChunk ChunkWithRedundant(DataStorage<float>::Ptr inputbuffer);
-    virtual Signal::pBuffer inverseWithRedundant( pChunk );
+    virtual Signal::pMonoBuffer inverseWithRedundant( pChunk );
 
 
     static std::vector<unsigned> _ok_chunk_sizes;

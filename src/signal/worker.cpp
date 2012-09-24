@@ -185,9 +185,9 @@ bool Worker::
 
         WORKER_INFO {
             tt->info("Worker got %s x %d, [%g, %g) s. %g or %g x realtime",
-                b->getInterval().toString().c_str(), b->channels(),
+                b->getInterval().toString().c_str(), b->number_of_channels (),
                 b->start(), b->start()+b->length(),
-                interval.count()/tt->elapsedTime()/b->sample_rate,
+                interval.count()/tt->elapsedTime()/b->sample_rate(),
                 b->length()/tt->elapsedTime());
         }
 

@@ -22,8 +22,6 @@ class PostSink: public Sink
 public:    
     PostSink();
 
-    virtual void set_channel(unsigned c);
-
     /**
       For each Operation in sinks(), sets up a source and calls read(I). For
       performance reasons, different Operation's in sinks() may be chained into

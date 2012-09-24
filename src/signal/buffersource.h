@@ -10,9 +10,10 @@ namespace Signal
 class SaweDll BufferSource: public FinalSource
 {
 public:
-    BufferSource( pBuffer _waveform = pBuffer() );
+    BufferSource( pBuffer waveform = pBuffer() );
+    BufferSource( pMonoBuffer waveform );
 
-    void setBuffer( pBuffer _waveform );
+    void setBuffer( pBuffer waveform );
 
     virtual pBuffer read( const Interval& I );
     virtual float sample_rate();
@@ -20,12 +21,9 @@ public:
     virtual IntervalType number_of_samples();
 
     virtual unsigned num_channels();
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel() { return channel; }
 
-protected:
-    unsigned channel;
-    std::vector<pBuffer> _waveforms;
+private:
+    pBuffer buffer_;
 };
 
 } // namespace Signal

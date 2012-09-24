@@ -54,7 +54,7 @@ std::string Rectangle::
 }
 
 
-void Rectangle::operator()( Chunk& chunk) {
+bool Rectangle::operator()( Chunk& chunk) {
     TIME_FILTER TaskTimer tt("Rectangle");
 
     Area area = {
@@ -68,6 +68,8 @@ void Rectangle::operator()( Chunk& chunk) {
                   _save_inside);
 
     TIME_FILTER ComputationSynchronize();
+
+    return true;
 }
 
 

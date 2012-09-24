@@ -19,7 +19,8 @@ namespace Signal {
 
 
 SinkSource::
-        SinkSource()
+        SinkSource( int num_channels )
+    :   _num_channels( num_channels )
 {
 }
 
@@ -29,7 +30,8 @@ SinkSource::
             :
         Sink(b),
         _cache( b._cache ),
-        _invalid_samples( b._invalid_samples )
+        _invalid_samples( b._invalid_samples ),
+        _num_channels( b._num_channels )
 {
 }
 
@@ -39,6 +41,7 @@ SinkSource& SinkSource::
 {
     _cache = b._cache;
     _invalid_samples = b._invalid_samples;
+    _num_channels = b._num_channels;
     return *this;
 }
 
@@ -109,7 +112,7 @@ void SinkSource::
             }
         }
 
-        pBuffer n( new Buffer( I.first, chunkSize, fs) );
+        pBuffer n( new Buffer( I.first, chunkSize, fs, _num_channels) );
         itr = _cache.insert(itr, n);
         I.first += chunkSize;
     }
@@ -193,14 +196,14 @@ void SinkSource::
 
     const Buffer& b = *bp;
 
-    allocateCache(b.getInterval(), b.sample_rate);
+    allocateCache(b.getInterval(), b.sample_rate());
 
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker cache_locker(&_cache_mutex);
 #endif
 
     if (!_cache.empty())
-        BOOST_ASSERT(_cache.front()->sample_rate == b.sample_rate);
+        BOOST_ASSERT(_cache.front()->sample_rate() == b.sample_rate());
 
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
         **itr |= b;
@@ -266,10 +269,9 @@ pBuffer SinkSource::
     validFetch &= b->getInterval();
 
     // TODO: if COW chunks could be created with an offset we could return all of b that is valid instead of just a copy of the portion that matches I. Less copying, returning more data right away.
-    pBuffer n(new Buffer(validFetch.first, validFetch.count(), b->sample_rate));
+    pBuffer n(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
     *n |= *b;
 
-    BOOST_ASSERT( n->getInterval() );
     return n;
 }
 
@@ -284,7 +286,7 @@ float SinkSource::
     if (_cache.empty())
         return 44100;
 
-    return _cache.front()->sample_rate;
+    return _cache.front()->sample_rate();
 }
 
 

@@ -979,7 +979,7 @@ pBlock Collection::
 #endif
                 INFO_COLLECTION TaskTimer tt("stft %s", things_to_update.toString().c_str());
 
-                fillBlock( block, things_to_update );
+                //fillBlock( block, things_to_update );
                 things_to_update.clear();
 
                 ComputationCheckError();
@@ -1038,78 +1038,79 @@ pBlock Collection::
 
 /**
   finds a source that we reliably can read from fast
+  TODO remove, instead make sure the top of the chain is a cache. And if the cache is not up to date, skip filling.
 */
-static pOperation
-        fast_source(pOperation start, Interval I)
-{
-    pOperation itr = start;
+//static pOperation
+//        fast_source(pOperation start, Interval I)
+//{
+//    pOperation itr = start;
 
-    if (!itr)
-        return itr;
+//    if (!itr)
+//        return itr;
 
-    while (true)
-    {
-        OperationCache* c = dynamic_cast<OperationCache*>( itr.get() );
-        if (c)
-        {
-            if ((I - c->cached_samples()).empty())
-            {
-                return itr;
-            }
-        }
+//    while (true)
+//    {
+//        OperationCache* c = dynamic_cast<OperationCache*>( itr.get() );
+//        if (c)
+//        {
+//            if ((I - c->cached_samples()).empty())
+//            {
+//                return itr;
+//            }
+//        }
 
-        if ( (I - itr->zeroed_samples_recursive()).empty() )
-            return itr;
+//        if ( (I - itr->zeroed_samples_recursive()).empty() )
+//            return itr;
 
-        pOperation s = itr->source();
-        if (!s)
-            return itr;
+//        pOperation s = itr->source();
+//        if (!s)
+//            return itr;
         
-        itr = s;
-    }
-}
+//        itr = s;
+//    }
+//}
 
 
-void Collection::
-        fillBlock( pBlock block, const Signal::Intervals& to_update )
-{
-    Tfr::StftParams params;
-    params.set_approximate_chunk_size(1 << 12); // 4096
+//void Collection::
+//        fillBlock( pBlock block, const Signal::Intervals& to_update )
+//{
+//    Tfr::StftParams params;
+//    params.set_approximate_chunk_size(1 << 12); // 4096
 
-    StftToBlock stftmerger(this);
-    stftmerger.transform( params.createTransform() );
-    stftmerger.exclude_end_block = true;
+//    StftToBlock stftmerger(this);
+//    stftmerger.transform( params.createTransform() );
+//    stftmerger.exclude_end_block = true;
 
-    // Only take 1 MB of signal data at a time
-    unsigned section_size = (1<<20) / sizeof(float);
-    Intervals sections = to_update;
-    sections &= Interval(0, target->number_of_samples());
+//    // Only take 1 MB of signal data at a time
+//    unsigned section_size = (1<<20) / sizeof(float);
+//    Intervals sections = to_update;
+//    sections &= Interval(0, target->number_of_samples());
 
-    boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-    boost::posix_time::ptime start_time = now;
-    unsigned time_to_work_ms = 20; // should count as interactive
-    while (sections)
-    {
-        Interval section = sections.fetchInterval(section_size);
-        Interval needed = stftmerger.requiredInterval( section, stftmerger.transform() );
-        pOperation fast_source = Heightmap::fast_source( target, needed );
-        stftmerger.source( fast_source );
-        Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
-        stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
-        Interval chunk_interval = ci.chunk->getInterval();
+//    boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+//    boost::posix_time::ptime start_time = now;
+//    unsigned time_to_work_ms = 20; // should count as interactive
+//    while (sections)
+//    {
+//        Interval section = sections.fetchInterval(section_size);
+//        Interval needed = stftmerger.requiredInterval( section, stftmerger.transform() );
+//        pOperation fast_source = Heightmap::fast_source( target, needed );
+//        stftmerger.source( fast_source );
+//        Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
+//        stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
+//        Interval chunk_interval = ci.chunk->getInterval();
 
-        sections -= chunk_interval;
+//        sections -= chunk_interval;
 
-        now = boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration diff = now - start_time;
-        // Don't bother creating stubbed blocks for more than a fraction of a second
-        if (diff.total_milliseconds() > time_to_work_ms)
-            break;
-    }
+//        now = boost::posix_time::microsec_clock::local_time();
+//        boost::posix_time::time_duration diff = now - start_time;
+//        // Don't bother creating stubbed blocks for more than a fraction of a second
+//        if (diff.total_milliseconds() > time_to_work_ms)
+//            break;
+//    }
 
-    // StftToBlock (rather BlockFilter) validates samples, Discard those.
-    block->valid_samples = Intervals();
-}
+//    // StftToBlock (rather BlockFilter) validates samples, Discard those.
+//    block->valid_samples = Intervals();
+//}
 
 
 bool Collection::

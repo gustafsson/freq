@@ -31,8 +31,8 @@ public:
     */
     Cwt( float scales_per_octave=20, float wavelet_time_suppport=3 );
 
-    virtual pChunk operator()( Signal::pBuffer );
-    virtual Signal::pBuffer inverse( pChunk );
+    virtual pChunk operator()( Signal::pMonoBuffer );
+    virtual Signal::pMonoBuffer inverse( pChunk );
     virtual const TransformParams* transformParams() const { return this; }
 
     virtual pTransform createTransform() const;
@@ -108,8 +108,8 @@ private:
     void            scales_per_octave_internal( float );
     unsigned        chunkpart_alignment(unsigned c) const;
 
-    Signal::pBuffer inverse( Tfr::CwtChunk* );
-    Signal::pBuffer inverse( Tfr::CwtChunkPart* );
+    Signal::pMonoBuffer inverse( Tfr::CwtChunk* );
+    Signal::pMonoBuffer inverse( Tfr::CwtChunkPart* );
 
     float           _min_hz;
     float           _scales_per_octave;

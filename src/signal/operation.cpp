@@ -15,7 +15,6 @@
 namespace Signal {
 
 Operation::Operation(pOperation s )
-    :   _set_channel_is_recursive( true )
 {
     source( s );
 }
@@ -41,23 +40,7 @@ Operation& Operation::
         operator=(const Operation& o )
 {
     Operation::source( o.Operation::source() );
-    _set_channel_is_recursive = o._set_channel_is_recursive;
     return *this;
-}
-
-
-void Operation::
-        set_channel(unsigned c)
-{
-    if(_source && _set_channel_is_recursive)
-        _source->set_channel(c);
-}
-
-
-void Operation::
-        set_channel_is_recursive(bool b)
-{
-    _set_channel_is_recursive = b;
 }
 
 
@@ -74,10 +57,10 @@ void Operation::
 }
 
 
-Signal::Intervals Operation::
+Intervals Operation::
         affected_samples()
 {
-    return getInterval();
+    return Intervals::Intervals_ALL;
 }
 
 
@@ -122,71 +105,6 @@ pBuffer Operation::
                   vartype(*this).c_str(), __FUNCTION__ ,
                   I.toString().c_str());
     return zeros(I);
-}
-
-
-pBuffer Operation::
-        readFixedLengthAllChannels( const Interval& I )
-{
-    if (1 >= num_channels())
-        return readFixedLength( I );
-
-    unsigned current_channel = this->get_channel();
-    pBuffer b( new Signal::Buffer(I.first, I.count(), sample_rate(), this->num_channels() ));
-
-    float* dst = b->waveform_data()->getCpuMemory();
-    for (unsigned i=0; i<num_channels(); ++i)
-    {
-        this->set_channel( i );
-        Signal::pBuffer r = readFixedLength( I );
-        float* src = r->waveform_data()->getCpuMemory();
-        memcpy( dst + i*I.count(), src, I.count()*sizeof(float));
-    }
-    this->set_channel( current_channel );
-
-    return b;
-}
-
-
-pBuffer Operation::
-        readAllChannels( const Interval& J )
-{
-    TIME_OPERATION TaskTimer tt("%s.%s %s",
-                  vartype(*this).c_str(), __FUNCTION__ ,
-                  J.toString().c_str() );
-
-    pBuffer b1;
-    TIME_OPERATION_LINE(b1 = read( J ));
-    if (1 >= num_channels())
-        return b1;
-
-    const Interval& I = b1->getInterval();
-
-    const unsigned current_channel = this->get_channel();
-    pBuffer b( new Signal::Buffer(I.first, I.count(), sample_rate(), this->num_channels() ));
-
-    float* dst = b->waveform_data()->getCpuMemory();
-    for (unsigned i=0; i<num_channels(); ++i)
-    {
-        Signal::pBuffer r;
-        if (current_channel==i)
-            r = b1;
-        else
-        {
-            this->set_channel( i );
-            r = readFixedLength( I );
-        }
-
-        float* src = r->waveform_data()->getCpuMemory();
-        unsigned C = r->channels();
-        BOOST_ASSERT( 0 < C );
-        BOOST_ASSERT( i + C <= num_channels() );
-        TIME_OPERATION_LINE(memcpy( dst + i*I.count(), src, I.count()*C*sizeof(float)));
-        i += C - 1;
-    }
-    this->set_channel( current_channel );
-
-    return b;
 }
 
 
@@ -262,16 +180,16 @@ pOperation Operation::
 }
 
 
-Signal::Intervals Operation::
+Intervals Operation::
         affectedDiff(pOperation source1, pOperation source2)
 {
-    Signal::Intervals new_data( 0, source1->number_of_samples() );
-    Signal::Intervals old_data( 0, source2->number_of_samples() );
-    Signal::Intervals invalid = new_data | old_data;
+    Intervals new_data( 0, source1->number_of_samples() );
+    Intervals old_data( 0, source2->number_of_samples() );
+    Intervals invalid = new_data | old_data;
 
-    Signal::Intervals was_zeros = source1->zeroed_samples_recursive();
-    Signal::Intervals new_zeros = source2->zeroed_samples_recursive();
-    Signal::Intervals still_zeros = was_zeros & new_zeros;
+    Intervals was_zeros = source1->zeroed_samples_recursive();
+    Intervals new_zeros = source2->zeroed_samples_recursive();
+    Intervals still_zeros = was_zeros & new_zeros;
     invalid -= still_zeros;
 
     Intervals affected_samples_until_source2;
@@ -356,13 +274,13 @@ std::string Operation::
 }
 
 
-Signal::Intervals FinalSource::
+Intervals FinalSource::
         zeroed_samples()
 {
     IntervalType N = number_of_samples();
-    Signal::Intervals r = Signal::Intervals::Intervals_ALL;
+    Intervals r = Intervals::Intervals_ALL;
     if (N)
-        r -= Signal::Interval(0, N);
+        r -= Interval(0, N);
     return r;
 }
 

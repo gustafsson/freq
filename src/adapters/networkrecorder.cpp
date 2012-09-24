@@ -121,8 +121,8 @@ int NetworkRecorder::
     Signal::IntervalType offset = actual_number_of_samples();
 
     // convert shortdata to normalized floats
-    Signal::pBuffer b( new Signal::Buffer(offset, sampleCount, sample_rate() ) );
-    float* p = b->waveform_data()->getCpuMemory();
+    Signal::pBuffer b( new Signal::Buffer(offset, sampleCount, sample_rate(), 1 ) );
+    float* p = b->getChannel (0)->waveform_data()->getCpuMemory();
     for (int i=0; i<sampleCount; ++i)
         p[i] = shortdata[i]/(float)SHRT_MAX;
 

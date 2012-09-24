@@ -44,12 +44,18 @@ pBuffer Normalize::
     Interval J = Intervals(I).enlarge(normalizationRadius).spannedInterval();
     pBuffer b = source()->readFixedLength(J);
 
-    normalizedata( b->waveform_data(), normalizationRadius );
-    // normalizedata moved the data (and made the last 2*normalizationRadius elements invalid)
-    b->sample_offset = J.first + normalizationRadius;
+    for (unsigned c=0; c<b->number_of_channels (); ++c)
+       normalizedata( b->getChannel (c)->waveform_data(), normalizationRadius );
 
-    pBuffer r( new Buffer(I.first, I.count(), b->sample_rate ));
-    *r |= *b;
+    // normalizedata moved the data (and made the last 2*normalizationRadius elements invalid)
+    Signal::IntervalType sample_offset = J.first + normalizationRadius;
+
+    pBuffer r( new Buffer(I.first, I.count(), b->sample_rate(), b->number_of_channels ()));
+    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    {
+        MonoBuffer mb(sample_offset, b->getChannel (c)->waveform_data (), b->sample_rate ());
+        *r->getChannel (c) |= mb;
+    }
 
     return r;
 }

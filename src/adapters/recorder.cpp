@@ -7,6 +7,7 @@ namespace Adapters {
 
 Recorder::Recorder()
     :
+    _data(0),
     _offset(0)
 {
 
@@ -69,20 +70,6 @@ Signal::pBuffer Recorder::
     return _data.read( I );
 }
 
-
-void Recorder::
-        set_channel(unsigned channel)
-{
-    QMutexLocker lock(&_data_lock);
-    _data.set_channel(channel);
-}
-
-
-unsigned Recorder::
-        get_channel()
-{
-    return _data.get_channel();
-}
 
 
 float Recorder::

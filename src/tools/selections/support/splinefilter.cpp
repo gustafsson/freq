@@ -35,7 +35,7 @@ std::string SplineFilter::
 }
 
 
-void SplineFilter::operator()( Chunk& chunk)
+bool SplineFilter::operator()( Chunk& chunk)
 {
     TIME_SPLINEFILTER TaskTimer tt("SplineFilter chunk area (%g %g : %g %g)",
         chunk.startTime(), chunk.minHz(), chunk.endTime(), chunk.maxHz());
@@ -81,6 +81,8 @@ void SplineFilter::operator()( Chunk& chunk)
     }
 
     TIME_SPLINEFILTER ComputationSynchronize();
+
+    return 0<j;
 }
 
 

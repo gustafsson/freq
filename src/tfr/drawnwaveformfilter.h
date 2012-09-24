@@ -15,14 +15,14 @@ public:
     /**
       Computes the interval that computeChunk would need to work.
       */
-    Signal::Interval requiredInterval( const Signal::Interval& I );
+    Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
 
-    /**
-      This computes the Stft chunk covering a given interval.
-      */
-    ChunkAndInverse computeChunk( const Signal::Interval& I );
+    bool applyFilter( const ChunkAndInverse &chunk );
 
+private:
+
+    float max_value_;
 };
 
 } // namespace Tfr

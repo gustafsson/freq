@@ -30,6 +30,7 @@ public:
     virtual pBuffer read( const Interval& I ) = 0;
     virtual float sample_rate() = 0;
     virtual IntervalType number_of_samples() = 0;
+    virtual unsigned num_channels() = 0;
     virtual Interval getInterval() { return Interval(0, number_of_samples() ); }
 
 

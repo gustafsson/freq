@@ -24,8 +24,8 @@ public:
     CepstrumParams params() const { return p; }
     virtual const TransformParams* transformParams() const { return &p; }
 
-    virtual pChunk operator()( Signal::pBuffer b );
-    virtual Signal::pBuffer inverse( pChunk chunk );
+    virtual pChunk operator()( Signal::pMonoBuffer b );
+    virtual Signal::pMonoBuffer inverse( pChunk chunk );
 
     Stft* stft();
 

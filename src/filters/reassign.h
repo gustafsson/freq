@@ -8,7 +8,7 @@ namespace Filters
     class Reassign: public Tfr::CwtFilter
     {
     public:
-        virtual void operator()( Tfr::Chunk& chunk );
+        virtual bool operator()( Tfr::Chunk& chunk );
 
         void limitedCpu(Tfr::Chunk& chunk );
         void naiveCpu(Tfr::Chunk& chunk );
@@ -19,7 +19,7 @@ namespace Filters
     class Tonalize: public Tfr::CwtFilter
     {
     public:
-        virtual void operator()( Tfr::Chunk& );
+        virtual bool operator()( Tfr::Chunk& );
 
         void brokenGpu(Tfr::Chunk& chunk );
     };

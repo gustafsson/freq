@@ -55,12 +55,6 @@ public:
     virtual pBuffer read( const Interval& I );
 
     /**
-      Merges num_channels() calls to readFixedLength.
-      */
-    virtual pBuffer readFixedLengthAllChannels( const Interval& I );
-    virtual pBuffer readAllChannels( const Interval& I );
-
-    /**
       sample_rate is invalid to call if _source is null.
 
       @see read(const Interval&)
@@ -70,9 +64,6 @@ public:
     virtual float length();
 
     virtual unsigned num_channels() { return _source?_source->num_channels():0; }
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel() { return _source?_source->get_channel():0; }
-    virtual void set_channel_is_recursive(bool b);
 
 
     /**
@@ -212,9 +203,6 @@ private:
     pOperation _source; /// @see Operation::source()
     //bool _enabled; /// @see Operation::enabled()
 
-    // TODO remove set_channel altogether
-    bool _set_channel_is_recursive;
-
     friend class boost::serialization::access;
     Operation() /// only used by deserialization, call Operation(pOperation) instead
     {}
@@ -247,8 +235,6 @@ public:
     virtual IntervalType number_of_samples() = 0;
 
     virtual unsigned num_channels() = 0;
-	virtual void set_channel(unsigned c) = 0;
-    virtual unsigned get_channel() = 0;
 
     virtual Signal::Intervals zeroed_samples();
 

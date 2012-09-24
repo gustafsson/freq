@@ -15,7 +15,7 @@ RecordedCommand::
             prev_qx(-1)
 {
     Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(recording);
-    recordedData = r->data().readAllChannelsFixedLength(Signal::Interval(prevLength, recording->number_of_samples()) );
+    recordedData = r->data().readFixedLength(Signal::Interval(prevLength, recording->number_of_samples()) );
 }
 
 
@@ -32,7 +32,7 @@ void RecordedCommand::
     if (undone)
     {
         Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(recording);
-        recordedData->sample_offset = r->number_of_samples();
+        recordedData->set_sample_offset( r->number_of_samples() );
         r->data().put(recordedData);
         r->invalidate_samples(recordedData->getInterval());
 

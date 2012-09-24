@@ -7,13 +7,13 @@
 
 namespace Tfr {
 
-Signal::pBuffer SuperSample::
-        supersample( Signal::pBuffer b, float requested_sample_rate )
+Signal::pMonoBuffer SuperSample::
+        supersample( Signal::pMonoBuffer b, float requested_sample_rate )
 {
-    if (b->sample_rate == requested_sample_rate)
+    if (b->sample_rate() == requested_sample_rate)
         return b;
 
-    float bsample_rate = b->sample_rate;
+    float bsample_rate = b->sample_rate();
     float fmultiple = log2f( requested_sample_rate/bsample_rate );
     int multiple = (int)fmultiple;
     if (fmultiple < 0 )
@@ -59,9 +59,9 @@ Signal::pBuffer SuperSample::
     memset( dest + src_sz.width, 0, (dest_sz.width - src_sz.width) * sizeof(ChunkElement) );
 
 
-    Signal::pBuffer r = Tfr::Fft().inverse( biggerchunk );
+    Signal::pMonoBuffer r = Tfr::Fft().inverse( biggerchunk );
 
-    BOOST_ASSERT( r->sample_rate == requested_sample_rate );
+    BOOST_ASSERT( r->sample_rate() == requested_sample_rate );
 
     return r;
 }

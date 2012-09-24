@@ -27,13 +27,16 @@ pBuffer ComputeRms::
         Interval i = missing.fetchFirstInterval();
         missing -= i;
         pBuffer b = BufferSource(read_b).readFixedLength( i );
-        float* p = b->waveform_data()->getCpuMemory();
         unsigned L = b->number_of_samples();
-        unsigned C = b->channels();
+        unsigned C = b->number_of_channels ();
         double S = 0;
-        for (unsigned i = 0; i<L*C; ++i)
+        for (unsigned c = 0; c<C; ++c)
         {
-            S += p[i]*p[i];
+            float* p = b->getChannel (c)->waveform_data()->getCpuMemory();
+            for (unsigned i = 0; i<L; ++i)
+            {
+                S += p[i]*p[i];
+            }
         }
 
         S/=C;

@@ -359,7 +359,9 @@ Signal::pBuffer Audiofile::
         I.last = I.first + readframes;
 
     Signal::pBuffer waveform( new Signal::Buffer(I.first, I.count(), sample_rate(), num_channels()));
-    TIME_AUDIOFILE_LINE( Signal::transpose( waveform->waveform_data().get(), &partialfile ) );
+    Signal::pTimeSeriesData mergedata = waveform->mergeChannelData ();
+    TIME_AUDIOFILE_LINE( Signal::transpose( mergedata.get(), &partialfile ) );
+    waveform.reset (new Signal::Buffer(I.first, mergedata, sample_rate()));
 
     VERBOSE_AUDIOFILE *tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
 

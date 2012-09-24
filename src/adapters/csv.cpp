@@ -25,7 +25,7 @@ string csv_number()
 }
 
 
-void Csv::
+bool Csv::
         operator()( Tfr::Chunk& c )
 {
     string filename;
@@ -60,6 +60,8 @@ void Csv::
         }
         csv << ss.str() << endl;
     }
+
+    return false;
 }
 
 } // namespace Adapters

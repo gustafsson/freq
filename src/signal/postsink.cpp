@@ -180,33 +180,6 @@ pBuffer PostSink::
 }
 
 
-void PostSink::
-        set_channel(unsigned c)
-{
-    // TODO remove set_channel and set_channel_is_recursive altogether. Return
-    // all channels instead. If the user wants to process the channels
-    // individually they could split them into different chains, the end of the
-    // chains could be rendered superpositioned though.
-    // Used to temporarily disable that by 's->source( pOperation() )',
-    // 's->source( source() )', but that doesn't work in a multithreaded
-    // environment which might need that source somewhere else.
-
-    readDirectSource()->set_channel( c );
-/*    Operation::set_channel( c );
-
-    source()->set_channel_is_recursive( false );
-
-    if (_filter)
-        _filter->set_channel( c );
-
-    BOOST_FOREACH( pOperation s, sinks() )
-        s->set_channel( c );
-
-    source()->set_channel_is_recursive( true );
-*/
-}
-
-
 pOperation PostSink::
         readDirectSource()
 {

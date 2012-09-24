@@ -11,7 +11,8 @@ namespace Tfr {
 
 DrawnWaveformFilter::
         DrawnWaveformFilter(Signal::pOperation source, pTransform t)
-:   Filter(source)
+:   Filter(source),
+    max_value_(0)
 {
     if (!t)
         t = pTransform(new DrawnWaveform());
@@ -19,14 +20,16 @@ DrawnWaveformFilter::
     DrawnWaveform* c = dynamic_cast<DrawnWaveform*>(t.get());
     BOOST_ASSERT( c );
 
+    max_value_ = c->maxValue;
+
     transform( t );
 }
 
 
 Signal::Interval DrawnWaveformFilter::
-        requiredInterval( const Signal::Interval& I )
+        requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(transform().get());
+    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(t.get ());
     if (0 == w)
         throw std::invalid_argument("'transform' must be an instance of Tfr::DrawnWaveform");
 
@@ -40,41 +43,18 @@ Signal::Interval DrawnWaveformFilter::
 }
 
 
-ChunkAndInverse DrawnWaveformFilter::
-        computeChunk( const Signal::Interval& I )
+bool DrawnWaveformFilter::
+        applyFilter( const ChunkAndInverse &chunk )
 {
-    ChunkAndInverse ci;
-
-    Signal::Interval J = requiredInterval( I );
-    ci.inverse = source()->readFixedLength( J );
-
-    float *p = ci.inverse->waveform_data()->getCpuMemory();
-    float maxValue=0;
-    Signal::IntervalType N = ci.inverse->number_of_samples();
-    for(Signal::IntervalType i=0; i<N; ++i)
-        maxValue = std::max(std::abs(p[i]), maxValue);
-    maxValue *= 1.1;
-
-    Tfr::pTransform t = transform();
-    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(t.get());
-    if (0 == w)
-        throw std::invalid_argument("'transform' must be an instance of Tfr::DrawnWaveform");
-    if (maxValue > w->maxValue)
+    DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(chunk.t.get ());
+    if (w->maxValue != max_value_)
     {
+        max_value_ = w->maxValue;
         invalidate_samples(Signal::Intervals::Intervals_ALL);
-        w->maxValue = maxValue;
     }
 
-    // Draw the waveform to on a matrix for drawing
-    ci.chunk = (*t)( ci.inverse );
-
-#ifdef _DEBUG
-    Signal::Interval cii = ci.chunk->getInterval();
-
-    BOOST_ASSERT( cii & I );
-#endif
-
-    return ci;
+    Filter::applyFilter (chunk);
+    return false;
 }
 
 

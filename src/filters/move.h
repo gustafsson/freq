@@ -10,7 +10,7 @@ class Move: public Tfr::CwtFilter
 public:
     Move(float df);
 
-    virtual void operator()( Tfr::Chunk& );
+    virtual bool operator()( Tfr::Chunk& );
 
     float _df;
 };

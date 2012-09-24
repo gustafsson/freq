@@ -82,11 +82,11 @@ Signal::pBuffer WriteWav::
     if (I.count() > samples_per_chunk)
         I.last = I.first + samples_per_chunk;
 
-    Signal::pBuffer b = source()->readAllChannels(I);
+    Signal::pBuffer b = source()->read(I);
 
     // Check if read contains I.first
-    BOOST_ASSERT(b->sample_offset.asInteger() <= I.first);
-    BOOST_ASSERT(b->sample_offset.asInteger() + b->number_of_samples() > I.first);
+    BOOST_ASSERT(b->sample_offset().asInteger() <= I.first);
+    BOOST_ASSERT(b->sample_offset().asInteger() + b->number_of_samples() > I.first);
 
     put(b);
 
@@ -124,7 +124,7 @@ void WriteWav::
 
     _invalid_samples -= buffer->getInterval();
 
-    buffer->sample_offset;
+    buffer->sample_offset();
     appendBuffer(buffer);
 
     if (!_invalid_samples)
@@ -209,15 +209,15 @@ void WriteWav::
     BOOST_ASSERT( _sndfile );
     BOOST_ASSERT( *_sndfile );
 
-    DataStorage<float> interleaved_data(b->channels(), b->number_of_samples());
-    TIME_WRITEWAV_LINE(Signal::transpose( &interleaved_data, b->waveform_data().get() ));
+    DataStorage<float> interleaved_data(b->number_of_channels (), b->number_of_samples());
+    TIME_WRITEWAV_LINE(Signal::transpose( &interleaved_data, b->mergeChannelData().get() ));
 
     double sum = 0;
     float high = _high;
     float low = _low;
 
     float* p = CpuMemoryStorage::ReadOnly<float,2>( &interleaved_data ).ptr();
-    int N = b->channels() * b->number_of_samples();
+    int N = b->number_of_channels () * b->number_of_samples();
 
     {
     TaskTimer ta("sum/high/low");
@@ -235,7 +235,7 @@ void WriteWav::
     _sum += sum;
     _sumsamples += N;
 
-    _sndfile->seek((b->sample_offset - _offset).asInteger(), SEEK_SET);
+    _sndfile->seek((b->sample_offset() - _offset).asInteger(), SEEK_SET);
     TIME_WRITEWAV_LINE(_sndfile->write( p, N )); // sndfile will convert float to short int
 }
 

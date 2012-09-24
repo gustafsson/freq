@@ -84,7 +84,7 @@ void MicrophoneRecorder::
                        << " and input latency " << device.defaultHighInputLatency() << " s";
 
         QMutexLocker lock(&_data_lock);
-        _data.setNumChannels(channel_count);
+        _data = Signal::SinkSource(channel_count);
         _rolling_mean.resize(channel_count);
         for (unsigned i=0; i<channel_count; ++i)
             _rolling_mean[i] = 0;
@@ -296,12 +296,12 @@ int MicrophoneRecorder::
     Signal::IntervalType offset = actual_number_of_samples();
     QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
-    unsigned prev_channel = _data.get_channel();
     unsigned num_channels = _data.num_channels();
 
+    Signal::pBuffer mb( new Signal::Buffer(0, framesPerBuffer, sample_rate(), num_channels ) );
     for (unsigned i=0; i<num_channels; ++i)
     {
-        Signal::pBuffer b( new Signal::Buffer(0, framesPerBuffer, sample_rate() ) );
+        Signal::pMonoBuffer b = mb->getChannel (i);
         float* p = b->waveform_data()->getCpuMemory();
 
         if (_is_interleaved)
@@ -330,19 +330,17 @@ int MicrophoneRecorder::
 //                 buffer,
 //                 framesPerBuffer*sizeof(float) );
 
-        b->sample_offset = offset;
-        b->sample_rate = sample_rate();
+        b->set_sample_offset( offset );
+        b->set_sample_rate( sample_rate() );
 
         TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s, [%g, %g) s",
                                             b->getInterval().toString().c_str(),
-                                            b->getInterval().first / b->sample_rate,
-                                            b->getInterval().last / b->sample_rate );
+                                            b->getInterval().first / b->sample_rate(),
+                                            b->getInterval().last / b->sample_rate() );
 
-        _data.set_channel(i);
-        _data.put( b );
     }
 
-    _data.set_channel(prev_channel);
+    _data.put( mb );
     lock.unlock();
 
     _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));

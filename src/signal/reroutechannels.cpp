@@ -7,9 +7,7 @@ const RerouteChannels::SourceChannel RerouteChannels::NOTHING = (unsigned)-1;
 RerouteChannels::
         RerouteChannels(pOperation source)
             :
-            Operation(source),
-            output_channel_(0),
-            source_channel_(0)
+            Operation(source)
 {
     resetMap();
 }
@@ -18,10 +16,11 @@ RerouteChannels::
 pBuffer RerouteChannels::
         read( const Interval& I )
 {
-    if (NOTHING == source_channel_)
-        return SourceBase::zeros( I );
-
-    return Operation::read( I );
+    pBuffer b = Operation::read ( I );
+    pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), scheme_.size ()));
+    for (unsigned i=0; i<scheme_.size (); ++i)
+        *r->getChannel (i) |= *b->getChannel (scheme_[i]);
+    return r;
 }
 
 
@@ -29,26 +28,6 @@ unsigned RerouteChannels::
         num_channels()
 {
     return scheme_.size();
-}
-
-
-void RerouteChannels::
-        set_channel(unsigned c)
-{
-    BOOST_ASSERT( c < num_channels() );
-
-    output_channel_ = c;
-
-    source_channel_ = scheme_[output_channel_];
-    if (NOTHING != source_channel_)
-        Operation::source()->set_channel( source_channel_ );
-}
-
-
-unsigned RerouteChannels::
-        get_channel()
-{
-    return output_channel_;
 }
 
 
@@ -64,9 +43,13 @@ void RerouteChannels::
 void RerouteChannels::
         invalidate_samples(const Intervals& I)
 {
+    bool invalidated = false;
     unsigned N = Operation::num_channels();
     if (N != scheme_.size())
+    {
+        invalidated = true;
         num_channels( N );
+    }
 
     for (unsigned i=0; i<scheme_.size(); ++i)
     {
@@ -74,7 +57,8 @@ void RerouteChannels::
             scheme_[i] = NOTHING;
     }
 
-    Operation::invalidate_samples(I);
+    if (!invalidated)
+        Operation::invalidate_samples(I);
 }
 
 
@@ -91,8 +75,12 @@ void RerouteChannels::
 void RerouteChannels::
         map(OutputChannel output_channel, SourceChannel source_channel)
 {
+    bool invalidated = false;
     if ( output_channel >= num_channels() )
+    {
+        invalidated = true;
         num_channels( output_channel+1 );
+    }
 
     BOOST_ASSERT( source_channel < Operation::source()->num_channels() || NOTHING == source_channel);
 
@@ -100,7 +88,9 @@ void RerouteChannels::
         return;
 
     scheme_[ output_channel ] = source_channel;
-    invalidate_samples( Signal::Intervals::Intervals_ALL );
+
+    if (!invalidated)
+        invalidate_samples( Signal::Intervals::Intervals_ALL );
 }
 
 
@@ -113,9 +103,6 @@ void RerouteChannels::
 
     for (unsigned i=M; i<N; ++i)
         scheme_[i] = i;
-
-    if (output_channel_ >= N && 0 < N)
-        set_channel( N-1 );
 
     if (N != M)
         invalidate_samples( getInterval() );

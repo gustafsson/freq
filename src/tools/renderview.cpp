@@ -1013,7 +1013,7 @@ void RenderView::
         // the context.
         Tfr::StftParams a;
         a.set_approximate_chunk_size(4);
-        Signal::pBuffer b(new Signal::Buffer(0,a.chunk_size(),1));
+        Signal::pMonoBuffer b(new Signal::MonoBuffer(0,a.chunk_size(),1));
         (Tfr::Stft(a))(b);
     }
 

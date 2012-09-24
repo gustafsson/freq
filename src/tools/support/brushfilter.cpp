@@ -109,13 +109,13 @@ std::string MultiplyBrush::
 }
 
 
-void MultiplyBrush::
+bool MultiplyBrush::
         operator()( Tfr::Chunk& chunk )
 {
     BrushImages const& imgs = *images.get();
 
     if (imgs.empty())
-        return;
+        return false;
 
     Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
     float scale1 = heightmapAxis.getFrequencyScalar( chunk.minHz() );
@@ -136,6 +136,8 @@ void MultiplyBrush::
                 imgarea,
                 v.second);
     }
+
+    return true;
 }
 
 

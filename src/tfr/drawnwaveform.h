@@ -13,9 +13,9 @@ public:
 
     virtual const TransformParams* transformParams() const { return this; }
 
-    virtual pChunk operator()( Signal::pBuffer b );
+    virtual pChunk operator()( Signal::pMonoBuffer b );
 
-    virtual Signal::pBuffer inverse( pChunk chunk );
+    virtual Signal::pMonoBuffer inverse( pChunk chunk );
 
 
     virtual pTransform createTransform() const;
@@ -38,6 +38,9 @@ public:
     float block_fs;
     unsigned signal_length;
     float maxValue;
+
+private:
+    void updateMaxValue(Signal::pMonoBuffer b);
 };
 
 

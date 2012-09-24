@@ -11,7 +11,49 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
+// std
+#include <vector>
+
 namespace Signal {
+
+typedef DataStorage<float> TimeSeriesData;
+typedef TimeSeriesData::Ptr pTimeSeriesData;
+
+class SaweDll MonoBuffer : public boost::noncopyable {
+public:
+    MonoBuffer(Interval I, float sample_rate);
+    MonoBuffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
+    MonoBuffer(UnsignedF first_sample, IntervalType number_of_samples, float sample_rate);
+    ~MonoBuffer();
+
+    pTimeSeriesData         waveform_data() const { return time_series_; }
+    IntervalType            number_of_samples() const { return time_series_->size().width; }
+    void                    release_extra_resources();
+
+    UnsignedF               sample_offset() const { return sample_offset_; }
+    float                   sample_rate() const { return sample_rate_; }
+    void                    set_sample_rate(float fs) { sample_rate_ = fs; }
+    void                    set_sample_offset(UnsignedF offset) { sample_offset_ = offset; }
+
+    float                   start() const;
+    float                   length() const;
+    Interval                getInterval() const;
+
+    /// element-wise overwrite 'this' with data from 'b' where they overlap
+    MonoBuffer&             operator|=(MonoBuffer const& b);
+    /// element-wise add 'this' with 'b' where they overlap
+    MonoBuffer&             operator+=(MonoBuffer const& b);
+
+private:
+    // Not implemented, no copying
+    MonoBuffer(const MonoBuffer&);
+
+    pTimeSeriesData time_series_;
+    UnsignedF       sample_offset_;
+    float           sample_rate_;
+};
+
+typedef boost::shared_ptr<MonoBuffer> pMonoBuffer;
 
 
 /**
@@ -22,43 +64,40 @@ as when created by Signal::MicrophoneRecorder.
 */
 class SaweDll Buffer : public boost::noncopyable {
 public:
-    Buffer(UnsignedF firstSample,
-           IntervalType numberOfSamples,
+    Buffer(Interval I, float sample_rate, unsigned number_of_channels);
+    Buffer(UnsignedF first_sample,
+           IntervalType number_of_samples,
            float sample_rate,
-           unsigned numberOfChannels = 1,
-           unsigned numberOfSignals = 1);
-    /**
-      Always creates a single channel buffer.
-      */
-    Buffer(Signal::Interval subinterval, boost::shared_ptr<Buffer> other, unsigned channel=0);
+           unsigned number_of_channels);
+    explicit Buffer(pMonoBuffer b);
+    Buffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
     ~Buffer();
 
-    DataStorage<float>::Ptr  waveform_data() const;
-    IntervalType        number_of_samples() const
-    {
-        return waveform_data_->size().width;
-    }
-    void                release_extra_resources();
+    IntervalType    number_of_samples() const { return getChannel(0)->number_of_samples (); }
+    unsigned        number_of_channels() const { return channels_.size(); }
+    void            release_extra_resources();
 
-    UnsignedF       sample_offset;
-    float           sample_rate;
+    UnsignedF       sample_offset() const { return getChannel(0)->sample_offset(); }
+    float           sample_rate() const { return getChannel(0)->sample_rate(); }
+    void            set_sample_rate(float);
+    void            set_sample_offset(UnsignedF offset);
 
-    float           start() const;
-    float           length() const;
-    Interval        getInterval() const;
+    float           start() const { return getChannel(0)->start(); }
+    float           length() const { return getChannel(0)->length(); }
+    Interval        getInterval() const { return getChannel(0)->getInterval(); }
 
-    unsigned        channels() const;
+    pMonoBuffer     getChannel(int channel) const { return channels_[channel]; }
+    pTimeSeriesData mergeChannelData() const;
 
     /// element-wise overwrite 'this' with data from 'b' where they overlap
     Buffer&         operator|=(const Buffer& b);
     /// element-wise add 'this' with 'b' where they overlap
     Buffer&         operator+=(const Buffer& b);
 
-protected:
-    DataStorage<float>::Ptr waveform_data_;
-    boost::shared_ptr<Buffer> other_;
-    unsigned bitor_channel_;
+private:
+    std::vector<pMonoBuffer> channels_;
 };
+
 typedef boost::shared_ptr<Buffer> pBuffer;
 
 } // namespace Signal

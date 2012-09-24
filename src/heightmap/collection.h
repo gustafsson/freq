@@ -274,7 +274,7 @@ private:
       Compoute a short-time Fourier transform (stft). Usefull for filling new
       blocks with data really fast.
       */
-    void        fillBlock( pBlock block, const Signal::Intervals& to_update );
+//    void        fillBlock( pBlock block, const Signal::Intervals& to_update );
 
 
     /**
