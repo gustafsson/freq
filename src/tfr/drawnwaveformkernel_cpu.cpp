@@ -17,13 +17,11 @@ void drawWaveform(
     int w = out_waveform_matrixp->size().width;
     if (blob > 1)
     {
-        printf("blob > 1: %g", blob);
         for(int writePos_x=0; writePos_x<w; ++writePos_x)
             draw_waveform_elem( writePos_x, in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs );
     }
     else
     {
-        printf("blob <= 1: %g", blob);
         for(int writePos_x=0; writePos_x<w; ++writePos_x)
             draw_waveform_with_lines_elem( writePos_x, in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs );
     }

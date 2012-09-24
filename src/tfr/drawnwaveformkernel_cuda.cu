@@ -35,12 +35,10 @@ void drawWaveform(
 
     if (blob > 1)
     {
-        printf("blob > 1: %g", blob);
         kernel_draw_waveform<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs );
     }
     else
     {
-        printf("blob <= 1: %g", blob);
         kernel_draw_waveform_with_lines<<<grid, block, 0, 0>>>( in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs );
     }
 }
