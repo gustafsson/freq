@@ -43,23 +43,14 @@ OperationRemoveSection::
 pBuffer OperationRemoveSection::
         read( const Interval& I )
 {
-    if (I.last <= section_.first )
-    {
-        return source()->readFixedLength( I );
-    }
+    const Interval neg(Interval::IntervalType_MIN, 0);
+    Interval r = translate_interval_inverse(I).fetchFirstInterval ();
 
-    if (I.first < section_.first)
-    {
-        return source()->readFixedLength( Interval(I.first, section_.first) );
-    }
+    if ((I & neg) && !(r & neg))
+        return zeros(I & neg);
 
-    if (I.first + section_.count() + 1 < I.first)
-    {
-        return zeros(I);
-    }
-
-    pBuffer b = source()->readFixedLength( (Intervals(I) << section_.count() ).spannedInterval() );
-    b->sample_offset -= section_.count();
+    pBuffer b = source()->readFixedLength(r);
+    b->set_sample_offset ( I.first );
 
     return b;
 }
@@ -67,44 +58,74 @@ pBuffer OperationRemoveSection::
 IntervalType OperationRemoveSection::
         number_of_samples()
 {
+    Interval pos(0, Interval::IntervalType_MAX);
+    Interval sectionp = pos & section_;
     IntervalType N = Operation::number_of_samples();
-    if (N<section_.last)
-        return std::min(N, section_.first);
-    return N - section_.count();
+    if (!sectionp.count ())
+        return N;
+
+    if (N<=sectionp.last)
+        return std::min(N, sectionp.first);
+
+    return N - sectionp.count();
 }
 
 Intervals OperationRemoveSection::
         affected_samples()
 {
-    return Signal::Interval(section_.first, Signal::Interval::IntervalType_MAX);
+    const Interval pos(0, Interval::IntervalType_MAX);
+    const Interval neg(Interval::IntervalType_MIN, 0);
+
+    Intervals I;
+
+    if (section_ & pos)
+        I |= pos & Interval(section_.first, pos.last);
+    if (section_ & neg)
+        I |= neg & Interval(pos.first, section_.last);
+
+    return I;
 }
 
 Signal::Intervals OperationRemoveSection::
         translate_interval(Signal::Intervals I)
 {
-    Signal::Intervals beginning, ending;
+    Interval pos(0, Interval::IntervalType_MAX);
+    Interval neg(Interval::IntervalType_MIN, 0);
+    Interval rightkeep(section_.last, Interval::IntervalType_MAX);
+    Interval leftkeep(Interval::IntervalType_MIN, section_.first);
 
-    if (section_.first)
-        beginning = Signal::Interval( 0, section_.first );
+    Intervals left = (I & leftkeep) << (section_ & neg).count ();
+    Intervals right = (I & rightkeep) >> (section_ & pos).count ();
 
-    if (section_.last < Signal::Interval::IntervalType_MAX)
-        ending = Signal::Interval( section_.last, Signal::Interval::IntervalType_MAX );
+    left |= I & rightkeep;
+    right |= I & leftkeep;
+    left &= neg;
+    right &= pos;
 
-    return (I&beginning) | ((I&ending) >> section_.count());
+    return left | right;
 }
 
 Signal::Intervals OperationRemoveSection::
         translate_interval_inverse(Signal::Intervals I)
 {
-    Signal::Intervals beginning, ending;
+    Interval pos(0, Interval::IntervalType_MAX);
+    Interval neg(Interval::IntervalType_MIN, 0);
+    Interval rightmove(section_.first, Interval::IntervalType_MAX);
+    Interval leftmove(Interval::IntervalType_MIN, section_.last);
 
-    if (section_.first)
-        beginning = Signal::Interval( 0, section_.first );
+    Intervals left = (leftmove & neg & I) >> (section_ & neg).count();
+    Intervals right = (rightmove & pos & I) << (section_ & pos).count();
 
-    ending = Signal::Interval( section_.first, Signal::Interval::IntervalType_MAX );
+    Interval rightkeep(section_.last, Interval::IntervalType_MAX);
+    Interval leftkeep(Interval::IntervalType_MIN, section_.first);
 
-    return (I&beginning) | ((I&ending) << section_.count());
+    left |= rightkeep & neg & I;
+    right |= leftkeep & pos & I;
+
+    Intervals r = left | right;
+    return r;
 }
+
 
     // OperationInsertSilence ///////////////////////////////////////////////////////////
 
@@ -113,6 +134,7 @@ OperationInsertSilence::
 :   Operation( source ),
     section_( section )
 {
+    BOOST_ASSERT( section.first >= 0 );
 }
 
 

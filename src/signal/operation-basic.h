@@ -50,7 +50,7 @@ public:
 
     virtual Intervals affected_samples();
     virtual Intervals translate_interval(Intervals I);
-    virtual Intervals translate_interval_inverse(Intervals I);
+    Intervals translate_interval_inverse(Intervals I);
 
 private:
 
@@ -83,7 +83,7 @@ public:
 
     virtual Intervals affected_samples();
     virtual Intervals translate_interval(Intervals I);
-    virtual Intervals translate_interval_inverse(Intervals I);
+    Intervals translate_interval_inverse(Intervals I);
 private:
     Interval section_;
 };
