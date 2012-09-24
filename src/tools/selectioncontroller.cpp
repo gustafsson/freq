@@ -499,7 +499,7 @@ namespace Tools
         while ( prev->source() != next )
         {
             prev = prev->source();
-            BOOST_ASSERT( prev );
+            EXCEPTION_ASSERT( prev );
         }
 
         prev->source( next->source() );

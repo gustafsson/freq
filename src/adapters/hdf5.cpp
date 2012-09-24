@@ -85,11 +85,11 @@ void Hdf5Input::
 {
     std::vector<std::string> strs;
     boost::split(strs, name, boost::is_any_of("/"));
-    BOOST_ASSERT( !strs.empty() );
+    EXCEPTION_ASSERT( !strs.empty() );
 
     if (strs.front().empty())
         strs.erase( strs.begin() );
-    BOOST_ASSERT( !strs.empty() );
+    EXCEPTION_ASSERT( !strs.empty() );
 
     herr_t status = H5LTfind_dataset ( _file_id, strs[0].c_str() );
     if (1!=status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Hdf5 file does not contain a dataset named '" + strs[0] + "'", strs[0]);
@@ -168,7 +168,7 @@ Signal::pBuffer Hdf5Input::
     Signal::pBuffer buffer;
     if (dims[0]>0 && dims[1]>0 && dims[2]>0)
     {
-        BOOST_ASSERT( dims[0] == 1 );
+        EXCEPTION_ASSERT( dims[0] == 1 );
         Signal::pTimeSeriesData data( new Signal::TimeSeriesData(dims[2], dims[1]) );
         float* p = data->getCpuMemory();
 
@@ -313,7 +313,7 @@ double Hdf5Input::
     vector<hsize_t> dims = getInfo(name, &class_id);
 
     BOOST_FOREACH( const hsize_t& t, dims)
-            BOOST_ASSERT( t == 1 );
+            EXCEPTION_ASSERT( t == 1 );
 
     double v;
     herr_t status = H5LTread_dataset(_file_id,name.c_str(),H5T_NATIVE_DOUBLE,&v);

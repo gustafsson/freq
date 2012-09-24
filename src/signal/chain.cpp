@@ -77,7 +77,7 @@ ChainHead::
 void ChainHead::
         appendOperation(Signal::pOperation s)
 {
-    BOOST_ASSERT( s );
+    EXCEPTION_ASSERT( s );
 
     // Check that this operation is not already in the list. Can't move into
     // composite operations yet as there is no operation iterator implemented.

@@ -196,7 +196,7 @@ GlBlock::
     // unmap();
     if (_mapped_height)
     {
-        BOOST_ASSERT( _mapped_height.unique() );
+        EXCEPTION_ASSERT( _mapped_height.unique() );
         _mapped_height.reset();
         TIME_GLBLOCK TaskInfo("_mapped_height.reset()");
     }
@@ -314,7 +314,7 @@ bool GlBlock::
         has_texture()
 {
     if (_tex_height_nearest)
-        BOOST_ASSERT(_tex_height);
+        EXCEPTION_ASSERT(_tex_height);
 
     return _tex_height;
 }
@@ -508,8 +508,8 @@ void GlBlock::
         TIME_GLBLOCK TaskTimer tt("Heightmap Cuda->OpenGL, height=%u", (unsigned)*_height);
         TIME_GLBLOCK ComputationCheckError();
 
-        BOOST_ASSERT( _mapped_height.unique() );
-        BOOST_ASSERT( _mapped_height->data.unique() );
+        EXCEPTION_ASSERT( _mapped_height.unique() );
+        EXCEPTION_ASSERT( _mapped_height->data.unique() );
 
         _mapped_height.reset();
 

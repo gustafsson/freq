@@ -142,7 +142,7 @@ RenderView::
     glwidget->makeCurrent();
 
 #ifdef USE_CUDA
-    BOOST_ASSERT( QGLContext::currentContext() );
+    EXCEPTION_ASSERT( QGLContext::currentContext() );
 
     // Destroy the cuda context for this thread
     CudaException_SAFE_CALL( cudaThreadExit() );
@@ -312,8 +312,8 @@ float RenderView::
     float    yf = (pos.scale-r.a.scale)/r.scale()*(h-1);
     unsigned y0 = yf + .5f;
 
-    BOOST_ASSERT( x0 < w );
-    BOOST_ASSERT( y0 < h );
+    EXCEPTION_ASSERT( x0 < w );
+    EXCEPTION_ASSERT( y0 < h );
     float v;
 
     if (!pick_local_max && !fetch_interpolation)
@@ -364,9 +364,9 @@ float RenderView::
         float testv = quad_interpol( y0, data + x0, h, w, &testmax );
         float testlocalmax = r.a.scale + r.scale()*(testmax)/(h-1);
 
-        BOOST_ASSERT( testv == v );
+        EXCEPTION_ASSERT( testv == v );
         if (pick_local_max)
-            BOOST_ASSERT( testlocalmax == *pick_local_max );
+            EXCEPTION_ASSERT( testlocalmax == *pick_local_max );
     }
 
     return v;

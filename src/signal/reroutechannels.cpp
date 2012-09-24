@@ -82,7 +82,7 @@ void RerouteChannels::
         num_channels( output_channel+1 );
     }
 
-    BOOST_ASSERT( source_channel < Operation::source()->num_channels() || NOTHING == source_channel);
+    EXCEPTION_ASSERT( source_channel < Operation::source()->num_channels() || NOTHING == source_channel);
 
     if (scheme_[ output_channel ] == source_channel)
         return;

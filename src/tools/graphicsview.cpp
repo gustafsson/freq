@@ -189,7 +189,7 @@ Support::ToolSelector* GraphicsView::
 {
     while (index >= layout_widget_->layout()->count())
     {
-        BOOST_ASSERT( state );
+        EXCEPTION_ASSERT( state );
 
         QWidget* parent = new QWidget();
         parent->setLayout(new QVBoxLayout());

@@ -27,7 +27,7 @@ namespace Tools
     ToolModelP ToolRepo::
             addModel(ToolModel* model)
     {
-        BOOST_ASSERT( model );
+        EXCEPTION_ASSERT( model );
 
         ToolModelP modelp(model);
         tool_models_.insert( modelp );

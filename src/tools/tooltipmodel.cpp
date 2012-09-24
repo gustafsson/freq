@@ -65,7 +65,7 @@ const Heightmap::Position& TooltipModel::
 void TooltipModel::
         showToolTip( Heightmap::Position p, bool adjustScaleToLocalPeak )
 {
-    BOOST_ASSERT( render_view_ );
+    EXCEPTION_ASSERT( render_view_ );
 
     switch(this->automarking)
     {
@@ -118,7 +118,7 @@ void TooltipModel::
     else
     {
         p = this->pos();
-        BOOST_ASSERT( this->markers );
+        EXCEPTION_ASSERT( this->markers );
     }
 
     float FS = render_view_->model->project()->worker.source()->sample_rate();
@@ -213,7 +213,7 @@ void TooltipModel::
     bool first = 0 == this->comment;
 
     comments_->setComment( this->pos(), ss.str(), &this->comment );
-    BOOST_ASSERT(this->comment);
+    EXCEPTION_ASSERT(this->comment);
     if (first)
     {
         this->comment->thumbnail( true );
@@ -367,7 +367,7 @@ public:
         for (unsigned i=0; i < cwtchunk->chunks.size(); ++i)
             N += cwtchunk->chunks[i]->nScales() - (i!=0);
 
-        BOOST_ASSERT( N == cwt->nScales( fs ) );
+        EXCEPTION_ASSERT( N == cwt->nScales( fs ) );
 
         abslog.reset( new DataStorage<float>(N));
 
@@ -404,7 +404,7 @@ public:
             }
         }
 
-        BOOST_ASSERT( k == cwt->nScales(fs) );
+        EXCEPTION_ASSERT( k == cwt->nScales(fs) );
 
         fa = chunk->freqAxis;
     }
@@ -523,7 +523,7 @@ unsigned TooltipModel::
     tt.info("%g Hz is harmonic number number %u, fundamental frequency is %g Hz. Did %u tests",
         F, max_i, F/max_i, n_tests);
     best_compliance = max_s;
-    BOOST_ASSERT( 0 < max_i );
+    EXCEPTION_ASSERT( 0 < max_i );
     return max_i;
 }
 
@@ -531,7 +531,7 @@ unsigned TooltipModel::
 float TooltipModel::
       computeMarkerMeasure(const Heightmap::Position& pos, unsigned i, FetchData* fetcher)
 {
-    BOOST_ASSERT( 0 < i );
+    EXCEPTION_ASSERT( 0 < i );
     boost::shared_ptr<FetchData> myfetcher;
     if (0==fetcher)
     {

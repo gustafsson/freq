@@ -58,7 +58,7 @@ Signal::pBuffer Filter::
         #ifdef _DEBUG
             Interval cii = ci.chunk->getInterval().spanned ( ci.chunk->getCoveredInterval () );
 
-            BOOST_ASSERT( cii & I );
+            EXCEPTION_ASSERT( cii & I );
         #endif
 
         if (applyFilter( ci ))
@@ -76,7 +76,7 @@ Signal::pBuffer Filter::
             ci.inverse = b->getChannel (c);
             ci.chunk = (*t)( ci.inverse );
             ci.inverse = t->inverse (ci.chunk);
-            BOOST_ASSERT( i & invinterval );
+            EXCEPTION_ASSERT( i & invinterval );
         }
 
         *r->getChannel (c) |= *ci.inverse;

@@ -26,7 +26,7 @@ CepstrumFilter::
     }
 
     Cepstrum* c = dynamic_cast<Cepstrum*>(t.get());
-    BOOST_ASSERT( c );
+    EXCEPTION_ASSERT( c );
 
     transform( t );
 }

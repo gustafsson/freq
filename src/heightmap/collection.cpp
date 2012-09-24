@@ -61,7 +61,7 @@ Collection::
     _free_memory(availableMemoryForSingleAllocation()),
     _amplitude_axis(AmplitudeAxis_5thRoot)
 {
-    BOOST_ASSERT( target );
+    EXCEPTION_ASSERT( target );
     samples_per_block( 1<<9 );
     scales_per_block( 1<<9 ); // sets _max_sample_size.scale
 
@@ -390,7 +390,7 @@ std::vector<pBlock> Collection::
                 found = true;
         }
 
-        BOOST_ASSERT(found);
+        EXCEPTION_ASSERT(found);
     }
 
     // consistency check
@@ -403,7 +403,7 @@ std::vector<pBlock> Collection::
                 found = true;
         }
 
-        BOOST_ASSERT(found);
+        EXCEPTION_ASSERT(found);
     }*/
 
     return r;
@@ -694,7 +694,7 @@ pBlock Collection::
 
         pBlock attempt( new Block(ref));
         Region r = ref.getRegion();
-        BOOST_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
+        EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( this, r.time(), r.scale() ));
 
 #ifndef SAWE_NO_MUTEX
@@ -778,7 +778,7 @@ pBlock Collection::
                         pBlock stealedBlock = _recent.back();
                         const Region& stealed_r = stealedBlock->getRegion();
 
-                        TaskInfo("Stealing block [%g:%g, %g:%g] last used %u frames ago. Total free %s, total cache %s, %u blocks",
+                        TaskInfo ti("Stealing block [%g:%g, %g:%g] last used %u frames ago. Total free %s, total cache %s, %u blocks",
                                      stealed_r.a.time, stealed_r.b.time, stealed_r.a.scale, stealed_r.b.scale,
                                      _frame_counter - stealedBlock->frame_number_last_used,
                                      DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
@@ -1025,7 +1025,7 @@ pBlock Collection::
         return pBlock();
     }
 
-    BOOST_ASSERT( 0 != result.get() );
+    EXCEPTION_ASSERT( 0 != result.get() );
 
     // result is non-zero
     _cache[ result->reference() ] = result;
@@ -1117,7 +1117,7 @@ bool Collection::
         mergeBlock( pBlock outBlock, pBlock inBlock, unsigned /*cuda_stream*/ )
 {
 #ifndef SAWE_NO_MUTEX
-    BOOST_ASSERT( !outBlock->cpu_copy_mutex.tryLock() );
+    EXCEPTION_ASSERT( !outBlock->cpu_copy_mutex.tryLock() );
     QMutexLocker il(&inBlock->cpu_copy_mutex);
 #endif
 
@@ -1143,12 +1143,12 @@ bool Collection::
     INFO_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
                                  inBlock->reference().toString().c_str(), outBlock->reference().toString().c_str());
 
-    BOOST_ASSERT( outBlock.get() != inBlock.get() );
+    EXCEPTION_ASSERT( outBlock.get() != inBlock.get() );
 
 #ifdef SAWE_NO_MUTEX
     GlBlock::pHeight out_h = outBlock->glblock->height();
     GlBlock::pHeight in_h = inBlock->glblock->height();
-    BOOST_ASSERT( in_h.get() != out_h.get() );
+    EXCEPTION_ASSERT( in_h.get() != out_h.get() );
 
     Block::pData out_data = out_h->data;
     Block::pData in_data = in_h->data;

@@ -79,7 +79,7 @@ namespace Tools
         std::set<Tfr::pTransformParams> params;
 
         friend class boost::serialization::access;
-        RenderModel() { BOOST_ASSERT( false ); } // required for serialization to compile, is never called
+        RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
             ar

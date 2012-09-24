@@ -190,7 +190,7 @@ void TooltipController::
     else if(1 < current_model()->markers)
         current_model()->markers--;
 
-    BOOST_ASSERT(current_model()->comment);
+    EXCEPTION_ASSERT(current_model()->comment);
 
     current_model()->automarking = TooltipModel::ManualMarkers;
     current_model()->showToolTip(current_model()->pos() );

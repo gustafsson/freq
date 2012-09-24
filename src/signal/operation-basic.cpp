@@ -37,7 +37,7 @@ OperationRemoveSection::
 :   Operation( source ),
     section_(section)
 {
-    BOOST_ASSERT(section_.count());
+    EXCEPTION_ASSERT(section_.count());
 }
 
 pBuffer OperationRemoveSection::
@@ -134,7 +134,7 @@ OperationInsertSilence::
 :   Operation( source ),
     section_( section )
 {
-    BOOST_ASSERT( section.first >= 0 );
+    EXCEPTION_ASSERT( section.first >= 0 );
 }
 
 
@@ -245,8 +245,8 @@ pBuffer OperationSuperposition::
 pBuffer OperationSuperposition::
         superPosition( pBuffer a, pBuffer b, bool inclusive )
 {
-    BOOST_ASSERT( a->sample_rate () == b->sample_rate () );
-    BOOST_ASSERT( a->number_of_channels () == b->number_of_channels () );
+    EXCEPTION_ASSERT( a->sample_rate () == b->sample_rate () );
+    EXCEPTION_ASSERT( a->number_of_channels () == b->number_of_channels () );
     Interval I;
     if (inclusive)
         I = a->getInterval ().spanned ( b->getInterval () );

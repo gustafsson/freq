@@ -26,7 +26,7 @@ StftFilter::
     }
 
     Stft* s = dynamic_cast<Stft*>(t.get());
-    BOOST_ASSERT( s );
+    EXCEPTION_ASSERT( s );
 
     transform( t );
 }

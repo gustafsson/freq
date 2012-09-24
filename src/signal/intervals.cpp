@@ -1,12 +1,14 @@
 #include "intervals.h"
 
+#include "exceptionassert.h"
+#include "TaskTimer.h"
+
 #include <stdexcept>
-#include <boost/assert.hpp>
-#include <boost/foreach.hpp>
 #include <cfloat>
-#include <TaskTimer.h>
 #include <sstream>
 #include <limits.h>
+
+#include <boost/foreach.hpp>
 
 namespace Signal {
 
@@ -34,7 +36,7 @@ Interval::
     first(first), last(last)
 {
     if (!valid())
-        BOOST_ASSERT( valid() );
+        EXCEPTION_ASSERT( valid() );
 }
 
 
@@ -90,7 +92,7 @@ Intervals::
 {
     if (first != last)
     {
-        BOOST_ASSERT( first < last );
+        EXCEPTION_ASSERT( first < last );
         base::push_back( Interval( first, last ) );
     }
 }
@@ -198,7 +200,7 @@ Intervals& Intervals::
 
             // Else, error
             } else {
-                BOOST_ASSERT( false );
+                EXCEPTION_ASSERT( false );
                 throw std::logic_error("Shouldn't reach here");
             }
         } else {
@@ -400,7 +402,7 @@ Interval Intervals::
             return f;
         }
 
-        BOOST_ASSERT(center>=f.first);
+        EXCEPTION_ASSERT(center>=f.first);
 
         unsigned int_div_ceil = ( center-f.first + dt - 1 ) / dt;
         IntervalType start = f.first + dt*int_div_ceil;
@@ -409,7 +411,7 @@ Interval Intervals::
             return Interval( f.last-dt, f.last );
         }
 
-        BOOST_ASSERT(start>=f.first);
+        EXCEPTION_ASSERT(start>=f.first);
 
         return Interval( start, std::min(start+dt, f.last) );
     }

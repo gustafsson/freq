@@ -169,7 +169,7 @@ Application* Application::
         global_ptr() 
 {
     Application* app = dynamic_cast<Application*>(QApplication::instance());
-    BOOST_ASSERT( app );
+    EXCEPTION_ASSERT( app );
     return app;
 }
 

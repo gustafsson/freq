@@ -15,7 +15,7 @@ RecordModel::
     recording = dynamic_cast<Adapters::Recorder*>
                 (project->head->head_source()->root());
 
-    BOOST_ASSERT( recording );
+    EXCEPTION_ASSERT( recording );
 }
 
 

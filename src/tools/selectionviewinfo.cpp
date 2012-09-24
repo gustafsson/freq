@@ -164,7 +164,7 @@ pBuffer SelectionViewInfoSink::
         stft.setWindow(Tfr::StftParams::WindowType_Hann, 0.5);
         stft.set_approximate_chunk_size( f.count() );
         stft.compute_redundant(false);
-        BOOST_ASSERT(stft.chunk_size() == f.count());
+        EXCEPTION_ASSERT(stft.chunk_size() == f.count());
 
         b = Operation::source()->readFixedLength(f);
 
@@ -172,8 +172,8 @@ pBuffer SelectionViewInfoSink::
         // TODO check other channels
         Tfr::pChunk c = (Tfr::Stft(stft))( b->getChannel (0));
         Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
-        BOOST_ASSERT( 1 == c->nSamples() );
-        BOOST_ASSERT( c->nScales() == f.count()/2+1 );
+        EXCEPTION_ASSERT( 1 == c->nSamples() );
+        EXCEPTION_ASSERT( c->nScales() == f.count()/2+1 );
 
         unsigned N = c->nScales();
         std::vector<float> absValues(N);

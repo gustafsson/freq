@@ -51,9 +51,9 @@ bool Bandpass::
     unsigned actualSize = window/2 + 1;
     unsigned windows = c.transform_data->size().width / actualSize;
 
-    BOOST_ASSERT( c.nScales() == actualSize );
-    BOOST_ASSERT( c.nSamples() == windows );
-    BOOST_ASSERT( ((Tfr::StftChunk&)c).window_size() == window );
+    EXCEPTION_ASSERT( c.nScales() == actualSize );
+    EXCEPTION_ASSERT( c.nSamples() == windows );
+    EXCEPTION_ASSERT( ((Tfr::StftChunk&)c).window_size() == window );
 
     TIME_BANDPASS TaskInfo("window = %u, actualSize = %u, windows = %u, a=%g, b=%g",
                                window, actualSize, windows, a, b);

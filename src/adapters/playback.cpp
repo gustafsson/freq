@@ -549,7 +549,6 @@ int Playback::
                  const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
-    BOOST_ASSERT( outputBuffer );
     if (!_data.empty() && _playback_itr == _data.getInterval().first) {
         _startPlay_timestamp = microsec_clock::local_time();
     }

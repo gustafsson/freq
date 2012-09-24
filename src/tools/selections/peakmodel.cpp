@@ -37,7 +37,7 @@ PeakModel::PeakAreaP PeakModel::
     if (!area)
     {
         area.reset( new DataStorage<bool>(ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
-        BOOST_ASSERT( area->numberOfBytes() == area->numberOfElements());
+        EXCEPTION_ASSERT( area->numberOfBytes() == area->numberOfElements());
         memset( area->getCpuMemory(), 0, area->numberOfBytes() );
     }
 
@@ -325,7 +325,7 @@ void PeakModel::
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(peak_filter()->transform().get());
 
 
-    BOOST_ASSERT(!classifictions.empty());
+    EXCEPTION_ASSERT(!classifictions.empty());
     Heightmap::Reference ref = classifictions.begin()->first;
 
     Heightmap::Reference

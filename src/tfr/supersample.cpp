@@ -61,7 +61,7 @@ Signal::pMonoBuffer SuperSample::
 
     Signal::pMonoBuffer r = Tfr::Fft().inverse( biggerchunk );
 
-    BOOST_ASSERT( r->sample_rate() == requested_sample_rate );
+    EXCEPTION_ASSERT( r->sample_rate() == requested_sample_rate );
 
     return r;
 }

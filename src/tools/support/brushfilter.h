@@ -109,7 +109,7 @@ private:
                 zlibCompressed.resize(compressedN);
                 ar.load_binary( zlibCompressed.data(), compressedN );
                 QByteArray zlibUncompressed = qUncompress(zlibCompressed);
-                BOOST_ASSERT( img->numberOfBytes() == (size_t)zlibUncompressed.size() );
+                EXCEPTION_ASSERT( img->numberOfBytes() == (size_t)zlibUncompressed.size() );
                 memcpy(img->getCpuMemory(), zlibUncompressed.constData(), img->numberOfBytes());
             }
 

@@ -50,7 +50,7 @@ TimelineView::
     _except_count( 0 ),
     _vertical( true )
 {
-    BOOST_ASSERT( _render_view );
+    EXCEPTION_ASSERT( _render_view );
 
     if (!context() || !context()->isSharing())
     {
@@ -105,7 +105,7 @@ void TimelineView::
 {
     initializeTimeline();
 
-    BOOST_ASSERT( tool_selector );
+    EXCEPTION_ASSERT( tool_selector );
     QRect rect = tool_selector->parentTool()->geometry();
     resizeGL( 0, 0, rect.width(), rect.height() );
     paintEventTime = boost::posix_time::microsec_clock::local_time();

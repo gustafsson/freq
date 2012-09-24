@@ -289,7 +289,7 @@ bool MatlabOperationWidget::
     Signal::pOperation om;
     foreach(Signal::Operation* c, this->operation->outputs())
     {
-        BOOST_ASSERT(c->source().get() == this->operation);
+        EXCEPTION_ASSERT(c->source().get() == this->operation);
         om = c->source();
     }
     if (!om)
@@ -374,7 +374,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         announceInvalidSamples()
 {
-    BOOST_ASSERT(operation);
+    EXCEPTION_ASSERT(operation);
 
     Signal::Intervals invalid_returns = operation->invalid_returns();
     Signal::Intervals invalid_samples = operation->invalid_samples();

@@ -107,8 +107,8 @@ bool Project::
 
     QByteArray mainwindowState = _mainWindow->saveState();
     QByteArray mainwindowState2 = _mainWindow->saveState();
-	BOOST_ASSERT( mainwindowState.size() == mainwindowState2.size());
-	BOOST_ASSERT( 0 == memcmp(mainwindowState.data(), mainwindowState2.data(), mainwindowState2.size()));
+    EXCEPTION_ASSERT( mainwindowState.size() == mainwindowState2.size());
+    EXCEPTION_ASSERT( 0 == memcmp(mainwindowState.data(), mainwindowState2.data(), mainwindowState2.size()));
     _mainWindow->restoreState( mainwindowState );
 
     {

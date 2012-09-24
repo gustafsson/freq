@@ -37,7 +37,7 @@ private:
     Sawe::Project* project_;
 
     friend class boost::serialization::access;
-    Layers() { BOOST_ASSERT(false); } // required for serialization to compile, is never called
+    Layers() { EXCEPTION_ASSERT(false); } // required for serialization to compile, is never called
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo ti("Layers::serialize");
         ar & BOOST_SERIALIZATION_NVP( layers_);

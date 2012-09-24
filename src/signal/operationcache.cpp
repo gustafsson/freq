@@ -118,7 +118,7 @@ void OperationCache::
 {
     unsigned N = source() ? source()->num_channels() : num_channels();
 
-    BOOST_ASSERT( 1 <= N );
+    EXCEPTION_ASSERT( 1 <= N );
 
     if (N != _cache.num_channels ())
         _cache = SinkSource(N);
@@ -177,7 +177,7 @@ OperationCachedSub::
     :
     OperationCache(source)
 {
-    BOOST_ASSERT( source );
+    EXCEPTION_ASSERT( source );
 }
 
 

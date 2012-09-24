@@ -224,7 +224,7 @@ void MatlabController::
         createFromAction()
 {
     QAction* a = dynamic_cast<QAction*>(sender());
-    BOOST_ASSERT( a );
+    EXCEPTION_ASSERT( a );
 
     QSettings state;
     state.beginGroup("MatlabOperation");
@@ -250,7 +250,7 @@ void MatlabController::
     TaskInfo ti("foundNewScript %s", settings.scriptname().c_str() );
 
     Adapters::ReadMatlabSettings* read = dynamic_cast<Adapters::ReadMatlabSettings*>(sender());
-    BOOST_ASSERT( read );
+    EXCEPTION_ASSERT( read );
 
     QFileInfo info(settings.scriptname().c_str());
 
@@ -322,7 +322,7 @@ void MatlabController::
         createFromScriptPath()
 {
     QAction* a = dynamic_cast<QAction*>(sender());
-    BOOST_ASSERT( a );
+    EXCEPTION_ASSERT( a );
 
     TaskInfo ti("createFromScriptPath %s", a->data().toString().toStdString().c_str() );
     Adapters::ReadMatlabSettings::readSettingsAsync( a->data().toString(), this, SLOT(showDialogFromSettings(Adapters::DefaultMatlabFunctionSettings)), SLOT(createFromSettingsFailed(QString, QString)));
@@ -366,7 +366,7 @@ void MatlabController::
         sourceRead()
 {
     Adapters::ReadMatlabSettings* read = dynamic_cast<Adapters::ReadMatlabSettings*>(sender());
-    BOOST_ASSERT( read );
+    EXCEPTION_ASSERT( read );
 
     TaskInfo ti("sourceRead %s, isSource = %d", read->settings.scriptname().c_str(), read->settings.isSource() );
     if (read->sourceBuffer())
@@ -426,7 +426,7 @@ void MatlabController::
         Signal::pOperation om;
         foreach(Signal::Operation* c, operation->outputs())
         {
-            BOOST_ASSERT(c->source().get() == operation);
+            EXCEPTION_ASSERT(c->source().get() == operation);
             om = c->source();
         }
         if (om)
@@ -437,7 +437,7 @@ void MatlabController::
     foreach(Signal::Operation* p, o->outputs())
     {
         // verify a correct structure while at it
-        BOOST_ASSERT( p->Operation::source().get() == o );
+        EXCEPTION_ASSERT( p->Operation::source().get() == o );
 
         createView( p );
     }
@@ -658,7 +658,7 @@ void MatlabController::
     {
         QDockWidget* toolWindow = project_->mainWindow()->getItems()->toolPropertiesWindow;
         MatlabOperationWidget* w = dynamic_cast<MatlabOperationWidget*>( m->settings() );
-        BOOST_ASSERT( w );
+        EXCEPTION_ASSERT( w );
         toolWindow->setWidget( w );
         if (w->getOctaveWindow())
         {

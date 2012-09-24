@@ -1,7 +1,8 @@
 #ifndef TOOLMODEL_H
 #define TOOLMODEL_H
 
-#include <TaskTimer.h>
+#include "TaskTimer.h"
+#include "exceptionassert.h"
 
 #include <boost/shared_ptr.hpp>
 #include <QWidget>
@@ -62,8 +63,8 @@ namespace Tools
         ToolRepo( Sawe::Project* project ) : project_(project) {}
         virtual ~ToolRepo() {}
 
-        virtual RenderView* render_view() { BOOST_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
-        //virtual ToolMainLoop* mainloop() { BOOST_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
+        virtual RenderView* render_view() { EXCEPTION_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
+        //virtual ToolMainLoop* mainloop() { EXCEPTION_ASSERT(false); return 0; } // can't make pure virtual because of serialization lib
 
         template<typename T>
         ToolModelP findToolModel(T* t)
@@ -106,7 +107,7 @@ namespace Tools
         Sawe::Project* project_;
 
         friend class boost::serialization::access;
-        ToolRepo() { BOOST_ASSERT( false ); }
+        ToolRepo() { EXCEPTION_ASSERT( false ); }
         template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/)
         {
             TaskInfo ti("ToolRepo::serialize");

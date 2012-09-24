@@ -145,7 +145,7 @@ void ReadMatlabSettings::
             readSource(file);
             break;
         default:
-            BOOST_ASSERT( false );
+            EXCEPTION_ASSERT( false );
             break;
         }
         success = true;

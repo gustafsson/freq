@@ -19,7 +19,7 @@ namespace Support {
 
     bool FanTrackerFilter::operator()( Tfr::Chunk& c )
     {
-        BOOST_ASSERT( this->track.size() == num_channels() );
+        EXCEPTION_ASSERT( this->track.size() == num_channels() );
 
         //find the peak, store time, freq and amp in the map called track.
 

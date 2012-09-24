@@ -329,9 +329,9 @@ void SaweMainWindow::
         openRecentFile()
 {
     QAction* a = dynamic_cast<QAction*>(sender());
-    BOOST_ASSERT( a );
+    EXCEPTION_ASSERT( a );
     QString s = a->data().toString();
-    BOOST_ASSERT( !s.isEmpty() );
+    EXCEPTION_ASSERT( !s.isEmpty() );
     if (0 == Sawe::Application::global_ptr()->slotOpen_file( s.toLocal8Bit().constData() ))
     {
         QSettings settings;

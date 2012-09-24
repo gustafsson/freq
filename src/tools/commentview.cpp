@@ -42,7 +42,7 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     containerWidget->layout()->setSpacing(0);
     containerWidget->setMinimumSize(70,40);
 
-    BOOST_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
+    EXCEPTION_ASSERT( dynamic_cast<CommentModel*>(modelp.get() ));
 
     QAction *closeAction = new QAction(tr("D&elete"), this);
     connect(closeAction, SIGNAL(triggered()), SLOT(close()));

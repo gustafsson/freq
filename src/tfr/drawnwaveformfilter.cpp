@@ -18,7 +18,7 @@ DrawnWaveformFilter::
         t = pTransform(new DrawnWaveform());
 
     DrawnWaveform* c = dynamic_cast<DrawnWaveform*>(t.get());
-    BOOST_ASSERT( c );
+    EXCEPTION_ASSERT( c );
 
     max_value_ = c->maxValue;
 

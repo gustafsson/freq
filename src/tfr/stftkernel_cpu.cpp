@@ -100,7 +100,7 @@ void stftAverage(
     Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
     Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
-    BOOST_ASSERT( height > 1 );
+    EXCEPTION_ASSERT( height > 1 );
 
     float as = 1.f/averaging;
 #pragma omp parallel for

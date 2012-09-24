@@ -28,13 +28,13 @@ pBuffer SourceBase::
 {
     TIME_SOURCEBASE TaskTimer tt("%s::readChecked( %s )", vartype(*this).c_str(), I.toString().c_str());
 
-    BOOST_ASSERT( I.count() );
+    EXCEPTION_ASSERT( I.count() );
 
     pBuffer r = read(I);
 
     // Check if read returned the first sample in interval I
     Interval i(I.first, I.first + 1);
-    BOOST_ASSERT( (i & r->getInterval()) == i );
+    EXCEPTION_ASSERT( (i & r->getInterval()) == i );
 
     return r;
 }
@@ -121,7 +121,7 @@ string SourceBase::
 pBuffer SourceBase::
         zeros( const Interval& I )
 {
-    BOOST_ASSERT( I.count() );
+    EXCEPTION_ASSERT( I.count() );
 
     TIME_SOURCEBASE TaskTimer tt("%s.%s %s",
                   vartype(*this).c_str(), __FUNCTION__ ,

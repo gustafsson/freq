@@ -203,7 +203,7 @@ void SinkSource::
 #endif
 
     if (!_cache.empty())
-        BOOST_ASSERT(_cache.front()->sample_rate() == b.sample_rate());
+        EXCEPTION_ASSERT(_cache.front()->sample_rate() == b.sample_rate());
 
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
         **itr |= b;
@@ -251,18 +251,18 @@ pBuffer SinkSource::
         validFetch.first = I.last;
     if (validFetch.first > I.first)
     {
-        BOOST_ASSERT( Interval(I.first, validFetch.first) );
+        EXCEPTION_ASSERT( Interval(I.first, validFetch.first) );
         return zeros(Interval(I.first, validFetch.first));
     }
 
     std::vector<pBuffer>::const_iterator itr = findBuffer(I.first);
 
-    BOOST_ASSERT( itr != _cache.end() );
+    EXCEPTION_ASSERT( itr != _cache.end() );
 
     pBuffer b = *itr;
     if ((b->getInterval() & _valid_samples) == b->getInterval())
     {
-        BOOST_ASSERT( Interval(I.first, I.first+1) & b->getInterval() );
+        EXCEPTION_ASSERT( Interval(I.first, I.first+1) & b->getInterval() );
         return b;
     }
 
@@ -310,7 +310,7 @@ pBuffer SinkSource::
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
-    BOOST_ASSERT( !_cache.empty() );
+    EXCEPTION_ASSERT( !_cache.empty() );
 
     if (_cache.empty())
         return pBuffer();

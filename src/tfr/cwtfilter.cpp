@@ -35,7 +35,7 @@ CwtFilter::
         t = pTransform(new Cwt());
 
     Cwt* c = dynamic_cast<Cwt*>(t.get());
-    BOOST_ASSERT( c );
+    EXCEPTION_ASSERT( c );
 
     transform( t );
 }

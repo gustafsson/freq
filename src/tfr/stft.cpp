@@ -3,6 +3,7 @@
 #include "complexbuffer.h"
 #include "signal/buffersource.h"
 #include "cpumemorystorage.h"
+#include "exceptionassert.h"
 
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
@@ -21,6 +22,9 @@
 //#define TEST_FT_INVERSE
 #define TEST_FT_INVERSE if(0)
 
+
+#define STFT_ASSERT EXCEPTION_ASSERT
+// #define STFT_ASSERT EXCEPTION_ASSERT
 
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
 #define USE_CUFFT
@@ -81,7 +85,7 @@ pChunk Fft::
     }
     else
     {
-        BOOST_ASSERT(output_n.width == input_n.width);
+        STFT_ASSERT(output_n.width == input_n.width);
 
         if (output_n.width != input_n.width)
         {
@@ -304,7 +308,7 @@ Tfr::pChunk Stft::
         float* breal_p = breal->waveform_data()->getCpuMemory();
         Signal::IntervalType breal_length = breal->number_of_samples();
         Signal::IntervalType binv_length = binv->number_of_samples();
-        BOOST_ASSERT( breal_length == binv_length );
+        STFT_ASSERT( breal_length == binv_length );
         float maxd = 0;
         for(Signal::IntervalType i =0; i<breal_length; i++)
         {
@@ -329,7 +333,7 @@ Tfr::pChunk Stft::
 Tfr::pChunk Stft::
         ComputeChunk(DataStorage<float>::Ptr inputbuffer)
 {
-    BOOST_ASSERT( 0!=p.chunk_size() );
+    STFT_ASSERT( 0!=p.chunk_size() );
 
     DataStorageSize actualSize(
             p.chunk_size()/2 + 1,
@@ -356,7 +360,7 @@ Tfr::pChunk Stft::
     Tfr::ChunkData::Ptr input( new Tfr::ChunkData( inputbuffer->size()));
     ::stftToComplex( inputbuffer, input );
 
-    BOOST_ASSERT( 0!=p.chunk_size() );
+    STFT_ASSERT( 0!=p.chunk_size() );
 
     DataStorageSize n(
             p.chunk_size(),
@@ -383,19 +387,19 @@ Tfr::pChunk Stft::
 Signal::pMonoBuffer Stft::
         inverse( pChunk chunk )
 {
-    BOOST_ASSERT( p.averaging() == 1 );
+    STFT_ASSERT( p.averaging() == 1 );
 
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
-    BOOST_ASSERT( stftchunk );
+    STFT_ASSERT( stftchunk );
     if (!(0<stftchunk->n_valid_samples))
     {
-        BOOST_ASSERT( 0<stftchunk->n_valid_samples );
+        STFT_ASSERT( 0<stftchunk->n_valid_samples );
     }
     if (stftchunk->redundant())
         return inverseWithRedundant( chunk );
 
     ComputationCheckError();
-    BOOST_ASSERT( chunk->nChannels() == 1 );
+    STFT_ASSERT( chunk->nChannels() == 1 );
 
     const int chunk_window_size = stftchunk->window_size();
     const int actualSize = stftchunk->nActualScales();
@@ -407,7 +411,7 @@ Signal::pMonoBuffer Stft::
             TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s, nwindows=%d",
                          chunk_window_size, chunk->getInterval().toString().c_str(), nwindows);
 
-    BOOST_ASSERT( 0 != chunk_window_size );
+    STFT_ASSERT( 0 != chunk_window_size );
 
     if (0==nwindows) // not enough data
         return Signal::pMonoBuffer();
@@ -448,7 +452,7 @@ Signal::pMonoBuffer Stft::
 Signal::pMonoBuffer Stft::
         inverseWithRedundant( pChunk chunk )
 {
-    BOOST_ASSERT( chunk->nChannels() == 1 );
+    STFT_ASSERT( chunk->nChannels() == 1 );
     int
             chunk_window_size = chunk->nScales(),
             nwindows = chunk->nSamples();
@@ -456,7 +460,7 @@ Signal::pMonoBuffer Stft::
     TIME_STFT ComputationSynchronize();
     TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
 
-    BOOST_ASSERT( 0!= chunk_window_size );
+    STFT_ASSERT( 0!= chunk_window_size );
 
     if (0==nwindows) // not enough data
         return Signal::pMonoBuffer();
@@ -588,8 +592,8 @@ void Stft::
                     TaskInfo("in0 %dl", in0);
                     TaskInfo("in1 %dl", in1);
                     TaskInfo("in2 %dl", in2);
-                    BOOST_ASSERT(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements());
-                    BOOST_ASSERT(in1 < in2);
+                    STFT_ASSERT(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements());
+                    STFT_ASSERT(in1 < in2);
                 }
             }
 
@@ -654,7 +658,7 @@ void Stft::
 
     TaskInfo("signal->size().width = %u", signal->size().width);
 
-    BOOST_ASSERT( c->n_valid_samples*increment == signal->size().width );
+    STFT_ASSERT( c->n_valid_samples*increment == signal->size().width );
 
     for (pos.z=0; pos.z<windowedSignal->size().depth; ++pos.z)
     {
@@ -763,7 +767,7 @@ DataStorage<float>::Ptr Stft::
     unsigned increment = c->increment();
     unsigned window_size = c->window_size();
     unsigned windowCount = windowedSignal->size().width / window_size;
-    BOOST_ASSERT( int(windowCount*c->window_size()) == windowedSignal->size().width );
+    STFT_ASSERT( int(windowCount*c->window_size()) == windowedSignal->size().width );
 
 
     unsigned L = c->n_valid_samples*increment;

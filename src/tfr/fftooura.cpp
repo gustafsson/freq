@@ -45,7 +45,7 @@ void FftOoura::
     int N = output->size().width;
     int n = input->size().width;
 
-    BOOST_ASSERT( n == N );
+    EXCEPTION_ASSERT( n == N );
 
     if ((int)w.size() != N/2 + magicCheck && !expectPrepared)
     {
@@ -61,7 +61,7 @@ void FftOoura::
         }
     }
 
-    BOOST_ASSERT( (int)w.size() == N/2 + magicCheck );
+    EXCEPTION_ASSERT( (int)w.size() == N/2 + magicCheck );
 
     *output = *input;
     float* q = (float*)CpuMemoryStorage::ReadWrite<1>( output ).ptr();
@@ -75,8 +75,8 @@ void FftOoura::
 
     if (magicCheck)
     {
-        BOOST_ASSERT( magicNumber == ip.back() );
-        BOOST_ASSERT( magicNumber == w.back() );
+        EXCEPTION_ASSERT( magicNumber == ip.back() );
+        EXCEPTION_ASSERT( magicNumber == w.back() );
     }
 }
 
@@ -87,7 +87,7 @@ void FftOoura::
     int denseWidth = output->size().width;
     int redundantWidth = input->size().width;
 
-   BOOST_ASSERT( denseWidth == redundantWidth/2+1 );
+   EXCEPTION_ASSERT( denseWidth == redundantWidth/2+1 );
 
     // interleave input to complex data
     Tfr::ChunkData::Ptr complexinput( new Tfr::ChunkData( input->size()));
@@ -116,7 +116,7 @@ void FftOoura::
     int denseWidth = input->size().width;
     int redundantWidth = output->size().width;
 
-    BOOST_ASSERT( denseWidth == redundantWidth/2+1 );
+    EXCEPTION_ASSERT( denseWidth == redundantWidth/2+1 );
 
     Tfr::ChunkData::Ptr redundantInput( new Tfr::ChunkData( redundantWidth, input->size().height ));
 
@@ -146,7 +146,7 @@ void FftOoura::
     Tfr::ChunkElement* input = CpuMemoryStorage::ReadOnly<1>( inputdata ).ptr();
     Tfr::ChunkElement* output = CpuMemoryStorage::WriteAll<1>( outputdata ).ptr();
 
-    BOOST_ASSERT( inputdata->numberOfBytes() == outputdata->numberOfBytes() );
+    EXCEPTION_ASSERT( inputdata->numberOfBytes() == outputdata->numberOfBytes() );
 
     // Transform signal
 
@@ -182,8 +182,8 @@ void FftOoura::
 
     DataStorageSize actualSize(n.width/2 + 1, n.height);
 
-    BOOST_ASSERT( (int)output->numberOfElements()/actualSize.width == n.height );
-    BOOST_ASSERT( (int)input->numberOfElements()/n.width == n.height );
+    EXCEPTION_ASSERT( (int)output->numberOfElements()/actualSize.width == n.height );
+    EXCEPTION_ASSERT( (int)input->numberOfElements()/n.width == n.height );
 
     // interleave input to complex data
     Tfr::ChunkData::Ptr complexinput( new Tfr::ChunkData( input->size()));
@@ -219,8 +219,8 @@ void FftOoura::
     int batchcount1 = output->numberOfElements()/redundantWidth,
              batchcount2 = input->numberOfElements()/denseWidth;
 
-    BOOST_ASSERT( batchcount1 == batchcount2 );
-    BOOST_ASSERT( (denseWidth-1)*2 == redundantWidth );
+    EXCEPTION_ASSERT( batchcount1 == batchcount2 );
+    EXCEPTION_ASSERT( (denseWidth-1)*2 == redundantWidth );
 
     Tfr::ChunkData::Ptr redundantInput( new Tfr::ChunkData( n.height*redundantWidth ));
 

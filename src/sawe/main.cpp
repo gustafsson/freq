@@ -9,6 +9,7 @@
 #include <neat_math.h>
 #include <computationkernel.h>
 #include <ThreadChecker.h>
+#include "exceptionassert.h"
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -264,6 +265,8 @@ void tstc(C*c)
 
 int main(int argc, char *argv[])
 {
+    ExceptionAssert::installEventHandler ();
+
     if (0)
     {
         Tfr::FreqAxis fa;

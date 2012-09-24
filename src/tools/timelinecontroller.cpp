@@ -117,7 +117,7 @@ void TimelineController::
 void TimelineController::
         embeddedVisibilityChanged(bool visible)
 {
-    BOOST_ASSERT( 0 == dock );
+    EXCEPTION_ASSERT( 0 == dock );
 
     if (!visible)
     {

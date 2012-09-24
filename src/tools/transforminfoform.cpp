@@ -259,7 +259,7 @@ void TransformInfoForm::
     }
     addRow("Sonic AWE caches", DataStorageVoid::getMemorySizeText( cacheByteSize ).c_str());
 
-    BOOST_ASSERT(project->areToolsInitialized());
+    EXCEPTION_ASSERT(project->areToolsInitialized());
 
     Signal::Intervals I = project->worker.todo_list();
 

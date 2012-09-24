@@ -136,7 +136,7 @@ const std::set<pChain>& Layers::
 void Layers::
         addLayer(pChain p )
 {
-    BOOST_ASSERT( !isInSet(p) );
+    EXCEPTION_ASSERT( !isInSet(p) );
     layers_.insert( p );
 }
 
@@ -144,7 +144,7 @@ void Layers::
 void Layers::
         removeLayer(pChain p)
 {
-    BOOST_ASSERT( isInSet(p) );
+    EXCEPTION_ASSERT( isInSet(p) );
     layers_.erase( p );
 }
 
@@ -183,7 +183,7 @@ Target::
 {
     TaskInfo("Target name %s", name_.c_str());
     // all_layers_ might not actually be needed, but, project() is for update_view
-    BOOST_ASSERT( all_layers_ );
+    EXCEPTION_ASSERT( all_layers_ );
 
     post_sink_->source( reroute_channels_ );
     update_view_->source( post_sink_ );
@@ -220,9 +220,9 @@ Sawe::Project* Target::
 void Target::
         addLayerHead(pChainHead p)
 {
-    BOOST_ASSERT( p );
-    BOOST_ASSERT( !isInSet(p->chain()) );
-    //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
+    EXCEPTION_ASSERT( p );
+    EXCEPTION_ASSERT( !isInSet(p->chain()) );
+    //EXCEPTION_ASSERT( all_layers_->isInSet(p->chain()) );
 
     Signal::Intervals was_zero = read_->zeroed_samples_recursive();
 
@@ -239,8 +239,8 @@ void Target::
 void Target::
         removeLayerHead(pChainHead p)
 {
-    BOOST_ASSERT( isInSet(p->chain()) );
-    //BOOST_ASSERT( all_layers_->isInSet(p->chain()) );
+    EXCEPTION_ASSERT( isInSet(p->chain()) );
+    //EXCEPTION_ASSERT( all_layers_->isInSet(p->chain()) );
 
     Signal::Intervals was_zero = read_->zeroed_samples_recursive();
 

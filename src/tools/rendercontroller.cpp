@@ -71,7 +71,7 @@ public:
             controller_(controller),
             prevSignal( o->getInterval() )
     {
-        BOOST_ASSERT( o );
+        EXCEPTION_ASSERT( o );
         Operation::source(o);
     }
 
@@ -546,7 +546,7 @@ Tfr::Filter* RenderController::
     if (ps->sinks().empty())
         return 0;
     BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
-    BOOST_ASSERT( bfs != 0 );
+    EXCEPTION_ASSERT( bfs != 0 );
     Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->Operation::source().get());
     return filter;
 }
@@ -571,7 +571,7 @@ float RenderController::
         currentTransformMinHz()
 {
     Tfr::Transform* t = currentTransform();
-    BOOST_ASSERT(t);
+    EXCEPTION_ASSERT(t);
     return t->transformParams()->freqAxis(headSampleRate()).min_hz;
 }
 
@@ -776,7 +776,7 @@ void RenderController::
 RenderModel *RenderController::
         model()
 {
-    BOOST_ASSERT( view );
+    EXCEPTION_ASSERT( view );
     return view->model;
 }
 

@@ -51,8 +51,8 @@ WriteWav::
 Signal::pBuffer WriteWav::
         read(const Signal::Interval& J)
 {
-    BOOST_ASSERT(source());
-    BOOST_ASSERT(J.count());
+    EXCEPTION_ASSERT(source());
+    EXCEPTION_ASSERT(J.count());
 
     if (_invalid_samples.empty())
     {
@@ -85,8 +85,8 @@ Signal::pBuffer WriteWav::
     Signal::pBuffer b = source()->read(I);
 
     // Check if read contains I.first
-    BOOST_ASSERT(b->sample_offset().asInteger() <= I.first);
-    BOOST_ASSERT(b->sample_offset().asInteger() + b->number_of_samples() > I.first);
+    EXCEPTION_ASSERT(b->sample_offset().asInteger() <= I.first);
+    EXCEPTION_ASSERT(b->sample_offset().asInteger() + b->number_of_samples() > I.first);
 
     put(b);
 
@@ -104,7 +104,7 @@ void WriteWav::
     if (buffer->getInterval() - _invalid_samples)
     {
         Signal::Interval expected = (buffer->getInterval() & _invalid_samples).spannedInterval();
-        BOOST_ASSERT( expected );
+        EXCEPTION_ASSERT( expected );
 
         buffer = Signal::BufferSource(buffer).readFixedLength( expected );
     }
@@ -206,8 +206,8 @@ void WriteWav::
     TIME_WRITEWAV TaskTimer tt("%s %s %s", __FUNCTION__, _filename.c_str(),
                                b->getInterval().toString().c_str());
 
-    BOOST_ASSERT( _sndfile );
-    BOOST_ASSERT( *_sndfile );
+    EXCEPTION_ASSERT( _sndfile );
+    EXCEPTION_ASSERT( *_sndfile );
 
     DataStorage<float> interleaved_data(b->number_of_channels (), b->number_of_samples());
     TIME_WRITEWAV_LINE(Signal::transpose( &interleaved_data, b->mergeChannelData().get() ));

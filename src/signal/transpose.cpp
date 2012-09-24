@@ -9,8 +9,8 @@ void transpose(DataStorage<float>* dest, DataStorage<float>* src)
 {
     DataStorageSize sz = dest->size();
 
-    BOOST_ASSERT( dest->numberOfElements() == src->numberOfElements() );
-    BOOST_ASSERT( sz.depth == 1 );
+    EXCEPTION_ASSERT( dest->numberOfElements() == src->numberOfElements() );
+    EXCEPTION_ASSERT( sz.depth == 1 );
 
     float* destp = CpuMemoryStorage::WriteAll<float,3>( dest ).ptr();
     float* srcp = CpuMemoryStorage::ReadOnly<float,3>( src ).ptr();

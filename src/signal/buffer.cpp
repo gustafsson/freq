@@ -24,8 +24,8 @@ MonoBuffer::
 :   sample_offset_(I.first),
     sample_rate_(fs)
 {
-    BOOST_ASSERT( 0 < I.count ());
-    BOOST_ASSERT( 0 < sample_rate() );
+    EXCEPTION_ASSERT( 0 < I.count ());
+    EXCEPTION_ASSERT( 0 < sample_rate() );
 
     time_series_.reset( new TimeSeriesData(DataStorageSize( I.count ())));
 }
@@ -36,8 +36,8 @@ MonoBuffer::
 :   sample_offset_(first_sample),
     sample_rate_(fs)
 {
-    BOOST_ASSERT( 0 < numberOfSamples );
-    BOOST_ASSERT( 0 < sample_rate() );
+    EXCEPTION_ASSERT( 0 < numberOfSamples );
+    EXCEPTION_ASSERT( 0 < sample_rate() );
 
     time_series_.reset( new TimeSeriesData(DataStorageSize( numberOfSamples )));
 }
@@ -48,9 +48,9 @@ MonoBuffer::
 :   sample_offset_(first_sample),
     sample_rate_(fs)
 {
-    BOOST_ASSERT( 0 < sample_rate() );
-    BOOST_ASSERT( 1 == p->size ().height);
-    BOOST_ASSERT( 1 == p->size ().depth);
+    EXCEPTION_ASSERT( 0 < sample_rate() );
+    EXCEPTION_ASSERT( 1 == p->size ().height);
+    EXCEPTION_ASSERT( 1 == p->size ().depth);
 
     time_series_.reset( new TimeSeriesData(p->size ()));
 
@@ -220,8 +220,8 @@ Buffer::
        float sample_rate,
        unsigned number_of_channels)
 {
-    BOOST_ASSERT( 0 < sample_rate );
-    BOOST_ASSERT( 0 < number_of_channels );
+    EXCEPTION_ASSERT( 0 < sample_rate );
+    EXCEPTION_ASSERT( 0 < number_of_channels );
 
     channels_.resize(number_of_channels);
     for (unsigned i=0; i<number_of_channels; ++i)
@@ -235,8 +235,8 @@ Buffer::
        float sample_rate,
        unsigned number_of_channels)
 {
-    BOOST_ASSERT( 0 < sample_rate );
-    BOOST_ASSERT( 0 < number_of_channels );
+    EXCEPTION_ASSERT( 0 < sample_rate );
+    EXCEPTION_ASSERT( 0 < number_of_channels );
 
     channels_.resize(number_of_channels);
     for (unsigned i=0; i<number_of_channels; ++i)
@@ -256,7 +256,7 @@ Buffer::
         Buffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate)
 {
     DataStorageSize sz = ptr->size ();
-    BOOST_ASSERT( 1 == sz.depth );
+    EXCEPTION_ASSERT( 1 == sz.depth );
     channels_.resize (sz.height);
 
     float* p = ptr->getCpuMemory ();
@@ -319,7 +319,7 @@ pTimeSeriesData Buffer::
 Buffer& Buffer::
         operator|=(const Buffer& b)
 {
-    BOOST_ASSERT( b.number_of_channels () == number_of_channels ());
+    EXCEPTION_ASSERT( b.number_of_channels () == number_of_channels ());
     for (unsigned i=0; i<number_of_channels(); ++i)
         *channels_[i] |= *b.getChannel (i);
     return *this;
@@ -329,7 +329,7 @@ Buffer& Buffer::
 Buffer& Buffer::
         operator+=(const Buffer& b)
 {
-    BOOST_ASSERT( b.number_of_channels () == number_of_channels ());
+    EXCEPTION_ASSERT( b.number_of_channels () == number_of_channels ());
     for (unsigned i=0; i<number_of_channels(); ++i)
         *channels_[i] += *b.getChannel (i);
     return *this;

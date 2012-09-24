@@ -311,9 +311,9 @@ std::string OperationOnSelection::
 void OperationOnSelection::
         reset( pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
 {
-    BOOST_ASSERT(insideSelection);
-    BOOST_ASSERT(outsideSelection);
-    BOOST_ASSERT(operation);
+    EXCEPTION_ASSERT(insideSelection);
+    EXCEPTION_ASSERT(outsideSelection);
+    EXCEPTION_ASSERT(operation);
 
     insideSelection_ = insideSelection;
     operation_ = operation;

@@ -25,8 +25,8 @@ void FftCufft::
     TIME_STFT TaskTimer tt("FFt cufft");
 
     cufftComplex* d = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
-    BOOST_ASSERT( sizeof(cufftComplex) == sizeof(std::complex<float>));
-    BOOST_ASSERT( sizeof(cufftComplex) == sizeof(float2));
+    EXCEPTION_ASSERT( sizeof(cufftComplex) == sizeof(std::complex<float>));
+    EXCEPTION_ASSERT( sizeof(cufftComplex) == sizeof(float2));
     unsigned inN = input->sizeInBytes().width,
              outN = output->numberOfBytes();
     if (inN<outN)
@@ -57,7 +57,7 @@ void FftCufft::
     cufftReal* i = CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
     cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
 
-    BOOST_ASSERT( input->size().width/2 + 1 == output->size().width);
+    EXCEPTION_ASSERT( input->size().width/2 + 1 == output->size().width);
 
     CufftException_SAFE_CALL(cufftExecR2C(
         CufftHandleContext(0, CUFFT_R2C)(input->size().width, 1),
@@ -71,7 +71,7 @@ void FftCufft::
     cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
     cufftReal* o = CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
 
-    BOOST_ASSERT( output->size().width/2 + 1 == input->size().width);
+    EXCEPTION_ASSERT( output->size().width/2 + 1 == input->size().width);
 
     CufftException_SAFE_CALL(cufftExecC2R(
         CufftHandleContext(0, CUFFT_C2R)(output->size().width, 1),
@@ -85,7 +85,7 @@ void FftCufft::
 //    cufftComplex* i = (cufftComplex*)CudaGlobalStorage::ReadOnly<1>( input ).device_ptr();
 //    cufftComplex* o = (cufftComplex*)CudaGlobalStorage::WriteAll<1>( output ).device_ptr();
 
-//    BOOST_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
+//    EXCEPTION_ASSERT( output->numberOfBytes() == input->numberOfBytes() );
 
 //    CufftException_SAFE_CALL(cufftExecC2C(
 //        CufftHandleContext(0, CUFFT_C2C)(n.width, n.height),
@@ -201,7 +201,7 @@ void FftCufft::
 
     TIME_STFT TaskTimer tt2("Stft::operator compute");
 
-    BOOST_ASSERT( slices > 0 );
+    EXCEPTION_ASSERT( slices > 0 );
 
     CufftHandleContext
             _handle_ctx_r2c(0, CUFFT_R2C);
@@ -357,13 +357,13 @@ unsigned FftCufft::
     //return lpo2s(x);
 
     multiple = std::max(1u, multiple);
-    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
+    EXCEPTION_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
 
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};
     unsigned N_bases = 4; // could limit to 2 bases
     unsigned x2 = multiple*findLargestSmaller(bases, a, 0, int_div_ceil(x, multiple), 0, N_bases);
-    BOOST_ASSERT( x2 < x );
+    EXCEPTION_ASSERT( x2 < x );
     return x2;
 }
 
@@ -375,13 +375,13 @@ unsigned FftCufft::
     //return spo2g(x);
 
     multiple = std::max(1u, multiple);
-    BOOST_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
+    EXCEPTION_ASSERT( spo2g(multiple-1) == lpo2s(multiple+1));
 
     unsigned bases[]={2, 3, 5, 7};
     unsigned a[]={0, 0, 0, 0};
     unsigned N_bases = 4;
     unsigned x2 = multiple*findSmallestGreater(bases, a, 0, x/multiple, 0, N_bases);
-    BOOST_ASSERT( x2 > x );
+    EXCEPTION_ASSERT( x2 > x );
     return x2;
 }
 

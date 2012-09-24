@@ -62,7 +62,7 @@ DropNotifyForm::
     this->setAttribute( Qt::WA_DeleteOnClose );
 
     parentLayout = dynamic_cast<QVBoxLayout*>(parent->layout());
-    BOOST_ASSERT( parentLayout );
+    EXCEPTION_ASSERT( parentLayout );
     parentLayout->insertWidget( 0, this );
     spacing = parentLayout->spacing();
     parentLayout->setSpacing( 0 );

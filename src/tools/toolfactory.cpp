@@ -222,13 +222,13 @@ ToolFactory::
 
     delete _fantracker_controller;
 
-    BOOST_ASSERT( _timeline_controller );
+    EXCEPTION_ASSERT( _timeline_controller );
 	delete _timeline_controller;
 
-    BOOST_ASSERT( _timeline_view );
+    EXCEPTION_ASSERT( _timeline_view );
     delete _timeline_view;
 
-    BOOST_ASSERT( _render_view );
+    EXCEPTION_ASSERT( _render_view );
     delete _render_view;
 }
 
@@ -240,7 +240,7 @@ ToolFactory::
             selection_model( 0 ),
             playback_model( 0 )
 {
-    BOOST_ASSERT( false );
+    EXCEPTION_ASSERT( false );
 }
 
 

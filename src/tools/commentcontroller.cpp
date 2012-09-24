@@ -168,7 +168,7 @@ void CommentController::
 void CommentController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    BOOST_ASSERT( comment_ );
+    EXCEPTION_ASSERT( comment_ );
 
     bool use_heightmap_value = true;
 

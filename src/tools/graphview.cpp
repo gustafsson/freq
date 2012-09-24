@@ -219,7 +219,7 @@ vertex_descriptor first_common_vertex(const vertex_descriptor& source, const ver
 
 static void updateOperationsTree( OperationGraph::vertex_descriptor v, OperationGraph& graph, QTreeWidgetItem* w, OperationGraph::vertex_descriptor stop )
 {
-    BOOST_ASSERT( w );
+    EXCEPTION_ASSERT( w );
 
     const TitleAndTooltip& tat = graph[v];
     QTreeWidgetItem* child = new QTreeWidgetItem( 0 );

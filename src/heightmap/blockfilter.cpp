@@ -157,11 +157,11 @@ void BlockFilter::
         Signal::Interval usableInInterval2 = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples2);
     }
 
-    BOOST_ASSERT( s2 >= t2 );
-    BOOST_ASSERT( s1 <= t1 );
-    BOOST_ASSERT(blockSpannedBlockSamples.count() == block->reference().samplesPerBlock());
-    BOOST_ASSERT(usableBlockInterval == blockInterval);
-    BOOST_ASSERT(usableInInterval.first >= inInterval.first || usableInInterval.last <= inInterval.last);
+    EXCEPTION_ASSERT( s2 >= t2 );
+    EXCEPTION_ASSERT( s1 <= t1 );
+    EXCEPTION_ASSERT(blockSpannedBlockSamples.count() == block->reference().samplesPerBlock());
+    EXCEPTION_ASSERT(usableBlockInterval == blockInterval);
+    EXCEPTION_ASSERT(usableInInterval.first >= inInterval.first || usableInInterval.last <= inInterval.last);
 #endif
 
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
@@ -334,7 +334,7 @@ void BlockFilter::
             s.scale / schunk.scale * chunk.nScales() + .5f)
         );
 
-    BOOST_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->size().width );
+    EXCEPTION_ASSERT( chunk.first_valid_sample+chunk.n_valid_samples <= chunk.transform_data->size().width );
 
     enable_subtexel_aggregation &= full_resolution;
 
@@ -425,7 +425,7 @@ void CwtToBlock::
         mergeChunk( pBlock block, const ChunkAndInverse& chunk, Block::pData outData )
 {
     Cwt* cwt = dynamic_cast<Cwt*>(transform().get());
-    BOOST_ASSERT( cwt );
+    EXCEPTION_ASSERT( cwt );
     bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
     float normalization_factor = cwt->nScales( chunk.chunk->original_sample_rate )/cwt->sigma();
 
@@ -463,7 +463,7 @@ void StftToBlock::
         mergeChunk( pBlock block, const ChunkAndInverse& chunk, Block::pData outData )
 {
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.chunk.get ());
-    BOOST_ASSERT( stftchunk );
+    EXCEPTION_ASSERT( stftchunk );
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
     mergeColumnMajorChunk(block, chunk, outData, normalization_factor);
 }
@@ -554,7 +554,7 @@ void DrawnWaveformToBlock::
     Tfr::FreqAxis fa = c->display_scale();
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
     {
-        BOOST_ASSERT( fa.max_frequency_scalar == 1.f );
+        EXCEPTION_ASSERT( fa.max_frequency_scalar == 1.f );
         fa.axis_scale = Tfr::AxisScale_Linear;
         fa.min_hz = chunk.freqAxis.min_hz;
         fa.f_step = -2*fa.min_hz;

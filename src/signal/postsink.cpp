@@ -187,7 +187,7 @@ pOperation PostSink::
     if (!s.empty())
         return s.back();
 
-    BOOST_ASSERT( false );
+    EXCEPTION_ASSERT( false );
 
     if (!_filter)
         return _filter;
@@ -220,7 +220,7 @@ void PostSink::
 {
 #ifndef SAWE_NO_MUTEX
     // make sure to lock _sinks_lock outside this
-    BOOST_ASSERT( false == _sinks_lock.tryLock() );
+    EXCEPTION_ASSERT( false == _sinks_lock.tryLock() );
 #endif
 
     pOperation v = source();
@@ -362,7 +362,7 @@ std::vector<pOperation> PostSink::
 void PostSink::
         sinks(std::vector<pOperation> v)
 {
-    BOOST_ASSERT( v.size() <= 1 );
+    EXCEPTION_ASSERT( v.size() <= 1 );
 
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
@@ -372,7 +372,7 @@ void PostSink::
     BOOST_FOREACH( pOperation o, v )
     {
         Sink* s = dynamic_cast<Sink*>(o.get());
-        BOOST_ASSERT( s );
+        EXCEPTION_ASSERT( s );
     }
 
     _sinks = v;
