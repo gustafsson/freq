@@ -75,6 +75,15 @@ profiling {
     !win32:QMAKE_LFLAGS_RELEASE += -pg
 }
 
+
+# Use macports gcc 4.7 if available, necessary to build for openmp on Mac
+system(which /opt/local/bin/g++-mp-4.7): CONFIG += gcc-mp-4.7
+gcc-mp-4.7 {
+    QMAKE_CXX = /opt/local/bin/g++-mp-4.7
+    QMAKE_CC = /opt/local/bin/gcc-mp-4.7
+    QMAKE_LINK = /opt/local/bin/g++-mp-4.7
+}
+
 ### Settings for using llvm instead of gcc on linux
 llvm {
     QMAKE_CXX = llvm-g++
@@ -88,13 +97,6 @@ gcc-4.3 {
     QMAKE_LINK = g++-4.3
 }
 
-# Use macports gcc 4.7 if available, necessary to build for openmp on Mac
-system(which /opt/local/bin/g++-mp-4.7): CONFIG += gcc-mp-4.7
-gcc-mp-4.7 {
-    QMAKE_CXX = /opt/local/bin/g++-mp-4.7
-    QMAKE_CC = /opt/local/bin/gcc-mp-4.7
-    QMAKE_LINK = /opt/local/bin/g++-mp-4.7
-}
 
 #gold-linker {
 #    QMAKE_LINK = gold
