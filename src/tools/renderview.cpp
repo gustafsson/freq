@@ -865,7 +865,7 @@ void RenderView::
 void RenderView::
         userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
 {
-    TaskInfo("userinput_update (%s%s%s)",
+    TIME_PAINTGL TaskInfo("userinput_update (%s%s%s)",
              request_high_fps?"request_high_fps":" ",
              post_update?"post_update":" ",
              cheat_also_high?"cheat_also_high":" ");

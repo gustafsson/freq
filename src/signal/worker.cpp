@@ -23,8 +23,8 @@
 #include <boost/foreach.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#define TIME_WORKER
-//#define TIME_WORKER if(0)
+//#define TIME_WORKER
+#define TIME_WORKER if(0)
 
 //#define WORKER_INFO
 #define WORKER_INFO if(0)

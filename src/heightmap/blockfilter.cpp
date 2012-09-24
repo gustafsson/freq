@@ -120,9 +120,9 @@ void BlockFilter::
     Signal::Interval transfer = usableInInterval&blockInterval;
 
 #ifdef _DEBUG
-    if (!spannedBlockSamples && transfer)
+    if (!transfer || !spannedBlockSamples)
     {
-        TaskInfo("%s", str(format("Warning: !spannedBlockSamples && transfer.~\nspannedBlockSamples=%s\ntransfer=%s") % spannedBlockSamples.toString() % transfer.toString()).c_str());
+        TaskInfo("%s", str(format("Warning: !transfer || !spannedBlockSamples.~\nspannedBlockSamples=%s\ntransfer=%s\nusableInInterval=%s\nblockInterval=%s") % spannedBlockSamples.toString() % transfer.toString() % usableInInterval.toString () % blockInterval.toString ()).c_str());
     }
 #endif
 
