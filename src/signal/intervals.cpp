@@ -2,12 +2,11 @@
 
 #include <stdexcept>
 #include <boost/assert.hpp>
+#include <boost/foreach.hpp>
 #include <cfloat>
 #include <TaskTimer.h>
 #include <sstream>
 #include <limits.h>
-
-#include <QtGlobal> // foreach
 
 namespace Signal {
 
@@ -34,7 +33,8 @@ Interval::
     :
     first(first), last(last)
 {
-    BOOST_ASSERT( valid() );
+    if (!valid())
+        BOOST_ASSERT( valid() );
 }
 
 
@@ -99,7 +99,7 @@ Intervals::
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
-    foreach (const Interval& r,  b)
+    BOOST_FOREACH (const Interval& r, b)
         operator |= ( r );
     return *this;
 }
@@ -153,7 +153,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    foreach (const Interval& r,  b)
+    BOOST_FOREACH (const Interval& r,  b)
         operator-=( r );
     return *this;
 }
@@ -257,9 +257,9 @@ Intervals& Intervals::
     // TODO optimize
     Intervals rebuild;
 
-    foreach (const Interval& r,  b) {
+    BOOST_FOREACH (const Interval& r,  b) {
         Intervals copy = *this;
-        copy&=( r );
+        copy &= r;
         rebuild |= copy;
     }
 
@@ -438,7 +438,7 @@ Intervals Intervals::
         enlarge( IntervalType dt ) const
 {
     Intervals I;
-    foreach (Interval r, *this)
+    BOOST_FOREACH (Interval r, *this)
     {
         if (r.first > Interval::IntervalType_MIN + dt)
             r.first -= dt;
@@ -460,7 +460,7 @@ Intervals Intervals::
         shrink( IntervalType dt ) const
 {
     Intervals I;
-    foreach (Interval r, *this)
+    BOOST_FOREACH (Interval r, *this)
     {
         if (r.first > Interval::IntervalType_MIN)
         {
@@ -487,7 +487,7 @@ IntervalType Intervals::
 {
     IntervalType c = 0;
 
-    foreach (const Interval& r, *this)
+    BOOST_FOREACH (const Interval& r, *this)
     {
         c += r.count();
     }
@@ -521,7 +521,7 @@ std::string Intervals::
     if (1<size())
         ss << size() << "#";
 
-    foreach (const Interval& r, *this)
+    BOOST_FOREACH (const Interval& r, *this)
     {
         if (1<size())
             ss << " ";
