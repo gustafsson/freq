@@ -150,7 +150,7 @@ pBuffer OperationInsertSilence::
     if (I.first >= section_.last) {
         pBuffer b = source()->readFixedLength(
                 (Intervals( I ) >> section_.count()).spannedInterval());
-        b->sample_offset += section_.count();
+        b->set_sample_offset ( b->sample_offset () + section_.count() );
         return b;
     }
 
@@ -235,46 +235,27 @@ void OperationSuperposition::
 pBuffer OperationSuperposition::
         read( const Interval& I )
 {   
-    pBuffer a, b;
+    pBuffer a = source()->read( I );
+    pBuffer b = _source2->read( I );
 
-    if ( Operation::get_channel() == get_channel() )
-        a = source()->read( I );
-    if ( _source2->get_channel() == get_channel() )
-        b = _source2->read( I );
-
-    if ( a && b )
-        return superPosition(a, b);
-    else if (a)
-        return a;
-    else if (b)
-        return b;
-    else
-        return Operation::zeros( I );
+    return superPosition(a, b, false);
 }
 
 
 pBuffer OperationSuperposition::
-        superPosition( pBuffer a, pBuffer b )
+        superPosition( pBuffer a, pBuffer b, bool inclusive )
 {
-    BOOST_ASSERT( a->sample_rate == b->sample_rate );
-    IntervalType offset = std::max(a->sample_offset.asInteger(), b->sample_offset.asInteger());
-    IntervalType length = std::min(
-            a->sample_offset.asInteger() + a->number_of_samples(),
-            b->sample_offset.asInteger() + b->number_of_samples() );
-    length -= offset;
+    BOOST_ASSERT( a->sample_rate () == b->sample_rate () );
+    BOOST_ASSERT( a->number_of_channels () == b->number_of_channels () );
+    Interval I;
+    if (inclusive)
+        I = a->getInterval ().spanned ( b->getInterval () );
+    else
+        I = a->getInterval () & b->getInterval ();
 
-    pBuffer r(new Buffer( offset, length, a->sample_rate ));
-
-    float *pa = a->waveform_data()->getCpuMemory();
-    float *pb = b->waveform_data()->getCpuMemory();
-    float *pr = r->waveform_data()->getCpuMemory();
-
-    pa += (r->sample_offset - a->sample_offset).asInteger();
-    pb += (r->sample_offset - b->sample_offset).asInteger();
-
-    for (unsigned i=0; i<r->number_of_samples(); i++)
-        pr[i] = pa[i] + pb[i];
-
+    pBuffer r(new Buffer( I.first, I.count (), a->sample_rate (), a->number_of_channels ()));
+    *r += *a;
+    *r += *b;
     return r;
 }
 
@@ -290,24 +271,6 @@ unsigned OperationSuperposition::
         num_channels()
 {
     return std::max( Operation::num_channels(), _source2->num_channels() );
-}
-
-
-void OperationSuperposition::
-        set_channel(unsigned c)
-{
-    if (c < _source2->num_channels())
-        _source2->set_channel(c);
-
-    if (c < Operation::num_channels())
-        Operation::set_channel(c);
-}
-
-
-unsigned OperationSuperposition::
-        get_channel()
-{
-    return std::max( Operation::get_channel(), _source2->get_channel() );
 }
 
 
@@ -339,8 +302,7 @@ OperationAddChannels::
         OperationAddChannels( pOperation source, pOperation source2 )
     :
     Operation(source),
-    source2_(source2),
-    current_channel_(0)
+    source2_(source2)
 {
 }
 
@@ -348,10 +310,19 @@ OperationAddChannels::
 pBuffer OperationAddChannels::
         read( const Interval& I )
 {
-    if (current_channel_< source()->num_channels())
-        return source()->read( I );
-    else
-        return source2_->read( I );
+    pBuffer b1 = source()->read( I );
+    pBuffer b2 = source2_->readFixedLength( b1->getInterval() );
+    int c1 = b1->number_of_channels();
+    int c2 = b2->number_of_channels();
+
+    pBuffer r(new Buffer(b1->getInterval(), b1->sample_rate(), c1+c2));
+
+    for (int c=0; c<c1; ++c)
+        *r->getChannel(c) |= *b1->getChannel(c);
+    for (int c=c1; c<c1+c2; ++c)
+        *r->getChannel(c) |= *b2->getChannel(c - c1);
+
+    return r;
 }
 
 
@@ -366,18 +337,6 @@ unsigned OperationAddChannels::
         num_channels()
 {
     return source()->num_channels() + source2_->num_channels();
-}
-
-
-void OperationAddChannels::
-        set_channel(unsigned c)
-{
-    BOOST_ASSERT( c < num_channels() );
-    if (c < source()->num_channels())
-        source()->set_channel(c);
-    else
-        source2_->set_channel(c - source()->num_channels());
-    current_channel_ = c;
 }
 
 
@@ -396,24 +355,12 @@ OperationSuperpositionChannels::
 pBuffer OperationSuperpositionChannels::
         read( const Interval& I )
 {
-    pBuffer sum;
-    for (unsigned c = 0; c < source()->num_channels(); c++)
-    {
-        source()->set_channel( c );
-        pBuffer b = source()->read( I );
-        if (sum)
-            sum = OperationSuperposition::superPosition(sum, b);
-        else
-            sum = b;
-    }
-    return sum;
-}
-
-
-void OperationSuperpositionChannels::
-        set_channel(unsigned c)
-{
-    BOOST_ASSERT( c == 0 );
+    pBuffer b = source()->read( I );
+    pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), 1));
+    pMonoBuffer sum = r->getChannel (0);
+    for (unsigned c = 0; c < b->number_of_channels (); c++)
+        *sum |= *b->getChannel (c);
+    return r;
 }
 
 

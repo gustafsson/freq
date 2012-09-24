@@ -15,7 +15,7 @@ public:
     /**
       This computes the Cepstrum chunk covering a given interval.
       */
-    ChunkAndInverse computeChunk( const Signal::Interval& I );
+    Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
 
     bool exclude_end_block;

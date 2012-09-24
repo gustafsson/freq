@@ -7,7 +7,7 @@ namespace Signal {
 OperationCache::
         OperationCache( pOperation source )
 :   Operation(source),
-    _cache()
+    _cache(source?source->num_channels ():0)
 {
     this->source(source);
 }
@@ -36,7 +36,7 @@ pBuffer OperationCache::
 
 
     // cached samples doesn't count in samplesDesc if they are marked as invalid
-    Intervals cached = _cache.samplesDesc_current_channel() - _cache.invalid_samples_current_channel();
+    Intervals cached = _cache.samplesDesc() - _cache.invalid_samples();
 
     ok = (cached & I).fetchFirstInterval();
 
@@ -54,7 +54,7 @@ pBuffer OperationCache::
     }
 
     Intervals zeroed = zeroed_samples_recursive();
-    _cache.validate_samples( zeroed - _cache.samplesDesc_current_channel() );
+    _cache.validate_samples( zeroed - _cache.samplesDesc() );
     Interval first_zero = (I & zeroed).fetchFirstInterval();
     Interval missing = (I - cached - zeroed).fetchFirstInterval();
 
@@ -71,34 +71,19 @@ pBuffer OperationCache::
                  b?b->getInterval().first:0,
                  b?b->getInterval().last:0);
 
-    unsigned c = get_channel();
-
     if (b)
     {
         Signal::Interval J = b->getInterval();
 
         _cache.put(b);
 
-        if (1<b->channels())
+        if (_invalid_returns & J)
         {
-            Signal::Intervals toinv;
-            for (unsigned d=0; d<b->channels(); d++)
-            {
-                if (_invalid_returns[d] & J)
-                {
-                    toinv |= _invalid_returns[d] & J;
-                    _invalid_returns[d] -= J;
-                }
-            }
-            Operation::invalidate_samples( toinv );
-        }
-        else if (_invalid_returns[c] & J)
-        {
-            Operation::invalidate_samples( _invalid_returns[c] & J );
-            _invalid_returns[c] -= J;
+            Operation::invalidate_samples( _invalid_returns & J );
+            _invalid_returns -= J;
         }
 
-        cached = _cache.samplesDesc_current_channel() - _cache.invalid_samples_current_channel();
+        cached = _cache.samplesDesc () - _cache.invalid_samples ();
         ok = (cached & I).fetchFirstInterval();
         if (ok.first == I.first && ok.count())
         {
@@ -108,7 +93,7 @@ pBuffer OperationCache::
         missing = (I - cached).fetchFirstInterval();
     }
 
-    _invalid_returns[c] |= missing;
+    _invalid_returns |= missing;
 
     if (source())
         b = source()->readFixedLength( missing );
@@ -135,8 +120,8 @@ void OperationCache::
 
     BOOST_ASSERT( 1 <= N );
 
-    _invalid_returns.resize( N );
-    _cache.setNumChannels( N );
+    if (N != _cache.num_channels ())
+        _cache = SinkSource(N);
     _cache.invalidate_samples( I );
     // TODO do this
     //_cache.invalidate_and_forget_samples(I);
@@ -146,7 +131,7 @@ void OperationCache::
 Intervals OperationCache::
         invalid_samples()
 {
-    Intervals c = _cache.invalid_samples_all_channels();
+    Intervals c = _cache.invalid_samples();
     Interval i = getInterval();
     Intervals d = c & i;
     return d;
@@ -156,18 +141,14 @@ Intervals OperationCache::
 Intervals OperationCache::
         cached_samples()
 {
-    return _cache.samplesDesc_all_channels() - _cache.invalid_samples_all_channels() - invalid_returns();
+    return _cache.samplesDesc() - _cache.invalid_samples() - invalid_returns();
 }
 
 
 Intervals OperationCache::
         invalid_returns()
 {
-    Intervals R;
-    for (unsigned i=0; i<_invalid_returns.size(); ++i)
-        R |= _invalid_returns[i];
-
-    return R & getInterval();
+    return _invalid_returns & getInterval();
 }
 
 
@@ -179,28 +160,12 @@ unsigned OperationCache::
 
 
 void OperationCache::
-        set_channel(unsigned c)
-{
-    _cache.set_channel( c );
-    Operation::set_channel( c );
-}
-
-
-unsigned OperationCache::
-        get_channel()
-{
-    return _cache.get_channel();
-}
-
-
-void OperationCache::
         source(pOperation v)
 {
     if (v && dynamic_cast<Signal::FinalSource*>(v->root()))
     {
         unsigned N = v->num_channels();
-        _invalid_returns.resize( N );
-        _cache.setNumChannels( N );
+        _cache = SinkSource(N);
     }
 
     Operation::source( v );

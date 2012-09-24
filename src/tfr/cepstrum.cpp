@@ -28,7 +28,7 @@ Cepstrum::
 
 
 pChunk Cepstrum::
-        operator()( pBuffer b )
+        operator()( pMonoBuffer b )
 {
     TaskTimer tt("Cepstrum");
     Stft& ft = *stft();
@@ -48,7 +48,7 @@ pChunk Cepstrum::
 }
 
 
-Signal::pBuffer Cepstrum::
+Signal::pMonoBuffer Cepstrum::
         inverse( pChunk )
 {
     throw std::logic_error("Not implemented");

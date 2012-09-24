@@ -36,7 +36,7 @@ class SinkSource: public Sink
 {
 public:
     /// @see SinkSource
-    SinkSource();
+    SinkSource( int num_channels );
     SinkSource( const SinkSource& b);
     SinkSource& operator=( const SinkSource& b);
 
@@ -82,6 +82,7 @@ public:
         'samplesDesc().spannedInterval().count'.
       */
     virtual IntervalType number_of_samples();
+    virtual unsigned num_channels() { return _num_channels; }
 
 
     /**
@@ -125,6 +126,8 @@ private:
      * empty buffer with zeroes.
      */
     Intervals _valid_samples;
+
+    int _num_channels;
 
     virtual pOperation source() const { return pOperation(); }
     virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }

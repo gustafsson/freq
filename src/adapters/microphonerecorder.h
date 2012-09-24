@@ -83,7 +83,7 @@ private:
         if (0==N) // workaround for the special case of saving an empty recording.
             N = 1;
 
-        Signal::pBuffer b = readFixedLengthAllChannels( Signal::Interval(0, N) );
+        Signal::pBuffer b = readFixedLength( Signal::Interval(0, N) );
 
         WriteWav::writeToDisk(_filename, b, false);
 
@@ -107,7 +107,7 @@ private:
 
         init();
 
-        _data.put(wavfile->readFixedLengthAllChannels( wavfile->getInterval() ));
+        _data.put(wavfile->readFixedLength( wavfile->getInterval() ));
     }
 };
 

@@ -39,6 +39,7 @@ pBuffer SourceBase::
     return r;
 }
 
+
 pBuffer SourceBase::
         readFixedLength( const Interval& I )
 {
@@ -51,30 +52,21 @@ pBuffer SourceBase::
     if (I == p->getInterval())
         return p;
 
-    // This row gives some performance gain (cpu->gpu copy only once and never back until inverse).
-    // But this also increases complexity to be handled properyl, that is not coded yet.
-    //p->waveform_data()->getCudaGlobal();
+    // Didn't get exact result, prepare new Buffer
+    pBuffer r( new Buffer(I, p->sample_rate(), p->number_of_channels ()) );
 
-    // Didn't get exact result, check if it spans all of I
-    if ( (p->getInterval() & I) == I )
+    for (unsigned c=0; c<r->number_of_channels (); ++c)
     {
-        pBuffer r( new Buffer( I, p ));
-        BOOST_ASSERT( r->getInterval() == I );
-        return r;
+    #ifndef USE_CUDA
+        // Allocate cpu memory and prevent calling an unnecessary clear by flagging the store as up-to-date
+        CpuMemoryStorage::WriteAll<3>( r->getChannel (c)->waveform_data() );
+    #else
+        if (p->getChannel (c)->waveform_data()->HasValidContent<CudaGlobalStorage>())
+            CudaGlobalStorage::WriteAll<3>( r->getChannel (c)->waveform_data() );
+        else
+            CpuMemoryStorage::WriteAll<3>( r->getChannel (c)->waveform_data() );
+    #endif
     }
-
-    // Doesn't span all of I, prepare new Buffer
-    pBuffer r( new Buffer(I.first, I.count(), p->sample_rate ) );
-
-#ifndef USE_CUDA
-    // Allocate cpu memory and prevent calling an unnecessary clear by flagging the store as up-to-date
-    CpuMemoryStorage::WriteAll<3>( r->waveform_data() );
-#else
-    if (p->waveform_data()->HasValidContent<CudaGlobalStorage>())
-        CudaGlobalStorage::WriteAll<3>( r->waveform_data() );
-    else
-        CpuMemoryStorage::WriteAll<3>( r->waveform_data() );
-#endif
 
     Intervals sid(I);
 
@@ -135,7 +127,7 @@ pBuffer SourceBase::
                   vartype(*this).c_str(), __FUNCTION__ ,
                   I.toString().c_str() );
 
-    pBuffer r( new Buffer(I.first, I.count(), sample_rate()) );
+    pBuffer r( new Buffer(I, sample_rate(), num_channels()) );
     // doesn't need to memset 0, will be set by the first initialization of a dataset
     //memset(r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->getSizeInBytes1D());
     return r;

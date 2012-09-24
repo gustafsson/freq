@@ -13,7 +13,7 @@ class FanTrackerFilter : public Tfr::CepstrumFilter
 public:
     FanTrackerFilter();
 
-    virtual void operator()( Tfr::Chunk& );
+    virtual bool operator()( Tfr::Chunk& );
 
     virtual Signal::Intervals affected_samples();
 

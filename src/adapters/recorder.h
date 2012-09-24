@@ -3,7 +3,7 @@
 
 #include <QMutex>
 
-#include "signal/sinksourcechannels.h"
+#include "signal/sinksource.h"
 #include "signal/postsink.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -23,7 +23,7 @@ public:
 
     float time_since_last_update();
     Signal::PostSink* getPostSink() { return &_postsink; }
-    Signal::SinkSourceChannels& data() { return _data; }
+    Signal::SinkSource& data() { return _data; }
 
     // virtual from Signal::FinalSource
     // virtual std::string name() = 0;
@@ -33,13 +33,11 @@ public:
     virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual Signal::IntervalType number_of_samples();
     virtual unsigned num_channels();
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel();
     virtual float length();
 
 protected:
     QMutex _data_lock;
-    Signal::SinkSourceChannels _data;
+    Signal::SinkSource _data;
     Signal::PostSink _postsink;
     float _offset;
     boost::posix_time::ptime _start_recording, _last_update;

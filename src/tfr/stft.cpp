@@ -51,7 +51,7 @@ Fft::
 
 
 pChunk Fft::
-        forward( Signal::pBuffer real_buffer)
+        forward( Signal::pMonoBuffer real_buffer)
 {
     TIME_STFT TaskTimer tt("Fft::forward %s", real_buffer->getInterval().toString().c_str());
 
@@ -77,28 +77,31 @@ pChunk Fft::
         chunk->transform_data.reset( new ChunkData( output_n ));
 
         FftImplementation::Singleton().compute( input, chunk->transform_data, FftDirection_Forward );
-        chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales()/2 );
+        chunk->freqAxis.setLinear( real_buffer->sample_rate(), chunk->nScales()/2 );
     }
     else
     {
         BOOST_ASSERT(output_n.width == input_n.width);
 
         if (output_n.width != input_n.width)
-            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( Signal::Interval( real_buffer->sample_offset.asInteger(), (real_buffer->sample_offset + output_n.width).asInteger()));
+        {
+            Signal::Interval I( real_buffer->sample_offset().asInteger(), (real_buffer->sample_offset() + output_n.width).asInteger());
+            real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( I )->getChannel (0);
+        }
 
         chunk.reset( new StftChunk(output_n.width, StftParams::WindowType_Rectangular, output_n.width, false) );
         output_n.width = ((StftChunk*)chunk.get())->nScales();
         chunk->transform_data.reset( new ChunkData( output_n ));
 
         FftImplementation::Singleton().computeR2C( real_buffer->waveform_data(), chunk->transform_data );
-        chunk->freqAxis.setLinear( real_buffer->sample_rate, chunk->nScales() );
+        chunk->freqAxis.setLinear( real_buffer->sample_rate(), chunk->nScales() );
     }
 
-    chunk->chunk_offset = real_buffer->sample_offset/(float)input_n.width;
+    chunk->chunk_offset = real_buffer->sample_offset()/(float)input_n.width;
     chunk->first_valid_sample = 0;
     chunk->n_valid_samples = 1;
-    chunk->sample_rate = real_buffer->sample_rate/(float)input_n.width;
-    chunk->original_sample_rate = real_buffer->sample_rate;
+    chunk->sample_rate = real_buffer->sample_rate()/(float)input_n.width;
+    chunk->original_sample_rate = real_buffer->sample_rate();
 
     TIME_STFT ComputationSynchronize();
 
@@ -169,12 +172,12 @@ bool Fft::
 }
 
 
-Signal::pBuffer Fft::
+Signal::pMonoBuffer Fft::
         backward( pChunk chunk)
 {
     TIME_STFT TaskTimer tt("Fft::backward %s", chunk->getInterval().toString().c_str());
 
-    Signal::pBuffer r;
+    Signal::pMonoBuffer r;
     float fs = chunk->original_sample_rate;
     if (((StftChunk*)chunk.get())->redundant())
     {
@@ -185,23 +188,23 @@ Signal::pBuffer Fft::
 
         FftImplementation::Singleton().compute( chunk->transform_data, output, FftDirection_Inverse );
 
-        r.reset( new Signal::Buffer(0, scales, fs ));
+        r.reset( new Signal::MonoBuffer(0, scales, fs ));
         ::stftDiscardImag( output, r->waveform_data() );
     }
     else
     {
         unsigned scales = ((StftChunk*)chunk.get())->window_size();
 
-        r.reset( new Signal::Buffer(0, scales, fs ));
+        r.reset( new Signal::MonoBuffer(0, scales, fs ));
 
         FftImplementation::Singleton().computeC2R( chunk->transform_data, r->waveform_data() );
     }
 
     unsigned original_sample_count = chunk->original_sample_rate/chunk->sample_rate + .5f;
     if ( r->number_of_samples() != original_sample_count )
-        r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, original_sample_count ));
+        r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, original_sample_count ))->getChannel (0);
 
-    r->sample_offset = chunk->getInterval().first;
+    r->set_sample_offset( chunk->getInterval().first );
 
     TIME_STFT ComputationSynchronize();
 
@@ -243,7 +246,7 @@ Stft::
 
 
 Tfr::pChunk Stft::
-        operator() (Signal::pBuffer b)
+        operator() (Signal::pMonoBuffer b)
 {
     TIME_STFT TaskTimer ti("Stft::operator, p.chunk_size() = %d, b = %s, computeredundant = %s",
                            p.chunk_size(), b->getInterval().toString().c_str(), p.compute_redundant()?"true":"false");
@@ -271,24 +274,32 @@ Tfr::pChunk Stft::
         chunk->transform_data = averagedOutput;
     }
 
-    chunk->freqAxis = p.freqAxis( b->sample_rate );
+    chunk->freqAxis = p.freqAxis( b->sample_rate() );
     double increment = p.increment();
     double alignment = p.chunk_size();
-    chunk->chunk_offset = (b->sample_offset + (alignment/2 - increment/2))/(increment*p.averaging());
-    // chunk->first_valid_sample only makes sense if the transform is invertible, which it isn't if p.averaging()!=1
-    chunk->first_valid_sample = ceil((alignment/2 - increment/2)/increment);
+
+    //
+    // see class Chunk::first_valid_sample for a definition of these
+    //
+
+    // sample_rate = original_sample_rate/(increment*averaging)
+    chunk->original_sample_rate = b->sample_rate();
+    chunk->sample_rate = chunk->original_sample_rate / (increment*p.averaging());
+    chunk->chunk_offset = b->sample_offset() / (increment*p.averaging());
+    //chunk->chunk_offset = (b->sample_offset() + alignment/2 - increment/2) / (increment*p.averaging());
+    // (note that "first_valid_sample" only makes sense if the transform is invertible, which it isn't if averaging != 1)
+    chunk->first_valid_sample = ceil((alignment - increment)/increment);
     int nSamples = chunk->nSamples();
-    if (nSamples > 2*chunk->first_valid_sample)
-        chunk->n_valid_samples = nSamples - 2*chunk->first_valid_sample;
+    int last_valid_sample = floor((nSamples*increment - alignment + increment)/increment);
+    if ( last_valid_sample >= chunk->first_valid_sample)
+        chunk->n_valid_samples = last_valid_sample - chunk->first_valid_sample;
     else
         chunk->n_valid_samples = 0;
-    chunk->sample_rate = b->sample_rate / (increment*p.averaging());
-    chunk->original_sample_rate = b->sample_rate;
 
     TEST_FT_INVERSE
     {
-        Signal::pBuffer breal = b;
-        Signal::pBuffer binv = inverse( chunk );
+        Signal::pMonoBuffer breal = b;
+        Signal::pMonoBuffer binv = inverse( chunk );
         float* binv_p = binv->waveform_data()->getCpuMemory();
         float* breal_p = breal->waveform_data()->getCpuMemory();
         Signal::IntervalType breal_length = breal->number_of_samples();
@@ -305,9 +316,8 @@ Tfr::pChunk Stft::
         TaskInfo("Difftest %s (value %g)", maxd<1e-9*p.chunk_size() ? "passed" : "failed", maxd);
     }
 
-    TIME_STFT TaskInfo("Stft chunk %s, %s, %s. (%u x %u)",
+    TIME_STFT TaskInfo("Stft chunk %s, %s. (%u x %u)",
                        chunk->getInterval().toString().c_str(),
-                       chunk->getInversedInterval().toString().c_str(),
                        chunk->getCoveredInterval().toString().c_str(),
                        chunk->nSamples(),
                        chunk->nScales());
@@ -370,14 +380,17 @@ Tfr::pChunk Stft::
 }
 
 
-Signal::pBuffer Stft::
+Signal::pMonoBuffer Stft::
         inverse( pChunk chunk )
 {
     BOOST_ASSERT( p.averaging() == 1 );
 
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
     BOOST_ASSERT( stftchunk );
-    BOOST_ASSERT( 0<stftchunk->n_valid_samples );
+    if (!(0<stftchunk->n_valid_samples))
+    {
+        BOOST_ASSERT( 0<stftchunk->n_valid_samples );
+    }
     if (stftchunk->redundant())
         return inverseWithRedundant( chunk );
 
@@ -394,16 +407,10 @@ Signal::pBuffer Stft::
             TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s, nwindows=%d",
                          chunk_window_size, chunk->getInterval().toString().c_str(), nwindows);
 
-    int
-            firstSample = 0;
-
-    if (chunk->chunk_offset.asFloat() != 0)
-        firstSample = (chunk->chunk_offset - (UnsignedF)(chunk_window_size/2)).asInteger();
-
-    BOOST_ASSERT( 0!= chunk_window_size );
+    BOOST_ASSERT( 0 != chunk_window_size );
 
     if (0==nwindows) // not enough data
-        return Signal::pBuffer();
+        return Signal::pMonoBuffer();
 
     if (32768<nwindows) // TODO can't handle this
         nwindows = 32768;
@@ -430,15 +437,15 @@ Signal::pBuffer Stft::
     DataStorage<float>::Ptr signal = reduceWindow( windowedOutput, stftchunk );
 
 
-    Signal::pBuffer b(new Signal::Buffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
-    *b->waveform_data() = *signal; // this will not copy any data as b->waveform_data() is empty
+    Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    *b->waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
 
 
     return b;
 }
 
 
-Signal::pBuffer Stft::
+Signal::pMonoBuffer Stft::
         inverseWithRedundant( pChunk chunk )
 {
     BOOST_ASSERT( chunk->nChannels() == 1 );
@@ -449,16 +456,10 @@ Signal::pBuffer Stft::
     TIME_STFT ComputationSynchronize();
     TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
 
-    int
-            firstSample = 0;
-
-    if (chunk->chunk_offset.asFloat() != 0)
-        firstSample = (chunk->chunk_offset - (UnsignedF)(chunk_window_size/2)).asInteger();
-
     BOOST_ASSERT( 0!= chunk_window_size );
 
     if (0==nwindows) // not enough data
-        return Signal::pBuffer();
+        return Signal::pMonoBuffer();
 
     if (32768<nwindows) // TODO can't handle this
         nwindows = 32768;
@@ -487,8 +488,8 @@ Signal::pBuffer Stft::
     DataStorage<float>::Ptr signal = reduceWindow( windowedOutput, stftchunk );
 
 
-    Signal::pBuffer b(new Signal::Buffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
-    *b->waveform_data() = *signal; // will copy data
+    Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    *b->waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
 
 
     return b;
@@ -582,11 +583,14 @@ void Stft::
                 long in0 = &in.ref(pos) - in.ptr();
                 long in1 = &in.ref(pos) + windowCount*increment - in.ptr();
                 long in2 = source->numberOfElements();
-                TaskInfo("in0 %dl", in0);
-                TaskInfo("in1 %dl", in1);
-                TaskInfo("in2 %dl", in2);
-                BOOST_ASSERT(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements());
-                BOOST_ASSERT(in1 < in2);
+                if (!(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements()) || !(in1 < in2))
+                {
+                    TaskInfo("in0 %dl", in0);
+                    TaskInfo("in1 %dl", in1);
+                    TaskInfo("in2 %dl", in2);
+                    BOOST_ASSERT(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements());
+                    BOOST_ASSERT(in1 < in2);
+                }
             }
 
 #pragma omp parallel for
@@ -644,14 +648,13 @@ void Stft::
     }
 
 
-    int out0 = p.chunk_size()/2 - increment/2 + c->first_valid_sample*increment;
+    int out0 = c->first_valid_sample*increment;
+    //int out0 = p.chunk_size()/2 - increment/2 + c->first_valid_sample*increment;
     int N = signal->size().width;
-    if (0 == c->chunk_offset.asFloat())
-        out0 = 0;
 
     TaskInfo("signal->size().width = %u", signal->size().width);
 
-    BOOST_ASSERT( c->n_valid_samples*increment + (0 == c->chunk_offset.asFloat() ? increment/2:0) == signal->size().width );
+    BOOST_ASSERT( c->n_valid_samples*increment == signal->size().width );
 
     for (pos.z=0; pos.z<windowedSignal->size().depth; ++pos.z)
     {
@@ -764,15 +767,7 @@ DataStorage<float>::Ptr Stft::
 
 
     unsigned L = c->n_valid_samples*increment;
-    if (0 == c->chunk_offset.asFloat())
-    {
-        L += increment/2;
-    }
     DataStorage<float>::Ptr signal(new DataStorage<float>( L ));
-    TaskInfo("increment = %u", increment);
-    TaskInfo("c->n_valid_samples = %u", c->n_valid_samples);
-    TaskInfo("c->n_valid_samples*increment = %u", c->n_valid_samples*increment);
-    TaskInfo("L = %u", L);
 
     switch(c->window_type())
     {
@@ -835,7 +830,7 @@ unsigned Stft::
 #else
     if(writeOutput) tt.reset( new TaskTimer("Building STFT performance statistics for %s", "Cpu"));
 #endif
-    Signal::pBuffer B = boost::shared_ptr<Signal::Buffer>( new Signal::Buffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
+    Signal::pMonoBuffer B = boost::shared_ptr<Signal::MonoBuffer>( new Signal::MonoBuffer( 0, 44100*size_of_test_signal_in_seconds, 44100 ) );
     {
         scoped_ptr<TaskTimer> tt;
         if(writeOutput) tt.reset( new TaskTimer("Filling test buffer with random data (%.1f kB or %.1f s with fs=44100)", B->number_of_samples()*sizeof(float)/1024.f, size_of_test_signal_in_seconds));
@@ -991,10 +986,14 @@ Signal::Interval StftChunk::
         getCoveredInterval() const
 {
     double scale = original_sample_rate/sample_rate;
+    unsigned n = nSamples();
+
     Signal::Interval I(
-            std::floor((chunk_offset + .5f).asFloat() * scale + 0.5),
-            std::floor((chunk_offset + nSamples() - .5f).asFloat() * scale + 0.5)
+            std::floor(chunk_offset.asFloat() * scale + _window_size/2.0 + 0.5),
+            std::floor((chunk_offset + n - 1.0).asFloat() * scale + _window_size/2.0 + 0.5)
     );
+    if (I.first == I.last)
+        ++I.last;
 
     return I;
 }

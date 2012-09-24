@@ -16,12 +16,12 @@ namespace Adapters {
 
 Playback::
         Playback( int outputDevice )
-:   _first_buffer_size(0),
+:   _data(0),
+    _first_buffer_size(0),
+    _playback_itr(0),
     _output_device(0),
     _is_interleaved(false)
 {
-    _data.setNumChannels(0);
-
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
 
@@ -214,7 +214,7 @@ void Playback::
     // Make sure the buffer is moved over to CPU memory and that GPU memory is released
     // (because the audio stream callback is executed from a different thread
     // it can't access the GPU memory)
-    buffer->waveform_data()->OnlyKeepOneStorage<CpuMemoryStorage>();
+    buffer->release_extra_resources ();
 
     _data.putExpectedSamples( buffer );
 
@@ -299,7 +299,7 @@ void Playback::
                         Signal::Interval::IntervalType_MAX);
 
     if (0 == _data.num_channels())
-        _data.setNumChannels( source()->num_channels() );
+        _data = Signal::SinkSource( source()->num_channels() );
 
     _data.invalidate_samples( s & whatsLeft );
 }
@@ -309,19 +309,6 @@ unsigned Playback::
         num_channels()
 {
     return _data.num_channels();
-}
-
-
-void Playback::
-        set_channel(unsigned c)
-{
-    // If more channels are requested for playback than the output device has channels available,
-    // then let the last channel requested go into the last channel available and discard other
-    // superfluous channels
-    if (c >= num_channels())
-        c = num_channels() - 1;
-
-    _data.set_channel( c );
 }
 
 
@@ -361,7 +348,7 @@ void Playback::
         if (available_channels<requested_number_of_channels)
         {
             requested_number_of_channels = available_channels;
-            _data.setNumChannels( requested_number_of_channels );
+            _data = Signal::SinkSource( requested_number_of_channels );
         }
 
         portaudio::Device& device = sys.deviceByIndex(_output_device);
@@ -568,9 +555,10 @@ int Playback::
     }
 
     unsigned nchannels = num_channels();
+    Signal::pBuffer mb = _data.readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
     for (unsigned c=0; c<nchannels; ++c)
     {
-        Signal::pBuffer b = _data.channel(c).readFixedLength( Signal::Interval(_playback_itr, _playback_itr+framesPerBuffer) );
+        Signal::pMonoBuffer b = mb->getChannel (c);
         float *p = CpuMemoryStorage::ReadOnly<1>( b->waveform_data() ).ptr();
         if (_is_interleaved)
         {

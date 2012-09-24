@@ -32,12 +32,9 @@ CepstrumFilter::
 }
 
 
-ChunkAndInverse CepstrumFilter::
-        computeChunk( const Signal::Interval& I )
+Signal::Interval CepstrumFilter::
+        requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    TIME_CepstrumFilter TaskTimer tt("Cepstrum filter");
-    Tfr::pTransform t = transform();
-
     unsigned chunk_size = dynamic_cast<Cepstrum*>(t.get())->params().chunk_size();
     // Add a margin to make sure that the STFT is computed for one block before
     // and one block after the signal. This makes it possible to do proper
@@ -63,12 +60,8 @@ ChunkAndInverse CepstrumFilter::
                 chunk_interval.last = last_chunk*chunk_size;
         }
     }
-    ci.inverse = source()->readFixedLength( chunk_interval );
 
-    // Compute the cepstrum transform
-    ci.chunk = (*t)( ci.inverse );
-
-    return ci;
+    return chunk_interval;
 }
 
 

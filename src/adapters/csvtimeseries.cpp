@@ -1,5 +1,5 @@
 #include "csvtimeseries.h"
-#include "signal/sinksourcechannels.h"
+#include "signal/sinksource.h"
 #include "tfr/cwt.h"
 
 #include <fstream>
@@ -75,9 +75,9 @@ void CsvTimeseries::
     float sample_rate = 1;
     //ifs >> sample_rate >> std::endl;
 
-    SinkSourceChannels ssc;
+    SinkSource ssc(0);
     size_t chunk = 1 << 18;
-    std::vector<Signal::pBuffer> chunkBuffers;
+    std::vector<Signal::pMonoBuffer> chunkBuffers;
     std::vector<float*> p;
 
     for (size_t bufferCount, channel, line=0; ifs.good();)
@@ -88,10 +88,10 @@ void CsvTimeseries::
             {
                 if (line==0)
                 {
-                    ssc.setNumChannels( channel + 1 );
+                    ssc = SinkSource( channel + 1 );
                     chunkBuffers.resize( channel + 1 );
                     p.resize( channel + 1 );
-                    chunkBuffers.back() = pBuffer( new Signal::Buffer(0, chunk, sample_rate ) );
+                    chunkBuffers.back() = pMonoBuffer( new MonoBuffer(0, chunk, sample_rate ) );
                     p.back() = chunkBuffers.back()->waveform_data()->getCpuMemory();
                 }
                 else if (channel >= ssc.num_channels())
@@ -124,9 +124,9 @@ void CsvTimeseries::
 
         if (0 < bufferCount) for (channel=0; channel < ssc.num_channels(); ++channel)
         {
-            chunkBuffers[channel]->sample_offset = (double)(line - bufferCount);
-            ssc.set_channel( channel );
-            ssc.put( BufferSource( chunkBuffers[channel] ).readFixedLength( Interval( line - bufferCount, line )) );
+            pMonoBuffer mb( new MonoBuffer((double)(line - bufferCount), chunkBuffers[channel]->waveform_data(), sample_rate));
+            pBuffer b( new Buffer(mb));
+            ssc.put( BufferSource( b ).readFixedLength( Interval( line - bufferCount, line )) );
         }
 
     }
@@ -134,12 +134,7 @@ void CsvTimeseries::
     if (ssc.empty())
         throw std::ios_base::failure("Couldn't read any CSV data from '" + filename + "'");
 
-    _waveforms.resize( ssc.num_channels());
-    for (unsigned c=0; c<ssc.num_channels(); c++)
-    {
-        ssc.set_channel( c );
-        _waveforms[c] = ssc.readFixedLength( ssc.getInterval() );
-    }
+    setBuffer( ssc.readFixedLength( ssc.getInterval() ) );
 
     // TODO adjust default wanted min hz to sample rate of opened signal
     //Tfr::Cwt::Singleton().set_wanted_min_hz( sample_rate/1000 );

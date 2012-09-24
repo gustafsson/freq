@@ -19,10 +19,10 @@ ComplexBuffer::ComplexBuffer(UnsignedF first_sample, unsigned long numberOfSampl
 
 
 ComplexBuffer::
-        ComplexBuffer(const Signal::Buffer& buffer)
+        ComplexBuffer(const Signal::MonoBuffer& buffer)
             :
-            sample_offset(buffer.sample_offset),
-            sample_rate(buffer.sample_rate)
+            sample_offset(buffer.sample_offset()),
+            sample_rate(buffer.sample_rate())
 {
     setData(buffer.waveform_data());
 }
@@ -72,11 +72,11 @@ DataStorage<float>::Ptr ComplexBuffer::
 }
 
 
-Signal::pBuffer ComplexBuffer::
+Signal::pMonoBuffer ComplexBuffer::
         get_real()
 {
     Signal::IntervalType length = number_of_samples();
-    Signal::pBuffer buffer( new Signal::Buffer( sample_offset, length, sample_rate ));
+    Signal::pMonoBuffer buffer( new Signal::MonoBuffer( sample_offset, length, sample_rate ));
 
     DataStorage<float>::Ptr real_waveform = buffer->waveform_data();
 

@@ -18,7 +18,7 @@ class Csv: public Tfr::CwtFilter
 public:
     Csv(std::string filename="") : _filename(filename) {}
 
-    virtual void operator()( Tfr::Chunk& );
+    virtual bool operator()( Tfr::Chunk& );
 
 private:
     std::string _filename;

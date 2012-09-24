@@ -14,10 +14,9 @@ namespace Tfr {
 
 
 StftFilter::
-        StftFilter(pOperation source, pTransform t, bool no_affected_samples)
+        StftFilter(pOperation source, pTransform t)
 :   Filter(source),
-    exclude_end_block(false),
-    no_affected_samples(no_affected_samples)
+    exclude_end_block(false)
 {
     if (!t)
     {
@@ -45,17 +44,13 @@ Signal::Interval StftFilter::
 
     // Add a margin to make sure that the inverse of the STFT will cover I
     long first_chunk = 0,
-         last_chunk = (I.last + chunk_size)/increment;
+         last_chunk = (I.last + 2*window_size - window_increment-1)/increment;
 
-    if (I.first >= window_size-window_increment)
-        first_chunk = (I.first - (window_size-window_increment))/increment;
+    first_chunk = I.first + window_increment - window_size;
+    if (first_chunk < 0)
+        first_chunk = floor(first_chunk/float(increment));
     else
-    {
-        first_chunk = floor((I.first - float(window_size-window_increment))/increment) - 1;
-
-        if (last_chunk*increment < chunk_size + increment)
-            last_chunk = (chunk_size + increment)/increment;
-    }
+        first_chunk = first_chunk/increment;
 
     Interval chunk_interval(
                 first_chunk*increment,
@@ -95,21 +90,6 @@ Signal::Interval StftFilter::
     }
 
     return chunk_interval;
-}
-
-
-ChunkAndInverse StftFilter::
-        computeChunk( const Signal::Interval& I )
-{
-    ChunkAndInverse ci;
-
-    pTransform t = transform();
-    ci.inverse = source()->readFixedLength( requiredInterval( I, t ) );
-
-    // Compute the stft transform
-    ci.chunk = (*t)( ci.inverse );
-
-    return ci;
 }
 
 

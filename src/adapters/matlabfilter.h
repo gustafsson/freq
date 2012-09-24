@@ -11,7 +11,7 @@ class MatlabFilter: public Tfr::CwtFilter
 public:
     MatlabFilter( std::string matlabFunction );
 
-    virtual void operator()( Tfr::Chunk& );
+    virtual bool operator()( Tfr::Chunk& );
     virtual Signal::Intervals ZeroedSamples() const;
     virtual Signal::Intervals affected_samples() const;
 

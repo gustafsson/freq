@@ -31,13 +31,13 @@ std::string Bandpass::
 }
 
 
-void Bandpass::
+bool Bandpass::
         operator()( Tfr::Chunk& c )
 {
     TIME_BANDPASS TaskTimer tt("%s (save %sside) on %s",
                                name().c_str(),
                                _save_inside?"in":"out",
-                               c.getInversedInterval().toString().c_str());
+                               c.getInterval().toString().c_str());
 
     float minf = min(_f1, _f2);
     float maxf = max(_f1, _f2);
@@ -83,6 +83,8 @@ void Bandpass::
                 p[t*actualSize + s] = zero;
         }
     }
+
+    return true;
 }
 
 } // namespace Filters

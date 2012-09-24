@@ -196,7 +196,7 @@ void ReadMatlabSettings::
 
     source_buffer_ = h5.tryread<Signal::pBuffer>("samples", Signal::pBuffer());
     if (source_buffer_)
-        source_buffer_->sample_rate = h5.tryread<double>("samplerate", 1);
+        source_buffer_->set_sample_rate ( h5.tryread<double>("samplerate", 1) );
     else
         settings.argument_description( h5.tryread<string>("argument_description", settings.argument_description()));
 

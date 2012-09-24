@@ -8,7 +8,7 @@ namespace Tfr {
 class SaweDll SuperSample
 {
 public:
-    static Signal::pBuffer supersample( Signal::pBuffer b, float requested_sample_rate );
+    static Signal::pMonoBuffer supersample( Signal::pMonoBuffer b, float requested_sample_rate );
 };
 
 } // namespace Tfr

@@ -22,8 +22,6 @@ public:
 
     virtual pBuffer read( const Interval& I );
     virtual unsigned num_channels();
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel();
     virtual void source(pOperation v);
     virtual pOperation source() { return Operation::source(); }
 
@@ -52,6 +50,8 @@ public:
       */
     void map(OutputChannel output_channel, SourceChannel source_channel);
 
+private:
+    MappingScheme scheme_;
 
     /**
       Set the number of output channels. If this value is larger than the
@@ -60,11 +60,6 @@ public:
       in which case they will be clamped to the last source channel.
       */
     void num_channels( unsigned N );
-
-private:
-    OutputChannel output_channel_;
-    SourceChannel source_channel_;
-    MappingScheme scheme_;
 };
 
 } // namespace Signal

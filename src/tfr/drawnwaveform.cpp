@@ -24,9 +24,9 @@ DrawnWaveform::
 
 
 pChunk DrawnWaveform::
-        operator()( Signal::pBuffer b )
+        operator()( Signal::pMonoBuffer b )
 {
-    float blobsize = blob(b->sample_rate);
+    float blobsize = blob(b->sample_rate());
 
     unsigned w = ((unsigned)(b->number_of_samples() / blobsize / drawWaveform_BLOCK_SIZE)) *drawWaveform_BLOCK_SIZE;
 
@@ -48,6 +48,8 @@ pChunk DrawnWaveform::
     if (wmax < w)
         w = wmax;
 
+    updateMaxValue(b);
+
     pChunk c(new DrawnWaveformChunk(this->block_fs));
     c->transform_data.reset( new ChunkData(w, drawWaveform_YRESOLUTION, 1));
 
@@ -60,7 +62,7 @@ pChunk DrawnWaveform::
             readstop = signal_length - b->getInterval().first;
     }
 
-    float writeposoffs = ((b->sample_offset / blobsize) - floorf((b->sample_offset / blobsize).asFloat())).asFloat();
+    float writeposoffs = ((b->sample_offset() / blobsize) - floorf((b->sample_offset() / blobsize).asFloat())).asFloat();
     ::drawWaveform(
             b->waveform_data(),
             c->transform_data,
@@ -71,20 +73,20 @@ pChunk DrawnWaveform::
 
     this->block_fs = 0;
 
-    c->chunk_offset = b->sample_offset / blobsize + writeposoffs;
-    c->freqAxis = freqAxis( b->sample_rate );
+    c->chunk_offset = b->sample_offset() / blobsize + writeposoffs;
+    c->freqAxis = freqAxis( b->sample_rate() );
 
     c->first_valid_sample = 0;
     c->n_valid_samples = c->nSamples();
 
-    c->original_sample_rate = b->sample_rate;
-    c->sample_rate = b->sample_rate / blobsize;
+    c->original_sample_rate = b->sample_rate();
+    c->sample_rate = b->sample_rate() / blobsize;
 
     return c;
 }
 
 
-Signal::pBuffer DrawnWaveform::
+Signal::pMonoBuffer DrawnWaveform::
         inverse( pChunk /*chunk*/ )
 {
     throw std::logic_error("Not implemented");
@@ -177,5 +179,17 @@ float DrawnWaveform::
     return b;
 }
 
+
+void DrawnWaveform::
+        updateMaxValue(Signal::pMonoBuffer b)
+{
+    float *p = b->waveform_data()->getCpuMemory();
+    float maxValue=0;
+    Signal::IntervalType N = b->number_of_samples();
+    for(Signal::IntervalType i=0; i<N; ++i)
+        maxValue = std::max(std::abs(p[i]), maxValue);
+    maxValue *= 1.1;
+    this->maxValue = std::max(this->maxValue, maxValue);
+}
 
 } // namespace Tfr

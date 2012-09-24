@@ -8,8 +8,8 @@
 
 namespace Signal
 {
-    class Buffer;
-    typedef boost::shared_ptr<Buffer> pBuffer;
+    class MonoBuffer;
+    typedef boost::shared_ptr<MonoBuffer> pMonoBuffer;
 }
 
 namespace Tfr
@@ -54,13 +54,13 @@ public:
       But a Transform is required to return something valid for any input
       size.
       */
-    virtual pChunk operator()( Signal::pBuffer b ) = 0;
+    virtual pChunk operator()( Signal::pMonoBuffer b ) = 0;
 
 
     /**
       Well, transform a chunk back into a buffer.
       */
-    virtual Signal::pBuffer inverse( pChunk chunk ) = 0;
+    virtual Signal::pMonoBuffer inverse( pChunk chunk ) = 0;
 };
 
 typedef boost::shared_ptr<Transform> pTransform;

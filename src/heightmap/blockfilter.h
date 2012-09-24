@@ -22,21 +22,20 @@ class BlockFilter
 {
 public:
     BlockFilter( Collection* collection );
+    BlockFilter( std::vector<boost::shared_ptr<Collection> >* collections );
 
-    virtual void applyFilter(Tfr::ChunkAndInverse& pchunk );
+    virtual bool applyFilter(const Tfr::ChunkAndInverse& pchunk);
+    unsigned smallestOk(const Signal::Interval& I);
+    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData ) = 0;
     virtual bool stubWithStft() { return true; }
     virtual bool createFromOthers() { return true; }
 
 protected:
-    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData ) = 0;
-
-    virtual void mergeColumnMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData, float normalization_factor );
-    virtual void mergeRowMajorChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData,
+    virtual void mergeColumnMajorChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData, float normalization_factor );
+    virtual void mergeRowMajorChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData,
                                      bool full_resolution, ComplexInfo complex_info, float normalization_factor, bool enable_subtexel_aggregation );
 
-    unsigned smallestOk(const Signal::Interval& I);
-
-    Collection* _collection;
+    std::vector<Collection* > _collections;
 };
 
 
@@ -54,23 +53,26 @@ public:
 
     BlockFilterImpl( std::vector<boost::shared_ptr<Collection> >* collections )
         :
-        BlockFilter((*collections)[0].get()),
-        _collections(collections),
+        BlockFilter(collections),
         largestApplied(0)
     {
     }
 
 
-    virtual void operator()( Tfr::Chunk& )
+    virtual bool operator()( Tfr::Chunk& )
     {
-        BOOST_ASSERT( false );
+        return false;
     }
 
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::Operation* affecting_source( const Signal::Interval& I)
     {
-        if (_collection->invalid_samples() & I)
+        Signal::Intervals invalid;
+        for (unsigned i=0; i<_collections.size (); ++i)
+            invalid |= _collections[i]->invalid_samples();
+
+        if (invalid & I)
             return this;
 
         return FilterKind::source()->affecting_source( I );
@@ -83,19 +85,15 @@ public:
         */
     Signal::Intervals zeroed_samples_recursive() { return Signal::Intervals(); }
 
-    virtual void set_channel(unsigned c)
-    {
-        FilterKind::set_channel(c);
 
-        _collection = (*_collections)[c].get();
-    }
-
-    void applyFilter( Tfr::ChunkAndInverse& pchunk )
+    bool applyFilter( const Tfr::ChunkAndInverse& pchunk )
     {
-        BlockFilter::applyFilter( pchunk );
+        bool r = BlockFilter::applyFilter( pchunk );
 
         Signal::Interval I = pchunk.inverse->getInterval();
         largestApplied = std::max( largestApplied, (unsigned)I.count() );
+
+        return r;
     }
 
 
@@ -125,7 +123,7 @@ public:
 
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk )
     {
-        unsigned smallest_ok = smallestOk(Signal::Interval(0,0));
+        unsigned smallest_ok = BlockFilter::smallestOk(Signal::Interval(0,0));
         unsigned requiredSize = std::min(largestApplied, smallest_ok);
         return std::max(requiredSize, FilterKind::next_good_size( current_valid_samples_per_chunk ) );
     }
@@ -133,7 +131,7 @@ public:
 
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk )
     {
-        unsigned smallest_ok = smallestOk(Signal::Interval(0,0));
+        unsigned smallest_ok = BlockFilter::smallestOk(Signal::Interval(0,0));
         unsigned requiredSize = std::min(largestApplied, smallest_ok);
         return std::max(requiredSize, FilterKind::prev_good_size( current_valid_samples_per_chunk ) );
     }
@@ -150,7 +148,7 @@ public:
 
     Signal::Interval coveredInterval(const Signal::Interval& J)
     {
-        unsigned smallest_ok = smallestOk(J);
+        unsigned smallest_ok = BlockFilter::smallestOk(J);
         if (largestApplied < smallest_ok)
         {
             if (!(disregardAtZero() && 0 == J.first))
@@ -187,8 +185,6 @@ protected:
     virtual bool disregardAtZero() { return false; }
 
 
-    std::vector<boost::shared_ptr<Collection> >* _collections;
-
 private:
     unsigned largestApplied;
     Signal::Intervals undersampled;
@@ -210,8 +206,8 @@ public:
       */
     ComplexInfo complex_info;
 
-    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
-    void mergeChunkpart( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    void mergeChunkpart( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
     virtual bool disregardAtZero() { return true; }
 
 private:
@@ -225,7 +221,7 @@ public:
     StftToBlock( Collection* collection );
     StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
-    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
     virtual bool stubWithStft() { return false; }
 };
 
@@ -235,7 +231,7 @@ class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 public:
     CepstrumToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
-    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
     virtual bool stubWithStft() { return false; }
 };
 
@@ -245,10 +241,9 @@ class DrawnWaveformToBlock: public BlockFilterImpl<Tfr::DrawnWaveformFilter>
 public:
     DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
-    // @overloads Tfr::DrawnWaveformFilter::computeChunk
-    virtual Tfr::ChunkAndInverse computeChunk( const Signal::Interval& I );
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
-    virtual void mergeChunk( pBlock block, Tfr::Chunk& chunk, Block::pData outData );
+    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
     virtual bool stubWithStft() { return false; }
     virtual bool createFromOthers() { return false; }
 };

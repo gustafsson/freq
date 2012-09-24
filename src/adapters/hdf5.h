@@ -151,7 +151,7 @@ class Hdf5Chunk: public Tfr::CwtFilter
 public:
     Hdf5Chunk(std::string filename="sawe_chunk.h5");
 
-    virtual void operator()( Tfr::Chunk& );
+    virtual bool operator()( Tfr::Chunk& );
 
     static void             saveChunk( std::string filename, const Tfr::Chunk& );
     static Tfr::pChunk      loadChunk( std::string filename );

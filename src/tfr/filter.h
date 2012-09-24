@@ -20,6 +20,11 @@ typedef boost::shared_ptr<Chunk> pChunk;
 struct ChunkAndInverse
 {
     /**
+     * The transform used to compute the chunk.
+     */
+    pTransform t;
+
+    /**
       The Tfr::Chunk as computed by readChunk(), or source()->readChunk()
       if transform() == source()->transform().
       */
@@ -32,7 +37,13 @@ struct ChunkAndInverse
       this->transform()->inverse(chunk). In that case the inverse won't be
       computed again.
       */
-    Signal::pBuffer inverse;
+    Signal::pMonoBuffer inverse;
+
+
+    /**
+     * Which channel the monobuffer comes from.
+     */
+    int channel;
 };
 
 
@@ -108,42 +119,26 @@ public:
 protected:
     /**
       Apply the filter to a computed Tfr::Chunk. This is the method that should
-      be implemented to create new filters.
+      be implemented to create new filters. Return true if it makes sense to
+      compute the inverse afterwards.
       */
-    virtual void operator()( Chunk& ) = 0;
+    virtual bool operator()( Chunk& ) = 0;
 
 
     /**
-      Meant to be used between Filters of the same kind to avoid transforming
-      back and forth multiple times.
-      */
-    virtual ChunkAndInverse readChunk( const Signal::Interval& I );
-
-
-    /**
-      readChunk first calls computeChunk to compute a chunk and then calls
-      applyFilter to apply the filter to the chunk.
-      */
-    virtual ChunkAndInverse computeChunk( const Signal::Interval& I ) = 0;
+     * @brief requiredInterval returns the interval that is required to compute
+     * a valid chunk representing interval I.
+     * @param I
+     * @param t transform() is not invariant use this instance instead.
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t ) = 0;
 
 
     /**
       The default implementation of applyFilter is to call operator()( Chunk& )
       @see computeChunk
       */
-    virtual void applyFilter( ChunkAndInverse& chunk );
-
-
-    /**
-      _try_shortcuts is set to false by an implementation if it requires that
-      all chunks be computed, even if the filter won't affect any samples when
-      the inverse is computed. If _try_shortcuts is false,
-      ChunkAndInverse::inverse _may_ contain the original Buffer as it were
-      before the chunk was computed.
-
-      _try_shortcuts defaults to true.
-      */
-    bool _try_shortcuts;
+    virtual bool applyFilter( const ChunkAndInverse& chunk );
 
 
 private:

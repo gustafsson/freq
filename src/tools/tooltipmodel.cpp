@@ -302,7 +302,10 @@ public:
         unsigned w = stft->chunk_size();
         i = i / w * w;
         Signal::Interval I( i, i+w );
-        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I) );
+
+        // Only check the first channel
+        // TODO check other channels
+        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>( chunk->transform_data->size() ));
 
@@ -326,7 +329,9 @@ public:
         unsigned w = cepstrum->chunk_size();
         i = i / w * w;
         Signal::Interval I( i, i+w );
-        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I) );
+        // Only check the first channel
+        // TODO check other channels
+        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>(chunk->transform_data->size()));
 
@@ -350,11 +355,14 @@ public:
 
         Tfr::DummyCwtFilter filter;
         filter.source(o);
+        filter.transform ( cwt->createTransform ());
         Signal::IntervalType sample = std::max(0.f, t) * fs;
-        const Signal::Interval I(sample, sample+1);
-        Tfr::ChunkAndInverse chunkAndInverse = filter.computeChunk( I );
+        const Signal::Interval I = filter.requiredInterval (Signal::Interval(sample, sample+1), filter.transform ());
+        // Only check the first channel
+        // TODO check other channels
+        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
 
-        Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunkAndInverse.chunk.get() );
+        Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
         unsigned N = 0;
         for (unsigned i=0; i < cwtchunk->chunks.size(); ++i)
             N += cwtchunk->chunks[i]->nScales() - (i!=0);
@@ -398,7 +406,7 @@ public:
 
         BOOST_ASSERT( k == cwt->nScales(fs) );
 
-        fa = chunkAndInverse.chunk->freqAxis;
+        fa = chunk->freqAxis;
     }
 
     virtual float operator()( float /*t*/, float hz, bool* is_valid_value )

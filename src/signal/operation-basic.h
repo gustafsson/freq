@@ -101,8 +101,6 @@ public:
     virtual IntervalType number_of_samples();
 
     virtual unsigned num_channels();
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel();
 
     virtual Intervals zeroed_samples();
     virtual Intervals affected_samples();
@@ -110,7 +108,7 @@ public:
 
     virtual pOperation source2() const { return _source2; }
 
-    static pBuffer superPosition( pBuffer a, pBuffer b );
+    static pBuffer superPosition( pBuffer a, pBuffer b, bool inclusive );
 private:
     pOperation _source2;
     std::string _name;
@@ -139,12 +137,9 @@ public:
     virtual IntervalType number_of_samples();
 
     virtual unsigned num_channels();
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel() { return current_channel_; }
 
 private:
     pOperation source2_;
-    unsigned current_channel_;
 };
 
 
@@ -156,8 +151,6 @@ public:
     virtual pBuffer read( const Interval& I );
 
     virtual unsigned num_channels() { return 1; }
-    virtual void set_channel(unsigned c);
-    virtual unsigned get_channel() { return 0; }
 
     virtual Signal::Intervals affected_samples();
 };

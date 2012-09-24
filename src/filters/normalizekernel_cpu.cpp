@@ -14,7 +14,7 @@
 //#define VAL(v) (v*v)
 //#define INVVAL(v) sqrt(v)
 
-// TODO could optimize this by computing the rms more sparesly and interpolate the rms value on a spline, would work really well in cuda as well
+// TODO could optimize this by computing the rms more sparsely and interpolate the rms value on a spline, would work really well in cuda as well
 void normalizedata(
         DataStorage<float>::Ptr data,
         int radius )

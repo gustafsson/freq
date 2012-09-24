@@ -12,62 +12,11 @@
 #include <boost/noncopyable.hpp>
 
 
-//#define TIME_FORALLCHANNELS
-#define TIME_FORALLCHANNELS if(0)
-
 //#define DEBUG_Target
 #define DEBUG_Target if(0)
 
 
 namespace Signal {
-
-
-class ForAllChannelsOperation: public Operation, public boost::noncopyable
-{
-public:
-    ForAllChannelsOperation
-        (
-            Signal::pOperation o
-        )
-            :
-        Operation(o)
-    {
-    }
-
-
-    virtual pBuffer read( const Interval& I )
-    {
-        unsigned N = num_channels();
-        TIME_FORALLCHANNELS TaskTimer t("Processing %u channels", N);
-        Signal::pBuffer r;
-        for (unsigned i=0; i<N; ++i)
-        {
-            {
-                TIME_FORALLCHANNELS TaskTimer t("Set channel %u", i);
-                set_channel( i );
-            }
-            {
-                TIME_FORALLCHANNELS TaskTimer t("Read channel %u", i);
-                r = Signal::Operation::read( I );
-            }
-        }
-
-        return r;
-    }
-
-
-    virtual void invalidate_samples(const Intervals& I)
-    {
-        unsigned N = num_channels();
-        if (0 < N)
-        {
-            if (get_channel() >= N)
-                set_channel(N - 1);
-        }
-
-        Operation::invalidate_samples( I );
-    }
-};
 
 
 class UpdateView: public Operation, public boost::noncopyable
@@ -226,7 +175,6 @@ Target::
             name_( name ),
             post_sink_( new PostSink ),
             reroute_channels_( new RerouteChannels(pOperation()) ),
-            forall_channels_( new ForAllChannelsOperation(pOperation()) ),
             update_view_( new UpdateView( all_layers->project(), name )),
             cache_vars_( new CacheVars ),
             add_as_channels_(false),
@@ -238,8 +186,7 @@ Target::
     BOOST_ASSERT( all_layers_ );
 
     post_sink_->source( reroute_channels_ );
-    forall_channels_->source( post_sink_ );
-    update_view_->source( forall_channels_ );
+    update_view_->source( post_sink_ );
     cache_vars_->source(update_view_);
     read_ = cache_vars_;
 

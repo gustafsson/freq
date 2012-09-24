@@ -56,23 +56,14 @@ ChunkElement Chunk::
 
 
 Signal::Interval Chunk::
-        getInversedInterval() const
-{
-    return Signal::Interval(
-        chunk_offset.asInteger() + first_valid_sample,
-        chunk_offset.asInteger() + first_valid_sample + n_valid_samples
-    );
-}
-
-
-Signal::Interval Chunk::
         getInterval() const
 {
     double scale = original_sample_rate/sample_rate;
-    return Signal::Interval(
+    Signal::Interval I(
             std::floor((chunk_offset + first_valid_sample).asFloat() * scale + 0.5),
             std::floor((chunk_offset + first_valid_sample + n_valid_samples).asFloat() * scale + 0.5)
     );
+    return I;
 }
 
 

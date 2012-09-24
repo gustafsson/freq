@@ -151,7 +151,6 @@ private:
     std::string name_;
     Signal::pOperation post_sink_;
     Signal::pOperation reroute_channels_;
-    Signal::pOperation forall_channels_;
     Signal::pOperation update_view_;
     Signal::pOperation cache_vars_;
     Signal::pOperation read_;

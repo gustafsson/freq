@@ -8,52 +8,37 @@ namespace Signal {
 
 
 BufferSource::
-        BufferSource( pBuffer waveform )
-:    channel(0)
+        BufferSource( pMonoBuffer waveform )
 {
-    setBuffer( waveform );
+    pBuffer b(new Buffer(waveform));
+    setBuffer(b);
+}
+
+
+BufferSource::
+        BufferSource( pBuffer buffer )
+{
+    setBuffer( buffer );
 }
 
 
 void BufferSource::
-        setBuffer( pBuffer waveform )
+        setBuffer( pBuffer buffer )
 {
-    if (0==waveform || 0==waveform->number_of_samples())
-    {
-        _waveforms.resize(1);
-        _waveforms[0] = waveform;
-        return;
-    }
+    buffer_ = buffer;
 
-    DataStorageSize sz = waveform->waveform_data()->size();
-    unsigned number_of_samples = sz.width;
-    unsigned channels = sz.height;
-    _waveforms.resize(channels);
-    if (0==channels)
-        ;
-    else if (1==channels)
-        _waveforms[0] = waveform;
-    else for (unsigned c=0; c<channels; ++c)
-    {
-        pBuffer w(new Buffer(waveform->sample_offset, number_of_samples, waveform->sample_rate));
-        memcpy( w->waveform_data()->getCpuMemory(),
-                waveform->waveform_data()->getCpuMemory() + c*number_of_samples,
-                w->waveform_data()->numberOfBytes() );
-        _waveforms[c] = w;
-    }
+    invalidate_samples (Intervals::Intervals_ALL);
 }
 
 
 pBuffer BufferSource::
         read( const Interval& I )
 {
-    BOOST_ASSERT( channel < num_channels() );
-
-    Interval myInterval = _waveforms[channel]->getInterval();
+    Interval myInterval = buffer_->getInterval();
     Intervals i(I.first, I.first+1);
     if (i & myInterval)
     {
-        return _waveforms[channel];
+        return buffer_;
     }
 
     return zeros((Intervals(I) - myInterval).fetchFirstInterval());
@@ -63,22 +48,14 @@ pBuffer BufferSource::
 float BufferSource::
         sample_rate()
 {
-    return _waveforms[0]->sample_rate;
+    return buffer_->sample_rate();
 }
 
 
 void BufferSource::
         set_sample_rate( float fs )
 {
-    bool changed = false;
-    for (unsigned i=0; i< _waveforms.size(); ++i )
-    {
-        pBuffer b = _waveforms[i];
-
-        changed |= b->sample_rate != fs;
-
-        b->sample_rate = fs;
-    }
+    buffer_->set_sample_rate ( fs );
 
     invalidate_samples( Signal::Interval::Interval_ALL );
 }
@@ -87,26 +64,20 @@ void BufferSource::
 Signal::IntervalType BufferSource::
         number_of_samples()
 {
-    return _waveforms[0]->number_of_samples();
+    return buffer_->number_of_samples ();
 }
 
 
 unsigned BufferSource::
         num_channels()
 {
+    if (!buffer_)
+        return 0;
+
     if (Sawe::Configuration::mono())
-        return _waveforms.size() ? 1 : 0;
+        return 1;
     else
-        return _waveforms.size();
-}
-
-
-void BufferSource::
-        set_channel(unsigned c)
-{
-    BOOST_ASSERT( c < num_channels() );
-
-    channel = c;
+        return buffer_->number_of_channels ();
 }
 
 

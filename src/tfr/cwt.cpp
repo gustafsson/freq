@@ -82,7 +82,7 @@ Cwt::
 
 
 pChunk Cwt::
-        operator()( Signal::pBuffer buffer )
+        operator()( Signal::pMonoBuffer buffer )
 {
 #ifdef USE_CUDA
     try {
@@ -104,20 +104,20 @@ pChunk Cwt::
 
     Signal::BufferSource bs( buffer );
 
-    Signal::IntervalType offset = buffer->sample_offset.asInteger();
-    unsigned std_samples = wavelet_time_support_samples( buffer->sample_rate );
-    //unsigned std_samples0 = time_support_bin0( buffer->sample_rate );
+    Signal::IntervalType offset = buffer->sample_offset().asInteger();
+    unsigned std_samples = wavelet_time_support_samples( buffer->sample_rate() );
+    //unsigned std_samples0 = time_support_bin0( buffer->sample_rate() );
     Signal::IntervalType first_valid_sample = std_samples;
 
     BOOST_ASSERT(buffer->number_of_samples() > 2*std_samples);
     // Align first_valid_sample with chunks (round upwards)
-    first_valid_sample = align_up(offset + first_valid_sample, (Signal::IntervalType) chunk_alignment(buffer->sample_rate)) - offset;
+    first_valid_sample = align_up(offset + first_valid_sample, (Signal::IntervalType) chunk_alignment(buffer->sample_rate())) - offset;
 
     BOOST_ASSERT( std_samples + first_valid_sample < buffer->number_of_samples());
 
     unsigned valid_samples = buffer->number_of_samples() - std_samples - first_valid_sample;
     // Align valid_samples with chunks (round downwards)
-    unsigned alignment = chunk_alignment(buffer->sample_rate);
+    unsigned alignment = chunk_alignment(buffer->sample_rate());
     valid_samples = align_down(valid_samples, alignment);
     BOOST_ASSERT( 0 < valid_samples );
 
@@ -127,16 +127,16 @@ pChunk Cwt::
     size_t free = availableMemoryForSingleAllocation();
     bool trypowerof2;
     {
-        unsigned r, T0 = required_length( 0, buffer->sample_rate, r );
+        unsigned r, T0 = required_length( 0, buffer->sample_rate(), r );
         unsigned smallest_L2 = spo2g(T0-1) - 2*r;
-        size_t smallest_required2 = required_gpu_bytes(smallest_L2, buffer->sample_rate);
+        size_t smallest_required2 = required_gpu_bytes(smallest_L2, buffer->sample_rate());
         trypowerof2 = smallest_required2 <= free;
     }
 
     DEBUG_CWT {
         TaskInfo("Free memory: %s. Required: %f MB",
              DataStorageVoid::getMemorySizeText( free ).c_str(),
-             DataStorageVoid::getMemorySizeText( required_gpu_bytes(valid_samples, buffer->sample_rate ) ).c_str());
+             DataStorageVoid::getMemorySizeText( required_gpu_bytes(valid_samples, buffer->sample_rate() ) ).c_str());
     }
 
     DEBUG_CWT TaskTimer("offset = %l", (long)offset).suppressTiming();
@@ -146,7 +146,7 @@ pChunk Cwt::
 
     // find all sub chunks
     unsigned prev_j = 0;
-    unsigned n_j = nScales( buffer->sample_rate );
+    unsigned n_j = nScales( buffer->sample_rate() );
 
     pChunk ft;
     pChunk wt( new CwtChunk() );
@@ -162,17 +162,17 @@ pChunk Cwt::
             for (unsigned j = prev_j; j<n_j; ++j)
             {
                 tt.getStream() << "j = " << j << ", "
-                               << "hz = " << j_to_hz( buffer->sample_rate, j ) << ", "
+                               << "hz = " << j_to_hz( buffer->sample_rate(), j ) << ", "
                                << "bin = " << find_bin( j ) << ", "
                                << "time_support in samples = "
-                               << wavelet_time_support_samples( buffer->sample_rate, j_to_hz( buffer->sample_rate, j )) << ", "
-                               << "redundant in seconds = " << wavelet_time_support_samples( buffer->sample_rate, j_to_hz( buffer->sample_rate, j ))/buffer->sample_rate;
+                               << wavelet_time_support_samples( buffer->sample_rate(), j_to_hz( buffer->sample_rate(), j )) << ", "
+                               << "redundant in seconds = " << wavelet_time_support_samples( buffer->sample_rate(), j_to_hz( buffer->sample_rate(), j ))/buffer->sample_rate();
                 tt.flushStream();
             }
         }
     }
 
-    unsigned max_bin = find_bin( nScales( buffer->sample_rate ) - 1 );
+    unsigned max_bin = find_bin( nScales( buffer->sample_rate() ) - 1 );
     for( unsigned c=0; prev_j<n_j; ++c )
     {
         // find the biggest j that is required to be in this chunk
@@ -205,14 +205,14 @@ pChunk Cwt::
         // Include next_j in this chunk so that parts can be interpolated
         // between in filters
         unsigned stop_j = std::min(n_j, next_j+1);
-        unsigned nScales_value = nScales(buffer->sample_rate);
+        unsigned nScales_value = nScales(buffer->sample_rate());
         BOOST_ASSERT( stop_j <= nScales_value);
 
         unsigned n_scales = stop_j - prev_j;
-        float hz = j_to_hz(buffer->sample_rate, stop_j-1);
+        float hz = j_to_hz(buffer->sample_rate(), stop_j-1);
         DEBUG_CWT TaskTimer("c=%u, hz=%g, 2^c=%u, n_scales=%u", c, hz, 1<<c, n_scales).suppressTiming();
 
-        unsigned sub_std_samples = wavelet_time_support_samples( buffer->sample_rate, hz );
+        unsigned sub_std_samples = wavelet_time_support_samples( buffer->sample_rate(), hz );
         BOOST_ASSERT( sub_std_samples <= std_samples );
 
         DEBUG_CWT TaskTimer("sub_std_samples=%u", sub_std_samples).suppressTiming();
@@ -256,12 +256,12 @@ pChunk Cwt::
                     subinterval.toString().c_str(),
                     ft?ft->getInterval().toString().c_str():0 );
 
-            Signal::pBuffer data;
+            Signal::pMonoBuffer data;
 
             //this can be asserted if we compute valid interval based on the widest chunk
             if (!AdjustToBin0)
                 BOOST_ASSERT( (Signal::Intervals(subinterval) - buffer->getInterval()).empty() );
-            data = bs.readFixedLength( subinterval );
+            data = bs.readFixedLength( subinterval )->getChannel (0); // bs is created from a monobuffer
 
             ComputationSynchronize();
 
@@ -288,10 +288,10 @@ pChunk Cwt::
         DEBUG_CWT {
             TaskTimer tt("Intervals");
             tt.getStream() << " ft(c)=" << ft->getInterval().toString(); tt.flushStream();
-            tt.getStream() << " adjusted chunkpart=" << chunkpart->getInversedInterval().toString(); tt.flushStream();
-            tt.getStream() << " units=[" << (chunkpart->getInversedInterval().first >> (max_bin-c)) << ", "
-                           << (chunkpart->getInversedInterval().last >> (max_bin-c)) << "), count="
-                           << (chunkpart->getInversedInterval().count() >> (max_bin-c)); tt.flushStream();
+            tt.getStream() << " adjusted chunkpart=" << chunkpart->getInterval().toString(); tt.flushStream();
+            tt.getStream() << " units=[" << (chunkpart->getInterval().first >> (max_bin-c)) << ", "
+                           << (chunkpart->getInterval().last >> (max_bin-c)) << "), count="
+                           << (chunkpart->getInterval().count() >> (max_bin-c)); tt.flushStream();
         }
 
         ((CwtChunk*)wt.get())->chunks.push_back( chunkpart );
@@ -303,12 +303,12 @@ pChunk Cwt::
     }
 
 
-    wt->freqAxis = freqAxis( buffer->sample_rate );
-    wt->chunk_offset = buffer->sample_offset + first_valid_sample;
+    wt->freqAxis = freqAxis( buffer->sample_rate() );
+    wt->chunk_offset = buffer->sample_offset() + first_valid_sample;
     wt->first_valid_sample = 0;
     wt->n_valid_samples = valid_samples;
-    wt->sample_rate = buffer->sample_rate;
-    wt->original_sample_rate = buffer->sample_rate;
+    wt->sample_rate = buffer->sample_rate();
+    wt->original_sample_rate = buffer->sample_rate();
 
     DEBUG_CWT {
         size_t sum = 0;
@@ -346,6 +346,19 @@ pChunk Cwt::
             Statistics<float> s( CpuMemoryStorage::BorrowPtr<float>( sz, (float*)CpuMemoryStorage::ReadOnly<2>(chunkpart->transform_data).ptr() ));
         }
     }
+
+#ifdef _DEBUG
+    Signal::Interval chunkInterval = wt->getInterval();
+
+    int subchunki = 0;
+    BOOST_FOREACH( const pChunk& chunk, dynamic_cast<Tfr::CwtChunk*>(wt.get())->chunks )
+    {
+        Signal::Interval cii = chunk->getInterval();
+        BOOST_ASSERT( chunkInterval == cii );
+
+        ++subchunki;
+    }
+#endif
 
     return wt;
 #ifdef USE_CUDA
@@ -389,7 +402,7 @@ float Cwt::
 //Signal::Interval Cwt::
 //        validLength(Signal::pBuffer buffer)
 //{
-//    return Signal::Intervals(buffer->getInterval()).shrink( wavelet_time_support_samples(buffer->sample_rate) ).spannedInterval();
+//    return Signal::Intervals(buffer->getInterval()).shrink( wavelet_time_support_samples(buffer->sample_rate()) ).spannedInterval();
 //}
 
 
@@ -582,7 +595,7 @@ pChunk Cwt::
 }
 
 
-Signal::pBuffer Cwt::
+Signal::pMonoBuffer Cwt::
         inverse( pChunk pchunk )
 {
     ComputationCheckError();
@@ -599,7 +612,7 @@ Signal::pBuffer Cwt::
 }
 
 
-Signal::pBuffer Cwt::
+Signal::pMonoBuffer Cwt::
         inverse( Tfr::CwtChunk* pchunk )
 {
     boost::scoped_ptr<TaskTimer> tt;
@@ -611,7 +624,7 @@ Signal::pBuffer Cwt::
         ) );
 
     Signal::Interval v = pchunk->getInterval();
-    Signal::pBuffer r( new Signal::Buffer( v.first, v.count(), pchunk->original_sample_rate ));
+    Signal::pMonoBuffer r( new Signal::MonoBuffer( v, pchunk->original_sample_rate ));
     memset( r->waveform_data()->getCpuMemory(), 0, r->waveform_data()->numberOfBytes() );
 
     BOOST_FOREACH( pChunk& part, pchunk->chunks )
@@ -621,13 +634,13 @@ Signal::pBuffer Cwt::
             log2f(part->original_sample_rate/part->sample_rate),
             part->freqAxis.min_hz, part->freqAxis.max_hz()) );
 
-        Signal::pBuffer inv = inverse(part);
-        Signal::pBuffer super = SuperSample::supersample(inv, pchunk->original_sample_rate);
+        Signal::pMonoBuffer inv = inverse(part);
+        Signal::pMonoBuffer super = SuperSample::supersample(inv, pchunk->original_sample_rate);
 
         DEBUG_CWT {
             tt->getStream()
                     << "Upsampled inv " << inv->getInterval().toString()
-                    << " by factor " << pchunk->sample_rate/inv->sample_rate
+                    << " by factor " << pchunk->sample_rate/inv->sample_rate()
                     << " to " << super->getInterval().toString(); tt->flushStream();
 
 //            GpuCpuData<float> mdata( part->transform_data->getCpuMemory(),
@@ -652,14 +665,14 @@ Signal::pBuffer Cwt::
 }
 
 
-Signal::pBuffer Cwt::
+Signal::pMonoBuffer Cwt::
         inverse( Tfr::CwtChunkPart* pchunk )
 {
     Chunk &chunk = *pchunk;
 
     DataStorageSize x = chunk.transform_data->size();
 
-    Signal::pBuffer r( new Signal::Buffer(
+    Signal::pMonoBuffer r( new Signal::MonoBuffer(
             chunk.chunk_offset,
             x.width,
             chunk.sample_rate

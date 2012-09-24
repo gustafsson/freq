@@ -123,10 +123,10 @@ void Hdf5Output::
 {
     VERBOSE_HDF5 TaskTimer tt("Adding buffer '%s'", name.c_str());
 
-    float* p = cb.waveform_data()->getCpuMemory();
+    float* p = cb.mergeChannelData ()->getCpuMemory();
 
     const unsigned RANK=2;
-    hsize_t     dims[RANK]={cb.channels(), cb.number_of_samples()};
+    hsize_t     dims[RANK]={hsize_t(cb.number_of_channels ()), hsize_t(cb.number_of_samples())};
 
     herr_t      status = H5LTmake_dataset(_file_id,name.c_str(),RANK,dims,H5T_NATIVE_FLOAT,p);
     if (0>status) throw Hdf5Error(Hdf5Error::Type_HdfFailure, "Could not create and write a H5T_NATIVE_FLOAT type dataset named '" + name + "'", name);
@@ -168,16 +168,18 @@ Signal::pBuffer Hdf5Input::
     Signal::pBuffer buffer;
     if (dims[0]>0 && dims[1]>0 && dims[2]>0)
     {
-        buffer.reset( new Signal::Buffer(0, dims[2], 44100, dims[1], dims[0] ) );
-        float* p = buffer->waveform_data()->getCpuMemory();
+        BOOST_ASSERT( dims[0] == 1 );
+        Signal::pTimeSeriesData data( new Signal::TimeSeriesData(dims[2], dims[1]) );
+        float* p = data->getCpuMemory();
 
         status = H5LTread_dataset(_file_id, name.c_str(), H5T_NATIVE_FLOAT, p);
         if (0>status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Could not read a H5T_NATIVE_FLOAT type dataset named '" + name + "'", name);
 
+        buffer.reset( new Signal::Buffer(0, data, 44100 ) );
         VERBOSE_HDF5 TaskInfo("number_of_samples=%u, channels=%u, numberOfSignals=%u",
-                              buffer->waveform_data()->size().width,
-                              buffer->waveform_data()->size().height,
-                              buffer->waveform_data()->size().depth
+                              data->size ().width,
+                              data->size ().height,
+                              data->size ().depth
                               );
     }
 
@@ -195,7 +197,7 @@ void Hdf5Output::
     DataStorageSize s = chunk.transform_data->size();
 
     const unsigned RANK=2;
-    hsize_t     dims[RANK]={s.height,s.width};
+    hsize_t     dims[RANK]={hsize_t(s.height),hsize_t(s.width)};
 
     herr_t      status;
 
@@ -393,7 +395,7 @@ Hdf5Buffer::Hdf5Buffer( std::string filename)
     :   _filename(filename) {}
 
 
-void Hdf5Chunk::
+bool Hdf5Chunk::
         operator()( Tfr::Chunk& c )
 {
     Tfr::Chunk* chunk;
@@ -409,6 +411,8 @@ void Hdf5Chunk::
         chunk = &c;
 
     Hdf5Chunk::saveChunk(_filename, *chunk);
+
+    return false;
 }
 
 
@@ -427,8 +431,8 @@ void Hdf5Buffer::
     Hdf5Output h5(filename);
 
     h5.add<Signal::Buffer>( dsetBuffer, cb );
-    h5.add<double>( dsetOffset, cb.sample_offset.asFloat());
-    h5.add<double>( dsetSamplerate, cb.sample_rate );
+    h5.add<double>( dsetOffset, cb.sample_offset().asFloat());
+    h5.add<double>( dsetSamplerate, cb.sample_rate() );
     h5.add<double>( dsetOverlap, overlap );
 }
 
@@ -451,8 +455,8 @@ Signal::pBuffer Hdf5Buffer::
     Signal::pBuffer b = h5.read<Signal::pBuffer>( dsetBuffer );
     if (b)
     {
-        b->sample_offset = h5.read<double>( dsetOffset );
-        b->sample_rate = h5.read<double>( dsetSamplerate );
+        b->set_sample_offset ( h5.read<double>( dsetOffset ) );
+        b->set_sample_rate ( h5.read<double>( dsetSamplerate ) );
     }
     try {
     *plot = h5.read<Signal::pBuffer>( dsetPlot );

@@ -20,7 +20,7 @@ public:
     /**
         Create a complex waveform out of a real waveform.
     */
-    ComplexBuffer(const Signal::Buffer& b);
+    ComplexBuffer(const Signal::MonoBuffer& b);
 
     ComplexBuffer(DataStorage<float>::Ptr inputbuffer);
 
@@ -48,7 +48,7 @@ public:
     /**
         Used to convert back to real data, will discard imaginary part.
     */
-    Signal::pBuffer get_real();
+    Signal::pMonoBuffer get_real();
 
 
     /**
@@ -60,7 +60,7 @@ public:
     }
 
 protected:
-    Signal::pBuffer _my_real;
+    Signal::pMonoBuffer _my_real;
 
     void setData(DataStorage<float>::Ptr inputbuffer);
     //    boost::scoped_ptr<GpuCpuData<float2> > _complex_waveform_data;

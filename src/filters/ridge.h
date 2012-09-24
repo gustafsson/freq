@@ -7,7 +7,7 @@ namespace Filters
 {
     class Ridge: public Tfr::CwtFilter
     {
-        virtual void operator()( Tfr::Chunk& );
+        virtual bool operator()( Tfr::Chunk& );
     };
 }
 #endif // FILTERS_RIDGE_H

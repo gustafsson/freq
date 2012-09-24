@@ -26,12 +26,12 @@ MatlabFilter::
 }
 
 
-void MatlabFilter::
+bool MatlabFilter::
         operator()( Chunk& c)
 {
     TIME_MatlabFilter TaskTimer tt("MatlabFilter::operator() [%g,%g)", c.startTime(), c.endTime() );
 
-    _invalid_returns |= c.getInversedInterval();
+    _invalid_returns |= c.getInterval();
 
     std::string file = _matlab->isReady();
     if (!file.empty())
@@ -41,10 +41,12 @@ void MatlabFilter::
 
         ::remove( file.c_str());
 
-        Interval J = c.getInversedInterval();
+        Interval J = c.getInterval();
 
         Operation::invalidate_samples( _invalid_returns & J );
         _invalid_returns -= J;
+
+        return true;
     }
 
     if (!_matlab->isWaiting())
@@ -55,6 +57,8 @@ void MatlabFilter::
 
         _matlab->invoke( file );
     }
+
+    return false;
 }
 
 

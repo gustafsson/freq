@@ -389,20 +389,6 @@ int main(int argc, char *argv[])
 	}
 
 
-
-    if(0) {
-        TaskTimer tt("Testing supersample");
-        Adapters::Audiofile file("testfil.wav");
-        pBuffer data = file.read(Interval(0,1));
-        Statistics<float> s1(data->waveform_data());
-
-        pBuffer super = Tfr::SuperSample::supersample(data, 8*file.sample_rate());
-        tt.info("super %u", super->number_of_samples());
-        Statistics<float> s2(super->waveform_data());
-        Adapters::WriteWav::writeToDisk("testut.wav", super, false);
-        return 0;
-    }
-
     if(0) {
         Gauss g(ResamplePos(-1.1, 20), ResamplePos(1.5, 1.5));
         double s = 0;
@@ -490,27 +476,27 @@ int main(int argc, char *argv[])
             firstSample = int_div_ceil(firstSample, chunk_alignment)*chunk_alignment;
             unsigned time_support = cwt.wavelet_time_support_samples( file.sample_rate() );
 
-            pBuffer data = file.readFixedLength(Interval(firstSample,firstSample+65536));
+            pMonoBuffer data = file.readFixedLength(Interval(firstSample,firstSample+65536))->getChannel (0);
 
-            Tfr::pChunk chunk = cwt( data );
-            pBuffer inv = cwt.inverse( chunk );
+            Tfr::pChunk chunk = cwt( data);
+            pMonoBuffer inv = cwt.inverse( chunk );
 
             TaskTimer("%s", inv->getInterval().toString().c_str()).suppressTiming();
             TaskTimer("%s", Interval(
                     firstSample+time_support,
                     firstSample+time_support+inv->number_of_samples()).toString().c_str()).suppressTiming();
             //pBuffer data2 = file.readFixedLength( inv->getInterval() );
-            pBuffer data2 = file.readFixedLength(
+            pMonoBuffer data2 = file.readFixedLength(
             Interval(
                     firstSample+time_support,
-                    firstSample+time_support+inv->number_of_samples()));
+                    firstSample+time_support+inv->number_of_samples()))->getChannel (0);
 
             Statistics<float> s1(data2->waveform_data());
             Statistics<float> si(inv->waveform_data());
 
             tt.info("firstSample = %u", firstSample);
             tt.info("time_support = %u", time_support);
-            Adapters::WriteWav::writeToDisk("invtest.wav", inv, false);
+            Adapters::WriteWav::writeToDisk("invtest.wav", pBuffer(new Buffer(inv)), false);
             return 0;
         }
 

@@ -8,7 +8,7 @@
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "signal/target.h"
-#include "signal/sinksourcechannels.h"
+#include "signal/sinksource.h"
 #include "signal/operation-basic.h"
 #include "tfr/stft.h"
 
@@ -167,7 +167,10 @@ pBuffer SelectionViewInfoSink::
         BOOST_ASSERT(stft.chunk_size() == f.count());
 
         b = Operation::source()->readFixedLength(f);
-        Tfr::pChunk c = (Tfr::Stft(stft))( b );
+
+        // Only check the first channel
+        // TODO check other channels
+        Tfr::pChunk c = (Tfr::Stft(stft))( b->getChannel (0));
         Tfr::ChunkElement* p = c->transform_data->getCpuMemory();
         BOOST_ASSERT( 1 == c->nSamples() );
         BOOST_ASSERT( c->nScales() == f.count()/2+1 );
