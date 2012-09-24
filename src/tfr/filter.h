@@ -83,7 +83,7 @@ public:
       a computation pass. Subsequent calls to transform() might return
       different transforms.
       */
-    Tfr::pTransform transform() const;
+    Tfr::pTransform transform();
 
 
     /**
@@ -117,6 +117,8 @@ public:
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
 
 protected:
+    Filter(Filter&);
+
     /**
       Apply the filter to a computed Tfr::Chunk. This is the method that should
       be implemented to create new filters. Return true if it makes sense to
@@ -142,6 +144,7 @@ protected:
 
 
 private:
+    QMutex _transform_mutex;
     /**
       The Tfr::Transform used for computing chunks and inverse Buffers.
       */

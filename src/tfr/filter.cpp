@@ -7,6 +7,8 @@
 
 #include <boost/format.hpp>
 
+#include <QMutexLocker>
+
 //#define TIME_Filter
 #define TIME_Filter if(0)
 
@@ -28,13 +30,25 @@ Filter::
 {}
 
 
+Filter::
+        Filter(Filter& f)
+    :
+      Operation(f)
+{
+    transform(f.transform ());
+}
+
+
 Signal::pBuffer Filter::
         read(  const Signal::Interval& I )
 {
     TIME_Filter TaskTimer tt("%s Filter::read( %s )", vartype(*this).c_str(),
                              I.toString().c_str());
 
-    pTransform t = transform();
+    QMutexLocker l(&_transform_mutex);
+    pTransform t = _transform;
+    l.unlock ();
+
     Signal::Interval required = requiredInterval(I, t);
 
     // If no samples would be non-zero, return zeros
@@ -115,8 +129,9 @@ bool Filter::
 
 
 Tfr::pTransform Filter::
-        transform() const
+        transform()
 {
+    QMutexLocker l(&_transform_mutex);
     return _transform;
 }
 
@@ -124,6 +139,8 @@ Tfr::pTransform Filter::
 void Filter::
         transform( Tfr::pTransform t )
 {
+    QMutexLocker l(&_transform_mutex);
+
     if (_transform)
     {
         if (typeid(*_transform) != typeid(*t))
@@ -134,6 +151,8 @@ void Filter::
         return;
 
     _transform = t;
+
+    l.unlock ();
 
     invalidate_samples( getInterval() );
 }

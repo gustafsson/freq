@@ -128,7 +128,7 @@ void TransformInfoForm::
     if (renderview->model->collections.empty())
         return;
 
-    const Tfr::Filter* f = renderview->model->block_filter();
+    Tfr::Filter* f = renderview->model->block_filter();
     const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(!f?0:f->transform()->transformParams());
     const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(!f?0:f->transform()->transformParams());
     const Tfr::CepstrumParams* cepstrum = dynamic_cast<const Tfr::CepstrumParams*>(!f?0:f->transform()->transformParams());

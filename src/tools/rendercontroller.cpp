@@ -474,7 +474,6 @@ void RenderController::
     else
         tf_resolution->setToolTip(QString("Time/frequency resolution\nSTFT window: %1 samples").arg(s.chunk_size()));
 
-    // TODO should do some little tiny lock here for access to a pTransform ...
     currentFilter()->transform( t );
 }
 
