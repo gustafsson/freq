@@ -28,8 +28,6 @@
 
 
 #ifdef USE_CUDA
-// gpumisc
-#include <gpucpudatacollection.h>
 
 // cuda
 #include "cuda.h"
@@ -330,9 +328,6 @@ void Application::
              total/1024.f/1024, free/1024.f/1024);
 #endif
     emit clearCachesSignal();
-#ifdef USE_CUDA
-    GpuCpuDataCollection::moveAllDataToCpuMemory();
-#endif
 
     if ( !QGLContext::currentContext() ) // See RenderView::~RenderView()
         return;

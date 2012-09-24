@@ -642,10 +642,6 @@ Signal::pMonoBuffer Cwt::
                     << "Upsampled inv " << inv->getInterval().toString()
                     << " by factor " << pchunk->sample_rate/inv->sample_rate()
                     << " to " << super->getInterval().toString(); tt->flushStream();
-
-//            GpuCpuData<float> mdata( part->transform_data->getCpuMemory(),
-//                                 make_cudaExtent( part->transform_data->getNumberOfElements1D(), 1, 1),
-//                                 GpuCpuVoidData::CpuMemory, true );
         }
 
         //TaskInfo("super->getInterval() = %s, first_valid_sample = %u",

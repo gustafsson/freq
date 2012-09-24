@@ -1,8 +1,8 @@
 #ifndef RESAMPLETEST_H
 #define RESAMPLETEST_H
 
-#include <GpuCpuData.h>
-#include <boost/scoped_ptr.hpp>
+#include "datastorage.h"
+#include <cuda_runtime.h>
 
 class ResampleTest
 {
@@ -18,12 +18,12 @@ public:
 
 private:
     template<typename T>
-    void print( const char* txt, GpuCpuData<T>& data );
+    void print( const char* txt, DataStorage<T>& data );
 
     void simpleData();
     void bigData( unsigned w = 1024, unsigned h = 1024 );
 
-    boost::scoped_ptr< GpuCpuData<float2> > inputData;
+    DataStorage< float2 >::Ptr inputData;
 };
 
 #endif // RESAMPLETEST_H

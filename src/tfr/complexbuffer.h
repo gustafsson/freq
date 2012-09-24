@@ -55,7 +55,6 @@ public:
         Access the complex waveform
     */
     DataStorage<std::complex<float> >::Ptr complex_waveform_data() const {
-//    GpuCpuData<float2>* complex_waveform_data() const {
         return _complex_waveform_data;
     }
 
@@ -63,7 +62,6 @@ protected:
     Signal::pMonoBuffer _my_real;
 
     void setData(DataStorage<float>::Ptr inputbuffer);
-    //    boost::scoped_ptr<GpuCpuData<float2> > _complex_waveform_data;
     DataStorage<std::complex<float> >::Ptr _complex_waveform_data;
 };
 

@@ -36,7 +36,7 @@ using namespace Signal;
 // gpumisc
 #include "CudaProperties.h"
 #include "CudaException.h"
-#include "GpuCpuData.h"
+#include "cudaglobalstorage.h"
 
 // cuda
 #include <cuda_gl_interop.h>
@@ -73,8 +73,9 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
             CudaException_SAFE_CALL( cudaMalloc( &ptr, 1024 ));
             CudaException_SAFE_CALL( cudaFree( ptr ));
-            GpuCpuData<float> a( 0, make_cudaExtent(1024,1,1), GpuCpuVoidData::CudaGlobal );
-            a.getCudaGlobal();
+
+            DataStorage<float> a( 1024 );
+            CudaGlobalStorage::ReadWrite<float,1>(&a).getCudaPitchedPtr();
 
             size_t free=0, total=0;
             cudaMemGetInfo(&free, &total);
