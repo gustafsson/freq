@@ -58,7 +58,7 @@ Renderer::Renderer( Collection* collection )
     draw_contour_plot(false),
     color_mode( ColorMode_Rainbow ),
     fixed_color( 1,0,0,1 ),
-    clear_color( 1,1,1,1 ),
+    clear_color( 1,1,1,0 ),
     y_scale( 1 ),
     last_ysize( 1 ),
     last_axes_length( 0 ),

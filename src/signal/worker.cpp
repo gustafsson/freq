@@ -597,11 +597,6 @@ void Worker::
             {
                 TIME_WORKER TaskTimer tt("Worker is waiting for more work to do");
                 _work_condition.wait( &_work_lock );
-                if (_keep_running) {
-                    TIME_WORKER TaskInfo("Worker moving on");
-                } else {
-                    TIME_WORKER TaskInfo("Worker thread quitting");
-                }
             }
         } catch ( const std::exception& x ) {
             TaskInfo("Worker thread caught %s: %s", vartype(x).c_str(), x.what());
@@ -615,6 +610,8 @@ void Worker::
             return;
         }
     }
+
+    TIME_WORKER TaskInfo("Worker thread quit");
 }
 #endif
 
