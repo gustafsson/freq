@@ -52,6 +52,7 @@ namespace Heightmap {
         // TODO make glblock private and create some interface here instead
         pData cpu_copy;
         bool new_data_available;
+        bool to_delete;
         QMutex cpu_copy_mutex;
     #endif
 

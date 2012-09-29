@@ -81,9 +81,10 @@ bool BlockFilter::
         {
             QMutexLocker l(&block->cpu_copy_mutex);
             if (!block->cpu_copy)
-                throw std::logic_error(
-                    "Multi threaded code is not usefull unless using multiple "
-                    "GPUs, and multi GPU code is not implemented yet.");
+            {
+                TaskInfo("%s", block->reference ().toString ().c_str ());
+                EXCEPTION_ASSERT( block->cpu_copy );
+            }
 
             mergeChunk( block, pchunk, block->cpu_copy );
 
