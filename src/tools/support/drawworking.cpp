@@ -82,7 +82,7 @@ static void
 
 
 void DrawWorking::
-        drawWorking(int viewport_width, int viewport_height)
+        drawWorking(int viewport_width, int viewport_height, bool crashed)
 {
     static float computing_rotation = 0.0;
 
@@ -105,6 +105,9 @@ void DrawWorking::
     glEnable(GL_BLEND);
 
     glColor4f(1, 1, 1, 0.3);
+    if (crashed)
+        glColor4f(1, 0, 0, 0.3);
+
     {
         glPushMatrixContext mc(GL_MODELVIEW);
 
@@ -112,7 +115,8 @@ void DrawWorking::
         drawRectRing(5, 0.10, 0.145);
         glRotatef(-2*computing_rotation, 0, 0, 1);
         drawRectRing(7, 0.15, 0.2);
-        computing_rotation += 5;
+        if (!crashed)
+            computing_rotation += 5;
     }
 
     glColor4f(0.3, 0.3, 0.3, 0.3);

@@ -170,8 +170,10 @@ bool Worker::
 
     pBuffer b;
 
+#ifdef SAWE_NO_MUTEX
     try
     {
+#endif
         ComputationCheckError();
 
         b = callCallbacks( interval );
@@ -237,6 +239,7 @@ bool Worker::
 //            throw;
 //        }
 #endif
+#ifdef SAWE_NO_MUTEX
     } catch (const exception& e) {
         TaskInfo("Worker caught exception type %s:\n%s",
                   vartype(e).c_str(), e.what());
@@ -245,6 +248,7 @@ bool Worker::
         TaskInfo("Worker caught unknown exception.");
         throw;
     }
+#endif
 
     return true;
 }
@@ -550,16 +554,10 @@ void Worker::
 void Worker::
 		checkForErrors()
 {
-    if (!_caught_invalid_argument.empty ()) {
-        string str = _caught_invalid_argument;
-        _caught_invalid_argument.clear ();
-        throw invalid_argument(str);
-	}
-	
     if (!_caught_exception.empty ()) {
         string str = _caught_exception;
         _caught_exception.clear ();
-        throw runtime_error(str);
+        throw invalid_argument(str);
 	}
 }
 
@@ -605,15 +603,16 @@ void Worker::
                     TIME_WORKER TaskInfo("Worker thread quitting");
                 }
             }
-        } catch ( const std::invalid_argument& x ) {
-            if (_caught_invalid_argument.empty())
-                _caught_invalid_argument = x.what();
         } catch ( const std::exception& x ) {
+            TaskInfo("Worker thread caught %s: %s", vartype(x).c_str(), x.what());
             if (_caught_exception.empty())
-                _caught_exception = x.what();
+                _caught_exception = "Signal processing failed. Please file a bug report on this from the help menu.";
+            return;
         } catch ( ... ) {
+            TaskInfo("Worker thread caught unknown exception");
             if (_caught_exception.empty())
-                _caught_exception = "Unknown exception";
+                _caught_exception = "Unknown signal processing error. Please file a bug report on this from the help menu.";
+            return;
         }
     }
 }

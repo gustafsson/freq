@@ -330,7 +330,6 @@ private:
       Worker::run and stored. A client may poll with: caught_exception.what()
       */
     std::string _caught_exception;
-    std::string _caught_invalid_argument;
 #endif
 };
 // typedef boost::shared_ptr<Worker> pWorker;

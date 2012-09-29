@@ -865,10 +865,10 @@ void RenderView::
 void RenderView::
         userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
 {
-    TIME_PAINTGL TaskInfo("userinput_update (%s%s%s)",
-             request_high_fps?"request_high_fps":" ",
-             post_update?"post_update":" ",
-             cheat_also_high?"cheat_also_high":" ");
+    TIME_PAINTGL TaskInfo("userinput_update (%s %s %s)",
+             request_high_fps?"request_high_fps":"",
+             post_update?"post_update":"",
+             cheat_also_high?"cheat_also_high":"");
 
     if (request_high_fps)
     {
@@ -1157,16 +1157,10 @@ void RenderView::
             // project->worker can be run in one or more separate threads, but if it isn't
             // execute the computations for one chunk
 #ifndef SAWE_NO_MUTEX
-            if (!worker.isRunning()) {
-                worker.workOne(!isRecording);
-                emit postUpdate();
-            } else {
-                //project->worker.todo_list().print("Work to do");
-                // Wait a bit while the other thread work
+            if (worker.isRunning ())
                 restartUpdateTimer();
 
-                worker.checkForErrors();
-            }
+            worker.checkForErrors();
 #else
             worker.workOne(!isRecording && !worker.target()->post_sink()->isUnderfed());
             emit postUpdate();
@@ -1201,8 +1195,13 @@ void RenderView::
         }
     }
 
+    bool workerCrashed = false;
+#ifndef SAWE_NO_MUTEX
+    workerCrashed = !worker.isRunning ();
+#endif
+
     if (isWorking || isRecording)
-        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3] );
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
 
 //    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
 //    {
