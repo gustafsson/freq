@@ -34,7 +34,11 @@ pBuffer SourceBase::
 
     // Check if read returned the first sample in interval I
     Interval i(I.first, I.first + 1);
-    EXCEPTION_ASSERT( (i & r->getInterval()) == i );
+    if ((i & r->getInterval()) != i)
+    {
+        TaskTimer tt("%s::readChecked( %s ) got %s", vartype(*this).c_str(), I.toString().c_str(), r->getInterval ().toString ().c_str ());
+        EXCEPTION_ASSERT( (i & r->getInterval()) == i );
+    }
 
     return r;
 }

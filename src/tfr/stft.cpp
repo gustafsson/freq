@@ -244,6 +244,7 @@ Stft::
 Stft::
         Stft(const Stft& s)
 :
+    Transform(s),
     p(s.params())
 {
 }
@@ -577,6 +578,9 @@ void Stft::
     CpuMemoryReadOnly<float, 3> in = CpuMemoryStorage::ReadOnly<3>(source);
     CpuMemoryWriteOnly<float, 3> out = CpuMemoryStorage::WriteAll<3>(windowedData);
     CpuMemoryWriteOnly<float, 3>::Position pos(0,0,0);
+
+    STFT_ASSERT(1 == source->size().height);
+    STFT_ASSERT(1 == source->size().depth);
 
     for (pos.z=0; pos.z<source->size().depth; ++pos.z)
     {

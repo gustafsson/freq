@@ -260,6 +260,16 @@ pBuffer SinkSource::
     EXCEPTION_ASSERT( itr != _cache.end() );
 
     pBuffer b = *itr;
+    if (!(b->getInterval () & Interval(I.first, I.first+1)))
+    {
+        TaskInfo("!(b->getInterval () & Interval(I.first, I.first+1))");
+        TaskInfo("_valid_samples = %s", _valid_samples.toString ().c_str ());
+        TaskInfo("I = %s", I.toString ().c_str ());
+        TaskInfo("b->getInterval() = %s", b->getInterval().toString ().c_str ());
+
+        EXCEPTION_ASSERT( _valid_samples & Interval(I.first, I.first+1) );
+    }
+
     if ((b->getInterval() & _valid_samples) == b->getInterval())
     {
         EXCEPTION_ASSERT( Interval(I.first, I.first+1) & b->getInterval() );
@@ -267,6 +277,26 @@ pBuffer SinkSource::
     }
 
     validFetch &= b->getInterval();
+
+    if (!validFetch)
+    {
+        TaskInfo("I = %s", I.toString ().c_str ());
+        TaskInfo("_valid_samples = %s", _valid_samples.toString ().c_str ());
+        TaskInfo("b->getInterval() = %s", b->getInterval().toString ().c_str ());
+        TaskInfo("I & _valid_samples = %s", (I & _valid_samples).toString ().c_str ());
+        TaskInfo("(I & _valid_samples).fetchFirstInterval() = %s", (I & _valid_samples).fetchFirstInterval().toString().c_str());
+        TaskInfo("(I & _valid_samples).fetchFirstInterval() & b->getInterval() = %s", ((I & _valid_samples).fetchFirstInterval() & b->getInterval()).toString().c_str());
+        Interval validFetch = (I & _valid_samples).fetchFirstInterval();
+        TaskInfo("validFetch = %s", validFetch.toString ().c_str ());
+        validFetch &= b->getInterval();
+        TaskInfo("validFetch = %s", validFetch.toString ().c_str ());
+        TaskInfo ti("_cache[%d] = ", _cache.size ());
+        BOOST_FOREACH( pBuffer b, _cache )
+            TaskInfo("b->getInterval() = %s", b->getInterval ().toString ().c_str ());
+
+        EXCEPTION_ASSERT( validFetch );
+        EXCEPTION_ASSERT( false );
+    }
 
     // TODO: if COW chunks could be created with an offset we could return all of b that is valid instead of just a copy of the portion that matches I. Less copying, returning more data right away.
     pBuffer n(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
