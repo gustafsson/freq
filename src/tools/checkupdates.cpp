@@ -131,10 +131,14 @@ void CheckUpdates::
         replyFinished(QNetworkReply* reply)
 {
     QString s = reply->readAll();
-    TaskInfo("CheckUpdates reply error=%s (code %d)\n%s",
-             QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
-             (int)reply->error(),
-             s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
+    TaskInfo ti("CheckUpdates reply");
+    TaskInfo("%s", s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
+    if (QNetworkReply::NoError != reply->error())
+    {
+        TaskInfo("CheckUpdates error=%s (code %d)",
+                 QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
+                 (int)reply->error());
+    }
 
     if ("not"==Sawe::Reader::reader_text().substr(0,3))
         return;

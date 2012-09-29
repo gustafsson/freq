@@ -133,16 +133,28 @@ void Application::
      logSystemInfo(int& argc, char **argv)
 {
     TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
+    boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+    boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
+    ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
+    ti.tt().getStream() << " started on " << today << endl;
+
+    TaskInfo("Build timestamp for %s: %s, %s. Revision %s",
+        Sawe::Configuration::uname().c_str(),
+        Sawe::Configuration::build_date().c_str(), Sawe::Configuration::build_time().c_str(),
+        Sawe::Configuration::revision().c_str());
+
+    {
+        TaskInfo ti2("%u command line argument%s", argc, argc==1?"":"s");
+        for (int i=0; i<argc; ++i)
+            TaskInfo("%s", argv[i]);
+    }
+
     TaskInfo("Organization: %s", organizationName().toStdString().c_str());
     TaskInfo("Organization domain: %s", organizationDomain().toStdString().c_str());
     TaskInfo("Application name: %s", applicationName().toStdString().c_str());
     TaskInfo("OS: %s", Sawe::Configuration::operatingSystemName().c_str());
     TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
     TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
-    TaskInfo("Build timestamp for %s: %s, %s. Revision %s",
-        Sawe::Configuration::uname().c_str(),
-        Sawe::Configuration::build_date().c_str(), Sawe::Configuration::build_time().c_str(),
-        Sawe::Configuration::revision().c_str());
     TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
     {
         TaskInfo ti("OpenGL information");
@@ -152,14 +164,6 @@ void Application::
         TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
         TaskInfo("extensions/capabilities/caps: %s", glGetString(GL_EXTENSIONS));
     }
-
-    boost::gregorian::date today = boost::gregorian::day_clock::local_day();
-    boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
-    ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
-    ti.tt().getStream() << "Program started " << today;
-    TaskInfo ti2("%u command line argument%s", argc, argc==1?"":"s");
-    for (int i=0; i<argc; ++i)
-        TaskInfo("%s", argv[i]);
 }
 
 

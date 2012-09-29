@@ -118,9 +118,14 @@ void SendFeedback::
         replyFinished(QNetworkReply* reply)
 {
     QString s = reply->readAll();
-    TaskInfo("SendFeedback reply error=%s\n%s",
-             QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
-             s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
+    TaskInfo ti("SendFeedback reply");
+    TaskInfo("%s", s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
+    if (QNetworkReply::NoError != reply->error())
+    {
+        TaskInfo("SendFeedback error=%s (code %d)",
+                 QNetworkReply::NoError == reply->error()?"no error":reply->errorString().toStdString().c_str(),
+                 (int)reply->error());
+    }
 
     if (QNetworkReply::NoError != reply->error())
         QMessageBox::warning(dynamic_cast<QWidget*>(parent()), "Could not send feedback", reply->errorString() + "\n" + s);
