@@ -121,7 +121,7 @@ Intervals& Intervals::
             break;
         }
 
-    if (first==end())
+    if (first==base::end())
     {
         base::iterator itr = base::begin();
         // find first after
@@ -134,15 +134,14 @@ Intervals& Intervals::
     base::iterator last = first;
     last++;
     // find first after
-    while (last != end() && last->first <= r.last)
+    while (last != base::end() && last->first <= r.last)
         last++;
 
     Interval b = r;
 
     for (base::iterator itr=first; itr!=last; itr++)
     {
-        Interval& i = *itr;
-        b = b.spanned(i);
+        b = b.spanned(*itr);
     }
 
     base::erase( first, last );
