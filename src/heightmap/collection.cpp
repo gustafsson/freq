@@ -209,7 +209,6 @@ unsigned Collection::
         }
     }
 
-    VERBOSE_EACH_FRAME_COLLECTION TaskTimer t2("Poking around %d", blocksToPoke.size());
     boost::unordered_set<Reference> blocksToPoke2 = blocksToPoke;
 
     BOOST_FOREACH(const Reference& r, blocksToPoke)
@@ -243,19 +242,12 @@ unsigned Collection::
     }
 
 
-    VERBOSE_EACH_FRAME_COLLECTION TaskInfo("Poke2 %d", blocksToPoke2.size());
-    int n = 0;
-
     BOOST_FOREACH(const Reference& r, blocksToPoke2)
     {
         cache_t::iterator itr = _cache.find( r );
         if (itr != _cache.end())
-        {
-            n++;
             poke(itr->second);
-        }
     }
-    VERBOSE_EACH_FRAME_COLLECTION TaskInfo("Poked %d", n);
 
     _free_memory = availableMemoryForSingleAllocation();
 
@@ -645,10 +637,12 @@ Intervals Collection::
             r |= i;
 
             VERBOSE_EACH_FRAME_COLLECTION
-            if (i)
-                TaskInfo("block %s is invalid on %s", b.reference().toString().c_str(), i.toString().c_str());
-            else
-                TaskInfo("block %s is valid", b.reference().toString().c_str());
+            {
+                if (i)
+                    TaskInfo("block %s is invalid on %s%s", b.reference().toString().c_str(), i.toString().c_str(), b.to_delete?" to delete":"");
+                else
+                    TaskInfo("block %s is valid%s", b.reference().toString().c_str(), b.to_delete?" to delete":"");
+            }
         } else
             break;
     }
@@ -766,7 +760,7 @@ pBlock Collection::
 #ifdef SAWE_NO_MUTEX
         GlBlock::pHeight h = block->glblock->height();
         h->data->ClearContents();
-        // will be unmapped in next_frame() or right before it's drawn
+        // will be unmapped right before it's drawn
 #else
         QMutexLocker cpul(&block->cpu_copy_mutex);
         // DataStorage makes sure nothing actually happens here unless
@@ -776,7 +770,6 @@ pBlock Collection::
 #endif
 
         createBlockFromOthers( block );
-        EXCEPTION_ASSERT( !block->valid_samples );
 
         // For some filters a block could be created with valid content from existing blocks
         //BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());

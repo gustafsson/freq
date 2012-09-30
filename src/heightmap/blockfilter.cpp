@@ -192,6 +192,7 @@ void BlockFilter::
     TIME_BLOCKFILTER ComputationSynchronize();
     }
 
+    DEBUG_CWTTOBLOCK TaskInfo("Validating %s in %s (was %s)", transfer.toString ().c_str (), block->reference ().toString ().c_str (), block->valid_samples.toString ().c_str ());
     block->valid_samples |= transfer;
     block->non_zero |= transfer;
 }
