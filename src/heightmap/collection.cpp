@@ -300,11 +300,10 @@ pBlock Collection::
 		#ifndef SAWE_NO_MUTEX
 		QMutexLocker l(&_cache_mutex);
 		#endif
+
         cache_t::iterator itr = _cache.find( ref );
         if (itr != _cache.end())
-        {
             block = itr->second;
-        }
     }
 
     if (0 == block.get()) {
@@ -356,9 +355,6 @@ std::vector<pBlock> Collection::
 	#endif
     //TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s ) from %u caches", I.toString().c_str(), only_visible?"only visible":"all", _cache.size());
 
-    //float fs = target->sample_rate();
-    //float Ia = I.first / fs, Ib = I.last/fs;
-
     BOOST_FOREACH( const cache_t::value_type& c, _cache )
     {
         const pBlock& pb = c.second;
@@ -367,21 +363,17 @@ std::vector<pBlock> Collection::
         if (only_visible && framediff != 0 && framediff != 1)
             continue;
 
-//        Position a, b;
-//        // getArea is faster than getInterval but misses the overlapping parts returned by getInterval
-//        pb->ref.getArea(a, b, _samples_per_block, _scales_per_block);
-//        if (b.time <= Ia || a.time >= Ib)
-//            continue;
+#ifndef SAWE_NO_MUTEX
+        if (pb->to_delete)
+            continue;
+#endif
 
-        // This check is done in mergeBlock as well, but do it here first
-        // for a hopefully more local and thus faster loop.
-        if ((I & pb->getInterval()).count() && !pb->to_delete)
-        {
+        if ((I & pb->getInterval()).count())
             r.push_back(pb);
-        }
     }
 
-/*    // consistency check
+/*
+    // consistency check
     foreach( const cache_t::value_type& c, _cache )
     {
         bool found = false;
@@ -405,7 +397,8 @@ std::vector<pBlock> Collection::
         }
 
         EXCEPTION_ASSERT(found);
-    }*/
+    }
+*/
 
     return r;
 }
@@ -459,6 +452,7 @@ void Collection::
 #ifdef USE_CUDA
     cudaMemGetInfo(&free, &total);
 #endif
+
     TaskInfo("Currently has %u cached blocks (ca %s). There are %s graphics memory free of a total of %s",
              _cache.size(),
              DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str(),
@@ -480,10 +474,8 @@ void Collection::
 
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); itr++ )
     {
-        if (_frame_counter != itr->second->frame_number_last_used ) {
-            _to_remove.push_back( itr->second );
-            itr->second->to_delete = true;
-        }
+        if (_frame_counter != itr->second->frame_number_last_used )
+            removeBlock( itr->second );
     }
 }
 
@@ -500,10 +492,7 @@ void Collection::
         Signal::Interval blockInterval = itr->first.getInterval();
         Signal::Interval toKeep = I & blockInterval;
         if ( !toKeep )
-        {
-            _to_remove.push_back(itr->second);
-            itr->second->to_delete = true;
-        }
+            removeBlock(itr->second);
         else if ( blockInterval == toKeep )
         {
         }
@@ -799,7 +788,9 @@ pBlock Collection::
 
                         block.reset( new Block(ref) );
                         block->glblock = stealedBlock->glblock;
+#ifndef SAWE_NO_MUTEX
                         block->cpu_copy = stealedBlock->cpu_copy;
+#endif
                         stealedBlock->glblock.reset();
                         const Region& r = block->getRegion();
                         block->glblock->reset( r.time(), r.scale() );
@@ -824,8 +815,7 @@ pBlock Collection::
                                      _cache.size()
                                      );
 
-                        _to_remove.push_back ( back );
-                        back->to_delete = true;
+                        removeBlock(back);
                     }
                 }
             }
@@ -1203,6 +1193,16 @@ bool Collection::
     TIME_COLLECTION ComputationSynchronize();
 
     return true;
+}
+
+
+void Collection::
+        removeBlock (pBlock b)
+{
+    _to_remove.push_back( b );
+#ifndef SAWE_NO_MUTEX
+    b->to_delete = true;
+#endif
 }
 
 } // namespace Heightmap

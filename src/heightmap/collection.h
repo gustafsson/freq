@@ -292,7 +292,14 @@ private:
     /**
       If 'r' exists in _cache, update its last_frame_used so that it wont yet be freed.
       */
-    void        poke(const Reference& r);
+    void        poke( const Reference& r );
+
+
+    /**
+     * Queue a block for removal.
+     */
+    void        removeBlock( pBlock b );
+
 
     /**
       Try to create 'r' and return its invalid samples if it was created.
