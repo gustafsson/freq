@@ -60,6 +60,8 @@ public:
 
     /** parent */
     Reference parent() const;
+    Reference parentVertical() const;
+    Reference parentHorizontal() const;
 
     /**
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including

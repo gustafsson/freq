@@ -16,6 +16,7 @@
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/foreach.hpp>
+#include <boost/unordered_set.hpp>
 
 // std
 #include <string>
@@ -161,13 +162,10 @@ unsigned Collection::
     QMutexLocker l(&_cache_mutex);
 #endif
 
-    // TaskTimer tt("%s, _recent.size() = %lu", __FUNCTION__, _recent.size());
-
     boost::shared_ptr<TaskTimer> tt;
     if (_unfinished_count)
-    {
-        VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("Collection::next_frame(), %u, %u", _unfinished_count, _created_count));
-    }
+        VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("%s(), %u, %u, %u",
+            __FUNCTION__, _unfinished_count, _created_count, (unsigned)_recent.size()) );
 
 
     unsigned t = _unfinished_count;
@@ -192,7 +190,7 @@ unsigned Collection::
     _to_remove = delayremoval;
 
 
-    std::vector<pBlock> blocksToPoke;
+    boost::unordered_set<Reference> blocksToPoke;
 
     BOOST_FOREACH(const cache_t::value_type& b, _cache)
     {
@@ -200,32 +198,34 @@ unsigned Collection::
 
         if (b.second->frame_number_last_used == _frame_counter)
         {
-            blocksToPoke.push_back(b.second);
+            // Mark these blocks and surrounding blocks as in-use
+            blocksToPoke.insert (b.second->reference ());
         }
-        else
+        else if (b.second->glblock->has_texture ())
         {
-            if (b.second->glblock->has_texture())
-            {
-                TaskTimer tt("Deleting texture");
-                b.second->glblock->delete_texture();
-            }
+            // This block isn't used but it has allocated a texture in OpenGL
+            // memory that can easily recreate as soon as it is needed.
+            TaskTimer tt("Deleting texture");
+            b.second->glblock->delete_texture ();
         }
     }
 
+    boost::unordered_set<Reference> blocksToPoke2 = blocksToPoke;
 
-    BOOST_FOREACH(const pBlock& b, blocksToPoke)
+    BOOST_FOREACH(const Reference& r, blocksToPoke)
     {
         // poke blocks that are likely to be needed soon
 
-        const Reference &r = b->reference();
         // poke children
-        poke(r.left());
-        poke(r.right());
-        poke(r.top());
-        poke(r.bottom());
+        blocksToPoke2.insert (r.left());
+        blocksToPoke2.insert (r.right());
+        blocksToPoke2.insert (r.top());
+        blocksToPoke2.insert (r.bottom());
 
         // poke parent
-        poke(r.parent());
+        blocksToPoke2.insert (r.parent());
+        blocksToPoke2.insert (r.parentHorizontal());
+        blocksToPoke2.insert (r.parentVertical());
 
         // poke surrounding sibblings, and this
         Reference q = r;
@@ -237,9 +237,14 @@ unsigned Collection::
                  q.block_index[1] <= r.block_index[1] + 1;
                  q.block_index[1]++)
             {
-                poke(q);
+                blocksToPoke2.insert (q);
             }
         }
+    }
+
+    BOOST_FOREACH(const Reference& r, blocksToPoke2)
+    {
+        poke (r);
     }
 
     _free_memory = availableMemoryForSingleAllocation();
@@ -255,11 +260,16 @@ void Collection::
 {
     cache_t::iterator itr = _cache.find( r );
     if (itr != _cache.end())
-    {
-        itr->second->frame_number_last_used = _frame_counter;
-        _recent.remove( itr->second );
-        _recent.push_front( itr->second );
-    }
+        poke(itr->second);
+}
+
+
+void Collection::
+        poke(pBlock b)
+{
+    b->frame_number_last_used = _frame_counter;
+    _recent.remove( b );
+    _recent.push_front( b );
 }
 
 
@@ -295,18 +305,10 @@ pBlock Collection::
     // Look among cached blocks for this reference
     TIME_GETBLOCK TaskTimer tt("getBlock %s", ref.toString().c_str());
 
-    pBlock block; // smart pointer defaults to 0
-    {   
-		#ifndef SAWE_NO_MUTEX
-		QMutexLocker l(&_cache_mutex);
-		#endif
+    pBlock block = findBlock( ref );
 
-        cache_t::iterator itr = _cache.find( ref );
-        if (itr != _cache.end())
-            block = itr->second;
-    }
-
-    if (0 == block.get()) {
+    if (!block)
+    {
         if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count )
         {
             block = createBlock( ref );
@@ -316,33 +318,47 @@ pBlock Collection::
         {
             TaskInfo("Delaying creation of block %s", ref.toString().c_str());
         }
-    } else {
+    }
+
+    if (block)
+    {
         #ifndef SAWE_NO_MUTEX
             if (block->new_data_available) {
                 QMutexLocker l(&block->cpu_copy_mutex);
-                *block->glblock->height()->data = *block->cpu_copy; // really small memcpy
+                *block->glblock->height()->data = *block->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
                 block->new_data_available = false;
             }
         #endif
-    }
 
-    if (0 != block.get())
-    {
-        Intervals refInt = block->getInterval();
-        if (!(refInt-=block->valid_samples).empty())
+        Intervals blockInt = block->getInterval();
+        if (blockInt -= block->valid_samples)
             _unfinished_count++;
 
-		#ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&_cache_mutex);
-		#endif
+        #ifndef SAWE_NO_MUTEX
+            QMutexLocker l(&_cache_mutex);
+        #endif
 
-        block->frame_number_last_used = _frame_counter;
-        _recent.remove( block );
-        _recent.push_front( block );
+        poke(block);
     }
 
     return block;
 }
+
+
+pBlock Collection::
+        findBlock( const Reference& ref )
+{
+    #ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_cache_mutex);
+    #endif
+
+    cache_t::iterator itr = _cache.find( ref );
+    if (itr != _cache.end())
+        return itr->second;
+
+    return pBlock();
+}
+
 
 std::vector<pBlock> Collection::
         getIntersectingBlocks( const Intervals& I, bool only_visible )
@@ -730,276 +746,39 @@ pBlock Collection::
 pBlock Collection::
         createBlock( const Reference& ref )
 {
+    TIME_COLLECTION TaskTimer tt("Creating a new block %s", ref.toString().c_str());
+
     pBlock result;
-    INFO_COLLECTION TaskTimer tt("Creating a new block %s", ref.toString().c_str());
-
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
-
     // Try to create a new block
     try
     {
-        pBlock block;
+        pBlock block = getAllocatedBlock(ref);
+        if (!block)
+            return block;
 
-        if (0!= "Reuse old redundant blocks")
-        {
-            // prefer to use block rather than discard an old block and then reallocate it
-
-            // _recent is ordered with the most recently accessed blocks first,
-            pBlock stealedBlock;
-            if (!_recent.empty())
-            {
-                stealedBlock = _recent.back();
-
-                // blocks that were used last frame has age 1 and blocks that were used this frame has age 0
-                unsigned age = _frame_counter - stealedBlock->frame_number_last_used;
-
-                if (1 < age)
-                {
-                    size_t memForNewBlock = 0;
-                    memForNewBlock += sizeof(float); // OpenGL VBO
-                    memForNewBlock += sizeof(float); // Cuda device memory
-                    memForNewBlock += sizeof(float); // OpenGL texture
-                    memForNewBlock += sizeof(float); // OpenGL neareset texture
-                    memForNewBlock *= scales_per_block()*samples_per_block();
-                    size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
-
-                    size_t margin = 2*memForNewBlock;
-
-                    if (allocatedMemory+memForNewBlock+margin > _free_memory*MAX_FRACTION_FOR_CACHES)
-                    {
-#ifndef SAWE_NO_MUTEX
-                        QMutexLocker l(&stealedBlock->cpu_copy_mutex);
-#endif
-                        pBlock stealedBlock = _recent.back();
-
-                        TaskInfo ti("Stealing block %s last used %u frames ago for %s. Total free %s, total cache %s, %u blocks",
-                                    stealedBlock->reference ().toString ().c_str (),
-                                     _frame_counter - stealedBlock->frame_number_last_used,
-                                    ref.toString ().c_str (),
-                                     DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
-                                     DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
-                                      _cache.size()
-                                     );
-
-                        _recent.remove( stealedBlock );
-                        _cache.erase( stealedBlock->reference() );
-
-                        block.reset( new Block(ref) );
-                        block->glblock = stealedBlock->glblock;
-#ifndef SAWE_NO_MUTEX
-                        block->cpu_copy = stealedBlock->cpu_copy;
-#endif
-                        stealedBlock->glblock.reset();
-                        const Region& r = block->getRegion();
-                        block->glblock->reset( r.time(), r.scale() );
-                    }
-
-                    // Need to release even more blocks? Release one at a time for each call to createBlock
-                    if (allocatedMemory > _free_memory*MAX_FRACTION_FOR_CACHES)
-                    {
-                        pBlock back = _recent.back();
-
-                        size_t blockMemory = back->glblock->allocated_bytes_per_element()*scales_per_block()*samples_per_block();
-                        allocatedMemory -= std::min(allocatedMemory,blockMemory);
-                        _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
-
-                        TaskInfo("Soon removing block %s last used %u frames ago in favor of %s. Freeing %s, total free %s, cache %s, %u blocks",
-                                     back->reference ().toString().c_str (),
-                                     _frame_counter - block->frame_number_last_used,
-                                     ref.toString ().c_str (),
-                                     DataStorageVoid::getMemorySizeText( blockMemory ).c_str(),
-                                     DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
-                                     DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
-                                     _cache.size()
-                                     );
-
-                        removeBlock(back);
-                    }
-                }
-            }
-        }
-
-        if (!block) // couldn't reuse recent block, allocate a new one instead
-        {
-            // estimate if there is enough memory available
-            size_t s = 0;
-            s += sizeof(float); // OpenGL VBO
-            s += sizeof(float); // Cuda device memory
-            s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
-            s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-            s*=scales_per_block()*samples_per_block();
-            s*=1.5f; // 50% arbitrary extra
-
-            s += 4<<20; // 4 MB to stub stft
-
-            if (s>_free_memory)
-            {
-                TaskInfo("Require %s free memory for new block (including margins), only %s available",
-                         DataStorageVoid::getMemorySizeText( s ).c_str(),
-                         DataStorageVoid::getMemorySizeText( _free_memory ).c_str());
-                return pBlock();
-            }
-
-            block = attempt( ref );
-        }
-
-        bool empty_cache = _cache.empty();
-
-#ifndef SAWE_NO_MUTEX
-        l.unlock ();
-#endif
-
-        if ( !block && !empty_cache) {
-            TaskTimer tt("Memory allocation failed creating new block %s. Doing garbage collection", ref.toString().c_str());
-            gc();
-            block = attempt( ref ); // try again
-        }
-
-        if ( 0 == block.get()) {
-            TaskTimer tt("Failed creating new block %s", ref.toString().c_str());
-            return pBlock(); // return null-pointer
-        }
-
-#ifndef SAWE_NO_MUTEX
+        // set to zero
+#ifdef SAWE_NO_MUTEX
+        GlBlock::pHeight h = block->glblock->height();
+        h->data->ClearContents();
+        // will be unmapped in next_frame() or right before it's drawn
+#else
         QMutexLocker cpul(&block->cpu_copy_mutex);
+        // DataStorage makes sure nothing actually happens here unless
+        // cpu_copy has already been allocated (i.e if it is stolen)
+        // Each block is about 1 MB so this takes about 500-1000 us.
+        block->cpu_copy->ClearContents ();
 #endif
 
-        VERBOSE_COLLECTION ComputationSynchronize();
+        createBlockFromOthers( block );
 
-        {
-            VERBOSE_COLLECTION TaskTimer tt("ClearContents");
-            // set to zero
-            GlBlock::pHeight h = block->glblock->height();
-            h->data->ClearContents();
-            // will be unmapped in next_frame() or right before it's drawn
+        // For some filters a block could be created with valid content from existing blocks
+        //BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
+        //if (!blockFilter->createFromOthers())
+        //    block->valid_samples.clear();
 
-            VERBOSE_COLLECTION ComputationSynchronize();
-        }
-
-        GlException_CHECK_ERROR();
-        ComputationCheckError();
-
-        bool stubWithStft = false;
-        BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
-        if (blockFilter)
-            stubWithStft &= blockFilter->stubWithStft();
-
-        VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
-
-        Intervals things_to_update = block->getInterval();
-
-        if ( 1 /* create from others */ )
-        {
-            std::vector<pBlock> gib = getIntersectingBlocks( things_to_update.spannedInterval(), false );
-
-            const Region& r = block->getRegion();
-
-            int merge_levels = 10;
-#ifndef SAWE_NO_MUTEX
-            // Don't bother locking _cache to check size during debugging
-#endif
-            VERBOSE_COLLECTION TaskTimer tt("Checking %u blocks out of %u blocks, %d times", gib.size(), _cache.size(), merge_levels);
-
-            for (int merge_level=0; merge_level<merge_levels; ++merge_level)
-            {
-                VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
-
-                std::vector<pBlock> next;
-                BOOST_FOREACH ( const pBlock& bl, gib )
-                {
-                    // The switch from high resolution blocks to low resolution blocks (or
-                    // the other way around) should be as invisible as possible. Therefor
-                    // the contents should be stubbed from whatever contents the previous
-                    // blocks already have, even if the contents are out-of-date.
-                    //
-                    // i.e. we use bl->ref.getInterval() here instead of bl->valid_samples.
-                    Interval v = bl->getInterval();
-
-                    // Check if these samples are still considered for update
-                    if ( (things_to_update & v & bl->non_zero).count() <= 1)
-                        continue;
-
-                    int d = bl->reference().log2_samples_size[0];
-                    d -= ref.log2_samples_size[0];
-                    d += bl->reference().log2_samples_size[1];
-                    d -= ref.log2_samples_size[1];
-
-                    if (d==merge_level || -d==merge_level)
-                    {
-                        const Region& r2 = bl->getRegion();
-                        if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale )
-                        {
-                            // 'bl' covers all scales in 'block' (not necessarily all time samples though)
-                            things_to_update -= v;
-                            mergeBlock( block, bl, 0 );
-                        }
-                        else if (bl->reference().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
-                        {
-                            // mergeBlock makes sure that their scales overlap more or less
-                            //mergeBlock( block, bl, 0 ); takes time
-                        }
-                        else
-                        {
-                            // don't bother with things that doesn't match very well
-                        }
-                    }
-                    else
-                    {
-                        next.push_back( bl );
-                    }
-                }
-                gib = next;
-            }
-        }
-
-
-        if (!blockFilter->createFromOthers())
-            block->valid_samples.clear();
-
-
-        // fill block by STFT during the very first frames
-        if (stubWithStft) // don't stubb if they will be filled by stft shortly hereafter
-        if (things_to_update)
-        if (10 > _frame_counter) {
-            //size_t stub_size
-            //if ((b.time - a.time)*fast_source( target)->sample_rate()*sizeof(float) )
-#ifdef USE_CUDA
-            try
-            {
-#endif
-                INFO_COLLECTION TaskTimer tt("stft %s", things_to_update.toString().c_str());
-
-                //fillBlock( block, things_to_update );
-                things_to_update.clear();
-
-                ComputationCheckError();
-#ifdef USE_CUDA
-            }
-            catch (const CudaException& x )
-            {
-                // Swallow silently, it is not fatal if this stubbed fft can't be computed right away
-                TaskInfo tt("Collection::fillBlock swallowed CudaException.\n%s", x.what());
-                printCacheSize();
-            }
-#endif
-        }
-
-        if ( 0 /* set dummy values */ ) {
-            GlBlock::pHeight h = block->glblock->height();
-            float* p = h->data->getCpuMemory();
-            for (unsigned s = 0; s<_samples_per_block/2; s++) {
-                for (unsigned f = 0; f<_scales_per_block; f++) {
-                    p[ f*_samples_per_block + s] = 0.05f+0.05f*sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
-                }
-            }
-        }
+        //setDummyValues(block);
 
         result = block;
-
-        GlException_CHECK_ERROR();
-        ComputationCheckError();
     }
 #ifdef USE_CUDA
     catch (const CudaException& x )
@@ -1017,13 +796,12 @@ pBlock Collection::
         return pBlock();
     }
 
-    EXCEPTION_ASSERT( 0 != result.get() );
-
-#ifndef SAWE_NO_MUTEX
-    l.relock();
-#endif
+    EXCEPTION_ASSERT( result );
 
     // result is non-zero
+#ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_cache_mutex);
+#endif
     _cache[ result->reference() ] = result;
 
     TIME_COLLECTION ComputationSynchronize();
@@ -1032,81 +810,223 @@ pBlock Collection::
 }
 
 
-/**
-  finds a source that we reliably can read from fast
-  TODO remove, instead make sure the top of the chain is a cache. And if the cache is not up to date, skip filling.
-*/
-//static pOperation
-//        fast_source(pOperation start, Interval I)
-//{
-//    pOperation itr = start;
-
-//    if (!itr)
-//        return itr;
-
-//    while (true)
-//    {
-//        OperationCache* c = dynamic_cast<OperationCache*>( itr.get() );
-//        if (c)
-//        {
-//            if ((I - c->cached_samples()).empty())
-//            {
-//                return itr;
-//            }
-//        }
-
-//        if ( (I - itr->zeroed_samples_recursive()).empty() )
-//            return itr;
-
-//        pOperation s = itr->source();
-//        if (!s)
-//            return itr;
-        
-//        itr = s;
-//    }
-//}
+void Collection::
+        removeBlock (pBlock b)
+{
+    _to_remove.push_back( b );
+#ifndef SAWE_NO_MUTEX
+    b->to_delete = true;
+#endif
+}
 
 
-//void Collection::
-//        fillBlock( pBlock block, const Signal::Intervals& to_update )
-//{
-//    Tfr::StftParams params;
-//    params.set_approximate_chunk_size(1 << 12); // 4096
+pBlock Collection::
+        getAllocatedBlock(const Reference& ref)
+{
+#ifndef SAWE_NO_MUTEX
+    QMutexLocker l(&_cache_mutex);
+#endif
 
-//    StftToBlock stftmerger(this);
-//    stftmerger.transform( params.createTransform() );
-//    stftmerger.exclude_end_block = true;
+    pBlock block;
 
-//    // Only take 1 MB of signal data at a time
-//    unsigned section_size = (1<<20) / sizeof(float);
-//    Intervals sections = to_update;
-//    sections &= Interval(0, target->number_of_samples());
+    if (0!= "Reuse old redundant blocks")
+    {
+        // prefer to use block rather than discard an old block and then reallocate it
 
-//    boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-//    boost::posix_time::ptime start_time = now;
-//    unsigned time_to_work_ms = 20; // should count as interactive
-//    while (sections)
-//    {
-//        Interval section = sections.fetchInterval(section_size);
-//        Interval needed = stftmerger.requiredInterval( section, stftmerger.transform() );
-//        pOperation fast_source = Heightmap::fast_source( target, needed );
-//        stftmerger.source( fast_source );
-//        Tfr::ChunkAndInverse ci = stftmerger.computeChunk( section );
-//        stftmerger.mergeChunk(block, *ci.chunk, block->glblock->height()->data);
-//        Interval chunk_interval = ci.chunk->getInterval();
+        // _recent is ordered with the most recently accessed blocks first,
+        pBlock stealedBlock;
+        if (!_recent.empty())
+        {
+            stealedBlock = _recent.back();
 
-//        sections -= chunk_interval;
+            // blocks that were used last frame has age 1 and blocks that were used this frame has age 0
+            unsigned age = _frame_counter - stealedBlock->frame_number_last_used;
 
-//        now = boost::posix_time::microsec_clock::local_time();
-//        boost::posix_time::time_duration diff = now - start_time;
-//        // Don't bother creating stubbed blocks for more than a fraction of a second
-//        if (diff.total_milliseconds() > time_to_work_ms)
-//            break;
-//    }
+            if (1 < age)
+            {
+                size_t memForNewBlock = 0;
+                memForNewBlock += sizeof(float); // OpenGL VBO
+                memForNewBlock += sizeof(float); // Cuda device memory
+                memForNewBlock += sizeof(float); // OpenGL texture
+                memForNewBlock += sizeof(float); // OpenGL neareset texture
+                memForNewBlock *= scales_per_block()*samples_per_block();
+                size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
 
-//    // StftToBlock (rather BlockFilter) validates samples, Discard those.
-//    block->valid_samples = Intervals();
-//}
+                size_t margin = 2*memForNewBlock;
+
+                if (allocatedMemory+memForNewBlock+margin > _free_memory*MAX_FRACTION_FOR_CACHES)
+                {
+    #ifndef SAWE_NO_MUTEX
+                    QMutexLocker l(&stealedBlock->cpu_copy_mutex);
+    #endif
+                    pBlock stealedBlock = _recent.back();
+
+                    TaskInfo ti("Stealing block %s last used %u frames ago for %s. Total free %s, total cache %s, %u blocks",
+                                stealedBlock->reference ().toString ().c_str (),
+                                 _frame_counter - stealedBlock->frame_number_last_used,
+                                ref.toString ().c_str (),
+                                 DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
+                                 DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
+                                  _cache.size()
+                                 );
+
+                    _recent.remove( stealedBlock );
+                    _cache.erase( stealedBlock->reference() );
+
+                    block.reset( new Block(ref) );
+                    block->glblock = stealedBlock->glblock;
+    #ifndef SAWE_NO_MUTEX
+                    block->cpu_copy = stealedBlock->cpu_copy;
+    #endif
+                    stealedBlock->glblock.reset();
+                    const Region& r = block->getRegion();
+                    block->glblock->reset( r.time(), r.scale() );
+                }
+
+                // Need to release even more blocks? Release one at a time for each call to createBlock
+                if (allocatedMemory > _free_memory*MAX_FRACTION_FOR_CACHES)
+                {
+                    pBlock back = _recent.back();
+
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*scales_per_block()*samples_per_block();
+                    allocatedMemory -= std::min(allocatedMemory,blockMemory);
+                    _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
+
+                    TaskInfo("Soon removing block %s last used %u frames ago in favor of %s. Freeing %s, total free %s, cache %s, %u blocks",
+                                 back->reference ().toString().c_str (),
+                                 _frame_counter - block->frame_number_last_used,
+                                 ref.toString ().c_str (),
+                                 DataStorageVoid::getMemorySizeText( blockMemory ).c_str(),
+                                 DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
+                                 DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
+                                 _cache.size()
+                                 );
+
+                    removeBlock(back);
+                }
+            }
+        }
+    }
+
+    if (!block) // couldn't reuse recent block, allocate a new one instead
+    {
+        // estimate if there is enough memory available
+        size_t s = 0;
+        s += sizeof(float); // OpenGL VBO
+        s += sizeof(float); // Cuda device memory
+        s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
+        s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
+        s*=scales_per_block()*samples_per_block();
+        s*=1.5f; // 50% arbitrary extra
+
+        if (s>_free_memory)
+        {
+            TaskInfo("Require %s free memory for new block (including margins), only %s available",
+                     DataStorageVoid::getMemorySizeText( s ).c_str(),
+                     DataStorageVoid::getMemorySizeText( _free_memory ).c_str());
+            return pBlock();
+        }
+
+        block = attempt( ref );
+    }
+
+    bool empty_cache = _cache.empty();
+
+    if ( !block && !empty_cache ) {
+        TaskTimer tt("Memory allocation failed creating new block %s. Doing garbage collection", ref.toString().c_str());
+        gc();
+        block = attempt( ref ); // try again
+    }
+
+    if ( !block ) {
+        TaskTimer tt("Failed to create a new block %s", ref.toString().c_str());
+        return pBlock(); // return null-pointer
+    }
+
+    return block;
+}
+
+
+void Collection::
+        setDummyValues( pBlock block )
+{
+    GlBlock::pHeight h = block->glblock->height();
+    float* p = h->data->getCpuMemory();
+    for (unsigned s = 0; s<_samples_per_block/2; s++) {
+        for (unsigned f = 0; f<_scales_per_block; f++) {
+            p[ f*_samples_per_block + s] = 0.05f+0.05f*sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
+        }
+    }
+}
+
+
+void Collection::
+        createBlockFromOthers( pBlock block )
+{
+    VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
+
+    const Reference& ref = block->reference ();
+    Intervals things_to_update = block->getInterval ();
+    std::vector<pBlock> gib = getIntersectingBlocks ( things_to_update.spannedInterval(), false );
+
+    const Region& r = block->getRegion ();
+
+    int merge_levels = 10;
+    #ifndef SAWE_NO_MUTEX
+    // Don't bother locking _cache to check size during debugging
+    #endif
+    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), _cache.size(), merge_levels);
+
+    for (int merge_level=0; merge_level<merge_levels; ++merge_level)
+    {
+        VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
+
+        std::vector<pBlock> next;
+        BOOST_FOREACH ( const pBlock& bl, gib )
+        {
+            // The switch from high resolution blocks to low resolution blocks (or
+            // the other way around) should be as invisible as possible. Therefor
+            // the contents should be stubbed from whatever contents the previous
+            // blocks already have, even if the contents are out-of-date.
+            //
+            Interval v = bl->getInterval ();
+
+            // Check if these samples are still considered for update
+            if ( (things_to_update & v & bl->non_zero).count() <= 1)
+                continue;
+
+            int d = bl->reference().log2_samples_size[0];
+            d -= ref.log2_samples_size[0];
+            d += bl->reference().log2_samples_size[1];
+            d -= ref.log2_samples_size[1];
+
+            if (d==merge_level || -d==merge_level)
+            {
+                const Region& r2 = bl->getRegion ();
+                if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale )
+                {
+                    // 'bl' covers all scales in 'block' (not necessarily all time samples though)
+                    things_to_update -= v;
+                    mergeBlock( block, bl, 0 );
+                }
+                else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
+                {
+                    // mergeBlock makes sure that their scales overlap more or less
+                    //mergeBlock( block, bl, 0 ); takes time
+                }
+                else
+                {
+                    // don't bother with things that doesn't match very well
+                }
+            }
+            else
+            {
+                next.push_back ( bl );
+            }
+        }
+        gib = next;
+    }
+}
 
 
 bool Collection::
@@ -1115,7 +1035,7 @@ bool Collection::
 #ifndef SAWE_NO_MUTEX
     EXCEPTION_ASSERT( outBlock.get() != inBlock.get() );
     EXCEPTION_ASSERT( !outBlock->cpu_copy_mutex.tryLock() );
-    QMutexLocker il(&inBlock->cpu_copy_mutex);
+    QMutexLocker il (&inBlock->cpu_copy_mutex);
 #endif
 
     const Interval outInterval = outBlock->getInterval();
@@ -1157,13 +1077,12 @@ bool Collection::
     INFO_COLLECTION ComputationSynchronize();
 
     {
-    INFO_COLLECTION TaskTimer tt("blockMerge");
-    ::blockMerge( in_data,
-                  out_data,
-
-                  ResampleArea( ri.a.time, ri.a.scale, ri.b.time, ri.b.scale ),
-                  ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );
-    INFO_COLLECTION ComputationSynchronize();
+        INFO_COLLECTION TaskTimer tt("blockMerge");
+        ::blockMerge( in_data,
+                      out_data,
+                      ResampleArea( ri.a.time, ri.a.scale, ri.b.time, ri.b.scale ),
+                      ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );
+        INFO_COLLECTION ComputationSynchronize();
     }
 
     outBlock->valid_samples -= inBlock->getInterval();
@@ -1195,14 +1114,5 @@ bool Collection::
     return true;
 }
 
-
-void Collection::
-        removeBlock (pBlock b)
-{
-    _to_remove.push_back( b );
-#ifndef SAWE_NO_MUTEX
-    b->to_delete = true;
-#endif
-}
 
 } // namespace Heightmap

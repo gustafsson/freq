@@ -260,27 +260,25 @@ private:
 
     ThreadChecker _constructor_thread;
 
+
+    /**
+     * @brief findBlock searches through the cache for a block with reference 'ref'
+     * @param ref the block to search for.
+     * @return a block if it is found or pBlock() otherwise.
+     */
+    pBlock      findBlock( const Reference& ref );
+
+
     /**
       Attempts to allocate a new block.
       */
     pBlock      attempt( const Reference& ref );
 
+
     /**
       Creates a new block.
       */
     pBlock      createBlock( const Reference& ref );
-
-    /**
-      Compoute a short-time Fourier transform (stft). Usefull for filling new
-      blocks with data really fast.
-      */
-//    void        fillBlock( pBlock block, const Signal::Intervals& to_update );
-
-
-    /**
-      TODO comment
-      */
-    void        mergeStftBlock( boost::shared_ptr<Tfr::Chunk> stft, pBlock block );
 
 
     /**
@@ -293,12 +291,34 @@ private:
       If 'r' exists in _cache, update its last_frame_used so that it wont yet be freed.
       */
     void        poke( const Reference& r );
+    void        poke( pBlock b );
 
 
     /**
      * Queue a block for removal.
      */
     void        removeBlock( pBlock b );
+
+
+    /**
+     * @brief getAllocatedBlock returns an allocated block either by new a
+     * memory allocation or by reusing the data from an old block.
+     */
+    pBlock      getAllocatedBlock( const Reference& ref );
+
+
+    /**
+     * @brief setDummyValues fills a block with dummy values, used for testing.
+     * @param block
+     */
+    void        setDummyValues( pBlock block );
+
+
+    /**
+     * @brief createBlockFromOthers fills a block with data from other blocks.
+     * @param block
+     */
+    void        createBlockFromOthers(pBlock block);
 
 
     /**

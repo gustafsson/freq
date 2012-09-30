@@ -27,7 +27,6 @@ public:
     virtual bool applyFilter(const Tfr::ChunkAndInverse& pchunk);
     unsigned smallestOk(const Signal::Interval& I);
     virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData ) = 0;
-    virtual bool stubWithStft() { return true; }
     virtual bool createFromOthers() { return true; }
 
 protected:
@@ -222,7 +221,6 @@ public:
     StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
-    virtual bool stubWithStft() { return false; }
 };
 
 
@@ -232,7 +230,6 @@ public:
     CepstrumToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
     virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
-    virtual bool stubWithStft() { return false; }
 };
 
 
@@ -244,7 +241,6 @@ public:
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
     virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
-    virtual bool stubWithStft() { return false; }
     virtual bool createFromOthers() { return false; }
 };
 

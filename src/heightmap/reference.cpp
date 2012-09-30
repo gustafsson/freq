@@ -137,6 +137,20 @@ Reference Reference::parent() const {
     return r;
 }
 
+Reference Reference::parentVertical() const {
+    Reference r = *this;
+    r.log2_samples_size[1]++;
+    r.block_index[1]>>=1;
+    return r;
+}
+
+Reference Reference::parentHorizontal() const {
+    Reference r = *this;
+    r.log2_samples_size[0]++;
+    r.block_index[0]>>=1;
+    return r;
+}
+
 Reference::
         Reference(Collection *collection)
 :   _collection(collection)

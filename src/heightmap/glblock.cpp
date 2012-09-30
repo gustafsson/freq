@@ -169,6 +169,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
     return program;
 }
 
+
 GlBlock::
 GlBlock( Collection* collection, float width, float height )
 :   _collection( collection ),
@@ -184,6 +185,7 @@ GlBlock( Collection* collection, float width, float height )
 
     // TODO read up on OpenGL interop in CUDA 3.0, cudaGLRegisterBufferObject is old, like CUDA 1.0 or something ;)
 }
+
 
 GlBlock::
 ~GlBlock()
@@ -360,8 +362,6 @@ bool GlBlock::
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        _got_new_height_data = true;
-
         TIME_GLBLOCK TaskInfo("Created tex_height=%u", _tex_height);
     }
 
@@ -523,6 +523,9 @@ void GlBlock::
 void GlBlock::
         draw( unsigned vbo_size, GlBlock::HeightMode withHeightMap )
 {
+    if (0==_tex_height && !_got_new_height_data)
+        return;
+
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
