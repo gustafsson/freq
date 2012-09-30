@@ -178,8 +178,7 @@ GlBlock( Collection* collection, float width, float height )
     _tex_height(0),
     _tex_height_nearest(0),
     _world_width(width),
-    _world_height(height),
-    _got_new_height_data(false)
+    _world_height(height)
 {
     TIME_GLBLOCK TaskTimer tt("GlBlock()");
 
@@ -208,8 +207,6 @@ GlBlock::
     _height.reset();
     _mesh.reset();
     if (tt) tt->partlyDone();
-
-    unmap();
 
     delete_texture();
     if (tt) tt->partlyDone();
@@ -325,6 +322,8 @@ bool GlBlock::
 void GlBlock::
         delete_texture()
 {
+    unmap();
+
     if (_tex_height)
     {
         TIME_GLBLOCK TaskInfo("Deleting tex_height=%u", _tex_height);
@@ -396,12 +395,11 @@ bool GlBlock::
 void GlBlock::
         update_texture( GlBlock::HeightMode heightMode )
 {
+    bool got_new_height_data = 0==_tex_height || (bool)_mapped_height;
     bool got_new_vertex_data = create_texture( heightMode );
 
-    _got_new_height_data |= (bool)_mapped_height;
-    got_new_vertex_data |= _got_new_height_data && HeightMode_Flat != heightMode;
-
-    if (!_got_new_height_data && !got_new_vertex_data)
+    got_new_vertex_data |= got_new_height_data && HeightMode_Flat != heightMode;
+    if (!got_new_height_data && !got_new_vertex_data)
         return;
 
     int w = _collection->samples_per_block();
@@ -411,7 +409,7 @@ void GlBlock::
     if (!hasTextureFloat)
         glPixelTransferf( GL_RED_SCALE, 0.1f );
 
-    if (_got_new_height_data)
+    if (got_new_height_data)
     {
         unmap();
 
@@ -425,8 +423,6 @@ void GlBlock::
 
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
-
-        _got_new_height_data = false;
     }
 
     if (got_new_vertex_data && HeightMode_VertexTexture == heightMode)
@@ -514,8 +510,6 @@ void GlBlock::
         _mapped_height.reset();
 
         TIME_GLBLOCK ComputationSynchronize();
-
-        _got_new_height_data = true;
     }
 }
 
@@ -523,8 +517,11 @@ void GlBlock::
 void GlBlock::
         draw( unsigned vbo_size, GlBlock::HeightMode withHeightMap )
 {
-    if (0==_tex_height && !_got_new_height_data)
+    if (!_height)
+    {
+        TaskInfo("Skipping rendering of block without data");
         return;
+    }
 
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();

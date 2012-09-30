@@ -33,17 +33,6 @@ public:
     //HeightReadOnlyArray heightReadOnlyArray();
     DataStorageSize     heightSize() const;
 
-    /**
-        'unmap' releases copies of pHeight and pSlope held by GlBlock and
-        updates the OpenGL textures that are used for rendering.
-
-        It is an error for a client to call unmap while keeping an instance
-        of pHeight or pSlope. Because if there is an instance of pHeight left.
-        The Vbo is not unmapped from cuda, glBindBuffer doesn't do anything and
-        glTexSubImage2D fails. unmap ensures this condition with an assert.
-      */
-    void unmap();
-
     bool has_texture();
     void delete_texture();
 
@@ -60,6 +49,17 @@ public:
     unsigned allocated_bytes_per_element();
 
 private:
+    /**
+        'unmap' releases copies of pHeight and pSlope held by GlBlock and
+        updates the OpenGL textures that are used for rendering.
+
+        It is an error for a client to call unmap while keeping an instance
+        of pHeight or pSlope. Because if there is an instance of pHeight left.
+        The Vbo is not unmapped from cuda, glBindBuffer doesn't do anything and
+        glTexSubImage2D fails. unmap ensures this condition with an assert.
+      */
+    void unmap();
+
     void createHeightVbo();
 
     bool create_texture( HeightMode heightMode );
@@ -80,7 +80,6 @@ private:
     unsigned _tex_height_nearest;
 
     float _world_width, _world_height;
-    bool _got_new_height_data;
 };
 
 typedef boost::shared_ptr<GlBlock> pGlBlock;

@@ -288,9 +288,8 @@ private:
 
 
     /**
-      If 'r' exists in _cache, update its last_frame_used so that it wont yet be freed.
+      Update 'b':S last_frame_used so that it wont yet be freed.
       */
-    void        poke( const Reference& r );
     void        poke( pBlock b );
 
 

@@ -194,22 +194,22 @@ unsigned Collection::
 
     BOOST_FOREACH(const cache_t::value_type& b, _cache)
     {
-        b.second->glblock->unmap();
-
-        if (b.second->frame_number_last_used == _frame_counter)
+        Block* block = b.second.get();
+        if (block->frame_number_last_used == _frame_counter)
         {
             // Mark these blocks and surrounding blocks as in-use
-            blocksToPoke.insert (b.second->reference ());
+            blocksToPoke.insert (block->reference ());
         }
-        else if (b.second->glblock->has_texture ())
+        else if (block->glblock->has_texture ())
         {
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
             TaskTimer tt("Deleting texture");
-            b.second->glblock->delete_texture ();
+            block->glblock->delete_texture ();
         }
     }
 
+    VERBOSE_EACH_FRAME_COLLECTION TaskTimer t2("Poking around %d", blocksToPoke.size());
     boost::unordered_set<Reference> blocksToPoke2 = blocksToPoke;
 
     BOOST_FOREACH(const Reference& r, blocksToPoke)
@@ -242,10 +242,20 @@ unsigned Collection::
         }
     }
 
+
+    VERBOSE_EACH_FRAME_COLLECTION TaskInfo("Poke2 %d", blocksToPoke2.size());
+    int n = 0;
+
     BOOST_FOREACH(const Reference& r, blocksToPoke2)
     {
-        poke (r);
+        cache_t::iterator itr = _cache.find( r );
+        if (itr != _cache.end())
+        {
+            n++;
+            poke(itr->second);
+        }
     }
+    VERBOSE_EACH_FRAME_COLLECTION TaskInfo("Poked %d", n);
 
     _free_memory = availableMemoryForSingleAllocation();
 
@@ -256,17 +266,11 @@ unsigned Collection::
 
 
 void Collection::
-        poke(const Reference& r)
-{
-    cache_t::iterator itr = _cache.find( r );
-    if (itr != _cache.end())
-        poke(itr->second);
-}
-
-
-void Collection::
         poke(pBlock b)
 {
+#ifndef SAWE_NO_MUTEX
+    b->to_delete = false;
+#endif
     b->frame_number_last_used = _frame_counter;
     _recent.remove( b );
     _recent.push_front( b );
@@ -528,7 +532,7 @@ void Collection::
 #else
                     QMutexLocker l(&itr->second->cpu_copy_mutex);
                     Block::pData data = itr->second->cpu_copy;
-                    itr->second->new_data_available;
+                    itr->second->new_data_available = true;
 #endif
 
                     ::blockClearPart( data,
@@ -643,12 +647,14 @@ Intervals Collection::
             VERBOSE_EACH_FRAME_COLLECTION
             if (i)
                 TaskInfo("block %s is invalid on %s", b.reference().toString().c_str(), i.toString().c_str());
+            else
+                TaskInfo("block %s is valid", b.reference().toString().c_str());
         } else
             break;
     }
     }
 
-    TIME_COLLECTION TaskInfo("%u blocks with invalid samples %s", counter, r.toString().c_str());
+    TIME_COLLECTION TaskInfo("%u recently used blocks. Total invalid samples %s", counter, r.toString().c_str());
 
     // If all recently used block are up-to-date then also update all their children, if any children are allocated
     if (false) if (!r)
@@ -770,6 +776,7 @@ pBlock Collection::
 #endif
 
         createBlockFromOthers( block );
+        EXCEPTION_ASSERT( !block->valid_samples );
 
         // For some filters a block could be created with valid content from existing blocks
         //BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
@@ -977,7 +984,7 @@ void Collection::
     #endif
     VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), _cache.size(), merge_levels);
 
-    for (int merge_level=0; merge_level<merge_levels; ++merge_level)
+    for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
         VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
 
@@ -1038,11 +1045,8 @@ bool Collection::
     QMutexLocker il (&inBlock->cpu_copy_mutex);
 #endif
 
-    const Interval outInterval = outBlock->getInterval();
-
     // Find out what intervals that match
-    Intervals transferDesc = inBlock->getInterval();
-    transferDesc &= outInterval;
+    Intervals transferDesc = inBlock->getInterval() & inBlock->valid_samples & outBlock->getInterval();
 
     // Remove already computed intervals
     transferDesc -= outBlock->valid_samples;
@@ -1076,6 +1080,7 @@ bool Collection::
 
     INFO_COLLECTION ComputationSynchronize();
 
+    // TODO examine why blockMerge is really really slow
     {
         INFO_COLLECTION TaskTimer tt("blockMerge");
         ::blockMerge( in_data,
@@ -1103,9 +1108,8 @@ bool Collection::
             ri.b.scale==ro.b.scale && ri.a.scale==ro.a.scale)
         {
             outBlock->valid_samples -= inBlock->getInterval();
-            outBlock->valid_samples |= inBlock->valid_samples;
-            outBlock->valid_samples &= outInterval;
-            VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inBlock->valid_samples & outInterval).toString().c_str() );
+            outBlock->valid_samples |= inBlock->valid_samples & inBlock->getInterval() & outBlock->getInterval ();
+            VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inBlock->valid_samples & outBlock->getInterval ()).toString().c_str() );
         }
     }
 
