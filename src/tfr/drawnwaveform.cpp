@@ -162,9 +162,10 @@ bool DrawnWaveform::
     if (!p)
         return false;
 
-    return block_fs == p->block_fs &&
-           signal_length == p->signal_length &&
-           maxValue == p->maxValue;
+    return true;
+
+    // 'block_fs', 'signal_length' and 'maxValue' are temporary internal
+    // variables and not transform settings.
 }
 
 
