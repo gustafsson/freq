@@ -27,11 +27,8 @@ public:
     virtual pChunk operator()( Signal::pMonoBuffer b );
     virtual Signal::pMonoBuffer inverse( pChunk chunk );
 
-    Stft* stft();
-
 private:
     const CepstrumParams p;
-    Tfr::pTransform stft_;
 };
 
 

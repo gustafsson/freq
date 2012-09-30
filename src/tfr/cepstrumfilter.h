@@ -18,6 +18,9 @@ public:
     Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
 
+    virtual void invalidate_samples(const Signal::Intervals& I);
+
+
     bool exclude_end_block;
 };
 

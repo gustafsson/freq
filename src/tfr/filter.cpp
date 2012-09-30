@@ -143,8 +143,7 @@ void Filter::
 
     if (_transform)
     {
-        if (typeid(*_transform) != typeid(*t))
-            throw std::invalid_argument(str(format("'transform' must be an instance of %s") % vartype(*t)));
+        EXCEPTION_ASSERTX(typeid(*_transform) == typeid(*t), str(format("'transform' must be an instance of %s, was %s") % vartype(*_transform) % vartype(*t)));
     }
 
     if (_transform == t )

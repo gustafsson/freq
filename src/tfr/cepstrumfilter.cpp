@@ -35,22 +35,33 @@ CepstrumFilter::
 Signal::Interval CepstrumFilter::
         requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    unsigned chunk_size = dynamic_cast<Cepstrum*>(t.get())->params().chunk_size();
-    // Add a margin to make sure that the STFT is computed for one block before
-    // and one block after the signal. This makes it possible to do proper
-    // interpolations so that there won't be any edges between blocks
+    const CepstrumParams& p = ((Cepstrum*)t.get())->params();
+    long averaging = p.averaging();
+    long window_size = p.chunk_size();
+    long window_increment = p.increment();
+    long chunk_size  = window_size*averaging;
+    long increment   = window_increment*averaging;
 
-    unsigned first_chunk = 0,
-             last_chunk = (I.last + 2.5*chunk_size)/chunk_size;
+    // Add a margin to make sure that the STFT is computed for one window
+    // before and one window after 'chunk_interval'.
 
-    if (I.first >= 1.5*chunk_size)
-        first_chunk = (I.first - 1.5*chunk_size)/chunk_size;
+    long first_chunk = 0;
+    long last_chunk = (I.last + chunk_size/2 + increment - 1)/increment;
 
-    ChunkAndInverse ci;
+    if (I.first >= chunk_size/2)
+        first_chunk = (I.first - chunk_size/2)/increment;
+    else
+    {
+        first_chunk = floor((I.first - chunk_size/2.f)/increment);
 
-    Interval chunk_interval (
-                first_chunk*chunk_size,
-                last_chunk*chunk_size);
+        if (last_chunk*increment < chunk_size + increment)
+            last_chunk = (chunk_size + increment)/increment;
+    }
+
+    Interval chunk_interval(
+                first_chunk*increment,
+                last_chunk*increment);
+
     if (exclude_end_block)
     {
         if (chunk_interval.last>number_of_samples())
@@ -62,6 +73,19 @@ Signal::Interval CepstrumFilter::
     }
 
     return chunk_interval;
+}
+
+
+void CepstrumFilter::
+        invalidate_samples(const Signal::Intervals& I)
+{
+    const CepstrumParams& p = ((Cepstrum*)transform().get())->params();
+    int window_size = p.chunk_size();
+    int increment   = p.increment();
+
+    // include_time_support
+    Signal::Intervals J = I.enlarge(window_size-increment);
+    Operation::invalidate_samples( J );
 }
 
 

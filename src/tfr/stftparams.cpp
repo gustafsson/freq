@@ -307,6 +307,7 @@ bool StftParams::
         return false;
 
     const StftParams* p = dynamic_cast<const StftParams*>(&b);
+
     return _window_size == p->_window_size &&
             _compute_redundant == p->_compute_redundant &&
             _averaging == p->_averaging &&

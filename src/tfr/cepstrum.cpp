@@ -11,19 +11,11 @@ using namespace Signal;
 namespace Tfr {
 
 
-CepstrumParams init(CepstrumParams p)
-{
-    CepstrumParams r = p;
-    r.compute_redundant( true );
-    return r;
-}
-
 Cepstrum::
         Cepstrum(const CepstrumParams& p)
     :
-      p(init(p))
+      p(p)
 {
-    stft_ = p.StftParams::createTransform();
 }
 
 
@@ -31,12 +23,14 @@ pChunk Cepstrum::
         operator()( pMonoBuffer b )
 {
     TaskTimer tt("Cepstrum");
-    Stft& ft = *stft();
-    pChunk cepstra = ft(b);
+    CepstrumParams p2 = p;
+    p2.compute_redundant ( true );
+    pTransform t = p2.StftParams::createTransform ();
+    pChunk cepstra = (*t)(b);
 
     ::cepstrumPrepareCepstra( cepstra->transform_data, 4.f/p.chunk_size() );
 
-    ft.compute( cepstra->transform_data, cepstra->transform_data, FftDirection_Forward );
+    ((Stft*)t.get())->compute( cepstra->transform_data, cepstra->transform_data, FftDirection_Forward );
     cepstra->freqAxis = p.freqAxis( cepstra->original_sample_rate );
 
     TaskInfo("Cepstrum debug. Was %s , returned %s ",
@@ -52,13 +46,6 @@ Signal::pMonoBuffer Cepstrum::
         inverse( pChunk )
 {
     throw std::logic_error("Not implemented");
-}
-
-
-Stft* Cepstrum::
-        stft()
-{
-    return dynamic_cast<Stft*>(stft_.get());
 }
 
 
