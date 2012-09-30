@@ -302,6 +302,24 @@ pBuffer SinkSource::
     pBuffer n(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
     *n |= *b;
 
+    if (0 == "check non-zero data")
+    {
+        float *p = b->getChannel (0)->waveform_data ()->getCpuMemory ();
+        float *q = n->getChannel (0)->waveform_data ()->getCpuMemory ();
+        int N = b->number_of_samples ();
+        bool nonzerob = false;
+        bool nonzeron = false;
+        for (int i=0; i<N; ++i)
+            nonzerob |= p[i] != 0;
+        for (int i=0; i<validFetch.count (); ++i)
+            nonzeron |= q[i] != 0;
+
+        EXCEPTION_ASSERT( nonzerob );
+        EXCEPTION_ASSERT( nonzeron );
+        if (validFetch.first > 0)
+            EXCEPTION_ASSERT( q[0] != 0.f );
+    }
+
     return n;
 }
 
