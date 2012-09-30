@@ -832,11 +832,15 @@ void RenderController::
         color->addActionItem( ui->actionSet_grayscale );
         toolbar_render->addWidget( color );
 
+        foreach(QAction*a,color->actions ())
+            a->setChecked (false);
+
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
         connect(ui->actionSet_greenred_colors, SIGNAL(triggered()), SLOT(receiveSetGreenRedColors()));
         connect(ui->actionSet_greenwhite_colors, SIGNAL(triggered()), SLOT(receiveSetGreenWhiteColors()));
+
 #if defined(TARGET_hast)
         color->setCheckedAction(ui->actionSet_greenwhite_colors);
         ui->actionSet_greenwhite_colors->trigger();
