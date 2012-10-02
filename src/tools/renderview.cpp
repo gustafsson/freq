@@ -1144,13 +1144,18 @@ void RenderView::
         }
     }
 
+    bool workerCrashed = false;
+#ifndef SAWE_NO_MUTEX
+    workerCrashed = !worker.isRunning ();
+#endif
+
     {   // Work
         isWorking = worker.todo_list();
         TIME_PAINTGL_DETAILS TaskTimer tt("Work target = %s, todo list = %s, isWorking = %d",
                  worker.target()->name().c_str(),
                  worker.todo_list().toString().c_str(), isWorking);
 
-        if (isWorking || isRecording) {
+        if ((isWorking || isRecording) && !workerCrashed) {
             if (!_work_timer.get())
                 _work_timer.reset( new TaskTimer("Working"));
 
@@ -1159,8 +1164,6 @@ void RenderView::
 #ifndef SAWE_NO_MUTEX
             if (worker.isRunning ())
                 restartUpdateTimer();
-
-            worker.checkForErrors();
 #else
             worker.workOne(!isRecording && !worker.target()->post_sink()->isUnderfed());
             emit postUpdate();
@@ -1195,11 +1198,6 @@ void RenderView::
         }
     }
 
-    bool workerCrashed = false;
-#ifndef SAWE_NO_MUTEX
-    workerCrashed = !worker.isRunning ();
-#endif
-
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
 
@@ -1212,6 +1210,9 @@ void RenderView::
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
+
+    if (workerCrashed)
+        worker.checkForErrors();
 
     if (!onlyComputeBlocksForRenderView)
     {

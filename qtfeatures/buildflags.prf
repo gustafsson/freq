@@ -37,13 +37,14 @@ win32 {
 # /Ob1 enables inlining of functions explicitly declared inline
 # /Ob2 makes it possible for any function to be inline
 # The /Gf switch enables string pooling, a size optimization that lets the compiler place a single copy of identical strings into the .exe file. # The /GF switch works likes /Gf but puts common strings in read-only memory
-# The /Gy switch makes it possible for the compiler to make all individual functions packaged functions (COMDATs). This means the linker can exclude or order individual functions in a DLL or .exe file, which in turn reduces the run-time size of the program.
+# The /Gy switch makes it possible for the compiler to make all individual functions packaged functions (COMDATs). This means the linker can exclude or order individual functions in a DLL or .exe file, which in turn reduces the run-time size of the program
 # /Oi, which makes it possible for the compiler to expand intrinsic functions inline
 # /Os favors smaller code size over speed
-# /Ot, which favors faster code over smaller code.
+# /Ot, which favors faster code over smaller code
 # /GL Whole Program Optimizaion: Enable link-time code generation
+# /DEBUG Generate debug info, needed for stack back traces
         QMAKE_CXXFLAGS += /Ox /Oi /Og /Ot /Ob2 /GL /GF /arch:SSE2 /fp:fast /MP
-        QMAKE_LFLAGS += /LTCG
+        QMAKE_LFLAGS += /LTCG /DEBUG
     }
 
     #QMAKE_LFLAGS_DEBUG += \

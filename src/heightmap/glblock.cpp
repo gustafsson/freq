@@ -519,7 +519,7 @@ void GlBlock::
 {
     if (!_height)
     {
-        TaskInfo("Skipping rendering of block without data");
+        TIME_GLBLOCK TaskInfo("Skipping rendering of block without data");
         return;
     }
 

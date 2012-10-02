@@ -36,6 +36,7 @@ fi
 
 
 msbuildparams="//property:Configuration=Release //verbosity:detailed sonicawe.sln"
+#msbuildparams="//property:Configuration=Debug //verbosity:detailed sonicawe.sln"
 
 pushd ..
 echo "========================== Building ==========================="
@@ -55,6 +56,7 @@ touch src/sawe/configuration/configuration.cpp
 
 "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
 cp src/release/sonicawe.exe src/release/sonicawe-cpu.exe
+cp src/release/sonicawe.pdb src/release/sonicawe-cpu.pdb
 
 echo "========================== Building ==========================="
 echo "Building ${packagename} cuda ${versiontag}"
@@ -73,6 +75,7 @@ if [ ! -z "$CUDA_BIN_PATH" ] && [ "Y" == "$buildcuda" ]; then
 
 	"C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" $msbuildparams
 	cp src/release/sonicawe.exe src/release/sonicawe-cuda.exe
+	cp src/release/sonicawe.pdb src/release/sonicawe-cuda.pdb
 else
     echo "Couldn't find nvcc, skipping build of \'${packagename}-cuda\'.";
 	rm -f src/release/sonicawe-cuda.exe
@@ -96,7 +99,9 @@ rm -rf $packagefullname
 mkdir -p tmp
 cp -r lib/sonicawe-winlib/sonicawe_snapshot_win32_base $packagefullname
 cp src/release/sonicawe-cpu.exe "$packagefullname/${packagename}-cpu.exe"
+cp src/release/sonicawe-cpu.pdb "$packagefullname/${packagename}-cpu.pdb"
 [ -e src/release/sonicawe-cuda.exe ] && cp src/release/sonicawe-cuda.exe "$packagefullname/${packagename}-cuda.exe"
+[ -e src/release/sonicawe-cuda.pdb ] && cp src/release/sonicawe-cuda.pdb "$packagefullname/${packagename}-cuda.pdb"
 cp dist/package-win/launcher/release/launcher.exe "$packagefullname/${packagename}.exe"
 cp -r matlab $packagefullname/matlab
 cp license/$licensefile $packagefullname

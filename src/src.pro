@@ -33,6 +33,7 @@ testlib {
     win32:CONFIG += embed_manifest_exe
 }
 
+CONFIG(debug, debug|release): CONFIG += console
 
 CONFIG += $${qtfeatures}buildflags
 #CONFIG += console # console output
