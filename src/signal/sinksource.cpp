@@ -392,16 +392,33 @@ Intervals SinkSource::
 }
 */
 
-bool cache_search( IntervalType t, const pBuffer& b )
+class cache_search
 {
-    return t < b->getInterval().last;
-}
+public:
+    bool operator()( IntervalType t, const pBuffer& b )
+    {
+        return t < b->getInterval().last;
+    }
+
+#if defined(_MSC_VER) && defined(_DEBUG)
+    // Integrity checks in windows debug mode
+    bool operator()( const pBuffer& b, IntervalType t )
+    {
+        return b->getInterval().last < t;
+    }
+
+    bool operator()( const pBuffer& b, const pBuffer& b2 )
+    {
+        return b->getInterval().last < b2->getInterval().last;
+    }
+#endif
+};
 
 
 std::vector<pBuffer>::iterator SinkSource::
         findBuffer( Signal::IntervalType sample )
 {
-    return upper_bound(_cache.begin(), _cache.end(), sample, cache_search);
+    return upper_bound(_cache.begin(), _cache.end(), sample, cache_search());
 }
 
 } // namespace Signal
