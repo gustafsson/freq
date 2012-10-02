@@ -113,7 +113,7 @@ void CommandList::
 {
     ptime epoch(date(2011,boost::date_time::Jan,1));
     ptime local_time(microsec_clock::local_time());
-    unsigned now = (local_time - epoch).ticks();
+    unsigned now = (local_time - epoch).ticks() & 0xFFFFFFFF;
 
     time_duration duration(0,0,0,now-lastCommandTimeStamp);
     if ( 1 < presentCommand && duration.total_milliseconds() < 1000 )
