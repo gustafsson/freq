@@ -112,7 +112,7 @@ if [ "Y" == "${verifyRepos}" ]; then
 				if [ -z "`apt-cache search $glewpkg`" ]; then
 					glewpkg=libglew1.5-dev
 				fi
-				sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc
+				sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc curl
 			fi
 		elif [ "$(uname -s)" == "Darwin" ]; then
 			git submodule update --init lib/sonicawe-maclib
