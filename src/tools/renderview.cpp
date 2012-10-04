@@ -1211,8 +1211,9 @@ void RenderView::
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
 
-    if (workerCrashed)
-        worker.checkForErrors();
+#ifndef SAWE_NO_MUTEX
+    worker.checkForErrors();
+#endif
 
     if (!onlyComputeBlocksForRenderView)
     {

@@ -638,10 +638,14 @@ Intervals Collection::
 
             VERBOSE_EACH_FRAME_COLLECTION
             {
+                bool to_delete = false;
+#ifndef SAWE_NO_MUTEX
+                to_delete = b.to_delete;
+#endif
                 if (i)
-                    TaskInfo("block %s is invalid on %s%s", b.reference().toString().c_str(), i.toString().c_str(), b.to_delete?" to delete":"");
+                    TaskInfo("block %s is invalid on %s%s", b.reference().toString().c_str(), i.toString().c_str(), to_delete?" to delete":"");
                 else
-                    TaskInfo("block %s is valid%s", b.reference().toString().c_str(), b.to_delete?" to delete":"");
+                    TaskInfo("block %s is valid%s", b.reference().toString().c_str(), to_delete?" to delete":"");
             }
         } else
             break;
