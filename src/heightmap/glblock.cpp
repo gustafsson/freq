@@ -67,17 +67,15 @@ string attachShader(GLuint prg, GLenum type, const char *name)
         if (fp) free(src);
 
         char shaderInfoLog[2048];
-        int len;
-
-        glGetShaderInfoLog(shader, sizeof(shaderInfoLog), (GLsizei*)&len, shaderInfoLog);
-        QString qshaderInfoLog(shaderInfoLog);
+        glGetShaderInfoLog(shader, sizeof(shaderInfoLog), 0, shaderInfoLog);
+        TaskInfo("Compiling shader %s\n%s",
+                 name, shaderInfoLog);
 
         bool showShaderLog = !compiled;
-        showShaderLog |= !qshaderInfoLog.isEmpty() && qshaderInfoLog != "No errors";
-//        showShaderLog |= 0 != qshaderInfoLog.contains("fail", Qt::CaseInsensitive);
-//        showShaderLog |= 0 != qshaderInfoLog.contains("warning", Qt::CaseInsensitive);
-//        showShaderLog |= 0 != qshaderInfoLog.contains("error", Qt::CaseInsensitive) && 0 == qshaderInfoLog.contains("No errors", Qt::CaseInsensitive);
 #ifdef _DEBUG
+        QString qshaderInfoLog(shaderInfoLog);
+        showShaderLog |= 0 != qshaderInfoLog.contains("fail", Qt::CaseInsensitive);
+        showShaderLog |= 0 != qshaderInfoLog.contains("warning", Qt::CaseInsensitive);
         showShaderLog |= strlen(shaderInfoLog)>0;
 #endif
 
@@ -117,17 +115,16 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &linked);
 
-        char programInfoLog[2048] = "";
+        char programInfoLog[2048];
         glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
-        programInfoLog[sizeof(programInfoLog)-1] = 0;
-        QString qprogramInfoLog(programInfoLog);
+        TaskInfo("Linking vertex shader %s with fragment shader %s\n%s",
+                 vertFileName, fragFileName, programInfoLog);
 
         bool showProgramLog = !linked;
-        showProgramLog |= !qprogramInfoLog.isEmpty() && qprogramInfoLog != "No errors";
-//        showProgramLog |= 0 != qprogramInfoLog.contains("fail", Qt::CaseInsensitive);
-//        showProgramLog |= 0 != qprogramInfoLog.contains("warning", Qt::CaseInsensitive);
-//        showProgramLog |= 0 != qprogramInfoLog.contains("error", Qt::CaseInsensitive) && 0 == qprogramInfoLog.contains("No errors", Qt::CaseInsensitive);
 #ifdef _DEBUG
+        QString qprogramInfoLog(programInfoLog);
+        showProgramLog |= 0 != qprogramInfoLog.contains("fail", Qt::CaseInsensitive);
+        showProgramLog |= 0 != qprogramInfoLog.contains("warning", Qt::CaseInsensitive);
         showProgramLog |= strlen(programInfoLog)>0;
 #endif
 
