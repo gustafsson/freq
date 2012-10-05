@@ -76,7 +76,7 @@ fi
 
 
 mkdir -p $package/usr/bin
-ln -s ../../opt/muchdifferent/sonicawe/sonicawe $package/usr/bin/${packagename}
+ln -s ../../opt/muchdifferent/sonicawe/${packagename} $package/usr/bin/${packagename}
 
 mkdir -p $share
 stat src/${packagename}-cuda >& /dev/null && CUDA=1
