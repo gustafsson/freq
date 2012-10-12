@@ -62,8 +62,11 @@ void MicrophoneRecorder::
             return;
         }
 
-        if (0>input_device_ || input_device_>sys.deviceCount()) {
+        if (0>input_device_) {
             input_device_ = sys.defaultInputDevice().index();
+        } else if (input_device_ >= sys.deviceCount()) {
+            input_device_ = sys.defaultInputDevice().index();
+            TaskInfo("Total number of devices is %d, reverting to default input device %d", sys.deviceCount(), input_device_);
         } else if ( sys.deviceByIndex(input_device_).isOutputOnlyDevice() ) {
             tt.getStream() << "Requested device '" << sys.deviceByIndex(input_device_).name() << "' can only be used for output";
             input_device_ = sys.defaultInputDevice().index();
