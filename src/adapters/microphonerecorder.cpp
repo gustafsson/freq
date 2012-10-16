@@ -87,7 +87,9 @@ void MicrophoneRecorder::
                        << " and input latency " << device.defaultHighInputLatency() << " s";
 
         QMutexLocker lock(&_data_lock);
-        _data = Signal::SinkSource(channel_count);
+        if (_rolling_mean.empty ())
+            _data = Signal::SinkSource(channel_count);
+
         _rolling_mean.resize(channel_count);
         for (unsigned i=0; i<channel_count; ++i)
             _rolling_mean[i] = 0;
@@ -306,22 +308,26 @@ int MicrophoneRecorder::
     {
         Signal::pMonoBuffer b = mb->getChannel (i);
         float* p = b->waveform_data()->getCpuMemory();
+        unsigned in_num_channels = _rolling_mean.size ();
+        unsigned in_i = i;
+        if (in_i >= in_num_channels)
+            in_i = in_num_channels - 1;
 
         if (_is_interleaved)
         {
             const float *in = (const float *)inputBuffer;
             for (unsigned j=0; j<framesPerBuffer; ++j)
-                p[j] = in[j*num_channels + i];
+                p[j] = in[j*in_num_channels + i];
         }
         else
         {
             const float **in = (const float **)inputBuffer;
-            const float *buffer = in[i];
+            const float *buffer = in[in_i];
             for (unsigned j=0; j<framesPerBuffer; ++j)
                 p[j] = buffer[j];
         }
 
-        float& mean = _rolling_mean[i];
+        float& mean = _rolling_mean[in_i];
         for (unsigned j=0; j<framesPerBuffer; ++j)
         {
             float v = p[j];
