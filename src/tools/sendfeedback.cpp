@@ -142,6 +142,8 @@ void SendFeedback::
     {
         QDialog::accept();
         QMessageBox::information(dynamic_cast<QWidget*>(parent()), "Feedback", "Your input has been sent. Thank you!");
+        ui->textEditMessage->setText ("");
+        ui->lineEditAttachFile->setText ("");
     }
 
     setEnabled( true );
