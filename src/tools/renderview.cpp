@@ -15,6 +15,7 @@
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "sawe/configuration.h"
+#include "ui_mainwindow.h"
 #include "support/drawwatermark.h"
 #include "support/drawworking.h"
 #include "tfr/cwt.h"
@@ -1270,6 +1271,15 @@ void RenderView::
             _try_gc++;
         }
         else throw;
+    } catch (const std::invalid_argument& x) {
+        const char* what = x.what();
+        if (0 == QMessageBox::warning( 0,
+                                       QString("Oups"),
+                                       "Oups...\n" + QString::fromLocal8Bit(what),
+                                       "File bug report", "Ignore", QString::null, 0, 0 ))
+        {
+            model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
+        }
     }
 
 	{

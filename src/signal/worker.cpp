@@ -601,12 +601,12 @@ void Worker::
         } catch ( const std::exception& x ) {
             TaskInfo("Worker thread caught %s: %s", vartype(x).c_str(), x.what());
             if (_caught_exception.empty())
-                _caught_exception = "Signal processing failed. Please file a bug report on this from the help menu.";
+                _caught_exception = "Signal processing failed.";
             return;
         } catch ( ... ) {
             TaskInfo("Worker thread caught unknown exception");
             if (_caught_exception.empty())
-                _caught_exception = "Unknown signal processing error. Please file a bug report on this from the help menu.";
+                _caught_exception = "Unknown signal processing error.";
             return;
         }
     }
