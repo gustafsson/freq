@@ -48,10 +48,35 @@ struct ChunkAndInverse
 
 
 /**
+ * @brief The ChunkFilter class
+ */
+class ChunkFilter
+{
+public:
+    virtual ~ChunkFilter() {}
+
+    /**
+      The default implementation of applyFilter is to call operator()( Chunk& )
+      @see computeChunk
+      */
+    virtual bool applyFilter( const ChunkAndInverse& chunk );
+
+protected:
+    /**
+      Apply the filter to a computed Tfr::Chunk. This is the method that should
+      be implemented to create new filters. Return true if it makes sense to
+      compute the inverse afterwards.
+      */
+    virtual bool operator()( Chunk& ) = 0;
+};
+typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
+
+
+/**
   Virtual base class for filters. To create a new filter, use CwtFilter or
   StftFilter as base class and implement the method 'operator()( Chunk& )'.
   */
-class Filter: public Signal::Operation
+class Filter: public Signal::Operation, public ChunkFilter
 {
 public:
     /**
@@ -120,27 +145,12 @@ protected:
     Filter(Filter&);
 
     /**
-      Apply the filter to a computed Tfr::Chunk. This is the method that should
-      be implemented to create new filters. Return true if it makes sense to
-      compute the inverse afterwards.
-      */
-    virtual bool operator()( Chunk& ) = 0;
-
-
-    /**
      * @brief requiredInterval returns the interval that is required to compute
      * a valid chunk representing interval I.
      * @param I
      * @param t transform() is not invariant use this instance instead.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t ) = 0;
-
-
-    /**
-      The default implementation of applyFilter is to call operator()( Chunk& )
-      @see computeChunk
-      */
-    virtual bool applyFilter( const ChunkAndInverse& chunk );
 
 
 private:
