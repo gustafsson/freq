@@ -120,6 +120,7 @@ public:
     StftChunk(unsigned window_size, StftParams::WindowType window_type, unsigned increment, bool redundant);
     void setHalfs( unsigned n );
     unsigned halfs( );
+    // make clear how these are related to the number of data samples in transform_data
     unsigned nActualScales() const;
 
     virtual unsigned nSamples() const;

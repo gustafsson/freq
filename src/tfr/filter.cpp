@@ -81,17 +81,19 @@ Signal::pBuffer Filter::
         if (!r)
             r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
 
-        Interval invinterval = ci.inverse->getInterval ();
-        Interval i(I.first, I.first+1);
-        if (!( i & invinterval ))
-        {
-            Signal::Interval required2 = requiredInterval(I, t);
-            Interval cgi2 = ci.chunk->getInterval ();
-            ci.inverse = b->getChannel (c);
-            ci.chunk = (*t)( ci.inverse );
-            ci.inverse = t->inverse (ci.chunk);
-            EXCEPTION_ASSERT( i & invinterval );
-        }
+        #ifdef _DEBUG
+            Interval invinterval = ci.inverse->getInterval ();
+            Interval i(I.first, I.first+1);
+            if (!( i & invinterval ))
+            {
+                Signal::Interval required2 = requiredInterval(I, t);
+                Interval cgi2 = ci.chunk->getInterval ();
+                ci.inverse = b->getChannel (c);
+                ci.chunk = (*t)( ci.inverse );
+                ci.inverse = t->inverse (ci.chunk);
+                EXCEPTION_ASSERT( i & invinterval );
+            }
+        #endif
 
         *r->getChannel (c) |= *ci.inverse;
     }
@@ -121,7 +123,7 @@ unsigned Filter::
 }
 
 
-bool Filter::
+bool ChunkFilter::
         applyFilter( const ChunkAndInverse& chunk )
 {
     return (*this)( *chunk.chunk );
