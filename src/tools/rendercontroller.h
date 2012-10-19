@@ -85,6 +85,7 @@ namespace Tools
     private slots:
         void deleteTarget();
         void updateFreqAxis();
+        void updateAmplitudeAxis();
         void updateChannels();
         void reroute();
         void clearCaches();

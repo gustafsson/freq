@@ -6,7 +6,8 @@ namespace Heightmap {
 enum AmplitudeAxis {
     AmplitudeAxis_Linear,
     AmplitudeAxis_Logarithmic,
-    AmplitudeAxis_5thRoot
+    AmplitudeAxis_5thRoot,
+    AmplitudeAxis_Real
 };
 
 

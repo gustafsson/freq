@@ -18,6 +18,12 @@
 #define M_PIf ((float)M_PI)
 
 #ifdef __CUDACC__
+#ifndef USE_CUDA
+#define USE_CUDA
+#endif
+#endif
+
+#ifdef USE_CUDA
 typedef float2 BlockElemType;
 #else
 typedef Tfr::ChunkElement BlockElemType;
@@ -28,7 +34,7 @@ class ConverterPhase
 public:
     RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& /*dataPosition*/ ) const
     {
-#ifdef __CUDACC__
+#ifdef USE_CUDA
         return atan2(v.x, v.y);
 #else
         return atan2(v.imag(), v.real());
@@ -42,7 +48,11 @@ template<Heightmap::AmplitudeAxis Axis>
 class ConverterAmplitudeAxis
 {
 public:
-    ConverterAmplitudeAxis(float normalization_factor):normalization_factor(normalization_factor) {}
+    ConverterAmplitudeAxis(float normalization_factor)
+        :
+          normalization_factor(normalization_factor)
+    {}
+
     RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& dataPosition ) const
     {
         return Heightmap::AmplitudeValue<Axis>()( normalization_factor*ConverterAmplitude()( v, dataPosition ) );
@@ -51,6 +61,32 @@ public:
 private:
     float normalization_factor;
 };
+
+
+
+template<>
+class ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_Real>
+{
+public:
+    ConverterAmplitudeAxis(float normalization_factor)
+        :
+          normalization_factor(normalization_factor)
+    {}
+
+    RESAMPLE_CALL float operator()( BlockElemType v, DataPos const& /*dataPosition*/ ) const
+    {
+#ifdef USE_CUDA
+        float q = v.x;
+#else
+        float q = v.real ();
+#endif
+        return normalization_factor * q;
+    }
+
+private:
+    float normalization_factor;
+};
+
 
 
 template<typename DefaultConverter>
@@ -441,7 +477,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                  )
 {
     // translate type to be read as a cuda texture
-#ifdef __CUDACC__
+#ifdef USE_CUDA
     DataStorage<float2>::Ptr input =
             CudaGlobalStorage::BorrowPitchedPtr<float2>(
                     inputp->size(),
@@ -609,7 +645,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
                    bool enable_subtexel_aggregation
                    )
 {
-#ifdef __CUDACC__
+#ifdef USE_CUDA
     cudaPitchedPtr cpp = CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr();
     cpp.xsize = cpp.pitch = nScales * sizeof(float2);
     cpp.ysize = nSamples;

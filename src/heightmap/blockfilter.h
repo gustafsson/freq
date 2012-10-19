@@ -220,6 +220,16 @@ public:
     StftToBlock( Collection* collection );
     StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
 
+    Tfr::pChunkFilter freqNormalization;
+
+    bool applyFilter( const Tfr::ChunkAndInverse& pchunk )
+    {
+        if (freqNormalization)
+            freqNormalization->applyFilter(pchunk);
+
+        return BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
+    }
+
     virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
 };
 

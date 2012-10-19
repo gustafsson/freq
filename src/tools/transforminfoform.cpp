@@ -14,6 +14,7 @@
 #include "tfr/drawnwaveform.h"
 #include "adapters/csvtimeseries.h"
 #include "filters/normalize.h"
+#include "filters/normalizespectra.h"
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -69,11 +70,19 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->windowTypeComboBox->addItem(Tfr::StftParams::windowTypeName((Tfr::StftParams::WindowType)i).c_str(), i);
     }
 
-    ui->normalizationComboBox->addItem("Select normalization to apply", -1.f);
+    ui->normalizationComboBox->addItem("None", -1.f);
     ui->normalizationComboBox->addItem("0 s normalization", 0.f);
     ui->normalizationComboBox->addItem("1 s normalization", 1.f);
     ui->normalizationComboBox->addItem("10 s normalization", 10.f);
     ui->normalizationComboBox->addItem("100 s normalization", 100.f);
+
+    ui->freqNormalComboBox->addItem("None", -1.f);
+    ui->freqNormalComboBox->addItem("0.5 Hz", 0.5f);
+    ui->freqNormalComboBox->addItem("1 Hz", 1.f);
+    ui->freqNormalComboBox->addItem("5 Hz", 5.f);
+    ui->freqNormalComboBox->addItem("25 Hz", 25.f);
+    ui->freqNormalComboBox->addItem("100 Hz", 100.f);
+    ui->freqNormalComboBox->addItem("500 Hz", 500.f);
 
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
@@ -82,6 +91,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
     connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
     connect(ui->normalizationComboBox, SIGNAL(currentIndexChanged(int)), SLOT(normalizationChanged()));
+    connect(ui->freqNormalComboBox, SIGNAL(currentIndexChanged(int)), SLOT(freqNormalizationChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
@@ -421,12 +431,48 @@ void TransformInfoForm::
 {
     float newValue = ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat();
 
+    Signal::PostSink* ps = project->tools ().render_model.renderSignalTarget->post_sink ();
+    float fs = ps->sample_rate ();
     if (0.f <= newValue)
     {
-        float fs = project->head->head_source()->sample_rate();
-        project->appendOperation(Signal::pOperation(
-                new Filters::Normalize(newValue*fs)));
+        Signal::pOperation timeNormalization(
+                        new Filters::Normalize(newValue*fs));
+        ps->filter ( timeNormalization );
     }
+    else
+        ps->filter( Signal::pOperation() );
+}
+
+
+void TransformInfoForm::
+        freqNormalizationChanged()
+{
+    float newValue = ui->freqNormalComboBox->itemData(ui->freqNormalComboBox->currentIndex()).toFloat();
+
+    Tfr::Filter* filter = project->tools ().render_model.block_filter ();
+    EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
+
+    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(filter->transform()->transformParams());
+    EXCEPTION_ASSERT( stft ); // Only if transform params are based on StftParams should it reach here (i.e Stft and Cepstrum)
+
+    Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
+    EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
+
+    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
+    if (0.f <= newValue)
+    {
+        stftblock->freqNormalization = Tfr::pChunkFilter(
+                    new Filters::NormalizeSpectra(newValue));
+        //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
+    }
+    else
+    {
+        stftblock->freqNormalization.reset();
+        //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
+    }
+
+    stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
+    renderview->emitTransformChanged ();
 }
 
 

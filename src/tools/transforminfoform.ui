@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>388</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,85 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="windowSizeEdit"/>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLineEdit" name="averagingEdit"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="averagingLabel">
+       <property name="text">
+        <string>Averaging</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="1">
+      <widget class="QLineEdit" name="overlapEdit"/>
+     </item>
+     <item row="9" column="0">
+      <widget class="QLabel" name="overlapLabel">
+       <property name="text">
+        <string>Overlap</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="normalizationLabel">
+       <property name="text">
+        <string>Time normalization</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QComboBox" name="normalizationComboBox"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="minHzEdit"/>
+     </item>
+     <item row="8" column="1">
+      <widget class="QComboBox" name="windowTypeComboBox"/>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="windowTypeLabel">
+       <property name="text">
+        <string>Window type</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="maxHzLabel">
+       <property name="text">
+        <string>Max hz</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="sampleRateEdit"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="sampleRateLabel">
+       <property name="text">
+        <string>Sample rate</string>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="1">
       <widget class="QLineEdit" name="binResolutionEdit"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="windowSizeLabel">
+       <property name="text">
+        <string>Window size</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="minHzLabel">
+       <property name="text">
+        <string>Min hz</string>
+       </property>
+      </widget>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="binResolutionLabel">
@@ -32,82 +109,15 @@
      <item row="1" column="1">
       <widget class="QLineEdit" name="maxHzEdit"/>
      </item>
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="minHzEdit"/>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="minHzLabel">
-       <property name="text">
-        <string>Min hz</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="maxHzLabel">
-       <property name="text">
-        <string>Max hz</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="sampleRateLabel">
-       <property name="text">
-        <string>Sample rate</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLineEdit" name="sampleRateEdit"/>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="windowSizeLabel">
-       <property name="text">
-        <string>Window size</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="windowSizeEdit"/>
-     </item>
      <item row="7" column="0">
-      <widget class="QLabel" name="windowTypeLabel">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>Window type</string>
+        <string>Freq normalization</string>
        </property>
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QComboBox" name="windowTypeComboBox"/>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="overlapLabel">
-       <property name="text">
-        <string>Overlap</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QLineEdit" name="overlapEdit"/>
-     </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="averagingLabel">
-       <property name="text">
-        <string>Averaging</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLineEdit" name="averagingEdit"/>
-     </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="normalizationLabel">
-       <property name="text">
-        <string>Normalization</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="1">
-      <widget class="QComboBox" name="normalizationComboBox"/>
+      <widget class="QComboBox" name="freqNormalComboBox"/>
      </item>
     </layout>
    </item>

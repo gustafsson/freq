@@ -1035,6 +1035,7 @@ void RenderController::
     }
 
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateFreqAxis()), Qt::QueuedConnection);
+    connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateAmplitudeAxis()), Qt::QueuedConnection);
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(updateChannels()), Qt::QueuedConnection);
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
 
@@ -1134,6 +1135,49 @@ void RenderController::
     default:
         break;
     }
+}
+
+
+void RenderController::
+        updateAmplitudeAxis()
+{
+    Tfr::Filter* filter = model()->block_filter ();
+    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
+
+/*    switch (model()->amplitude_axis ())
+    {
+    case Heightmap::AmplitudeAxis_Real:
+        break;
+    default:
+        stftblock->freqNormalization.reset ();
+        break;
+    }*/
+
+    view->emitAxisChanged();
+    stateChanged();
+
+//    switch (model()->amplitude_axis ())
+/*    switch (model()->amplitude_axis ())
+    {
+    case Heightmap::AmplitudeAxis_Linear:
+        receiveLinearAmplitude();
+        break;
+
+    case Heightmap::AmplitudeAxis_Logarithmic:
+        receiveLogAmplitude();
+        break;
+
+    case Heightmap::AmplitudeAxis_5thRoot:
+        receiveFifthAmplitude();
+        break;
+
+    case Heightmap::AmplitudeAxis_Real:
+        receiveLinearAmplitude();
+        break;
+
+    default:
+        break;
+    }*/
 }
 
 
