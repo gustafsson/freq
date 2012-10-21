@@ -6,8 +6,8 @@
 
 #include "cpumemorystorage.h"
 
-#define TIME_PLAYBACK
-//#define TIME_PLAYBACK if(0)
+//#define TIME_PLAYBACK
+#define TIME_PLAYBACK if(0)
 
 using namespace std;
 using namespace boost::posix_time;
@@ -549,6 +549,14 @@ int Playback::
                  const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
+    float FS;
+    TIME_PLAYBACK FS = _data.sample_rate();
+    TIME_PLAYBACK TaskTimer("Playback::readBuffer Reading [%d, %d)%u# from %d. [%g, %g)%g s",
+                           (int)_playback_itr, (int)(_playback_itr+framesPerBuffer),
+                           (unsigned)framesPerBuffer, (int)_data.number_of_samples(),
+                           _playback_itr/ FS, (_playback_itr + framesPerBuffer)/ FS,
+                           framesPerBuffer/ FS);
+
     if (!_data.empty() && _playback_itr == _data.getInterval().first) {
         _startPlay_timestamp = microsec_clock::local_time();
     }
@@ -580,26 +588,17 @@ int Playback::
 
     _playback_itr += framesPerBuffer;
 
-    const char* msg = "";
     int ret = paContinue;
     if (_data.getInterval().last + (Signal::IntervalType)framesPerBuffer < _playback_itr ) {
-        msg = ". DONE";
+        TaskInfo("DONE");
         ret = paComplete;
     } else {
         if (_data.getInterval().last < _playback_itr ) {
-            msg = ". PAST END";
+            TaskInfo("PAST END");
             // TODO if !_data.invalid_samples().empty() should pause playback here and continue when data is made available
         } else {
         }
     }
-
-    float FS;
-    TIME_PLAYBACK FS = _data.sample_rate();
-    TIME_PLAYBACK TaskInfo("Playback::readBuffer Reading [%d, %d)%u# from %d. [%g, %g)%g s%s",
-                           (int)_playback_itr, (int)(_playback_itr+framesPerBuffer),
-                           (unsigned)framesPerBuffer, (int)_data.number_of_samples(),
-                           _playback_itr/ FS, (_playback_itr + framesPerBuffer)/ FS,
-                           framesPerBuffer/ FS, msg);
 
     return ret;
 }
