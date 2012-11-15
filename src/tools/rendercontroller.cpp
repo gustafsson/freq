@@ -247,6 +247,14 @@ void RenderController::
 
 
 void RenderController::
+        receiveSetBlackGrayscaleColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_BlackGrayscale;
+    stateChanged();
+}
+
+
+void RenderController::
         receiveSetColorscaleColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_FixedColor;
@@ -266,6 +274,14 @@ void RenderController::
         receiveSetGreenWhiteColors()
 {
     model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenWhite;
+    stateChanged();
+}
+
+
+void RenderController::
+        receiveSetGreenColors()
+{
+    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Green;
     stateChanged();
 }
 
@@ -829,7 +845,9 @@ void RenderController::
         color->addActionItem( ui->actionSet_rainbow_colors );
 #endif
         color->addActionItem( ui->actionSet_greenwhite_colors );
+        color->addActionItem( ui->actionSet_green_colors );
         color->addActionItem( ui->actionSet_grayscale );
+        color->addActionItem( ui->actionSet_blackgrayscale );
         toolbar_render->addWidget( color );
 
         foreach(QAction*a,color->actions ())
@@ -837,9 +855,11 @@ void RenderController::
 
         connect(ui->actionSet_rainbow_colors, SIGNAL(triggered()), SLOT(receiveSetRainbowColors()));
         connect(ui->actionSet_grayscale, SIGNAL(triggered()), SLOT(receiveSetGrayscaleColors()));
+        connect(ui->actionSet_blackgrayscale, SIGNAL(triggered()), SLOT(receiveSetBlackGrayscaleColors()));
         connect(ui->actionSet_colorscale, SIGNAL(triggered()), SLOT(receiveSetColorscaleColors()));
         connect(ui->actionSet_greenred_colors, SIGNAL(triggered()), SLOT(receiveSetGreenRedColors()));
         connect(ui->actionSet_greenwhite_colors, SIGNAL(triggered()), SLOT(receiveSetGreenWhiteColors()));
+        connect(ui->actionSet_green_colors, SIGNAL(triggered()), SLOT(receiveSetGreenColors()));
 
 #if defined(TARGET_hast)
         color->setCheckedAction(ui->actionSet_greenwhite_colors);

@@ -224,7 +224,7 @@
     <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionPausePlayBack"/>
    <addaction name="actionPlayEntireSound"/>
@@ -1643,7 +1643,7 @@
     <string>Green/red</string>
    </property>
    <property name="toolTip">
-    <string>Green to Red color scheme</string>
+    <string>Green to Red color scheme (white background)</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1661,10 +1661,52 @@
      <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
    </property>
    <property name="text">
+    <string>Green/white</string>
+   </property>
+   <property name="toolTip">
+    <string>Green to white color scheme (black background)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_green_colors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
+   </property>
+   <property name="text">
     <string>Green</string>
    </property>
    <property name="toolTip">
-    <string>Green color scheme</string>
+    <string>Green color scheme (black background)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_blackgrayscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
+   </property>
+   <property name="text">
+    <string>Inverted gray scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Inverted gray scale</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>

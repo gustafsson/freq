@@ -35,9 +35,11 @@ namespace Tools
         // ComboBoxAction color
         void receiveSetRainbowColors();
         void receiveSetGrayscaleColors();
+        void receiveSetBlackGrayscaleColors();
         void receiveSetColorscaleColors();
         void receiveSetGreenRedColors();
         void receiveSetGreenWhiteColors();
+        void receiveSetGreenColors();
 
         // Toggle Buttons
         void receiveToogleHeightlines(bool);

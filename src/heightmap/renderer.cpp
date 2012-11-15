@@ -473,6 +473,8 @@ tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
 tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::ColorMode scheme ) {
     tvector<4,float> spectrum[12];
     int count = 0;
+    spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
+
     switch (scheme)
     {
     case Renderer::ColorMode_GreenRed:
@@ -503,6 +505,24 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         //spectrum[7] = tvector<4,float>( -0.5, -0.5, -0.5, 0 ); // dark line, almost black
         spectrum[7] = tvector<4,float>( 1, 1, 1, 0 ); // darker when over the top
         count = 7;
+        break;
+    case Renderer::ColorMode_Green:
+        if (wavelengthScalar<0)
+            return tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[1] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[2] = tvector<4,float>( 0, 1, 0, 0 );
+        spectrum[3] = tvector<4,float>( 0, 1, 0, 0 );
+        spectrum[4] = tvector<4,float>( 0, 1, 0, 0 );
+        spectrum[5] = tvector<4,float>( 0, 1, 0, 0 );
+        spectrum[6] = tvector<4,float>( 0, 1, 0, 0 );
+        count = 6;
+        break;
+    case Renderer::ColorMode_Grayscale:
+        break;
+    case Renderer::ColorMode_BlackGrayscale:
+        if (wavelengthScalar<0)
+            return tvector<4,float>( 0, 0, 0, 0 );
         break;
     default:
         /* for white background */
@@ -692,10 +712,18 @@ void Renderer::beginVboRendering()
         glUniform1i(uniVertText2, 2); // GL_TEXTURE2
 
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
-        if (color_mode == ColorMode_Grayscale)
-            glUniform4f(uniFixedColor, 1.f, 1.f, 1.f, 1.f);
-        else
+        switch (color_mode)
+        {
+        case ColorMode_Grayscale:
+            glUniform4f(uniFixedColor, 0.f, 0.f, 0.f, 0.f);
+            break;
+        case ColorMode_BlackGrayscale:
+            glUniform4f(uniFixedColor, 1.f, 1.f, 1.f, 0.f);
+            break;
+        default:
             glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
+            break;
+        }
 
         uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
         glUniform4f(uniClearColor, clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
@@ -706,6 +734,7 @@ void Renderer::beginVboRendering()
         case ColorMode_Rainbow:
         case ColorMode_GreenRed:
         case ColorMode_GreenWhite:
+        case ColorMode_Green:
             glUniform1f(uniColorTextureFactor, 1.f);
             break;
         default:

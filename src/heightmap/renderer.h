@@ -30,11 +30,13 @@ class Renderer
 {
 public:
     enum ColorMode {
-        ColorMode_Rainbow = 0,
-        ColorMode_Grayscale = 1,
-        ColorMode_FixedColor = 2,
-        ColorMode_GreenRed = 3,
-        ColorMode_GreenWhite = 4
+        ColorMode_Rainbow,
+        ColorMode_Grayscale,
+        ColorMode_BlackGrayscale,
+        ColorMode_FixedColor,
+        ColorMode_GreenRed,
+        ColorMode_GreenWhite,
+        ColorMode_Green
     };
 
     Renderer( Collection* collection );
