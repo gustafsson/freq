@@ -342,8 +342,8 @@ Tfr::pChunk Stft::
 
     DataStorageSize n = actualSize.width * actualSize.height;
 
-    if (0==actualSize.height) // not enough data
-        return Tfr::pChunk();
+    STFT_ASSERT (0!=actualSize.height); // not enough data
+
     Tfr::pChunk chunk( new Tfr::StftChunk(p.chunk_size(), p.windowType(), p.increment(), false) );
     chunk->transform_data.reset( new Tfr::ChunkData( n ));
 
@@ -367,11 +367,13 @@ Tfr::pChunk Stft::
             p.chunk_size(),
             inputbuffer->size().width/p.chunk_size() );
 
-    if (0==n.height) // not enough data
-        return Tfr::pChunk();
+    STFT_ASSERT (0!=n.height); // not enough data
 
-    if (32768<n.height) // TODO can't handle this
+    if (32768<n.height)
+    {
+        TaskInfo("%s: Reducing n.height from %d to %d", __FUNCTION__, n.height, 32768);
         n.height = 32768;
+    }
 
     Tfr::pChunk chunk( new Tfr::StftChunk(p.chunk_size(), p.windowType(), p.increment(), true) );
 
@@ -414,11 +416,13 @@ Signal::pMonoBuffer Stft::
 
     STFT_ASSERT( 0 != chunk_window_size );
 
-    if (0==nwindows) // not enough data
-        return Signal::pMonoBuffer();
+    STFT_ASSERT (0!=nwindows); // not enough data
 
-    if (32768<nwindows) // TODO can't handle this
+    if (32768<nwindows)
+    {
+        TaskInfo("%s: Reducing n.height from %d to %d", __FUNCTION__, nwindows, 32768);
         nwindows = 32768;
+    }
 
     const DataStorageSize n(
             chunk_window_size,
@@ -463,11 +467,13 @@ Signal::pMonoBuffer Stft::
 
     STFT_ASSERT( 0!= chunk_window_size );
 
-    if (0==nwindows) // not enough data
-        return Signal::pMonoBuffer();
+    STFT_ASSERT (0!=nwindows); // not enough data
 
-    if (32768<nwindows) // TODO can't handle this
+    if (32768<nwindows)
+    {
+        TaskInfo("%s: Reducing n.height from %d to %d", __FUNCTION__, nwindows, 32768);
         nwindows = 32768;
+    }
 
     DataStorageSize n(
             chunk_window_size,
