@@ -27,8 +27,8 @@ public:
     void childEvent(QChildEvent *e);
     void customEvent(QEvent *e);
 
-    void keyPressEvent(QKeyEvent *event);
-    void keyReleaseEvent(QKeyEvent *event);
+//    void keyPressEvent(QKeyEvent *event);
+//    void keyReleaseEvent(QKeyEvent *event);
 
     void mousePressEvent( QMouseEvent* e );
     void mouseMoveEvent(QMouseEvent *e);
@@ -53,7 +53,7 @@ signals:
 public slots:
 
 private:
-    bool pressed_control_;
+//    bool pressed_control_;
     QWidget* layout_widget_;
     QGraphicsProxyWidget* tool_proxy_;
 };

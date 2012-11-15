@@ -28,9 +28,9 @@ RescaleWidget::
         qimage_(":/icons/muchdifferent.png"),
         updateTimer_(0)
 {
-    setMinimumSize(50,50);
+    setMinimumSize(70,70);
     setCursor(Qt::SizeAllCursor);
-    setToolTip("Click and drag to rescale axes");
+    setToolTip("Click and drag to rescale axes [alt]");
 
     //this->setMinimumSize(qimage_.size());
     //QRegion m(QBitmap(qimage_.size()).fromImage(qimage_.createAlphaMask()));
@@ -95,7 +95,7 @@ void RescaleWidget::
     painter.fillPath (path_, QColor(220,220,220,200));
     painter.strokePath (path_, QPen(
                             QColor(100,100,100,200),
-                            .8,
+                            hasFocus () ? 1.6 : .8,
                             Qt::SolidLine,
                             Qt::RoundCap,
                             Qt::RoundJoin));

@@ -4,12 +4,20 @@
 #include "TaskTimer.h"
 #include "demangle.h"
 
-#include <QLayout>
-
 // widgets
 #include "rescalewidget.h"
 #include "panwidget.h"
 #include "rotatewidget.h"
+
+// Qt
+#include <QLayout>
+#include <QKeyEvent>
+#include <QCursor>
+#include <QApplication>
+
+#include <boost/format.hpp>
+
+using namespace boost;
 
 namespace Tools {
 namespace Widgets {
@@ -17,7 +25,10 @@ namespace Widgets {
 WidgetOverlayController::
         WidgetOverlayController(RenderView* view)
     : OverlayWidget(view),
-      view_(view)
+      pan_(0), rescale_(0), rotate_(0),
+      proxy_mousepress_(0),
+      view_(view),
+      update_timer_(0)
 {
     setupLayout();
 }
@@ -30,9 +41,90 @@ WidgetOverlayController::
 
 
 void WidgetOverlayController::
+        timerEvent( QTimerEvent *)
+{
+    killTimer(update_timer_);
+    update_timer_ = 0;
+
+    this->setWindowOpacity (0.0);
+}
+
+
+void WidgetOverlayController::
+        keyPressEvent(QKeyEvent *e)
+{
+    TaskInfo("%s", str(format("%s\nkey %d\nmodifiers %d\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
+
+    if (updateFocusWidget(e))
+        return;
+
+    OverlayWidget::keyPressEvent (e);
+}
+
+
+void WidgetOverlayController::
+        keyReleaseEvent(QKeyEvent *e)
+{
+    TaskInfo("%s", str(format("%s\nkey %d\nmodifiers %d\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
+
+    updateFocusWidget(e);
+
+    OverlayWidget::keyReleaseEvent (e);
+}
+
+
+void WidgetOverlayController::
+        mouseMoveEvent ( QMouseEvent * event )
+{
+    this->setWindowOpacity (1.0);
+    if (update_timer_!=0)
+    {
+        killTimer (update_timer_);
+        update_timer_ = 0;
+    }
+    update_timer_ = startTimer(5000);
+
+    if (proxy_mousepress_)
+        QCoreApplication::sendEvent (proxy_mousepress_, event);
+    else
+        OverlayWidget::mouseMoveEvent( event );
+}
+
+
+void WidgetOverlayController::
+        mousePressEvent ( QMouseEvent * event )
+{
+    if ((proxy_mousepress_ = focusProxy ()))
+        QCoreApplication::sendEvent (proxy_mousepress_, event);
+    else
+        OverlayWidget::mousePressEvent( event );
+}
+
+
+void WidgetOverlayController::
+        mouseReleaseEvent ( QMouseEvent * event )
+{
+    if (proxy_mousepress_)
+        QCoreApplication::sendEvent (proxy_mousepress_, event);
+    else
+        OverlayWidget::mouseReleaseEvent( event );
+}
+
+
+void WidgetOverlayController::
+        updatePosition()
+{
+    QRect r = sceneRect();
+    move(r.topLeft());
+    resize(r.size());
+}
+
+
+void WidgetOverlayController::
         setupLayout()
 {
     setCursor(Qt::CrossCursor);
+    setMouseTracking (true);
 
 //    setupLayoutRightAndBottom();
     setupLayoutCenter();
@@ -44,9 +136,9 @@ void WidgetOverlayController::
 {    
     QHBoxLayout* h = new QHBoxLayout();
     h->addStretch();
-    h->addWidget(new PanWidget(view_));
-    h->addWidget(new RescaleWidget(view_));
-    h->addWidget(new RotateWidget(view_));
+    h->addWidget(pan_ = new PanWidget(view_));
+    h->addWidget(rescale_ = new RescaleWidget(view_));
+    h->addWidget(rotate_ = new RotateWidget(view_));
     h->addStretch();
 
     QVBoxLayout* v = new QVBoxLayout(this);
@@ -81,12 +173,44 @@ void WidgetOverlayController::
 }
 
 
-void WidgetOverlayController::
-        updatePosition()
+bool WidgetOverlayController::
+        updateFocusWidget(QKeyEvent *e)
 {
-    QRect r = sceneRect();
-    move(r.topLeft());
-    resize(r.size());
+    switch(e->key ())
+    {
+    case Qt::Key_Control:
+    case Qt::Key_Meta:
+    case Qt::Key_Alt:
+    {
+        QWidget* fp = 0;
+        if (e->modifiers ().testFlag (Qt::MetaModifier)) // Mac Ctrl
+            fp = pan_;
+        if (e->modifiers ().testFlag (Qt::AltModifier)) // Mac Alt
+            fp = rescale_;
+        if (e->modifiers ().testFlag (Qt::ControlModifier)) // Mac Cmd
+            fp = rotate_;
+
+        if (fp != focusProxy ())
+        {
+            if (fp)
+            {
+                fp->setFocus ( Qt::MouseFocusReason );
+                QApplication::setOverrideCursor (fp->cursor ());
+            }
+
+            setFocusProxy (fp);
+
+            if (!fp)
+            {
+                setFocus();
+                QApplication::restoreOverrideCursor ();
+            }
+        }
+        return true;
+    }
+    default:
+        return false;
+    }
 }
 
 

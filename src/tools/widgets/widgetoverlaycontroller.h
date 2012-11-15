@@ -15,6 +15,13 @@ public:
     WidgetOverlayController(RenderView* view);
     ~WidgetOverlayController();
 
+    void timerEvent ( QTimerEvent * );
+    void keyPressEvent ( QKeyEvent * );
+    void keyReleaseEvent ( QKeyEvent * );
+    void mouseMoveEvent ( QMouseEvent * event );
+    void mousePressEvent ( QMouseEvent * event );
+    void mouseReleaseEvent ( QMouseEvent * event );
+
 protected:
     void updatePosition();
 
@@ -23,7 +30,11 @@ private:
     void setupLayoutCenter();
     void setupLayoutRightAndBottom();
 
+    bool updateFocusWidget(QKeyEvent *e);
+
+    QWidget *pan_, *rescale_, *rotate_, *proxy_mousepress_;
     RenderView* view_;
+    int update_timer_;
 };
 
 } // namespace Widgets

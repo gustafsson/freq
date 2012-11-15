@@ -18,8 +18,8 @@ namespace Tools
 
 GraphicsView::
         GraphicsView(QGraphicsScene* scene)
-    :   QGraphicsView(scene),
-        pressed_control_(false)
+    :   QGraphicsView(scene)
+//        ,pressed_control_(false)
 {
     setWindowTitle(tr("Sonic AWE"));
     //setRenderHints(QPainter::SmoothPixmapTransform);
@@ -105,44 +105,44 @@ void GraphicsView::customEvent(QEvent *e){
     DEBUG_EVENTS TaskTimer("GraphicsView customEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
 }
 
-void GraphicsView::keyPressEvent(QKeyEvent *event) {
-    if (event->key() != Qt::Key_Shift)
-    {
-        QGraphicsView::keyPressEvent( event );
-        return;
-    }
+//void GraphicsView::keyPressEvent(QKeyEvent *event) {
+//    if (event->key() != Qt::Key_Shift)
+//    {
+//        QGraphicsView::keyPressEvent( event );
+//        return;
+//    }
 
-    pressed_control_ = true;
+//    pressed_control_ = true;
 
-    unsigned u = toolWindows();
-    for (unsigned i=0; i<u; ++i)
-    {
-        Support::ToolSelector* ts = toolSelector(i, 0);
-        ts->temp_tool = ts->currentTool();
-        ts->setCurrentTool( ts->default_tool, true );
-    }
-}
+//    unsigned u = toolWindows();
+//    for (unsigned i=0; i<u; ++i)
+//    {
+//        Support::ToolSelector* ts = toolSelector(i, 0);
+//        ts->temp_tool = ts->currentTool();
+//        ts->setCurrentTool( ts->default_tool, true );
+//    }
+//}
 
-void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
-    if (event->key() != Qt::Key_Shift)
-    {
-        QGraphicsView::keyReleaseEvent( event );
-        return;
-    }
+//void GraphicsView::keyReleaseEvent(QKeyEvent *event) {
+//    if (event->key() != Qt::Key_Shift)
+//    {
+//        QGraphicsView::keyReleaseEvent( event );
+//        return;
+//    }
 
-    if (!pressed_control_ )
-        return;
+//    if (!pressed_control_ )
+//        return;
 
-    pressed_control_ = false;
+//    pressed_control_ = false;
 
-    unsigned u = toolWindows();
-    for (unsigned i=0; i<u; ++i)
-    {
-        Support::ToolSelector* ts = toolSelector(i, 0);
-        ts->setCurrentTool( ts->temp_tool, true );
-        ts->temp_tool = 0;
-    }
-}
+//    unsigned u = toolWindows();
+//    for (unsigned i=0; i<u; ++i)
+//    {
+//        Support::ToolSelector* ts = toolSelector(i, 0);
+//        ts->setCurrentTool( ts->temp_tool, true );
+//        ts->temp_tool = 0;
+//    }
+//}
 
 void GraphicsView::mousePressEvent( QMouseEvent* e )
 {

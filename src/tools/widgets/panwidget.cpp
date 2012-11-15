@@ -16,9 +16,9 @@ namespace Widgets {
 PanWidget::PanWidget(RenderView *view) :
     view_(view)
 {
-    setMinimumSize(50,50);
+    setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
-    setToolTip("Click and drag to pan");
+    setToolTip("Click and drag to pan [ctrl]");
 }
 
 
@@ -74,7 +74,7 @@ void PanWidget::
     painter.fillPath (path_, QColor(220,220,220,200));
     painter.strokePath (path_, QPen(
                             QColor(100,100,100,200),
-                            .8,
+                            hasFocus () ? 1.6 : .8,
                             Qt::SolidLine,
                             Qt::RoundCap,
                             Qt::RoundJoin));

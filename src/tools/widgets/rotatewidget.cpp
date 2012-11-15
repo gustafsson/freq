@@ -17,9 +17,9 @@ RotateWidget::RotateWidget(RenderView* view) :
     view_(view),
     mouseMoved_(true)
 {
-    setMinimumSize(50,50);
+    setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
-    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D");
+    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [cmd]");
 }
 
 
@@ -86,7 +86,7 @@ void RotateWidget::
     painter.fillPath (path_, QColor(220,220,220,200));
     painter.strokePath (path_, QPen(
                             QColor(100,100,100,200),
-                            .8,
+                            hasFocus () ? 1.6 : .8,
                             Qt::SolidLine,
                             Qt::RoundCap,
                             Qt::RoundJoin));
