@@ -3,15 +3,17 @@
 #include "stftkernel.h"
 
 #include "stringprintf.h"
-
+#include "cuda_vector_types_op.h"
 #include <stdexcept>
 
-__global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, float v );
+template<typename T>
+__global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<T> wave, float v );
 __global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave, float v );
 __global__ void kernel_stftToComplex( cudaPitchedPtrType<float> inwave, cudaPitchedPtrType<float2> outwave );
 __global__ void kernel_stftDiscardImag( cudaPitchedPtrType<float2> inwave, cudaPitchedPtrType<float> outwave );
 __global__ void kernel_cepstrumPrepareCepstra( cudaPitchedPtrType<float2> cepstra, float normalization );
 
+template<>
 void stftNormalizeInverse(
         DataStorage<float>::Ptr wavep,
         unsigned length )
@@ -25,7 +27,22 @@ void stftNormalizeInverse(
 }
 
 
-__global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<float> wave, float v )
+template<>
+void stftNormalizeInverse(
+        DataStorage<Tfr::ChunkElement>::Ptr wavep,
+        unsigned length )
+{
+    cudaPitchedPtrType<float2> wave(CudaGlobalStorage::ReadWrite<1>( wavep ).getCudaPitchedPtr());
+
+    dim3 block(128);
+    dim3 grid = wrapCudaMaxGrid( wave.getNumberOfElements(), block);
+
+    kernel_stftNormalizeInverse<<<grid, block, 0>>>( wave, 1.f/length );
+}
+
+
+template<typename T>
+__global__ void kernel_stftNormalizeInverse( cudaPitchedPtrType<T> wave, float v )
 {
     unsigned n;
     if( !wave.unwrapGlobalThreadNumber3D(n))
