@@ -59,7 +59,7 @@ public:
       The default implementation of applyFilter is to call operator()( Chunk& )
       @see computeChunk
       */
-    virtual bool applyFilter( const ChunkAndInverse& chunk );
+    virtual bool applyFilter( ChunkAndInverse& chunk );
 
 protected:
     /**

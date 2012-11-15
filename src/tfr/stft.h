@@ -5,6 +5,7 @@
 #include "chunk.h"
 #include "fftimplementation.h"
 #include "stftparams.h"
+#include "complexbuffer.h"
 
 // std
 #include <vector>
@@ -81,6 +82,8 @@ public:
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
+    Tfr::ComplexBuffer::Ptr inverseKeepComplex( pChunk chunk );
+
 private:
     const StftParams p;
 
@@ -102,13 +105,14 @@ private:
       the overlap function exactly on the sample.
       */
     DataStorage<float>::Ptr prepareWindow( DataStorage<float>::Ptr );
-    DataStorage<float>::Ptr reduceWindow( DataStorage<float>::Ptr windowedSignal, const StftChunk* c );
+    template<typename T>
+    typename DataStorage<T>::Ptr reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c );
 
     template<StftParams::WindowType>
     void prepareWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out );
 
-    template<StftParams::WindowType>
-    void reduceWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out, const StftChunk* c );
+    template<StftParams::WindowType, typename T>
+    void reduceWindowKernel( boost::shared_ptr<DataStorage<T> > in, typename DataStorage<T>::Ptr out, const StftChunk* c );
 
     template<StftParams::WindowType>
     float computeWindowValue( float p );

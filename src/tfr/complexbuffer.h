@@ -12,6 +12,9 @@ namespace Tfr
 class ComplexBuffer
 {
 public:
+    typedef boost::shared_ptr<ComplexBuffer> Ptr;
+
+
     ComplexBuffer(UnsignedF firstSample,
            unsigned long numberOfSamples,
            float FS,
@@ -39,7 +42,7 @@ public:
     /**
         Overloaded from buffer
     */
-    unsigned number_of_samples() const { return _complex_waveform_data->size().width; }
+    int number_of_samples() const { return _complex_waveform_data->size().width; }
 
 
     UnsignedF       sample_offset;

@@ -124,7 +124,7 @@ unsigned Filter::
 
 
 bool ChunkFilter::
-        applyFilter( const ChunkAndInverse& chunk )
+        applyFilter( ChunkAndInverse& chunk )
 {
     return (*this)( *chunk.chunk );
 }

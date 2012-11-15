@@ -3,7 +3,8 @@
 
 #include "tfr/chunkdata.h"
 
-void        stftNormalizeInverse( DataStorage<float>::Ptr wave, unsigned length );
+template<typename T>
+void        stftNormalizeInverse( boost::shared_ptr<DataStorage<T> > wave, unsigned length );
 void        stftNormalizeInverse( Tfr::ChunkData::Ptr inwave, DataStorage<float>::Ptr outwave, unsigned length );
 inline void stftDiscardImag( Tfr::ChunkData::Ptr inwavep, DataStorage<float>::Ptr outwavep )
 {

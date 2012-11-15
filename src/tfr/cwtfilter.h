@@ -22,7 +22,7 @@ public:
     virtual void invalidate_samples(const Signal::Intervals& I);
 
 protected:
-    bool applyFilter( const ChunkAndInverse& chunk );
+    bool applyFilter( ChunkAndInverse& chunk );
 
 private:
     float   _previous_scales_per_octave;

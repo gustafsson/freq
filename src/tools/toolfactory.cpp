@@ -38,6 +38,7 @@
 #include "commands/commandhistory.h"
 #include "splashscreen.h"
 #include "widgets/widgetoverlaycontroller.h"
+#include "filtercontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -159,6 +160,8 @@ ToolFactory::
 
     if (Sawe::Configuration::feature("overlay_navigation"))
         _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view ) ));
+
+    _objects.push_back( QPointer<QObject>( new FilterController( p )));
 
     //
     // Insert new tools here, and delete things in the destructor in the

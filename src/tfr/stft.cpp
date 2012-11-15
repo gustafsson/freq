@@ -501,6 +501,55 @@ Signal::pMonoBuffer Stft::
 }
 
 
+Tfr::ComplexBuffer::Ptr Stft::
+        inverseKeepComplex( pChunk chunk )
+{
+    STFT_ASSERT( chunk->nChannels() == 1 );
+    int
+            chunk_window_size = chunk->nScales(),
+            nwindows = chunk->nSamples();
+
+    TIME_STFT ComputationSynchronize();
+    TIME_STFT TaskTimer ti("Stft::inverse, chunk_window_size = %d, b = %s", chunk_window_size, chunk->getInterval().toString().c_str());
+
+    STFT_ASSERT( 0!= chunk_window_size );
+
+    STFT_ASSERT (0!=nwindows); // not enough data
+
+    if (32768<nwindows)
+    {
+        TaskInfo("%s: Reducing n.height from %d to %d", __FUNCTION__, nwindows, 32768);
+        nwindows = 32768;
+    }
+
+    DataStorageSize n(
+            chunk_window_size,
+            nwindows );
+
+    Tfr::ChunkData::Ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
+
+    FftImplementation::Singleton().compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
+
+    TIME_STFT ComputationSynchronize();
+
+    {
+        TIME_STFT TaskTimer ti("normalizing %u elements", n.width);
+        stftNormalizeInverse( complexWindowedOutput, n.width );
+        TIME_STFT ComputationSynchronize();
+    }
+
+
+    // TODO discard imaginary part while reducing
+    StftChunk*stftchunk = dynamic_cast<StftChunk*>(chunk.get());
+    Tfr::ChunkData::Ptr signal = reduceWindow( complexWindowedOutput, stftchunk );
+
+
+    Tfr::ComplexBuffer::Ptr b(new Tfr::ComplexBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    *b->complex_waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
+
+
+    return b;
+}
 
 
 
@@ -615,9 +664,9 @@ void Stft::
 }
 
 
-template<StftParams::WindowType Type>
+template<StftParams::WindowType Type, typename T>
 void Stft::
-        reduceWindowKernel( DataStorage<float>::Ptr windowedSignal, DataStorage<float>::Ptr signal, const StftChunk* c )
+        reduceWindowKernel( boost::shared_ptr<DataStorage<T> > windowedSignal, typename DataStorage<T>::Ptr signal, const StftChunk* c )
 {
     int increment = c->increment();
     int window_size = c->window_size();
@@ -626,10 +675,10 @@ void Stft::
     float normalizeFft = 1.f; // 1.f/window_size;, todo normalize here while going through the data anyways
     float normalize = normalizeFft*normalizeOverlap;
 
-    CpuMemoryReadOnly<float, 3> in = CpuMemoryStorage::ReadOnly<3>(windowedSignal);
-    CpuMemoryWriteOnly<float, 3> out = CpuMemoryStorage::WriteAll<3>(signal);
+    CpuMemoryReadOnly<T, 3> in = CpuMemoryStorage::ReadOnly<3>(windowedSignal);
+    CpuMemoryWriteOnly<T, 3> out = CpuMemoryStorage::WriteAll<3>(signal);
 
-    CpuMemoryWriteOnly<float, 3>::Position pos(0,0,0);
+    typename CpuMemoryWriteOnly<T, 3>::Position pos(0,0,0);
 
     std::vector<float> windowfunction(window_size);
     float* window = &windowfunction[0];
@@ -668,7 +717,7 @@ void Stft::
     {
         for (pos.y=0; pos.y<windowedSignal->size().height; ++pos.y)
         {
-            float *o = &out.ref(pos);
+            T *o = &out.ref(pos);
             for (int x=0; x<increment; ++x)
                 if (x>=out0 && x<N+out0) o[x-out0] = 0;
             for (int x=0; x<signal->size().width; ++x)
@@ -678,14 +727,14 @@ void Stft::
 //#pragma omp parallel for
             for (int w=0; w<windowCount; ++w)
             {
-                float *o = &out.ref(pos);
-                float *i = &in.ref(pos) + w*window_size;
+                T *o = &out.ref(pos);
+                T *i = &in.ref(pos) + w*window_size;
 
                 int x0 = w*increment;
                 int x=0;
                 for (; x<window_size; ++x)
                     //if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += i[x] * normalize;
-                    if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += window[x] * i[x] * norm;
+                    if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += i[x] * (window[x] * norm);
 
                 //for (; x<window_size-increment; ++x)
                     //if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += window[x] * i[x] * norm;
@@ -762,8 +811,9 @@ DataStorage<float>::Ptr Stft::
 }
 
 
-DataStorage<float>::Ptr Stft::
-        reduceWindow( DataStorage<float>::Ptr windowedSignal, const StftChunk* c )
+template<typename T>
+typename DataStorage<T>::Ptr Stft::
+        reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c )
 {
     if (c->window_type() == StftParams::WindowType_Rectangular && c->increment() == c->window_size() )
         return windowedSignal;
@@ -775,7 +825,7 @@ DataStorage<float>::Ptr Stft::
 
 
     unsigned L = c->n_valid_samples*increment;
-    DataStorage<float>::Ptr signal(new DataStorage<float>( L ));
+    typename DataStorage<T>::Ptr signal(new DataStorage<T>( L ));
 
     switch(c->window_type())
     {

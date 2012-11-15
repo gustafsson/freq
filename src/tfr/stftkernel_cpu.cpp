@@ -3,11 +3,12 @@
 
 #include "stftkernel.h"
 
+template<typename T>
 void stftNormalizeInverse(
-        DataStorage<float>::Ptr wavep,
+        boost::shared_ptr<DataStorage<T> > wavep,
         unsigned length )
 {
-    CpuMemoryReadWrite<float, 2> in_wt = CpuMemoryStorage::ReadWrite<2>( wavep );
+    CpuMemoryReadWrite<T, 2> in_wt = CpuMemoryStorage::ReadWrite<2>( wavep );
 
     float v = 1.f/length;
     int h = (int)in_wt.numberOfElements().height;
@@ -15,13 +16,17 @@ void stftNormalizeInverse(
 #pragma omp parallel for
     for (int y=0; y<h; ++y)
     {
-        CpuMemoryReadWrite<float, 2>::Position pos( 0, y );
+        typename CpuMemoryReadWrite<T, 2>::Position pos( 0, y );
         for (pos.x=0; pos.x<in_wt.numberOfElements().width; ++pos.x)
         {
             in_wt.ref(pos) *= v;
         }
     }
 }
+
+
+template void stftNormalizeInverse(DataStorage<float>::Ptr, unsigned);
+template void stftNormalizeInverse(DataStorage<Tfr::ChunkElement>::Ptr, unsigned);
 
 
 void stftNormalizeInverse(

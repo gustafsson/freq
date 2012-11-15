@@ -25,6 +25,7 @@ void FanTrackerController::
     connect(ui->actionToggleFanTracker, SIGNAL(toggled(bool)), SLOT(receiveToggleFanTracker(bool)));
 
     QMenu* tools = new QMenu( "&Filters", ui->menuTools );
+    tools->setObjectName ("filtermenu");
     ui->menuTools->insertMenu( ui->menuToolbars->menuAction(), tools );
     tools->insertAction( 0, ui->actionToggleFanTracker );
 

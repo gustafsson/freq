@@ -44,7 +44,7 @@ Signal::Interval DrawnWaveformFilter::
 
 
 bool DrawnWaveformFilter::
-        applyFilter( const ChunkAndInverse &chunk )
+        applyFilter( ChunkAndInverse &chunk )
 {
     DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(chunk.t.get ());
     if (w->maxValue != max_value_)

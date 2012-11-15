@@ -68,7 +68,7 @@ Interval CwtFilter::
 
 
 bool CwtFilter::
-        applyFilter( const ChunkAndInverse& chunkInv )
+        applyFilter( ChunkAndInverse& chunkInv )
 {
     Tfr::pChunk pchunk = chunkInv.chunk;
 

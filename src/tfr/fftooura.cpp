@@ -146,7 +146,7 @@ void FftOoura::
     Tfr::ChunkElement* input = CpuMemoryStorage::ReadOnly<1>( inputdata ).ptr();
     Tfr::ChunkElement* output = CpuMemoryStorage::WriteAll<1>( outputdata ).ptr();
 
-    EXCEPTION_ASSERT( inputdata->numberOfBytes() == outputdata->numberOfBytes() );
+    EXCEPTION_ASSERT( inputdata->numberOfBytes() >= outputdata->numberOfBytes() );
 
     // Transform signal
 

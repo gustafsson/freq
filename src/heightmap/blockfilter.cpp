@@ -54,7 +54,7 @@ BlockFilter::
 
 
 bool BlockFilter::
-        applyFilter(const ChunkAndInverse& pchunk )
+        applyFilter( ChunkAndInverse& pchunk )
 {
     Collection* collection = _collections[pchunk.channel];
     Tfr::Chunk& chunk = *pchunk.chunk;

@@ -8,7 +8,6 @@
 #include "CudaException.h"
 #include "CudaProperties.h"
 #include "cudaglobalstorage.h"
-#include "complexbuffer.h"
 #include "TaskTimer.h"
 #include "cuffthandlecontext.h"
 

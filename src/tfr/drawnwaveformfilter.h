@@ -18,7 +18,7 @@ public:
     Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
 
-    bool applyFilter( const ChunkAndInverse &chunk );
+    bool applyFilter( ChunkAndInverse &chunk );
 
 private:
 

@@ -24,7 +24,7 @@ public:
     BlockFilter( Collection* collection );
     BlockFilter( std::vector<boost::shared_ptr<Collection> >* collections );
 
-    virtual bool applyFilter(const Tfr::ChunkAndInverse& pchunk);
+    virtual bool applyFilter( Tfr::ChunkAndInverse& pchunk);
     unsigned smallestOk(const Signal::Interval& I);
     virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData ) = 0;
     virtual bool createFromOthers() { return true; }
@@ -85,7 +85,7 @@ public:
     Signal::Intervals zeroed_samples_recursive() { return Signal::Intervals(); }
 
 
-    bool applyFilter( const Tfr::ChunkAndInverse& pchunk )
+    bool applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         bool r = BlockFilter::applyFilter( pchunk );
 
@@ -222,7 +222,7 @@ public:
 
     Tfr::pChunkFilter freqNormalization;
 
-    bool applyFilter( const Tfr::ChunkAndInverse& pchunk )
+    bool applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         if (freqNormalization)
             freqNormalization->applyFilter(pchunk);
