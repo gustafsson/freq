@@ -1098,6 +1098,7 @@ bool Collection::
 #endif
 
     if (!using_subtexel_aggregation) // blockMerge doesn't support subtexel aggregation
+        if (false) // disabled validation of blocks until this is stable
     {
         // Validate region of block if inBlock was source of higher resolution than outBlock
         if (inBlock->reference().log2_samples_size[0] < outBlock->reference().log2_samples_size[0] &&
