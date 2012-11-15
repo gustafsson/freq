@@ -194,7 +194,7 @@ def package_macos(app_name, version, packagename, zip = false)
 	run("cp -r \"sonicawe.app\" \"pack/Sonic AWE.app\"")
 	run("ln -s /Applications pack/Applications")
 	run("rm -f #{packagename}.dmg")
-	run("hdiutil create -srcfolder pack -volname \"Sonic AWE\" -fs HFS+ #{packagename}.dmg")
+	run("hdiutil create -size 128m -srcfolder pack -volname \"Sonic AWE\" -fs HFS+ #{packagename}.dmg")
 	run("rm -rf pack")
 end
 
