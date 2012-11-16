@@ -182,14 +182,24 @@ bool WidgetOverlayController::
     case Qt::Key_Control:
     case Qt::Key_Meta:
     case Qt::Key_Alt:
+    case Qt::Key_Shift:
     {
         QWidget* fp = 0;
+#ifdef __APPLE__
         if (e->modifiers ().testFlag (Qt::MetaModifier)) // Mac Ctrl
             fp = pan_;
         if (e->modifiers ().testFlag (Qt::AltModifier)) // Mac Alt
             fp = rescale_;
         if (e->modifiers ().testFlag (Qt::ControlModifier)) // Mac Cmd
             fp = rotate_;
+#else
+        if (e->modifiers ().testFlag (Qt::ShiftModifier)) // Windows Shift
+            fp = pan_;
+        if (e->modifiers ().testFlag (Qt::ControlModifier)) // Windows Ctrl
+            fp = rescale_;
+        if (e->modifiers ().testFlag (Qt::AltModifier)) // Windows Alt
+            fp = rotate_;
+#endif
 
         if (fp != focusProxy ())
         {

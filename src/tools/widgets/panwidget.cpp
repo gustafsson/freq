@@ -18,7 +18,11 @@ PanWidget::PanWidget(RenderView *view) :
 {
     setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
+#ifdef __APPLE__
     setToolTip("Click and drag to pan [ctrl]");
+#else
+    setToolTip("Click and drag to pan [shift]");
+#endif
 }
 
 

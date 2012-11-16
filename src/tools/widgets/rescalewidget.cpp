@@ -30,7 +30,11 @@ RescaleWidget::
 {
     setMinimumSize(70,70);
     setCursor(Qt::SizeAllCursor);
+#ifdef __APPLE__
     setToolTip("Click and drag to rescale axes [alt]");
+#else
+    setToolTip("Click and drag to rescale axes [ctrl]");
+#endif
 
     //this->setMinimumSize(qimage_.size());
     //QRegion m(QBitmap(qimage_.size()).fromImage(qimage_.createAlphaMask()));

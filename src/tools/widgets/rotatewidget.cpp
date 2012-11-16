@@ -19,7 +19,12 @@ RotateWidget::RotateWidget(RenderView* view) :
 {
     setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
+
+#ifdef __APPLE__
     setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [cmd]");
+#else
+    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [alt]");
+#endif
 }
 
 
