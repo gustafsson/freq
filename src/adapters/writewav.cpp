@@ -1,10 +1,6 @@
 #include "writewav.h"
 
-#ifdef _MSC_VER
-typedef __int64 __int64_t;
-#else
-#include <stdint.h> // defines __int64_t which is expected by sndfile.h
-#endif
+#include "neat_math.h" // defines __int64_t which is expected by sndfile.h
 
 #include <float.h>
 

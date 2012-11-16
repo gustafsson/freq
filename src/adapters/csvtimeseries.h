@@ -3,17 +3,11 @@
 
 #include "signal/buffersource.h"
 #include "sawe/reader.h"
+#include "neat_math.h" // uint64_t
 
 #include <boost/serialization/string.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
-
-#ifdef _MSC_VER
-typedef unsigned __int64 uint64_t;
-typedef unsigned __int32 uint32_t;
-#else
-#include <stdint.h>
-#endif
 
 #include "cpumemorystorage.h"
 

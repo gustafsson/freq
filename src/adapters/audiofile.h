@@ -232,20 +232,13 @@
 
 #include "signal/operationcache.h"
 #include "sawe/reader.h"
+#include "neat_math.h" // uint64_t
 
 // boost
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/version.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
-
-// std
-#ifdef _MSC_VER
-typedef unsigned __int64 uint64_t;
-typedef unsigned __int32 uint32_t;
-#else
-#include <stdint.h>
-#endif
 
 // gpumisc
 #include "cpumemorystorage.h"
