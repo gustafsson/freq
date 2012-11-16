@@ -39,6 +39,7 @@
 #include "splashscreen.h"
 #include "widgets/widgetoverlaycontroller.h"
 #include "filtercontroller.h"
+#include "printscreencontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -162,6 +163,8 @@ ToolFactory::
         _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view ) ));
 
     _objects.push_back( QPointer<QObject>( new FilterController( p )));
+
+    _objects.push_back( QPointer<QObject>( new PrintScreenController( p )));
 
     //
     // Insert new tools here, and delete things in the destructor in the
