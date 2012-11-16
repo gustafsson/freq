@@ -35,8 +35,10 @@ void PanWidget::
 {
     bool success1, success2;
 
-    Heightmap::Position last = view_->getPlanePos( dragSource_, &success1);
-    Heightmap::Position current = view_->getPlanePos( event->posF(), &success2);
+    Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
+    Heightmap::Position current = view_->getPlanePos( mapToParent(event->pos()), &success2);
+
+    TaskInfo("now at %g %g", current.time, current.scale);
 
     if (success1 && success2)
     {

@@ -187,8 +187,8 @@ void RescaleWidget::
 {
     bool success1, success2;
 
-    Heightmap::Position last = view_->getPlanePos( dragSource_, &success1);
-    Heightmap::Position current = view_->getPlanePos( lastPos_, &success2);
+    Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
+    Heightmap::Position current = view_->getPlanePos( mapToParent(lastPos_), &success2);
 
     QPointF d = lastPos_ - dragSource_;
     float dx = d.x() / width();
