@@ -25,6 +25,7 @@ PanWidget::PanWidget(RenderView *view) :
 void PanWidget::
         leaveEvent ( QEvent * )
 {
+    // Restore closed hand cursor, called from mouseReleaseEvent
     QApplication::restoreOverrideCursor();
 }
 

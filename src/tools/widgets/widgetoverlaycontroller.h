@@ -15,7 +15,8 @@ public:
     WidgetOverlayController(RenderView* view);
     ~WidgetOverlayController();
 
-    void timerEvent ( QTimerEvent * );
+    void enterEvent ( QEvent * );
+    void leaveEvent ( QEvent * );
     void keyPressEvent ( QKeyEvent * );
     void keyReleaseEvent ( QKeyEvent * );
     void mouseMoveEvent ( QMouseEvent * event );
@@ -34,7 +35,6 @@ private:
 
     QWidget *pan_, *rescale_, *rotate_, *proxy_mousepress_;
     RenderView* view_;
-    int update_timer_;
 };
 
 } // namespace Widgets

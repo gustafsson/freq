@@ -27,8 +27,7 @@ WidgetOverlayController::
     : OverlayWidget(view),
       pan_(0), rescale_(0), rotate_(0),
       proxy_mousepress_(0),
-      view_(view),
-      update_timer_(0)
+      view_(view)
 {
     setupLayout();
 }
@@ -41,12 +40,16 @@ WidgetOverlayController::
 
 
 void WidgetOverlayController::
-        timerEvent( QTimerEvent *)
+        enterEvent ( QEvent * )
 {
-    killTimer(update_timer_);
-    update_timer_ = 0;
+    setWindowOpacity (1.0);
+}
 
-    this->setWindowOpacity (0.0);
+
+void WidgetOverlayController::
+        leaveEvent ( QEvent * )
+{
+    setWindowOpacity (0.0);
 }
 
 
@@ -76,14 +79,6 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         mouseMoveEvent ( QMouseEvent * event )
 {
-    this->setWindowOpacity (1.0);
-    if (update_timer_!=0)
-    {
-        killTimer (update_timer_);
-        update_timer_ = 0;
-    }
-    update_timer_ = startTimer(5000);
-
     if (proxy_mousepress_)
         QCoreApplication::sendEvent (proxy_mousepress_, event);
     else
@@ -123,8 +118,10 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         setupLayout()
 {
+    leaveEvent (0);
+
     setCursor(Qt::CrossCursor);
-    setMouseTracking (true);
+
 
 //    setupLayoutRightAndBottom();
     setupLayoutCenter();
