@@ -4,7 +4,7 @@
 #include "overlaywidget.h"
 
 #include <QList>
-#include <QPointer>
+#include <QMouseEvent>
 
 namespace Tools {
 namespace Widgets {
@@ -32,9 +32,12 @@ private:
     void setupLayoutRightAndBottom();
 
     bool updateFocusWidget(QKeyEvent *e);
+    void sendMouseProxyEvent( QMouseEvent * event );
 
     QWidget *pan_, *rescale_, *rotate_, *proxy_mousepress_;
     RenderView* view_;
+    QMouseEvent child_event_;
+    QPoint lastMousePos_;
 };
 
 } // namespace Widgets

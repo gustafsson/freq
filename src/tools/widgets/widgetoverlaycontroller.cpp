@@ -27,7 +27,8 @@ WidgetOverlayController::
     : OverlayWidget(view),
       pan_(0), rescale_(0), rotate_(0),
       proxy_mousepress_(0),
-      view_(view)
+      view_(view),
+      child_event_(QMouseEvent(QEvent::None,QPoint(),Qt::NoButton,0,0))
 {
     setupLayout();
 }
@@ -80,7 +81,7 @@ void WidgetOverlayController::
         mouseMoveEvent ( QMouseEvent * event )
 {
     if (proxy_mousepress_)
-        QCoreApplication::sendEvent (proxy_mousepress_, event);
+        sendMouseProxyEvent ( event );
     else
         OverlayWidget::mouseMoveEvent( event );
 }
@@ -90,7 +91,7 @@ void WidgetOverlayController::
         mousePressEvent ( QMouseEvent * event )
 {
     if ((proxy_mousepress_ = focusProxy ()))
-        QCoreApplication::sendEvent (proxy_mousepress_, event);
+        sendMouseProxyEvent ( event );
     else
         OverlayWidget::mousePressEvent( event );
 }
@@ -100,7 +101,10 @@ void WidgetOverlayController::
         mouseReleaseEvent ( QMouseEvent * event )
 {
     if (proxy_mousepress_)
-        QCoreApplication::sendEvent (proxy_mousepress_, event);
+    {
+        sendMouseProxyEvent ( event );
+        proxy_mousepress_ = 0;
+    }
     else
         OverlayWidget::mouseReleaseEvent( event );
 }
@@ -189,11 +193,26 @@ bool WidgetOverlayController::
 
         if (fp != focusProxy ())
         {
+            bool oldMousePress = 0!=proxy_mousepress_  && proxy_mousepress_ != fp;
+
             if (fp)
             {
                 fp->setFocus ( Qt::MouseFocusReason );
                 QApplication::setOverrideCursor (fp->cursor ());
-                proxy_mousepress_ = fp;
+
+                if (oldMousePress)
+                {
+                    QMouseEvent releaseEvent(
+                                QEvent::MouseButtonRelease,
+                                lastMousePos_,
+                                child_event_.button (),
+                                child_event_.buttons (),
+                                child_event_.modifiers ()
+                                );
+                    mouseReleaseEvent(&releaseEvent);
+                }
+                else
+                    proxy_mousepress_ = fp;
             }
 
             setFocusProxy (fp);
@@ -203,12 +222,39 @@ bool WidgetOverlayController::
                 setFocus();
                 QApplication::restoreOverrideCursor ();
             }
+            else if (oldMousePress)
+            {
+                QMouseEvent pressEvent(
+                            QEvent::MouseButtonPress,
+                            lastMousePos_,
+                            child_event_.button (),
+                            child_event_.buttons (),
+                            child_event_.modifiers ()
+                            );
+                mousePressEvent(&pressEvent);
+            }
         }
         return true;
     }
     default:
         return false;
     }
+}
+
+
+void WidgetOverlayController::
+        sendMouseProxyEvent( QMouseEvent * e )
+{
+    lastMousePos_ = e->pos();
+    child_event_ = QMouseEvent(
+                e->type (),
+                proxy_mousepress_->mapFromParent (e->pos ()),
+                e->button (),
+                e->buttons (),
+                e->modifiers ()
+                );
+
+    QCoreApplication::sendEvent (proxy_mousepress_, &child_event_);
 }
 
 
