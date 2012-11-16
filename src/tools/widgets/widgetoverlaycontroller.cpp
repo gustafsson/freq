@@ -193,6 +193,7 @@ bool WidgetOverlayController::
             {
                 fp->setFocus ( Qt::MouseFocusReason );
                 QApplication::setOverrideCursor (fp->cursor ());
+                proxy_mousepress_ = fp;
             }
 
             setFocusProxy (fp);
