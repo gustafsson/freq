@@ -381,9 +381,11 @@ void RenderController::
     {
     case Heightmap::Renderer::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_rainbow_colors); break;
     case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
+    case Heightmap::Renderer::ColorMode_BlackGrayscale: color->setCheckedAction(ui->actionSet_blackgrayscale); break;
     case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
     case Heightmap::Renderer::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
     case Heightmap::Renderer::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
+    case Heightmap::Renderer::ColorMode_Green: color->setCheckedAction(ui->actionSet_green_colors); break;
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
@@ -1161,8 +1163,8 @@ void RenderController::
 void RenderController::
         updateAmplitudeAxis()
 {
-    Tfr::Filter* filter = model()->block_filter ();
-    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
+//    Tfr::Filter* filter = model()->block_filter ();
+//    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
 
 /*    switch (model()->amplitude_axis ())
     {
