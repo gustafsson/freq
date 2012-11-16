@@ -180,7 +180,11 @@ void RenderView::
 void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
-    userinput_update( false );
+    if (model->renderer->draw_cursor_marker)
+        update();
+
+    bool request_high_fps = false;
+    userinput_update( request_high_fps );
 
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
