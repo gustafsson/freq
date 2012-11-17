@@ -50,6 +50,7 @@ DropNotifyForm::
     if (!text.isEmpty())
     {
         ui->labelInfoText->setText(text);
+        ui->labelInfoText->setToolTip(text);
         this->url = url;
     }
     if (!buttontext.isEmpty())
