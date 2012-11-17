@@ -211,8 +211,6 @@ void TransformInfoForm::
         addRow("Type", "Short time fourier");
         if (renderview->model->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
-        addRow("Window type", "Regular");
-        addRow("Overlap", "0");
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
@@ -232,9 +230,7 @@ void TransformInfoForm::
         addRow("Type", "Cepstrum");
         if (renderview->model->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
-        addRow("Window type", "Regular");
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
-        addRow("Overlap", "0");
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
 

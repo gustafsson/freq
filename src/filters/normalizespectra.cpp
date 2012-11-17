@@ -154,9 +154,9 @@ void NormalizeSpectra::
                     std::insert_iterator< std::vector<float> >( median, median.begin() ),
                     2*R);
 
-        int s = median.size ();
-        float* mv = &median[0];
-        float* mo = &original[0];
+//        int s = median.size ();
+//        float* mv = &median[0];
+//        float* mo = &original[0];
 
         for (int i=0; i<W; ++i)
         {
@@ -170,7 +170,7 @@ void NormalizeSpectra::
 
 
 int NormalizeSpectra::
-    computeR( const Tfr::Chunk& chunk )
+        computeR( const Tfr::Chunk& chunk )
 {
     const StftChunk* stftChunk = dynamic_cast<const StftChunk*>(&chunk);
     int processingWindow = stftChunk->window_size ();
