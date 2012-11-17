@@ -19,9 +19,9 @@ PanWidget::PanWidget(RenderView *view) :
     setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
 #ifdef __APPLE__
-    setToolTip("Click and drag to pan [ctrl]");
+    setToolTip("Click and drag to pan [hold ctrl]");
 #else
-    setToolTip("Click and drag to pan [shift]");
+    setToolTip("Click and drag to pan [hold shift]");
 #endif
 }
 
@@ -41,8 +41,6 @@ void PanWidget::
 
     Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
     Heightmap::Position current = view_->getPlanePos( mapToParent(event->pos()), &success2);
-
-    TaskInfo("now at %g %g", current.time, current.scale);
 
     if (success1 && success2)
     {

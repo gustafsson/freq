@@ -57,7 +57,7 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         keyPressEvent(QKeyEvent *e)
 {
-    TaskInfo("%s", str(format("%s\nkey %d\nmodifiers %d\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
+    TaskInfo("%s", str(format("%s\nkey 0x%x\nmodifiers 0x%x\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
 
     if (updateFocusWidget(e))
         return;
@@ -69,7 +69,7 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         keyReleaseEvent(QKeyEvent *e)
 {
-    TaskInfo("%s", str(format("%s\nkey %d\nmodifiers %d\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
+    TaskInfo("%s", str(format("%s\nkey 0x%x\nmodifiers 0x%x\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
 
     updateFocusWidget(e);
 
@@ -90,6 +90,9 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         mousePressEvent ( QMouseEvent * event )
 {
+    QKeyEvent key( QEvent::KeyPress, Qt::Key_unknown, event->modifiers());
+    updateFocusWidget(&key);
+
     if ((proxy_mousepress_ = focusProxy ()))
         sendMouseProxyEvent ( event );
     else
@@ -177,12 +180,31 @@ void WidgetOverlayController::
 bool WidgetOverlayController::
         updateFocusWidget(QKeyEvent *e)
 {
+//    TaskInfo ti("%s key = 0x%x", __FUNCTION__, (int)e->key ());
+//    if (((int)e->modifiers ()) & ~Qt::KeyboardModifierMask)
+//        TaskInfo("modifiers = 0x%x", (int)e->modifiers ());
+//    if (e->modifiers ().testFlag (Qt::MetaModifier))
+//        TaskInfo("Meta");
+//    if (e->modifiers ().testFlag (Qt::AltModifier))
+//        TaskInfo("Alt");
+//    if (e->modifiers ().testFlag (Qt::ControlModifier))
+//        TaskInfo("Control");
+//    if (e->modifiers ().testFlag (Qt::ShiftModifier))
+//        TaskInfo("Shift");
+//    if (e->modifiers ().testFlag (Qt::KeypadModifier))
+//        TaskInfo("Keypad");
+//    if (e->modifiers ().testFlag ((Qt::KeyboardModifier)Qt::UNICODE_ACCEL))
+//        TaskInfo("UNICODE_ACCEL");
+//    if (e->modifiers ().testFlag (Qt::GroupSwitchModifier))
+//        TaskInfo("GroupSwitc");
+
     switch(e->key ())
     {
     case Qt::Key_Control:
     case Qt::Key_Meta:
     case Qt::Key_Alt:
     case Qt::Key_Shift:
+    case Qt::Key_unknown:
     {
         QWidget* fp = 0;
 #ifdef __APPLE__
@@ -193,18 +215,18 @@ bool WidgetOverlayController::
         if (e->modifiers ().testFlag (Qt::ControlModifier)) // Mac Cmd
             fp = rotate_;
 #else
-        if (e->modifiers ().testFlag (Qt::ShiftModifier)) // Windows Shift
+        if (e->modifiers ().testFlag (Qt::ShiftModifier)) // Windows/Ubuntu Shift
             fp = pan_;
-        if (e->modifiers ().testFlag (Qt::ControlModifier)) // Windows Ctrl
+        if (e->modifiers ().testFlag (Qt::ControlModifier)) // Windows/Ubuntu Ctrl
             fp = rescale_;
-        if (e->modifiers ().testFlag (Qt::AltModifier)) // Windows Alt
+        if (e->modifiers ().testFlag (Qt::AltModifier)) // Windows/Ubuntu Alt
             fp = rotate_;
 #endif
 
+        bool oldMousePress = 0!=proxy_mousepress_ && proxy_mousepress_ != fp;
+
         if (fp != focusProxy ())
         {
-            bool oldMousePress = 0!=proxy_mousepress_  && proxy_mousepress_ != fp;
-
             if (fp)
             {
                 fp->setFocus ( Qt::MouseFocusReason );
@@ -219,10 +241,9 @@ bool WidgetOverlayController::
                                 child_event_.buttons (),
                                 child_event_.modifiers ()
                                 );
-                    mouseReleaseEvent(&releaseEvent);
+
+                    mouseReleaseEvent( &releaseEvent );
                 }
-                else
-                    proxy_mousepress_ = fp;
             }
 
             setFocusProxy (fp);
@@ -241,9 +262,13 @@ bool WidgetOverlayController::
                             child_event_.buttons (),
                             child_event_.modifiers ()
                             );
-                mousePressEvent(&pressEvent);
+
+                mousePressEvent( &pressEvent );
             }
         }
+
+        //TaskInfo("%s", fp?vartype(*fp).c_str():0);
+
         return true;
     }
     default:

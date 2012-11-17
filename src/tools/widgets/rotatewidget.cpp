@@ -21,9 +21,11 @@ RotateWidget::RotateWidget(RenderView* view) :
     setCursor(Qt::OpenHandCursor);
 
 #ifdef __APPLE__
-    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [cmd]");
+    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [hold cmd]");
+#elif defined(_MSC_VER)
+    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [hold alt]");
 #else
-    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [alt]");
+    setToolTip("Click to flip between 2D and 3D. Drag to rotate in 3D [hold ctrl+alt]"); // or shift+alt, or win+alt
 #endif
 }
 
