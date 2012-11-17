@@ -933,6 +933,11 @@ void RenderView::
     height = height?height:1;
 
     QRect rect = tool_selector->parentTool()->geometry();
+
+    // Might happen during the first (few) frame during startup. Before "parentTool()" knows which size it should have.
+    if (width > 1 && rect.width () > width) rect.setWidth (width);
+    if (height > 1 && rect.height () > height) rect.setHeight (height);
+
     glViewport( rect.x(), height - rect.y() - rect.height(), rect.width(), rect.height() );
     _last_x = rect.x();
     _last_y = rect.y();
