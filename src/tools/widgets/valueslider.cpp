@@ -20,9 +20,10 @@ ValueSlider::
     slider_(0),
     resolution_(1000000),
     decimals_(0),
-    is_logaritmic_(false),
+    value_translation_(Linear),
     value_(0),
-    slider_is_pressed_(false)
+    slider_is_pressed_(false),
+    logaritmic_zero_(false)
 {
     setMinimumWidth (40);
 
@@ -113,9 +114,20 @@ void ValueSlider::
 
 
 void ValueSlider::
+        focusInEvent ( QFocusEvent * e )
+{
+    QComboBox::focusInEvent(e);
+
+    updateLineEdit();
+}
+
+
+void ValueSlider::
         focusOutEvent ( QFocusEvent * e )
 {
     QComboBox::focusOutEvent(e);
+
+    updateLineEdit();
 }
 
 
@@ -141,7 +153,7 @@ void ValueSlider::
 {
     qreal max = maximum();
     if (max < m) max = m;
-    setRange(m, max, isLogaritmic());
+    setRange(m, max, value_translation_);
 }
 
 
@@ -157,7 +169,7 @@ void ValueSlider::
 {
     qreal min = minimum();
     if (min > m) min = m;
-    setRange(min, m, isLogaritmic());
+    setRange(min, m, value_translation_);
 }
 
 
@@ -171,7 +183,13 @@ qreal ValueSlider::
 void ValueSlider::
         setValue(qreal v)
 {
-    if (value_ == v)
+    qreal q = v;
+    if (v < minimum())
+        v = minimum();
+    if (v > maximum())
+        v = maximum();
+
+    if (value_ == v && v == q)
         return;
 
     value_ = v;
@@ -185,21 +203,32 @@ void ValueSlider::
 
 
 void ValueSlider::
-        setRange(qreal min, qreal max, bool logaritmic)
+        setRange(qreal min, qreal max, ValueTranslation translation)
 {
     qreal v = value_;
 
     qreal d;
-    if (logaritmic)
-        d = log(max) - log(min);
-    else
-        d = max - min;
+    switch(translation)
+    {
+        case Quadratic:
+            d = sqrt(max) - sqrt(min);
+            break;
+        case Logaritmic:
+        case LogaritmicZeroMin:
+            if (min <= 0) min = 1;
+            if (max < min) max = min;
+
+            d = log(max) - log(min);
+            break;
+        default:
+            d = max - min;
+            break;
+    }
     if (boost::math::isnan(d) || boost::math::isinf(d) || d<100)
         d = 100;
 
     resolution_ = INT_MAX / d;
-
-    is_logaritmic_ = logaritmic;
+    value_translation_ = translation;
     slider_->setMinimum (toInt(min));
     slider_->setMaximum (toInt(max));
     slider_->setValue (toInt(v));
@@ -227,6 +256,21 @@ void ValueSlider::
 
 
 QString ValueSlider::
+        unit() const
+{
+    return unit_;
+}
+
+
+void ValueSlider::
+        setUnit(QString value)
+{
+    unit_ = value;
+    updateLineEdit();
+}
+
+
+QString ValueSlider::
         toolTip()
 {
     return slider_->toolTip ();
@@ -246,15 +290,22 @@ void ValueSlider::
 {
     qreal v = value(), min = minimum(), max = maximum();
     qreal f, d;
-    if (isLogaritmic ())
+    switch (value_translation_)
     {
+    case Quadratic:
+        d = sqrt(max) - sqrt(min);
+        f = sqrt(v) - sqrt(min);
+        break;
+    case Logaritmic:
+    case LogaritmicZeroMin:
         d = log(max) - log(min);
         f = log(v) - log(min);
-    }
-    else
-    {
+        break;
+    case Linear:
+    default:
         d = max - min;
         f = v - min;
+        break;
     }
 
     f /= d;
@@ -276,14 +327,21 @@ void ValueSlider::
 
     f *= d;
 
-    if (isLogaritmic ())
+    switch (value_translation_)
     {
+    case Quadratic:
+        f += sqrt(min);
+        v = f*f;
+        break;
+    case Logaritmic:
+    case LogaritmicZeroMin:
         f += log(min);
         v = exp(f);
-    }
-    else
-    {
+        break;
+    case Linear:
+    default:
         v = f + min;
+        break;
     }
 
     if (value_ == v)
@@ -295,21 +353,10 @@ void ValueSlider::
 }
 
 
-bool ValueSlider::
-        isLogaritmic()
+ValueSlider::ValueTranslation ValueSlider::
+        valueTranslation()
 {
-    return is_logaritmic_;
-}
-
-
-void ValueSlider::
-        setLogaritmic(bool l)
-{
-    qreal min = minimum ();
-    qreal max = maximum ();
-    if (min <= 0) min = 1;
-    if (max < min) max = 1;
-    setRange(min, max, l);
+    return value_translation_;
 }
 
 
@@ -369,7 +416,8 @@ void ValueSlider::
                            .arg(minimum(),0,'f',decimals(minimum()))
                            .arg(maximum(),0,'f',decimals(maximum()))
                            .arg(toolTip()));
-    setValidator(new QDoubleValidator(minimum(), maximum(), 1000));
+    //setValidator(new QDoubleValidator(minimum(), maximum(), 1000));
+    setValidator(new QDoubleValidator());// minimum(), maximum(), 1000));
 }
 
 
@@ -407,7 +455,7 @@ void ValueSlider::
         editingFinished()
 {
     QString text = currentText();
-    if (text == valueAsString())
+    if (text == valueAsString(true))
         return;
 
     bool ok = false;
@@ -428,9 +476,9 @@ void ValueSlider::
 
 
 QString ValueSlider::
-        valueAsString() const
+        valueAsString(bool forceDisableUnits) const
 {
-    return QString("%1").arg(value_,0,'f',decimals(value_));
+    return QString("%1%2").arg(value_,0,'f',decimals(value_)).arg (unit_.isEmpty () || hasFocus () || forceDisableUnits?"":" " + unit_);
 }
 
 
@@ -465,21 +513,54 @@ qreal ValueSlider::
 {
     qreal f = qreal(v)/resolution_;
 
-    if (is_logaritmic_)
-        f = exp(f);
+    switch(value_translation_)
+    {
+    case Quadratic:
+        return f*f;
 
-    return f;
+    case LogaritmicZeroMin:
+        if (v <= slider_->minimum ())
+            return 0;
+
+        // fall through to Logaritmic
+    case Logaritmic:
+        return exp(f);
+
+    case Linear:
+    default:
+        return f;
+    }
 }
 
 
 int ValueSlider::
         toInt(qreal v) const
 {
-    if (is_logaritmic_)
+    switch(value_translation_)
+    {
+    case Quadratic:
+        if (v < 0)
+            return slider_->minimum ();
+
+        v = sqrt(v);
+        break;
+
+    case Logaritmic:
+    case LogaritmicZeroMin:
+        if (v < 0)
+            return slider_->minimum ();
+
         v = log(v);
+        break;
+
+    case Linear:
+    default:
+        break;
+    }
 
     return v*resolution_ + 0.5;
 }
+
 
 } // namespace Support
 } // namespace Tools

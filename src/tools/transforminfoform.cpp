@@ -72,21 +72,23 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     }
 
     {   ui->timeNormalizationSlider->setOrientation( Qt::Horizontal );
-        ui->timeNormalizationSlider->setRange (0.0, 100, false );
+        ui->timeNormalizationSlider->setRange (0.0, 100, Widgets::ValueSlider::Quadratic );
         ui->timeNormalizationSlider->setValue ( 0 );
         ui->timeNormalizationSlider->setDecimals (1);
         ui->timeNormalizationSlider->setToolTip( "Normalization along time axis" );
         ui->timeNormalizationSlider->setSliderSize ( 300 );
+        ui->timeNormalizationSlider->setUnit ("s");
 
         connect(ui->timeNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(timeNormalizationChanged(qreal)));
     }
 
     {   ui->freqNormalizationSlider->setOrientation( Qt::Horizontal );
-        ui->freqNormalizationSlider->setRange (0.0, 500, false );
+        ui->freqNormalizationSlider->setRange (0.0, 500, Widgets::ValueSlider::Quadratic );
         ui->freqNormalizationSlider->setValue ( 0 );
         ui->freqNormalizationSlider->setDecimals (1);
         ui->freqNormalizationSlider->setToolTip( "Normalization along frequency axis" );
         ui->freqNormalizationSlider->setSliderSize ( 300 );
+        ui->freqNormalizationSlider->setUnit ("Hz");
 
         connect(ui->freqNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(freqNormalizationChanged(qreal)));
     }

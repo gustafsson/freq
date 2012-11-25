@@ -16,12 +16,21 @@ class ValueSlider : public QComboBox
     Q_PROPERTY(qreal decimals READ decimals WRITE setDecimals)
 
 public:
+    enum ValueTranslation
+    {
+        Linear,
+        Quadratic,
+        Logaritmic,
+        LogaritmicZeroMin
+    };
+
     explicit ValueSlider(QWidget *parent = 0);
     ~ValueSlider();
 
     // QComboBox
     void showPopup();
     void hidePopup();
+    void focusInEvent ( QFocusEvent * e );
     void focusOutEvent ( QFocusEvent * e );
     bool eventFilter(QObject *, QEvent *);
 
@@ -31,7 +40,10 @@ public:
     void setMaximum(qreal);
     qreal value() const;
     void setValue(qreal v);
-    void setRange(qreal min, qreal max, bool logaritmic);
+    void setRange(qreal min, qreal max, ValueTranslation translation=Linear);
+
+    QString unit() const;
+    void setUnit(QString);
 
     Qt::Orientation orientation();
     void setOrientation( Qt::Orientation orientation );
@@ -41,8 +53,8 @@ public:
 
     void triggerAction ( QAbstractSlider::SliderAction action );
 
-    bool isLogaritmic();
-    void setLogaritmic(bool);
+    ValueTranslation valueTranslation();
+    void setValueTranslation(ValueTranslation translation);
 
     /// Number of decimal digits to print.
     int decimals() const;
@@ -67,16 +79,18 @@ private slots:
     void sliderReleased();
     void updateLineEdit();
 
-private:    
+private:
     QDialog* popup_;
     QSlider* slider_;
     int resolution_;
     int decimals_;
-    bool is_logaritmic_;
+    ValueTranslation value_translation_;
     qreal value_;
     bool slider_is_pressed_;
+    QString unit_;
+    bool logaritmic_zero_;
 
-    QString valueAsString() const;
+    QString valueAsString(bool forceDisableUnits=false) const;
     int decimals(qreal) const;
     qreal toReal(int) const;
     int toInt(qreal) const;

@@ -534,7 +534,7 @@ Signal::PostSink* RenderController::
 
     if (isCwt && !wasCwt)
     {
-        tf_resolution->setRange (2, 40, false);
+        tf_resolution->setRange (2, 40);
         tf_resolution->setDecimals (1);
         c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.scales_per_octave ()));
         // transformChanged updates value accordingly
@@ -542,7 +542,7 @@ Signal::PostSink* RenderController::
 
     if (!isCwt && wasCwt)
     {
-        tf_resolution->setRange (1<<8, 1<<20, true);
+        tf_resolution->setRange (1<<8, 1<<20, Widgets::ValueSlider::Logaritmic);
         tf_resolution->setDecimals (0);
         s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
         // transformChanged updates value accordingly
@@ -1004,7 +1004,7 @@ void RenderController::
     {   yscale = new Widgets::ValueSlider( toolbar_render );
         yscale->setObjectName("yscale");
         yscale->setOrientation( Qt::Horizontal );
-        yscale->setRange (0.0003, 2000, true );
+        yscale->setRange (0.0003, 2000, Widgets::ValueSlider::LogaritmicZeroMin );
         yscale->setValue ( 1 );
         yscale->setDecimals (2);
         yscale->setToolTip( "Intensity level" );
@@ -1031,9 +1031,7 @@ void RenderController::
     // QSlider * tf_resolution
     {   tf_resolution = new Widgets::ValueSlider( toolbar_render );
         tf_resolution->setObjectName ("tf_slider");
-        tf_resolution->setLogaritmic (true);
-        tf_resolution->setMinimum (1<<8);
-        tf_resolution->setMaximum (1<<20);
+        tf_resolution->setRange (1<<8, 1<<20, Widgets::ValueSlider::Logaritmic);
         tf_resolution->setValue ( 4096 );
         tf_resolution->setToolTip ("Window size (time/frequency resolution) ");
         tf_resolution->setSliderSize ( 300 );
