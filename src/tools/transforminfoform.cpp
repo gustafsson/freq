@@ -15,6 +15,7 @@
 #include "adapters/csvtimeseries.h"
 #include "filters/normalize.h"
 #include "filters/normalizespectra.h"
+#include "widgets/valueslider.h"
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -70,19 +71,25 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->windowTypeComboBox->addItem(Tfr::StftParams::windowTypeName((Tfr::StftParams::WindowType)i).c_str(), i);
     }
 
-    ui->normalizationComboBox->addItem("None", -1.f);
-    ui->normalizationComboBox->addItem("0 s normalization", 0.f);
-    ui->normalizationComboBox->addItem("1 s normalization", 1.f);
-    ui->normalizationComboBox->addItem("10 s normalization", 10.f);
-    ui->normalizationComboBox->addItem("100 s normalization", 100.f);
+    {   ui->timeNormalizationSlider->setOrientation( Qt::Horizontal );
+        ui->timeNormalizationSlider->setRange (0.0, 100, false );
+        ui->timeNormalizationSlider->setValue ( 0 );
+        ui->timeNormalizationSlider->setDecimals (1);
+        ui->timeNormalizationSlider->setToolTip( "Normalization along time axis" );
+        ui->timeNormalizationSlider->setSliderSize ( 300 );
 
-    ui->freqNormalComboBox->addItem("None", -1.f);
-    ui->freqNormalComboBox->addItem("0.5 Hz", 0.5f);
-    ui->freqNormalComboBox->addItem("1 Hz", 1.f);
-    ui->freqNormalComboBox->addItem("5 Hz", 5.f);
-    ui->freqNormalComboBox->addItem("25 Hz", 25.f);
-    ui->freqNormalComboBox->addItem("100 Hz", 100.f);
-    ui->freqNormalComboBox->addItem("500 Hz", 500.f);
+        connect(ui->timeNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(timeNormalizationChanged(qreal)));
+    }
+
+    {   ui->freqNormalizationSlider->setOrientation( Qt::Horizontal );
+        ui->freqNormalizationSlider->setRange (0.0, 500, false );
+        ui->freqNormalizationSlider->setValue ( 0 );
+        ui->freqNormalizationSlider->setDecimals (1);
+        ui->freqNormalizationSlider->setToolTip( "Normalization along frequency axis" );
+        ui->freqNormalizationSlider->setSliderSize ( 300 );
+
+        connect(ui->freqNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(freqNormalizationChanged(qreal)));
+    }
 
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
@@ -90,8 +97,6 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
     connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
-    connect(ui->normalizationComboBox, SIGNAL(currentIndexChanged(int)), SLOT(normalizationChanged()));
-    connect(ui->freqNormalComboBox, SIGNAL(currentIndexChanged(int)), SLOT(freqNormalizationChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
     //connect(ui->maxHzEdit, SIGNAL(textEdited(QString)), SLOT(maxHzChanged()));
     //connect(ui->binResolutionEdit, SIGNAL(textEdited(QString)), SLOT(binResolutionChanged()));
@@ -163,9 +168,6 @@ void TransformInfoForm::
         addRow("Sample rate", QString("%1").arg(fs));
     }
     addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
-
-    if (-1.f != ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat() && !ui->normalizationComboBox->hasFocus())
-        ui->normalizationComboBox->setCurrentIndex(ui->normalizationComboBox->findData(-1.f));
 
 #ifdef TARGET_hast
     {
@@ -423,13 +425,11 @@ void TransformInfoForm::
 
 
 void TransformInfoForm::
-        normalizationChanged()
+        timeNormalizationChanged(qreal newValue)
 {
-    float newValue = ui->normalizationComboBox->itemData(ui->normalizationComboBox->currentIndex()).toFloat();
-
     Signal::PostSink* ps = project->tools ().render_model.renderSignalTarget->post_sink ();
     float fs = ps->sample_rate ();
-    if (0.f <= newValue)
+    if (0.f < newValue)
     {
         Signal::pOperation timeNormalization(
                         new Filters::Normalize(newValue*fs));
@@ -441,10 +441,8 @@ void TransformInfoForm::
 
 
 void TransformInfoForm::
-        freqNormalizationChanged()
+        freqNormalizationChanged(qreal newValue)
 {
-    float newValue = ui->freqNormalComboBox->itemData(ui->freqNormalComboBox->currentIndex()).toFloat();
-
     Tfr::Filter* filter = project->tools ().render_model.block_filter ();
     EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
 
@@ -455,7 +453,7 @@ void TransformInfoForm::
     EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
 
     Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
-    if (0.f <= newValue)
+    if (0.f < newValue)
     {
         stftblock->freqNormalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(newValue));
