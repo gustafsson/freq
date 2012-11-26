@@ -5,24 +5,26 @@
 #include "fftclfft.h"
 #include "fftcufft.h"
 
+#include <boost/make_shared.hpp>
+
+using namespace boost;
+
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
 #define USE_CUFFT
 #endif
 
 namespace Tfr {
 
-FftImplementation& FftImplementation::
-        Singleton()
+shared_ptr<FftImplementation> FftImplementation::
+        newInstance()
 {
-    // TODO can't use statics
 #ifdef USE_CUFFT
-    static FftCufft fft;
+    return make_shared<FftCufft>(); // Gpu, Cuda
 #elif defined(USE_OPENCL)
-    static FftClFft fft;
+    return make_shared<FftClFft>(); // Gpu, OpenCL
 #else
-    static FftOoura fft;
+    return make_shared<FftOoura>(); // Cpu
 #endif
-    return fft;
 }
 
 

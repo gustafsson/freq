@@ -43,7 +43,8 @@ namespace Tfr {
 Fft::
         Fft( bool computeRedundant )
             :
-            _compute_redundant( computeRedundant )
+            _compute_redundant( computeRedundant ),
+            fft( FftImplementation::newInstance () )
 {
 }
 
@@ -80,7 +81,7 @@ pChunk Fft::
         chunk.reset( new StftChunk( output_n.width, StftParams::WindowType_Rectangular, output_n.width, true ) );
         chunk->transform_data.reset( new ChunkData( output_n ));
 
-        FftImplementation::Singleton().compute( input, chunk->transform_data, FftDirection_Forward );
+        fft->compute( input, chunk->transform_data, FftDirection_Forward );
         chunk->freqAxis.setLinear( real_buffer->sample_rate(), chunk->nScales()/2 );
     }
     else
@@ -97,7 +98,7 @@ pChunk Fft::
         output_n.width = ((StftChunk*)chunk.get())->nScales();
         chunk->transform_data.reset( new ChunkData( output_n ));
 
-        FftImplementation::Singleton().computeR2C( real_buffer->waveform_data(), chunk->transform_data );
+        fft->computeR2C( real_buffer->waveform_data(), chunk->transform_data );
         chunk->freqAxis.setLinear( real_buffer->sample_rate(), chunk->nScales() );
     }
 
@@ -141,7 +142,7 @@ unsigned Fft::
 {
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
     maxsize /= 3*sizeof(ChunkElement);
-    return std::min(maxsize, (size_t)Fft::sChunkSizeG(current_valid_samples_per_chunk));
+    return std::min(maxsize, (size_t)fft->sChunkSizeG(current_valid_samples_per_chunk));
 }
 
 
@@ -150,7 +151,7 @@ unsigned Fft::
 {
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
     maxsize /= 3*sizeof(ChunkElement);
-    return std::min(maxsize, (size_t)Fft::lChunkSizeS(current_valid_samples_per_chunk));
+    return std::min(maxsize, (size_t)fft->lChunkSizeS(current_valid_samples_per_chunk));
 }
 
 
@@ -190,7 +191,7 @@ Signal::pMonoBuffer Fft::
         // original_sample_rate == fs * scales
         Tfr::ChunkData::Ptr output( new Tfr::ChunkData( scales ));
 
-        FftImplementation::Singleton().compute( chunk->transform_data, output, FftDirection_Inverse );
+        fft->compute( chunk->transform_data, output, FftDirection_Inverse );
 
         r.reset( new Signal::MonoBuffer(0, scales, fs ));
         ::stftDiscardImag( output, r->waveform_data() );
@@ -201,7 +202,7 @@ Signal::pMonoBuffer Fft::
 
         r.reset( new Signal::MonoBuffer(0, scales, fs ));
 
-        FftImplementation::Singleton().computeC2R( chunk->transform_data, r->waveform_data() );
+        fft->computeC2R( chunk->transform_data, r->waveform_data() );
     }
 
     unsigned original_sample_count = chunk->original_sample_rate/chunk->sample_rate + .5f;
@@ -219,13 +220,13 @@ Signal::pMonoBuffer Fft::
 unsigned Fft::
         lChunkSizeS(unsigned x, unsigned m)
 {
-    return FftImplementation::Singleton().lChunkSizeS(x,m);
+    return fft->lChunkSizeS(x,m);
 }
 
 unsigned Fft::
         sChunkSizeG(unsigned x, unsigned m)
 {
-    return FftImplementation::Singleton().sChunkSizeG(x,m);
+    return fft->sChunkSizeG(x,m);
 }
 
 /// STFT
@@ -236,7 +237,8 @@ std::vector<unsigned> Stft::_ok_chunk_sizes;
 Stft::
         Stft(const StftParams& p)
     :
-      p(p)
+      p(p),
+      fft( FftImplementation::newInstance () )
 {
 }
 
@@ -347,7 +349,7 @@ Tfr::pChunk Stft::
     Tfr::pChunk chunk( new Tfr::StftChunk(p.chunk_size(), p.windowType(), p.increment(), false) );
     chunk->transform_data.reset( new Tfr::ChunkData( n ));
 
-    FftImplementation::Singleton().compute( inputbuffer, chunk->transform_data, DataStorageSize(p.chunk_size(), actualSize.height) );
+    fft->compute( inputbuffer, chunk->transform_data, DataStorageSize(p.chunk_size(), actualSize.height) );
 
     TIME_STFT ComputationSynchronize();
 
@@ -379,7 +381,7 @@ Tfr::pChunk Stft::
 
     chunk->transform_data.reset( new ChunkData( n.width*n.height ));
 
-    FftImplementation::Singleton().compute( input, chunk->transform_data, n, FftDirection_Forward );
+    fft->compute( input, chunk->transform_data, n, FftDirection_Forward );
 
     TIME_STFT ComputationSynchronize();
 
@@ -430,7 +432,7 @@ Signal::pMonoBuffer Stft::
 
     DataStorage<float>::Ptr windowedOutput(new DataStorage<float>(nwindows*chunk_window_size));
 
-    FftImplementation::Singleton().inverse( chunk->transform_data, windowedOutput, n );
+    fft->inverse( chunk->transform_data, windowedOutput, n );
 
     TIME_STFT ComputationSynchronize();
 
@@ -481,7 +483,7 @@ Signal::pMonoBuffer Stft::
 
     Tfr::ChunkData::Ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
 
-    FftImplementation::Singleton().compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
+    fft->compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
 
     TIME_STFT ComputationSynchronize();
 
@@ -534,7 +536,7 @@ Tfr::ComplexBuffer::Ptr Stft::
 
     Tfr::ChunkData::Ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
 
-    FftImplementation::Singleton().compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
+    fft->compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
 
     TIME_STFT ComputationSynchronize();
 
@@ -576,7 +578,7 @@ void Stft::
     TIME_STFT TaskTimer ti("Stft::compute %s, size = %d, %d",
                            direction == FftDirection_Forward ? "forward" : "inverse",
                            size.width, size.height);
-    FftImplementation::Singleton().compute( input, output, size, direction );
+    fft->compute( input, output, size, direction );
 }
 
 

@@ -49,11 +49,12 @@ public:
     pChunk forward( Signal::pMonoBuffer );
     Signal::pMonoBuffer backward( pChunk );
 
-    static unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
-    static unsigned sChunkSizeG(unsigned x, unsigned multiple=1);
+    unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
+    unsigned sChunkSizeG(unsigned x, unsigned multiple=1);
 
 private:
     bool _compute_redundant;
+    FftImplementation::Ptr fft;
 };
 
 
@@ -86,6 +87,7 @@ public:
 
 private:
     const StftParams p;
+    FftImplementation::Ptr fft;
 
     Tfr::pChunk ComputeChunk(DataStorage<float>::Ptr inputbuffer);
 

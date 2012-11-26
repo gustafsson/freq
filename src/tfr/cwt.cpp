@@ -57,10 +57,9 @@
 const bool AdjustToBin0 = true;
 
 using namespace boost::lambda;
+using namespace std;
 
 namespace Tfr {
-
-pTransform Cwt::static_singleton;
 
 Cwt::
         Cwt( float scales_per_octave, float wavelet_time_suppport )
@@ -77,6 +76,7 @@ Cwt::
 #ifdef USE_CUDA
     storageCudaMemsetFix = &cudaMemsetFix;
 #endif
+    fft(0); // init
     this->scales_per_octave( scales_per_octave );
 }
 
@@ -227,7 +227,7 @@ pChunk Cwt::
         if (trypowerof2)
             extra = spo2g(sub_length - 1) - sub_length;
         else
-            extra = Fft::sChunkSizeG(sub_length - 1, chunkpart_alignment( c )) - sub_length;
+            extra = fft()->sChunkSizeG(sub_length - 1, chunkpart_alignment( c )) - sub_length;
 
         //this can be asserted if we compute valid interval based on the widest chunk
         if (!AdjustToBin0)
@@ -370,6 +370,8 @@ pChunk Cwt::
         throw;
     }
 #endif
+
+    clearFft();
 }
 
 
@@ -690,6 +692,43 @@ Signal::pMonoBuffer Cwt::
 }
 
 
+Tfr::FftImplementation::Ptr Cwt::
+        fft() const
+{
+    return fft_instances.find (0)->second;
+}
+
+
+Tfr::FftImplementation::Ptr Cwt::
+        fft(int width)
+{
+    Tfr::FftImplementation::Ptr& i = fft_instances[width];
+    i = Tfr::FftImplementation::newInstance ();
+    fft_usage.insert (width);
+    return i;
+}
+
+
+void Cwt::
+        clearFft()
+{
+    typedef map<int, Tfr::FftImplementation::Ptr> fmap;
+
+    for (fmap::iterator i = fft_instances.begin (); i!=fft_instances.end (); ++i)
+    {
+        if (0 < fft_usage.count (i->first))
+            fft_usage.erase (i->first);
+    }
+
+    fft_usage.erase (0);
+
+    for (set<int>::iterator i = fft_usage.begin (); i!=fft_usage.end (); ++i)
+        fft_instances.erase (*i);
+
+    fft_usage.clear ();
+}
+
+
 float Cwt::
         wanted_min_hz() const
 {
@@ -851,9 +890,9 @@ unsigned Cwt::
     current_valid_samples_per_chunk = align_up(current_valid_samples_per_chunk, alignment);
     unsigned T = r + current_valid_samples_per_chunk + r;
     if (AdjustToBin0)
-        T = Fft::sChunkSizeG(T-1, chunkpart_alignment( 0 ));
+        T = fft()->sChunkSizeG(T-1, chunkpart_alignment( 0 ));
     else
-        T = Fft::sChunkSizeG(T-1, alignment);
+        T = fft()->sChunkSizeG(T-1, alignment);
     return T;
 }
 
@@ -884,7 +923,7 @@ unsigned Cwt::
         if (testPo2)
             nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
         else
-            nT = Fft::sChunkSizeG(T, chunkpart_alignment( 0 ));
+            nT = fft()->sChunkSizeG(T, chunkpart_alignment( 0 ));
         EXCEPTION_ASSERT(nT != T);
 
         unsigned nL = nT - 2*r;
@@ -896,7 +935,7 @@ unsigned Cwt::
             if (testPo2)
                 nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
             else
-                nT = Fft::sChunkSizeG(T, chunkpart_alignment( 0 ));
+                nT = fft()->sChunkSizeG(T, chunkpart_alignment( 0 ));
             EXCEPTION_ASSERT(nT != T);
             nL = nT - 2*r;
             L = align_down(nL, alignment);
@@ -908,7 +947,7 @@ unsigned Cwt::
         if (testPo2)
             nT = align_up( spo2g(T), alignment);
         else
-            nT = Fft::sChunkSizeG(T, alignment);
+            nT = fft()->sChunkSizeG(T, alignment);
         EXCEPTION_ASSERT(nT != T);
 
         L = nT - 2*r;
@@ -989,7 +1028,7 @@ unsigned Cwt::
             if (testPo2)
                 T = align_up( lpo2s(T), (unsigned) 2);
             else
-                T = Fft::lChunkSizeS(T, 2);
+                T = fft()->lChunkSizeS(T, 2);
 
             //check whether we have reached the smallest acceptable length
             if ( T <= smallest_L + 2*r)
@@ -1142,7 +1181,7 @@ size_t Cwt::
         if (ispowerof2)
             sub_length = spo2g(sub_length - 1);
         else
-            sub_length = Fft::sChunkSizeG(sub_length - 1, chunk_alignment( sample_rate ));
+            sub_length = fft()->sChunkSizeG(sub_length - 1, chunk_alignment( sample_rate ));
 
         size_t s = 2*sizeof(Tfr::ChunkElement)*(sub_length >> c)*n_scales;
 
@@ -1230,13 +1269,6 @@ unsigned Cwt::
         }
 
     return wavelet_time_support_samples( fs, highesthz_inBin0 );
-}
-
-
-void Cwt::
-        resetSingleton()
-{
-    static_singleton.reset();
 }
 
 

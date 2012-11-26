@@ -84,8 +84,9 @@ unsigned oksz(unsigned x)
     if (0 == x)
         x = 1;
 
-    unsigned ls = Fft::lChunkSizeS(x+1, 4);
-    unsigned sg = Fft::sChunkSizeG(x-1, 4);
+    Fft fft;
+    unsigned ls = fft.lChunkSizeS(x+1, 4);
+    unsigned sg = fft.sChunkSizeG(x-1, 4);
     if (x-ls < sg-x)
         return ls;
     else
@@ -109,7 +110,7 @@ int StftParams::
     if (slices * _window_size*multiple*sizeof(Tfr::ChunkElement) > free)
     {
         unsigned max_size = free / (slices*multiple*sizeof(Tfr::ChunkElement));
-        _window_size = Fft::lChunkSizeS(max_size+1, 4);
+        _window_size = Fft().lChunkSizeS(max_size+1, 4);
     }
 
     _window_size = std::max(4, _window_size);

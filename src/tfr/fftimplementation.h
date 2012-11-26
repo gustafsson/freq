@@ -2,6 +2,7 @@
 #define FFTIMPLEMENTATION_H
 
 #include "tfr/chunkdata.h"
+#include <boost/shared_ptr.hpp>
 
 namespace Tfr {
     enum FftDirection
@@ -12,7 +13,9 @@ namespace Tfr {
 
     class FftImplementation {
     public:
-        static FftImplementation& Singleton();
+        typedef boost::shared_ptr<FftImplementation> Ptr;
+        // An implementation can optimize itself based on which type of fft that is requested for
+        static Ptr newInstance();
         virtual ~FftImplementation() {}
 
         /**
@@ -61,6 +64,9 @@ namespace Tfr {
           Returns the smallest ok chunk size strictly greater than x that also is
           a multiple of 'multiple'.
           'multiple' must be a power of 2.
+
+          This default implementation always returns powers of two but an
+          implementation that supports other sizes may override this behaviour.
           */
         virtual unsigned sChunkSizeG(unsigned x, unsigned multiple=1);
 
@@ -68,6 +74,9 @@ namespace Tfr {
           Returns the largest ok chunk size strictly smaller than x that also is
           a multiple of 'multiple'.
           'multiple' must be a power of 2.
+
+          This default implementation always returns powers of two but an
+          implementation that supports other sizes may override this behaviour.
           */
         virtual unsigned lChunkSizeS(unsigned x, unsigned multiple=1);
     };

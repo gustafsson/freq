@@ -3,6 +3,9 @@
 
 #include "transform.h"
 #include "signal/buffer.h"
+#include "fftimplementation.h"
+
+#include <map>
 
 namespace Tfr {
 
@@ -96,7 +99,6 @@ public:
     size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
     unsigned        chunk_alignment(float fs) const;
-    static void     resetSingleton();
 private:
     pChunk          computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales );
 
@@ -116,7 +118,12 @@ private:
     float           _tf_resolution;
     float           _least_meaningful_fraction_of_r;
     unsigned        _least_meaningful_samples_per_chunk;
-    static pTransform static_singleton;
+
+    std::map<int, Tfr::FftImplementation::Ptr> fft_instances;
+    std::set<int> fft_usage; // remove any that wasn't recently used
+    Tfr::FftImplementation::Ptr fft() const;
+    Tfr::FftImplementation::Ptr fft(int width); // width=0 -> don't care
+    void clearFft();
 
     /**
       Default value: _wavelet_time_suppport=3.

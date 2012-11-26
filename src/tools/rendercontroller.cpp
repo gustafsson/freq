@@ -372,7 +372,6 @@ void RenderController::
 
     this->yscale->setValue( model()->renderer->y_scale );
 
-
     // keep buttons in sync
     ::Ui::MainWindow* ui = getItems();
     if (model()->renderer->draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
@@ -898,16 +897,16 @@ void RenderController::
 //        connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
 //        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
-#ifdef _DEBUG
         connect(ui->actionTransform_Waveform, SIGNAL(triggered()), SLOT(receiveSetTransform_DrawnWaveform()));
-#endif
 
         transform = new ComboBoxAction(toolbar_render);
         transform->setObjectName("ComboBoxActiontransform");
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
         transform->addActionItem( ui->actionTransform_Cepstrum );
+#ifdef _DEBUG
         transform->addActionItem( ui->actionTransform_Waveform );
+#endif
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
 //        transform->addActionItem( ui->actionTransform_Cwt_reassign );
 //        transform->addActionItem( ui->actionTransform_Cwt_ridge );
