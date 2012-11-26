@@ -1533,6 +1533,9 @@
    <property name="text">
     <string>Open and &amp;compare</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionMuchdifferent_com">
    <property name="text">
