@@ -288,25 +288,8 @@ void ValueSlider::
 void ValueSlider::
         triggerAction ( QAbstractSlider::SliderAction action )
 {
-    qreal v = value(), min = minimum(), max = maximum();
-    qreal f, d;
-    switch (value_translation_)
-    {
-    case Quadratic:
-        d = sqrt(max) - sqrt(min);
-        f = sqrt(v) - sqrt(min);
-        break;
-    case Logaritmic:
-    case LogaritmicZeroMin:
-        d = log(max) - log(min);
-        f = log(v) - log(min);
-        break;
-    case Linear:
-    default:
-        d = max - min;
-        f = v - min;
-        break;
-    }
+    qreal d = slider_->maximum () - slider_->minimum ();
+    qreal f = slider_->value () - slider_->minimum ();
 
     f /= d;
 
@@ -327,29 +310,9 @@ void ValueSlider::
 
     f *= d;
 
-    switch (value_translation_)
-    {
-    case Quadratic:
-        f += sqrt(min);
-        v = f*f;
-        break;
-    case Logaritmic:
-    case LogaritmicZeroMin:
-        f += log(min);
-        v = exp(f);
-        break;
-    case Linear:
-    default:
-        v = f + min;
-        break;
-    }
+    slider_->setValue (slider_->minimum () + f);
 
-    if (value_ == v)
-        return;
-
-    value_ = v;
-
-    emit valueChanged(v);
+    sliderMoved(slider_->value ());
 }
 
 
