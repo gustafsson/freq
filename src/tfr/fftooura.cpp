@@ -49,7 +49,7 @@ void FftOoura::
 
     if ((int)w.size() != N/2 + magicCheck && !expectPrepared)
     {
-        TIME_STFT TaskInfo("Recopmuting helper vectors for Ooura fft");
+        TIME_STFT TaskInfo("Recomputing helper vectors for Ooura fft");
         w.resize(N/2 + magicCheck);
         ip.resize(2+(1<<(int)(log2f(N+0.5)-1)) + magicCheck);
         ip[0] = 0;

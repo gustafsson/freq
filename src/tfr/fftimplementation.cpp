@@ -14,6 +14,7 @@ namespace Tfr {
 FftImplementation& FftImplementation::
         Singleton()
 {
+    // TODO can't use statics
 #ifdef USE_CUFFT
     static FftCufft fft;
 #elif defined(USE_OPENCL)

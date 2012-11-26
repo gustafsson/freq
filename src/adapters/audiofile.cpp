@@ -301,13 +301,8 @@ Signal::pBuffer Audiofile::
         readRaw( const Signal::Interval& J )
 
 {
-    if (!tryload())
-    {
-        TaskInfo("Loading '%s' failed (this=%p), requested %s",
-                     filename().c_str(), this, J.toString().c_str());
-        bool booooooo = true;
-        return zeros( J );
-    }
+    EXCEPTION_ASSERTX(tryload(), str(format("Loading '%s' failed (this=%p), requested %s") %
+                                        filename() % this % J.toString()));
 
     Signal::Interval I = J;
     Signal::IntervalType fixedReadLength = 1<<20;
@@ -319,12 +314,16 @@ Signal::pBuffer Audiofile::
         I.last = number_of_samples();
 
     if (I.first < 0)
-        I.first = 0;
-
-	if (!I.valid() || 0==I.count())
     {
-        TaskInfo("Couldn't load %s from '%s', getInterval is %s (this=%p)",
-                     J.toString().c_str(), filename().c_str(), getInterval().toString().c_str(), this);
+        // Treat out of range samples as zeros.
+        I.last = 0;
+        return zeros( I );
+    }
+
+    if (0==I.count())
+    {
+        TaskInfo("Couldn't load %s from '%s', getInterval is %s (this=%p), number_of_samples()=%d",
+                 J.toString().c_str(), filename().c_str(), getInterval().toString().c_str(), this, (int)number_of_samples());
         return zeros( J );
     }
 
