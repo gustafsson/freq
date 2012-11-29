@@ -142,6 +142,7 @@ void Operation::
 
     BOOST_FOREACH( Operation* p, _outputs )
     {
+        EXCEPTION_ASSERT( 0 != p );
         p->invalidate_samples( p->translate_interval( I ));
     }
 }
