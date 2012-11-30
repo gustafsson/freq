@@ -83,7 +83,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     }
 
     {   ui->freqNormalizationSlider->setOrientation( Qt::Horizontal );
-        ui->freqNormalizationSlider->setRange (0.0, 500, Widgets::ValueSlider::Quadratic );
+        ui->freqNormalizationSlider->setRange (0.0, 1500, Widgets::ValueSlider::Quadratic );
         ui->freqNormalizationSlider->setValue ( 0 );
         ui->freqNormalizationSlider->setDecimals (1);
         ui->freqNormalizationSlider->setToolTip( "Normalization along frequency axis" );
