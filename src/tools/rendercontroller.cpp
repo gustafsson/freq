@@ -873,13 +873,13 @@ void RenderController::
 
     // ComboBoxAction* channels
     {   channelselector = new QToolButton(toolbar_render);
-        channelselector->setVisible (false);
+        channelselector->setVisible (true);
         channelselector->setObjectName("channelselector");
         channelselector->setCheckable( false );
         channelselector->setText("Channels");
         channelselector->setContextMenuPolicy( Qt::ActionsContextMenu );
         channelselector->setToolTip("Press to get a list of channels (or right click)");
-        if(0) toolbar_render->addWidget( channelselector );
+        toolbar_render->addWidget( channelselector );
     }
 
     // QAction *actionSet_heightlines
@@ -904,9 +904,8 @@ void RenderController::
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
         transform->addActionItem( ui->actionTransform_Cepstrum );
-#ifdef _DEBUG
         transform->addActionItem( ui->actionTransform_Waveform );
-#endif
+
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
 //        transform->addActionItem( ui->actionTransform_Cwt_reassign );
 //        transform->addActionItem( ui->actionTransform_Cwt_ridge );
