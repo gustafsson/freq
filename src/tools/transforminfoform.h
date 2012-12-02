@@ -36,6 +36,7 @@ public slots:
     void averagingChanged();
     void timeNormalizationChanged(qreal);
     void freqNormalizationChanged(qreal);
+    void freqNormalizationPercentChanged(qreal);
 
 private:
     Ui::TransformInfoForm *ui;

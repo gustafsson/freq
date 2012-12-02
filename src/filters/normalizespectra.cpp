@@ -123,6 +123,50 @@ void SlidingMedian( I inIter, I inEnd, J output, int window )
 }
 
 
+template<class I, class J>
+void SlidingMedian( I inIter, I inEnd, J output, float fraction )
+{
+    typedef typename std::iterator_traits<I>::value_type T;
+
+    int N = inEnd-inIter;
+    std::vector<T> cq((N+2)*fraction + 1.5f);
+    std::vector<T> ordered;
+
+    int index = 0;
+    int readindex = 0;
+    for( int j = 0; j<N; ++j )
+    {
+        int window = j*fraction + 0.5f;
+        if (window < 2) window = 2;
+
+        // when window increases we can't be sure that ordered is still full
+        if (ordered.size () > 0 && (ordered.size () >= window || readindex-window <= j-window/2))
+        {
+            T old = cq[index];
+            ordered.erase( std::lower_bound( ordered.begin(), ordered.end(), old ) );
+        }
+
+        while (ordered.size () < window)
+        {
+            T in = *inIter;
+            cq[index] = in;
+            index = ( index+1 ) % window;
+
+            ordered.insert( std::upper_bound( ordered.begin(), ordered.end(), in ), in );
+
+            if (inIter != inEnd && ordered.size () > window/2)
+            {
+                ++inIter;
+                ++readindex;
+            }
+        }
+
+        if( window % 2 ) *output++ = ordered[ window/2 ];
+        else *output++ = ( ordered[ window/2-1 ] + ordered[ window/2 ] ) / T(2);
+    }
+}
+
+
 void NormalizeSpectra::
         removeSlidingMedian( Chunk& chunk )
 {
@@ -134,6 +178,9 @@ void NormalizeSpectra::
     int nSamples = stftChunk->nSamples ();
     int W = stftChunk->nActualScales ();
     int R = computeR( chunk );
+
+    if (meansHz_<0)
+        R = 0;
 
 #pragma omp parallel for
     for (int w=0; w<nSamples; ++w)
@@ -148,11 +195,20 @@ void NormalizeSpectra::
             original[i] = 0.f;
 
         vector<float> median;
-        SlidingMedian(
-                    original.begin (),
-                    original.end (),
-                    std::insert_iterator< std::vector<float> >( median, median.begin() ),
-                    2*R);
+        TaskInfo("meansHz_ = %f", meansHz_);
+        if (meansHz_<0)
+            SlidingMedian(
+                        original.begin (),
+                        original.end (),
+                        std::insert_iterator< std::vector<float> >( median, median.begin() ),
+                        -meansHz_);
+        else
+            SlidingMedian(
+                        original.begin (),
+                        original.end (),
+                        std::insert_iterator< std::vector<float> >( median, median.begin() ),
+                        2*R);
+        TaskInfo("meansHz_ = %f, median.size() = %d", meansHz_, median.size());
 
 //        int s = median.size ();
 //        float* mv = &median[0];
@@ -161,7 +217,7 @@ void NormalizeSpectra::
         for (int i=0; i<W; ++i)
         {
             float v = original[i+R] / median[i];
-            q[i].real ( std::max(0.f, v) );
+            q[i].real ( v );
             //q[i].real ( sqrtf(fabsf(v)) * (v > 0 ? 1.f : -1.f) );
             q[i].imag ( 0.f );
         }

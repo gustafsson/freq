@@ -8,6 +8,7 @@ namespace Filters {
 class NormalizeSpectra : public Tfr::StftFilter
 {
 public:
+    // negative values set a fraction rather than an absolute number of Hz
     NormalizeSpectra(float meansHz=0.1f);
 
     virtual bool operator()( Tfr::Chunk& );

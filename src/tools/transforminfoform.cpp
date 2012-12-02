@@ -93,6 +93,17 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         connect(ui->freqNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(freqNormalizationChanged(qreal)));
     }
 
+    {   ui->freqNormalizationSliderPercent->setOrientation( Qt::Horizontal );
+        ui->freqNormalizationSliderPercent->setRange (0.0, 100.0, Widgets::ValueSlider::Linear );
+        ui->freqNormalizationSliderPercent->setValue ( 0 );
+        ui->freqNormalizationSliderPercent->setDecimals (1);
+        ui->freqNormalizationSliderPercent->setToolTip( "Normalization along frequency axis" );
+        ui->freqNormalizationSliderPercent->setSliderSize ( 300 );
+        ui->freqNormalizationSliderPercent->setUnit ("%");
+
+        connect(ui->freqNormalizationSliderPercent, SIGNAL(valueChanged(qreal)), SLOT(freqNormalizationPercentChanged(qreal)));
+    }
+
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
@@ -189,6 +200,8 @@ void TransformInfoForm::
     ui->windowTypeComboBox->setVisible(stft || cepstrum);
     ui->overlapLabel->setVisible(stft || cepstrum);
     ui->overlapEdit->setVisible(stft || cepstrum);
+    ui->freqNormalizationSlider->setVisible(stft);
+    ui->freqNormalizationSliderPercent->setVisible(stft);
 #ifdef TARGET_hast
     }
 #endif
@@ -457,8 +470,41 @@ void TransformInfoForm::
     Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
     if (0.f < newValue)
     {
+        ui->freqNormalizationSliderPercent->setValue ( 0 );
         stftblock->freqNormalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(newValue));
+        //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
+    }
+    else
+    {
+        stftblock->freqNormalization.reset();
+        //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
+    }
+
+    stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
+    renderview->emitTransformChanged ();
+}
+
+
+void TransformInfoForm::
+        freqNormalizationPercentChanged(qreal newValue)
+{
+    Tfr::Filter* filter = project->tools ().render_model.block_filter ();
+    EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
+
+    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(filter->transform()->transformParams());
+    EXCEPTION_ASSERT( stft ); // Only if transform params are based on StftParams should it reach here (i.e Stft and Cepstrum)
+
+    Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
+    EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
+
+    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
+    if (0.f < newValue)
+    {
+        ui->freqNormalizationSlider->setValue ( 0 );
+        TaskInfo("new stuff: %f", -newValue/100.0f);
+        stftblock->freqNormalization = Tfr::pChunkFilter(
+                    new Filters::NormalizeSpectra(-newValue/100.0f));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else

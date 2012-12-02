@@ -224,8 +224,13 @@ public:
 
     bool applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
-        if (freqNormalization)
-            freqNormalization->applyFilter(pchunk);
+        // TODO use a chain of commands instead to be processed by the worker thread
+        Tfr::pChunkFilter f = freqNormalization;
+        if (f)
+            f->applyFilter(pchunk);
+
+        if (f != freqNormalization)
+            return false;
 
         return BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
     }
