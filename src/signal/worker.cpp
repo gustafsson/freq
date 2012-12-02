@@ -524,6 +524,7 @@ void Worker::
     }
 
 
+    // TODO don't recompute _samples_per_chunk. target()->next_good_size(1) is way too involved to be called carelessly like this
     _requested_cheat_fps = cheat_value;
     if (_requested_cheat_fps > _requested_fps)
         _samples_per_chunk = target()->next_good_size(1);
