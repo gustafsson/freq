@@ -222,7 +222,7 @@ namespace Tools
             Commands::pCommand p( new Commands::ChangeSelectionCommand(this, selection));
             this->model()->project()->commandInvoker()->invokeCommand( p );
 
-            model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
+            //model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
         }
     }
 
