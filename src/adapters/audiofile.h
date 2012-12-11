@@ -351,7 +351,7 @@ private:
     template<class archive> void serialize(archive& ar, const unsigned int version) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         ar & make_nvp("Original_filename", _original_relative_filename);
 

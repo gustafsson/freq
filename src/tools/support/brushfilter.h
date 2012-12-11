@@ -50,7 +50,7 @@ public:
 private:
     friend class boost::serialization::access;
     template<class archive> void save(archive& ar, const unsigned int version) const {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
 		size_t N = images->size();
         ar & BOOST_SERIALIZATION_NVP(N);
@@ -81,7 +81,7 @@ private:
         }
     }
     template<class archive> void load(archive& ar, const unsigned int version) {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         unsigned N = 0;
         ar & BOOST_SERIALIZATION_NVP(N);

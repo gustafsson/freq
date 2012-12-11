@@ -76,7 +76,7 @@ typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
   Virtual base class for filters. To create a new filter, use CwtFilter or
   StftFilter as base class and implement the method 'operator()( Chunk& )'.
   */
-class Filter: public Signal::Operation, public ChunkFilter
+class Filter: public Signal::DeprecatedOperation, public ChunkFilter
 {
 public:
     /**
@@ -123,7 +123,7 @@ public:
       If _try_shortcuts is true. This method from Operation will be used to
       try to avoid computing any actual transform.
       */
-    virtual Operation* affecting_source( const Signal::Interval& I );
+    virtual DeprecatedOperation* affecting_source( const Signal::Interval& I );
 
 
     /**

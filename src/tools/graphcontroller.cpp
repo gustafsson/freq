@@ -341,15 +341,15 @@ namespace Tools
 
         removing_ = true;
 
-        Signal::pOperation newHead = Signal::Operation::findParentOfSource( currentChain->tip_source(), currentOperation );
+        Signal::pOperation newHead = Signal::DeprecatedOperation::findParentOfSource( currentChain->tip_source(), currentOperation );
         if (newHead)
         {
-            newHead->invalidate_samples( Signal::Operation::affectedDiff(newHead->source(), newCurrentOperation ));
+            newHead->invalidate_samples( Signal::DeprecatedOperation::affectedDiff(newHead->source(), newCurrentOperation ));
 
             newHead->source( newCurrentOperation );
 
             // If there is a cache right above this, set the cache as head_source instead
-            Signal::pOperation o2 = Signal::Operation::findParentOfSource( currentChain->tip_source(), newHead );
+            Signal::pOperation o2 = Signal::DeprecatedOperation::findParentOfSource( currentChain->tip_source(), newHead );
             if (dynamic_cast<Signal::OperationCacheLayer*>(o2.get()) )
                 newHead = o2;
         }

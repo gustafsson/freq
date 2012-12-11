@@ -19,10 +19,10 @@ namespace Signal {
   to an operation, the results may be discarded. This class hopefully makes it
   a little bit more clear by providing some convenient methods as examples.
  */
-class Sink: public Operation
+class Sink: public DeprecatedOperation
 {
 public:
-    Sink(): Operation(pOperation()) {}
+    Sink(): DeprecatedOperation(pOperation()) {}
 
 
     /// @overload Operation::read()
@@ -72,7 +72,7 @@ public:
     virtual Intervals invalid_samples() = 0;
 
 
-    static pBuffer put(Operation* receiver, pBuffer buffer);
+    static pBuffer put(DeprecatedOperation* receiver, pBuffer buffer);
 };
 
 

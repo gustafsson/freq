@@ -9,7 +9,7 @@
 
 namespace Signal {
 
-class RerouteChannels : public Signal::Operation, public boost::noncopyable
+class RerouteChannels : public Signal::DeprecatedOperation, public boost::noncopyable
 {
 public:
     typedef unsigned SourceChannel;
@@ -23,7 +23,7 @@ public:
     virtual pBuffer read( const Interval& I );
     virtual unsigned num_channels();
     virtual void source(pOperation v);
-    virtual pOperation source() { return Operation::source(); }
+    virtual pOperation source() { return DeprecatedOperation::source(); }
 
     /**
       Validate bindings.

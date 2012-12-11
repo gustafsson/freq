@@ -89,7 +89,7 @@ private:
 
         boost::shared_ptr<Audiofile> wavfile( new Audiofile(_filename) );
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -101,7 +101,7 @@ private:
     {
         boost::shared_ptr<Audiofile> wavfile;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 

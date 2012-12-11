@@ -7,7 +7,7 @@ const RerouteChannels::SourceChannel RerouteChannels::NOTHING = (unsigned)-1;
 RerouteChannels::
         RerouteChannels(pOperation source)
             :
-            Operation(source)
+            DeprecatedOperation(source)
 {
     resetMap();
 }
@@ -16,7 +16,7 @@ RerouteChannels::
 pBuffer RerouteChannels::
         read( const Interval& I )
 {
-    pBuffer b = Operation::read ( I );
+    pBuffer b = DeprecatedOperation::read ( I );
     pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), scheme_.size ()));
     for (unsigned i=0; i<scheme_.size (); ++i)
         *r->getChannel (i) |= *b->getChannel (scheme_[i]);
@@ -34,7 +34,7 @@ unsigned RerouteChannels::
 void RerouteChannels::
         source(pOperation v)
 {
-    Operation::source(v);
+    DeprecatedOperation::source(v);
 
     resetMap();
 }
@@ -44,7 +44,7 @@ void RerouteChannels::
         invalidate_samples(const Intervals& I)
 {
     bool invalidated = false;
-    unsigned N = Operation::num_channels();
+    unsigned N = DeprecatedOperation::num_channels();
     if (N != scheme_.size())
     {
         invalidated = true;
@@ -58,7 +58,7 @@ void RerouteChannels::
     }
 
     if (!invalidated)
-        Operation::invalidate_samples(I);
+        DeprecatedOperation::invalidate_samples(I);
 }
 
 
@@ -67,8 +67,8 @@ void RerouteChannels::
 {
     scheme_.clear();
 
-    if (Operation::source())
-        num_channels( Operation::source()->num_channels() );
+    if (DeprecatedOperation::source())
+        num_channels( DeprecatedOperation::source()->num_channels() );
 }
 
 
@@ -82,7 +82,7 @@ void RerouteChannels::
         num_channels( output_channel+1 );
     }
 
-    EXCEPTION_ASSERT( source_channel < Operation::source()->num_channels() || NOTHING == source_channel);
+    EXCEPTION_ASSERT( source_channel < DeprecatedOperation::source()->num_channels() || NOTHING == source_channel);
 
     if (scheme_[ output_channel ] == source_channel)
         return;

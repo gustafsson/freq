@@ -11,7 +11,7 @@ namespace Filters {
 Normalize::
         Normalize( unsigned normalizationRadius, pOperation source )
             :
-            Operation(source),
+            DeprecatedOperation(source),
             normalizationRadius(normalizationRadius)
 {
 }
@@ -20,7 +20,7 @@ Normalize::
 Normalize::
         Normalize()
             :
-            Operation(pOperation())
+            DeprecatedOperation(pOperation())
 {}
 
 
@@ -34,7 +34,7 @@ std::string Normalize::
 void Normalize::
         invalidate_samples(const Intervals& I)
 {
-    Operation::invalidate_samples(I.enlarge(normalizationRadius));
+    DeprecatedOperation::invalidate_samples(I.enlarge(normalizationRadius));
 }
 
 

@@ -44,7 +44,7 @@ namespace Tools
         void createFromSettings( Adapters::MatlabFunctionSettings& settings );
 
         void createView();
-        void createView(Signal::Operation* o);
+        void createView(Signal::DeprecatedOperation* o);
 
         void updateScriptsMenu();
         void createOperation(MatlabOperationWidget* settings);

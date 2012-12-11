@@ -111,7 +111,7 @@ SelectionViewInfoSink::
 {
     mixchannels_.reset(new OperationSuperpositionChannels(pOperation()));
     rms_.reset(new Support::ComputeRms(mixchannels_));
-    Operation::source(rms_);
+    DeprecatedOperation::source(rms_);
 }
 
 
@@ -122,7 +122,7 @@ pBuffer SelectionViewInfoSink::
 
     if (!searchingformaximas_)
     {
-        b = Operation::read(I); // note: Operation::source() == rms_
+        b = DeprecatedOperation::read(I); // note: Operation::source() == rms_
         Support::ComputeRms* rms = dynamic_cast<Support::ComputeRms*>(rms_.get());
         Intervals all = this->getInterval() - this->zeroed_samples_recursive();
         Intervals processed = rms->rms_I;
@@ -166,7 +166,7 @@ pBuffer SelectionViewInfoSink::
         stft.compute_redundant(false);
         EXCEPTION_ASSERT(stft.chunk_size() == f.count());
 
-        b = Operation::source()->readFixedLength(f);
+        b = DeprecatedOperation::source()->readFixedLength(f);
 
         // Only check the first channel
         // TODO check other channels

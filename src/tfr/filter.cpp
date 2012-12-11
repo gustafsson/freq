@@ -26,14 +26,14 @@ namespace Tfr {
 Filter::
         Filter( pOperation source )
             :
-            Operation( source )
+            DeprecatedOperation( source )
 {}
 
 
 Filter::
         Filter(Filter& f)
     :
-      Operation(f)
+      DeprecatedOperation(f)
 {
     transform(f.transform ());
 }
@@ -102,10 +102,10 @@ Signal::pBuffer Filter::
 }
 
 
-Operation* Filter::
+DeprecatedOperation* Filter::
         affecting_source( const Interval& I )
 {
-    return Operation::affecting_source( I );
+    return DeprecatedOperation::affecting_source( I );
 }
 
 

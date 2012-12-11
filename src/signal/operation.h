@@ -24,18 +24,18 @@ A Signal::Operation is a Signal::Source which reads data from another
 Signal::Source and performs some operation on that data before returning it to
 the caller.
  */
-class SaweDll Operation: public SourceBase
+class SaweDll DeprecatedOperation: public SourceBase
 {
 public:
     /**
       This constructor by itself creates a dummy Operation that redirects 'read'
       to its _source.
       */
-    Operation( pOperation source );
-    ~Operation();
+    DeprecatedOperation( pOperation source );
+    ~DeprecatedOperation();
 
-    Operation( const Operation& o );
-    Operation& operator=(const Operation& o);
+    DeprecatedOperation( const DeprecatedOperation& o );
+    DeprecatedOperation& operator=(const DeprecatedOperation& o);
 
     /**
      * @brief name() human readable text description of *this
@@ -85,7 +85,7 @@ public:
 
       outputs() are used by Operation::invalidate_samples.
       */
-    virtual std::set<Operation*> outputs() { return _outputs; }
+    virtual std::set<DeprecatedOperation*> outputs() { return _outputs; }
 
     /**
       'affected_samples' describes where it is possible that
@@ -144,7 +144,7 @@ public:
 
       Returns 'this' if this Operation does something.
       */
-    virtual Operation* affecting_source( const Interval& I );
+    virtual DeprecatedOperation* affecting_source( const Interval& I );
 
 
     /**
@@ -184,8 +184,8 @@ public:
 //    virtual void enabled(bool value) { _enabled = value; }
 
 
-    Operation* root();
-    virtual bool hasSource(Operation*s);
+    DeprecatedOperation* root();
+    virtual bool hasSource(DeprecatedOperation*s);
 
     /**
       If 's' has multiple outputs, find the output that leads to 'this' and
@@ -199,12 +199,12 @@ public:
     virtual std::string parentsToString();
 
 private:
-    std::set<Operation*> _outputs; /// @see Operation::parent()
+    std::set<DeprecatedOperation*> _outputs; /// @see Operation::parent()
     pOperation _source; /// @see Operation::source()
     //bool _enabled; /// @see Operation::enabled()
 
     friend class boost::serialization::access;
-    Operation() /// only used by deserialization, call Operation(pOperation) instead
+    DeprecatedOperation() /// only used by deserialization, call Operation(pOperation) instead
     {}
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
@@ -215,7 +215,7 @@ private:
 
         ar & BOOST_SERIALIZATION_NVP(_source);
 
-        Operation::source(_source);
+        DeprecatedOperation::source(_source);
     }
 };
 
@@ -225,10 +225,10 @@ private:
   It is in functionality almost equivalent to SourceBase but can be shipped
   around as pOperation.
   */
-class FinalSource: public Operation
+class FinalSource: public DeprecatedOperation
 {
 public:
-    FinalSource() : Operation(pOperation()) {}
+    FinalSource() : DeprecatedOperation(pOperation()) {}
 
     virtual pBuffer read( const Interval& I ) = 0;
     virtual float sample_rate() = 0;

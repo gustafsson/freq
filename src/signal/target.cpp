@@ -19,12 +19,12 @@
 namespace Signal {
 
 
-class UpdateView: public Operation, public boost::noncopyable
+class UpdateView: public DeprecatedOperation, public boost::noncopyable
 {
 public:
     UpdateView(Sawe::Project* project, std::string targetname)
         :
-        Operation(pOperation()),
+        DeprecatedOperation(pOperation()),
         project_(project),
         targetname_(targetname)
     {
@@ -33,7 +33,7 @@ public:
 
     virtual std::string name()
     {
-        return Operation::name() + " for '" + targetname_ + "' in '" + project_->project_title() + "'";
+        return DeprecatedOperation::name() + " for '" + targetname_ + "' in '" + project_->project_title() + "'";
     }
 
 
@@ -42,7 +42,7 @@ public:
         if (project_->areToolsInitialized())
             project_->tools().render_view()->userinput_update( false );
 
-        Operation::invalidate_samples(I);
+        DeprecatedOperation::invalidate_samples(I);
 
         project_->setModified();
     }
@@ -57,22 +57,22 @@ private:
 /**
   This is a premature optimization that saves quite a few function calls.
   */
-class CacheVars: public Operation, public boost::noncopyable
+class CacheVars: public DeprecatedOperation, public boost::noncopyable
 {
 public:
-    CacheVars() : Operation(pOperation()), FS(-1) {}
+    CacheVars() : DeprecatedOperation(pOperation()), FS(-1) {}
 
     virtual Signal::pBuffer read(const Interval& I)
     {
         update();
-        return Operation::read( I );
+        return DeprecatedOperation::read( I );
     }
 
 
     virtual IntervalType number_of_samples()
     {
         if (0>FS)
-            return Operation::number_of_samples();
+            return DeprecatedOperation::number_of_samples();
         return number_of_samples_;
     }
 
@@ -88,15 +88,15 @@ public:
     {
         update();
 
-        Operation::invalidate_samples(I);
+        DeprecatedOperation::invalidate_samples(I);
     }
 
 
 private:
     void update()
     {
-        number_of_samples_ = Operation::number_of_samples();
-        FS = Operation::sample_rate();
+        number_of_samples_ = DeprecatedOperation::number_of_samples();
+        FS = DeprecatedOperation::sample_rate();
     }
 
     Signal::IntervalType number_of_samples_;
@@ -441,7 +441,7 @@ void OperationTarget::
     Signal::pChainHead ch( new Signal::ChainHead(chain));
 
     // Add cache layer
-    ch->appendOperation(Signal::pOperation(new Signal::Operation(Signal::pOperation())));
+    ch->appendOperation(Signal::pOperation(new Signal::DeprecatedOperation(Signal::pOperation())));
 
     // Invalidate cache
     ch->head_source()->invalidate_samples(ch->head_source()->getInterval() );

@@ -65,7 +65,7 @@ public:
 
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-    Signal::Operation* affecting_source( const Signal::Interval& I)
+    Signal::DeprecatedOperation* affecting_source( const Signal::Interval& I)
     {
         Signal::Intervals invalid;
         for (unsigned i=0; i<_collections.size (); ++i)

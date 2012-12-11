@@ -132,7 +132,7 @@ void PlaybackController::
     // here we just need to create a filter that does the right thing to an arbitrary source
     // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
     // and responds with no samples to zeroed_samples().
-    Signal::pOperation filter( new Signal::Operation(Signal::pOperation()) );
+    Signal::pOperation filter( new Signal::DeprecatedOperation(Signal::pOperation()) );
 
     startPlayback( filter );
 }

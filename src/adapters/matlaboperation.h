@@ -62,7 +62,7 @@ private:
         settings.chunksize_ = _settings->chunksize();
         settings.arguments_ = _settings->arguments();
         settings.argument_description_ = _settings->argument_description();
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(settings.scriptname_);
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
@@ -81,7 +81,7 @@ private:
 
         DefaultMatlabFunctionSettings* settingsp = new DefaultMatlabFunctionSettings();
         DefaultMatlabFunctionSettings& settings = *settingsp;
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(settings.scriptname_);
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);

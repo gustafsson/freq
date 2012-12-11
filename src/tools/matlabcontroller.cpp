@@ -415,7 +415,7 @@ void MatlabController::
 
 
 void MatlabController::
-        createView(Signal::Operation* o)
+        createView(Signal::DeprecatedOperation* o)
 {
     Adapters::MatlabOperation* operation = dynamic_cast<Adapters::MatlabOperation*>(o);
     if (operation)
@@ -424,7 +424,7 @@ void MatlabController::
         operation->settings( settings );
 
         Signal::pOperation om;
-        foreach(Signal::Operation* c, operation->outputs())
+        foreach(Signal::DeprecatedOperation* c, operation->outputs())
         {
             EXCEPTION_ASSERT(c->source().get() == operation);
             om = c->source();
@@ -434,7 +434,7 @@ void MatlabController::
     }
 
     // work recursively up to find all operations
-    foreach(Signal::Operation* p, o->outputs())
+    foreach(Signal::DeprecatedOperation* p, o->outputs())
     {
         // verify a correct structure while at it
         EXCEPTION_ASSERT( p->Operation::source().get() == o );

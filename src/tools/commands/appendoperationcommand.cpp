@@ -59,12 +59,12 @@ void AppendOperationCommand::
         p->head->chain()->tip_source( prevHead );
     else
     {
-        BOOST_FOREACH( Signal::Operation*o, newHead->outputs())
+        BOOST_FOREACH( Signal::DeprecatedOperation*o, newHead->outputs())
         {
             o->source( prevHead );
         }
 
-        Signal::Intervals affected = Signal::Operation::affectedDiff(newHead, prevHead);
+        Signal::Intervals affected = Signal::DeprecatedOperation::affectedDiff(newHead, prevHead);
         prevHead->invalidate_samples(affected);
     }
 }

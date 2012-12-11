@@ -43,7 +43,7 @@ bool MatlabFilter::
 
         Interval J = c.getInterval();
 
-        Operation::invalidate_samples( _invalid_returns & J );
+        DeprecatedOperation::invalidate_samples( _invalid_returns & J );
         _invalid_returns -= J;
 
         return true;

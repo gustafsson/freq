@@ -209,7 +209,7 @@ void PostSink::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
 #endif
-    Operation::source( v );
+    DeprecatedOperation::source( v );
 
     update_source();
 }

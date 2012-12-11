@@ -85,7 +85,7 @@ void CepstrumFilter::
 
     // include_time_support
     Signal::Intervals J = I.enlarge(window_size-increment);
-    Operation::invalidate_samples( J );
+    DeprecatedOperation::invalidate_samples( J );
 }
 
 

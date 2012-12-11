@@ -972,7 +972,7 @@ void RenderView::
 
     Signal::Worker& worker = model->project()->worker;
     Signal::pOperation source = worker.source();
-    Signal::Operation* first_source = source ? source->root() : 0;
+    Signal::DeprecatedOperation* first_source = source ? source->root() : 0;
 
     TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
                               first_source?first_source->name().c_str():0, first_source);

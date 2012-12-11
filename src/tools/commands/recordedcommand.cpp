@@ -7,7 +7,7 @@ namespace Tools {
 namespace Commands {
 
 RecordedCommand::
-        RecordedCommand(Signal::Operation* recording, Signal::IntervalType prevLength, Tools::RenderModel* model)
+        RecordedCommand(Signal::DeprecatedOperation* recording, Signal::IntervalType prevLength, Tools::RenderModel* model)
             :
             recording(recording),
             model(model),

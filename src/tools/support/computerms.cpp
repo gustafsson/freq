@@ -9,7 +9,7 @@ namespace Support {
 ComputeRms::
         ComputeRms(pOperation o)
             :
-            Operation(o),
+            DeprecatedOperation(o),
             rms(0)
 {
 
@@ -19,7 +19,7 @@ ComputeRms::
 pBuffer ComputeRms::
         read( const Interval& I )
 {
-    const pBuffer read_b = Operation::read(I);
+    const pBuffer read_b = DeprecatedOperation::read(I);
     Intervals missing = read_b->getInterval() - rms_I;
 
     while (missing)
@@ -57,7 +57,7 @@ void ComputeRms::
     rms_I.clear();
     rms = 0;
 
-    Operation::invalidate_samples(I);
+    DeprecatedOperation::invalidate_samples(I);
 }
 
 } // namespace Support

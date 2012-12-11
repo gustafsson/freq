@@ -18,7 +18,7 @@ namespace Signal {
 
 
     // static
-    pBuffer Sink::put(Operation* receiver, pBuffer buffer) {
+    pBuffer Sink::put(DeprecatedOperation* receiver, pBuffer buffer) {
         pOperation s( new BufferSource(buffer));
         pOperation old = receiver->source();
         receiver->source(s);

@@ -115,7 +115,7 @@ Intervals CwtFilter::
 void CwtFilter::
         invalidate_samples(const Intervals& I)
 {
-    Operation::invalidate_samples( include_time_support(I) );
+    DeprecatedOperation::invalidate_samples( include_time_support(I) );
 }
 
 void CwtFilter::

@@ -59,10 +59,10 @@ bool Chain::
 }
 
 
-class ChainHeadReference: public Signal::Operation
+class ChainHeadReference: public Signal::DeprecatedOperation
 {
 public:
-    ChainHeadReference( Signal::pOperation o ): Operation(o) {}
+    ChainHeadReference( Signal::pOperation o ): DeprecatedOperation(o) {}
 };
 
 ChainHead::
@@ -106,7 +106,7 @@ void ChainHead::
         new_head.reset( new OperationCacheLayer(s) );
 
     // Inject this operation in the middle
-    Signal::pOperation o = Signal::Operation::findParentOfSource( chain_->tip_source(), head_source() );
+    Signal::pOperation o = Signal::DeprecatedOperation::findParentOfSource( chain_->tip_source(), head_source() );
     if (o)
         o->source( new_head );
 
@@ -138,7 +138,7 @@ void ChainHead::
 
     if (head_source() != s)
     {
-        Signal::Intervals diff = Signal::Operation::affectedDiff( head_source(), s );
+        Signal::Intervals diff = Signal::DeprecatedOperation::affectedDiff( head_source(), s );
         head_source_->source( s );
         head_source_->invalidate_samples( diff );
 

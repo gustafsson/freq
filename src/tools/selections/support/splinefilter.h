@@ -42,7 +42,7 @@ private:
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
            & BOOST_SERIALIZATION_NVP( v )
            & make_nvp("save_inside", _save_inside);
     }

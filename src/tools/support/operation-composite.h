@@ -12,11 +12,11 @@ namespace Tools {
 /**
   DummyOperation is used internally in operation-composite.cpp
 */
-class DummyOperation: public Signal::Operation
+class DummyOperation: public Signal::DeprecatedOperation
 {
 public:
     DummyOperation(Signal::pOperation o):
-            Operation(o)
+            DeprecatedOperation(o)
     {}
 
     virtual Signal::Intervals affected_samples()
@@ -26,12 +26,12 @@ public:
 
 private:
     friend class boost::serialization::access;
-    DummyOperation():Operation(Signal::pOperation()) {} // only used by deserialization
+    DummyOperation():DeprecatedOperation(Signal::pOperation()) {} // only used by deserialization
 
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
     }
 };
 
@@ -49,9 +49,9 @@ private:
   reads from _source. _readSubOperation is supposed to be created by another
   class subclassing OperationSubOperations. Hence the protected constructor.
   */
-class OperationSubOperations : public Signal::Operation {
+class OperationSubOperations : public Signal::DeprecatedOperation {
 public:
-    Signal::pOperation subSource() { return Operation::source(); }
+    Signal::pOperation subSource() { return DeprecatedOperation::source(); }
 
     /// this skips all contained suboperations
     virtual Signal::pOperation source() const { return source_sub_operation_->source(); }
@@ -75,14 +75,14 @@ protected:
 
 
     friend class boost::serialization::access;
-    OperationSubOperations():Operation(Signal::pOperation()) {} // only used by deserialization
+    OperationSubOperations():DeprecatedOperation(Signal::pOperation()) {} // only used by deserialization
 
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
            & BOOST_SERIALIZATION_NVP(source_sub_operation_)
            & BOOST_SERIALIZATION_NVP(name_);
     }
@@ -108,11 +108,11 @@ public:
     void setContent(Signal::pOperation content)
     {
         if (!content)
-            Operation::source( source_sub_operation_ );
+            DeprecatedOperation::source( source_sub_operation_ );
         else
         {
-            Operation::source( content );
-            Operation::source()->source( source_sub_operation_ );
+            DeprecatedOperation::source( content );
+            DeprecatedOperation::source()->source( source_sub_operation_ );
         }
     }
     Signal::pOperation content() { return subSource(); }

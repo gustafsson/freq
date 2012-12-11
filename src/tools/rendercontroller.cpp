@@ -72,15 +72,15 @@ public:
             prevSignal( o->getInterval() )
     {
         EXCEPTION_ASSERT( o );
-        Operation::source(o);
+        DeprecatedOperation::source(o);
     }
 
 
-    virtual void source(Signal::pOperation v) { Operation::source()->source(v); }
+    virtual void source(Signal::pOperation v) { DeprecatedOperation::source()->source(v); }
     virtual bool deleteMe() { return false; } // Never delete this sink
 
     virtual Signal::pBuffer read(const Signal::Interval& I) {
-        Signal::pBuffer r = Signal::Operation::read( I );
+        Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
         return r;
     }
 
@@ -96,7 +96,7 @@ public:
             c->invalidate_samples( I );
         }
 
-        Operation::invalidate_samples( I );
+        DeprecatedOperation::invalidate_samples( I );
 
         view_->update();
     }
@@ -134,7 +134,7 @@ public:
 
         foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
         {
-            c->block_filter( Operation::source() );
+            c->block_filter( DeprecatedOperation::source() );
         }
 
         Signal::Interval currentInterval = getInterval();
@@ -496,7 +496,7 @@ void RenderController::
 
 
 Signal::PostSink* RenderController::
-        setBlockFilter(Signal::Operation* blockfilter)
+        setBlockFilter(Signal::DeprecatedOperation* blockfilter)
 {
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
 
@@ -1073,7 +1073,7 @@ void RenderController::
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
 
     {
-        Signal::Operation* first_source = model()->project()->head->chain()->root_source().get();
+        Signal::DeprecatedOperation* first_source = model()->project()->head->chain()->root_source().get();
 
         view->glwidget->setObjectName( QString("glwidget %1").arg(first_source->name().c_str()));
     }

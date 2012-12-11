@@ -6,7 +6,7 @@ namespace Filters {
 
 
 AbsoluteValue::AbsoluteValue()
-    :   Operation(pOperation())
+    :   DeprecatedOperation(pOperation())
 {}
 
 

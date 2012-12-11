@@ -250,7 +250,7 @@ public:
     virtual Signal::Intervals invalid_samples() { return invalid_samples_; }
     virtual Signal::pBuffer read( const Signal::Interval& I )
     {
-        Signal::pBuffer b = Operation::read(I);
+        Signal::pBuffer b = DeprecatedOperation::read(I);
         invalid_samples_ -= b->getInterval();
         return b;
     }
@@ -287,7 +287,7 @@ bool MatlabOperationWidget::
     }
 
     Signal::pOperation om;
-    foreach(Signal::Operation* c, this->operation->outputs())
+    foreach(Signal::DeprecatedOperation* c, this->operation->outputs())
     {
         EXCEPTION_ASSERT(c->source().get() == this->operation);
         om = c->source();
