@@ -12,7 +12,7 @@ namespace Tfr {
 class CwtChunk;
 class CwtChunkPart;
 
-class Cwt:public Transform, public TransformParams
+class Cwt:public Transform, public TransformDesc
 {
 public:
     /**
@@ -36,13 +36,13 @@ public:
 
     virtual pChunk operator()( Signal::pMonoBuffer );
     virtual Signal::pMonoBuffer inverse( pChunk );
-    virtual const TransformParams* transformParams() const { return this; }
+    virtual const TransformDesc* transformDesc() const { return this; }
 
     virtual pTransform createTransform() const;
     virtual float displayedTimeResolution( float FS, float hz ) const;
     virtual FreqAxis freqAxis( float FS ) const;
     //virtual Signal::Interval validLength(Signal::pBuffer buffer);
-    virtual bool operator==(const TransformParams& b) const;
+    virtual bool operator==(const TransformDesc& b) const;
 
 
     float     get_min_hz(float fs) const;

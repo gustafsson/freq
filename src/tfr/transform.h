@@ -15,7 +15,7 @@ namespace Signal
 namespace Tfr
 {
 
-class TransformParams;
+class TransformDesc;
 class Chunk;
 typedef boost::shared_ptr<Chunk> pChunk;
 
@@ -33,10 +33,10 @@ public:
 
 
     /**
-     * @brief transformParams
-     * @return parameters used for this transform.
+     * @brief transformDesc
+     * @return description used for this transform.
      */
-    virtual const TransformParams* transformParams() const = 0;
+    virtual const TransformDesc* transformDesc() const = 0;
 
 
     /**
@@ -67,18 +67,18 @@ typedef boost::shared_ptr<Transform> pTransform;
 
 
 /**
- * @brief The TransformParams class represents parameters needed for a transform.
+ * @brief The TransformDesc class represents a description to create a transform.
  */
-class TransformParams {
+class TransformDesc {
 public:
     /**
       Virtual housekeeping.
       */
-    virtual ~TransformParams() {}
+    virtual ~TransformDesc() {}
 
 
     /**
-     * @brief createTransform instantiates a transform that uses these parameters.
+     * @brief createTransform instantiates a transform that uses the parameters in this description.
      * @return a newly created transform.
      */
     virtual pTransform createTransform() const = 0;
@@ -127,16 +127,16 @@ public:
 
 
     /**
-      Returns a string representation of this transform. Mainly used for debugging and testing.
+      Returns a string representation of this transform. Mainly used for debugging.
       */
     virtual std::string toString() const = 0;
 
 
-    virtual bool operator==(const TransformParams&) const = 0;
-    bool operator!=(const TransformParams& b) const { return !(*this == b); }
+    virtual bool operator==(const TransformDesc&) const = 0;
+    bool operator!=(const TransformDesc& b) const { return !(*this == b); }
 };
 
-typedef boost::shared_ptr<TransformParams> pTransformParams;
+typedef boost::shared_ptr<TransformDesc> pTransformDesc;
 
 
 } // namespace Tfr

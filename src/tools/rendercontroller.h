@@ -82,7 +82,7 @@ namespace Tools
         void receiveFifthAmplitude();
 
         void transformChanged();
-        void updateTransformParams();
+        void updateTransformDesc();
 
     private slots:
         void deleteTarget();

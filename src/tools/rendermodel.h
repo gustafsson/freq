@@ -46,12 +46,12 @@ namespace Tools
 
         template<typename T>
         T* getParam() {
-            foreach(Tfr::pTransformParams p, params)
+            foreach(Tfr::pTransformDesc p, descriptions)
                 if (dynamic_cast<T*>(p.get()))
                     return dynamic_cast<T*>(p.get());
 
-            Tfr::pTransformParams p(new T());
-            params.insert(p);
+            Tfr::pTransformDesc p(new T());
+            descriptions.insert(p);
             return dynamic_cast<T*>(p.get());
         }
 
@@ -76,7 +76,7 @@ namespace Tools
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
-        std::set<Tfr::pTransformParams> params;
+        std::set<Tfr::pTransformDesc> descriptions;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called

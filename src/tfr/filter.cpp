@@ -112,14 +112,14 @@ DeprecatedOperation* Filter::
 unsigned Filter::
         prev_good_size( unsigned current_valid_samples_per_chunk )
 {
-    return transform()->transformParams()->prev_good_size( current_valid_samples_per_chunk, sample_rate() );
+    return transform()->transformDesc()->prev_good_size( current_valid_samples_per_chunk, sample_rate() );
 }
 
 
 unsigned Filter::
         next_good_size( unsigned current_valid_samples_per_chunk )
 {
-    return transform()->transformParams()->next_good_size( current_valid_samples_per_chunk, sample_rate() );
+    return transform()->transformDesc()->next_good_size( current_valid_samples_per_chunk, sample_rate() );
 }
 
 

@@ -153,7 +153,7 @@ namespace Tools
         /**
          * @brief transformChanged is emitted through emitTransformChanged.
          * emitTransformChanged should be called whenever the state of the
-         * transform parameters have changed. This signal might be issued
+         * transform description has changed. This signal might be issued
          * several times during a frame. Use 'Qt::QueuedConnection'.
          */
         void transformChanged();

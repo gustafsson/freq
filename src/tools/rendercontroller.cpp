@@ -204,8 +204,8 @@ RenderController::
 //        logScale->trigger();
 //#endif
 
-        Tfr::StftParams* p = model()->getParam<Tfr::StftParams>();
-        p->setWindow(Tfr::StftParams::WindowType_Hann, 0.75f);
+        Tfr::StftDesc* p = model()->getParam<Tfr::StftParams>();
+        p->setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
 
         ui->actionToggleTransformToolBox->setChecked( true );
     }
@@ -366,7 +366,7 @@ void RenderController::
     }
     else
     {
-        Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
+        Tfr::StftDesc& s = *model()->getParam<Tfr::StftParams>();
         tf_resolution->setValue (s.chunk_size ());
     }
 
@@ -440,7 +440,7 @@ void RenderController::tfresolutionDecrease()
 
 
 void RenderController::
-        updateTransformParams()
+        updateTransformDesc()
 {
     Tfr::Transform* t = currentTransform();
     if (!t)
@@ -448,29 +448,29 @@ void RenderController::
 
     if (Tfr::Stft* s = dynamic_cast<Tfr::Stft*>(t))
     {
-        Tfr::StftParams* sp = model()->getParam<Tfr::StftParams>();
-        if (*s->transformParams() != *sp)
+        Tfr::StftDesc* sp = model()->getParam<Tfr::StftParams>();
+        if (*s->transformDesc() != *sp)
             setCurrentFilterTransform(sp->createTransform());
         return;
     }
     if (Tfr::Cwt* s = dynamic_cast<Tfr::Cwt*>(t))
     {
         Tfr::Cwt* sp = model()->getParam<Tfr::Cwt>();
-        if (*s->transformParams() != *sp)
+        if (*s->transformDesc() != *sp)
             setCurrentFilterTransform(sp->createTransform());
         return;
     }
     if (Tfr::Cepstrum* s = dynamic_cast<Tfr::Cepstrum*>(t))
     {
-        Tfr::CepstrumParams* sp = model()->getParam<Tfr::CepstrumParams>();
-        if (*s->transformParams() != *sp)
+        Tfr::CepstrumDesc* sp = model()->getParam<Tfr::CepstrumParams>();
+        if (*s->transformDesc() != *sp)
             setCurrentFilterTransform(sp->createTransform());
         return;
     }
     if (Tfr::DrawnWaveform* s = dynamic_cast<Tfr::DrawnWaveform*>(t))
     {
         Tfr::DrawnWaveform* sp = model()->getParam<Tfr::DrawnWaveform>();
-        if (*s->transformParams() != *sp)
+        if (*s->transformDesc() != *sp)
             setCurrentFilterTransform(sp->createTransform());
         return;
     }
@@ -482,7 +482,7 @@ void RenderController::
 void RenderController::
         setCurrentFilterTransform( Tfr::pTransform t )
 {
-    Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
+    Tfr::StftDesc& s = *model()->getParam<Tfr::StftParams>();
     Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(t.get ());
@@ -523,7 +523,7 @@ Signal::PostSink* RenderController::
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
 
-    Tfr::StftParams& s = *model()->getParam<Tfr::StftParams>();
+    Tfr::StftDesc& s = *model()->getParam<Tfr::StftParams>();
     Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
     float FS = headSampleRate();
 
@@ -588,7 +588,7 @@ float RenderController::
 {
     Tfr::Transform* t = currentTransform();
     EXCEPTION_ASSERT(t);
-    return t->transformParams()->freqAxis(headSampleRate()).min_hz;
+    return t->transformDesc()->freqAxis(headSampleRate()).min_hz;
 }
 
 
@@ -1058,8 +1058,8 @@ void RenderController::
     connect(this->view.data(), SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
 
     // Validate the current transform used for rendering before each rendering.
-    // Lazy updating with easier and direct access to transform parameters.
-    connect(this->view.data(), SIGNAL(prePaint()), SLOT(updateTransformParams()), Qt::DirectConnection);
+    // Lazy updating with easier and direct access to a transform description.
+    connect(this->view.data(), SIGNAL(prePaint()), SLOT(updateTransformDesc()), Qt::DirectConnection);
 
     // Release cuda buffers and disconnect them from OpenGL before destroying
     // OpenGL rendering context. Just good housekeeping.

@@ -416,12 +416,12 @@ std::vector<pBlock> Collection::
 }
 
 
-const Tfr::TransformParams* Collection::
+const Tfr::TransformDesc* Collection::
         transform()
 {
     Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
     if (filter)
-        return filter->transform()->transformParams();
+        return filter->transform()->transformDesc();
     return 0;
 }
 

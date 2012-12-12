@@ -2,13 +2,13 @@
 #define CEPSTRUM_H
 
 #include "transform.h"
-#include "stftparams.h"
+#include "stftdesc.h"
 
 namespace Tfr {
 
 class Stft;
 
-class CepstrumParams : public StftParams
+class CepstrumDesc : public StftDesc
 {
 public:
     pTransform createTransform() const;
@@ -19,16 +19,16 @@ public:
 class Cepstrum : public Tfr::Transform
 {
 public:
-    Cepstrum(const CepstrumParams& p = CepstrumParams());
+    Cepstrum(const CepstrumDesc& p = CepstrumDesc());
 
-    CepstrumParams params() const { return p; }
-    virtual const TransformParams* transformParams() const { return &p; }
+    const CepstrumDesc& desc() const { return p; }
+    virtual const TransformDesc* transformDesc() const { return &p; }
 
     virtual pChunk operator()( Signal::pMonoBuffer b );
     virtual Signal::pMonoBuffer inverse( pChunk chunk );
 
 private:
-    const CepstrumParams p;
+    const CepstrumDesc p;
 };
 
 

@@ -6,12 +6,12 @@
 
 namespace Tfr {
 
-class DrawnWaveform : public Transform, public TransformParams
+class DrawnWaveform : public Transform, public TransformDesc
 {
 public:
     DrawnWaveform();
 
-    virtual const TransformParams* transformParams() const { return this; }
+    virtual const TransformDesc* transformDesc() const { return this; }
 
     virtual pChunk operator()( Signal::pMonoBuffer b );
 
@@ -30,7 +30,7 @@ public:
 
     virtual std::string toString() const;
 
-    virtual bool operator==(const TransformParams& b) const;
+    virtual bool operator==(const TransformDesc& b) const;
 
 
     float blob(float FS);

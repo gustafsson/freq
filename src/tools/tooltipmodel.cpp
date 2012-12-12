@@ -161,7 +161,7 @@ void TooltipModel::
     }
     else if (dynamic_cast<Tfr::StftFilter*>( render_view_->model->block_filter()))
     {
-        const Tfr::StftParams* f = render_view_->model->getParam<Tfr::StftParams>();
+        const Tfr::StftDesc* f = render_view_->model->getParam<Tfr::StftParams>();
         std_t = f->chunk_size() / FS / 2;
         std_f = FS / f->chunk_size() / 2;
     }
@@ -295,7 +295,7 @@ std::string TooltipModel::
 class TooltipModel::FetchDataTransform: public TooltipModel::FetchData
 {
 public:
-    FetchDataTransform( RenderModel* m, const Tfr::StftParams* stft, float t )
+    FetchDataTransform( RenderModel* m, const Tfr::StftDesc* stft, float t )
     {
         Signal::pOperation o = m->renderSignalTarget->source();
         Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
@@ -322,7 +322,7 @@ public:
         fa = chunk->freqAxis;
     }
 
-    FetchDataTransform( RenderModel* m, const Tfr::CepstrumParams* cepstrum, float t )
+    FetchDataTransform( RenderModel* m, const Tfr::CepstrumDesc* cepstrum, float t )
     {
         Signal::pOperation o = m->renderSignalTarget->source();
         Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
@@ -469,10 +469,10 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
         createFetchData( RenderView* view, float t )
 {
     boost::shared_ptr<FetchData> r;
-    const Tfr::TransformParams* transform = view->model->collections[0]->transform();
-    if (const Tfr::CepstrumParams* cepstrum = dynamic_cast<const Tfr::CepstrumParams*>(transform))
+    const Tfr::TransformDesc* transform = view->model->collections[0]->transform();
+    if (const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(transform))
         r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
-    else if (const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(transform))
+    else if (const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(transform))
         r.reset( new FetchDataTransform( view->model, stft, t ) );
     else if (const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(transform))
         r.reset( new FetchDataTransform( view->model, cwt, t ) );

@@ -20,8 +20,8 @@ CepstrumFilter::
 {
     if (!t)
     {
-        CepstrumParams p;
-        p.setWindow(StftParams::WindowType_Hann, 0.75f);
+        CepstrumDesc p;
+        p.setWindow(StftDesc::WindowType_Hann, 0.75f);
         t = pTransform(new Cepstrum(p));
     }
 
@@ -35,7 +35,7 @@ CepstrumFilter::
 Signal::Interval CepstrumFilter::
         requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    const CepstrumParams& p = ((Cepstrum*)t.get())->params();
+    const CepstrumDesc& p = ((Cepstrum*)t.get())->desc();
     long averaging = p.averaging();
     long window_size = p.chunk_size();
     long window_increment = p.increment();
@@ -79,7 +79,7 @@ Signal::Interval CepstrumFilter::
 void CepstrumFilter::
         invalidate_samples(const Signal::Intervals& I)
 {
-    const CepstrumParams& p = ((Cepstrum*)transform().get())->params();
+    const CepstrumDesc& p = ((Cepstrum*)transform().get())->desc();
     int window_size = p.chunk_size();
     int increment   = p.increment();
 

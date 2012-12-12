@@ -6,8 +6,8 @@
 
 namespace Tfr {
 
-StftParams::
-        StftParams()
+StftDesc::
+        StftDesc()
     :
       _window_size( 1<<11 ),
       _compute_redundant(false),
@@ -19,14 +19,14 @@ StftParams::
 }
 
 
-pTransform StftParams::
+pTransform StftDesc::
         createTransform() const
 {
     return pTransform(new Stft(*this));
 }
 
 
-FreqAxis StftParams::
+FreqAxis StftDesc::
         freqAxis( float FS ) const
 {
     FreqAxis fa;
@@ -40,14 +40,14 @@ FreqAxis StftParams::
 }
 
 
-float StftParams::
+float StftDesc::
         displayedTimeResolution( float FS, float /*hz*/ ) const
 {
     return 0.125f*chunk_size() / FS;
 }
 
 
-unsigned StftParams::
+unsigned StftDesc::
         next_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ ) const
 {
     int window_size = chunk_size();
@@ -63,7 +63,7 @@ unsigned StftParams::
 }
 
 
-unsigned StftParams::
+unsigned StftDesc::
         prev_good_size( unsigned current_valid_samples_per_chunk, float /*sample_rate*/ ) const
 {
     int window_size = chunk_size();
@@ -93,7 +93,7 @@ unsigned oksz(unsigned x)
         return sg;
 }
 
-int StftParams::
+int StftDesc::
         set_approximate_chunk_size( unsigned preferred_size )
 {
     //_window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
@@ -139,21 +139,21 @@ int StftParams::
 }
 
 
-void StftParams::
+void StftDesc::
         set_exact_chunk_size( unsigned chunk_size )
 {
     _window_size = chunk_size;
 }
 
 
-bool StftParams::
+bool StftDesc::
         compute_redundant() const
 {
     return _compute_redundant;
 }
 
 
-void StftParams::
+void StftDesc::
         compute_redundant(bool value)
 {
     _compute_redundant = value;
@@ -171,14 +171,14 @@ void StftParams::
 }
 
 
-int StftParams::
+int StftDesc::
         averaging() const
 {
     return _averaging;
 }
 
 
-void StftParams::
+void StftDesc::
         averaging(int value)
 {
     if (1 > value)
@@ -190,21 +190,21 @@ void StftParams::
 }
 
 
-float StftParams::
+float StftDesc::
         overlap() const
 {
     return _overlap;
 }
 
 
-StftParams::WindowType StftParams::
+StftDesc::WindowType StftDesc::
         windowType() const
 {
     return _window_type;
 }
 
 
-std::string StftParams::
+std::string StftDesc::
         windowTypeName(WindowType type)
 {
     switch(type)
@@ -228,7 +228,7 @@ std::string StftParams::
 }
 
 
-bool StftParams::
+bool StftDesc::
         applyWindowOnInverse(WindowType type)
 {
     switch (type)
@@ -252,7 +252,7 @@ bool StftParams::
 }
 
 
-void StftParams::
+void StftDesc::
         setWindow(WindowType type, float overlap)
 {
     _window_type = type;
@@ -260,7 +260,7 @@ void StftParams::
 }
 
 
-int StftParams::
+int StftDesc::
         increment() const
 {
     int window_size = chunk_size();
@@ -280,14 +280,14 @@ int StftParams::
 }
 
 
-int StftParams::
+int StftDesc::
         chunk_size() const
 {
     return _window_size;
 }
 
 
-std::string StftParams::
+std::string StftDesc::
         toString() const
 {
     std::stringstream ss;
@@ -300,14 +300,14 @@ std::string StftParams::
 }
 
 
-bool StftParams::
-        operator==(const TransformParams& b) const
+bool StftDesc::
+        operator==(const TransformDesc& b) const
 {
     // Works for CepstrumParams as well.
     if (typeid(b)!=typeid(*this))
         return false;
 
-    const StftParams* p = dynamic_cast<const StftParams*>(&b);
+    const StftDesc* p = dynamic_cast<const StftDesc*>(&b);
 
     return _window_size == p->_window_size &&
             _compute_redundant == p->_compute_redundant &&

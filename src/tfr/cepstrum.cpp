@@ -12,7 +12,7 @@ namespace Tfr {
 
 
 Cepstrum::
-        Cepstrum(const CepstrumParams& p)
+        Cepstrum(const CepstrumDesc& p)
     :
       p(p)
 {
@@ -23,7 +23,7 @@ pChunk Cepstrum::
         operator()( pMonoBuffer b )
 {
     TaskTimer tt("Cepstrum");
-    CepstrumParams p2 = p;
+    CepstrumDesc p2 = p;
     p2.compute_redundant ( true );
     pTransform t = p2.StftParams::createTransform ();
     pChunk cepstra = (*t)(b);
@@ -49,14 +49,14 @@ Signal::pMonoBuffer Cepstrum::
 }
 
 
-pTransform CepstrumParams::
+pTransform CepstrumDesc::
         createTransform() const
 {
     return pTransform(new Cepstrum(*this));
 }
 
 
-FreqAxis CepstrumParams::
+FreqAxis CepstrumDesc::
         freqAxis( float FS ) const
 {
     FreqAxis fa;

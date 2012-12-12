@@ -5,7 +5,7 @@
 
 namespace Tfr {
 
-class SaweDll StftParams: public TransformParams
+class SaweDll StftDesc: public TransformDesc
 {
 public:
     enum WindowType
@@ -27,7 +27,7 @@ public:
         WindowType_NumberOfWindowTypes
     };
 
-    StftParams();
+    StftDesc();
 
     virtual pTransform createTransform() const;
     virtual float displayedTimeResolution( float FS, float hz ) const;
@@ -35,7 +35,7 @@ public:
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
     virtual std::string toString() const;
-    virtual bool operator==(const TransformParams& b) const;
+    virtual bool operator==(const TransformDesc& b) const;
 
 
     int increment() const;

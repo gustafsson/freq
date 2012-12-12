@@ -160,8 +160,8 @@ pBuffer SelectionViewInfoSink::
         f = Intervals(f).enlarge(sample_rate()/2).spannedInterval() & getInterval();
         f.last = f.first + Tfr::Fft().lChunkSizeS( f.count() + 1, 4 );
 
-        Tfr::StftParams stft;
-        stft.setWindow(Tfr::StftParams::WindowType_Hann, 0.5);
+        Tfr::StftDesc stft;
+        stft.setWindow(Tfr::StftDesc::WindowType_Hann, 0.5);
         stft.set_approximate_chunk_size( f.count() );
         stft.compute_redundant(false);
         EXCEPTION_ASSERT(stft.chunk_size() == f.count());

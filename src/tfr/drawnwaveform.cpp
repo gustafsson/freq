@@ -156,7 +156,7 @@ std::string DrawnWaveform::
 
 
 bool DrawnWaveform::
-        operator==(const TransformParams& b) const
+        operator==(const TransformDesc& b) const
 {
     const DrawnWaveform* p = dynamic_cast<const DrawnWaveform*>(&b);
     if (!p)

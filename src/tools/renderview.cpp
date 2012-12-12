@@ -1024,7 +1024,7 @@ void RenderView::
         // use various GPU resources the application will crash, for
         // instance when another RenderView is closed and releases
         // the context.
-        Tfr::StftParams a;
+        Tfr::StftDesc a;
         a.set_approximate_chunk_size(4);
         Signal::pMonoBuffer b(new Signal::MonoBuffer(0,a.chunk_size(),1));
         (Tfr::Stft(a))(b);

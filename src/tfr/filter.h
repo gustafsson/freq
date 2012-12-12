@@ -10,8 +10,8 @@ namespace Tfr {
 
 class Transform;
 typedef boost::shared_ptr<Transform> pTransform;
-class TransformParams;
-typedef boost::shared_ptr<TransformParams> pTransformParams;
+class TransformDesc;
+typedef boost::shared_ptr<TransformDesc> pTransformDesc;
 
 class Chunk;
 typedef boost::shared_ptr<Chunk> pChunk;

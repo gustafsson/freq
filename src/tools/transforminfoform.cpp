@@ -66,9 +66,9 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
-    for (int i=0;i<Tfr::StftParams::WindowType_NumberOfWindowTypes; ++i)
+    for (int i=0;i<Tfr::StftDesc::WindowType_NumberOfWindowTypes; ++i)
     {
-        ui->windowTypeComboBox->addItem(Tfr::StftParams::windowTypeName((Tfr::StftParams::WindowType)i).c_str(), i);
+        ui->windowTypeComboBox->addItem(Tfr::StftDesc::windowTypeName((Tfr::StftDesc::WindowType)i).c_str(), i);
     }
 
     {   ui->timeNormalizationSlider->setOrientation( Qt::Horizontal );
@@ -157,10 +157,10 @@ void TransformInfoForm::
         return;
 
     Tfr::Filter* f = renderview->model->block_filter();
-    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(!f?0:f->transform()->transformParams());
-    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(!f?0:f->transform()->transformParams());
-    const Tfr::CepstrumParams* cepstrum = dynamic_cast<const Tfr::CepstrumParams*>(!f?0:f->transform()->transformParams());
-    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformParams());
+    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(!f?0:f->transform()->transformDesc());
+    const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(!f?0:f->transform()->transformDesc());
+    const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(!f?0:f->transform()->transformDesc());
+    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformDesc());
     if (cepstrum) stft = 0; // CepstrumParams inherits StftParams
 
     Signal::pOperation head = project->head->head_source();
@@ -238,7 +238,7 @@ void TransformInfoForm::
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
         setEditText( ui->averagingEdit, QString("%1").arg(stft->averaging()) );
-        Tfr::StftParams::WindowType windowtype = stft->windowType();
+        Tfr::StftDesc::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
@@ -254,7 +254,7 @@ void TransformInfoForm::
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/cepstrum->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(cepstrum->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(cepstrum->overlap()) );
-        Tfr::StftParams::WindowType windowtype = cepstrum->windowType();
+        Tfr::StftDesc::WindowType windowtype = cepstrum->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
@@ -325,7 +325,7 @@ void TransformInfoForm::
     if (newValue>fs/4)
         newValue=fs/4;
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
     Signal::IntervalType new_chunk_size = fs/newValue;
 
     if (new_chunk_size != stft->chunk_size())
@@ -347,7 +347,7 @@ void TransformInfoForm::
     if ((unsigned)newValue>N*2)
         newValue=N*2;
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
 
     if (newValue != stft->chunk_size())
     {
@@ -389,14 +389,14 @@ void TransformInfoForm::
 {
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
     if (stft->windowType() != windowtype)
     {
         float overlap = stft->overlap();
-        if (stft->windowType() == Tfr::StftParams::WindowType_Rectangular && overlap == 0.f)
+        if (stft->windowType() == Tfr::StftDesc::WindowType_Rectangular && overlap == 0.f)
             overlap = 0.5f;
 
-        stft->setWindow( (Tfr::StftParams::WindowType)windowtype, overlap );
+        stft->setWindow( (Tfr::StftDesc::WindowType)windowtype, overlap );
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
         renderview->emitTransformChanged();
@@ -411,10 +411,10 @@ void TransformInfoForm::
 
     // Tfr::Stft::setWindow validates value range
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
     if (stft->overlap() != newValue)
     {
-        Tfr::StftParams::WindowType windowtype = stft->windowType();
+        Tfr::StftDesc::WindowType windowtype = stft->windowType();
         stft->setWindow( windowtype, newValue );
 
         renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
@@ -428,7 +428,7 @@ void TransformInfoForm::
 {
     float newValue = ui->averagingEdit->text().toFloat();
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
     if (stft->averaging() != newValue)
     {
         stft->averaging( newValue );
@@ -461,8 +461,8 @@ void TransformInfoForm::
     Tfr::Filter* filter = project->tools ().render_model.block_filter ();
     EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
 
-    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(filter->transform()->transformParams());
-    EXCEPTION_ASSERT( stft ); // Only if transform params are based on StftParams should it reach here (i.e Stft and Cepstrum)
+    const Tfr::StftDesc* stftDesc = dynamic_cast<const Tfr::StftDesc*>(filter->transform()->transformDesc());
+    EXCEPTION_ASSERT( stftDesc ); // Only if transform desc are based on StftParams should it reach here (i.e Stft and Cepstrum)
 
     Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
     EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
@@ -492,8 +492,8 @@ void TransformInfoForm::
     Tfr::Filter* filter = project->tools ().render_model.block_filter ();
     EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
 
-    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(filter->transform()->transformParams());
-    EXCEPTION_ASSERT( stft ); // Only if transform params are based on StftParams should it reach here (i.e Stft and Cepstrum)
+    const Tfr::StftDesc* stftdesc = dynamic_cast<const Tfr::StftDesc*>(filter->transform()->transformDesc());
+    EXCEPTION_ASSERT( stftdesc ); // Only if transform desc is based on StftDesc should it reach here (i.e Stft and Cepstrum)
 
     Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
     EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works

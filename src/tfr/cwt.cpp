@@ -409,7 +409,7 @@ float Cwt::
 
 
 bool Cwt::
-        operator==(const TransformParams& b) const
+        operator==(const TransformDesc& b) const
 {
     const Cwt* p = dynamic_cast<const Cwt*>(&b);
     if (!p)
@@ -536,7 +536,7 @@ pChunk Cwt::
 
         intermediate_wt->n_valid_samples = ft->getInterval().count() - time_support - intermediate_wt->first_valid_sample;
 
-        StftParams stft;
+        StftDesc stft;
         stft.set_exact_chunk_size(n.width);
         Stft(stft).compute( g, g, Tfr::FftDirection_Inverse );
 
