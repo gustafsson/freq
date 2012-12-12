@@ -47,3 +47,4 @@ image_works
 *.sln.cache
 *.suo
 .DS_Store
+*.autosave

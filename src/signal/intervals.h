@@ -68,6 +68,8 @@ public:
 
      I = [first, last)
 
+  Could speed up performance by allocating a limited number of Interval on the
+  stack instead, if performance of Intervals becomes an issue.
   */
 class SaweDll Intervals: private std::list<Interval>
 {

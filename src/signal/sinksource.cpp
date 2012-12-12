@@ -366,12 +366,30 @@ pBuffer SinkSource::
 }
 
 
-bool SinkSource::empty()
+bool SinkSource::
+        empty()
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
     QMutexLocker l(&_cache_mutex);
 #endif
     return _cache.empty();
+}
+
+
+Intervals SinkSource::
+        samplesDesc()
+{
+    QMutexLocker l(&_cache_mutex);
+    Intervals r = _valid_samples;
+    return r;
+}
+
+
+bool SinkSource::
+        hasInterval(const Interval& I)
+{
+    QMutexLocker l(&_cache_mutex);
+    return I == (_valid_samples & I);
 }
 
 /*
