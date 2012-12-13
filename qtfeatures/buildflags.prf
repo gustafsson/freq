@@ -18,8 +18,8 @@ macx {
         QMAKE_CXXFLAGS += -m32 -arch i386
         QMAKE_CFLAGS += -m32 -arch i386
     }
-    QMAKE_CXXFLAGS += -Wfatal-errors
-    QMAKE_CFLAGS += -Wfatal-errors
+    #QMAKE_CXXFLAGS += -Wfatal-errors
+    #QMAKE_CFLAGS += -Wfatal-errors
     DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
 }
 
