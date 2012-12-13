@@ -462,7 +462,7 @@ void RenderController::
     }
     if (Tfr::Cepstrum* s = dynamic_cast<Tfr::Cepstrum*>(t))
     {
-        Tfr::CepstrumDesc* sp = model()->getParam<Tfr::CepstrumParams>();
+        Tfr::CepstrumDesc* sp = model()->getParam<Tfr::CepstrumDesc>();
         if (*s->transformDesc() != *sp)
             setCurrentFilterTransform(sp->createTransform());
         return;
@@ -746,7 +746,7 @@ void RenderController::
     float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
-    fa.setQuefrencyNormalized( fs, model()->getParam<Tfr::CepstrumParams>()->chunk_size() );
+    fa.setQuefrencyNormalized( fs, model()->getParam<Tfr::CepstrumDesc>()->chunk_size() );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
