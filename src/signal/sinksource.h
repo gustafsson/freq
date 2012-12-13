@@ -7,7 +7,7 @@
 #include <vector>
 
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-#include <QMutex>
+#include <QReadWriteLock>
 #endif
 
 namespace Signal {
@@ -84,7 +84,7 @@ public:
         'samplesDesc().spannedInterval().count'.
       */
     virtual IntervalType number_of_samples();
-    virtual unsigned num_channels() { return _num_channels; }
+    virtual unsigned num_channels();
 
 
     /**
@@ -106,7 +106,7 @@ public:
 
 private:
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-	QMutex _cache_mutex;
+    QReadWriteLock _cache_lock;
 #endif
     std::vector<pBuffer> _cache;
 

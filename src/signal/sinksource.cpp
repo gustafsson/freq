@@ -28,17 +28,19 @@ SinkSource::
 SinkSource::
         SinkSource( const SinkSource& b)
             :
-        Sink(b),
-        _cache( b._cache ),
-        _invalid_samples( b._invalid_samples ),
-        _num_channels( b._num_channels )
+        Sink(b)
 {
+    *this = b;
 }
 
 
 SinkSource& SinkSource::
         operator=( const SinkSource& b)
 {
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QWriteLocker l(&_cache_lock);
+#endif
+
     _cache = b._cache;
     _invalid_samples = b._invalid_samples;
     _num_channels = b._num_channels;
@@ -92,7 +94,7 @@ void SinkSource::
         allocateCache( Signal::Interval I, float fs )
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker l(&_cache_mutex);
+    QWriteLocker l(&_cache_lock);
 #endif
 
     const int chunkSize = 1<<22; // 16 MB = sizeof(float)*(1<<22)
@@ -126,7 +128,7 @@ void SinkSource::
 
     {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-        QMutexLocker l(&_cache_mutex);
+        QReadLocker l(&_cache_lock);
 #endif
         if (_cache.empty())
             return;
@@ -199,7 +201,7 @@ void SinkSource::
     allocateCache(b.getInterval(), b.sample_rate());
 
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker cache_locker(&_cache_mutex);
+    QWriteLocker l(&_cache_lock);
 #endif
 
     if (!_cache.empty())
@@ -233,7 +235,7 @@ void SinkSource::
         clear()
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker l(&_cache_mutex);
+    QWriteLocker l(&_cache_lock);
 #endif
     _cache.clear();
     _invalid_samples = Intervals();
@@ -328,7 +330,7 @@ float SinkSource::
         sample_rate()
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker l(&_cache_mutex);
+    QReadLocker l(&_cache_lock);
 #endif
 
     if (_cache.empty())
@@ -341,13 +343,32 @@ float SinkSource::
 IntervalType SinkSource::
         number_of_samples()
 {
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QReadLocker l(&_cache_lock);
+#endif
+
     return _valid_samples.spannedInterval().count();
+}
+
+
+unsigned SinkSource::
+        num_channels()
+{
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QReadLocker l(&_cache_lock);
+#endif
+
+    return _num_channels;
 }
 
 
 Interval SinkSource::
         getInterval()
 {
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QReadLocker l(&_cache_lock);
+#endif
+
     return _valid_samples.spannedInterval();
 }
 
@@ -356,7 +377,7 @@ pBuffer SinkSource::
         first_buffer()
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker l(&_cache_mutex);
+    QReadLocker l(&_cache_lock);
 #endif
     EXCEPTION_ASSERT( !_cache.empty() );
 
@@ -370,7 +391,7 @@ bool SinkSource::
         empty()
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker l(&_cache_mutex);
+    QReadLocker l(&_cache_lock);
 #endif
     return _cache.empty();
 }
@@ -379,7 +400,9 @@ bool SinkSource::
 Intervals SinkSource::
         samplesDesc()
 {
-    QMutexLocker l(&_cache_mutex);
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QReadLocker l(&_cache_lock);
+#endif
     Intervals r = _valid_samples;
     return r;
 }
@@ -388,7 +411,9 @@ Intervals SinkSource::
 bool SinkSource::
         hasInterval(const Interval& I)
 {
-    QMutexLocker l(&_cache_mutex);
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QReadLocker l(&_cache_lock);
+#endif
     return I == (_valid_samples & I);
 }
 
@@ -397,7 +422,7 @@ Intervals SinkSource::
         samplesDesc()
 {
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-    QMutexLocker l(&_cache_mutex);
+    QReadLocker l(&_cache_lock);
 #endif
 
     Intervals sid;
