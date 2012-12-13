@@ -76,11 +76,11 @@ void CsvTimeseries::
     //ifs >> sample_rate >> std::endl;
 
     SinkSource ssc(0);
-    size_t chunk = 1 << 18;
+    int chunk = 1 << 18;
     std::vector<Signal::pMonoBuffer> chunkBuffers;
     std::vector<float*> p;
 
-    for (size_t bufferCount, channel, line=0; ifs.good();)
+    for (int bufferCount, channel, line=0; ifs.good();)
     {
         for (bufferCount = 0; bufferCount < chunk; ++bufferCount, ++line )
         {
