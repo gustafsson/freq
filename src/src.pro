@@ -91,6 +91,7 @@ HEADERS += \
     signal/*.h \
     test/*.h \
     signal/dag/*.h \
+    test/*.h \
     tfr/*.h \
     tools/*.h \
     tools/commands/*.h \
