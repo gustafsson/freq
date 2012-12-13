@@ -21,7 +21,7 @@ DeprecatedOperation::DeprecatedOperation(pOperation s )
 
 
 DeprecatedOperation::
-        ~Operation()
+        ~DeprecatedOperation()
 {
     source( pOperation() );
 }
@@ -39,7 +39,7 @@ DeprecatedOperation::
 DeprecatedOperation& DeprecatedOperation::
         operator=(const DeprecatedOperation& o )
 {
-    DeprecatedOperation::source( o.Operation::source() );
+    DeprecatedOperation::source( o.DeprecatedOperation::source() );
     return *this;
 }
 

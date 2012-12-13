@@ -309,7 +309,7 @@ void PostSink::
     #endif
 
         noop = true;
-        s->Operation::invalidate_samples( I );
+        s->DeprecatedOperation::invalidate_samples( I );
         noop = false;
     }
     else
