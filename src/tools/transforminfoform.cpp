@@ -161,7 +161,7 @@ void TransformInfoForm::
     const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(!f?0:f->transform()->transformDesc());
     const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(!f?0:f->transform()->transformDesc());
     const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformDesc());
-    if (cepstrum) stft = 0; // CepstrumParams inherits StftParams
+    if (cepstrum) stft = 0; // CepstrumParams inherits StftDesc
 
     Signal::pOperation head = project->head->head_source();
     float fs = head->sample_rate();
@@ -325,7 +325,7 @@ void TransformInfoForm::
     if (newValue>fs/4)
         newValue=fs/4;
 
-    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftDesc>();
     Signal::IntervalType new_chunk_size = fs/newValue;
 
     if (new_chunk_size != stft->chunk_size())
@@ -347,7 +347,7 @@ void TransformInfoForm::
     if ((unsigned)newValue>N*2)
         newValue=N*2;
 
-    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftDesc>();
 
     if (newValue != stft->chunk_size())
     {
@@ -389,7 +389,7 @@ void TransformInfoForm::
 {
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
-    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftDesc>();
     if (stft->windowType() != windowtype)
     {
         float overlap = stft->overlap();
@@ -411,7 +411,7 @@ void TransformInfoForm::
 
     // Tfr::Stft::setWindow validates value range
 
-    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftDesc>();
     if (stft->overlap() != newValue)
     {
         Tfr::StftDesc::WindowType windowtype = stft->windowType();
@@ -428,7 +428,7 @@ void TransformInfoForm::
 {
     float newValue = ui->averagingEdit->text().toFloat();
 
-    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftParams>();
+    Tfr::StftDesc* stft = renderview->model->getParam<Tfr::StftDesc>();
     if (stft->averaging() != newValue)
     {
         stft->averaging( newValue );
@@ -462,7 +462,7 @@ void TransformInfoForm::
     EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
 
     const Tfr::StftDesc* stftDesc = dynamic_cast<const Tfr::StftDesc*>(filter->transform()->transformDesc());
-    EXCEPTION_ASSERT( stftDesc ); // Only if transform desc are based on StftParams should it reach here (i.e Stft and Cepstrum)
+    EXCEPTION_ASSERT( stftDesc ); // Only if transform desc are based on StftDesc should it reach here (i.e Stft and Cepstrum)
 
     Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
     EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works

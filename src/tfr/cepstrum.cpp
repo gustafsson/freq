@@ -25,7 +25,7 @@ pChunk Cepstrum::
     TaskTimer tt("Cepstrum");
     CepstrumDesc p2 = p;
     p2.compute_redundant ( true );
-    pTransform t = p2.StftParams::createTransform ();
+    pTransform t = p2.StftDesc::createTransform ();
     pChunk cepstra = (*t)(b);
 
     ::cepstrumPrepareCepstra( cepstra->transform_data, 4.f/p.chunk_size() );

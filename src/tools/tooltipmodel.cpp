@@ -161,7 +161,7 @@ void TooltipModel::
     }
     else if (dynamic_cast<Tfr::StftFilter*>( render_view_->model->block_filter()))
     {
-        const Tfr::StftDesc* f = render_view_->model->getParam<Tfr::StftParams>();
+        const Tfr::StftDesc* f = render_view_->model->getParam<Tfr::StftDesc>();
         std_t = f->chunk_size() / FS / 2;
         std_f = FS / f->chunk_size() / 2;
     }

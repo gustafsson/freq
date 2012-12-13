@@ -204,7 +204,7 @@ RenderController::
 //        logScale->trigger();
 //#endif
 
-        Tfr::StftDesc* p = model()->getParam<Tfr::StftParams>();
+        Tfr::StftDesc* p = model()->getParam<Tfr::StftDesc>();
         p->setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
 
         ui->actionToggleTransformToolBox->setChecked( true );
@@ -366,7 +366,7 @@ void RenderController::
     }
     else
     {
-        Tfr::StftDesc& s = *model()->getParam<Tfr::StftParams>();
+        Tfr::StftDesc& s = *model()->getParam<Tfr::StftDesc>();
         tf_resolution->setValue (s.chunk_size ());
     }
 
@@ -421,7 +421,7 @@ void RenderController::
     if (isCwt)
         model()->getParam<Tfr::Cwt>()->scales_per_octave ( value );
     else
-        model()->getParam<Tfr::StftParams>()->set_approximate_chunk_size( value );
+        model()->getParam<Tfr::StftDesc>()->set_approximate_chunk_size( value );
 
     stateChanged();
 
@@ -448,7 +448,7 @@ void RenderController::
 
     if (Tfr::Stft* s = dynamic_cast<Tfr::Stft*>(t))
     {
-        Tfr::StftDesc* sp = model()->getParam<Tfr::StftParams>();
+        Tfr::StftDesc* sp = model()->getParam<Tfr::StftDesc>();
         if (*s->transformDesc() != *sp)
             setCurrentFilterTransform(sp->createTransform());
         return;
@@ -482,7 +482,7 @@ void RenderController::
 void RenderController::
         setCurrentFilterTransform( Tfr::pTransform t )
 {
-    Tfr::StftDesc& s = *model()->getParam<Tfr::StftParams>();
+    Tfr::StftDesc& s = *model()->getParam<Tfr::StftDesc>();
     Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(t.get ());
@@ -523,7 +523,7 @@ Signal::PostSink* RenderController::
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
 
-    Tfr::StftDesc& s = *model()->getParam<Tfr::StftParams>();
+    Tfr::StftDesc& s = *model()->getParam<Tfr::StftDesc>();
     Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
     float FS = headSampleRate();
 
