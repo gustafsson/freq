@@ -563,7 +563,7 @@ Tfr::Filter* RenderController::
         return 0;
     BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
     EXCEPTION_ASSERT( bfs != 0 );
-    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->Operation::source().get());
+    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->DeprecatedOperation::source().get());
     return filter;
 }
 

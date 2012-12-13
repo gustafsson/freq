@@ -437,7 +437,7 @@ void MatlabController::
     foreach(Signal::DeprecatedOperation* p, o->outputs())
     {
         // verify a correct structure while at it
-        EXCEPTION_ASSERT( p->Operation::source().get() == o );
+        EXCEPTION_ASSERT( p->DeprecatedOperation::source().get() == o );
 
         createView( p );
     }
