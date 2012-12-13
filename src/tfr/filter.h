@@ -76,7 +76,7 @@ typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
   Virtual base class for filters. To create a new filter, use CwtFilter or
   StftFilter as base class and implement the method 'operator()( Chunk& )'.
   */
-class Filter: public Signal::DeprecatedOperation, public ChunkFilter
+class Filter: public Signal::DeprecatedOperation, public ChunkFilter, public Signal::Operation
 {
 public:
     /**
@@ -98,8 +98,8 @@ public:
       @overload Operation::read(const Signal::Interval&)
       */
     virtual Signal::pBuffer read( const Signal::Interval& I );
-
-
+    virtual Signal::pBuffer process(Signal::pBuffer);
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
     /**
       Filters are applied to chunks that are computed using some transform.
       transform()/transform(pTransform) gets/sets that transform.
@@ -161,6 +161,18 @@ private:
     Tfr::pTransform _transform;
 };
 
+
+class FilterDesc: public Signal::OperationDesc
+{
+public:
+    FilterDesc(Tfr::pTransformDesc);
+
+    Tfr::pTransformDesc transformDesc() const;
+    void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
+    virtual bool operator==(const Signal::OperationDesc&d) const;
+protected:
+    Tfr::pTransformDesc transform_desc_;
+};
 
 } // namespace Tfr
 

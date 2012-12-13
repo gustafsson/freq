@@ -8,6 +8,7 @@
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
 #include "tfr/stft.h"
+#include "tfr/cepstrum.h"
 
 #include <computationkernel.h>
 #include <TaskTimer.h>
@@ -572,6 +573,43 @@ void DrawnWaveformToBlock::
         return;
 
     mergeRowMajorChunk(block, pchunk, outData, true, ComplexInfo_Amplitude_Non_Weighted, 1.f, false);
+}
+
+
+BlockFilterDesc::
+        BlockFilterDesc(std::vector<boost::shared_ptr<Collection> >* collections, Renderer* renderer, Tfr::pTransformDesc d)
+    :
+      FilterDesc(d),
+      collections_(collections),
+      renderer_(renderer)
+{}
+
+
+Signal::Operation::Ptr BlockFilterDesc::
+        createOperation(Signal::ComputingEngine* engine) const
+{
+    // yeah dynamic_cast is ugly
+    Signal::Operation::Ptr r;
+    Tfr::pTransformDesc t = transformDesc();
+    if (dynamic_cast<Tfr::DrawnWaveform*>(t.get ()))
+        r.reset ( new DrawnWaveformToBlock(collections_));
+    else if (dynamic_cast<Tfr::CepstrumDesc*>(t.get ()))
+        r.reset ( new CepstrumToBlock(collections_));
+    else if (dynamic_cast<Tfr::StftDesc*>(t.get ()))
+        r.reset ( new StftToBlock(collections_));
+    else if (dynamic_cast<Tfr::Cwt*>(t.get ()))
+        r.reset ( new CwtToBlock(collections_, renderer_));
+
+    Filter* f = dynamic_cast<Filter*>(r.get ());
+    f->transform (t->createTransform ());
+    return r;
+}
+
+
+Signal::OperationDesc::Ptr BlockFilterDesc::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new BlockFilterDesc(collections_, renderer_, transformDesc()));
 }
 
 } // namespace Heightmap

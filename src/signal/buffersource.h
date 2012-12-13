@@ -24,7 +24,7 @@ public:
 
 
 
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) const {
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) {
         return I;
     }
     virtual Signal::pBuffer process(Signal::pBuffer b) {

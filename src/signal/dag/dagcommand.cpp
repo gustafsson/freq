@@ -3,6 +3,7 @@
 namespace Signal {
 namespace Dag {
 
+
 CommandAddUnaryOperation::
         CommandAddUnaryOperation(Signal::OperationDesc::Ptr operation)
     : node_(new Node(operation))
@@ -23,13 +24,6 @@ Node::Ptr CommandAddUnaryOperation::
 {
     node_->setChild(head);
     return node_;
-}
-
-
-void CommandAddUnaryOperation::
-        test()
-{
-    EXCEPTION_ASSERT( false );
 }
 
 
@@ -63,13 +57,6 @@ Node::Ptr CommandRemoveNode::
 }
 
 
-void CommandRemoveNode::
-        test()
-{
-    EXCEPTION_ASSERT( false );
-}
-
-
 CommandReplaceOperation::
         CommandReplaceOperation (Node::Ptr node, Signal::OperationDesc::Ptr operationdesc)
     :
@@ -83,6 +70,41 @@ Node::Ptr CommandReplaceOperation::
 {
     node_->operationDesc ( operationdesc_ );
     return head;
+}
+
+
+
+void ICommand::
+        test()
+{
+    CommandAddUnaryOperation::test ();
+    CommandRemoveNode::test ();
+    CommandReplaceOperation::test ();
+    CommandUpdateNode::test ();
+}
+
+
+void CommandAddUnaryOperation::
+        test()
+{
+}
+
+
+void CommandRemoveNode::
+        test()
+{
+}
+
+
+void CommandReplaceOperation::
+        test()
+{
+}
+
+
+void CommandUpdateNode::
+        test()
+{
 }
 
 

@@ -259,5 +259,23 @@ public:
     virtual bool createFromOthers() { return false; }
 };
 
+
+
+class BlockFilterDesc : public Tfr::FilterDesc
+{
+public:
+    BlockFilterDesc(
+            std::vector<boost::shared_ptr<Collection> >* collections,
+            Renderer* renderer,
+            Tfr::pTransformDesc d
+            );
+
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
+    Signal::OperationDesc::Ptr copy() const;
+private:
+    std::vector<boost::shared_ptr<Collection> >* collections_;
+    Renderer* renderer_;
+};
+
 } // namespace Heightmap
 #endif // HEIGHTMAPBLOCKFILTER_H

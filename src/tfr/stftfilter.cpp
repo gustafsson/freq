@@ -105,4 +105,5 @@ void StftFilter::
     DeprecatedOperation::invalidate_samples( J );
 }
 
+
 } // namespace Signal

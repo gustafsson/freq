@@ -1,4 +1,5 @@
 #include "node.h"
+#include "test/operationmockups.h"
 
 namespace Signal {
 namespace Dag {
@@ -217,17 +218,39 @@ private:
     Signal::Operation::Ptr p;
 };
 
+
 void Node::
         test()
 {
-
-
     pBuffer b(new Buffer(Interval(0, 10), 1, 1));
     Signal::Operation::Ptr o( new BufferSource(b));
-    Node n(Signal::OperationDesc::Ptr(new SimpleOperationDesc(o)), true);
-    EXCEPTION_ASSERTX(n.data ().hidden () == true, str(format("n.hidden () = %d") % n.data ().hidden ()));
+    Node::Ptr n(new Node(Signal::OperationDesc::Ptr(new SimpleOperationDesc(o)), true));
+    EXCEPTION_ASSERTX(n->data ().hidden () == true, str(format("n.hidden () = %d") % n->data ().hidden ()));
 
+    Signal::OperationDesc::Ptr d(new Test::TransparentOperationDesc);
+    Node::Ptr
+            p1(new Node(d)),
+            p2(new Node(d)),
+            p3(new Node(d)),
+            p4(new Node(d));
+    p2->setChild (p3);
+    p1->setChild (p2);
+    p3->setChild (p4);
+    p4->setChild (n);
 
+    EXCEPTION_ASSERT_EQUALS( *d, *d );
+    EXCEPTION_ASSERT_EQUALS( d.get (), d.get ());
+    EXCEPTION_ASSERT_EQUALS( p1->operationDesc (), *d );
+    EXCEPTION_ASSERT_NOTEQUALS( &p1->operationDesc (), d.get () );
+    EXCEPTION_ASSERT_EQUALS( p1->operationDesc (), p3->operationDesc () );
+    EXCEPTION_ASSERT_NOTEQUALS( &p1->operationDesc (), &p3->operationDesc () );
+
+    p4->data ().cache () = Signal::SinkSource(b->number_of_channels ());
+    p4->data ().cache ().put (b);
+    EXCEPTION_ASSERT_EQUALS( b->getInterval (), p4->data ().cache ().samplesDesc () );
+
+    n->invalidate_samples (Interval(0,6));
+    EXCEPTION_ASSERT_EQUALS( Interval(6,10), p4->data ().cache ().samplesDesc () );
 }
 } // namespace Dag
 } // namespace Signal

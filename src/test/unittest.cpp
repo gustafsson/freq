@@ -5,13 +5,17 @@
 #include "test/tasktimertiming.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
+<<<<<<< HEAD
 #include "tools/support/timer.h"
 #include "signal/buffer.h"
+=======
+#include "signal/dag/node.h"
+#include "signal/dag/dagcommand.h"
+#include "tools/support/timer.h"
+>>>>>>> Stubbed FilterDescs for BlockFilter and AudiofileDesc for Audiofile.
 
 #include <stdio.h>
 #include <exception>
-
-#include <TaskTimer.h>
 
 using namespace std;
 
@@ -21,7 +25,6 @@ namespace Test {
         TaskTimer tt("%s", #x); \
         x::test (); \
     } while(false)
-
 
 int UnitTest::
         test()
@@ -37,8 +40,11 @@ int UnitTest::
         RUNTEST(Signal::Buffer);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
+        RUNTEST(Signal::Dag::Node);
+        RUNTEST(Signal::Dag::ICommand);
+
     } catch (const exception& x) {
-        printf("%s\n", x.what());
+        printf("\n%s\n\n", x.what());
         return 1;
     }
 

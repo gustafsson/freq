@@ -13,6 +13,7 @@ public:
     typedef boost::shared_ptr<ICommand> Ptr;
 
     static void test();
+
 private:
     friend class Dag;
 
@@ -65,6 +66,8 @@ class CommandReplaceOperation: public ICommand
 public:
     CommandReplaceOperation (Node::Ptr node, Signal::OperationDesc::Ptr operationdesc);
 
+    static void test();
+
 private:
     Node::Ptr node_;
     Signal::OperationDesc::Ptr operationdesc_;
@@ -85,6 +88,8 @@ class CommandUpdateNode: public ICommand
 {
 public:
     CommandUpdateNode (Node::Ptr node, Signal::Intervals I);
+
+    static void test();
 
 private:
     Node::Ptr node_;

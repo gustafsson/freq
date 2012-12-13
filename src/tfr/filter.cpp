@@ -59,6 +59,22 @@ Signal::pBuffer Filter::
     if (this != affecting_source(required))
         return b;
 
+    return process(b);
+}
+
+
+Signal::Interval Filter::
+        requiredInterval( const Signal::Interval& I )
+{
+    return requiredInterval(I, transform());
+}
+
+
+Signal::pBuffer Filter::
+        process(Signal::pBuffer b)
+{
+    pTransform t = _transform;
+
     pBuffer r;
     for (unsigned c=0; c<b->number_of_channels (); ++c)
     {
@@ -156,6 +172,36 @@ void Filter::
     l.unlock ();
 
     invalidate_samples( getInterval() );
+}
+
+
+FilterDesc::
+        FilterDesc(Tfr::pTransformDesc d)
+    :
+      transform_desc_(d)
+{
+
+}
+
+
+Tfr::pTransformDesc FilterDesc::
+        transformDesc() const
+{
+    return transform_desc_;
+}
+
+
+bool FilterDesc::
+        operator==(const Signal::OperationDesc&d) const
+{
+    if (const FilterDesc* f = dynamic_cast<const FilterDesc*>(&d))
+    {
+        const TransformDesc& a = *transform_desc_;
+        const TransformDesc& b = *f->transformDesc ();
+        return a == b;
+       // return *f->transformDesc () == *transform_desc_;
+    }
+    return false;
 }
 
 } // namespace Tfr

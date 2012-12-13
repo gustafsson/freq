@@ -17,7 +17,7 @@ void Gauss::
         for (double x=-10; x<10; x+=dx)
             s += g.gauss_value(x, y)*dx*dy;
 
-    printf("1-s=%g\n", (float)(1.f-s));
+    EXCEPTION_ASSERT_FUZZYEQUALS(1-s, 2.35354e-08, 1e-12);
 }
 
 #endif // USE_CUDA

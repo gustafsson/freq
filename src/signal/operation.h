@@ -40,13 +40,9 @@ public:
 
     /**
      * @brief process computes the operation
-     * @return processed data. Will return
+     * @return processed data
      */
     virtual Signal::pBuffer process(Signal::pBuffer) = 0;
-    virtual Signal::pBuffer process(std::vector<Signal::pBuffer>) {
-        EXCEPTION_ASSERT("invalid argument");
-        return Signal::pBuffer();
-    }
 
 
     /**
@@ -54,7 +50,7 @@ public:
      * a valid chunk representing interval I.
      * @param I
      */
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) const = 0;
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) = 0;
 };
 
 
@@ -71,8 +67,21 @@ public:
 
 
     /**
+     * @brief cloneParams creates a copy of 'this'.
+     * @return a copy.
+     */
+    virtual OperationDesc::Ptr copy() const = 0;
+
+
+    /**
      * @brief createOperation instantiates an operation that uses this description.
      * Different computing engines could be used to instantiate different types.
+     *
+     * May return an empty Operation::Ptr if an operation isn't supported by a
+     * given ComputingEngine in which case some other thread will have to
+     * populate the cache instead and call invalidate samples when they are
+     * ready. This thread will then have to wait, or do something else. It will
+     * be marked as complete without computing anything until invalidated.
      * @return a newly created operation.
      */
     virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
@@ -90,16 +99,9 @@ public:
 
 
     /**
-     * @brief cloneParams creates a copy of 'this'.
-     * @return a copy.
-     */
-    virtual OperationDesc::Ptr copy() const = 0;
-
-
-    /**
      * Returns a string representation of this operation. Mainly used for debugging.
      */
-    virtual QString toString() const = 0;
+    virtual QString toString() const { return vartype(*this).c_str(); }
 
 
     /**
@@ -109,10 +111,29 @@ public:
     virtual int getNumberOfSources() const { return 1; }
 
 
-    virtual bool operator==(const OperationDesc&) const = 0;
+    /**
+     * @brief operator == checks if two instances of OperationDesc would generate
+     * identical instances of Operation. The default behaviour is to just check
+     * the type of the argument.
+     * @param d
+     * @return
+     */
+    virtual bool operator==(const OperationDesc& d) const {
+        &d?void():void();
+        return typeid(*this) == typeid(d);
+    }
     bool operator!=(const OperationDesc& b) const { return !(*this == b); }
-};
 
+
+    /**
+     * @brief operator << makes OperationDesc support common printing routines
+     * with the stream operator.
+     * @param os
+     * @param d
+     * @return
+     */
+    friend std::ostream& operator << (std::ostream& os, const OperationDesc& d) { return os << d.toString().toStdString (); }
+};
 
 
 

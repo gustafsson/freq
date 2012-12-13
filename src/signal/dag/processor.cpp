@@ -84,11 +84,24 @@ Signal::pBuffer Processor::
 
     default:
         {
-            std::vector<Signal::pBuffer> B( N );
             for (int i=0; i<N; ++i)
-                B[i] = read (node.getChild (i), I);
+            {
+                Signal::pBuffer r = read (node.getChild (i), I);
+                if (!b)
+                    b = r;
+                else
+                {
+                    Signal::pBuffer n(new Signal::Buffer(b->getInterval (), b->sample_rate (), b->number_of_channels ()+r->number_of_channels ()));
+                    int j=0;
+                    for (;j<b->number_of_channels ();++j)
+                        *n->getChannel (j) |= *b->getChannel (j);
+                    for (;j<n->number_of_channels ();++j)
+                        *n->getChannel (j) |= *r->getChannel (j-b->number_of_channels ());
+                    b = n;
+                }
+            }
 
-            b = operation->process (B);
+            b = operation->process (b);
             break;
         }
     }

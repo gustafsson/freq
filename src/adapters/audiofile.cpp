@@ -430,4 +430,67 @@ void Audiofile::
     file->write(QByteArray::fromRawData(&rawFileData[0], rawFileData.size()));
 }
 
+
+AudiofileOperation::
+        AudiofileOperation(Audiofile::Ptr audiofile) : audiofile_(audiofile)
+{}
+
+
+Signal::pBuffer AudiofileOperation::
+        process(Signal::pBuffer b)
+{
+    return audiofile_->readRaw(b->getInterval ());
+}
+
+
+Signal::Interval AudiofileOperation::
+        requiredInterval( const Signal::Interval& I )
+{
+    return I;
+}
+
+
+AudiofileDesc::
+        AudiofileDesc(boost::shared_ptr<Audiofile> audiofile)
+    :
+      audiofile_(audiofile)
+{}
+
+
+Signal::Operation::Ptr AudiofileDesc::
+        createOperation(Signal::ComputingEngine*) const
+{
+    return Signal::Operation::Ptr(new AudiofileOperation(audiofile_));
+}
+
+
+Signal::OperationDesc::Ptr AudiofileDesc::
+        copy() const
+{
+    return OperationDesc::Ptr(new AudiofileDesc(audiofile_));
+}
+
+
+QString AudiofileDesc::
+        toString() const
+{
+    return audiofile_->filename ().c_str ();
+}
+
+
+int AudiofileDesc::
+        getNumberOfSources() const
+{
+    return 0;
+}
+
+
+bool AudiofileDesc::
+        operator==(const OperationDesc& d) const
+{
+    if (const AudiofileDesc* a = dynamic_cast<const AudiofileDesc*>(&d))
+        return a->audiofile_ == this->audiofile_;
+    return false;
+}
+
 } // namespace Adapters

@@ -317,6 +317,8 @@ private:
     };
 
 public:
+    typedef boost::shared_ptr<Audiofile> Ptr;
+
     static std::string getFileFormatsQtFilter( bool split );
     static bool hasExpectedSuffix( const std::string& suffix );
 
@@ -329,9 +331,9 @@ public:
     std::string filename() const;
 
     virtual void invalidate_samples(const Signal::Intervals& I);
+    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
 private:
     Audiofile();
-    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     bool tryload();
 
     /// file can be a QTemporaryFile that deletes itself upon destruction
@@ -418,6 +420,32 @@ private:
         }
 #endif
     }
+};
+
+
+class SaweDll AudiofileOperation: public Signal::Operation
+{
+public:
+    AudiofileOperation(Audiofile::Ptr audiofile);
+
+    virtual Signal::pBuffer process(Signal::pBuffer b);
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
+private:
+    Audiofile::Ptr audiofile_;
+};
+
+class SaweDll AudiofileDesc: public Signal::OperationDesc
+{
+public:
+    AudiofileDesc(boost::shared_ptr<Audiofile> audiofile);
+
+    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
+    virtual OperationDesc::Ptr copy() const;
+    virtual QString toString() const;
+    virtual int getNumberOfSources() const;
+    virtual bool operator==(const OperationDesc& d) const;
+private:
+    boost::shared_ptr<Audiofile> audiofile_;
 };
 
 } // namespace Adapters
