@@ -68,6 +68,7 @@ SOURCES += \
     heightmap/*.cpp \
     sawe/*.cpp \
     signal/*.cpp \
+    signal/dag/*.cpp \
     test/*.cpp \
     tfr/fft4g.c \
     tfr/*.cpp \
@@ -89,6 +90,7 @@ HEADERS += \
     sawe/*.h \
     signal/*.h \
     test/*.h \
+    signal/dag/*.h \
     tfr/*.h \
     tools/*.h \
     tools/commands/*.h \

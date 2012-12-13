@@ -7,7 +7,7 @@
 namespace Signal
 {
 
-class SaweDll BufferSource: public FinalSource
+class SaweDll BufferSource: public FinalSource, public Operation
 {
 public:
     BufferSource( pBuffer waveform = pBuffer() );
@@ -21,6 +21,17 @@ public:
     virtual IntervalType number_of_samples();
 
     virtual unsigned num_channels();
+
+
+
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) const {
+        return I;
+    }
+    virtual Signal::pBuffer process(Signal::pBuffer b) {
+        Signal::pBuffer r(new Signal::Buffer(b->getInterval (), buffer_->sample_rate (), buffer_->number_of_channels ()));
+        *r |= *buffer_;
+        return r;
+    }
 
 private:
     pBuffer buffer_;

@@ -17,7 +17,104 @@
 // std
 #include <set>
 
+// QString
+#include <QString>
+
 namespace Signal {
+
+class ComputingEngine;
+
+class OperationDesc;
+
+class SaweDll Operation
+{
+public:
+    typedef boost::shared_ptr<Operation> Ptr;
+
+
+    /**
+      Virtual housekeeping.
+      */
+    virtual ~Operation() {}
+
+
+    /**
+     * @brief process computes the operation
+     * @return processed data. Will return
+     */
+    virtual Signal::pBuffer process(Signal::pBuffer) = 0;
+    virtual Signal::pBuffer process(std::vector<Signal::pBuffer>) {
+        EXCEPTION_ASSERT("invalid argument");
+        return Signal::pBuffer();
+    }
+
+
+    /**
+     * @brief requiredInterval returns the interval that is required to compute
+     * a valid chunk representing interval I.
+     * @param I
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) const = 0;
+};
+
+
+class SaweDll OperationDesc
+{
+public:
+    typedef boost::shared_ptr<OperationDesc> Ptr;
+
+
+    /**
+      Virtual housekeeping.
+      */
+    virtual ~OperationDesc() {}
+
+
+    /**
+     * @brief createOperation instantiates an operation that uses this description.
+     * Different computing engines could be used to instantiate different types.
+     * @return a newly created operation.
+     */
+    virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
+
+
+    /**
+     * @brief recreateOperation recreates an operation in an existing instance.
+     * If the operation supports this, some caches might be reused instead of
+     * deallocated and reallocated (to reduce memory fragmentation). The
+     * default behaviour is to call createOperation without a specific.
+     *
+     * @return the same operation or a new operation.
+     */
+    virtual Operation::Ptr recreateOperation(Operation::Ptr) const { return createOperation(0); }
+
+
+    /**
+     * @brief cloneParams creates a copy of 'this'.
+     * @return a copy.
+     */
+    virtual OperationDesc::Ptr copy() const = 0;
+
+
+    /**
+     * Returns a string representation of this operation. Mainly used for debugging.
+     */
+    virtual QString toString() const = 0;
+
+
+    /**
+     * @brief getNumberOfSources is larger than 1 if the operation merges
+     * multiple sources.
+     */
+    virtual int getNumberOfSources() const { return 1; }
+
+
+    virtual bool operator==(const OperationDesc&) const = 0;
+    bool operator!=(const OperationDesc& b) const { return !(*this == b); }
+};
+
+
+
 
 /**
 A Signal::Operation is a Signal::Source which reads data from another 
@@ -27,6 +124,8 @@ the caller.
 class SaweDll DeprecatedOperation: public SourceBase
 {
 public:
+    typedef boost::shared_ptr<Operation> Ptr;
+
     /**
       This constructor by itself creates a dummy Operation that redirects 'read'
       to its _source.
