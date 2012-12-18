@@ -38,7 +38,7 @@ public:
 
         bool                    hidden() { return hidden_; }
 
-        // Cache is thread safe
+        // Signal::SinkSource is thread safe
         Signal::SinkSource&     cache() { return cache_; }
 
         Signal::Operation::Ptr  operation(void* p, ComputingEngine* e=0);

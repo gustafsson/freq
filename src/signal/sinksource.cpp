@@ -218,6 +218,10 @@ void SinkSource::
 void SinkSource::
         invalidate_samples(const Intervals& I)
 {
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QWriteLocker l(&_cache_lock);
+#endif
+
     _invalid_samples |= I;
     _valid_samples -= I;
 }
@@ -237,6 +241,7 @@ void SinkSource::
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
     QWriteLocker l(&_cache_lock);
 #endif
+
     _cache.clear();
     _invalid_samples = Intervals();
 }
@@ -245,6 +250,10 @@ void SinkSource::
 pBuffer SinkSource::
         read( const Interval& I )
 {
+#ifndef SAWE_NO_SINKSOURCE_MUTEX
+    QReadLocker l(&_cache_lock);
+#endif
+
     TIME_SINKSOURCE TaskTimer tt("%s %s from %s", __FUNCTION__, I.toString().c_str(), _valid_samples.toString().c_str());
 
     Interval validFetch = (I & _valid_samples).fetchFirstInterval();
