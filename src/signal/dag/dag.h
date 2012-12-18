@@ -23,6 +23,7 @@ public:
 
     Processor getProcessor();
     void queueCommand(ICommand::Ptr cmd);
+
 private:
     void executeQueue();
 

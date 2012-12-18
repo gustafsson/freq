@@ -9,7 +9,7 @@ namespace Test {
 class TransparentOperation: public Signal::Operation {
 public:
     virtual Signal::pBuffer process(Signal::pBuffer b);
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
+    virtual Signal::Interval requiredInterval( Signal::Interval& I );
 };
 
 class TransparentOperationDesc: public Signal::OperationDesc {

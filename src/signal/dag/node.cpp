@@ -223,7 +223,7 @@ void Node::
         test()
 {
     pBuffer b(new Buffer(Interval(0, 10), 1, 1));
-    Signal::Operation::Ptr o( new BufferSource(b));
+    Signal::Operation::Ptr o( new BufferSource::BufferSourceOperation(b));
     Node::Ptr n(new Node(Signal::OperationDesc::Ptr(new SimpleOperationDesc(o)), true));
     EXCEPTION_ASSERTX(n->data ().hidden () == true, str(format("n.hidden () = %d") % n->data ().hidden ()));
 

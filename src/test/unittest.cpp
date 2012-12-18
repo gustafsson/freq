@@ -38,6 +38,7 @@ int UnitTest::
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
         RUNTEST(Signal::Buffer);
+        RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
         RUNTEST(Signal::Dag::Node);

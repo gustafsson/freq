@@ -73,6 +73,13 @@ Node::Ptr CommandReplaceOperation::
 }
 
 
+Node::Ptr CommandUpdateNode::
+        execute (Node::Ptr head)
+{
+    node_->invalidate_samples (I_);
+    return head;
+}
+
 
 void ICommand::
         test()

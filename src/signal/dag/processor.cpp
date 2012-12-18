@@ -63,7 +63,7 @@ Signal::pBuffer Processor::
 Signal::pBuffer Processor::
         readSkipCache (const Node &node, Signal::Interval I, Signal::Operation::Ptr operation)
 {
-    I = operation->requiredInterval( I );
+    const Signal::Interval rI = operation->requiredInterval( I );
 
     // EXCEPTION_ASSERT(I.count () && node.data().output_buffer->number_of_samples ());
 
@@ -72,13 +72,20 @@ Signal::pBuffer Processor::
     switch(N)
     {
     case 0:
-        // just a cumbersome way of transferring the informtion in 'I'
-        b = Signal::pBuffer( new Signal::Buffer(I, 44100, 1));
-        b = operation->process (b);
-        break;
+        {
+            const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&node.operationDesc ());
+            EXCEPTION_ASSERTX( osd, boost::format(
+                                   "The first node in the dag was not an instance of "
+                                   "OperationSourceDesc but: %1 (%2)")
+                               % node.operationDesc ()
+                               % vartype(node.operationDesc ()));
 
+            b = Signal::pBuffer( new Signal::Buffer(rI, osd->getSampleRate (), osd->getNumberOfChannels ()));
+            b = operation->process (b);
+            break;
+        }
     case 1:
-        b = read (node.getChild (), I);
+        b = read (node.getChild (), rI);
         b = operation->process (b);
         break;
 
@@ -86,13 +93,13 @@ Signal::pBuffer Processor::
         {
             for (int i=0; i<N; ++i)
             {
-                Signal::pBuffer r = read (node.getChild (i), I);
+                Signal::pBuffer r = read (node.getChild (i), rI);
                 if (!b)
                     b = r;
                 else
                 {
                     Signal::pBuffer n(new Signal::Buffer(b->getInterval (), b->sample_rate (), b->number_of_channels ()+r->number_of_channels ()));
-                    int j=0;
+                    unsigned j=0;
                     for (;j<b->number_of_channels ();++j)
                         *n->getChannel (j) |= *b->getChannel (j);
                     for (;j<n->number_of_channels ();++j)
@@ -105,6 +112,8 @@ Signal::pBuffer Processor::
             break;
         }
     }
+
+    EXCEPTION_ASSERT_EQUALS( b->getInterval (), I );
 
     return b;
 }

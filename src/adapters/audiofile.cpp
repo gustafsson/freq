@@ -444,9 +444,10 @@ Signal::pBuffer AudiofileOperation::
 
 
 Signal::Interval AudiofileOperation::
-        requiredInterval( const Signal::Interval& I )
+        requiredInterval( Signal::Interval& I )
 {
-    return I;
+    Signal::IntervalType fixedReadLength = 1<<20;
+    return I & Signal::Interval(I.first, I.first + fixedReadLength);
 }
 
 

@@ -64,7 +64,7 @@ Signal::pBuffer Filter::
 
 
 Signal::Interval Filter::
-        requiredInterval( const Signal::Interval& I )
+        requiredInterval( Signal::Interval& I )
 {
     return requiredInterval(I, transform());
 }
@@ -74,6 +74,7 @@ Signal::pBuffer Filter::
         process(Signal::pBuffer b)
 {
     pTransform t = _transform;
+    const Interval I = b->getInterval ();
 
     pBuffer r;
     for (unsigned c=0; c<b->number_of_channels (); ++c)

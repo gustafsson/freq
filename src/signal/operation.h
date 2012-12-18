@@ -40,17 +40,29 @@ public:
 
     /**
      * @brief process computes the operation
-     * @return processed data
+     * @param A buffer with data to process. The interval of the buffer will
+     * be equal to param 'I' after a call to requiredInterval. requiredInterval
+     * may be called several times for different intervals before calling
+     * process.
+     * @return processed data. Returned buffer interval must be equal to
+     * requiredInterval(b->getInterval());
      */
-    virtual Signal::pBuffer process(Signal::pBuffer) = 0;
+    virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
 
 
     /**
      * @brief requiredInterval returns the interval that is required to compute
-     * a valid chunk representing interval I.
-     * @param I
+     * a valid chunk representing interval I. If the operation can not compute
+     * a valid chunk representing the at least interval I at once the operation
+     * can request a smaller chunk for processing instead by modifying I before
+     * returning.
+     * @param 'I' may be modified by Operation if another interval is preferred.
+     * I.first must be contained in a modified interval.
      */
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I ) = 0;
+    virtual Signal::Interval requiredInterval( Signal::Interval& I ) = 0;
+
+
+    static void test(Ptr o);
 };
 
 
@@ -93,22 +105,23 @@ public:
      * deallocated and reallocated (to reduce memory fragmentation). The
      * default behaviour is to call createOperation without a specific.
      *
-     * @return the same operation or a new operation.
+     * @return the same operation if it could be reused and modified, or a new
+     * operation. The default is to not use the hint at all.
      */
-    virtual Operation::Ptr recreateOperation(Operation::Ptr) const { return createOperation(0); }
+    virtual Operation::Ptr recreateOperation(Operation::Ptr hint) const;
 
 
     /**
      * Returns a string representation of this operation. Mainly used for debugging.
      */
-    virtual QString toString() const { return vartype(*this).c_str(); }
+    virtual QString toString() const;
 
 
     /**
      * @brief getNumberOfSources is larger than 1 if the operation merges
      * multiple sources.
      */
-    virtual int getNumberOfSources() const { return 1; }
+    virtual int getNumberOfSources() const;
 
 
     /**
@@ -118,23 +131,51 @@ public:
      * @param d
      * @return
      */
-    virtual bool operator==(const OperationDesc& d) const {
-        &d?void():void();
-        return typeid(*this) == typeid(d);
-    }
+    virtual bool operator==(const OperationDesc& d) const;
     bool operator!=(const OperationDesc& b) const { return !(*this == b); }
 
 
     /**
      * @brief operator << makes OperationDesc support common printing routines
-     * with the stream operator.
+     * using the stream operator.
      * @param os
      * @param d
-     * @return
+     * @return os
      */
-    friend std::ostream& operator << (std::ostream& os, const OperationDesc& d) { return os << d.toString().toStdString (); }
+    friend std::ostream& operator << (std::ostream& os, const OperationDesc& d);
 };
 
+
+/**
+ * @brief The OperationSourceDesc class describes a starting point of a Dag.
+ */
+class SaweDll OperationSourceDesc: public OperationDesc
+{
+public:
+    /**
+     * @brief getNumberOfSources overloads OperationDesc::getNumberOfSources
+     */
+    int getNumberOfSources() const { return 0; }
+
+
+    /**
+     * @brief getSampleRate is constant during the lifetime of OperationSourceDesc.
+     * @return the sample rate.
+     */
+    virtual float getSampleRate() const = 0;
+
+    /**
+     * @brief getNumberOfChannels is constant during the lifetime of OperationSourceDesc.
+     * @return the number of channels.
+     */
+    virtual float getNumberOfChannels() const = 0;
+
+    /**
+     * @brief getNumberOfSamples does not have to be constant during the lifetime of OperationSourceDesc
+     * @return the number of samples in this description.
+     */
+    virtual float getNumberOfSamples() const = 0;
+};
 
 
 /**

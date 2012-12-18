@@ -429,7 +429,7 @@ public:
     AudiofileOperation(Audiofile::Ptr audiofile);
 
     virtual Signal::pBuffer process(Signal::pBuffer b);
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
+    virtual Signal::Interval requiredInterval( Signal::Interval& I );
 private:
     Audiofile::Ptr audiofile_;
 };

@@ -14,6 +14,53 @@
 
 namespace Signal {
 
+
+void Operation::
+        test(Ptr o)
+{
+    Interval I(40,70);
+    Interval ri = o->requiredInterval (I);
+    EXCEPTION_ASSERT_EQUALS( I, ri );
+    pBuffer d(new Buffer(ri, 40, 7));
+    pBuffer p = o->process (d);
+    EXCEPTION_ASSERT_EQUALS( p->getInterval (), I );
+}
+
+
+Operation::Ptr OperationDesc::
+        recreateOperation(Operation::Ptr /*hint*/) const
+{
+    return createOperation(0);
+}
+
+
+QString OperationDesc::
+        toString() const
+{
+    return vartype(*this).c_str();
+}
+
+
+int OperationDesc::
+        getNumberOfSources() const
+{
+    return 1;
+}
+
+
+bool OperationDesc::
+        operator==(const OperationDesc& d) const
+{
+    &d?void():void(); // suppress unused argument warning
+    return typeid(*this) == typeid(d);
+}
+
+
+std::ostream& operator << (std::ostream& os, const OperationDesc& d) {
+    return os << d.toString().toStdString ();
+}
+
+
 DeprecatedOperation::DeprecatedOperation(pOperation s )
 {
     source( s );

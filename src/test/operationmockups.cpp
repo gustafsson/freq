@@ -11,7 +11,7 @@ Signal::pBuffer TransparentOperation::
 
 
 Signal::Interval TransparentOperation::
-        requiredInterval( const Signal::Interval& I )
+        requiredInterval( Signal::Interval& I )
 {
     return I;
 }
