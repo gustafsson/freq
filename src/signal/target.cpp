@@ -425,28 +425,4 @@ bool Target::
 }
 
 
-OperationTarget::
-        OperationTarget(Layers* all_layers, pOperation operation, std::string name, bool allow_cheat_resolution)
-            :
-            Target(all_layers, name, allow_cheat_resolution, false)
-{
-    addOperation(operation);
-}
-
-
-void OperationTarget::
-        addOperation(pOperation operation)
-{
-    Signal::pChain chain( new Signal::Chain(operation) );
-    Signal::pChainHead ch( new Signal::ChainHead(chain));
-
-    // Add cache layer
-    ch->appendOperation(Signal::pOperation(new Signal::DeprecatedOperation(Signal::pOperation())));
-
-    // Invalidate cache
-    ch->head_source()->invalidate_samples(ch->head_source()->getInterval() );
-
-    addLayerHead( ch );
-}
-
 } // namespace Signal

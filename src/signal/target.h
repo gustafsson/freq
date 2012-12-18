@@ -164,20 +164,6 @@ private:
 typedef boost::shared_ptr<Target> pTarget;
 
 
-/**
-  * Not used
-  */
-class OperationTarget: public Target {
-public:
-    /**
-      * @param all_layers Pass &Sawe::Projecct::layers
-      */
-    OperationTarget(Layers* all_layers, pOperation operation, std::string name, bool allow_cheat_resolution);
-
-private:
-    void addOperation(pOperation operation);
-};
-
 } // namespace Signal
 
 #endif // LAYERS_H
