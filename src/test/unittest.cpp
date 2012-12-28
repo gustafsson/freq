@@ -5,6 +5,8 @@
 #include "test/tasktimertiming.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
+#include "tools/support/timer.h"
+#include "signal/buffer.h"
 
 #include <stdio.h>
 #include <exception>
@@ -15,25 +17,33 @@ using namespace std;
 
 namespace Test {
 
+#define RUNTEST(x) do { \
+        TaskTimer tt("%s", #x); \
+        x::test (); \
+    } while(false)
+
+
 int UnitTest::
         test()
 {
     try {
-        TaskTimer tt("Tests ...");
+        Tools::Support::Timer(); // Init performance counting
+        TaskTimer tt("Running tests");
+        Tools::Support::Timer timer;
 
-        Test::ImplicitOrdering::test ();
-        Test::Stdlibtest::test ();
-        Test::TaskTimerTiming::test ();
-        Tfr::FreqAxis::test ();
-        Gauss::test ();
-
-        printf("OK\n");
-        return 0;
-
+        RUNTEST(Test::ImplicitOrdering);
+        RUNTEST(Test::Stdlibtest);
+        RUNTEST(Test::TaskTimerTiming);
+        RUNTEST(Signal::Buffer);
+        RUNTEST(Tfr::FreqAxis);
+        RUNTEST(Gauss);
     } catch (const exception& x) {
         printf("%s\n", x.what());
         return 1;
     }
+
+    printf("\n OK\n\n");
+    return 0;
 }
 
 } // namespace Test

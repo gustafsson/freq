@@ -160,7 +160,7 @@ private:
     std::string _filename;
 };
 
-class Hdf5Buffer: public Signal::Sink
+class SaweDll Hdf5Buffer: public Signal::Sink
 {
 public:
     Hdf5Buffer(std::string filename="sawe_buffer.h5");

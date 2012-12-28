@@ -44,6 +44,10 @@ public:
     /// element-wise add 'this' with 'b' where they overlap
     MonoBuffer&             operator+=(MonoBuffer const& b);
 
+    // Used for testing, compares on the CPU
+    bool                    operator==(MonoBuffer const& b) const;
+    bool                    operator!=(MonoBuffer const& b) const { return !(*this == b); }
+
 private:
     // Not implemented, no copying
     MonoBuffer(const MonoBuffer&);
@@ -94,6 +98,11 @@ public:
     /// element-wise add 'this' with 'b' where they overlap
     Buffer&         operator+=(const Buffer& b);
 
+    // Used for testing
+    bool            operator==(const Buffer& b) const;
+    bool            operator!=(const Buffer& b) const { return !(*this == b); }
+
+    static void     test();
 private:
     std::vector<pMonoBuffer> channels_;
 };

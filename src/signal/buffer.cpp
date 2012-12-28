@@ -215,6 +215,17 @@ MonoBuffer& MonoBuffer::
 }
 
 
+bool MonoBuffer::
+        operator==(MonoBuffer const& b) const
+{
+    if (b.waveform_data ()->size () != waveform_data ()->size ())
+        return false;
+    float *p = waveform_data ()->getCpuMemory ();
+    float *bp = b.waveform_data ()->getCpuMemory ();
+    return 0 == memcmp(p, bp, waveform_data ()->numberOfBytes ());
+}
+
+
 Buffer::
         Buffer(Interval I,
        float sample_rate,
@@ -335,5 +346,45 @@ Buffer& Buffer::
     return *this;
 }
 
+
+bool Buffer::
+        operator==(const Buffer& b) const
+{
+    if (b.number_of_channels () != number_of_channels ())
+        return false;
+
+    for (unsigned i=0; i<number_of_channels(); ++i)
+        if (*channels_[i] != *b.getChannel (i))
+            return false;
+
+    return true;
+}
+
+
+void Buffer::
+        test()
+{
+    pBuffer b(new Buffer(Interval(20,30), 40, 7));
+    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    {
+        float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
+        for (int i=0; i<b->number_of_samples (); ++i)
+            p[i] = c + i/(float)b->number_of_samples ();
+    }
+    pBuffer c(new Buffer(Interval(20,30), 40, 7));
+    *c |= *b;
+
+    // Test that 'c' contains a copy on write of 'b'
+    float * bp = CpuMemoryStorage::ReadOnly<1>(b->getChannel (0)->waveform_data ()).ptr();
+    float * cp = CpuMemoryStorage::ReadOnly<1>(c->getChannel (0)->waveform_data ()).ptr();
+    float * bpcpu = b->getChannel (0)->waveform_data ()->getCpuMemory ();
+    float * cp2 = CpuMemoryStorage::ReadOnly<1>(c->getChannel (0)->waveform_data ()).ptr();
+    float * cpcpu = c->getChannel (0)->waveform_data ()->getCpuMemory ();
+    EXCEPTION_ASSERTX( bp != 0, "Buffer didn't allocate any data");
+    EXCEPTION_ASSERTX( bp == cp, "Buffer |= didn't do a copy on write");
+    EXCEPTION_ASSERTX( bpcpu == bp, "Buffer |= didn't do a copy on write");
+    EXCEPTION_ASSERTX( bpcpu != cp2, "Buffer |= didn't do a copy on write");
+    EXCEPTION_ASSERTX( cpcpu == cp2, "Buffer |= didn't do a copy on write");
+}
 
 } // namespace Signal

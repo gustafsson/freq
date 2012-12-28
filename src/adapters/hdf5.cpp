@@ -9,6 +9,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include <H5Fpublic.h>
+#include <H5Opublic.h>
 
 #include "hdf5_hl.h"
 
@@ -87,12 +88,29 @@ void Hdf5Input::
     boost::split(strs, name, boost::is_any_of("/"));
     EXCEPTION_ASSERT( !strs.empty() );
 
-    if (strs.front().empty())
-        strs.erase( strs.begin() );
-    EXCEPTION_ASSERT( !strs.empty() );
+    std::string group;
+    for (size_t i=0; i<strs.size (); ++i)
+    {
+        group += strs[i];
+        if (!group.empty ())
+        {
+            herr_t status = H5Lexists (_file_id, group.c_str (), 0);
+            if (1!=status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Hdf5 file does not contain a link named '" + group + "'", strs[0]);
 
-    herr_t status = H5LTfind_dataset ( _file_id, strs[0].c_str() );
-    if (1!=status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Hdf5 file does not contain a dataset named '" + strs[0] + "'", strs[0]);
+            // Check that this is a group or nor a group
+            H5O_info_t info;
+            status = H5Oget_info_by_name(_file_id, group.c_str (), &info, 0);
+            if (0 > status) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Hdf5 file does not contain a valid link named '" + group + "'", strs[0]);
+            if (i+1 < strs.size ()) {
+                if (info.type != H5O_TYPE_GROUP) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Hdf5 file does not contain a group named '" + group + "'", strs[0]);
+            } else {
+                if (info.type == H5O_TYPE_GROUP) throw Hdf5Error(Hdf5Error::Type_MissingDataset, "Hdf5 file does not contain a dataset named '" + group + "'", strs[0]);
+            }
+        }
+        group += "/";
+    }
+
+    EXCEPTION_ASSERT( group.size () > 1 );
 }
 
 
