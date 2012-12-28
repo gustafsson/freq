@@ -1,6 +1,8 @@
 #include "node.h"
 #include "test/operationmockups.h"
 
+#include "tools/support/timer.h"
+
 namespace Signal {
 namespace Dag {
 
@@ -14,6 +16,7 @@ NodeData(Signal::OperationDesc::Ptr operationdesc, bool hidden)
 {
 }
 
+
 Signal::Operation::Ptr Node::NodeData::
         operation(void* p, ComputingEngine* e)
 {
@@ -23,6 +26,7 @@ Signal::Operation::Ptr Node::NodeData::
         r = desc_->createOperation (e);
     return r;
 }
+
 
 void Node::NodeData::
         removeOperation(void* p)
@@ -104,19 +108,27 @@ void Node::
 void Node::
         setChild(Node::Ptr p, int i)
 {
+    QWriteLocker l(&lock_);
     if (children_[i])
+    {
+        QWriteLocker l(&children_[i]->lock_);
         children_[i]->parents_.erase(this);
+    }
 
     children_[i] = p;
 
     if (children_[i])
+    {
+        QWriteLocker l(&children_[i]->lock_);
         children_[i]->parents_.insert(this);
+    }
 }
 
 
 Node::Ptr Node::
         getChildPtr (int i)
 {
+    QReadLocker l(&lock_);
     return children_[i];
 }
 
@@ -132,6 +144,13 @@ int Node::
         numChildren() const
 {
     return children_.size ();
+}
+
+
+QReadWriteLock* Node::
+        lock()
+{
+    return &lock_;
 }
 
 
@@ -157,7 +176,7 @@ const OperationDesc& Node::
 
 
 void Node::
-        invalidate_samples(const Intervals& I) const
+        invalidateSamples(const Intervals& I) const
 {
     data().cache ().invalidate_samples (I);
 
@@ -165,7 +184,7 @@ void Node::
          i != parents_.end ();
          ++i)
     {
-        (*i)->invalidate_samples (I);
+        (*i)->invalidateSamples (I);
     }
 }
 
@@ -177,9 +196,10 @@ void Node::
 }
 
 
-const std::set<Node*>& Node::
+std::set<Node*> Node::
         parents()
 {
+    std::set<Node*> parents;
     return parents_;
 }
 
@@ -249,7 +269,7 @@ void Node::
     p4->data ().cache ().put (b);
     EXCEPTION_ASSERT_EQUALS( b->getInterval (), p4->data ().cache ().samplesDesc () );
 
-    n->invalidate_samples (Interval(0,6));
+    n->invalidateSamples (Interval(0,6));
     EXCEPTION_ASSERT_EQUALS( Interval(6,10), p4->data ().cache ().samplesDesc () );
 }
 } // namespace Dag

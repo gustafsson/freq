@@ -7,34 +7,45 @@
 // Describes a graph of signal processing nodes and operations on it.
 
 #include "dagcommand.h"
-#include "processor.h"
 
-#include <QReadWriteLock>
+#include <QWaitCondition>
 
 namespace Signal {
 namespace Dag {
 
+/**
+ * @brief The Dag class
+ * Dag TODO
+ * Assuming for now that the list of nodes is linear, and not at all a dag.
+ * I.e a chain... the chain class was just removed...
+ */
 class Dag
 {
 public:
     typedef boost::shared_ptr<Dag> Ptr;
 
-    Dag (Node::Ptr head);
+    Dag (Node::Ptr root);
 
-    Processor getProcessor();
-    void queueCommand(ICommand::Ptr cmd);
+    int sampleRate();
+    int numberOfSamples();
+    int numberOfChannels();
 
 private:
-    void executeQueue();
+    friend class DagHead;
 
-    QReadWriteLock dag_lock_;
-    Node::Ptr head_; // There's only one 'head'.
-    Node::Ptr tip_; // There's only one 'tip'. 'head' and 'tip' might be the same.
-    // Multiple Dags are out-of-scope.
-    // Multiple tips are out-of-scope. Or?
+    // The nodes build a linked bi-directional list.
+    Node::Ptr tip_; // There's only one 'tip'
+    const Node::Ptr root_; // 'root' is never changed during the lifetime of a dag
 
-    QReadWriteLock cmdqueue_lock_;
-    std::vector<ICommand::Ptr> cmdqueue_;
+    // Each node can access the entire tree through children and parents.
+    // There might be multiple tips. Connected to different points in the tree.
+
+    friend class boost::serialization::access;
+    template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
+        TaskInfo ti("ChainHead::serialize");
+        ar & BOOST_SERIALIZATION_NVP(root_); // Save it early to make it more readable.
+        ar & BOOST_SERIALIZATION_NVP(tip_);
+    }
 };
 
 

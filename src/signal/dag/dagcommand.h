@@ -15,7 +15,7 @@ public:
     static void test();
 
 private:
-    friend class Dag;
+    friend class DagHead;
 
     virtual Node::Ptr execute(Node::Ptr head)=0;
 };

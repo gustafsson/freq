@@ -1,38 +1,31 @@
-#include "processor.h"
+#include "scheduler.h"
 
 namespace Signal {
 namespace Dag {
 
-Processor::
-Processor (QReadWriteLock* lock, Node::Ptr* head_node, ComputingEngine* computing_engine)
-    :
-      lock_(lock),
-      head_node_(head_node),
-      computing_engine_(computing_engine)
+
+void Scheduler::
+        run()
 {
+    for (;;)
+    {
+        QReadLocker l(&lock_);
+     //   doOneTask();
+    }
+
 }
 
-
-Processor::
-~Processor()
+/*
+void doOneTask()
 {
-    QWriteLocker l(lock_);
-    for (OperationInstances_::iterator itr = operation_instances_.begin ();
-         itr != operation_instances_.end ();
+    // Prioritera med round robin.
+    for (std::set<DagHead::Ptr>::iterator itr = dag_heads_.begin ();
+         itr != dag_heads_.end ();
          ++itr)
     {
-        Node::Ptr n(*itr);
-        if (n)
-            n->data ().removeOperation (this);
+
     }
-}
-
-
-Signal::pBuffer Processor::
-        read (Signal::Interval I)
-{
-    QReadLocker l(lock_);
-    return read(*head_node_->get (), I);
+    read (const Node &node, Signal::Interval I)
 }
 
 
@@ -117,7 +110,7 @@ Signal::pBuffer Processor::
 
     return b;
 }
-
+*/
 
 } // namespace Dag
 } // namespace Signal

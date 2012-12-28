@@ -1,65 +1,48 @@
 #include "dag.h"
-
+#include "signal/operation.h"
 namespace Signal {
 namespace Dag {
 
 Dag::
-        Dag (Node::Ptr head)
+        Dag (Node::Ptr root)
     :
-      head_(head),
-      tip_(head)
-{}
-
-
-Processor Dag::
-        getProcessor()
+      tip_(root),
+      root_(root)
 {
-    return Processor(&dag_lock_, &head_);
+    const Signal::OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root->operationDesc ());
+    EXCEPTION_ASSERTX( osd, boost::format(
+                           "The first node in the dag was not an instance of "
+                           "OperationSourceDesc but: %1 (%2)")
+                       % root->operationDesc ()
+                       % vartype(root->operationDesc ()));
+    EXCEPTION_ASSERT_EQUALS( osd->getNumberOfSources (), 0 );
 }
 
 
-void Dag::
-        queueCommand(ICommand::Ptr cmd)
+int Dag::
+        sampleRate()
 {
-    QWriteLocker l (&cmdqueue_lock_);
-    cmdqueue_.push_back (cmd);
+    QReadLocker l (root_->lock ());
+    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root_->operationDesc ());
+    return osd->getSampleRate ();
 }
 
 
-void Dag::
-        executeQueue()
+int Dag::
+        numberOfSamples()
 {
-    QWriteLocker l1 (&dag_lock_);
-    QWriteLocker l2 (&cmdqueue_lock_);
-    for (int i=0; i<(int)cmdqueue_.size (); ++i)
-    {
-        bool movetip = (head_ == tip_);
-        Node::Ptr oldhead = head_;
-        head_ = cmdqueue_[i]->execute (head_);
+    QReadLocker l (root_->lock ());
+    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root_->operationDesc ());
+    return osd->getNumberOfSamples ();
+}
 
-        // Move parents if head has changed.
-        if (oldhead != head_)
-        {
-            // if oldhead is unique P should be empty
-            std::set<Node*> P = oldhead->parents();
-            for (std::set<Node*>::iterator itr = P.begin();
-                 itr != P.end();
-                 ++itr)
-            {
-                Node* p = *itr;
-                for (int j=0; j<p->numChildren(); ++j)
-                {
-                    if (&p->getChild(j) == oldhead.get ())
-                        p->setChild(head_, j);
-                }
-            }
-        }
 
-        if (movetip)
-            tip_ = head_;
-    }
-
-    cmdqueue_.clear ();
+int Dag::
+        numberOfChannels()
+{
+    QReadLocker l (root_->lock ());
+    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root_->operationDesc ());
+    return osd->getNumberOfChannels ();
 }
 
 } // namespace Dag

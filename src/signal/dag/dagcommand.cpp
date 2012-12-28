@@ -76,7 +76,7 @@ Node::Ptr CommandReplaceOperation::
 Node::Ptr CommandUpdateNode::
         execute (Node::Ptr head)
 {
-    node_->invalidate_samples (I_);
+    node_->invalidateSamples (I_);
     return head;
 }
 

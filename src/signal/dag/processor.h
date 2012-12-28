@@ -1,9 +1,10 @@
 #ifndef SIGNAL_DAG_PROCESSOR_H
 #define SIGNAL_DAG_PROCESSOR_H
 
-#include "node.h"
+#include "daghead.h"
 
 #include <QReadWriteLock>
+#include <QThread>
 
 namespace Signal {
 
@@ -17,11 +18,14 @@ namespace Dag {
 
 class Processor {
 public:
+    typedef boost::shared_ptr<Processor> Ptr;
+
+private:
+    friend class ProcessingScheduler;
     Processor (QReadWriteLock* lock, Node::Ptr* head_node, ComputingEngine* computing_engine=0);    ~Processor();
 
     Signal::pBuffer read (Signal::Interval I);
 
-private:
     Signal::pBuffer read (const Node &node, Signal::Interval I);
     Signal::pBuffer readSkipCache (const Node &node, Signal::Interval I, Signal::Operation::Ptr operation);
 
@@ -35,6 +39,19 @@ private:
     typedef std::set<boost::weak_ptr<Node> > OperationInstances_;
     OperationInstances_ operation_instances_;
 };
+
+
+class Processors: boost::noncopyable {
+public:
+
+    // Make Singleton? Later optimization
+    std::list<Processor::Ptr> processors;
+
+//public enable_shared_from_this<Y>
+};
+
+
+
 
 } // namespace Dag
 } // namespace Signal

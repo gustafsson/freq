@@ -7,13 +7,14 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include <QReadWriteLock>
+
 namespace Signal {
 namespace Dag {
 
 class Node: boost::noncopyable {
 public:
     typedef boost::shared_ptr<Node> Ptr;
-    typedef boost::shared_ptr<const Node> ConstPtr;
 
     class NodeData: boost::noncopyable
     {
@@ -66,7 +67,7 @@ public:
     NodeData&               data () const;
     QString                 name () const;
     const OperationDesc&    operationDesc() const;
-    void                    invalidate_samples(const Intervals& I) const;
+    void                    invalidateSamples(const Intervals& I) const;
 
     // Meant to enforce constness for the entire DAG when reached from a const Node.
     const Node&             getChild (int i=0) const;
@@ -74,6 +75,7 @@ public:
 
 
     // none-const interface
+    explicit Node(Signal::OperationDesc::Ptr operationdesc, bool hidden = false);
     ~Node();
 
     // NodeData has non-const access from a const Node. But OperationDesc has
@@ -83,13 +85,13 @@ public:
     void                    setChild (Node::Ptr p, int i = 0);
     Node::Ptr               getChildPtr (int i=0);
     void                    detachParents ();
-    const std::set<Node*>&  parents ();
+    std::set<Node*>         parents ();
+    QReadWriteLock*         lock();
 
     static void test ();
 
 private:
-    friend class CommandAddUnaryOperation;
-    explicit Node(Signal::OperationDesc::Ptr operationdesc, bool hidden = false);
+    QReadWriteLock lock_;
 
     // A const Node refers to the DAG references, but properties of the payload
     // data can be changed within the restrictions of NodeData.
@@ -97,6 +99,30 @@ private:
 
     std::vector<Node::Ptr> children_;
     std::set<Node*> parents_;
+
+    friend class boost::serialization::access;
+    Node() {} /// only used by deserialization
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        TaskInfo ti("Serializing %s", name().toStdString ().c_str());
+
+        Signal::OperationDesc::Ptr operationdesc;
+        bool hidden;
+        if (typename archive::is_saving())
+        {
+            operationdesc = operationDesc().copy ();
+            hidden = data ().hidden ();
+        }
+        ar & BOOST_SERIALIZATION_NVP(operationdesc);
+        ar & BOOST_SERIALIZATION_NVP(hidden);
+        if (typename archive::is_loading())
+        {
+            data_.reset (new NodeData(operationdesc, hidden));
+        }
+
+        ar & BOOST_SERIALIZATION_NVP(children_);
+    }
 };
 
 
