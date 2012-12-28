@@ -3,6 +3,7 @@
 #include "heightmap/amplitudeaxis.h"
 
 #include "resampletypes.h"
+#include "datastorage.h"
 
 #ifdef _MSC_VER
 #define _USE_MATH_DEFINES
@@ -58,6 +59,8 @@ public:
     ResamplePos pos; // mu
     ResamplePos k; // k = log2f(e)*0.5f/sigma/sigma
     float scale;
+
+    static void test();
 
 private:
     void normalized_scale(ResamplePos sigma)

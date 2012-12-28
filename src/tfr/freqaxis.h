@@ -256,6 +256,9 @@ public:
     float f_step;
     /// highest value that will be returned from getFrequencyScalar or getFrequencyIndex
     float max_frequency_scalar;
+
+
+    static void test();
 };
 
 } // namespace Tfr

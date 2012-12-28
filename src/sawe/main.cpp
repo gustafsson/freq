@@ -3,6 +3,7 @@
 #include "tfr/cwt.h"
 #include "sawe/reader.h"
 #include "sawe/configuration.h"
+#include "test/unittest.h"
 
 // gpumisc
 #include <redirectstdout.h>
@@ -222,142 +223,14 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
 using namespace Signal;
 
-class A
-{
-public:
-    A() { std::cout << __FUNCTION__ << " " << this << std::endl; }
-    virtual ~A() { std::cout << __FUNCTION__ << " " << this << std::endl; }
-
-    int data;
-};
-
-A hej()
-{
-    return A();
-}
-
-class B
-{
-public:
-    virtual ~B() { std::cout << __FUNCTION__ << " " << this << std::endl; }
-    int data2;
-};
-
-class C: public A, public B
-{
-public:
-    virtual ~C() { std::cout << __FUNCTION__ << " " << this << std::endl; }
-    int data3;
-};
-
-void tsta(A*a)
-{
-    std::cout << a << " a " << a->data << std::endl;
-}
-
-void tstb(B*b)
-{
-    std::cout << b << " b " << b->data2 << std::endl;
-}
-void tstc(C*c)
-{
-    std::cout << c << " c " << c->data3 << std::endl;
-}
 
 int main(int argc, char *argv[])
 {
     ExceptionAssert::installEventHandler ();
 
-    if (0)
-    {
-        Tfr::FreqAxis fa;
-        fa.setLinear(1);
-        fa.max_frequency_scalar = 1;
-        fa.min_hz = -20;
-        fa.f_step = -2*fa.min_hz;
+    if (argc == 2 && 0 == strcmp(argv[1],"--test"))
+        return Test::UnitTest::test ();
 
-        for (float f=0; f<=fa.max_frequency_scalar; f+=0.1)
-            cout << f << " " << fa.getFrequency(f) << " Hz" << endl;
-
-        cout << endl;
-
-        float maxValue = 20;
-        fa.max_frequency_scalar = 20 - 1;
-        fa.min_hz = -maxValue;
-        fa.f_step = (1/fa.max_frequency_scalar) * 2*maxValue;
-
-        for (int f=0; f<=fa.max_frequency_scalar; f++)
-            cout << f << " " << fa.getFrequency((float)f) << " Hz" << endl;
-
-        return 0;
-    }
-    if (0)
-    {
-        C* c = new C;
-        A* a = c;
-        tsta(c);
-        tstb(c);
-        tstc(c);
-        delete a;
-        c = new C;
-        B* b = c;
-        tsta(c);
-        tstb(c);
-        tstc(c);
-        delete b;
-        return 0;
-    }
-    if (0)
-    {
-        C c;
-        c.data = 1;
-        c.data2 = 2;
-        c.data3 = 3;
-        tsta(&c);
-        tstb(&c);
-        tstc(&c);
-        return 0;
-    }
-    if (0)
-    {
-        std::vector<float> r;
-        r.reserve(10);
-        TaskInfo("r.size() = %u", r.size() );
-        r.push_back(4);
-        TaskInfo("r.size() = %u", r.size() );
-        return 0;
-    }
-    if (0)
-    {
-        {
-            TaskTimer tt("Timing tasktimer");
-        }
-        {
-            TaskTimer tt("Timing loop");
-            for (unsigned N = 1000; N; --N)
-            {
-            }
-        }
-        {
-            TaskTimer tt("Timing threadchecker");
-            for (unsigned N = 1000; N; --N)
-            {
-                ThreadChecker tc;
-            }
-        }
-        // Ubuntu, debug build of both gpumisc and sonicawe
-        //00:12:20.787 Timing tasktimer... done in 4.0 us.
-        //00:12:20.788 Timing loop... done in 6.0 us.
-        //00:12:20.788 Timing threadchecker... done in 37.0 us.
-        return 0;
-    }
-
-    if (0)
-    {
-        /*const A& a = hej();
-        std::cout << "tjo" << std::endl;
-        return 0;*/
-    }
 #ifdef USE_CUDA
     if (0) {
         ResampleTest rt;
@@ -391,22 +264,6 @@ int main(int argc, char *argv[])
 		cout << vartype(x) << ": " << x.what() << endl;
 		return 0;
 	}
-
-
-    if(0) {
-        Gauss g(ResamplePos(-1.1, 20), ResamplePos(1.5, 1.5));
-        double s = 0;
-        double dx = .1, dy = .1;
-
-        for (double y=10; y<30; y+=dy)
-            for (double x=-10; x<10; x+=dx)
-                s += g.gauss_value(x, y)*dx*dy;
-
-        printf("1-s=%g\n", (float)(1.f-s));
-        return 0;
-    }
-
-	
 
 
     QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
