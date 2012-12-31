@@ -5,14 +5,11 @@
 #include "test/tasktimertiming.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
-<<<<<<< HEAD
-#include "tools/support/timer.h"
 #include "signal/buffer.h"
-=======
 #include "signal/dag/node.h"
 #include "signal/dag/dagcommand.h"
 #include "tools/support/timer.h"
->>>>>>> Stubbed FilterDescs for BlockFilter and AudiofileDesc for Audiofile.
+#include "volatilelock.h"
 
 #include <stdio.h>
 #include <exception>
@@ -43,6 +40,7 @@ int UnitTest::
         RUNTEST(Gauss);
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
+        RUNTEST(VolatileLockTest);
 
     } catch (const exception& x) {
         printf("\n%s\n\n", x.what());
