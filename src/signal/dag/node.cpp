@@ -8,11 +8,10 @@ namespace Dag {
 
 
 Node::NodeData::
-NodeData(Signal::OperationDesc::Ptr operationdesc, bool hidden)
+        NodeData(Signal::OperationDesc::Ptr operationdesc)
     :
-      desc_(operationdesc),
-      hidden_(hidden),
-      cache_(0)
+      cache(0),
+      desc_(operationdesc)
 {
 }
 
@@ -20,7 +19,6 @@ NodeData(Signal::OperationDesc::Ptr operationdesc, bool hidden)
 Signal::Operation::Ptr Node::NodeData::
         operation(void* p, ComputingEngine* e)
 {
-    QWriteLocker l(&operations_lock_);
     Signal::Operation::Ptr& r = operations_[p];
     if (!r)
         r = desc_->createOperation (e);
@@ -31,7 +29,6 @@ Signal::Operation::Ptr Node::NodeData::
 void Node::NodeData::
         removeOperation(void* p)
 {
-    QWriteLocker l(&operations_lock_);
     operations_.erase(p);
 }
 
@@ -46,7 +43,6 @@ const OperationDesc& Node::NodeData::
 void Node::NodeData::
         operationDesc(Signal::OperationDesc::Ptr desc)
 {
-    QWriteLocker l(&operations_lock_);
     for (OperationMap::iterator i = operations_.begin();
          i != operations_.end();
          ++i)
@@ -57,9 +53,9 @@ void Node::NodeData::
 
 
 Node::
-        Node(Signal::OperationDesc::Ptr operationdesc, bool hidden)
+        Node(Signal::OperationDesc::Ptr operationdesc)
     :
-      data_(new NodeData(operationdesc->copy(), hidden))
+      data_(new NodeData(operationdesc->copy()))
 {
     children_.resize (operationdesc->getNumberOfSources());
 }
@@ -68,75 +64,78 @@ Node::
 Node::
         ~Node()
 {
-    // Detach self from children. This effectively delets any child that
-    // doesn't have any other reference.
+    // Detach self from children.
     for (int j=0; j<numChildren(); ++j)
-        setChild(Node::Ptr(), j);
-
-    // Doesn't need to detach self from parents. Since parents keep a smart
-    // pointer reference to this the destructor wouldn't be called if there
-    // would be any parent to detach.
-}
-
-
-void Node::
-        detachParents()
-{
-    // Detach self from parents
-    // Replace self with the first child among the parents.
-    // This will invalidate parents if 'newChildNode' is not set.
-    Ptr newChildNode;
-    if (numChildren()>0)
-        newChildNode = children_[0];
-
-    for (std::set<Node*>::iterator itr = parents_.begin ();
-         itr != parents_.end ();
-         itr++)
     {
-        Node* p = *itr;
-        for (int j=0; j<p->numChildren(); ++j)
+        // This detachment isn't strictly necessary as Node::parents()
+        // makes sure only valid parents are returned anyways. But I
+        // guess it counts as good housekeeping.
+
+        // Can't use 'setChild(Node::Ptr(), j)' because setChild relies
+        // on 'shared_from_this' which isn't available in the destructor.
+
+        if (!children_[j])
+            continue;
+
+        WritePtr c(children_[j]);
+
+        for (std::set<WeakPtr>::iterator i=c->parents_.begin();
+             i != c->parents_.end ();
+             ++i)
         {
-            if (&p->getChild(j) == this)
-                p->setChild(newChildNode, j);
+            if (!i->lock())
+            {
+                // Assume that 'i' was the one we're removing now.
+                c->parents_.erase(i);
+                break;
+            }
         }
     }
+
+    // Doesn't need to detach self from parents. Since parents keep a
+    // shared_ptr (Node::Ptr) reference to this, the destructor wouldn't be
+    // called if there was any parent to detach here.
     // Parents should be detached here.
-    EXCEPTION_ASSERT(parents_.empty ());
+    //EXCEPTION_ASSERT(parents_.empty ());
+
+    // This effectively delets any instance of a child Node that does not
+    // have any other references through shared_ptr (Node::Ptr).
+    // children_.clear (); // implicit by std::vector::~vector
 }
 
 
 void Node::
-        setChild(Node::Ptr p, int i)
+        setChild(Node::Ptr newchild, int i) volatile
 {
-    QWriteLocker l(&lock_);
-    if (children_[i])
-    {
-        QWriteLocker l(&children_[i]->lock_);
-        children_[i]->parents_.erase(this);
-    }
+    // Avoid locking multiple objects at once as it may cause deadlocks.
+    // But it is required here to keep consistency during the transaction.
+    WritePtr self(this);
 
-    children_[i] = p;
+    Ptr oldchild = self->children_[i];
+    self->children_[i] = newchild;
 
-    if (children_[i])
-    {
-        QWriteLocker l(&children_[i]->lock_);
-        children_[i]->parents_.insert(this);
-    }
+    WeakPtr weakself = self->shared_from_this();
+
+    if (oldchild)
+        WritePtr(oldchild)->parents_.erase(weakself);
+    if (newchild)
+        WritePtr(newchild)->parents_.insert(weakself);
 }
 
 
 Node::Ptr Node::
-        getChildPtr (int i)
+        getChild (int i) volatile
 {
-    QReadLocker l(&lock_);
-    return children_[i];
+    ReadPtr r(this);
+    return r->children_[i];
 }
 
 
-const Node& Node::
-        getChild( int i ) const
+Node::ConstPtr Node::
+        getChild( int i ) const volatile
 {
-    return *children_[i];
+    ReadPtr r(this);
+    return r->children_[i];
 }
 
 
@@ -147,41 +146,45 @@ int Node::
 }
 
 
-QReadWriteLock* Node::
-        lock()
+const Node::NodeData* Node::
+        data () const
 {
-    return &lock_;
+    return data_.get ();
 }
 
 
-Node::NodeData& Node::
-        data() const
+Node::NodeData* Node::
+        data ()
 {
-    return *data_;
+    return data_.get ();
 }
 
 
 QString Node::
         name() const
 {
-    return operationDesc().toString ();
-}
-
-
-const OperationDesc& Node::
-        operationDesc() const
-{
-    return data().operationDesc();
+    return data()->operationDesc().toString ();
 }
 
 
 void Node::
-        invalidateSamples(const Intervals& I) const
+        invalidateSamples(Intervals I) volatile
 {
-    data().cache ().invalidate_samples (I);
+    std::set<Node::Ptr> P;
 
-    for (std::set<Node*>::iterator i = parents_.begin ();
-         i != parents_.end ();
+    {
+        Node::WritePtr w(this);
+        Node::NodeData* data = w->data();
+        data->intervals_to_invalidate |= data->current_processing & I;
+        I -= data->current_processing;
+        if (!I)
+            return;
+        data->cache.invalidate_samples (I);
+        P = w->parents();
+    }
+
+    for (std::set<Node::Ptr>::iterator i = P.begin ();
+         i != P.end ();
          ++i)
     {
         (*i)->invalidateSamples (I);
@@ -190,17 +193,68 @@ void Node::
 
 
 void Node::
-        operationDesc(Signal::OperationDesc::Ptr p)
+        startSampleProcessing(Interval expected_output) volatile
 {
-    data().operationDesc(p);
+    Node::WritePtr(this)->data()->current_processing |= expected_output;
 }
 
 
-std::set<Node*> Node::
+void Node::
+        validateSamples(Signal::pBuffer output) volatile
+{
+    Signal::Intervals reinvalidate;
+    {
+        Node::WritePtr w(this);
+        Node::NodeData* data = w->data();
+
+        // Done processing
+        data->current_processing -= output->getInterval ();
+
+        // data->intervals_to_invalidate_
+        Signal::Intervals validoutput = output->getInterval () - data->intervals_to_invalidate;
+
+        if (validoutput)
+            data->cache.put (output);
+
+        reinvalidate = data->intervals_to_invalidate & output->getInterval ();
+    }
+
+    if (reinvalidate)
+        invalidateSamples(reinvalidate);
+}
+
+
+std::set<Node::Ptr> Node::
         parents()
 {
-    std::set<Node*> parents;
-    return parents_;
+    std::set<Ptr> P;
+    for (std::set<WeakPtr>::iterator i = parents_.begin ();
+         i != parents_.end ();
+         ++i)
+    {
+        Ptr p = i->lock();
+        if (p)
+            P.insert (p);
+    }
+
+    return P;
+}
+
+
+std::set<Node::ConstPtr> Node::
+        parents() const
+{
+    std::set<ConstPtr> P;
+    for (std::set<WeakPtr>::iterator i = parents_.begin ();
+         i != parents_.end ();
+         ++i)
+    {
+        ConstPtr p = i->lock();
+        if (p)
+            P.insert (p);
+    }
+
+    return P;
 }
 
 
@@ -243,10 +297,13 @@ void Node::
         test()
 {
     pBuffer b(new Buffer(Interval(0, 10), 1, 1));
-    Signal::Operation::Ptr o( new BufferSource::BufferSourceOperation(b));
-    Node::Ptr n(new Node(Signal::OperationDesc::Ptr(new SimpleOperationDesc(o)), true));
-    EXCEPTION_ASSERTX(n->data ().hidden () == true, str(format("n.hidden () = %d") % n->data ().hidden ()));
-
+    Signal::OperationDesc::Ptr desc( new BufferSource(b));
+    Node::Ptr np(new Node(desc));
+    {
+        Node::ReadPtr n(np);
+        EXCEPTION_ASSERTX(n->data ()->operationDesc () == BufferSource(b),
+                          str(format("n.hidden () = %1%") % n->data ()->operationDesc ()));
+    }
     Signal::OperationDesc::Ptr d(new Test::TransparentOperationDesc);
     Node::Ptr
             p1(new Node(d)),
@@ -256,21 +313,35 @@ void Node::
     p2->setChild (p3);
     p1->setChild (p2);
     p3->setChild (p4);
-    p4->setChild (n);
+    p4->setChild (np);
 
-    EXCEPTION_ASSERT_EQUALS( *d, *d );
-    EXCEPTION_ASSERT_EQUALS( d.get (), d.get ());
-    EXCEPTION_ASSERT_EQUALS( p1->operationDesc (), *d );
-    EXCEPTION_ASSERT_NOTEQUALS( &p1->operationDesc (), d.get () );
-    EXCEPTION_ASSERT_EQUALS( p1->operationDesc (), p3->operationDesc () );
-    EXCEPTION_ASSERT_NOTEQUALS( &p1->operationDesc (), &p3->operationDesc () );
+    {
+        Node::ReadPtr
+                nr1(p1),
+                nr3(p3);
+        Node::WritePtr
+                nr4(p4);
 
-    p4->data ().cache () = Signal::SinkSource(b->number_of_channels ());
-    p4->data ().cache ().put (b);
-    EXCEPTION_ASSERT_EQUALS( b->getInterval (), p4->data ().cache ().samplesDesc () );
+        const Node::NodeData *r1 = nr1->data();
+        const Node::NodeData *r3 = nr3->data();
+        Node::NodeData *r4 = nr4->data();
 
-    n->invalidateSamples (Interval(0,6));
-    EXCEPTION_ASSERT_EQUALS( Interval(6,10), p4->data ().cache ().samplesDesc () );
+        EXCEPTION_ASSERT_EQUALS( *d, *d );
+        EXCEPTION_ASSERT_EQUALS( d.get (), d.get ());
+        EXCEPTION_ASSERT_EQUALS( r1->operationDesc (), *d );
+        EXCEPTION_ASSERT_NOTEQUALS( &r1->operationDesc (), d.get () );
+        EXCEPTION_ASSERT_EQUALS( r1->operationDesc (), r3->operationDesc () );
+        EXCEPTION_ASSERT_NOTEQUALS( &r1->operationDesc (), &r3->operationDesc () );
+
+        r4->cache = Signal::SinkSource(b->number_of_channels ());
+        r4->cache.put (b);
+        EXCEPTION_ASSERT_EQUALS( b->getInterval (), r4->cache.samplesDesc () );
+    }
+
+    np->invalidateSamples (Interval(0,6));
+    Signal::Intervals I = Node::WritePtr (p4)->data ()->cache.samplesDesc ();
+    EXCEPTION_ASSERT_EQUALS( Interval(6,10), I );
 }
+
 } // namespace Dag
 } // namespace Signal

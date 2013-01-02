@@ -4,9 +4,8 @@ namespace Signal {
 namespace Dag {
 
 Processor::
-Processor (QReadWriteLock* lock, Node::Ptr* head_node, ComputingEngine* computing_engine)
+Processor (Node::Ptr* head_node, ComputingEngine* computing_engine)
     :
-      lock_(lock),
       head_node_(head_node),
       computing_engine_(computing_engine)
 {
@@ -16,14 +15,13 @@ Processor (QReadWriteLock* lock, Node::Ptr* head_node, ComputingEngine* computin
 Processor::
 ~Processor()
 {
-    QWriteLocker l(lock_);
     for (OperationInstances_::iterator itr = operation_instances_.begin ();
          itr != operation_instances_.end ();
          ++itr)
     {
         Node::Ptr n(*itr);
         if (n)
-            n->data ().removeOperation (this);
+            Node::WritePtr (n)->data ()->removeOperation (this);
     }
 }
 
@@ -31,37 +29,37 @@ Processor::
 Signal::pBuffer Processor::
         read (Signal::Interval I)
 {
-    QReadLocker l(lock_);
-    return read(*head_node_->get (), I);
+    return read(*head_node_, I);
 }
 
 
 Signal::pBuffer Processor::
-        read (const Node &node, Signal::Interval I)
+        read (Node::Ptr nodep, Signal::Interval I)
 {
-    Signal::SinkSource& cache = node.data ().cache ();
-    Signal::Intervals missing = I - cache.samplesDesc ();
+    Node::WritePtr nodew(nodep);
+    Node::NodeData* data = nodew->data();
+    Signal::Intervals missing = I - data->cache.samplesDesc ();
 
-    Signal::Operation::Ptr operation = node.data ().operation (this, computing_engine_);
+    Signal::Operation::Ptr operation = data->operation (this, computing_engine_);
 
     while (!missing.empty ())
     {
-        Signal::pBuffer r = readSkipCache (node, missing.fetchFirstInterval (), operation);
-        if (cache.num_channels () != r->number_of_channels ())
-            cache = Signal::SinkSource(r->number_of_channels ());
-        cache.put (r);
+        Signal::pBuffer r = readSkipCache (*nodew, missing.fetchFirstInterval (), operation);
+        if (data->cache.num_channels () != r->number_of_channels ())
+            data->cache = Signal::SinkSource(r->number_of_channels ());
+        data->cache.put (r);
         missing -= r->getInterval ();
 
         if (r->getInterval () == I)
             return r;
     }
 
-    return cache.readFixedLength (I);
+    return data->cache.readFixedLength (I);
 }
 
 
 Signal::pBuffer Processor::
-        readSkipCache (const Node &node, Signal::Interval I, Signal::Operation::Ptr operation)
+        readSkipCache (Node &node, Signal::Interval I, Signal::Operation::Ptr operation)
 {
     const Signal::Interval rI = operation->requiredInterval( I );
 
@@ -73,12 +71,13 @@ Signal::pBuffer Processor::
     {
     case 0:
         {
-            const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&node.operationDesc ());
+            const Signal::OperationDesc& desc = node.data ()->operationDesc ();
+            const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&desc);
             EXCEPTION_ASSERTX( osd, boost::format(
                                    "The first node in the dag was not an instance of "
                                    "OperationSourceDesc but: %1 (%2)")
-                               % node.operationDesc ()
-                               % vartype(node.operationDesc ()));
+                               % desc
+                               % vartype(desc));
 
             b = Signal::pBuffer( new Signal::Buffer(rI, osd->getSampleRate (), osd->getNumberOfChannels ()));
             b = operation->process (b);

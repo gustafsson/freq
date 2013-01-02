@@ -103,12 +103,12 @@ public:
      * @brief recreateOperation recreates an operation in an existing instance.
      * If the operation supports this, some caches might be reused instead of
      * deallocated and reallocated (to reduce memory fragmentation). The
-     * default behaviour is to call createOperation without a specific.
+     * default behaviour is to call createOperation with the given engine.
      *
      * @return the same operation if it could be reused and modified, or a new
      * operation. The default is to not use the hint at all.
      */
-    virtual Operation::Ptr recreateOperation(Operation::Ptr hint) const;
+    virtual Operation::Ptr recreateOperation(Operation::Ptr hint, ComputingEngine* engine=0) const;
 
 
     /**

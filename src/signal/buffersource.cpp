@@ -96,6 +96,21 @@ Operation::Ptr BufferSource::
 }
 
 
+bool BufferSource::
+        operator==(const OperationDesc& d) const
+{
+    if (!OperationDesc::operator == (d))
+        return false;
+
+    const BufferSource* b = dynamic_cast<const BufferSource*>(&d);
+    if (b->buffer_ == buffer_)
+        return true;
+    if (*b->buffer_ == *buffer_)
+        return true;
+    return false;
+}
+
+
 // OperationSourceDesc
 float BufferSource::
         getSampleRate() const

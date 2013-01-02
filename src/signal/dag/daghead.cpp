@@ -10,7 +10,7 @@ DagHead::
         DagHead(Dag::Ptr dag, Signal::OperationDesc::Ptr headprocessor)
     :
       dag_(dag),
-      head_(new Node(headprocessor, true))
+      head_(new Node(headprocessor))
 {
     head_->setChild (dag_->root_);
 }
@@ -20,9 +20,9 @@ DagHead::
         DagHead(DagHead::Ptr daghead, Signal::OperationDesc::Ptr headprocessor)
     :
       dag_(daghead->dag ()),
-      head_(new Node(headprocessor, true))
+      head_(new Node(headprocessor))
 {
-    head_->setChild ( daghead->head ()->getChildPtr () );
+    head_->setChild ( daghead->head ()->getChild () );
 }
 
 

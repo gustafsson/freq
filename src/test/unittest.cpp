@@ -9,10 +9,12 @@
 #include "signal/dag/node.h"
 #include "signal/dag/dagcommand.h"
 #include "tools/support/timer.h"
-#include "volatilelock.h"
+#include "volatileptr.h"
 
 #include <stdio.h>
 #include <exception>
+
+#include <boost/exception/diagnostic_information.hpp>
 
 using namespace std;
 
@@ -40,10 +42,10 @@ int UnitTest::
         RUNTEST(Gauss);
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
-        RUNTEST(VolatileLockTest);
+        RUNTEST(VolatilePtrTest);
 
-    } catch (const exception& x) {
-        printf("\n%s\n\n", x.what());
+    } catch (exception& x) {
+        printf("\n%s\n\n", boost::diagnostic_information(x).c_str());
         return 1;
     }
 

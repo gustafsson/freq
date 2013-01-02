@@ -4,17 +4,19 @@ namespace Signal {
 namespace Dag {
 
 Dag::
-        Dag (Node::Ptr root)
+        Dag (Node::Ptr rootp)
     :
-      tip_(root),
-      root_(root)
+      tip_(rootp),
+      root_(rootp)
 {
-    const Signal::OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root->operationDesc ());
+    Node::ReadPtr root(rootp);
+    const OperationDesc& desc = root->data()->operationDesc ();
+    const Signal::OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&desc);
     EXCEPTION_ASSERTX( osd, boost::format(
                            "The first node in the dag was not an instance of "
                            "OperationSourceDesc but: %1 (%2)")
-                       % root->operationDesc ()
-                       % vartype(root->operationDesc ()));
+                       % desc
+                       % vartype(desc));
     EXCEPTION_ASSERT_EQUALS( osd->getNumberOfSources (), 0 );
 }
 
@@ -22,8 +24,8 @@ Dag::
 int Dag::
         sampleRate()
 {
-    QReadLocker l (root_->lock ());
-    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root_->operationDesc ());
+    Node::ReadPtr root(root_);
+    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root->data()->operationDesc ());
     return osd->getSampleRate ();
 }
 
@@ -31,8 +33,8 @@ int Dag::
 int Dag::
         numberOfSamples()
 {
-    QReadLocker l (root_->lock ());
-    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root_->operationDesc ());
+    Node::ReadPtr root(root_);
+    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root->data()->operationDesc ());
     return osd->getNumberOfSamples ();
 }
 
@@ -40,8 +42,8 @@ int Dag::
 int Dag::
         numberOfChannels()
 {
-    QReadLocker l (root_->lock ());
-    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root_->operationDesc ());
+    Node::ReadPtr root(root_);
+    const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&root->data()->operationDesc ());
     return osd->getNumberOfChannels ();
 }
 

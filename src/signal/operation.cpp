@@ -28,9 +28,9 @@ void Operation::
 
 
 Operation::Ptr OperationDesc::
-        recreateOperation(Operation::Ptr /*hint*/) const
+        recreateOperation(Operation::Ptr /*hint*/, ComputingEngine* engine) const
 {
-    return createOperation(0);
+    return createOperation(engine);
 }
 
 

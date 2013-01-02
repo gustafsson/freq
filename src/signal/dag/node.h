@@ -3,23 +3,31 @@
 
 #include "signal/sinksource.h"
 #include "signal/operationcache.h"
-
+#include "volatileptr.h"
 #include <boost/weak_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 #include <QReadWriteLock>
 
 namespace Signal {
 namespace Dag {
 
-class Node: boost::noncopyable {
-public:
-    typedef boost::shared_ptr<Node> Ptr;
 
-    class NodeData: boost::noncopyable
+class Node: public boost::enable_shared_from_this<volatile Node>, public VolatilePtr<Node> {
+public:
+
+    /**
+     * @brief Node and NodeData could have separate locks as consistency
+     * within NodeData is managed independently of Node.
+     */
+    class NodeData
     {
     public:
-        // (1) An Operation should not required any mutexes (exceptions occur
+        typedef boost::shared_ptr<NodeData> Ptr;
+
+        // (1) Operations An Operation should not required any mutexes for normal fast
+        //     processing. This (exceptions occur
         //     for operations with shared resources, such as source data).
         // (2) An Operation might modify internal states while computing.
         // 1 and 2 implies that different threads must use different instances
@@ -36,69 +44,54 @@ public:
         // change their state during the lifetime of an Operation. To
         // invalidate samples in parent caches
 
+        NodeData(Signal::OperationDesc::Ptr operationdesc);
 
-        bool                    hidden() { return hidden_; }
+        const OperationDesc&        operationDesc() const;
+        void                        operationDesc(Signal::OperationDesc::Ptr desc);
 
-        // Signal::SinkSource is thread safe
-        Signal::SinkSource&     cache() { return cache_; }
+        Signal::Operation::Ptr      operation(void* p, ComputingEngine* e=0);
+        void                        removeOperation(void* p);
 
-        Signal::Operation::Ptr  operation(void* p, ComputingEngine* e=0);
-        void                    removeOperation(void* p);
+        Signal::Intervals           current_processing; // Expected output
+        Signal::Intervals           intervals_to_invalidate;
+        Signal::SinkSource          cache;
 
     private:
         typedef std::map<void*, Signal::Operation::Ptr> OperationMap;
 
-        friend class Node;
-        NodeData(Signal::OperationDesc::Ptr operationdesc, bool hidden);
-
-        // Make sure operationDesc is only changed when Node is non-const
-        const OperationDesc&        operationDesc() const;
-        void                        operationDesc(Signal::OperationDesc::Ptr desc);
-
-        QReadWriteLock              operations_lock_;
         OperationMap                operations_;
         Signal::OperationDesc::Ptr  desc_;
-        bool                        hidden_;
-        Signal::SinkSource          cache_;
     };
 
 
-    // const interface
-    NodeData&               data () const;
-    QString                 name () const;
-    const OperationDesc&    operationDesc() const;
-    void                    invalidateSamples(const Intervals& I) const;
-
-    // Meant to enforce constness for the entire DAG when reached from a const Node.
-    const Node&             getChild (int i=0) const;
-    int                     numChildren () const;
-
-
-    // none-const interface
-    explicit Node(Signal::OperationDesc::Ptr operationdesc, bool hidden = false);
+    explicit Node(Signal::OperationDesc::Ptr operationdesc);
     ~Node();
 
-    // NodeData has non-const access from a const Node. But OperationDesc has
-    // non-const access only from a non-const Node.
-    void                    operationDesc(Signal::OperationDesc::Ptr);
 
-    void                    setChild (Node::Ptr p, int i = 0);
-    Node::Ptr               getChildPtr (int i=0);
-    void                    detachParents ();
-    std::set<Node*>         parents ();
-    QReadWriteLock*         lock();
+    NodeData*               data ();
+    const NodeData*         data () const;
+    QString                 name () const;
+
+
+    void                    invalidateSamples(Intervals I) volatile;
+    void                    startSampleProcessing(Interval expected_output) volatile;
+    void                    validateSamples(Signal::pBuffer output) volatile;
+
+
+    void                    setChild (Node::Ptr p, int i = 0) volatile;
+    Ptr                     getChild (int i=0) volatile;
+    ConstPtr                getChild (int i=0) const volatile;
+    int                     numChildren () const;
+    std::set<Ptr>           parents ();
+    std::set<ConstPtr>      parents () const;
 
     static void test ();
 
 private:
-    QReadWriteLock lock_;
+    NodeData::Ptr data_;
 
-    // A const Node refers to the DAG references, but properties of the payload
-    // data can be changed within the restrictions of NodeData.
-    boost::scoped_ptr<NodeData> data_;
-
-    std::vector<Node::Ptr> children_;
-    std::set<Node*> parents_;
+    std::vector<Ptr> children_;
+    std::set<WeakPtr> parents_;
 
     friend class boost::serialization::access;
     Node() {} /// only used by deserialization
@@ -108,17 +101,14 @@ private:
         TaskInfo ti("Serializing %s", name().toStdString ().c_str());
 
         Signal::OperationDesc::Ptr operationdesc;
-        bool hidden;
         if (typename archive::is_saving())
         {
-            operationdesc = operationDesc().copy ();
-            hidden = data ().hidden ();
+            operationdesc = Node::ReadPtr(this)->data()->operationDesc().copy ();
         }
         ar & BOOST_SERIALIZATION_NVP(operationdesc);
-        ar & BOOST_SERIALIZATION_NVP(hidden);
         if (typename archive::is_loading())
         {
-            data_.reset (new NodeData(operationdesc, hidden));
+            data_.reset (new NodeData(operationdesc));
         }
 
         ar & BOOST_SERIALIZATION_NVP(children_);

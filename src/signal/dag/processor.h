@@ -22,21 +22,20 @@ public:
 
 private:
     friend class ProcessingScheduler;
-    Processor (QReadWriteLock* lock, Node::Ptr* head_node, ComputingEngine* computing_engine=0);    ~Processor();
+    Processor (Node::Ptr* head_node, ComputingEngine* computing_engine=0);    ~Processor();
 
     Signal::pBuffer read (Signal::Interval I);
 
-    Signal::pBuffer read (const Node &node, Signal::Interval I);
-    Signal::pBuffer readSkipCache (const Node &node, Signal::Interval I, Signal::Operation::Ptr operation);
+    Signal::pBuffer read (Node::Ptr node, Signal::Interval I);
+    Signal::pBuffer readSkipCache (Node &node, Signal::Interval I, Signal::Operation::Ptr operation);
 
-    QReadWriteLock* lock_;
     const Node::Ptr* head_node_;
     ComputingEngine* computing_engine_;
 
     // A bunch of of nodes that this processor should remove itself from
     // when the processor is destroyed if the node hasn't already been
     // destroyed.
-    typedef std::set<boost::weak_ptr<Node> > OperationInstances_;
+    typedef std::set<boost::weak_ptr<Node::Ptr::value_type> > OperationInstances_;
     OperationInstances_ operation_instances_;
 };
 

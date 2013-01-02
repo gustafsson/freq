@@ -45,6 +45,7 @@ public:
     // OperationDesc
     virtual OperationDesc::Ptr copy() const;
     virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
+    virtual bool operator==(const OperationDesc& d) const;
 
     // OperationSourceDesc
     virtual float getSampleRate() const;
