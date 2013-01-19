@@ -270,6 +270,7 @@ public:
             Tfr::pTransformDesc d
             );
 
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
     Signal::OperationDesc::Ptr copy() const;
 private:

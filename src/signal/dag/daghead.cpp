@@ -19,10 +19,10 @@ DagHead::
 DagHead::
         DagHead(DagHead::Ptr daghead, Signal::OperationDesc::Ptr headprocessor)
     :
-      dag_(daghead->dag ()),
+      dag_(DagHead::ReadPtr(daghead)->dag ()),
       head_(new Node(headprocessor))
 {
-    head_->setChild ( daghead->head ()->getChild () );
+    head_->setChild ( DagHead::ReadPtr(daghead)->head ()->getChild () );
 }
 
 
@@ -36,9 +36,11 @@ void DagHead::
 
 
 void DagHead::
-        setInvalidSamples(Signal::Intervals invalid, Signal::IntervalType center)
+        setInvalidSamples(Signal::Intervals invalid_samples)
 {
-
+    invalid_samples_ = invalid_samples;
+    if (invalid_samples_)
+        emit invalidatedSamples();
 }
 
 

@@ -4,24 +4,31 @@
 #include "dag.h"
 #include "signal/operation.h"
 
+#include <QObject>
+
 namespace Signal {
 namespace Dag {
 
-class DagHead
+class DagHead: public QObject, public VolatilePtr<DagHead>
 {
+    Q_OBJECT
 public:
-    typedef boost::shared_ptr<DagHead> Ptr;
 
     DagHead(Dag::Ptr dag, Signal::OperationDesc::Ptr headprocessor);
     DagHead(DagHead::Ptr daghead, Signal::OperationDesc::Ptr headprocessor);
 
     // Used by processor
-    Node::Ptr head() { return head_; }
-    Dag::Ptr dag() { return dag_; }
+    Node::Ptr head() const { return head_; }
+    Dag::Ptr dag() const { return dag_; }
 
     void queueCommand(ICommand::Ptr cmd);
 
-    void setInvalidSamples(Signal::Intervals invalid, Signal::IntervalType center=0);
+    void setInvalidSamples(Signal::Intervals invalid);
+
+    Signal::Intervals invalidSamples() const { return invalid_samples_; }
+
+signals:
+    void invalidatedSamples();
 
 private:
     void executeQueue();
@@ -29,6 +36,7 @@ private:
     QWaitCondition head_modified_;
 
     Signal::OperationDesc::Ptr head_processor_;
+    Signal::Intervals invalid_samples_;
 
     Dag::Ptr dag_;
 

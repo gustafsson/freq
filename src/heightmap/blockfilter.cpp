@@ -585,6 +585,14 @@ BlockFilterDesc::
 {}
 
 
+Signal::Interval BlockFilterDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    EXCEPTION_ASSERTX( false, "Not implemented");
+}
+
+
+
 Signal::Operation::Ptr BlockFilterDesc::
         createOperation(Signal::ComputingEngine* engine) const
 {

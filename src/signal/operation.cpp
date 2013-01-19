@@ -16,14 +16,21 @@ namespace Signal {
 
 
 void Operation::
-        test(Ptr o)
+        test(Ptr o, OperationDesc* desc)
 {
-    Interval I(40,70);
-    Interval ri = o->requiredInterval (I);
-    EXCEPTION_ASSERT_EQUALS( I, ri );
+    Interval I(40,70), expectedOutput;
+    Interval ri = desc->requiredInterval (I, &expectedOutput);
+    EXCEPTION_ASSERT( (Interval(I.first, I.first+1) & ri).count() > 0 );
     pBuffer d(new Buffer(ri, 40, 7));
     pBuffer p = o->process (d);
-    EXCEPTION_ASSERT_EQUALS( p->getInterval (), I );
+    EXCEPTION_ASSERT_EQUALS( p->getInterval (), expectedOutput );
+}
+
+
+Signal::Interval OperationDesc::
+        requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const
+{
+    return requiredInterval (I.fetchFirstInterval (), expectedOutput );
 }
 
 

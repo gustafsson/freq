@@ -45,24 +45,12 @@ public:
      * may be called several times for different intervals before calling
      * process.
      * @return processed data. Returned buffer interval must be equal to
-     * requiredInterval(b->getInterval());
+     * OperationDesc::requiredInterval(b->getInterval());
      */
     virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
 
 
-    /**
-     * @brief requiredInterval returns the interval that is required to compute
-     * a valid chunk representing interval I. If the operation can not compute
-     * a valid chunk representing the at least interval I at once the operation
-     * can request a smaller chunk for processing instead by modifying I before
-     * returning.
-     * @param 'I' may be modified by Operation if another interval is preferred.
-     * I.first must be contained in a modified interval.
-     */
-    virtual Signal::Interval requiredInterval( Signal::Interval& I ) = 0;
-
-
-    static void test(Ptr o);
+    static void test(Ptr o, OperationDesc*);
 };
 
 
@@ -76,6 +64,30 @@ public:
       Virtual housekeeping.
       */
     virtual ~OperationDesc() {}
+
+
+    /**
+     * @brief requiredInterval returns the interval that is required to compute
+     * a valid chunk representing interval I. If the operation can not compute
+     * a valid chunk representing the at least interval I at once the operation
+     * can request a smaller chunk for processing instead by modifying I before
+     * returning.
+     * @param 'I' may be modified by Operation if another interval is preferred.
+     * I.first must be contained in a modified interval.
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
+
+
+    /**
+     * @brief requiredInterval takes a Signal::Intervals with the same logic as
+     * the version for Signal::Interval. The default implementation calls the
+     * other version with I.fetchFirstInterval ();
+     * Used to let an Operation prioritize in which order to compute stuff.
+     * Such as starting computing closer to the camera.
+     * @param 'I' may be modified by Operation if another interval is preferred.
+     * I.first must be contained in a modified interval.
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
 
 
     /**

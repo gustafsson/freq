@@ -443,19 +443,22 @@ Signal::pBuffer AudiofileOperation::
 }
 
 
-Signal::Interval AudiofileOperation::
-        requiredInterval( Signal::Interval& I )
-{
-    Signal::IntervalType fixedReadLength = 1<<20;
-    return I & Signal::Interval(I.first, I.first + fixedReadLength);
-}
-
-
 AudiofileDesc::
         AudiofileDesc(boost::shared_ptr<Audiofile> audiofile)
     :
       audiofile_(audiofile)
 {}
+
+
+Signal::Interval AudiofileDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    Signal::IntervalType fixedReadLength = 1<<20;
+    Signal::Interval r = I & Signal::Interval(I.first, I.first + fixedReadLength);
+    if (expectedOutput)
+        *expectedOutput = r;
+    return r;
+}
 
 
 Signal::Operation::Ptr AudiofileDesc::

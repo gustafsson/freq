@@ -14,10 +14,6 @@ public:
     public:
         BufferSourceOperation(pBuffer buffer): buffer_(buffer) {}
 
-        virtual Signal::Interval requiredInterval( Signal::Interval& I ) {
-            return I;
-        }
-
         virtual Signal::pBuffer process(Signal::pBuffer b) {
             Signal::pBuffer r(new Signal::Buffer(b->getInterval (), buffer_->sample_rate (), buffer_->number_of_channels ()));
             // Won't actually copy but instead create a reference and use CopyOnWrite
@@ -43,6 +39,7 @@ public:
 
 
     // OperationDesc
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual OperationDesc::Ptr copy() const;
     virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
     virtual bool operator==(const OperationDesc& d) const;

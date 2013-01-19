@@ -82,6 +82,15 @@ unsigned BufferSource::
 
 
 // OperationDesc
+Signal::Interval BufferSource::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
 OperationDesc::Ptr BufferSource::
         copy() const
 {
@@ -145,7 +154,7 @@ void BufferSource::
     }
     BufferSource s(b);
     Operation::Ptr o = s.createOperation (0);
-    Operation::test (o);
+    Operation::test (o, &s);
 
     pBuffer r(new Buffer(Interval(60,70), 40, 7));
     pBuffer d = o->process (r);

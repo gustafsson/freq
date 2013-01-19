@@ -10,9 +10,12 @@ Signal::pBuffer TransparentOperation::
 }
 
 
-Signal::Interval TransparentOperation::
-        requiredInterval( Signal::Interval& I )
+Signal::Interval TransparentOperationDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
+    if (expectedOutput)
+        *expectedOutput = I;
+
     return I;
 }
 
