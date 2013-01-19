@@ -6,6 +6,8 @@
 #include "processor.h"
 
 #include <QThread>
+#include <QMutex>
+#include <QWaitCondition>
 
 namespace Signal {
 namespace Dag {
@@ -15,15 +17,14 @@ namespace Dag {
  *
  * Scheduler monitors Dags and Heads and reacts to changes.
  */
-class Scheduler: public QThread {
+class Scheduler: public QObject, public VolatilePtr<Scheduler> {
+    Q_OBJECT
 public:
-    typedef boost::shared_ptr<Scheduler> Ptr;
 
-    void addComputingEngine(ComputingEngine*);
-    void removeComputingEngine(ComputingEngine*);
+    void addDagHead(DagHead::Ptr) volatile;
+    void removeDagHead(DagHead::Ptr) volatile;
 
-    void addDagHead(DagHead::Ptr);
-    void removeDagHead(DagHead::Ptr);
+    void sleepUntilWork() volatile;
 
 
 /*
@@ -50,23 +51,26 @@ public:
 
 */
 
+private slots:
+    void invalidatedSamples();
 
 private:
+    QMutex task_lock_;
+    QWaitCondition task_wait_;
+
     class Task {
     public:
         Node::Ptr node;
         Signal::Interval I;
     };
 
-    void        run();
+    Task        getNextTask(ComputingEngine*) volatile;
+    Task        getNextTask(ComputingEngine*);
 
     void        doOneTask();
-    Task        getNextTask();
 
-    QReadWriteLock lock_;
-    std::map<ComputingEngine*, Processor::Ptr> processors_;
+    std::set<DagHead::Ptr>::iterator dag_head_i_;
     std::set<DagHead::Ptr> dag_heads_;
-    std::set<Task> running_tasks_;
 };
 
 } // namespace Dag

@@ -13,7 +13,7 @@ Processor (Node::Ptr* head_node, ComputingEngine* computing_engine)
 
 
 Processor::
-~Processor()
+        ~Processor()
 {
     for (OperationInstances_::iterator itr = operation_instances_.begin ();
          itr != operation_instances_.end ();
@@ -21,7 +21,8 @@ Processor::
     {
         Node::Ptr n(*itr);
         if (n)
-            Node::WritePtr (n)->data ()->removeOperation (this);
+            LOG_ERROR("Not implemented");
+//            Node::WritePtr (n)->data ()->removeOperation (this);
     }
 }
 
@@ -40,13 +41,14 @@ Signal::pBuffer Processor::
     Node::NodeData* data = nodew->data();
     Signal::Intervals missing = I - data->cache.samplesDesc ();
 
-    Signal::Operation::Ptr operation = data->operation (this, computing_engine_);
+    Signal::Operation::Ptr operation = data->operation ( computing_engine_);
 
     while (!missing.empty ())
     {
+        LOG_ERROR("not implemented");
         Signal::pBuffer r = readSkipCache (*nodew, missing.fetchFirstInterval (), operation);
         if (data->cache.num_channels () != r->number_of_channels ())
-            data->cache = Signal::SinkSource(r->number_of_channels ());
+            data->cache = Signal::Cache();//r->number_of_channels ());
         data->cache.put (r);
         missing -= r->getInterval ();
 
@@ -54,14 +56,16 @@ Signal::pBuffer Processor::
             return r;
     }
 
-    return data->cache.readFixedLength (I);
+    return data->cache.read (I);
 }
 
 
 Signal::pBuffer Processor::
         readSkipCache (Node &node, Signal::Interval I, Signal::Operation::Ptr operation)
 {
-    const Signal::Interval rI = operation->requiredInterval( I );
+    Signal::Interval expectedOutput;
+    LOG_ERROR("Not implemented");
+    const Signal::Interval rI;// = operation->requiredInterval( I, &expectedOutput );
 
     // EXCEPTION_ASSERT(I.count () && node.data().output_buffer->number_of_samples ());
 
@@ -112,7 +116,7 @@ Signal::pBuffer Processor::
         }
     }
 
-    EXCEPTION_ASSERT_EQUALS( b->getInterval (), I );
+    EXCEPTION_ASSERT_EQUALS( b->getInterval (), expectedOutput );
 
     return b;
 }
