@@ -10,16 +10,15 @@ namespace Dag {
 Node::NodeData::
         NodeData(Signal::OperationDesc::Ptr operationdesc)
     :
-      cache(0),
       desc_(operationdesc)
 {
 }
 
 
 Signal::Operation::Ptr Node::NodeData::
-        operation(void* p, ComputingEngine* e)
+        operation(ComputingEngine* e)
 {
-    Signal::Operation::Ptr& r = operations_[p];
+    Signal::Operation::Ptr& r = operations_[e];
     if (!r)
         r = desc_->createOperation (e);
     return r;
@@ -27,7 +26,7 @@ Signal::Operation::Ptr Node::NodeData::
 
 
 void Node::NodeData::
-        removeOperation(void* p)
+        removeOperation(ComputingEngine* p)
 {
     operations_.erase(p);
 }
@@ -274,6 +273,12 @@ class SimpleOperationDesc: public Signal::OperationDesc {
 public:
     SimpleOperationDesc(Signal::Operation::Ptr p) : p(p) {}
 
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const {
+        if (expectedOutput)
+            *expectedOutput = I;
+        return I;
+    }
+
     Signal::Operation::Ptr createOperation(ComputingEngine* engine) const {
         engine=engine;
         return p;
@@ -333,7 +338,7 @@ void Node::
         EXCEPTION_ASSERT_EQUALS( r1->operationDesc (), r3->operationDesc () );
         EXCEPTION_ASSERT_NOTEQUALS( &r1->operationDesc (), &r3->operationDesc () );
 
-        r4->cache = Signal::SinkSource(b->number_of_channels ());
+        r4->cache = Cache(); //Signal::SinkSource(b->number_of_channels ());
         r4->cache.put (b);
         EXCEPTION_ASSERT_EQUALS( b->getInterval (), r4->cache.samplesDesc () );
     }

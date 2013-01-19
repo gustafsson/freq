@@ -99,6 +99,7 @@ public:
     bool empty();
 
     /// Get what samples that are described in the containing buffer
+    /// Merely allocated memory doesn't not count in this description.
     Intervals samplesDesc();
 
     /// Return true if the entire interval I is up to date and can be read from this.

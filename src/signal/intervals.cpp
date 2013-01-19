@@ -71,6 +71,13 @@ bool Interval::
 }
 
 
+bool Interval::
+        contains (const IntervalType& t) const
+{
+    return t >= first && t < last;
+}
+
+
 Intervals::
         Intervals()
 {

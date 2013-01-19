@@ -1,7 +1,7 @@
 #ifndef SIGNAL_DAG_NODE_H
 #define SIGNAL_DAG_NODE_H
 
-#include "signal/sinksource.h"
+#include "signal/cache.h"
 #include "signal/operationcache.h"
 #include "volatileptr.h"
 #include <boost/weak_ptr.hpp>
@@ -49,12 +49,12 @@ public:
         const OperationDesc&        operationDesc() const;
         void                        operationDesc(Signal::OperationDesc::Ptr desc);
 
-        Signal::Operation::Ptr      operation(void* p, ComputingEngine* e=0);
-        void                        removeOperation(void* p);
+        Signal::Operation::Ptr      operation(ComputingEngine* e);
+        void                        removeOperation(ComputingEngine* e);
 
         Signal::Intervals           current_processing; // Expected output
         Signal::Intervals           intervals_to_invalidate;
-        Signal::SinkSource          cache;
+        Signal::Cache               cache;
 
     private:
         typedef std::map<void*, Signal::Operation::Ptr> OperationMap;

@@ -6,6 +6,7 @@
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
 #include "signal/buffer.h"
+#include "signal/cache.h"
 #include "signal/dag/node.h"
 #include "signal/dag/dagcommand.h"
 #include "tools/support/timer.h"
@@ -40,6 +41,7 @@ int UnitTest::
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
+        RUNTEST(Signal::Cache);
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(VolatilePtrTest);
