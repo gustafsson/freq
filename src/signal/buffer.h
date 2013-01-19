@@ -78,6 +78,7 @@ public:
     ~Buffer();
 
     IntervalType    number_of_samples() const { return getChannel(0)->number_of_samples (); }
+    // TODO change type to int
     unsigned        number_of_channels() const { return channels_.size(); }
     void            release_extra_resources();
 

@@ -94,7 +94,7 @@ void CsvTimeseries::
                     chunkBuffers.back() = pMonoBuffer( new MonoBuffer(0, chunk, sample_rate ) );
                     p.back() = chunkBuffers.back()->waveform_data()->getCpuMemory();
                 }
-                else if (channel >= ssc.num_channels())
+                else if (channel >= (int)ssc.num_channels())
                     throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
 
                 ifs >> p[channel][bufferCount];
@@ -115,14 +115,14 @@ void CsvTimeseries::
                 throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
             }
 
-            if (ifs.good() && channel + 1 != ssc.num_channels())
+            if (ifs.good() && channel + 1 != (int)ssc.num_channels())
                 throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
 
             if (!ifs.good())
                 break;
         }
 
-        if (0 < bufferCount) for (channel=0; channel < ssc.num_channels(); ++channel)
+        if (0 < bufferCount) for (channel=0; channel < (int)ssc.num_channels(); ++channel)
         {
             pMonoBuffer mb( new MonoBuffer((double)(line - bufferCount), chunkBuffers[channel]->waveform_data(), sample_rate));
             pBuffer b( new Buffer(mb));
