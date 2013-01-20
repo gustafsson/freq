@@ -14,13 +14,7 @@ public:
     public:
         BufferSourceOperation(pBuffer buffer): buffer_(buffer) {}
 
-        virtual Signal::pBuffer process(Signal::pBuffer b) {
-            Signal::pBuffer r(new Signal::Buffer(b->getInterval (), buffer_->sample_rate (), buffer_->number_of_channels ()));
-            // Won't actually copy but instead create a reference and use CopyOnWrite
-            *r |= *buffer_;
-            return r;
-        }
-
+        virtual Signal::pBuffer process(Signal::pBuffer b);
     private:
         pBuffer buffer_;
     };

@@ -68,11 +68,11 @@ as when created by Signal::MicrophoneRecorder.
 */
 class SaweDll Buffer : public boost::noncopyable {
 public:
-    Buffer(Interval I, float sample_rate, unsigned number_of_channels);
+    Buffer(Interval I, float sample_rate, int number_of_channels);
     Buffer(UnsignedF first_sample,
            IntervalType number_of_samples,
            float sample_rate,
-           unsigned number_of_channels);
+           int number_of_channels);
     explicit Buffer(pMonoBuffer b);
     Buffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
     ~Buffer();

@@ -2,9 +2,31 @@
 
 #include "sawe/configuration.h"
 
+#include "cpumemorystorage.h"
+
 #include <boost/foreach.hpp>
 
 namespace Signal {
+
+
+Signal::pBuffer BufferSource::BufferSourceOperation::
+        process(Signal::pBuffer b)
+{
+    Signal::pBuffer r(new Signal::Buffer(b->getInterval (), buffer_->sample_rate (), buffer_->number_of_channels ()));
+    if (buffer_->getInterval ().contains (r->getInterval ()))
+    {
+        // Doesn't have to copy but can instead create a reference and use CopyOnWrite
+    }
+    else
+    {
+        // Need to clear data before merging with buffer. The easiest way to clear is to requires read access. Could also just zero the affect samples.
+        // "should" allocate in the same memory as buffer uses.
+        for (unsigned c=0; c<r->number_of_channels (); ++c)
+            CpuMemoryStorage::ReadOnly<1>(r->getChannel (c)->waveform_data ());
+    }
+    *r |= *buffer_;
+    return r;
+}
 
 
 BufferSource::
@@ -160,16 +182,19 @@ void BufferSource::
     pBuffer d = o->process (r);
     EXCEPTION_ASSERT( *d == *b );
 
-    r = pBuffer(new Buffer(Interval(61,71), 40, 7));
+    r = pBuffer(new Buffer(Interval(61,71), 0, 1));
     d = o->process (r);
+    EXCEPTION_ASSERT_EQUALS (b->number_of_channels (), d->number_of_channels ());
+    EXCEPTION_ASSERT_EQUALS (b->number_of_samples (), d->number_of_samples ());
+    EXCEPTION_ASSERT_EQUALS (r->getInterval (), d->getInterval ());
     for (unsigned c=0; c<b->number_of_channels (); ++c)
     {
         float *bp = b->getChannel (c)->waveform_data ()->getCpuMemory ();
         float *dp = d->getChannel (c)->waveform_data ()->getCpuMemory ();
 
         for (int i=0; i<b->number_of_samples ()-1; ++i)
-            EXCEPTION_ASSERT(bp[1+i] == dp[i]);
-        EXCEPTION_ASSERT(dp[9] == 0);
+            EXCEPTION_ASSERT_EQUALS (bp[1+i], dp[i]);
+        EXCEPTION_ASSERT_EQUALS (dp[9], 0);
     }
 }
 
