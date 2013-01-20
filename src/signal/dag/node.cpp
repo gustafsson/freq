@@ -223,12 +223,19 @@ void Node::
 
         if (data->intervals_to_invalidate & I)
         {
-            // discard results
+            // discard results if not everything computed could be used.
+            // TODO select a few samples from output
         }
         else
         {
-            // Merge results
-            data->cache.put (output);
+            // Merge results if there are any parents that could possibly be interested.
+            // This assumes that the top parent stores its data somewhere else. To save
+            // the cache of the last node add an additional dummy no-op operation at the
+            // top that returns meaningless data from process.
+            if (!w->parents_.empty())
+            {
+                data->cache.put (output);
+            }
         }
 
         // Done processing
