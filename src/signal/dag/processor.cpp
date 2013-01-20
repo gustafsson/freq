@@ -47,7 +47,7 @@ Signal::pBuffer Processor::
     {
         LOG_ERROR("not implemented");
         Signal::pBuffer r = readSkipCache (*nodew, missing.fetchFirstInterval (), operation);
-        if (data->cache.num_channels () != r->number_of_channels ())
+        if (data->cache.num_channels () != (int)r->number_of_channels ())
             data->cache = Signal::Cache();//r->number_of_channels ());
         data->cache.put (r);
         missing -= r->getInterval ();

@@ -74,7 +74,8 @@ public:
 
 
     void                    invalidateSamples(Intervals I) volatile;
-    void                    startSampleProcessing(Interval expected_output) volatile;
+    void                    invalidateParentSamples(Intervals I) volatile;
+    bool                    startSampleProcessing(Interval expected_output) volatile;
     void                    validateSamples(Signal::pBuffer output) volatile;
 
 

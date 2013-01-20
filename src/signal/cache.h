@@ -9,7 +9,7 @@ namespace Signal {
 
 /**
  * @brief The Cache class
- * Not threadsafe.
+ * Not thread-safe.
  */
 class Cache
 {

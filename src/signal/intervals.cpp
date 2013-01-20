@@ -352,6 +352,31 @@ Intervals& Intervals::
 }
 
 
+bool Intervals::
+        contains    (const Intervals& t) const
+{
+    return (*this & t) == t;
+}
+
+
+bool Intervals::
+        contains    (const Interval& t) const
+{
+    return (*this & t) == t;
+}
+
+
+bool Intervals::
+        contains    (const IntervalType& t) const
+{
+    // for t = Interval::IntervalType_MAX
+    if (t + 1 < t)
+        return false;
+
+    return contains(Interval(t, t+1));
+}
+
+
 Interval Intervals::
         fetchFirstInterval() const
 {

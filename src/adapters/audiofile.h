@@ -191,7 +191,7 @@
             4. The Tfr::Chunk is sent to the callback, there might be multiple callbacks on each queue.
 
             CwtCompleteCallback takes a CwtQueue as constructing argument and can thus access the CwtQueue mutex
-            and be more threadsafe. CwtQueue aquires the mutex when calling CwtCompleteCallback, and CwtCompleteCallback
+            and be more thread-safe. CwtQueue aquires the mutex when calling CwtCompleteCallback, and CwtCompleteCallback
             aquires the mutex upon destruction, where it also removes itself from CwtQueue.
 
        Playback and Tfr::InverseCwt

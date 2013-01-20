@@ -169,8 +169,6 @@ QString Node::
 void Node::
         invalidateSamples(Intervals I) volatile
 {
-    std::set<Node::Ptr> P;
-
     {
         Node::WritePtr w(this);
         Node::NodeData* data = w->data();
@@ -179,8 +177,16 @@ void Node::
         if (!I)
             return;
         data->cache.invalidate_samples (I);
-        P = w->parents();
     }
+
+    invalidateParentSamples (I);
+}
+
+
+void Node::
+        invalidateParentSamples(Intervals I) volatile
+{
+    std::set<Node::Ptr> P = Node::WritePtr (this)->parents();
 
     for (std::set<Node::Ptr>::iterator i = P.begin ();
          i != P.end ();
@@ -191,35 +197,52 @@ void Node::
 }
 
 
-void Node::
+bool Node::
         startSampleProcessing(Interval expected_output) volatile
 {
-    Node::WritePtr(this)->data()->current_processing |= expected_output;
+    Node::WritePtr self(this);
+    if (self->data()->current_processing & expected_output)
+    {
+        // If someone else has just started working on this.
+        return false;
+    }
+
+    self->data()->current_processing |= expected_output;
+    return true;
 }
 
 
 void Node::
         validateSamples(Signal::pBuffer output) volatile
 {
-    Signal::Intervals reinvalidate;
+    Interval I = output->getInterval ();
+
     {
         Node::WritePtr w(this);
         Node::NodeData* data = w->data();
 
-        // Done processing
-        data->current_processing -= output->getInterval ();
-
-        // data->intervals_to_invalidate_
-        Signal::Intervals validoutput = output->getInterval () - data->intervals_to_invalidate;
-
-        if (validoutput)
+        if (data->intervals_to_invalidate & I)
+        {
+            // discard results
+        }
+        else
+        {
+            // Merge results
             data->cache.put (output);
+        }
 
-        reinvalidate = data->intervals_to_invalidate & output->getInterval ();
+        // Done processing
+        data->current_processing -= I;
+        // Doesn't need to invalidate parents as they shouldn't have been
+        // validated either. And if the parents somehow aren't invalid this
+        // result might still not be needed. So there's no imminent need to
+        // call invalidateSamples which will trigger pretty much everything.
+        data->cache.invalidate_samples (data->intervals_to_invalidate);
+        data->intervals_to_invalidate.clear ();
+
     }
 
-    if (reinvalidate)
-        invalidateSamples(reinvalidate);
+    invalidateParentSamples (I);
 }
 
 

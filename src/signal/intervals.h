@@ -100,6 +100,10 @@ public:
     Intervals  operator ~  () const { return inverse(); }
     operator   bool        () const { return !empty(); }
 
+    // contains returns true only if the entire argument is covered by this
+    bool                    contains    (const Intervals& t) const;
+    bool                    contains    (const Interval& t) const;
+    bool                    contains    (const IntervalType& t) const;
     Intervals               inverse() const;
     Interval                fetchFirstInterval() const;
     Interval                fetchInterval( IntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;

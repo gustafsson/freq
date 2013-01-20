@@ -14,6 +14,7 @@ void Scheduler::
     self->dag_head_i_ = self->dag_heads_.begin ();
 
     self->connect(DagHead::WritePtr(p), SIGNAL(invalidatedSamples()), self, SLOT(invalidatedSamples()));
+    self->invalidatedSamples ();
 }
 
 
@@ -25,225 +26,209 @@ void Scheduler::
     self->dag_head_i_ = self->dag_heads_.begin ();
 
     self->disconnect(DagHead::WritePtr(p), SIGNAL(invalidatedSamples()), self, SLOT(invalidatedSamples()));
+    self->invalidatedSamples ();
 }
 
 
 void Scheduler::
         invalidatedSamples()
 {
-    QMutexLocker l( &task_lock_ );
-    task_wait_.wakeOne ();
+    QMutexLocker l( &invalidated_samples_mutex_ );
+    invalidated_samples_wait_.wakeAll ();
 }
 
 
 void Scheduler::
         sleepUntilWork() volatile
 {
-    LOG_ERROR("Not implemented");
-
-    // This logic is flawed. self will be locked while waiting for a signal on task_lock.
-    WritePtr self(this);
-    QMutexLocker l( &self->task_lock_ );
-    self->task_wait_.wait ( &self->task_lock_ );
-}
-
-
-Scheduler::Task Scheduler::
-        getNextTask(ComputingEngine* engine) volatile
-{
-    WritePtr self(this);
-    return self->getNextTask(engine);
-}
-
-
-Scheduler::Task Scheduler::
-        getNextTask(ComputingEngine*e)
-{
-    // Check if list of dags is empty
-    if (dag_head_i_ == dag_heads_.end ())
     {
-        // Return an empty task
+        ReadPtr self(this);
+        for (std::set<DagHead::Ptr>::iterator i=self->dag_heads_.begin ();
+             i != self->dag_heads_.end ();
+             ++i)
+        {
+            DagHead::ReadPtr dag(*i);
+            if (dag->invalidSamples())
+            {
+                // There are invalid samples somewhere so don't sleep. Our round robin will find them.
+                return;
+            }
+        }
+    }
+    {
+        // cast away volatile to access objects which are inherently thread-safe
+        Scheduler* self = const_cast<Scheduler*> (this);
+        QMutexLocker l( &self->invalidated_samples_mutex_ );
+
+        // Can't use ReadPtr/WritePtr(this) because they would keep a lock during this call.
+        self->invalidated_samples_wait_.wait ( &self->invalidated_samples_mutex_ );
+    }
+}
+
+
+void Scheduler::
+        run(ComputingEngine*e) volatile
+{
+    while (true)
+    {
+        Task t = runOneIfReady (e);
+        if (!t.node)
+        {
+            sleepUntilWork();
+            continue;
+        }
+    }
+}
+
+
+Scheduler::Task Scheduler::
+        runOneIfReady(ComputingEngine* e) volatile
+{
+    Task t = getNextTask(e);
+    if (!t.node)
+    {
         return Task();
     }
 
-    // round robin between tasks
-    dag_head_i_++;
-    if (dag_head_i_ == dag_heads_.end ())
-        dag_head_i_ = dag_heads_.begin ();
+    if (!t.node->startSampleProcessing(t.expected_result))
+        return Task();
 
-    //DagHead::Ptr p = *dag_head_i_;
-    Signal::Intervals I;
+    Signal::Operation::Ptr o = Node::WritePtr (t.node)->data()->operation (e);
+    EXCEPTION_ASSERTX ( o, "Expected getNextTask to return an operation that supportes computing engine e" );
+
+    // Do computing without keeping any lock.
+    Signal::pBuffer result = o->process (t.data);
+    EXCEPTION_ASSERT_EQUALS (t.expected_result, result->getInterval ());
+
+    t.node->validateSamples( result );
+
+    return t;
+}
+
+
+Scheduler::Task Scheduler::
+        getNextTask(ComputingEngine*e) volatile
+{
+    // Only checks the current dag after rotating it.
+
+    Signal::Intervals missing;
     Node::Ptr node;
+
     {
-        DagHead::ReadPtr p(*dag_head_i_);
-        I = p->invalidSamples ();
+        WritePtr self(this);
+        // Check if list of dags is empty
+        if (self->dag_head_i_ == self->dag_heads_.end ())
+        {
+            // Return an empty task
+            return Task();
+        }
+
+        // round-robin between tasks
+        self->dag_head_i_++;
+        if (self->dag_head_i_ == self->dag_heads_.end ())
+            self->dag_head_i_ = self->dag_heads_.begin ();
+
+        DagHead::ReadPtr p(*self->dag_head_i_);
+        missing = p->invalidSamples ();
         node = p->head ();
     }
 
-    Node::ReadPtr rnode(node);
-    const Node::NodeData* data = rnode->data();
-    const OperationDesc& desc = data->operationDesc ();
-    Signal::Interval expectedOutput;
-    Signal::Interval requiredInterval = desc.requiredInterval (I, &expectedOutput);
-    // See if 'requiredInterval' are readily available in the source
+    Task t = searchjob(e, node, missing);
+    if (t.node)
+        return t;
 
-    Node::ReadPtr rnode2(node->getChild());
-    const Signal::Cache& ss = rnode2->data()->cache;
-    ss.samplesDesc ();
-
-    Signal::Intervals i = rnode2->data()->cache.samplesDesc();
-
-    Node::WritePtr wnode(node);
-    Node::NodeData* data2 = wnode->data();
-    Signal::Operation::Ptr o = data2->operation (e);
-    Signal::pBuffer b; // = source data from cache
-    Signal::pBuffer out = o->process (b);
-/*    {
-        DagHead::Ptr p = *i;
-        Signal::Intervals I = p->invalid ();
-        Node::Ptr node = p->head ();
-
-        getsearchjob(engine, node, I);
-    }*/
+    // Return an empty task
     return Task();
 }
 
 
-void searchjob(ComputingEngine* engine, Node::Ptr node, Signal::Intervals I)
+Scheduler::Task Scheduler::
+        searchjob(ComputingEngine* engine, Node::Ptr node, const Signal::Intervals& missing)
 {
-    Signal::Interval required;
+    // We need everything in 'missing' from 'node'. Ask the node what we can start with.
+    // Don't bother to check the cache, assume someone already did (because if the caller did it would already have found a task on the parent).
+    Signal::Operation::Ptr operation;
+    Signal::Intervals stillmissing;
+
     {
-        Node::WritePtr r(node);
-        Node::NodeData* data = r->data();
-        I -= data->current_processing;
-        Signal::Operation::Ptr o = data->operation (engine);
+        Node::WritePtr nodew(node);
+        nodew->data()->operation (engine);
+        stillmissing = missing - nodew->data()->current_processing;
+
+        if (0 == nodew->numChildren()) {
+            if (operation) {
+                // fs and number of channels are just dummy placeholders to compute which interval to fetch.
+                Interval I = missing.fetchFirstInterval ();
+                return Task(node, Signal::pBuffer (new Signal::Buffer (I, 1, 1)), I);
+            } else {
+                // Operation doesn't support this engine. Search somewhere else.
+                return Task();
+            }
+        }
+    }
+
+    Node::Ptr childp = node->getChild();
+
+    while (stillmissing) {
         Signal::Interval expectedOutput;
-        required = data->operationDesc().requiredInterval (I, &expectedOutput);
-    }
-/*
-    Node::Ptr child = node->getChild();
-    {
-        Node::ReadPtr c(child);
-        Node::NodeData* data = r->data();
-        Signal::Intervals missing = required - data->cache.samplesDesc ();
-        if (missing.empty ())
+        Signal::Interval requiredInterval = Node::ReadPtr(node)->data()->operationDesc().requiredInterval (stillmissing, &expectedOutput);
+        stillmissing -= expectedOutput;
+
         {
-            Signahildl::pBuffer b = data->cache.readFixedLength(required);
-            {
-                Node::R c(child);
-                {
-        }
-    }
-            {
+            // See if requiredInterval is availble in the childrens caches. Keep a separate scope from the searchjob call.
+            Node::ReadPtr child(childp);
+            const Cache& childcache = child->data()->cache;
 
-            }
-        }
-        o->process ()
-        ->data()-> >operationDesc();
-        requiredInterval
-        I.fetchInterval ( , c)
-    }
-    */
-    LOG_ERROR("not implemented");
-}
-
-
-/*
-void doOneTask()
-{
-    // Prioritera med round robin.
-    for (std::set<DagHead::Ptr>::iterator itr = dag_heads_.begin ();
-         itr != dag_heads_.end ();
-         ++itr)
-    {
-
-    }
-    read (const Node &node, Signal::Interval I)
-}
-
-
-Signal::pBuffer Processor::
-        read (const Node &node, Signal::Interval I)
-{
-    Signal::SinkSource& cache = node.data ().cache ();
-    Signal::Intervals missing = I - cache.samplesDesc ();
-
-    Signal::Operation::Ptr operation = node.data ().operation (this, computing_engine_);
-
-    while (!missing.empty ())
-    {
-        Signal::pBuffer r = readSkipCache (node, missing.fetchFirstInterval (), operation);
-        if (cache.num_channels () != r->number_of_channels ())
-            cache = Signal::SinkSource(r->number_of_channels ());
-        cache.put (r);
-        missing -= r->getInterval ();
-
-        if (r->getInterval () == I)
-            return r;
-    }
-
-    return cache.readFixedLength (I);
-}
-
-
-Signal::pBuffer Processor::
-        readSkipCache (const Node &node, Signal::Interval I, Signal::Operation::Ptr operation)
-{
-    const Signal::Interval rI = operation->requiredInterval( I );
-
-    // EXCEPTION_ASSERT(I.count () && node.data().output_buffer->number_of_samples ());
-
-    int N = node.numChildren ();
-    Signal::pBuffer b;
-    switch(N)
-    {
-    case 0:
-        {
-            const OperationSourceDesc* osd = dynamic_cast<const OperationSourceDesc*>(&node.operationDesc ());
-            EXCEPTION_ASSERTX( osd, boost::format(
-                                   "The first node in the dag was not an instance of "
-                                   "OperationSourceDesc but: %1 (%2)")
-                               % node.operationDesc ()
-                               % vartype(node.operationDesc ()));
-
-            b = Signal::pBuffer( new Signal::Buffer(rI, osd->getSampleRate (), osd->getNumberOfChannels ()));
-            b = operation->process (b);
-            break;
-        }
-    case 1:
-        b = read (node.getChild (), rI);
-        b = operation->process (b);
-        break;
-
-    default:
-        {
-            for (int i=0; i<N; ++i)
-            {
-                Signal::pBuffer r = read (node.getChild (i), rI);
-                if (!b)
-                    b = r;
-                else
-                {
-                    Signal::pBuffer n(new Signal::Buffer(b->getInterval (), b->sample_rate (), b->number_of_channels ()+r->number_of_channels ()));
-                    unsigned j=0;
-                    for (;j<b->number_of_channels ();++j)
-                        *n->getChannel (j) |= *b->getChannel (j);
-                    for (;j<n->number_of_channels ();++j)
-                        *n->getChannel (j) |= *r->getChannel (j-b->number_of_channels ());
-                    b = n;
+            if (childcache.samplesDesc ().contains (requiredInterval)) {
+                // Nice, the child contains the data we need to get started.
+                // But does the child even support this engine?
+                if (!operation) {
+                    // See if there's any need to dig further (if something that's need is not found in the child cache).
+                    // Otherwise this engine is out of job under this node with 'missing'.
+                    continue;
                 }
-            }
 
-            b = operation->process (b);
-            break;
+                // perform some work right away (Cache::read)...
+                // If we just save the interval we can't be sure that
+                // childcache won't be invalidated before we get to read its
+                // contents.
+                pBuffer buffer = childcache.read (requiredInterval);
+                return Task (node, buffer, expectedOutput);
+            }
         }
+
+        // requiredInterval is not available and desc says that it is the most important thing to provide for stillmissing.
+        // see if the child can find us a job
+        Task t = searchjob(engine, childp, requiredInterval);
+        if (t.data)
+            return t;
+
+        // child couldn't provide us with anything meaningful either. Keep on searching until everything has been checked.
     }
 
-    EXCEPTION_ASSERT_EQUALS( b->getInterval (), I );
-
-    return b;
+    // No job found here
+    return Task();
 }
-*/
+
+
+} // namespace Dag
+} // namespace Signal
+
+
+namespace Signal {
+namespace Dag {
+
+void Scheduler::
+        test()
+{
+    Scheduler s;
+    // TODO create a dag, give it a dummy buffersource node and set some samples as invalid.
+    // See if searchjob works when the dag only has one node.
+    // Create two nodes with a dummy operation.
+    // See if the dummy operation gets called by.
+    // s.searchjob(ComputingEngine* engine, Node::Ptr node, const Signal::Intervals& missing);
+}
+
 
 } // namespace Dag
 } // namespace Signal
