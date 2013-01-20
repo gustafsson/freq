@@ -72,6 +72,13 @@ bool Interval::
 
 
 bool Interval::
+        contains (const Interval& t) const
+{
+    return first <= t.first && last >= t.last;
+}
+
+
+bool Interval::
         contains (const IntervalType& t) const
 {
     return t >= first && t < last;
@@ -369,8 +376,7 @@ bool Intervals::
 bool Intervals::
         contains    (const IntervalType& t) const
 {
-    // for t = Interval::IntervalType_MAX
-    if (t + 1 < t)
+    if (t >= Interval::IntervalType_MAX)
         return false;
 
     return contains(Interval(t, t+1));
@@ -578,7 +584,7 @@ std::string Interval::
 {
     std::stringstream ss;
     ss << "[" << first << ", " << last << ")";
-    if (0<first)
+    if (0 != first)
         ss << count() << "#";
     return ss.str();
 }

@@ -4,6 +4,8 @@
 #include "exceptionassert.h"
 #include "neat_math.h"
 
+using namespace boost;
+
 namespace Signal {
 
 Cache::
@@ -56,7 +58,14 @@ void Cache::
         throw std::invalid_argument(str(boost::format("Expected fs=%g channels, got %g\n%s") %
                                         F % fs % BACKTRACE()));
 
-    const int chunkSize = 1<<22; // 16 MB = sizeof(float)*(1<<22)
+    // chunkSize 1 << ...
+    // 22 -> 1.8 ms
+    // 21 -> 1.5 ms
+    // 20 -> 1.2 ms -> 4 MB cache chunks
+    // 19 -> 1.2 ms
+    // 18 -> 1.2 ms
+    // 10 -> 1.2 ms
+    const int chunkSize = 1<<20;
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 
@@ -74,6 +83,8 @@ void Cache::
         }
 
         pBuffer n( new Buffer( I.first, chunkSize, fs, num_channels) );
+        // Don't bother clearing the buffer with zeros. _valid_samples keeps
+        // track of what data we can readily use.
         itr = _cache.insert(itr, n);
         I.first += chunkSize;
     }
@@ -98,7 +109,7 @@ void Cache::
 pBuffer Cache::
         read( const Interval& I ) const
 {
-    // COPY FROM SourceBase::readFixedLength
+    // COPIED FROM SourceBase::readFixedLength
 
     // Try a simple read
     pBuffer p = readAtLeastFirstSample( I );
@@ -106,19 +117,7 @@ pBuffer Cache::
         return p;
 
     // Didn't get exact result, prepare new Buffer
-    pBuffer r( new Buffer(I, p->sample_rate(), p->number_of_channels ()) );
-
-    for (unsigned c=0; c<r->number_of_channels (); ++c)
-    {
-        // Allocate cpu memory and prevent calling an unnecessary clear by flagging the store as up-to-date
-        // TODO make allocation in same memory as p was allocated in.
-        // CpuMemoryStorage::WriteAll<3>( r->getChannel (c)->waveform_data() );
-
-//        if (p->getChannel (c)->waveform_data()->HasValidContent<CudaGlobalStorage>())
-//            CudaGlobalStorage::WriteAll<3>( r->getChannel (c)->waveform_data() );
-//        else
-//            CpuMemoryStorage::WriteAll<3>( r->getChannel (c)->waveform_data() );
-    }
+    pBuffer r = pBuffer( new Buffer(I, p->sample_rate(), p->number_of_channels ()) );
 
     Intervals sid(I);
 
@@ -128,7 +127,7 @@ pBuffer Cache::
             p = readAtLeastFirstSample( sid.fetchFirstInterval() );
 
         sid -= p->getInterval();
-        (*r) |= *p; // Fill buffer
+        *r |= *p; // Fill buffer
         p.reset();
     } while (sid);
 
@@ -139,7 +138,7 @@ pBuffer Cache::
 pBuffer Cache::
         readAtLeastFirstSample( const Interval& I ) const
 {
-    EXCEPTION_ASSERT_LESS( I.first, I.last );
+    EXCEPTION_ASSERT_LESS_DBG( I.first, I.last );
 
     Interval validFetch = (I & _valid_samples).fetchFirstInterval();
 
@@ -151,29 +150,33 @@ pBuffer Cache::
 
     if (validFetch.first > I.first)
     {
-        EXCEPTION_ASSERT( Interval(I.first, validFetch.first) );
-        pBuffer zeros = pBuffer( new Buffer(Interval(I.first, validFetch.first), sample_rate(), num_channels()) );
-        return zeros;
+        EXCEPTION_ASSERT_DBG( Interval(I.first, validFetch.first) );
+        // This buffer will be initialized to zeros when it's being read from.
+        return pBuffer( new Buffer(Interval(I.first, validFetch.first), sample_rate(), num_channels()) );
     }
 
+    // Find the cache chunk for sample I.first
     std::vector<pBuffer>::const_iterator itr = findBuffer(I.first);
 
-    EXCEPTION_ASSERT( itr != _cache.end() );
+    EXCEPTION_ASSERT_DBG( itr != _cache.end() );
 
     pBuffer b = *itr;
-    EXCEPTION_ASSERT( b->getInterval().contains (I.first) );
-    if ((b->getInterval() & _valid_samples) == b->getInterval())
+    Interval bI = b->getInterval ();
+    EXCEPTION_ASSERT_DBG( bI.contains (I.first) );
+
+    // If all of b is ok, return b
+    if ( _valid_samples.contains (bI) )
+    {
+        // TODO: if COW chunks could be created with an offset we could return all
+        // of b that is valid instead of just a copy of the portion that matches I.
+        // Would result in less copying by returning more data right away.
         return b;
+    }
 
-    validFetch &= b->getInterval();
+    validFetch &= bI;
 
-    // TODO: if COW chunks could be created with an offset we could return all
-    // of b that is valid instead of just a copy of the portion that matches I.
-    // Would result in less copying by returning more data right away.
-
-    pBuffer n(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
+    pBuffer n = pBuffer(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
     *n |= *b;
-
     return n;
 }
 
@@ -271,9 +274,15 @@ void Cache::
             p[i] = c;
     }
     cache.put (b);
-    pBuffer r = cache.read (Interval(-1, 80));
-    EXCEPTION_ASSERT_EQUALS (r->getInterval (), Interval(-1, 80) );
+    cache.put (pBuffer(new Buffer(Interval(-3, -1), 5.1, 7)));
+    cache.put (pBuffer(new Buffer(Interval(76, 77), 5.1, 7)));
+    pBuffer r = cache.read (Interval(-4, 80));
+
+    EXCEPTION_ASSERT_EQUALS (r->getInterval (), Interval(-4, 80) );
     EXCEPTION_ASSERT_EQUALS (r->number_of_channels (), b->number_of_channels ());
+
+    EXCEPTION_ASSERT_EQUALS (cache.samplesDesc (), Intervals(-3, -1) | Interval(1, 75) | Interval(76, 77));
+
     for (int c=0; c<(int)r->number_of_channels (); ++c)
     {
         pMonoBuffer mono = r->getChannel (c);

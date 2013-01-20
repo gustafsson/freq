@@ -32,7 +32,6 @@ int UnitTest::
     try {
         Tools::Support::Timer(); // Init performance counting
         TaskTimer tt("Running tests");
-        Tools::Support::Timer timer;
 
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
