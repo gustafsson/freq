@@ -12,6 +12,8 @@ class ICommand
 public:
     typedef boost::shared_ptr<ICommand> Ptr;
 
+    virtual ~ICommand() {}
+
     static void test();
 
 private:

@@ -12,7 +12,8 @@ DagHead::
       dag_(dag),
       head_(new Node(headprocessor))
 {
-    head_->setChild (dag_->root_);
+    if (dag)
+        head_->setChild (dag_->root_);
 }
 
 
@@ -31,7 +32,6 @@ void DagHead::
 {
     QWriteLocker l (&cmdqueue_lock_);
     cmdqueue_.push_back (cmd);
-
 }
 
 

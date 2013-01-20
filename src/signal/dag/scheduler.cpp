@@ -2,6 +2,9 @@
 
 #include <QMutexLocker>
 
+using namespace boost;
+using namespace std;
+
 namespace Signal {
 namespace Dag {
 
@@ -71,24 +74,18 @@ void Scheduler::
 {
     while (true)
     {
-        Task t = runOneIfReady (e);
-        if (!t.node)
-        {
-            sleepUntilWork();
-            continue;
-        }
+        Task t = getNextTask (e);
+        t = run (t, e);
+
+        sleepUntilWork();
     }
 }
 
-
 Scheduler::Task Scheduler::
-        runOneIfReady(ComputingEngine* e) volatile
+        run(const Task& t, ComputingEngine* e) volatile
 {
-    Task t = getNextTask(e);
     if (!t.node)
-    {
         return Task();
-    }
 
     if (!t.node->startSampleProcessing(t.expected_result))
         return Task();
@@ -133,9 +130,11 @@ Scheduler::Task Scheduler::
         node = p->head ();
     }
 
-    Task t = searchjob(e, node, missing);
-    if (t.node)
-        return t;
+    if (missing) {
+        Task t = searchjob(e, node, missing);
+        if (t.node)
+            return t;
+    }
 
     // Return an empty task
     return Task();
@@ -152,7 +151,7 @@ Scheduler::Task Scheduler::
 
     {
         Node::WritePtr nodew(node);
-        nodew->data()->operation (engine);
+        operation = nodew->data()->operation (engine);
         stillmissing = missing - nodew->data()->current_processing;
 
         if (0 == nodew->numChildren()) {
@@ -171,7 +170,7 @@ Scheduler::Task Scheduler::
 
     while (stillmissing) {
         Signal::Interval expectedOutput;
-        Signal::Interval requiredInterval = Node::ReadPtr(node)->data()->operationDesc().requiredInterval (stillmissing, &expectedOutput);
+        Signal::Intervals requiredInterval = Node::ReadPtr(node)->data()->operationDesc().requiredInterval (stillmissing, &expectedOutput);
         stillmissing -= expectedOutput;
 
         {
@@ -192,9 +191,11 @@ Scheduler::Task Scheduler::
                 // If we just save the interval we can't be sure that
                 // childcache won't be invalidated before we get to read its
                 // contents.
-                pBuffer buffer = childcache.read (requiredInterval);
+                pBuffer buffer = childcache.read (requiredInterval.fetchFirstInterval ());
                 return Task (node, buffer, expectedOutput);
             }
+
+            requiredInterval -= childcache.samplesDesc ();
         }
 
         // requiredInterval is not available and desc says that it is the most important thing to provide for stillmissing.
@@ -218,15 +219,126 @@ Scheduler::Task Scheduler::
 namespace Signal {
 namespace Dag {
 
+class DummyHeadKernel:public Operation {
+public:
+    DummyHeadKernel(DagHead::Ptr daghead):daghead(daghead) {}
+
+    virtual Signal::pBuffer process(Signal::pBuffer b) {
+        Signal::Interval I = Signal::Intervals(b->getInterval ()).shrink (5).spannedInterval ();
+        Signal::pBuffer r(new Signal::Buffer(I, b->sample_rate (), b->number_of_channels ()));
+        *r |= *b;
+
+        DagHead::WritePtr head(daghead);
+        head->setInvalidSamples(head->invalidSamples() - I);
+        return r;
+    }
+
+private:
+    DagHead::Ptr daghead;
+};
+
+
+class DummyHeadDesc:public OperationDesc {
+public:
+    DummyHeadDesc(DagHead::Ptr daghead):daghead(daghead) {}
+
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const {
+        Interval i = I;
+        i.first = i.first / 5 * 5;
+        i.last = i.first + 5;
+        if (expectedOutput)
+            *expectedOutput = i;
+        return Intervals (i).enlarge (5).spannedInterval ();
+    }
+
+    virtual OperationDesc::Ptr copy() const { return OperationDesc::Ptr (new DummyHeadDesc(daghead)); }
+
+    virtual Operation::Ptr createOperation(ComputingEngine*) const {
+        return Operation::Ptr (new DummyHeadKernel (daghead));
+    }
+
+private:
+    DagHead::Ptr daghead;
+};
+
+
 void Scheduler::
         test()
 {
-    Scheduler s;
-    // TODO create a dag, give it a dummy buffersource node and set some samples as invalid.
-    // See if searchjob works when the dag only has one node.
-    // Create two nodes with a dummy operation.
-    // See if the dummy operation gets called by.
-    // s.searchjob(ComputingEngine* engine, Node::Ptr node, const Signal::Intervals& missing);
+    OperationDesc::Ptr desc (new BufferSource (pBuffer (new Buffer (Interval (10, 20), 1, 1))));
+    Scheduler::Ptr scheduler (new Scheduler ());
+    DagHead::Ptr head(new DagHead (Dag::Ptr(), desc));
+    scheduler->addDagHead( head );
+    ComputingEngine* engine = 0;
+    Task t = scheduler->getNextTask( engine );
+    EXCEPTION_ASSERT_EQUALS( t.data, Signal::pBuffer() );
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, Signal::Interval() );
+    EXCEPTION_ASSERT_EQUALS( t.node, Node::Ptr() );
+
+    write1(head)->setInvalidSamples( Interval (15, 25));
+    t = scheduler->getNextTask( engine );
+
+    EXCEPTION_ASSERT( t.data );
+    EXCEPTION_ASSERT( t.node );
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, Interval(15,25));
+    EXCEPTION_ASSERT_EQUALS( t.data->getInterval (), Interval(15,25));
+    EXCEPTION_ASSERT_EQUALS( read1(t.node)->name().toStdString(), "Signal::BufferSource");
+
+    scheduler->run(t, 0);
+
+    // Running shouldn't affect head
+    Task t2 = scheduler->getNextTask( engine );
+    EXCEPTION_ASSERT( t2.data );
+    EXCEPTION_ASSERT( t2.node );
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, t2.expected_result );
+    EXCEPTION_ASSERT( *t.data == *t2.data );
+    EXCEPTION_ASSERT( t.node == t2.node );
+
+    OperationDesc::Ptr dummyDesc = OperationDesc::Ptr(new DummyHeadDesc(head) );
+    ICommand::Ptr command(new CommandAddUnaryOperation( dummyDesc ));
+    write1(head)->queueCommand( command );
+
+    Node::Ptr node = read1(head)->head();
+    EXCEPTION_ASSERT_EQUALS( read1(node)->data()->operationDesc(), *desc );
+
+    write1(head)->executeQueue();
+
+    node = read1(head)->head();
+    EXCEPTION_ASSERT_EQUALS( read1(node)->data()->operationDesc(), *dummyDesc );
+
+    t = scheduler->getNextTask( engine );
+
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, Interval(10,25));
+    EXCEPTION_ASSERT_EQUALS( t.data->getInterval (), Interval(10,25));
+    EXCEPTION_ASSERT_EQUALS( read1(t.node)->name().toStdString(), "Signal::BufferSource");
+
+    scheduler->run(t, 0);
+
+    t = scheduler->getNextTask( engine );
+
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, Interval(15,20));
+    EXCEPTION_ASSERT_EQUALS( t.data->getInterval (), Interval(10,25));
+    EXCEPTION_ASSERT_EQUALS( read1(t.node)->name().toStdString(), "Signal::Dag::DummyHeadDesc");
+
+    scheduler->run(t, 0);
+
+    t = scheduler->getNextTask( engine );
+
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, Interval(25,30));
+    EXCEPTION_ASSERT_EQUALS( t.data->getInterval (), Interval(25,30));
+    EXCEPTION_ASSERT_EQUALS( read1(t.node)->name().toStdString(), "Signal::BufferSource");
+
+    scheduler->run(t, 0);
+
+    t = scheduler->getNextTask( engine );
+
+    EXCEPTION_ASSERT_EQUALS( t.expected_result, Interval(20,25));
+    EXCEPTION_ASSERT_EQUALS( t.data->getInterval (), Interval(15,30));
+    EXCEPTION_ASSERT_EQUALS( read1(t.node)->name().toStdString(), "Signal::Dag::DummyHeadDesc");
+
+    scheduler->run(t, 0);
+
+    EXCEPTION_ASSERT( read1(head)->invalidSamples().empty() );
 }
 
 

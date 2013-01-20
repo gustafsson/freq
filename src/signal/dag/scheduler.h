@@ -71,7 +71,7 @@ private:
             : node(node), data(data), expected_result(expected_result) {}
     };
 
-    Task                runOneIfReady(ComputingEngine*) volatile;
+    Task                run(const Task&, ComputingEngine* e) volatile;
     Task                getNextTask(ComputingEngine*) volatile;
     static Task         searchjob(ComputingEngine* engine, Node::Ptr node, const Signal::Intervals& required);
 

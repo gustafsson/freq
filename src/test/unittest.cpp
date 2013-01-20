@@ -7,8 +7,9 @@
 #include "tools/support/brushpaintkernel.h"
 #include "signal/buffer.h"
 #include "signal/cache.h"
-#include "signal/dag/node.h"
 #include "signal/dag/dagcommand.h"
+#include "signal/dag/node.h"
+#include "signal/dag/scheduler.h"
 #include "tools/support/timer.h"
 #include "volatileptr.h"
 
@@ -43,6 +44,7 @@ int UnitTest::
         RUNTEST(Signal::Cache);
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
+        RUNTEST(Signal::Dag::Scheduler);
         RUNTEST(VolatilePtrTest);
 
     } catch (exception& x) {

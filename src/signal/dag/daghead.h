@@ -22,6 +22,7 @@ public:
     Dag::Ptr dag() const { return dag_; }
 
     void queueCommand(ICommand::Ptr cmd);
+    void executeQueue();
 
     void setInvalidSamples(Signal::Intervals invalid);
 
@@ -31,7 +32,6 @@ signals:
     void invalidatedSamples();
 
 private:
-    void executeQueue();
 
     QWaitCondition head_modified_;
 

@@ -204,8 +204,7 @@ int Cache::
 Intervals Cache::
         samplesDesc() const
 {
-    Intervals r = _valid_samples;
-    return r;
+    return _valid_samples;
 }
 
 
