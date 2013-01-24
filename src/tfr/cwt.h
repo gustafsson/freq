@@ -42,6 +42,7 @@ public:
     virtual float displayedTimeResolution( float FS, float hz ) const;
     virtual FreqAxis freqAxis( float FS ) const;
     //virtual Signal::Interval validLength(Signal::pBuffer buffer);
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual bool operator==(const TransformDesc& b) const;
 
 
@@ -133,6 +134,9 @@ private:
     float  _wavelet_def_time_suppport;
     float _wavelet_scale_suppport;
     float _jibberish_normalization;
+
+    // TODO make Cwt not depend on fs at all.
+    float last_fs;
 };
 
 } // namespace Tfr

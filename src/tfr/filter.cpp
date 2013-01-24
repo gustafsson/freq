@@ -176,12 +176,85 @@ void Filter::
 }
 
 
-FilterDesc::
-        FilterDesc(Tfr::pTransformDesc d)
+TransformKernel::
+        TransformKernel(Tfr::pTransform transform, pChunkFilter chunk_filter)
     :
-      transform_desc_(d)
+      transform_(transform),
+      chunk_filter_(chunk_filter)
+{}
+
+
+Signal::pBuffer TransformKernel::
+        process(Signal::pBuffer b)
+{
+    pTransform t = transform_;
+
+    pBuffer r;
+    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    {
+        ChunkAndInverse ci;
+        ci.channel = c;
+        ci.t = t;
+        ci.inverse = b->getChannel (c);
+
+        ci.chunk = (*t)( ci.inverse );
+
+        if (chunk_filter_->applyFilter ( ci ))
+            ci.inverse = t->inverse (ci.chunk);
+
+        if (!r)
+            r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
+
+        *r->getChannel (c) |= *ci.inverse;
+    }
+
+    return r;
+}
+
+
+Tfr::pTransform TransformKernel::
+        transform()
+{
+    return transform_;
+}
+
+
+pChunkFilter TransformKernel::
+        chunk_filter()
+{
+    return chunk_filter_;
+}
+
+FilterDesc::
+        FilterDesc(Tfr::pTransformDesc d, FilterKernelDesc::Ptr f)
+    :
+      transform_desc_(d),
+      chunk_filter_(f)
 {
 
+}
+
+
+OperationDesc::Ptr FilterDesc::
+        copy() const
+{
+    return OperationDesc::Ptr (new FilterDesc (this->transform_desc_, chunk_filter_));
+}
+
+
+Signal::Operation::Ptr FilterDesc::
+        createOperation(Signal::ComputingEngine*engine) const
+{
+    Tfr::pTransform t = transform_desc_->createTransform ();
+    pChunkFilter f = chunk_filter_->createChunkFilter (engine);
+    return Signal::Operation::Ptr (new TransformKernel( t, f ));
+}
+
+
+Signal::Interval FilterDesc::
+        requiredInterval(const Signal::Interval& I, Signal::Interval* expectedOutput) const
+{
+    return transform_desc_->requiredInterval (I, expectedOutput);
 }
 
 

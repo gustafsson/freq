@@ -127,6 +127,17 @@ public:
 
 
     /**
+     * @brief requiredInterval returns the interval that is required to compute
+     * a valid chunk representing interval I. If the operation can not compute
+     * a valid chunk representing the at least interval I at once the operation
+     * can request a smaller chunk for processing instead by modifying I before
+     * returning.
+     * @param expectedOutput must overlap I.
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
+
+
+    /**
       Returns a string representation of this transform. Mainly used for debugging.
       */
     virtual std::string toString() const = 0;

@@ -34,6 +34,7 @@ public:
     virtual FreqAxis freqAxis( float FS ) const;
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual std::string toString() const;
     virtual bool operator==(const TransformDesc& b) const;
 
@@ -68,6 +69,21 @@ public:
       */
     static bool applyWindowOnInverse(WindowType);
     static std::string windowTypeName(WindowType);
+
+
+    /**
+      'affected_samples' describes where it is possible that
+        'source()->readFixedLength( I ) != readFixedLength( I )'
+      '~affected_samples' describes where it is guaranteed that
+        'source()->readFixedLength( I ) == readFixedLength( I )'
+
+      A filter is allowed to be passive in some parts and nonpassive in others.
+      'affected_samples' describes where. 'affected_samples' is allowed to
+      change over time as well.
+
+      As default all samples are possibly affected by an Operation.
+      */
+    virtual Signal::Intervals affected_samples() const;
 
 private:
     /**

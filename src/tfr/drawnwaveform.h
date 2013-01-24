@@ -28,6 +28,8 @@ public:
 
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
 
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+
     virtual std::string toString() const;
 
     virtual bool operator==(const TransformDesc& b) const;

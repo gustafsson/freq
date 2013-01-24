@@ -76,7 +76,7 @@ typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
   Virtual base class for filters. To create a new filter, use CwtFilter or
   StftFilter as base class and implement the method 'operator()( Chunk& )'.
   */
-class Filter: public Signal::DeprecatedOperation, public ChunkFilter, public Signal::Operation
+class Filter: public Signal::DeprecatedOperation, public ChunkFilter
 {
 public:
     /**
@@ -148,7 +148,7 @@ protected:
      * @brief requiredInterval returns the interval that is required to compute
      * a valid chunk representing interval I.
      * @param I
-     * @param t transform() is not invariant use this instance instead.
+     * @param t transform() is not invariant, use this instance instead.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t ) = 0;
 
@@ -162,16 +162,50 @@ private:
 };
 
 
+class TransformKernel: public Signal::Operation
+{
+public:
+    virtual ~TransformKernel() {}
+
+    TransformKernel(Tfr::pTransform t, pChunkFilter chunk_filter);
+
+    virtual Signal::pBuffer process(Signal::pBuffer b);
+
+    Tfr::pTransform transform();
+    pChunkFilter chunk_filter();
+
+private:
+    Tfr::pTransform transform_;
+    pChunkFilter chunk_filter_;
+};
+
+
+class FilterKernelDesc
+{
+public:
+    typedef boost::shared_ptr<FilterKernelDesc> Ptr;
+    virtual ~FilterKernelDesc() {}
+
+    virtual pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
+};
+
+
 class FilterDesc: public Signal::OperationDesc
 {
 public:
-    FilterDesc(Tfr::pTransformDesc);
+    FilterDesc(Tfr::pTransformDesc, FilterKernelDesc::Ptr);
+    virtual ~FilterDesc() {}
+
+    virtual OperationDesc::Ptr copy() const;
+    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    virtual Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
 
     Tfr::pTransformDesc transformDesc() const;
     void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
     virtual bool operator==(const Signal::OperationDesc&d) const;
 protected:
     Tfr::pTransformDesc transform_desc_;
+    FilterKernelDesc::Ptr chunk_filter_;
 };
 
 } // namespace Tfr

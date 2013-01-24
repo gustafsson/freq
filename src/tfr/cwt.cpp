@@ -71,7 +71,8 @@ Cwt::
     _wavelet_time_suppport( wavelet_time_suppport ),
     _wavelet_def_time_suppport( wavelet_time_suppport ),
     _wavelet_scale_suppport( 6 ),
-    _jibberish_normalization( 1 )
+    _jibberish_normalization( 1 ),
+    last_fs( 1 )
 {
 #ifdef USE_CUDA
     storageCudaMemsetFix = &cudaMemsetFix;
@@ -84,6 +85,8 @@ Cwt::
 pChunk Cwt::
         operator()( Signal::pMonoBuffer buffer )
 {
+    this->last_fs = buffer->sample_rate ();
+
 #ifdef USE_CUDA
     try {
 #endif
@@ -400,6 +403,34 @@ float Cwt::
     return morlet_sigma_samples(FS, hz) / FS;
 }
 
+
+Signal::Interval Cwt::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    const Tfr::Cwt& cwt = *this;
+
+    float fs = cwt.last_fs;
+
+    unsigned chunk_alignment = cwt.chunk_alignment( fs );
+    Signal::IntervalType firstSample = I.first;
+    firstSample = align_down(firstSample, (Signal::IntervalType) chunk_alignment);
+
+    unsigned time_support = cwt.wavelet_time_support_samples( fs );
+    firstSample -= time_support;
+    unsigned numberOfSamples = cwt.next_good_size( I.count()-1, fs );
+
+    // hack to make it work without subsampling
+    #ifdef CWT_NOBINS
+    numberOfSamples = cwt.next_good_size( 1, fs );
+    #endif
+
+    unsigned L = time_support + numberOfSamples + time_support;
+
+    if (expectedOutput)
+        *expectedOutput = I;
+
+    return Signal::Interval(firstSample, firstSample+L);
+}
 
 //Signal::Interval Cwt::
 //        validLength(Signal::pBuffer buffer)

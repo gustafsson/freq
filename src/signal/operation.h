@@ -72,8 +72,7 @@ public:
      * a valid chunk representing the at least interval I at once the operation
      * can request a smaller chunk for processing instead by modifying I before
      * returning.
-     * @param 'I' may be modified by Operation if another interval is preferred.
-     * I.first must be contained in a modified interval.
+     * @param expectedOutput must overlap I.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
 
@@ -88,6 +87,9 @@ public:
      * I.first must be contained in a modified interval.
      */
     virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
+
+
+    // TODO will need requiredIntervalInverse as well.
 
 
     /**

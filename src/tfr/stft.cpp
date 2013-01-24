@@ -155,6 +155,13 @@ unsigned Fft::
 }
 
 
+Signal::Interval Fft::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+}
+
+
 std::string Fft::
         toString() const
 {
