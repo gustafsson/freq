@@ -8,12 +8,81 @@ using namespace std;
 
 namespace Heightmap {
 
+
+BlockConfiguration::
+        BlockConfiguration( Collection* collection )
+    :   collection_(collection)
+{}
+
+
+Collection* BlockConfiguration::
+        collection() const
+{
+    return this->collection_;
+}
+
+
+void BlockConfiguration::
+        setCollection(Collection* c)
+{
+    this->collection_ = c;
+}
+
+
+unsigned BlockConfiguration::
+        samplesPerBlock() const
+{
+    return this->collection_->samples_per_block ();
+}
+
+
+unsigned BlockConfiguration::
+        scalesPerBlock() const
+{
+    return this->collection_->scales_per_block ();
+}
+
+
+float BlockConfiguration::
+        targetSampleRate() const
+{
+    return this->collection_->target->sample_rate ();
+}
+
+
+Tfr::FreqAxis BlockConfiguration::
+        display_scale() const
+{
+    return this->collection_->display_scale ();
+}
+
+
+Tfr::FreqAxis BlockConfiguration::
+        transform_scale() const
+{
+    return collection_->transform()->freqAxis(targetSampleRate ());
+}
+
+
+float BlockConfiguration::
+        displayedTimeResolution(float hz) const
+{
+    return collection_->transform()->displayedTimeResolution(targetSampleRate (), hz);
+}
+
+
+float BlockConfiguration::
+        length() const
+{
+    return collection_->target->length();
+}
+
+
 bool Reference::
         operator==(const Reference &b) const
 {
     return log2_samples_size == b.log2_samples_size
             && block_index == b.block_index;
-            // Don't compare _collection == b._collection;
 }
 
 Region Reference::
@@ -153,8 +222,15 @@ Reference Reference::parentHorizontal() const {
 
 Reference::
         Reference(Collection *collection)
-:   _collection(collection)
+:   block_config_(new BlockConfiguration(collection))
 {}
+
+
+Reference::
+        ~Reference()
+{
+}
+
 
 bool Reference::
         containsPoint(Position p) const
@@ -171,8 +247,8 @@ bool Reference::
 {
     Region r = getRegion();
 
-    float FS = _collection->target->sample_rate();
-    const Tfr::FreqAxis& cfa = _collection->display_scale();
+    float FS = block_config_->targetSampleRate ();
+    const Tfr::FreqAxis& cfa = block_config_->display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
@@ -182,7 +258,7 @@ bool Reference::
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
-        const Tfr::FreqAxis& tfa = _collection->transform()->freqAxis(FS);
+        const Tfr::FreqAxis& tfa = block_config_->transform_scale ();
         float scalara = tfa.getFrequencyScalar(ahz);
         float scalarb = tfa.getFrequencyScalar(bhz);
         float scalara2 = tfa.getFrequencyScalar(a2hz);
@@ -194,8 +270,8 @@ bool Reference::
 
     if (c & BoundsCheck_HighT)
     {
-        float atres = _collection->transform()->displayedTimeResolution(FS, ahz);
-        float btres = _collection->transform()->displayedTimeResolution(FS, bhz);
+        float atres = block_config_->displayedTimeResolution (ahz);
+        float btres = block_config_->displayedTimeResolution (bhz);
         float tdelta = 2*r.time()/samplesPerBlock();
         if (btres > tdelta && atres > tdelta)
             return false;
@@ -203,7 +279,7 @@ bool Reference::
 
     if (c & BoundsCheck_OutT)
     {
-        float length = _collection->target->length();
+        float length = block_config_->length();
         if (r.a.time >= length )
             return false;
     }
@@ -225,8 +301,7 @@ bool Reference::
         tooLarge() const
 {
     Region r = getRegion();
-    Signal::pOperation wf = _collection->target;
-    if (r.b.time > 2 * wf->length() && r.b.scale > 2 )
+    if (r.b.time > 2 * block_config_->length () && r.b.scale > 2 )
         return true;
     return false;
 }
@@ -247,25 +322,25 @@ string Reference::
 unsigned Reference::
         samplesPerBlock() const
 {
-    return _collection->samples_per_block();
+    return block_config_->samplesPerBlock ();
 }
 
 unsigned Reference::
         scalesPerBlock() const
 {
-    return _collection->scales_per_block();
+    return block_config_->scalesPerBlock ();
 }
 
 Collection* Reference::
         collection() const
 {
-    return _collection;
+    return block_config_->collection();
 }
 
 void Reference::
         setCollection(Collection* c)
 {
-    _collection = c;
+    block_config_->setCollection (c);
 }
 
 Signal::Interval Reference::
@@ -291,7 +366,7 @@ Signal::Interval Reference::
     // where the last element ends
     long double endTime = startTime + blockLocalSize;
 
-    long double FS = _collection->target->sample_rate();
+    long double FS = block_config_->targetSampleRate ();
     Signal::Interval i( max(0.L, floor(startTime * FS)), ceil(endTime * FS) );
 
     //Position a, b;
@@ -306,7 +381,7 @@ Signal::Interval Reference::
 {
     unsigned samples_per_block = samplesPerBlock();
     long double blockSize = samples_per_block * ldexp(1.,log2_samples_size[0]);
-    long double FS = _collection->target->sample_rate();
+    long double FS = block_config_->targetSampleRate ();
 
     unsigned stepsPerBlock = samples_per_block - 1;
     long double p = FS*blockSize/stepsPerBlock;
