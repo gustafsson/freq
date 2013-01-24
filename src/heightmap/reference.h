@@ -106,35 +106,6 @@ private:
 };
 
 
-class ReferenceInfo {
-public:
-    ReferenceInfo(const BlockConfiguration*,const Reference*);
-
-    Region getRegion() const;
-    long double sample_rate() const;
-    bool containsPoint(Position p) const;
-    enum BoundsCheck
-    {
-        BoundsCheck_HighS = 1,
-        BoundsCheck_HighT = 2,
-        BoundsCheck_OutS = 4,
-        BoundsCheck_OutT = 8,
-        BoundsCheck_All = 15
-    };
-
-    // returns false if the given BoundsCheck is out of bounds
-    bool boundsCheck(BoundsCheck) const;
-    bool tooLarge() const;
-    std::string toString() const;
-
-    /**
-      Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
-      invalid samples.
-      */
-    Signal::Interval getInterval() const;
-    Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
-};
-
 } // namespace Heightmap
 
 #endif // HEIGHTMAPREFERENCE_H
