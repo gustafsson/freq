@@ -48,6 +48,9 @@ BlockFilter::
 BlockFilter::
         BlockFilter( std::vector<boost::shared_ptr<Collection> >* collections )
 {
+    if (!collections)
+        return;
+
     _collections.resize (collections->size ());
     for (unsigned c=0; c<collections->size (); ++c)
         _collections[c] = (*collections)[c].get();
@@ -579,10 +582,12 @@ void DrawnWaveformToBlock::
 BlockFilterDesc::
         BlockFilterDesc(std::vector<boost::shared_ptr<Collection> >* collections, Renderer* renderer, Tfr::pTransformDesc d)
     :
-      FilterDesc(d),
+      FilterDesc(d, FilterKernelDesc::Ptr()),
       collections_(collections),
       renderer_(renderer)
-{}
+{
+    EXCEPTION_ASSERTX( false, "Not implemented");
+}
 
 
 Signal::Interval BlockFilterDesc::
@@ -596,7 +601,8 @@ Signal::Interval BlockFilterDesc::
 Signal::Operation::Ptr BlockFilterDesc::
         createOperation(Signal::ComputingEngine* engine) const
 {
-    // yeah dynamic_cast is ugly
+    EXCEPTION_ASSERTX(false, "Not implemented");
+/*    // yeah dynamic_cast is ugly
     Signal::Operation::Ptr r;
     Tfr::pTransformDesc t = transformDesc();
     if (dynamic_cast<Tfr::DrawnWaveform*>(t.get ()))
@@ -610,7 +616,7 @@ Signal::Operation::Ptr BlockFilterDesc::
 
     Filter* f = dynamic_cast<Filter*>(r.get ());
     f->transform (t->createTransform ());
-    return r;
+    return r;*/
 }
 
 
@@ -618,6 +624,13 @@ Signal::OperationDesc::Ptr BlockFilterDesc::
         copy() const
 {
     return Signal::OperationDesc::Ptr(new BlockFilterDesc(collections_, renderer_, transformDesc()));
+}
+
+
+void BlockFilterDesc::
+        test()
+{
+    // ...
 }
 
 } // namespace Heightmap

@@ -17,7 +17,7 @@ namespace Heightmap {
 
     class GlBlock;
 
-    // TODO it would probably look awesome if new blocks weren't displayed
+    // FEATURE it would probably look awesome if new blocks weren't displayed
     // instantaneously but rather faded in from 0 or from their previous value.
     // This method could be used to slide between the images of two different
     // signals or channels as well. This should be implemented by rendering two or
@@ -26,6 +26,7 @@ namespace Heightmap {
     // transfer results between them.
     class Block {
     public:
+        Block( Signal::Interval block_interval, Region region, float sample_rate );
         Block( Reference ref );
         ~Block();
 

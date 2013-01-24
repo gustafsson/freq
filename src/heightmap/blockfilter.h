@@ -273,6 +273,8 @@ public:
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
     Signal::OperationDesc::Ptr copy() const;
+
+    static void test();
 private:
     std::vector<boost::shared_ptr<Collection> >* collections_;
     Renderer* renderer_;

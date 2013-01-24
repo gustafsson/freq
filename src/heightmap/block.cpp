@@ -21,6 +21,22 @@ Block::
 
 
 Block::
+        Block( Signal::Interval block_interval, Region region, float sample_rate )
+    :
+    frame_number_last_used(-1),
+#ifndef SAWE_NO_MUTEX
+    new_data_available( false ),
+    to_delete( false ),
+#endif
+    ref_(0),
+    block_interval_( block_interval ),
+    region_( region ),
+    sample_rate_( sample_rate )
+{
+}
+
+
+Block::
         ~Block()
 {
     if (glblock)

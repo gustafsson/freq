@@ -11,6 +11,8 @@
 #include "signal/dag/node.h"
 #include "signal/dag/scheduler.h"
 #include "tools/support/timer.h"
+#include "heightmap/chunktoblock.h"
+#include "heightmap/blockfilter.h"
 #include "volatileptr.h"
 
 #include <stdio.h>
@@ -45,7 +47,9 @@ int UnitTest::
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(Signal::Dag::Scheduler);
+        RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(VolatilePtrTest);
+        RUNTEST(Heightmap::BlockFilterDesc);
 
     } catch (exception& x) {
         printf("\n%s\n\n", boost::diagnostic_information(x).c_str());
