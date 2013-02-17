@@ -9,7 +9,7 @@
 
 namespace Heightmap {
 
-class ReferenceInfo: boost::noncopyable {
+class ReferenceInfo {
 public:
     ReferenceInfo(const BlockConfiguration*,const Reference&);
 
@@ -29,6 +29,8 @@ public:
       */
     Signal::Interval getInterval() const;
     Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
+
+    Reference reference() const;
 
     static void test();
 

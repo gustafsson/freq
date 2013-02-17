@@ -1,41 +1,14 @@
 #ifndef HEIGHTMAPREFERENCE_H
 #define HEIGHTMAPREFERENCE_H
 
+#include "blockconfiguration.h"
 #include "position.h"
 #include "signal/intervals.h"
-#include "tfr/freqaxis.h"
-#include <tvector.h>
-#include <boost/shared_ptr.hpp>
 
-#ifdef __GNUC__
-#define DEPRECATED(func) func __attribute__ ((deprecated))
-#elif defined(_MSC_VER)
-#define DEPRECATED(func) __declspec(deprecated) func
-#else
-#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-#define DEPRECATED(func) func
-#endif
+#include "tvector.h"
+#include "deprecated.h"
 
 namespace Heightmap {
-
-class Collection;
-
-class BlockConfiguration {
-public:
-    BlockConfiguration(Collection*);
-    Collection* collection() const;
-    void setCollection(Collection* c);
-    unsigned samplesPerBlock() const;
-    unsigned scalesPerBlock() const;
-    float targetSampleRate() const;
-    Tfr::FreqAxis display_scale() const;
-    Tfr::FreqAxis transform_scale() const;
-    float displayedTimeResolution(float ahz) const;
-    float length() const;
-private:
-    Collection* collection_;
-};
-
 
 class Reference {
 public:
@@ -45,7 +18,8 @@ public:
     bool operator==(const Reference &b) const;
     Region getRegion( unsigned samples_per_block, unsigned scales_per_block ) const;
     // begin move out
-    DEPRECATED( Region getRegion() const );
+    //DEPRECATED( Region getRegion() const );
+    Region getRegion() const;
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
     Collection* collection() const;
@@ -99,10 +73,12 @@ public:
     Reference parentVertical() const;
     Reference parentHorizontal() const;
 
-    Reference( Collection* parent );
+    //Reference( Collection* parent );
+    Reference( BlockConfiguration::Ptr block_config );
     ~Reference();
+
 private:
-    boost::shared_ptr<BlockConfiguration> block_config_;
+    BlockConfiguration::Ptr block_config_;
 };
 
 

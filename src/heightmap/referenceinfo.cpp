@@ -198,6 +198,13 @@ Signal::Interval ReferenceInfo::
 }
 
 
+Reference ReferenceInfo::
+        reference() const
+{
+    return this->reference_;
+}
+
+
 void ReferenceInfo::
         test()
 {

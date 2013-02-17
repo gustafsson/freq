@@ -12,6 +12,7 @@
 
 // gpumisc
 #include "ThreadChecker.h"
+#include "deprecated.h"
 
 // boost
 #include <boost/unordered_map.hpp>
@@ -200,6 +201,8 @@ public:
     bool isVisible();
     void setVisible(bool v);
 
+    DEPRECATED(BlockConfiguration::Ptr block_config());
+
     Renderer* renderer;
 
 private:
@@ -239,6 +242,11 @@ private:
       Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But it's needed to create them.
       */
     Heightmap::AmplitudeAxis _amplitude_axis;
+
+    /**
+     * @brief block_config_ describes the block configuration.
+     */
+    BlockConfiguration::Ptr block_config_;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.

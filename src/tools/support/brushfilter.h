@@ -87,7 +87,7 @@ private:
         ar & BOOST_SERIALIZATION_NVP(N);
         for (unsigned i=0; i<N; ++i)
         {
-            Heightmap::Reference ref(0);
+            Heightmap::Reference ref = Heightmap::Reference(Heightmap::BlockConfiguration::Ptr());
 			serialize_ref(ar, ref);
 
             DataStorageSize sz(0);

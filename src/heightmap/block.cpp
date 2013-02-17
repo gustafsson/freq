@@ -5,14 +5,14 @@
 namespace Heightmap {
 
 Block::
-        Block( Reference ref )
+        Block( ReferenceInfo ref )
     :
     frame_number_last_used(-1),
 #ifndef SAWE_NO_MUTEX
     new_data_available( false ),
     to_delete( false ),
 #endif
-    ref_(ref),
+    ref_(ref.reference()),
     block_interval_( ref.getInterval() ),
     region_( ref.getRegion() ),
     sample_rate_( ref.sample_rate() )
@@ -28,7 +28,7 @@ Block::
     new_data_available( false ),
     to_delete( false ),
 #endif
-    ref_(0),
+    ref_(BlockConfiguration::Ptr(new BlockConfiguration(0))),
     block_interval_( block_interval ),
     region_( region ),
     sample_rate_( sample_rate )

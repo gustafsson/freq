@@ -1,7 +1,7 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "reference.h"
+#include "referenceinfo.h"
 
 // gpumisc
 #include "datastorage.h"
@@ -27,7 +27,7 @@ namespace Heightmap {
     class Block {
     public:
         Block( Signal::Interval block_interval, Region region, float sample_rate );
-        Block( Reference ref );
+        Block( ReferenceInfo ref );
         ~Block();
 
         // TODO move this value to a complementary class

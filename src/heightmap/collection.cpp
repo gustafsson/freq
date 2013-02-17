@@ -73,6 +73,8 @@ Collection::
 
     // set _max_sample_size.time
     reset();
+
+    block_config_.reset (new BlockConfiguration(this));
 }
 
 
@@ -288,7 +290,7 @@ Signal::Intervals inline Collection::
 Reference Collection::
         entireHeightmap()
 {
-    Reference r(this);
+    Reference r(this->block_config_);
     r.log2_samples_size = tvector<2,int>( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
     r.block_index = tvector<2,unsigned>(0,0);
     return r;
@@ -515,7 +517,7 @@ void Collection::
                 bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
                 if (hasValidOutside)
                 {
-                    Region ir = itr->first.getRegion();
+                    Region ir = ReferenceInfo(block_config_.get (), itr->first).getRegion();
                     float t = I.last / target->sample_rate() - ir.a.time;
 
 #ifdef SAWE_NO_MUTEX
@@ -572,6 +574,13 @@ void Collection::
         setVisible(bool v)
 {
     _is_visible = v;
+}
+
+
+BlockConfiguration::Ptr Collection::
+        block_config()
+{
+    return block_config_;
 }
 
 
@@ -704,8 +713,9 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
-        pBlock attempt( new Block(ref));
-        Region r = ref.getRegion();
+        ReferenceInfo refinfo( block_config_.get (), ref );
+        pBlock attempt( new Block(refinfo));
+        Region r = refinfo.getRegion();
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( this, r.time(), r.scale() ));
 
@@ -877,7 +887,8 @@ pBlock Collection::
                     _recent.remove( stealedBlock );
                     _cache.erase( stealedBlock->reference() );
 
-                    block.reset( new Block(ref) );
+                    ReferenceInfo refinfo( this->block_config_.get (), ref );
+                    block.reset( new Block(refinfo) );
                     block->glblock = stealedBlock->glblock;
     #ifndef SAWE_NO_MUTEX
                     block->cpu_copy = stealedBlock->cpu_copy;
@@ -1058,8 +1069,7 @@ bool Collection::
     if (ro.b.scale <= ri.a.scale || ri.b.scale<=ro.a.scale || ro.b.time <= ri.a.time || ri.b.time <= ro.a.time)
         return false;
 
-    INFO_COLLECTION TaskTimer tt("%s, %s into %s", __FUNCTION__,
-                                 inBlock->reference().toString().c_str(), outBlock->reference().toString().c_str());
+    INFO_COLLECTION TaskTimer tt(boost::format("%s, %s into %s") % __FUNCTION__ % ri % ro);
 
 #ifdef SAWE_NO_MUTEX
     GlBlock::pHeight out_h = outBlock->glblock->height();
