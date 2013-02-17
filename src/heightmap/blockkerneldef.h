@@ -628,6 +628,8 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
                 enable_subtexel_aggregation);
         break;
+    case Heightmap::AmplitudeAxis_Real:
+        break;
     }
 }
 
@@ -739,6 +741,8 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                 inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
                 enable_subtexel_aggregation);
+        break;
+    case Heightmap::AmplitudeAxis_Real:
         break;
     }
 }

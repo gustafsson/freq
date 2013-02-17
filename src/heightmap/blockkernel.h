@@ -72,6 +72,8 @@ namespace Heightmap {
                 return AmplitudeValue<AmplitudeAxis_Logarithmic>()( v );
             case AmplitudeAxis_5thRoot:
                 return AmplitudeValue<AmplitudeAxis_5thRoot>()( v );
+            case AmplitudeAxis_Real:
+                break;
             }
             return 0.f;
         }

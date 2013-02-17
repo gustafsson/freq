@@ -153,11 +153,12 @@ namespace Heightmap {
 
 class DummyKernel: public Tfr::ChunkFilter {
     virtual bool operator()( Tfr::Chunk& ) {
+        return false;
     }
 };
 
 class DummyKernelDesc: public Tfr::FilterKernelDesc {
-    virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const {
+    virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
         return Tfr::pChunkFilter(new DummyKernel);
     }
 };
