@@ -578,7 +578,7 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         showOutput()
 {
-    QProcess* pid_at_entry = pid;
+//    QProcess* pid_at_entry = pid;
 
     if (0 == octaveWindow && text != 0)
         return;
@@ -629,7 +629,7 @@ void MatlabOperationWidget::
     if (hasCrashed)
         octaveWindow->show();
 
-    QProcess* senderprocess = dynamic_cast<QProcess*>(this->sender());
+//    QProcess* senderprocess = dynamic_cast<QProcess*>(this->sender());
     if (pid)
     {
         QByteArray ba = pid->readAllStandardOutput();
