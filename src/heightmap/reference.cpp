@@ -175,9 +175,9 @@ bool Reference::
 
 
 bool Reference::
-        boundsCheck(BoundsCheck c) const
+        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform) const
 {
-    return ReferenceInfo(block_config_.get (), *this).boundsCheck(c);
+    return ReferenceInfo(block_config_.get (), *this).boundsCheck(c, transform);
 }
 
 

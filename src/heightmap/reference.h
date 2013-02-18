@@ -4,6 +4,7 @@
 #include "blockconfiguration.h"
 #include "position.h"
 #include "signal/intervals.h"
+#include "tfr/transform.h"
 
 #include "tvector.h"
 #include "deprecated.h"
@@ -36,7 +37,7 @@ public:
     };
 
     // returns false if the given BoundsCheck is out of bounds
-    bool boundsCheck(BoundsCheck) const;
+    bool boundsCheck(BoundsCheck, const Tfr::TransformDesc* transform) const;
     bool tooLarge() const;
     std::string toString() const;
 

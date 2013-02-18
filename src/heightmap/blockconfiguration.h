@@ -26,10 +26,6 @@ public:
     void display_scale(Tfr::FreqAxis);
     void amplitude_axis(AmplitudeAxis);
 
-    // Requires Collection::transform.
-    Tfr::FreqAxis transform_scale() const;
-    float displayedTimeResolution(float ahz) const;
-
     // Requires Collection::target.
     float targetSampleRate() const;
     float length() const;

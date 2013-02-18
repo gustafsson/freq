@@ -75,20 +75,6 @@ void BlockConfiguration::
 }
 
 
-Tfr::FreqAxis BlockConfiguration::
-        transform_scale() const
-{
-    return collection_->transform()->freqAxis(targetSampleRate ());
-}
-
-
-float BlockConfiguration::
-        displayedTimeResolution(float hz) const
-{
-    return collection_->transform()->displayedTimeResolution(targetSampleRate (), hz);
-}
-
-
 float BlockConfiguration::
         targetSampleRate() const
 {

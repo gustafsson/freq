@@ -42,7 +42,7 @@ bool ReferenceInfo::
 
 // returns false if the given BoundsCheck is out of bounds
 bool ReferenceInfo::
-        boundsCheck(BoundsCheck c) const
+        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform) const
 {
     Region r = getRegion();
 
@@ -56,7 +56,7 @@ bool ReferenceInfo::
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
-        const Tfr::FreqAxis& tfa = block_config_->transform_scale ();
+        const Tfr::FreqAxis& tfa = transformScale (transform);
         float scalara = tfa.getFrequencyScalar(ahz);
         float scalarb = tfa.getFrequencyScalar(bhz);
         float scalara2 = tfa.getFrequencyScalar(a2hz);
@@ -68,8 +68,8 @@ bool ReferenceInfo::
 
     if (c & Reference::BoundsCheck_HighT)
     {
-        float atres = block_config_->displayedTimeResolution (ahz);
-        float btres = block_config_->displayedTimeResolution (bhz);
+        float atres = displayedTimeResolution (ahz, transform);
+        float btres = displayedTimeResolution (bhz, transform);
         float tdelta = 2*r.time()/block_config_->samplesPerBlock();
         if (btres > tdelta && atres > tdelta)
             return false;
@@ -202,6 +202,20 @@ Reference ReferenceInfo::
         reference() const
 {
     return this->reference_;
+}
+
+
+Tfr::FreqAxis ReferenceInfo::
+        transformScale(const Tfr::TransformDesc* transform) const
+{
+    return transform->freqAxis(block_config_->targetSampleRate ());
+}
+
+
+float ReferenceInfo::
+        displayedTimeResolution(float hz, const Tfr::TransformDesc* transform) const
+{
+    return transform->displayedTimeResolution(block_config_->targetSampleRate (), hz);
 }
 
 

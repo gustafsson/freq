@@ -4,6 +4,7 @@
 #include "reference.h"
 
 #include "signal/intervals.h"
+#include "tfr/transform.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -19,7 +20,7 @@ public:
     typedef Reference::BoundsCheck BoundsCheck;
 
     // returns false if the given BoundsCheck is out of bounds
-    bool boundsCheck(BoundsCheck) const;
+    bool boundsCheck(BoundsCheck, const Tfr::TransformDesc*) const;
     bool tooLarge() const;
     std::string toString() const;
 
@@ -35,6 +36,9 @@ public:
     static void test();
 
 private:
+    Tfr::FreqAxis transformScale(const Tfr::TransformDesc* transform) const;
+    float displayedTimeResolution(float ahz, const Tfr::TransformDesc* transform) const;
+
     const BlockConfiguration* block_config_;
     const Reference& reference_;
 };
