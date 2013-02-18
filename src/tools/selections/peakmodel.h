@@ -25,7 +25,7 @@ public:
 
     SplineModel spline_model;
 
-    void findAddPeak( Heightmap::Reference ref, Heightmap::Position pos );
+    void findAddPeak( Heightmap::Collection* c, Heightmap::Reference ref, Heightmap::Position pos );
 
 private:
     struct BorderCoordinates
@@ -43,6 +43,7 @@ private:
     std::vector<BorderCoordinates> border_nodes;
     unsigned pixel_count;
 
+    Heightmap::Collection* c;
     float found_max;
     float found_min;
     float middle_limit;

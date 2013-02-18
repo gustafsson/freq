@@ -22,8 +22,6 @@ public:
     Region getRegion() const;
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
-    Collection* collection() const;
-    void setCollection(Collection* c);
 
     long double sample_rate() const;
 
@@ -74,7 +72,7 @@ public:
     Reference parentHorizontal() const;
 
     //Reference( Collection* parent );
-    Reference( BlockConfiguration::Ptr block_config );
+    Reference( const BlockConfiguration& block_config );
     ~Reference();
 
 private:

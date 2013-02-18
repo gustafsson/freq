@@ -3,6 +3,7 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/collection.h"
+#include "heightmap/referenceinfo.h"
 
 #include "sawe/project.h"
 #include "tfr/cwt.h"
@@ -39,7 +40,7 @@ BrushModel::
                 foreach (Support::BrushFilter::BrushImages::value_type v, *b->images)
                 {
                     Heightmap::Reference ref = v.first;
-                    ref.setCollection( render_model->collections[0].get() );
+                    //ref.setCollection( render_model->collections[0].get() );
                     (*imgcopy)[ ref ] = v.second;
                 }
                 b->images = imgcopy;
@@ -68,7 +69,10 @@ void BrushModel::
         finished_painting()
 {
     if (filter()->images && filter()->images->size())
+    {
+        filter()->imagesAxis = render_model_->display_scale ();
         project_->appendOperation( filter_ ); // Insert cache layer
+    }
 
     filter_.reset();
 }
@@ -78,9 +82,9 @@ Gauss BrushModel::
        getGauss( Heightmap::Reference ref, Heightmap::Position pos )
 {
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
-    Heightmap::Region region = ref.getRegion();
+    Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), ref ).getRegion();
 
-    const Tfr::Cwt& cwt = *project_->tools().render_model.getParam<Tfr::Cwt>();
+    const Tfr::Cwt& cwt = *render_model_->getParam<Tfr::Cwt>();
     float fs = filter()->sample_rate();
     float hz = render_model_->display_scale().getFrequency( pos.scale );
     float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
@@ -121,25 +125,25 @@ Signal::Interval BrushModel::
     float threshold = 0.001f;
     for (unsigned &x = left.block_index[0]; ; --x)
     {
-        Heightmap::Region region = left.getRegion();
+        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), left ).getRegion();
         if (0 == region.a.time || threshold > fabsf(gauss.gauss_value( region.a.time, pos.scale )))
             break;
     }
     for (unsigned &x = right.block_index[0]; ; ++x)
     {
-        Heightmap::Region region = right.getRegion();
+        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), right ).getRegion();
         if (threshold > fabsf(gauss.gauss_value( region.b.time, pos.scale )))
             break;
     }
     for (unsigned &y = bottom.block_index[1]; ; --y)
     {
-        Heightmap::Region region = bottom.getRegion();
+        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), bottom ).getRegion();
         if (0 == region.a.scale || threshold > fabsf(gauss.gauss_value( pos.time, region.a.scale )))
             break;
     }
     for (unsigned &y = top.block_index[1]; ; ++y)
     {
-        Heightmap::Region region = top.getRegion();
+        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), top ).getRegion();
         if (1 <= region.b.scale || threshold > fabsf(gauss.gauss_value( pos.time, region.b.scale )))
             break;
     }
@@ -157,10 +161,17 @@ Signal::Interval BrushModel::
 }
 
 
+const Heightmap::BlockConfiguration* BrushModel::
+        block_config()
+{
+    return &render_model_->collections[0]->block_configuration();
+}
+
+
 Signal::Interval BrushModel::
         addGauss( Heightmap::Reference ref, Gauss gauss )
 {
-    Heightmap::Region r = ref.getRegion();
+    Heightmap::Region r = Heightmap::ReferenceInfo( block_config(), ref ).getRegion();
 
     TIME_BRUSH TaskInfo("Painting gauss to ref=%s",
                         ref.toString().c_str());

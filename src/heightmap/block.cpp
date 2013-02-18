@@ -28,7 +28,7 @@ Block::
     new_data_available( false ),
     to_delete( false ),
 #endif
-    ref_(BlockConfiguration::Ptr(new BlockConfiguration(0))),
+    ref_( BlockConfiguration(0) ),
     block_interval_( block_interval ),
     region_( region ),
     sample_rate_( sample_rate )

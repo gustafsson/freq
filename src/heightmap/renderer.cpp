@@ -601,7 +601,7 @@ Reference Renderer::
 {
     //Position max_ss = collection->max_sample_size();
     Reference ref = collection->entireHeightmap();
-
+    const BlockConfiguration& bc = collection->block_configuration ();
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
     // 'p' with enough details.
@@ -614,7 +614,7 @@ Reference Renderer::
     {
         LevelOfDetal lod = testLod(ref);
 
-        Region r = ref.getRegion();
+        Region r = ReferenceInfo(&bc, ref).getRegion();
 
         switch(lod)
         {
@@ -784,7 +784,8 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
-    Region r = ref.getRegion();
+    const BlockConfiguration& bc = collection->block_configuration ();
+    Region r = ReferenceInfo(&bc, ref).getRegion();
     glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(r.a.time, 0, r.a.scale);
@@ -1159,7 +1160,8 @@ std::vector<GLvector> Renderer::
 bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
-    Region r = ref.getRegion();
+    const BlockConfiguration& bc = collection->block_configuration ();
+    Region r = ReferenceInfo(&bc, ref).getRegion();
     const Position p[2] = { r.a, r.b };
 
     float y[]={0, float(projectionPlane[1]*.5)};

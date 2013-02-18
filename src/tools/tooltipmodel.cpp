@@ -437,7 +437,7 @@ class TooltipModel::FetchDataHeightmap: public TooltipModel::FetchData
 public:
     FetchDataHeightmap( RenderView* render_view )
         :
-        ref_(render_view_->model->collections[0]->block_config()),
+        ref_(render_view_->model->collections[0]->block_configuration()),
         render_view_(render_view)
     {
         ref_.block_index[0] = (unsigned)-1;

@@ -96,7 +96,10 @@ namespace Tools { namespace Selections
             Heightmap::Position p = r.getHeightmapPos( e->posF() );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
             if (ref.containsPoint(p))
-                model()->findAddPeak( ref, p );
+            {
+                Heightmap::Collection* c = r.model->collections[0].get();
+                model()->findAddPeak( c, ref, p );
+            }
         }
 
         r.userinput_update();

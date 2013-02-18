@@ -128,9 +128,9 @@ public:
       scales_per_block and samples_per_block are constants deciding how many blocks
       are to be created.
       */
-    unsigned    scales_per_block() const { return _scales_per_block; }
+    unsigned    scales_per_block() const;
     void        scales_per_block(unsigned v);
-    unsigned    samples_per_block() const { return _samples_per_block; }
+    unsigned    samples_per_block() const;
     void        samples_per_block(unsigned v);
 
 
@@ -188,10 +188,10 @@ public:
     void        discardOutside(Signal::Interval I);
 
 
-    Tfr::FreqAxis display_scale() { return _display_scale; }
+    Tfr::FreqAxis display_scale() { return block_configuration().display_scale (); }
     void display_scale(Tfr::FreqAxis a);
 
-    Heightmap::AmplitudeAxis amplitude_axis() { return _amplitude_axis; }
+    Heightmap::AmplitudeAxis amplitude_axis() { return block_configuration().amplitude_axis (); }
     void amplitude_axis(Heightmap::AmplitudeAxis a);
 
     Signal::pOperation target;
@@ -201,7 +201,8 @@ public:
     bool isVisible();
     void setVisible(bool v);
 
-    DEPRECATED(BlockConfiguration::Ptr block_config());
+    const BlockConfiguration& block_configuration() const;
+    void block_configuration(BlockConfiguration& new_block_config);
 
     Renderer* renderer;
 
@@ -214,9 +215,9 @@ private:
     bool
         _is_visible;
 
+    BlockConfiguration block_configuration_;
+
     unsigned
-        _samples_per_block,
-        _scales_per_block,
         _unfinished_count,
         _created_count,
         _frame_counter;
@@ -232,16 +233,6 @@ private:
             _free_memory;
 
     Signal::pOperation _filter;
-
-    /**
-      Heightmap blocks are rather agnostic to FreqAxis. But it's needed to create them.
-      */
-    Tfr::FreqAxis _display_scale;
-
-    /**
-      Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But it's needed to create them.
-      */
-    Heightmap::AmplitudeAxis _amplitude_axis;
 
     /**
      * @brief block_config_ describes the block configuration.

@@ -156,8 +156,8 @@ Reference Reference::parentHorizontal() const {
 
 
 Reference::
-        Reference( BlockConfiguration::Ptr block_config )
-    : block_config_(block_config)
+        Reference( const BlockConfiguration& block_config )
+    : block_config_(new BlockConfiguration(block_config))
 {}
 
 
@@ -203,18 +203,6 @@ unsigned Reference::
         scalesPerBlock() const
 {
     return block_config_->scalesPerBlock ();
-}
-
-Collection* Reference::
-        collection() const
-{
-    return block_config_->collection();
-}
-
-void Reference::
-        setCollection(Collection* c)
-{
-    block_config_->setCollection (c);
 }
 
 Signal::Interval Reference::

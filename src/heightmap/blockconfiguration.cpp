@@ -9,49 +9,69 @@ namespace Heightmap {
 
 BlockConfiguration::
         BlockConfiguration( Collection* collection )
-    :   collection_(collection)
-{}
-
-
-Collection* BlockConfiguration::
-        collection() const
+    :
+      collection_(collection),
+      scales_per_block_( -1 ),
+      samples_per_block_( -1 ),
+      amplitude_axis_(AmplitudeAxis_5thRoot)
 {
-    return this->collection_;
-}
-
-
-void BlockConfiguration::
-        setCollection(Collection* c)
-{
-    this->collection_ = c;
+    display_scale_.setLinear(1);
 }
 
 
 unsigned BlockConfiguration::
         samplesPerBlock() const
 {
-    return this->collection_->samples_per_block ();
+    return samples_per_block_;
 }
 
 
 unsigned BlockConfiguration::
         scalesPerBlock() const
 {
-    return this->collection_->scales_per_block ();
+    return scales_per_block_;
 }
 
 
-float BlockConfiguration::
-        targetSampleRate() const
+void BlockConfiguration::
+        samplesPerBlock(unsigned spb)
 {
-    return this->collection_->target->sample_rate ();
+    samples_per_block_ = spb;
+}
+
+
+void BlockConfiguration::
+        scalesPerBlock(unsigned spb)
+{
+    scales_per_block_ = spb;
 }
 
 
 Tfr::FreqAxis BlockConfiguration::
         display_scale() const
 {
-    return this->collection_->display_scale ();
+    return display_scale_;
+}
+
+
+AmplitudeAxis BlockConfiguration::
+        amplitude_axis() const
+{
+    return amplitude_axis_;
+}
+
+
+void BlockConfiguration::
+        display_scale(Tfr::FreqAxis v)
+{
+    display_scale_ = v;
+}
+
+
+void BlockConfiguration::
+        amplitude_axis(AmplitudeAxis v)
+{
+    amplitude_axis_ = v;
 }
 
 
@@ -66,6 +86,13 @@ float BlockConfiguration::
         displayedTimeResolution(float hz) const
 {
     return collection_->transform()->displayedTimeResolution(targetSampleRate (), hz);
+}
+
+
+float BlockConfiguration::
+        targetSampleRate() const
+{
+    return collection_->target->sample_rate ();
 }
 
 

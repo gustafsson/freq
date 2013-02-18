@@ -117,9 +117,8 @@ bool MultiplyBrush::
     if (imgs.empty())
         return false;
 
-    Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
-    float scale1 = heightmapAxis.getFrequencyScalar( chunk.minHz() );
-    float scale2 = heightmapAxis.getFrequencyScalar( chunk.maxHz() );
+    float scale1 = imagesAxis.getFrequencyScalar( chunk.minHz() );
+    float scale2 = imagesAxis.getFrequencyScalar( chunk.maxHz() );
     float time1 = (chunk.chunk_offset/chunk.sample_rate).asFloat();
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 

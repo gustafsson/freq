@@ -44,6 +44,9 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
+//        const Heightmap::BlockConfiguration block_configuration() const;
+//        void block_configuration(Heightmap::BlockConfiguration new_config);
+
         template<typename T>
         T* getParam() {
             foreach(Tfr::pTransformDesc p, descriptions)
@@ -56,6 +59,8 @@ namespace Tools
         }
 
         Tfr::Filter* block_filter();
+
+        const Tfr::TransformDesc* transform();
 
         Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
@@ -77,6 +82,7 @@ namespace Tools
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
         std::set<Tfr::pTransformDesc> descriptions;
+        //Heightmap::BlockConfiguration block_configuration_;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called

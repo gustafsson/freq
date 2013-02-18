@@ -54,14 +54,12 @@ Collection::
 :   target( target ),
     renderer( 0 ),
     _is_visible( true ),
-    _samples_per_block( -1 ), // Created for each
-    _scales_per_block( -1 ),
+    block_configuration_( this ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
     _prev_length(.0f),
-    _free_memory(availableMemoryForSingleAllocation()),
-    _amplitude_axis(AmplitudeAxis_5thRoot)
+    _free_memory(availableMemoryForSingleAllocation())
 {
     EXCEPTION_ASSERT( target );
     samples_per_block( 1<<9 );
@@ -69,7 +67,9 @@ Collection::
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
-    _display_scale.setLinear(target->sample_rate());
+    Tfr::FreqAxis fa;
+    fa.setLinear(target->sample_rate());
+    display_scale(fa);
 
     // set _max_sample_size.time
     reset();
@@ -128,32 +128,35 @@ bool Collection::
 }
 
 
+unsigned Collection::
+        scales_per_block() const
+{
+    return block_configuration ().scalesPerBlock();
+}
+
+
+unsigned Collection::
+        samples_per_block() const
+{
+    return block_configuration ().samplesPerBlock();
+}
+
+
 void Collection::
         scales_per_block(unsigned v)
 {
-    {
-#ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&_cache_mutex);
-#endif
-        _scales_per_block=v;
-        _max_sample_size.scale = 1.f/_scales_per_block;
-    }
-
-    reset();
+    BlockConfiguration bc = block_configuration();
+    bc.scalesPerBlock ( v );
+    block_configuration ( bc );
 }
 
 
 void Collection::
         samples_per_block(unsigned v)
 {
-    {
-#ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&_cache_mutex);
-#endif
-        _samples_per_block=v;
-    }
-
-    reset();
+    BlockConfiguration bc = block_configuration();
+    bc.samplesPerBlock (v);
+    block_configuration ( bc );
 }
 
 
@@ -290,7 +293,7 @@ Signal::Intervals inline Collection::
 Reference Collection::
         entireHeightmap()
 {
-    Reference r(this->block_config_);
+    Reference r( this->block_configuration () );
     r.log2_samples_size = tvector<2,int>( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
     r.block_index = tvector<2,unsigned>(0,0);
     return r;
@@ -544,22 +547,18 @@ void Collection::
 void Collection::
         display_scale(Tfr::FreqAxis a)
 {
-    if (_display_scale == a)
-        return;
-
-    _display_scale = a;
-    invalidate_samples( target->getInterval() );
+    BlockConfiguration bc = block_configuration();
+    bc.display_scale ( a );
+    block_configuration( bc );
 }
 
 
 void Collection::
         amplitude_axis(Heightmap::AmplitudeAxis a)
 {
-    if (_amplitude_axis == a)
-        return;
-
-    _amplitude_axis = a;
-    invalidate_samples( target->getInterval() );
+    BlockConfiguration bc = block_configuration();
+    bc.amplitude_axis ( a );
+    block_configuration( bc );
 }
 
 
@@ -577,10 +576,35 @@ void Collection::
 }
 
 
-BlockConfiguration::Ptr Collection::
-        block_config()
+const BlockConfiguration& Collection::
+        block_configuration() const
 {
-    return block_config_;
+    return block_configuration_;
+}
+
+
+void Collection::
+        block_configuration(BlockConfiguration& new_block_config)
+{
+    bool doreset = false;
+
+    {
+#ifndef SAWE_NO_MUTEX
+        QMutexLocker l(&_cache_mutex);
+#endif
+        doreset =
+                new_block_config.scalesPerBlock () != block_configuration_.scalesPerBlock () ||
+                new_block_config.samplesPerBlock () != block_configuration_.samplesPerBlock ();
+
+        block_configuration_ = new_block_config;
+
+        _max_sample_size.scale = 1.f/block_configuration_.scalesPerBlock ();
+    }
+
+    if (doreset)
+        reset();
+    else
+        invalidate_samples( Signal::Interval::Interval_ALL );
 }
 
 
@@ -601,7 +625,7 @@ void Collection::
     // validate length
     Interval wholeSignal = target->getInterval();
     float length = wholeSignal.last / target->sample_rate();
-    _max_sample_size.time = 2.f*std::max(1.f, length)/_samples_per_block;
+    _max_sample_size.time = 2.f*std::max(1.f, length)/samples_per_block();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
@@ -967,9 +991,11 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    for (unsigned s = 0; s<_samples_per_block/2; s++) {
-        for (unsigned f = 0; f<_scales_per_block; f++) {
-            p[ f*_samples_per_block + s] = 0.05f+0.05f*sin(s*10./_samples_per_block)*cos(f*10./_scales_per_block);
+    unsigned samples = samples_per_block (),
+            scales = scales_per_block ();
+    for (unsigned s = 0; s<samples/2; s++) {
+        for (unsigned f = 0; f<scales; f++) {
+            p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);
         }
     }
 }

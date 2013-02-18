@@ -24,7 +24,8 @@ namespace Tools { namespace Selections
 {
 
 PeakModel::PeakModel( RenderModel* rendermodel )
-    :   spline_model( rendermodel )
+    :   spline_model( rendermodel ),
+      c ( 0 )
 {
 }
 
@@ -81,7 +82,7 @@ bool PeakModel::
 float PeakModel::
         heightVal(Heightmap::Reference ref, unsigned x, unsigned y)
 {
-    Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return 0;
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
@@ -104,8 +105,9 @@ float& PeakModel::
 */
 
 void PeakModel::
-        findAddPeak( Heightmap::Reference ref, Heightmap::Position pos )
+        findAddPeak( Heightmap::Collection* c, Heightmap::Reference ref, Heightmap::Position pos )
 {
+    this->c = c;
     Heightmap::Region r = ref.getRegion();
     unsigned h = ref.scalesPerBlock();
     unsigned w = ref.samplesPerBlock();
@@ -134,7 +136,7 @@ void PeakModel::
     // Discard image data from CPU
     foreach( PeakAreas::value_type const& v, classifictions )
     {
-        Heightmap::pBlock block = ref.collection()->getBlock( v.first );
+        Heightmap::pBlock block = c->getBlock( v.first );
         if (block)
         {
             DataStorage<float>::Ptr blockData = block->glblock->height()->data;
@@ -421,7 +423,7 @@ void PeakModel::
     if (r.b.scale > 1 || r.a.scale >= 1)
         return;
 
-    Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return;
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
@@ -597,7 +599,7 @@ void PeakModel::
 
         if (!(ref == prevRef))
         {
-            Heightmap::pBlock block = ref.collection()->getBlock( ref );
+            Heightmap::pBlock block = c->getBlock( ref );
             if (!block)
             {
                 // Would have needed unavailable blocks to compute this,

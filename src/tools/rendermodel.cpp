@@ -145,6 +145,16 @@ Tfr::Filter* RenderModel::
 }
 
 
+const Tfr::TransformDesc* RenderModel::
+        transform()
+{
+    Tfr::Filter* filter = block_filter();
+    if (filter)
+        return filter->transform()->transformDesc();
+    return 0;
+}
+
+
 float RenderModel::
         effective_ry()
 {

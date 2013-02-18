@@ -31,6 +31,11 @@ public:
       */
     BrushImagesP images;
 
+    /**
+     * @brief imagesAxis describes at which display_scale 'images' were created with 'appendOperation'
+     */
+    Tfr::FreqAxis imagesAxis;
+
     void release_extra_resources();
     BrushImageDataP getImage(Heightmap::Reference const& ref);
 
@@ -80,6 +85,7 @@ private:
             }
         }
     }
+
     template<class archive> void load(archive& ar, const unsigned int version) {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
@@ -87,7 +93,7 @@ private:
         ar & BOOST_SERIALIZATION_NVP(N);
         for (unsigned i=0; i<N; ++i)
         {
-            Heightmap::Reference ref = Heightmap::Reference(Heightmap::BlockConfiguration::Ptr());
+            Heightmap::Reference ref = Heightmap::Reference(Heightmap::BlockConfiguration(0));
 			serialize_ref(ar, ref);
 
             DataStorageSize sz(0);
