@@ -3,18 +3,17 @@
 
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
+#include "signal/intervals.h"
 
 #include <boost/shared_ptr.hpp>
 
 namespace Heightmap {
 
-class Collection;
-
 class BlockConfiguration {
 public:
     typedef boost::shared_ptr<BlockConfiguration> Ptr;
 
-    BlockConfiguration(Collection*);
+    BlockConfiguration(float fs);
 
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
@@ -26,15 +25,13 @@ public:
     void display_scale(Tfr::FreqAxis);
     void amplitude_axis(AmplitudeAxis);
 
-    // Requires Collection::target.
+    // targetSampleRate is used to compute which rawdata (Signal::Interval) that a block represents
     float targetSampleRate() const;
-    float length() const;
 
 private:
-    Collection* collection_;
-
     unsigned    scales_per_block_;
     unsigned    samples_per_block_;
+    float       sample_rate;
 
     /**
       Heightmap blocks are rather agnostic to FreqAxis. But it's needed to create them.

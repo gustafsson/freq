@@ -20,8 +20,8 @@ public:
     typedef Reference::BoundsCheck BoundsCheck;
 
     // returns false if the given BoundsCheck is out of bounds
-    bool boundsCheck(BoundsCheck, const Tfr::TransformDesc*) const;
-    bool tooLarge() const;
+    bool boundsCheck(BoundsCheck, const Tfr::TransformDesc*, float length) const;
+    bool tooLarge(float length) const;
     std::string toString() const;
 
     /**

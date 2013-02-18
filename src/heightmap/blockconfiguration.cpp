@@ -8,11 +8,11 @@ namespace Heightmap {
 
 
 BlockConfiguration::
-        BlockConfiguration( Collection* collection )
+        BlockConfiguration( float fs )
     :
-      collection_(collection),
       scales_per_block_( -1 ),
       samples_per_block_( -1 ),
+      sample_rate( fs ),
       amplitude_axis_(AmplitudeAxis_5thRoot)
 {
     display_scale_.setLinear(1);
@@ -78,14 +78,7 @@ void BlockConfiguration::
 float BlockConfiguration::
         targetSampleRate() const
 {
-    return collection_->target->sample_rate ();
-}
-
-
-float BlockConfiguration::
-        length() const
-{
-    return collection_->target->length();
+    return sample_rate;
 }
 
 

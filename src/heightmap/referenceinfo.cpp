@@ -42,7 +42,7 @@ bool ReferenceInfo::
 
 // returns false if the given BoundsCheck is out of bounds
 bool ReferenceInfo::
-        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform) const
+        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
     Region r = getRegion();
 
@@ -77,7 +77,6 @@ bool ReferenceInfo::
 
     if (c & Reference::BoundsCheck_OutT)
     {
-        float length = block_config_->length();
         if (r.a.time >= length )
             return false;
     }
@@ -96,10 +95,10 @@ bool ReferenceInfo::
 
 
 bool ReferenceInfo::
-        tooLarge() const
+        tooLarge(float length) const
 {
     Region r = getRegion();
-    if (r.b.time > 2 * block_config_->length () && r.b.scale > 2 )
+    if (r.b.time > 2 * length && r.b.scale > 2 )
         return true;
     return false;
 }

@@ -7,6 +7,8 @@
 #include <boost/unordered_map.hpp>
 #include "splinemodel.h"
 
+namespace Heightmap { class Collection; }
+
 namespace Tools { namespace Selections
 {
 

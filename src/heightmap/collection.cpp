@@ -54,7 +54,7 @@ Collection::
 :   target( target ),
     renderer( 0 ),
     _is_visible( true ),
-    block_configuration_( this ),
+    block_configuration_( target->sample_rate () ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
@@ -73,8 +73,6 @@ Collection::
 
     // set _max_sample_size.time
     reset();
-
-    block_config_.reset (new BlockConfiguration(this));
 }
 
 
@@ -520,7 +518,7 @@ void Collection::
                 bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
                 if (hasValidOutside)
                 {
-                    Region ir = ReferenceInfo(block_config_.get (), itr->first).getRegion();
+                    Region ir = ReferenceInfo(&block_configuration_, itr->first).getRegion();
                     float t = I.last / target->sample_rate() - ir.a.time;
 
 #ifdef SAWE_NO_MUTEX
@@ -737,7 +735,7 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
-        ReferenceInfo refinfo( block_config_.get (), ref );
+        ReferenceInfo refinfo( &block_configuration_, ref );
         pBlock attempt( new Block(refinfo));
         Region r = refinfo.getRegion();
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
@@ -911,7 +909,7 @@ pBlock Collection::
                     _recent.remove( stealedBlock );
                     _cache.erase( stealedBlock->reference() );
 
-                    ReferenceInfo refinfo( this->block_config_.get (), ref );
+                    ReferenceInfo refinfo( &block_configuration_, ref );
                     block.reset( new Block(refinfo) );
                     block->glblock = stealedBlock->glblock;
     #ifndef SAWE_NO_MUTEX

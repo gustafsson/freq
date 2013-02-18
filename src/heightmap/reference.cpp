@@ -175,16 +175,16 @@ bool Reference::
 
 
 bool Reference::
-        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform) const
+        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
-    return ReferenceInfo(block_config_.get (), *this).boundsCheck(c, transform);
+    return ReferenceInfo(block_config_.get (), *this).boundsCheck(c, transform, length);
 }
 
 
 bool Reference::
-        tooLarge() const
+        tooLarge(float length) const
 {
-    return ReferenceInfo(block_config_.get (), *this).tooLarge();
+    return ReferenceInfo(block_config_.get (), *this).tooLarge(length);
 }
 
 string Reference::

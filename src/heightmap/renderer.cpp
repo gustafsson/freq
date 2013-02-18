@@ -17,6 +17,7 @@
 #include "heightmap/glblock.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"
+#include "signal/operation.h"
 
 // gpumisc
 #include <float.h>
@@ -873,10 +874,10 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
         needBetterT = timePixels / (_redundancy*collection->samples_per_block());
 
     const Tfr::TransformDesc* t = this->collection->transform ();
-    if (!ref.top().boundsCheck(Reference::BoundsCheck_HighS, t) && !ref.bottom().boundsCheck(Reference::BoundsCheck_HighS, t))
+    if (!ref.top().boundsCheck(Reference::BoundsCheck_HighS, t, 0) && !ref.bottom().boundsCheck(Reference::BoundsCheck_HighS, t, 0))
         needBetterF = 0;
 
-    if (!ref.left().boundsCheck(Reference::BoundsCheck_HighT, t))
+    if (!ref.left().boundsCheck(Reference::BoundsCheck_HighT, t, 0))
         needBetterT = 0;
 
     if ( needBetterF > needBetterT && needBetterF > 1 )
@@ -901,7 +902,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        if (ref.right().boundsCheck(Reference::BoundsCheck_OutT, collection->transform ()))
+        if (ref.right().boundsCheck(Reference::BoundsCheck_OutT, 0, collection->target->length()))
             renderChildrenSpectrogramRef( ref.right() );
         break;
     case Lod_Ok:
@@ -921,7 +922,8 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling2() );
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
-    if (!ref.parent().tooLarge() )
+    float L = this->collection->target->length();
+    if (!ref.parent().tooLarge(L) )
         renderParentSpectrogramRef( ref.parent() );
 }
 

@@ -235,11 +235,6 @@ private:
     Signal::pOperation _filter;
 
     /**
-     * @brief block_config_ describes the block configuration.
-     */
-    BlockConfiguration::Ptr block_config_;
-
-    /**
       The cache contains as many blocks as there are space for in the GPU ram.
       If allocation of a new block fails to be allocated
             1) all unused blocks are freed.
