@@ -25,8 +25,6 @@ BrushModel::
             render_model_(render_model),
             project_(project)
 {
-/*    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections )
-        brush->validateRefs( collection.get() );*/
     foreach (Signal::pChain c, project->layers.layers())
     {
         Signal::pOperation o = c->tip_source();
@@ -40,7 +38,6 @@ BrushModel::
                 foreach (Support::BrushFilter::BrushImages::value_type v, *b->images)
                 {
                     Heightmap::Reference ref = v.first;
-                    //ref.setCollection( render_model->collections[0].get() );
                     (*imgcopy)[ ref ] = v.second;
                 }
                 b->images = imgcopy;

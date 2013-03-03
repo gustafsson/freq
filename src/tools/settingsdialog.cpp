@@ -209,7 +209,7 @@ void SettingsDialog::
     project->tools().render_view()->model->renderer->redundancy(resolution);
     project->tools().render_view()->model->renderer->setFractionSize(fraction, fraction);
 
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(project->tools().render_model.collections[0]->transform());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(project->tools().render_model.transform());
     bool subtexelAggregationChanged = isCwt && (prevRedundancy == 1.f) != (resolution == 1.f);
 
 #ifndef CWT_SUBTEXEL_AGGREGATION

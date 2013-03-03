@@ -469,7 +469,7 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
         createFetchData( RenderView* view, float t )
 {
     boost::shared_ptr<FetchData> r;
-    const Tfr::TransformDesc* transform = view->model->collections[0]->transform();
+    const Tfr::TransformDesc* transform = view->model->transform();
     if (const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(transform))
         r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
     else if (const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(transform))

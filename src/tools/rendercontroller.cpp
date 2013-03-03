@@ -391,7 +391,7 @@ void RenderController::
 
 
     // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
-    if (dynamic_cast<const Tfr::Cwt*>(model()->collections[0]->transform()))
+    if (dynamic_cast<const Tfr::Cwt*>(model()->transform()))
         model()->project()->worker.min_fps( 1 );
     else
         model()->project()->worker.min_fps( 4 );
