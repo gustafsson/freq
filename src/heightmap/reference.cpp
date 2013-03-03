@@ -17,7 +17,7 @@ bool Reference::
 Region Reference::
         getRegion() const
 {
-    return ReferenceInfo(block_config_.get (), *this).getRegion();
+    return ReferenceInfo(*block_config_.get (), *this).getRegion();
 }
 
 Region Reference::
@@ -170,27 +170,27 @@ Reference::
 bool Reference::
         containsPoint(Position p) const
 {
-    return ReferenceInfo(block_config_.get (), *this).containsPoint(p);
+    return ReferenceInfo(*block_config_.get (), *this).containsPoint(p);
 }
 
 
 bool Reference::
         boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
-    return ReferenceInfo(block_config_.get (), *this).boundsCheck(c, transform, length);
+    return ReferenceInfo(*block_config_.get (), *this).boundsCheck(c, transform, length);
 }
 
 
 bool Reference::
         tooLarge(float length) const
 {
-    return ReferenceInfo(block_config_.get (), *this).tooLarge(length);
+    return ReferenceInfo(*block_config_.get (), *this).tooLarge(length);
 }
 
 string Reference::
         toString() const
 {
-    return ReferenceInfo(block_config_.get (), *this).toString();
+    return ReferenceInfo(*block_config_.get (), *this).toString();
 }
 
 unsigned Reference::
@@ -208,21 +208,21 @@ unsigned Reference::
 Signal::Interval Reference::
         getInterval() const
 {
-    return ReferenceInfo(block_config_.get (), *this).getInterval();
+    return ReferenceInfo(*block_config_.get (), *this).getInterval();
 }
 
 
 Signal::Interval Reference::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    return ReferenceInfo(block_config_.get (), *this).spannedElementsInterval (I, spannedBlockSamples);
+    return ReferenceInfo(*block_config_.get (), *this).spannedElementsInterval (I, spannedBlockSamples);
 }
 
 
 long double Reference::
         sample_rate() const
 {
-    return ReferenceInfo(block_config_.get (), *this).sample_rate();
+    return ReferenceInfo(*block_config_.get (), *this).sample_rate();
 }
 
 unsigned Reference::

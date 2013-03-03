@@ -615,7 +615,7 @@ Reference Renderer::
     {
         LevelOfDetal lod = testLod(ref);
 
-        Region r = ReferenceInfo(&bc, ref).getRegion();
+        Region r = ReferenceInfo(bc, ref).getRegion();
 
         switch(lod)
         {
@@ -786,7 +786,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     const BlockConfiguration& bc = collection->block_configuration ();
-    Region r = ReferenceInfo(&bc, ref).getRegion();
+    Region r = ReferenceInfo(bc, ref).getRegion();
     glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(r.a.time, 0, r.a.scale);
@@ -1164,7 +1164,7 @@ bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
     const BlockConfiguration& bc = collection->block_configuration ();
-    Region r = ReferenceInfo(&bc, ref).getRegion();
+    Region r = ReferenceInfo(bc, ref).getRegion();
     const Position p[2] = { r.a, r.b };
 
     float y[]={0, float(projectionPlane[1]*.5)};

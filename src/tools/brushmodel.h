@@ -49,7 +49,7 @@ private:
     Signal::pOperation filter_;
     Sawe::Project* project_;
 
-    const Heightmap::BlockConfiguration* block_config();
+    const Heightmap::BlockConfiguration block_config();
 
     Signal::Interval addGauss( Heightmap::Reference ref, Gauss gauss );
 };

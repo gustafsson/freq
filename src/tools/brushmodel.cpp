@@ -161,10 +161,10 @@ Signal::Interval BrushModel::
 }
 
 
-const Heightmap::BlockConfiguration* BrushModel::
+const Heightmap::BlockConfiguration BrushModel::
         block_config()
 {
-    return &render_model_->collections[0]->block_configuration();
+    return render_model_->block_configuration();
 }
 
 

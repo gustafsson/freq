@@ -514,7 +514,7 @@ void Collection::
                 bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
                 if (hasValidOutside)
                 {
-                    Region ir = ReferenceInfo(&block_configuration_, itr->first).getRegion();
+                    Region ir = ReferenceInfo(block_configuration_, itr->first).getRegion();
                     float t = I.last / target->sample_rate() - ir.a.time;
 
 #ifdef SAWE_NO_MUTEX
@@ -713,7 +713,7 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
-        ReferenceInfo refinfo( &block_configuration_, ref );
+        ReferenceInfo refinfo( block_configuration_, ref );
         pBlock attempt( new Block(refinfo));
         Region r = refinfo.getRegion();
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
@@ -887,7 +887,7 @@ pBlock Collection::
                     _recent.remove( stealedBlock );
                     _cache.erase( stealedBlock->reference() );
 
-                    ReferenceInfo refinfo( &block_configuration_, ref );
+                    ReferenceInfo refinfo( block_configuration_, ref );
                     block.reset( new Block(refinfo) );
                     block->glblock = stealedBlock->glblock;
     #ifndef SAWE_NO_MUTEX

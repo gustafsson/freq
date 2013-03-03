@@ -7,7 +7,7 @@ using namespace std;
 namespace Heightmap {
 
 ReferenceInfo::
-        ReferenceInfo(const BlockConfiguration* block_config, const Reference& reference)
+        ReferenceInfo(const BlockConfiguration& block_config, const Reference& reference)
     :
       block_config_(block_config),
       reference_(reference)
@@ -18,7 +18,7 @@ ReferenceInfo::
 Region ReferenceInfo::
         getRegion() const
 {
-    return reference_.getRegion(block_config_->samplesPerBlock(), block_config_->scalesPerBlock());
+    return reference_.getRegion(block_config_.samplesPerBlock(), block_config_.scalesPerBlock());
 }
 
 
@@ -46,13 +46,13 @@ bool ReferenceInfo::
 {
     Region r = getRegion();
 
-    const Tfr::FreqAxis& cfa = block_config_->display_scale();
+    const Tfr::FreqAxis& cfa = block_config_.display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
     if (c & Reference::BoundsCheck_HighS)
     {
-        float scaledelta = (r.scale())/block_config_->scalesPerBlock();
+        float scaledelta = (r.scale())/block_config_.scalesPerBlock();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
@@ -70,7 +70,7 @@ bool ReferenceInfo::
     {
         float atres = displayedTimeResolution (ahz, transform);
         float btres = displayedTimeResolution (bhz, transform);
-        float tdelta = 2*r.time()/block_config_->samplesPerBlock();
+        float tdelta = 2*r.time()/block_config_.samplesPerBlock();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -131,7 +131,7 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    int samplesPerBlock = block_config_->samplesPerBlock ();
+    int samplesPerBlock = block_config_.samplesPerBlock ();
     long double blockSize = samplesPerBlock * ldexp(1.f,reference_.log2_samples_size[0]);
     long double elementSize = 1.0 / sample_rate();
     long double blockLocalSize = samplesPerBlock * elementSize;
@@ -142,7 +142,7 @@ Signal::Interval ReferenceInfo::
     // where the last element ends
     long double endTime = startTime + blockLocalSize;
 
-    long double FS = block_config_->targetSampleRate ();
+    long double FS = block_config_.targetSampleRate ();
     Signal::Interval i( max(0.L, floor(startTime * FS)), ceil(endTime * FS) );
 
     //Position a, b;
@@ -155,9 +155,9 @@ Signal::Interval ReferenceInfo::
 Signal::Interval ReferenceInfo::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    unsigned samples_per_block = block_config_->samplesPerBlock();
+    unsigned samples_per_block = block_config_.samplesPerBlock();
     long double blockSize = samples_per_block * ldexp(1.,reference_.log2_samples_size[0]);
-    long double FS = block_config_->targetSampleRate ();
+    long double FS = block_config_.targetSampleRate ();
 
     unsigned stepsPerBlock = samples_per_block - 1;
     long double p = FS*blockSize/stepsPerBlock;
@@ -207,14 +207,14 @@ Reference ReferenceInfo::
 Tfr::FreqAxis ReferenceInfo::
         transformScale(const Tfr::TransformDesc* transform) const
 {
-    return transform->freqAxis(block_config_->targetSampleRate ());
+    return transform->freqAxis(block_config_.targetSampleRate ());
 }
 
 
 float ReferenceInfo::
         displayedTimeResolution(float hz, const Tfr::TransformDesc* transform) const
 {
-    return transform->displayedTimeResolution(block_config_->targetSampleRate (), hz);
+    return transform->displayedTimeResolution(block_config_.targetSampleRate (), hz);
 }
 
 

@@ -12,7 +12,7 @@ namespace Heightmap {
 
 class ReferenceInfo {
 public:
-    ReferenceInfo(const BlockConfiguration*,const Reference&);
+    ReferenceInfo(const BlockConfiguration&,const Reference&);
 
     Region getRegion() const;
     long double sample_rate() const;
@@ -39,7 +39,7 @@ private:
     Tfr::FreqAxis transformScale(const Tfr::TransformDesc* transform) const;
     float displayedTimeResolution(float ahz, const Tfr::TransformDesc* transform) const;
 
-    const BlockConfiguration* block_config_;
+    const BlockConfiguration& block_config_;
     const Reference& reference_;
 };
 
