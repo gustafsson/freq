@@ -873,7 +873,7 @@ void RenderController::
 
     // ComboBoxAction* channels
     {   channelselector = new QToolButton(toolbar_render);
-        channelselector->setVisible (true);
+        channelselector->setVisible (false);
         channelselector->setObjectName("channelselector");
         channelselector->setCheckable( false );
         channelselector->setText("Channels");
