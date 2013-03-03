@@ -117,6 +117,8 @@ void BrushController::
     Tools::RenderView &r = *render_view_;
     Heightmap::Position p = r.getPlanePos( e->posF() );
     Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
+    // TODO this should soon work
+    //Heightmap::BlockConfiguration* block_config = render_view_->model->BlockConfiguration ();
     view_->gauss = model()->getGauss( ref, p );
 
     if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))
@@ -132,6 +134,8 @@ void BrushController::
             if (0)
             {
                 ref = ref.parent().parent().parent();
+
+//                Heightmap::Region region = Heightmap::ReferenceInfo( block_config, ref ).getRegion();
 
                 Heightmap::Region region = ref.getRegion();
                 while(region.b.scale>1)

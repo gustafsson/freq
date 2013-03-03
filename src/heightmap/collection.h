@@ -195,6 +195,7 @@ public:
     void setVisible(bool v);
 
     const BlockConfiguration& block_configuration() const;
+    // TODO should be private
     void block_configuration(BlockConfiguration& new_block_config);
 
     Renderer* renderer;
