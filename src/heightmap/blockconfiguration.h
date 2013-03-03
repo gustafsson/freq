@@ -11,6 +11,7 @@ namespace Heightmap {
 
 class BlockConfiguration {
 public:
+    // TODO remove Ptr
     typedef boost::shared_ptr<BlockConfiguration> Ptr;
 
     BlockConfiguration(float fs);

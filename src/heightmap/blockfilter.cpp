@@ -189,8 +189,8 @@ void BlockFilter::
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk.freqAxis,
-                  collection->display_scale(),
-                  collection->amplitude_axis(),
+                  collection->block_configuration ().display_scale (),
+                  collection->block_configuration ().amplitude_axis (),
                   normalization_factor,
                   true);
     TIME_BLOCKFILTER ComputationSynchronize();
@@ -264,8 +264,9 @@ void BlockFilter::
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = collection->display_scale().getFrequencyScalar( chunk.minHz() );
-    float chunk_last_scale = collection->display_scale().getFrequencyScalar( chunk.maxHz() );
+    const BlockConfiguration& blockconfig = collection->block_configuration ();
+    float chunk_first_scale = blockconfig.display_scale().getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = blockconfig.display_scale().getFrequencyScalar( chunk.maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -363,8 +364,8 @@ void BlockFilter::
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk.freqAxis,
-                     collection->display_scale(),
-                     collection->amplitude_axis(),
+                     blockconfig.display_scale(),
+                     blockconfig.amplitude_axis(),
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
@@ -556,15 +557,17 @@ void DrawnWaveformToBlock::
         mergeChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData )
 {
     Collection* c = _collections[pchunk.channel];
+    BlockConfiguration blockconfig = c->block_configuration ();
     Chunk& chunk = *pchunk.chunk;
-    Tfr::FreqAxis fa = c->display_scale();
+    Tfr::FreqAxis fa = blockconfig.display_scale();
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
     {
         EXCEPTION_ASSERT( fa.max_frequency_scalar == 1.f );
         fa.axis_scale = Tfr::AxisScale_Linear;
         fa.min_hz = chunk.freqAxis.min_hz;
         fa.f_step = -2*fa.min_hz;
-        c->display_scale( fa );
+        blockconfig.display_scale( fa );
+        c->block_configuration ( blockconfig );
     }
 
 

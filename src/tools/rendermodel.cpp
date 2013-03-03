@@ -23,11 +23,13 @@ RenderModel::
         xscale(0),
         zscale(0),
         orthoview(1),
-        _project(p)
+        _project(p),
+        block_configuration_(0)
 {
     resetSettings();
 
     Signal::PostSink* o = renderSignalTarget->post_sink();
+    block_configuration_ = Heightmap::BlockConfiguration(o->sample_rate());
 
     collections.resize(o->num_channels());
     for (unsigned c=0; c<o->num_channels(); ++c)
@@ -101,32 +103,52 @@ void RenderModel::
 
 
 Tfr::FreqAxis RenderModel::
-        display_scale()
+        display_scale() const
 {
-    return collections[0]->display_scale();
+    return block_configuration_.display_scale();
 }
 
 
 void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
+    block_configuration_.display_scale( x );
+
     for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->display_scale( x );
+        collections[c]->block_configuration( block_configuration_ );
 }
 
 
 Heightmap::AmplitudeAxis RenderModel::
-        amplitude_axis()
+        amplitude_axis() const
 {
-    return collections[0]->amplitude_axis();
+    return block_configuration_.amplitude_axis();
 }
 
 
 void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
+    block_configuration_.amplitude_axis( x );
     for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->amplitude_axis( x );
+        collections[c]->block_configuration( block_configuration_ );
+}
+
+
+Heightmap::BlockConfiguration RenderModel::
+        block_configuration() const
+{
+    return block_configuration_;
+}
+
+
+void RenderModel::
+        block_configuration(Heightmap::BlockConfiguration new_config)
+{
+    block_configuration_ = new_config;
+
+    for (unsigned c=0; c<collections.size(); ++c)
+        collections[c]->block_configuration( block_configuration_ );
 }
 
 

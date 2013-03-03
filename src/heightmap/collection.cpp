@@ -67,10 +67,6 @@ Collection::
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
-    Tfr::FreqAxis fa;
-    fa.setLinear(target->sample_rate());
-    display_scale(fa);
-
     // set _max_sample_size.time
     reset();
 }
@@ -539,24 +535,6 @@ void Collection::
             }
         }
     }
-}
-
-
-void Collection::
-        display_scale(Tfr::FreqAxis a)
-{
-    BlockConfiguration bc = block_configuration();
-    bc.display_scale ( a );
-    block_configuration( bc );
-}
-
-
-void Collection::
-        amplitude_axis(Heightmap::AmplitudeAxis a)
-{
-    BlockConfiguration bc = block_configuration();
-    bc.amplitude_axis ( a );
-    block_configuration( bc );
 }
 
 

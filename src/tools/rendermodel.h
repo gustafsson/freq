@@ -38,14 +38,14 @@ namespace Tools
 
         std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
 
-        Tfr::FreqAxis display_scale();
+        Tfr::FreqAxis display_scale() const;
         void display_scale(Tfr::FreqAxis x);
 
-        Heightmap::AmplitudeAxis amplitude_axis();
+        Heightmap::AmplitudeAxis amplitude_axis() const;
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-//        const Heightmap::BlockConfiguration block_configuration() const;
-//        void block_configuration(Heightmap::BlockConfiguration new_config);
+        Heightmap::BlockConfiguration block_configuration() const;
+        void block_configuration(Heightmap::BlockConfiguration new_config);
 
         template<typename T>
         T* getParam() {
@@ -82,10 +82,10 @@ namespace Tools
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
         std::set<Tfr::pTransformDesc> descriptions;
-        //Heightmap::BlockConfiguration block_configuration_;
+        Heightmap::BlockConfiguration block_configuration_;
 
         friend class boost::serialization::access;
-        RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
+        RenderModel() : block_configuration_(0) { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
             ar

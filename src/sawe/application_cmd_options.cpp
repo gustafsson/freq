@@ -143,11 +143,10 @@ void Application::
 
     tools.playback_model.selection_filename  = Sawe::Configuration::selection_output_file();
 
-    BOOST_FOREACH( const boost::shared_ptr<Heightmap::Collection>& c, tools.render_model.collections )
-    {
-        c->samples_per_block( Sawe::Configuration::samples_per_block() );
-        c->scales_per_block( Sawe::Configuration::scales_per_block() );
-    }
+    Heightmap::BlockConfiguration bc = tools.render_model.block_configuration ();
+    bc.samplesPerBlock ( Sawe::Configuration::samples_per_block() );
+    bc.scalesPerBlock ( Sawe::Configuration::scales_per_block () );
+    tools.render_model.block_configuration ( bc );
 
     tools.render_view()->emitTransformChanged();
 }

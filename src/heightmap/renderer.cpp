@@ -1370,7 +1370,7 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Tfr::FreqAxis fa = collection->display_scale();
+    Tfr::FreqAxis fa = collection->block_configuration ().display_scale();
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
     typedef tvector<2,GLfloat> GLvector2F;

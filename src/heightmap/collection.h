@@ -187,13 +187,6 @@ public:
     void        gc();
     void        discardOutside(Signal::Interval I);
 
-
-    Tfr::FreqAxis display_scale() { return block_configuration().display_scale (); }
-    void display_scale(Tfr::FreqAxis a);
-
-    Heightmap::AmplitudeAxis amplitude_axis() { return block_configuration().amplitude_axis (); }
-    void amplitude_axis(Heightmap::AmplitudeAxis a);
-
     Signal::pOperation target;
 
     const ThreadChecker& constructor_thread() const { return _constructor_thread; }

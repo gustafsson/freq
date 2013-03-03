@@ -15,7 +15,7 @@ BlockConfiguration::
       sample_rate( fs ),
       amplitude_axis_(AmplitudeAxis_5thRoot)
 {
-    display_scale_.setLinear(1);
+    display_scale_.setLinear( fs );
 }
 
 

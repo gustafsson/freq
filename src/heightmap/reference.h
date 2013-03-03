@@ -19,8 +19,8 @@ public:
     bool operator==(const Reference &b) const;
     Region getRegion( unsigned samples_per_block, unsigned scales_per_block ) const;
     // begin move out
-    //DEPRECATED( Region getRegion() const );
-    Region getRegion() const;
+    DEPRECATED( Region getRegion() const );
+    //Region getRegion() const;
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
 
