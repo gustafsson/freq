@@ -296,6 +296,8 @@ bool PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
+    DeprecatedOperation::invalidate_samples( I );
+
     pOperation s = source();
     if (s)
     {

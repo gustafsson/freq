@@ -9,6 +9,8 @@
 
 namespace Signal {
 
+//TODO rewrite PostSink, it's, error prone and ugle, i.e broken. The optimization that it once tried to achieve is no longer needed.
+
 /**
   PostSink directs reads through a filter and lets sinks chain-read from
   eachother, through that filter and from the source if the sinks promise not
