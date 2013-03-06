@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-configurations="onlycpu usecuda"
+configurations="onlycpu"
+#configurations="onlycpu usecuda"
 defaulttimeout=10
 
 if [ "$1" = "--help" ]; then
