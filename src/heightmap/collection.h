@@ -125,16 +125,6 @@ public:
 
 
     /**
-      scales_per_block and samples_per_block are constants deciding how many blocks
-      are to be created.
-      */
-    unsigned    scales_per_block() const;
-    void        scales_per_block(unsigned v);
-    unsigned    samples_per_block() const;
-    void        samples_per_block(unsigned v);
-
-
-    /**
       getBlock increases a counter for each block that hasn't been computed yet.
       next_frame returns that counter.
       */

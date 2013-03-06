@@ -658,7 +658,8 @@ void Renderer::draw( float scaley )
         setSize(2,2),
         scaley = 0.001;
     else
-        setSize( collection->samples_per_block()/_mesh_fraction_width, collection->scales_per_block()/_mesh_fraction_height );
+        setSize( collection->block_configuration ().samplesPerBlock ()/_mesh_fraction_width,
+                 collection->block_configuration ().scalesPerBlock ()/_mesh_fraction_height );
 
     last_ysize = scaley;
     drawn_blocks = 0;
@@ -750,8 +751,8 @@ void Renderer::beginVboRendering()
         glUniform1f(uniYScale, y_scale);
 
         float
-                w = collection->samples_per_block(),
-                h = collection->scales_per_block();
+                w = collection->block_configuration ().samplesPerBlock (),
+                h = collection->block_configuration ().scalesPerBlock ();
 
         uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
         glUniform2f(uniScaleTex, (w-1.f)/w, (h-1.f)/h);
@@ -867,11 +868,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*collection->scales_per_block());
+        needBetterF = scalePixels / (_redundancy*collection->block_configuration ().scalesPerBlock ());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*collection->samples_per_block());
+        needBetterT = timePixels / (_redundancy*collection->block_configuration ().samplesPerBlock ());
 
     const Tfr::TransformDesc* t = this->collection->transform ();
     if (!ref.top().boundsCheck(Reference::BoundsCheck_HighS, t, 0) && !ref.bottom().boundsCheck(Reference::BoundsCheck_HighS, t, 0))

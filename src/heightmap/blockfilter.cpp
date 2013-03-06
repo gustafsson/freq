@@ -298,7 +298,7 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
     DEBUG_CWTTOBLOCK TaskInfo("merge_last_scale = %g", merge_last_scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
-    DEBUG_CWTTOBLOCK TaskInfo("_collection->scales_per_block() = %u", collection->scales_per_block());
+    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", blockconfig.scalesPerBlock ());
 
 
     DEBUG_CWTTOBLOCK {

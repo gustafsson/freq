@@ -1,9 +1,10 @@
 #ifndef HEIGHTMAPVBO_H
 #define HEIGHTMAPVBO_H
 
+#include "blockconfiguration.h"
+
 // gpumisc
 #include <mappedvbo.h>
-
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -65,7 +66,7 @@ private:
     bool create_texture( HeightMode heightMode );
     void update_texture( HeightMode heightMode );
 
-    Collection* _collection;
+    const BlockConfiguration block_configuration_;
 
     pHeightReadOnlyCpu _read_only_cpu;
     //cudaGraphicsResource* _read_only_array_resource;

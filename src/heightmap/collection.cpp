@@ -62,8 +62,8 @@ Collection::
     _free_memory(availableMemoryForSingleAllocation())
 {
     EXCEPTION_ASSERT( target );
-    samples_per_block( 1<<9 );
-    scales_per_block( 1<<9 ); // sets _max_sample_size.scale
+
+    block_configuration( block_configuration_ );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
@@ -119,38 +119,6 @@ bool Collection::
     QMutexLocker l(&_cache_mutex);
 #endif
     return _cache.empty() && _recent.empty();
-}
-
-
-unsigned Collection::
-        scales_per_block() const
-{
-    return block_configuration ().scalesPerBlock();
-}
-
-
-unsigned Collection::
-        samples_per_block() const
-{
-    return block_configuration ().samplesPerBlock();
-}
-
-
-void Collection::
-        scales_per_block(unsigned v)
-{
-    BlockConfiguration bc = block_configuration();
-    bc.scalesPerBlock ( v );
-    block_configuration ( bc );
-}
-
-
-void Collection::
-        samples_per_block(unsigned v)
-{
-    BlockConfiguration bc = block_configuration();
-    bc.samplesPerBlock (v);
-    block_configuration ( bc );
 }
 
 
@@ -444,7 +412,7 @@ unsigned long Collection::
         sumsize += b.second->glblock->allocated_bytes_per_element();
     }
 
-    unsigned elements_per_block = scales_per_block()*samples_per_block();
+    unsigned elements_per_block = block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
     return sumsize*elements_per_block;
 }
 
@@ -601,7 +569,7 @@ void Collection::
     // validate length
     Interval wholeSignal = target->getInterval();
     float length = wholeSignal.last / target->sample_rate();
-    _max_sample_size.time = 2.f*std::max(1.f, length)/samples_per_block();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/block_configuration_.samplesPerBlock ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
@@ -863,7 +831,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // Cuda device memory
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
-                memForNewBlock *= scales_per_block()*samples_per_block();
+                memForNewBlock *= block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
                 size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
 
                 size_t margin = 2*memForNewBlock;
@@ -903,7 +871,7 @@ pBlock Collection::
                 {
                     pBlock back = _recent.back();
 
-                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*scales_per_block()*samples_per_block();
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
@@ -931,7 +899,7 @@ pBlock Collection::
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
         s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-        s*=scales_per_block()*samples_per_block();
+        s*=block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
         s*=1.5f; // 50% arbitrary extra
 
         if (s>_free_memory)
@@ -967,8 +935,8 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    unsigned samples = samples_per_block (),
-            scales = scales_per_block ();
+    unsigned samples = block_configuration_.samplesPerBlock (),
+            scales = block_configuration_.scalesPerBlock ();
     for (unsigned s = 0; s<samples/2; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);
