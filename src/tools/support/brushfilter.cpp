@@ -3,7 +3,7 @@
 
 #include "brushfilterkernel.h"
 #include "tfr/chunk.h"
-#include "heightmap/collection.h"
+#include "heightmap/referenceinfo.h"
 
 #include "cpumemorystorage.h"
 
@@ -12,7 +12,9 @@ namespace Support {
 
 
 BrushFilter::
-        BrushFilter()
+        BrushFilter(Heightmap::BlockConfiguration block_configuration)
+    :
+      block_configuration_(block_configuration)
 {
     images.reset( new BrushImages );
     //transform( Tfr::pTransform(new Tfr::Cwt( Tfr::Cwt::Singleton())));
@@ -77,6 +79,14 @@ void BrushFilter::
 }
 
 
+MultiplyBrush::
+        MultiplyBrush(Heightmap::BlockConfiguration block_configuration)
+    :
+      BrushFilter(block_configuration)
+{
+
+}
+
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {
@@ -117,15 +127,15 @@ bool MultiplyBrush::
     if (imgs.empty())
         return false;
 
-    float scale1 = imagesAxis.getFrequencyScalar( chunk.minHz() );
-    float scale2 = imagesAxis.getFrequencyScalar( chunk.maxHz() );
+    float scale1 = this->block_configuration_.display_scale ().getFrequencyScalar( chunk.minHz() );
+    float scale2 = this->block_configuration_.display_scale ().getFrequencyScalar( chunk.maxHz() );
     float time1 = (chunk.chunk_offset/chunk.sample_rate).asFloat();
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
     ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
-        Heightmap::Region r = v.first.getRegion();
+        Heightmap::Region r = Heightmap::ReferenceInfo( block_configuration_, v.first ).getRegion();
 
         ResampleArea imgarea( r.a.time, r.a.scale, r.b.time, r.b.scale );
 

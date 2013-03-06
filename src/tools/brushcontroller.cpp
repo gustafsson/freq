@@ -7,6 +7,7 @@
 #include "support/toolbar.h"
 
 #include "heightmap/renderer.h"
+#include "heightmap/referenceinfo.h"
 
 #include <QMouseEvent>
 
@@ -118,7 +119,7 @@ void BrushController::
     Heightmap::Position p = r.getPlanePos( e->posF() );
     Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
     // TODO this should soon work
-    //Heightmap::BlockConfiguration* block_config = render_view_->model->BlockConfiguration ();
+    Heightmap::BlockConfiguration block_config = render_view_->model->block_configuration ();
     view_->gauss = model()->getGauss( ref, p );
 
     if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))
@@ -135,18 +136,17 @@ void BrushController::
             {
                 ref = ref.parent().parent().parent();
 
-//                Heightmap::Region region = Heightmap::ReferenceInfo( block_config, ref ).getRegion();
 
-                Heightmap::Region region = ref.getRegion();
+                Heightmap::Region region = Heightmap::ReferenceInfo( block_config, ref ).getRegion();
                 while(region.b.scale>1)
                 {
                     ref = ref.bottom();
-                    region = ref.getRegion();
+                    region = Heightmap::ReferenceInfo( block_config, ref ).getRegion();
                 }
                 while(region.b.time > 2*r.last_length())
                 {
                     ref = ref.left();
-                    region = ref.getRegion();
+                    region = Heightmap::ReferenceInfo( block_config, ref ).getRegion();
                 }
             }
 

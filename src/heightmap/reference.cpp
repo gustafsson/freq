@@ -14,27 +14,6 @@ bool Reference::
             && block_index == b.block_index;
 }
 
-Region Reference::
-        getRegion() const
-{
-    return ReferenceInfo(*block_config_.get (), *this).getRegion();
-}
-
-Region Reference::
-        getRegion( unsigned samples_per_block, unsigned scales_per_block ) const
-{
-    Position a, b;
-    // TODO make Referece independent of samples_per_block and scales_per_block
-    // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
-    Position blockSize( samples_per_block * ldexpf(1.f,log2_samples_size[0]),
-                        scales_per_block * ldexpf(1.f,log2_samples_size[1]));
-    a.time = blockSize.time * block_index[0];
-    a.scale = blockSize.scale * block_index[1];
-    b.time = a.time + blockSize.time;
-    b.scale = a.scale + blockSize.scale;
-
-    return Region(a,b);
-}
 
 /* child references */
 Reference Reference::

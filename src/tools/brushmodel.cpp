@@ -54,7 +54,7 @@ Support::BrushFilter* BrushModel::
     Support::MultiplyBrush* brush = dynamic_cast<Support::MultiplyBrush*>(filter_.get());
     if (0 == brush)
     {
-        filter_.reset( brush = new Support::MultiplyBrush );
+        filter_.reset( brush = new Support::MultiplyBrush(project_->tools().render_model.block_configuration ()) );
         filter_->source( project_->head->head_source() );
     }
 
@@ -67,7 +67,6 @@ void BrushModel::
 {
     if (filter()->images && filter()->images->size())
     {
-        filter()->imagesAxis = render_model_->display_scale ();
         project_->appendOperation( filter_ ); // Insert cache layer
     }
 

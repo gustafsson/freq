@@ -19,7 +19,7 @@ namespace Support {
 class BrushFilter : public Tfr::CwtFilter, public boost::noncopyable
 {
 public:
-    BrushFilter();
+    BrushFilter(Heightmap::BlockConfiguration block_configuration);
     ~BrushFilter();
 
     typedef DataStorage<float>::Ptr BrushImageDataP;
@@ -31,13 +31,15 @@ public:
       */
     BrushImagesP images;
 
-    /**
-     * @brief imagesAxis describes at which display_scale 'images' were created with 'appendOperation'
-     */
-    Tfr::FreqAxis imagesAxis;
-
     void release_extra_resources();
     BrushImageDataP getImage(Heightmap::Reference const& ref);
+
+
+protected:
+    /**
+     * @brief block_configuration describes the block settings for 'images'
+     */
+    const Heightmap::BlockConfiguration block_configuration_;
 
 private:
     class BrushFilterSupport* resource_releaser_;
@@ -47,6 +49,8 @@ private:
 class MultiplyBrush: public BrushFilter
 {
 public:
+    MultiplyBrush(Heightmap::BlockConfiguration block_configuration);
+
     virtual Signal::Intervals affected_samples();
 
     virtual std::string name();
@@ -54,8 +58,11 @@ public:
 
 private:
     friend class boost::serialization::access;
+    MultiplyBrush():BrushFilter(Heightmap::BlockConfiguration(-1)) { BOOST_ASSERT(false); } // required by serialization, should never be called
     template<class archive> void save(archive& ar, const unsigned int version) const {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
+
+        // TODO serialize block_configuration_
 
 		size_t N = images->size();
         ar & BOOST_SERIALIZATION_NVP(N);

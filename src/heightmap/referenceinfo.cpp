@@ -18,7 +18,16 @@ ReferenceInfo::
 Region ReferenceInfo::
         getRegion() const
 {
-    return reference_.getRegion(block_config_.samplesPerBlock(), block_config_.scalesPerBlock());
+    Position a, b;
+    // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
+    Position blockSize( block_config_.samplesPerBlock() * ldexpf(1.f,reference_.log2_samples_size[0]),
+                        block_config_.scalesPerBlock() * ldexpf(1.f,reference_.log2_samples_size[1]));
+    a.time = blockSize.time * reference_.block_index[0];
+    a.scale = blockSize.scale * reference_.block_index[1];
+    b.time = a.time + blockSize.time;
+    b.scale = a.scale + blockSize.scale;
+
+    return Region(a,b);
 }
 
 

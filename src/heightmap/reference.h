@@ -17,10 +17,8 @@ public:
     tvector<2,unsigned> block_index;
 
     bool operator==(const Reference &b) const;
-    Region getRegion( unsigned samples_per_block, unsigned scales_per_block ) const;
     // begin move out
-    DEPRECATED( Region getRegion() const );
-    //Region getRegion() const;
+    // DEPRECATED( unsigned samplesPerBlock() const );
     unsigned samplesPerBlock() const;
     unsigned scalesPerBlock() const;
 
