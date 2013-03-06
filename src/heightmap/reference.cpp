@@ -146,19 +146,6 @@ Reference::
 }
 
 
-bool Reference::
-        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
-{
-    return ReferenceInfo(*block_config_.get (), *this).boundsCheck(c, transform, length);
-}
-
-
-bool Reference::
-        tooLarge(float length) const
-{
-    return ReferenceInfo(*block_config_.get (), *this).tooLarge(length);
-}
-
 string Reference::
         toString() const
 {

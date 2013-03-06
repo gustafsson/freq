@@ -12,12 +12,20 @@ namespace Heightmap {
 
 class ReferenceInfo {
 public:
+    enum BoundsCheck
+    {
+        BoundsCheck_HighS = 1,
+        BoundsCheck_HighT = 2,
+        BoundsCheck_OutS = 4,
+        BoundsCheck_OutT = 8,
+        BoundsCheck_All = 15
+    };
+
     ReferenceInfo(const BlockConfiguration&,const Reference&);
 
     Region getRegion() const;
     long double sample_rate() const;
     bool containsPoint(Position p) const;
-    typedef Reference::BoundsCheck BoundsCheck;
 
     // returns false if the given BoundsCheck is out of bounds
     bool boundsCheck(BoundsCheck, const Tfr::TransformDesc*, float length) const;

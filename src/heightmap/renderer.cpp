@@ -854,6 +854,8 @@ void Renderer::renderSpectrogramRef( Reference ref )
 
 Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
+    BlockConfiguration block_config = collection->block_configuration ();
+
     float timePixels, scalePixels;
     if (!computePixelsPerUnit( ref, timePixels, scalePixels ))
         return Lod_Invalid;
@@ -868,17 +870,18 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*collection->block_configuration ().scalesPerBlock ());
+        needBetterF = scalePixels / (_redundancy*block_config.scalesPerBlock ());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*collection->block_configuration ().samplesPerBlock ());
+        needBetterT = timePixels / (_redundancy*block_config.samplesPerBlock ());
 
     const Tfr::TransformDesc* t = this->collection->transform ();
-    if (!ref.top().boundsCheck(Reference::BoundsCheck_HighS, t, 0) && !ref.bottom().boundsCheck(Reference::BoundsCheck_HighS, t, 0))
+    if (!ReferenceInfo(block_config, ref.top()).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&
+        !ReferenceInfo(block_config, ref.bottom()).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0))
         needBetterF = 0;
 
-    if (!ref.left().boundsCheck(Reference::BoundsCheck_HighT, t, 0))
+    if (!ReferenceInfo(block_config, ref.left()).boundsCheck(ReferenceInfo::BoundsCheck_HighT, t, 0))
         needBetterT = 0;
 
     if ( needBetterF > needBetterT && needBetterF > 1 )
@@ -903,7 +906,8 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        if (ref.right().boundsCheck(Reference::BoundsCheck_OutT, 0, collection->target->length()))
+        if (ReferenceInfo(collection->block_configuration (), ref.right ())
+                .boundsCheck(ReferenceInfo::BoundsCheck_OutT, 0, collection->target->length()))
             renderChildrenSpectrogramRef( ref.right() );
         break;
     case Lod_Ok:
@@ -924,8 +928,11 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
     float L = this->collection->target->length();
-    if (!ref.parent().tooLarge(L) )
+    if (!ReferenceInfo(collection->block_configuration (), ref.parent ())
+            .tooLarge(L) )
+    {
         renderParentSpectrogramRef( ref.parent() );
+    }
 }
 
 // the normal does not need to be normalized

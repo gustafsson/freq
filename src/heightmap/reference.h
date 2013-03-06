@@ -18,19 +18,7 @@ public:
 
     bool operator==(const Reference &b) const;
     // begin move out
-    enum BoundsCheck
-    {
-        BoundsCheck_HighS = 1,
-        BoundsCheck_HighT = 2,
-        BoundsCheck_OutS = 4,
-        BoundsCheck_OutT = 8,
-        BoundsCheck_All = 15
-    };
-
-    // returns false if the given BoundsCheck is out of bounds
-    //DEPRECATED( bool boundsCheck(BoundsCheck, const Tfr::TransformDesc* transform, float length) const );
-    bool boundsCheck(BoundsCheck, const Tfr::TransformDesc* transform, float length) const;
-    bool tooLarge(float length) const;
+    //DEPRECATED( std::string toString() const );
     std::string toString() const;
 
     /**

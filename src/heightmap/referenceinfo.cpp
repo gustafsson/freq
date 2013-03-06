@@ -59,7 +59,7 @@ bool ReferenceInfo::
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
-    if (c & Reference::BoundsCheck_HighS)
+    if (c & ReferenceInfo::BoundsCheck_HighS)
     {
         float scaledelta = (r.scale())/block_config_.scalesPerBlock();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
@@ -75,7 +75,7 @@ bool ReferenceInfo::
             return false;
     }
 
-    if (c & Reference::BoundsCheck_HighT)
+    if (c & ReferenceInfo::BoundsCheck_HighT)
     {
         float atres = displayedTimeResolution (ahz, transform);
         float btres = displayedTimeResolution (bhz, transform);
@@ -84,13 +84,13 @@ bool ReferenceInfo::
             return false;
     }
 
-    if (c & Reference::BoundsCheck_OutT)
+    if (c & ReferenceInfo::BoundsCheck_OutT)
     {
         if (r.a.time >= length )
             return false;
     }
 
-    if (c & Reference::BoundsCheck_OutS)
+    if (c & ReferenceInfo::BoundsCheck_OutS)
     {
         if (r.a.scale >= 1)
             return false;
