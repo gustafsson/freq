@@ -54,7 +54,7 @@ Collection::
 :   target( target ),
     renderer( 0 ),
     _is_visible( true ),
-    block_configuration_( target->sample_rate () ),
+    block_configuration_( BlockSize(1<<8, 1<<8), target->sample_rate () ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),

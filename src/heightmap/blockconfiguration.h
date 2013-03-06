@@ -9,17 +9,30 @@
 
 namespace Heightmap {
 
+class BlockSize {
+public:
+    BlockSize(int texels_per_row, int texels_per_column);
+
+    int texels_per_row() const;
+    int texels_per_column() const;
+    int texels_per_block() const { return texels_per_row() * texels_per_column(); }
+
+private:
+    int texels_per_column_;
+    int texels_per_row_;
+};
+
+
 class BlockConfiguration {
 public:
     // TODO remove Ptr
     typedef boost::shared_ptr<BlockConfiguration> Ptr;
 
-    BlockConfiguration(float fs);
+    BlockConfiguration(BlockSize block_size, float fs);
 
-    unsigned samplesPerBlock() const;
-    unsigned scalesPerBlock() const;
-    void samplesPerBlock(unsigned);
-    void scalesPerBlock(unsigned);
+    int samplesPerBlock() const;
+    int scalesPerBlock() const;
+    BlockSize block_size() const;
 
     Tfr::FreqAxis display_scale() const;
     AmplitudeAxis amplitude_axis() const;
@@ -30,9 +43,8 @@ public:
     float targetSampleRate() const;
 
 private:
-    unsigned    scales_per_block_;
-    unsigned    samples_per_block_;
-    float       sample_rate;
+    BlockSize       block_size_;
+    float           sample_rate_;
 
     /**
       Heightmap blocks are rather agnostic to FreqAxis. But it's needed to create them.

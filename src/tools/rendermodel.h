@@ -85,7 +85,7 @@ namespace Tools
         Heightmap::BlockConfiguration block_configuration_;
 
         friend class boost::serialization::access;
-        RenderModel() : block_configuration_(0) { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
+        RenderModel() : block_configuration_(Heightmap::BlockSize(0,0), 0) { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
             ar

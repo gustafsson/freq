@@ -24,12 +24,11 @@ RenderModel::
         zscale(0),
         orthoview(1),
         _project(p),
-        block_configuration_(0)
+        block_configuration_(Heightmap::BlockSize(1<<8,1<<8), 1)
 {
     resetSettings();
 
     Signal::PostSink* o = renderSignalTarget->post_sink();
-    block_configuration_ = Heightmap::BlockConfiguration(o->sample_rate());
 
     collections.resize(o->num_channels());
     for (unsigned c=0; c<o->num_channels(); ++c)
@@ -39,6 +38,8 @@ RenderModel::
 
     for (unsigned c=0; c<o->num_channels(); ++c)
         collections[c]->renderer = renderer.get();
+
+    block_configuration( Heightmap::BlockConfiguration(block_configuration_.block_size (), o->sample_rate()) );
 
 
 //    setTestCamera();

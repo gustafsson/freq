@@ -58,7 +58,7 @@ public:
 
 private:
     friend class boost::serialization::access;
-    MultiplyBrush():BrushFilter(Heightmap::BlockConfiguration(-1)) { BOOST_ASSERT(false); } // required by serialization, should never be called
+    MultiplyBrush():BrushFilter(Heightmap::BlockConfiguration(Heightmap::BlockSize(0,0), 0)) { BOOST_ASSERT(false); } // required by serialization, should never be called
     template<class archive> void save(archive& ar, const unsigned int version) const {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
@@ -100,7 +100,7 @@ private:
         ar & BOOST_SERIALIZATION_NVP(N);
         for (unsigned i=0; i<N; ++i)
         {
-            Heightmap::Reference ref = Heightmap::Reference(Heightmap::BlockConfiguration(0));
+            Heightmap::Reference ref = Heightmap::Reference(Heightmap::BlockConfiguration(Heightmap::BlockSize(2,2), 1));
 			serialize_ref(ar, ref);
 
             DataStorageSize sz(0);

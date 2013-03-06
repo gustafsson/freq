@@ -144,9 +144,14 @@ void Application::
     tools.playback_model.selection_filename  = Sawe::Configuration::selection_output_file();
 
     Heightmap::BlockConfiguration bc = tools.render_model.block_configuration ();
-    bc.samplesPerBlock ( Sawe::Configuration::samples_per_block() );
-    bc.scalesPerBlock ( Sawe::Configuration::scales_per_block () );
-    tools.render_model.block_configuration ( bc );
+    Heightmap::BlockConfiguration newbc(
+                Heightmap::BlockSize(
+                    Sawe::Configuration::samples_per_block(),
+                    Sawe::Configuration::scales_per_block ()),
+                bc.targetSampleRate ());
+    newbc.amplitude_axis ( bc.amplitude_axis () );
+    newbc.display_scale ( bc.display_scale () );
+    tools.render_model.block_configuration ( newbc );
 
     tools.render_view()->emitTransformChanged();
 }

@@ -6,44 +6,61 @@
 
 namespace Heightmap {
 
+BlockSize::
+        BlockSize(int texels_per_row, int texels_per_column)
+    :
+        texels_per_column_( texels_per_column ),
+        texels_per_row_( texels_per_row )
+{
+    EXCEPTION_ASSERT_LESS( 1, texels_per_row );
+    EXCEPTION_ASSERT_LESS( 1, texels_per_column );
+}
+
+
+int BlockSize::
+        texels_per_row() const
+{
+    return texels_per_row_;
+}
+
+
+int BlockSize::
+        texels_per_column() const
+{
+    return texels_per_column_;
+}
+
 
 BlockConfiguration::
-        BlockConfiguration( float fs )
+        BlockConfiguration( BlockSize block_size, float fs )
     :
-      scales_per_block_( -1 ),
-      samples_per_block_( -1 ),
-      sample_rate( fs ),
+      block_size_( block_size ),
+      sample_rate_( fs ),
       amplitude_axis_(AmplitudeAxis_5thRoot)
 {
+    EXCEPTION_ASSERT_LESS( 0, fs );
     display_scale_.setLinear( fs );
 }
 
 
-unsigned BlockConfiguration::
+int BlockConfiguration::
         samplesPerBlock() const
 {
-    return samples_per_block_;
+    return block_size_.texels_per_row ();
 }
 
 
-unsigned BlockConfiguration::
+int BlockConfiguration::
         scalesPerBlock() const
 {
-    return scales_per_block_;
+    return block_size_.texels_per_column ();
 }
 
 
-void BlockConfiguration::
-        samplesPerBlock(unsigned spb)
+BlockSize BlockConfiguration::
+    block_size() const
 {
-    samples_per_block_ = spb;
-}
-
-
-void BlockConfiguration::
-        scalesPerBlock(unsigned spb)
-{
-    scales_per_block_ = spb;
+    return block_size_;
 }
 
 
@@ -78,7 +95,7 @@ void BlockConfiguration::
 float BlockConfiguration::
         targetSampleRate() const
 {
-    return sample_rate;
+    return sample_rate_;
 }
 
 
