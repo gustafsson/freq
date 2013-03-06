@@ -178,8 +178,9 @@ Signal::Interval BrushModel::
 
     if (!img)
     {
+        Heightmap::BlockSize block_size = block_config().block_size ();
         img.reset( new DataStorage<float>(
-                ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+                       block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }
 
     ResampleArea area( r.a.time, r.a.scale, r.b.time, r.b.scale );

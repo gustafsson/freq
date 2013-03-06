@@ -18,10 +18,7 @@ public:
 
     bool operator==(const Reference &b) const;
     // begin move out
-    // DEPRECATED( unsigned samplesPerBlock() const );
-    unsigned samplesPerBlock() const;
-    unsigned scalesPerBlock() const;
-
+    //DEPRECATED( long double sample_rate() const );
     long double sample_rate() const;
 
     bool containsPoint(Position p) const;

@@ -324,6 +324,8 @@ void BlockFilter::
         schunk = Position( chunk_b.time - chunk_a.time, chunk_b.scale - chunk_a.scale);
     }
 
+    int samplesPerBlock = outData->size ().width;
+    int scalesPerBlock = outData->size ().height;
     TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %.2f), (%.2f %.2f)] |%.2f %.2f, %.2f %.2f| %ux%u=%u <- %ux%u=%u",
             r.a.time, r.b.time,
             r.a.scale, r.b.scale,
@@ -331,10 +333,10 @@ void BlockFilter::
             chunk_a.scale, chunk_b.scale,
             transfer.first/chunk.original_sample_rate, transfer.last/chunk.original_sample_rate,
             merge_first_scale, merge_last_scale,
-            (unsigned)(s.time / sblock.time * block->reference().samplesPerBlock() + .5f),
-            (unsigned)(s.scale / sblock.scale * block->reference().scalesPerBlock() + .5f),
-            (unsigned)(s.time / sblock.time * block->reference().samplesPerBlock() *
-            s.scale / sblock.scale * block->reference().scalesPerBlock() + .5f),
+            (unsigned)(s.time / sblock.time * samplesPerBlock + .5f),
+            (unsigned)(s.scale / sblock.scale * scalesPerBlock + .5f),
+            (unsigned)(s.time / sblock.time * samplesPerBlock *
+            s.scale / sblock.scale * scalesPerBlock + .5f),
             (unsigned)(s.time / schunk.time * chunk.n_valid_samples + .5f),
             (unsigned)(s.scale / schunk.scale * chunk.nScales() + .5f),
             (unsigned)(s.time / schunk.time * chunk.n_valid_samples *

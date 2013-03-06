@@ -172,17 +172,6 @@ string Reference::
     return ReferenceInfo(*block_config_.get (), *this).toString();
 }
 
-unsigned Reference::
-        samplesPerBlock() const
-{
-    return block_config_->samplesPerBlock ();
-}
-
-unsigned Reference::
-        scalesPerBlock() const
-{
-    return block_config_->scalesPerBlock ();
-}
 
 Signal::Interval Reference::
         getInterval() const

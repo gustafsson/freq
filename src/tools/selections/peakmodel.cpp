@@ -37,7 +37,8 @@ PeakModel::PeakAreaP PeakModel::
 
     if (!area)
     {
-        area.reset( new DataStorage<bool>(ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        Heightmap::BlockSize block_size = c->block_configuration ().block_size ();
+        area.reset( new DataStorage<bool>(block_size.texels_per_row (), block_size.texels_per_column (), 1));
         EXCEPTION_ASSERT( area->numberOfBytes() == area->numberOfElements());
         memset( area->getCpuMemory(), 0, area->numberOfBytes() );
     }
@@ -88,7 +89,8 @@ float PeakModel::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
-    return data[x+y*ref.samplesPerBlock()];
+    Heightmap::BlockSize block_size = c->block_configuration ().block_size ();
+    return data[x+y*block_size.texels_per_row ()];
 }
 
 /*
@@ -109,8 +111,9 @@ void PeakModel::
 {
     this->c = c;
     Heightmap::Region r = Heightmap::ReferenceInfo(c->block_configuration (), ref).getRegion();
-    unsigned h = ref.scalesPerBlock();
-    unsigned w = ref.samplesPerBlock();
+    Heightmap::BlockSize block_size = c->block_configuration ().block_size ();
+    unsigned h = block_size.texels_per_column ();
+    unsigned w = block_size.texels_per_row ();
     unsigned y0 = (pos.scale-r.a.scale)/r.scale()*(h-1) + .5f;
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
 
@@ -174,10 +177,10 @@ void PeakModel::
     if (classifictions.empty())
         return;
 
-    Heightmap::Reference ref = classifictions.begin()->first;
+    Heightmap::BlockSize block_size = c->block_configuration ().block_size ();
     unsigned
-            w = ref.samplesPerBlock(),
-            h = ref.scalesPerBlock();
+            w = block_size.texels_per_row (),
+            h = block_size.texels_per_column ();
 
     BorderCoordinates start_point;
     if (!anyBorderPixel(start_point, w, h))
@@ -551,8 +554,9 @@ void PeakModel::
 
     pts.push_back( Pt(ref0, x0, y0, PS_Increasing, -FLT_MAX) );
 
-    unsigned w = ref0.samplesPerBlock(),
-             h = ref0.scalesPerBlock();
+    Heightmap::BlockSize block_size = c->block_configuration ().block_size ();
+    unsigned w = block_size.texels_per_row (),
+             h = block_size.texels_per_column ();
 
     pixel_count = 0;
 

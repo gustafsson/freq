@@ -60,7 +60,8 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        img.reset( new DataStorage<float>( ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        Heightmap::BlockSize block_size = block_configuration_.block_size ();
+        img.reset( new DataStorage<float>( block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }
 
     return img;

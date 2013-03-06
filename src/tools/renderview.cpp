@@ -311,8 +311,9 @@ float RenderView::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
-    unsigned w = ref->samplesPerBlock();
-    unsigned h = ref->scalesPerBlock();
+    Heightmap::BlockSize block_size = model->block_configuration ().block_size ();
+    unsigned w = block_size.texels_per_row ();
+    unsigned h = block_size.texels_per_column ();
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
     float    yf = (pos.scale-r.a.scale)/r.scale()*(h-1);
     unsigned y0 = yf + .5f;
