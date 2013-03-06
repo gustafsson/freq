@@ -18,9 +18,7 @@ public:
 
     bool operator==(const Reference &b) const;
     // begin move out
-    //DEPRECATED( long double sample_rate() const );
-    long double sample_rate() const;
-
+    //DEPRECATED( bool containsPoint(Position p) const );
     bool containsPoint(Position p) const;
     enum BoundsCheck
     {

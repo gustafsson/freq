@@ -187,12 +187,6 @@ Signal::Interval Reference::
 }
 
 
-long double Reference::
-        sample_rate() const
-{
-    return ReferenceInfo(*block_config_.get (), *this).sample_rate();
-}
-
 unsigned Reference::
         frequency_resolution() const
 {

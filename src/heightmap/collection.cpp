@@ -482,7 +482,8 @@ void Collection::
                 bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
                 if (hasValidOutside)
                 {
-                    Region ir = ReferenceInfo(block_configuration_, itr->first).getRegion();
+                    ReferenceInfo ri(block_configuration_, itr->first);
+                    Region ir = ri.getRegion();
                     float t = I.last / target->sample_rate() - ir.a.time;
 
 #ifdef SAWE_NO_MUTEX
@@ -495,7 +496,7 @@ void Collection::
 #endif
 
                     ::blockClearPart( data,
-                                  ceil(t * itr->first.sample_rate()) );
+                                  ceil(t * ri.sample_rate()) );
 
                     itr->second->valid_samples &= I;
                     itr->second->non_zero &= I;

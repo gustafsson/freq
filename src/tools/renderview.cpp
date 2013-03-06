@@ -290,14 +290,15 @@ float RenderView::
 
     ref->block_index[0] = pos.time / r.time();
     ref->block_index[1] = pos.scale / r.scale();
-    r = Heightmap::ReferenceInfo( model->block_configuration (), *ref).getRegion ();
+    Heightmap::ReferenceInfo ri( model->block_configuration (), *ref);
+    r = ri.getRegion ();
 
     Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
         return 0;
     if (is_valid_value)
     {
-        Signal::IntervalType s = pos.time * ref->sample_rate();
+        Signal::IntervalType s = pos.time * ri.sample_rate();
         Signal::Intervals I = Signal::Intervals(s, s+1);
         I -= block->valid_samples;
         I &= ref->getInterval();
