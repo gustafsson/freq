@@ -18,8 +18,6 @@ public:
 
     bool operator==(const Reference &b) const;
     // begin move out
-    //DEPRECATED( bool containsPoint(Position p) const );
-    bool containsPoint(Position p) const;
     enum BoundsCheck
     {
         BoundsCheck_HighS = 1,
@@ -30,6 +28,7 @@ public:
     };
 
     // returns false if the given BoundsCheck is out of bounds
+    //DEPRECATED( bool boundsCheck(BoundsCheck, const Tfr::TransformDesc* transform, float length) const );
     bool boundsCheck(BoundsCheck, const Tfr::TransformDesc* transform, float length) const;
     bool tooLarge(float length) const;
     std::string toString() const;

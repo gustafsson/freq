@@ -147,13 +147,6 @@ Reference::
 
 
 bool Reference::
-        containsPoint(Position p) const
-{
-    return ReferenceInfo(*block_config_.get (), *this).containsPoint(p);
-}
-
-
-bool Reference::
         boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
     return ReferenceInfo(*block_config_.get (), *this).boundsCheck(c, transform, length);

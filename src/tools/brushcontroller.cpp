@@ -129,7 +129,8 @@ void BrushController::
         if (e->buttons().testFlag( Qt::RightButton ))
             model()->brush_factor *= -1;
 
-        if (ref.containsPoint(p))
+        Heightmap::ReferenceInfo ri( block_config, ref );
+        if (ri.containsPoint (p))
         {
             // TODO Paint with a lower resolution
             if (0)
@@ -137,7 +138,7 @@ void BrushController::
                 ref = ref.parent().parent().parent();
 
 
-                Heightmap::Region region = Heightmap::ReferenceInfo( block_config, ref ).getRegion();
+                Heightmap::Region region = ri.getRegion();
                 while(region.b.scale>1)
                 {
                     ref = ref.bottom();
