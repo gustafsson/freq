@@ -37,7 +37,7 @@ PeakModel::PeakAreaP PeakModel::
 
     if (!area)
     {
-        Heightmap::BlockSize block_size = c->tfr_mapping ().block_size ();
+        Heightmap::BlockSize block_size = c->tfr_mapping ().block_size;
         area.reset( new DataStorage<bool>(block_size.texels_per_row (), block_size.texels_per_column (), 1));
         EXCEPTION_ASSERT( area->numberOfBytes() == area->numberOfElements());
         memset( area->getCpuMemory(), 0, area->numberOfBytes() );
@@ -89,7 +89,7 @@ float PeakModel::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
-    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size ();
+    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size;
     return data[x+y*block_size.texels_per_row ()];
 }
 
@@ -111,7 +111,7 @@ void PeakModel::
 {
     this->c = c;
     Heightmap::Region r = Heightmap::ReferenceRegion(c->tfr_mapping ())(ref);
-    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size ();
+    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size;
     unsigned h = block_size.texels_per_column ();
     unsigned w = block_size.texels_per_row ();
     unsigned y0 = (pos.scale-r.a.scale)/r.scale()*(h-1) + .5f;
@@ -177,7 +177,7 @@ void PeakModel::
     if (classifictions.empty())
         return;
 
-    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size ();
+    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size;
     unsigned
             w = block_size.texels_per_row (),
             h = block_size.texels_per_column ();
@@ -554,7 +554,7 @@ void PeakModel::
 
     pts.push_back( Pt(ref0, x0, y0, PS_Increasing, -FLT_MAX) );
 
-    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size ();
+    Heightmap::BlockSize block_size = c->tfr_mapping ().block_size;
     unsigned w = block_size.texels_per_row (),
              h = block_size.texels_per_column ();
 

@@ -179,7 +179,7 @@ Signal::Interval BrushModel::
 
     if (!img)
     {
-        Heightmap::BlockSize block_size = tfr_mapping().block_size ();
+        Heightmap::BlockSize block_size = tfr_mapping().block_size;
         img.reset( new DataStorage<float>(
                        block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }

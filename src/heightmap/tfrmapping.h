@@ -2,17 +2,52 @@
 #define HEIGHTMAP_TFRMAPPING_H
 
 #include "blocksize.h"
+#include "tfr/transform.h"
+#include "volatileptr.h"
+#include "signal/poperation.h"
+
+#include <vector>
 
 namespace Heightmap {
+class Collection;
 
 class TfrMapping {
 public:
-    // TODO remove Ptr
-    typedef boost::shared_ptr<TfrMapping> Ptr;
+    TfrMapping(BlockSize, float fs);
 
-    TfrMapping(BlockSize block_size, float fs);
+    bool operator==(const TfrMapping& b);
+
+    BlockSize               block_size;
+    float                   targetSampleRate;
+    float                   length;
+
+    /**
+     * Not that this is the transform that should be used. Blocks computed by
+     * an old transform desc might still exist as they are being processed.
+     */
+    Tfr::TransformDesc::Ptr transform_desc;
+
+    /**
+     * Heightmap blocks are rather agnostic to FreqAxis. But it's needed to
+     * create them.
+     */
+    Tfr::FreqAxis display_scale;
+
+    /**
+     * Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But
+     * it's needed to create them.
+     */
+    AmplitudeAxis amplitude_axis;
+};
+
+
+class TfrMap: public VolatilePtr<TfrMap> {
+public:
+    TfrMap(TfrMapping tfr_mapping, int channels, Signal::pOperation target);
+    ~TfrMap();
 
     BlockSize block_size() const;
+    void block_size(BlockSize bs);
 
     Tfr::FreqAxis display_scale() const;
     AmplitudeAxis amplitude_axis() const;
@@ -22,19 +57,26 @@ public:
     // targetSampleRate is used to compute which rawdata (Signal::Interval) that a block represents
     float targetSampleRate() const;
 
+    Tfr::TransformDesc::Ptr transform_desc() const;
+    void transform_desc(Tfr::TransformDesc::Ptr);
+
+    const TfrMapping& tfr_mapping() const;
+
+    // TODO use these
+    //Signal::Intervals invalid_samples;
+
+    // TODO use these
+    float length() const;
+    void length(float L);
+
+    int channels() const;
+    std::vector<boost::shared_ptr<Heightmap::Collection> > collections() const;
+
 private:
-    BlockSize       block_size_;
-    float           sample_rate_;
+    void updateCollections();
 
-    /**
-      Heightmap blocks are rather agnostic to FreqAxis. But it's needed to create them.
-      */
-    Tfr::FreqAxis display_scale_;
-
-    /**
-      Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But it's needed to create them.
-      */
-    AmplitudeAxis amplitude_axis_;
+    TfrMapping                                              tfr_mapping_;
+    std::vector<boost::shared_ptr<Heightmap::Collection> >  collections_;
 };
 
 } // namespace Heightmap

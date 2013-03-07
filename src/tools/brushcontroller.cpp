@@ -119,7 +119,7 @@ void BrushController::
     Heightmap::Position p = r.getPlanePos( e->posF() );
     Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
     // TODO this should soon work
-    Heightmap::TfrMapping tfr_mapping = render_view_->model->tfr_mapping ();
+    const Heightmap::TfrMapping& tfr_mapping = render_view_->model->tfr_mapping ();
     view_->gauss = model()->getGauss( ref, p );
 
     if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))

@@ -1,60 +1,171 @@
 #include "tfrmapping.h"
 #include "exceptionassert.h"
+#include "collection.h"
 
 namespace Heightmap {
-
 
 TfrMapping::
         TfrMapping( BlockSize block_size, float fs )
     :
-      block_size_( block_size ),
-      sample_rate_( fs ),
-      amplitude_axis_(AmplitudeAxis_5thRoot)
+      block_size( block_size ),
+      targetSampleRate( fs ),
+      length( 0 ),
+      amplitude_axis(AmplitudeAxis_5thRoot)
 {
     EXCEPTION_ASSERT_LESS( 0, fs );
-    display_scale_.setLinear( fs );
+    display_scale.setLinear( fs );
+    // by default there is no transform_desc, and nothing will be drawn
 }
 
 
-BlockSize TfrMapping::
+bool TfrMapping::
+        operator==(const TfrMapping& b)
+{
+    return block_size == b.block_size &&
+            targetSampleRate == b.targetSampleRate &&
+            length == b.length &&
+            transform_desc == b.transform_desc &&
+            (transform_desc ? *transform_desc == *b.transform_desc : true) &&
+            display_scale == b.display_scale &&
+            amplitude_axis == b.amplitude_axis;
+}
+
+
+TfrMap::
+        TfrMap( TfrMapping tfr_mapping, int channels, Signal::pOperation target )
+    :
+      tfr_mapping_( tfr_mapping )
+{
+    collections_.resize(channels);
+
+    for (int c=0; c<channels; ++c)
+    {
+        collections_[c].reset( new Heightmap::Collection(target));
+        collections_[c]->tfr_mapping( tfr_mapping_ );
+    }
+}
+
+
+TfrMap::
+        ~TfrMap()
+{
+    collections_.clear();
+}
+
+
+BlockSize TfrMap::
     block_size() const
 {
-    return block_size_;
+    return tfr_mapping_.block_size;
 }
 
 
-Tfr::FreqAxis TfrMapping::
+void TfrMap::
+        block_size(BlockSize bs)
+{
+    tfr_mapping_.block_size = bs;
+
+    updateCollections();
+}
+
+
+Tfr::FreqAxis TfrMap::
         display_scale() const
 {
-    return display_scale_;
+    return tfr_mapping_.display_scale;
 }
 
 
-AmplitudeAxis TfrMapping::
+AmplitudeAxis TfrMap::
         amplitude_axis() const
 {
-    return amplitude_axis_;
+    return tfr_mapping_.amplitude_axis;
 }
 
 
-void TfrMapping::
+void TfrMap::
         display_scale(Tfr::FreqAxis v)
 {
-    display_scale_ = v;
+    tfr_mapping_.display_scale = v;
+
+    updateCollections();
 }
 
 
-void TfrMapping::
+void TfrMap::
         amplitude_axis(AmplitudeAxis v)
 {
-    amplitude_axis_ = v;
+    tfr_mapping_.amplitude_axis = v;
+
+    updateCollections();
 }
 
 
-float TfrMapping::
+float TfrMap::
         targetSampleRate() const
 {
-    return sample_rate_;
+    return tfr_mapping_.targetSampleRate;
+}
+
+
+Tfr::TransformDesc::Ptr TfrMap::
+        transform_desc() const
+{
+    return tfr_mapping_.transform_desc;
+}
+
+
+void TfrMap::
+        transform_desc(Tfr::TransformDesc::Ptr t)
+{
+    tfr_mapping_.transform_desc = t;
+
+    updateCollections();
+}
+
+
+const TfrMapping& TfrMap::
+        tfr_mapping() const
+{
+    return tfr_mapping_;
+}
+
+
+float TfrMap::
+        length() const
+{
+    return tfr_mapping_.length;
+}
+
+
+void TfrMap::
+        length(float L)
+{
+    tfr_mapping_.length = L;
+
+    updateCollections();
+}
+
+
+int TfrMap::
+        channels() const
+{
+    return collections_.size ();
+}
+
+
+std::vector<boost::shared_ptr<Heightmap::Collection> > TfrMap::
+        collections() const
+{
+    return collections_;
+}
+
+
+void TfrMap::
+        updateCollections()
+{
+    for (unsigned c=0; c<collections_.size(); ++c)
+        collections_[c]->tfr_mapping( tfr_mapping_ );
 }
 
 } // namespace Heightmap

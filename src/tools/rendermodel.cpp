@@ -23,24 +23,25 @@ RenderModel::
         xscale(0),
         zscale(0),
         orthoview(1),
-        _project(p),
-        tfr_mapping_(Heightmap::BlockSize(1<<8,1<<8), 1)
+        _project(p)
 {
     resetSettings();
 
+    // initialize tfr_map_
     Signal::PostSink* o = renderSignalTarget->post_sink();
+    Heightmap::TfrMapping tfr_mapping(Heightmap::BlockSize(1<<8,1<<8), o->sample_rate ());
+    tfr_map_.reset (new Heightmap::TfrMap(tfr_mapping, o->num_channels (), renderSignalTarget->source ()));
 
-    collections.resize(o->num_channels());
-    for (unsigned c=0; c<o->num_channels(); ++c)
-        collections[c].reset( new Heightmap::Collection(renderSignalTarget->source()));
+    EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
 
-    renderer.reset( new Heightmap::Renderer( collections[0].get() ));
+    {
+        Heightmap::TfrMap::ReadPtr tfr(tfr_map_);
 
-    for (unsigned c=0; c<o->num_channels(); ++c)
-        collections[c]->renderer = renderer.get();
+        renderer.reset( new Heightmap::Renderer( tfr->collections()[0].get() ));
 
-    tfr_mapping( Heightmap::TfrMapping(tfr_mapping_.block_size (), o->sample_rate()) );
-
+        for (unsigned c=0; c<o->num_channels(); ++c)
+            tfr->collections()[c]->renderer = renderer.get();
+    }
 
 //    setTestCamera();
 }
@@ -51,7 +52,7 @@ RenderModel::
 {
     TaskInfo ti(__FUNCTION__);
     renderer.reset();
-    collections.clear();
+    tfr_map_.reset ();
     renderSignalTarget.reset();
 }
 
@@ -103,53 +104,52 @@ void RenderModel::
 }
 
 
-Tfr::FreqAxis RenderModel::
-        display_scale() const
+void RenderModel::
+        block_size(Heightmap::BlockSize bs)
 {
-    return tfr_mapping_.display_scale();
+    write1(tfr_map_)->block_size( bs );
+}
+
+
+Tfr::FreqAxis RenderModel::
+        display_scale()
+{
+    return read1(tfr_map_)->display_scale();
 }
 
 
 void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
-    tfr_mapping_.display_scale( x );
-
-    for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->tfr_mapping( tfr_mapping_ );
+    write1(tfr_map_)->display_scale( x );
 }
 
 
 Heightmap::AmplitudeAxis RenderModel::
-        amplitude_axis() const
+        amplitude_axis()
 {
-    return tfr_mapping_.amplitude_axis();
+    return read1(tfr_map_)->amplitude_axis();
 }
 
 
 void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
-    tfr_mapping_.amplitude_axis( x );
-    for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->tfr_mapping( tfr_mapping_ );
+    write1(tfr_map_)->amplitude_axis( x );
 }
 
 
 Heightmap::TfrMapping RenderModel::
-        tfr_mapping() const
+        tfr_mapping()
 {
-    return tfr_mapping_;
+    return read1(tfr_map_)->tfr_mapping();
 }
 
 
-void RenderModel::
-        tfr_mapping(Heightmap::TfrMapping new_config)
+Heightmap::TfrMap::Ptr& RenderModel::
+        tfr_map()
 {
-    tfr_mapping_ = new_config;
-
-    for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->tfr_mapping( tfr_mapping_ );
+    return tfr_map_;
 }
 
 

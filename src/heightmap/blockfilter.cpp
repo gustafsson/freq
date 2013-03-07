@@ -196,8 +196,8 @@ void BlockFilter::
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk.freqAxis,
-                  tfr_mapping.display_scale (),
-                  tfr_mapping.amplitude_axis (),
+                  tfr_mapping.display_scale,
+                  tfr_mapping.amplitude_axis,
                   normalization_factor,
                   true);
     TIME_BLOCKFILTER ComputationSynchronize();
@@ -275,8 +275,8 @@ void BlockFilter::
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = tfr_mapping.display_scale().getFrequencyScalar( chunk.minHz() );
-    float chunk_last_scale = tfr_mapping.display_scale().getFrequencyScalar( chunk.maxHz() );
+    float chunk_first_scale = tfr_mapping.display_scale.getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = tfr_mapping.display_scale.getFrequencyScalar( chunk.maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -308,7 +308,7 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
     DEBUG_CWTTOBLOCK TaskInfo("merge_last_scale = %g", merge_last_scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
-    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", tfr_mapping.block_size ().texels_per_column ());
+    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", tfr_mapping.block_size.texels_per_column ());
 
 
     DEBUG_CWTTOBLOCK {
@@ -376,8 +376,8 @@ void BlockFilter::
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk.freqAxis,
-                     tfr_mapping.display_scale(),
-                     tfr_mapping.amplitude_axis(),
+                     tfr_mapping.display_scale,
+                     tfr_mapping.amplitude_axis,
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
@@ -569,17 +569,17 @@ void DrawnWaveformToBlock::
         mergeChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData )
 {
     Collection* c = _collections[pchunk.channel];
-    TfrMapping blockconfig = c->tfr_mapping ();
+    TfrMapping tm = c->tfr_mapping ();
     Chunk& chunk = *pchunk.chunk;
-    Tfr::FreqAxis fa = blockconfig.display_scale();
+    Tfr::FreqAxis fa = tm.display_scale;
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
     {
         EXCEPTION_ASSERT( fa.max_frequency_scalar == 1.f );
         fa.axis_scale = Tfr::AxisScale_Linear;
         fa.min_hz = chunk.freqAxis.min_hz;
         fa.f_step = -2*fa.min_hz;
-        blockconfig.display_scale( fa );
-        c->tfr_mapping ( blockconfig );
+        tm.display_scale = fa;
+        c->tfr_mapping ( tm );
     }
 
 

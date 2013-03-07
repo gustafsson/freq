@@ -3,6 +3,7 @@
 
 #include "freqaxis.h"
 #include "signal/intervals.h"
+#include "volatileptr.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -23,6 +24,8 @@ typedef boost::shared_ptr<Chunk> pChunk;
   Examples of Transform implementations:
   "cwt.h"
   "stft.h"
+
+  An instance of transform must not be shared between multiple threads.
   */
 class Transform {
 public:
@@ -34,7 +37,9 @@ public:
 
     /**
      * @brief transformDesc
-     * @return description used for this transform.
+     * @return description used for this transform. The Transform instance
+     * owns the returned instance which is not modified for the lifetime of
+     * the Transform.
      */
     virtual const TransformDesc* transformDesc() const = 0;
 
@@ -69,8 +74,12 @@ typedef boost::shared_ptr<Transform> pTransform;
 /**
  * @brief The TransformDesc class represents a description to create a transform.
  */
-class TransformDesc {
+class TransformDesc: public VolatilePtr<TransformDesc> {
 public:
+    TransformDesc() {}
+    // Prevent the volatileptr from being copied, create a new instance instead.
+    TransformDesc(const TransformDesc&) {}
+
     /**
       Virtual housekeeping.
       */
@@ -146,7 +155,7 @@ public:
     virtual bool operator==(const TransformDesc&) const = 0;
     bool operator!=(const TransformDesc& b) const { return !(*this == b); }
 };
-
+// TODO remove pTransformDesc
 typedef boost::shared_ptr<TransformDesc> pTransformDesc;
 
 

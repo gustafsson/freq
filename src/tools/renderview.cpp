@@ -313,7 +313,7 @@ float RenderView::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
-    Heightmap::BlockSize block_size = model->tfr_mapping ().block_size ();
+    Heightmap::BlockSize block_size = model->tfr_mapping ().block_size;
     unsigned w = block_size.texels_per_row ();
     unsigned h = block_size.texels_per_column ();
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
@@ -1100,6 +1100,11 @@ void RenderView::
             memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
             memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
             memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+
+            {
+                Heightmap::TfrMap::WritePtr write(model->tfr_map());
+                write->length( length );
+            }
 
             model->renderer->drawAxes( length ); // 4.7 ms
 

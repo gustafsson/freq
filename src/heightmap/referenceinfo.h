@@ -53,7 +53,7 @@ public:
     Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
 
     Reference reference() const;
-    TfrMapping tfr_mapping() const;
+    const TfrMapping& tfr_mapping() const;
 
 
     std::string toString() const;
