@@ -93,6 +93,13 @@ Signal::pMonoBuffer DrawnWaveform::
 }
 
 
+TransformDesc::Ptr DrawnWaveform::
+        copy() const
+{
+    return TransformDesc::Ptr(new DrawnWaveform(*this));
+}
+
+
 pTransform DrawnWaveform::
         createTransform() const
 {

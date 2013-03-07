@@ -95,7 +95,7 @@ namespace Tools { namespace Selections
 
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Heightmap::Collection* c = r.model->collections[0].get();
+            Heightmap::Collection* c = r.model->collections()[0].get();
 
             Heightmap::Position p = r.getHeightmapPos( e->posF() );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );

@@ -19,6 +19,13 @@ StftDesc::
 }
 
 
+TransformDesc::Ptr StftDesc::
+        copy() const
+{
+    return TransformDesc::Ptr(new StftDesc(*this));
+}
+
+
 pTransform StftDesc::
         createTransform() const
 {

@@ -679,12 +679,15 @@ void Renderer::draw( float scaley )
 
     glScalef(1, _draw_flat ? 0 : scaley, 1);
 
-    beginVboRendering();
+    if (collection->tfr_mapping ().transform_desc)
+    {
+        beginVboRendering();
 
-    if (!renderChildrenSpectrogramRef(ref))
-        renderSpectrogramRef( ref );
+        if (!renderChildrenSpectrogramRef(ref))
+            renderSpectrogramRef( ref );
 
-    endVboRendering();
+        endVboRendering();
+    }
 
     GlException_CHECK_ERROR();
 }

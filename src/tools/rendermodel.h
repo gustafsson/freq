@@ -8,6 +8,7 @@
 #include "heightmap/tfrmapping.h"
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
+#include "support/transformdescs.h"
 
 // gpumisc
 #include <TAni.h>
@@ -37,7 +38,7 @@ namespace Tools
 
         void resetSettings();
 
-        std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
+        std::vector<boost::shared_ptr<Heightmap::Collection> > collections();
 
         void block_size(Heightmap::BlockSize);
 
@@ -48,17 +49,13 @@ namespace Tools
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
         Heightmap::TfrMapping tfr_mapping();
-        Heightmap::TfrMap::Ptr& tfr_map();
+        Heightmap::TfrMap::Ptr tfr_map();
+        Support::TransformDescs::Ptr transform_descs();
+
 
         template<typename T>
-        T* getParam() {
-            foreach(Tfr::pTransformDesc p, descriptions)
-                if (dynamic_cast<T*>(p.get()))
-                    return dynamic_cast<T*>(p.get());
-
-            Tfr::pTransformDesc p(new T());
-            descriptions.insert(p);
-            return dynamic_cast<T*>(p.get());
+        T& getParam() {
+            return write1(transform_descs_)->getParam<T>();
         }
 
         Tfr::Filter* block_filter();
@@ -84,7 +81,7 @@ namespace Tools
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
-        std::set<Tfr::pTransformDesc> descriptions;
+        Support::TransformDescs::Ptr transform_descs_;
         Heightmap::TfrMap::Ptr tfr_map_;
 
         friend class boost::serialization::access;

@@ -114,6 +114,13 @@ pChunk Fft::
 }
 
 
+TransformDesc::Ptr Fft::
+        copy() const
+{
+    return TransformDesc::Ptr(new Fft(*this));
+}
+
+
 pTransform Fft::
         createTransform() const
 {

@@ -80,7 +80,7 @@ Gauss BrushModel::
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
     Heightmap::Region region = Heightmap::ReferenceRegion( tfr_mapping() )( ref);
 
-    const Tfr::Cwt& cwt = *render_model_->getParam<Tfr::Cwt>();
+    Tfr::Cwt& cwt = render_model_->getParam<Tfr::Cwt>();
     float fs = filter()->sample_rate();
     float hz = render_model_->display_scale().getFrequency( pos.scale );
     float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;
@@ -189,7 +189,7 @@ Signal::Interval BrushModel::
                    img,
                    gauss );
 
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections )
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections() )
     {
         Heightmap::pBlock block = collection->getBlock( ref );
         if (block)

@@ -74,16 +74,23 @@ typedef boost::shared_ptr<Transform> pTransform;
 /**
  * @brief The TransformDesc class represents a description to create a transform.
  */
-class TransformDesc: public VolatilePtr<TransformDesc> {
+class TransformDesc {
 public:
+    typedef boost::shared_ptr<TransformDesc> Ptr;
+
     TransformDesc() {}
-    // Prevent the volatileptr from being copied, create a new instance instead.
-    TransformDesc(const TransformDesc&) {}
 
     /**
       Virtual housekeeping.
       */
     virtual ~TransformDesc() {}
+
+
+    /**
+     * @brief copy creates a copy of 'this'.
+     * @return a copy.
+     */
+    virtual TransformDesc::Ptr copy() const = 0;
 
 
     /**
@@ -156,7 +163,7 @@ public:
     bool operator!=(const TransformDesc& b) const { return !(*this == b); }
 };
 // TODO remove pTransformDesc
-typedef boost::shared_ptr<TransformDesc> pTransformDesc;
+typedef TransformDesc::Ptr pTransformDesc;
 
 
 } // namespace Tfr

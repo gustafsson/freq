@@ -70,7 +70,10 @@ public:
     void length(float L);
 
     int channels() const;
-    std::vector<boost::shared_ptr<Heightmap::Collection> > collections() const;
+
+    typedef boost::shared_ptr<Heightmap::Collection> pCollection;
+    typedef std::vector<pCollection> Collections;
+    Collections collections() const;
 
 private:
     void updateCollections();

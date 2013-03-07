@@ -92,7 +92,8 @@ Signal::pBuffer Filter::
             EXCEPTION_ASSERT( cii & I );
         #endif
 
-        if (applyFilter( ci ))
+        bool applied_filter = applyFilter( ci );
+        if (applied_filter)
             ci.inverse = t->inverse (ci.chunk);
 
         if (!r)
@@ -101,7 +102,7 @@ Signal::pBuffer Filter::
         #ifdef _DEBUG
             Interval invinterval = ci.inverse->getInterval ();
             Interval i(I.first, I.first+1);
-            if (!( i & invinterval ))
+            if (!( i & invinterval ) && !applied_filter)
             {
                 Signal::Interval required2 = requiredInterval(I, t);
                 Interval cgi2 = ci.chunk->getInterval ();

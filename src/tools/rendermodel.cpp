@@ -23,7 +23,8 @@ RenderModel::
         xscale(0),
         zscale(0),
         orthoview(1),
-        _project(p)
+        _project(p),
+        transform_descs_(new Support::TransformDescs)
 {
     resetSettings();
 
@@ -104,6 +105,13 @@ void RenderModel::
 }
 
 
+std::vector<boost::shared_ptr<Heightmap::Collection> > RenderModel::
+        collections()
+{
+    return read1(tfr_map_)->collections();
+}
+
+
 void RenderModel::
         block_size(Heightmap::BlockSize bs)
 {
@@ -146,10 +154,17 @@ Heightmap::TfrMapping RenderModel::
 }
 
 
-Heightmap::TfrMap::Ptr& RenderModel::
+Heightmap::TfrMap::Ptr RenderModel::
         tfr_map()
 {
     return tfr_map_;
+}
+
+
+Support::TransformDescs::Ptr RenderModel::
+        transform_descs()
+{
+    return transform_descs_;
 }
 
 
@@ -160,7 +175,7 @@ Tfr::Filter* RenderModel::
     Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s[0]->source().get());
 
 #ifdef _DEBUG
-    Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(collections[0]->block_filter().get());
+    Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(collections()[0]->block_filter().get());
     EXCEPTION_ASSERT( f == f2 );
 #endif
 

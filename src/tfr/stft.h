@@ -37,6 +37,7 @@ public:
 
 
     // Implementing TransformParams
+    virtual TransformDesc::Ptr copy() const;
     virtual pTransform createTransform() const;
     virtual float displayedTimeResolution( float FS, float hz ) const;
     virtual FreqAxis freqAxis( float FS ) const;

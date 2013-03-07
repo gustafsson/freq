@@ -153,10 +153,12 @@ unsigned Collection::
             TaskInfo(format("Release block %s") % rr (b->reference()));
         else
         {
-            TaskInfo(format("Delaying removal of block %s") % rr (b->reference()));
             delayremoval.push_back (b);
         }
     }
+    if (!delayremoval.empty ())
+        TaskInfo(format("Delaying removal of %d blocks") % delayremoval.size ());
+
     _to_remove = delayremoval;
 
 
@@ -534,6 +536,9 @@ const TfrMapping& Collection::
 void Collection::
         tfr_mapping(TfrMapping& new_tfr_mapping)
 {
+    if (new_tfr_mapping == tfr_mapping_)
+        return;
+
     bool doreset = false;
 
     {

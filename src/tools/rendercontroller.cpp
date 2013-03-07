@@ -91,7 +91,7 @@ public:
 
         // If BlockFilter is a CwtFilter wavelet time support has already been included in I
 
-        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections())
         {
             c->invalidate_samples( I );
         }
@@ -105,7 +105,7 @@ public:
     virtual Signal::Intervals invalid_samples()
     {
         Signal::Intervals I;
-        foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+        foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections())
         {
             Signal::Intervals inv_coll = c->invalid_samples();
             I |= inv_coll;
@@ -117,6 +117,7 @@ public:
 
     void validateSize()
     {
+/*
         unsigned N = num_channels();
         if ( N != model_->collections.size())
         {
@@ -131,8 +132,8 @@ public:
 
             view_->emitTransformChanged();
         }
-
-        foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+*/
+        foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections())
         {
             c->block_filter( DeprecatedOperation::source() );
         }
@@ -140,7 +141,7 @@ public:
         Signal::Interval currentInterval = getInterval();
         if (prevSignal != currentInterval)
         {
-            foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections)
+            foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections())
             {
                 c->discardOutside( currentInterval );
             }
@@ -204,8 +205,8 @@ RenderController::
 //        logScale->trigger();
 //#endif
 
-        Tfr::StftDesc* p = model()->getParam<Tfr::StftDesc>();
-        p->setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
+        Tfr::StftDesc& p = model()->getParam<Tfr::StftDesc>();
+        p.setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
 
         ui->actionToggleTransformToolBox->setChecked( true );
     }
@@ -361,12 +362,12 @@ void RenderController::
 
     if (isCwt)
     {
-        Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+        Tfr::Cwt& c = model()->getParam<Tfr::Cwt>();
         tf_resolution->setValue (c.scales_per_octave ());
     }
     else
     {
-        Tfr::StftDesc& s = *model()->getParam<Tfr::StftDesc>();
+        Tfr::StftDesc& s = model()->getParam<Tfr::StftDesc>();
         tf_resolution->setValue (s.chunk_size ());
     }
 
@@ -419,9 +420,9 @@ void RenderController::
 {
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
     if (isCwt)
-        model()->getParam<Tfr::Cwt>()->scales_per_octave ( value );
+        model()->getParam<Tfr::Cwt>().scales_per_octave ( value );
     else
-        model()->getParam<Tfr::StftDesc>()->set_approximate_chunk_size( value );
+        model()->getParam<Tfr::StftDesc>().set_approximate_chunk_size( value );
 
     stateChanged();
 
@@ -443,55 +444,49 @@ void RenderController::
         updateTransformDesc()
 {
     Tfr::Transform* t = currentTransform();
+    Tfr::TransformDesc::Ptr newuseroptions;
+
     if (!t)
         return;
 
-    if (Tfr::Stft* s = dynamic_cast<Tfr::Stft*>(t))
     {
-        Tfr::StftDesc* sp = model()->getParam<Tfr::StftDesc>();
-        if (*s->transformDesc() != *sp)
-            setCurrentFilterTransform(sp->createTransform());
-        return;
-    }
-    if (Tfr::Cwt* s = dynamic_cast<Tfr::Cwt*>(t))
-    {
-        Tfr::Cwt* sp = model()->getParam<Tfr::Cwt>();
-        if (*s->transformDesc() != *sp)
-            setCurrentFilterTransform(sp->createTransform());
-        return;
-    }
-    if (Tfr::Cepstrum* s = dynamic_cast<Tfr::Cepstrum*>(t))
-    {
-        Tfr::CepstrumDesc* sp = model()->getParam<Tfr::CepstrumDesc>();
-        if (*s->transformDesc() != *sp)
-            setCurrentFilterTransform(sp->createTransform());
-        return;
-    }
-    if (Tfr::DrawnWaveform* s = dynamic_cast<Tfr::DrawnWaveform*>(t))
-    {
-        Tfr::DrawnWaveform* sp = model()->getParam<Tfr::DrawnWaveform>();
-        if (*s->transformDesc() != *sp)
-            setCurrentFilterTransform(sp->createTransform());
-        return;
+        Heightmap::TfrMap::WritePtr tfr_map(model()->tfr_map ());
+
+        // If the transform currently in use differs from the transform settings
+        // that should be used, change the transform.
+        Tfr::TransformDesc::Ptr useroptions = tfr_map->transform_desc();
+
+        // If there is a transform but no tfr_map transform_desc it means that
+        // there is a bug (or at least some continued refactoring todo). Update
+        // tfr_map
+        EXCEPTION_ASSERT (useroptions);
+
+        newuseroptions = read1(model()->transform_descs ())->cloneType(typeid(*useroptions));
+        EXCEPTION_ASSERT (newuseroptions);
+
+        if (*newuseroptions != *useroptions)
+            tfr_map->transform_desc( newuseroptions );
     }
 
-    throw std::logic_error(str(format("updateTransformParams, unkown transform: %s") % vartype(*t)).c_str());
+    if (*t->transformDesc () != *newuseroptions)
+        setCurrentFilterTransform(newuseroptions);
 }
 
 
 void RenderController::
-        setCurrentFilterTransform( Tfr::pTransform t )
+        setCurrentFilterTransform( Tfr::TransformDesc::Ptr t )
 {
-    Tfr::StftDesc& s = *model()->getParam<Tfr::StftDesc>();
-    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+    Tfr::StftDesc& s = model()->getParam<Tfr::StftDesc>();
+    Tfr::Cwt& c = model()->getParam<Tfr::Cwt>();
 
+    // TODO add tfr resolution string to TransformDesc
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(t.get ());
     if (isCwt)
         tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1\nScales per octave").arg(c.sigma(), 0, 'f', 1));
     else
         tf_resolution->setToolTip(QString("Time/frequency resolution\nSTFT window: %1 samples").arg(s.chunk_size()));
 
-    currentFilter()->transform( t );
+    currentFilter()->transform( t->createTransform() );
 }
 
 
@@ -523,8 +518,8 @@ Signal::PostSink* RenderController::
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
 
-    Tfr::StftDesc& s = *model()->getParam<Tfr::StftDesc>();
-    Tfr::Cwt& c = *model()->getParam<Tfr::Cwt>();
+    Tfr::StftDesc& s = model()->getParam<Tfr::StftDesc>();
+    Tfr::Cwt& c = model()->getParam<Tfr::Cwt>();
     float FS = headSampleRate();
 
     float wavelet_default_time_support = c.wavelet_default_time_support();
@@ -548,6 +543,8 @@ Signal::PostSink* RenderController::
     }
 
     c.wavelet_fast_time_support( wavelet_fast_time_support );
+
+    write1(model()->tfr_map ())->transform_desc( currentTransform()->transformDesc ()->copy() );
 
     view->emitTransformChanged();
     return ps;
@@ -603,7 +600,7 @@ float RenderController::
 void RenderController::
         receiveSetTransform_Cwt()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     setBlockFilter( cwtblock );
@@ -613,7 +610,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(&model()->collections);
+    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->tfr_map ());
 
     setBlockFilter( stftblock );
 }
@@ -622,7 +619,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -646,7 +643,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
@@ -658,7 +655,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );
@@ -668,7 +665,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cepstrum()
 {
-    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(&model()->collections);
+    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->tfr_map ());
 
     setBlockFilter( cepstrumblock );
 }
@@ -677,7 +674,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_DrawnWaveform()
 {
-    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(&model()->collections);
+    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(model()->tfr_map ());
 
     setBlockFilter( drawnwaveformblock );
 
@@ -720,17 +717,21 @@ void RenderController::
     float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
-    Tfr::Cwt* cwt = model()->getParam<Tfr::Cwt>();
-    fa.setLogarithmic(
-            cwt->wanted_min_hz(),
-            cwt->get_max_hz(fs) );
 
-    if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
-        // Happens typically when currentTransform is a cepstrum transform with a short window size
+        Support::TransformDescs::WritePtr td(model()->transform_descs ());
+        Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         fa.setLogarithmic(
-                currentTransformMinHz(),
-                cwt->get_max_hz(fs) );
+                cwt.wanted_min_hz(),
+                cwt.get_max_hz(fs) );
+
+        if (currentTransform() && fa.min_hz < currentTransformMinHz())
+        {
+            // Happens typically when currentTransform is a cepstrum transform with a short window size
+            fa.setLogarithmic(
+                    currentTransformMinHz(),
+                    cwt.get_max_hz(fs) );
+        }
     }
 
     model()->display_scale( fa );
@@ -746,7 +747,7 @@ void RenderController::
     float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
-    fa.setQuefrencyNormalized( fs, model()->getParam<Tfr::CepstrumDesc>()->chunk_size() );
+    fa.setQuefrencyNormalized( fs, model()->getParam<Tfr::CepstrumDesc>().chunk_size() );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
@@ -1125,7 +1126,7 @@ void RenderController::
 
     // Clear all cached blocks and release cuda memory befure destroying cuda
     // context
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections )
+    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections() )
         collection->reset();
 
 
@@ -1238,9 +1239,9 @@ void RenderController::
     {
         unsigned c = o->data().toUInt();
         //channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
-        if (model()->collections[c]->isVisible() != o->isChecked())
+        if (model()->collections()[c]->isVisible() != o->isChecked())
         {
-            model()->collections[c]->setVisible( o->isChecked() );
+            model()->collections()[c]->setVisible( o->isChecked() );
             stateChanged();
         }
     }

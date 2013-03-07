@@ -38,29 +38,28 @@ namespace Heightmap
 {
 
 BlockFilter::
-        BlockFilter( Collection* collection )
+        BlockFilter( Collection* /*collection*/ )
 {
-    _collections.resize (1);
-    _collections[0] = collection;
+    EXCEPTION_ASSERT( false );
+//    Heightmap::TfrMap::Ptr tfr_map(new Heightmap::TfrMap(collection->tfr_mapping (), 1, collection->target));
+//    *read1(tfr_map)->collections()[0] = *collection;
+//    this->tfr_map_ = tfr_map;
 }
 
 
 BlockFilter::
-        BlockFilter( std::vector<boost::shared_ptr<Collection> >* collections )
+        BlockFilter( Heightmap::TfrMap::Ptr tfr_map )
+    :
+      tfr_map_( tfr_map )
 {
-    if (!collections)
-        return;
-
-    _collections.resize (collections->size ());
-    for (unsigned c=0; c<collections->size (); ++c)
-        _collections[c] = (*collections)[c].get();
+    EXCEPTION_ASSERT( tfr_map );
 }
 
 
 bool BlockFilter::
         applyFilter( ChunkAndInverse& pchunk )
 {
-    Collection* collection = _collections[pchunk.channel];
+    boost::shared_ptr<Collection> collection = read1(tfr_map_)->collections()[pchunk.channel];
     Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( chunk_interval, false );
@@ -113,8 +112,7 @@ bool BlockFilter::
 void BlockFilter::
         mergeColumnMajorChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData, float normalization_factor )
 {
-    Collection* collection = _collections[pchunk.channel];
-    Heightmap::TfrMapping tfr_mapping = collection->tfr_mapping ();
+    Heightmap::TfrMapping tfr_mapping = read1(tfr_map_)->tfr_mapping ();
 
     Tfr::Chunk& chunk = *pchunk.chunk;
     Region r = block->getRegion();
@@ -203,6 +201,7 @@ void BlockFilter::
     TIME_BLOCKFILTER ComputationSynchronize();
     }
 
+    TfrMap::pCollection collection = read1(tfr_map_)->collections()[pchunk.channel];
     DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
             % transfer
             % Heightmap::ReferenceInfo(block->reference (), collection->tfr_mapping ())
@@ -217,8 +216,7 @@ void BlockFilter::
                             bool full_resolution, ComplexInfo complex_info,
                             float normalization_factor, bool enable_subtexel_aggregation)
 {
-    Collection* collection = _collections[pchunk.channel];
-    Heightmap::TfrMapping tfr_mapping = collection->tfr_mapping ();
+    Heightmap::TfrMapping tfr_mapping = read1(tfr_map_)->tfr_mapping ();
     Tfr::Chunk& chunk = *pchunk.chunk;
 
     ComputationCheckError();
@@ -410,7 +408,7 @@ void BlockFilter::
 unsigned BlockFilter::
         smallestOk(const Signal::Interval& I)
 {
-    Collection* collection = _collections[0];
+    TfrMap::pCollection collection = read1(tfr_map_)->collections()[0];
     float FS = collection->target->sample_rate();
     long double min_fs = FS;
     std::vector<pBlock> intersections = collection->getIntersectingBlocks( I?I:collection->invalid_samples(), true );
@@ -431,9 +429,9 @@ unsigned BlockFilter::
 //////////////////////////////// CwtToBlock ///////////////////////////////
 
 CwtToBlock::
-        CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections, Renderer* renderer )
+        CwtToBlock( TfrMap::Ptr tfr_map, Renderer* renderer )
             :
-            BlockFilterImpl<Tfr::CwtFilter>(collections),
+            BlockFilterImpl<Tfr::CwtFilter>(tfr_map),
             complex_info(ComplexInfo_Amplitude_Non_Weighted),
             renderer(renderer)
 {
@@ -471,9 +469,9 @@ StftToBlock::
 
 
 StftToBlock::
-        StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections )
+        StftToBlock( TfrMap::Ptr tfr_map )
             :
-            BlockFilterImpl<Tfr::StftFilter>(collections)
+            BlockFilterImpl<Tfr::StftFilter>(tfr_map)
 {
 }
 
@@ -491,9 +489,9 @@ void StftToBlock::
 ///////////////////////////// CepstrumToBlock /////////////////////////////
 
 CepstrumToBlock::
-        CepstrumToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
+        CepstrumToBlock( TfrMap::Ptr tfr_map )
             :
-            BlockFilterImpl<Tfr::CepstrumFilter>(collections)
+            BlockFilterImpl<Tfr::CepstrumFilter>(tfr_map)
 {
 }
 
@@ -509,9 +507,9 @@ void CepstrumToBlock::
 /////////////////////////// DrawnWaveformToBlock ///////////////////////////
 
 DrawnWaveformToBlock::
-        DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> > *collections )
+        DrawnWaveformToBlock( TfrMap::Ptr tfr_map )
             :
-            BlockFilterImpl<Tfr::DrawnWaveformFilter>(collections)
+            BlockFilterImpl<Tfr::DrawnWaveformFilter>(tfr_map)
 {
 }
 
@@ -520,9 +518,11 @@ Signal::Interval DrawnWaveformToBlock::
         requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
     Signal::Intervals missingSamples;
-    for (unsigned c=0; c<_collections.size (); ++c)
+    TfrMap::Collections collections = read1(tfr_map_)->collections();
+
+    for (unsigned c=0; c<collections.size (); ++c)
     {
-        Collection* collection = _collections[c];
+        TfrMap::pCollection collection = collections[c];
         std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( I, false );
 
         BOOST_FOREACH( pBlock block, intersecting_blocks)
@@ -541,9 +541,9 @@ Signal::Interval DrawnWaveformToBlock::
         first.first = missingSamples.spannedInterval().first;
         first.last = first.first + 1;
 
-        for (unsigned c=0; c<_collections.size (); ++c)
+        for (unsigned c=0; c<collections.size (); ++c)
         {
-            Collection* collection = _collections[c];
+            TfrMap::pCollection collection = collections[c];
             std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( I, false );
 
             BOOST_FOREACH( pBlock block, intersecting_blocks)
@@ -568,7 +568,8 @@ Signal::Interval DrawnWaveformToBlock::
 void DrawnWaveformToBlock::
         mergeChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData )
 {
-    Collection* c = _collections[pchunk.channel];
+    TfrMap::Collections collections = read1(tfr_map_)->collections();
+    TfrMap::pCollection c = collections[pchunk.channel];
     TfrMapping tm = c->tfr_mapping ();
     Chunk& chunk = *pchunk.chunk;
     Tfr::FreqAxis fa = tm.display_scale;

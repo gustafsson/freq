@@ -64,6 +64,7 @@ public:
     }
 
     static void test();
+
 private:
     Tfr::FreqAxis transformScale(const Tfr::TransformDesc* transform) const;
     float displayedTimeResolution(float ahz, const Tfr::TransformDesc* transform) const;

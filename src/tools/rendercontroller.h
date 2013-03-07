@@ -94,7 +94,7 @@ namespace Tools
 
     private:
         void stateChanged();
-        void setCurrentFilterTransform(Tfr::pTransform);
+        void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
         Signal::PostSink* setBlockFilter(Signal::DeprecatedOperation* blockfilter);
         Tfr::Filter* currentFilter();
         Tfr::Transform* currentTransform();

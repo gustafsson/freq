@@ -350,8 +350,8 @@ void Worker::
         // TODO handle cheating through signals instead (which could also be thread safe)
         // Not cheating anymore as there would have been nothing left to work on
         WORKER_INFO TaskInfo("Restoring time support");
-        Tfr::Cwt* cwt = t->project()->tools().render_model.getParam<Tfr::Cwt>();
-        cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
+        Tfr::Cwt& cwt = t->project()->tools().render_model.getParam<Tfr::Cwt>();
+        cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
     }
 
     if (!is_cheating || !c)
@@ -416,8 +416,8 @@ void Worker::
 
             if (!_target->allow_cheat_resolution() && false)
             {
-                Tfr::Cwt* cwt = _target->project()->tools().render_model.getParam<Tfr::Cwt>();
-                cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
+                Tfr::Cwt& cwt = _target->project()->tools().render_model.getParam<Tfr::Cwt>();
+                cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
             }
         }
 
@@ -485,8 +485,8 @@ float Worker::
     }
     _last_work_one = now;
 
-    Tfr::Cwt* cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
-    cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
+    Tfr::Cwt& cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
+    cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
 
     return current_fps;
 }
@@ -514,7 +514,7 @@ void Worker::
         // TODO setting cheat resolution is a property of target. Not something worker should know this much about.
         if (target()->allow_cheat_resolution() && false)
         {
-            Tfr::Cwt& cwt = *target()->project()->tools().render_model.getParam<Tfr::Cwt>();
+            Tfr::Cwt& cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
             float fs = target()->source()->sample_rate();
             float fast_support_samples = 0.01f *fs;
             float fast_support = fast_support_samples / cwt.morlet_sigma_samples( fs, cwt.wanted_min_hz() );
@@ -538,8 +538,9 @@ void Worker::
 bool Worker::
         is_cheating()
 {
-    const Tfr::Cwt* cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
-    return cwt->wavelet_time_support() < cwt->wavelet_default_time_support();
+    Tfr::Cwt& cwt = target()->project()->tools().render_model.getParam<Tfr::Cwt>();
+//    VolatilePtr<Tfr::Cwt>::ReadPtr cwt ( target()->project()->tools().render_model.getParam<Tfr::Cwt>() );
+    return cwt.wavelet_time_support() < cwt.wavelet_default_time_support();
 }
 
 

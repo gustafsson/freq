@@ -93,7 +93,7 @@ public:
 
 
     /**
-     * @brief cloneParams creates a copy of 'this'.
+     * @brief copy creates a copy of 'this'.
      * @return a copy.
      */
     virtual OperationDesc::Ptr copy() const = 0;

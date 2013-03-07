@@ -378,6 +378,13 @@ pChunk Cwt::
 }
 
 
+TransformDesc::Ptr Cwt::
+        copy() const
+{
+    return TransformDesc::Ptr(new Cwt(*this));
+}
+
+
 pTransform Cwt::
         createTransform() const
 {

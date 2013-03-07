@@ -18,6 +18,9 @@ public:
     virtual Signal::pMonoBuffer inverse( pChunk chunk );
 
 
+
+    virtual TransformDesc::Ptr copy() const;
+
     virtual pTransform createTransform() const;
 
     virtual float displayedTimeResolution( float FS, float hz ) const;
