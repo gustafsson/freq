@@ -5,35 +5,18 @@
 namespace Heightmap {
 
 Block::
-        Block( ReferenceInfo ref )
+        Block( const Reference& ref, const BlockConfiguration& block_config)
     :
     frame_number_last_used(-1),
 #ifndef SAWE_NO_MUTEX
     new_data_available( false ),
     to_delete( false ),
 #endif
-    ref_(ref.reference()),
-    block_interval_( ref.getInterval() ),
-    region_( ReferenceRegion(ref.block_config ())(ref.reference ()) ),
-    sample_rate_( ref.sample_rate() ),
-    block_size_( ref.block_config ().block_size () )
-{
-}
-
-
-Block::
-        Block( Signal::Interval block_interval, Region region, float sample_rate, BlockSize block_size )
-    :
-    frame_number_last_used(-1),
-#ifndef SAWE_NO_MUTEX
-    new_data_available( false ),
-    to_delete( false ),
-#endif
-    ref_(),
-    block_interval_( block_interval ),
-    region_( region ),
-    sample_rate_( sample_rate ),
-    block_size_( block_size )
+    ref_(ref),
+    block_config_(block_config),
+    block_interval_( ReferenceInfo(ref, block_config).getInterval() ),
+    region_( ReferenceRegion(block_config)(ref) ),
+    sample_rate_( ReferenceInfo(ref, block_config).sample_rate() )
 {
 }
 
@@ -43,7 +26,7 @@ Block::
 {
     if (glblock)
     {
-        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceRegion(block_size_)(ref_));
+        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_config_));
         glblock.reset();
     }
 }

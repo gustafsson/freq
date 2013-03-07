@@ -26,14 +26,13 @@ namespace Heightmap {
     // transfer results between them.
     class Block {
     public:
-        Block( Signal::Interval block_interval, Region region, float sample_rate, BlockSize block_size );
-        Block( ReferenceInfo ref );
+        Block( const Reference&, const BlockConfiguration& );
         ~Block();
 
         // TODO move this value to a complementary class
         unsigned frame_number_last_used;
 
-        // Zoom level for this slot, determines size of elements
+        // OpenGL data to render
         boost::shared_ptr<GlBlock> glblock;
 
         typedef DataStorage<float>::Ptr pData;
@@ -66,17 +65,19 @@ namespace Heightmap {
         Signal::Intervals valid_samples, non_zero;
 
         const Reference& reference() const { return ref_; }
+        const BlockConfiguration& block_config() const { return block_config_; }
 
         const Signal::Interval& getInterval() const { return block_interval_; }
         const Region& getRegion() const { return region_; }
         float sample_rate() const { return sample_rate_; }
+
     private:
         const Reference ref_;
+        const BlockConfiguration block_config_;
 
         const Signal::Interval block_interval_;
         const Region region_;
         const float sample_rate_;
-        const BlockSize block_size_;
     };
     typedef boost::shared_ptr<Block> pBlock;
 

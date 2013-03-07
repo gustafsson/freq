@@ -201,18 +201,20 @@ void ChunkToBlock::
     Signal::pMonoBuffer buffer( new Signal::MonoBuffer (requiredInterval, 1));
     Tfr::pChunk chunk = (*t)( buffer );
 
-    pBlock block( new Block( Signal::Interval(15,20), Region(Position(0,0),Position(1,1)), 0, Heightmap::BlockSize(1<<9, 1<<9) ));
+    Heightmap::Reference ref;
+
+    pBlock block( new Block (ref, ctb.block_config));
     Block::pData outData( new DataStorage<float>(32,32) );
 
-//    ctb.mergeColumnMajorChunk(
-//            block,
-//            chunk,
-//            outData );
+    ctb.mergeColumnMajorChunk(
+            block,
+            chunk,
+            outData );
 
-//    ctb.mergeRowMajorChunk(
-//            block,
-//            chunk,
-//            outData );
+    ctb.mergeRowMajorChunk(
+            block,
+            chunk,
+            outData );
 }
 
 } // namespace Heightmap
