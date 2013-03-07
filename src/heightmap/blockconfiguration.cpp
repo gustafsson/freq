@@ -17,20 +17,6 @@ BlockSize::
 }
 
 
-int BlockSize::
-        texels_per_row() const
-{
-    return texels_per_row_;
-}
-
-
-int BlockSize::
-        texels_per_column() const
-{
-    return texels_per_column_;
-}
-
-
 BlockConfiguration::
         BlockConfiguration( BlockSize block_size, float fs )
     :
