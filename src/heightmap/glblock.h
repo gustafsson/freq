@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAPVBO_H
 #define HEIGHTMAPVBO_H
 
-#include "blockconfiguration.h"
+#include "blocksize.h"
 #include "tfrmapping.h"
 
 // gpumisc

@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAP_TFRMAPPING_H
 #define HEIGHTMAP_TFRMAPPING_H
 
-#include "blockconfiguration.h"
+#include "blocksize.h"
 
 namespace Heightmap {
 

@@ -1,4 +1,4 @@
-#include "blockconfiguration.h"
+#include "blocksize.h"
 
 #include "collection.h"
 #include "tfr/transform.h"
