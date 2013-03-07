@@ -105,7 +105,7 @@ typedef boost::shared_ptr<Block> pBlock;
   */
 class Collection: public VolatilePtr<Collection> {
 public:
-    Collection(Signal::pOperation target);
+    Collection(TfrMapping tfr_mapping);
     ~Collection();
 
 
@@ -160,8 +160,6 @@ public:
     void        gc();
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
-
-    Signal::pOperation target;
 
     const ThreadChecker& constructor_thread() const { return _constructor_thread; }
 

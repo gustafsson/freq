@@ -30,10 +30,10 @@ RenderModel::
 
     // initialize tfr_map_
     Signal::PostSink* o = renderSignalTarget->post_sink();
-    Heightmap::TfrMapping tfr_mapping(Heightmap::BlockSize(1<<8,1<<8), o->sample_rate ());
-    tfr_map_.reset (new Heightmap::TfrMap(tfr_mapping, o->num_channels (), renderSignalTarget->source ()));
-
     EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
+
+    Heightmap::TfrMapping tfr_mapping(Heightmap::BlockSize(1<<8,1<<8), o->sample_rate ());
+    tfr_map_.reset (new Heightmap::TfrMap(tfr_mapping, o->num_channels () ));
 
     renderer.reset( new Heightmap::Renderer() );
 

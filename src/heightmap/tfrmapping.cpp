@@ -32,7 +32,7 @@ bool TfrMapping::
 
 
 TfrMap::
-        TfrMap( TfrMapping tfr_mapping, int channels, Signal::pOperation target )
+        TfrMap( TfrMapping tfr_mapping, int channels )
     :
       tfr_mapping_( tfr_mapping )
 {
@@ -40,8 +40,7 @@ TfrMap::
 
     for (int c=0; c<channels; ++c)
     {
-        collections_[c].reset( new Heightmap::Collection(target));
-        write1(collections_[c])->tfr_mapping( tfr_mapping_ );
+        collections_[c].reset( new Heightmap::Collection(tfr_mapping_));
     }
 }
 

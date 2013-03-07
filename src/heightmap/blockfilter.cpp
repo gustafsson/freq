@@ -400,7 +400,7 @@ unsigned BlockFilter::
         smallestOk(const Signal::Interval& I)
 {
     TfrMap::pCollection collection = read1(tfr_map_)->collections()[0];
-    float FS = read1(collection)->target->sample_rate();
+    float FS = read1(tfr_map_)->targetSampleRate();
     long double min_fs = FS;
     Signal::Intervals invalid_samples = write1(collection)->invalid_samples();
     std::vector<pBlock> intersections = write1(collection)->getIntersectingBlocks( I?I:invalid_samples, true );

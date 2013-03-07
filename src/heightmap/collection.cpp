@@ -50,9 +50,8 @@ namespace Heightmap {
 
 
 Collection::
-        Collection( pOperation target )
-:   target( target ),
-    tfr_mapping_( BlockSize(1<<8, 1<<8), target->sample_rate () ),
+        Collection( TfrMapping tfr_mapping )
+:   tfr_mapping_( tfr_mapping ),
     _is_visible( true ),
     _unfinished_count(0),
     _created_count(0),
@@ -62,11 +61,9 @@ Collection::
     failed_allocation_(false),
     failed_allocation_prev_(false)
 {
-    EXCEPTION_ASSERT( target );
-
-    tfr_mapping( tfr_mapping_ );
-
     TaskTimer tt("%s = %p", __FUNCTION__, this);
+
+    _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
 
     // set _max_sample_size.time
     reset();
@@ -430,7 +427,7 @@ void Collection::
 {
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
-        Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping ()).getInterval();
+        Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping_).getInterval();
         Signal::Interval toKeep = I & blockInterval;
         if ( !toKeep )
             removeBlock(itr->second);
@@ -445,7 +442,7 @@ void Collection::
                 if (hasValidOutside)
                 {
                     Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
-                    float t = I.last / target->sample_rate() - ir.a.time;
+                    float t = I.last / tfr_mapping_.targetSampleRate - ir.a.time;
 
 #ifdef SAWE_NO_MUTEX
                     GlBlock::pHeight block = itr->second->glblock->height();
@@ -537,8 +534,8 @@ void Collection::
         c.second->valid_samples -= sid;
 
     // validate length
-    Interval wholeSignal = target->getInterval();
-    float length = wholeSignal.last / target->sample_rate();
+    Interval wholeSignal( 0, tfr_mapping_.length * (long double)tfr_mapping_.targetSampleRate );
+    float length = wholeSignal.last / tfr_mapping_.targetSampleRate;
     _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size.texels_per_row ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
@@ -790,7 +787,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
                 memForNewBlock *= tfr_mapping_.block_size.texels_per_block ();
-                size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
+                size_t allocatedMemory = this->cacheByteSize();
 
                 size_t margin = 2*memForNewBlock;
 

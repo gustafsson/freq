@@ -43,7 +43,7 @@ public:
 
 class TfrMap: public VolatilePtr<TfrMap> {
 public:
-    TfrMap(TfrMapping tfr_mapping, int channels, Signal::pOperation target);
+    TfrMap(TfrMapping tfr_mapping, int channels);
     ~TfrMap();
 
     BlockSize block_size() const;
