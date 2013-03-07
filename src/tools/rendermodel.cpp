@@ -24,7 +24,7 @@ RenderModel::
         zscale(0),
         orthoview(1),
         _project(p),
-        block_configuration_(Heightmap::BlockSize(1<<8,1<<8), 1)
+        tfr_mapping_(Heightmap::BlockSize(1<<8,1<<8), 1)
 {
     resetSettings();
 
@@ -39,7 +39,7 @@ RenderModel::
     for (unsigned c=0; c<o->num_channels(); ++c)
         collections[c]->renderer = renderer.get();
 
-    block_configuration( Heightmap::BlockConfiguration(block_configuration_.block_size (), o->sample_rate()) );
+    tfr_mapping( Heightmap::TfrMapping(tfr_mapping_.block_size (), o->sample_rate()) );
 
 
 //    setTestCamera();
@@ -106,50 +106,50 @@ void RenderModel::
 Tfr::FreqAxis RenderModel::
         display_scale() const
 {
-    return block_configuration_.display_scale();
+    return tfr_mapping_.display_scale();
 }
 
 
 void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
-    block_configuration_.display_scale( x );
+    tfr_mapping_.display_scale( x );
 
     for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->block_configuration( block_configuration_ );
+        collections[c]->tfr_mapping( tfr_mapping_ );
 }
 
 
 Heightmap::AmplitudeAxis RenderModel::
         amplitude_axis() const
 {
-    return block_configuration_.amplitude_axis();
+    return tfr_mapping_.amplitude_axis();
 }
 
 
 void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
-    block_configuration_.amplitude_axis( x );
+    tfr_mapping_.amplitude_axis( x );
     for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->block_configuration( block_configuration_ );
+        collections[c]->tfr_mapping( tfr_mapping_ );
 }
 
 
-Heightmap::BlockConfiguration RenderModel::
-        block_configuration() const
+Heightmap::TfrMapping RenderModel::
+        tfr_mapping() const
 {
-    return block_configuration_;
+    return tfr_mapping_;
 }
 
 
 void RenderModel::
-        block_configuration(Heightmap::BlockConfiguration new_config)
+        tfr_mapping(Heightmap::TfrMapping new_config)
 {
-    block_configuration_ = new_config;
+    tfr_mapping_ = new_config;
 
     for (unsigned c=0; c<collections.size(); ++c)
-        collections[c]->block_configuration( block_configuration_ );
+        collections[c]->tfr_mapping( tfr_mapping_ );
 }
 
 

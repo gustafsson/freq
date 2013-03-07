@@ -12,9 +12,9 @@ namespace Support {
 
 
 BrushFilter::
-        BrushFilter(Heightmap::BlockConfiguration block_configuration)
+        BrushFilter(Heightmap::TfrMapping tfr_mapping)
     :
-      block_configuration_(block_configuration)
+      tfr_mapping_(tfr_mapping)
 {
     images.reset( new BrushImages );
     //transform( Tfr::pTransform(new Tfr::Cwt( Tfr::Cwt::Singleton())));
@@ -60,7 +60,7 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        Heightmap::BlockSize block_size = block_configuration_.block_size ();
+        Heightmap::BlockSize block_size = tfr_mapping_.block_size ();
         img.reset( new DataStorage<float>( block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }
 
@@ -81,9 +81,9 @@ void BrushFilter::
 
 
 MultiplyBrush::
-        MultiplyBrush(Heightmap::BlockConfiguration block_configuration)
+        MultiplyBrush(Heightmap::TfrMapping tfr_mapping)
     :
-      BrushFilter(block_configuration)
+      BrushFilter(tfr_mapping)
 {
 
 }
@@ -98,7 +98,7 @@ Signal::Intervals MultiplyBrush::
 
     foreach(BrushImages::value_type const& v, imgs)
     {
-        r |= Heightmap::ReferenceInfo(v.first, block_configuration_).getInterval();
+        r |= Heightmap::ReferenceInfo(v.first, tfr_mapping_).getInterval();
     }
 
     return r;
@@ -128,15 +128,15 @@ bool MultiplyBrush::
     if (imgs.empty())
         return false;
 
-    float scale1 = this->block_configuration_.display_scale ().getFrequencyScalar( chunk.minHz() );
-    float scale2 = this->block_configuration_.display_scale ().getFrequencyScalar( chunk.maxHz() );
+    float scale1 = this->tfr_mapping_.display_scale ().getFrequencyScalar( chunk.minHz() );
+    float scale2 = this->tfr_mapping_.display_scale ().getFrequencyScalar( chunk.maxHz() );
     float time1 = (chunk.chunk_offset/chunk.sample_rate).asFloat();
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
     ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
-        Heightmap::Region r = Heightmap::ReferenceRegion( block_configuration_)( v.first );
+        Heightmap::Region r = Heightmap::ReferenceRegion( tfr_mapping_)( v.first );
 
         ResampleArea imgarea( r.a.time, r.a.scale, r.b.time, r.b.scale );
 

@@ -54,7 +54,7 @@ Support::BrushFilter* BrushModel::
     Support::MultiplyBrush* brush = dynamic_cast<Support::MultiplyBrush*>(filter_.get());
     if (0 == brush)
     {
-        filter_.reset( brush = new Support::MultiplyBrush(project_->tools().render_model.block_configuration ()) );
+        filter_.reset( brush = new Support::MultiplyBrush(project_->tools().render_model.tfr_mapping ()) );
         filter_->source( project_->head->head_source() );
     }
 
@@ -78,7 +78,7 @@ Gauss BrushModel::
        getGauss( Heightmap::Reference ref, Heightmap::Position pos )
 {
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
-    Heightmap::Region region = Heightmap::ReferenceRegion( block_config() )( ref);
+    Heightmap::Region region = Heightmap::ReferenceRegion( tfr_mapping() )( ref);
 
     const Tfr::Cwt& cwt = *render_model_->getParam<Tfr::Cwt>();
     float fs = filter()->sample_rate();
@@ -119,7 +119,7 @@ Signal::Interval BrushModel::
             bottom = ref;
 
     float threshold = 0.001f;
-    Heightmap::ReferenceRegion rr( block_config() );
+    Heightmap::ReferenceRegion rr( tfr_mapping() );
     for (unsigned &x = left.block_index[0]; ; --x)
     {
         Heightmap::Region region = rr( left);
@@ -158,17 +158,17 @@ Signal::Interval BrushModel::
 }
 
 
-const Heightmap::BlockConfiguration BrushModel::
-        block_config()
+const Heightmap::TfrMapping BrushModel::
+        tfr_mapping()
 {
-    return render_model_->block_configuration();
+    return render_model_->tfr_mapping();
 }
 
 
 Signal::Interval BrushModel::
         addGauss( Heightmap::Reference ref, Gauss gauss )
 {
-    Heightmap::Region r = Heightmap::ReferenceRegion( block_config() )( ref );
+    Heightmap::Region r = Heightmap::ReferenceRegion( tfr_mapping() )( ref );
 
     TIME_BRUSH TaskInfo("Painting gauss to ref=%s",
                         ref.toString().c_str());
@@ -179,7 +179,7 @@ Signal::Interval BrushModel::
 
     if (!img)
     {
-        Heightmap::BlockSize block_size = block_config().block_size ();
+        Heightmap::BlockSize block_size = tfr_mapping().block_size ();
         img.reset( new DataStorage<float>(
                        block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }
@@ -203,7 +203,7 @@ Signal::Interval BrushModel::
         }
     }
 
-    return Heightmap::ReferenceInfo(ref, block_config()).getInterval ();
+    return Heightmap::ReferenceInfo(ref, tfr_mapping()).getInterval ();
 }
 
 

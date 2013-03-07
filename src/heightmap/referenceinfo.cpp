@@ -16,9 +16,9 @@ ReferenceRegion::
 
 
 ReferenceRegion::
-        ReferenceRegion(const BlockConfiguration& block_config)
+        ReferenceRegion(const TfrMapping& tfr_mapping)
     :
-      block_size_(block_config.block_size ())
+      block_size_(tfr_mapping.block_size ())
 {
 
 }
@@ -41,9 +41,9 @@ Region ReferenceRegion::
 
 
 ReferenceInfo::
-        ReferenceInfo(const Reference& reference, const BlockConfiguration& block_config)
+        ReferenceInfo(const Reference& reference, const TfrMapping& tfr_mapping)
     :
-      block_config_(block_config),
+      tfr_mapping_(tfr_mapping),
       reference_(reference)
 {
 }
@@ -52,7 +52,7 @@ ReferenceInfo::
 long double ReferenceInfo::
         sample_rate() const
 {
-    Region r = ReferenceRegion(block_config_)(reference_);
+    Region r = ReferenceRegion(tfr_mapping_)(reference_);
     return ldexp(1.0, -reference_.log2_samples_size[0]) - 1/(long double)r.time();
 }
 
@@ -60,7 +60,7 @@ long double ReferenceInfo::
 bool ReferenceInfo::
         containsPoint(Position p) const
 {
-    Region r = ReferenceRegion(block_config_)(reference_);
+    Region r = ReferenceRegion(tfr_mapping_)(reference_);
 
     return r.a.time <= p.time && p.time <= r.b.time &&
             r.a.scale <= p.scale && p.scale <= r.b.scale;
@@ -71,15 +71,15 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
-    Region r = ReferenceRegion(block_config_)(reference_);
+    Region r = ReferenceRegion(tfr_mapping_)(reference_);
 
-    const Tfr::FreqAxis& cfa = block_config_.display_scale();
+    const Tfr::FreqAxis& cfa = tfr_mapping_.display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
     if (c & ReferenceInfo::BoundsCheck_HighS)
     {
-        float scaledelta = (r.scale())/block_config_.scalesPerBlock();
+        float scaledelta = (r.scale())/tfr_mapping_.scalesPerBlock();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
@@ -97,7 +97,7 @@ bool ReferenceInfo::
     {
         float atres = displayedTimeResolution (ahz, transform);
         float btres = displayedTimeResolution (bhz, transform);
-        float tdelta = 2*r.time()/block_config_.samplesPerBlock();
+        float tdelta = 2*r.time()/tfr_mapping_.samplesPerBlock();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -124,7 +124,7 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         tooLarge(float length) const
 {
-    Region r = ReferenceRegion(block_config_)(reference_);
+    Region r = ReferenceRegion(tfr_mapping_)(reference_);
     if (r.b.time > 2 * length && r.b.scale > 2 )
         return true;
     return false;
@@ -134,7 +134,7 @@ bool ReferenceInfo::
 std::string ReferenceInfo::
         toString() const
 {
-    Region r = ReferenceRegion(block_config_)(reference_);
+    Region r = ReferenceRegion(tfr_mapping_)(reference_);
     stringstream ss;
     ss << "(" << r.a.time << ":" << r.b.time << " " << r.a.scale << ":" << r.b.scale << " "
             << getInterval() << " "
@@ -158,7 +158,7 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    int samplesPerBlock = block_config_.samplesPerBlock ();
+    int samplesPerBlock = tfr_mapping_.samplesPerBlock ();
     long double blockSize = samplesPerBlock * ldexp(1.f,reference_.log2_samples_size[0]);
     long double elementSize = 1.0 / sample_rate();
     long double blockLocalSize = samplesPerBlock * elementSize;
@@ -169,7 +169,7 @@ Signal::Interval ReferenceInfo::
     // where the last element ends
     long double endTime = startTime + blockLocalSize;
 
-    long double FS = block_config_.targetSampleRate ();
+    long double FS = tfr_mapping_.targetSampleRate ();
     Signal::Interval i( max(0.L, floor(startTime * FS)), ceil(endTime * FS) );
 
     //Position a, b;
@@ -182,9 +182,9 @@ Signal::Interval ReferenceInfo::
 Signal::Interval ReferenceInfo::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    unsigned samples_per_block = block_config_.samplesPerBlock();
+    unsigned samples_per_block = tfr_mapping_.samplesPerBlock();
     long double blockSize = samples_per_block * ldexp(1.,reference_.log2_samples_size[0]);
-    long double FS = block_config_.targetSampleRate ();
+    long double FS = tfr_mapping_.targetSampleRate ();
 
     unsigned stepsPerBlock = samples_per_block - 1;
     long double p = FS*blockSize/stepsPerBlock;
@@ -231,24 +231,24 @@ Reference ReferenceInfo::
 }
 
 
-BlockConfiguration ReferenceInfo::
-        block_config() const
+TfrMapping ReferenceInfo::
+        tfr_mapping() const
 {
-    return this->block_config_;
+    return this->tfr_mapping_;
 }
 
 
 Tfr::FreqAxis ReferenceInfo::
         transformScale(const Tfr::TransformDesc* transform) const
 {
-    return transform->freqAxis(block_config_.targetSampleRate ());
+    return transform->freqAxis(tfr_mapping_.targetSampleRate ());
 }
 
 
 float ReferenceInfo::
         displayedTimeResolution(float hz, const Tfr::TransformDesc* transform) const
 {
-    return transform->displayedTimeResolution(block_config_.targetSampleRate (), hz);
+    return transform->displayedTimeResolution(tfr_mapping_.targetSampleRate (), hz);
 }
 
 

@@ -169,7 +169,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
 GlBlock::
 GlBlock( Collection* collection, float width, float height )
-:   block_configuration_( collection->block_configuration () ),
+:   block_configuration_( collection->tfr_mapping () ),
 //    _read_only_array_resource( 0 ),
 //    _read_only_array( 0 ),
     _tex_height(0),

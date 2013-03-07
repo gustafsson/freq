@@ -89,7 +89,7 @@ bool BlockFilter::
                 TaskInfo(format("%s") %
                          Heightmap::ReferenceInfo(
                              block->reference (),
-                             collection->block_configuration ()
+                             collection->tfr_mapping ()
                              ));
                 EXCEPTION_ASSERT( block->cpu_copy );
             }
@@ -114,7 +114,7 @@ void BlockFilter::
         mergeColumnMajorChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData, float normalization_factor )
 {
     Collection* collection = _collections[pchunk.channel];
-    Heightmap::BlockConfiguration block_config = collection->block_configuration ();
+    Heightmap::TfrMapping tfr_mapping = collection->tfr_mapping ();
 
     Tfr::Chunk& chunk = *pchunk.chunk;
     Region r = block->getRegion();
@@ -126,7 +126,7 @@ void BlockFilter::
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    Heightmap::ReferenceInfo ri(block->reference (), block_config);
+    Heightmap::ReferenceInfo ri(block->reference (), tfr_mapping);
     Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
@@ -196,8 +196,8 @@ void BlockFilter::
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk.freqAxis,
-                  block_config.display_scale (),
-                  block_config.amplitude_axis (),
+                  tfr_mapping.display_scale (),
+                  tfr_mapping.amplitude_axis (),
                   normalization_factor,
                   true);
     TIME_BLOCKFILTER ComputationSynchronize();
@@ -205,7 +205,7 @@ void BlockFilter::
 
     DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
             % transfer
-            % Heightmap::ReferenceInfo(block->reference (), collection->block_configuration ())
+            % Heightmap::ReferenceInfo(block->reference (), collection->tfr_mapping ())
             % block->valid_samples);
     block->valid_samples |= transfer;
     block->non_zero |= transfer;
@@ -218,7 +218,7 @@ void BlockFilter::
                             float normalization_factor, bool enable_subtexel_aggregation)
 {
     Collection* collection = _collections[pchunk.channel];
-    Heightmap::BlockConfiguration block_config = collection->block_configuration ();
+    Heightmap::TfrMapping tfr_mapping = collection->tfr_mapping ();
     Tfr::Chunk& chunk = *pchunk.chunk;
 
     ComputationCheckError();
@@ -275,8 +275,8 @@ void BlockFilter::
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = block_config.display_scale().getFrequencyScalar( chunk.minHz() );
-    float chunk_last_scale = block_config.display_scale().getFrequencyScalar( chunk.maxHz() );
+    float chunk_first_scale = tfr_mapping.display_scale().getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = tfr_mapping.display_scale().getFrequencyScalar( chunk.maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -308,7 +308,7 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
     DEBUG_CWTTOBLOCK TaskInfo("merge_last_scale = %g", merge_last_scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
-    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", block_config.scalesPerBlock ());
+    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", tfr_mapping.scalesPerBlock ());
 
 
     DEBUG_CWTTOBLOCK {
@@ -376,8 +376,8 @@ void BlockFilter::
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk.freqAxis,
-                     block_config.display_scale(),
-                     block_config.amplitude_axis(),
+                     tfr_mapping.display_scale(),
+                     tfr_mapping.amplitude_axis(),
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
@@ -569,7 +569,7 @@ void DrawnWaveformToBlock::
         mergeChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData )
 {
     Collection* c = _collections[pchunk.channel];
-    BlockConfiguration blockconfig = c->block_configuration ();
+    TfrMapping blockconfig = c->tfr_mapping ();
     Chunk& chunk = *pchunk.chunk;
     Tfr::FreqAxis fa = blockconfig.display_scale();
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
@@ -579,7 +579,7 @@ void DrawnWaveformToBlock::
         fa.min_hz = chunk.freqAxis.min_hz;
         fa.f_step = -2*fa.min_hz;
         blockconfig.display_scale( fa );
-        c->block_configuration ( blockconfig );
+        c->tfr_mapping ( blockconfig );
     }
 
 

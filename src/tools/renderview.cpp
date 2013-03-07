@@ -286,14 +286,14 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::ReferenceRegion rr(model->block_configuration ());
+    Heightmap::ReferenceRegion rr(model->tfr_mapping ());
     Heightmap::Region r = rr(*ref);
 
     ref->block_index[0] = pos.time / r.time();
     ref->block_index[1] = pos.scale / r.scale();
     r = rr(*ref);
 
-    Heightmap::ReferenceInfo ri( *ref, model->block_configuration () );
+    Heightmap::ReferenceInfo ri( *ref, model->tfr_mapping () );
     Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
         return 0;
@@ -313,7 +313,7 @@ float RenderView::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
-    Heightmap::BlockSize block_size = model->block_configuration ().block_size ();
+    Heightmap::BlockSize block_size = model->tfr_mapping ().block_size ();
     unsigned w = block_size.texels_per_row ();
     unsigned h = block_size.texels_per_column ();
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;

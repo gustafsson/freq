@@ -8,7 +8,7 @@ namespace Heightmap {
 ChunkToBlock::
         ChunkToBlock()
     :
-      block_config( BlockSize(1<<8,1<<8),2)
+      tfr_mapping( BlockSize(1<<8,1<<8),2)
 {
 
 }
@@ -28,7 +28,7 @@ void ChunkToBlock::mergeColumnMajorChunk(
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    ReferenceInfo ri(block->reference (), block_config);
+    ReferenceInfo ri(block->reference (), tfr_mapping);
     Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
@@ -54,8 +54,8 @@ void ChunkToBlock::mergeColumnMajorChunk(
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk->freqAxis,
-                  block_config.display_scale (),
-                  block_config.amplitude_axis (),
+                  tfr_mapping.display_scale (),
+                  tfr_mapping.amplitude_axis (),
                   normalization_factor,
                   true);
 
@@ -100,8 +100,8 @@ void ChunkToBlock::mergeRowMajorChunk(
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = block_config.display_scale ().getFrequencyScalar( chunk->minHz() );
-    float chunk_last_scale = block_config.display_scale ().getFrequencyScalar( chunk->maxHz() );
+    float chunk_first_scale = tfr_mapping.display_scale ().getFrequencyScalar( chunk->minHz() );
+    float chunk_last_scale = tfr_mapping.display_scale ().getFrequencyScalar( chunk->maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -137,8 +137,8 @@ void ChunkToBlock::mergeRowMajorChunk(
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk->freqAxis,
-                     block_config.display_scale (),
-                     block_config.amplitude_axis (),
+                     tfr_mapping.display_scale (),
+                     tfr_mapping.amplitude_axis (),
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
@@ -181,10 +181,10 @@ void ChunkToBlock::
     ctb.enable_subtexel_aggregation = false;
     ctb.full_resolution = false;
     ctb.normalization_factor = 1;
-    ctb.block_config = BlockConfiguration( BlockSize(1<<8,1<<8),100);
+    ctb.tfr_mapping = TfrMapping( BlockSize(1<<8,1<<8),100);
     Tfr::FreqAxis tfa;tfa.setLinear (1);
-    ctb.block_config.display_scale (tfa);
-    ctb.block_config.amplitude_axis (AmplitudeAxis_Linear);
+    ctb.tfr_mapping.display_scale (tfa);
+    ctb.tfr_mapping.amplitude_axis (AmplitudeAxis_Linear);
 
     Tfr::StftDesc* tfr;
     Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
@@ -203,7 +203,7 @@ void ChunkToBlock::
 
     Heightmap::Reference ref;
 
-    pBlock block( new Block (ref, ctb.block_config));
+    pBlock block( new Block (ref, ctb.tfr_mapping));
     Block::pData outData( new DataStorage<float>(32,32) );
 
     ctb.mergeColumnMajorChunk(

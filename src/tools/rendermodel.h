@@ -5,7 +5,7 @@
 #include "signal/target.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
-#include "heightmap/blockconfiguration.h"
+#include "heightmap/tfrmapping.h"
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 
@@ -45,8 +45,8 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis() const;
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-        Heightmap::BlockConfiguration block_configuration() const;
-        void block_configuration(Heightmap::BlockConfiguration new_config);
+        Heightmap::TfrMapping tfr_mapping() const;
+        void tfr_mapping(Heightmap::TfrMapping new_config);
 
         template<typename T>
         T* getParam() {
@@ -83,10 +83,10 @@ namespace Tools
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
         std::set<Tfr::pTransformDesc> descriptions;
-        Heightmap::BlockConfiguration block_configuration_;
+        Heightmap::TfrMapping tfr_mapping_;
 
         friend class boost::serialization::access;
-        RenderModel() : block_configuration_(Heightmap::BlockSize(0,0), 0) { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
+        RenderModel() : tfr_mapping_(Heightmap::BlockSize(0,0), 0) { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
             ar

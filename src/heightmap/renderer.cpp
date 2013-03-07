@@ -602,7 +602,7 @@ Reference Renderer::
 {
     //Position max_ss = collection->max_sample_size();
     Reference ref = collection->entireHeightmap();
-    const BlockConfiguration& bc = collection->block_configuration ();
+    const TfrMapping& bc = collection->tfr_mapping ();
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
     // 'p' with enough details.
@@ -658,8 +658,8 @@ void Renderer::draw( float scaley )
         setSize(2,2),
         scaley = 0.001;
     else
-        setSize( collection->block_configuration ().samplesPerBlock ()/_mesh_fraction_width,
-                 collection->block_configuration ().scalesPerBlock ()/_mesh_fraction_height );
+        setSize( collection->tfr_mapping ().samplesPerBlock ()/_mesh_fraction_width,
+                 collection->tfr_mapping ().scalesPerBlock ()/_mesh_fraction_height );
 
     last_ysize = scaley;
     drawn_blocks = 0;
@@ -751,8 +751,8 @@ void Renderer::beginVboRendering()
         glUniform1f(uniYScale, y_scale);
 
         float
-                w = collection->block_configuration ().samplesPerBlock (),
-                h = collection->block_configuration ().scalesPerBlock ();
+                w = collection->tfr_mapping ().samplesPerBlock (),
+                h = collection->tfr_mapping ().scalesPerBlock ();
 
         uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
         glUniform2f(uniScaleTex, (w-1.f)/w, (h-1.f)/h);
@@ -786,7 +786,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
-    const BlockConfiguration& bc = collection->block_configuration ();
+    const TfrMapping& bc = collection->tfr_mapping ();
     Region r = ReferenceRegion(bc)(ref);
     glPushMatrixContext mc( GL_MODELVIEW );
 
@@ -854,7 +854,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
 
 Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
-    BlockConfiguration block_config = collection->block_configuration ();
+    TfrMapping tfr_mapping = collection->tfr_mapping ();
 
     float timePixels, scalePixels;
     if (!computePixelsPerUnit( ref, timePixels, scalePixels ))
@@ -870,18 +870,18 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*block_config.scalesPerBlock ());
+        needBetterF = scalePixels / (_redundancy*tfr_mapping.scalesPerBlock ());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*block_config.samplesPerBlock ());
+        needBetterT = timePixels / (_redundancy*tfr_mapping.samplesPerBlock ());
 
     const Tfr::TransformDesc* t = this->collection->transform ();
-    if (!ReferenceInfo(ref.top(), block_config).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&
-        !ReferenceInfo(ref.bottom(), block_config).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0))
+    if (!ReferenceInfo(ref.top(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&
+        !ReferenceInfo(ref.bottom(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0))
         needBetterF = 0;
 
-    if (!ReferenceInfo(ref.left(), block_config).boundsCheck(ReferenceInfo::BoundsCheck_HighT, t, 0))
+    if (!ReferenceInfo(ref.left(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighT, t, 0))
         needBetterT = 0;
 
     if ( needBetterF > needBetterT && needBetterF > 1 )
@@ -897,7 +897,7 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("%s")
-        % ReferenceInfo(ref, collection->block_configuration ()));
+        % ReferenceInfo(ref, collection->tfr_mapping ()));
 
     LevelOfDetal lod = testLod( ref );
     switch(lod) {
@@ -907,7 +907,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        if (ReferenceInfo(ref.right (), collection->block_configuration ())
+        if (ReferenceInfo(ref.right (), collection->tfr_mapping ())
                 .boundsCheck(ReferenceInfo::BoundsCheck_OutT, 0, collection->target->length()))
             renderChildrenSpectrogramRef( ref.right() );
         break;
@@ -929,7 +929,7 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
     float L = this->collection->target->length();
-    if (!ReferenceInfo(ref.parent (), collection->block_configuration ())
+    if (!ReferenceInfo(ref.parent (), collection->tfr_mapping ())
             .tooLarge(L) )
     {
         renderParentSpectrogramRef( ref.parent() );
@@ -1172,7 +1172,7 @@ std::vector<GLvector> Renderer::
 bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
-    const BlockConfiguration& bc = collection->block_configuration ();
+    const TfrMapping& bc = collection->tfr_mapping ();
     Region r = ReferenceRegion(bc)(ref);
     const Position p[2] = { r.a, r.b };
 
@@ -1379,7 +1379,7 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Tfr::FreqAxis fa = collection->block_configuration ().display_scale();
+    Tfr::FreqAxis fa = collection->tfr_mapping ().display_scale();
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
     typedef tvector<2,GLfloat> GLvector2F;

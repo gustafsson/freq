@@ -5,7 +5,7 @@
 namespace Heightmap {
 
 Block::
-        Block( const Reference& ref, const BlockConfiguration& block_config)
+        Block( const Reference& ref, const TfrMapping& tfr_mapping)
     :
     frame_number_last_used(-1),
 #ifndef SAWE_NO_MUTEX
@@ -13,10 +13,10 @@ Block::
     to_delete( false ),
 #endif
     ref_(ref),
-    block_config_(block_config),
-    block_interval_( ReferenceInfo(ref, block_config).getInterval() ),
-    region_( ReferenceRegion(block_config)(ref) ),
-    sample_rate_( ReferenceInfo(ref, block_config).sample_rate() )
+    tfr_mapping_(tfr_mapping),
+    block_interval_( ReferenceInfo(ref, tfr_mapping).getInterval() ),
+    region_( ReferenceRegion(tfr_mapping)(ref) ),
+    sample_rate_( ReferenceInfo(ref, tfr_mapping).sample_rate() )
 {
 }
 
@@ -26,7 +26,7 @@ Block::
 {
     if (glblock)
     {
-        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_config_));
+        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, tfr_mapping_));
         glblock.reset();
     }
 }

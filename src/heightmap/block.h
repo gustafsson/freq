@@ -26,7 +26,7 @@ namespace Heightmap {
     // transfer results between them.
     class Block {
     public:
-        Block( const Reference&, const BlockConfiguration& );
+        Block( const Reference&, const TfrMapping& );
         ~Block();
 
         // TODO move this value to a complementary class
@@ -65,7 +65,7 @@ namespace Heightmap {
         Signal::Intervals valid_samples, non_zero;
 
         const Reference& reference() const { return ref_; }
-        const BlockConfiguration& block_config() const { return block_config_; }
+        const TfrMapping& tfr_mapping() const { return tfr_mapping_; }
 
         const Signal::Interval& getInterval() const { return block_interval_; }
         const Region& getRegion() const { return region_; }
@@ -73,7 +73,7 @@ namespace Heightmap {
 
     private:
         const Reference ref_;
-        const BlockConfiguration block_config_;
+        const TfrMapping tfr_mapping_;
 
         const Signal::Interval block_interval_;
         const Region region_;

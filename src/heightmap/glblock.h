@@ -2,6 +2,7 @@
 #define HEIGHTMAPVBO_H
 
 #include "blockconfiguration.h"
+#include "tfrmapping.h"
 
 // gpumisc
 #include <mappedvbo.h>
@@ -20,6 +21,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 class GlBlock
 {
 public:
+    // TODO change Collection to BlockConfiguration and remove tfrmapping.h
     GlBlock( Collection* collection, float width, float height );
     ~GlBlock();
 
@@ -66,7 +68,7 @@ private:
     bool create_texture( HeightMode heightMode );
     void update_texture( HeightMode heightMode );
 
-    const BlockConfiguration block_configuration_;
+    const TfrMapping block_configuration_;
 
     pHeightReadOnlyCpu _read_only_cpu;
     //cudaGraphicsResource* _read_only_array_resource;

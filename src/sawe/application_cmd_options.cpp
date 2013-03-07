@@ -143,15 +143,15 @@ void Application::
 
     tools.playback_model.selection_filename  = Sawe::Configuration::selection_output_file();
 
-    Heightmap::BlockConfiguration bc = tools.render_model.block_configuration ();
-    Heightmap::BlockConfiguration newbc(
+    Heightmap::TfrMapping bc = tools.render_model.tfr_mapping ();
+    Heightmap::TfrMapping newbc(
                 Heightmap::BlockSize(
                     Sawe::Configuration::samples_per_block(),
                     Sawe::Configuration::scales_per_block ()),
                 bc.targetSampleRate ());
     newbc.amplitude_axis ( bc.amplitude_axis () );
     newbc.display_scale ( bc.display_scale () );
-    tools.render_model.block_configuration ( newbc );
+    tools.render_model.tfr_mapping ( newbc );
 
     tools.render_view()->emitTransformChanged();
 }

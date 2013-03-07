@@ -55,7 +55,7 @@ Collection::
 :   target( target ),
     renderer( 0 ),
     _is_visible( true ),
-    block_configuration_( BlockSize(1<<8, 1<<8), target->sample_rate () ),
+    tfr_mapping_( BlockSize(1<<8, 1<<8), target->sample_rate () ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
@@ -64,7 +64,7 @@ Collection::
 {
     EXCEPTION_ASSERT( target );
 
-    block_configuration( block_configuration_ );
+    tfr_mapping( tfr_mapping_ );
 
     TaskTimer tt("%s = %p", __FUNCTION__, this);
 
@@ -90,7 +90,7 @@ void Collection::
 
     {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
-        ReferenceRegion rr(this->block_configuration ().block_size());
+        ReferenceRegion rr(this->tfr_mapping ().block_size());
         BOOST_FOREACH (const cache_t::value_type& b, _cache)
         {
             TaskInfo(format("%s") % rr(b.first));
@@ -141,7 +141,7 @@ unsigned Collection::
     _unfinished_count = 0;
     _created_count = 0;
 
-    ReferenceRegion rr(this->block_configuration ().block_size ());
+    ReferenceRegion rr(this->tfr_mapping ().block_size ());
 
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
@@ -269,7 +269,7 @@ pBlock Collection::
         getBlock( const Reference& ref )
 {
     // Look among cached blocks for this reference
-    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_configuration ()));
+    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, tfr_mapping ()));
 
     pBlock block = findBlock( ref );
 
@@ -282,7 +282,7 @@ pBlock Collection::
         }
         else
         {
-            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(block_configuration().block_size ())(ref));
+            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(tfr_mapping().block_size ())(ref));
         }
     }
 
@@ -415,7 +415,7 @@ unsigned long Collection::
         sumsize += b.second->glblock->allocated_bytes_per_element();
     }
 
-    unsigned elements_per_block = block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
+    unsigned elements_per_block = tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
     return sumsize*elements_per_block;
 }
 
@@ -471,7 +471,7 @@ void Collection::
 
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
-        Signal::Interval blockInterval = ReferenceInfo(itr->first, block_configuration ()).getInterval();
+        Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping ()).getInterval();
         Signal::Interval toKeep = I & blockInterval;
         if ( !toKeep )
             removeBlock(itr->second);
@@ -485,7 +485,7 @@ void Collection::
                 bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
                 if (hasValidOutside)
                 {
-                    Region ir = ReferenceRegion(block_configuration_)(itr->first);
+                    Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
                     float t = I.last / target->sample_rate() - ir.a.time;
 
 #ifdef SAWE_NO_MUTEX
@@ -497,7 +497,7 @@ void Collection::
                     itr->second->new_data_available = true;
 #endif
 
-                    ReferenceInfo ri(itr->first, block_configuration_);
+                    ReferenceInfo ri(itr->first, tfr_mapping_);
                     ::blockClearPart( data,
                                   ceil(t * ri.sample_rate()) );
 
@@ -524,15 +524,15 @@ void Collection::
 }
 
 
-const BlockConfiguration& Collection::
-        block_configuration() const
+const TfrMapping& Collection::
+        tfr_mapping() const
 {
-    return block_configuration_;
+    return tfr_mapping_;
 }
 
 
 void Collection::
-        block_configuration(BlockConfiguration& new_block_config)
+        tfr_mapping(TfrMapping& new_tfr_mapping)
 {
     bool doreset = false;
 
@@ -541,12 +541,12 @@ void Collection::
         QMutexLocker l(&_cache_mutex);
 #endif
         doreset =
-                new_block_config.scalesPerBlock () != block_configuration_.scalesPerBlock () ||
-                new_block_config.samplesPerBlock () != block_configuration_.samplesPerBlock ();
+                new_tfr_mapping.scalesPerBlock () != tfr_mapping_.scalesPerBlock () ||
+                new_tfr_mapping.samplesPerBlock () != tfr_mapping_.samplesPerBlock ();
 
-        block_configuration_ = new_block_config;
+        tfr_mapping_ = new_tfr_mapping;
 
-        _max_sample_size.scale = 1.f/block_configuration_.scalesPerBlock ();
+        _max_sample_size.scale = 1.f/tfr_mapping_.scalesPerBlock ();
     }
 
     if (doreset)
@@ -573,7 +573,7 @@ void Collection::
     // validate length
     Interval wholeSignal = target->getInterval();
     float length = wholeSignal.last / target->sample_rate();
-    _max_sample_size.time = 2.f*std::max(1.f, length)/block_configuration_.samplesPerBlock ();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.samplesPerBlock ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
@@ -685,8 +685,8 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
-        pBlock attempt( new Block( ref, block_configuration_ ));
-        Region r = ReferenceRegion( block_configuration_ )( ref );
+        pBlock attempt( new Block( ref, tfr_mapping_ ));
+        Region r = ReferenceRegion( tfr_mapping_ )( ref );
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( this, r.time(), r.scale() ));
 
@@ -731,7 +731,7 @@ pBlock Collection::
 pBlock Collection::
         createBlock( const Reference& ref )
 {
-    TIME_COLLECTION TaskTimer tt(format("Creating a new block %s") % ReferenceInfo(ref, block_configuration ()));
+    TIME_COLLECTION TaskTimer tt(format("Creating a new block %s") % ReferenceInfo(ref, tfr_mapping ()));
 
     pBlock result;
     // Try to create a new block
@@ -834,7 +834,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // Cuda device memory
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
-                memForNewBlock *= block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
+                memForNewBlock *= tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
                 size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
 
                 size_t margin = 2*memForNewBlock;
@@ -858,7 +858,7 @@ pBlock Collection::
                     _recent.remove( stealedBlock );
                     _cache.erase( stealedBlock->reference() );
 
-                    block.reset( new Block(ref, block_configuration_) );
+                    block.reset( new Block(ref, tfr_mapping_) );
                     block->glblock = stealedBlock->glblock;
     #ifndef SAWE_NO_MUTEX
                     block->cpu_copy = stealedBlock->cpu_copy;
@@ -873,7 +873,7 @@ pBlock Collection::
                 {
                     pBlock back = _recent.back();
 
-                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
@@ -901,7 +901,7 @@ pBlock Collection::
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
         s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-        s*=block_configuration_.scalesPerBlock ()*block_configuration_.samplesPerBlock ();
+        s*=tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
         s*=1.5f; // 50% arbitrary extra
 
         if (s>_free_memory)
@@ -937,8 +937,8 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    unsigned samples = block_configuration_.samplesPerBlock (),
-            scales = block_configuration_.scalesPerBlock ();
+    unsigned samples = tfr_mapping_.samplesPerBlock (),
+            scales = tfr_mapping_.scalesPerBlock ();
     for (unsigned s = 0; s<samples/2; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);

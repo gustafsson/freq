@@ -3,7 +3,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "heightmap/reference_hash.h"
-#include "heightmap/blockconfiguration.h"
+#include "heightmap/tfrmapping.h"
 
 // boost
 #include <boost/serialization/shared_ptr.hpp>
@@ -20,7 +20,7 @@ namespace Support {
 class BrushFilter : public Tfr::CwtFilter, public boost::noncopyable
 {
 public:
-    BrushFilter(Heightmap::BlockConfiguration block_configuration);
+    BrushFilter(Heightmap::TfrMapping tfr_mapping);
     ~BrushFilter();
 
     typedef DataStorage<float>::Ptr BrushImageDataP;
@@ -38,9 +38,9 @@ public:
 
 protected:
     /**
-     * @brief block_configuration describes the block settings for 'images'
+     * @brief tfr_mapping describes how 'images' is mapped to the heightmap
      */
-    const Heightmap::BlockConfiguration block_configuration_;
+    const Heightmap::TfrMapping tfr_mapping_;
 
 private:
     class BrushFilterSupport* resource_releaser_;
@@ -50,7 +50,7 @@ private:
 class MultiplyBrush: public BrushFilter
 {
 public:
-    MultiplyBrush(Heightmap::BlockConfiguration block_configuration);
+    MultiplyBrush(Heightmap::TfrMapping tfr_mapping);
 
     virtual Signal::Intervals affected_samples();
 
@@ -59,11 +59,11 @@ public:
 
 private:
     friend class boost::serialization::access;
-    MultiplyBrush():BrushFilter(Heightmap::BlockConfiguration(Heightmap::BlockSize(0,0), 0)) { BOOST_ASSERT(false); } // required by serialization, should never be called
+    MultiplyBrush():BrushFilter(Heightmap::TfrMapping(Heightmap::BlockSize(0,0), 0)) { BOOST_ASSERT(false); } // required by serialization, should never be called
     template<class archive> void save(archive& ar, const unsigned int version) const {
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
-        // TODO serialize block_configuration_
+        // TODO serialize tfr_mapping
 
 		size_t N = images->size();
         ar & BOOST_SERIALIZATION_NVP(N);

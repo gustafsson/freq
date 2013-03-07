@@ -119,7 +119,7 @@ void BrushController::
     Heightmap::Position p = r.getPlanePos( e->posF() );
     Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
     // TODO this should soon work
-    Heightmap::BlockConfiguration block_config = render_view_->model->block_configuration ();
+    Heightmap::TfrMapping tfr_mapping = render_view_->model->tfr_mapping ();
     view_->gauss = model()->getGauss( ref, p );
 
     if (e->buttons().testFlag( paint_button_ ) || e->buttons().testFlag( Qt::RightButton ))
@@ -129,7 +129,7 @@ void BrushController::
         if (e->buttons().testFlag( Qt::RightButton ))
             model()->brush_factor *= -1;
 
-        Heightmap::ReferenceInfo ri( ref, block_config );
+        Heightmap::ReferenceInfo ri( ref, tfr_mapping );
         if (ri.containsPoint (p))
         {
             // TODO Paint with a lower resolution
@@ -137,7 +137,7 @@ void BrushController::
             {
                 ref = ref.parent().parent().parent();
 
-                Heightmap::ReferenceRegion rr( block_config );
+                Heightmap::ReferenceRegion rr( tfr_mapping );
                 Heightmap::Region region = rr(ref);
                 while(region.b.scale>1)
                 {

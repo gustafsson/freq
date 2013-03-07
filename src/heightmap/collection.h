@@ -6,7 +6,7 @@
 #include "amplitudeaxis.h"
 #include "tfr/freqaxis.h"
 #include "position.h"
-#include "blockconfiguration.h"
+#include "tfrmapping.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
@@ -186,9 +186,9 @@ public:
     bool isVisible();
     void setVisible(bool v);
 
-    const BlockConfiguration& block_configuration() const;
+    const TfrMapping& tfr_mapping() const;
     // TODO should be private
-    void block_configuration(BlockConfiguration& new_block_config);
+    void tfr_mapping(TfrMapping& new_mapping);
 
     Renderer* renderer;
 
@@ -201,7 +201,7 @@ private:
     bool
         _is_visible;
 
-    BlockConfiguration block_configuration_;
+    TfrMapping tfr_mapping_;
 
     unsigned
         _unfinished_count,
