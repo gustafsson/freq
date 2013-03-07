@@ -688,7 +688,7 @@ pBlock Collection::
         pBlock attempt( new Block( ref, tfr_mapping_ ));
         Region r = ReferenceRegion( tfr_mapping_ )( ref );
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
-        attempt->glblock.reset( new GlBlock( this, r.time(), r.scale() ));
+        attempt->glblock.reset( new GlBlock( tfr_mapping ().block_size (), r.time(), r.scale() ));
 
 #ifndef SAWE_NO_MUTEX
         attempt->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );

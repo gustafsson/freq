@@ -5,9 +5,6 @@
 // sonicawe
 #include "sawe/nonblockingmessagebox.h"
 
-// Heightmap namespace
-#include "collection.h"
-
 // gpumisc
 #include "vbo.h"
 #include "demangle.h"
@@ -168,8 +165,8 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
 
 GlBlock::
-GlBlock( Collection* collection, float width, float height )
-:   block_configuration_( collection->tfr_mapping () ),
+GlBlock( BlockSize block_size, float width, float height )
+:   block_size_( block_size ),
 //    _read_only_array_resource( 0 ),
 //    _read_only_array( 0 ),
     _tex_height(0),
@@ -222,8 +219,8 @@ DataStorageSize GlBlock::
         heightSize() const
 {
     return DataStorageSize(
-                block_configuration_.samplesPerBlock (),
-                block_configuration_.scalesPerBlock ());
+                block_size_.texels_per_row (),
+                block_size_.texels_per_column ());
 }
 
 
@@ -282,7 +279,7 @@ void GlBlock::
     if (!_height)
     {
         TIME_GLBLOCK TaskTimer tt("Heightmap, creating vbo");
-        unsigned elems = block_configuration_.samplesPerBlock ()*block_configuration_.scalesPerBlock ();
+        unsigned elems = block_size_.texels_per_row ()*block_size_.texels_per_column ();
         // PIXEL_UNPACK_BUFFER, to be used with glTexSubImage2D
         _height.reset( new Vbo(elems*sizeof(float), GL_PIXEL_UNPACK_BUFFER, GL_STATIC_DRAW) );
     }
@@ -339,8 +336,8 @@ void GlBlock::
 bool GlBlock::
         create_texture( GlBlock::HeightMode heightMode )
 {
-    int w = block_configuration_.samplesPerBlock ();
-    int h = block_configuration_.scalesPerBlock ();
+    int w = block_size_.texels_per_row ();
+    int h = block_size_.texels_per_column ();
     static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
 
     if (0==_tex_height)
@@ -399,8 +396,8 @@ void GlBlock::
     if (!got_new_height_data && !got_new_vertex_data)
         return;
 
-    int w = block_configuration_.samplesPerBlock ();
-    int h = block_configuration_.scalesPerBlock ();
+    int w = block_size_.texels_per_row ();
+    int h = block_size_.texels_per_column ();
     static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
 
     if (!hasTextureFloat)
