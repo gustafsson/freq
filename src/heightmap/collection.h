@@ -189,7 +189,7 @@ public:
 
     const TfrMapping& tfr_mapping() const;
     // TODO should be private
-    void tfr_mapping(TfrMapping& new_mapping);
+    void tfr_mapping(TfrMapping new_mapping);
 
     Renderer* renderer;
 

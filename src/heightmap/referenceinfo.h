@@ -42,7 +42,7 @@ public:
     bool containsPoint(Position p) const;
 
     // returns false if the given BoundsCheck is out of bounds
-    bool boundsCheck(BoundsCheck, const Tfr::TransformDesc*, float length) const;
+    bool boundsCheck(BoundsCheck) const;
     bool tooLarge(float length) const;
 
     /**
@@ -66,8 +66,8 @@ public:
     static void test();
 
 private:
-    Tfr::FreqAxis transformScale(const Tfr::TransformDesc* transform) const;
-    float displayedTimeResolution(float ahz, const Tfr::TransformDesc* transform) const;
+    Tfr::FreqAxis transformScale() const;
+    float displayedTimeResolution(float ahz) const;
 
     const TfrMapping& tfr_mapping_;
     const Reference& reference_;

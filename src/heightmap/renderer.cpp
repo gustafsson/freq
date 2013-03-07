@@ -883,12 +883,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     else
         needBetterT = timePixels / (_redundancy*tfr_mapping.block_size.texels_per_row ());
 
-    const Tfr::TransformDesc* t = this->collection->transform ();
-    if (!ReferenceInfo(ref.top(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&
-        !ReferenceInfo(ref.bottom(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0))
+    if (!ReferenceInfo(ref.top(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
+        !ReferenceInfo(ref.bottom(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
         needBetterF = 0;
 
-    if (!ReferenceInfo(ref.left(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighT, t, 0))
+    if (!ReferenceInfo(ref.left(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighT))
         needBetterT = 0;
 
     if ( needBetterF > needBetterT && needBetterF > 1 )
@@ -915,7 +914,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
         if (ReferenceInfo(ref.right (), collection->tfr_mapping ())
-                .boundsCheck(ReferenceInfo::BoundsCheck_OutT, 0, collection->target->length()))
+                .boundsCheck(ReferenceInfo::BoundsCheck_OutT))
             renderChildrenSpectrogramRef( ref.right() );
         break;
     case Lod_Ok:

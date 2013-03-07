@@ -74,7 +74,7 @@ bool ReferenceInfo::
 
 // returns false if the given BoundsCheck is out of bounds
 bool ReferenceInfo::
-        boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
+        boundsCheck(BoundsCheck c) const
 {
     const Tfr::FreqAxis& cfa = tfr_mapping_.display_scale;
     float ahz = cfa.getFrequency(r.a.scale);
@@ -86,7 +86,7 @@ bool ReferenceInfo::
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
-        const Tfr::FreqAxis& tfa = transformScale (transform);
+        const Tfr::FreqAxis& tfa = transformScale ();
         float scalara = tfa.getFrequencyScalar(ahz);
         float scalarb = tfa.getFrequencyScalar(bhz);
         float scalara2 = tfa.getFrequencyScalar(a2hz);
@@ -98,8 +98,8 @@ bool ReferenceInfo::
 
     if (c & ReferenceInfo::BoundsCheck_HighT)
     {
-        float atres = displayedTimeResolution (ahz, transform);
-        float btres = displayedTimeResolution (bhz, transform);
+        float atres = displayedTimeResolution (ahz);
+        float btres = displayedTimeResolution (bhz);
         float tdelta = 2*r.time()/tfr_mapping_.block_size.texels_per_row ();
         if (btres > tdelta && atres > tdelta)
             return false;
@@ -107,7 +107,7 @@ bool ReferenceInfo::
 
     if (c & ReferenceInfo::BoundsCheck_OutT)
     {
-        if (r.a.time >= length )
+        if (r.a.time >= tfr_mapping_.length )
             return false;
     }
 
@@ -240,16 +240,16 @@ const TfrMapping& ReferenceInfo::
 
 
 Tfr::FreqAxis ReferenceInfo::
-        transformScale(const Tfr::TransformDesc* transform) const
+        transformScale() const
 {
-    return transform->freqAxis(tfr_mapping_.targetSampleRate);
+    return tfr_mapping_.transform_desc->freqAxis(tfr_mapping_.targetSampleRate);
 }
 
 
 float ReferenceInfo::
-        displayedTimeResolution(float hz, const Tfr::TransformDesc* transform) const
+        displayedTimeResolution(float hz) const
 {
-    return transform->displayedTimeResolution(tfr_mapping_.targetSampleRate, hz);
+    return tfr_mapping_.transform_desc->displayedTimeResolution(tfr_mapping_.targetSampleRate, hz);
 }
 
 

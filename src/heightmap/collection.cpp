@@ -547,8 +547,16 @@ const TfrMapping& Collection::
 
 
 void Collection::
-        tfr_mapping(TfrMapping& new_tfr_mapping)
+        tfr_mapping(TfrMapping new_tfr_mapping)
 {
+    // If only the length has changed, don't invalidate the entire heightmap.
+    // Let other calls to invalidate_samples take care of the things that
+    // needs to be invalidated.
+    TfrMapping tfr_mapping_length = tfr_mapping_;
+    tfr_mapping_length.length = new_tfr_mapping.length;
+    if (new_tfr_mapping == tfr_mapping_length)
+        tfr_mapping_ = new_tfr_mapping;
+
     if (new_tfr_mapping == tfr_mapping_)
         return;
 
