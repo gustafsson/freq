@@ -5,6 +5,8 @@
 #include "reference_hash.h"
 #include "amplitudeaxis.h"
 #include "tfr/freqaxis.h"
+#include "position.h"
+#include "blockconfiguration.h"
 
 // Sonic AWE
 #include "signal/intervals.h"

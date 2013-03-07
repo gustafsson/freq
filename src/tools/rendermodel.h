@@ -5,6 +5,7 @@
 #include "signal/target.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
+#include "heightmap/blockconfiguration.h"
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 

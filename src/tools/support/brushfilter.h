@@ -3,6 +3,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "heightmap/reference_hash.h"
+#include "heightmap/blockconfiguration.h"
 
 // boost
 #include <boost/serialization/shared_ptr.hpp>
@@ -100,7 +101,7 @@ private:
         ar & BOOST_SERIALIZATION_NVP(N);
         for (unsigned i=0; i<N; ++i)
         {
-            Heightmap::Reference ref = Heightmap::Reference(Heightmap::BlockConfiguration(Heightmap::BlockSize(2,2), 1));
+            Heightmap::Reference ref;
 			serialize_ref(ar, ref);
 
             DataStorageSize sz(0);

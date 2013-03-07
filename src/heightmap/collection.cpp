@@ -258,9 +258,9 @@ Signal::Intervals inline Collection::
 Reference Collection::
         entireHeightmap()
 {
-    Reference r( this->block_configuration () );
-    r.log2_samples_size = tvector<2,int>( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
-    r.block_index = tvector<2,unsigned>(0,0);
+    Reference r;
+    r.log2_samples_size = Reference::Scale( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
+    r.block_index = Reference::Index(0,0);
     return r;
 }
 

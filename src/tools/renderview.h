@@ -42,6 +42,7 @@ namespace Tools
         Heightmap::Position getPlanePos( QPointF widget_coordinates, bool* success = 0, bool useRenderViewContext = true );
         QPointF widget_coordinates( QPointF window_coordinates );
         QPointF window_coordinates( QPointF widget_coordinates );
+        // TODO use a pointer to a smart pointer or something that has a semantic meaning instead of a magical value of ref.
         float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false, bool* is_valid_value = 0 );
 
         /**

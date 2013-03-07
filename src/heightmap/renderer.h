@@ -3,6 +3,7 @@
 
 // Heightmap namespace
 #include "reference.h"
+#include "position.h"
 
 // gpumisc
 #include <tmatrix.h>

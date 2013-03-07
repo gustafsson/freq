@@ -9,6 +9,14 @@ using namespace std;
 namespace Heightmap {
 
 
+Reference::
+        Reference()
+    :
+        log2_samples_size(Scale(0,0)),
+        block_index(Index(0,0))
+{}
+
+
 bool Reference::
         operator==(const Reference &b) const
 {
@@ -128,23 +136,6 @@ Reference Reference::parentHorizontal() const {
     r.log2_samples_size[0]++;
     r.block_index[0]>>=1;
     return r;
-}
-
-/*Reference::
-        Reference(Collection *collection)
-:   block_config_(new BlockConfiguration(collection))
-{}*/
-
-
-Reference::
-        Reference( const BlockConfiguration& block_config )
-    : block_config_(new BlockConfiguration(block_config))
-{}
-
-
-Reference::
-        ~Reference()
-{
 }
 
 

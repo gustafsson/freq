@@ -29,7 +29,7 @@ Block::
     new_data_available( false ),
     to_delete( false ),
 #endif
-    ref_( BlockConfiguration( BlockSize(2,2), 1) ),
+    ref_(),
     block_interval_( block_interval ),
     region_( region ),
     sample_rate_( sample_rate ),

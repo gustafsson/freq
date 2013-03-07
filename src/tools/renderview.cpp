@@ -275,7 +275,7 @@ float RenderView::
     if (is_valid_value)
         *is_valid_value = false;
 
-    Heightmap::Reference myref(model->block_configuration());
+    Heightmap::Reference myref;
     if (!ref)
     {
         ref = &myref;

@@ -1,20 +1,21 @@
 #ifndef HEIGHTMAPREFERENCE_H
 #define HEIGHTMAPREFERENCE_H
 
-#include "blockconfiguration.h"
-#include "position.h"
-#include "signal/intervals.h"
-#include "tfr/transform.h"
-
 #include "tvector.h"
-#include "deprecated.h"
+
+#include <string>
 
 namespace Heightmap {
 
 class Reference {
 public:
-    tvector<2,int> log2_samples_size;
-    tvector<2,unsigned> block_index;
+    typedef tvector<2,int> Scale;
+    typedef tvector<2,unsigned> Index;
+
+    Scale log2_samples_size;
+    Index block_index;
+
+    Reference();
 
     bool operator==(const Reference &b) const;
 
@@ -42,19 +43,12 @@ public:
     Reference parentVertical() const;
     Reference parentHorizontal() const;
 
-    //Reference( Collection* parent );
-    Reference( const BlockConfiguration& block_config );
-    ~Reference();
-
     std::string toString() const;
 
     template< class ostream_t > inline
     friend ostream_t& operator<<(ostream_t& os, const Reference& r) {
         return os << r.toString();
     }
-
-private:
-    BlockConfiguration::Ptr block_config_;
 };
 
 
