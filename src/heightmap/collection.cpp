@@ -389,13 +389,6 @@ std::vector<pBlock> Collection::
 }
 
 
-const Tfr::TransformDesc* Collection::
-        transform()
-{
-    return tfr_mapping_.transform_desc.get ();
-}
-
-
 unsigned long Collection::
         cacheByteSize()
 {
@@ -1090,9 +1083,9 @@ bool Collection::
 
     outBlock->valid_samples -= inBlock->getInterval();
 
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
+    //bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
     //bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
-    bool using_subtexel_aggregation = !isCwt || false;
+    bool using_subtexel_aggregation = false;
 
 #ifndef CWT_SUBTEXEL_AGGREGATION
     // subtexel aggregation is way to slow

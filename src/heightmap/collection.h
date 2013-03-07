@@ -160,12 +160,6 @@ public:
     std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible );
 
 
-    /**
-      Extract the transform from the current filter.
-      */
-    const Tfr::TransformDesc* transform();
-
-
     unsigned long cacheByteSize();
     unsigned    cacheCount();
     void        printCacheSize();
