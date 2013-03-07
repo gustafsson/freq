@@ -37,6 +37,7 @@ public:
 
     ReferenceInfo(const Reference&, const TfrMapping&);
 
+    Region region() const;
     long double sample_rate() const;
     bool containsPoint(Position p) const;
 
@@ -69,6 +70,7 @@ private:
 
     const TfrMapping& tfr_mapping_;
     const Reference& reference_;
+    const Region r;
 };
 
 } // namespace Heightmap

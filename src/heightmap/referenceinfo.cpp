@@ -44,15 +44,22 @@ ReferenceInfo::
         ReferenceInfo(const Reference& reference, const TfrMapping& tfr_mapping)
     :
       tfr_mapping_(tfr_mapping),
-      reference_(reference)
+      reference_(reference),
+      r(ReferenceRegion(tfr_mapping_)(reference_))
 {
+}
+
+
+Region ReferenceInfo::
+        region() const
+{
+    return r;
 }
 
 
 long double ReferenceInfo::
         sample_rate() const
 {
-    Region r = ReferenceRegion(tfr_mapping_)(reference_);
     return ldexp(1.0, -reference_.log2_samples_size[0]) - 1/(long double)r.time();
 }
 
@@ -60,8 +67,6 @@ long double ReferenceInfo::
 bool ReferenceInfo::
         containsPoint(Position p) const
 {
-    Region r = ReferenceRegion(tfr_mapping_)(reference_);
-
     return r.a.time <= p.time && p.time <= r.b.time &&
             r.a.scale <= p.scale && p.scale <= r.b.scale;
 }
@@ -71,8 +76,6 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
-    Region r = ReferenceRegion(tfr_mapping_)(reference_);
-
     const Tfr::FreqAxis& cfa = tfr_mapping_.display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
@@ -124,7 +127,6 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         tooLarge(float length) const
 {
-    Region r = ReferenceRegion(tfr_mapping_)(reference_);
     if (r.b.time > 2 * length && r.b.scale > 2 )
         return true;
     return false;
@@ -134,7 +136,6 @@ bool ReferenceInfo::
 std::string ReferenceInfo::
         toString() const
 {
-    Region r = ReferenceRegion(tfr_mapping_)(reference_);
     stringstream ss;
     ss << "(" << r.a.time << ":" << r.b.time << " " << r.a.scale << ":" << r.b.scale << " "
             << getInterval() << " "
