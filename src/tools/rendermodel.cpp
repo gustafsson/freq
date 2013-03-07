@@ -174,11 +174,6 @@ Tfr::Filter* RenderModel::
     std::vector<Signal::pOperation> s = renderSignalTarget->post_sink ()->sinks ();
     Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s[0]->source().get());
 
-#ifdef _DEBUG
-    Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(collections()[0]->block_filter().get());
-    EXCEPTION_ASSERT( f == f2 );
-#endif
-
     return f;
 }
 

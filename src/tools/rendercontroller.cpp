@@ -117,26 +117,8 @@ public:
 
     void validateSize()
     {
-/*
         unsigned N = num_channels();
-        if ( N != model_->collections.size())
-        {
-            N = num_channels();
-
-            model_->collections.resize(N);
-            for (unsigned c=0; c<N; ++c)
-            {
-                if (!model_->collections[c])
-                    model_->collections[c].reset( new Heightmap::Collection(model_->renderSignalTarget->source()));
-            }
-
-            view_->emitTransformChanged();
-        }
-*/
-        foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections())
-        {
-            c->block_filter( DeprecatedOperation::source() );
-        }
+        EXCEPTION_ASSERT_EQUALS( N, model_->collections ().size() );
 
         Signal::Interval currentInterval = getInterval();
         if (prevSignal != currentInterval)

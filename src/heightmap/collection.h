@@ -161,13 +161,6 @@ public:
 
 
     /**
-      Notify the Collection what filter that is currently creating blocks.
-      */
-    void block_filter(Signal::pOperation filter) { _filter = filter; }
-    Signal::pOperation block_filter() { return _filter; }
-
-
-    /**
       Extract the transform from the current filter.
       */
     const Tfr::TransformDesc* transform();
@@ -188,21 +181,16 @@ public:
     void setVisible(bool v);
 
     const TfrMapping& tfr_mapping() const;
-    // TODO should be private
-    void tfr_mapping(TfrMapping new_mapping);
 
     Renderer* renderer;
 
 private:
-    // TODO remove friends
-    //friend class BlockFilter;
-    friend class CwtToBlock;
-    friend class StftToBlock;
+    friend class Heightmap::TfrMap;
+    void tfr_mapping(TfrMapping new_mapping);
+    TfrMapping tfr_mapping_;
 
     bool
         _is_visible;
-
-    TfrMapping tfr_mapping_;
 
     unsigned
         _unfinished_count,
@@ -218,8 +206,6 @@ private:
     // free memory is updated in next_frame()
     size_t
             _free_memory;
-
-    Signal::pOperation _filter;
 
     /**
      * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()

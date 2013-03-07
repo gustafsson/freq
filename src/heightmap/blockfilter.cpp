@@ -579,8 +579,7 @@ void DrawnWaveformToBlock::
         fa.axis_scale = Tfr::AxisScale_Linear;
         fa.min_hz = chunk.freqAxis.min_hz;
         fa.f_step = -2*fa.min_hz;
-        tm.display_scale = fa;
-        c->tfr_mapping ( tm );
+        write1(tfr_map_)->display_scale( fa );
     }
 
 

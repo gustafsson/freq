@@ -54,8 +54,8 @@ Collection::
         Collection( pOperation target )
 :   target( target ),
     renderer( 0 ),
-    _is_visible( true ),
     tfr_mapping_( BlockSize(1<<8, 1<<8), target->sample_rate () ),
+    _is_visible( true ),
     _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
@@ -394,10 +394,7 @@ std::vector<pBlock> Collection::
 const Tfr::TransformDesc* Collection::
         transform()
 {
-    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(_filter.get());
-    if (filter)
-        return filter->transform()->transformDesc();
-    return 0;
+    return tfr_mapping_.transform_desc.get ();
 }
 
 
