@@ -18,13 +18,11 @@ public:
 
     bool operator==(const Reference &b) const;
     // begin move out
-    //DEPRECATED( std::string toString() const );
-    std::string toString() const;
-
     /**
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
       invalid samples.
       */
+    //DEPRECATED ( Signal::Interval getInterval() const );
     Signal::Interval getInterval() const;
     Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
     // end moved out
@@ -55,6 +53,13 @@ public:
     //Reference( Collection* parent );
     Reference( const BlockConfiguration& block_config );
     ~Reference();
+
+    std::string toString() const;
+
+    template< class ostream_t > inline
+    friend ostream_t& operator<<(ostream_t& os, const Reference& r) {
+        return os << r.toString();
+    }
 
 private:
     BlockConfiguration::Ptr block_config_;

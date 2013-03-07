@@ -45,6 +45,7 @@
 #define MAX_CREATED_BLOCKS_PER_FRAME 16
 
 using namespace Signal;
+using namespace boost;
 
 namespace Heightmap {
 
@@ -89,15 +90,16 @@ void Collection::
 
     {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
+        ReferenceRegion rr(this->block_configuration ().block_size());
         BOOST_FOREACH (const cache_t::value_type& b, _cache)
         {
-            TaskInfo("%s", b.first.toString().c_str());
+            TaskInfo(format("%s") % rr(b.first));
         }
 
         TaskInfo ti2("of which recent count %u", _recent.size());
         BOOST_FOREACH (const recent_t::value_type& b, _recent)
         {
-            TaskInfo("%s", b->reference().toString().c_str());
+            TaskInfo(format("%s") % rr(b->reference()));
         }
     }
 
@@ -139,6 +141,7 @@ unsigned Collection::
     _unfinished_count = 0;
     _created_count = 0;
 
+    ReferenceRegion rr(this->block_configuration ().block_size ());
 
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
@@ -147,10 +150,10 @@ unsigned Collection::
         _cache.erase(b->reference());
 
         if (b.unique ())
-            TaskInfo("Release block %s", b->reference().toString().c_str());
+            TaskInfo(format("Release block %s") % rr (b->reference()));
         else
         {
-            TaskInfo("Delaying removal of block %s", b->reference().toString().c_str());
+            TaskInfo(format("Delaying removal of block %s") % rr (b->reference()));
             delayremoval.push_back (b);
         }
     }
@@ -266,7 +269,7 @@ pBlock Collection::
         getBlock( const Reference& ref )
 {
     // Look among cached blocks for this reference
-    TIME_GETBLOCK TaskTimer tt("getBlock %s", ref.toString().c_str());
+    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_configuration ()));
 
     pBlock block = findBlock( ref );
 
@@ -279,7 +282,7 @@ pBlock Collection::
         }
         else
         {
-            TaskInfo("Delaying creation of block %s", ref.toString().c_str());
+            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(block_configuration().block_size ())(ref));
         }
     }
 
@@ -621,9 +624,9 @@ Intervals Collection::
                 to_delete = b.to_delete;
 #endif
                 if (i)
-                    TaskInfo("block %s is invalid on %s%s", b.reference().toString().c_str(), i.toString().c_str(), to_delete?" to delete":"");
+                    TaskInfo(format("block %s is invalid on %s%s") % b.reference() % i % (to_delete?" to delete":""));
                 else
-                    TaskInfo("block %s is valid%s", b.reference().toString().c_str(), to_delete?" to delete":"");
+                    TaskInfo(format("block %s is valid%s") % b.reference() % (to_delete?" to delete":""));
             }
         } else
             break;
@@ -729,7 +732,7 @@ pBlock Collection::
 pBlock Collection::
         createBlock( const Reference& ref )
 {
-    TIME_COLLECTION TaskTimer tt("Creating a new block %s", ref.toString().c_str());
+    TIME_COLLECTION TaskTimer tt(format("Creating a new block %s") % ReferenceInfo(ref, block_configuration ()));
 
     pBlock result;
     // Try to create a new block
@@ -844,13 +847,13 @@ pBlock Collection::
     #endif
                     pBlock stealedBlock = _recent.back();
 
-                    TaskInfo ti("Stealing block %s last used %u frames ago for %s. Total free %s, total cache %s, %u blocks",
-                                stealedBlock->reference ().toString ().c_str (),
-                                 _frame_counter - stealedBlock->frame_number_last_used,
-                                ref.toString ().c_str (),
-                                 DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
-                                 DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
-                                  _cache.size()
+                    TaskInfo ti(format("Stealing block %s last used %u frames ago for %s. Total free %s, total cache %s, %u blocks")
+                                % stealedBlock->reference ()
+                                % (_frame_counter - stealedBlock->frame_number_last_used)
+                                % ref
+                                % DataStorageVoid::getMemorySizeText( _free_memory )
+                                % DataStorageVoid::getMemorySizeText( allocatedMemory )
+                                % _cache.size()
                                  );
 
                     _recent.remove( stealedBlock );
@@ -876,14 +879,14 @@ pBlock Collection::
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
-                    TaskInfo("Soon removing block %s last used %u frames ago in favor of %s. Freeing %s, total free %s, cache %s, %u blocks",
-                                 back->reference ().toString().c_str (),
-                                 _frame_counter - block->frame_number_last_used,
-                                 ref.toString ().c_str (),
-                                 DataStorageVoid::getMemorySizeText( blockMemory ).c_str(),
-                                 DataStorageVoid::getMemorySizeText( _free_memory ).c_str(),
-                                 DataStorageVoid::getMemorySizeText( allocatedMemory ).c_str(),
-                                 _cache.size()
+                    TaskInfo(format("Soon removing block %s last used %u frames ago in favor of %s. Freeing %s, total free %s, cache %s, %u blocks")
+                                 % back->reference ()
+                                 % (_frame_counter - block->frame_number_last_used)
+                                 % ref
+                                 % DataStorageVoid::getMemorySizeText( blockMemory )
+                                 % DataStorageVoid::getMemorySizeText( _free_memory )
+                                 % DataStorageVoid::getMemorySizeText( allocatedMemory )
+                                 % _cache.size()
                                  );
 
                     removeBlock(back);
@@ -917,13 +920,13 @@ pBlock Collection::
     bool empty_cache = _cache.empty();
 
     if ( !block && !empty_cache ) {
-        TaskTimer tt("Memory allocation failed creating new block %s. Doing garbage collection", ref.toString().c_str());
+        TaskTimer tt(format("Memory allocation failed creating new block %s. Doing garbage collection") % ref);
         gc();
         block = attempt( ref ); // try again
     }
 
     if ( !block ) {
-        TaskTimer tt("Failed to create a new block %s", ref.toString().c_str());
+        TaskTimer tt(format("Failed to create a new block %s") % ref);
         return pBlock(); // return null-pointer
     }
 

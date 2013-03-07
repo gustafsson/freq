@@ -2,6 +2,8 @@
 
 #include "referenceinfo.h"
 
+#include <sstream>
+
 using namespace std;
 
 namespace Heightmap {
@@ -149,7 +151,11 @@ Reference::
 string Reference::
         toString() const
 {
-    return ReferenceInfo(*this, *block_config_).toString();
+    std::stringstream ss;
+    ss << "(" << log2_samples_size[0] << ":" << log2_samples_size[1] << " "
+            << block_index[0] << ":" << block_index[1]
+            << ")";
+    return ss.str();
 }
 
 

@@ -896,7 +896,8 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 
 bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
-    TIME_RENDERER_BLOCKS TaskTimer tt("%s", ref.toString().c_str());
+    TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("%s")
+        % ReferenceInfo(ref, collection->block_configuration ()));
 
     LevelOfDetal lod = testLod( ref );
     switch(lod) {

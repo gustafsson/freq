@@ -26,7 +26,7 @@ namespace Heightmap {
     // transfer results between them.
     class Block {
     public:
-        Block( Signal::Interval block_interval, Region region, float sample_rate );
+        Block( Signal::Interval block_interval, Region region, float sample_rate, BlockSize block_size );
         Block( ReferenceInfo ref );
         ~Block();
 
@@ -76,6 +76,7 @@ namespace Heightmap {
         const Signal::Interval block_interval_;
         const Region region_;
         const float sample_rate_;
+        const BlockSize block_size_;
     };
     typedef boost::shared_ptr<Block> pBlock;
 

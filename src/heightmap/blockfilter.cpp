@@ -64,8 +64,8 @@ bool BlockFilter::
     Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( chunk_interval, false );
-    TIME_BLOCKFILTER TaskTimer tt("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks",
-        chunk_interval.toString().c_str(), chunk.minHz(), chunk.maxHz(), intersecting_blocks.size());
+    TIME_BLOCKFILTER TaskTimer tt(format("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks")
+        % chunk_interval % chunk.minHz() % chunk.maxHz() % intersecting_blocks.size());
 
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
@@ -86,7 +86,11 @@ bool BlockFilter::
             QMutexLocker l(&block->cpu_copy_mutex);
             if (!block->cpu_copy)
             {
-                TaskInfo("%s", block->reference ().toString ().c_str ());
+                TaskInfo(format("%s") %
+                         Heightmap::ReferenceInfo(
+                             block->reference (),
+                             collection->block_configuration ()
+                             ));
                 EXCEPTION_ASSERT( block->cpu_copy );
             }
 
@@ -127,7 +131,7 @@ void BlockFilter::
 #ifdef _DEBUG
     if (!transfer || !spannedBlockSamples)
     {
-        TaskInfo("%s", str(format("Warning: !transfer || !spannedBlockSamples.~\nspannedBlockSamples=%s\ntransfer=%s\nusableInInterval=%s\nblockInterval=%s") % spannedBlockSamples.toString() % transfer.toString() % usableInInterval.toString () % blockInterval.toString ()).c_str());
+        TaskInfo(format("Warning: !transfer || !spannedBlockSamples.~\nspannedBlockSamples=%s\ntransfer=%s\nusableInInterval=%s\nblockInterval=%s") % spannedBlockSamples % transfer % usableInInterval % blockInterval);
     }
 #endif
 
@@ -196,7 +200,10 @@ void BlockFilter::
     TIME_BLOCKFILTER ComputationSynchronize();
     }
 
-    DEBUG_CWTTOBLOCK TaskInfo("Validating %s in %s (was %s)", transfer.toString ().c_str (), block->reference ().toString ().c_str (), block->valid_samples.toString ().c_str ());
+    DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
+            % transfer
+            % Heightmap::ReferenceInfo(block->reference (), collection->block_configuration ())
+            % block->valid_samples);
     block->valid_samples |= transfer;
     block->non_zero |= transfer;
 }
@@ -240,7 +247,7 @@ void BlockFilter::
     {
         if (!(transfer - block->valid_samples))
         {
-            TIME_CWTTOBLOCK TaskInfo("%s not accepting %s, early termination", vartype(*this).c_str(), transfer.toString().c_str());
+            TIME_CWTTOBLOCK TaskInfo(format("%s not accepting %s, early termination") % vartype(*this) % transfer);
             transfer.last=transfer.first;
         }
     }
@@ -250,8 +257,8 @@ void BlockFilter::
     if (!transfer)
     {
         TIME_CWTTOBLOCK TaskInfo tt("CwtToBlock::mergeChunk, transfer empty");
-        TIME_CWTTOBLOCK TaskInfo("outInterval = %s", outInterval.toString().c_str());
-        TIME_CWTTOBLOCK TaskInfo("inInterval = %s", inInterval.toString().c_str());
+        TIME_CWTTOBLOCK TaskInfo(format("outInterval = %s") % outInterval);
+        TIME_CWTTOBLOCK TaskInfo(format("inInterval = %s") % inInterval);
 
         return;
     }
@@ -382,12 +389,12 @@ void BlockFilter::
     else
     {
         block->valid_samples -= transfer;
-        TIME_CWTTOBLOCK TaskInfo("%s not accepting %s", vartype(*this).c_str(), transfer.toString().c_str());
+        TIME_CWTTOBLOCK TaskInfo(format("%s not accepting %s") % vartype(*this) % transfer);
     }
     block->non_zero |= transfer;
 
     DEBUG_CWTTOBLOCK {
-        TaskInfo ti("Block filter input and output %s", block->reference().toString().c_str());
+        TaskInfo ti(format("Block filter input and output %s") % block->reference());
         DataStorageSize sz = chunk.transform_data->size();
         sz.width *= 2;
         Statistics<float> o1( CpuMemoryStorage::BorrowPtr<float>( sz, (float*)CpuMemoryStorage::ReadOnly<2>(chunk.transform_data).ptr() ));

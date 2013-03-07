@@ -41,7 +41,6 @@ public:
     // returns false if the given BoundsCheck is out of bounds
     bool boundsCheck(BoundsCheck, const Tfr::TransformDesc*, float length) const;
     bool tooLarge(float length) const;
-    std::string toString() const;
 
     /**
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
@@ -53,8 +52,15 @@ public:
     Reference reference() const;
     BlockConfiguration block_config() const;
 
-    static void test();
 
+    std::string toString() const;
+
+    template< class ostream_t > inline
+    friend ostream_t& operator<<(ostream_t& os, const ReferenceInfo& r) {
+        return os << r.toString();
+    }
+
+    static void test();
 private:
     Tfr::FreqAxis transformScale(const Tfr::TransformDesc* transform) const;
     float displayedTimeResolution(float ahz, const Tfr::TransformDesc* transform) const;

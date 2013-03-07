@@ -189,7 +189,7 @@ void ChunkToBlock::
     Signal::pMonoBuffer buffer( new Signal::MonoBuffer (requiredInterval, 1));
     Tfr::pChunk chunk = (*t)( buffer );
 
-    pBlock block( new Block( Signal::Interval(15,20), Region(Position(0,0),Position(1,1)), 0 ));
+    pBlock block( new Block( Signal::Interval(15,20), Region(Position(0,0),Position(1,1)), 0, Heightmap::BlockSize(1<<9, 1<<9) ));
     Block::pData outData( new DataStorage<float>(32,32) );
 
 //    ctb.mergeColumnMajorChunk(
