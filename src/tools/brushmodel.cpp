@@ -78,7 +78,7 @@ Gauss BrushModel::
        getGauss( Heightmap::Reference ref, Heightmap::Position pos )
 {
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
-    Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), ref ).getRegion();
+    Heightmap::Region region = Heightmap::ReferenceRegion( block_config() )( ref);
 
     const Tfr::Cwt& cwt = *render_model_->getParam<Tfr::Cwt>();
     float fs = filter()->sample_rate();
@@ -119,27 +119,28 @@ Signal::Interval BrushModel::
             bottom = ref;
 
     float threshold = 0.001f;
+    Heightmap::ReferenceRegion rr( block_config() );
     for (unsigned &x = left.block_index[0]; ; --x)
     {
-        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), left ).getRegion();
+        Heightmap::Region region = rr( left);
         if (0 == region.a.time || threshold > fabsf(gauss.gauss_value( region.a.time, pos.scale )))
             break;
     }
     for (unsigned &x = right.block_index[0]; ; ++x)
     {
-        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), right ).getRegion();
+        Heightmap::Region region = rr( right );
         if (threshold > fabsf(gauss.gauss_value( region.b.time, pos.scale )))
             break;
     }
     for (unsigned &y = bottom.block_index[1]; ; --y)
     {
-        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), bottom ).getRegion();
+        Heightmap::Region region = rr( bottom );
         if (0 == region.a.scale || threshold > fabsf(gauss.gauss_value( pos.time, region.a.scale )))
             break;
     }
     for (unsigned &y = top.block_index[1]; ; ++y)
     {
-        Heightmap::Region region = Heightmap::ReferenceInfo( block_config(), top ).getRegion();
+        Heightmap::Region region = rr( top );
         if (1 <= region.b.scale || threshold > fabsf(gauss.gauss_value( pos.time, region.b.scale )))
             break;
     }
@@ -167,7 +168,7 @@ const Heightmap::BlockConfiguration BrushModel::
 Signal::Interval BrushModel::
         addGauss( Heightmap::Reference ref, Gauss gauss )
 {
-    Heightmap::Region r = Heightmap::ReferenceInfo( block_config(), ref ).getRegion();
+    Heightmap::Region r = Heightmap::ReferenceRegion( block_config() )( ref );
 
     TIME_BRUSH TaskInfo("Painting gauss to ref=%s",
                         ref.toString().c_str());

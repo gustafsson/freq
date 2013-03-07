@@ -10,6 +10,18 @@
 
 namespace Heightmap {
 
+class ReferenceRegion {
+public:
+    ReferenceRegion(const BlockSize& block_size);
+    ReferenceRegion(const BlockConfiguration& block_size);
+
+    Region operator()(const Reference& ref) const;
+
+private:
+    const BlockSize block_size_;
+};
+
+
 class ReferenceInfo {
 public:
     enum BoundsCheck
@@ -21,9 +33,8 @@ public:
         BoundsCheck_All = 15
     };
 
-    ReferenceInfo(const BlockConfiguration&,const Reference&);
+    ReferenceInfo(const Reference&, const BlockConfiguration&);
 
-    Region getRegion() const;
     long double sample_rate() const;
     bool containsPoint(Position p) const;
 
@@ -40,6 +51,7 @@ public:
     Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
 
     Reference reference() const;
+    BlockConfiguration block_config() const;
 
     static void test();
 

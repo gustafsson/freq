@@ -14,7 +14,7 @@ Block::
 #endif
     ref_(ref.reference()),
     block_interval_( ref.getInterval() ),
-    region_( ref.getRegion() ),
+    region_( ReferenceRegion(ref.block_config ())(ref.reference ()) ),
     sample_rate_( ref.sample_rate() )
 {
 }

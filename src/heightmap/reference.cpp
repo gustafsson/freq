@@ -149,21 +149,21 @@ Reference::
 string Reference::
         toString() const
 {
-    return ReferenceInfo(*block_config_.get (), *this).toString();
+    return ReferenceInfo(*this, *block_config_).toString();
 }
 
 
 Signal::Interval Reference::
         getInterval() const
 {
-    return ReferenceInfo(*block_config_.get (), *this).getInterval();
+    return ReferenceInfo(*this, *block_config_).getInterval();
 }
 
 
 Signal::Interval Reference::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    return ReferenceInfo(*block_config_.get (), *this).spannedElementsInterval (I, spannedBlockSamples);
+    return ReferenceInfo(*this, *block_config_).spannedElementsInterval (I, spannedBlockSamples);
 }
 
 

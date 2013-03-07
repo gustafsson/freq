@@ -6,24 +6,33 @@ using namespace std;
 
 namespace Heightmap {
 
-ReferenceInfo::
-        ReferenceInfo(const BlockConfiguration& block_config, const Reference& reference)
+ReferenceRegion::
+        ReferenceRegion(const BlockSize& block_size)
     :
-      block_config_(block_config),
-      reference_(reference)
+      block_size_(block_size)
 {
+
 }
 
 
-Region ReferenceInfo::
-        getRegion() const
+ReferenceRegion::
+        ReferenceRegion(const BlockConfiguration& block_config)
+    :
+      block_size_(block_config.block_size ())
+{
+
+}
+
+
+Region ReferenceRegion::
+        operator()(const Reference& ref) const
 {
     Position a, b;
     // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
-    Position blockSize( block_config_.samplesPerBlock() * ldexpf(1.f,reference_.log2_samples_size[0]),
-                        block_config_.scalesPerBlock() * ldexpf(1.f,reference_.log2_samples_size[1]));
-    a.time = blockSize.time * reference_.block_index[0];
-    a.scale = blockSize.scale * reference_.block_index[1];
+    Position blockSize( block_size_.texels_per_row () * ldexpf(1.f,ref.log2_samples_size[0]),
+                        block_size_.texels_per_column () * ldexpf(1.f,ref.log2_samples_size[1]));
+    a.time = blockSize.time * ref.block_index[0];
+    a.scale = blockSize.scale * ref.block_index[1];
     b.time = a.time + blockSize.time;
     b.scale = a.scale + blockSize.scale;
 
@@ -31,10 +40,19 @@ Region ReferenceInfo::
 }
 
 
+ReferenceInfo::
+        ReferenceInfo(const Reference& reference, const BlockConfiguration& block_config)
+    :
+      block_config_(block_config),
+      reference_(reference)
+{
+}
+
+
 long double ReferenceInfo::
         sample_rate() const
 {
-    Region r = getRegion();
+    Region r = ReferenceRegion(block_config_)(reference_);
     return ldexp(1.0, -reference_.log2_samples_size[0]) - 1/(long double)r.time();
 }
 
@@ -42,7 +60,7 @@ long double ReferenceInfo::
 bool ReferenceInfo::
         containsPoint(Position p) const
 {
-    Region r = getRegion();
+    Region r = ReferenceRegion(block_config_)(reference_);
 
     return r.a.time <= p.time && p.time <= r.b.time &&
             r.a.scale <= p.scale && p.scale <= r.b.scale;
@@ -53,7 +71,7 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         boundsCheck(BoundsCheck c, const Tfr::TransformDesc* transform, float length) const
 {
-    Region r = getRegion();
+    Region r = ReferenceRegion(block_config_)(reference_);
 
     const Tfr::FreqAxis& cfa = block_config_.display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
@@ -106,7 +124,7 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         tooLarge(float length) const
 {
-    Region r = getRegion();
+    Region r = ReferenceRegion(block_config_)(reference_);
     if (r.b.time > 2 * length && r.b.scale > 2 )
         return true;
     return false;
@@ -116,7 +134,7 @@ bool ReferenceInfo::
 std::string ReferenceInfo::
         toString() const
 {
-    Region r = getRegion();
+    Region r = ReferenceRegion(block_config_)(reference_);
     stringstream ss;
     ss << "(" << r.a.time << ":" << r.b.time << " " << r.a.scale << ":" << r.b.scale << " "
             << getInterval() << " "
@@ -210,6 +228,13 @@ Reference ReferenceInfo::
         reference() const
 {
     return this->reference_;
+}
+
+
+BlockConfiguration ReferenceInfo::
+        block_config() const
+{
+    return this->block_config_;
 }
 
 

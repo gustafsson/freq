@@ -286,13 +286,14 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::Region r = Heightmap::ReferenceInfo( model->block_configuration (), *ref).getRegion ();
+    Heightmap::ReferenceRegion rr(model->block_configuration ());
+    Heightmap::Region r = rr(*ref);
 
     ref->block_index[0] = pos.time / r.time();
     ref->block_index[1] = pos.scale / r.scale();
-    Heightmap::ReferenceInfo ri( model->block_configuration (), *ref);
-    r = ri.getRegion ();
+    r = rr(*ref);
 
+    Heightmap::ReferenceInfo ri( *ref, model->block_configuration () );
     Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
     if (!block)
         return 0;

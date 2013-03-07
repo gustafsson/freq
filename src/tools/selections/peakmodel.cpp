@@ -110,7 +110,7 @@ void PeakModel::
         findAddPeak( Heightmap::Collection* c, Heightmap::Reference ref, Heightmap::Position pos )
 {
     this->c = c;
-    Heightmap::Region r = Heightmap::ReferenceInfo(c->block_configuration (), ref).getRegion();
+    Heightmap::Region r = Heightmap::ReferenceRegion(c->block_configuration ())(ref);
     Heightmap::BlockSize block_size = c->block_configuration ().block_size ();
     unsigned h = block_size.texels_per_column ();
     unsigned w = block_size.texels_per_row ();
@@ -422,7 +422,7 @@ void PeakModel::
                              PropagationState prevState, float prevVal
                              )
 {
-    Heightmap::Region r = Heightmap::ReferenceInfo(c->block_configuration (), ref).getRegion();
+    Heightmap::Region r = Heightmap::ReferenceRegion(c->block_configuration ())(ref);
     if (r.b.scale > 1 || r.a.scale >= 1)
         return;
 
@@ -593,7 +593,7 @@ void PeakModel::
             ref = ref.sibblingTop();
             y -= h;
 
-            Heightmap::Region r = Heightmap::ReferenceInfo(c->block_configuration (), ref).getRegion();
+            Heightmap::Region r = Heightmap::ReferenceRegion(c->block_configuration ())(ref);
             if (r.a.scale >= 1 || r.b.scale > 1 )
             {
                 this->classifictions.clear();

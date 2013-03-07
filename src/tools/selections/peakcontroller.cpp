@@ -99,7 +99,7 @@ namespace Tools { namespace Selections
 
             Heightmap::Position p = r.getHeightmapPos( e->posF() );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
-            Heightmap::ReferenceInfo ri(c->block_configuration (), ref);
+            Heightmap::ReferenceInfo ri(ref, c->block_configuration ());
             if (ri.containsPoint(p))
             {
                 model()->findAddPeak( c, ref, p );

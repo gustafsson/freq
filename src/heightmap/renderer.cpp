@@ -615,7 +615,7 @@ Reference Renderer::
     {
         LevelOfDetal lod = testLod(ref);
 
-        Region r = ReferenceInfo(bc, ref).getRegion();
+        Region r = ReferenceRegion(bc)(ref);
 
         switch(lod)
         {
@@ -787,7 +787,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     const BlockConfiguration& bc = collection->block_configuration ();
-    Region r = ReferenceInfo(bc, ref).getRegion();
+    Region r = ReferenceRegion(bc)(ref);
     glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(r.a.time, 0, r.a.scale);
@@ -877,11 +877,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
         needBetterT = timePixels / (_redundancy*block_config.samplesPerBlock ());
 
     const Tfr::TransformDesc* t = this->collection->transform ();
-    if (!ReferenceInfo(block_config, ref.top()).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&
-        !ReferenceInfo(block_config, ref.bottom()).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0))
+    if (!ReferenceInfo(ref.top(), block_config).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&
+        !ReferenceInfo(ref.bottom(), block_config).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0))
         needBetterF = 0;
 
-    if (!ReferenceInfo(block_config, ref.left()).boundsCheck(ReferenceInfo::BoundsCheck_HighT, t, 0))
+    if (!ReferenceInfo(ref.left(), block_config).boundsCheck(ReferenceInfo::BoundsCheck_HighT, t, 0))
         needBetterT = 0;
 
     if ( needBetterF > needBetterT && needBetterF > 1 )
@@ -906,7 +906,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        if (ReferenceInfo(collection->block_configuration (), ref.right ())
+        if (ReferenceInfo(ref.right (), collection->block_configuration ())
                 .boundsCheck(ReferenceInfo::BoundsCheck_OutT, 0, collection->target->length()))
             renderChildrenSpectrogramRef( ref.right() );
         break;
@@ -928,7 +928,7 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
     float L = this->collection->target->length();
-    if (!ReferenceInfo(collection->block_configuration (), ref.parent ())
+    if (!ReferenceInfo(ref.parent (), collection->block_configuration ())
             .tooLarge(L) )
     {
         renderParentSpectrogramRef( ref.parent() );
@@ -1172,7 +1172,7 @@ bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
     const BlockConfiguration& bc = collection->block_configuration ();
-    Region r = ReferenceInfo(bc, ref).getRegion();
+    Region r = ReferenceRegion(bc)(ref);
     const Position p[2] = { r.a, r.b };
 
     float y[]={0, float(projectionPlane[1]*.5)};
