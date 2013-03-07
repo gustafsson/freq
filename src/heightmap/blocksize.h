@@ -17,6 +17,9 @@ public:
     int texels_per_column() const { return texels_per_column_; }
     int texels_per_block() const { return texels_per_row() * texels_per_column(); }
 
+    bool operator==(const BlockSize& b);
+    bool operator!=(const BlockSize& b);
+
 private:
     int texels_per_column_;
     int texels_per_row_;

@@ -17,4 +17,19 @@ BlockSize::
 }
 
 
+bool BlockSize::
+        operator==(const BlockSize& b)
+{
+    return texels_per_column_ == b.texels_per_column_ &&
+            texels_per_row_ == b.texels_per_row_;
+}
+
+
+bool BlockSize::
+        operator!=(const BlockSize& b)
+{
+    return texels_per_column_ != b.texels_per_column_ ||
+           texels_per_row_ != b.texels_per_row_;
+}
+
 } // namespace Heightmap

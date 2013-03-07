@@ -540,11 +540,7 @@ void Collection::
 #ifndef SAWE_NO_MUTEX
         QMutexLocker l(&_cache_mutex);
 #endif
-        doreset =
-                new_tfr_mapping.block_size ().texels_per_column ()
-                        != tfr_mapping_.block_size ().texels_per_column () ||
-                new_tfr_mapping.block_size ().texels_per_row ()
-                        != tfr_mapping_.block_size ().texels_per_row ();
+        doreset = new_tfr_mapping.block_size () != tfr_mapping_.block_size ();
 
         tfr_mapping_ = new_tfr_mapping;
 
