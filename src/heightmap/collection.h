@@ -182,8 +182,6 @@ public:
 
     const TfrMapping& tfr_mapping() const;
 
-    Renderer* renderer;
-
 private:
     friend class Heightmap::TfrMap;
     void tfr_mapping(TfrMapping new_mapping);

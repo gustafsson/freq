@@ -1,7 +1,6 @@
 #include "collection.h"
 #include "blockkernel.h"
 #include "blockfilter.h"
-#include "renderer.h"
 #include "glblock.h"
 
 #include "tfr/cwt.h"
@@ -53,7 +52,6 @@ namespace Heightmap {
 Collection::
         Collection( pOperation target )
 :   target( target ),
-    renderer( 0 ),
     tfr_mapping_( BlockSize(1<<8, 1<<8), target->sample_rate () ),
     _is_visible( true ),
     _unfinished_count(0),
@@ -1093,7 +1091,8 @@ bool Collection::
     outBlock->valid_samples -= inBlock->getInterval();
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
-    bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
+    //bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
+    bool using_subtexel_aggregation = !isCwt || false;
 
 #ifndef CWT_SUBTEXEL_AGGREGATION
     // subtexel aggregation is way to slow

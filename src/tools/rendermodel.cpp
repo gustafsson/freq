@@ -39,9 +39,6 @@ RenderModel::
         Heightmap::TfrMap::ReadPtr tfr(tfr_map_);
 
         renderer.reset( new Heightmap::Renderer( tfr->collections()[0].get() ));
-
-        for (unsigned c=0; c<o->num_channels(); ++c)
-            tfr->collections()[c]->renderer = renderer.get();
     }
 
 //    setTestCamera();
