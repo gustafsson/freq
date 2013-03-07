@@ -42,7 +42,7 @@
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
 #define MAX_FRACTION_FOR_CACHES (1.f/2.f)
-#define MAX_CREATED_BLOCKS_PER_FRAME 160
+#define MAX_CREATED_BLOCKS_PER_FRAME 16
 
 using namespace Signal;
 using namespace boost;
@@ -60,7 +60,9 @@ Collection::
     _created_count(0),
     _frame_counter(0),
     _prev_length(.0f),
-    _free_memory(availableMemoryForSingleAllocation())
+    _free_memory(availableMemoryForSingleAllocation()),
+    failed_allocation_(false),
+    failed_allocation_prev_(false)
 {
     EXCEPTION_ASSERT( target );
 
@@ -284,6 +286,7 @@ pBlock Collection::
         }
         else
         {
+            failed_allocation_ = true;
             TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(tfr_mapping().block_size)(ref));
         }
     }
@@ -509,6 +512,16 @@ void Collection::
             }
         }
     }
+}
+
+
+bool Collection::
+        failed_allocation()
+{
+    bool r = failed_allocation_ || failed_allocation_prev_;
+    failed_allocation_prev_ = failed_allocation_;
+    failed_allocation_ = false;
+    return r;
 }
 
 

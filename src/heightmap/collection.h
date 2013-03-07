@@ -178,6 +178,7 @@ public:
     void        printCacheSize();
     void        gc();
     void        discardOutside(Signal::Interval I);
+    bool        failed_allocation();
 
     Signal::pOperation target;
 
@@ -219,6 +220,12 @@ private:
             _free_memory;
 
     Signal::pOperation _filter;
+
+    /**
+     * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
+     */
+    bool failed_allocation_;
+    bool failed_allocation_prev_;
 
     /**
       The cache contains as many blocks as there are space for in the GPU ram.

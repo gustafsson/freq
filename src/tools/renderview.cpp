@@ -1173,6 +1173,13 @@ void RenderView::
 
     {   // Work
         isWorking = worker.todo_list();
+
+        bool failed_allocation = false;
+        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, collections )
+            failed_allocation |= collection->failed_allocation ();
+
+        isWorking |= failed_allocation;
+
         TIME_PAINTGL_DETAILS TaskTimer tt("Work target = %s, todo list = %s, isWorking = %d",
                  worker.target()->name().c_str(),
                  worker.todo_list().toString().c_str(), isWorking);
@@ -1200,10 +1207,11 @@ void RenderView::
             if (_work_timer) {
                 Signal::IntervalType wsc = worker.worked_samples.count();
                 float worked_time = wsc/worker.source()->sample_rate();
-                _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
+                _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Project %s. Work session #%u",
                                   worker.work_chunks,
                                   worked_time,
                                   worked_time/_work_timer->elapsedTime(),
+                                  model->project ()->project_title ().c_str (),
                                   workcount);
                 worker.work_chunks = 0;
                 worker.worked_samples.clear();
