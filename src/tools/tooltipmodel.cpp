@@ -155,13 +155,15 @@ void TooltipModel::
 
     if (dynamic_cast<Tfr::CwtFilter*>( render_view_->model->block_filter()))
     {
-        Tfr::Cwt& c = render_view_->model->getParam<Tfr::Cwt>();
+        Tools::Support::TransformDescs::WritePtr td (render_view_->model->transform_descs ());
+        Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
         std_t = c.morlet_sigma_samples( FS, f ) / FS;
         std_f = c.morlet_sigma_f( f );
     }
     else if (dynamic_cast<Tfr::StftFilter*>( render_view_->model->block_filter()))
     {
-        Tfr::StftDesc& f = render_view_->model->getParam<Tfr::StftDesc>();
+        Tools::Support::TransformDescs::WritePtr td (render_view_->model->transform_descs ());
+        Tfr::StftDesc& f = td->getParam<Tfr::StftDesc>();
         std_t = f.chunk_size() / FS / 2;
         std_f = FS / f.chunk_size() / 2;
     }

@@ -66,7 +66,8 @@ void Application::
         ::exit(3);
 
     Tools::RenderModel& render_model = p->tools().render_model;
-    Tfr::Cwt& cwt = render_model.getParam<Tfr::Cwt>();
+    Tools::Support::TransformDescs::WritePtr td (render_model.transform_descs ());
+    Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
     unsigned samples_per_chunk_hint = Sawe::Configuration::samples_per_chunk_hint();
     unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<samples_per_chunk_hint, source->sample_rate() );
@@ -129,7 +130,8 @@ void Application::
         apply_command_line_options( pProject p )
 {
     {
-        Tfr::Cwt& cwt = p->tools().render_model.getParam<Tfr::Cwt>();
+        Tools::Support::TransformDescs::WritePtr td (p->tools().render_model.transform_descs ());
+        Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
         cwt.set_wanted_min_hz( Sawe::Configuration::min_hz() );
         cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );

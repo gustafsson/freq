@@ -51,7 +51,8 @@ void PlaybackView::
         emit_update_view()
 {
     emit update_view(false);
-    Tfr::Cwt& cwt = _render_view->model->getParam<Tfr::Cwt>();
+    Tools::Support::TransformDescs::WritePtr td (_render_view->model->transform_descs ());
+    Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
 }
 

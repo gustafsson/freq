@@ -80,7 +80,8 @@ Gauss BrushModel::
     TIME_BRUSH TaskTimer tt("BrushModel::paint( %s, (%g, %g) )", ref.toString().c_str(), pos.time, pos.scale );
     Heightmap::Region region = Heightmap::ReferenceRegion( tfr_mapping() )( ref);
 
-    Tfr::Cwt& cwt = render_model_->getParam<Tfr::Cwt>();
+    Tools::Support::TransformDescs::WritePtr td (render_model_->transform_descs ());
+    Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     float fs = filter()->sample_rate();
     float hz = render_model_->display_scale().getFrequency( pos.scale );
     float deltasample = cwt.morlet_sigma_samples( fs, hz ) * cwt.wavelet_default_time_support()*0.9f;

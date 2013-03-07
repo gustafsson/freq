@@ -205,8 +205,7 @@ RenderController::
 //        logScale->trigger();
 //#endif
 
-        Tfr::StftDesc& p = model()->getParam<Tfr::StftDesc>();
-        p.setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
+        write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
 
         ui->actionToggleTransformToolBox->setChecked( true );
     }
@@ -362,13 +361,13 @@ void RenderController::
 
     if (isCwt)
     {
-        Tfr::Cwt& c = model()->getParam<Tfr::Cwt>();
-        tf_resolution->setValue (c.scales_per_octave ());
+        float scales_per_octave = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ();
+        tf_resolution->setValue ( scales_per_octave );
     }
     else
     {
-        Tfr::StftDesc& s = model()->getParam<Tfr::StftDesc>();
-        tf_resolution->setValue (s.chunk_size ());
+        int chunk_size = write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().chunk_size ();
+        tf_resolution->setValue ( chunk_size );
     }
 
     this->yscale->setValue( model()->renderer->y_scale );
@@ -420,9 +419,9 @@ void RenderController::
 {
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
     if (isCwt)
-        model()->getParam<Tfr::Cwt>().scales_per_octave ( value );
+        write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ( value );
     else
-        model()->getParam<Tfr::StftDesc>().set_approximate_chunk_size( value );
+        write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().set_approximate_chunk_size( value );
 
     stateChanged();
 
@@ -476,15 +475,18 @@ void RenderController::
 void RenderController::
         setCurrentFilterTransform( Tfr::TransformDesc::Ptr t )
 {
-    Tfr::StftDesc& s = model()->getParam<Tfr::StftDesc>();
-    Tfr::Cwt& c = model()->getParam<Tfr::Cwt>();
+    {
+        Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
+        Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
+        Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
 
-    // TODO add tfr resolution string to TransformDesc
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(t.get ());
-    if (isCwt)
-        tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1\nScales per octave").arg(c.sigma(), 0, 'f', 1));
-    else
-        tf_resolution->setToolTip(QString("Time/frequency resolution\nSTFT window: %1 samples").arg(s.chunk_size()));
+        // TODO add tfr resolution string to TransformDesc
+        bool isCwt = dynamic_cast<const Tfr::Cwt*>(t.get ());
+        if (isCwt)
+            tf_resolution->setToolTip(QString("Time/frequency resolution\nMorlet std: %1\nScales per octave").arg(c.sigma(), 0, 'f', 1));
+        else
+            tf_resolution->setToolTip(QString("Time/frequency resolution\nSTFT window: %1 samples").arg(s.chunk_size()));
+    }
 
     currentFilter()->transform( t->createTransform() );
 }
@@ -518,31 +520,34 @@ Signal::PostSink* RenderController::
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
 
-    Tfr::StftDesc& s = model()->getParam<Tfr::StftDesc>();
-    Tfr::Cwt& c = model()->getParam<Tfr::Cwt>();
-    float FS = headSampleRate();
-
-    float wavelet_default_time_support = c.wavelet_default_time_support();
-    float wavelet_fast_time_support = c.wavelet_time_support();
-    c.wavelet_time_support(wavelet_default_time_support);
-
-    if (isCwt && !wasCwt)
     {
-        tf_resolution->setRange (2, 40);
-        tf_resolution->setDecimals (1);
-        c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.scales_per_octave ()));
-        // transformChanged updates value accordingly
-    }
+        Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
+        Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
+        Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
+        float FS = headSampleRate();
 
-    if (!isCwt && wasCwt)
-    {
-        tf_resolution->setRange (1<<8, 1<<20, Widgets::ValueSlider::Logaritmic);
-        tf_resolution->setDecimals (0);
-        s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
-        // transformChanged updates value accordingly
-    }
+        float wavelet_default_time_support = c.wavelet_default_time_support();
+        float wavelet_fast_time_support = c.wavelet_time_support();
+        c.wavelet_time_support(wavelet_default_time_support);
 
-    c.wavelet_fast_time_support( wavelet_fast_time_support );
+        if (isCwt && !wasCwt)
+        {
+            tf_resolution->setRange (2, 40);
+            tf_resolution->setDecimals (1);
+            c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.scales_per_octave ()));
+            // transformChanged updates value accordingly
+        }
+
+        if (!isCwt && wasCwt)
+        {
+            tf_resolution->setRange (1<<8, 1<<20, Widgets::ValueSlider::Logaritmic);
+            tf_resolution->setDecimals (0);
+            s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+            // transformChanged updates value accordingly
+        }
+
+        c.wavelet_fast_time_support( wavelet_fast_time_support );
+    }
 
     write1(model()->tfr_map ())->transform_desc( currentTransform()->transformDesc ()->copy() );
 
@@ -747,7 +752,7 @@ void RenderController::
     float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
-    fa.setQuefrencyNormalized( fs, model()->getParam<Tfr::CepstrumDesc>().chunk_size() );
+    fa.setQuefrencyNormalized( fs, write1(model()->transform_descs ())->getParam<Tfr::CepstrumDesc>().chunk_size() );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {

@@ -305,7 +305,8 @@ void TransformInfoForm::
         newValue=fs/2;
 
     {
-        Tfr::Cwt& cwt = project->tools().render_model.getParam<Tfr::Cwt>();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
 
         if (cwt.wanted_min_hz() == newValue)
             return;
@@ -329,7 +330,8 @@ void TransformInfoForm::
     Signal::IntervalType new_chunk_size = fs/newValue;
 
     {
-        Tfr::StftDesc& stft = renderview->model->getParam<Tfr::StftDesc>();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
 
         if (new_chunk_size == stft.chunk_size())
             return;
@@ -353,7 +355,8 @@ void TransformInfoForm::
         newValue=N*2;
 
     {
-        Tfr::StftDesc& stft = renderview->model->getParam<Tfr::StftDesc>();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
 
         if (newValue == stft.chunk_size())
             return;
@@ -379,7 +382,7 @@ void TransformInfoForm::
     if (minHz>newValue/2)
         minHz=newValue/2;
     if (orgMinHz != minHz)
-        project->tools().render_model.getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
+        write1(renderview->model->transform_descs ())->getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
 
     Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
     if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
@@ -398,7 +401,8 @@ void TransformInfoForm::
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
     {
-        Tfr::StftDesc& stft = renderview->model->getParam<Tfr::StftDesc>();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
         if (stft.windowType() == windowtype)
             return;
 
@@ -421,15 +425,18 @@ void TransformInfoForm::
 
     // Tfr::Stft::setWindow validates value range
 
-    Tfr::StftDesc& stft = renderview->model->getParam<Tfr::StftDesc>();
-    if (stft.overlap() != newValue)
     {
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+        if (stft.overlap() == newValue)
+            return;
+
         Tfr::StftDesc::WindowType windowtype = stft.windowType();
         stft.setWindow( windowtype, newValue );
-
-        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        renderview->emitTransformChanged();
     }
+
+    renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    renderview->emitTransformChanged();
 }
 
 
@@ -438,14 +445,17 @@ void TransformInfoForm::
 {
     float newValue = ui->averagingEdit->text().toFloat();
 
-    Tfr::StftDesc& stft = renderview->model->getParam<Tfr::StftDesc>();
-    if (stft.averaging() != newValue)
     {
-        stft.averaging( newValue );
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+        if (stft.averaging() == newValue)
+            return;
 
-        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        renderview->emitTransformChanged();
+        stft.averaging( newValue );
     }
+
+    renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
+    renderview->emitTransformChanged();
 }
 
 

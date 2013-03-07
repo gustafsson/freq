@@ -52,12 +52,6 @@ namespace Tools
         Heightmap::TfrMap::Ptr tfr_map();
         Support::TransformDescs::Ptr transform_descs();
 
-
-        template<typename T>
-        T& getParam() {
-            return write1(transform_descs_)->getParam<T>();
-        }
-
         Tfr::Filter* block_filter();
 
         const Tfr::TransformDesc* transform();
