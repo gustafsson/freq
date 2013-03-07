@@ -95,11 +95,11 @@ namespace Tools { namespace Selections
 
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Heightmap::Collection* c = r.model->collections()[0].get();
+            Heightmap::Collection::Ptr c = r.model->collections()[0];
 
             Heightmap::Position p = r.getHeightmapPos( e->posF() );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
-            Heightmap::ReferenceInfo ri(ref, c->tfr_mapping ());
+            Heightmap::ReferenceInfo ri(ref, read1(c)->tfr_mapping ());
             if (ri.containsPoint(p))
             {
                 model()->findAddPeak( c, ref, p );

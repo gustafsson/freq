@@ -7,6 +7,9 @@
 #include <boost/unordered_map.hpp>
 #include "splinemodel.h"
 
+// gpumisc
+#include "volatileptr.h"
+
 namespace Heightmap { class Collection; }
 
 namespace Tools { namespace Selections
@@ -27,7 +30,7 @@ public:
 
     SplineModel spline_model;
 
-    void findAddPeak( Heightmap::Collection* c, Heightmap::Reference ref, Heightmap::Position pos );
+    void findAddPeak( VolatilePtr<Heightmap::Collection>::Ptr c, Heightmap::Reference ref, Heightmap::Position pos );
 
 private:
     struct BorderCoordinates

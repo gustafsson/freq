@@ -125,9 +125,9 @@ bool ReferenceInfo::
 
 
 bool ReferenceInfo::
-        tooLarge(float length) const
+        tooLarge() const
 {
-    if (r.b.time > 2 * length && r.b.scale > 2 )
+    if (r.b.time > 2 * tfr_mapping_.length && r.b.scale > 2 )
         return true;
     return false;
 }

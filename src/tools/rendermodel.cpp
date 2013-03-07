@@ -35,11 +35,7 @@ RenderModel::
 
     EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
 
-    {
-        Heightmap::TfrMap::ReadPtr tfr(tfr_map_);
-
-        renderer.reset( new Heightmap::Renderer( tfr->collections()[0].get() ));
-    }
+    renderer.reset( new Heightmap::Renderer() );
 
 //    setTestCamera();
 }
@@ -102,7 +98,7 @@ void RenderModel::
 }
 
 
-std::vector<boost::shared_ptr<Heightmap::Collection> > RenderModel::
+Heightmap::TfrMap::Collections RenderModel::
         collections()
 {
     return read1(tfr_map_)->collections();

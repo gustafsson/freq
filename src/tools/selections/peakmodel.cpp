@@ -24,8 +24,7 @@ namespace Tools { namespace Selections
 {
 
 PeakModel::PeakModel( RenderModel* rendermodel )
-    :   spline_model( rendermodel ),
-      c ( 0 )
+    :   spline_model( rendermodel )
 {
 }
 
@@ -107,9 +106,10 @@ float& PeakModel::
 */
 
 void PeakModel::
-        findAddPeak( Heightmap::Collection* c, Heightmap::Reference ref, Heightmap::Position pos )
+        findAddPeak( Heightmap::Collection::Ptr cptr, Heightmap::Reference ref, Heightmap::Position pos )
 {
-    this->c = c;
+    VolatilePtr<Heightmap::Collection>::WritePtr write_ptr(cptr);
+    this->c = &*write_ptr;
     Heightmap::Region r = Heightmap::ReferenceRegion(c->tfr_mapping ())(ref);
     Heightmap::BlockSize block_size = c->tfr_mapping ().block_size;
     unsigned h = block_size.texels_per_column ();

@@ -41,7 +41,7 @@ TfrMap::
     for (int c=0; c<channels; ++c)
     {
         collections_[c].reset( new Heightmap::Collection(target));
-        collections_[c]->tfr_mapping( tfr_mapping_ );
+        write1(collections_[c])->tfr_mapping( tfr_mapping_ );
     }
 }
 
@@ -154,7 +154,7 @@ int TfrMap::
 }
 
 
-std::vector<boost::shared_ptr<Heightmap::Collection> > TfrMap::
+TfrMap::Collections TfrMap::
         collections() const
 {
     return collections_;
@@ -165,7 +165,7 @@ void TfrMap::
         updateCollections()
 {
     for (unsigned c=0; c<collections_.size(); ++c)
-        collections_[c]->tfr_mapping( tfr_mapping_ );
+        write1(collections_[c])->tfr_mapping( tfr_mapping_ );
 }
 
 } // namespace Heightmap

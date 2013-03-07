@@ -37,15 +37,6 @@ using namespace boost;
 namespace Heightmap
 {
 
-BlockFilter::
-        BlockFilter( Collection* /*collection*/ )
-{
-    EXCEPTION_ASSERT( false );
-//    Heightmap::TfrMap::Ptr tfr_map(new Heightmap::TfrMap(collection->tfr_mapping (), 1, collection->target));
-//    *read1(tfr_map)->collections()[0] = *collection;
-//    this->tfr_map_ = tfr_map;
-}
-
 
 BlockFilter::
         BlockFilter( Heightmap::TfrMap::Ptr tfr_map )
@@ -59,10 +50,10 @@ BlockFilter::
 bool BlockFilter::
         applyFilter( ChunkAndInverse& pchunk )
 {
-    boost::shared_ptr<Collection> collection = read1(tfr_map_)->collections()[pchunk.channel];
+    boost::shared_ptr<volatile Collection> collection = read1(tfr_map_)->collections()[pchunk.channel];
     Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getCoveredInterval();
-    std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( chunk_interval, false );
+    std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt(format("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks")
         % chunk_interval % chunk.minHz() % chunk.maxHz() % intersecting_blocks.size());
 
@@ -72,7 +63,7 @@ bool BlockFilter::
             continue;
 
 #ifndef SAWE_NO_MUTEX
-        if (collection->constructor_thread().isSameThread())
+        if (write1(collection)->constructor_thread().isSameThread())
         {
 #endif
             mergeChunk( block, pchunk, block->glblock->height()->data );
@@ -88,7 +79,7 @@ bool BlockFilter::
                 TaskInfo(format("%s") %
                          Heightmap::ReferenceInfo(
                              block->reference (),
-                             collection->tfr_mapping ()
+                             read1(tfr_map_)->tfr_mapping ()
                              ));
                 EXCEPTION_ASSERT( block->cpu_copy );
             }
@@ -204,7 +195,7 @@ void BlockFilter::
     TfrMap::pCollection collection = read1(tfr_map_)->collections()[pchunk.channel];
     DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
             % transfer
-            % Heightmap::ReferenceInfo(block->reference (), collection->tfr_mapping ())
+            % Heightmap::ReferenceInfo(block->reference (), read1(collection)->tfr_mapping ())
             % block->valid_samples);
     block->valid_samples |= transfer;
     block->non_zero |= transfer;
@@ -409,9 +400,10 @@ unsigned BlockFilter::
         smallestOk(const Signal::Interval& I)
 {
     TfrMap::pCollection collection = read1(tfr_map_)->collections()[0];
-    float FS = collection->target->sample_rate();
+    float FS = read1(collection)->target->sample_rate();
     long double min_fs = FS;
-    std::vector<pBlock> intersections = collection->getIntersectingBlocks( I?I:collection->invalid_samples(), true );
+    Signal::Intervals invalid_samples = write1(collection)->invalid_samples();
+    std::vector<pBlock> intersections = write1(collection)->getIntersectingBlocks( I?I:invalid_samples, true );
     BOOST_FOREACH( pBlock b, intersections )
     {
         if (!(b->getInterval() - b->valid_samples))
@@ -459,14 +451,6 @@ void CwtToBlock::
 
 
 /////////////////////////////// StftToBlock ///////////////////////////////
-
-StftToBlock::
-        StftToBlock( Collection* collection )
-            :
-            BlockFilterImpl<Tfr::StftFilter>(collection)
-{
-}
-
 
 StftToBlock::
         StftToBlock( TfrMap::Ptr tfr_map )
@@ -523,7 +507,7 @@ Signal::Interval DrawnWaveformToBlock::
     for (unsigned c=0; c<collections.size (); ++c)
     {
         TfrMap::pCollection collection = collections[c];
-        std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( I, false );
+        std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( I, false );
 
         BOOST_FOREACH( pBlock block, intersecting_blocks)
         {
@@ -544,7 +528,7 @@ Signal::Interval DrawnWaveformToBlock::
         for (unsigned c=0; c<collections.size (); ++c)
         {
             TfrMap::pCollection collection = collections[c];
-            std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( I, false );
+            std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( I, false );
 
             BOOST_FOREACH( pBlock block, intersecting_blocks)
             {
@@ -570,7 +554,7 @@ void DrawnWaveformToBlock::
 {
     TfrMap::Collections collections = read1(tfr_map_)->collections();
     TfrMap::pCollection c = collections[pchunk.channel];
-    TfrMapping tm = c->tfr_mapping ();
+    TfrMapping tm = read1(tfr_map_)->tfr_mapping ();
     Chunk& chunk = *pchunk.chunk;
     Tfr::FreqAxis fa = tm.display_scale;
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)

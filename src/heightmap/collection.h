@@ -15,16 +15,10 @@
 // gpumisc
 #include "ThreadChecker.h"
 #include "deprecated.h"
+#include "volatileptr.h"
 
 // boost
 #include <boost/unordered_map.hpp>
-
-// Qt
-#ifndef SAWE_NO_MUTEX
-#include <QMutex>
-#include <QWaitCondition>
-#include <QThread>
-#endif
 
 // std
 #include <vector>
@@ -109,7 +103,7 @@ typedef boost::shared_ptr<Block> pBlock;
   Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection {
+class Collection: public VolatilePtr<Collection> {
 public:
     Collection(Signal::pOperation target);
     ~Collection();
@@ -136,7 +130,7 @@ public:
     /**
       Returns a Reference for a block containing the entire heightmap.
       */
-    Reference   entireHeightmap();
+    Reference   entireHeightmap() const;
 
 
     /**
@@ -171,7 +165,7 @@ public:
 
     const ThreadChecker& constructor_thread() const { return _constructor_thread; }
 
-    bool isVisible();
+    bool isVisible() const;
     void setVisible(bool v);
 
     const TfrMapping& tfr_mapping() const;
@@ -216,9 +210,6 @@ private:
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 
-#ifndef SAWE_NO_MUTEX
-    QMutex _cache_mutex; /// Mutex for _cache and _recent, see getIntersectingBlocks
-#endif
     cache_t _cache;
     recent_t _recent; /// Ordered with the most recently accessed blocks first
     recent_t _to_remove;

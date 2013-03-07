@@ -7,6 +7,7 @@
 
 // gpumisc
 #include <tmatrix.h>
+#include "volatileptr.h"
 
 // std
 #include <vector>
@@ -40,10 +41,10 @@ public:
         ColorMode_Green
     };
 
-    Renderer( Collection* collection );
+    Renderer();
 
     Reference findRefAtCurrentZoomLevel( Heightmap::Position p );
-    Collection* collection;
+    VolatilePtr<Collection>::Ptr collection;
 
     void draw( float scaley );
     void drawAxes( float T );

@@ -38,7 +38,7 @@ namespace Tools
 
         void resetSettings();
 
-        std::vector<boost::shared_ptr<Heightmap::Collection> > collections();
+        Heightmap::TfrMap::Collections collections();
 
         void block_size(Heightmap::BlockSize);
 

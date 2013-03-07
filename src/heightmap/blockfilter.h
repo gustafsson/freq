@@ -21,7 +21,6 @@ class Renderer;
 class BlockFilter
 {
 public:
-    BlockFilter( Collection* collection );
     BlockFilter( Heightmap::TfrMap::Ptr tfr_map );
 
     virtual bool applyFilter( Tfr::ChunkAndInverse& pchunk);
@@ -42,14 +41,6 @@ template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
 public:
-    BlockFilterImpl( Collection* collection )
-        :
-        BlockFilter(collection),
-        largestApplied(0)
-    {
-    }
-
-
     BlockFilterImpl( Heightmap::TfrMap::Ptr tfr_map )
         :
         BlockFilter(tfr_map),
@@ -71,7 +62,7 @@ public:
 
         TfrMap::Collections C = read1(tfr_map_)->collections();
         for (unsigned i=0; i<C.size (); ++i)
-            invalid |= C[i]->invalid_samples();
+            invalid |= write1(C[i])->invalid_samples();
 
         if (invalid & I)
             return this;
@@ -219,7 +210,6 @@ private:
 class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Collection* collection );
     StftToBlock( Heightmap::TfrMap::Ptr tfr_map_ );
 
     Tfr::pChunkFilter freqNormalization;

@@ -62,24 +62,20 @@ public:
 
     const TfrMapping& tfr_mapping() const;
 
-    // TODO use these
-    //Signal::Intervals invalid_samples;
-
-    // TODO use these
     float length() const;
     void length(float L);
 
     int channels() const;
 
-    typedef boost::shared_ptr<Heightmap::Collection> pCollection;
+    typedef VolatilePtr<Heightmap::Collection>::Ptr pCollection;
     typedef std::vector<pCollection> Collections;
     Collections collections() const;
 
 private:
     void updateCollections();
 
-    TfrMapping                                              tfr_mapping_;
-    std::vector<boost::shared_ptr<Heightmap::Collection> >  collections_;
+    TfrMapping  tfr_mapping_;
+    Collections collections_;
 };
 
 } // namespace Heightmap

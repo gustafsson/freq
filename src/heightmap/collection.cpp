@@ -84,10 +84,6 @@ Collection::
 void Collection::
         reset()
 {
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
-
     {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
         ReferenceRegion rr(this->tfr_mapping ().block_size);
@@ -106,10 +102,6 @@ void Collection::
     _cache.clear();
     _recent.clear();
 
-#ifndef SAWE_NO_MUTEX
-    l.unlock();
-#endif
-
     invalidate_samples(Signal::Intervals::Intervals_ALL);
 }
 
@@ -117,9 +109,6 @@ void Collection::
 bool Collection::
         empty()
 {
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
     return _cache.empty() && _recent.empty();
 }
 
@@ -127,10 +116,6 @@ bool Collection::
 unsigned Collection::
         next_frame()
 {
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
-
     boost::shared_ptr<TaskTimer> tt;
     if (_unfinished_count)
         VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("%s(), %u, %u, %u",
@@ -258,7 +243,7 @@ Signal::Intervals inline Collection::
 
 
 Reference Collection::
-        entireHeightmap()
+        entireHeightmap() const
 {
     Reference r;
     r.log2_samples_size = Reference::Scale( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
@@ -303,10 +288,6 @@ pBlock Collection::
         if (blockInt -= block->valid_samples)
             _unfinished_count++;
 
-        #ifndef SAWE_NO_MUTEX
-            QMutexLocker l(&_cache_mutex);
-        #endif
-
         poke(block);
     }
 
@@ -317,10 +298,6 @@ pBlock Collection::
 pBlock Collection::
         findBlock( const Reference& ref )
 {
-    #ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-    #endif
-
     cache_t::iterator itr = _cache.find( ref );
     if (itr != _cache.end())
         return itr->second;
@@ -335,9 +312,6 @@ std::vector<pBlock> Collection::
     std::vector<pBlock> r;
     r.reserve(32);
 
-	#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-	#endif
     //TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s ) from %u caches", I.toString().c_str(), only_visible?"only visible":"all", _cache.size());
 
     BOOST_FOREACH( const cache_t::value_type& c, _cache )
@@ -439,10 +413,6 @@ void Collection::
 void Collection::
         gc()
 {
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
-
     TaskTimer tt("Collection doing garbage collection", _cache.size());
     printCacheSize();
     TaskInfo("Of which %u are recently used", _recent.size());
@@ -458,10 +428,6 @@ void Collection::
 void Collection::
         discardOutside(Signal::Interval I)
 {
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
-
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
         Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping ()).getInterval();
@@ -514,7 +480,7 @@ bool Collection::
 
 
 bool Collection::
-        isVisible()
+        isVisible() const
 {
     return _is_visible;
 }
@@ -548,18 +514,11 @@ void Collection::
     if (new_tfr_mapping == tfr_mapping_)
         return;
 
-    bool doreset = false;
+    bool doreset = new_tfr_mapping.block_size != tfr_mapping_.block_size;
 
-    {
-#ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&_cache_mutex);
-#endif
-        doreset = new_tfr_mapping.block_size != tfr_mapping_.block_size;
+    tfr_mapping_ = new_tfr_mapping;
 
-        tfr_mapping_ = new_tfr_mapping;
-
-        _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
-    }
+    _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
 
     if (doreset)
         reset();
@@ -574,13 +533,8 @@ void Collection::
     INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
-    {
-#ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&_cache_mutex);
-#endif
-        BOOST_FOREACH ( const cache_t::value_type& c, _cache )
-            c.second->valid_samples -= sid;
-    }
+    BOOST_FOREACH ( const cache_t::value_type& c, _cache )
+        c.second->valid_samples -= sid;
 
     // validate length
     Interval wholeSignal = target->getInterval();
@@ -603,10 +557,6 @@ Intervals Collection::
 
     if (!_is_visible)
         return r;
-
-#ifndef SAWE_NO_MUTEX
-	QMutexLocker l(&_cache_mutex);
-#endif
 
     unsigned counter = 0;
     {
@@ -796,9 +746,6 @@ pBlock Collection::
     EXCEPTION_ASSERT( result );
 
     // result is non-zero
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
     _cache[ result->reference() ] = result;
 
     TIME_COLLECTION ComputationSynchronize();
@@ -820,10 +767,6 @@ void Collection::
 pBlock Collection::
         getAllocatedBlock(const Reference& ref)
 {
-#ifndef SAWE_NO_MUTEX
-    QMutexLocker l(&_cache_mutex);
-#endif
-
     pBlock block;
 
     if (0!= "Reuse old redundant blocks")

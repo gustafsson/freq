@@ -91,10 +91,8 @@ public:
 
         // If BlockFilter is a CwtFilter wavelet time support has already been included in I
 
-        foreach(boost::shared_ptr<Heightmap::Collection> c, model_->collections())
-        {
-            c->invalidate_samples( I );
-        }
+        foreach(const Heightmap::Collection::Ptr& c, model_->collections())
+            write1(c)->invalidate_samples( I );
 
         DeprecatedOperation::invalidate_samples( I );
 
@@ -105,9 +103,9 @@ public:
     virtual Signal::Intervals invalid_samples()
     {
         Signal::Intervals I;
-        foreach ( boost::shared_ptr<Heightmap::Collection> c, model_->collections())
+        foreach ( const Heightmap::Collection::Ptr& c, model_->collections())
         {
-            Signal::Intervals inv_coll = c->invalid_samples();
+            Signal::Intervals inv_coll = write1(c)->invalid_samples();
             I |= inv_coll;
         }
 
@@ -123,10 +121,8 @@ public:
         Signal::Interval currentInterval = getInterval();
         if (prevSignal != currentInterval)
         {
-            foreach (boost::shared_ptr<Heightmap::Collection> c, model_->collections())
-            {
-                c->discardOutside( currentInterval );
-            }
+            foreach (const Heightmap::Collection::Ptr& c, model_->collections())
+                write1(c)->discardOutside( currentInterval );
 
             if (currentInterval.last < prevSignal.last)
             {
@@ -1113,8 +1109,10 @@ void RenderController::
 
     // Clear all cached blocks and release cuda memory befure destroying cuda
     // context
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model()->collections() )
-        collection->reset();
+    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
+    {
+        write1(collection)->reset();
+    }
 
 
     // TODO clear stuff from FftImplementations somewhere not here
@@ -1226,9 +1224,9 @@ void RenderController::
     {
         unsigned c = o->data().toUInt();
         //channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
-        if (model()->collections()[c]->isVisible() != o->isChecked())
+        if (read1(model()->collections()[c])->isVisible() != o->isChecked())
         {
-            model()->collections()[c]->setVisible( o->isChecked() );
+            write1(model()->collections()[c])->setVisible( o->isChecked() );
             stateChanged();
         }
     }

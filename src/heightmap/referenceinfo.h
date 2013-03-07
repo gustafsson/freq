@@ -43,7 +43,7 @@ public:
 
     // returns false if the given BoundsCheck is out of bounds
     bool boundsCheck(BoundsCheck) const;
-    bool tooLarge(float length) const;
+    bool tooLarge() const;
 
     /**
       Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including

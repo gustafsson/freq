@@ -294,7 +294,7 @@ float RenderView::
     r = rr(*ref);
 
     Heightmap::ReferenceInfo ri( *ref, model->tfr_mapping () );
-    Heightmap::pBlock block = model->collections()[0]->getBlock( *ref );
+    Heightmap::pBlock block = write1(model->collections()[0])->getBlock( *ref );
     if (!block)
         return 0;
     if (is_valid_value)
@@ -388,7 +388,7 @@ Heightmap::Reference RenderView::
     memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
     memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
 
-    model->renderer->collection = model->collections()[0].get();
+    model->renderer->collection = model->collections()[0];
 
     return model->renderer->findRefAtCurrentZoomLevel( p );
 }
@@ -623,12 +623,12 @@ void RenderView::
 
     unsigned i=0;
 
-    std::vector<boost::shared_ptr<Heightmap::Collection> > collections = model->collections ();
+    const Heightmap::TfrMap::Collections collections = model->collections ();
 
     // draw the first without fbo
     for (; i < N; ++i)
     {
-        if (!collections[i]->isVisible())
+        if (!read1(collections[i])->isVisible())
             continue;
 
         drawCollection(i, yscale);
@@ -641,7 +641,7 @@ void RenderView::
 
     for (; i<N; ++i)
     {
-        if (!collections[i]->isVisible())
+        if (!read1(collections[i])->isVisible())
             continue;
 
         if (!hasValidatedFboSize)
@@ -708,7 +708,7 @@ void RenderView::
     {
         unsigned collections_n = 0;
         for (i=0; i < N; ++i)
-            collections_n += collections[i]->isVisible();
+            collections_n += read1(collections[i])->isVisible();
 
         TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
         collections_n,
@@ -724,7 +724,7 @@ void RenderView::
 void RenderView::
         drawCollection(int i, float yscale )
 {
-    model->renderer->collection = model->collections()[i].get();
+    model->renderer->collection = model->collections()[i];
     model->renderer->fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
     if (0 != model->_rx)
@@ -964,6 +964,7 @@ void RenderView::
     if (!model->renderSignalTarget)
         return;
 
+    model->renderer->collection = read1(model->tfr_map ())->collections()[0];
     model->renderer->init();
     if (!model->renderer->isInitialized())
         return;
@@ -982,7 +983,7 @@ void RenderView::
     TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
                               first_source?first_source->name().c_str():0, first_source);
 
-    std::vector<boost::shared_ptr<Heightmap::Collection> > collections = model->collections ();
+    Heightmap::TfrMap::Collections collections = model->collections ();
 
     unsigned N = collections.size();
     unsigned long sumsize = 0;
@@ -990,12 +991,12 @@ void RenderView::
 
     TIME_PAINTGL_DETAILS
     {
-        sumsize = collections[0]->cacheByteSize();
-        cacheCount = collections[0]->cacheCount();
+        sumsize = write1(collections[0])->cacheByteSize();
+        cacheCount = write1(collections[0])->cacheCount();
         for (unsigned i=1; i<N; ++i)
         {
-            TaskLogIfFalse( sumsize == collections[i]->cacheByteSize() );
-            TaskLogIfFalse( cacheCount == collections[i]->cacheCount() );
+            TaskLogIfFalse( sumsize == write1(collections[i])->cacheByteSize() );
+            TaskLogIfFalse( cacheCount == write1(collections[i])->cacheCount() );
         }
     }
 
@@ -1005,7 +1006,7 @@ void RenderView::
 
     if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {
-        collections[i]->printCacheSize();
+        write1(collections[i])->printCacheSize();
     }
 
 
@@ -1076,9 +1077,9 @@ void RenderView::
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
         if (onlyComputeBlocksForRenderView)
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, collections )
+        foreach( const Heightmap::Collection::Ptr& collection, collections )
         {
-            collection->next_frame(); // Discard needed blocks before this row
+            write1(collection)->next_frame(); // Discard needed blocks before this row
         }
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
@@ -1175,8 +1176,10 @@ void RenderView::
         isWorking = worker.todo_list();
 
         bool failed_allocation = false;
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, collections )
-            failed_allocation |= collection->failed_allocation ();
+        foreach( const Heightmap::Collection::Ptr& collection, collections )
+        {
+            failed_allocation |= write1(collection)->failed_allocation ();
+        }
 
         isWorking |= failed_allocation;
 
@@ -1248,10 +1251,10 @@ void RenderView::
     if (!onlyComputeBlocksForRenderView)
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, collections )
+        foreach( const Heightmap::Collection::Ptr& collection, collections )
         {
             // Start looking for which blocks that are requested for the next frame.
-            collection->next_frame();
+            write1(collection)->next_frame();
         }
     }
 
@@ -1322,10 +1325,9 @@ void RenderView::
         clearCaches()
 {
     TaskTimer tt("RenderView::clearCaches(), %p", this);
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections() )
+    foreach( const Heightmap::Collection::Ptr& collection, model->collections() )
     {
-        Heightmap::Collection* c = collection.get();
-        c->reset(); // note, not c.reset()
+        write1(collection)->reset(); // note, not collection.reset()
     }
 
     if (model->renderer && model->renderer->isInitialized())

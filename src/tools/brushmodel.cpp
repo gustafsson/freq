@@ -190,9 +190,9 @@ Signal::Interval BrushModel::
                    img,
                    gauss );
 
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, render_model_->collections() )
+    foreach( const Heightmap::Collection::Ptr& collection, render_model_->collections() )
     {
-        Heightmap::pBlock block = collection->getBlock( ref );
+        Heightmap::pBlock block = write1(collection)->getBlock( ref );
         if (block)
         {
             Heightmap::Block::pData blockData = block->glblock->height()->data;

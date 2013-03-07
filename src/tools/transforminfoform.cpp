@@ -276,10 +276,11 @@ void TransformInfoForm::
 #endif
 
     size_t cacheByteSize=0;
-    foreach( boost::shared_ptr<Heightmap::Collection> h, renderview->model->collections())
+    foreach( const Heightmap::Collection::Ptr& h, renderview->model->collections())
     {
-        cacheByteSize += h->cacheByteSize();
+        cacheByteSize += write1(h)->cacheByteSize();
     }
+
     addRow("Sonic AWE caches", DataStorageVoid::getMemorySizeText( cacheByteSize ).c_str());
 
     EXCEPTION_ASSERT(project->areToolsInitialized());

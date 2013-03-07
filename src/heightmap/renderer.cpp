@@ -48,9 +48,8 @@ using namespace std;
 namespace Heightmap {
 
 
-Renderer::Renderer( Collection* collection )
-:   collection(collection),
-    draw_piano(false),
+Renderer::Renderer()
+:   draw_piano(false),
     draw_hz(true),
     draw_t(true),
     draw_cursor_marker(false),
@@ -110,8 +109,6 @@ Renderer::Renderer( Collection* collection )
         c = 1;
 #endif
     }
-
-    init();
 }
 
 
@@ -601,8 +598,8 @@ Reference Renderer::
         findRefAtCurrentZoomLevel( Heightmap::Position p )
 {
     //Position max_ss = collection->max_sample_size();
-    Reference ref = collection->entireHeightmap();
-    const TfrMapping& bc = collection->tfr_mapping ();
+    Reference ref = read1(collection)->entireHeightmap();
+    TfrMapping bc = read1(collection)->tfr_mapping ();
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
     // 'p' with enough details.
@@ -646,6 +643,12 @@ Reference Renderer::
   */
 void Renderer::draw( float scaley )
 {
+    if (!collection)
+        return;
+
+    if (!read1(collection)->tfr_mapping ().transform_desc)
+        return;
+
     GlException_CHECK_ERROR();
 
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
@@ -659,7 +662,7 @@ void Renderer::draw( float scaley )
         scaley = 0.001;
     else
     {
-        BlockSize block_size = collection->tfr_mapping ().block_size;
+        BlockSize block_size = read1(collection)->tfr_mapping ().block_size;
         setSize( block_size.texels_per_row ()/_mesh_fraction_width,
                  block_size.texels_per_column ()/_mesh_fraction_height );
     }
@@ -671,7 +674,7 @@ void Renderer::draw( float scaley )
 
     //Position mss = collection->max_sample_size();
     //Reference ref = collection->findReference(Position(0,0), mss);
-    Reference ref = collection->entireHeightmap();
+    Reference ref = read1(collection)->entireHeightmap();
 
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
     glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
@@ -679,15 +682,12 @@ void Renderer::draw( float scaley )
 
     glScalef(1, _draw_flat ? 0 : scaley, 1);
 
-    if (collection->tfr_mapping ().transform_desc)
-    {
-        beginVboRendering();
+    beginVboRendering();
 
-        if (!renderChildrenSpectrogramRef(ref))
-            renderSpectrogramRef( ref );
+    if (!renderChildrenSpectrogramRef(ref))
+        renderSpectrogramRef( ref );
 
-        endVboRendering();
-    }
+    endVboRendering();
 
     GlException_CHECK_ERROR();
 }
@@ -756,7 +756,7 @@ void Renderer::beginVboRendering()
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
 
-        BlockSize block_size = collection->tfr_mapping ().block_size;
+        BlockSize block_size = read1(collection)->tfr_mapping ().block_size;
         float
                 w = block_size.texels_per_row (),
                 h = block_size.texels_per_column ();
@@ -793,14 +793,13 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
-    const TfrMapping& bc = collection->tfr_mapping ();
-    Region r = ReferenceRegion(bc)(ref);
+    Region r = ReferenceRegion (read1 (collection)->tfr_mapping ()) ( ref );
     glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
 
-    pBlock block = collection->getBlock( ref );
+    pBlock block = write1 (collection)->getBlock( ref );
 
     float yscalelimit = _drawcrosseswhen0 ? 0.0004f : 0.f;
     if (0!=block.get() && y_scale > yscalelimit) {
@@ -861,7 +860,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
 
 Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
-    TfrMapping tfr_mapping = collection->tfr_mapping ();
+    TfrMapping tfr_mapping = read1(collection)->tfr_mapping ();
 
     float timePixels, scalePixels;
     if (!computePixelsPerUnit( ref, timePixels, scalePixels ))
@@ -903,7 +902,7 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 bool Renderer::renderChildrenSpectrogramRef( Reference ref )
 {
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("%s")
-        % ReferenceInfo(ref, collection->tfr_mapping ()));
+        % ReferenceInfo(ref, read1(collection)->tfr_mapping ()));
 
     LevelOfDetal lod = testLod( ref );
     switch(lod) {
@@ -913,7 +912,7 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
         break;
     case Lod_NeedBetterT:
         renderChildrenSpectrogramRef( ref.left() );
-        if (ReferenceInfo(ref.right (), collection->tfr_mapping ())
+        if (ReferenceInfo(ref.right (), read1(collection)->tfr_mapping ())
                 .boundsCheck(ReferenceInfo::BoundsCheck_OutT))
             renderChildrenSpectrogramRef( ref.right() );
         break;
@@ -934,9 +933,8 @@ void Renderer::renderParentSpectrogramRef( Reference ref )
     renderChildrenSpectrogramRef( ref.sibbling2() );
     renderChildrenSpectrogramRef( ref.sibbling3() );
 
-    float L = this->collection->target->length();
-    if (!ReferenceInfo(ref.parent (), collection->tfr_mapping ())
-            .tooLarge(L) )
+    if (!ReferenceInfo(ref.parent (), read1(collection)->tfr_mapping ())
+            .tooLarge() )
     {
         renderParentSpectrogramRef( ref.parent() );
     }
@@ -1178,8 +1176,7 @@ std::vector<GLvector> Renderer::
 bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
-    const TfrMapping& bc = collection->tfr_mapping ();
-    Region r = ReferenceRegion(bc)(ref);
+    Region r = ReferenceRegion ( read1(collection)->tfr_mapping () )(ref);
     const Position p[2] = { r.a, r.b };
 
     float y[]={0, float(projectionPlane[1]*.5)};
@@ -1385,7 +1382,7 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Tfr::FreqAxis fa = collection->tfr_mapping ().display_scale;
+    Tfr::FreqAxis fa = read1(collection)->tfr_mapping ().display_scale;
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
     typedef tvector<2,GLfloat> GLvector2F;
