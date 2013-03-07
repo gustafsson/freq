@@ -471,7 +471,7 @@ void Collection::
 
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
-        Signal::Interval blockInterval = itr->first.getInterval();
+        Signal::Interval blockInterval = ReferenceInfo(itr->first, block_configuration ()).getInterval();
         Signal::Interval toKeep = I & blockInterval;
         if ( !toKeep )
             removeBlock(itr->second);

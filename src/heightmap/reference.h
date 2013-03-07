@@ -17,15 +17,7 @@ public:
     tvector<2,unsigned> block_index;
 
     bool operator==(const Reference &b) const;
-    // begin move out
-    /**
-      Creates a SamplesIntervalDescriptor describing the entire range of the referenced block, including
-      invalid samples.
-      */
-    //DEPRECATED ( Signal::Interval getInterval() const );
-    Signal::Interval getInterval() const;
-    Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
-    // end moved out
+
     unsigned frequency_resolution() const;
 
     /** child references */

@@ -159,20 +159,6 @@ string Reference::
 }
 
 
-Signal::Interval Reference::
-        getInterval() const
-{
-    return ReferenceInfo(*this, *block_config_).getInterval();
-}
-
-
-Signal::Interval Reference::
-        spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
-{
-    return ReferenceInfo(*this, *block_config_).spannedElementsInterval (I, spannedBlockSamples);
-}
-
-
 unsigned Reference::
         frequency_resolution() const
 {

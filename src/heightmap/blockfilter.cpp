@@ -114,6 +114,8 @@ void BlockFilter::
         mergeColumnMajorChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData, float normalization_factor )
 {
     Collection* collection = _collections[pchunk.channel];
+    Heightmap::BlockConfiguration block_config = collection->block_configuration ();
+
     Tfr::Chunk& chunk = *pchunk.chunk;
     Region r = block->getRegion();
 
@@ -124,7 +126,8 @@ void BlockFilter::
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    Signal::Interval usableInInterval = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples);
+    Heightmap::ReferenceInfo ri(block->reference (), block_config);
+    Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
 
@@ -193,8 +196,8 @@ void BlockFilter::
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk.freqAxis,
-                  collection->block_configuration ().display_scale (),
-                  collection->block_configuration ().amplitude_axis (),
+                  block_config.display_scale (),
+                  block_config.amplitude_axis (),
                   normalization_factor,
                   true);
     TIME_BLOCKFILTER ComputationSynchronize();
@@ -215,6 +218,7 @@ void BlockFilter::
                             float normalization_factor, bool enable_subtexel_aggregation)
 {
     Collection* collection = _collections[pchunk.channel];
+    Heightmap::BlockConfiguration block_config = collection->block_configuration ();
     Tfr::Chunk& chunk = *pchunk.chunk;
 
     ComputationCheckError();
@@ -271,9 +275,8 @@ void BlockFilter::
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    const BlockConfiguration& blockconfig = collection->block_configuration ();
-    float chunk_first_scale = blockconfig.display_scale().getFrequencyScalar( chunk.minHz() );
-    float chunk_last_scale = blockconfig.display_scale().getFrequencyScalar( chunk.maxHz() );
+    float chunk_first_scale = block_config.display_scale().getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = block_config.display_scale().getFrequencyScalar( chunk.maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -305,7 +308,7 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
     DEBUG_CWTTOBLOCK TaskInfo("merge_last_scale = %g", merge_last_scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
-    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", blockconfig.scalesPerBlock ());
+    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", block_config.scalesPerBlock ());
 
 
     DEBUG_CWTTOBLOCK {
@@ -373,8 +376,8 @@ void BlockFilter::
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk.freqAxis,
-                     blockconfig.display_scale(),
-                     blockconfig.amplitude_axis(),
+                     block_config.display_scale(),
+                     block_config.amplitude_axis(),
                      normalization_factor,
                      enable_subtexel_aggregation
                      );

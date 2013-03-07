@@ -5,6 +5,15 @@
 
 namespace Heightmap {
 
+ChunkToBlock::
+        ChunkToBlock()
+    :
+      block_config( BlockSize(1<<8,1<<8),2)
+{
+
+}
+
+
 void ChunkToBlock::mergeColumnMajorChunk(
         pBlock block,
         Tfr::pChunk chunk,
@@ -19,7 +28,8 @@ void ChunkToBlock::mergeColumnMajorChunk(
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    Signal::Interval usableInInterval = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples);
+    ReferenceInfo ri(block->reference (), block_config);
+    Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
 
@@ -44,8 +54,8 @@ void ChunkToBlock::mergeColumnMajorChunk(
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk->freqAxis,
-                  display_scale,
-                  amplitude_axis,
+                  block_config.display_scale (),
+                  block_config.amplitude_axis (),
                   normalization_factor,
                   true);
 
@@ -90,8 +100,8 @@ void ChunkToBlock::mergeRowMajorChunk(
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = display_scale.getFrequencyScalar( chunk->minHz() );
-    float chunk_last_scale = display_scale.getFrequencyScalar( chunk->maxHz() );
+    float chunk_first_scale = block_config.display_scale ().getFrequencyScalar( chunk->minHz() );
+    float chunk_last_scale = block_config.display_scale ().getFrequencyScalar( chunk->maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -127,8 +137,8 @@ void ChunkToBlock::mergeRowMajorChunk(
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk->freqAxis,
-                     display_scale,
-                     amplitude_axis,
+                     block_config.display_scale (),
+                     block_config.amplitude_axis (),
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
@@ -167,12 +177,14 @@ void ChunkToBlock::
         test()
 {
     ChunkToBlock ctb;
-    ctb.amplitude_axis = AmplitudeAxis_Linear;
     ctb.complex_info = ComplexInfo_Amplitude_Non_Weighted;
-    ctb.display_scale.setLinear (1);
     ctb.enable_subtexel_aggregation = false;
     ctb.full_resolution = false;
     ctb.normalization_factor = 1;
+    ctb.block_config = BlockConfiguration( BlockSize(1<<8,1<<8),100);
+    Tfr::FreqAxis tfa;tfa.setLinear (1);
+    ctb.block_config.display_scale (tfa);
+    ctb.block_config.amplitude_axis (AmplitudeAxis_Linear);
 
     Tfr::StftDesc* tfr;
     Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );

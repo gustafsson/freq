@@ -203,7 +203,7 @@ Signal::Interval BrushModel::
         }
     }
 
-    return ref.getInterval();
+    return Heightmap::ReferenceInfo(ref, block_config()).getInterval ();
 }
 
 

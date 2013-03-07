@@ -98,7 +98,7 @@ Signal::Intervals MultiplyBrush::
 
     foreach(BrushImages::value_type const& v, imgs)
     {
-        r |= v.first.getInterval();
+        r |= Heightmap::ReferenceInfo(v.first, block_configuration_).getInterval();
     }
 
     return r;

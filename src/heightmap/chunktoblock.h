@@ -11,12 +11,13 @@ namespace Heightmap {
 class ChunkToBlock
 {
 public:
-    Heightmap::AmplitudeAxis amplitude_axis;
+    ChunkToBlock();
+
     ComplexInfo complex_info;
-    Tfr::FreqAxis display_scale;
     float normalization_factor;
     bool full_resolution;
     bool enable_subtexel_aggregation;
+    Heightmap::BlockConfiguration block_config;
 
     void mergeColumnMajorChunk(
             pBlock block,
