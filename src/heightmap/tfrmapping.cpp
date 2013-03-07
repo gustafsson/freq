@@ -16,20 +16,6 @@ TfrMapping::
 }
 
 
-int TfrMapping::
-        samplesPerBlock() const
-{
-    return block_size_.texels_per_row ();
-}
-
-
-int TfrMapping::
-        scalesPerBlock() const
-{
-    return block_size_.texels_per_column ();
-}
-
-
 BlockSize TfrMapping::
     block_size() const
 {

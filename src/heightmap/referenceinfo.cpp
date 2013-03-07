@@ -79,7 +79,7 @@ bool ReferenceInfo::
 
     if (c & ReferenceInfo::BoundsCheck_HighS)
     {
-        float scaledelta = (r.scale())/tfr_mapping_.scalesPerBlock();
+        float scaledelta = (r.scale())/tfr_mapping_.block_size ().texels_per_column ();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
@@ -97,7 +97,7 @@ bool ReferenceInfo::
     {
         float atres = displayedTimeResolution (ahz, transform);
         float btres = displayedTimeResolution (bhz, transform);
-        float tdelta = 2*r.time()/tfr_mapping_.samplesPerBlock();
+        float tdelta = 2*r.time()/tfr_mapping_.block_size ().texels_per_row ();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -158,7 +158,7 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    int samplesPerBlock = tfr_mapping_.samplesPerBlock ();
+    int samplesPerBlock = tfr_mapping_.block_size ().texels_per_row ();
     long double blockSize = samplesPerBlock * ldexp(1.f,reference_.log2_samples_size[0]);
     long double elementSize = 1.0 / sample_rate();
     long double blockLocalSize = samplesPerBlock * elementSize;
@@ -182,7 +182,7 @@ Signal::Interval ReferenceInfo::
 Signal::Interval ReferenceInfo::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    unsigned samples_per_block = tfr_mapping_.samplesPerBlock();
+    unsigned samples_per_block = tfr_mapping_.block_size ().texels_per_row ();
     long double blockSize = samples_per_block * ldexp(1.,reference_.log2_samples_size[0]);
     long double FS = tfr_mapping_.targetSampleRate ();
 

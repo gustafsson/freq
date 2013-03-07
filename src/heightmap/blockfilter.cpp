@@ -308,7 +308,7 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo("merge_first_scale = %g", merge_first_scale);
     DEBUG_CWTTOBLOCK TaskInfo("merge_last_scale = %g", merge_last_scale);
     DEBUG_CWTTOBLOCK TaskInfo("chunk.nScales() = %u", chunk.nScales());
-    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", tfr_mapping.scalesPerBlock ());
+    DEBUG_CWTTOBLOCK TaskInfo("blockconfig.scalesPerBlock() = %u", tfr_mapping.block_size ().texels_per_column ());
 
 
     DEBUG_CWTTOBLOCK {

@@ -415,7 +415,7 @@ unsigned long Collection::
         sumsize += b.second->glblock->allocated_bytes_per_element();
     }
 
-    unsigned elements_per_block = tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
+    unsigned elements_per_block = tfr_mapping_.block_size ().texels_per_block ();
     return sumsize*elements_per_block;
 }
 
@@ -541,12 +541,14 @@ void Collection::
         QMutexLocker l(&_cache_mutex);
 #endif
         doreset =
-                new_tfr_mapping.scalesPerBlock () != tfr_mapping_.scalesPerBlock () ||
-                new_tfr_mapping.samplesPerBlock () != tfr_mapping_.samplesPerBlock ();
+                new_tfr_mapping.block_size ().texels_per_column ()
+                        != tfr_mapping_.block_size ().texels_per_column () ||
+                new_tfr_mapping.block_size ().texels_per_row ()
+                        != tfr_mapping_.block_size ().texels_per_row ();
 
         tfr_mapping_ = new_tfr_mapping;
 
-        _max_sample_size.scale = 1.f/tfr_mapping_.scalesPerBlock ();
+        _max_sample_size.scale = 1.f/tfr_mapping_.block_size ().texels_per_column ();
     }
 
     if (doreset)
@@ -573,7 +575,7 @@ void Collection::
     // validate length
     Interval wholeSignal = target->getInterval();
     float length = wholeSignal.last / target->sample_rate();
-    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.samplesPerBlock ();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size ().texels_per_row ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
@@ -834,7 +836,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // Cuda device memory
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
-                memForNewBlock *= tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
+                memForNewBlock *= tfr_mapping_.block_size ().texels_per_block ();
                 size_t allocatedMemory = this->cacheByteSize()*target->num_channels();
 
                 size_t margin = 2*memForNewBlock;
@@ -873,7 +875,7 @@ pBlock Collection::
                 {
                     pBlock back = _recent.back();
 
-                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*tfr_mapping_.block_size ().texels_per_block ();
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
@@ -901,7 +903,7 @@ pBlock Collection::
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
         s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-        s*=tfr_mapping_.scalesPerBlock ()*tfr_mapping_.samplesPerBlock ();
+        s*=tfr_mapping_.block_size ().texels_per_block ();
         s*=1.5f; // 50% arbitrary extra
 
         if (s>_free_memory)
@@ -937,8 +939,8 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    unsigned samples = tfr_mapping_.samplesPerBlock (),
-            scales = tfr_mapping_.scalesPerBlock ();
+    unsigned samples = tfr_mapping_.block_size ().texels_per_row (),
+            scales = tfr_mapping_.block_size ().texels_per_column ();
     for (unsigned s = 0; s<samples/2; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);

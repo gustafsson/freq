@@ -658,8 +658,11 @@ void Renderer::draw( float scaley )
         setSize(2,2),
         scaley = 0.001;
     else
-        setSize( collection->tfr_mapping ().samplesPerBlock ()/_mesh_fraction_width,
-                 collection->tfr_mapping ().scalesPerBlock ()/_mesh_fraction_height );
+    {
+        BlockSize block_size = collection->tfr_mapping ().block_size ();
+        setSize( block_size.texels_per_row ()/_mesh_fraction_width,
+                 block_size.texels_per_column ()/_mesh_fraction_height );
+    }
 
     last_ysize = scaley;
     drawn_blocks = 0;
@@ -750,9 +753,10 @@ void Renderer::beginVboRendering()
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
 
+        BlockSize block_size = collection->tfr_mapping ().block_size ();
         float
-                w = collection->tfr_mapping ().samplesPerBlock (),
-                h = collection->tfr_mapping ().scalesPerBlock ();
+                w = block_size.texels_per_row (),
+                h = block_size.texels_per_column ();
 
         uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
         glUniform2f(uniScaleTex, (w-1.f)/w, (h-1.f)/h);
@@ -870,11 +874,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*tfr_mapping.scalesPerBlock ());
+        needBetterF = scalePixels / (_redundancy*tfr_mapping.block_size ().texels_per_column ());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*tfr_mapping.samplesPerBlock ());
+        needBetterT = timePixels / (_redundancy*tfr_mapping.block_size ().texels_per_row ());
 
     const Tfr::TransformDesc* t = this->collection->transform ();
     if (!ReferenceInfo(ref.top(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS, t, 0) &&

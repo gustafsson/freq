@@ -12,8 +12,6 @@ public:
 
     TfrMapping(BlockSize block_size, float fs);
 
-    int samplesPerBlock() const;
-    int scalesPerBlock() const;
     BlockSize block_size() const;
 
     Tfr::FreqAxis display_scale() const;
