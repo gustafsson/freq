@@ -167,4 +167,30 @@ void TfrMap::
         write1(collections_[c])->tfr_mapping( tfr_mapping_ );
 }
 
+
+void TfrMap::
+        test()
+{
+    TfrMap::Ptr t = testInstance();
+    write1(t)->block_size( BlockSize(123,456));
+    EXCEPTION_ASSERT ( BlockSize(123,456) == read1(t)->tfr_mapping().block_size );
+}
+
+
+} // namespace Heightmap
+
+#include "tfr/stftdesc.h"
+
+namespace Heightmap
+{
+
+TfrMap::Ptr TfrMap::
+        testInstance()
+{
+    TfrMapping tfrmapping(BlockSize(1<<8, 1<<8), 10);
+    TfrMap::Ptr tfrmap(new TfrMap(tfrmapping, 1));
+    write1(tfrmap)->transform_desc( Tfr::StftDesc ().copy ());
+    return tfrmap;
+}
+
 } // namespace Heightmap

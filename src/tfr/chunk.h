@@ -19,17 +19,17 @@ namespace Tfr {
 
 class Chunk
 {
-protected:
+public:
     enum Order {
         Order_row_major,
-        Order_column_major,
+        Order_column_major
     } order;
 
+protected:
     Chunk( Order order );
     virtual ~Chunk() {}
 
 public:
-
     /**
       Each transform computes different frequency distributions. An instance of
       FreqAxis is used for translating frequencies to chunk indicies and vice

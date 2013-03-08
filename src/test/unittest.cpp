@@ -13,6 +13,7 @@
 #include "tools/support/timer.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
+#include "heightmap/chunkblockfilter.h"
 #include "volatileptr.h"
 
 #include <stdio.h>
@@ -48,8 +49,9 @@ int UnitTest::
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(Signal::Dag::Scheduler);
         RUNTEST(Heightmap::ChunkToBlock);
+        RUNTEST(Heightmap::TfrMap);
+        RUNTEST(Heightmap::CreateChunkBlockFilter);
         RUNTEST(VolatilePtrTest);
-        RUNTEST(Heightmap::BlockFilterDesc);
 
     } catch (exception& x) {
         printf("\n%s\n\n", boost::diagnostic_information(x).c_str());

@@ -76,6 +76,10 @@ private:
 
     TfrMapping  tfr_mapping_;
     Collections collections_;
+
+public:
+    static void test();
+    static TfrMap::Ptr testInstance();
 };
 
 } // namespace Heightmap
