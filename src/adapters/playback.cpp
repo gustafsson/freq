@@ -28,7 +28,7 @@ Playback::
     static bool first = true;
     if (first) list_devices();
 
-    if (0>outputDevice || outputDevice>sys.deviceCount()) {
+    if (0>outputDevice || outputDevice>=sys.deviceCount()) {
         _output_device = sys.defaultOutputDevice().index();
     } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
         TaskTimer("Creating audio Playback. Requested audio device '%s' can only be used for input.",
