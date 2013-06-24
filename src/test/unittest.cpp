@@ -15,6 +15,7 @@
 #include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
 #include "volatileptr.h"
+#include "adapters/playback.h"
 
 #include <stdio.h>
 #include <exception>
@@ -52,6 +53,7 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMap);
         RUNTEST(Heightmap::CreateChunkBlockFilter);
         RUNTEST(VolatilePtrTest);
+        RUNTEST(Adapters::Playback);
 
     } catch (exception& x) {
         printf("\n%s\n\n", boost::diagnostic_information(x).c_str());

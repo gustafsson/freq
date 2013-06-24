@@ -54,6 +54,9 @@ public:
     float       sample_rate() { return _data.sample_rate(); }
 
     void        restart_playback();
+
+    static void test();
+
 private:
     Signal::SinkSource _data;
     Signal::Interval _expected;
