@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace boost::posix_time;
+using namespace boost;
 
 namespace Adapters {
 
@@ -19,31 +20,50 @@ Playback::
 :   _data(0),
     _first_buffer_size(0),
     _playback_itr(0),
-    _output_device(0),
+    _output_device(-1),
     _is_interleaved(false)
 {
     portaudio::AutoSystem autoSys;
     portaudio::System &sys = portaudio::System::instance();
 
     static bool first = true;
-    if (first) list_devices();
+    boost::shared_ptr<TaskInfo> ti;
+    if (first) {
+        ti.reset (new TaskInfo(format("Creating audio Playback. Requested device: %d") % outputDevice));
+        list_devices();
 
-    if (0>outputDevice || outputDevice>=sys.deviceCount()) {
+        bool _has_output_device = false;
+        for (int i=0; i < sys.deviceCount(); ++i)
+        {
+            if (!sys.deviceByIndex(i).isInputOnlyDevice ())
+                _has_output_device = true;
+        }
+        if (_has_output_device) {
+            TaskInfo("System didn't report any output devices. Can't play sound.");
+            // leave _output_device as -1
+            return;
+        }
+    }
+
+
+    if (0>outputDevice) {
         _output_device = sys.defaultOutputDevice().index();
+    } else if (outputDevice >= sys.deviceCount ()) {
+        _output_device = sys.defaultOutputDevice().index();
+        TaskInfo(format("Highest valid device id is %d. Reverting to default output device") % (sys.deviceCount() - 1));
     } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
-        TaskTimer("Creating audio Playback. Requested audio device '%s' can only be used for input.",
-                     sys.deviceByIndex(outputDevice).name()).suppressTiming();
         _output_device = sys.defaultOutputDevice().index();
+        TaskInfo(format("Requested audio device (%d) '%s' can only be used for input. Reverting to default output device")
+                         % outputDevice % sys.deviceByIndex(outputDevice).name());
     } else {
         _output_device = outputDevice;
     }
 
     if(first)
     {
-        TaskInfo tt("Creating audio Playback. Using device '%s' (%d) for audio output.",
-                 sys.deviceByIndex(_output_device).name(), _output_device);
-        if (_output_device != outputDevice)
-            tt.tt().getStream() << " Requested device was number " << outputDevice;
+        TaskInfo tt(format("Using device '%s' (%d) for audio output")
+                           % sys.deviceByIndex(_output_device).name()
+                           % _output_device);
     }
 
     reset();
@@ -340,6 +360,11 @@ void Playback::
 
         portaudio::System &sys = portaudio::System::instance();
 
+        if (_output_device < 0) {
+            TaskInfo("No output device, can't start playing");
+            return;
+        }
+
         TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
         unsigned requested_number_of_channels = num_channels();
@@ -601,6 +626,19 @@ int Playback::
     }
 
     return ret;
+}
+
+
+void Playback::
+    test()
+{
+    portaudio::AutoSystem autoSys;
+    portaudio::System &sys = portaudio::System::instance();
+
+    // Don't throw any exceptions
+    for (int i=-10; i<sys.deviceCount ()*2+10; ++i) {
+        Playback a(i);
+    }
 }
 
 } // namespace Adapters
