@@ -43,13 +43,14 @@ Open sonicawe project.
 Open "test project".
 
 [The first time you open a Qt project in your build environment you need to setup the build and run configuration (this is stored in the .pro.user file which is individual and not committed)]
+[tests in the tests/integration/4-sonicawe-end2end folder rely on a common project, open that as well]
 
 Deselect to import build.
 Create build configuration: For Each Qt Version One Debug And One Release.
 Deselect shadow build.
 Deselect Embedded Linux.
 Click "Configure Project".
-Go to the Projects->"Test project"->Dependencies and add a dependncy on the sonicawe project.
+Go to the Projects->"Test project"->Dependencies and add a dependncy on the sonicawe project (and to the common project if this is an end2end test).
 Select the build configuration for sonicawe to be debug testlib.
 
 Configure run environment in Qt according to the instructions above.
