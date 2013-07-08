@@ -38,7 +38,7 @@ Playback::
             if (!sys.deviceByIndex(i).isInputOnlyDevice ())
                 _has_output_device = true;
         }
-        if (_has_output_device) {
+        if (!_has_output_device) {
             TaskInfo("System didn't report any output devices. Can't play sound.");
             // leave _output_device as -1
             return;
@@ -632,12 +632,20 @@ int Playback::
 void Playback::
     test()
 {
-    portaudio::AutoSystem autoSys;
-    portaudio::System &sys = portaudio::System::instance();
+    // It should not throw any exceptions when requesting an invalid device
+    {
+        portaudio::AutoSystem autoSys;
+        portaudio::System &sys = portaudio::System::instance();
 
-    // Don't throw any exceptions
-    for (int i=-10; i<sys.deviceCount ()*2+10; ++i) {
-        Playback a(i);
+        // Don't throw any exceptions
+        for (int i=-10; i<sys.deviceCount ()*2+10; ++i) {
+            Playback a(i);
+            int od = a.output_device();
+            EXCEPTION_ASSERTX ( 0 <= od && od < sys.deviceCount (), (format("od=%1% not in [0, %2%). i=%3%") % od % sys.deviceCount () % i));
+            EXCEPTION_ASSERT_LESS ( od, sys.deviceCount () );
+        }
+    }
+
     }
 }
 
