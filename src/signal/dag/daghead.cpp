@@ -7,7 +7,7 @@ namespace Dag {
 
 
 DagHead::
-        DagHead(Dag::Ptr dag, Signal::OperationDesc::Ptr headprocessor)
+        DagHead(SignalDag::Ptr dag, Signal::OperationDesc::Ptr headprocessor)
     :
       dag_(dag),
       head_(new Node(headprocessor))

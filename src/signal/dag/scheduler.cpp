@@ -267,7 +267,7 @@ void Scheduler::
 {
     OperationDesc::Ptr desc (new BufferSource (pBuffer (new Buffer (Interval (10, 20), 1, 1))));
     Scheduler::Ptr scheduler (new Scheduler ());
-    DagHead::Ptr head(new DagHead (Dag::Ptr(), desc));
+    DagHead::Ptr head(new DagHead (SignalDag::Ptr(), desc));
     scheduler->addDagHead( head );
     ComputingEngine* engine = 0;
     Task t = scheduler->getNextTask( engine );

@@ -19,12 +19,12 @@ namespace Dag {
  * Assuming for now that the list of nodes is linear, and not at all a dag.
  * I.e a chain... the chain class was just removed...
  */
-class Dag
+class SignalDag
 {
 public:
-    typedef boost::shared_ptr<Dag> Ptr;
+    typedef boost::shared_ptr<SignalDag> Ptr;
 
-    Dag (Node::Ptr root);
+    SignalDag (Node::Ptr root);
 
     int sampleRate();
     int numberOfSamples();

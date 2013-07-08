@@ -1,7 +1,7 @@
 #ifndef SIGNAL_DAG_DAGHEAD_H
 #define SIGNAL_DAG_DAGHEAD_H
 
-#include "dag.h"
+#include "signaldag.h"
 #include "signal/operation.h"
 
 #include <QObject>
@@ -14,12 +14,12 @@ class DagHead: public QObject, public VolatilePtr<DagHead>
     Q_OBJECT
 public:
 
-    DagHead(Dag::Ptr dag, Signal::OperationDesc::Ptr headprocessor);
+    DagHead(SignalDag::Ptr dag, Signal::OperationDesc::Ptr headprocessor);
     DagHead(DagHead::Ptr daghead, Signal::OperationDesc::Ptr headprocessor);
 
     // Used by processor
     Node::Ptr head() const { return head_; }
-    Dag::Ptr dag() const { return dag_; }
+    SignalDag::Ptr dag() const { return dag_; }
 
     void queueCommand(ICommand::Ptr cmd);
     void executeQueue();
@@ -38,7 +38,7 @@ private:
     Signal::OperationDesc::Ptr head_processor_;
     Signal::Intervals invalid_samples_;
 
-    Dag::Ptr dag_;
+    SignalDag::Ptr dag_;
 
     // This Node::Ptr is a copy of the actual node in the dag.
     Node::Ptr head_;

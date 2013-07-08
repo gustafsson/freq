@@ -1,10 +1,10 @@
-#include "dag.h"
+#include "signaldag.h"
 #include "signal/operation.h"
 namespace Signal {
 namespace Dag {
 
-Dag::
-        Dag (Node::Ptr rootp)
+SignalDag::
+        SignalDag (Node::Ptr rootp)
     :
       tip_(rootp),
       root_(rootp)
@@ -21,7 +21,7 @@ Dag::
 }
 
 
-int Dag::
+int SignalDag::
         sampleRate()
 {
     Node::ReadPtr root(root_);
@@ -30,7 +30,7 @@ int Dag::
 }
 
 
-int Dag::
+int SignalDag::
         numberOfSamples()
 {
     Node::ReadPtr root(root_);
@@ -39,7 +39,7 @@ int Dag::
 }
 
 
-int Dag::
+int SignalDag::
         numberOfChannels()
 {
     Node::ReadPtr root(root_);
