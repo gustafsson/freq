@@ -195,7 +195,7 @@ void NormalizeSpectra::
             original[i] = 0.f;
 
         vector<float> median;
-        TaskInfo("meansHz_ = %f", meansHz_);
+        //TaskInfo("meansHz_ = %f", meansHz_);
         if (meansHz_<0)
             SlidingMedian(
                         original.begin (),
@@ -208,7 +208,7 @@ void NormalizeSpectra::
                         original.end (),
                         std::insert_iterator< std::vector<float> >( median, median.begin() ),
                         2*R);
-        TaskInfo("meansHz_ = %f, median.size() = %d", meansHz_, median.size());
+        //TaskInfo("meansHz_ = %f, median.size() = %d", meansHz_, median.size());
 
 //        int s = median.size ();
 //        float* mv = &median[0];
