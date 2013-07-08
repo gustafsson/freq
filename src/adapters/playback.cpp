@@ -318,6 +318,8 @@ void Playback::
                         _playback_itr,
                         Signal::Interval::IntervalType_MAX);
 
+    EXCEPTION_ASSERT(source());
+
     if (0 == _data.num_channels())
         _data = Signal::SinkSource( source()->num_channels() );
 
@@ -646,6 +648,43 @@ void Playback::
         }
     }
 
+    // It should be stopped and pause should be disabled when there's not put data
+    {
+        Playback pb(-1);
+        EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
+        pb.source ( Signal::pOperation (new Signal::BufferSource (
+                            Signal::pBuffer (new Signal::Buffer(
+                                Signal::Interval (10,20),
+                                pb.sample_rate (),
+                                1
+                            ))
+                    )));
+        EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
+        pb.setExpectedSamples (Signal::Interval(10,20));
+        EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
+        pb.pausePlayback (true);
+        EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
+        pb.pausePlayback (false);
+        EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
+    }
+
+    // It should start playing when feeded with data
+    {
+        Playback pb(-1);
+        pb.source ( Signal::pOperation (new Signal::BufferSource (
+                            Signal::pBuffer (new Signal::Buffer(
+                                Signal::Interval (10,20),
+                                pb.sample_rate (),
+                                1
+                            ))
+                    )));
+        pb.setExpectedSamples (Signal::Interval(10,20));
+        pb.put (Signal::pBuffer(new Signal::Buffer(Signal::Interval(10,20), pb.sample_rate (), 1)));
+        EXCEPTION_ASSERT (!pb.isStopped () && !pb.isPaused ());
+        pb.pausePlayback (true);
+        EXCEPTION_ASSERT (!pb.isStopped () && pb.isPaused ());
+        pb.pausePlayback (false);
+        EXCEPTION_ASSERT (!pb.isStopped () && !pb.isPaused ());
     }
 }
 
