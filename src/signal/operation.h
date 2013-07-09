@@ -30,6 +30,7 @@ class SaweDll Operation
 {
 public:
     typedef boost::shared_ptr<Operation> Ptr;
+    typedef boost::weak_ptr<Operation> WeakPtr;
 
 
     /**

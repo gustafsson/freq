@@ -69,6 +69,7 @@ SOURCES += \
     sawe/*.cpp \
     signal/*.cpp \
     signal/dag/*.cpp \
+    signal/processing/*.cpp \
     test/*.cpp \
     tfr/fft4g.c \
     tfr/*.cpp \
@@ -91,6 +92,7 @@ HEADERS += \
     signal/*.h \
     test/*.h \
     signal/dag/*.h \
+    signal/processing/*.h \
     test/*.h \
     tfr/*.h \
     tools/*.h \
