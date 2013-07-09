@@ -33,10 +33,7 @@ void Task::
 
     Signal::pBuffer output_buffer = o->process (input_buffer);
 
-    {
-        Step::WritePtr step_result(step);
-        step_result->finishTask(this, output_buffer);
-    }
+    write1(step)->finishTask(this, output_buffer);
 }
 
 
@@ -94,7 +91,7 @@ void Task::
         Signal::OperationDesc::Ptr od(new BufferSource(b));
 
         // setup a known signal processing step
-        Step::Ptr step (new Step(od, b->number_of_channels (), b->sample_rate ()));
+        Step::Ptr step (new Step(od, b->sample_rate (), b->number_of_channels ()));
         std::vector<Step::Ptr> children; // empty
         Signal::Interval expected_output(-10,80);
 
@@ -107,21 +104,10 @@ void Task::
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
         Signal::pBuffer r = write1(step)->readFixedLengthFromCache(to_read);
-        for (unsigned c=0; c<r->number_of_channels (); ++c)
-        {
-            float *p = r->getChannel (c)->waveform_data ()->getCpuMemory ();
-            for (int i=0; i<r->number_of_samples (); ++i)
-            {
-                float v = 0;
-                Signal::IntervalType k = i + r->getInterval ().first;
-                if (b->getInterval ().contains (k))
-                {
-                    int j = k - b->getInterval ().first;
-                    v = c + j/(float)b->number_of_samples ();
-                }
-                EXCEPTION_ASSERT_EQUALS(p[i], v);
-            }
-        }
+        Signal::Buffer expected_r(to_read, 40, 7);
+        expected_r += *b;
+
+        EXCEPTION_ASSERT(expected_r == *r);
     }
 }
 

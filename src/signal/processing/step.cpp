@@ -1,16 +1,15 @@
 #include "step.h"
-#include "task.h"
 
 #include <boost/foreach.hpp>
 
 namespace Signal {
 namespace Processing {
 
-Step::Step(Signal::OperationDesc::Ptr operation_desc, int num_channels, float /*sample_rate*/)
+Step::Step(Signal::OperationDesc::Ptr operation_desc, float /*sample_rate*/, int num_channels)
     :
-      not_started(Signal::Intervals::Intervals_ALL),
-      cache_(num_channels), // TODO add sample_rate to the cache constructor here
-      operation_desc_(operation_desc)
+        cache_(num_channels), // TODO add sample_rate to the cache constructor here
+        not_started_(Signal::Intervals::Intervals_ALL),
+        operation_desc_(operation_desc)
 {
 }
 
@@ -20,19 +19,33 @@ Signal::Intervals Step::
 {
     Signal::Intervals I;
 
-    BOOST_FOREACH(volatile Task* t, running_tasks)
+    BOOST_FOREACH(RunningTaskMap::value_type ti, running_tasks)
     {
-        I |= Task::ReadPtr( t )->expected_output();
+        I |= ti.second;
     }
 
     return I;
 }
 
 
+void Step::
+        deprecateCache(Signal::Intervals deprecated)
+{
+    not_started_ |= deprecated;
+}
+
+
+Signal::Intervals Step::
+        not_started() const
+{
+    return not_started_;
+}
+
+
 Signal::Intervals Step::
         out_of_date() const
 {
-    return not_started | currently_processing();
+    return not_started_ | currently_processing();
 }
 
 
@@ -64,9 +77,10 @@ Signal::OperationDesc::Ptr Step::
 
 
 void Step::
-        registerTask(volatile Task* t)
+        registerTask(volatile Task* t, Signal::Interval expected_output)
 {
-    running_tasks.insert (t);
+    running_tasks[t] = expected_output;
+    not_started_ -= expected_output;
 }
 
 
@@ -119,26 +133,27 @@ void Step::
 void Step::
         test()
 {
-    // It should store stuff in the cache
+    // It should keep a cache (for an OpertionDesc) and keep track of things to work on.
     {
+        // Create an OperationDesc
         Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
         for (unsigned c=0; c<b->number_of_channels (); ++c)
         {
             float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
             for (int i=0; i<b->number_of_samples (); ++i)
-                p[i] = c + i/(float)b->number_of_samples ();
+                p[i] = c + 1+i/(float)b->number_of_samples ();
         }
-        Signal::OperationDesc::Ptr bs(new Signal::BufferSource(b));
 
-        Step s(bs, b->number_of_samples (), b->sample_rate ());
-        //s.cache.put ();
+        // Create a Step
+        Step s(Signal::OperationDesc::Ptr(), 40, 7);
+        s.registerTask(0, b->getInterval ());
+        EXCEPTION_ASSERT_EQUALS(s.not_started (), ~Signal::Intervals(b->getInterval ()));
+        EXCEPTION_ASSERT_EQUALS(s.out_of_date(), Signal::Intervals::Intervals_ALL);
+        s.finishTask(0, b);
+        EXCEPTION_ASSERT_EQUALS(s.out_of_date(), ~Signal::Intervals(b->getInterval ()));
+
+        EXCEPTION_ASSERT( *b == *s.readFixedLengthFromCache (b->getInterval ()) );
     }
-/*    Operation::Ptr o = s.createOperation (0);
-    Operation::test (o, &s);
-
-    BufferSource
-    Signal::OperationDesc
-    Step s()*/
 }
 
 

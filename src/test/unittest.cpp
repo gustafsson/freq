@@ -10,6 +10,7 @@
 #include "signal/dag/dagcommand.h"
 #include "signal/dag/node.h"
 #include "signal/dag/scheduler.h"
+#include "signal/processing/step.h"
 #include "signal/processing/task.h"
 #include "tools/support/timer.h"
 #include "heightmap/chunktoblock.h"
@@ -50,6 +51,7 @@ int UnitTest::
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(Signal::Dag::Scheduler);
+        RUNTEST(Signal::Processing::Step);
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
