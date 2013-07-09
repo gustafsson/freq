@@ -1,12 +1,15 @@
 #include "step.h"
 #include "task.h"
 
+#include <boost/foreach.hpp>
+
 namespace Signal {
 namespace Processing {
 
 Step::Step(Signal::OperationDesc::Ptr operation_desc, int num_channels, float /*sample_rate*/)
     :
-      cache(num_channels), // TODO add sample_rate to the cache constructor here
+      not_started(Signal::Intervals::Intervals_ALL),
+      cache_(num_channels), // TODO add sample_rate to the cache constructor here
       operation_desc_(operation_desc)
 {
 }
@@ -17,8 +20,9 @@ Signal::Intervals Step::
 {
     Signal::Intervals I;
 
-    for (size_t i=0; i<running_tasks.size (); i++) {
-        I |= Task::ReadPtr( running_tasks[i] )->expected_output();
+    BOOST_FOREACH(volatile Task* t, running_tasks)
+    {
+        I |= Task::ReadPtr( t )->expected_output();
     }
 
     return I;
@@ -28,7 +32,7 @@ Signal::Intervals Step::
 Signal::Intervals Step::
         out_of_date() const
 {
-    return todo | currently_processing();
+    return not_started | currently_processing();
 }
 
 
@@ -60,9 +64,38 @@ Signal::OperationDesc::Ptr Step::
 
 
 void Step::
-        operation_desc (Signal::OperationDesc::Ptr p)
+        registerTask(volatile Task* t)
 {
-    operation_desc_ = p;
+    running_tasks.insert (t);
+}
+
+
+void Step::
+        finishTask(volatile Task* t, Signal::pBuffer result)
+{
+    cache_.put (result);
+    running_tasks.erase (t);
+}
+
+
+Signal::pBuffer Step::
+        readFixedLengthFromCache(Signal::Interval I)
+{
+    return cache_.readFixedLength (I);
+}
+
+
+float Step::
+        sample_rate()
+{
+    return cache_.sample_rate ();
+}
+
+
+unsigned Step::
+        num_channels()
+{
+    return cache_.num_channels ();
 }
 
 

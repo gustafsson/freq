@@ -10,16 +10,8 @@ Task::
     :
       step_(step),
       children_(children),
-      expected_output_(expected_output),
-      state_(NotStarted)
+      expected_output_(expected_output)
 {
-}
-
-
-Task::State Task::
-        state() const
-{
-    return state_;
 }
 
 
@@ -36,19 +28,15 @@ void Task::
     Signal::pBuffer input_buffer = get_input();
 
 
-    WritePtr(this)->state_ = Processing;
-
-
-
     Step::Ptr step = ReadPtr(this)->step_;
     Signal::Operation::Ptr o = write1(step)->operation (ce);
 
     Signal::pBuffer output_buffer = o->process (input_buffer);
 
-    write1(step)->cache.put (output_buffer);
-
-
-    WritePtr(this)->state_ = Done;
+    {
+        Step::WritePtr step_result(step);
+        step_result->finishTask(this, output_buffer);
+    }
 }
 
 
@@ -61,7 +49,6 @@ Signal::pBuffer Task::
 
     {
         WritePtr self(this);
-        self->state_ = PreparingInput;
 
         step = self->step_;
         needed = self->expected_output_;
@@ -78,14 +65,14 @@ Signal::pBuffer Task::
     }
 
     // Assume that the cache has been accurately setup
-    int num_channels = write1(step)->cache.num_channels();
-    float fs = write1(step)->cache.sample_rate();
+    int num_channels = write1(step)->num_channels();
+    float fs = write1(step)->sample_rate();
     Signal::pBuffer input_buffer(new Signal::Buffer(required_input.spannedInterval (), fs, num_channels));
 
     // Sum all sources
     std::vector<Step::Ptr> children = ReadPtr(this)->children_;
     for (size_t i=0;i<children.size(); ++i)
-        *input_buffer += *write1(children[i])->cache.readFixedLength(required_input.spannedInterval ());
+        *input_buffer += *write1(children[i])->readFixedLengthFromCache(required_input.spannedInterval ());
 
     return input_buffer;
 }
@@ -115,11 +102,11 @@ void Task::
         Task t(step, children, expected_output);
         t.run (Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
-        EXCEPTION_ASSERT_EQUALS(expected_output, write1(step)->cache.samplesDesc());
-        EXCEPTION_ASSERT_EQUALS(b->sample_rate (), write1(step)->cache.sample_rate());
-        EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), write1(step)->cache.num_channels());
+        EXCEPTION_ASSERT_EQUALS(b->sample_rate (), write1(step)->sample_rate());
+        EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), write1(step)->num_channels());
 
-        Signal::pBuffer r = write1(step)->cache.readFixedLength(Signal::Intervals(expected_output).enlarge (2).spannedInterval ());
+        Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
+        Signal::pBuffer r = write1(step)->readFixedLengthFromCache(to_read);
         for (unsigned c=0; c<r->number_of_channels (); ++c)
         {
             float *p = r->getChannel (c)->waveform_data ()->getCpuMemory ();
