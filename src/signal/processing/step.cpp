@@ -119,13 +119,14 @@ void Step::
     // Garbage collection, remove operation mappings whose ComputingEngine has been removed.
 
     for (OperationMap::iterator omi = operations_.begin ();
-         omi != operations_.end (); omi++)
+         omi != operations_.end (); )
     {
-        Signal::ComputingEngine::Ptr p(omi->first);
-        if (0 == p.get ()) {
+        Signal::ComputingEngine::Ptr p = omi->first.lock();
+        if (!p) {
             operations_.erase (omi);
             omi = operations_.begin ();
-        }
+        } else
+            omi++;
     }
 }
 
