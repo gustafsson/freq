@@ -12,6 +12,7 @@
 #include "signal/dag/scheduler.h"
 #include "signal/processing/dag.h"
 #include "signal/processing/schedule.h"
+#include "signal/processing/schedulealgorithm.h"
 #include "signal/processing/step.h"
 #include "signal/processing/task.h"
 #include "tools/support/timer.h"
@@ -55,6 +56,7 @@ int UnitTest::
         RUNTEST(Signal::Dag::Scheduler);
         RUNTEST(Signal::Processing::GraphProperties);
         RUNTEST(Signal::Processing::Schedule);
+        RUNTEST(Signal::Processing::ScheduleAlgorithm);
         RUNTEST(Signal::Processing::Step);
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Heightmap::ChunkToBlock);

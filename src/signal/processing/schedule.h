@@ -3,6 +3,7 @@
 
 #include "task.h"
 #include "dag.h"
+#include "worker.h"
 
 namespace Signal {
 namespace Processing {
@@ -12,12 +13,12 @@ class Schedule
 public:
     Schedule();
 
-    Task::Ptr getTask(
-            Graph& g,
-            GraphVertex target,
-            Signal::Intervals missing_in_target=Intervals::Intervals_ALL,
-            int preferred_size=1<<16,
-            Signal::IntervalType center=Interval::IntervalType_MIN);
+    Task::Ptr getTask();
+
+    QWaitCondition work_condition;
+
+    std::list<Worker> workers;
+    // List workers that belongs to this scheduler
 
     static void test();
 };

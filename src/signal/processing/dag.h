@@ -24,7 +24,6 @@ class GraphProperties
 public:
     GraphProperties();
 
-    // list workers
     // list targets (targets should have a timestamp so that the scheduler can know what to focus on first)
     // invalidate steps (only deprecateCache(Interval::Interval_ALL) for now)
     // map step to vertex
