@@ -14,7 +14,11 @@ public:
 
     Step::Ptr step();
 
+    boost::posix_time::ptime timestamp;
+
     virtual Signal::Intervals out_of_date(Signal::Intervals skip = Signal::Intervals()) = 0;
+
+    int center;
 
 private:
     Step::Ptr step_;

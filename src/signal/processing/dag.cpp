@@ -7,13 +7,27 @@ namespace og = boost::graph;
 namespace Signal {
 namespace Processing {
 
-GraphProperties::
-        GraphProperties()
+Dag::
+        Dag()
 {
 }
 
 
-void GraphProperties::
+void Dag::
+        insertStep(GraphVertex /*gv*/, Step::Ptr /*step*/)
+{
+
+}
+
+
+void Dag::
+        removeStep(Step::Ptr /*step*/)
+{
+
+}
+
+
+void Dag::
         test()
 {
 }

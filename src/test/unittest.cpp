@@ -54,7 +54,7 @@ int UnitTest::
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(Signal::Dag::Scheduler);
-        RUNTEST(Signal::Processing::GraphProperties);
+        RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::Schedule);
         RUNTEST(Signal::Processing::ScheduleAlgorithm);
         RUNTEST(Signal::Processing::Step);

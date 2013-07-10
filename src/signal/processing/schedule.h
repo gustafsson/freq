@@ -11,7 +11,7 @@ namespace Processing {
 class Schedule
 {
 public:
-    Schedule();
+    Schedule(Dag::Ptr g);
 
     Task::Ptr getTask();
 
@@ -20,6 +20,10 @@ public:
     std::list<Worker> workers;
     // List workers that belongs to this scheduler
 
+private:
+    Dag::Ptr g;
+
+public:
     static void test();
 };
 

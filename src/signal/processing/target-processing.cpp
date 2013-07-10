@@ -10,5 +10,13 @@ Target::
 {
 }
 
+
+Step::Ptr Target::
+        step()
+{
+    return step_;
+}
+
+
 } // namespace Processing
 } // namespace Signal
