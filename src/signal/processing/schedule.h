@@ -1,27 +1,35 @@
 #ifndef SIGNAL_PROCESSING_SCHEDULE_H
 #define SIGNAL_PROCESSING_SCHEDULE_H
 
-#include "task.h"
 #include "dag.h"
 #include "worker.h"
+#include "gettask.h"
 
 namespace Signal {
 namespace Processing {
 
-class Schedule
+class Schedule: public GetTask
 {
 public:
     Schedule(Dag::Ptr g);
 
-    Task::Ptr getTask();
+    void wakeup();
+    bool is_sleeping();
 
-    QWaitCondition work_condition;
+    // Throw exception if already added.
+    // This will spawn a new worker thread for this computing engine.
+    void addComputingEngine(Signal::ComputingEngine::Ptr ce);
 
-    std::list<Worker> workers;
-    // List workers that belongs to this scheduler
+    // Throw exception if not found
+    void removeComputingEngine(Signal::ComputingEngine::Ptr ce);
+
+    std::vector<Signal::ComputingEngine::Ptr> getComputingEngines() const;
 
 private:
-    Dag::Ptr g;
+    GetTask::Ptr get_task;
+
+    typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
+    EngineWorkerMap workers;
 
 public:
     static void test();

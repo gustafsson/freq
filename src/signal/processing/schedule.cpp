@@ -1,8 +1,9 @@
+// Include Boost.Foreach before any Qt includes to prevent conflicts with Qt foreach
+#include <boost/foreach.hpp>
+
 #include "schedule.h"
 
-#include "schedulealgorithm.h"
-
-#include <boost/foreach.hpp>
+#include "schedulegettask.h"
 
 namespace Signal {
 namespace Processing {
@@ -11,41 +12,50 @@ namespace Processing {
 Schedule::
         Schedule(Dag::Ptr g)
     :
-      g(g)
+      get_task(new ScheduleGetTask(g))
 {
 }
 
 
-Task::Ptr Schedule::
-        getTask()
+void Schedule::
+        addComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
-    ScheduleAlgorithm sa;
+    EXCEPTION_ASSERT(ce);
 
-    Target::Ptr target;
+    if (workers.find (ce) != workers.end ())
+        EXCEPTION_ASSERTX(false, "Engine already added");
 
-    BOOST_FOREACH(Target::Ptr t, write1(g)->target) {
-        target = t;
+    Worker::Ptr w(new Worker(ce, get_task));
+    workers[ce] = w;
+
+    // The computation is a background process with a priority one step lower than NormalPriority
+    w->start (QThread::LowPriority);
+}
+
+
+void Schedule::
+        removeComputingEngine(Signal::ComputingEngine::Ptr ce)
+{
+    EXCEPTION_ASSERT(ce);
+
+    if (workers.find (ce) == workers.end ())
+        EXCEPTION_ASSERTX(false, "No such engine");
+
+    // Don't try to delete a running thread.
+    workers.erase (ce);
+}
+
+
+std::vector<Signal::ComputingEngine::Ptr> Schedule::
+        getComputingEngines() const
+{
+    std::vector<Signal::ComputingEngine::Ptr> engines;
+
+    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers) {
+        engines.push_back (ewp.first);
     }
 
-    if (!target)
-        return Task::Ptr();
-
-    Step::Ptr step = write1(target)->step();
-    GraphVertex vertex = write1(g)->map[step];
-
-    Signal::Intervals missing_in_target = write1(target)->out_of_date();
-    int preferred_size = 1 + missing_in_target.count () / workers.size ();
-    int center = target->center;
-    center = Interval::IntervalType_MIN;
-
-    Task::Ptr task = sa.getTask(
-            write1(g)->g,
-            vertex,
-            missing_in_target,
-            preferred_size,
-            center);
-
-    return task;
+    return engines;
 }
 
 
