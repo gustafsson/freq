@@ -24,9 +24,14 @@ public:
     // Delete when finished
     virtual void run ();
 
+    // Postpones the thread exit until a task has been finished.
+    // 'get_task_->getTask()' might be idling but this class is unaware of that
+    void exit_nicely_and_delete();
+
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
     GetTask::Ptr get_task_;
+    bool enough_;
 
 public:
     static void test ();

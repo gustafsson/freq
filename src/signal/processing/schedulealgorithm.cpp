@@ -9,6 +9,13 @@ namespace Signal {
 namespace Processing {
 
 
+ScheduleAlgorithm::
+        ScheduleAlgorithm(Workers::Ptr workers)
+    :
+      workers_(workers)
+{}
+
+
 typedef std::map<GraphVertex, Signal::Intervals> MissingSamples;
 
 
@@ -84,9 +91,14 @@ Task::Ptr ScheduleAlgorithm::
         getTask(Graph& g,
                 GraphVertex target,
                 Signal::Intervals missing_in_target,
-                int preferred_size,
-                Signal::IntervalType center)
+                Signal::IntervalType center,
+                Signal::ComputingEngine::Ptr /*engine*/)
 {
+    int preferred_size = missing_in_target.count ();
+
+    if (workers_)
+        preferred_size = 1 + preferred_size/read1(workers_)->n_workers();
+
     ScheduleParams schedule_params = { preferred_size, center };
 
     MissingSamples missing_samples;
@@ -118,18 +130,18 @@ void ScheduleAlgorithm::
         GraphVertex v = g.add_vertex (step);
 
         // Schedule a task
-        Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 2, 25);
-        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(20,24) | Signal::Interval(26,30), 2, 25);
-        EXCEPTION_ASSERT_EQUALS(read1(t1)->expected_output(), Interval(24,26));
-        EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(22,24));
+        Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25);
+        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(20,24) | Signal::Interval(26,30), 25);
+        EXCEPTION_ASSERT_EQUALS(read1(t1)->expected_output(), Interval(20,30));
+        EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(20,24));
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), Signal::Intervals::Intervals_ALL);
-        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(22,26), read1(step)->not_started());
+        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(20,30), read1(step)->not_started());
 
         t1->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         t2->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(22,26));
+        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(20,30));
     }
 }
 

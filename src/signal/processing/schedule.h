@@ -3,14 +3,15 @@
 
 #include "dag.h"
 #include "worker.h"
-#include "gettask.h"
+#include "workers.h"
 
 namespace Signal {
 namespace Processing {
 
-class Schedule: public GetTask
+class Schedule
 {
 public:
+    // Should take a GetTask as input rather than a Dag
     Schedule(Dag::Ptr g);
 
     void wakeup();
@@ -23,14 +24,21 @@ public:
     // Throw exception if not found
     void removeComputingEngine(Signal::ComputingEngine::Ptr ce);
 
-    std::vector<Signal::ComputingEngine::Ptr> getComputingEngines() const;
+    Workers::Ptr getWorkers() const;
 
 private:
+    class ScheduleWorkers: public Workers {
+    public:
+        friend class Schedule;
+    };
+
+    Workers::Ptr workers_;
     GetTask::Ptr get_task;
 
     typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
     EngineWorkerMap workers;
 
+    void updateWorkers();
 public:
     static void test();
 };

@@ -51,14 +51,12 @@ Task::Ptr ScheduleGetTask::
     GraphVertex vertex = write1(g)->map[step];
 
     Signal::Intervals missing_in_target = write1(target)->out_of_date();
-    Signal::IntervalType preferred_size = 1 + missing_in_target.count (); // / workers.size ();
     Signal::IntervalType work_center = read1(target)->work_center();
 
     Task::Ptr task = sa.getTask(
             write1(g)->g,
             vertex,
             missing_in_target,
-            preferred_size,
             work_center);
 
     return task;

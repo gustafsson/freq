@@ -28,6 +28,8 @@ void Schedule::
     Worker::Ptr w(new Worker(ce, get_task));
     workers[ce] = w;
 
+    updateWorkers();
+
     // The computation is a background process with a priority one step lower than NormalPriority
     w->start (QThread::LowPriority);
 }
@@ -38,16 +40,20 @@ void Schedule::
 {
     EXCEPTION_ASSERT(ce);
 
-    if (workers.find (ce) == workers.end ())
+    EngineWorkerMap::iterator worker = workers.find (ce);
+    if (worker == workers.end ())
         EXCEPTION_ASSERTX(false, "No such engine");
 
     // Don't try to delete a running thread.
-    workers.erase (ce);
+    worker->second->exit_nicely_and_delete();
+    workers.erase (worker); // This doesn't delete worker, worker deletes itself (if there are any additional tasks).
+
+    updateWorkers();
 }
 
 
-std::vector<Signal::ComputingEngine::Ptr> Schedule::
-        getComputingEngines() const
+void Schedule::
+        updateWorkers()
 {
     std::vector<Signal::ComputingEngine::Ptr> engines;
 
@@ -55,7 +61,7 @@ std::vector<Signal::ComputingEngine::Ptr> Schedule::
         engines.push_back (ewp.first);
     }
 
-    return engines;
+    dynamic_cast<ScheduleWorkers*>((Workers*)write1(workers_))->workers_ = engines;
 }
 
 

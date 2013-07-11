@@ -7,7 +7,8 @@ Worker::
         Worker (Signal::ComputingEngine::Ptr computing_eninge, GetTask::Ptr get_task)
     :
       computing_eninge_(computing_eninge),
-      get_task_(get_task)
+      get_task_(get_task),
+      enough_(false)
 {
 
 }
@@ -21,9 +22,19 @@ void Worker::
     while (task = get_task_->getTask())
     {
         task->run(computing_eninge_);
+
+        if (enough_)
+            break;
     }
 
     deleteLater ();
+}
+
+
+void Worker::
+        exit_nicely_and_delete()
+{
+    enough_ = true;
 }
 
 
