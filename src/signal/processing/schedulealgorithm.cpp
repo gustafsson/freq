@@ -88,7 +88,7 @@ public:
 
 
 Task::Ptr ScheduleAlgorithm::
-        getTask(Graph& g,
+        getTask(const Graph& g,
                 GraphVertex target,
                 Signal::Intervals missing_in_target,
                 Signal::IntervalType center,

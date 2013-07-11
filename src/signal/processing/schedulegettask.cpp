@@ -64,13 +64,13 @@ Task::Ptr ScheduleGetTask::
         return Task::Ptr();
 
     Step::Ptr step = read1(target)->step();
-    GraphVertex vertex = write1(g)->map[step];
+    GraphVertex vertex = write1(g)->getVertex(step);
 
     Signal::Intervals missing_in_target = write1(target)->out_of_date();
     Signal::IntervalType work_center = read1(target)->work_center();
 
     Task::Ptr task = sa.getTask(
-            write1(g)->g,
+            read1(g)->g(), // this locks the graph for writing during getTask
             vertex,
             missing_in_target,
             work_center);

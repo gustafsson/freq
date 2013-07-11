@@ -12,9 +12,10 @@ namespace Signal {
 namespace Processing {
 
 /**
- * @brief The ScheduleGetTask class should provide new tasks for workers who lack information about what they should do.
+ * @brief The ScheduleGetTask class should provide new tasks for workers who
+ * lack information about what they should do.
  *
- * It should let
+ * It should halt works while waiting for an available task.
  */
 class ScheduleGetTask: public GetTask
 {

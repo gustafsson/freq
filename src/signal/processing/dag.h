@@ -31,22 +31,27 @@ class Dag: public VolatilePtr<Dag>
 public:
     Dag();
 
-    Graph g;
+    const Graph& g() const { return g_; }
 
     std::list<Target::Ptr> target;
     // list targets (targets should have a timestamp so that the scheduler can know what to focus on first)
+    // this list is publicly accesible
 
     // invalidate steps (only deprecateCache(Interval::Interval_ALL) for now)
     void deprecateCache(GraphVertex);
 
-    // map step to vertex
-    std::map<Step::Ptr, GraphVertex> map;
+    GraphVertex getVertex(Step::Ptr s) { return map[s]; }
 
     // manage add/remove vertex from graph, throw exception if not found
     void insertStep(GraphVertex gv, Step::Ptr step);
     void removeStep(Step::Ptr step);
 
     static void test();
+
+private:
+    Graph g_;
+
+    std::map<Step::Ptr, GraphVertex> map;
 };
 
 

@@ -23,7 +23,7 @@ public:
     ScheduleAlgorithm(Workers::Ptr workers = Workers::Ptr());
 
     Task::Ptr getTask(
-            Graph& g,
+            const Graph& g,
             GraphVertex target,
             Signal::Intervals missing_in_target=Intervals::Intervals_ALL,
             Signal::IntervalType center=Interval::IntervalType_MIN,
