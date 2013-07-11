@@ -3,6 +3,7 @@
 
 #include "schedulegettask.h"
 #include "schedulealgorithm.h"
+#include <QThread>
 
 using namespace boost::posix_time;
 
@@ -21,13 +22,28 @@ ScheduleGetTask::
 Task::Ptr ScheduleGetTask::
         getTask() volatile
 {
-    WritePtr selftask(this);
-    return dynamic_cast<ScheduleGetTask*>((GetTask*)selftask)->getTask ();
+    Task::Ptr task;
+
+    while (true) {
+        {
+            // Lock this while reading a task
+            ReadPtr that(this);
+            const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const GetTask*)that);
+            task = self->getTask ();
+        }
+
+        if (task)
+            return task;
+
+        // QWaitCondition/QMutex are thread-safe so we can discard the volatile qualifier
+        const_cast<QWaitCondition*>(&work_condition)->wait (
+                    const_cast<QMutex*> (&work_condition_mutex));
+    }
 }
 
 
 Task::Ptr ScheduleGetTask::
-        getTask()
+        getTask() const
 {
     ScheduleAlgorithm sa;
 
@@ -60,6 +76,21 @@ Task::Ptr ScheduleGetTask::
             work_center);
 
     return task;
+}
+
+
+void ScheduleGetTask::
+        test()
+{
+    // It should provide new tasks for workers who lack information about what they should do
+    {
+
+    }
+
+    // It should halt works while waiting for an available task
+    {
+
+    }
 }
 
 

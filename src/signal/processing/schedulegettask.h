@@ -11,14 +11,23 @@
 namespace Signal {
 namespace Processing {
 
+/**
+ * @brief The ScheduleGetTask class should provide new tasks for workers who lack information about what they should do.
+ *
+ * It should let
+ */
 class ScheduleGetTask: public GetTask
 {
 public:
     ScheduleGetTask(Dag::Ptr g);
 
+    // Stalls until a task can be returned
     virtual Task::Ptr getTask() volatile;
-    virtual Task::Ptr getTask();
 
+    // Returns null if no task was found
+    virtual Task::Ptr getTask() const;
+
+    // Check if a task might be available
     void wakeup();
 
 private:
