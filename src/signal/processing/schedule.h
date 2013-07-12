@@ -14,10 +14,8 @@ namespace Processing {
  * @brief The Schedule class should start and stop computing engines as they
  * are added and removed.
  *
- * A started engine uses class Worker which queries
- *
- * Issues
- * Assuming that workers doesn't die by themselves. Missing handling of workers that died anyways.
+ * A started engine uses class Worker which queries a GetTask for tasks to work
+ * on.
  */
 class Schedule: public VolatilePtr<Schedule>
 {

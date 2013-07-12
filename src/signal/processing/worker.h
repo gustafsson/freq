@@ -11,7 +11,9 @@ namespace Signal {
 namespace Processing {
 
 /**
- * @brief The Worker class
+ * @brief The Worker class should run the next task as long as there is one
+ *
+ * It should store information about a crashed task (both segfault and std::exception)
  *
  * Issues
  * should not subclass QThread

@@ -65,34 +65,74 @@ public:
     int get_task_count;
 
     virtual Task::Ptr getTask() volatile {
-        if (get_task_count++ < 1)
-            return Task::Ptr();
-
-        pBuffer b(new Buffer(Interval(60,70), 40, 7));
-        Signal::OperationDesc::Ptr od(new BufferSource(b));
-        Step::Ptr step (new Step(od, b->sample_rate (), b->number_of_channels ()));
-        std::vector<Step::Ptr> children;
-        Signal::Interval expected_output(-10,80);
-
-        // No children, and no data
-        return Task::Ptr( new Task(step, children, expected_output));
+        get_task_count++;
+        return Task::Ptr();
     }
 };
+
+
+class GetTaskSegFaultMock: public GetTask {
+public:
+    virtual Task::Ptr getTask() volatile {
+        int a = *(int*)0; // cause segfault
+        a=a;
+        return Task::Ptr();
+    }
+};
+
+
+class GetTaskExceptionMock: public GetTask {
+public:
+    virtual Task::Ptr getTask() volatile {
+        EXCEPTION_ASSERTX(false, "GetTaskExceptionMock");
+        return Task::Ptr();
+    }
+};
+
 
 void Worker::
         test()
 {
     // It should run the next task as long as there is one
     {
-        Signal::ComputingEngine::Ptr computing_eninge(new Signal::ComputingCpu);
         GetTask::Ptr gettask(new GetTaskMock());
 
-        Worker worker(computing_eninge, gettask);
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        worker.start ();
+        bool finished = worker.wait (3); // Stop running within 3 ms, equals !worker.isRunning ()
+        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+        // Verify that tasks execute properly in Task::test.
+    }
+
+    // It should store information about a crashed task (segfault)
+    {
+        GetTask::Ptr gettask(new GetTaskSegFaultMock());
+
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
         worker.run ();
-        EXCEPTION_ASSERT_EQUALS( true, worker.isRunning () );
-        QThread::currentThread()->wait (1);
-        EXCEPTION_ASSERT_EQUALS( false, worker.isRunning () );
-        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<volatile GetTaskMock*>(gettask.get())->get_task_count );
+        bool finished = worker.wait (2);
+        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        const std::type_info* ti = worker.exception_type();
+
+        EXCEPTION_ASSERT_EQUALS( demangle (ti?ti->name ():""), demangle (typeid(SignalException).name ()) );
+    }
+
+    // It should store information about a crashed task (C++ exception)
+    {
+        GetTask::Ptr gettask(new GetTaskExceptionMock());
+
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        worker.run ();
+        bool finished = worker.wait (2);
+        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        const std::type_info* ti = worker.exception_type();
+
+        EXCEPTION_ASSERT_EQUALS( demangle (ti?ti->name ():""), demangle (typeid(ExceptionAssert).name ()) );
+        EXCEPTION_ASSERT_EQUALS( "GetTaskExceptionMock", worker.exception_what () );
     }
 }
 

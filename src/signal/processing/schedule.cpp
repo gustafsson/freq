@@ -17,10 +17,6 @@ Schedule::
     :
       get_task(get_task)
 {
-/*    GetDagTaskAlgorithm::Ptr algorithm(new ScheduleAlgorithm(workers_));
-    GetTask::Ptr get_dag_tasks(new GetDagTask(g, algorithm));
-    GetTask::Ptr wait_for_task(new ScheduleGetTask(get_dag_tasks));
-*/
 }
 
 
@@ -86,27 +82,75 @@ Schedule::DeadEngines Schedule::
 
     for(EngineWorkerMap::iterator i=workers.begin (); i != workers.end(); ++i) {
         QPointer<Worker> worker = i->second;
-        EXCEPTION_ASSERT (!worker); // This indicates an error in scheduling if a null task was returned
 
-        if (!worker->isRunning ()) // This
-        {
-            // Do something intelligent
+        if (!worker) {
+            // The worker has been deleted
+            Signal::ComputingEngine::Ptr ce = i->first;
+            dead[ce] = DeadEngines::mapped_type(0, "");
+
+        } else if (!worker->isRunning ()) {
+            // The worker has stopped but has not yet been deleted
             Signal::ComputingEngine::Ptr ce = i->first;
             dead[ce] = DeadEngines::mapped_type(worker->exception_type(), worker->exception_what());
 
-            workers.erase (i);
-            i = workers.begin ();
+            worker->deleteLater ();
         }
     }
+
+    for (DeadEngines::iterator i=dead.begin (); i != dead.end(); ++i) {
+        workers.erase (i->first);
+    }
+
+    if (!dead.empty ())
+        updateWorkers();
 
     return dead;
 }
 
 
+class GetEmptyTaskMock: public GetTask {
+public:
+    GetEmptyTaskMock() : get_task_count(0) {}
+
+    int get_task_count;
+
+    virtual Task::Ptr getTask() volatile {
+        get_task_count++;
+        throw std::logic_error("test crash");
+        return Task::Ptr();
+    }
+};
+
+
 void Schedule::
         test()
 {
+    // It should start and stop computing engines as they are added and removed
+    {
+//        GetDagTaskAlgorithm::Ptr algorithm(new ScheduleAlgorithm(workers_));
+//        GetTask::Ptr get_dag_tasks(new GetDagTask(g, algorithm));
+//        GetTask::Ptr wait_for_task(new ScheduleGetTask(get_dag_tasks));
 
+        GetTask::Ptr gettaskp(new GetEmptyTaskMock);
+        GetTask::WritePtr gettask(gettaskp);
+        GetEmptyTaskMock* gettaskmock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
+        Schedule schedule(gettaskp);
+
+        int workers = 4;
+        for (int i=0; i<workers; ++i)
+            schedule.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+
+        usleep(5000);
+
+        EXCEPTION_ASSERT_EQUALS(gettaskmock->get_task_count, workers);
+
+        Schedule::DeadEngines dead = schedule.clean_dead_workers ();
+        Engines engines = schedule.getWorkers();
+
+        // If failing here, try to increase the sleep period above.
+        EXCEPTION_ASSERT_EQUALS(engines.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)workers);
+    }
 }
 
 
