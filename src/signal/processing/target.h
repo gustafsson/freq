@@ -21,7 +21,6 @@ public:
 
     virtual Signal::Intervals out_of_date(Signal::Intervals skip = Signal::Intervals()) = 0;
 
-
 protected:
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;

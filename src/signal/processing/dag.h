@@ -17,17 +17,6 @@ typedef boost::graph_traits<Graph>::edge_descriptor GraphEdge;
 
 /**
  * @brief The Dag class should manage the connections between the steps in the signal processing chain.
- *
- * example:
- *
- *  Graph g;
- *  Signal::Processing::Step::Ptr source, target;
- *  GraphVertex v1 = g.add_vertex (source);
- *  GraphVertex v2 = g.add_vertex (target);
- *  g.add_edge (v1, v2);
- *
- * Issues
- * Target does not belong here.
  */
 class Dag: public VolatilePtr<Dag>
 {
@@ -36,12 +25,6 @@ public:
 
     const Graph& g() const { return g_; }
 
-    std::list<Target::Ptr> target;
-    // list targets (targets should have a timestamp so that the scheduler can know what to focus on first)
-    // this list is publicly accesible
-
-    // invalidate steps (only deprecateCache(Interval::Interval_ALL) for now)
-    void deprecateCache(GraphVertex);
 
     GraphVertex getVertex(Step::Ptr s) const;
 
@@ -59,6 +42,14 @@ private:
     StepVertexMap map;
 };
 
+
+class DagOperation
+{
+public:
+    // invalidate steps (only deprecateCache(Interval::Interval_ALL) until OperationDesc supports affected samples)
+    static void deprecateCache(Dag::Ptr dag, Step::Ptr s);
+    static void deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s);
+};
 
 } // namespace Processing
 } // namespace Signal

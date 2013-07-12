@@ -16,6 +16,10 @@ class GetDagTask: public GetTask {
 public:
     GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm);
 
+    std::list<Target::Ptr> targets;
+    // list targets (targets should have a timestamp so that the scheduler can know what to focus on first)
+    // this list is publicly accesible
+
     virtual Task::Ptr getTask() volatile;
 
 private:

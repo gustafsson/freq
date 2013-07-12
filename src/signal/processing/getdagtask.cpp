@@ -65,7 +65,7 @@ Target::Ptr GetDagTask::
     Target::Ptr target;
 
     ptime latest(neg_infin);
-    BOOST_FOREACH(Target::Ptr t, read1(g)->target)
+    BOOST_FOREACH(Target::Ptr t, this->targets)
     {
         ptime last_request = read1(t)->last_request();
 

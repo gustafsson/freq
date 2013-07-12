@@ -16,13 +16,6 @@ Dag::
 }
 
 
-void Dag::
-        deprecateCache(GraphVertex)
-{
-
-}
-
-
 GraphVertex Dag::
         getVertex(Step::Ptr s) const
 {
@@ -169,6 +162,24 @@ void Dag::
         EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::Ptr>(1, step2));
         EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::Ptr>(1, step1));
         EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>());
+    }
+}
+
+
+void DagOperation::
+        deprecateCache(Dag::Ptr dag, Step::Ptr s)
+{
+    deprecateCache(Dag::ReadPtr(dag), s);
+}
+
+
+void DagOperation::
+        deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s)
+{
+    write1(s)->deprecateCache(Signal::Intervals::Intervals_ALL);
+
+    BOOST_FOREACH(Step::Ptr ts, dag->targetSteps(s)) {
+        deprecateCache(dag, ts);
     }
 }
 
