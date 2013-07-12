@@ -92,7 +92,7 @@ Task::Ptr ScheduleAlgorithm::
                 GraphVertex target,
                 Signal::Intervals missing_in_target,
                 Signal::IntervalType center,
-                Signal::ComputingEngine::Ptr /*engine*/)
+                Signal::ComputingEngine::Ptr /*engine*/) const
 {
     int preferred_size = missing_in_target.count ();
 

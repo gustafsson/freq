@@ -11,11 +11,12 @@ class Workers: public VolatilePtr<Workers>
 public:
     virtual ~Workers() {}
 
-    std::vector<Signal::ComputingEngine::Ptr> workers() const { return workers_; }
+    typedef std::vector<Signal::ComputingEngine::Ptr> Engines;
+    Engines workers() const { return workers_; }
     size_t n_workers() const { return workers_.size(); }
 
 protected:
-    std::vector<Signal::ComputingEngine::Ptr> workers_;
+    Engines workers_;
 };
 
 } // namespace Processing

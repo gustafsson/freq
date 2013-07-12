@@ -28,10 +28,17 @@ public:
     // 'get_task_->getTask()' might be idling but this class is unaware of that
     void exit_nicely_and_delete();
 
+    const std::string& exception_what() const;
+    // non-zero if an exception was caught
+    const std::type_info* exception_type() const;
+
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
     GetTask::Ptr get_task_;
     bool enough_;
+
+    std::string exception_what_;
+    const std::type_info* exception_type_;
 
 public:
     static void test ();

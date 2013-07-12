@@ -40,7 +40,7 @@ public:
     // invalidate steps (only deprecateCache(Interval::Interval_ALL) for now)
     void deprecateCache(GraphVertex);
 
-    GraphVertex getVertex(Step::Ptr s) { return map[s]; }
+    GraphVertex getVertex(Step::Ptr s) const;
 
     // manage add/remove vertex from graph, throw exception if not found
     void insertStep(GraphVertex gv, Step::Ptr step);
@@ -51,7 +51,8 @@ public:
 private:
     Graph g_;
 
-    std::map<Step::Ptr, GraphVertex> map;
+    typedef std::map<Step::Ptr, GraphVertex> StepVertexMap;
+    StepVertexMap map;
 };
 
 

@@ -8,23 +8,29 @@ Worker::
     :
       computing_eninge_(computing_eninge),
       get_task_(get_task),
-      enough_(false)
+      enough_(false),
+      exception_type_(0)
 {
-
 }
 
 
 void Worker::
         run()
 {
-    Task::Ptr task;
+    try {
+        Task::Ptr task;
 
-    while (task = get_task_->getTask())
-    {
-        task->run(computing_eninge_);
+        while (task = get_task_->getTask())
+        {
+            task->run(computing_eninge_);
 
-        if (enough_)
-            break;
+            if (enough_)
+                break;
+        }
+    } catch (const std::exception& x) {
+        exception_what_ = x.what();
+        const std::type_info& t = typeid(x);
+        exception_type_ = &t;
     }
 
     deleteLater ();
@@ -35,6 +41,20 @@ void Worker::
         exit_nicely_and_delete()
 {
     enough_ = true;
+}
+
+
+const std::string& Worker::
+        exception_what() const
+{
+    return exception_what_;
+}
+
+
+const std::type_info* Worker::
+        exception_type() const
+{
+    return exception_type_;
 }
 
 

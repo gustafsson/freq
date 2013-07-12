@@ -6,6 +6,10 @@
 namespace Signal {
 namespace Processing {
 
+/**
+ * @brief The GetTask class should provide new tasks for workers who lack
+ * information about what they should do.
+ */
 class GetTask: public VolatilePtr<GetTask>
 {
 public:

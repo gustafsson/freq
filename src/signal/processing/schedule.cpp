@@ -1,19 +1,26 @@
-// Include Boost.Foreach before any Qt includes to prevent conflicts with Qt foreach
+// Include QObject and Boost.Foreach in that order to prevent conflicts with Qt foreach
+#include <QObject>
 #include <boost/foreach.hpp>
 
 #include "schedule.h"
 
 #include "schedulegettask.h"
+#include "getdagtask.h"
+#include "schedulealgorithm.h"
 
 namespace Signal {
 namespace Processing {
 
 
 Schedule::
-        Schedule(Dag::Ptr g)
+        Schedule(GetTask::Ptr get_task)
     :
-      get_task(new ScheduleGetTask(g))
+      get_task(get_task)
 {
+/*    GetDagTaskAlgorithm::Ptr algorithm(new ScheduleAlgorithm(workers_));
+    GetTask::Ptr get_dag_tasks(new GetDagTask(g, algorithm));
+    GetTask::Ptr wait_for_task(new ScheduleGetTask(get_dag_tasks));
+*/
 }
 
 
@@ -52,16 +59,47 @@ void Schedule::
 }
 
 
+const Schedule::Engines& Schedule::
+        getWorkers() const
+{
+    return workers_;
+}
+
+
 void Schedule::
         updateWorkers()
 {
-    std::vector<Signal::ComputingEngine::Ptr> engines;
+    Engines engines;
 
     BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers) {
         engines.push_back (ewp.first);
     }
 
-    dynamic_cast<ScheduleWorkers*>((Workers*)write1(workers_))->workers_ = engines;
+    workers_ = engines;
+}
+
+
+Schedule::DeadEngines Schedule::
+        clean_dead_workers()
+{
+    DeadEngines dead;
+
+    for(EngineWorkerMap::iterator i=workers.begin (); i != workers.end(); ++i) {
+        QPointer<Worker> worker = i->second;
+        EXCEPTION_ASSERT (!worker); // This indicates an error in scheduling if a null task was returned
+
+        if (!worker->isRunning ()) // This
+        {
+            // Do something intelligent
+            Signal::ComputingEngine::Ptr ce = i->first;
+            dead[ce] = DeadEngines::mapped_type(worker->exception_type(), worker->exception_what());
+
+            workers.erase (i);
+            i = workers.begin ();
+        }
+    }
+
+    return dead;
 }
 
 

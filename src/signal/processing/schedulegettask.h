@@ -11,30 +11,32 @@
 namespace Signal {
 namespace Processing {
 
+
+
 /**
- * @brief The ScheduleGetTask class should provide new tasks for workers who
- * lack information about what they should do.
+ * @brief The ScheduleGetTask class should behave as GetTask.
  *
- * It should halt works while waiting for an available task.
+ * It should stall callers while waiting for an available task.
  */
 class ScheduleGetTask: public GetTask
 {
 public:
-    ScheduleGetTask(Dag::Ptr g);
+    ScheduleGetTask();
 
-    // Stalls until a task can be returned
-    virtual Task::Ptr getTask() volatile;
-
-    // Returns null if no task was found
-    virtual Task::Ptr getTask() const;
+    GetTask::Ptr getTaskImplementation();
+    void updateGetTaskImplementation(GetTask::Ptr);
 
     // Check if a task might be available
     void wakeup();
 
+    // Stalls until a task can be returned
+    virtual Task::Ptr getTask() volatile;
+
 private:
-    Dag::Ptr g;
     QWaitCondition work_condition;
     QMutex work_condition_mutex;
+
+    GetTask::Ptr get_task;
 
 public:
     static void test();
