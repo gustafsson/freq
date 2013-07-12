@@ -10,6 +10,13 @@
 namespace Signal {
 namespace Processing {
 
+/**
+ * @brief The Worker class
+ *
+ * Issues
+ * should not subclass QThread
+ * http://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
+ */
 class Worker
         : public QThread
 {

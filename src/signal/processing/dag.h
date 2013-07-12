@@ -16,7 +16,7 @@ typedef boost::graph_traits<Graph>::edge_descriptor GraphEdge;
 
 
 /**
- * @brief The Dag class describes the signal processing chain
+ * @brief The Dag class should manage the connections between the steps in the signal processing chain.
  *
  * example:
  *
@@ -25,6 +25,9 @@ typedef boost::graph_traits<Graph>::edge_descriptor GraphEdge;
  *  GraphVertex v1 = g.add_vertex (source);
  *  GraphVertex v2 = g.add_vertex (target);
  *  g.add_edge (v1, v2);
+ *
+ * Issues
+ * Target does not belong here.
  */
 class Dag: public VolatilePtr<Dag>
 {
@@ -42,9 +45,10 @@ public:
 
     GraphVertex getVertex(Step::Ptr s) const;
 
-    // manage add/remove vertex from graph, throw exception if not found
-    void insertStep(GraphVertex gv, Step::Ptr step);
+    GraphVertex appendStep(Step::Ptr step, GraphVertex gv=boost::graph_traits<Graph>::null_vertex ());
     void removeStep(Step::Ptr step);
+    std::vector<Step::Ptr> sourceSteps(Step::Ptr step) const;
+    std::vector<Step::Ptr> targetSteps(Step::Ptr step) const;
 
     static void test();
 
