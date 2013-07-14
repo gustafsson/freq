@@ -11,7 +11,7 @@ namespace Processing {
 
 
 TargetSchedule::
-        TargetSchedule(Dag::Ptr g, ScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets)
+        TargetSchedule(Dag::Ptr g, IScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets)
     :
       targets(targets),
       g(g),
@@ -27,7 +27,7 @@ Task::Ptr TargetSchedule::
 {
     // Lock this from writing during getTask
     ReadPtr gettask(this);
-    const TargetSchedule* self = dynamic_cast<const TargetSchedule*>((const Schedule*)gettask);
+    const TargetSchedule* self = dynamic_cast<const TargetSchedule*>((const ISchedule*)gettask);
 
     // Lock the graph from writing during getTask
     Dag::ReadPtr dag(self->g);
@@ -80,7 +80,7 @@ Target::Ptr TargetSchedule::
 }
 
 
-class GetDagTaskAlgorithmMockup: public ScheduleAlgorithm
+class GetDagTaskAlgorithmMockup: public IScheduleAlgorithm
 {
 public:
     virtual Task::Ptr getTask(
@@ -105,7 +105,7 @@ void TargetSchedule::
         Dag::Ptr dag(new Dag);
         write1(dag)->appendStep(step);
 
-        ScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
+        IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Targets::Ptr targets(new Targets(dag, Bedroom::Ptr(new Bedroom)));
         //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
         TargetSchedule getdagtask(dag, algorithm, targets);

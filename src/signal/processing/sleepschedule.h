@@ -3,7 +3,7 @@
 
 #include "dag.h"
 #include "task.h"
-#include "schedule.h"
+#include "ischedule.h"
 #include "bedroom.h"
 
 #include <QMutex>
@@ -20,17 +20,17 @@ namespace Processing {
  *
  * It should stall callers while waiting for an available task.
  */
-class SleepSchedule: public Schedule
+class SleepSchedule: public ISchedule
 {
 public:
-    SleepSchedule(Bedroom::Ptr bedroom, Schedule::Ptr schedule);
+    SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule);
 
     // Sleeps until a task can be returned
     virtual Task::Ptr getTask() volatile;
 
 private:
     Bedroom::Ptr bedroom;
-    Schedule::Ptr schedule;
+    ISchedule::Ptr schedule;
 
 public:
     static void test();

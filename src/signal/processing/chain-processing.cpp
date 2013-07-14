@@ -15,9 +15,9 @@ Chain::Ptr Chain::
     Bedroom::Ptr bedroom(new Bedroom);
     Targets::Ptr targets(new Targets(dag, bedroom));
 
-    ScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
-    Schedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
-    Schedule::Ptr sleepSchedule(new SleepSchedule(bedroom, targetSchedule));
+    IScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
+    ISchedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
+    ISchedule::Ptr sleepSchedule(new SleepSchedule(bedroom, targetSchedule));
     Workers::Ptr workers(new Workers(sleepSchedule));
 
     for (int i=0; i<QThread::idealThreadCount (); i++) {

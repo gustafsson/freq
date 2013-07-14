@@ -17,7 +17,7 @@ Targets::
 Updater::Ptr Targets::
         addTarget(Step::Ptr step)
 {
-    Invalidator::Ptr invalidator(new GraphInvalidator(dag_, bedroom_ ));
+    IInvalidator::Ptr invalidator(new GraphInvalidator(dag_, bedroom_ ));
     Target::Ptr target(new Target(step));
     Updater::Ptr target_updater(new TargetUpdater(invalidator, target ));
 

@@ -2,7 +2,7 @@
 #define SIGNAL_PROCESSING_GRAPHUPDATER_H
 
 #include "dag.h"
-#include "invalidator.h"
+#include "iinvalidator.h"
 #include "bedroom.h"
 
 namespace Signal {
@@ -11,7 +11,7 @@ namespace Processing {
 /**
  * @brief The GraphInvalidator class should invalidate caches and wakeup workers.
  */
-class GraphInvalidator: public Invalidator
+class GraphInvalidator: public IInvalidator
 {
 public:
     GraphInvalidator(Dag::Ptr dag, Bedroom::Ptr bedroom);

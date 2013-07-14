@@ -1,8 +1,8 @@
 #ifndef SIGNAL_PROCESSING_TARGETSCHEDULE_H
 #define SIGNAL_PROCESSING_TARGETSCHEDULE_H
 
-#include "schedulealgorithm.h"
-#include "schedule.h"
+#include "ischedulealgorithm.h"
+#include "ischedule.h"
 #include "targets.h"
 
 namespace Signal {
@@ -11,9 +11,9 @@ namespace Processing {
 /**
  * @brief The GetDagTask class should provide tasks to keep a Dag up-to-date with respect to all targets.
  */
-class TargetSchedule: public Schedule {
+class TargetSchedule: public ISchedule {
 public:
-    TargetSchedule(Dag::Ptr g, ScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets);
+    TargetSchedule(Dag::Ptr g, IScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets);
 
     virtual Task::Ptr getTask() volatile;
 
@@ -21,7 +21,7 @@ private:
     Targets::Ptr targets;
 
     Dag::Ptr g;
-    ScheduleAlgorithm::Ptr algorithm;
+    IScheduleAlgorithm::Ptr algorithm;
 
     Target::Ptr prioritizedTarget() const;
 

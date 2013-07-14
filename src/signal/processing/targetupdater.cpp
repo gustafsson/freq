@@ -8,7 +8,7 @@ namespace Signal {
 namespace Processing {
 
 TargetUpdater::
-        TargetUpdater(Invalidator::Ptr invalidator, Target::Ptr target)
+        TargetUpdater(IInvalidator::Ptr invalidator, Target::Ptr target)
     :
       invalidator_(invalidator),
       target_(target)
@@ -20,7 +20,7 @@ void TargetUpdater::
         update(int prio, Signal::IntervalType center, Signal::Intervals intervals)
 {
     Target::WritePtr t(target_);
-    invalidator_->deprecateCache (t->step, intervals);
+    read1(invalidator_)->deprecateCache (t->step, intervals);
     ptime now = microsec_clock::local_time();
     now += time_duration(0,0,prio);
     t->last_request = now;

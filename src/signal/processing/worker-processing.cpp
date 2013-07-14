@@ -1,10 +1,11 @@
 #include "worker.h"
+#include "task.h"
 
 namespace Signal {
 namespace Processing {
 
 Worker::
-        Worker (Signal::ComputingEngine::Ptr computing_eninge, Schedule::Ptr scheduel)
+        Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::Ptr scheduel)
     :
       computing_eninge_(computing_eninge),
       schedule_(scheduel),
@@ -58,7 +59,7 @@ const std::type_info* Worker::
 }
 
 
-class GetTaskMock: public Schedule {
+class GetTaskMock: public ISchedule {
 public:
     GetTaskMock() : get_task_count(0) {}
 
@@ -71,7 +72,7 @@ public:
 };
 
 
-class GetTaskSegFaultMock: public Schedule {
+class GetTaskSegFaultMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
         int a = *(int*)0; // cause segfault
@@ -81,7 +82,7 @@ public:
 };
 
 
-class GetTaskExceptionMock: public Schedule {
+class GetTaskExceptionMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
         EXCEPTION_ASSERTX(false, "GetTaskExceptionMock");
@@ -95,7 +96,7 @@ void Worker::
 {
     // It should run the next task as long as there is one
     {
-        Schedule::Ptr gettask(new GetTaskMock());
+        ISchedule::Ptr gettask(new GetTaskMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
         worker.start ();
@@ -108,7 +109,7 @@ void Worker::
 
     // It should store information about a crashed task (segfault)
     {
-        Schedule::Ptr gettask(new GetTaskSegFaultMock());
+        ISchedule::Ptr gettask(new GetTaskSegFaultMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
         worker.run ();
@@ -122,7 +123,7 @@ void Worker::
 
     // It should store information about a crashed task (C++ exception)
     {
-        Schedule::Ptr gettask(new GetTaskExceptionMock());
+        ISchedule::Ptr gettask(new GetTaskExceptionMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
         worker.run ();

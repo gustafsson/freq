@@ -1,10 +1,12 @@
-#ifndef SIGNAL_PROCESSING_GETTASK_H
-#define SIGNAL_PROCESSING_GETTASK_H
+#ifndef SIGNAL_PROCESSING_ISCHEDULE_H
+#define SIGNAL_PROCESSING_ISCHEDULE_H
 
-#include "task.h"
+#include "volatileptr.h"
 
 namespace Signal {
 namespace Processing {
+
+class Task;
 
 /**
  * @brief The GetTask class should provide new tasks for workers who lack
@@ -13,15 +15,15 @@ namespace Processing {
  * It may return null if no plausible task was found.
  * It may block the calling thread until a plausible task is found.
  */
-class Schedule: public VolatilePtr<Schedule>
+class ISchedule: public VolatilePtr<ISchedule>
 {
 public:
-    virtual ~Schedule() {}
+    virtual ~ISchedule() {}
 
-    virtual Task::Ptr getTask() volatile=0;
+    virtual boost::shared_ptr<volatile Task> getTask() volatile=0;
 };
 
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_GETTASK_H
+#endif // SIGNAL_PROCESSING_ISCHEDULE_H

@@ -11,7 +11,7 @@ namespace Processing {
 
 
 Workers::
-        Workers(Schedule::Ptr schedule)
+        Workers(ISchedule::Ptr schedule)
     :
       schedule_(schedule)
 {
@@ -113,7 +113,7 @@ Workers::DeadEngines Workers::
 }
 
 
-class GetEmptyTaskMock: public Schedule {
+class GetEmptyTaskMock: public ISchedule {
 public:
     GetEmptyTaskMock() : get_task_count(0) {}
 
@@ -121,8 +121,10 @@ public:
 
     virtual Task::Ptr getTask() volatile {
         get_task_count++;
-        throw std::logic_error("test crash");
-        return Task::Ptr();
+        if (get_task_count%2)
+            throw std::logic_error("test crash");
+        else
+            return Task::Ptr();
     }
 };
 
@@ -132,12 +134,8 @@ void Workers::
 {
     // It should start and stop computing engines as they are added and removed
     {
-//        GetDagTaskAlgorithm::Ptr algorithm(new ScheduleAlgorithm(workers_));
-//        GetTask::Ptr get_dag_tasks(new GetDagTask(g, algorithm));
-//        GetTask::Ptr wait_for_task(new ScheduleGetTask(get_dag_tasks));
-
-        Schedule::Ptr gettaskp(new GetEmptyTaskMock);
-        Schedule::WritePtr gettask(gettaskp);
+        ISchedule::Ptr gettaskp(new GetEmptyTaskMock);
+        ISchedule::WritePtr gettask(gettaskp);
         GetEmptyTaskMock* schedulemock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
         Workers schedule(gettaskp);
 
@@ -145,7 +143,7 @@ void Workers::
         for (int i=0; i<workers; ++i)
             schedule.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
-        usleep(10000);
+        usleep(12000);
 
         EXCEPTION_ASSERT_EQUALS(schedulemock->get_task_count, workers);
 

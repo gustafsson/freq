@@ -1,5 +1,5 @@
 #include "sleepschedule.h"
-#include "schedulealgorithm.h"
+#include "ischedulealgorithm.h"
 #include <QThread>
 
 namespace Signal {
@@ -7,7 +7,7 @@ namespace Processing {
 
 
 SleepSchedule::
-        SleepSchedule(Bedroom::Ptr bedroom, Schedule::Ptr schedule)
+        SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule)
     :
       bedroom(bedroom),
       schedule(schedule)
@@ -23,14 +23,14 @@ Task::Ptr SleepSchedule::
 
     {
         ReadPtr that(this);
-        const SleepSchedule* self = dynamic_cast<const SleepSchedule*>((const Schedule*)that);
+        const SleepSchedule* self = dynamic_cast<const SleepSchedule*>((const ISchedule*)that);
         bedroom = self->bedroom;
     }
 
     while (true) {
         {
             ReadPtr that(this);
-            const SleepSchedule* self = dynamic_cast<const SleepSchedule*>((const Schedule*)that);
+            const SleepSchedule* self = dynamic_cast<const SleepSchedule*>((const ISchedule*)that);
 
             if (self->schedule)
                 task = self->schedule->getTask();

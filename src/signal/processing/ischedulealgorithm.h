@@ -1,5 +1,5 @@
-#ifndef SIGNAL_PROCESSING_SCHEDULEALGORITHM_H
-#define SIGNAL_PROCESSING_SCHEDULEALGORITHM_H
+#ifndef SIGNAL_PROCESSING_ISCHEDULEALGORITHM_H
+#define SIGNAL_PROCESSING_ISCHEDULEALGORITHM_H
 
 #include "volatileptr.h"
 #include "task.h"
@@ -9,10 +9,10 @@
 namespace Signal {
 namespace Processing {
 
-class ScheduleAlgorithm: public VolatilePtr<ScheduleAlgorithm>
+class IScheduleAlgorithm: public VolatilePtr<IScheduleAlgorithm>
 {
 public:
-    virtual ~ScheduleAlgorithm() {}
+    virtual ~IScheduleAlgorithm() {}
 
     virtual Task::Ptr getTask(
             const Graph& g,
@@ -26,4 +26,4 @@ public:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_SCHEDULEALGORITHM_H
+#endif // SIGNAL_PROCESSING_ISCHEDULEALGORITHM_H
