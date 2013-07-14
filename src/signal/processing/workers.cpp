@@ -138,16 +138,16 @@ void Workers::
 
         Schedule::Ptr gettaskp(new GetEmptyTaskMock);
         Schedule::WritePtr gettask(gettaskp);
-        GetEmptyTaskMock* gettaskmock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
+        GetEmptyTaskMock* schedulemock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
         Workers schedule(gettaskp);
 
         int workers = 4;
         for (int i=0; i<workers; ++i)
             schedule.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
-        usleep(6000);
+        usleep(10000);
 
-        EXCEPTION_ASSERT_EQUALS(gettaskmock->get_task_count, workers);
+        EXCEPTION_ASSERT_EQUALS(schedulemock->get_task_count, workers);
 
         Workers::DeadEngines dead = schedule.clean_dead_workers ();
         Engines engines = schedule.workers();
