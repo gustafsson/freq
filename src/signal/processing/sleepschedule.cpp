@@ -1,6 +1,5 @@
 #include "sleepschedule.h"
-#include "ischedulealgorithm.h"
-#include <QThread>
+#include "task.h"
 
 namespace Signal {
 namespace Processing {
@@ -43,18 +42,62 @@ Task::Ptr SleepSchedule::
     }
 }
 
+} // namespace Processing
+} // namespace Signal
+
+
+#include <QThread>
+
+namespace Signal {
+namespace Processing {
+
+class ScheduleMock: public ISchedule {
+public:
+    ScheduleMock() : get_task_calls(0) {}
+
+    Task::Ptr getTask() volatile {
+        get_task_calls++;
+        if (get_task_calls == 1)
+            return Task::Ptr();
+        return Task::Ptr(new Task(Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(4,5)));
+    }
+
+    int get_task_calls;
+};
+
+class WorkerMock: public QThread {
+public:
+    WorkerMock(ISchedule::Ptr schedule) : schedule(schedule) {}
+
+    virtual void run() {
+        schedule->getTask();
+    }
+
+    ISchedule::Ptr schedule;
+};
 
 void SleepSchedule::
         test()
 {
-    // It should provide new tasks for workers who lack information about what they should do
+    // It should stall callers while waiting for an available task.
     {
+        Bedroom::Ptr bedroom(new Bedroom);
+        ISchedule::Ptr schedule_mock(new ScheduleMock);
+        ISchedule::Ptr sleep_schedule(new SleepSchedule(bedroom, schedule_mock));
 
-    }
+        WorkerMock worker_mock(sleep_schedule);
+        worker_mock.start ();
 
-    // It should halt works while waiting for an available task
-    {
+        usleep(1000);
+        EXCEPTION_ASSERT(worker_mock.isRunning ());
 
+        bedroom->wakeup();
+
+        usleep(1000);
+        EXCEPTION_ASSERT(worker_mock.isFinished ());
+
+        int get_task_calls = dynamic_cast<const ScheduleMock*>(&*read1(schedule_mock))->get_task_calls;
+        EXCEPTION_ASSERT_EQUALS(get_task_calls, 2);
     }
 }
 

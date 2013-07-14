@@ -9,8 +9,8 @@ namespace Processing {
 class Task;
 
 /**
- * @brief The GetTask class should provide new tasks for workers who lack
- * information about what they should do.
+ * @brief The ISchedule class should provide new tasks for callers who lack
+ * additional information.
  *
  * It may return null if no plausible task was found.
  * It may block the calling thread until a plausible task is found.
