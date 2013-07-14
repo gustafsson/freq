@@ -10,16 +10,14 @@ namespace Signal {
 namespace Processing {
 
 /**
- * @brief The WorkerBedroom class
- *
- * Issues
- * WorkerBedroom
+ * @brief The WorkerBedroom class should allow different threads to sleep on
+ * this object until another thread calls wakeup().
  */
 class Bedroom: public VolatilePtr<Bedroom>
 {
 public:
     // Check if a task might be available
-    void wakeup();
+    void wakeup() volatile;
 
     void sleep() volatile;
 

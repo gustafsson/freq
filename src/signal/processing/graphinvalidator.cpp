@@ -1,6 +1,5 @@
 #include <QObject>
 #include "graphinvalidator.h"
-#include "schedulegettask.h"
 
 #include <boost/foreach.hpp>
 
@@ -23,7 +22,7 @@ void GraphInvalidator::
 {
     deprecateCache(Dag::ReadPtr(dag_), s);
 
-    write1(bedroom_)->wakeup ();
+    bedroom_->wakeup ();
 }
 
 

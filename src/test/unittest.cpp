@@ -10,6 +10,7 @@
 #include "signal/dag/dagcommand.h"
 #include "signal/dag/node.h"
 #include "signal/dag/scheduler.h"
+#include "signal/processing/bedroom.h"
 #include "signal/processing/chain.h"
 #include "signal/processing/dag.h"
 #include "signal/processing/firstmissalgorithm.h"
@@ -57,6 +58,7 @@ int UnitTest::
         RUNTEST(Signal::Dag::Node);
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(Signal::Dag::Scheduler);
+        RUNTEST(Signal::Processing::Bedroom);
         RUNTEST(Signal::Processing::Chain);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::FirstMissAlgorithm);
