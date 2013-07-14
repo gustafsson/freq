@@ -13,10 +13,10 @@ namespace Processing {
  * It may return null if no plausible task was found.
  * It may block the calling thread until a plausible task is found.
  */
-class GetTask: public VolatilePtr<GetTask>
+class Schedule: public VolatilePtr<Schedule>
 {
 public:
-    virtual ~GetTask() {}
+    virtual ~Schedule() {}
 
     virtual Task::Ptr getTask() volatile=0;
 };

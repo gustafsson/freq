@@ -3,7 +3,7 @@
 
 #include "worker.h"
 #include "workers.h"
-#include "gettask.h"
+#include "schedule.h"
 #include "signal/computingengine.h"
 #include "volatileptr.h"
 
@@ -20,7 +20,7 @@ namespace Processing {
 class Workers: public VolatilePtr<Workers>
 {
 public:
-    Workers(GetTask::Ptr get_task);
+    Workers(Schedule::Ptr get_task);
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.
@@ -38,7 +38,7 @@ public:
     DeadEngines clean_dead_workers();
 
 private:
-    GetTask::Ptr get_task;
+    Schedule::Ptr get_task;
 
     Engines workers_;
 

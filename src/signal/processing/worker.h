@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_WORKER_H
 #define SIGNAL_PROCESSING_WORKER_H
 
-#include "gettask.h"
+#include "schedule.h"
 #include "signal/computingengine.h"
 
 #include <QThread>
@@ -28,7 +28,7 @@ public:
     // objects that delete themselves.
     typedef QPointer<Worker> Ptr;
 
-    Worker (Signal::ComputingEngine::Ptr computing_eninge, GetTask::Ptr get_task);
+    Worker (Signal::ComputingEngine::Ptr computing_eninge, Schedule::Ptr get_task);
 
     // Delete when finished
     virtual void run ();
@@ -43,7 +43,7 @@ public:
 
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
-    GetTask::Ptr get_task_;
+    Schedule::Ptr get_task_;
     bool enough_;
 
     std::string exception_what_;

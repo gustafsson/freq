@@ -13,7 +13,7 @@ namespace Processing {
 
 
 Workers::
-        Workers(GetTask::Ptr get_task)
+        Workers(Schedule::Ptr get_task)
     :
       get_task(get_task)
 {
@@ -115,7 +115,7 @@ Workers::DeadEngines Workers::
 }
 
 
-class GetEmptyTaskMock: public GetTask {
+class GetEmptyTaskMock: public Schedule {
 public:
     GetEmptyTaskMock() : get_task_count(0) {}
 
@@ -138,8 +138,8 @@ void Workers::
 //        GetTask::Ptr get_dag_tasks(new GetDagTask(g, algorithm));
 //        GetTask::Ptr wait_for_task(new ScheduleGetTask(get_dag_tasks));
 
-        GetTask::Ptr gettaskp(new GetEmptyTaskMock);
-        GetTask::WritePtr gettask(gettaskp);
+        Schedule::Ptr gettaskp(new GetEmptyTaskMock);
+        Schedule::WritePtr gettask(gettaskp);
         GetEmptyTaskMock* gettaskmock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
         Workers schedule(gettaskp);
 

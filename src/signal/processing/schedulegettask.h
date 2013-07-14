@@ -3,7 +3,7 @@
 
 #include "dag.h"
 #include "task.h"
-#include "gettask.h"
+#include "schedule.h"
 #include "bedroom.h"
 
 #include <QMutex>
@@ -20,13 +20,13 @@ namespace Processing {
  *
  * It should stall callers while waiting for an available task.
  */
-class ScheduleGetTask: public GetTask
+class ScheduleGetTask: public Schedule
 {
 public:
     ScheduleGetTask(Bedroom::Ptr bedroom);
 
-    GetTask::Ptr getTaskImplementation();
-    void updateGetTaskImplementation(GetTask::Ptr);
+    Schedule::Ptr getTaskImplementation();
+    void updateGetTaskImplementation(Schedule::Ptr);
 
     // Stalls until a task can be returned
     virtual Task::Ptr getTask() volatile;
@@ -35,7 +35,7 @@ private:
     QWaitCondition work_condition;
     QMutex work_condition_mutex;
 
-    GetTask::Ptr get_task;
+    Schedule::Ptr get_task;
     Bedroom::Ptr bedroom;
 
 public:

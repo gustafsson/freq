@@ -2,7 +2,7 @@
 #define SIGNAL_PROCESSING_GETDAGTASK_H
 
 #include "getdagtaskalgorithm.h"
-#include "gettask.h"
+#include "schedule.h"
 #include "targetinvalidator.h"
 #include "targets.h"
 
@@ -12,7 +12,7 @@ namespace Processing {
 /**
  * @brief The GetDagTask class should provide tasks to keep a Dag up-to-date with respect to all targets.
  */
-class GetDagTask: public GetTask {
+class GetDagTask: public Schedule {
 public:
     GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets);
 

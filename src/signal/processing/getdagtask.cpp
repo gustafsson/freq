@@ -27,7 +27,7 @@ Task::Ptr GetDagTask::
 {
     // Lock this from writing during getTask
     ReadPtr gettask(this);
-    const GetDagTask* self = dynamic_cast<const GetDagTask*>((const GetTask*)gettask);
+    const GetDagTask* self = dynamic_cast<const GetDagTask*>((const Schedule*)gettask);
 
     // Lock the graph from writing during getTask
     Dag::ReadPtr dag(self->g);

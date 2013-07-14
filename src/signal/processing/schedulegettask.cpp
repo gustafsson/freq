@@ -24,7 +24,7 @@ Task::Ptr ScheduleGetTask::
     while (true) {
         {
             ReadPtr that(this);
-            const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const GetTask*)that);
+            const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const Schedule*)that);
 
             if (self->get_task)
                 task = self->get_task->getTask();
@@ -36,7 +36,7 @@ Task::Ptr ScheduleGetTask::
         Bedroom::Ptr bedroom;
         {
             ReadPtr that(this);
-            const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const GetTask*)that);
+            const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const Schedule*)that);
             bedroom = self->bedroom;
         }
 
