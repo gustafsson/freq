@@ -5,7 +5,7 @@
 #include "dag.h"
 #include "workers.h"
 #include "signal/computingengine.h"
-#include "getdagtaskalgorithm.h"
+#include "schedulealgorithm.h"
 
 namespace Signal {
 namespace Processing {
@@ -20,7 +20,7 @@ namespace Processing {
  * Issues
  * Does not know how to cope with workers that doesn't support all steps.
  */
-class FirstMissAlgorithm: public GetDagTaskAlgorithm
+class FirstMissAlgorithm: public ScheduleAlgorithm
 {
 public:
     FirstMissAlgorithm(Workers::Ptr workers = Workers::Ptr());

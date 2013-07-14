@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_GETDAGTASK_H
 #define SIGNAL_PROCESSING_GETDAGTASK_H
 
-#include "getdagtaskalgorithm.h"
+#include "schedulealgorithm.h"
 #include "schedule.h"
 #include "targets.h"
 
@@ -13,7 +13,7 @@ namespace Processing {
  */
 class TargetSchedule: public Schedule {
 public:
-    TargetSchedule(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets);
+    TargetSchedule(Dag::Ptr g, ScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets);
 
     virtual Task::Ptr getTask() volatile;
 
@@ -21,7 +21,7 @@ private:
     Targets::Ptr targets;
 
     Dag::Ptr g;
-    GetDagTaskAlgorithm::Ptr algorithm;
+    ScheduleAlgorithm::Ptr algorithm;
 
     Target::Ptr prioritizedTarget() const;
 

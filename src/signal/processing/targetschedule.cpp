@@ -11,7 +11,7 @@ namespace Processing {
 
 
 TargetSchedule::
-        TargetSchedule(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets)
+        TargetSchedule(Dag::Ptr g, ScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets)
     :
       targets(targets),
       g(g),
@@ -80,7 +80,7 @@ Target::Ptr TargetSchedule::
 }
 
 
-class GetDagTaskAlgorithmMockup: public GetDagTaskAlgorithm
+class GetDagTaskAlgorithmMockup: public ScheduleAlgorithm
 {
 public:
     virtual Task::Ptr getTask(
@@ -104,7 +104,7 @@ void TargetSchedule::
         Dag::Ptr dag(new Dag);
         write1(dag)->appendStep(step);
 
-        GetDagTaskAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
+        ScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Targets::Ptr targets(new Targets(dag, Bedroom::Ptr(new Bedroom)));
         //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
         TargetSchedule getdagtask(dag, algorithm, targets);
