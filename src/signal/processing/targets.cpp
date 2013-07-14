@@ -1,5 +1,5 @@
 #include "targets.h"
-#include "graphupdater.h"
+#include "graphinvalidator.h"
 #include "targetinvalidator.h"
 
 namespace Signal {
@@ -17,7 +17,7 @@ Targets::
 TargetUpdater::Ptr Targets::
         addTarget(Step::Ptr step)
 {
-    Invalidator::Ptr invalidator(new GraphUpdater(dag_, bedroom_ ));
+    Invalidator::Ptr invalidator(new GraphInvalidator(dag_, bedroom_ ));
     Target::Ptr target(new Target(step));
     TargetUpdater::Ptr target_updater(new TargetInvalidator(invalidator, target ));
 

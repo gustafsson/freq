@@ -8,10 +8,10 @@
 namespace Signal {
 namespace Processing {
 
-class GraphUpdater: public Invalidator
+class GraphInvalidator: public Invalidator
 {
 public:
-    GraphUpdater(Dag::Ptr dag, Bedroom::Ptr bedroom);
+    GraphInvalidator(Dag::Ptr dag, Bedroom::Ptr bedroom);
 
     void deprecateCache(Step::Ptr s, Signal::Intervals what) const;
 

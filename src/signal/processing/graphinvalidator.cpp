@@ -1,5 +1,5 @@
 #include <QObject>
-#include "graphupdater.h"
+#include "graphinvalidator.h"
 #include "schedulegettask.h"
 
 #include <boost/foreach.hpp>
@@ -7,8 +7,8 @@
 namespace Signal {
 namespace Processing {
 
-GraphUpdater::
-        GraphUpdater(Dag::Ptr dag, Bedroom::Ptr bedroom)
+GraphInvalidator::
+        GraphInvalidator(Dag::Ptr dag, Bedroom::Ptr bedroom)
     :
       dag_(dag),
       bedroom_(bedroom)
@@ -18,7 +18,7 @@ GraphUpdater::
 }
 
 
-void GraphUpdater::
+void GraphInvalidator::
         deprecateCache(Step::Ptr s, Signal::Intervals /*what*/) const
 {
     deprecateCache(Dag::ReadPtr(dag_), s);
@@ -27,7 +27,7 @@ void GraphUpdater::
 }
 
 
-void GraphUpdater::
+void GraphInvalidator::
         deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s) const
 {
     write1(s)->deprecateCache(Signal::Intervals::Intervals_ALL);
