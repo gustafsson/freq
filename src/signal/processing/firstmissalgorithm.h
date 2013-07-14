@@ -1,5 +1,5 @@
-#ifndef SIGNAL_PROCESSING_SCHEDULEALGORITHM_H
-#define SIGNAL_PROCESSING_SCHEDULEALGORITHM_H
+#ifndef SIGNAL_PROCESSING_FIRSTMISSALGORITHM_H
+#define SIGNAL_PROCESSING_FIRSTMISSALGORITHM_H
 
 #include "task.h"
 #include "dag.h"
@@ -20,10 +20,10 @@ namespace Processing {
  * Issues
  * Does not know how to cope with workers that doesn't support all steps.
  */
-class ScheduleAlgorithm: public GetDagTaskAlgorithm
+class FirstMissAlgorithm: public GetDagTaskAlgorithm
 {
 public:
-    ScheduleAlgorithm(Workers::Ptr workers = Workers::Ptr());
+    FirstMissAlgorithm(Workers::Ptr workers = Workers::Ptr());
 
     Task::Ptr getTask(
             const Graph& g,
@@ -43,4 +43,4 @@ public:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_SCHEDULEALGORITHM_H
+#endif // SIGNAL_PROCESSING_FIRSTMISSALGORITHM_H

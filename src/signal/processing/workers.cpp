@@ -5,7 +5,6 @@
 #include "workers.h"
 
 #include "targetschedule.h"
-#include "schedulealgorithm.h"
 
 namespace Signal {
 namespace Processing {

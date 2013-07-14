@@ -1,4 +1,4 @@
-#include "schedulealgorithm.h"
+#include "firstmissalgorithm.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -9,8 +9,8 @@ namespace Signal {
 namespace Processing {
 
 
-ScheduleAlgorithm::
-        ScheduleAlgorithm(Workers::Ptr workers)
+FirstMissAlgorithm::
+        FirstMissAlgorithm(Workers::Ptr workers)
     :
       workers_(workers)
 {}
@@ -87,7 +87,7 @@ public:
 };
 
 
-Task::Ptr ScheduleAlgorithm::
+Task::Ptr FirstMissAlgorithm::
         getTask(const Graph& g,
                 GraphVertex target,
                 Signal::Intervals missing_in_target,
@@ -114,12 +114,12 @@ Task::Ptr ScheduleAlgorithm::
 }
 
 
-void ScheduleAlgorithm::
+void FirstMissAlgorithm::
         test()
 {
     // It should figure out the missing pieces in the graph and produce a Task to work it off
     {
-        ScheduleAlgorithm schedule;
+        FirstMissAlgorithm schedule;
         // Create an OperationDesc and a Step
         Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
         Signal::OperationDesc::Ptr od(new BufferSource(b));
