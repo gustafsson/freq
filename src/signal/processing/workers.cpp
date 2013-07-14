@@ -2,7 +2,7 @@
 #include <QObject>
 #include <boost/foreach.hpp>
 
-#include "schedule.h"
+#include "workers.h"
 
 #include "schedulegettask.h"
 #include "getdagtask.h"
@@ -12,24 +12,24 @@ namespace Signal {
 namespace Processing {
 
 
-Schedule::
-        Schedule(GetTask::Ptr get_task)
+Workers::
+        Workers(GetTask::Ptr get_task)
     :
       get_task(get_task)
 {
 }
 
 
-void Schedule::
+void Workers::
         addComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
     EXCEPTION_ASSERT(ce);
 
-    if (workers.find (ce) != workers.end ())
+    if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
     Worker::Ptr w(new Worker(ce, get_task));
-    workers[ce] = w;
+    workers_map_[ce] = w;
 
     updateWorkers();
 
@@ -38,36 +38,43 @@ void Schedule::
 }
 
 
-void Schedule::
+void Workers::
         removeComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
     EXCEPTION_ASSERT(ce);
 
-    EngineWorkerMap::iterator worker = workers.find (ce);
-    if (worker == workers.end ())
+    EngineWorkerMap::iterator worker = workers_map_.find (ce);
+    if (worker == workers_map_.end ())
         EXCEPTION_ASSERTX(false, "No such engine");
 
     // Don't try to delete a running thread.
     worker->second->exit_nicely_and_delete();
-    workers.erase (worker); // This doesn't delete worker, worker deletes itself (if there are any additional tasks).
+    workers_map_.erase (worker); // This doesn't delete worker, worker deletes itself (if there are any additional tasks).
 
     updateWorkers();
 }
 
 
-const Schedule::Engines& Schedule::
-        getWorkers() const
+const Workers::Engines& Workers::
+        workers() const
 {
     return workers_;
 }
 
 
-void Schedule::
+size_t Workers::
+        n_workers() const
+{
+    return workers_.size();
+}
+
+
+void Workers::
         updateWorkers()
 {
     Engines engines;
 
-    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers) {
+    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
         engines.push_back (ewp.first);
     }
 
@@ -75,12 +82,12 @@ void Schedule::
 }
 
 
-Schedule::DeadEngines Schedule::
+Workers::DeadEngines Workers::
         clean_dead_workers()
 {
     DeadEngines dead;
 
-    for(EngineWorkerMap::iterator i=workers.begin (); i != workers.end(); ++i) {
+    for(EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
         QPointer<Worker> worker = i->second;
 
         if (!worker) {
@@ -98,7 +105,7 @@ Schedule::DeadEngines Schedule::
     }
 
     for (DeadEngines::iterator i=dead.begin (); i != dead.end(); ++i) {
-        workers.erase (i->first);
+        workers_map_.erase (i->first);
     }
 
     if (!dead.empty ())
@@ -122,7 +129,7 @@ public:
 };
 
 
-void Schedule::
+void Workers::
         test()
 {
     // It should start and stop computing engines as they are added and removed
@@ -134,7 +141,7 @@ void Schedule::
         GetTask::Ptr gettaskp(new GetEmptyTaskMock);
         GetTask::WritePtr gettask(gettaskp);
         GetEmptyTaskMock* gettaskmock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
-        Schedule schedule(gettaskp);
+        Workers schedule(gettaskp);
 
         int workers = 4;
         for (int i=0; i<workers; ++i)
@@ -144,8 +151,8 @@ void Schedule::
 
         EXCEPTION_ASSERT_EQUALS(gettaskmock->get_task_count, workers);
 
-        Schedule::DeadEngines dead = schedule.clean_dead_workers ();
-        Engines engines = schedule.getWorkers();
+        Workers::DeadEngines dead = schedule.clean_dead_workers ();
+        Engines engines = schedule.workers();
 
         // If failing here, try to increase the sleep period above.
         EXCEPTION_ASSERT_EQUALS(engines.size (), 0);

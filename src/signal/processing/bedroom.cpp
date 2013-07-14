@@ -1,16 +1,16 @@
-#include "workerbedroom.h"
+#include "bedroom.h"
 
 namespace Signal {
 namespace Processing {
 
-void WorkerBedroom::
+void Bedroom::
         wakeup()
 {
     work_condition.wakeAll ();
 }
 
 
-void WorkerBedroom::
+void Bedroom::
         sleep() volatile
 {
     // QWaitCondition/QMutex are thread-safe so we can discard the volatile qualifier

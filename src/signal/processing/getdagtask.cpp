@@ -105,7 +105,7 @@ void GetDagTask::
         write1(dag)->appendStep(step);
 
         GetDagTaskAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
-        Targets::Ptr targets(new Targets(dag, WorkerBedroom::Ptr(new WorkerBedroom)));
+        Targets::Ptr targets(new Targets(dag, Bedroom::Ptr(new Bedroom)));
         //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
         GetDagTask getdagtask(dag, algorithm, targets);
         Task::Ptr task = getdagtask.getTask ();

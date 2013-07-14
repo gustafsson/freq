@@ -15,7 +15,7 @@ namespace Processing {
  * Issues
  * WorkerBedroom
  */
-class WorkerBedroom: public VolatilePtr<WorkerBedroom>
+class Bedroom: public VolatilePtr<Bedroom>
 {
 public:
     // Check if a task might be available

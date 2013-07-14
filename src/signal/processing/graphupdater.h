@@ -3,7 +3,7 @@
 
 #include "dag.h"
 #include "invalidator.h"
-#include "workerbedroom.h"
+#include "bedroom.h"
 
 namespace Signal {
 namespace Processing {
@@ -11,7 +11,7 @@ namespace Processing {
 class GraphUpdater: public Invalidator
 {
 public:
-    GraphUpdater(Dag::Ptr dag, WorkerBedroom::Ptr worker_bedroom);
+    GraphUpdater(Dag::Ptr dag, Bedroom::Ptr bedroom);
 
     void deprecateCache(Step::Ptr s, Signal::Intervals what) const;
 
@@ -20,7 +20,7 @@ private:
     void deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s) const;
 
     Dag::Ptr dag_;
-    WorkerBedroom::Ptr worker_bedroom_;
+    Bedroom::Ptr bedroom_;
 
 public:
     static void test();

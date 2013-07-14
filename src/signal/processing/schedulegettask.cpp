@@ -7,9 +7,9 @@ namespace Processing {
 
 
 ScheduleGetTask::
-        ScheduleGetTask(WorkerBedroom::Ptr worker_bedroom)
+        ScheduleGetTask(Bedroom::Ptr bedroom)
     :
-      worker_bedroom(worker_bedroom)
+      bedroom(bedroom)
 {
 }
 
@@ -33,14 +33,14 @@ Task::Ptr ScheduleGetTask::
         if (task)
             return task;
 
-        WorkerBedroom::Ptr worker_bedroom;
+        Bedroom::Ptr bedroom;
         {
             ReadPtr that(this);
             const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const GetTask*)that);
-            worker_bedroom = self->worker_bedroom;
+            bedroom = self->bedroom;
         }
 
-        worker_bedroom->sleep();
+        bedroom->sleep();
     }
 }
 

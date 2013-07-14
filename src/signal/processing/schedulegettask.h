@@ -4,7 +4,7 @@
 #include "dag.h"
 #include "task.h"
 #include "gettask.h"
-#include "workerbedroom.h"
+#include "bedroom.h"
 
 #include <QMutex>
 #include <QWaitCondition>
@@ -23,7 +23,7 @@ namespace Processing {
 class ScheduleGetTask: public GetTask
 {
 public:
-    ScheduleGetTask(WorkerBedroom::Ptr worker_bedroom);
+    ScheduleGetTask(Bedroom::Ptr bedroom);
 
     GetTask::Ptr getTaskImplementation();
     void updateGetTaskImplementation(GetTask::Ptr);
@@ -36,7 +36,7 @@ private:
     QMutex work_condition_mutex;
 
     GetTask::Ptr get_task;
-    WorkerBedroom::Ptr worker_bedroom;
+    Bedroom::Ptr bedroom;
 
 public:
     static void test();

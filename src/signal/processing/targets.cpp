@@ -6,10 +6,10 @@ namespace Signal {
 namespace Processing {
 
 Targets::
-        Targets(Dag::Ptr dag, WorkerBedroom::Ptr worker_bedroom)
+        Targets(Dag::Ptr dag, Bedroom::Ptr bedroom)
     :
       dag_(dag),
-      worker_bedroom_(worker_bedroom)
+      bedroom_(bedroom)
 {
 }
 
@@ -17,7 +17,7 @@ Targets::
 TargetUpdater::Ptr Targets::
         addTarget(Step::Ptr step)
 {
-    Invalidator::Ptr invalidator(new GraphUpdater(dag_, worker_bedroom_ ));
+    Invalidator::Ptr invalidator(new GraphUpdater(dag_, bedroom_ ));
     Target::Ptr target(new Target(step));
     TargetUpdater::Ptr target_updater(new TargetInvalidator(invalidator, target ));
 

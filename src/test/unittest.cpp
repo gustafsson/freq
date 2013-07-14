@@ -12,11 +12,11 @@
 #include "signal/dag/scheduler.h"
 #include "signal/processing/dag.h"
 #include "signal/processing/getdagtask.h"
-#include "signal/processing/schedule.h"
 #include "signal/processing/schedulealgorithm.h"
 #include "signal/processing/step.h"
 #include "signal/processing/task.h"
 #include "signal/processing/worker.h"
+#include "signal/processing/workers.h"
 #include "tools/support/timer.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
@@ -58,11 +58,11 @@ int UnitTest::
         RUNTEST(Signal::Dag::Scheduler);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::GetDagTask);
-        RUNTEST(Signal::Processing::Schedule);
         RUNTEST(Signal::Processing::ScheduleAlgorithm);
         RUNTEST(Signal::Processing::Step);
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
+        RUNTEST(Signal::Processing::Workers);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
         RUNTEST(Heightmap::CreateChunkBlockFilter);

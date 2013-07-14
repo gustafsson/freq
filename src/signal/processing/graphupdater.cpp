@@ -8,13 +8,13 @@ namespace Signal {
 namespace Processing {
 
 GraphUpdater::
-        GraphUpdater(Dag::Ptr dag, WorkerBedroom::Ptr worker_bedroom)
+        GraphUpdater(Dag::Ptr dag, Bedroom::Ptr bedroom)
     :
       dag_(dag),
-      worker_bedroom_(worker_bedroom)
+      bedroom_(bedroom)
 {
     EXCEPTION_ASSERT(dag);
-    EXCEPTION_ASSERT(worker_bedroom_);
+    EXCEPTION_ASSERT(bedroom_);
 }
 
 
@@ -23,7 +23,7 @@ void GraphUpdater::
 {
     deprecateCache(Dag::ReadPtr(dag_), s);
 
-    write1(worker_bedroom_)->wakeup ();
+    write1(bedroom_)->wakeup ();
 }
 
 

@@ -4,7 +4,7 @@
 #include "step.h"
 #include "target.h"
 #include "targetupdater.h"
-#include "workerbedroom.h"
+#include "bedroom.h"
 #include "dag.h"
 
 namespace Signal {
@@ -13,16 +13,16 @@ namespace Processing {
 class Targets: public VolatilePtr<Targets>
 {
 public:
-    Targets(Dag::Ptr dag, WorkerBedroom::Ptr worker_bedroom);
+    Targets(Dag::Ptr dag, Bedroom::Ptr bedroom);
 
-    TargetUpdater::Ptr      addTarget(Step::Ptr step);
-    void                    removeTarget(Step::Ptr step);
-    std::vector<Step::Ptr>  getTargetSteps() const;
-    std::vector<Target::Ptr>  getTargets() const;
+    TargetUpdater::Ptr       addTarget(Step::Ptr step);
+    void                     removeTarget(Step::Ptr step);
+    std::vector<Step::Ptr>   getTargetSteps() const;
+    std::vector<Target::Ptr> getTargets() const;
 
 private:
     Dag::Ptr dag_;
-    WorkerBedroom::Ptr worker_bedroom_;
+    Bedroom::Ptr bedroom_;
 
     typedef std::vector<Target::Ptr> TargetInfos;
     TargetInfos targets;
