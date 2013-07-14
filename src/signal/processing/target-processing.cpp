@@ -2,7 +2,7 @@
 
 namespace Signal {
 namespace Processing {
-
+/*
 Target::
         Target(Step::Ptr step)
     :
@@ -34,5 +34,29 @@ Signal::IntervalType Target::
 }
 
 
+void Target::
+        last_request(boost::posix_time::ptime v)
+{
+    last_request_ = v;
+}
+
+
+void Target::
+        work_center(Signal::IntervalType v)
+{
+    work_center_ = v;
+}
+
+
+void Target::
+        test()
+{
+    // It should provide information to prioritize tasks
+    {
+        Target t;
+    }
+}
+
+*/
 } // namespace Processing
 } // namespace Signal

@@ -9,24 +9,20 @@
 namespace Signal {
 namespace Processing {
 
+/**
+ * @brief The TargetInfo class should provide information to prioritize tasks.
+ *
+ * Issues:
+ * rename to TargetInfo.
+ */
 class Target: public VolatilePtr<Target>
 {
 public:
-    Target(Step::Ptr step);
+    Target(Step::Ptr step) : step(step) {}
 
-    Step::Ptr step() const;
-
-    boost::posix_time::ptime last_request() const;
-    Signal::IntervalType work_center() const;
-
-    virtual Signal::Intervals out_of_date(Signal::Intervals skip = Signal::Intervals()) = 0;
-
-protected:
-    boost::posix_time::ptime last_request_;
-    Signal::IntervalType work_center_;
-
-private:
-    Step::Ptr step_;
+    const Step::Ptr step;
+    boost::posix_time::ptime last_request;
+    Signal::IntervalType work_center;
 };
 
 } // namespace Processing

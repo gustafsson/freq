@@ -33,23 +33,16 @@ public:
     std::vector<Step::Ptr> sourceSteps(Step::Ptr step) const;
     std::vector<Step::Ptr> targetSteps(Step::Ptr step) const;
 
-    static void test();
-
 private:
     Graph g_;
 
     typedef std::map<Step::Ptr, GraphVertex> StepVertexMap;
     StepVertexMap map;
-};
 
-
-class DagOperation
-{
 public:
-    // invalidate steps (only deprecateCache(Interval::Interval_ALL) until OperationDesc supports affected samples)
-    static void deprecateCache(Dag::Ptr dag, Step::Ptr s);
-    static void deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s);
+    static void test();
 };
+
 
 } // namespace Processing
 } // namespace Signal

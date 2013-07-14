@@ -166,22 +166,5 @@ void Dag::
 }
 
 
-void DagOperation::
-        deprecateCache(Dag::Ptr dag, Step::Ptr s)
-{
-    deprecateCache(Dag::ReadPtr(dag), s);
-}
-
-
-void DagOperation::
-        deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s)
-{
-    write1(s)->deprecateCache(Signal::Intervals::Intervals_ALL);
-
-    BOOST_FOREACH(Step::Ptr ts, dag->targetSteps(s)) {
-        deprecateCache(dag, ts);
-    }
-}
-
 } // namespace Processing
 } // namespace Signal
