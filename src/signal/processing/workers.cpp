@@ -5,7 +5,7 @@
 #include "workers.h"
 
 #include "schedulegettask.h"
-#include "getdagtask.h"
+#include "targetschedule.h"
 #include "schedulealgorithm.h"
 
 namespace Signal {

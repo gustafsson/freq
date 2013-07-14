@@ -11,9 +11,9 @@
 #include "signal/dag/node.h"
 #include "signal/dag/scheduler.h"
 #include "signal/processing/dag.h"
-#include "signal/processing/getdagtask.h"
 #include "signal/processing/schedulealgorithm.h"
 #include "signal/processing/step.h"
+#include "signal/processing/targetschedule.h"
 #include "signal/processing/task.h"
 #include "signal/processing/worker.h"
 #include "signal/processing/workers.h"
@@ -57,9 +57,9 @@ int UnitTest::
         RUNTEST(Signal::Dag::ICommand);
         RUNTEST(Signal::Dag::Scheduler);
         RUNTEST(Signal::Processing::Dag);
-        RUNTEST(Signal::Processing::GetDagTask);
         RUNTEST(Signal::Processing::ScheduleAlgorithm);
         RUNTEST(Signal::Processing::Step);
+        RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);

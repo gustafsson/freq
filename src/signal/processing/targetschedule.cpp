@@ -2,7 +2,7 @@
 #include <QObject>
 #include <boost/foreach.hpp>
 
-#include "getdagtask.h"
+#include "targetschedule.h"
 
 using namespace boost::posix_time;
 
@@ -10,8 +10,8 @@ namespace Signal {
 namespace Processing {
 
 
-GetDagTask::
-        GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets)
+TargetSchedule::
+        TargetSchedule(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets)
     :
       targets(targets),
       g(g),
@@ -22,12 +22,12 @@ GetDagTask::
 }
 
 
-Task::Ptr GetDagTask::
+Task::Ptr TargetSchedule::
         getTask() volatile
 {
     // Lock this from writing during getTask
     ReadPtr gettask(this);
-    const GetDagTask* self = dynamic_cast<const GetDagTask*>((const Schedule*)gettask);
+    const TargetSchedule* self = dynamic_cast<const TargetSchedule*>((const Schedule*)gettask);
 
     // Lock the graph from writing during getTask
     Dag::ReadPtr dag(self->g);
@@ -60,7 +60,7 @@ Task::Ptr GetDagTask::
 }
 
 
-Target::Ptr GetDagTask::
+Target::Ptr TargetSchedule::
         prioritizedTarget() const
 {
     Target::Ptr target;
@@ -95,7 +95,7 @@ public:
 };
 
 
-void GetDagTask::
+void TargetSchedule::
         test()
 {
     // It should provide tasks to keep a Dag up-to-date with respect to all targets
@@ -107,7 +107,7 @@ void GetDagTask::
         GetDagTaskAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Targets::Ptr targets(new Targets(dag, Bedroom::Ptr(new Bedroom)));
         //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
-        GetDagTask getdagtask(dag, algorithm, targets);
+        TargetSchedule getdagtask(dag, algorithm, targets);
         Task::Ptr task = getdagtask.getTask ();
 
         EXCEPTION_ASSERT(0 == task.get ()); // should not be null

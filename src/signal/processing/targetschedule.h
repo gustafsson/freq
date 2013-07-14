@@ -12,9 +12,9 @@ namespace Processing {
 /**
  * @brief The GetDagTask class should provide tasks to keep a Dag up-to-date with respect to all targets.
  */
-class GetDagTask: public Schedule {
+class TargetSchedule: public Schedule {
 public:
-    GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets);
+    TargetSchedule(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets);
 
     virtual Task::Ptr getTask() volatile;
 

@@ -14,8 +14,6 @@ ScheduleGetTask::
 }
 
 
-
-
 Task::Ptr ScheduleGetTask::
         getTask() volatile
 {
