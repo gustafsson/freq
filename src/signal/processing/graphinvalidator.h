@@ -8,6 +8,9 @@
 namespace Signal {
 namespace Processing {
 
+/**
+ * @brief The GraphInvalidator class should invalidate caches and wakeup workers.
+ */
 class GraphInvalidator: public Invalidator
 {
 public:

@@ -36,5 +36,29 @@ void GraphInvalidator::
     }
 }
 
+
+void GraphInvalidator::
+        test()
+{
+    // It should invalidate caches and wakeup workers
+    {
+        Dag::Ptr dag(new Dag);
+        Bedroom::Ptr bedroom(new Bedroom);
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
+
+        write1(dag)->appendStep(step);
+        write1(step)->setInvalid(Signal::Intervals(20,30));
+
+        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals(20,30));
+
+        GraphInvalidator graphInvalidator(dag, bedroom);
+        Signal::Intervals dummy;
+        graphInvalidator.deprecateCache (step, dummy);
+
+        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals::Intervals_ALL);
+    }
+}
+
+
 } // namespace Processing
 } // namespace Signal

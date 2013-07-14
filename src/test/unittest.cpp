@@ -14,6 +14,7 @@
 #include "signal/processing/chain.h"
 #include "signal/processing/dag.h"
 #include "signal/processing/firstmissalgorithm.h"
+#include "signal/processing/graphinvalidator.h"
 #include "signal/processing/step.h"
 #include "signal/processing/targetschedule.h"
 #include "signal/processing/task.h"
@@ -62,6 +63,7 @@ int UnitTest::
         RUNTEST(Signal::Processing::Chain);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::FirstMissAlgorithm);
+        RUNTEST(Signal::Processing::GraphInvalidator);
         RUNTEST(Signal::Processing::Step);
         RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
