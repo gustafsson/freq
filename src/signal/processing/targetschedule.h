@@ -1,5 +1,5 @@
-#ifndef SIGNAL_PROCESSING_GETDAGTASK_H
-#define SIGNAL_PROCESSING_GETDAGTASK_H
+#ifndef SIGNAL_PROCESSING_TARGETSCHEDULE_H
+#define SIGNAL_PROCESSING_TARGETSCHEDULE_H
 
 #include "schedulealgorithm.h"
 #include "schedule.h"
@@ -32,4 +32,4 @@ public:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_GETDAGTASK_H
+#endif // SIGNAL_PROCESSING_TARGETSCHEDULE_H
