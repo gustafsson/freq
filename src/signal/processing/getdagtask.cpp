@@ -11,7 +11,7 @@ namespace Processing {
 
 
 GetDagTask::
-        GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, std::vector<Target::Ptr> targets)
+        GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, Targets::Ptr targets)
     :
       targets(targets),
       g(g),
@@ -19,44 +19,6 @@ GetDagTask::
 {
     BOOST_ASSERT(g);
     BOOST_ASSERT(algorithm);
-}
-
-
-TargetUpdater::Ptr GetDagTask::
-        addTarget(Step::Ptr step)
-{
-    Invalidator::Ptr invalidator();
-    Target::Ptr target(new Target(step));
-
-
-    //TargetUpdater::Ptr targetUpdater(new TargetInvalidator(invalidator, target);
-    return TargetUpdater::Ptr();
-}
-
-
-void GetDagTask::
-        removeTarget(Step::Ptr step)
-{
-    for (TargetInfos::iterator i=targets.begin (); i!=targets.end (); i++) {
-        Target::Ptr t = *i;
-        if (read1(t)->step == step) {
-            targets.erase (i);
-            return;
-        }
-    }
-}
-
-
-std::vector<Step::Ptr> GetDagTask::
-        getTargets() const
-{
-    std::vector<Step::Ptr> target_steps;
-
-    BOOST_FOREACH( Target::Ptr t, targets ) {
-        target_steps.push_back (read1(t)->step);
-    }
-
-    return target_steps;
 }
 
 
@@ -104,7 +66,7 @@ Target::Ptr GetDagTask::
     Target::Ptr target;
 
     ptime latest(neg_infin);
-    BOOST_FOREACH(Target::Ptr t, this->targets)
+    BOOST_FOREACH(Target::Ptr t, read1(targets)->getTargets())
     {
         ptime last_request = read1(t)->last_request;
 
@@ -143,7 +105,7 @@ void GetDagTask::
         write1(dag)->appendStep(step);
 
         GetDagTaskAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
-        std::vector<Target::Ptr> targets;
+        Targets::Ptr targets(new Targets(dag, WorkerBedroom::Ptr(new WorkerBedroom)));
         //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
         GetDagTask getdagtask(dag, algorithm, targets);
         Task::Ptr task = getdagtask.getTask ();

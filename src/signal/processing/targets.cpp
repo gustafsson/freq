@@ -37,7 +37,7 @@ void Targets::
 
 
 std::vector<Step::Ptr> Targets::
-        getTargets() const
+        getTargetSteps() const
 {
     std::vector<Step::Ptr> T;
 
@@ -47,6 +47,13 @@ std::vector<Step::Ptr> Targets::
     }
 
     return T;
+}
+
+
+std::vector<Target::Ptr> Targets::
+        getTargets() const
+{
+    return targets;
 }
 
 } // namespace Processing

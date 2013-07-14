@@ -10,14 +10,15 @@
 namespace Signal {
 namespace Processing {
 
-class Targets
+class Targets: public VolatilePtr<Targets>
 {
 public:
     Targets(Dag::Ptr dag, WorkerBedroom::Ptr worker_bedroom);
 
     TargetUpdater::Ptr      addTarget(Step::Ptr step);
     void                    removeTarget(Step::Ptr step);
-    std::vector<Step::Ptr>  getTargets() const;
+    std::vector<Step::Ptr>  getTargetSteps() const;
+    std::vector<Target::Ptr>  getTargets() const;
 
 private:
     Dag::Ptr dag_;
