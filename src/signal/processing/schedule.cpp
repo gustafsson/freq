@@ -140,7 +140,7 @@ void Schedule::
         for (int i=0; i<workers; ++i)
             schedule.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
-        usleep(5000);
+        usleep(6000);
 
         EXCEPTION_ASSERT_EQUALS(gettaskmock->get_task_count, workers);
 
