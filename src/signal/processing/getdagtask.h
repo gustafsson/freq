@@ -3,26 +3,35 @@
 
 #include "getdagtaskalgorithm.h"
 #include "gettask.h"
+#include "targetinvalidator.h"
 
 namespace Signal {
 namespace Processing {
 
 /**
- * @brief The ScheduleGetTask class should behave as GetTask.
- *
- * It should return return null if no plausible task was found.
+ * @brief The GetDagTask class should provide tasks to keep a Dag up-to-date with respect to all targets.
  */
 class GetDagTask: public GetTask {
 public:
-    GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm);
+    GetDagTask(Dag::Ptr g, GetDagTaskAlgorithm::Ptr algorithm, std::vector<Target::Ptr> targets);
 
-    std::list<Target::Ptr> targets;
-    // list targets (targets should have a timestamp so that the scheduler can know what to focus on first)
-    // this list is publicly accesible
+    TargetUpdater::Ptr addTarget(Step::Ptr step);
+    void removeTarget(Step::Ptr step);
+    std::vector<Step::Ptr> getTargets() const;
+
+    // Targets have a timestamp, the target with the latest timestamp is computed first.
+    // Targets are free to compete with different prioritizes by setting arbitrary timestamps.
+    // This list is publicly accesible.
+
+
 
     virtual Task::Ptr getTask() volatile;
 
 private:
+
+    typedef std::vector<Target::Ptr> TargetInfos;
+    TargetInfos targets;
+
     Dag::Ptr g;
     GetDagTaskAlgorithm::Ptr algorithm;
 

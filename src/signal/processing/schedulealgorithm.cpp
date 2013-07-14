@@ -102,7 +102,7 @@ Task::Ptr ScheduleAlgorithm::
     ScheduleParams schedule_params = { preferred_size, center };
 
     MissingSamples missing_samples;
-    missing_samples[target] = missing_in_target & read1( g[target] )->out_of_date();
+    missing_samples[target] = missing_in_target;
 
 
     Task::Ptr task;
@@ -143,6 +143,8 @@ void ScheduleAlgorithm::
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(20,30));
     }
+
+    // It should let missing_in_target override out_of_date in the given vertex
 }
 
 

@@ -15,6 +15,8 @@ namespace Processing {
  * @brief The ScheduleAlgorithm class should figure out the missing pieces in
  * the graph and produce a Task to work it off
  *
+ * It should let missing_in_target override out_of_date in the given vertex
+ *
  * Issues
  * Does not know how to cope with workers that doesn't support all steps.
  */

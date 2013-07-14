@@ -12,6 +12,7 @@ namespace Signal {
 namespace Processing {
 
 
+// Class keep the work condition separate from GetTask.
 
 /**
  * @brief The ScheduleGetTask class should behave as GetTask.

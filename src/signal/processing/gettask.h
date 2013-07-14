@@ -9,6 +9,9 @@ namespace Processing {
 /**
  * @brief The GetTask class should provide new tasks for workers who lack
  * information about what they should do.
+ *
+ * It may return null if no plausible task was found.
+ * It may block the calling thread until a plausible task is found.
  */
 class GetTask: public VolatilePtr<GetTask>
 {

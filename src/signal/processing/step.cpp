@@ -35,6 +35,13 @@ void Step::
 }
 
 
+void Step::
+        setInvalid(Signal::Intervals request)
+{
+    not_started_ = request;
+}
+
+
 Signal::Intervals Step::
         not_started() const
 {

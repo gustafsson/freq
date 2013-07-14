@@ -17,6 +17,7 @@ public:
     Step(Signal::OperationDesc::Ptr operation_desc, float sample_rate, int num_channels);
 
     void                        deprecateCache(Signal::Intervals deprecated);
+    void                        setInvalid(Signal::Intervals invalid); // implicitly validates ~invalid
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
