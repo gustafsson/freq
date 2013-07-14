@@ -82,7 +82,7 @@ void Bedroom::
         sleepyface2.start ();
 
         for (int i=snoozes; i>=0; i--) {
-            usleep(1000);
+            usleep(2000);
             EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), i>0?2:0);
             bedroom->wakeup();
             EXCEPTION_ASSERT_EQUALS(sleepyface1.snooze (), i);

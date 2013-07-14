@@ -7,12 +7,12 @@
 namespace Signal {
 namespace Processing {
 
-class Updater
+class ITargetUpdater
 {
 public:
-    typedef boost::shared_ptr<Updater> Ptr;
+    typedef boost::shared_ptr<ITargetUpdater> Ptr;
 
-    virtual ~Updater() {}
+    virtual ~ITargetUpdater() {}
 
     virtual void update(int prio, Signal::IntervalType center, Signal::Intervals intervals) = 0;
 };

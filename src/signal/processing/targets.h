@@ -10,12 +10,16 @@
 namespace Signal {
 namespace Processing {
 
+/**
+ * @brief The Targets class should keep track of targets and let callers update
+ * what each target needs afterwards.
+ */
 class Targets: public VolatilePtr<Targets>
 {
 public:
     Targets(Dag::Ptr dag, Bedroom::Ptr bedroom);
 
-    Updater::Ptr             addTarget(Step::Ptr step);
+    ITargetUpdater::Ptr      addTarget(Step::Ptr step);
     void                     removeTarget(Step::Ptr step);
     std::vector<Step::Ptr>   getTargetSteps() const;
     std::vector<Target::Ptr> getTargets() const;

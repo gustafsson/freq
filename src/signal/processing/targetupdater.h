@@ -1,14 +1,14 @@
 #ifndef SIGNAL_PROCESSING_TARGETUPDATER_H
 #define SIGNAL_PROCESSING_TARGETUPDATER_H
 
-#include "updater.h"
+#include "itargetupdater.h"
 #include "iinvalidator.h"
 #include "target.h"
 
 namespace Signal {
 namespace Processing {
 
-class TargetUpdater: public Updater
+class TargetUpdater: public ITargetUpdater
 {
 public:
     TargetUpdater(IInvalidator::Ptr invalidator, Target::Ptr target);
