@@ -20,23 +20,17 @@ namespace Processing {
  *
  * It should stall callers while waiting for an available task.
  */
-class ScheduleGetTask: public Schedule
+class SleepSchedule: public Schedule
 {
 public:
-    ScheduleGetTask(Bedroom::Ptr bedroom);
+    SleepSchedule(Bedroom::Ptr bedroom, Schedule::Ptr schedule);
 
-    Schedule::Ptr getTaskImplementation();
-    void updateGetTaskImplementation(Schedule::Ptr);
-
-    // Stalls until a task can be returned
+    // Sleeps until a task can be returned
     virtual Task::Ptr getTask() volatile;
 
 private:
-    QWaitCondition work_condition;
-    QMutex work_condition_mutex;
-
-    Schedule::Ptr get_task;
     Bedroom::Ptr bedroom;
+    Schedule::Ptr schedule;
 
 public:
     static void test();
