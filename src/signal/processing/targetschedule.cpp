@@ -88,6 +88,7 @@ public:
             GraphVertex,
             Signal::Intervals,
             Signal::IntervalType,
+            Workers::Ptr,
             Signal::ComputingEngine::Ptr) const
     {
         return Task::Ptr(new Task(Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(1,2)));

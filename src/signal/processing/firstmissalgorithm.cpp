@@ -9,13 +9,6 @@ namespace Signal {
 namespace Processing {
 
 
-FirstMissAlgorithm::
-        FirstMissAlgorithm(Workers::Ptr workers)
-    :
-      workers_(workers)
-{}
-
-
 typedef std::map<GraphVertex, Signal::Intervals> MissingSamples;
 
 
@@ -92,12 +85,13 @@ Task::Ptr FirstMissAlgorithm::
                 GraphVertex target,
                 Signal::Intervals missing_in_target,
                 Signal::IntervalType center,
+                Workers::Ptr workers,
                 Signal::ComputingEngine::Ptr /*engine*/) const
 {
     int preferred_size = missing_in_target.count ();
 
-    if (workers_)
-        preferred_size = 1 + preferred_size/read1(workers_)->n_workers();
+    if (workers)
+        preferred_size = 1 + preferred_size/read1(workers)->n_workers();
 
     ScheduleParams schedule_params = { preferred_size, center };
 

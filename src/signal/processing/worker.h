@@ -28,13 +28,13 @@ public:
     // objects that delete themselves.
     typedef QPointer<Worker> Ptr;
 
-    Worker (Signal::ComputingEngine::Ptr computing_eninge, Schedule::Ptr get_task);
+    Worker (Signal::ComputingEngine::Ptr computing_eninge, Schedule::Ptr scheduel);
 
     // Delete when finished
     virtual void run ();
 
     // Postpones the thread exit until a task has been finished.
-    // 'get_task_->getTask()' might be idling but this class is unaware of that
+    // 'scheduel_->getTask()' might be idling but this class is unaware of that
     void exit_nicely_and_delete();
 
     const std::string& exception_what() const;
@@ -43,7 +43,7 @@ public:
 
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
-    Schedule::Ptr get_task_;
+    Schedule::Ptr schedule_;
     bool enough_;
 
     std::string exception_what_;

@@ -11,9 +11,9 @@ namespace Processing {
 
 
 Workers::
-        Workers(Schedule::Ptr get_task)
+        Workers(Schedule::Ptr schedule)
     :
-      get_task(get_task)
+      schedule_(schedule)
 {
 }
 
@@ -26,7 +26,7 @@ void Workers::
     if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
-    Worker::Ptr w(new Worker(ce, get_task));
+    Worker::Ptr w(new Worker(ce, schedule_));
     workers_map_[ce] = w;
 
     updateWorkers();

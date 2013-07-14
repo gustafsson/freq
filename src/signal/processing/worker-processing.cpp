@@ -4,10 +4,10 @@ namespace Signal {
 namespace Processing {
 
 Worker::
-        Worker (Signal::ComputingEngine::Ptr computing_eninge, Schedule::Ptr get_task)
+        Worker (Signal::ComputingEngine::Ptr computing_eninge, Schedule::Ptr scheduel)
     :
       computing_eninge_(computing_eninge),
-      get_task_(get_task),
+      schedule_(scheduel),
       enough_(false),
       exception_type_(0)
 {
@@ -20,7 +20,7 @@ void Worker::
     try {
         Task::Ptr task;
 
-        while (task = get_task_->getTask())
+        while (task = schedule_->getTask())
         {
             task->run(computing_eninge_);
 

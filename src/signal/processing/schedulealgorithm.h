@@ -4,6 +4,7 @@
 #include "volatileptr.h"
 #include "task.h"
 #include "dag.h"
+#include "workers.h"
 
 namespace Signal {
 namespace Processing {
@@ -18,6 +19,7 @@ public:
             GraphVertex target,
             Signal::Intervals missing_in_target=Intervals::Intervals_ALL,
             Signal::IntervalType center=Interval::IntervalType_MIN,
+            Workers::Ptr workers=Workers::Ptr(),
             Signal::ComputingEngine::Ptr worker=Signal::ComputingEngine::Ptr()) const = 0;
 };
 
