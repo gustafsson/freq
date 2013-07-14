@@ -7,31 +7,13 @@ namespace Processing {
 
 
 ScheduleGetTask::
-        ScheduleGetTask()
+        ScheduleGetTask(WorkerBedroom::Ptr worker_bedroom)
+    :
+      worker_bedroom(worker_bedroom)
 {
 }
 
 
-GetTask::Ptr ScheduleGetTask::
-        getTaskImplementation()
-{
-    return get_task;
-}
-
-
-void ScheduleGetTask::
-        updateGetTaskImplementation(GetTask::Ptr value)
-{
-    get_task = value;
-    wakeup();
-}
-
-
-void ScheduleGetTask::
-        wakeup()
-{
-    work_condition.wakeAll ();
-}
 
 
 Task::Ptr ScheduleGetTask::
@@ -51,9 +33,14 @@ Task::Ptr ScheduleGetTask::
         if (task)
             return task;
 
-        // QWaitCondition/QMutex are thread-safe so we can discard the volatile qualifier
-        const_cast<QWaitCondition*>(&work_condition)->wait (
-                    const_cast<QMutex*> (&work_condition_mutex));
+        WorkerBedroom::Ptr worker_bedroom;
+        {
+            ReadPtr that(this);
+            const ScheduleGetTask* self = dynamic_cast<const ScheduleGetTask*>((const GetTask*)that);
+            worker_bedroom = self->worker_bedroom;
+        }
+
+        worker_bedroom->sleep();
     }
 }
 

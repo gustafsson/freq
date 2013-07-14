@@ -4,6 +4,7 @@
 #include "dag.h"
 #include "task.h"
 #include "gettask.h"
+#include "workerbedroom.h"
 
 #include <QMutex>
 #include <QWaitCondition>
@@ -22,13 +23,10 @@ namespace Processing {
 class ScheduleGetTask: public GetTask
 {
 public:
-    ScheduleGetTask();
+    ScheduleGetTask(WorkerBedroom::Ptr worker_bedroom);
 
     GetTask::Ptr getTaskImplementation();
     void updateGetTaskImplementation(GetTask::Ptr);
-
-    // Check if a task might be available
-    void wakeup();
 
     // Stalls until a task can be returned
     virtual Task::Ptr getTask() volatile;
@@ -38,6 +36,7 @@ private:
     QMutex work_condition_mutex;
 
     GetTask::Ptr get_task;
+    WorkerBedroom::Ptr worker_bedroom;
 
 public:
     static void test();

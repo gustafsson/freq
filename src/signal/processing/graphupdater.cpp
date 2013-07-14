@@ -8,13 +8,13 @@ namespace Signal {
 namespace Processing {
 
 GraphUpdater::
-        GraphUpdater(Dag::Ptr dag, GetTask::Ptr scheduleGetTask)
+        GraphUpdater(Dag::Ptr dag, WorkerBedroom::Ptr worker_bedroom)
     :
       dag_(dag),
-      schedule_get_task_(scheduleGetTask)
+      worker_bedroom_(worker_bedroom)
 {
-    EXCEPTION_ASSERT(schedule_get_task_);
-    EXCEPTION_ASSERT(dynamic_cast<const ScheduleGetTask*>(&*read1(schedule_get_task_)));
+    EXCEPTION_ASSERT(dag);
+    EXCEPTION_ASSERT(worker_bedroom_);
 }
 
 
@@ -23,8 +23,7 @@ void GraphUpdater::
 {
     deprecateCache(Dag::ReadPtr(dag_), s);
 
-    ScheduleGetTask* t = dynamic_cast<ScheduleGetTask*>(&*write1(schedule_get_task_));
-    t->wakeup ();
+    write1(worker_bedroom_)->wakeup ();
 }
 
 
