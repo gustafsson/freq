@@ -3,7 +3,6 @@
 
 #include "getdagtaskalgorithm.h"
 #include "schedule.h"
-#include "targetinvalidator.h"
 #include "targets.h"
 
 namespace Signal {

@@ -4,7 +4,6 @@
 
 #include "workers.h"
 
-#include "schedulegettask.h"
 #include "targetschedule.h"
 #include "schedulealgorithm.h"
 

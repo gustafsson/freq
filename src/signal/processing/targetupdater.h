@@ -1,20 +1,26 @@
 #ifndef SIGNAL_PROCESSING_TARGETUPDATER_H
 #define SIGNAL_PROCESSING_TARGETUPDATER_H
 
-#include "signal/intervals.h"
-#include <boost/shared_ptr.hpp>
+#include "updater.h"
+#include "invalidator.h"
+#include "target.h"
 
 namespace Signal {
 namespace Processing {
 
-class TargetUpdater
+class TargetUpdater: public Updater
 {
 public:
-    typedef boost::shared_ptr<TargetUpdater> Ptr;
+    TargetUpdater(Invalidator::Ptr invalidator, Target::Ptr target);
 
-    virtual ~TargetUpdater() {}
+    void update(int prio, Signal::IntervalType center, Signal::Intervals intervals);
 
-    virtual void update(int prio, Signal::IntervalType center, Signal::Intervals intervals) = 0;
+private:
+    Invalidator::Ptr invalidator_;
+    Target::Ptr target_;
+
+public:
+    static void test();
 };
 
 } // namespace Processing

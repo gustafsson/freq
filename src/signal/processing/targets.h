@@ -15,7 +15,7 @@ class Targets: public VolatilePtr<Targets>
 public:
     Targets(Dag::Ptr dag, Bedroom::Ptr bedroom);
 
-    TargetUpdater::Ptr       addTarget(Step::Ptr step);
+    Updater::Ptr             addTarget(Step::Ptr step);
     void                     removeTarget(Step::Ptr step);
     std::vector<Step::Ptr>   getTargetSteps() const;
     std::vector<Target::Ptr> getTargets() const;

@@ -1,4 +1,4 @@
-#include "targetinvalidator.h"
+#include "targetupdater.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -7,8 +7,8 @@ using namespace boost::posix_time;
 namespace Signal {
 namespace Processing {
 
-TargetInvalidator::
-        TargetInvalidator(Invalidator::Ptr invalidator, Target::Ptr target)
+TargetUpdater::
+        TargetUpdater(Invalidator::Ptr invalidator, Target::Ptr target)
     :
       invalidator_(invalidator),
       target_(target)
@@ -16,7 +16,7 @@ TargetInvalidator::
 }
 
 
-void TargetInvalidator::
+void TargetUpdater::
         update(int prio, Signal::IntervalType center, Signal::Intervals intervals)
 {
     Target::WritePtr t(target_);
@@ -28,7 +28,7 @@ void TargetInvalidator::
 }
 
 
-void TargetInvalidator::
+void TargetUpdater::
         test()
 {
 
