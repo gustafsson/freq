@@ -36,26 +36,56 @@ void GraphInvalidator::
     }
 }
 
+} // namespace Processing
+} // namespace Signal
+
+
+#include <QThread>
+
+namespace Signal {
+namespace Processing {
+
+class WaitForWakeupMock: public QThread {
+public:
+    WaitForWakeupMock(Bedroom::Ptr bedroom) : bedroom_(bedroom) {}
+
+    void run() {
+        bedroom_->sleep();
+    }
+
+private:
+    Bedroom::Ptr bedroom_;
+};
 
 void GraphInvalidator::
         test()
 {
     // It should invalidate caches and wakeup workers
     {
+        // create
         Dag::Ptr dag(new Dag);
         Bedroom::Ptr bedroom(new Bedroom);
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
+        WaitForWakeupMock sleeper(bedroom);
 
+        // wire up
+        sleeper.start ();
+        usleep(1000);
         write1(dag)->appendStep(step);
         write1(step)->setInvalid(Signal::Intervals(20,30));
-
         EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals(20,30));
+        EXCEPTION_ASSERT(sleeper.isRunning ());
+        EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 1);
 
+        // test
         GraphInvalidator graphInvalidator(dag, bedroom);
         Signal::Intervals dummy;
         graphInvalidator.deprecateCache (step, dummy);
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals::Intervals_ALL);
+        usleep(1000);
+        EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
+        EXCEPTION_ASSERT(sleeper.isFinished ());
     }
 }
 
