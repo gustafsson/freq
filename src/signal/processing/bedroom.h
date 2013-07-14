@@ -16,12 +16,16 @@ namespace Processing {
 class Bedroom: public VolatilePtr<Bedroom>
 {
 public:
+    Bedroom();
+
     // Check if a task might be available
     void wakeup() volatile;
 
     void sleep() volatile;
 
+    int sleepers() const volatile;
 private:
+    int sleepers_;
     QWaitCondition work_condition;
     QMutex work_condition_mutex;
 

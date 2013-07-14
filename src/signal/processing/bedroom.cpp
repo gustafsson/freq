@@ -5,6 +5,15 @@
 namespace Signal {
 namespace Processing {
 
+
+Bedroom::
+        Bedroom()
+    :
+      sleepers_(0)
+{
+}
+
+
 void Bedroom::
         wakeup() volatile
 {
@@ -15,9 +24,21 @@ void Bedroom::
 void Bedroom::
         sleep() volatile
 {
+    WritePtr(this)->sleepers_++;
+
     // QWaitCondition/QMutex are thread-safe so we can discard the volatile qualifier
     const_cast<QWaitCondition*>(&work_condition)->wait (
                 const_cast<QMutex*> (&work_condition_mutex));
+
+    WritePtr(this)->sleepers_--;
+
+}
+
+
+int Bedroom::
+        sleepers() const volatile
+{
+    return ReadPtr(this)->sleepers_;
 }
 
 } // namespace Processing
@@ -25,6 +46,7 @@ void Bedroom::
 
 
 #include <QThread>
+#include "TaskTimer.h"
 
 namespace Signal {
 namespace Processing {
@@ -61,6 +83,7 @@ void Bedroom::
 
         for (int i=snoozes; i>=0; i--) {
             usleep(1000);
+            EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), i>0?2:0);
             bedroom->wakeup();
             EXCEPTION_ASSERT_EQUALS(sleepyface1.snooze (), i);
             EXCEPTION_ASSERT_EQUALS(sleepyface2.snooze (), i);
@@ -68,6 +91,7 @@ void Bedroom::
 
         EXCEPTION_ASSERT(sleepyface1.isFinished ());
         EXCEPTION_ASSERT(sleepyface2.isFinished ());
+        EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), 0);
     }
 }
 
