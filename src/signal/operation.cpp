@@ -34,6 +34,20 @@ Signal::Interval OperationDesc::
 }
 
 
+Signal::Interval OperationDesc::
+        affectedSamples( const Signal::Interval& I ) const
+{
+    return I;
+}
+
+
+boost::optional<Interval> OperationDesc::
+        extent() const
+{
+    return boost::optional<Interval>();
+}
+
+
 Operation::Ptr OperationDesc::
         recreateOperation(Operation::Ptr /*hint*/, ComputingEngine* engine) const
 {

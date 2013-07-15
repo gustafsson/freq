@@ -90,9 +90,6 @@ public:
     virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
 
 
-    // TODO will need requiredIntervalInverse as well.
-
-
     /**
      * @brief copy creates a copy of 'this'.
      * @return a copy.
@@ -112,6 +109,22 @@ public:
      * @return a newly created operation.
      */
     virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
+
+
+    /**
+     * @brief affectedSamples
+     * @param I
+     * @return which samples that needs to be recomputed if I changes in the input.
+     */
+    virtual Interval affectedSamples( const Interval& I ) const;
+
+
+    /**
+     * @brief extent describes the extent of this operation. Extent is allowed
+     * to change during the lifetime of an OperationDesc.
+     * @return No Interval unless this operation creates any special extent.
+     */
+    virtual boost::optional<Interval> extent() const;
 
 
     /**
