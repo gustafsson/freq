@@ -42,11 +42,14 @@ Task::Ptr TargetSchedule::
 
     // Read info from target
     {
-        TargetNeeds::WritePtr target(priotarget);
+        TargetNeeds::ReadPtr target(priotarget);
         step = target->step();
-        missing_in_target = read1(step)->not_started();
+        missing_in_target = target->not_started();
         work_center = target->work_center();
     }
+
+    if (!missing_in_target)
+        return Task::Ptr();
 
     GraphVertex vertex = dag->getVertex(step);
 
@@ -66,7 +69,7 @@ TargetNeeds::Ptr TargetSchedule::
     TargetNeeds::Ptr target;
 
     ptime latest(neg_infin);
-    BOOST_FOREACH(TargetNeeds::Ptr t, read1(targets)->getTargets())
+    BOOST_FOREACH(const TargetNeeds::Ptr& t, read1(targets)->getTargets())
     {
         ptime last_request = read1(t)->last_request();
 
@@ -91,7 +94,7 @@ public:
             Workers::Ptr,
             Signal::ComputingEngine::Ptr) const
     {
-        return Task::Ptr(new Task(Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(1,2)));
+        return Task::Ptr(new Task(Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(5,6)));
     }
 };
 
@@ -104,16 +107,30 @@ void TargetSchedule::
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
         Dag::Ptr dag(new Dag);
         write1(dag)->appendStep(step);
-
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Targets::Ptr targets(new Targets(Bedroom::Ptr(new Bedroom)));
-        //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
-        TargetSchedule getdagtask(dag, algorithm, targets);
-        Task::Ptr task = getdagtask.getTask ();
 
-        EXCEPTION_ASSERT(0 == task.get ()); // should not be null
-        /*
-        EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(1,3));*/
+        TargetSchedule targetschedule(dag, algorithm, targets);
+
+        // It should not return a task without a target
+        EXCEPTION_ASSERT(!targetschedule.getTask ());
+
+        // It should not return a task for a target without needed_samples
+        TargetNeeds::Ptr targetneeds ( write1(targets)->addTarget(step) );
+        EXCEPTION_ASSERT(!targetschedule.getTask ());
+
+        // The scheduler should be used to find a task when the target has
+        // a non-empty not_started();
+        write1(targetneeds)->updateNeeds(Signal::Interval(3,4));
+        EXCEPTION_ASSERT(read1(targetneeds)->not_started());
+        Task::Ptr task = targetschedule.getTask ();
+        EXCEPTION_ASSERT(task);
+        EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(5,6));
+    }
+
+    // It should provide tasks to keep a Dag up-to-date with respect to all targets
+    {
+        Targets::Ptr targets(new Targets(Bedroom::Ptr(new Bedroom)));
     }
 }
 

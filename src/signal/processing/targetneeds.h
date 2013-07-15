@@ -19,16 +19,39 @@ class TargetNeeds: public VolatilePtr<TargetNeeds>
 public:
     TargetNeeds(boost::shared_ptr<volatile Step> step_, Bedroom::Ptr bedroom);
 
-    void updateNeeds(Signal::Intervals intervals, int prio=0, Signal::IntervalType center=Signal::Interval::IntervalType_MIN);
+    /**
+     * Large portions of step can be out_of_date yet not needed by the target.
+     *
+     * Only the part of Step::not_started() that is overlapping with
+     * 'needed_samples' provided here will actually be scheduled for
+     * calculation (as returned by TargetNeeds::not_started()).
+     *
+     * @arg needed_samples Which portion that is actually needed by the target.
+     * @arg prio A higher number makes sure this TargetNeed is computed before
+     *           others.
+     * @arg center From where to work of intervals from this->not_started()
+     * @arg invalidate Samples to invalidate in the step cache while at it.
+     *                 Note that Only the part overlapping with
+     *                 arg 'needed_samples' will actually be scheduled for
+     *                 calculation (as returned by this->not_started()).
+     */
+    void updateNeeds(
+            Signal::Intervals needed_samples,
+            int prio=0,
+            Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
+            Signal::Intervals invalidate=Signal::Intervals());
 
     const boost::shared_ptr<volatile Step> step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
+    Signal::Intervals out_of_date() const;
+    Signal::Intervals not_started() const;
 
 private:
     const boost::shared_ptr<volatile Step> step_;
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;
+    Signal::Intervals needed_samples_;
 
     Bedroom::Ptr bedroom;
 

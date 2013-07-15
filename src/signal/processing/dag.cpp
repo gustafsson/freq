@@ -114,7 +114,7 @@ std::vector<Step::Ptr> Dag::
     BOOST_FOREACH(GraphEdge e, out_edges(getVertex(step), g_)) {
         GraphVertex u = boost::target(e,g_);
         Step::Ptr s = g_[u];
-        int nc = write1(s)->num_channels ();
+        //int nc = write1(s)->num_channels ();
         steps.push_back (s);
     }
 
