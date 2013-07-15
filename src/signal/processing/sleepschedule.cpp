@@ -88,13 +88,12 @@ void SleepSchedule::
         WorkerMock worker_mock(sleep_schedule);
         worker_mock.start ();
 
-        usleep(1000);
-        EXCEPTION_ASSERT(worker_mock.isRunning ());
+        EXCEPTION_ASSERT_EQUALS(worker_mock.wait (1), false);
+        EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), 1);
 
         bedroom->wakeup();
 
-        usleep(1000);
-        EXCEPTION_ASSERT(worker_mock.isFinished ());
+        EXCEPTION_ASSERT_EQUALS(worker_mock.wait (1), true);
 
         int get_task_calls = dynamic_cast<const ScheduleMock*>(&*read1(schedule_mock))->get_task_calls;
         EXCEPTION_ASSERT_EQUALS(get_task_calls, 2);

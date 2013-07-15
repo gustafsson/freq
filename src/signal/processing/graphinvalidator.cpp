@@ -70,11 +70,12 @@ void GraphInvalidator::
 
         // wire up
         sleeper.start ();
-        usleep(1000);
         write1(dag)->appendStep(step);
         write1(step)->setInvalid(Signal::Intervals(20,30));
         EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals(20,30));
         EXCEPTION_ASSERT(sleeper.isRunning ());
+
+        EXCEPTION_ASSERT_EQUALS(sleeper.wait (1), false);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 1);
 
         // test
@@ -83,7 +84,7 @@ void GraphInvalidator::
         graphInvalidator.deprecateCache (step, dummy);
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals::Intervals_ALL);
-        usleep(1000);
+        sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());
     }

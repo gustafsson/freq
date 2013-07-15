@@ -72,7 +72,7 @@ void Bedroom::
         test()
 {
     // It should allow different threads to sleep on this object until another thread calls wakeup()
-    {
+    for (int j=0;j<2; j++) {
         Bedroom::Ptr bedroom(new Bedroom);
         int snoozes = 10;
         SleepyFaceMock sleepyface1(bedroom, snoozes);
@@ -82,7 +82,8 @@ void Bedroom::
         sleepyface2.start ();
 
         for (int i=snoozes; i>=0; i--) {
-            usleep(2000);
+            EXCEPTION_ASSERT_EQUALS(sleepyface1.wait (1), i>0?false:true);
+            EXCEPTION_ASSERT_EQUALS(sleepyface2.wait (1), i>0?false:true);
             EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), i>0?2:0);
             bedroom->wakeup();
             EXCEPTION_ASSERT_EQUALS(sleepyface1.snooze (), i);
