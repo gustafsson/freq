@@ -1,5 +1,6 @@
 #include "worker.h"
 #include "task.h"
+#include "detectgdb.h"
 
 namespace Signal {
 namespace Processing {
@@ -75,6 +76,9 @@ public:
 class GetTaskSegFaultMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
+        if (DetectGdb::is_running_through_gdb ())
+            throw SignalException(SIGSEGV);
+
         int a = *(int*)0; // cause segfault
         a=a;
         return Task::Ptr();
