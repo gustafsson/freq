@@ -5,27 +5,37 @@
 #include "targets.h"
 #include "dag.h"
 #include "workers.h"
+#include "graphinvalidator.h"
 
 namespace Signal {
 namespace Processing {
 
 /**
  * @brief The Chain class should manage the creation of new signal processing chains.
+ *
+ * It should provide the public interface for managing a signal processing chain.
  */
 class Chain: public VolatilePtr<Chain>
 {
 public:
     static Chain::Ptr createDefaultChain();
 
-    Dag::Ptr dag() const;
-    Targets::Ptr targets() const;
+    TargetNeeds::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
+    IInvalidator::Ptr addOperation(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
+    void removeOperations(TargetNeeds::Ptr at);
+    Signal::Interval extent(TargetNeeds::Ptr at) const;
+
+    // Add jumping around with targets later.
 
 private:
     Dag::Ptr dag_;
     Targets::Ptr targets_;
     Workers::Ptr workers_;
+    Bedroom::Ptr bedroom_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers);
+    Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom);
+
+    Step::Ptr insertStep(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
 
 public:
     static void test();

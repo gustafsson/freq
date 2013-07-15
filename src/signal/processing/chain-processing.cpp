@@ -4,6 +4,11 @@
 #include "sleepschedule.h"
 #include "targetschedule.h"
 
+#include <boost/foreach.hpp>
+#include <boost/graph/breadth_first_search.hpp>
+
+using namespace boost;
+
 namespace Signal {
 namespace Processing {
 
@@ -25,34 +30,144 @@ Chain::Ptr Chain::
     }
 
 
-    Chain::Ptr chain(new Chain(dag, targets, workers));
+    Chain::Ptr chain(new Chain(dag, targets, workers, bedroom));
 
     return chain;
 }
 
 
-Dag::Ptr Chain::
-        dag() const
+TargetNeeds::Ptr Chain::
+        addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
-    return dag_;
+    Step::Ptr step = insertStep(desc, at);
+
+    TargetNeeds::Ptr target_needs = write1(targets_)->addTarget(step);
+
+    return target_needs;
 }
 
 
-Targets::Ptr Chain::
-        targets() const
+IInvalidator::Ptr Chain::
+        addOperation(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
-    return targets_;
+    EXCEPTION_ASSERT (at);
+
+    Step::Ptr step = insertStep(desc, at);
+
+    IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
+
+    return graph_invalidator;
+}
+
+
+void Chain::
+        removeOperations(TargetNeeds::Ptr at)
+{
+    EXCEPTION_ASSERT (at);
+
+    Dag::WritePtr dag(dag_);
+
+    const Graph& g = dag->g ();
+    GraphVertex v = dag->getVertex (read1(at)->step());
+
+    std::vector<GraphEdge> inedges;
+    BOOST_FOREACH(GraphEdge e, in_edges(v, g)) {
+        inedges.push_back (e);
+    }
+
+    BOOST_FOREACH(GraphEdge e, inedges) {
+        dag->removeStep (g[source(e, g)]);
+    }
+}
+
+
+class find_extent: public default_bfs_visitor {
+public:
+    find_extent(boost::optional<Signal::Interval>* extent)
+        :   extent(extent)
+    {
+    }
+
+
+    void discover_vertex(GraphVertex u, const Graph & g)
+    {
+        if (*extent)
+            return;
+
+        Step::WritePtr step( g[u] ); // lock while studying what's needed
+        Signal::OperationDesc::Ptr od = step->operation_desc();
+        Signal::OperationDesc::Extent x = od->extent ();
+
+        // This doesn't really work with merged paths
+        *extent = x.interval;
+    }
+
+    boost::optional<Signal::Interval>* extent;
+};
+
+
+Signal::Interval Chain::
+        extent(TargetNeeds::Ptr at) const
+{
+    Dag::ReadPtr dag(dag_);
+
+    boost::optional<Signal::Interval> I;
+    GraphVertex vertex = dag->getVertex (read1(at)->step());
+    breadth_first_search(dag->g (), vertex, visitor(find_extent(&I)));
+
+    return I.get_value_or (Signal::Interval());
 }
 
 
 Chain::
-        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers)
+        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom)
     :
       dag_(dag),
       targets_(targets),
-      workers_(workers)
+      workers_(workers),
+      bedroom_(bedroom)
 {
 }
+
+
+Step::Ptr Chain::
+        insertStep(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
+{
+    Dag::WritePtr dag(dag_);
+    GraphVertex vertex = boost::graph_traits<Graph>::null_vertex ();
+    if (at)
+        vertex = dag->getVertex (read1(at)->step());
+
+    Step::Ptr step(new Step(desc));
+    dag->appendStep (step, vertex);
+
+    return step;
+}
+
+
+class OperationDescChainMock : public Signal::OperationDesc
+{
+    Signal::Interval requiredInterval( const Signal::Interval&, Signal::Interval* ) const {
+        EXCEPTION_ASSERTX(false, "not implemented");
+        return Signal::Interval();
+    }
+
+    OperationDesc::Ptr copy() const {
+        EXCEPTION_ASSERTX(false, "not implemented");
+        return OperationDesc::Ptr();
+    }
+
+    Operation::Ptr createOperation( ComputingEngine* ) const {
+        EXCEPTION_ASSERTX(false, "not implemented");
+        return Operation::Ptr();
+    }
+
+    Extent extent() const {
+        Extent x;
+        x.interval = Signal::Interval(3,5);
+        return x;
+    }
+};
 
 
 void Chain::
@@ -61,11 +176,20 @@ void Chain::
     // It should manage the creation of new signal processing chains
     {
         Chain::Ptr chain = Chain::createDefaultChain ();
-        Targets::Ptr targets = read1(chain)->targets();
-        Dag::Ptr dag = read1(chain)->dag();
 
-        EXCEPTION_ASSERT(targets);
-        EXCEPTION_ASSERT(dag);
+        Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
+        Signal::OperationDesc::Ptr source_desc(new OperationDescChainMock);
+
+        TargetNeeds::Ptr null;
+        TargetNeeds::Ptr target = write1(chain)->addTarget(target_desc, null);
+        IInvalidator::Ptr invalidator = write1(chain)->addOperation(source_desc, target);
+
+        EXCEPTION_ASSERT_EQUALS (read1(chain)->extent(target), Signal::Interval(3,5));
+
+        write1(chain)->removeOperations(target);
+
+        write1(target)->updateNeeds(Signal::Interval(4,6));
+        write1(invalidator)->deprecateCache(Signal::Interval(9,11));
     }
 }
 
