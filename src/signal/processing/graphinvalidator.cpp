@@ -65,7 +65,7 @@ void GraphInvalidator::
         // create
         Dag::Ptr dag(new Dag);
         Bedroom::Ptr bedroom(new Bedroom);
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         WaitForWakeupMock sleeper(bedroom);
 
         // wire up

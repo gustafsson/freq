@@ -63,7 +63,7 @@ void Targets::
     {
         // setup
         Bedroom::Ptr bedroom(new Bedroom);
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
 
         Targets::Ptr targets(new Targets(bedroom));
         TargetNeeds::Ptr updater( write1(targets)->addTarget(step) );

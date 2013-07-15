@@ -1,5 +1,7 @@
 #include "task.h"
 
+#include <boost/foreach.hpp>
+
 namespace Signal {
 namespace Processing {
 
@@ -61,15 +63,30 @@ Signal::pBuffer Task::
         needed -= actual_output;
     }
 
-    // Assume that the cache has been accurately setup
-    int num_channels = write1(step)->num_channels();
-    float fs = write1(step)->sample_rate();
-    Signal::pBuffer input_buffer(new Signal::Buffer(required_input.spannedInterval (), fs, num_channels));
-
     // Sum all sources
     std::vector<Step::Ptr> children = ReadPtr(this)->children_;
+    std::vector<Signal::pBuffer> buffers;
+    buffers.reserve (children.size ());
+
+    unsigned num_channels = 1; // Because a Signal::Buffer with 0 channels is invalid.
+    float sample_rate = 0;
     for (size_t i=0;i<children.size(); ++i)
-        *input_buffer += *write1(children[i])->readFixedLengthFromCache(required_input.spannedInterval ());
+    {
+        Signal::pBuffer b = write1(children[i])->readFixedLengthFromCache(required_input.spannedInterval ());
+        if (b) {
+            num_channels = std::max(num_channels, b->number_of_channels ());
+            sample_rate = std::max(sample_rate, b->sample_rate ());
+            buffers.push_back ( b );
+        }
+    }
+
+    Signal::pBuffer input_buffer(new Signal::Buffer(required_input.spannedInterval (), sample_rate, num_channels));
+
+    BOOST_FOREACH( Signal::pBuffer b, buffers )
+    {
+        for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
+            *input_buffer->getChannel (c) += *b->getChannel(c);
+    }
 
     return input_buffer;
 }
@@ -91,7 +108,7 @@ void Task::
         Signal::OperationDesc::Ptr od(new BufferSource(b));
 
         // setup a known signal processing step
-        Step::Ptr step (new Step(od, b->sample_rate (), b->number_of_channels ()));
+        Step::Ptr step (new Step(od));
         std::vector<Step::Ptr> children; // empty
         Signal::Interval expected_output(-10,80);
 
@@ -99,11 +116,11 @@ void Task::
         Task t(step, children, expected_output);
         t.run (Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
-        EXCEPTION_ASSERT_EQUALS(b->sample_rate (), write1(step)->sample_rate());
-        EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), write1(step)->num_channels());
-
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
         Signal::pBuffer r = write1(step)->readFixedLengthFromCache(to_read);
+        EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
+        EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
+
         Signal::Buffer expected_r(to_read, 40, 7);
         expected_r += *b;
 

@@ -5,9 +5,8 @@
 namespace Signal {
 namespace Processing {
 
-Step::Step(Signal::OperationDesc::Ptr operation_desc, float /*sample_rate*/, int num_channels)
+Step::Step(Signal::OperationDesc::Ptr operation_desc)
     :
-        cache_(num_channels), // TODO add sample_rate to the cache constructor here
         not_started_(Signal::Intervals::Intervals_ALL),
         operation_desc_(operation_desc)
 {
@@ -94,7 +93,8 @@ void Step::
 void Step::
         finishTask(volatile Task* t, Signal::pBuffer result)
 {
-    cache_.put (result);
+    if (!cache_) cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
+    cache_->put (result);
     running_tasks.erase (t);
 }
 
@@ -102,21 +102,7 @@ void Step::
 Signal::pBuffer Step::
         readFixedLengthFromCache(Signal::Interval I)
 {
-    return cache_.readFixedLength (I);
-}
-
-
-float Step::
-        sample_rate()
-{
-    return cache_.sample_rate ();
-}
-
-
-unsigned Step::
-        num_channels()
-{
-    return cache_.num_channels ();
+    return cache_ ? cache_->readFixedLength (I) : Signal::pBuffer();
 }
 
 
@@ -153,7 +139,7 @@ void Step::
         }
 
         // Create a Step
-        Step s(Signal::OperationDesc::Ptr(), 40, 7);
+        Step s((Signal::OperationDesc::Ptr()));
         s.registerTask(0, b->getInterval ());
         EXCEPTION_ASSERT_EQUALS(s.not_started (), ~Signal::Intervals(b->getInterval ()));
         EXCEPTION_ASSERT_EQUALS(s.out_of_date(), Signal::Intervals::Intervals_ALL);

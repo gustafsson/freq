@@ -104,7 +104,7 @@ void TargetSchedule::
 {
     // It should provide tasks to keep a Dag up-to-date with respect to all targets
     {
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         Dag::Ptr dag(new Dag);
         write1(dag)->appendStep(step);
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);

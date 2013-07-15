@@ -83,7 +83,7 @@ void TargetNeeds::
         test()
 {
     Bedroom::Ptr bedroom(new Bedroom);
-    Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
+    Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
 
     TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
 

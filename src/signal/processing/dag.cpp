@@ -129,9 +129,9 @@ void Dag::
     {
         Dag dag;
 
-        Step::Ptr step1(new Step(Signal::OperationDesc::Ptr(), 1, 1));
-        Step::Ptr step2(new Step(Signal::OperationDesc::Ptr(), 1, 2));
-        Step::Ptr step3(new Step(Signal::OperationDesc::Ptr(), 1, 3));
+        Step::Ptr step1(new Step(Signal::OperationDesc::Ptr()));
+        Step::Ptr step2(new Step(Signal::OperationDesc::Ptr()));
+        Step::Ptr step3(new Step(Signal::OperationDesc::Ptr()));
 
         dag.appendStep (step1);
         dag.appendStep (step2, dag.getVertex (step1));

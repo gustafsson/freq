@@ -117,7 +117,7 @@ void FirstMissAlgorithm::
         // Create an OperationDesc and a Step
         Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
         Signal::OperationDesc::Ptr od(new BufferSource(b));
-        Step::Ptr step(new Step(od, 40, 7));
+        Step::Ptr step(new Step(od));
 
         // Create a graph with only one vertex
         Graph g;
