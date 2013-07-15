@@ -177,7 +177,7 @@ void Workers::
         EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count);
     }
 
-    EXCEPTION_ASSERT_LESS(maxwait, 0.002);
+    EXCEPTION_ASSERT_LESS(maxwait, 0.004);
 }
 
 
