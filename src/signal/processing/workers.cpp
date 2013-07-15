@@ -3,8 +3,8 @@
 #include <boost/foreach.hpp>
 
 #include "workers.h"
-
 #include "targetschedule.h"
+#include "tools/support/timer.h"
 
 namespace Signal {
 namespace Processing {
@@ -18,7 +18,7 @@ Workers::
 }
 
 
-void Workers::
+Worker::Ptr Workers::
         addComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
     EXCEPTION_ASSERT(ce);
@@ -33,6 +33,8 @@ void Workers::
 
     // The computation is a background process with a priority one step lower than NormalPriority
     w->start (QThread::LowPriority);
+
+    return w;
 }
 
 
@@ -46,7 +48,8 @@ void Workers::
         EXCEPTION_ASSERTX(false, "No such engine");
 
     // Don't try to delete a running thread.
-    worker->second->exit_nicely_and_delete();
+    if (worker->second)
+        worker->second->exit_nicely_and_delete();
     workers_map_.erase (worker); // This doesn't delete worker, worker deletes itself (if there are any additional tasks).
 
     updateWorkers();
@@ -93,12 +96,18 @@ Workers::DeadEngines Workers::
             Signal::ComputingEngine::Ptr ce = i->first;
             dead[ce] = DeadEngines::mapped_type(0, "");
 
-        } else if (!worker->isRunning ()) {
-            // The worker has stopped but has not yet been deleted
-            Signal::ComputingEngine::Ptr ce = i->first;
-            dead[ce] = DeadEngines::mapped_type(worker->exception_type(), worker->exception_what());
+        } else {
+            // Worker::delete_later() is carried out in the event loop of the
+            // thread in which it was created. If the current thread here is
+            // the same thread, we know that worker is not deleted between the
+            // !worker check about and the usage of worker below:
+            if (!worker->isRunning ()) {
+                // The worker has stopped but has not yet been deleted
+                Signal::ComputingEngine::Ptr ce = i->first;
+                dead[ce] = DeadEngines::mapped_type(worker->exception_type(), worker->exception_what());
 
-            worker->deleteLater ();
+                worker->deleteLater ();
+            }
         }
     }
 
@@ -120,8 +129,11 @@ public:
     int get_task_count;
 
     virtual Task::Ptr getTask() volatile {
-        get_task_count++;
-        if (get_task_count%2)
+        WritePtr w(this);
+        GetEmptyTaskMock* self = dynamic_cast<GetEmptyTaskMock*>(&*w);
+
+        self->get_task_count++;
+        if (self->get_task_count%2)
             throw std::logic_error("test crash");
         else
             return Task::Ptr();
@@ -133,27 +145,35 @@ void Workers::
         test()
 {
     // It should start and stop computing engines as they are added and removed
-    {
-        ISchedule::Ptr gettaskp(new GetEmptyTaskMock);
-        ISchedule::WritePtr gettask(gettaskp);
-        GetEmptyTaskMock* schedulemock = dynamic_cast<GetEmptyTaskMock*>(&*gettask);
-        Workers schedule(gettaskp);
+    double maxwait = 0;
+    for (int j=0; j<100; j++) {
+        ISchedule::Ptr schedule(new GetEmptyTaskMock);
+        Workers workers(schedule);
 
-        int workers = 4;
-        for (int i=0; i<workers; ++i)
-            schedule.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+        int worker_count = 40;
+        std::list<Worker::Ptr> workerlist;
+        for (int i=0; i<worker_count; ++i) {
+            Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+            workerlist.push_back (w);
+        }
 
-        usleep(13000);
+        // Wait until they're done
+        Tools::Support::Timer t;
+        BOOST_FOREACH (Worker::Ptr& w, workerlist) w->wait (1);
+        maxwait = std::max(maxwait, t.elapsed ());
 
-        EXCEPTION_ASSERT_EQUALS(schedulemock->get_task_count, workers);
+        int get_task_count = dynamic_cast<const GetEmptyTaskMock*>(&*read1(schedule))->get_task_count;
+        EXCEPTION_ASSERT_EQUALS(get_task_count, worker_count);
 
-        Workers::DeadEngines dead = schedule.clean_dead_workers ();
-        Engines engines = schedule.workers();
+        Workers::DeadEngines dead = workers.clean_dead_workers ();
+        Engines engines = workers.workers();
 
         // If failing here, try to increase the sleep period above.
         EXCEPTION_ASSERT_EQUALS(engines.size (), 0);
-        EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)workers);
+        EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count);
     }
+
+    EXCEPTION_ASSERT_LESS(maxwait, 0.0005);
 }
 
 

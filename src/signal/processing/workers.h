@@ -25,16 +25,24 @@ public:
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.
-    void addComputingEngine(Signal::ComputingEngine::Ptr ce);
+    Worker::Ptr addComputingEngine(Signal::ComputingEngine::Ptr ce);
 
-    // Throw exception if not found
+    /**
+     * Throw exception if this engine was never added or already removed. The
+     * thread can be stopped without calling removeComputingEngine. Call
+     * clean_dead_workers() to remove them from the workers() list.
+     */
     void removeComputingEngine(Signal::ComputingEngine::Ptr ce);
 
     typedef std::vector<Signal::ComputingEngine::Ptr> Engines;
     const Engines& workers() const;
     size_t n_workers() const;
 
-    // Check if any workers has died. This also cleans any dead workers.
+    /**
+     * Check if any workers has died. This also cleans any dead workers.
+     * It is only valid to call this method from the same thread as they were
+     * added.
+     */
     typedef std::map<Signal::ComputingEngine::Ptr, std::pair<const std::type_info*,std::string> > DeadEngines;
     DeadEngines clean_dead_workers();
 
