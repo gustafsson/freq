@@ -120,11 +120,21 @@ public:
 
 
     /**
-     * @brief extent describes the extent of this operation. Extent is allowed
-     * to change during the lifetime of an OperationDesc.
-     * @return No Interval unless this operation creates any special extent.
+     * @brief The SignalExtent struct is returned by OperationDesc::extent ()
      */
-    virtual boost::optional<Interval> extent() const;
+    struct Extent {
+        boost::optional<Interval> interval;
+        boost::optional<float> sample_rate;
+        boost::optional<int> number_of_channels;
+    };
+
+
+    /**
+     * @brief extent describes the extent of this operation. Extent::interval is allowed
+     * to change during the lifetime of an OperationDesc.
+     * @return Does not initialize anything unless this operation creates any special extent.
+     */
+    virtual Extent extent() const;
 
 
     /**

@@ -41,10 +41,10 @@ Signal::Interval OperationDesc::
 }
 
 
-boost::optional<Interval> OperationDesc::
+OperationDesc::Extent OperationDesc::
         extent() const
 {
-    return boost::optional<Interval>();
+    return Extent();
 }
 
 
