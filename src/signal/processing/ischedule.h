@@ -20,6 +20,13 @@ class ISchedule: public VolatilePtr<ISchedule>
 public:
     virtual ~ISchedule() {}
 
+    /**
+     * @brief getTask finds if there is something to work on.
+     *
+     * Note that multiple threads may call getTask simultaneously (see VolatilePtr)
+     *
+     * @return
+     */
     virtual boost::shared_ptr<volatile Task> getTask() volatile=0;
 };
 
