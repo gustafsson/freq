@@ -1,11 +1,11 @@
 #ifndef SIGNAL_PROCESSING_DAG_H
 #define SIGNAL_PROCESSING_DAG_H
 
-#include <boost/graph/directed_graph.hpp>
-
-#include "target.h"
 #include "step.h"
+
 #include "volatileptr.h"
+
+#include <boost/graph/directed_graph.hpp>
 
 namespace Signal {
 namespace Processing {

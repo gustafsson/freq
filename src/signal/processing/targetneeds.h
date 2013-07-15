@@ -1,28 +1,39 @@
-#ifndef SIGNAL_PROCESSING_TARGET_H
-#define SIGNAL_PROCESSING_TARGET_H
+#ifndef SIGNAL_PROCESSING_TARGETNEEDS_H
+#define SIGNAL_PROCESSING_TARGETNEEDS_H
 
 #include "signal/intervals.h"
-#include "step.h"
+#include "bedroom.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 
 namespace Signal {
 namespace Processing {
 
+class Step;
+
 /**
- * @brief The TargetInfo class should provide information to prioritize tasks.
- *
- * Issues:
- * rename to TargetInfo.
+ * @brief The TargetNeeds class should describe what needs to be computed for a target.
  */
-class Target: public VolatilePtr<Target>
+class TargetNeeds: public VolatilePtr<TargetNeeds>
 {
 public:
-    Target(Step::Ptr step) : step(step) {}
+    TargetNeeds(boost::shared_ptr<volatile Step> step_, Bedroom::Ptr bedroom);
 
-    const Step::Ptr step;
-    boost::posix_time::ptime last_request;
-    Signal::IntervalType work_center;
+    void updateNeeds(Signal::Intervals intervals, int prio=0, Signal::IntervalType center=Signal::Interval::IntervalType_MIN);
+
+    const boost::shared_ptr<volatile Step> step() const;
+    boost::posix_time::ptime last_request() const;
+    Signal::IntervalType work_center() const;
+
+private:
+    const boost::shared_ptr<volatile Step> step_;
+    boost::posix_time::ptime last_request_;
+    Signal::IntervalType work_center_;
+
+    Bedroom::Ptr bedroom;
+
+public:
+    static void test();
 };
 
 /*
@@ -210,4 +221,4 @@ private:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_TARGET_H
+#endif // SIGNAL_PROCESSING_TARGETNEEDS_H

@@ -2,8 +2,7 @@
 #define SIGNAL_PROCESSING_TARGETS_H
 
 #include "step.h"
-#include "target.h"
-#include "targetupdater.h"
+#include "targetneeds.h"
 #include "bedroom.h"
 #include "dag.h"
 
@@ -17,18 +16,17 @@ namespace Processing {
 class Targets: public VolatilePtr<Targets>
 {
 public:
-    Targets(Dag::Ptr dag, Bedroom::Ptr bedroom);
+    Targets(Bedroom::Ptr bedroom);
 
-    ITargetUpdater::Ptr      addTarget(Step::Ptr step);
-    void                     removeTarget(Step::Ptr step);
-    std::vector<Step::Ptr>   getTargetSteps() const;
-    std::vector<Target::Ptr> getTargets() const;
+    TargetNeeds::Ptr              addTarget(Step::Ptr step);
+    void                          removeTarget(Step::Ptr step);
+    std::vector<Step::Ptr>        getTargetSteps() const;
+    std::vector<TargetNeeds::Ptr> getTargets() const;
 
 private:
-    Dag::Ptr dag_;
     Bedroom::Ptr bedroom_;
 
-    typedef std::vector<Target::Ptr> TargetInfos;
+    typedef std::vector<TargetNeeds::Ptr> TargetInfos;
     TargetInfos targets;
 
 public:

@@ -13,7 +13,7 @@ Chain::Ptr Chain::
 {
     Dag::Ptr dag(new Dag);
     Bedroom::Ptr bedroom(new Bedroom);
-    Targets::Ptr targets(new Targets(dag, bedroom));
+    Targets::Ptr targets(new Targets(bedroom));
 
     IScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
     ISchedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));

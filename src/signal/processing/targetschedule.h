@@ -23,7 +23,7 @@ private:
     Dag::Ptr g;
     IScheduleAlgorithm::Ptr algorithm;
 
-    Target::Ptr prioritizedTarget() const;
+    TargetNeeds::Ptr prioritizedTarget() const;
 
 public:
     static void test();

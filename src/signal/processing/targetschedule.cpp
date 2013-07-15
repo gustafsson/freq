@@ -32,7 +32,7 @@ Task::Ptr TargetSchedule::
     // Lock the graph from writing during getTask
     Dag::ReadPtr dag(self->g);
 
-    Target::Ptr priotarget = self->prioritizedTarget();
+    TargetNeeds::Ptr priotarget = self->prioritizedTarget();
     if (!priotarget)
         return Task::Ptr();
 
@@ -42,10 +42,10 @@ Task::Ptr TargetSchedule::
 
     // Read info from target
     {
-        Target::WritePtr target(priotarget);
-        step = target->step;
+        TargetNeeds::WritePtr target(priotarget);
+        step = target->step();
         missing_in_target = read1(step)->not_started();
-        work_center = target->work_center;
+        work_center = target->work_center();
     }
 
     GraphVertex vertex = dag->getVertex(step);
@@ -60,15 +60,15 @@ Task::Ptr TargetSchedule::
 }
 
 
-Target::Ptr TargetSchedule::
+TargetNeeds::Ptr TargetSchedule::
         prioritizedTarget() const
 {
-    Target::Ptr target;
+    TargetNeeds::Ptr target;
 
     ptime latest(neg_infin);
-    BOOST_FOREACH(Target::Ptr t, read1(targets)->getTargets())
+    BOOST_FOREACH(TargetNeeds::Ptr t, read1(targets)->getTargets())
     {
-        ptime last_request = read1(t)->last_request;
+        ptime last_request = read1(t)->last_request();
 
         if (latest < last_request) {
             latest = last_request;
@@ -106,7 +106,7 @@ void TargetSchedule::
         write1(dag)->appendStep(step);
 
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
-        Targets::Ptr targets(new Targets(dag, Bedroom::Ptr(new Bedroom)));
+        Targets::Ptr targets(new Targets(Bedroom::Ptr(new Bedroom)));
         //targets.push_back (Target::Ptr(new GetDagTask_TargetMockup(step)));
         TargetSchedule getdagtask(dag, algorithm, targets);
         Task::Ptr task = getdagtask.getTask ();
