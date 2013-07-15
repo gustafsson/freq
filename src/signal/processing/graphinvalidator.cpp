@@ -7,22 +7,32 @@ namespace Signal {
 namespace Processing {
 
 GraphInvalidator::
-        GraphInvalidator(Dag::Ptr dag, Bedroom::Ptr bedroom)
+        GraphInvalidator(Dag::WeakPtr dag, Bedroom::WeakPtr bedroom, Step::WeakPtr step)
     :
       dag_(dag),
-      bedroom_(bedroom)
+      bedroom_(bedroom),
+      step_(step)
 {
-    EXCEPTION_ASSERT(dag);
-    EXCEPTION_ASSERT(bedroom_);
+    EXCEPTION_ASSERT(dag.lock ());
+    EXCEPTION_ASSERT(bedroom.lock ());
+    EXCEPTION_ASSERT(step.lock ());
 }
 
 
 void GraphInvalidator::
-        deprecateCache(Step::Ptr s, Signal::Intervals /*what*/) const
+        deprecateCache(Signal::Intervals /*what*/) const
 {
-    deprecateCache(Dag::ReadPtr(dag_), s);
+    Dag::Ptr dag = dag_.lock ();
+    Bedroom::Ptr bedroom = bedroom_.lock ();
+    Step::Ptr step = step_.lock ();
 
-    bedroom_->wakeup ();
+    if (!dag || !bedroom || !step)
+        return;
+
+    // can't make use of what
+    deprecateCache(Dag::ReadPtr(dag), step);
+
+    bedroom->wakeup ();
 }
 
 
@@ -79,9 +89,9 @@ void GraphInvalidator::
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 1);
 
         // test
-        GraphInvalidator graphInvalidator(dag, bedroom);
+        GraphInvalidator graphInvalidator(dag, bedroom, step);
         Signal::Intervals dummy;
-        graphInvalidator.deprecateCache (step, dummy);
+        graphInvalidator.deprecateCache (dummy);
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals::Intervals_ALL);
         sleeper.wait (1);

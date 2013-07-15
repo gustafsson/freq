@@ -10,20 +10,23 @@ namespace Processing {
 
 /**
  * @brief The GraphInvalidator class should invalidate caches and wakeup workers.
+ *
+ * It will silently stop doing anything if any of it's dependencies are deleted.
  */
 class GraphInvalidator: public IInvalidator
 {
 public:
-    GraphInvalidator(Dag::Ptr dag, Bedroom::Ptr bedroom);
+    GraphInvalidator(Dag::WeakPtr dag, Bedroom::WeakPtr bedroom, Step::WeakPtr step);
 
-    void deprecateCache(Step::Ptr s, Signal::Intervals what) const;
+    void deprecateCache(Signal::Intervals what) const;
 
 private:
     // invalidate steps (only deprecateCache(Interval::Interval_ALL) until OperationDesc supports 'affectedInterval' (inverse of requiredInterval))
     void deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s) const;
 
-    Dag::Ptr dag_;
-    Bedroom::Ptr bedroom_;
+    Dag::WeakPtr dag_;
+    Bedroom::WeakPtr bedroom_;
+    Step::WeakPtr step_;
 
 public:
     static void test();

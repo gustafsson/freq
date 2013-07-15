@@ -7,8 +7,6 @@
 namespace Signal {
 namespace Processing {
 
-class Step;
-
 /**
  * @brief The IInvalidator interface should invalidate step cache and its implementation specific dependencies.
  *
@@ -19,7 +17,7 @@ class IInvalidator: public VolatilePtr<IInvalidator>
 public:
     virtual ~IInvalidator() {}
 
-    virtual void deprecateCache(boost::shared_ptr<volatile Step> at, Signal::Intervals what) const=0;
+    virtual void deprecateCache(Signal::Intervals what) const=0;
 };
 
 } // namespace Processing
