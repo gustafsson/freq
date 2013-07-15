@@ -12,7 +12,7 @@ TargetNeeds::
         TargetNeeds(boost::shared_ptr<volatile Step> step, Bedroom::Ptr bedroom)
     :
       step_(step),
-      bedroom(bedroom)
+      bedroom_(bedroom)
 {
     EXCEPTION_ASSERT(step);
     EXCEPTION_ASSERT(bedroom);
@@ -31,7 +31,7 @@ void TargetNeeds::
 
     write1(step_)->deprecateCache(invalidate);
 
-    bedroom->wakeup();
+    bedroom_->wakeup();
 }
 
 
@@ -67,6 +67,14 @@ Signal::Intervals TargetNeeds::
         out_of_date() const
 {
     return needed_samples_ & read1(step_)->out_of_date();
+}
+
+
+void TargetNeeds::
+        sleep() volatile
+{
+    Bedroom::Ptr bedroom = TargetNeeds::ReadPtr(this)->bedroom_;
+    bedroom->sleep();
 }
 
 

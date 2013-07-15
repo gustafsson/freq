@@ -47,13 +47,18 @@ public:
     Signal::Intervals out_of_date() const;
     Signal::Intervals not_started() const;
 
+    /**
+     * @brief sleep sleeps the caller until wakeup is called.
+     */
+    void sleep() volatile;
+
 private:
     const boost::shared_ptr<volatile Step> step_;
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;
     Signal::Intervals needed_samples_;
 
-    Bedroom::Ptr bedroom;
+    Bedroom::Ptr bedroom_;
 
 public:
     static void test();
