@@ -1,6 +1,8 @@
 #include "targets.h"
 #include "graphinvalidator.h"
 
+#include <boost/foreach.hpp>
+
 namespace Signal {
 namespace Processing {
 
@@ -16,40 +18,35 @@ TargetNeeds::Ptr Targets::
         addTarget(Step::Ptr step)
 {
     TargetNeeds::Ptr target(new TargetNeeds(step, bedroom_));
+    targets.push_back (target);
+
+    // perform gc
+    Targets::TargetNeedsCollection T = getTargets();
+    targets.clear ();
+    targets.reserve (T.size ());
+    BOOST_FOREACH(const TargetNeeds::Ptr& i, T) {
+        targets.push_back (i);
+    }
+
     return target;
 }
 
 
-void Targets::
-        removeTarget(Step::Ptr step)
-{
-    for (TargetInfos::iterator i=targets.begin (); i!=targets.end (); ++i) {
-        TargetNeeds::Ptr t = *i;
-        if (read1(t)->step() == step)
-            targets.erase (i);
-    }
-}
-
-
-std::vector<Step::Ptr> Targets::
-        getTargetSteps() const
-{
-    std::vector<Step::Ptr> T;
-
-    for (TargetInfos::const_iterator i=targets.begin (); i!=targets.end (); ++i) {
-        TargetNeeds::Ptr t = *i;
-        T.push_back (read1(t)->step());
-    }
-
-    return T;
-}
-
-
-std::vector<TargetNeeds::Ptr> Targets::
+Targets::TargetNeedsCollection Targets::
         getTargets() const
 {
-    return targets;
+    TargetNeedsCollection C;
+    C.reserve (targets.size ());
+
+    BOOST_FOREACH(const TargetNeeds::WeakPtr& i, targets) {
+        TargetNeeds::Ptr t( i );
+        if (t)
+            C.push_back (t);
+    }
+
+    return C;
 }
+
 
 } // namespace Processing
 } // namespace Signal
@@ -69,7 +66,7 @@ void Targets::
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr(), 1, 2));
 
         Targets::Ptr targets(new Targets(bedroom));
-        TargetNeeds::Ptr updater = write1(targets)->addTarget(step);
+        TargetNeeds::Ptr updater( write1(targets)->addTarget(step) );
         EXCEPTION_ASSERT(updater);
         EXCEPTION_ASSERT(read1(updater)->step() == step);
     }
