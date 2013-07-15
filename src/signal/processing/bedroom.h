@@ -24,6 +24,7 @@ public:
     void sleep() volatile;
 
     int sleepers() const volatile;
+
 private:
     int sleepers_;
     QWaitCondition work_condition;

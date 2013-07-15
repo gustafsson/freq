@@ -18,8 +18,8 @@ namespace Ui {
 class CommandHistory : public QWidget
 {
     Q_OBJECT
-
 public:
+
     explicit CommandHistory(CommandInvoker* command_invoker);
     ~CommandHistory();
 
