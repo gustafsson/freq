@@ -132,6 +132,10 @@ public:
         WritePtr w(this);
         GetEmptyTaskMock* self = dynamic_cast<GetEmptyTaskMock*>(&*w);
 
+        //GetEmptyTaskMock* self = const_cast<GetEmptyTaskMock*>(this);
+        //__sync_fetch_and_add (&self->get_task_count, 1);
+
+        // could also use boost::detail::atomic_count get_task_count
         self->get_task_count++;
         if (self->get_task_count%2)
             throw std::logic_error("test crash");
@@ -146,11 +150,12 @@ void Workers::
 {
     // It should start and stop computing engines as they are added and removed
     double maxwait = 0;
-    for (int j=0; j<100; j++) {
+    {
         ISchedule::Ptr schedule(new GetEmptyTaskMock);
         Workers workers(schedule);
 
-        int worker_count = 40;
+        Tools::Support::Timer t;
+        int worker_count = 40; // Multiplying by 10 multiplies the elapsed time by a factor of 100.
         std::list<Worker::Ptr> workerlist;
         for (int i=0; i<worker_count; ++i) {
             Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
@@ -158,7 +163,6 @@ void Workers::
         }
 
         // Wait until they're done
-        Tools::Support::Timer t;
         BOOST_FOREACH (Worker::Ptr& w, workerlist) w->wait (1);
         maxwait = std::max(maxwait, t.elapsed ());
 
@@ -173,7 +177,7 @@ void Workers::
         EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count);
     }
 
-    EXCEPTION_ASSERT_LESS(maxwait, 0.0005);
+    EXCEPTION_ASSERT_LESS(maxwait, 0.002);
 }
 
 
