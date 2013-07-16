@@ -21,8 +21,7 @@ public:
     void deprecateCache(Signal::Intervals what) const;
 
 private:
-    // invalidate steps (only deprecateCache(Interval::Interval_ALL) until OperationDesc supports 'affectedInterval' (inverse of requiredInterval))
-    void deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s) const;
+    void deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s, Signal::Intervals what) const;
 
     Dag::WeakPtr dag_;
     Bedroom::WeakPtr bedroom_;

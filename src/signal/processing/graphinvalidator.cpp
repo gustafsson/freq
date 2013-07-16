@@ -20,7 +20,7 @@ GraphInvalidator::
 
 
 void GraphInvalidator::
-        deprecateCache(Signal::Intervals /*what*/) const
+        deprecateCache(Signal::Intervals what) const
 {
     Dag::Ptr dag = dag_.lock ();
     Bedroom::Ptr bedroom = bedroom_.lock ();
@@ -29,20 +29,19 @@ void GraphInvalidator::
     if (!dag || !bedroom || !step)
         return;
 
-    // can't make use of what
-    deprecateCache(Dag::ReadPtr(dag), step);
+    deprecateCache(Dag::ReadPtr(dag), step, what);
 
     bedroom->wakeup ();
 }
 
 
 void GraphInvalidator::
-        deprecateCache(const Dag::ReadPtr& dag, Step::Ptr s) const
+        deprecateCache(const Dag::ReadPtr& dag, Step::Ptr step, Signal::Intervals what) const
 {
-    write1(s)->deprecateCache(Signal::Intervals::Intervals_ALL);
+    what = write1(step)->deprecateCache(what);
 
-    BOOST_FOREACH(Step::Ptr ts, dag->targetSteps(s)) {
-        deprecateCache(dag, ts);
+    BOOST_FOREACH(Step::Ptr ts, dag->targetSteps(step)) {
+        deprecateCache(dag, ts, what);
     }
 }
 
@@ -81,8 +80,9 @@ void GraphInvalidator::
         // wire up
         sleeper.start ();
         write1(dag)->appendStep(step);
-        write1(step)->setInvalid(Signal::Intervals(20,30));
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals(20,30));
+        Signal::Intervals initial_invalid(20,30);
+        write1(step)->setInvalid(initial_invalid);
+        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), initial_invalid);
         EXCEPTION_ASSERT(sleeper.isRunning ());
 
         EXCEPTION_ASSERT_EQUALS(sleeper.wait (1), false);
@@ -90,10 +90,10 @@ void GraphInvalidator::
 
         // test
         GraphInvalidator graphInvalidator(dag, bedroom, step);
-        Signal::Intervals dummy;
-        graphInvalidator.deprecateCache (dummy);
+        Signal::Intervals deprected(40,50);
+        graphInvalidator.deprecateCache (deprected);
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), Signal::Intervals::Intervals_ALL);
+        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), initial_invalid | deprected);
         sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());

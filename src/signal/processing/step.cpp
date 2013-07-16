@@ -27,10 +27,14 @@ Signal::Intervals Step::
 }
 
 
-void Step::
+Signal::Intervals Step::
         deprecateCache(Signal::Intervals deprecated)
 {
+    if (operation_desc_)
+        deprecated = operation_desc_->affectedInterval(deprecated);
+
     not_started_ |= deprecated;
+    return deprecated;
 }
 
 

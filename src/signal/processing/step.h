@@ -16,7 +16,12 @@ class Step: public VolatilePtr<Step>
 public:
     Step(Signal::OperationDesc::Ptr operation_desc);
 
-    void                        deprecateCache(Signal::Intervals deprecated);
+    /**
+     * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
+     * @param deprecated_input
+     * @return which intervals in the cache that was affected by 'deprecated_input'
+     */
+    Signal::Intervals           deprecateCache(Signal::Intervals deprecated_input);
     void                        setInvalid(Signal::Intervals invalid); // implicitly validates ~invalid
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
