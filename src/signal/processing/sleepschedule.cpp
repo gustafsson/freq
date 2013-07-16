@@ -9,34 +9,42 @@ SleepSchedule::
         SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule)
     :
       bedroom(bedroom),
-      schedule(schedule)
+      schedule(schedule),
+      enough(false)
 {
+}
+
+
+SleepSchedule::
+        ~SleepSchedule()
+{
+    enough = true;
+    bedroom->wakeup();
+    bedroom->sleep();
 }
 
 
 Task::Ptr SleepSchedule::
         getTask() volatile
 {
-    Task::Ptr task;
     Bedroom::Ptr bedroom;
+    ISchedule::Ptr schedule;
 
     {
         ReadPtr that(this);
-        const SleepSchedule* self = dynamic_cast<const SleepSchedule*>((const ISchedule*)that);
+        const SleepSchedule* self = (const SleepSchedule*)&*that;
+
         bedroom = self->bedroom;
+        schedule = self->schedule;
     }
 
-    while (true) {
-        {
-            ReadPtr that(this);
-            const SleepSchedule* self = dynamic_cast<const SleepSchedule*>((const ISchedule*)that);
+    for (;;) {
+        Task::Ptr task = schedule->getTask();
 
-            if (self->schedule)
-                task = self->schedule->getTask();
-        }
-
-        if (task)
+        if (task || enough) {
+            bedroom->wakeup();
             return task;
+        }
 
         bedroom->sleep();
     }

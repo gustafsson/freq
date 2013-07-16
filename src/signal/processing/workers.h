@@ -22,6 +22,7 @@ class Workers: public VolatilePtr<Workers>
 {
 public:
     Workers(ISchedule::Ptr schedule);
+    ~Workers();
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.

@@ -6,10 +6,10 @@ namespace Signal {
 namespace Processing {
 
 Worker::
-        Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::Ptr scheduel)
+        Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::WeakPtr schedule)
     :
       computing_eninge_(computing_eninge),
-      schedule_(scheduel),
+      schedule_(schedule),
       enough_(false),
       exception_type_(0)
 {
@@ -20,14 +20,18 @@ void Worker::
         run()
 {
     try {
-        Task::Ptr task;
 
-        while (task = schedule_->getTask())
+        while (!enough_)
         {
-            task->run(computing_eninge_);
-
-            if (enough_)
+            ISchedule::Ptr schedule = schedule_.lock ();
+            if (!schedule)
                 break;
+
+            Task::Ptr task = schedule->getTask();
+            if (!task)
+                break;
+
+            task->run(computing_eninge_);
         }
     } catch (const std::exception& x) {
         exception_what_ = x.what();
@@ -76,7 +80,7 @@ public:
 class GetTaskSegFaultMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
-        if (DetectGdb::is_running_through_gdb ())
+        if (DetectGdb::was_started_through_gdb ())
             throw SignalException(SIGSEGV);
 
         int a = *(int*)0; // cause segfault

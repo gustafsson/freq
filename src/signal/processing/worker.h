@@ -28,7 +28,7 @@ public:
     // objects that delete themselves.
     typedef QPointer<Worker> Ptr;
 
-    Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::Ptr scheduel);
+    Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::WeakPtr schedule);
 
     // Delete when finished
     virtual void run ();
@@ -43,7 +43,7 @@ public:
 
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
-    ISchedule::Ptr schedule_;
+    ISchedule::WeakPtr schedule_;
     bool enough_;
 
     std::string exception_what_;

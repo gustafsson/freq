@@ -16,6 +16,7 @@ class SleepSchedule: public ISchedule
 {
 public:
     SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule);
+    ~SleepSchedule();
 
     // Sleeps until a task can be returned
     virtual boost::shared_ptr<volatile Task> getTask() volatile;
@@ -23,6 +24,7 @@ public:
 private:
     Bedroom::Ptr bedroom;
     ISchedule::Ptr schedule;
+    bool enough;
 
 public:
     static void test();
