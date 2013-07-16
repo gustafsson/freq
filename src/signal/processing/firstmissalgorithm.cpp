@@ -1,5 +1,7 @@
 #include "firstmissalgorithm.h"
 
+#include "reversegraph.h"
+
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
@@ -81,13 +83,16 @@ public:
 
 
 Task::Ptr FirstMissAlgorithm::
-        getTask(const Graph& g,
-                GraphVertex target,
+        getTask(const Graph& straight_g,
+                GraphVertex straight_target,
                 Signal::Intervals missing_in_target,
                 Signal::IntervalType center,
                 Workers::Ptr workers,
                 Signal::ComputingEngine::Ptr /*engine*/) const
 {
+    Graph g; ReverseGraph::reverse_graph (straight_g, g);
+    GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
+
     int preferred_size = missing_in_target.count ();
 
     if (workers)

@@ -3,6 +3,7 @@
 #include "firstmissalgorithm.h"
 #include "sleepschedule.h"
 #include "targetschedule.h"
+#include "reversegraph.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -101,6 +102,7 @@ public:
         Signal::OperationDesc::Extent x = od->extent ();
 
         // This doesn't really work with merged paths
+        // But it could be extended to support that by merging the extents of merged paths.
         *extent = x.interval;
     }
 
@@ -112,10 +114,13 @@ Signal::Interval Chain::
         extent(TargetNeeds::Ptr at) const
 {
     Dag::ReadPtr dag(dag_);
+    Step::Ptr step = read1(at)->step();
+
+    Graph rev; ReverseGraph::reverse_graph (dag->g (), rev);
+    GraphVertex at_vertex = ReverseGraph::find_first_vertex (rev, step);
 
     boost::optional<Signal::Interval> I;
-    GraphVertex vertex = dag->getVertex (read1(at)->step());
-    breadth_first_search(dag->g (), vertex, visitor(find_extent(&I)));
+    breadth_first_search(rev, at_vertex, visitor(find_extent(&I)));
 
     return I.get_value_or (Signal::Interval());
 }
