@@ -95,12 +95,17 @@ void TargetNeeds::
 
     TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
 
-    write1(step)->setInvalid(Signal::Interval(-10,10));
-    EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval(-10,10) );
+    Signal::Intervals initial_valid(0,60);
+    write1(step)->registerTask((volatile Task*)0, initial_valid.spannedInterval ());
+
+    EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
+    EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
     EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval() );
     write1(target_needs)->updateNeeds(Signal::Interval(-15,5), 0, 0);
-    EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval(-10,10) );
-    EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval(-10,5) );
+    EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
+    EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
+    EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval(-15,5) );
+    EXCEPTION_ASSERT_EQUALS( read1(target_needs)->not_started(), Signal::Interval(-15,0) );
 }
 
 } // namespace Processing

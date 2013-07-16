@@ -80,9 +80,9 @@ void GraphInvalidator::
         // wire up
         sleeper.start ();
         write1(dag)->appendStep(step);
-        Signal::Intervals initial_invalid(20,30);
-        write1(step)->setInvalid(initial_invalid);
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), initial_invalid);
+        Signal::Intervals initial_valid(-20,60);
+        write1(step)->registerTask((volatile Task*)0, initial_valid.spannedInterval ());
+        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), ~initial_valid);
         EXCEPTION_ASSERT(sleeper.isRunning ());
 
         EXCEPTION_ASSERT_EQUALS(sleeper.wait (1), false);
@@ -93,7 +93,7 @@ void GraphInvalidator::
         Signal::Intervals deprected(40,50);
         graphInvalidator.deprecateCache (deprected);
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), initial_invalid | deprected);
+        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), ~initial_valid | deprected);
         sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());
