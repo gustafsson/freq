@@ -39,7 +39,7 @@ Chain::Ptr Chain::
 TargetNeeds::Ptr Chain::
         addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
-    Step::Ptr step = insertStep(desc, at);
+    Step::Ptr step = insertStep(Dag::WritePtr(dag_), desc, at);
 
     TargetNeeds::Ptr target_needs = write1(targets_)->addTarget(step);
 
@@ -52,7 +52,7 @@ IInvalidator::Ptr Chain::
 {
     EXCEPTION_ASSERT (at);
 
-    Step::Ptr step = insertStep(desc, at);
+    Step::Ptr step = insertStep(Dag::WritePtr(dag_), desc, at);
 
     IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
 
@@ -131,9 +131,8 @@ Chain::
 
 
 Step::Ptr Chain::
-        insertStep(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
+        insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
-    Dag::WritePtr dag(dag_);
     GraphVertex vertex = boost::graph_traits<Graph>::null_vertex ();
     if (at)
         vertex = dag->getVertex (read1(at)->step());

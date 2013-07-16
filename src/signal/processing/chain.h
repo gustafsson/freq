@@ -14,6 +14,9 @@ namespace Processing {
  * @brief The Chain class should manage the creation of new signal processing chains.
  *
  * It should provide the public interface for managing a signal processing chain.
+ *
+ * Doesn't really need VolatilePtr since all member variables are thread safe
+ * by themselves. But using VolatilePtr
  */
 class Chain: public VolatilePtr<Chain>
 {
@@ -35,7 +38,7 @@ private:
 
     Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom);
 
-    Step::Ptr insertStep(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
+    Step::Ptr insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
 
 public:
     static void test();
