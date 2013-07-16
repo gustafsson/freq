@@ -23,7 +23,17 @@ class Chain: public VolatilePtr<Chain>
 public:
     static Chain::Ptr createDefaultChain();
 
-    TargetNeeds::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
+    TargetNeeds::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at=TargetNeeds::Ptr());
+    /**
+     * @brief addOperation
+     * @param desc
+     * @param at
+     * @return
+     *
+     * Call IInvalidator::deprecateCache to update the chain with the samples that
+     * were affected by this definition. A generic call would be
+     * 'read1(invalidator)->deprecateCache(chain->extent(at));'
+     */
     IInvalidator::Ptr addOperation(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
     void removeOperations(TargetNeeds::Ptr at);
     Signal::Interval extent(TargetNeeds::Ptr at) const;
