@@ -21,8 +21,6 @@ Workers::
 Worker::Ptr Workers::
         addComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
-    EXCEPTION_ASSERT(ce);
-
     if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
@@ -41,8 +39,6 @@ Worker::Ptr Workers::
 void Workers::
         removeComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
-    EXCEPTION_ASSERT(ce);
-
     EngineWorkerMap::iterator worker = workers_map_.find (ce);
     if (worker == workers_map_.end ())
         EXCEPTION_ASSERTX(false, "No such engine");
@@ -157,7 +153,9 @@ void Workers::
         Tools::Support::Timer t;
         int worker_count = 40; // Multiplying by 10 multiplies the elapsed time by a factor of 100.
         std::list<Worker::Ptr> workerlist;
-        for (int i=0; i<worker_count; ++i) {
+        Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr());
+        workerlist.push_back (w);
+        for (int i=1; i<worker_count; ++i) {
             Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
             workerlist.push_back (w);
         }
