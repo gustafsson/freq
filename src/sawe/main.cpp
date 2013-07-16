@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
 
             tt.info("firstSample = %u", firstSample);
             tt.info("time_support = %u", time_support);
-            Adapters::WriteWav::writeToDisk("invtest.wav", pBuffer(new Buffer(inv)), false);
+            Adapters::WriteWav::writeToDisk("invtest.wav", pBuffer(new Signal::Buffer(inv)), false);
             return 0;
         }
 
