@@ -461,6 +461,13 @@ Signal::Interval AudiofileDesc::
 }
 
 
+Signal::Interval AudiofileDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    return I;
+}
+
+
 Signal::Operation::Ptr AudiofileDesc::
         createOperation(Signal::ComputingEngine*) const
 {

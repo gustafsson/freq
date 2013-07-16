@@ -242,13 +242,17 @@ class DummyHeadDesc:public OperationDesc {
 public:
     DummyHeadDesc(DagHead::Ptr daghead):daghead(daghead) {}
 
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const {
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const {
         Interval i = I;
         i.first = i.first / 5 * 5;
         i.last = i.first + 5;
         if (expectedOutput)
             *expectedOutput = i;
         return Intervals (i).enlarge (5).spannedInterval ();
+    }
+
+    Signal::Interval affectedInterval (const Interval &i) const {
+        return Intervals (i).enlarge (5+4).spannedInterval ();
     }
 
     virtual OperationDesc::Ptr copy() const { return OperationDesc::Ptr (new DummyHeadDesc(daghead)); }

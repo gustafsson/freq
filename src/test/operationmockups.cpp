@@ -20,6 +20,13 @@ Signal::Interval TransparentOperationDesc::
 }
 
 
+Signal::Interval TransparentOperationDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    return I;
+}
+
+
 Signal::Operation::Ptr TransparentOperationDesc::
         createOperation(Signal::ComputingEngine*) const
 {

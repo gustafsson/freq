@@ -33,6 +33,8 @@ public:
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
 
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+
     virtual std::string toString() const;
 
     virtual bool operator==(const TransformDesc& b) const;

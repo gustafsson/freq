@@ -91,6 +91,22 @@ public:
 
 
     /**
+     * @brief affectedInterval
+     * @param I
+     * @return which interval of samples that needs to be recomputed if 'I'
+     * changes in the input.
+     */
+    virtual Interval affectedInterval( const Interval& I ) const = 0;
+
+    /**
+     * @brief affectedInterval
+     * @param I
+     * @return a merge of the intervals returned by affectedInterval for each interval in I
+     */
+    virtual Intervals affectedInterval( const Intervals& I ) const;
+
+
+    /**
      * @brief copy creates a copy of 'this'.
      * @return a copy.
      */
@@ -109,14 +125,6 @@ public:
      * @return a newly created operation.
      */
     virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
-
-
-    /**
-     * @brief affectedSamples
-     * @param I
-     * @return which samples that needs to be recomputed if I changes in the input.
-     */
-    virtual Interval affectedSamples( const Interval& I ) const;
 
 
     /**
@@ -224,7 +232,7 @@ the caller.
 class SaweDll DeprecatedOperation: public SourceBase
 {
 public:
-    typedef boost::shared_ptr<Operation> Ptr;
+    //typedef boost::shared_ptr<DeprecatedOperation> Ptr;
 
     /**
       This constructor by itself creates a dummy Operation that redirects 'read'

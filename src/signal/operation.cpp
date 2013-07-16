@@ -34,10 +34,15 @@ Signal::Interval OperationDesc::
 }
 
 
-Signal::Interval OperationDesc::
-        affectedSamples( const Signal::Interval& I ) const
+Intervals OperationDesc::
+        affectedInterval( const Intervals& I ) const
 {
-    return I;
+    Intervals A;
+    BOOST_FOREACH(const Interval& i, I) {
+            A |= affectedInterval(i);
+    }
+
+    return A;
 }
 
 

@@ -44,6 +44,7 @@ public:
     virtual FreqAxis freqAxis( float FS ) const;
     //virtual Signal::Interval validLength(Signal::pBuffer buffer);
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     virtual bool operator==(const TransformDesc& b) const;
 
 

@@ -163,9 +163,18 @@ unsigned Fft::
 
 
 Signal::Interval Fft::
-        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+        requiredInterval( const Signal::Interval&, Signal::Interval* ) const
 {
     EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
+}
+
+
+Signal::Interval Fft::
+        affectedInterval( const Signal::Interval& ) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
 }
 
 

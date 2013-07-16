@@ -439,6 +439,7 @@ public:
     AudiofileDesc(boost::shared_ptr<Audiofile> audiofile);
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
     virtual OperationDesc::Ptr copy() const;
     virtual QString toString() const;

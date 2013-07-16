@@ -34,6 +34,7 @@ public:
 
     // OperationDesc
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Interval affectedInterval( const Interval& I ) const;
     virtual OperationDesc::Ptr copy() const;
     virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
     virtual bool operator==(const OperationDesc& d) const;

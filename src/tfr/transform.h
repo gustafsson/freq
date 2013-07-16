@@ -143,15 +143,26 @@ public:
 
 
     /**
-     * @brief requiredInterval returns the interval that is required to compute
+     * @brief requiredInterval should figure out which input interval that is
+     * needed for a given output interval.
+     * @param expectedOutput must overlap I.
+     * @return the interval that is required to compute
      * a valid chunk representing interval I. If the operation can not compute
      * a valid chunk representing the at least interval I at once the operation
      * can request a smaller chunk for processing instead by modifying I before
      * returning.
-     * @param expectedOutput must overlap I.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
 
+
+    /**
+     * @brief affectedInterval should figure out which output interval that is
+     * affected by changes in a given input interval.
+     * @param I describes an interval in the input buffer.
+     * @return returns the interval that needs to be recomputed if samples at
+     * 'I' changes.
+     */
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const = 0;
 
     /**
       Returns a string representation of this transform. Mainly used for debugging.

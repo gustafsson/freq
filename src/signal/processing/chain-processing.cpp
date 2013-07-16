@@ -153,6 +153,11 @@ class OperationDescChainMock : public Signal::OperationDesc
         return Signal::Interval();
     }
 
+    Signal::Interval affectedInterval( const Signal::Interval& ) const {
+        EXCEPTION_ASSERTX(false, "not implemented");
+        return Signal::Interval();
+    }
+
     OperationDesc::Ptr copy() const {
         EXCEPTION_ASSERTX(false, "not implemented");
         return OperationDesc::Ptr();

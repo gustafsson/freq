@@ -157,6 +157,15 @@ Signal::Interval DrawnWaveform::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
     EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
+}
+
+
+Signal::Interval DrawnWaveform::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
 }
 
 

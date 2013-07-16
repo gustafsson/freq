@@ -309,6 +309,10 @@ public:
         return I;
     }
 
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const {
+        return I;
+    }
+
     Signal::Operation::Ptr createOperation(ComputingEngine* engine) const {
         engine=engine;
         return p;

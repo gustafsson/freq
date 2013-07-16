@@ -259,6 +259,13 @@ Signal::Interval FilterDesc::
 }
 
 
+Signal::Interval FilterDesc::
+        affectedInterval(const Signal::Interval& I) const
+{
+    return transform_desc_->affectedInterval (I);
+}
+
+
 Tfr::pTransformDesc FilterDesc::
         transformDesc() const
 {

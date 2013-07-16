@@ -375,6 +375,7 @@ pChunk Cwt::
 #endif
 
     clearFft();
+    return wt;
 }
 
 
@@ -437,6 +438,17 @@ Signal::Interval Cwt::
         *expectedOutput = I;
 
     return Signal::Interval(firstSample, firstSample+L);
+}
+
+
+Signal::Interval Cwt::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    float fs = last_fs;
+
+    Signal::IntervalType n = wavelet_time_support_samples( fs );
+
+    return Signal::Intervals(I).enlarge( n ).spannedInterval ();
 }
 
 //Signal::Interval Cwt::

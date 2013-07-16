@@ -113,6 +113,13 @@ Signal::Interval BufferSource::
 }
 
 
+Interval BufferSource::
+        affectedInterval( const Interval& I ) const
+{
+    return I;
+}
+
+
 OperationDesc::Ptr BufferSource::
         copy() const
 {

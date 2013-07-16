@@ -96,13 +96,9 @@ Signal::Interval StftFilter::
 void StftFilter::
         invalidate_samples(const Signal::Intervals& I)
 {
-    const StftDesc& p = ((Stft*)transform().get())->desc();
-    int window_size = p.chunk_size();
-    int increment   = p.increment();
-
     // include_time_support
-    Signal::Intervals J = I.enlarge(window_size-increment);
-    DeprecatedOperation::invalidate_samples( J );
+    const StftDesc& p = ((Stft*)transform().get())->desc();
+    DeprecatedOperation::invalidate_samples( p.affectedInterval (I.spannedInterval ()) );
 }
 
 

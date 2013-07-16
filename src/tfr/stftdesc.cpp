@@ -150,6 +150,15 @@ Signal::Interval StftDesc::
 }
 
 
+Signal::Interval StftDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    int window_size = chunk_size();
+
+    return Signal::Intervals(I).enlarge(window_size-increment()).spannedInterval ();
+}
+
+
 unsigned oksz(unsigned x)
 {
     if (0 == x)
