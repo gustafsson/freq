@@ -1,16 +1,18 @@
-#ifndef SIGNAL_PROCESSING_WORKERREADY_H
-#define SIGNAL_PROCESSING_WORKERREADY_H
+#ifndef SIGNAL_PROCESSING_BEDROOM_H
+#define SIGNAL_PROCESSING_BEDROOM_H
 
-#include <QMutex>
-#include <QWaitCondition>
+#include <QSemaphore>
 
 #include "volatileptr.h"
 
 namespace Signal {
 namespace Processing {
 
+class Void {};
+typedef boost::shared_ptr<Void> Bed;
+
 /**
- * @brief The WorkerBedroom class should allow different threads to sleep on
+ * @brief The Bedroom class should allow different threads to sleep on
  * this object until another thread calls wakeup().
  */
 class Bedroom: public VolatilePtr<Bedroom>
@@ -18,17 +20,16 @@ class Bedroom: public VolatilePtr<Bedroom>
 public:
     Bedroom();
 
-    // Check if a task might be available
-    void wakeup() volatile;
+    // Wake up sleepers
+    int wakeup() volatile;
 
     void sleep() volatile;
 
     int sleepers() const volatile;
 
 private:
-    int sleepers_;
-    QWaitCondition work_condition;
-    QMutex work_condition_mutex;
+    QSemaphore work_;
+    Bed bed_;
 
 public:
     static void test();
@@ -37,4 +38,4 @@ public:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_WORKERREADY_H
+#endif // SIGNAL_PROCESSING_BEDROOM_H

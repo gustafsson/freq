@@ -9,36 +9,43 @@ namespace Processing {
 Bedroom::
         Bedroom()
     :
-      sleepers_(0)
+      bed_(new Bed::value_type)
 {
 }
 
 
-void Bedroom::
+int Bedroom::
         wakeup() volatile
 {
-    WritePtr(this)->work_condition.wakeAll ();
+    int N = sleepers();
+    int should_be_available = std::max(1, N);
+
+    WritePtr self(this);
+
+    int to_release = should_be_available - self->work_.available ();
+    if (0<to_release)
+        self->work_.release (to_release);
+
+    return std::max(0,to_release);
 }
 
 
 void Bedroom::
         sleep() volatile
 {
-    WritePtr(this)->sleepers_++;
+    // Increment usage count
+    Bed b = ReadPtr(this)->bed_;
 
-    // QWaitCondition/QMutex are thread-safe so we can discard the volatile qualifier
-    const_cast<QWaitCondition*>(&work_condition)->wait (
-                const_cast<QMutex*> (&work_condition_mutex));
-
-    WritePtr(this)->sleepers_--;
-
+    // Don't keep a lock when acquiring
+    const_cast<Bedroom*>(this)->work_.acquire ();
 }
 
 
 int Bedroom::
         sleepers() const volatile
 {
-    return ReadPtr(this)->sleepers_;
+    // Remove 1 to compensate for the instance used by 'this'
+    return ReadPtr(this)->bed_.use_count() - 1;
 }
 
 } // namespace Processing
@@ -46,7 +53,6 @@ int Bedroom::
 
 
 #include <QThread>
-#include "TaskTimer.h"
 
 namespace Signal {
 namespace Processing {
@@ -58,10 +64,13 @@ public:
     void run() {
         do {
             bedroom_->sleep();
-        } while(--snooze_ > 0);
+            --snooze_;
+            usleep(60);
+        } while(snooze_ > 0);
     }
 
     int snooze() { return snooze_; }
+
 private:
     Bedroom::Ptr bedroom_;
     int snooze_;
@@ -84,10 +93,17 @@ void Bedroom::
         for (int i=snoozes; i>=0; i--) {
             EXCEPTION_ASSERT_EQUALS(sleepyface1.wait (1), i>0?false:true);
             EXCEPTION_ASSERT_EQUALS(sleepyface2.wait (1), i>0?false:true);
+
+            // sleepyface1 and sleepyface2 shoule be sleeping now
             EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), i>0?2:0);
-            bedroom->wakeup();
-            EXCEPTION_ASSERT_EQUALS(sleepyface1.snooze (), i);
-            EXCEPTION_ASSERT_EQUALS(sleepyface2.snooze (), i);
+
+            // they should have 'i' times left to snooze
+            EXCEPTION_ASSERTX(sleepyface1.snooze () == i && sleepyface2.snooze () == i,
+                              (boost::format("sleepyface1=%d, sleepyface2=%d, i=%d")
+                              % sleepyface1.snooze () % sleepyface2.snooze () % i));
+
+            int w = bedroom->wakeup();
+            EXCEPTION_ASSERT_EQUALS(w, i>0?2:1);
         }
 
         EXCEPTION_ASSERT(sleepyface1.isFinished ());
