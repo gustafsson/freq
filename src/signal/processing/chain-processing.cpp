@@ -184,7 +184,8 @@ class OperationDescChainMock : public Signal::OperationDesc
 void Chain::
         test()
 {
-    // It should manage the creation of new signal processing chains
+    // It should make the signal processing namespace easy to use with a clear
+    // and simple interface.
     {
         Chain::Ptr chain = Chain::createDefaultChain ();
 

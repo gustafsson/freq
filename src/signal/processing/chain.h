@@ -11,12 +11,12 @@ namespace Signal {
 namespace Processing {
 
 /**
- * @brief The Chain class should manage the creation of new signal processing chains.
- *
- * It should provide the public interface for managing a signal processing chain.
+ * @brief The Chain class should make the signal processing namespace easy to
+ * use with a clear and simple interface.
  *
  * Doesn't really need VolatilePtr since all member variables are thread safe
- * by themselves. But using VolatilePtr
+ * by themselves. But using VolatilePtr makes it more clear that this class is
+ * indeed thread-safe. A bit far fetched maybe, ah well.
  */
 class Chain: public VolatilePtr<Chain>
 {
