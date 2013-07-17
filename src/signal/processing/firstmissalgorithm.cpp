@@ -47,14 +47,16 @@ public:
             Signal::Interval actual_output;
             Signal::Interval r1 = od->requiredInterval (needed, &actual_output);
             required_input |= r1;
-            EXCEPTION_ASSERT (actual_output & needed); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
+            EXCEPTION_ASSERTX (actual_output & needed,
+                               boost::format("actual_output = %1%, needed = %2%")
+                               % actual_output % needed); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
             needed -= actual_output;
         }
 
         // Compute what the sources have available
         Intervals total_missing;
-        BOOST_FOREACH(GraphEdge e, in_edges(u, g)) {
-            GraphVertex v = source(e,g);
+        BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
+            GraphVertex v = target(e,g);
             Step::ReadPtr src( g[v] );
             Signal::Intervals src_missing = src->out_of_date() & required_input;
             missing_samples[v] |= src_missing;
@@ -66,8 +68,8 @@ public:
         {
             // Create a task
             std::vector<Step::Ptr> children;
-            BOOST_FOREACH(GraphEdge e, in_edges(u, g)) {
-                GraphVertex v = source(e,g);
+            BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
+                GraphVertex v = target(e,g);
                 children.push_back (g[v]);
             }
 
@@ -118,7 +120,6 @@ void FirstMissAlgorithm::
 {
     // It should figure out the missing pieces in the graph and produce a Task to work it off
     {
-        FirstMissAlgorithm schedule;
         // Create an OperationDesc and a Step
         Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
         Signal::OperationDesc::Ptr od(new BufferSource(b));
@@ -128,15 +129,21 @@ void FirstMissAlgorithm::
         Graph g;
         GraphVertex v = g.add_vertex (step);
 
+
         // Schedule a task
+        FirstMissAlgorithm schedule;
         Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25);
         Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(20,24) | Signal::Interval(26,30), 25);
+
+
+        // Verify output
         EXCEPTION_ASSERT_EQUALS(read1(t1)->expected_output(), Interval(20,30));
         EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(20,24));
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), Signal::Intervals::Intervals_ALL);
         EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(20,30), read1(step)->not_started());
 
+        // Verify that the output objects can be used
         t1->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         t2->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
