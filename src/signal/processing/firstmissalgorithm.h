@@ -18,7 +18,15 @@ namespace Processing {
  * It should let missing_in_target override out_of_date in the given vertex
  *
  * Issues
- * Does not know how to cope with workers that doesn't support all steps.
+ * ------
+ * Has not tested how it copes with workers that doesn't support all steps.
+ * If the engine does not support the selected step the task will silently
+ * ignore it.
+ *
+ * Todo
+ * ----
+ * To utilize workers that doesn't support all steps FirstMissAlgorithm could
+ * keep on breath_first_searching until a supported step is found.
  */
 class FirstMissAlgorithm: public IScheduleAlgorithm
 {

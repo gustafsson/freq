@@ -33,6 +33,9 @@ void Task::
     Step::Ptr step = ReadPtr(this)->step_;
     Signal::Operation::Ptr o = write1(step)->operation (ce);
 
+    if (!o)
+        return;
+
     Signal::pBuffer output_buffer = o->process (input_buffer);
 
     write1(step)->finishTask(this, output_buffer);
