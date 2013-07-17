@@ -157,7 +157,7 @@ void Workers::
 {
     // It should start and stop computing engines as they are added and removed
     double maxwait = 0;
-    {
+    for (int j=0;j<100; j++){
         ISchedule::Ptr schedule(new GetEmptyTaskMock);
         Workers workers(schedule);
 
@@ -172,10 +172,10 @@ void Workers::
         }
 
         // Wait until they're done
-        BOOST_FOREACH (Worker::Ptr& w, workerlist) w->wait (1);
+        BOOST_FOREACH (Worker::Ptr& w, workerlist) w->wait ();
         maxwait = std::max(maxwait, t.elapsed ());
 
-        int get_task_count = dynamic_cast<const GetEmptyTaskMock*>(&*read1(schedule))->get_task_count;
+        int get_task_count = ((const GetEmptyTaskMock*)&*read1(schedule))->get_task_count;
         EXCEPTION_ASSERT_EQUALS(get_task_count, worker_count);
 
         Workers::DeadEngines dead = workers.clean_dead_workers ();
