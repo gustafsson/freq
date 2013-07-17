@@ -160,7 +160,7 @@ void OldOperationDescWrapper::
 {
     // It should represent an instance of DeprecatedOperation in
     // Processing::Chain.
-    {
+    for (int i=0; i<10; i++) {
         // wiring
         pBuffer buffer(new Buffer(Interval(1,4),0,1));
         float *t = buffer->getChannel (0)->waveform_data()->getCpuMemory ();
@@ -178,7 +178,7 @@ void OldOperationDescWrapper::
         OperationDesc::Ptr target_op_wrapper(new OldOperationDescWrapper(target_op));
         Chain::Ptr chain = Chain::createDefaultChain ();
         TargetNeeds::Ptr target = write1(chain)->addTarget (target_op_wrapper);
-        IInvalidator::Ptr step = write1(chain)->addOperation (source_op_wrapper, target);
+        IInvalidator::Ptr step = write1(chain)->addOperationAt (source_op_wrapper, target);
 
         Signal::Interval extent = read1(chain)->extent(target);
         EXCEPTION_ASSERT_EQUALS(extent, buffer->getInterval ());
@@ -187,23 +187,31 @@ void OldOperationDescWrapper::
         // Should wait for workers to fininsh
         target->sleep();
 
+        //read1(chain)->print_dead_workers();
+
         // Should produce a cache in the target that matches the chain
-        Step::Ptr target_step=read1(target)->step ();
+        Step::Ptr target_step = read1(target)->step ().lock();
+        EXCEPTION_ASSERT(target_step);
         pBuffer r = write1(target_step)->readFixedLengthFromCache(Interval(1,4));
         EXCEPTION_ASSERT(r);
         EXCEPTION_ASSERT_EQUALS(r->getInterval (), buffer->getInterval ());
         EXCEPTION_ASSERT_EQUALS(r->number_of_channels (), buffer->number_of_channels ());
         t[1] = 0;
+        //PRINT_BUFFER(r,"");
+        //PRINT_BUFFER(buffer,"");
         EXCEPTION_ASSERT(*r == *buffer);
         t[1] = 2;
 
         // Modifying the source should produce a new cache in the target
         t[0] = 4;
         write1(step)->deprecateCache (Interval(1,2));
+
         target->sleep();
         r = write1(target_step)->readFixedLengthFromCache(Interval(1,4));
         t[1] = 0;
         EXCEPTION_ASSERT(*r == *buffer);
+
+        read1(chain)->rethrow_worker_exception();
     }
 }
 
