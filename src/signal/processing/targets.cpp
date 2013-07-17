@@ -7,7 +7,7 @@ namespace Signal {
 namespace Processing {
 
 Targets::
-        Targets(Bedroom::Ptr bedroom)
+        Targets(Bedroom::WeakPtr bedroom)
     :
       bedroom_(bedroom)
 {
@@ -68,7 +68,7 @@ void Targets::
         Targets::Ptr targets(new Targets(bedroom));
         TargetNeeds::Ptr updater( write1(targets)->addTarget(step) );
         EXCEPTION_ASSERT(updater);
-        EXCEPTION_ASSERT(read1(updater)->step() == step);
+        EXCEPTION_ASSERT(read1(updater)->step().lock() == step);
     }
 }
 

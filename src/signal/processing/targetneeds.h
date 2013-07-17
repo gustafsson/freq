@@ -18,7 +18,7 @@ class Bedroom;
 class TargetNeeds: public VolatilePtr<TargetNeeds>
 {
 public:
-    TargetNeeds(boost::shared_ptr<volatile Step> step_, boost::shared_ptr<volatile Bedroom> bedroom);
+    TargetNeeds(boost::weak_ptr<volatile Step> step_, boost::weak_ptr<volatile Bedroom> bedroom);
 
     /**
      * Large portions of step can be out_of_date yet not needed by the target.
@@ -42,7 +42,7 @@ public:
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
             Signal::Intervals invalidate=Signal::Intervals());
 
-    const boost::shared_ptr<volatile Step> step() const;
+    boost::weak_ptr<volatile Step> step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
     Signal::Intervals out_of_date() const;
@@ -54,12 +54,12 @@ public:
     void sleep() volatile;
 
 private:
-    const boost::shared_ptr<volatile Step> step_;
+    const boost::weak_ptr<volatile Step> step_;
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;
     Signal::Intervals needed_samples_;
 
-    boost::shared_ptr<volatile Bedroom> bedroom_;
+    boost::weak_ptr<volatile Bedroom> bedroom_;
 
 public:
     static void test();

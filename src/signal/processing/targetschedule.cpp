@@ -27,7 +27,7 @@ Task::Ptr TargetSchedule::
 {
     // Lock this from writing during getTask
     ReadPtr gettask(this);
-    const TargetSchedule* self = dynamic_cast<const TargetSchedule*>((const ISchedule*)gettask);
+    const TargetSchedule* self = (const TargetSchedule*)&*gettask;
 
     // Lock the graph from writing during getTask
     Dag::ReadPtr dag(self->g);
@@ -43,12 +43,12 @@ Task::Ptr TargetSchedule::
     // Read info from target
     {
         TargetNeeds::ReadPtr target(priotarget);
-        step = target->step();
+        step = target->step().lock ();
         missing_in_target = target->not_started();
         work_center = target->work_center();
     }
 
-    if (!missing_in_target)
+    if (!missing_in_target || !step)
         return Task::Ptr();
 
     GraphVertex vertex = dag->getVertex(step);
@@ -104,11 +104,12 @@ void TargetSchedule::
 {
     // It should provide tasks to keep a Dag up-to-date with respect to all targets
     {
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         Dag::Ptr dag(new Dag);
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         write1(dag)->appendStep(step);
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
-        Targets::Ptr targets(new Targets(Bedroom::Ptr(new Bedroom)));
+        Bedroom::Ptr bedroom(new Bedroom);
+        Targets::Ptr targets(new Targets(bedroom));
 
         TargetSchedule targetschedule(dag, algorithm, targets);
 

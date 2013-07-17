@@ -10,13 +10,13 @@ namespace Signal {
 namespace Processing {
 
 TargetNeeds::
-        TargetNeeds(Step::Ptr step, Bedroom::Ptr bedroom)
+        TargetNeeds(Step::WeakPtr step, Bedroom::WeakPtr bedroom)
     :
       step_(step),
       bedroom_(bedroom)
 {
-    EXCEPTION_ASSERT(step);
-    EXCEPTION_ASSERT(bedroom);
+    EXCEPTION_ASSERT(step.lock ());
+    EXCEPTION_ASSERT(bedroom.lock ());
 }
 
 
@@ -30,13 +30,17 @@ void TargetNeeds::
 
     work_center_ = center;
 
-    write1(step_)->deprecateCache(invalidate);
+    Step::Ptr step = step_.lock ();
+    if (step)
+        write1(step)->deprecateCache(invalidate);
 
-    bedroom_->wakeup();
+    Bedroom::Ptr bedroom = bedroom_.lock ();
+    if (bedroom)
+        bedroom->wakeup();
 }
 
 
-const boost::shared_ptr<volatile Step> TargetNeeds::
+Step::WeakPtr TargetNeeds::
         step() const
 {
     return step_;

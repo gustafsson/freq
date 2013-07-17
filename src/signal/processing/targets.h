@@ -20,7 +20,7 @@ class Targets: public VolatilePtr<Targets>
 public:
     typedef std::vector<TargetNeeds::Ptr> TargetNeedsCollection;
 
-    Targets(Bedroom::Ptr bedroom);
+    Targets(Bedroom::WeakPtr bedroom);
 
     /**
      * @brief insert adds a new target to this collection of Targets.
@@ -38,7 +38,7 @@ public:
     TargetNeedsCollection         getTargets() const;
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::WeakPtr bedroom_;
 
     std::vector<TargetNeeds::WeakPtr> targets;
 
