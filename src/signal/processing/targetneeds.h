@@ -2,7 +2,7 @@
 #define SIGNAL_PROCESSING_TARGETNEEDS_H
 
 #include "signal/intervals.h"
-#include "bedroom.h"
+#include "volatileptr.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 
@@ -10,6 +10,7 @@ namespace Signal {
 namespace Processing {
 
 class Step;
+class Bedroom;
 
 /**
  * @brief The TargetNeeds class should describe what needs to be computed for a target.
@@ -17,7 +18,7 @@ class Step;
 class TargetNeeds: public VolatilePtr<TargetNeeds>
 {
 public:
-    TargetNeeds(boost::shared_ptr<volatile Step> step_, Bedroom::Ptr bedroom);
+    TargetNeeds(boost::shared_ptr<volatile Step> step_, boost::shared_ptr<volatile Bedroom> bedroom);
 
     /**
      * Large portions of step can be out_of_date yet not needed by the target.
@@ -48,7 +49,7 @@ public:
     Signal::Intervals not_started() const;
 
     /**
-     * @brief sleep sleeps the caller until wakeup is called.
+     * @brief sleep sleeps the caller until all needed_samples have been provided
      */
     void sleep() volatile;
 
@@ -58,7 +59,7 @@ private:
     Signal::IntervalType work_center_;
     Signal::Intervals needed_samples_;
 
-    Bedroom::Ptr bedroom_;
+    boost::shared_ptr<volatile Bedroom> bedroom_;
 
 public:
     static void test();

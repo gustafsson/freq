@@ -1,5 +1,6 @@
 #include "targetneeds.h"
 #include "step.h"
+#include "bedroom.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -9,7 +10,7 @@ namespace Signal {
 namespace Processing {
 
 TargetNeeds::
-        TargetNeeds(boost::shared_ptr<volatile Step> step, Bedroom::Ptr bedroom)
+        TargetNeeds(Step::Ptr step, Bedroom::Ptr bedroom)
     :
       step_(step),
       bedroom_(bedroom)
@@ -73,8 +74,15 @@ Signal::Intervals TargetNeeds::
 void TargetNeeds::
         sleep() volatile
 {
-    Bedroom::Ptr bedroom = TargetNeeds::ReadPtr(this)->bedroom_;
-    bedroom->sleep();
+    Step::Ptr step = ReadPtr(this)->step_;
+    Bedroom::Ptr bedroom = ReadPtr(this)->bedroom_;
+
+    while (ReadPtr(this)->out_of_date()) {
+        Step::WritePtr(step)->sleepWhileTasks ();
+
+        if (ReadPtr(this)->out_of_date())
+            bedroom->sleep ();
+    }
 }
 
 
