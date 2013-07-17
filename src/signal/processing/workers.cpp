@@ -6,6 +6,7 @@
 #include "targetschedule.h"
 #include "tools/support/timer.h"
 
+
 namespace Signal {
 namespace Processing {
 
@@ -25,6 +26,22 @@ Workers::
         Worker::Ptr worker = ewp.second;
         if (worker && worker->isRunning ())
             worker->exit_nicely_and_delete(); // will still wait for ISchedule to return
+    }
+
+    // terminate and delete
+    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
+        Worker::Ptr worker = ewp.second;
+        if (worker && worker->isRunning ()) {
+            worker->wait (1);
+            worker->terminate ();
+        }
+    }
+    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
+        Worker::Ptr worker = ewp.second;
+        if (worker) {
+            worker->wait ();
+            delete worker.data ();
+        }
     }
 }
 
