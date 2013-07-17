@@ -94,7 +94,7 @@ public:
             Workers::Ptr,
             Signal::ComputingEngine::Ptr) const
     {
-        return Task::Ptr(new Task(Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(5,6)));
+        return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(5,6)));
     }
 };
 
