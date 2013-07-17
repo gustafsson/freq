@@ -39,6 +39,25 @@ Chain::Ptr Chain::
 }
 
 
+Chain::
+        ~Chain()
+{
+    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
+    dag_.reset ();
+
+    print_dead_workers();
+
+    // Workers will ask all instances of Worker to quit at will. class Workers
+    // does not know about any sleeping. class Bedroom takes care of waking
+    // them up so that the Worker threads can quit.
+    workers_.reset ();
+
+    // Notify sleeping workers that something has changed. They will notice
+    // that there's nothing to work on anymore and close.
+    bedroom_->wakeup();
+}
+
+
 TargetNeeds::Ptr Chain::
         addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
@@ -51,7 +70,7 @@ TargetNeeds::Ptr Chain::
 
 
 IInvalidator::Ptr Chain::
-        addOperation(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
+        addOperationAt(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
     EXCEPTION_ASSERT (at);
 
@@ -64,14 +83,18 @@ IInvalidator::Ptr Chain::
 
 
 void Chain::
-        removeOperations(TargetNeeds::Ptr at)
+        removeOperationsAt(TargetNeeds::Ptr at)
 {
     EXCEPTION_ASSERT (at);
 
+    Step::Ptr step = read1(at)->step().lock();
+    if (!step)
+        return;
+
     Dag::WritePtr dag(dag_);
 
+    GraphVertex v = dag->getVertex (step);
     const Graph& g = dag->g ();
-    GraphVertex v = dag->getVertex (read1(at)->step());
 
     std::vector<GraphEdge> inedges;
     BOOST_FOREACH(GraphEdge e, in_edges(v, g)) {
@@ -113,8 +136,11 @@ public:
 Signal::Interval Chain::
         extent(TargetNeeds::Ptr at) const
 {
+    Step::Ptr step = read1(at)->step().lock();
+    if (!step)
+        return Signal::Interval();
+
     Dag::ReadPtr dag(dag_);
-    Step::Ptr step = read1(at)->step();
 
     Graph rev; ReverseGraph::reverse_graph (dag->g (), rev);
     GraphVertex at_vertex = ReverseGraph::find_first_vertex (rev, step);
@@ -123,6 +149,21 @@ Signal::Interval Chain::
     breadth_first_search(rev, at_vertex, visitor(find_extent(&I)));
 
     return I.get_value_or (Signal::Interval());
+}
+
+
+void Chain::
+        print_dead_workers() const
+{
+    Workers::DeadEngines engines = write1(workers_)->clean_dead_workers();
+    Workers::print (engines);
+}
+
+
+void Chain::
+        rethrow_worker_exception() const
+{
+    write1(workers_)->rethrow_worker_exception();
 }
 
 
@@ -141,8 +182,12 @@ Step::Ptr Chain::
         insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
 {
     GraphVertex vertex = boost::graph_traits<Graph>::null_vertex ();
-    if (at)
-        vertex = dag->getVertex (read1(at)->step());
+    if (at) {
+        Step::Ptr target_step = read1(at)->step().lock();
+        EXCEPTION_ASSERTX (target_step, "target step has been removed");
+
+        vertex = dag->getVertex (target_step);
+    }
 
     Step::Ptr step(new Step(desc));
     dag->appendStep (step, vertex);
@@ -153,9 +198,9 @@ Step::Ptr Chain::
 
 class OperationDescChainMock : public Signal::OperationDesc
 {
-    Signal::Interval requiredInterval( const Signal::Interval&, Signal::Interval* ) const {
-        EXCEPTION_ASSERTX(false, "not implemented");
-        return Signal::Interval();
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* J) const {
+        if (J) *J = I;
+        return I;
     }
 
     Signal::Interval affectedInterval( const Signal::Interval& ) const {
@@ -169,7 +214,6 @@ class OperationDescChainMock : public Signal::OperationDesc
     }
 
     Operation::Ptr createOperation( ComputingEngine* ) const {
-        EXCEPTION_ASSERTX(false, "not implemented");
         return Operation::Ptr();
     }
 
@@ -188,21 +232,31 @@ void Chain::
     // and simple interface.
     {
         Chain::Ptr chain = Chain::createDefaultChain ();
-
         Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
         Signal::OperationDesc::Ptr source_desc(new OperationDescChainMock);
 
         TargetNeeds::Ptr null;
         TargetNeeds::Ptr target = write1(chain)->addTarget(target_desc, null);
-        IInvalidator::Ptr invalidator = write1(chain)->addOperation(source_desc, target);
+        IInvalidator::Ptr invalidator = write1(chain)->addOperationAt(source_desc, target);
 
         EXCEPTION_ASSERT_EQUALS (read1(chain)->extent(target), Signal::Interval(3,5));
 
-        write1(chain)->removeOperations(target);
-
         write1(target)->updateNeeds(Signal::Interval(4,6));
+        usleep(4000);
+        //target->sleep();
+
+        // This will remove the step used by invalidator
+        write1(chain)->removeOperationsAt(target);
+
+        // So using invalidator should not do anything (would throw an
+        // exception if OperationDescChainMock::affectedInterval was called)
         write1(invalidator)->deprecateCache(Signal::Interval(9,11));
+
+        usleep(4000);
+        read1(chain)->rethrow_worker_exception();
     }
+    // Wait for threads to exit.
+    usleep(4000);
 }
 
 } // namespace Processing

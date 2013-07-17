@@ -17,11 +17,17 @@ namespace Processing {
  * Doesn't really need VolatilePtr since all member variables are thread safe
  * by themselves. But using VolatilePtr makes it more clear that this class is
  * indeed thread-safe. A bit far fetched maybe, ah well.
+ *
+ * TODO
+ * ----
+ * extent should return an OperationDesc::Extent.
  */
 class Chain: public VolatilePtr<Chain>
 {
 public:
     static Chain::Ptr createDefaultChain();
+
+    ~Chain();
 
     TargetNeeds::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at=TargetNeeds::Ptr());
     /**
@@ -34,9 +40,12 @@ public:
      * were affected by this definition. A generic call would be
      * 'read1(invalidator)->deprecateCache(chain->extent(at));'
      */
-    IInvalidator::Ptr addOperation(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
-    void removeOperations(TargetNeeds::Ptr at);
+    IInvalidator::Ptr addOperationAt(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
+    void removeOperationsAt(TargetNeeds::Ptr at);
     Signal::Interval extent(TargetNeeds::Ptr at) const;
+
+    void print_dead_workers() const;
+    void rethrow_worker_exception() const;
 
     // Add jumping around with targets later.
 
