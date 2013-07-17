@@ -46,6 +46,9 @@ public:
      */
     typedef std::map<Signal::ComputingEngine::Ptr, std::pair<const std::type_info*,std::string> > DeadEngines;
     DeadEngines clean_dead_workers();
+    void rethrow_worker_exception();
+
+    static void print(const DeadEngines&);
 
 private:
     ISchedule::Ptr schedule_;

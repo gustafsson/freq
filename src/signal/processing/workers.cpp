@@ -22,27 +22,29 @@ Workers::
 Workers::
         ~Workers()
 {
+    schedule_.reset ();
+
     BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
         Worker::Ptr worker = ewp.second;
         if (worker && worker->isRunning ())
             worker->exit_nicely_and_delete(); // will still wait for ISchedule to return
     }
 
-    // terminate and delete
-    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
-        Worker::Ptr worker = ewp.second;
-        if (worker && worker->isRunning ()) {
-            worker->wait (1);
-            worker->terminate ();
-        }
-    }
-    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
-        Worker::Ptr worker = ewp.second;
-        if (worker) {
-            worker->wait ();
-            delete worker.data ();
-        }
-    }
+//    // terminate and delete
+//    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
+//        Worker::Ptr worker = ewp.second;
+//        if (worker && worker->isRunning ()) {
+//            worker->wait (1);
+//            worker->terminate ();
+//        }
+//    }
+//    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
+//        Worker::Ptr worker = ewp.second;
+//        if (worker) {
+//            worker->wait (1);
+//            delete worker.data ();
+//        }
+//    }
 }
 
 
@@ -146,6 +148,45 @@ Workers::DeadEngines Workers::
 }
 
 
+void Workers::
+        rethrow_worker_exception()
+{
+    for(EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
+        QPointer<Worker> worker = i->second;
+
+        if (worker && worker->exception_type()) {
+            workers_map_.erase (i);
+            throw std::runtime_error(demangle(*worker->exception_type()) + worker->exception_what());
+        }
+    }
+}
+
+
+void Workers::
+        print(const DeadEngines& engines)
+{
+    if (engines.empty ())
+        return;
+
+    TaskInfo ti("Dead engines");
+
+    BOOST_FOREACH(Workers::DeadEngines::value_type e, engines) {
+        Signal::ComputingEngine::Ptr dead = e.first;
+        const std::type_info* type = e.second.first;
+        std::string str = e.second.second;
+
+        if (type)
+            TaskInfo(boost::format("engine %1% failed with %2%. %3%")
+                     % (dead ? vartype(*dead.get ()) : vartype(dead.get ()))
+                     % demangle(type->name ()) % str);
+        else
+            TaskInfo(boost::format("engine %1% stopped. %2%")
+                     % (dead ? vartype(*dead.get ()) : vartype(dead.get ()))
+                     % str);
+    }
+}
+
+
 class GetEmptyTaskMock: public ISchedule {
 public:
     GetEmptyTaskMock() : get_task_count(0) {}
@@ -177,6 +218,7 @@ void Workers::
     for (int j=0;j<100; j++){
         ISchedule::Ptr schedule(new GetEmptyTaskMock);
         Workers workers(schedule);
+        workers.rethrow_worker_exception(); // Should do nothing
 
         Tools::Support::Timer t;
         int worker_count = 40; // Multiplying by 10 multiplies the elapsed time by a factor of 100.
@@ -201,6 +243,12 @@ void Workers::
         // If failing here, try to increase the sleep period above.
         EXCEPTION_ASSERT_EQUALS(engines.size (), 0);
         EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count);
+
+        // It should forward exceptions from workers
+        try {
+            workers.rethrow_worker_exception();
+            EXCEPTION_ASSERTX(false, "Expected exception");
+        } catch (const std::exception& x) {}
     }
 
     EXCEPTION_ASSERT_LESS(maxwait, 0.004);
