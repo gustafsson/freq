@@ -64,28 +64,52 @@ Signal::IntervalType TargetNeeds::
 Signal::Intervals TargetNeeds::
         not_started() const
 {
-    return needed_samples_ & read1(step_)->not_started();
+    Signal::Intervals not_started;
+    Step::Ptr step = step_.lock ();
+    if (step)
+        not_started = read1(step)->not_started();
+
+    return needed_samples_ & not_started;
 }
 
 
 Signal::Intervals TargetNeeds::
         out_of_date() const
 {
-    return needed_samples_ & read1(step_)->out_of_date();
+    Signal::Intervals out_of_date;
+    Step::Ptr step = step_.lock ();
+    if (step)
+        out_of_date = read1(step)->out_of_date();
+
+    return needed_samples_ & out_of_date;
 }
 
 
 void TargetNeeds::
         sleep() volatile
 {
-    Step::Ptr step = ReadPtr(this)->step_;
-    Bedroom::Ptr bedroom = ReadPtr(this)->bedroom_;
+    Step::Ptr pstep = ReadPtr(this)->step_.lock();
+    Bedroom::Ptr bedroom = ReadPtr(this)->bedroom_.lock();
 
-    while (ReadPtr(this)->out_of_date()) {
-        Step::WritePtr(step)->sleepWhileTasks ();
+    if (!pstep || !bedroom)
+        return;
 
-        if (ReadPtr(this)->out_of_date())
-            bedroom->sleep ();
+    for (;;) {
+        bedroom->wakeup();
+
+        {
+            Step::WritePtr step(pstep);
+
+            if (!(ReadPtr(this)->needed_samples_ & step->out_of_date ()))
+                break;
+
+            step->sleepWhileTasks ();
+
+            if (!(ReadPtr(this)->needed_samples_ & step->out_of_date ()))
+                break;
+        }
+
+        bedroom->sleep();
     }
 }
 
