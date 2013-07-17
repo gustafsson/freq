@@ -44,7 +44,6 @@ public:
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
     ISchedule::WeakPtr schedule_;
-    bool enough_;
 
     std::string exception_what_;
     const std::type_info* exception_type_;
