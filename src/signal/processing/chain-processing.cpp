@@ -29,9 +29,10 @@ Chain::Ptr Chain::
     // Add the 'single instance engine' thread.
     write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr());
 
-//    for (int i=0; i<QThread::idealThreadCount (); i++) {
-//        write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
-//    }
+    // Add worker threads to occupy all kernels (the engine above occupies the first)
+    for (int i=0; i<QThread::idealThreadCount ()-1; i++) {
+        write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+    }
 
     Chain::Ptr chain(new Chain(dag, targets, workers, bedroom));
 
