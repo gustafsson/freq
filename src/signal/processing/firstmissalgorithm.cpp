@@ -14,7 +14,7 @@ namespace Signal {
 namespace Processing {
 
 
-typedef std::map<GraphVertex, Signal::Intervals> MissingSamples;
+typedef std::map<GraphVertex, Signal::Intervals> NeededSamples;
 
 
 struct ScheduleParams {
@@ -26,9 +26,9 @@ struct ScheduleParams {
 
 class find_missing_samples: public default_bfs_visitor {
 public:
-    find_missing_samples(MissingSamples missing_samples, Task::Ptr* output_task, ScheduleParams schedule_params)
+    find_missing_samples(NeededSamples needed, Task::Ptr* output_task, ScheduleParams schedule_params)
         :
-          missing_samples(missing_samples),
+          needed(needed),
           params(schedule_params),
           task(output_task)
     {
@@ -43,7 +43,7 @@ public:
         DEBUGINFO TaskTimer tt(format("discover_vertex %1%") % u);
 
         Step::WritePtr step( g[u] ); // lock while studying what's needed
-        Signal::Intervals I = missing_samples[u] & step->not_started ();
+        Signal::Intervals I = needed[u] & step->not_started ();
         Signal::OperationDesc::Ptr od = step->operation_desc();
 
         // Compute what we need from sources
@@ -53,14 +53,14 @@ public:
 
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;
-        for (Signal::Intervals needed = expected_output; needed;) {
+        for (Signal::Intervals x = expected_output; x;) {
             Signal::Interval actual_output;
-            Signal::Interval r1 = od->requiredInterval (needed, &actual_output);
+            Signal::Interval r1 = od->requiredInterval (x, &actual_output);
             required_input |= r1;
-            EXCEPTION_ASSERTX (actual_output & needed,
-                               boost::format("actual_output = %1%, needed = %2%")
-                               % actual_output % needed); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
-            needed -= actual_output;
+            EXCEPTION_ASSERTX (actual_output & x,
+                               boost::format("actual_output = %1%, x = %2%")
+                               % actual_output % x); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
+            x -= actual_output;
         }
 
         // Compute what the sources have available
@@ -68,7 +68,7 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
             GraphVertex v = target(e,g);
             Step::ReadPtr src( g[v] );
-            missing_samples[v] |= src->not_started () & required_input;
+            needed[v] |= src->not_started () & required_input;
             total_missing |= src->out_of_date () & required_input;
         }
 
@@ -89,7 +89,7 @@ public:
         }
     }
 
-    MissingSamples missing_samples;
+    NeededSamples needed;
     ScheduleParams params;
     Task::Ptr* task;
 };
@@ -98,7 +98,7 @@ public:
 Task::Ptr FirstMissAlgorithm::
         getTask(const Graph& straight_g,
                 GraphVertex straight_target,
-                Signal::Intervals missing_in_target,
+                Signal::Intervals needed,
                 Signal::IntervalType center,
                 Workers::Ptr workers,
                 Signal::ComputingEngine::Ptr engine) const
@@ -107,19 +107,19 @@ Task::Ptr FirstMissAlgorithm::
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 
-    int preferred_size = missing_in_target.count ();
+    int preferred_size = needed.count ();
 
     if (workers)
         preferred_size = 1 + preferred_size/read1(workers)->n_workers();
 
     ScheduleParams schedule_params = { engine, preferred_size, center };
 
-    MissingSamples missing_samples;
-    missing_samples[target] = missing_in_target;
+    NeededSamples needed_samples;
+    needed_samples[target] = needed;
 
 
     Task::Ptr task;
-    find_missing_samples vis(missing_samples, &task, schedule_params);
+    find_missing_samples vis(needed_samples, &task, schedule_params);
 
     breadth_first_search(g, target, visitor(vis));
 

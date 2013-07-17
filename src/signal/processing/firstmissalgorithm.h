@@ -34,7 +34,7 @@ public:
     Task::Ptr getTask(
             const Graph& g,
             GraphVertex target,
-            Signal::Intervals missing_in_target=Intervals::Intervals_ALL,
+            Signal::Intervals needed=Intervals::Intervals_ALL,
             Signal::IntervalType center=Interval::IntervalType_MIN,
             Workers::Ptr workers=Workers::Ptr(),
             Signal::ComputingEngine::Ptr worker=Signal::ComputingEngine::Ptr()) const;

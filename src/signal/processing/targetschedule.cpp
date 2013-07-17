@@ -37,18 +37,18 @@ Task::Ptr TargetSchedule::
         return Task::Ptr();
 
     Step::Ptr step;
-    Signal::Intervals missing_in_target;
+    Signal::Intervals needed;
     Signal::IntervalType work_center;
 
     // Read info from target
     {
         TargetNeeds::ReadPtr target(priotarget);
         step = target->step().lock ();
-        missing_in_target = target->not_started();
+        needed = target->not_started();
         work_center = target->work_center();
     }
 
-    if (!missing_in_target || !step)
+    if (!needed || !step)
         return Task::Ptr();
 
     GraphVertex vertex = dag->getVertex(step);
@@ -56,7 +56,7 @@ Task::Ptr TargetSchedule::
     Task::Ptr task = read1(self->algorithm)->getTask(
             dag->g(),
             vertex,
-            missing_in_target,
+            needed,
             work_center);
 
     return task;
