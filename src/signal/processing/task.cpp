@@ -1,12 +1,17 @@
 #include "task.h"
 
 #include <boost/foreach.hpp>
+#include <QThread>
+
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
 
 namespace Signal {
 namespace Processing {
 
 Task::
-        Task(Signal::Processing::Step::Ptr step,
+        Task(Step* writeable_step,
+             Signal::Processing::Step::Ptr step,
              std::vector<Signal::Processing::Step::Ptr> children,
              Signal::Interval expected_output)
     :
@@ -14,6 +19,15 @@ Task::
       children_(children),
       expected_output_(expected_output)
 {
+    if (writeable_step)
+        writeable_step->registerTask (this, expected_output);
+}
+
+
+Task::
+        ~Task()
+{
+    cancel();
 }
 
 
@@ -27,34 +41,35 @@ Signal::Interval Task::
 void Task::
         run(Signal::ComputingEngine::Ptr ce) volatile
 {
-    Signal::pBuffer input_buffer = get_input();
+    DEBUGINFO TaskTimer tt(boost::format("run %1%") % ReadPtr(this)->expected_output());
 
+    Signal::Operation::Ptr o = write1(step_)->operation (ce);
 
-    Step::Ptr step = ReadPtr(this)->step_;
-    Signal::Operation::Ptr o = write1(step)->operation (ce);
-
-    if (!o)
+    if (!o) {
+        DEBUGINFO TaskInfo("Oups, this engine does not support this operation");
         return;
+    }
 
+    Signal::pBuffer input_buffer = get_input();
     Signal::pBuffer output_buffer = o->process (input_buffer);
-
-    write1(step)->finishTask(this, output_buffer);
+    DEBUGINFO TaskInfo("finishing");
+    finish(output_buffer);
+    DEBUGINFO TaskInfo("finished");
 }
 
 
 Signal::pBuffer Task::
         get_input() volatile
 {
-    Step::Ptr step;
+    DEBUGINFO TaskTimer tt("get input");
     Signal::Intervals needed;
     Signal::OperationDesc::Ptr operation_desc;
 
     {
         WritePtr self(this);
 
-        step = self->step_;
         needed = self->expected_output_;
-        operation_desc = read1(step)->operation_desc ();
+        operation_desc = read1(step_)->operation_desc ();
     }
 
     Signal::Intervals required_input;
@@ -96,6 +111,26 @@ Signal::pBuffer Task::
 
 
 void Task::
+        finish(Signal::pBuffer b) volatile
+{
+    Step::Ptr step = ReadPtr(this)->step_;
+    if (step)
+        write1(step)->finishTask(&*WritePtr(this), b);
+    WritePtr(this)->step_.reset();
+}
+
+
+void Task::
+        cancel() volatile
+{
+    Step::Ptr step = ReadPtr(this)->step_;
+    if (step)
+        write1(step)->finishTask(&*WritePtr(this), Signal::pBuffer());
+    WritePtr(this)->step_.reset();
+}
+
+
+void Task::
         test()
 {
     // It should store results of an operation in the cache
@@ -116,7 +151,7 @@ void Task::
         Signal::Interval expected_output(-10,80);
 
         // perform a signal processing task
-        Task t(step, children, expected_output);
+        Task t(write1(step), step, children, expected_output);
         t.run (Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();

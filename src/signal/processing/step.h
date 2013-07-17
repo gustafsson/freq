@@ -37,8 +37,8 @@ public:
     Signal::Operation::Ptr      operation(Signal::ComputingEngine::Ptr);
     Signal::OperationDesc::Ptr  operation_desc() const;
 
-    void                        registerTask(volatile Task*, Signal::Interval expected_output);
-    void                        finishTask(volatile Task*, Signal::pBuffer result);
+    void                        registerTask(Task* taskid, Signal::Interval expected_output);
+    void                        finishTask(Task* taskid, Signal::pBuffer result);
     void                        sleepWhileTasks();
 
     /**
@@ -52,7 +52,7 @@ public:
 
 private:
     typedef std::map<Signal::ComputingEngine::WeakPtr, Signal::Operation::Ptr> OperationMap;
-    typedef std::map<volatile Task*, Signal::Interval> RunningTaskMap;
+    typedef std::map<Task*, Signal::Interval> RunningTaskMap;
 
     Signal::SinkSource::Ptr     cache_;
     Signal::Intervals           not_started_;

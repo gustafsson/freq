@@ -67,7 +67,7 @@ public:
         get_task_calls++;
         if (get_task_calls == 1)
             return Task::Ptr();
-        return Task::Ptr(new Task(Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(4,5)));
+        return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(4,5)));
     }
 
     int get_task_calls;

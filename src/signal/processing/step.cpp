@@ -2,6 +2,11 @@
 
 #include <boost/foreach.hpp>
 
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
+
+using namespace boost;
+
 namespace Signal {
 namespace Processing {
 
@@ -30,6 +35,8 @@ Signal::Intervals Step::
 Signal::Intervals Step::
         deprecateCache(Signal::Intervals deprecated)
 {
+    DEBUGINFO TaskInfo ti(format("step %1%: deprecate %2%") % (void*)this % deprecated);
+
     if (operation_desc_)
         deprecated = operation_desc_->affectedInterval(deprecated);
 
@@ -80,20 +87,48 @@ Signal::OperationDesc::Ptr Step::
 
 
 void Step::
-        registerTask(volatile Task* t, Signal::Interval expected_output)
+        registerTask(Task* taskid, Signal::Interval expected_output)
 {
-    running_tasks[t] = expected_output;
+    DEBUGINFO TaskInfo tt(format("step %1%: starting %2% - task %3%") % (void*)this % expected_output % (void*)taskid );
+    running_tasks[taskid] = expected_output;
     not_started_ -= expected_output;
 }
 
 
 void Step::
-        finishTask(volatile Task* t, Signal::pBuffer result)
+        finishTask(Task* taskid, Signal::pBuffer result)
 {
-    if (!cache_) cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
-    cache_->put (result);
-    running_tasks.erase (t);
+    Signal::Interval result_interval;
+    if (result)
+        result_interval = result->getInterval ();
 
+    DEBUGINFO TaskInfo tt(format("step %1%: finish %2% - task %3%") % (void*)this % result_interval % (void*)taskid );
+
+    if (result) {
+        if (!cache_) cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
+        cache_->put (result);
+    }
+
+    int C = running_tasks.count (taskid);
+    if (C!=1) {
+        DEBUGINFO TaskInfo("C = %d, taskid = %x", C, taskid);
+        EXCEPTION_ASSERTX( running_tasks.count (taskid)==1, "Could not find given task");
+    }
+
+    Signal::Intervals expected_output = running_tasks[ taskid ];
+
+    Intervals update_miss = expected_output - result_interval;
+    not_started_ |= update_miss;
+
+    if (!expected_output) {
+        DEBUGINFO TaskInfo(format("The task was not recognized. %1%") % result_interval);
+    } else if (!result_interval) {
+        DEBUGINFO TaskInfo(format("The task was cancelled. Restoring %1%") % update_miss);
+    } else if (update_miss) {
+        DEBUGINFO TaskInfo(format("These samples were supposed to be updated by the task but missed: %1%") % update_miss);
+    }
+
+    running_tasks.erase ( taskid );
     wait_for_tasks_.wakeAll ();
 }
 
@@ -102,9 +137,12 @@ void Step::
         sleepWhileTasks()
 {
     // The caller keeps a lock that is released while waiting
+    gc();
 
     while (!running_tasks.empty ()) {
+        DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
         wait_for_tasks_.wait (readWriteLock());
+        gc();
     }
 }
 
@@ -116,23 +154,36 @@ Signal::pBuffer Step::
 }
 
 
+template<typename T>
+void weakmap_gc(T& m) {
+    for (typename T::iterator i = m.begin (); i != m.end (); )
+    {
+        if (i->first.lock()) {
+            i++;
+        } else {
+            m.erase (i);
+            i = m.begin ();
+        }
+    }
+}
+
 void Step::
         gc()
 {
     // Garbage collection, remove operation mappings whose ComputingEngine has been removed.
+    weakmap_gc(operations_);
 
-    for (OperationMap::iterator omi = operations_.begin ();
-         omi != operations_.end (); )
-    {
-        Signal::ComputingEngine::Ptr p = omi->first.lock();
-        if (!p) {
-            operations_.erase (omi);
-            omi = operations_.begin ();
-        } else
-            omi++;
-    }
+    //weakmap_gc(running_tasks);
+    //wait_for_tasks_.wakeAll ();
 }
 
+
+} // namespace Processing
+} // namespace Signal
+
+
+namespace Signal {
+namespace Processing {
 
 void Step::
         test()

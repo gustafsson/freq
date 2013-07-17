@@ -73,8 +73,7 @@ public:
                 children.push_back (g[v]);
             }
 
-            task->reset (new Task(g[u], children, expected_output));
-            step->registerTask(task->get (), expected_output);
+            task->reset (new Task(&*step, g[u], children, expected_output));
         }
     }
 

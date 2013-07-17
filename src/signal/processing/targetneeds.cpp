@@ -104,7 +104,7 @@ void TargetNeeds::
     TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
 
     Signal::Intervals initial_valid(0,60);
-    write1(step)->registerTask((volatile Task*)0, initial_valid.spannedInterval ());
+    write1(step)->registerTask(0, initial_valid.spannedInterval ());
 
     EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
     EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
