@@ -73,7 +73,9 @@ public:
      * a valid chunk representing the at least interval I at once the operation
      * can request a smaller chunk for processing instead by modifying I before
      * returning.
-     * @param expectedOutput must overlap I.
+     * @param expectedOutput will overlap I. expectedOutput may be zero. If
+     * 'expectedOutput' is non-zero it will be assigned an Interval by
+     * requiredInterval.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
 
