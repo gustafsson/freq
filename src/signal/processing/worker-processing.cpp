@@ -10,7 +10,6 @@ Worker::
     :
       computing_eninge_(computing_eninge),
       schedule_(schedule),
-      enough_(false),
       exception_type_(0)
 {
 }
@@ -21,7 +20,7 @@ void Worker::
 {
     try {
 
-        while (!enough_)
+        for (;;)
         {
             ISchedule::Ptr schedule = schedule_.lock ();
             if (!schedule)
@@ -46,7 +45,7 @@ void Worker::
 void Worker::
         exit_nicely_and_delete()
 {
-    enough_ = true;
+    schedule_.reset ();
 }
 
 
