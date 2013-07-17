@@ -103,6 +103,13 @@ unsigned BufferSource::
 }
 
 
+Interval BufferSource::
+        getInterval()
+{
+    return buffer_->getInterval ();
+}
+
+
 // OperationDesc
 Signal::Interval BufferSource::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
@@ -131,6 +138,17 @@ Operation::Ptr BufferSource::
         createOperation(ComputingEngine*) const
 {
     return Operation::Ptr(new BufferSourceOperation(buffer_));
+}
+
+
+Signal::OperationDesc::Extent BufferSource::
+        extent() const
+{
+    Extent x;
+    x.interval = buffer_->getInterval ();
+    x.number_of_channels = buffer_->number_of_channels ();
+    x.sample_rate = buffer_->sample_rate ();
+    return x;
 }
 
 

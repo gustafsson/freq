@@ -30,6 +30,7 @@ public:
     void set_sample_rate( float fs );
     virtual IntervalType number_of_samples();
     virtual unsigned num_channels();
+    virtual Interval getInterval();
 
 
     // OperationDesc
@@ -37,6 +38,7 @@ public:
     virtual Interval affectedInterval( const Interval& I ) const;
     virtual OperationDesc::Ptr copy() const;
     virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
+    virtual Extent extent() const;
     virtual bool operator==(const OperationDesc& d) const;
 
     // OperationSourceDesc
