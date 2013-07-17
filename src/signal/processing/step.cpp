@@ -93,6 +93,19 @@ void Step::
     if (!cache_) cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
     cache_->put (result);
     running_tasks.erase (t);
+
+    wait_for_tasks_.wakeAll ();
+}
+
+
+void Step::
+        sleepWhileTasks()
+{
+    // The caller keeps a lock that is released while waiting
+
+    while (!running_tasks.empty ()) {
+        wait_for_tasks_.wait (readWriteLock());
+    }
 }
 
 
@@ -137,6 +150,8 @@ void Step::
 
         // Create a Step
         Step s((Signal::OperationDesc::Ptr()));
+
+        // It should contain information about what's out_of_date and what's currently being updated.
         s.registerTask(0, b->getInterval ());
         EXCEPTION_ASSERT_EQUALS(s.not_started (), ~Signal::Intervals(b->getInterval ()));
         EXCEPTION_ASSERT_EQUALS(s.out_of_date(), Signal::Intervals::Intervals_ALL);
@@ -145,6 +160,8 @@ void Step::
 
         EXCEPTION_ASSERT( *b == *s.readFixedLengthFromCache (b->getInterval ()) );
     }
+
+
 }
 
 

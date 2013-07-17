@@ -6,11 +6,20 @@
 #include "signal/operation.h"
 #include "signal/sinksource.h"
 
+#include <QWaitCondition>
+
 namespace Signal {
 namespace Processing {
 
 class Task;
 
+/**
+ * @brief The Step class should keep a cache for a signal processing step
+ * (defined by an OpertionDesc).
+ *
+ * The cache description should contain information about what's out_of_date
+ * and what's currently being updated.
+ */
 class Step: public VolatilePtr<Step>
 {
 public:
@@ -30,6 +39,7 @@ public:
 
     void                        registerTask(volatile Task*, Signal::Interval expected_output);
     void                        finishTask(volatile Task*, Signal::pBuffer result);
+    void                        sleepWhileTasks();
 
     /**
      * @brief readFixedLengthFromCache should read a buffer from the cache.
@@ -51,6 +61,8 @@ private:
 
     Signal::OperationDesc::Ptr  operation_desc_;
     OperationMap                operations_;
+
+    QWaitCondition              wait_for_tasks_;
 
     Signal::Intervals           currently_processing() const; // from running_tasks
     void                        gc();
