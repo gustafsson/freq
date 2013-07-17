@@ -5,6 +5,9 @@
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
+
 using namespace boost;
 
 namespace Signal {
@@ -15,6 +18,7 @@ typedef std::map<GraphVertex, Signal::Intervals> MissingSamples;
 
 
 struct ScheduleParams {
+    Signal::ComputingEngine::Ptr engine;
     Signal::IntervalType preferred_size;
     Signal::IntervalType center;
 };
@@ -36,11 +40,17 @@ public:
         if (*task)
             return;
 
+        DEBUGINFO TaskTimer tt(format("discover_vertex %1%") % u);
+
         Step::WritePtr step( g[u] ); // lock while studying what's needed
-        Signal::Intervals I = missing_samples[u];
+        Signal::Intervals I = missing_samples[u] & step->not_started ();
         Signal::OperationDesc::Ptr od = step->operation_desc();
 
         // Compute what we need from sources
+        DEBUGINFO TaskInfo(format("step %1%: missing samples %2%") % ((void*)&*step) % I);
+        if (!I)
+            return;
+
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;
         for (Signal::Intervals needed = expected_output; needed;) {
@@ -58,13 +68,15 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
             GraphVertex v = target(e,g);
             Step::ReadPtr src( g[v] );
-            Signal::Intervals src_missing = src->out_of_date() & required_input;
-            missing_samples[v] |= src_missing;
-            total_missing |= src_missing;
+            missing_samples[v] |= src->not_started () & required_input;
+            total_missing |= src->out_of_date () & required_input;
         }
 
-        // If nothing is missing
-        if (total_missing.empty ())
+        // If nothing is missing and this engine supports this operation
+        if (total_missing.empty () && step->operation (params.engine))
+            // Even if this engine doesn't support this operation it should
+            // still update missing_samples so that it can compute what's
+            // needed in the children.
         {
             // Create a task
             std::vector<Step::Ptr> children;
@@ -89,8 +101,9 @@ Task::Ptr FirstMissAlgorithm::
                 Signal::Intervals missing_in_target,
                 Signal::IntervalType center,
                 Workers::Ptr workers,
-                Signal::ComputingEngine::Ptr /*engine*/) const
+                Signal::ComputingEngine::Ptr engine) const
 {
+    DEBUGINFO TaskTimer tt("getTask");
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 
@@ -99,7 +112,7 @@ Task::Ptr FirstMissAlgorithm::
     if (workers)
         preferred_size = 1 + preferred_size/read1(workers)->n_workers();
 
-    ScheduleParams schedule_params = { preferred_size, center };
+    ScheduleParams schedule_params = { engine, preferred_size, center };
 
     MissingSamples missing_samples;
     missing_samples[target] = missing_in_target;
@@ -109,6 +122,9 @@ Task::Ptr FirstMissAlgorithm::
     find_missing_samples vis(missing_samples, &task, schedule_params);
 
     breadth_first_search(g, target, visitor(vis));
+
+    if (!task)
+        DEBUGINFO TaskInfo("didn't find anything");
 
     return task;
 }
@@ -132,21 +148,23 @@ void FirstMissAlgorithm::
         // Schedule a task
         FirstMissAlgorithm schedule;
         Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25);
-        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(20,24) | Signal::Interval(26,30), 25);
+        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25);
 
 
         // Verify output
+        EXCEPTION_ASSERT(t1);
+        EXCEPTION_ASSERT(t2);
         EXCEPTION_ASSERT_EQUALS(read1(t1)->expected_output(), Interval(20,30));
-        EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(20,24));
+        EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(10, 20));
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), Signal::Intervals::Intervals_ALL);
-        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(20,30), read1(step)->not_started());
+        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), read1(step)->not_started());
 
         // Verify that the output objects can be used
         t1->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         t2->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(20,30));
+        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,30));
     }
 
     // It should let missing_in_target override out_of_date in the given vertex
