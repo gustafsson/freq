@@ -23,6 +23,7 @@
 #include "signal/processing/task.h"
 #include "signal/processing/worker.h"
 #include "signal/processing/workers.h"
+#include "signal/oldoperationwrapper.h"
 #include "tools/support/timer.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
@@ -75,6 +76,8 @@ int UnitTest::
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
+        RUNTEST(Signal::OldOperationWrapper);
+        RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
         RUNTEST(Heightmap::CreateChunkBlockFilter);
