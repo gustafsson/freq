@@ -1,52 +1,61 @@
 #include "sleepschedule.h"
 #include "task.h"
 
+#include <QThread>
+
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
+
 namespace Signal {
 namespace Processing {
 
 
 SleepSchedule::
-        SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule)
+        SleepSchedule(Bedroom::WeakPtr bedroom, ISchedule::Ptr schedule)
     :
-      bedroom(bedroom),
-      schedule(schedule),
-      enough(false)
+      bedroom_(bedroom),
+      schedule_(schedule)
 {
-}
-
-
-SleepSchedule::
-        ~SleepSchedule()
-{
-    enough = true;
-    bedroom->wakeup();
-    bedroom->sleep();
 }
 
 
 Task::Ptr SleepSchedule::
         getTask() volatile
 {
-    Bedroom::Ptr bedroom;
+    Bedroom::WeakPtr wbedroom;
     ISchedule::Ptr schedule;
 
     {
         ReadPtr that(this);
         const SleepSchedule* self = (const SleepSchedule*)&*that;
 
-        bedroom = self->bedroom;
-        schedule = self->schedule;
+        wbedroom = self->bedroom_;
+        schedule = self->schedule_;
+
+        Bedroom::Ptr bedroom = wbedroom.lock ();
+        if (bedroom) {
+            DEBUGINFO TaskInfo("wakeup");
+            bedroom->wakeup();
+        }
     }
 
     for (;;) {
+        Bedroom::Ptr bedroom = wbedroom.lock ();
+        if (!bedroom)
+            return Task::Ptr();
+
+        DEBUGINFO TaskInfo(boost::format("starts searching for a task"));
+
         Task::Ptr task = schedule->getTask();
 
-        if (task || enough) {
+        if (task) {
             bedroom->wakeup();
             return task;
         }
 
+        DEBUGINFO TaskInfo(boost::format("didn't find a task. Going to bed"));
         bedroom->sleep();
+        DEBUGINFO TaskInfo(boost::format("woke up"));
     }
 }
 
@@ -65,7 +74,7 @@ public:
 
     Task::Ptr getTask() volatile {
         get_task_calls++;
-        if (get_task_calls == 1)
+        if (get_task_calls <= 2)
             return Task::Ptr();
         return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(4,5)));
     }
@@ -96,15 +105,15 @@ void SleepSchedule::
         WorkerMock worker_mock(sleep_schedule);
         worker_mock.start ();
 
-        EXCEPTION_ASSERT_EQUALS(worker_mock.wait (1), false);
+        EXCEPTION_ASSERT(!worker_mock.wait (1));
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), 1);
 
         bedroom->wakeup();
 
-        EXCEPTION_ASSERT_EQUALS(worker_mock.wait (1), true);
+        EXCEPTION_ASSERT(worker_mock.wait (1));
 
         int get_task_calls = dynamic_cast<const ScheduleMock*>(&*read1(schedule_mock))->get_task_calls;
-        EXCEPTION_ASSERT_EQUALS(get_task_calls, 2);
+        EXCEPTION_ASSERT_EQUALS(get_task_calls, 3);
     }
 }
 
