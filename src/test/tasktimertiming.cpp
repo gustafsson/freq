@@ -44,7 +44,7 @@ void TaskTimerTiming::
         TaskTimer::setLogLevelStream (TaskTimer::LogVerbose, &std::cout);
         TaskTimer::setLogLevelStream (TaskTimer::LogDetailed, &std::cout);
         float T = t.elapsed ();
-        EXCEPTION_ASSERTX( T < 0.0005, boost::format("T was %1%") % T);
+        EXCEPTION_ASSERTX( T < 0.0006, boost::format("T was %1%") % T);
     }
     catch( ... )
     {
