@@ -648,13 +648,18 @@ void Stft::
                 long in0 = &in.ref(pos) - in.ptr();
                 long in1 = &in.ref(pos) + windowCount*increment - in.ptr();
                 long in2 = source->numberOfElements();
-                if (!(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements()) || !(in1 < in2))
+                long in3 = &in.ref(pos) + (windowCount-1)*increment + p.chunk_size() - 1 - in.ptr();
+                if (!(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements()) || !(in3 < in2))
                 {
-                    TaskInfo("in0 %dl", in0);
-                    TaskInfo("in1 %dl", in1);
-                    TaskInfo("in2 %dl", in2);
+                    TaskInfo("in0 %d", in0);
+                    TaskInfo("in1 %d", in1);
+                    TaskInfo("in2 %d", in2);
+                    TaskInfo("in3 %d", in3);
+                    TaskInfo("windowCount %d", windowCount);
+                    TaskInfo("p.chunk_size() %d", p.chunk_size());
+                    TaskInfo("increment %d", increment);
                     STFT_ASSERT(&out.ref(pos) + windowCount*p.chunk_size() - out.ptr() == (long)windowedData->numberOfElements());
-                    STFT_ASSERT(in1 < in2);
+                    STFT_ASSERT(in3 < in2);
                 }
             }
 
