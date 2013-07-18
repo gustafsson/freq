@@ -541,7 +541,7 @@ Signal::PostSink* RenderController::
 
     if (!isCwt && wasCwt)
     {
-        tf_resolution->setRange (1<<8, 1<<20, Widgets::ValueSlider::Logaritmic);
+        tf_resolution->setRange (1<<5, 1<<20, Widgets::ValueSlider::Logaritmic);
         tf_resolution->setDecimals (0);
         s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
         // transformChanged updates value accordingly
@@ -1029,7 +1029,7 @@ void RenderController::
     // QSlider * tf_resolution
     {   tf_resolution = new Widgets::ValueSlider( toolbar_render );
         tf_resolution->setObjectName ("tf_slider");
-        tf_resolution->setRange (1<<8, 1<<20, Widgets::ValueSlider::Logaritmic);
+        tf_resolution->setRange (1<<5, 1<<20, Widgets::ValueSlider::Logaritmic);
         tf_resolution->setValue ( 4096 );
         tf_resolution->setToolTip ("Window size (time/frequency resolution) ");
         tf_resolution->setSliderSize ( 300 );
