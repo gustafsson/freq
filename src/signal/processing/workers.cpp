@@ -251,7 +251,7 @@ void Workers::
         } catch (const std::exception& x) {}
     }
 
-    EXCEPTION_ASSERT_LESS(maxwait, 0.004);
+    EXCEPTION_ASSERT_LESS(maxwait, 0.006);
 }
 
 
