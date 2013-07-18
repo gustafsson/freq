@@ -253,13 +253,8 @@ void SettingsDialog::
 {
     if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear all user defined settings?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
-        QSettings settings;
-        QString value = settings.value("value").toString();
-        settings.clear();
-        settings.setValue("value", value);
-
-        project->mainWindow()->resetLayout();
-        project->mainWindow()->resetView();
+        QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to reload default settings");
+        QSettings().setValue("reset on next startup", true);
     }
 }
 

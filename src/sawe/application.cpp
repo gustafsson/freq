@@ -105,8 +105,16 @@ Application::
 
     if (!Sawe::Configuration::use_saved_state())
     {
+        QSettings().remove("reset on next startup");
+
         QVariant value = QSettings().value("value");
         setApplicationName(applicationName() + " temp");
+        QSettings().clear();
+        QSettings().setValue("value", value);
+    }
+    if (QSettings().value("reset on next startup", false).toBool())
+    {
+        QVariant value = QSettings().value("value");
         QSettings().clear();
         QSettings().setValue("value", value);
     }
