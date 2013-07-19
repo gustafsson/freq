@@ -121,6 +121,12 @@ void PlaybackController::
         return;
     }
 
+    if (_view->model->selection->current_selection())
+    {
+        receivePlaySelection (active);
+        return;
+    }
+
     TaskTimer tt("Initiating playback of entire sound");
 
     ui_items_->actionPlaySelection->setChecked( false );
