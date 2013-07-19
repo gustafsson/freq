@@ -1404,10 +1404,10 @@
     <string>Play entire sound starting at current section</string>
    </property>
    <property name="toolTip">
-    <string>Play entire sound starting at current section [ [Ctrl+Shift+Space]</string>
+    <string>Play entire sound starting at current section [Space]</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+Space</string>
+    <string>Space</string>
    </property>
   </action>
   <action name="actionToggleFullscreenNoMenus">
