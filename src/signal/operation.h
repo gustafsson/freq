@@ -26,6 +26,11 @@ class ComputingEngine;
 
 class OperationDesc;
 
+/**
+ * @brief The Operation class should describe the interface for performing signal processing on signal data.
+ *
+ * 'process' will only be called from one thread.
+ */
 class SaweDll Operation
 {
 public:
@@ -55,6 +60,11 @@ public:
 };
 
 
+/**
+ * @brief The OperationDesc class should describe the interface for creating instances of the Operation interface.
+ *
+ * TODO should use VolatilePtr as the operation description might be accessed from different threads.
+ */
 class SaweDll OperationDesc
 {
 public:
@@ -99,6 +109,7 @@ public:
      * changes in the input.
      */
     virtual Interval affectedInterval( const Interval& I ) const = 0;
+
 
     /**
      * @brief affectedInterval
@@ -155,6 +166,8 @@ public:
      *
      * @return the same operation if it could be reused and modified, or a new
      * operation. The default is to not use the hint at all.
+     *
+     * TODO deprecated
      */
     virtual Operation::Ptr recreateOperation(Operation::Ptr hint, ComputingEngine* engine=0) const;
 
@@ -168,6 +181,8 @@ public:
     /**
      * @brief getNumberOfSources is larger than 1 if the operation merges
      * multiple sources.
+     *
+     * TODO deprecated
      */
     virtual int getNumberOfSources() const;
 

@@ -17,6 +17,9 @@ namespace Processing {
  * Doesn't really need VolatilePtr since all member variables are thread safe
  * by themselves. But using VolatilePtr makes it more clear that this class is
  * indeed thread-safe. A bit far fetched maybe, ah well.
+ *
+ * TODO adding an operation should invalidate the target automatically using iinvalidator.
+ * TODO removing an operation should invalidate the target using OperationDesc::affectedInterval just like Step::deprecatedCache
  */
 class Chain: public VolatilePtr<Chain>
 {

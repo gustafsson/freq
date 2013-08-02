@@ -42,6 +42,15 @@ std::string AppendOperationDescCommand::
 }
 
 
+} // namespace Commands
+} // namespace Tools
+
+
+// Unit test
+
+namespace Tools {
+namespace Commands {
+
 class EmptyOperationDesc : public OperationDesc
 {
     Interval requiredInterval( const Interval& I, Interval* J) const {
@@ -64,15 +73,6 @@ class EmptyOperationDesc : public OperationDesc
     }
 };
 
-
-} // namespace Commands
-} // namespace Tools
-
-
-// Unit test
-
-namespace Tools {
-namespace Commands {
 
 class SourceMock : public EmptyOperationDesc
 {
