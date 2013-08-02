@@ -14,6 +14,8 @@ namespace Commands {
  * user-level state of the application. Commands are invoked through
  * CommandInvoker::invokeCommand(pCommand). CommandInvoker keeps track of a
  * CommandList that describes the order of executed and undone commands.
+ *
+ * TODO should use QString toString() instead of std::string toString();
  */
 class Command
 {
