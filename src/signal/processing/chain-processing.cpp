@@ -110,7 +110,7 @@ void Chain::
 
 class find_extent: public default_bfs_visitor {
 public:
-    find_extent(boost::optional<Signal::Interval>* extent)
+    find_extent(Signal::OperationDesc::Extent* extent)
         :   extent(extent)
     {
     }
@@ -118,38 +118,43 @@ public:
 
     void discover_vertex(GraphVertex u, const Graph & g)
     {
-        if (*extent)
-            return;
-
         Step::WritePtr step( g[u] ); // lock while studying what's needed
         Signal::OperationDesc::Ptr od = step->operation_desc();
         Signal::OperationDesc::Extent x = od->extent ();
 
-        // This doesn't really work with merged paths
+        // TODO This doesn't really work with merged paths
         // But it could be extended to support that by merging the extents of merged paths.
-        *extent = x.interval;
+
+        if (!extent->interval.is_initialized ())
+            extent->interval = x.interval;
+
+        if (!extent->number_of_channels.is_initialized ())
+            extent->number_of_channels = x.number_of_channels;
+
+        if (!extent->sample_rate.is_initialized ())
+            extent->sample_rate = x.sample_rate;
     }
 
-    boost::optional<Signal::Interval>* extent;
+    Signal::OperationDesc::Extent* extent;
 };
 
 
-Signal::Interval Chain::
+Signal::OperationDesc::Extent Chain::
         extent(TargetNeeds::Ptr at) const
 {
     Step::Ptr step = read1(at)->step().lock();
     if (!step)
-        return Signal::Interval();
+        return Signal::OperationDesc::Extent();
 
     Dag::ReadPtr dag(dag_);
 
     Graph rev; ReverseGraph::reverse_graph (dag->g (), rev);
     GraphVertex at_vertex = ReverseGraph::find_first_vertex (rev, step);
 
-    boost::optional<Signal::Interval> I;
+    Signal::OperationDesc::Extent I;
     breadth_first_search(rev, at_vertex, visitor(find_extent(&I)));
 
-    return I.get_value_or (Signal::Interval());
+    return I;
 }
 
 
@@ -240,7 +245,7 @@ void Chain::
         TargetNeeds::Ptr target = write1(chain)->addTarget(target_desc, null);
         IInvalidator::Ptr invalidator = write1(chain)->addOperationAt(source_desc, target);
 
-        EXCEPTION_ASSERT_EQUALS (read1(chain)->extent(target), Signal::Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS (read1(chain)->extent(target).interval, Signal::Interval(3,5));
 
         write1(target)->updateNeeds(Signal::Interval(4,6));
         usleep(4000);

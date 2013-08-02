@@ -180,9 +180,9 @@ void OldOperationDescWrapper::
         TargetNeeds::Ptr target = write1(chain)->addTarget (target_op_wrapper);
         IInvalidator::Ptr step = write1(chain)->addOperationAt (source_op_wrapper, target);
 
-        Signal::Interval extent = read1(chain)->extent(target);
-        EXCEPTION_ASSERT_EQUALS(extent, buffer->getInterval ());
-        write1(target)->updateNeeds(extent);
+        Signal::OperationDesc::Extent extent = read1(chain)->extent(target);
+        EXCEPTION_ASSERT_EQUALS(extent.interval, buffer->getInterval ());
+        write1(target)->updateNeeds(extent.interval.get ());
 
         // Should wait for workers to fininsh
         target->sleep();
