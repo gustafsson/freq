@@ -91,8 +91,8 @@ void Bedroom::
         sleepyface2.start ();
 
         for (int i=snoozes; i>=0; i--) {
-            EXCEPTION_ASSERT_EQUALS(sleepyface1.wait (1), i>0?false:true);
-            EXCEPTION_ASSERT_EQUALS(sleepyface2.wait (1), i>0?false:true);
+            EXCEPTION_ASSERT_EQUALS(sleepyface1.wait (2), i>0?false:true);
+            EXCEPTION_ASSERT_EQUALS(sleepyface2.wait (2), i>0?false:true);
 
             // sleepyface1 and sleepyface2 shoule be sleeping now
             EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), i>0?2:0);
