@@ -102,6 +102,7 @@ void Dag::
 
     g_.clear_vertex (v);
     g_.remove_vertex (v);
+    g_.renumber_indices ();
     map.erase (step);
 }
 

@@ -97,13 +97,14 @@ void Chain::
     GraphVertex v = dag->getVertex (step);
     const Graph& g = dag->g ();
 
-    std::vector<GraphEdge> inedges;
+    std::vector<Step::Ptr> steps_to_remove;
     BOOST_FOREACH(GraphEdge e, in_edges(v, g)) {
-        inedges.push_back (e);
+        Step::Ptr s = g[source(e, g)];
+        steps_to_remove.push_back (s);
     }
 
-    BOOST_FOREACH(GraphEdge e, inedges) {
-        dag->removeStep (g[source(e, g)]);
+    BOOST_FOREACH(Step::Ptr s, steps_to_remove) {
+        dag->removeStep (s);
     }
 }
 
@@ -231,9 +232,25 @@ class OperationDescChainMock : public Signal::OperationDesc
 };
 
 
+
+
 void Chain::
         test()
 {
+    // Boost graph shall support removing and adding vertices without breaking color maps
+    {
+        typedef boost::directed_graph<> my_graph;
+        typedef boost::graph_traits<my_graph>::vertex_descriptor my_vertex;
+
+        my_graph g;
+        my_vertex v1 = g.add_vertex ();
+        g.remove_vertex (v1);
+        g.renumber_indices (); // required after removing a vertex
+        my_vertex v2 = g.add_vertex ();
+        breadth_first_search(g, v2, visitor(default_bfs_visitor()));
+    }
+
+
     // It should make the signal processing namespace easy to use with a clear
     // and simple interface.
     {
@@ -243,6 +260,18 @@ void Chain::
 
         TargetNeeds::Ptr null;
         TargetNeeds::Ptr target = write1(chain)->addTarget(target_desc, null);
+
+        // Should be able to add and remove an operation multiple times
+        write1(chain)->addOperationAt(source_desc, target);
+        write1(chain)->removeOperationsAt(target);
+        write1(chain)->addOperationAt(source_desc, target);
+        write1(chain)->extent(target); // will fail unless indices are reordered
+        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_edges(), 1);
+        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_vertices(), 2);
+        write1(chain)->removeOperationsAt(target);
+
+
+        // Should create an invalidator when adding an operation
         IInvalidator::Ptr invalidator = write1(chain)->addOperationAt(source_desc, target);
 
         EXCEPTION_ASSERT_EQUALS (read1(chain)->extent(target).interval, Signal::Interval(3,5));

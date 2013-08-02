@@ -27,7 +27,7 @@ GraphVertex ReverseGraph::
             u = v;
     }
 
-    EXCEPTION_ASSERTX(u !=  graph_traits<Graph>::null_vertex (), "Target was not found in graph");
+    EXCEPTION_ASSERTX(u != graph_traits<Graph>::null_vertex (), "Target was not found in graph");
 
     return u;
 }
