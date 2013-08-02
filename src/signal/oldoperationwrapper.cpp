@@ -148,6 +148,11 @@ Interval OldOperationDescWrapper::
 
 } // namespace Signal
 
+
+
+// Unit tests below
+
+
 #include "processing/chain.h"
 
 using namespace boost;
