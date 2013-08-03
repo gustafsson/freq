@@ -237,18 +237,20 @@ void Workers::
         int get_task_count = ((const GetEmptyTaskMock*)&*read1(schedule))->get_task_count;
         EXCEPTION_ASSERT_EQUALS(get_task_count, worker_count);
 
-        Workers::DeadEngines dead = workers.clean_dead_workers ();
-        Engines engines = workers.workers();
-
-        // If failing here, try to increase the sleep period above.
-        EXCEPTION_ASSERT_EQUALS(engines.size (), 0);
-        EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count);
-
         // It should forward exceptions from workers
         try {
             workers.rethrow_worker_exception();
             EXCEPTION_ASSERTX(false, "Expected exception");
-        } catch (const std::exception& x) {}
+        } catch (const std::exception&) {}
+
+        Workers::DeadEngines dead = workers.clean_dead_workers ();
+        Engines engines = workers.workers();
+
+        EXCEPTION_ASSERT_EQUALS(engines.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count-1); // One was cleared by catching its exception above
+
+        // When dead workers are cleared there should not be any exceptions thrown
+        workers.rethrow_worker_exception();
     }
 
     EXCEPTION_ASSERT_LESS(maxwait, 0.006);
