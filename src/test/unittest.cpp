@@ -17,6 +17,7 @@
 #include "signal/processing/graphinvalidator.h"
 #include "signal/processing/sleepschedule.h"
 #include "signal/processing/step.h"
+#include "signal/processing/targetmarker.h"
 #include "signal/processing/targetneeds.h"
 #include "signal/processing/targets.h"
 #include "signal/processing/targetschedule.h"
@@ -72,6 +73,7 @@ int UnitTest::
         RUNTEST(Signal::Processing::GraphInvalidator);
         RUNTEST(Signal::Processing::SleepSchedule);
         RUNTEST(Signal::Processing::Step);
+        RUNTEST(Signal::Processing::TargetMarker);
         RUNTEST(Signal::Processing::TargetNeeds);
         RUNTEST(Signal::Processing::Targets);
         RUNTEST(Signal::Processing::TargetSchedule);
