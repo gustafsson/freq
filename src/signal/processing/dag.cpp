@@ -37,6 +37,25 @@ GraphVertex Dag::
     map[step] = new_vertex;
 
     if (v != boost::graph_traits<Graph>::null_vertex ()) {
+        // v should have new_vertex as target
+        g_.add_edge (v, new_vertex);
+    }
+
+    return new_vertex;
+}
+
+
+GraphVertex Dag::
+        insertStep(Step::Ptr step, GraphVertex v)
+{
+    EXCEPTION_ASSERT (step);
+    StepVertexMap::const_iterator i = map.find (step);
+    EXCEPTION_ASSERTX (i == map.end (), "step was already added");
+
+    GraphVertex new_vertex = g_.add_vertex (step);
+    map[step] = new_vertex;
+
+    if (v != boost::graph_traits<Graph>::null_vertex ()) {
         // All sources of v should have new_vertex as target instead of v.
         // new_vertex should have v as target
 
@@ -144,39 +163,39 @@ void Dag::
     {
         Dag dag;
 
-        Step::Ptr inserter(new Step(Signal::OperationDesc::Ptr()));
         Step::Ptr step1(new Step(Signal::OperationDesc::Ptr()));
         Step::Ptr step2(new Step(Signal::OperationDesc::Ptr()));
+        Step::Ptr step3(new Step(Signal::OperationDesc::Ptr()));
 
-        dag.appendStep (inserter);
-        dag.appendStep (step1, dag.getVertex (inserter));
-        dag.appendStep (step2, dag.getVertex (inserter));
+        dag.insertStep (step2);
+        dag.insertStep (step1, dag.getVertex (step2));
+        dag.appendStep (step3, dag.getVertex (step2));
 
         EXCEPTION_ASSERT(dag.sourceSteps (step1) == std::vector<Step::Ptr>());
         EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::Ptr>(1, step2));
         EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::Ptr>(1, step1));
-        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, inserter));
-        EXCEPTION_ASSERT(dag.sourceSteps (inserter) == std::vector<Step::Ptr>(1, step2));
-        EXCEPTION_ASSERT(dag.targetSteps (inserter) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, step3));
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step2));
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
 
         dag.removeStep (step2);
 
         EXCEPTION_ASSERT(dag.sourceSteps (step1) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::Ptr>(1, inserter));
-        EXCEPTION_ASSERT(dag.sourceSteps (inserter) == std::vector<Step::Ptr>(1, step1));
-        EXCEPTION_ASSERT(dag.targetSteps (inserter) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::Ptr>(1, step3));
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step1));
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
 
         dag.removeStep (step1);
 
-        EXCEPTION_ASSERT(dag.sourceSteps (inserter) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (inserter) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
 
-        dag.appendStep (step2, dag.getVertex (inserter));
+        dag.insertStep (step2, dag.getVertex (step3));
 
         EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, inserter));
-        EXCEPTION_ASSERT(dag.sourceSteps (inserter) == std::vector<Step::Ptr>(1, step2));
-        EXCEPTION_ASSERT(dag.targetSteps (inserter) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, step3));
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step2));
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
     }
 }
 

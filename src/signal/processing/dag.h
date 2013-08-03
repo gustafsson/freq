@@ -29,6 +29,7 @@ public:
     GraphVertex getVertex(Step::Ptr s) const;
 
     GraphVertex appendStep(Step::Ptr step, GraphVertex gv=boost::graph_traits<Graph>::null_vertex ());
+    GraphVertex insertStep(Step::Ptr step, GraphVertex gv=boost::graph_traits<Graph>::null_vertex ());
     void removeStep(Step::Ptr step);
     std::vector<Step::Ptr> sourceSteps(Step::Ptr step) const;
     std::vector<Step::Ptr> targetSteps(Step::Ptr step) const;
