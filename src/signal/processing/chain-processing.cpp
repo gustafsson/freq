@@ -59,19 +59,21 @@ Chain::
 }
 
 
-TargetNeeds::Ptr Chain::
-        addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
+TargetMarker::Ptr Chain::
+        addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
-    Step::Ptr step = insertStep(Dag::WritePtr(dag_), desc, at);
+    Step::Ptr step = createBranchStep(Dag::WritePtr(dag_), desc, at);
 
     TargetNeeds::Ptr target_needs = write1(targets_)->addTarget(step);
 
-    return target_needs;
+    TargetMarker::Ptr marker(new TargetMarker(target_needs, dag_));
+
+    return marker;
 }
 
 
 IInvalidator::Ptr Chain::
-        addOperationAt(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
+        addOperationAt(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
     EXCEPTION_ASSERT (at);
 
@@ -84,7 +86,7 @@ IInvalidator::Ptr Chain::
 
 
 void Chain::
-        removeOperationsAt(TargetNeeds::Ptr at)
+        removeOperationsAt(TargetMarker::Ptr at)
 {
     EXCEPTION_ASSERT (at);
 
@@ -141,7 +143,7 @@ public:
 
 
 Signal::OperationDesc::Extent Chain::
-        extent(TargetNeeds::Ptr at) const
+        extent(TargetMarker::Ptr at) const
 {
     Step::Ptr step = read1(at)->step().lock();
     if (!step)
@@ -186,9 +188,32 @@ Chain::
 
 
 Step::Ptr Chain::
-        insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at)
+        createBranchStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
-    GraphVertex vertex = boost::graph_traits<Graph>::null_vertex ();
+    GraphVertex vertex = graph_traits<Graph>::null_vertex ();
+    if (at) {
+        Step::Ptr target_step = read1(at)->step().lock();
+        EXCEPTION_ASSERTX (target_step, "target step has been removed");
+
+        vertex = dag->getVertex (target_step);
+        BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag->g ())) {
+            // Pick one of the sources on random and append to that one
+            vertex = source(e, dag->g ());
+            break;
+        }
+    }
+
+    Step::Ptr step(new Step(desc));
+    dag->appendStep (step, vertex);
+
+    return step;
+}
+
+
+Step::Ptr Chain::
+        insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+{
+    GraphVertex vertex = graph_traits<Graph>::null_vertex ();
     if (at) {
         Step::Ptr target_step = read1(at)->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
@@ -197,7 +222,7 @@ Step::Ptr Chain::
     }
 
     Step::Ptr step(new Step(desc));
-    dag->appendStep (step, vertex);
+    dag->insertStep (step, vertex);
 
     return step;
 }
@@ -239,8 +264,8 @@ void Chain::
 {
     // Boost graph shall support removing and adding vertices without breaking color maps
     {
-        typedef boost::directed_graph<> my_graph;
-        typedef boost::graph_traits<my_graph>::vertex_descriptor my_vertex;
+        typedef directed_graph<> my_graph;
+        typedef graph_traits<my_graph>::vertex_descriptor my_vertex;
 
         my_graph g;
         my_vertex v1 = g.add_vertex ();
@@ -258,8 +283,8 @@ void Chain::
         Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
         Signal::OperationDesc::Ptr source_desc(new OperationDescChainMock);
 
-        TargetNeeds::Ptr null;
-        TargetNeeds::Ptr target = write1(chain)->addTarget(target_desc, null);
+        TargetMarker::Ptr null;
+        TargetMarker::Ptr target = write1(chain)->addTarget(target_desc, null);
 
         // Should be able to add and remove an operation multiple times
         write1(chain)->addOperationAt(source_desc, target);

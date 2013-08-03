@@ -182,7 +182,7 @@ void OldOperationDescWrapper::
         OperationDesc::Ptr source_op_wrapper(new OldOperationDescWrapper(source_op));
         OperationDesc::Ptr target_op_wrapper(new OldOperationDescWrapper(target_op));
         Chain::Ptr chain = Chain::createDefaultChain ();
-        TargetNeeds::Ptr target = write1(chain)->addTarget (target_op_wrapper);
+        TargetMarker::Ptr target = write1(chain)->addTarget (target_op_wrapper);
         IInvalidator::Ptr step = write1(chain)->addOperationAt (source_op_wrapper, target);
 
         Signal::OperationDesc::Extent extent = read1(chain)->extent(target);

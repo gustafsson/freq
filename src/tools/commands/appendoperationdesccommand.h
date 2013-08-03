@@ -16,7 +16,10 @@ namespace Commands {
 class AppendOperationDescCommand : public Tools::Commands::OperationCommand
 {
 public:
-    AppendOperationDescCommand(Signal::OperationDesc::Ptr o, Signal::Processing::Chain::Ptr c, Signal::Processing::TargetNeeds::Ptr at);
+    AppendOperationDescCommand(
+            Signal::OperationDesc::Ptr o,
+            Signal::Processing::Chain::Ptr c,
+            Signal::Processing::TargetMarker::Ptr at);
 
     virtual void execute();
     virtual void undo();
@@ -25,7 +28,7 @@ public:
 private:
     Signal::OperationDesc::Ptr operation_;
     Signal::Processing::Chain::Ptr chain_;
-    Signal::Processing::TargetNeeds::Ptr at_;
+    Signal::Processing::TargetMarker::Ptr at_;
 
 public:
     static void test();

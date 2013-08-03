@@ -9,7 +9,7 @@ namespace Commands {
 AppendOperationDescCommand::
         AppendOperationDescCommand(OperationDesc::Ptr o,
                                    Chain::Ptr c,
-                                   TargetNeeds::Ptr a)
+                                   TargetMarker::Ptr a)
     :
       operation_(o),
       chain_(c),
@@ -95,7 +95,7 @@ void AppendOperationDescCommand::
         OperationDesc::Ptr target_desc(new EmptyOperationDesc);
         OperationDesc::Ptr operation_desc(new EmptyOperationDesc);
         OperationDesc::Ptr source_desc(new SourceMock);
-        TargetNeeds::Ptr target = write1(chain)->addTarget(target_desc);
+        TargetMarker::Ptr target = write1(chain)->addTarget(target_desc);
 
 
         AppendOperationDescCommand aodc1(source_desc, chain, target);

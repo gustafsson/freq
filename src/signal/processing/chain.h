@@ -3,6 +3,7 @@
 
 #include "volatileptr.h"
 #include "targets.h"
+#include "targetmarker.h"
 #include "dag.h"
 #include "workers.h"
 #include "graphinvalidator.h"
@@ -28,7 +29,14 @@ public:
 
     ~Chain();
 
-    TargetNeeds::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at=TargetNeeds::Ptr());
+    /**
+     * @brief addTarget
+     * @param desc
+     * @param at
+     * @return A marker to keep track of the target. The Target is removed from the Dag when TargetNeeds is deleted.
+     */
+    TargetMarker::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at=TargetMarker::Ptr());
+
     /**
      * @brief addOperation
      * @param desc
@@ -39,9 +47,9 @@ public:
      * were affected by this definition. A generic call would be
      * 'read1(invalidator)->deprecateCache(chain->extent(at));'
      */
-    IInvalidator::Ptr addOperationAt(Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
-    void removeOperationsAt(TargetNeeds::Ptr at);
-    Signal::OperationDesc::Extent extent(TargetNeeds::Ptr at) const;
+    IInvalidator::Ptr addOperationAt(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    void removeOperationsAt(TargetMarker::Ptr at);
+    Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
 
     void print_dead_workers() const;
     void rethrow_worker_exception() const;
@@ -56,7 +64,8 @@ private:
 
     Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom);
 
-    Step::Ptr insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetNeeds::Ptr at);
+    Step::Ptr createBranchStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::Ptr insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
 
 public:
     static void test();
