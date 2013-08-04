@@ -8,6 +8,8 @@
 
 #include <Statistics.h>
 
+#include <boost/foreach.hpp>
+
 //#define TIME_MICROPHONERECORDER
 #define TIME_MICROPHONERECORDER if(0)
 
@@ -355,6 +357,209 @@ int MicrophoneRecorder::
     _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
 
     return paContinue;
+}
+
+
+MicrophoneRecorderOperation::
+        MicrophoneRecorderOperation( Signal::pOperation recorder )
+    :
+      recorder_(recorder)
+{
+}
+
+
+Signal::pBuffer MicrophoneRecorderOperation::
+        process(Signal::pBuffer b)
+{
+    return recorder_->readFixedLength (b->getInterval ());
+}
+
+
+class MarshallNewlyRecordedData: public Signal::Sink {
+public:
+    MarshallNewlyRecordedData(MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator)
+        :
+          invalidator_(invalidator)
+    {}
+
+    virtual void invalidate_samples(const Signal::Intervals& I) {
+        BOOST_FOREACH(const Signal::Interval& i, I)
+            write1(invalidator_)->markNewlyRecordedData(i);
+    }
+    virtual Signal::Intervals invalid_samples() {return Signal::Intervals(); }
+
+private:
+    MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator_;
+};
+
+
+MicrophoneRecorderDesc::
+        MicrophoneRecorderDesc(int inputDevice, IGotDataCallback::Ptr invalidator)
+    :
+      recorder_(new MicrophoneRecorder(inputDevice)),
+      input_device_(inputDevice),
+      invalidator_(invalidator)
+{
+    setDataCallback(invalidator);
+}
+
+
+void MicrophoneRecorderDesc::
+        changeInputDevice( int inputDevice )
+{
+    recorder()->changeInputDevice (inputDevice);
+}
+
+
+void MicrophoneRecorderDesc::
+        startRecording()
+{
+    recorder()->startRecording ();
+}
+
+
+void MicrophoneRecorderDesc::
+        stopRecording()
+{
+    recorder()->stopRecording ();
+}
+
+
+bool MicrophoneRecorderDesc::
+        isStopped()
+{
+    recorder()->isStopped ();
+}
+
+
+bool MicrophoneRecorderDesc::
+        canRecord()
+{
+    recorder()->canRecord ();
+}
+
+
+void MicrophoneRecorderDesc::
+        setDataCallback( IGotDataCallback::Ptr invalidator )
+{
+    std::vector<Signal::pOperation> sinks;
+
+    if (invalidator) {
+        Signal::pOperation marshal(new MarshallNewlyRecordedData(invalidator));
+        sinks.push_back (marshal);
+    }
+
+    recorder()->getPostSink()->sinks (sinks);
+}
+
+
+Signal::Interval MicrophoneRecorderDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Signal::Interval MicrophoneRecorderDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    return I;
+}
+
+
+Signal::OperationDesc::Ptr MicrophoneRecorderDesc::
+        copy() const
+{
+    Signal::OperationDesc::Ptr r(new MicrophoneRecorderDesc(input_device_, invalidator_));
+    return r;
+}
+
+
+Signal::Operation::Ptr MicrophoneRecorderDesc::
+        createOperation(Signal::ComputingEngine*) const
+{
+    Signal::Operation::Ptr r(new MicrophoneRecorderOperation(recorder_));
+    return r;
+}
+
+
+MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
+        extent() const
+{
+    MicrophoneRecorderDesc::Extent x;
+    x.interval = Signal::Interval(0, recorder()->number_of_samples());
+    x.number_of_channels = recorder()->num_channels ();
+    x.sample_rate = recorder()->sample_rate ();
+    return x;
+}
+
+
+MicrophoneRecorder* MicrophoneRecorderDesc::
+        recorder() const
+{
+    return dynamic_cast<MicrophoneRecorder*>(recorder_.get ());
+}
+
+
+} // namespace Adapters
+
+
+#include "tools/support/timer.h"
+
+#include <QSemaphore>
+
+
+namespace Adapters {
+
+class GotDataCallback: public MicrophoneRecorderDesc::IGotDataCallback
+{
+public:
+    Signal::Intervals marked_data() const { return marked_data_; }
+
+    virtual void markNewlyRecordedData(Signal::Interval what) {
+        marked_data_ |= what;
+        semaphore_.release ();
+    }
+
+    void wait(int ms_timeout) volatile {
+        const_cast<GotDataCallback*>(this)->semaphore_.tryAcquire (1, ms_timeout);
+    }
+
+private:
+    QSemaphore semaphore_;
+    Signal::Intervals marked_data_;
+};
+
+void MicrophoneRecorderDesc::
+        test()
+{
+    // It should control the behaviour of a recording
+    {
+        int inputDevice = -1;
+        MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback);
+
+        MicrophoneRecorderDesc mrd(inputDevice, callback);
+
+        EXCEPTION_ASSERT( mrd.canRecord() );
+        EXCEPTION_ASSERT( mrd.isStopped() );
+
+        mrd.startRecording();
+
+        EXCEPTION_ASSERT( !mrd.isStopped() );
+
+        Tools::Support::Timer t;
+        dynamic_cast<volatile GotDataCallback*>(callback.get ())->wait (400);
+        EXCEPTION_ASSERT_LESS( t.elapsed (), 0.300 );
+
+        mrd.stopRecording();
+
+        EXCEPTION_ASSERT( mrd.isStopped() );
+
+        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(&*read1(callback))->marked_data () != Signal::Intervals());
+        EXCEPTION_ASSERT_LESS( t.elapsed (), 0.400 );
+    }
 }
 
 } // namespace Adapters

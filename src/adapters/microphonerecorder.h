@@ -3,6 +3,7 @@
 
 #include "writewav.h"
 #include "audiofile.h"
+#include "volatileptr.h"
 
 #include "adapters/recorder.h"
 
@@ -109,6 +110,61 @@ private:
 
         _data.put(wavfile->readFixedLength( wavfile->getInterval() ));
     }
+};
+
+
+/**
+ * @brief The MicrophoneRecorderOperation class should provide access to recorded data.
+ */
+class MicrophoneRecorderOperation: public Signal::Operation
+{
+public:
+    MicrophoneRecorderOperation( Signal::pOperation recorder_ );
+
+    virtual Signal::pBuffer process(Signal::pBuffer b);
+
+private:
+    Signal::pOperation recorder_;
+};
+
+
+/**
+ * @brief The MicrophoneRecorderDesc class should control the behaviour of a recording.
+ */
+class MicrophoneRecorderDesc: public Signal::OperationDesc
+{
+public:
+    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
+    {
+    public:
+        virtual void markNewlyRecordedData(Signal::Interval what)=0;
+    };
+
+    MicrophoneRecorderDesc( int inputDevice, IGotDataCallback::Ptr invalidator );
+
+    void changeInputDevice( int inputDevice );
+    void startRecording();
+    void stopRecording();
+    bool isStopped();
+    bool canRecord();
+
+    // OperationDesc
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    virtual OperationDesc::Ptr copy() const;
+    virtual Signal::Operation::Ptr createOperation( Signal::ComputingEngine* engine ) const;
+    virtual Extent extent() const;
+
+private:
+    MicrophoneRecorder* recorder() const;
+    void setDataCallback( IGotDataCallback::Ptr invalidator );
+
+    Signal::pOperation recorder_;
+    int input_device_;
+    IGotDataCallback::Ptr invalidator_;
+
+public:
+    static void test();
 };
 
 } // namespace Adapters

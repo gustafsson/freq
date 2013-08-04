@@ -5,6 +5,7 @@
 #include "test/tasktimertiming.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
+#include "adapters/microphonerecorder.h"
 #include "signal/buffer.h"
 #include "signal/cache.h"
 #include "signal/dag/dagcommand.h"
@@ -58,6 +59,7 @@ int UnitTest::
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
+        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Buffer);
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
