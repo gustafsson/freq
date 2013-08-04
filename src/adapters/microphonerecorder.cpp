@@ -550,15 +550,15 @@ void MicrophoneRecorderDesc::
         EXCEPTION_ASSERT( !mrd.isStopped() );
 
         Tools::Support::Timer t;
-        dynamic_cast<volatile GotDataCallback*>(callback.get ())->wait (400);
-        EXCEPTION_ASSERT_LESS( t.elapsed (), 0.300 );
+        dynamic_cast<volatile GotDataCallback*>(callback.get ())->wait (6000);
+        EXCEPTION_ASSERT_LESS( t.elapsed (), 0.700 );
 
         mrd.stopRecording();
 
         EXCEPTION_ASSERT( mrd.isStopped() );
 
         EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(&*read1(callback))->marked_data () != Signal::Intervals());
-        EXCEPTION_ASSERT_LESS( t.elapsed (), 0.400 );
+        EXCEPTION_ASSERT_LESS( t.elapsed (), 1.000 );
     }
 }
 
