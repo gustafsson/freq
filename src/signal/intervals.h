@@ -9,6 +9,7 @@
 namespace Signal {
 
 typedef long long IntervalType;
+typedef unsigned long long UnsignedIntervalType;
 
 /**
   Describes one discrete intervals. Always in the same sample rate as the
@@ -39,7 +40,11 @@ public:
       It is up to the user to ensure the invariant relation first<=last.
       */
     IntervalType first, last;
-    IntervalType count() const { return valid() ? last - first : 0; }
+
+    /**
+     * count() returns the number of elements between first and last or 0 if last>first.
+     */
+    UnsignedIntervalType count() const { return valid() ? last - first : 0; }
 
     bool        valid       () const { return first <= last; }
     Interval    spanned     (const Interval& r) const;
