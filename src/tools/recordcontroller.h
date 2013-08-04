@@ -9,6 +9,9 @@ namespace Tools
 {
     class RecordModel;
 
+    /**
+     * @brief The RecordController class should map UI actions to manage a recorder operation (RecordModel).
+     */
     class RecordController: public QObject
     {
         Q_OBJECT

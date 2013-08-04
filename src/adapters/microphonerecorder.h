@@ -147,6 +147,7 @@ public:
     void stopRecording();
     bool isStopped();
     bool canRecord();
+    MicrophoneRecorder* recorder() const;
 
     // OperationDesc
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
@@ -156,7 +157,6 @@ public:
     virtual Extent extent() const;
 
 private:
-    MicrophoneRecorder* recorder() const;
     void setDataCallback( IGotDataCallback::Ptr invalidator );
 
     Signal::pOperation recorder_;
