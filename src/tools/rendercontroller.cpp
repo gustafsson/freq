@@ -572,7 +572,8 @@ Tfr::TransformDesc* RenderController::
 float RenderController::
         headSampleRate()
 {
-    return model()->project()->head->head_source()->sample_rate();
+    return model()->project ()->extent ().sample_rate.get_value_or (1);
+//    return model()->project()->head->head_source()->sample_rate();
 }
 
 
@@ -1073,9 +1074,13 @@ void RenderController::
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
 
     {
+/*
+//Use Signal::Processing namespace
         Signal::DeprecatedOperation* first_source = model()->project()->head->chain()->root_source().get();
 
         view->glwidget->setObjectName( QString("glwidget %1").arg(first_source->name().c_str()));
+*/
+        view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     }
 
     view->glwidget->makeCurrent();
