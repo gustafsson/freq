@@ -122,7 +122,8 @@ void RecordController::
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(model()->project->head->head_source()->root());
+//    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(model()->project->head->head_source()->root());
+    Adapters::Recorder* r = model()->recording;
     if (r)
     {
         if (r->canRecord())
