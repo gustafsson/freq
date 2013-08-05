@@ -4,6 +4,7 @@
 #include "sleepschedule.h"
 #include "targetschedule.h"
 #include "reversegraph.h"
+#include "graphinvalidator.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -62,7 +63,7 @@ Chain::
 TargetMarker::Ptr Chain::
         addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
-    Step::Ptr step = createBranchStep(Dag::WritePtr(dag_), desc, at);
+    Step::Ptr step = createBranchStep(*Dag::WritePtr(dag_), desc, at);
 
     TargetNeeds::Ptr target_needs = write1(targets_)->addTarget(step);
 
@@ -77,7 +78,7 @@ IInvalidator::Ptr Chain::
 {
     EXCEPTION_ASSERT (at);
 
-    Step::Ptr step = insertStep(Dag::WritePtr(dag_), desc, at);
+    Step::Ptr step = insertStep(*Dag::WritePtr(dag_), desc, at);
 
     IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
 
@@ -193,41 +194,41 @@ Chain::
 
 
 Step::Ptr Chain::
-        createBranchStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+        createBranchStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
     GraphVertex vertex = graph_traits<Graph>::null_vertex ();
     if (at) {
         Step::Ptr target_step = read1(at)->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
-        vertex = dag->getVertex (target_step);
-        BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag->g ())) {
+        vertex = dag.getVertex (target_step);
+        BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag.g ())) {
             // Pick one of the sources on random and append to that one
-            vertex = source(e, dag->g ());
+            vertex = source(e, dag.g ());
             break;
         }
     }
 
     Step::Ptr step(new Step(desc));
-    dag->appendStep (step, vertex);
+    dag.appendStep (step, vertex);
 
     return step;
 }
 
 
 Step::Ptr Chain::
-        insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+        insertStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
     GraphVertex vertex = graph_traits<Graph>::null_vertex ();
     if (at) {
         Step::Ptr target_step = read1(at)->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
-        vertex = dag->getVertex (target_step);
+        vertex = dag.getVertex (target_step);
     }
 
     Step::Ptr step(new Step(desc));
-    dag->insertStep (step, vertex);
+    dag.insertStep (step, vertex);
 
     return step;
 }

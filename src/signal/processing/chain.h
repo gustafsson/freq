@@ -6,7 +6,7 @@
 #include "targetmarker.h"
 #include "dag.h"
 #include "workers.h"
-#include "graphinvalidator.h"
+#include "iinvalidator.h"
 
 namespace Signal {
 namespace Processing {
@@ -63,8 +63,8 @@ private:
 
     Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom);
 
-    Step::Ptr createBranchStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    Step::Ptr insertStep(const Dag::WritePtr& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::Ptr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::Ptr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
 
 public:
     static void test();
