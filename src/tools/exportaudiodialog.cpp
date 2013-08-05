@@ -86,11 +86,14 @@ void ExportAudioDialog::
 void ExportAudioDialog::
         populateTodoList()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     if (project->worker.todo_list() || !exportTarget)
         return;
 
     project->worker.center = 0;
     project->worker.target(exportTarget);
+*/
 }
 
 
@@ -202,7 +205,10 @@ void ExportAudioDialog::
     if (0 != QString::compare(filemame.mid(filemame.length() - extension.length()), extension, Qt::CaseInsensitive))
         filemame += extension;
 
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     exportTarget.reset(new Signal::Target(&project->layers, "File export (" + filemame.toStdString() + ")" , false, true));
+
     Signal::PostSink* postsink = exportTarget->post_sink();
 
     postsink->filter( filter );
@@ -236,6 +242,7 @@ void ExportAudioDialog::
     hide();
     setWindowModality( Qt::WindowModal );
     show();
+*/
 }
 
 

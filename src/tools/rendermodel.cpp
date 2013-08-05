@@ -4,6 +4,8 @@
 #include "heightmap/collection.h"
 #include "heightmap/renderer.h"
 
+#include "signal/operationwrapper.h"
+
 #include "tfr/filter.h"
 
 #include <GlTexture.h>
@@ -16,7 +18,7 @@ namespace Tools
 RenderModel::
         RenderModel(Sawe::Project* p)
         :
-        renderSignalTarget(new Signal::Target(&p->layers, "Heightmap", true, true)),
+        //renderSignalTarget(new Signal::Target(&p->layers, "Heightmap", true, true)),
         _qx(0), _qy(0), _qz(0),
         _px(0), _py(0), _pz(0),
         _rx(0), _ry(0), _rz(0),
@@ -26,14 +28,16 @@ RenderModel::
         _project(p),
         transform_descs_(new Support::TransformDescs)
 {
+    Signal::OperationDescWrapper::Ptr w(new Signal::OperationDescWrapper());
+    target_marker_ = write1(p->processing_chain ())->addTarget(w);
+
     resetSettings();
 
     // initialize tfr_map_
-    Signal::PostSink* o = renderSignalTarget->post_sink();
-    EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
+    //Signal::PostSink* o = renderSignalTarget->post_sink();
+    //EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
 
-    Heightmap::TfrMapping tfr_mapping(Heightmap::BlockSize(1<<8,1<<8), o->sample_rate ());
-    tfr_map_.reset (new Heightmap::TfrMap(tfr_mapping, o->num_channels () ));
+    recompute_extent ();
 
     renderer.reset( new Heightmap::Renderer() );
 
@@ -47,7 +51,7 @@ RenderModel::
     TaskInfo ti(__FUNCTION__);
     renderer.reset();
     tfr_map_.reset ();
-    renderSignalTarget.reset();
+    //renderSignalTarget.reset();
 }
 
 
@@ -164,20 +168,83 @@ Support::TransformDescs::Ptr RenderModel::
 Tfr::Filter* RenderModel::
         block_filter()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     std::vector<Signal::pOperation> s = renderSignalTarget->post_sink ()->sinks ();
     Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s[0]->source().get());
 
     return f;
+*/
+    return 0;
 }
 
 
 const Tfr::TransformDesc* RenderModel::
         transform()
 {
-    Tfr::Filter* filter = block_filter();
-    if (filter)
-        return filter->transform()->transformDesc();
-    return 0;
+//    Tfr::Filter* filter = block_filter();
+//    if (filter)
+//        return filter->transform()->transformDesc();
+//    return 0;
+    return transform_desc().get ();
+}
+
+
+Tfr::TransformDesc::Ptr RenderModel::
+        transform_desc()
+{
+    Signal::OperationDesc::Ptr o = get_filter();
+    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
+    if (f)
+        return f->transformDesc ();
+    return Tfr::TransformDesc::Ptr();
+}
+
+
+void RenderModel::
+        set_transform_desc(Tfr::TransformDesc::Ptr t)
+{
+    Signal::OperationDesc::Ptr o = get_filter();
+    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
+    if (f)
+        f->transformDesc (t);
+}
+
+
+void RenderModel::
+        recompute_extent()
+{
+    Signal::OperationDesc::Extent extent = read1(project ()->processing_chain ())->extent(target_marker_);
+
+    Heightmap::TfrMapping tfr_mapping(Heightmap::BlockSize(1<<8,1<<8), extent.sample_rate.get_value_or (1));
+    tfr_map_.reset (new Heightmap::TfrMap(tfr_mapping, extent.number_of_channels.get_value_or (1)));
+}
+
+
+Signal::Processing::TargetMarker::Ptr RenderModel::
+        target_marker()
+{
+    return target_marker_;
+}
+
+
+void RenderModel::
+        set_filter(Signal::OperationDesc::Ptr o)
+{
+    Signal::Processing::Step::Ptr s = read1(target_marker_)->step().lock();
+    Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
+    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
+    w->setWrappedOperationDesc (o);
+}
+
+
+Signal::OperationDesc::Ptr RenderModel::
+        get_filter()
+{
+    Signal::Processing::Step::Ptr s = read1(target_marker_)->step().lock();
+    Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
+    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
+    return w->getWrappedOperationDesc ();
 }
 
 

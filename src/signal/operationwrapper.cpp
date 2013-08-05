@@ -60,6 +60,13 @@ void OperationDescWrapper::
 }
 
 
+OperationDesc::Ptr OperationDescWrapper::
+        getWrappedOperationDesc()
+{
+    return wrap_;
+}
+
+
 Signal::Interval OperationDescWrapper::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {

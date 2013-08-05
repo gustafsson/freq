@@ -56,17 +56,16 @@ private:
 
 RecordModel* RecordModel::
         createRecorder(Signal::Processing::Chain::Ptr chain, Signal::Processing::TargetMarker::Ptr at,
+                       Adapters::Recorder* recorder,
                        Sawe::Project* project, RenderView* render_view)
 {
-    int device = -1;
     Adapters::MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback());
 
-    Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(device, callback) );
+    Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);
 
     dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
 
-    Adapters::MicrophoneRecorder* recorder = dynamic_cast<Adapters::MicrophoneRecorderDesc*>(&*desc)->recorder ();
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
     return record_model;
@@ -136,6 +135,7 @@ void RecordModel::
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
                     target_marker,
+                    new Adapters::MicrophoneRecorder(-1),
                     p, r );
 
         EXCEPTION_ASSERT(record_model->recording);

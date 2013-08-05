@@ -9,6 +9,7 @@
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 #include "support/transformdescs.h"
+#include "signal/processing/targetmarker.h"
 
 // gpumisc
 #include <TAni.h>
@@ -30,6 +31,11 @@ namespace Tfr { class Filter; }
 
 namespace Tools
 {
+    /**
+     * @brief The RenderModel class
+     *
+     * TODO call set_extent when it's changed
+     */
     class RenderModel: public ToolModel
     {
     public:
@@ -52,11 +58,20 @@ namespace Tools
         Heightmap::TfrMap::Ptr tfr_map();
         Support::TransformDescs::Ptr transform_descs();
 
+
         Tfr::Filter* block_filter();
 
         const Tfr::TransformDesc* transform();
+        Tfr::TransformDesc::Ptr transform_desc();
+        void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
-        Signal::pTarget renderSignalTarget;
+        void recompute_extent();
+
+        Signal::Processing::TargetMarker::Ptr target_marker();
+        void set_filter(Signal::OperationDesc::Ptr o);
+        Signal::OperationDesc::Ptr get_filter();
+
+        //Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
         Sawe::Project* project() { return _project; }
@@ -77,6 +92,7 @@ namespace Tools
         Sawe::Project* _project; // project should probably be a member of RenderController instead
         Support::TransformDescs::Ptr transform_descs_;
         Heightmap::TfrMap::Ptr tfr_map_;
+        Signal::Processing::TargetMarker::Ptr target_marker_;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called

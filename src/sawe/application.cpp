@@ -296,8 +296,11 @@ void Application::
     if (1 == _projects.size())
     {
         pProject q = *_projects.begin();
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         if (!q->isModified() && q->worker.number_of_samples() == 0)
             q->mainWindow()->close();
+*/
     }
 
     if ("not"==Reader::reader_text().substr(0,3))
@@ -371,8 +374,6 @@ void Application::
 pProject Application::
         slotNew_recording()
 {
-    TaskTimer tt("New recording");
-
     pProject p = Project::createRecording();
     if (p)
         openadd_project(p);
@@ -386,6 +387,7 @@ pProject Application::
     pProject p = Project::open( project_file_or_audio_file );
     if (p)
         openadd_project(p);
+
     return p;
 }
 

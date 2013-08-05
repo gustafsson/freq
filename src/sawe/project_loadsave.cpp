@@ -112,6 +112,8 @@ bool Project::
     _mainWindow->restoreState( mainwindowState );
 
     {
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         int microphoneCounter = 0;
         foreach(Signal::pChain c, layers.layers())
         {
@@ -119,6 +121,7 @@ bool Project::
             if (r)
                 r->setProjectName(project_filename_, ++microphoneCounter);
         }
+*/
     }
 
     try

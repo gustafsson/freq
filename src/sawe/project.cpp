@@ -10,12 +10,14 @@
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
 #include "signal/operationcache.h"
+#include "signal/oldoperationwrapper.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tools/commands/appendoperationcommand.h"
+#include "tools/commands/appendoperationdesccommand.h"
 
 // Qt
 #include <QtGui/QFileDialog>
@@ -29,7 +31,8 @@
 using namespace std;
 
 namespace Sawe {
-
+/*
+//Use Signal::Processing namespace
 Project::
         Project( Signal::pOperation root, std::string layer_title )
 :   worker(Signal::pTarget()),
@@ -45,6 +48,18 @@ Project::
     layers.addLayer( chain );
     head.reset( new Signal::ChainHead(chain) );
 }
+*/
+
+Project::
+        Project( std::string layer_title )
+:   //worker(Signal::pTarget()),
+    //layers(this),
+    is_modified_(false),
+    is_sawe_project_(false),
+    project_title_(layer_title)
+{
+    // class Project has two constructors. Initialize common stuff in createMainWindow instead of here.
+}
 
 
 Project::
@@ -56,8 +71,9 @@ Project::
     TaskInfo("project_filename = %s", project_filename().c_str());
 
 #ifndef SAWE_NO_MUTEX
-    worker.stopRunning();
+    //worker.stopRunning();
 #endif
+    this->processing_chain_.reset ();
 
     {
         TaskInfo ti("releasing tool resources");
@@ -74,8 +90,27 @@ Project::
 void Project::
         appendOperation(Signal::pOperation s)
 {
-    Tools::Commands::pCommand c( new Tools::Commands::AppendOperationCommand(this, s));
+//    Tools::Commands::pCommand c( new Tools::Commands::AppendOperationCommand(this, s));
+//    commandInvoker()->invokeCommand(c);
+    Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(s));
+    appendOperation(oodw);
+}
+
+
+void Project::
+        appendOperation(Signal::OperationDesc::Ptr s)
+{
+    Tools::Commands::pCommand c(
+                new Tools::Commands::AppendOperationDescCommand(
+                    s,
+                    this->processing_chain (),
+                    default_target())
+                );
+
     commandInvoker()->invokeCommand(c);
+
+    // TODO recompute_extent must be called again if the operation is undone.
+    tools().render_model.recompute_extent();
 }
 
 
@@ -149,7 +184,12 @@ pProject Project::
         {
             std::string scheme = url.scheme().toStdString();
             Signal::pOperation s( new Adapters::NetworkRecorder(url) );
-            return pProject( new Project( s, "New network recording" ));
+
+            pProject p( new Project( "New network recording" ));
+            p->createMainWindow ();
+            p->tools ().addRecording (new Adapters::NetworkRecorder(url));
+
+            return p;
         }
 
         QMessageBox::warning( 0,
@@ -281,9 +321,13 @@ void Project::
 pProject Project::
         createRecording()
 {
-    int record_device = QSettings().value("inputdevice", -1).toInt();
-    Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
-    return pProject( new Project( s, "New recording" ));
+    int device = QSettings().value("inputdevice", -1).toInt();
+
+    pProject p( new Project( "New recording" ));
+    p->createMainWindow ();
+    p->tools ().addRecording (new Adapters::MicrophoneRecorder(device));
+
+    return p;
 }
 
 
@@ -341,8 +385,8 @@ std::string Project::
 Project::
         Project()
             :
-            worker(Signal::pTarget()),
-            layers(this),
+            //worker(Signal::pTarget()),
+            //layers(this),
             is_modified_(false),
             is_sawe_project_(true)
 {}
@@ -355,6 +399,8 @@ void Project::
         return;
 
     TaskTimer tt("Project::createMainWindow");
+
+    processing_chain_ = Signal::Processing::Chain::createDefaultChain ();
 
     command_invoker_.reset( new Tools::Commands::CommandInvoker(this) );
 
@@ -435,6 +481,35 @@ bool Project::
 }
 
 
+Signal::Processing::TargetMarker::Ptr Project::
+        default_target()
+{
+    return tools().render_model.target_marker();
+}
+
+
+Signal::OperationDesc::Extent Project::
+        extent()
+{
+    Signal::OperationDesc::Extent x = read1(processing_chain_)->extent(this->default_target ());
+    if (!x.interval.is_initialized ())
+        x.interval = Signal::Interval();
+    if (!x.number_of_channels.is_initialized ())
+        x.number_of_channels = 0;
+    if (!x.sample_rate.is_initialized ())
+        x.sample_rate = 1;
+    return x;
+}
+
+
+float Project::
+        length()
+{
+    Signal::OperationDesc::Extent x = extent();
+    return x.interval.get ().count() / x.sample_rate.get ();
+}
+
+
 #if !defined(TARGET_reader)
 bool Project::
         saveAs()
@@ -482,9 +557,15 @@ bool Project::
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Adapters::Audiofile*a;
-    Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    return pProject( new Project( s, a->name() ));
+    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString();
+
+    boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
+    Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
+
+    pProject p( new Project(a->name() ));
+    p->appendOperation (d);
+
+    return p;
 }
 #endif
 
@@ -494,7 +575,8 @@ pProject Project::
 {
     Adapters::CsvTimeseries*a;
     Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    pProject p( new Project( s, a->name() ));
+    pProject p( new Project( a->name() ));
+    p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
     return p;
 }

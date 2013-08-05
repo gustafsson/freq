@@ -5,6 +5,7 @@
 #include <QPointer>
 
 #include "signal/target.h"
+#include "signal/processing/targetmarker.h"
 
 namespace Sawe { class Project; }
 namespace Tools {
@@ -35,6 +36,8 @@ private:
     QPointer<SelectionModel> model_;
     Ui::SelectionViewInfo *ui_;
     Signal::pTarget target_;
+//Use Signal::Processing namespace
+    Signal::Processing::TargetMarker::Ptr target_marker_;
 };
 
 

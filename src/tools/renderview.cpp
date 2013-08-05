@@ -269,7 +269,7 @@ float RenderView::
     if (is_valid_value)
         *is_valid_value = true;
 
-    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->worker.length())
+    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->length())
         return 0;
 
     if (is_valid_value)
@@ -827,7 +827,7 @@ void RenderView::
 void RenderView::
         setPosition( Heightmap::Position pos )
 {
-    float l = model->project()->worker.length();
+    float l = model->project()->length();
     model->_qx = pos.time;
     if (model->_qx<0) model->_qx=0;
     if (model->_qx>l) model->_qx=l;
@@ -853,7 +853,7 @@ Support::ToolSelector* RenderView::
 float RenderView::
         last_length()
 {
-    return model->project()->worker.length();
+    return model->project()->length();
 }
 
 
@@ -882,7 +882,10 @@ void RenderView::
 
     if (request_high_fps)
     {
+/*
+//Use Signal::Processing namespace
         model->project()->worker.requested_fps(30, cheat_also_high?30:-1);
+*/
     }
 
     if (post_update)
@@ -906,6 +909,8 @@ void RenderView::
 
         unsigned ms = (wait-dt)*1e3; // round down
 
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         // wait longer between frames if the requested framerate is low
         float reqdt = 1.f/model->project()->worker.requested_fps();
         reqdt = std::min(0.01f, .05f * reqdt);
@@ -913,7 +918,8 @@ void RenderView::
         // allow others to jump in before the next update if ms=0
         // most visible in windows message loop
         ms = std::max( 10u, std::max((unsigned)(1000*reqdt), ms));
-
+*/
+        ms = 10;
         _update_timer->start(ms);
     }
 }
@@ -961,8 +967,8 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!model->renderSignalTarget)
-        return;
+//    if (!model->renderSignalTarget)
+//        return;
 
     model->renderer->collection = read1(model->tfr_map ())->collections()[0];
     model->renderer->init();
@@ -976,9 +982,9 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-    Signal::Worker& worker = model->project()->worker;
-    Signal::pOperation source = worker.source();
-    Signal::DeprecatedOperation* first_source = source ? source->root() : 0;
+//    Signal::Worker& worker = model->project()->worker;
+//    Signal::pOperation source = worker.source();
+    Signal::DeprecatedOperation* first_source = 0; //source ? source->root() : 0;
 
     TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
                               first_source?first_source->name().c_str():0, first_source);
@@ -1044,7 +1050,7 @@ void RenderView::
 
     if (0 == "stop after 31 seconds")
     {
-        float length = model->project()->worker.length();
+        float length = model->project()->length();
         static unsigned frame_counter = 0;
         TaskInfo("frame_counter = %u", ++frame_counter);
         if (length > 30) for (static bool once=true; once; once=false)
@@ -1093,7 +1099,7 @@ void RenderView::
 		}
 
         {
-            float length = model->project()->worker.length();
+            float length = model->project()->length();
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
 
             bool draw_piano = model->renderer->draw_piano;
@@ -1123,6 +1129,14 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
+        write1(model->target_marker())->updateNeeds(
+                    write1(model->collections ()[0])->invalid_samples(),
+                    0,
+                    model->_qx
+                );
+
+/*
+        //Use Signal::Processing namespace
         Signal::pTarget oldTarget = worker.target();
 
         emit populateTodoList();
@@ -1132,6 +1146,12 @@ void RenderView::
         {
             std::vector<Signal::pTarget> targetsToTry;
             targetsToTry.push_back( model->renderSignalTarget );
+
+            write1(model->target_marker())->updateNeeds(
+                        model->collections ()[0]->invalid_samples(),
+                        0,
+                        model->_qx
+                    );
 
             // Use the populated target (possibly set in populateTodoList) if
             // renderSignalTarget has nothing to work on
@@ -1165,14 +1185,20 @@ void RenderView::
                 worker.target(oldTarget);
             }
         }
+*/
     }
 
     bool workerCrashed = false;
 #ifndef SAWE_NO_MUTEX
+/*
+    //Use Signal::Processing namespace
     workerCrashed = !worker.isRunning ();
+*/
 #endif
 
     {   // Work
+/*
+        //Use Signal::Processing namespace
         isWorking = worker.todo_list();
 
         bool failed_allocation = false;
@@ -1229,10 +1255,14 @@ void RenderView::
                 }
             }
         }
+*/
     }
 
+/*
+    //Use Signal::Processing namespace
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
+*/
 
 //    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
 //    {
@@ -1245,7 +1275,8 @@ void RenderView::
 #endif
 
 #ifndef SAWE_NO_MUTEX
-    worker.checkForErrors();
+    //worker.checkForErrors();
+    read1(model->project ()->processing_chain ())->rethrow_worker_exception();
 #endif
 
     if (!onlyComputeBlocksForRenderView)

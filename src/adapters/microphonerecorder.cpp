@@ -394,20 +394,12 @@ private:
 
 
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(int inputDevice, IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder* recorder, IGotDataCallback::Ptr invalidator)
     :
-      recorder_(new MicrophoneRecorder(inputDevice)),
-      input_device_(inputDevice),
+      recorder_(recorder),
       invalidator_(invalidator)
 {
     setDataCallback(invalidator);
-}
-
-
-void MicrophoneRecorderDesc::
-        changeInputDevice( int inputDevice )
-{
-    recorder()->changeInputDevice (inputDevice);
 }
 
 
@@ -428,14 +420,14 @@ void MicrophoneRecorderDesc::
 bool MicrophoneRecorderDesc::
         isStopped()
 {
-    recorder()->isStopped ();
+    return recorder()->isStopped ();
 }
 
 
 bool MicrophoneRecorderDesc::
         canRecord()
 {
-    recorder()->canRecord ();
+    return recorder()->canRecord ();
 }
 
 
@@ -472,8 +464,12 @@ Signal::Interval MicrophoneRecorderDesc::
 Signal::OperationDesc::Ptr MicrophoneRecorderDesc::
         copy() const
 {
-    Signal::OperationDesc::Ptr r(new MicrophoneRecorderDesc(input_device_, invalidator_));
-    return r;
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+    return Signal::OperationDesc::Ptr();
+
+    // Can't make a copy of recorder();
+    //Signal::OperationDesc::Ptr r(new MicrophoneRecorderDesc(new Adapters::MicrophoneRecorder(device), invalidator_));
+    //return r;
 }
 
 
@@ -496,10 +492,10 @@ MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
 }
 
 
-MicrophoneRecorder* MicrophoneRecorderDesc::
+Recorder* MicrophoneRecorderDesc::
         recorder() const
 {
-    return dynamic_cast<MicrophoneRecorder*>(recorder_.get ());
+    return dynamic_cast<Recorder*>(recorder_.get ());
 }
 
 
@@ -540,7 +536,7 @@ void MicrophoneRecorderDesc::
         int inputDevice = -1;
         MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(inputDevice, callback);
+        MicrophoneRecorderDesc mrd(new MicrophoneRecorder(inputDevice), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );

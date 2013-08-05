@@ -90,7 +90,7 @@ namespace Tools
         // View
         SelectionModel* _model;
         RenderView* _render_view;
-        Signal::Worker* _worker;
+        //Signal::Worker* _worker;
 
         // GUI
         void setupGui();

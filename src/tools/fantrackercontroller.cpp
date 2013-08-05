@@ -37,6 +37,8 @@ void FanTrackerController::
 void FanTrackerController::
         receiveToggleFanTracker(bool value)
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::PostSink* ps = render_view_->model->renderSignalTarget->post_sink();
 
     if (value)
@@ -58,7 +60,7 @@ void FanTrackerController::
     ps->invalidate_samples(Signal::Intervals::Intervals_ALL);
 
     render_view_->userinput_update();
-
+*/
 }
 
 } // namespace Tools

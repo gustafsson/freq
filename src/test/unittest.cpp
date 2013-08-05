@@ -28,6 +28,7 @@
 #include "signal/oldoperationwrapper.h"
 #include "signal/operationwrapper.h"
 #include "tools/commands/appendoperationdesccommand.h"
+#include "tools/recordmodel.h"
 #include "tools/support/timer.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
@@ -86,6 +87,7 @@ int UnitTest::
         RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
+        RUNTEST(Tools::RecordModel);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
         RUNTEST(Heightmap::CreateChunkBlockFilter);

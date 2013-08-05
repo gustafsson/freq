@@ -10,6 +10,7 @@
 #include "signal/target.h"
 #include "signal/sinksource.h"
 #include "signal/operation-basic.h"
+#include "signal/oldoperationwrapper.h"
 #include "tfr/stft.h"
 
 // gpumisc
@@ -69,6 +70,8 @@ void SelectionViewInfo::
 void SelectionViewInfo::
         selectionChanged()
 {
+/*
+//Use Signal::Processing namespace
     if (target_)
         project_->targets.erase( target_ );
 
@@ -92,6 +95,24 @@ void SelectionViewInfo::
     target_->post_sink()->invalidate_samples(~selection->zeroed_samples_recursive());
 
     project_->targets.insert( target_ );
+*/
+    if (target_marker_)
+        target_marker_.reset ();
+
+    if (!model_->current_selection() || !isVisibleTo(parentWidget()))
+    {
+        target_marker_.reset ();
+        return;
+    }
+
+    Signal::pOperation infoOperation(new SelectionViewInfoSink(this));
+    Signal::pOperation selection = model_->current_selection_copy();
+    Signal::OperationDesc::Ptr info_desc( new Signal::OldOperationDescWrapper(infoOperation));
+    Signal::OperationDesc::Ptr selection_desc( new Signal::OldOperationDescWrapper(selection));
+
+    Signal::Processing::Chain::WritePtr chain( project_->processing_chain () );
+    target_marker_ = chain->addTarget(info_desc, project_->default_target());
+    chain->addOperationAt(selection_desc, target_marker_);
 }
 
 

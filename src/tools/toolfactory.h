@@ -17,6 +17,8 @@ namespace Sawe {
 #include <typeinfo>
 #include <QScopedPointer>
 
+namespace Adapters { class Recorder; }
+
 namespace Tools
 {
     /**
@@ -27,6 +29,8 @@ namespace Tools
     public:
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
+
+        void addRecording(Adapters::Recorder* recorder);
 
         /**
          * TODO render_model should not be public. And a session could have more than one render model.

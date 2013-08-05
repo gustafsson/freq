@@ -68,15 +68,20 @@ void Application::
     Tools::RenderModel& render_model = p->tools().render_model;
     Tools::Support::TransformDescs::WritePtr td (render_model.transform_descs ());
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
-    Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
+    //Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
+    Signal::OperationDesc::Extent extent = read1(p->processing_chain ())->extent(p->default_target ());
+    Signal::IntervalType number_of_samples = extent.interval.get_value_or (Signal::Interval());
+    float sample_rate = extent.sample_rate.get_value_or (1);
     unsigned samples_per_chunk_hint = Sawe::Configuration::samples_per_chunk_hint();
-    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<samples_per_chunk_hint, source->sample_rate() );
+    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<samples_per_chunk_hint, sample_rate );
 
     bool sawe_exit = false;
 
+/*
+//Use Signal::Processing namespace
     unsigned get_csv = Sawe::Configuration::get_csv();
     if (get_csv != (unsigned)-1) {
-        if (0==source->number_of_samples()) {
+        if (0==number_of_samples) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
             ::exit(4);
         }
@@ -90,7 +95,7 @@ void Application::
 
     unsigned get_hdf = Sawe::Configuration::get_hdf();
     if (get_hdf != (unsigned)-1) {
-        if (0==source->number_of_samples()) {
+        if (0==number_of_samples) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
             ::exit(5);
         }
@@ -101,15 +106,16 @@ void Application::
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
+*/
 
     if (Sawe::Configuration::get_chunk_count()) {
-        TaskInfo("number of samples = %u", source->number_of_samples());
+        TaskInfo("number of samples = %u", number_of_samples);
         TaskInfo("samples per chunk = %u", total_samples_per_chunk);
-        TaskInfo("chunk count = %u", (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk);
+        TaskInfo("chunk count = %u", (number_of_samples + total_samples_per_chunk-1) / total_samples_per_chunk);
         this->rs.reset();
-        cout    << "number_of_samples = " << source->number_of_samples() << endl
+        cout    << "number_of_samples = " << number_of_samples << endl
                 << "samples_per_chunk = " << total_samples_per_chunk << endl
-                << "chunk_count = " << (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk << endl;
+                << "chunk_count = " << (number_of_samples + total_samples_per_chunk-1) / total_samples_per_chunk << endl;
         sawe_exit = true;
     }
 
@@ -138,10 +144,13 @@ void Application::
         cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
     }
 
+/*
+//Use Signal::Processing namespace
 #ifndef SAWE_NO_MUTEX
     if (Sawe::Configuration::feature("worker_thread"))
         p->worker.start();
 #endif
+*/
 
     Tools::ToolFactory &tools = p->tools();
 

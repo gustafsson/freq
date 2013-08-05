@@ -73,7 +73,8 @@ void PlaybackMarkersController::
     }
     else
     {
-        pos = render_view_->model->project()->worker.length();
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+//        pos = render_view_->model->project()->worker.length();
     }
 
     render_view_->setPosition( Heightmap::Position( pos, render_view_->model->_qz) );

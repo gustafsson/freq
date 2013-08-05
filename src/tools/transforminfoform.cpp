@@ -209,8 +209,11 @@ void TransformInfoForm::
     if (cwt)
     {
         addRow("Type", "Gabor wavelet");
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         if (renderview->model->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
+*/
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
         addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
@@ -226,8 +229,11 @@ void TransformInfoForm::
     else if (stft)
     {
         addRow("Type", "Short time fourier");
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         if (renderview->model->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
+*/
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
@@ -245,8 +251,11 @@ void TransformInfoForm::
     else if (cepstrum)
     {
         addRow("Type", "Cepstrum");
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         if (renderview->model->renderSignalTarget->post_sink()->filter())
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
+*/
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
@@ -285,6 +294,8 @@ void TransformInfoForm::
 
     EXCEPTION_ASSERT(project->areToolsInitialized());
 
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::Intervals I = project->worker.todo_list();
 
     if (I.count())
@@ -292,6 +303,7 @@ void TransformInfoForm::
         addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs, 0, 'f', 1));
         timer.start();
     }
+*/
 }
 
 
@@ -399,6 +411,8 @@ void TransformInfoForm::
 void TransformInfoForm::
         windowTypeChanged()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
     {
@@ -416,12 +430,15 @@ void TransformInfoForm::
 
     renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
     renderview->emitTransformChanged();
+*/
 }
 
 
 void TransformInfoForm::
         overlapChanged()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     float newValue = ui->overlapEdit->text().toFloat();
 
     // Tfr::Stft::setWindow validates value range
@@ -438,12 +455,15 @@ void TransformInfoForm::
 
     renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
     renderview->emitTransformChanged();
+*/
 }
 
 
 void TransformInfoForm::
         averagingChanged()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     float newValue = ui->averagingEdit->text().toFloat();
 
     {
@@ -457,12 +477,15 @@ void TransformInfoForm::
 
     renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
     renderview->emitTransformChanged();
+*/
 }
 
 
 void TransformInfoForm::
         timeNormalizationChanged(qreal newValue)
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::PostSink* ps = project->tools ().render_model.renderSignalTarget->post_sink ();
     float fs = ps->sample_rate ();
     if (0.f < newValue)
@@ -473,12 +496,15 @@ void TransformInfoForm::
     }
     else
         ps->filter( Signal::pOperation() );
+*/
 }
 
 
 void TransformInfoForm::
         freqNormalizationChanged(qreal newValue)
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Tfr::Filter* filter = project->tools ().render_model.block_filter ();
     EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
 
@@ -504,6 +530,7 @@ void TransformInfoForm::
 
     stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
     renderview->emitTransformChanged ();
+*/
 }
 
 

@@ -25,6 +25,8 @@ BrushModel::
             render_model_(render_model),
             project_(project)
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     foreach (Signal::pChain c, project->layers.layers())
     {
         Signal::pOperation o = c->tip_source();
@@ -45,6 +47,7 @@ BrushModel::
             o = o->source();
         }
     }
+*/
 }
 
 

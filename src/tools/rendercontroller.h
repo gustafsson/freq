@@ -95,9 +95,9 @@ namespace Tools
     private:
         void stateChanged();
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
-        Signal::PostSink* setBlockFilter(Signal::DeprecatedOperation* blockfilter);
-        Tfr::Filter* currentFilter();
-        Tfr::Transform* currentTransform();
+        void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
+        //Tfr::Filter* currentFilter();
+        Tfr::TransformDesc* currentTransform();
         float headSampleRate();
         float currentTransformMinHz();
         ::Ui::MainWindow* getItems();

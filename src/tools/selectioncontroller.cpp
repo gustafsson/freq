@@ -37,7 +37,7 @@ namespace Tools
                 :
                 _model(model),
                 _render_view(render_view),
-                _worker(&render_view->model->project()->worker),
+                //_worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
                 tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this)),
                 deselect_action_(0),
@@ -130,6 +130,8 @@ namespace Tools
     void SelectionController::
             toolfactory()
     {
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         setLayout(new QHBoxLayout());
         layout()->setMargin(0);
 
@@ -154,6 +156,7 @@ namespace Tools
 #endif
 
         connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
+*/
     }
 
 
@@ -325,13 +328,18 @@ namespace Tools
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
+*/
     }
 
 
     void SelectionController::
             receiveCropSelection()
     {
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         if (!_model->current_selection())
             return;
 
@@ -358,6 +366,7 @@ namespace Tools
         _model->set_current_selection( o );
 
         TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
+*/
     }
 
 

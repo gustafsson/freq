@@ -65,6 +65,8 @@ const Heightmap::Position& TooltipModel::
 void TooltipModel::
         showToolTip( Heightmap::Position p, bool adjustScaleToLocalPeak )
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     EXCEPTION_ASSERT( render_view_ );
 
     switch(this->automarking)
@@ -235,6 +237,7 @@ void TooltipModel::
                 << "selected_tone_number = " << this->markers << ";" << endl
                 << "frequencies = fundamental_frequency * (1:3*selected_tone_number);" << endl;
     }
+*/
 }
 
 
@@ -299,15 +302,22 @@ class TooltipModel::FetchDataTransform: public TooltipModel::FetchData
 public:
     FetchDataTransform( RenderModel* m, const Tfr::StftDesc* stft, float t )
     {
-        Signal::pOperation o = m->renderSignalTarget->source();
-        Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
+        Signal::Processing::Step::Ptr s = read1(m->project ()->default_target ())->step().lock();
+        Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
+        float sample_rate = x.sample_rate.get_value_or (1);
+
+//        Signal::pOperation o = m->renderSignalTarget->source();
+//        float sample_rate = o->sample_rate ();
+
+        Signal::IntervalType i = std::max(0.f, t) * sample_rate;
         unsigned w = stft->chunk_size();
         i = i / w * w;
         Signal::Interval I( i, i+w );
 
         // Only check the first channel
         // TODO check other channels
-        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I)->getChannel (0));
+//        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I)->getChannel (0));
+        Tfr::pChunk chunk = (*stft->createTransform())( write1(s)->readFixedLengthFromCache(I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>( chunk->transform_data->size() ));
 
@@ -326,14 +336,21 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::CepstrumDesc* cepstrum, float t )
     {
-        Signal::pOperation o = m->renderSignalTarget->source();
-        Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
+        Signal::Processing::Step::Ptr s = read1(m->project ()->default_target ())->step().lock();
+        Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
+        float sample_rate = x.sample_rate.get_value_or (1);
+
+//        Signal::pOperation o = m->renderSignalTarget->source();
+//        float sample_rate = o->sample_rate ();
+
+        Signal::IntervalType i = std::max(0.f, t) * sample_rate;
         unsigned w = cepstrum->chunk_size();
         i = i / w * w;
         Signal::Interval I( i, i+w );
         // Only check the first channel
         // TODO check other channels
-        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I)->getChannel (0));
+//        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I)->getChannel (0));
+        Tfr::pChunk chunk = (*cepstrum->createTransform())( write1(s)->readFixedLengthFromCache(I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>(chunk->transform_data->size()));
 
@@ -352,17 +369,23 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::Cwt* cwt, float t )
     {
-        Signal::pOperation o = m->renderSignalTarget->source();
-        float fs = o->sample_rate();
+        Signal::Processing::Step::Ptr s = read1(m->project ()->default_target ())->step().lock();
+        Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
+        float fs = x.sample_rate.get_value_or (1);
+
+//        Signal::pOperation o = m->renderSignalTarget->source();
+//        float fs = o->sample_rate();
 
         Tfr::DummyCwtFilter filter;
-        filter.source(o);
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace"); // for DummyCwtFilter::requiredInterval
+        //filter.source(o);
         filter.transform ( cwt->createTransform ());
         Signal::IntervalType sample = std::max(0.f, t) * fs;
         const Signal::Interval I = filter.requiredInterval (Signal::Interval(sample, sample+1), filter.transform ());
         // Only check the first channel
         // TODO check other channels
-        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
+//        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
+        Tfr::pChunk chunk = (*filter.transform ())(write1(s)->readFixedLengthFromCache (I)->getChannel (0));
 
         Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
         unsigned N = 0;

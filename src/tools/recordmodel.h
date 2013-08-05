@@ -26,7 +26,7 @@ public:
      * @return a new RecordModel if it could be created, or null if it failed.
      */
     static RecordModel* createRecorder( Signal::Processing::Chain::Ptr chain, Signal::Processing::TargetMarker::Ptr at,
-                                 Sawe::Project* project, RenderView* render_view );
+                                 Adapters::Recorder* recorder, Sawe::Project* project, RenderView* render_view );
     ~RecordModel();
 
     static bool canCreateRecordModel( Sawe::Project* project );

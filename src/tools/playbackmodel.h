@@ -4,6 +4,7 @@
 #include "signal/operation.h"
 #include "signal/postsink.h"
 #include "signal/target.h"
+#include "signal/processing/targetmarker.h"
 
 #include <string>
 
@@ -20,7 +21,9 @@ namespace Tools
     public:
         PlaybackModel(Sawe::Project* project);
 
-        Signal::pTarget playbackTarget;
+//Use Signal::Processing namespace
+//        Signal::pTarget playbackTarget;
+        Signal::Processing::TargetMarker::Ptr target_marker;
 
         std::string selection_filename;
 

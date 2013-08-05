@@ -7,6 +7,7 @@
 #include "signal/target.h"
 #include "tools/toolfactory.h"
 #include "tools/commands/commandinvoker.h"
+#include "signal/processing/chain.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -52,19 +53,21 @@ public:
 /**
       A project currently is entirely defined by its head source.
       */
-    Project(Signal::pOperation head_source, std::string filename);
+    Project(std::string filename);
+    //Project(Signal::pOperation head_source, std::string filename);
     ~Project();
 
-    Signal::Worker worker;
+//    Signal::Worker worker;
 
-    Signal::Layers layers;
-    std::set<Signal::pTarget> targets;
+//    Signal::Layers layers;
+//    std::set<Signal::pTarget> targets;
 
 
     /**
       The HEAD is were edits take place. This is not necessairly the same as the position being played back
       or the position being rendered.
       */
+    // TODO remove head
     Signal::pChainHead head;
 
 
@@ -72,6 +75,7 @@ public:
       Appends 's' to head. If there is a current selection this only applies 's' to that selection.
       */
     void appendOperation(Signal::pOperation s);
+    void appendOperation(Signal::OperationDesc::Ptr s);
 
 
     /**
@@ -179,6 +183,17 @@ public:
       */
     bool isSaweProject();
 
+
+    /**
+     * @brief processing_chain return the signal processing chain used to add
+     * targets and operations.
+     * @return
+     */
+    Signal::Processing::Chain::Ptr processing_chain() { return processing_chain_; }
+    Signal::Processing::TargetMarker::Ptr default_target();
+    Signal::OperationDesc::Extent extent();
+    float length();
+
 private:
     Project(); // used by deserialization
     void createMainWindow();
@@ -191,6 +206,7 @@ private:
     bool is_modified_, is_sawe_project_;
     boost::scoped_ptr<Tools::Commands::CommandInvoker> command_invoker_;
 
+    Signal::Processing::Chain::Ptr processing_chain_;
     std::string project_filename_, project_title_;
 
     boost::scoped_ptr<Tools::ToolRepo> _tools;
@@ -209,7 +225,10 @@ private:
     template<class Archive> void save(Archive& ar, const unsigned int /*version*/) const {
         TaskInfo ti("Project::serialize");
 
+        //Use Signal::Processing namespace
+        Signal::Layers layers(const_cast<Project*>(this));
         ar & BOOST_SERIALIZATION_NVP(layers);
+
         ar & BOOST_SERIALIZATION_NVP(head);
 
         QByteArray guiState = getGuiState();
@@ -221,7 +240,11 @@ private:
     template<class Archive> void load(Archive& ar, const unsigned int version) {
         TaskInfo ti("Project::deserialize");
 
+        //Use Signal::Processing namespace
+        Signal::Layers layers(this);
         ar & BOOST_SERIALIZATION_NVP(layers);
+
+
         ar & BOOST_SERIALIZATION_NVP(head);
 
 		createMainWindow();

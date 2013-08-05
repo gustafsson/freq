@@ -25,6 +25,7 @@
 #include "signal/buffersource.h"
 #include "signal/worker.h"
 #include "signal/reroutechannels.h"
+#include "signal/oldoperationwrapper.h"
 
 // gpumisc
 #include <demangle.h>
@@ -369,13 +370,16 @@ void RenderController::
 
 
     // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
+/*
+//Use Signal::Processing namespace
     if (dynamic_cast<const Tfr::Cwt*>(model()->transform()))
         model()->project()->worker.min_fps( 1 );
     else
         model()->project()->worker.min_fps( 4 );
 
     // clear worker assumptions of target
-    model()->project()->worker.target(model()->renderSignalTarget);
+    //model()->project()->worker.target(model()->renderSignalTarget);
+*/
 }
 
 
@@ -420,7 +424,7 @@ void RenderController::tfresolutionDecrease()
 void RenderController::
         updateTransformDesc()
 {
-    Tfr::Transform* t = currentTransform();
+    Tfr::TransformDesc* t = currentTransform();
     Tfr::TransformDesc::Ptr newuseroptions;
 
     if (!t)
@@ -445,7 +449,7 @@ void RenderController::
             tfr_map->transform_desc( newuseroptions );
     }
 
-    if (*t->transformDesc () != *newuseroptions)
+    if (*t != *newuseroptions)
         setCurrentFilterTransform(newuseroptions);
 }
 
@@ -466,11 +470,11 @@ void RenderController::
             tf_resolution->setToolTip(QString("Time/frequency resolution\nSTFT window: %1 samples").arg(s.chunk_size()));
     }
 
-    currentFilter()->transform( t->createTransform() );
+    model()->set_transform_desc (t);
 }
 
 
-Signal::PostSink* RenderController::
+void RenderController::
         setBlockFilter(Signal::DeprecatedOperation* blockfilter)
 {
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
@@ -479,14 +483,18 @@ Signal::PostSink* RenderController::
     Signal::pOperation blockop( blockfilter );
     Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), view, this));
 
-    model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
-
+    //model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
+/*
+//Use Signal::Processing namespace
     std::vector<Signal::pOperation> v;
     v.push_back( channelop );
     Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
     ps->sinks(v);
     bfs->validateSize();
     bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
+*/
+    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(channelop));
+    model()->set_filter (od);
 
     stateChanged();
 
@@ -527,13 +535,14 @@ Signal::PostSink* RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    write1(model()->tfr_map ())->transform_desc( currentTransform()->transformDesc ()->copy() );
+    write1(model()->tfr_map ())->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
-    return ps;
+    //return ps;
 }
 
-
+/*
+//Use Signal::Processing namespace
 Tfr::Filter* RenderController::
         currentFilter()
 {
@@ -546,13 +555,17 @@ Tfr::Filter* RenderController::
     Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->DeprecatedOperation::source().get());
     return filter;
 }
+*/
 
-
-Tfr::Transform* RenderController::
+Tfr::TransformDesc* RenderController::
         currentTransform()
 {
+    return model()->transform_desc ().get();
+/*
+//Use Signal::Processing namespace
     Tfr::Filter* f = currentFilter();
     return f?f->transform().get():0;
+*/
 }
 
 
@@ -566,9 +579,9 @@ float RenderController::
 float RenderController::
         currentTransformMinHz()
 {
-    Tfr::Transform* t = currentTransform();
+    Tfr::TransformDesc* t = currentTransform();
     EXCEPTION_ASSERT(t);
-    return t->transformDesc()->freqAxis(headSampleRate()).min_hz;
+    return t->freqAxis(headSampleRate()).min_hz;
 }
 
 
@@ -626,12 +639,15 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_ridge()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
 
     Signal::PostSink* ps = setBlockFilter( cwtblock );
 
     ps->filter( Signal::pOperation(new Filters::Ridge()));
+*/
 }
 
 
@@ -1092,7 +1108,10 @@ void RenderController::
 {
     clearCaches();
 
+/*
+Use Signal::Processing namespace
     model()->renderSignalTarget.reset();
+*/
 }
 
 
@@ -1101,9 +1120,11 @@ void RenderController::
 {
     // Stop worker from producing any more heightmaps by disconnecting
     // the collection callback from worker.
+/*
+Use Signal::Processing namespace
     if (model()->renderSignalTarget == model()->project()->worker.target())
         model()->project()->worker.target(Signal::pTarget());
-
+*/
 
     // Assuming calling thread is the GUI thread.
 
@@ -1188,6 +1209,8 @@ void RenderController::
 void RenderController::
         updateChannels()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
     unsigned N = channels->source()->num_channels();
     for (unsigned i=0; i<N; ++i)
@@ -1213,6 +1236,7 @@ void RenderController::
             a->setChecked( true ); // invokes reroute
         }
     }
+*/
 }
 
 
@@ -1257,14 +1281,20 @@ bool RenderController::
 void RenderController::
         windowLostFocus()
 {
+/*
+    // Use Signal::Processing namespace
     model()->project()->worker.min_fps( 20 );
+*/
 }
 
 
 void RenderController::
         windowGotFocus()
 {
+/*
+    // Use Signal::Processing namespace
     model()->project()->worker.min_fps( 4 );
+*/
 }
 
 

@@ -7,6 +7,7 @@
 #include "renderview.h"
 #include "playbackmarkersmodel.h"
 #include "support/operation-composite.h"
+#include "signal/oldoperationwrapper.h"
 
 // Sonic AWE
 #include "ui/mainwindow.h"
@@ -152,6 +153,8 @@ void PlaybackController::
 
     TaskInfo("Selection is of type %s", vartype(*filter.get()).c_str());
 
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
     if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
     {
@@ -159,6 +162,9 @@ void PlaybackController::
 
         model()->adapter_playback.reset();
         model()->adapter_playback.reset( new Adapters::Playback( playback_device ));
+
+        Signal::OperationDesc::Ptr desc(new Signal::OldOperationDescWrapper(model()->adapter_playback) );
+        model()->target_marker = write1(project->processing_chain ())->addTarget(desc, project->default_target ());
 
         std::vector<Signal::pOperation> sinks;
         postsink_operations->sinks( sinks ); // empty
@@ -171,7 +177,8 @@ void PlaybackController::
 
         //Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
         Signal::Intervals expected_data = ~filter->zeroed_samples();
-        model()->playback ()->setExpectedSamples (expected_data.fetchFirstInterval ());
+        //model()->playback ()->setExpectedSamples (expected_data.fetchFirstInterval ());
+        write1(model()->target_marker)->updateNeeds( expected_data, 1 );
     }
     else
     {
@@ -179,6 +186,7 @@ void PlaybackController::
     }
 
     _view->update();
+*/
 }
 
 
@@ -211,6 +219,8 @@ void PlaybackController::
 void PlaybackController::
         onSelectionChanged()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     if (ui_items_->actionPlaySelection->isChecked())
         receiveStop();
 
@@ -220,12 +230,15 @@ void PlaybackController::
     model()->playbackTarget->post_sink()->sinks( empty );
     model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
     model()->adapter_playback.reset();
+*/
 }
 
 
 void PlaybackController::
         populateTodoList()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::Intervals missing_for_playback=
             model()->playbackTarget->post_sink()->invalid_samples();
 
@@ -240,6 +253,7 @@ void PlaybackController::
             project_->worker.target( project_->tools().playback_model.playbackTarget );
         }
     }
+*/
 }
 
 

@@ -88,6 +88,8 @@ MatlabController::
 void MatlabController::
         setupGui()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     ::Ui::SaweMainWindow* main = project_->mainWindow();
     ::Ui::MainWindow* ui = main->getItems();
 
@@ -113,6 +115,7 @@ void MatlabController::
 
 
     updateScriptsMenu();
+*/
 }
 
 
@@ -407,10 +410,13 @@ void MatlabController::
 void MatlabController::
         createView()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     foreach(Signal::pChain c, project_->layers.layers())
     {
         createView(c->root_source().get());
     }
+*/
 }
 
 
@@ -623,6 +629,9 @@ void MatlabController::
         worker_->invalidate_post_sink(_matlabfilter->affected_samples());
     }
     else*/
+
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     {
         Signal::pOperation matlabfilter( new Adapters::MatlabFilter( "matlabfilter" ) );
         project_->appendOperation( matlabfilter );
@@ -635,6 +644,7 @@ void MatlabController::
 
     render_view_->userinput_update();
     project_->setModified();
+*/
 }
 
 

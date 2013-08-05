@@ -208,6 +208,8 @@ namespace Tools
     void GraphController::
             redraw_operation_tree()
     {
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         if (dontredraw_ && !removing_)
             return;
 
@@ -251,6 +253,7 @@ namespace Tools
                 o = o->source();
             }
         }
+*/
     }
 
 
@@ -293,6 +296,8 @@ namespace Tools
         }
         else
         {
+            EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
             // head_source( pOperation ) invalidates models where approperiate
             Signal::pChain chain = currentItem->chain;
             Signal::pOperation operation = currentItem->operation;
@@ -302,6 +307,7 @@ namespace Tools
             head1->head_source( operation );
             head2->head_source( operation );
             head3->head_source( operation );
+*/
         }
     }
 
@@ -309,6 +315,8 @@ namespace Tools
     void GraphController::
             removeSelected()
     {
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         DEBUG_GRAPH TaskInfo ti("removeSelected");
         DEBUG_GRAPH TaskInfo("project head source: %s", project_->head->head_source()->toString().c_str());
         DEBUG_GRAPH TaskInfo("project head output: %s", project_->head->head_source()->parentsToString().c_str());
@@ -373,6 +381,7 @@ namespace Tools
 
         if (newHead==newCurrentOperation)
             currentChain->tip_source( newHead );
+*/
     }
 
 
@@ -521,10 +530,13 @@ namespace Tools
         connect(&timerUpdateContextMenu, SIGNAL(timeout()), SLOT(updateContextMenu()));
 
 
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         BOOST_FOREACH( Signal::pChain c, project_->layers.layers() )
         {
             connect( c.get(), SIGNAL(chainChanged()), SLOT(redraw_operation_tree()), Qt::QueuedConnection );
         }
+*/
 
         connect( project_->head.get(), SIGNAL(headChanged()), SLOT(redraw_operation_tree()), Qt::QueuedConnection );
 

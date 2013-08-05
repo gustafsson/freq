@@ -45,7 +45,7 @@ private:
     QTimer update_timer;
     QString filemame;
     Signal::IntervalType total;
-    bool drawnFinished_;;
+    bool drawnFinished_;
 
     // overloaded from QWidget
     virtual void paintEvent ( QPaintEvent * event );

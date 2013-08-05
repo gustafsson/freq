@@ -137,17 +137,18 @@ public:
     class IGotDataCallback: public VolatilePtr<IGotDataCallback>
     {
     public:
+        virtual ~IGotDataCallback() {}
+
         virtual void markNewlyRecordedData(Signal::Interval what)=0;
     };
 
-    MicrophoneRecorderDesc( int inputDevice, IGotDataCallback::Ptr invalidator );
+    MicrophoneRecorderDesc( Recorder*, IGotDataCallback::Ptr invalidator );
 
-    void changeInputDevice( int inputDevice );
     void startRecording();
     void stopRecording();
     bool isStopped();
     bool canRecord();
-    MicrophoneRecorder* recorder() const;
+    Recorder* recorder() const;
 
     // OperationDesc
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
@@ -160,7 +161,6 @@ private:
     void setDataCallback( IGotDataCallback::Ptr invalidator );
 
     Signal::pOperation recorder_;
-    int input_device_;
     IGotDataCallback::Ptr invalidator_;
 
 public:

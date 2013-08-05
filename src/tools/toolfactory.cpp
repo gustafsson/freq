@@ -87,12 +87,8 @@ ToolFactory::
         _brush_controller = new BrushController( _brush_view.data(), _render_view );
 #endif
 
-    if (RecordModel::canCreateRecordModel(p))
-    {
-        _record_model.reset( new RecordModel(p, _render_view) );
-        _record_view.reset( new RecordView(_record_model.data() ));
-        _record_controller = new RecordController( _record_view.data() );
-    }
+//    if (RecordModel::canCreateRecordModel(p))
+//        addRecording ();
 
     _comment_controller = new CommentController( _render_view );
     tool_controllers_.push_back( _comment_controller );
@@ -236,6 +232,22 @@ ToolFactory::
 
     EXCEPTION_ASSERT( _render_view );
     delete _render_view;
+}
+
+
+void ToolFactory::
+        addRecording (Adapters::Recorder* recorder)
+{
+    Sawe::Project*p = render_model.project ();
+
+    _record_model.reset( RecordModel::createRecorder(
+                p->processing_chain (),
+                p->default_target (),
+                recorder,
+                p, _render_view ));
+
+    _record_view.reset( new RecordView(_record_model.data() ));
+    _record_controller = new RecordController( _record_view.data() );
 }
 
 

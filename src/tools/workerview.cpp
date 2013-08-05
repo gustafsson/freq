@@ -23,6 +23,8 @@ Sawe::Project* WorkerView::
 void WorkerView::
         draw()
 {
+/*
+//Use Signal::Processing namespace
     Signal::Intervals I = project_->worker.todo_list();
     float FS = project_->head->head_source()->sample_rate();
 
@@ -48,6 +50,7 @@ void WorkerView::
     pts[0].scale = 0.93;
     pts[1].scale = 0.93;
     Support::PaintLine::drawSlice( 2, &pts[0], 0,1,0 );
+*/
 }
 
 } // namespace Tools

@@ -21,6 +21,8 @@ AppendOperationCommand::
 void AppendOperationCommand::
         execute()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     QMutexLocker l(&p->head->chain()->mutex);
 
     prevHead = p->head->head_source();
@@ -49,6 +51,7 @@ void AppendOperationCommand::
     p->tools().playback_model.playbackTarget->findHead( p->head->chain() )->head_source( p->head->head_source() );
 
     p->setModified();
+*/
 }
 
 

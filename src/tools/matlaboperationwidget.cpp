@@ -265,6 +265,8 @@ private:
 bool MatlabOperationWidget::
         hasValidTarget()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     if (!this->operation)
         return false;
 
@@ -311,7 +313,7 @@ bool MatlabOperationWidget::
     ui->pushButtonRestoreChanges->setEnabled(false);
     ui->pushButtonShowOutput->setEnabled(false);
     ui->labelEmptyForTerminal->setVisible(false);
-
+*/
     return true;
 }
 
@@ -350,6 +352,8 @@ void MatlabOperationWidget::
 void MatlabOperationWidget::
         populateTodoList()
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     if (hasValidTarget())
     {
         Signal::Intervals needupdate = operation->invalid_returns() | operation->invalid_samples();
@@ -368,6 +372,7 @@ void MatlabOperationWidget::
             }
         }
     }
+*/
 }
 
 

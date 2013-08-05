@@ -35,6 +35,7 @@ public:
     OperationDescWrapper(OperationDesc::Ptr wrap=OperationDesc::Ptr());
 
     void setWrappedOperationDesc(OperationDesc::Ptr wrap);
+    OperationDesc::Ptr getWrappedOperationDesc();
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
