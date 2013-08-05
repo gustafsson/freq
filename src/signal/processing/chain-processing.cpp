@@ -81,6 +81,8 @@ IInvalidator::Ptr Chain::
 
     IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
 
+    read1(graph_invalidator)->deprecateCache(Signal::Interval::Interval_ALL);
+
     return graph_invalidator;
 }
 
@@ -228,35 +230,22 @@ Step::Ptr Chain::
 }
 
 
-class OperationDescChainMock : public Signal::OperationDesc
+} // namespace Processing
+} // namespace Signal
+
+#include "test/operationmockups.h"
+
+namespace Signal {
+namespace Processing {
+
+class OperationDescChainMock : public Test::TransparentOperationDesc
 {
-    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* J) const {
-        if (J) *J = I;
-        return I;
-    }
-
-    Signal::Interval affectedInterval( const Signal::Interval& ) const {
-        EXCEPTION_ASSERTX(false, "not implemented");
-        return Signal::Interval();
-    }
-
-    OperationDesc::Ptr copy() const {
-        EXCEPTION_ASSERTX(false, "not implemented");
-        return OperationDesc::Ptr();
-    }
-
-    Operation::Ptr createOperation( ComputingEngine* ) const {
-        return Operation::Ptr();
-    }
-
     Extent extent() const {
         Extent x;
         x.interval = Signal::Interval(3,5);
         return x;
     }
 };
-
-
 
 
 void Chain::

@@ -15,11 +15,12 @@ namespace Processing {
  * @brief The Chain class should make the signal processing namespace easy to
  * use with a clear and simple interface.
  *
- * Doesn't really need VolatilePtr since all member variables are thread safe
- * by themselves. But using VolatilePtr makes it more clear that this class is
- * indeed thread-safe. A bit far fetched maybe, ah well.
+ * It should add signal processing operation steps to the Dag.
+ * It should remove steps from the Dag.
  *
- * TODO adding an operation should invalidate the target automatically using iinvalidator.
+ * It should provide means to deprecate caches when the an added operation
+ * changes (such as settings or contained data).
+ *
  * TODO removing an operation should invalidate the target using OperationDesc::affectedInterval just like Step::deprecatedCache
  */
 class Chain: public VolatilePtr<Chain>
