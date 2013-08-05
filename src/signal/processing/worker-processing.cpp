@@ -82,6 +82,7 @@ public:
         if (DetectGdb::was_started_through_gdb ())
             throw SignalException(SIGSEGV);
 
+        TaskInfo("Causing deliberate segfault to test that the worker handles it correctly");
         int a = *(int*)0; // cause segfault
         a=a;
         return Task::Ptr();
@@ -92,7 +93,7 @@ public:
 class GetTaskExceptionMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
-        EXCEPTION_ASSERTX(false, "GetTaskExceptionMock");
+        EXCEPTION_ASSERTX(false, "testing that worker catches exceptions from a scheduler");
         return Task::Ptr();
     }
 };
@@ -140,7 +141,7 @@ void Worker::
         const std::type_info* ti = worker.exception_type();
 
         EXCEPTION_ASSERT_EQUALS( demangle (ti?ti->name ():""), demangle (typeid(ExceptionAssert).name ()) );
-        EXCEPTION_ASSERT_EQUALS( "GetTaskExceptionMock", worker.exception_what () );
+        EXCEPTION_ASSERT_EQUALS( "testing that worker catches exceptions from a scheduler", worker.exception_what () );
     }
 }
 
