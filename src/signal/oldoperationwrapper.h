@@ -31,12 +31,18 @@ private:
  */
 class OldOperationWrapper: public Operation {
 public:
-    OldOperationWrapper(pOperation old_operation);
+    class LastRequiredInterval {
+    public:
+        Interval last_required_interval;
+    };
+
+    OldOperationWrapper(pOperation old_operation, LastRequiredInterval*);
 
 private:
     pBuffer process(pBuffer b);
 
     pOperation old_operation_;
+    LastRequiredInterval* required_interval_;
 
 public:
     static void test();
@@ -62,6 +68,7 @@ private:
     Extent extent() const;
     QString toString() const;
 
+    boost::shared_ptr<OldOperationWrapper::LastRequiredInterval> lri_;
     pOperation old_operation_;
 
 public:

@@ -1,6 +1,7 @@
 #include "oldoperationwrapper.h"
 #include "buffersource.h"
 #include "operation-basic.h"
+#include "tfr/filter.h"
 
 using namespace boost;
 
@@ -25,43 +26,33 @@ public:
     {}
 
     pBuffer read( const Interval& I ) {
-        last_read = I;
         pBuffer b = BufferSource::read(I);
-
-        // PRINT_BUFFER(b, I);
 
         return b;
     }
-
-    Interval last_read;
 };
 
 
 OldOperationWrapper::
-        OldOperationWrapper(pOperation old_operation)
+        OldOperationWrapper(pOperation old_operation, LastRequiredInterval* required_interval)
     :
-      old_operation_(old_operation)
-{}
+      old_operation_(old_operation),
+      required_interval_(required_interval)
+{
+    EXCEPTION_ASSERT( old_operation );
+    EXCEPTION_ASSERT( required_interval );
+}
 
 
 pBuffer OldOperationWrapper::
         process(pBuffer b)
 {
-    // PRINT_BUFFER(b, "pBuffer b");
-
     pOperation buffer_source(new OldOperationTrackBufferSource(b));
     if (!dynamic_cast<FinalSource*>(old_operation_.get ()))
         old_operation_->source(buffer_source);
 
-    Interval I = b->getInterval ();
-
+    Interval I = required_interval_->last_required_interval;
     pBuffer r = old_operation_->readFixedLength( I );
-
-    // PRINT_BUFFER(r, old_operation_->name ());
-
-    Interval last_read = ((OldOperationTrackBufferSource*)buffer_source.get ())->last_read;
-    bool ok = (last_read & b->getInterval ()) == last_read;
-    EXCEPTION_ASSERT (ok);
 
     return r;
 }
@@ -77,7 +68,9 @@ void OldOperationWrapper::
         pOperation old_operation(
                     new OperationSetSilent(Signal::pOperation(), Interval(4,5)));
 
-        OldOperationWrapper wrapper(old_operation);
+        OldOperationWrapper::LastRequiredInterval lri;
+        OldOperationWrapper wrapper(old_operation, &lri);
+        lri.last_required_interval = b->getInterval ();
         pBuffer r = wrapper.process (b);
         EXCEPTION_ASSERT( *r == *b );
     }
@@ -90,15 +83,26 @@ OldOperationDescWrapper::
       old_operation_(old_operation)
 {
     EXCEPTION_ASSERT(old_operation);
+    lri_.reset ( new OldOperationWrapper::LastRequiredInterval() );
 }
 
 
 Interval OldOperationDescWrapper::
         requiredInterval( const Interval& I, Interval* expectedOutput ) const
 {
+    Interval r;
+    Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(old_operation_.get ());
+
+    lri_->last_required_interval = I;
+    if (f)
+        r = f->requiredInterval (lri_->last_required_interval);
+    else
+        r = I;
+
     if (expectedOutput)
-        *expectedOutput = I;
-    return I;
+        *expectedOutput = lri_->last_required_interval;
+
+    return r;
 }
 
 
@@ -115,7 +119,7 @@ Operation::Ptr OldOperationDescWrapper::
     if (engine)
         return Operation::Ptr();
 
-    return Operation::Ptr(new OldOperationWrapper(old_operation_));
+    return Operation::Ptr(new OldOperationWrapper(old_operation_, lri_.get ()));
 }
 
 
