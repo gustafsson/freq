@@ -97,7 +97,7 @@ namespace Tools
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
         void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
         //Tfr::Filter* currentFilter();
-        Tfr::TransformDesc* currentTransform();
+        Tfr::TransformDesc::Ptr currentTransform();
         float headSampleRate();
         float currentTransformMinHz();
         ::Ui::MainWindow* getItems();

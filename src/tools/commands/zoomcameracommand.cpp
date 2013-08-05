@@ -56,7 +56,7 @@ bool ZoomCameraCommand::
     float max_xscale = 0.05f*fs;
 
 
-    const Tfr::FreqAxis& tfa = model->transform ()->freqAxis(fs);
+    const Tfr::FreqAxis& tfa = model->transform_desc ()->freqAxis(fs);
     unsigned maxi = tfa.getFrequencyScalar(fs/2);
 
     float hza = tfa.getFrequency(0u);

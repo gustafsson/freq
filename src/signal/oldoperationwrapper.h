@@ -52,6 +52,8 @@ class OldOperationDescWrapper: public OperationDesc
 public:
     OldOperationDescWrapper(pOperation old_operation);
 
+    pOperation old_operation() { return old_operation_; }
+
 private:
     Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const;
     Interval affectedInterval( const Interval& I ) const;

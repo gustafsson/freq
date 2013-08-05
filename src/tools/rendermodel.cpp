@@ -5,6 +5,7 @@
 #include "heightmap/renderer.h"
 
 #include "signal/operationwrapper.h"
+#include "signal/oldoperationwrapper.h"
 
 #include "tfr/filter.h"
 
@@ -179,24 +180,23 @@ Tfr::Filter* RenderModel::
 }
 
 
-const Tfr::TransformDesc* RenderModel::
-        transform()
-{
-//    Tfr::Filter* filter = block_filter();
-//    if (filter)
-//        return filter->transform()->transformDesc();
-//    return 0;
-    return transform_desc().get ();
-}
-
-
 Tfr::TransformDesc::Ptr RenderModel::
         transform_desc()
 {
     Signal::OperationDesc::Ptr o = get_filter();
+
     Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
     if (f)
         return f->transformDesc ();
+
+//Use Signal::Processing namespace
+    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(o.get ());
+    if (w)
+    {
+        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
+        if (f2)
+            return f2->transform ()->transformDesc ()->copy ();
+    }
     return Tfr::TransformDesc::Ptr();
 }
 
@@ -235,6 +235,7 @@ void RenderModel::
     Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
     Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
     w->setWrappedOperationDesc (o);
+    TaskInfo(boost::format("wrapping %s") % (o?vartype(*o):"(nul)"));
 }
 
 
@@ -244,7 +245,9 @@ Signal::OperationDesc::Ptr RenderModel::
     Signal::Processing::Step::Ptr s = read1(target_marker_)->step().lock();
     Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
     Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
-    return w->getWrappedOperationDesc ();
+    Signal::OperationDesc::Ptr o = w->getWrappedOperationDesc ();
+    TaskInfo(boost::format("wrapped %s") % (o?vartype(*o):"(nul)"));
+    return o;
 }
 
 

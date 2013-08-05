@@ -336,7 +336,7 @@ void RenderController::
 void RenderController::
         transformChanged()
 {
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     if (isCwt)
     {
@@ -399,7 +399,7 @@ void RenderController::
 void RenderController::
         receiveSetTimeFrequencyResolution( qreal value )
 {
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
     if (isCwt)
         write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ( value );
     else
@@ -424,7 +424,7 @@ void RenderController::tfresolutionDecrease()
 void RenderController::
         updateTransformDesc()
 {
-    Tfr::TransformDesc* t = currentTransform();
+    Tfr::TransformDesc::Ptr t = currentTransform();
     Tfr::TransformDesc::Ptr newuseroptions;
 
     if (!t)
@@ -477,7 +477,7 @@ void RenderController::
 void RenderController::
         setBlockFilter(Signal::DeprecatedOperation* blockfilter)
 {
-    bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
+    bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     BlockFilterSink* bfs;
     Signal::pOperation blockop( blockfilter );
@@ -493,8 +493,12 @@ void RenderController::
     bfs->validateSize();
     bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 */
-    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(channelop));
+    Tfr::TransformDesc::Ptr t1 = currentTransform();
+    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(blockop));
+    Tfr::TransformDesc::Ptr t2 = currentTransform();
+//    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(channelop));
     model()->set_filter (od);
+    Tfr::TransformDesc::Ptr t3 = currentTransform();
 
     stateChanged();
 
@@ -503,8 +507,8 @@ void RenderController::
     ui->actionToggle_piano_grid->setVisible( true );
     hz_scale->setEnabled( true );
 
-
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform());
+    bool isCwt2 = dynamic_cast<Tfr::Cwt*>(t3.get ());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     {
         Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
@@ -557,10 +561,10 @@ Tfr::Filter* RenderController::
 }
 */
 
-Tfr::TransformDesc* RenderController::
+Tfr::TransformDesc::Ptr RenderController::
         currentTransform()
 {
-    return model()->transform_desc ().get();
+    return model()->transform_desc ();
 /*
 //Use Signal::Processing namespace
     Tfr::Filter* f = currentFilter();
@@ -580,7 +584,7 @@ float RenderController::
 float RenderController::
         currentTransformMinHz()
 {
-    Tfr::TransformDesc* t = currentTransform();
+    Tfr::TransformDesc::Ptr t = currentTransform();
     EXCEPTION_ASSERT(t);
     return t->freqAxis(headSampleRate()).min_hz;
 }

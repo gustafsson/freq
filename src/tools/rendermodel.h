@@ -61,7 +61,6 @@ namespace Tools
 
         Tfr::Filter* block_filter();
 
-        const Tfr::TransformDesc* transform();
         Tfr::TransformDesc::Ptr transform_desc();
         void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
