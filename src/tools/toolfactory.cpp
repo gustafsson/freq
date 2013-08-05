@@ -72,34 +72,52 @@ ToolFactory::
     _timeline_view = new TimelineView(p, _render_view);
     _timeline_controller = new TimelineController(_timeline_view);
 
-    _selection_controller = new SelectionController(&selection_model, _render_view );
+/*
+//Use Signal::Processing namespace
+    //_selection_controller = new SelectionController(&selection_model, _render_view );
+*/
 
     //_navigation_controller = new NavigationController(_render_view);
 
+/*
+//Use Signal::Processing namespace
     playback_model.selection = &selection_model;
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
+*/
 
 #ifndef TARGET_hast
     // No brushes for Sjostridsskolan, the Swedish Naval Academy
+/*
+//Use Signal::Processing namespace
         _brush_model.reset( new BrushModel(p, &render_model) );
         _brush_view.reset( new BrushView(_brush_model.data() ));
         _brush_controller = new BrushController( _brush_view.data(), _render_view );
+*/
 #endif
 
 //    if (RecordModel::canCreateRecordModel(p))
 //        addRecording ();
 
+/*
+//Use Signal::Processing namespace
     _comment_controller = new CommentController( _render_view );
+*/
     tool_controllers_.push_back( _comment_controller );
 
 #if !defined(TARGET_sd) && !defined(TARGET_reader) && !defined(TARGET_hast)
+/*
+//Use Signal::Processing namespace
     // no matlab for sound design version, nor reader
     _matlab_controller = new MatlabController( p, _render_view );
+*/
 #endif
 
 #ifndef TARGET_hast
+/*
+//Use Signal::Processing namespace
     _graph_controller = new GraphController( _render_view );
+*/
 #endif
 
     _tooltip_controller = new TooltipController(
@@ -107,13 +125,18 @@ ToolFactory::
     tool_controllers_.push_back( _tooltip_controller );
 
 #ifndef TARGET_hast
+/*
+//Use Signal::Processing namespace
     _fantracker_model.reset( new FanTrackerModel( &render_model ) );
     _fantracker_view.reset(new FanTrackerView( _fantracker_model.data() ,_render_view ));
     _fantracker_controller = new FanTrackerController(_fantracker_view.data(), _render_view );
+*/
 #endif
 
     _about_dialog = new AboutDialog( p );
 
+/*
+//Use Signal::Processing namespace
     _playbackmarkers_model.reset( new PlaybackMarkersModel() );
     _playbackmarkers_view.reset( new PlaybackMarkersView( _playbackmarkers_model.data(), p ));
     _playbackmarkers_controller = new PlaybackMarkersController(
@@ -133,7 +156,7 @@ ToolFactory::
             );
 
     _selection_view_info = new SelectionViewInfo(p, &selection_model );
-
+*/
     _objects.push_back( QPointer<QObject>( new OpenAndCompareController( p ) ));
 
     _objects.push_back( QPointer<QObject>( new SettingsController( p )));
