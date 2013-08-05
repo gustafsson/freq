@@ -909,8 +909,8 @@ void RenderView::
 
         unsigned ms = (wait-dt)*1e3; // round down
 
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
 /*
+//Use Signal::Processing namespace
         // wait longer between frames if the requested framerate is low
         float reqdt = 1.f/model->project()->worker.requested_fps();
         reqdt = std::min(0.01f, .05f * reqdt);

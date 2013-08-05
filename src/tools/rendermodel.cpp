@@ -38,6 +38,9 @@ RenderModel::
     //Signal::PostSink* o = renderSignalTarget->post_sink();
     //EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
 
+    Heightmap::BlockSize bs(1<<8,1<<8);
+    tfr_map_.reset (new Heightmap::TfrMap(Heightmap::TfrMapping(bs,1), 0));
+
     recompute_extent ();
 
     renderer.reset( new Heightmap::Renderer() );
@@ -216,8 +219,10 @@ void RenderModel::
 {
     Signal::OperationDesc::Extent extent = read1(project ()->processing_chain ())->extent(target_marker_);
 
-    Heightmap::TfrMapping tfr_mapping(Heightmap::BlockSize(1<<8,1<<8), extent.sample_rate.get_value_or (1));
-    tfr_map_.reset (new Heightmap::TfrMap(tfr_mapping, extent.number_of_channels.get_value_or (1)));
+    Heightmap::TfrMap::WritePtr w(tfr_map_);
+    w->targetSampleRate( extent.sample_rate.get_value_or (1) );
+    w->length( extent.interval.get_value_or (Signal::Interval()).count() / w->targetSampleRate() );
+    w->channels( extent.number_of_channels.get_value_or (1) );
 }
 
 
@@ -235,7 +240,6 @@ void RenderModel::
     Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
     Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
     w->setWrappedOperationDesc (o);
-    TaskInfo(boost::format("wrapping %s") % (o?vartype(*o):"(nul)"));
 }
 
 
@@ -246,7 +250,6 @@ Signal::OperationDesc::Ptr RenderModel::
     Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
     Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
     Signal::OperationDesc::Ptr o = w->getWrappedOperationDesc ();
-    TaskInfo(boost::format("wrapped %s") % (o?vartype(*o):"(nul)"));
     return o;
 }
 

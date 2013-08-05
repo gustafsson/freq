@@ -56,6 +56,7 @@ public:
 
     // targetSampleRate is used to compute which rawdata (Signal::Interval) that a block represents
     float targetSampleRate() const;
+    void targetSampleRate(float);
 
     Tfr::TransformDesc::Ptr transform_desc() const;
     void transform_desc(Tfr::TransformDesc::Ptr);
@@ -66,6 +67,7 @@ public:
     void length(float L);
 
     int channels() const;
+    void channels(int value);
 
     typedef VolatilePtr<Heightmap::Collection>::Ptr pCollection;
     typedef std::vector<pCollection> Collections;

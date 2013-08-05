@@ -298,8 +298,8 @@ bool SaweMainWindow::
     TaskInfo("Save current state of the project?");
     QMessageBox save_changes_msgbox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
 /*
+//Use Signal::Processing namespace
     save_changes_msgbox.setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
 */
     save_changes_msgbox.exec();

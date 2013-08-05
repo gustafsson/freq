@@ -36,12 +36,7 @@ TfrMap::
     :
       tfr_mapping_( tfr_mapping )
 {
-    collections_.resize(channels);
-
-    for (int c=0; c<channels; ++c)
-    {
-        collections_[c].reset( new Heightmap::Collection(tfr_mapping_));
-    }
+    this->channels (channels);
 }
 
 
@@ -107,6 +102,13 @@ float TfrMap::
 }
 
 
+void TfrMap::
+        targetSampleRate(float v)
+{
+    tfr_mapping_.targetSampleRate = v;
+}
+
+
 Tfr::TransformDesc::Ptr TfrMap::
         transform_desc() const
 {
@@ -150,6 +152,22 @@ int TfrMap::
         channels() const
 {
     return collections_.size ();
+}
+
+
+void TfrMap::
+        channels(int v)
+{
+    // There are several assumptions that there is at least one channel on the form 'collections()[0]'
+    if (v < 1)
+        v = 1;
+
+    collections_.resize(v);
+
+    for (int c=0; c<v; ++c)
+    {
+        collections_[c].reset( new Heightmap::Collection(tfr_mapping_));
+    }
 }
 
 

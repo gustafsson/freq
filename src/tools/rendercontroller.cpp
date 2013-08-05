@@ -1218,10 +1218,14 @@ void RenderController::
 void RenderController::
         updateChannels()
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
 /*
+//Use Signal::Processing namespace
     Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
     unsigned N = channels->source()->num_channels();
+*/
+    unsigned  N = model()->project ()->extent().number_of_channels.get_value_or (0);
+    if (read1(model()->tfr_map ())->channels() != N)
+        model()->recompute_extent ();
     for (unsigned i=0; i<N; ++i)
     {
         foreach (QAction* a, channelselector->actions())
@@ -1245,7 +1249,6 @@ void RenderController::
             a->setChecked( true ); // invokes reroute
         }
     }
-*/
 }
 
 
