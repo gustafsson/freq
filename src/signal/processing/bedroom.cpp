@@ -102,6 +102,8 @@ void Bedroom::
                               (boost::format("sleepyface1=%d, sleepyface2=%d, i=%d")
                               % sleepyface1.snooze () % sleepyface2.snooze () % i));
 
+            // TODO Bedroom::wakeup may wake the same sleepyface twice instead of waking up both,
+            // this behaviour is valid but it doesn't pass this test.
             int w = bedroom->wakeup();
             EXCEPTION_ASSERT_EQUALS(w, i>0?2:1);
         }
