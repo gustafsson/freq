@@ -57,6 +57,9 @@ int UnitTest::
         Tools::Support::Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
+        // SignalException only works for one segfault per execution.
+        //RUNTEST(ExceptionAssert);
+        //RUNTEST(ExceptionAssert);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
