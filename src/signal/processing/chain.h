@@ -20,8 +20,6 @@ namespace Processing {
  *
  * It should provide means to deprecate caches when the an added operation
  * changes (such as settings or contained data).
- *
- * TODO removing an operation should invalidate the target using OperationDesc::affectedInterval just like Step::deprecatedCache
  */
 class Chain: public VolatilePtr<Chain>
 {

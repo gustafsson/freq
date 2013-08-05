@@ -108,8 +108,11 @@ void Chain::
     }
 
     BOOST_FOREACH(Step::Ptr s, steps_to_remove) {
+        GraphInvalidator::deprecateCache (*dag, s, Signal::Interval::Interval_ALL);
         dag->removeStep (s);
     }
+
+    bedroom_->wakeup();
 }
 
 
