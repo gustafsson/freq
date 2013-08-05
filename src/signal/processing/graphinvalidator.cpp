@@ -22,25 +22,29 @@ GraphInvalidator::
 void GraphInvalidator::
         deprecateCache(Signal::Intervals what) const
 {
-    Dag::Ptr dag = dag_.lock ();
+    Dag::Ptr dagp = dag_.lock ();
+    if (!dagp)
+        return;
+
+    Dag::ReadPtr dag(dagp);
     Bedroom::Ptr bedroom = bedroom_.lock ();
     Step::Ptr step = step_.lock ();
 
-    if (!dag || !bedroom || !step)
+    if (!bedroom || !step)
         return;
 
-    deprecateCache(Dag::ReadPtr(dag), step, what);
+    GraphInvalidator::deprecateCache(*dag, step, what);
 
     bedroom->wakeup ();
 }
 
 
 void GraphInvalidator::
-        deprecateCache(const Dag::ReadPtr& dag, Step::Ptr step, Signal::Intervals what) const
+        deprecateCache(const Dag& dag, Step::Ptr step, Signal::Intervals what)
 {
     what = write1(step)->deprecateCache(what);
 
-    BOOST_FOREACH(Step::Ptr ts, dag->targetSteps(step)) {
+    BOOST_FOREACH(Step::Ptr ts, dag.targetSteps(step)) {
         deprecateCache(dag, ts, what);
     }
 }
