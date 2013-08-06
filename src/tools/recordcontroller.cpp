@@ -54,6 +54,8 @@ void RecordController::
     Adapters::Recorder* r = model()->recording;
     if (active)
     {
+/*
+//If the recording is stopped because of an error, the button in the user interface should notice somehow ...
         Support::SinkSignalProxy* proxy;
         Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy() );
 
@@ -65,7 +67,7 @@ void RecordController::
                 SIGNAL(recievedInvalidSamples( Signal::Intervals )),
                 SLOT(recievedInvalidSamples( Signal::Intervals )),
                 Qt::QueuedConnection );
-
+*/
         prev_length_ = r->number_of_samples();
         r->startRecording();
 
@@ -80,6 +82,7 @@ void RecordController::
 
             if (model()->recording->number_of_samples() > prev_length_)
             {
+// TODO this command really should be invoked when the recording is started.
                 Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand( model()->recording, prev_length_, model()->render_view->model ));
                 model()->project->commandInvoker()->invokeCommand(  cmd );
             }
