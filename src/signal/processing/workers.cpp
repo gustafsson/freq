@@ -177,11 +177,11 @@ void Workers::
 
         if (type)
             TaskInfo(boost::format("engine %1% failed with %2%. %3%")
-                     % (dead ? vartype(*dead.get ()) : vartype(dead.get ()))
+                     % (dead ? vartype(*dead.get ()) : (vartype(dead.get ())+"==0"))
                      % demangle(type->name ()) % str);
         else
             TaskInfo(boost::format("engine %1% stopped. %2%")
-                     % (dead ? vartype(*dead.get ()) : vartype(dead.get ()))
+                     % (dead ? vartype(*dead.get ()) : (vartype(dead.get ())+"==0"))
                      % str);
     }
 }
