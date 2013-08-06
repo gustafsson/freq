@@ -44,6 +44,7 @@ Signal::Intervals Step::
         deprecated = operation_desc_->affectedInterval(deprecated);
 
     not_started_ |= deprecated;
+
     return deprecated;
 }
 
@@ -109,6 +110,9 @@ void Step::
 
     if (result) {
         if (!cache_) cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
+
+        // Result must have the same number of channels and sample rate as previous cache.
+        // Call deprecateCache(Signal::Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
         cache_->put (result);
     }
 
