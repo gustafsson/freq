@@ -20,6 +20,12 @@ public:
     bool operator==(const BlockSize& b);
     bool operator!=(const BlockSize& b);
 
+    std::string toString() const;
+
+    template< class ostream_t > inline
+    friend ostream_t& operator<<(ostream_t& os, const BlockSize& r) {
+        return os << r.toString();
+    }
 private:
     int texels_per_column_;
     int texels_per_row_;

@@ -32,4 +32,13 @@ bool BlockSize::
            texels_per_row_ != b.texels_per_row_;
 }
 
+
+std::string BlockSize::
+        toString() const
+{
+    std::stringstream ss;
+    ss << "BlockSize(" << texels_per_row_ << ", " << texels_per_column_ << ")";
+    return ss.str();
+}
+
 } // namespace Heightmap

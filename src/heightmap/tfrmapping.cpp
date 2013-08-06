@@ -57,6 +57,9 @@ BlockSize TfrMap::
 void TfrMap::
         block_size(BlockSize bs)
 {
+    if (bs == tfr_mapping_.block_size)
+        return;
+
     tfr_mapping_.block_size = bs;
 
     updateCollections();
@@ -80,6 +83,9 @@ AmplitudeAxis TfrMap::
 void TfrMap::
         display_scale(Tfr::FreqAxis v)
 {
+    if (v == tfr_mapping_.display_scale)
+        return;
+
     tfr_mapping_.display_scale = v;
 
     updateCollections();
@@ -89,6 +95,9 @@ void TfrMap::
 void TfrMap::
         amplitude_axis(AmplitudeAxis v)
 {
+    if (v == tfr_mapping_.amplitude_axis)
+        return;
+
     tfr_mapping_.amplitude_axis = v;
 
     updateCollections();
@@ -105,7 +114,12 @@ float TfrMap::
 void TfrMap::
         targetSampleRate(float v)
 {
+    if (v == tfr_mapping_.targetSampleRate)
+        return;
+
     tfr_mapping_.targetSampleRate = v;
+
+    updateCollections();
 }
 
 
@@ -119,6 +133,12 @@ Tfr::TransformDesc::Ptr TfrMap::
 void TfrMap::
         transform_desc(Tfr::TransformDesc::Ptr t)
 {
+    if (t == tfr_mapping_.transform_desc)
+        return;
+
+    if (t && tfr_mapping_.transform_desc && (*t == *tfr_mapping_.transform_desc))
+        return;
+
     tfr_mapping_.transform_desc = t;
 
     updateCollections();
@@ -142,6 +162,9 @@ float TfrMap::
 void TfrMap::
         length(float L)
 {
+    if (L == tfr_mapping_.length)
+        return;
+
     tfr_mapping_.length = L;
 
     updateCollections();
@@ -194,8 +217,8 @@ void TfrMap::
         test()
 {
     TfrMap::Ptr t = testInstance();
-    write1(t)->block_size( BlockSize(123,456));
-    EXCEPTION_ASSERT ( BlockSize(123,456) == read1(t)->tfr_mapping().block_size );
+    write1(t)->block_size( BlockSize(123,456) );
+    EXCEPTION_ASSERT_EQUALS( BlockSize(123,456), read1(t)->tfr_mapping().block_size );
 }
 
 
