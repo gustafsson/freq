@@ -214,6 +214,10 @@ unsigned Collection::
 void Collection::
         poke(pBlock b)
 {
+    if (b->frame_number_last_used+1 == _frame_counter) {
+        recently_created_ |= b->getInterval() - b->valid_samples;
+    }
+
 #ifndef SAWE_NO_MUTEX
     b->to_delete = false;
 #endif
@@ -686,6 +690,14 @@ pBlock Collection::
         TaskInfo("Collection::attempt swallowed GlException.\n%s", x.what());
     }
     return pBlock();
+}
+
+Signal::Intervals Collection::
+        recently_created()
+{
+    Signal::Intervals r = recently_created_;
+    recently_created_.clear ();
+    return r;
 }
 
 

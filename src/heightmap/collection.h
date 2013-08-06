@@ -120,6 +120,9 @@ public:
     void invalidate_samples( const Signal::Intervals& );
 
 
+    Signal::Intervals recently_created();
+
+
     /**
       getBlock increases a counter for each block that hasn't been computed yet.
       next_frame returns that counter.
@@ -172,6 +175,7 @@ private:
     friend class Heightmap::TfrMap;
     void tfr_mapping(TfrMapping new_mapping);
     TfrMapping tfr_mapping_;
+    Signal::Intervals recently_created_;
 
     bool
         _is_visible;
