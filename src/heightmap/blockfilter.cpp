@@ -50,7 +50,16 @@ BlockFilter::
 bool BlockFilter::
         applyFilter( ChunkAndInverse& pchunk )
 {
-    boost::shared_ptr<volatile Collection> collection = read1(tfr_map_)->collections()[pchunk.channel];
+    Collection::Ptr collection;
+
+    {
+        Heightmap::TfrMap::ReadPtr tfr_map(tfr_map_);
+        if (pchunk.channel >= tfr_map->channels())
+            return false;
+
+        collection = tfr_map->collections()[pchunk.channel];
+    }
+
     Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
