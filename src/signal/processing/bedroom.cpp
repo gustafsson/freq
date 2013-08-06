@@ -33,11 +33,18 @@ int Bedroom::
 void Bedroom::
         sleep() volatile
 {
+    sleep(-1);
+}
+
+
+void Bedroom::
+        sleep(int ms_timeout) volatile
+{
     // Increment usage count
     Bed b = ReadPtr(this)->bed_;
 
     // Don't keep a lock when acquiring
-    const_cast<Bedroom*>(this)->work_.acquire ();
+    const_cast<Bedroom*>(this)->work_.tryAcquire (1, ms_timeout);
 }
 
 

@@ -2,6 +2,8 @@
 #include "step.h"
 #include "bedroom.h"
 
+#include "tools/support/timer.h"
+
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace boost::posix_time;
@@ -31,7 +33,7 @@ void TargetNeeds::
     work_center_ = center;
 
     Step::Ptr step = step_.lock ();
-    if (step)
+    if (step && invalidate)
         write1(step)->deprecateCache(invalidate);
 
     Bedroom::Ptr bedroom = bedroom_.lock ();
@@ -85,14 +87,27 @@ Signal::Intervals TargetNeeds::
 }
 
 
-void TargetNeeds::
-        sleep() volatile
+int left(const Tools::Support::Timer& t, int sleep_ms) {
+    if (sleep_ms < 0)
+        return sleep_ms;
+
+    float elapsed = t.elapsed ();
+    if (elapsed > sleep_ms/1000.f)
+        elapsed = sleep_ms/1000.f;
+    int left = elapsed*1000 - sleep_ms;
+    return left;
+}
+
+bool TargetNeeds::
+        sleep(int sleep_ms) volatile
 {
+    Tools::Support::Timer t;
+
     Step::Ptr pstep = ReadPtr(this)->step_.lock();
     Bedroom::Ptr bedroom = ReadPtr(this)->bedroom_.lock();
 
     if (!pstep || !bedroom)
-        return;
+        return false;
 
     for (;;) {
         bedroom->wakeup();
@@ -101,15 +116,18 @@ void TargetNeeds::
             Step::WritePtr step(pstep);
 
             if (!(ReadPtr(this)->needed_samples_ & step->out_of_date ()))
-                break;
+                return true;
 
-            step->sleepWhileTasks ();
+            step->sleepWhileTasks (left(t, sleep_ms));
 
             if (!(ReadPtr(this)->needed_samples_ & step->out_of_date ()))
-                break;
+                return true;
         }
 
-        bedroom->sleep();
+        bedroom->sleep(left(t, sleep_ms));
+
+        if (0 <= sleep_ms && 0 == left(t, sleep_ms))
+            return false;
     }
 }
 

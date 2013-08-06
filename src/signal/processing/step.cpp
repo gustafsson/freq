@@ -134,14 +134,15 @@ void Step::
 
 
 void Step::
-        sleepWhileTasks()
+        sleepWhileTasks(int sleep_ms)
 {
     // The caller keeps a lock that is released while waiting
     gc();
 
     while (!running_tasks.empty ()) {
         DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
-        wait_for_tasks_.wait (readWriteLock());
+        if (!wait_for_tasks_.wait (readWriteLock(), sleep_ms < 0 ? ULONG_MAX : sleep_ms))
+            return;
         gc();
     }
 }

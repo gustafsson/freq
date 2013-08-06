@@ -71,11 +71,11 @@ Step::WeakPtr TargetMarker::
 }
 
 
-void TargetMarker::
-        sleep() volatile
+bool TargetMarker::
+        sleep(int sleep_ms) volatile
 {
     TargetNeeds::Ptr target_needs = ReadPtr(this)->target_needs_;
-    target_needs->sleep();
+    return target_needs->sleep(sleep_ms);
 }
 
 

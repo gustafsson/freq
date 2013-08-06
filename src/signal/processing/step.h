@@ -39,7 +39,7 @@ public:
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
     void                        finishTask(Task* taskid, Signal::pBuffer result);
-    void                        sleepWhileTasks();
+    void                        sleepWhileTasks(int sleep_ms);
 
     /**
      * @brief readFixedLengthFromCache should read a buffer from the cache.

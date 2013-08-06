@@ -27,7 +27,7 @@ public:
             Signal::Intervals invalidate=Signal::Intervals());
 
     boost::weak_ptr<volatile Step> step() const;
-    void sleep() volatile;
+    bool sleep(int sleep_ms) volatile;
 
 private:
     TargetNeeds::Ptr target_needs_;

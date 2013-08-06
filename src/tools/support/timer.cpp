@@ -27,7 +27,7 @@ void Timer::restart()
 }
 
 
-double Timer::elapsed()
+double Timer::elapsed() const
 {
 #ifdef _MSC_VER
     LARGE_INTEGER li;

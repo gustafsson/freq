@@ -194,7 +194,7 @@ void OldOperationDescWrapper::
         write1(target)->updateNeeds(extent.interval.get ());
 
         // Should wait for workers to fininsh
-        target->sleep();
+        EXCEPTION_ASSERT(target->sleep(1000));
 
         //read1(chain)->print_dead_workers();
 
@@ -215,7 +215,7 @@ void OldOperationDescWrapper::
         t[0] = 4;
         write1(step)->deprecateCache (Interval(1,2));
 
-        target->sleep();
+        EXCEPTION_ASSERT(target->sleep(1000));
         r = write1(target_step)->readFixedLengthFromCache(Interval(1,4));
         t[1] = 0;
         EXCEPTION_ASSERT(*r == *buffer);

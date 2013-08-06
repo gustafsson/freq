@@ -24,6 +24,7 @@ public:
     int wakeup() volatile;
 
     void sleep() volatile;
+    void sleep(int ms_timeout) volatile;
 
     int sleepers() const volatile;
 

@@ -150,7 +150,7 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        target_marker->sleep();
+        EXCEPTION_ASSERT( target_marker->sleep(1000) );
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());

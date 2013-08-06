@@ -49,9 +49,11 @@ public:
     Signal::Intervals not_started() const;
 
     /**
-     * @brief sleep sleeps the caller until all needed_samples have been provided
+     * @brief sleep sleeps the caller until all needed_samples have been provided.
+     * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
+     * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */
-    void sleep() volatile;
+    bool sleep(int sleep_ms) volatile;
 
 private:
     const boost::weak_ptr<volatile Step> step_;

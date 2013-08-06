@@ -14,7 +14,7 @@ public:
     Timer();
 
     void restart();
-    double elapsed();
+    double elapsed() const;
 
 private:
 #ifdef _MSC_VER
