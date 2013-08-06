@@ -555,7 +555,6 @@ void RenderController::
     ui->actionToggle_piano_grid->setVisible( true );
     hz_scale->setEnabled( true );
 
-    bool isCwt2 = dynamic_cast<Tfr::Cwt*>(t3.get ());
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     {
