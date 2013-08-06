@@ -75,10 +75,11 @@ public:
     virtual Signal::pBuffer read(const Signal::Interval& I) {
         Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
 
-        //Use Signal::Processing namespace to do the equivalent of validateSize
-        Heightmap::TfrMap::WritePtr tfr_map(model_->tfr_map ());
-        if (tfr_map->channels() != r->number_of_channels ()) {
-            tfr_map->channels(r->number_of_channels ());
+        if (read1(model_->tfr_map ())->channels() != (int)r->number_of_channels () ||
+            read1(model_->tfr_map ())->targetSampleRate() != r->sample_rate ())
+        {
+            model_->recompute_extent();
+
             Signal::Processing::Step::Ptr s = read1(model_->target_marker ())->step().lock();
             if (s)
                 write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
@@ -1271,7 +1272,7 @@ void RenderController::
     unsigned N = channels->source()->num_channels();
 */
     unsigned  N = model()->project ()->extent().number_of_channels.get_value_or (0);
-    if (read1(model()->tfr_map ())->channels() != N)
+    if (read1(model()->tfr_map ())->channels() != (int)N)
         model()->recompute_extent ();
     for (unsigned i=0; i<N; ++i)
     {

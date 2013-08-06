@@ -120,6 +120,7 @@ public:
     void invalidate_samples( const Signal::Intervals& );
 
 
+    Signal::Intervals needed_samples();
     Signal::Intervals recently_created();
 
 

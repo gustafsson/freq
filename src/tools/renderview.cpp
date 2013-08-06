@@ -1130,16 +1130,23 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        Signal::Intervals invalid_samples;
+        //Signal::Intervals invalid_samples;
+        Signal::Intervals things_to_add;
+        Signal::Intervals needed_samples;
 
-        BOOST_FOREACH(Heightmap::Collection::Ptr c, model->collections ())
-            invalid_samples |= write1(c)->invalid_samples();
+        BOOST_FOREACH(Heightmap::Collection::Ptr c, model->collections ()) {
+            Heightmap::Collection::WritePtr wc(c);
+            //invalid_samples |= wc->invalid_samples();
+            things_to_add |= wc->recently_created();
+            needed_samples |= wc->needed_samples();
+        }
 
-        TaskInfo(boost::format("invalid_samples = %s") % invalid_samples);
+        //TaskInfo(boost::format("invalid_samples = %s") % invalid_samples);
         write1(model->target_marker())->updateNeeds(
-                    invalid_samples,
+                    needed_samples,
                     0,
-                    model->_qx
+                    model->_qx,
+                    things_to_add
                 );
 
 /*

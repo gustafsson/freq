@@ -99,7 +99,9 @@ void Collection::
     _cache.clear();
     _recent.clear();
 
+/*
     invalidate_samples(Signal::Intervals::Intervals_ALL);
+*/
 }
 
 
@@ -214,7 +216,7 @@ unsigned Collection::
 void Collection::
         poke(pBlock b)
 {
-    if (b->frame_number_last_used+1 == _frame_counter) {
+    if (b->frame_number_last_used+1 != _frame_counter) {
         recently_created_ |= b->getInterval() - b->valid_samples;
     }
 
@@ -504,56 +506,53 @@ const TfrMapping& Collection::
 void Collection::
         tfr_mapping(TfrMapping new_tfr_mapping)
 {
+    float length = new_tfr_mapping.length;
+
     // If only the length has changed, don't invalidate the entire heightmap.
-    // Let other calls to invalidate_samples take care of the things that
-    // needs to be invalidated.
     TfrMapping tfr_mapping_length = tfr_mapping_;
     tfr_mapping_length.length = new_tfr_mapping.length;
-    if (new_tfr_mapping == tfr_mapping_length)
-        tfr_mapping_ = new_tfr_mapping;
-
-    if (new_tfr_mapping == tfr_mapping_)
-        return;
-
-    bool doreset = new_tfr_mapping.block_size != tfr_mapping_.block_size;
+    bool doreset = !(new_tfr_mapping == tfr_mapping_length);
 
     tfr_mapping_ = new_tfr_mapping;
-
     _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size.texels_per_row ();
+
+    // If the signal has gotten shorter, make sure to discard all blocks that
+    // go outside the new shorter interval
+    if (_prev_length > length)
+        discardOutside( Signal::Interval(0, length*tfr_mapping_.targetSampleRate) );
+
+    _prev_length = length;
 
     if (doreset)
         reset();
-    else
-        invalidate_samples( Signal::Interval::Interval_ALL );
+//    else
+//        invalidate_samples( Signal::Interval::Interval_ALL );
 }
 
 
 void Collection::
         invalidate_samples( const Intervals& sid )
 {
+    return;
+
+    EXCEPTION_ASSERT(false);
+
     INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
                                  sid.toString().c_str());
 
     BOOST_FOREACH ( const cache_t::value_type& c, _cache )
         c.second->valid_samples -= sid;
-
-    // validate length
-    Interval wholeSignal( 0, tfr_mapping_.length * (long double)tfr_mapping_.targetSampleRate );
-    float length = wholeSignal.last / tfr_mapping_.targetSampleRate;
-    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size.texels_per_row ();
-
-    // If the signal has gotten shorter, make sure to discard all blocks that
-    // go outside the new shorter interval
-    if (_prev_length > length)
-        discardOutside( wholeSignal );
-
-    _prev_length = length;
 }
 
 
 Intervals Collection::
         invalid_samples()
 {
+    return Intervals();
+
+    EXCEPTION_ASSERT(false);
+
     Intervals r;
 
     if (!_is_visible)
@@ -635,6 +634,28 @@ Intervals Collection::
     }
 
 //    TaskInfo(boost::format("collection %p invalid_samples = %s") % (size_t)this % r);
+    return r;
+}
+
+
+Intervals Collection::
+        needed_samples()
+{
+    Intervals r;
+
+    if (!_is_visible)
+        return r;
+
+    BOOST_FOREACH ( const recent_t::value_type& a, _recent )
+    {
+        Block& b = *a;
+        unsigned framediff = _frame_counter - b.frame_number_last_used;
+        if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
+        {
+            r |= b.getInterval();
+        }
+    }
+
     return r;
 }
 

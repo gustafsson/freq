@@ -68,8 +68,8 @@ bool BlockFilter::
 
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
-        if (((block->getInterval() - block->valid_samples) & chunk_interval).empty() )
-            continue;
+//        if (((block->getInterval() - block->valid_samples) & chunk_interval).empty() )
+//            continue;
 
 #ifndef SAWE_NO_MUTEX
         // Multiple threads could create and share texture data using wglShareLists, but it's not really necessary.
@@ -416,12 +416,17 @@ unsigned BlockFilter::
     TfrMap::pCollection collection = read1(tfr_map_)->collections()[0];
     float FS = read1(tfr_map_)->targetSampleRate();
     long double min_fs = FS;
+/*
     Signal::Intervals invalid_samples = write1(collection)->invalid_samples();
     std::vector<pBlock> intersections = write1(collection)->getIntersectingBlocks( I?I:invalid_samples, true );
+*/
+    std::vector<pBlock> intersections = write1(collection)->getIntersectingBlocks( I, true );
     BOOST_FOREACH( pBlock b, intersections )
     {
+/*
         if (!(b->getInterval() - b->valid_samples))
             continue;
+*/
 
         long double fs = b->sample_rate();
         min_fs = std::min( min_fs, fs );

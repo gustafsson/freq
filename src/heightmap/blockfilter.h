@@ -58,6 +58,8 @@ public:
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
     Signal::DeprecatedOperation* affecting_source( const Signal::Interval& I)
     {
+        return this;
+/*
         Signal::Intervals invalid;
 
         TfrMap::Collections C = read1(tfr_map_)->collections();
@@ -68,6 +70,7 @@ public:
             return this;
 
         return FilterKind::source()->affecting_source( I );
+*/
     }
 
 
