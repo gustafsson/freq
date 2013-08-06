@@ -86,7 +86,7 @@ void BufferSource::
 Signal::IntervalType BufferSource::
         number_of_samples()
 {
-    return buffer_->number_of_samples ();
+    return buffer_->getInterval ().last;
 }
 
 
@@ -107,6 +107,13 @@ Interval BufferSource::
         getInterval()
 {
     return buffer_->getInterval ();
+}
+
+
+Intervals BufferSource::
+        zeroed_samples()
+{
+    return ~Intervals(buffer_->getInterval ());
 }
 
 

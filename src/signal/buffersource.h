@@ -31,6 +31,7 @@ public:
     virtual IntervalType number_of_samples();
     virtual unsigned num_channels();
     virtual Interval getInterval();
+    virtual Intervals zeroed_samples();
 
 
     // OperationDesc
