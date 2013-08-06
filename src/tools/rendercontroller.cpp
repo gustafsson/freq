@@ -26,6 +26,7 @@
 #include "signal/worker.h"
 #include "signal/reroutechannels.h"
 #include "signal/oldoperationwrapper.h"
+#include "tools/support/operation-composite.h"
 
 // gpumisc
 #include <demangle.h>
@@ -55,6 +56,44 @@ using namespace boost;
 
 namespace Tools
 {
+
+class BlockFilterSink2: public Signal::DeprecatedOperation
+{
+public:
+    BlockFilterSink2
+        (
+            RenderModel* model,
+            RenderView* view
+        )
+        :
+            Signal::DeprecatedOperation(Signal::pOperation()),
+            model_(model),
+            view_(view)
+    {
+    }
+
+    virtual Signal::pBuffer read(const Signal::Interval& I) {
+        Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
+
+        //Use Signal::Processing namespace to do the equivalent of validateSize
+        Heightmap::TfrMap::WritePtr tfr_map(model_->tfr_map ());
+        if (tfr_map->channels() != r->number_of_channels ()) {
+            tfr_map->channels(r->number_of_channels ());
+            Signal::Processing::Step::Ptr s = read1(model_->target_marker ())->step().lock();
+            if (s)
+                write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
+        }
+
+        // TODO call this after collection has been updated
+        view_->userinput_update();
+
+        return r;
+    }
+
+private:
+    RenderModel* model_;
+    RenderView* view_;
+};
 
 class BlockFilterSink: public Signal::Sink
 {
@@ -474,14 +513,27 @@ void RenderController::
 }
 
 
+class AdapterBlockFilterDesc : public Tools::Support::OperationSubOperations
+{
+public:
+    AdapterBlockFilterDesc(Signal::pOperation first, Signal::pOperation last)
+        :
+          Tools::Support::OperationSubOperations(Signal::pOperation(),"AdapterBlockFilterDesc")
+    {
+        last->source (source_sub_operation_);
+        DeprecatedOperation::source(first);
+    }
+};
+
 void RenderController::
         setBlockFilter(Signal::DeprecatedOperation* blockfilter)
 {
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
-    BlockFilterSink* bfs;
     Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( bfs = new BlockFilterSink(blockop, model(), view, this));
+    Signal::pOperation channelop( new BlockFilterSink2(model(), view));
+    blockop->source (channelop);
+    Signal::pOperation adapter( new AdapterBlockFilterDesc(blockop, channelop) );
 
     //model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
 /*
@@ -493,12 +545,8 @@ void RenderController::
     bfs->validateSize();
     bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 */
-    Tfr::TransformDesc::Ptr t1 = currentTransform();
-    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(blockop));
-    Tfr::TransformDesc::Ptr t2 = currentTransform();
-//    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(channelop));
+    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(adapter));
     model()->set_filter (od);
-    Tfr::TransformDesc::Ptr t3 = currentTransform();
 
     stateChanged();
 
