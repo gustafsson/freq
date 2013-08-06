@@ -206,12 +206,8 @@ void SinkSource::
 
     if (!_cache.empty())
     {
-        // EXCEPTION_ASSERT_EQUALS(_cache.front()->sample_rate(), b.sample_rate());
-        if (_cache.front()->sample_rate() != b.sample_rate()) {
-            _invalid_samples |= _valid_samples;
-            _valid_samples.clear ();
-            _cache.clear ();
-        }
+        EXCEPTION_ASSERT_EQUALS(_cache.front()->sample_rate(), b.sample_rate());
+        EXCEPTION_ASSERT_EQUALS(_cache.front()->number_of_channels(), b.number_of_channels ());
     }
 
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
