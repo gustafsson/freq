@@ -39,7 +39,7 @@ Targets::TargetNeedsCollection Targets::
     C.reserve (targets.size ());
 
     BOOST_FOREACH(const TargetNeeds::WeakPtr& i, targets) {
-        TargetNeeds::Ptr t( i );
+        TargetNeeds::Ptr t = i.lock ();
         if (t)
             C.push_back (t);
     }

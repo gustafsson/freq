@@ -44,9 +44,6 @@ Chain::Ptr Chain::
 Chain::
         ~Chain()
 {
-    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
-    dag_.reset ();
-
     print_dead_workers();
 
     // Workers will ask all instances of Worker to quit at will. class Workers
@@ -57,6 +54,26 @@ Chain::
     // Notify sleeping workers that something has changed. They will notice
     // that there's nothing to work on anymore and close.
     bedroom_->wakeup();
+
+    // Wait for targets to finish.
+    // 1.0 s 'should' be enough.
+    // If it isn't, well then there will probably be a crash if
+    // OpenGL resources are released from a different thread.
+    Targets::TargetNeedsCollection T = read1(targets_)->getTargets();
+
+    BOOST_FOREACH( TargetNeeds::Ptr t, T ) {
+        write1(t)->updateNeeds(
+                    Signal::Intervals(),
+                    0,
+                    Signal::Interval::IntervalType_MIN,
+                    Signal::Intervals());
+
+        bedroom_->wakeup();
+        t->sleep(1000);
+    }
+
+    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
+    dag_.reset ();
 }
 
 
