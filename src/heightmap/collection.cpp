@@ -629,6 +629,8 @@ Intervals Collection::
             }
         }
     }
+
+//    TaskInfo(boost::format("collection %p invalid_samples = %s") % (size_t)this % r);
     return r;
 }
 

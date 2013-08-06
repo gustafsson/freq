@@ -89,7 +89,7 @@ Signal::pBuffer Filter::
         #ifdef _DEBUG
             Interval cii = ci.chunk->getInterval().spanned ( ci.chunk->getCoveredInterval () );
 
-            EXCEPTION_ASSERT( cii & I );
+            EXCEPTION_ASSERTX( cii & I, boost::format("cii = %s, I = %s") % cii % I);
         #endif
 
         bool applied_filter = applyFilter( ci );

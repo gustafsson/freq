@@ -42,6 +42,7 @@
 #include <QGLContext>
 #include <QGraphicsView>
 
+#include <boost/foreach.hpp>
 
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
@@ -1129,7 +1130,11 @@ void RenderView::
     {   // Find things to work on (ie playback and file output)
 		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-        Signal::Intervals invalid_samples = write1(model->collections ()[0])->invalid_samples();
+        Signal::Intervals invalid_samples;
+
+        BOOST_FOREACH(Heightmap::Collection::Ptr c, model->collections ())
+            invalid_samples |= write1(c)->invalid_samples();
+
         TaskInfo(boost::format("invalid_samples = %s") % invalid_samples);
         write1(model->target_marker())->updateNeeds(
                     invalid_samples,

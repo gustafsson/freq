@@ -109,6 +109,28 @@ void Step::
     DEBUGINFO TaskInfo tt(format("step %1%: finish %2% - task %3%") % (void*)this % result_interval % (void*)taskid );
 
     if (result) {
+        /*
+        if (cache_)
+        {
+            float fs = !cache_->empty () ? cache_->sample_rate () : std::numeric_limits<float>::quiet_NaN();
+            unsigned Nc = cache_->num_channels ();
+
+            if (fs != result->sample_rate () || Nc != result->number_of_channels ())
+            {
+                TaskInfo(boost::format("Changed sample rate and number of channels. Previous fs=%g, Nc=%d, S=%d. Now fs=%g, Nc=%d, S=%d")
+                         %  fs
+                         %  Nc
+                         %  cache_->samplesDesc ()
+                         %  result->sample_rate ()
+                         %  result->number_of_channels ()
+                         %  result->getInterval ());
+
+                not_started_ = ~expected_output;
+                cache_.reset ();
+            }
+        }
+        */
+
         if (!cache_) cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
 
         // Result must have the same number of channels and sample rate as previous cache.
