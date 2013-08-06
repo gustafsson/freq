@@ -72,10 +72,20 @@ public:
             total_missing |= src->out_of_date () & required_input;
         }
 
+        // If there are no sources
+        if (0==out_degree(u, g)) {
+            // Then this operation must specify sample rate and number of
+            // samples for this to be a valid read. Otherwise the signal is
+            // undefined.
+            Signal ::OperationDesc::Extent x = od->extent ();
+            if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
+                total_missing = Signal::Interval::Interval_ALL; // A non-empty interval
+        }
+
         // If nothing is missing and this engine supports this operation
         if (total_missing.empty () && step->operation (params.engine))
             // Even if this engine doesn't support this operation it should
-            // still update missing_samples so that it can compute what's
+            // still update 'needed' so that it can compute what's
             // needed in the children.
         {
             // Create a task
