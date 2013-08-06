@@ -47,34 +47,12 @@ std::string AppendOperationDescCommand::
 
 
 // Unit test
+#include "test/operationmockups.h"
 
 namespace Tools {
 namespace Commands {
 
-class EmptyOperationDesc : public OperationDesc
-{
-    Interval requiredInterval( const Interval& I, Interval* J) const {
-        if (J) *J = I;
-        return I;
-    }
-
-    Interval affectedInterval( const Interval& ) const {
-        EXCEPTION_ASSERTX(false, "not implemented");
-        return Interval();
-    }
-
-    OperationDesc::Ptr copy() const {
-        EXCEPTION_ASSERTX(false, "not implemented");
-        return OperationDesc::Ptr();
-    }
-
-    Operation::Ptr createOperation( ComputingEngine* ) const {
-        return Operation::Ptr();
-    }
-};
-
-
-class SourceMock : public EmptyOperationDesc
+class SourceMock : public Test::TransparentOperationDesc
 {
     Extent extent() const {
         Extent x;
@@ -92,8 +70,8 @@ void AppendOperationDescCommand::
     // It should add a new operation to the signal processing chain at the given targets current position
     {
         Chain::Ptr chain = Chain::createDefaultChain ();
-        OperationDesc::Ptr target_desc(new EmptyOperationDesc);
-        OperationDesc::Ptr operation_desc(new EmptyOperationDesc);
+        OperationDesc::Ptr target_desc(new Test::TransparentOperationDesc);
+        OperationDesc::Ptr operation_desc(new Test::TransparentOperationDesc);
         OperationDesc::Ptr source_desc(new SourceMock);
         TargetMarker::Ptr target = write1(chain)->addTarget(target_desc);
 

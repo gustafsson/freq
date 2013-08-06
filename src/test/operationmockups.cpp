@@ -41,17 +41,4 @@ Signal::OperationDesc::Ptr TransparentOperationDesc::
 }
 
 
-QString TransparentOperationDesc::
-        toString() const
-{
-    return "TransparentOperationDesc";
-}
-
-
-bool TransparentOperationDesc::
-        operator==(const OperationDesc& d) const
-{
-    return 0 != dynamic_cast<const TransparentOperationDesc*>(&d);
-}
-
 } // namespace Test

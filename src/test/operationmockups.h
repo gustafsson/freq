@@ -17,8 +17,6 @@ public:
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
     virtual OperationDesc::Ptr copy() const;
-    virtual QString toString() const;
-    virtual bool operator==(const OperationDesc& d) const;
 };
 
 } // namespace Test

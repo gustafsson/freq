@@ -29,6 +29,8 @@ private:
  *
  * It should ensure that when the wrapped operation is changed all instanciated
  * operations must be recreated.
+ *
+ * It should behave as a transparent operation if no operation is wrapped.
  */
 class OperationDescWrapper: public OperationDesc {
 public:
