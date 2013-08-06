@@ -25,7 +25,7 @@ MonoBuffer::
     sample_rate_(fs)
 {
     EXCEPTION_ASSERT( 0 < I.count ());
-    EXCEPTION_ASSERT( 0 <= fs );
+    EXCEPTION_ASSERT( 0 < fs );
 
     time_series_.reset( new TimeSeriesData(DataStorageSize( I.count ())));
 }
@@ -37,7 +37,7 @@ MonoBuffer::
     sample_rate_(fs)
 {
     EXCEPTION_ASSERT( 0 < numberOfSamples );
-    EXCEPTION_ASSERT( 0 <= fs );
+    EXCEPTION_ASSERT( 0 < fs );
 
     time_series_.reset( new TimeSeriesData(DataStorageSize( numberOfSamples )));
 }
@@ -258,7 +258,7 @@ Buffer::
        float sample_rate,
        int number_of_channels)
 {
-    EXCEPTION_ASSERT( 0 <= sample_rate );
+    EXCEPTION_ASSERT( 0 < sample_rate );
     EXCEPTION_ASSERT( 0 < number_of_channels );
 
     channels_.resize(number_of_channels);

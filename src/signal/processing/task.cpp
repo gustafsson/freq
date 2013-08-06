@@ -86,8 +86,10 @@ Signal::pBuffer Task::
     std::vector<Signal::pBuffer> buffers;
     buffers.reserve (children.size ());
 
-    unsigned num_channels = 1; // Because a Signal::Buffer with 0 channels is invalid.
-    float sample_rate = 0;
+    Signal::OperationDesc::Extent x = operation_desc->extent ();
+
+    unsigned num_channels = x.number_of_channels.get_value_or (0);
+    float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children.size(); ++i)
     {
         Signal::pBuffer b = write1(children[i])->readFixedLengthFromCache(required_input.spannedInterval ());
@@ -96,6 +98,16 @@ Signal::pBuffer Task::
             sample_rate = std::max(sample_rate, b->sample_rate ());
             buffers.push_back ( b );
         }
+    }
+
+    if (0==num_channels || 0.f==sample_rate) {
+        // Undefined signal. Shouldn't have created this task.
+        if (children.empty ()) {
+            EXCEPTION_ASSERT(x.sample_rate.is_initialized ());
+            EXCEPTION_ASSERT(x.number_of_channels.is_initialized ());
+        }
+        EXCEPTION_ASSERT_LESS(0, num_channels);
+        EXCEPTION_ASSERT_LESS(0, sample_rate);
     }
 
     Signal::pBuffer input_buffer(new Signal::Buffer(required_input.spannedInterval (), sample_rate, num_channels));
