@@ -207,7 +207,7 @@ void BufferSource::
     pBuffer d = o->process (r);
     EXCEPTION_ASSERT( *d == *b );
 
-    r = pBuffer(new Buffer(Interval(61,71), 0, 1));
+    r = pBuffer(new Buffer(Interval(61,71), 1, 1));
     d = o->process (r);
     EXCEPTION_ASSERT_EQUALS (b->number_of_channels (), d->number_of_channels ());
     EXCEPTION_ASSERT_EQUALS (b->number_of_samples (), d->number_of_samples ());

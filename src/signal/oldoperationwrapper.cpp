@@ -171,7 +171,7 @@ void OldOperationDescWrapper::
     // Processing::Chain.
     for (int i=0; i<10; i++) {
         // wiring
-        pBuffer buffer(new Buffer(Interval(1,4),0,1));
+        pBuffer buffer(new Buffer(Interval(1,4),2,1));
         float *t = buffer->getChannel (0)->waveform_data()->getCpuMemory ();
         t[0] = 1;
         t[1] = 2;
