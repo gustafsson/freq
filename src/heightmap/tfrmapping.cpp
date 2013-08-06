@@ -162,6 +162,10 @@ void TfrMap::
     if (v < 1)
         v = 1;
 
+    if (v == channels())
+        return;
+
+    collections_.clear ();
     collections_.resize(v);
 
     for (int c=0; c<v; ++c)
