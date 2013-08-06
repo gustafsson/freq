@@ -3,6 +3,8 @@
 #include "operation-basic.h"
 #include "tfr/filter.h"
 
+#include "Statistics.h"
+
 using namespace boost;
 
 namespace Signal {
@@ -18,15 +20,27 @@ void print_buffer(pBuffer b, const char* bname, const char* func, T arg, const c
 
 #define PRINT_BUFFER(b, arg) print_buffer(b, #b, __FUNCTION__, arg, __FILE__, __LINE__)
 
+template<typename T>
+void print_buffer_stats(pBuffer b, const char* bname, const char* func, T arg, const char* file, int line) {
+    TaskInfo ti(format("%s(%s): %s(%s) -> %s = %s") % file % line % func % arg % bname % b->getInterval ());
+
+    Statistics<float>(b->getChannel (0)->waveform_data());
+}
+
+#define PRINT_BUFFER_STATS(b, arg) print_buffer_stats(b, #b, __FUNCTION__, arg, __FILE__, __LINE__)
+
 class OldOperationTrackBufferSource: public BufferSource {
 public:
     OldOperationTrackBufferSource( pBuffer waveform )
         :
           BufferSource(waveform)
-    {}
+    {
+        //PRINT_BUFFER_STATS (waveform,"");
+    }
 
     pBuffer read( const Interval& I ) {
         pBuffer b = BufferSource::read(I);
+        //PRINT_BUFFER_STATS (b,"");
 
         return b;
     }
@@ -47,6 +61,8 @@ OldOperationWrapper::
 pBuffer OldOperationWrapper::
         process(pBuffer b)
 {
+    //PRINT_BUFFER_STATS (b,"process");
+
     pOperation buffer_source(new OldOperationTrackBufferSource(b));
     if (!dynamic_cast<FinalSource*>(old_operation_.get ()))
         old_operation_->source(buffer_source);
