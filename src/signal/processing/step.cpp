@@ -37,7 +37,10 @@ Signal::Intervals Step::
 {
     DEBUGINFO TaskInfo ti(format("step %1%: deprecate %2%") % (void*)this % deprecated);
 
-    if (operation_desc_)
+    if (deprecated == Signal::Interval::Interval_ALL)
+        cache_.reset ();
+
+    if (operation_desc_ && deprecated)
         deprecated = operation_desc_->affectedInterval(deprecated);
 
     not_started_ |= deprecated;
