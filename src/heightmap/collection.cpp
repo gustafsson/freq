@@ -216,6 +216,15 @@ unsigned Collection::
 void Collection::
         poke(pBlock b)
 {
+/*
+    TaskInfo ti(boost::format("poke %s") % b->getRegion ());
+    TaskInfo(boost::format("b->frame_number_last_used = %1%") % b->frame_number_last_used);
+    TaskInfo(boost::format("_frame_counter = %1%") % _frame_counter);
+    TaskInfo(boost::format("b->getInterval() = %s") % b->getInterval());
+    TaskInfo(boost::format("b->valid_samples = %s") % b->valid_samples);
+    TaskInfo(boost::format("recently_created_ = %s") % recently_created_);
+*/
+
     if (b->frame_number_last_used+1 != _frame_counter) {
         recently_created_ |= b->getInterval() - b->valid_samples;
     }

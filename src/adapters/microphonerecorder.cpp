@@ -6,8 +6,6 @@
 
 #include <QMutexLocker>
 
-#include <Statistics.h>
-
 #include <boost/foreach.hpp>
 
 //#define TIME_MICROPHONERECORDER
