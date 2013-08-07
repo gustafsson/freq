@@ -54,8 +54,10 @@ bool BlockFilter::
 
     {
         Heightmap::TfrMap::ReadPtr tfr_map(tfr_map_);
-        if (pchunk.channel >= tfr_map->channels())
+        if (pchunk.channel >= tfr_map->channels()) {
+            // Just ignore
             return false;
+        }
 
         collection = tfr_map->collections()[pchunk.channel];
     }

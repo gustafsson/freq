@@ -1082,11 +1082,31 @@ void RenderView::
     bool onlyComputeBlocksForRenderView = false;
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
+        float length=0.f;
 
         if (onlyComputeBlocksForRenderView)
         foreach( const Heightmap::Collection::Ptr& collection, collections )
         {
             write1(collection)->next_frame(); // Discard needed blocks before this row
+        }
+
+        {
+            Signal::OperationDesc::Extent x = model->project()->extent ();
+            length = x.interval.get ().count() / x.sample_rate.get ();
+
+            Heightmap::TfrMap::WritePtr w(model->tfr_map ());
+            w->length( length );
+
+            if (w->channels() != x.number_of_channels ||
+                w->targetSampleRate() != x.sample_rate)
+            {
+                w->targetSampleRate( x.sample_rate.get ());
+                w->channels( x.number_of_channels.get ());
+
+                Signal::Processing::Step::Ptr s = read1(model->target_marker ())->step().lock();
+                if (s)
+                    write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
+            }
         }
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
@@ -1100,7 +1120,6 @@ void RenderView::
 		}
 
         {
-            float length = model->project()->length();
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
 
             bool draw_piano = model->renderer->draw_piano;
@@ -1112,11 +1131,6 @@ void RenderView::
             memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
             memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
             memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
-
-            {
-                Heightmap::TfrMap::WritePtr write(model->tfr_map());
-                write->length( length );
-            }
 
             model->renderer->drawAxes( length ); // 4.7 ms
 

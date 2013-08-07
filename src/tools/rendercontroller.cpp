@@ -75,16 +75,6 @@ public:
     virtual Signal::pBuffer read(const Signal::Interval& I) {
         Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
 
-        if (read1(model_->tfr_map ())->channels() != (int)r->number_of_channels () ||
-            read1(model_->tfr_map ())->targetSampleRate() != r->sample_rate ())
-        {
-            model_->recompute_extent();
-
-            Signal::Processing::Step::Ptr s = read1(model_->target_marker ())->step().lock();
-            if (s)
-                write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
-        }
-
         // TODO call this after collection has been updated
         view_->userinput_update();
 
