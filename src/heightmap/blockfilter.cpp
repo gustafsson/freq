@@ -77,7 +77,8 @@ bool BlockFilter::
         // and then to use an fence sync object to prevent it from being used during rendering until it's ready.
         // http://www.opengl.org/wiki/OpenGL_and_multithreading
         // http://www.opengl.org/wiki/Sync_Object
-        if (false && write1(collection)->constructor_thread().isSameThread())
+        //if (write1(collection)->constructor_thread().isSameThread())
+        if (false)
         {
 #endif
             mergeChunk( block, pchunk, block->glblock->height()->data );

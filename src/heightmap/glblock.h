@@ -4,7 +4,8 @@
 #include "blocksize.h"
 
 // gpumisc
-#include <mappedvbo.h>
+#include "mappedvbo.h"
+#include "ThreadChecker.h"
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -75,6 +76,9 @@ private:
     pVbo _mesh;
 
     pHeight _mapped_height;
+    // Create and destroy in the same context, which
+    // is only being kept in the main thread.
+    ThreadChecker _constructor_thread;
 
     unsigned _tex_height;
     unsigned _tex_height_nearest;

@@ -165,8 +165,6 @@ public:
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 
-    const ThreadChecker& constructor_thread() const { return _constructor_thread; }
-
     bool isVisible() const;
     void setVisible(bool v);
 
@@ -216,8 +214,6 @@ private:
     cache_t _cache;
     recent_t _recent; /// Ordered with the most recently accessed blocks first
     recent_t _to_remove;
-
-    ThreadChecker _constructor_thread;
 
 
     /**
