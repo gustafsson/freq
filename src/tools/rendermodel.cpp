@@ -211,6 +211,15 @@ void RenderModel::
     Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
     if (f)
         f->transformDesc (t);
+
+//Use Signal::Processing namespace
+    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(o.get ());
+    if (w)
+    {
+        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ()->DeprecatedOperation::source ().get ());
+        if (f2)
+            return f2->transform (t->createTransform ());
+    }
 }
 
 
