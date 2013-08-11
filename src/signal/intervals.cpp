@@ -583,9 +583,26 @@ std::string Interval::
         toString() const
 {
     std::stringstream ss;
-    ss << "[" << first << ", " << last << ")";
-    if (0 != first)
+
+    ss << "[";
+
+    if (first != IntervalType_MIN)
+        ss << first;
+    else
+        ss << "-";
+
+    ss << ", ";
+
+    if (last != IntervalType_MAX)
+        ss << last;
+    else
+        ss << "+";
+
+    ss << ")";
+
+    if (0 != first && first != IntervalType_MIN && last != IntervalType_MAX)
         ss << count() << "#";
+
     return ss.str();
 }
 
