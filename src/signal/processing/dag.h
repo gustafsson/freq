@@ -17,6 +17,8 @@ typedef boost::graph_traits<Graph>::edge_descriptor GraphEdge;
 
 /**
  * @brief The Dag class should manage the connections between the steps in the signal processing chain.
+ *
+ * TODO It should treat Step's that aren't a part of the Dag as lonely islands.
  */
 class Dag: public VolatilePtr<Dag>
 {
