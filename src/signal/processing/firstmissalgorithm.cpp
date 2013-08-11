@@ -171,8 +171,8 @@ void FirstMissAlgorithm::
         EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), read1(step)->not_started());
 
         // Verify that the output objects can be used
-        t1->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
-        t2->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+        write1(t1)->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+        write1(t2)->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,30));
     }

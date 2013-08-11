@@ -29,7 +29,7 @@ void Worker::
             if (!task)
                 break;
 
-            task->run(computing_eninge_);
+            write1(task)->run(computing_eninge_);
         }
     } catch (const std::exception&) {
         exception_ = boost::current_exception ();

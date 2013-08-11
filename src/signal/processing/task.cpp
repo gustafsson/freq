@@ -19,6 +19,8 @@ Task::
       children_(children),
       expected_output_(expected_output)
 {
+    EXCEPTION_ASSERT_EQUALS(writeable_step, &*step);
+
     if (writeable_step)
         writeable_step->registerTask (this, expected_output);
 }
@@ -39,9 +41,9 @@ Signal::Interval Task::
 
 
 void Task::
-        run(Signal::ComputingEngine::Ptr ce) volatile
+        run(Signal::ComputingEngine::Ptr ce)
 {
-    DEBUGINFO TaskTimer tt(boost::format("run %1%") % ReadPtr(this)->expected_output());
+    DEBUGINFO TaskTimer tt(boost::format("run %1%") % expected_output());
 
     Signal::Operation::Ptr o = write1(step_)->operation (ce);
 
@@ -59,18 +61,13 @@ void Task::
 
 
 Signal::pBuffer Task::
-        get_input() volatile
+        get_input() const
 {
     DEBUGINFO TaskTimer tt("get input");
-    Signal::Intervals needed;
-    Signal::OperationDesc::Ptr operation_desc;
 
-    {
-        WritePtr self(this);
+    Signal::Intervals needed = expected_output_;
+    Signal::OperationDesc::Ptr operation_desc = read1(step_)->operation_desc ();
 
-        needed = self->expected_output_;
-        operation_desc = read1(step_)->operation_desc ();
-    }
 
     Signal::Intervals required_input;
     while (needed) {
@@ -82,17 +79,16 @@ Signal::pBuffer Task::
     }
 
     // Sum all sources
-    std::vector<Step::Ptr> children = ReadPtr(this)->children_;
     std::vector<Signal::pBuffer> buffers;
-    buffers.reserve (children.size ());
+    buffers.reserve (children_.size ());
 
     Signal::OperationDesc::Extent x = operation_desc->extent ();
 
     unsigned num_channels = x.number_of_channels.get_value_or (0);
     float sample_rate = x.sample_rate.get_value_or (0.f);
-    for (size_t i=0;i<children.size(); ++i)
+    for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = write1(children[i])->readFixedLengthFromCache(required_input.spannedInterval ());
+        Signal::pBuffer b = write1(children_[i])->readFixedLengthFromCache(required_input.spannedInterval ());
         if (b) {
             num_channels = std::max(num_channels, b->number_of_channels ());
             sample_rate = std::max(sample_rate, b->sample_rate ());
@@ -102,7 +98,7 @@ Signal::pBuffer Task::
 
     if (0==num_channels || 0.f==sample_rate) {
         // Undefined signal. Shouldn't have created this task.
-        if (children.empty ()) {
+        if (children_.empty ()) {
             EXCEPTION_ASSERT(x.sample_rate.is_initialized ());
             EXCEPTION_ASSERT(x.number_of_channels.is_initialized ());
         }
@@ -117,28 +113,29 @@ Signal::pBuffer Task::
         for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
             *input_buffer->getChannel (c) += *b->getChannel(c);
     }
+    DEBUGINFO TaskInfo(boost::format("got input %s for %s")
+                       % input_buffer->getInterval ()
+                       % operation_desc->toString ().toStdString ());
 
     return input_buffer;
 }
 
 
 void Task::
-        finish(Signal::pBuffer b) volatile
+        finish(Signal::pBuffer b)
 {
-    Step::Ptr step = ReadPtr(this)->step_;
-    if (step)
-        write1(step)->finishTask(&*WritePtr(this), b);
-    WritePtr(this)->step_.reset();
+    if (step_)
+        write1(step_)->finishTask(this, b);
+    step_.reset();
 }
 
 
 void Task::
-        cancel() volatile
+        cancel()
 {
-    Step::Ptr step = ReadPtr(this)->step_;
-    if (step)
-        write1(step)->finishTask(&*WritePtr(this), Signal::pBuffer());
-    WritePtr(this)->step_.reset();
+    if (step_)
+        write1(step_)->finishTask(this, Signal::pBuffer());
+    step_.reset();
 }
 
 

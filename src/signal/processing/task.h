@@ -27,16 +27,16 @@ public:
 
     Signal::Interval        expected_output() const;
 
-    void run(Signal::ComputingEngine::Ptr) volatile;
+    void run(Signal::ComputingEngine::Ptr);
 
 private:
     Step::Ptr               step_;
     std::vector<Step::Ptr>  children_;
     Signal::Interval        expected_output_;
 
-    Signal::pBuffer         get_input() volatile;
-    void                    finish(Signal::pBuffer) volatile;
-    void                    cancel() volatile;
+    Signal::pBuffer         get_input() const;
+    void                    finish(Signal::pBuffer);
+    void                    cancel();
 
 public:
     static void test();
