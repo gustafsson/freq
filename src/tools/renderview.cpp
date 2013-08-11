@@ -1048,6 +1048,7 @@ void RenderView::
     // TODO move to rendercontroller
     bool isWorking = false;
     bool isRecording = false;
+    bool workerCrashed = false;
 
     if (0 == "stop after 31 seconds")
     {
@@ -1163,6 +1164,8 @@ void RenderView::
                     things_to_add
                 );
 
+        isWorking = model->target_marker ()->isWorking();
+        workerCrashed = !model->target_marker ()->isWorking() && model->target_marker ()->hasWork();
 /*
         //Use Signal::Processing namespace
         Signal::pTarget oldTarget = worker.target();
@@ -1216,7 +1219,6 @@ void RenderView::
 */
     }
 
-    bool workerCrashed = false;
 #ifndef SAWE_NO_MUTEX
 /*
     //Use Signal::Processing namespace
@@ -1286,11 +1288,11 @@ void RenderView::
 */
     }
 
-/*
+
     //Use Signal::Processing namespace
     if (isWorking || isRecording)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
-*/
+
 
 //    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
 //    {
