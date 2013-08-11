@@ -120,7 +120,7 @@ Workers::DeadEngines Workers::
         if (!worker) {
             // The worker has been deleted
             Signal::ComputingEngine::Ptr ce = i->first;
-            dead[ce] = DeadEngines::mapped_type(0, "");
+            dead[ce] = boost::exception_ptr();
 
         } else {
             // Worker::delete_later() is carried out in the event loop of the
@@ -130,7 +130,7 @@ Workers::DeadEngines Workers::
             if (!worker->isRunning ()) {
                 // The worker has stopped but has not yet been deleted
                 Signal::ComputingEngine::Ptr ce = i->first;
-                dead[ce] = DeadEngines::mapped_type(worker->exception_type(), worker->exception_what());
+                dead[ce] = worker->caught_exception ();
 
                 worker->deleteLater ();
             }
@@ -154,9 +154,9 @@ void Workers::
     for(EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
         QPointer<Worker> worker = i->second;
 
-        if (worker && worker->exception_type()) {
+        if (worker && worker->caught_exception ()) {
             workers_map_.erase (i);
-            throw std::runtime_error(demangle(*worker->exception_type()) + worker->exception_what());
+            rethrow_exception(worker->caught_exception ());
         }
     }
 }
@@ -171,18 +171,16 @@ void Workers::
     TaskInfo ti("Dead engines");
 
     BOOST_FOREACH(Workers::DeadEngines::value_type e, engines) {
-        Signal::ComputingEngine::Ptr dead = e.first;
-        const std::type_info* type = e.second.first;
-        std::string str = e.second.second;
+        Signal::ComputingEngine::Ptr engine = e.first;
+        boost::exception_ptr x = e.second;
 
-        if (type)
-            TaskInfo(boost::format("engine %1% failed with %2%. %3%")
-                     % (dead ? vartype(*dead.get ()) : (vartype(dead.get ())+"==0"))
-                     % demangle(type->name ()) % str);
+        if (x)
+            TaskInfo(boost::format("engine %1% failed.\n%2%")
+                     % (engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0"))
+                     % boost::diagnostic_information(x));
         else
-            TaskInfo(boost::format("engine %1% stopped. %2%")
-                     % (dead ? vartype(*dead.get ()) : (vartype(dead.get ())+"==0"))
-                     % str);
+            TaskInfo(boost::format("engine %1% stopped.")
+                     % (engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0")));
     }
 }
 

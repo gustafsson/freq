@@ -9,8 +9,7 @@ Worker::
         Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::WeakPtr schedule)
     :
       computing_eninge_(computing_eninge),
-      schedule_(schedule),
-      exception_type_(0)
+      schedule_(schedule)
 {
 }
 
@@ -32,10 +31,8 @@ void Worker::
 
             task->run(computing_eninge_);
         }
-    } catch (const std::exception& x) {
-        exception_what_ = x.what();
-        const std::type_info& t = typeid(x);
-        exception_type_ = &t;
+    } catch (const std::exception&) {
+        exception_ = boost::current_exception ();
     }
 
     deleteLater ();
@@ -49,17 +46,10 @@ void Worker::
 }
 
 
-const std::string& Worker::
-        exception_what() const
+boost::exception_ptr Worker::
+        caught_exception() const
 {
-    return exception_what_;
-}
-
-
-const std::type_info* Worker::
-        exception_type() const
-{
-    return exception_type_;
+    return exception_;
 }
 
 
@@ -80,7 +70,7 @@ class GetTaskSegFaultMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
         if (DetectGdb::was_started_through_gdb ())
-            throw SignalException(SIGSEGV);
+            BOOST_THROW_EXCEPTION(SignalException(SIGSEGV));
 
         TaskInfo("Causing deliberate segfault to test that the worker handles it correctly");
         int a = *(int*)0; // cause segfault
@@ -123,10 +113,13 @@ void Worker::
         worker.run ();
         bool finished = worker.wait (2);
         EXCEPTION_ASSERT_EQUALS( true, finished );
+        EXCEPTION_ASSERT( worker.caught_exception () );
 
-        const std::type_info* ti = worker.exception_type();
-
-        EXCEPTION_ASSERT_EQUALS( demangle (ti?ti->name ():""), demangle (typeid(SignalException).name ()) );
+        try {
+            rethrow_exception(worker.caught_exception ());
+            BOOST_THROW_EXCEPTION(boost::unknown_exception());
+        } catch (const SignalException&) {
+        }
     }
 
     // It should store information about a crashed task (C++ exception)
@@ -137,11 +130,15 @@ void Worker::
         worker.run ();
         bool finished = worker.wait (2);
         EXCEPTION_ASSERT_EQUALS( true, finished );
+        EXCEPTION_ASSERT( worker.caught_exception () );
 
-        const std::type_info* ti = worker.exception_type();
-
-        EXCEPTION_ASSERT_EQUALS( demangle (ti?ti->name ():""), demangle (typeid(ExceptionAssert).name ()) );
-        EXCEPTION_ASSERT_EQUALS( "testing that worker catches exceptions from a scheduler", worker.exception_what () );
+        try {
+            rethrow_exception(worker.caught_exception ());
+            BOOST_THROW_EXCEPTION(boost::unknown_exception());
+        } catch (const ExceptionAssert& x) {
+            const std::string* message = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
+            EXCEPTION_ASSERT_EQUALS( "testing that worker catches exceptions from a scheduler", message?*message:"" );
+        }
     }
 }
 

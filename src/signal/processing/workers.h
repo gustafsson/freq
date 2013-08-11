@@ -44,7 +44,7 @@ public:
      * It is only valid to call this method from the same thread as they were
      * added.
      */
-    typedef std::map<Signal::ComputingEngine::Ptr, std::pair<const std::type_info*,std::string> > DeadEngines;
+    typedef std::map<Signal::ComputingEngine::Ptr, boost::exception_ptr > DeadEngines;
     DeadEngines clean_dead_workers();
     void rethrow_worker_exception();
 

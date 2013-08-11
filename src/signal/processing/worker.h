@@ -7,6 +7,8 @@
 #include <QThread>
 #include <QPointer>
 
+#include <boost/exception_ptr.hpp>
+
 namespace Signal {
 namespace Processing {
 
@@ -37,16 +39,23 @@ public:
     // 'scheduel_->getTask()' might be idling but this class is unaware of that
     void exit_nicely_and_delete();
 
-    const std::string& exception_what() const;
-    // non-zero if an exception was caught
-    const std::type_info* exception_type() const;
+    // 'if (caught_exception())' will be true if an exception was caught.
+    //
+    // To examine the exception. Use this pattern:
+    //
+    //     try {
+    //         rethrow_exception(caught_exception ());
+    //     } catch ( std::exception& x ) {
+    //         x.what();
+    //         ... get_error_info<...>(x);
+    //     }
+    boost::exception_ptr caught_exception() const;
 
 private:
     Signal::ComputingEngine::Ptr computing_eninge_;
     ISchedule::WeakPtr schedule_;
 
-    std::string exception_what_;
-    const std::type_info* exception_type_;
+    boost::exception_ptr exception_;
 
 public:
     static void test ();
