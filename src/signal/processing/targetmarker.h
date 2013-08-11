@@ -28,6 +28,8 @@ public:
 
     boost::weak_ptr<volatile Step> step() const;
     bool sleep(int sleep_ms) volatile;
+    bool isWorking() volatile;
+    bool hasWork() volatile;
 
 private:
     TargetNeeds::Ptr target_needs_;
