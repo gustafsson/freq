@@ -2,7 +2,9 @@
 #include "buffersource.h"
 #include "operation-basic.h"
 #include "tfr/filter.h"
+#include "tfr/transform.h"
 
+// gpumisc
 #include "Statistics.h"
 
 using namespace boost;
@@ -172,7 +174,20 @@ QString OldOperationDescWrapper::
 Interval OldOperationDescWrapper::
         affectedInterval( const Interval& I ) const
 {
-    return I;
+    Interval r = I;
+    pOperation s = old_operation_;
+
+    while (s) {
+        Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s.get ());
+
+        if (f)
+            r = f->transform ()->transformDesc()->affectedInterval( r );
+
+        // ignore that this is traversing the dag in the wrong direction
+        s = s->DeprecatedOperation::source ();
+    }
+
+    return r;
 }
 
 } // namespace Signal
