@@ -99,7 +99,7 @@ public:
       */
     virtual Signal::pBuffer read( const Signal::Interval& I );
     virtual Signal::pBuffer process(Signal::pBuffer);
-    virtual Signal::Interval requiredInterval( Signal::Interval& I );
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
     /**
       Filters are applied to chunks that are computed using some transform.
       transform()/transform(pTransform) gets/sets that transform.
