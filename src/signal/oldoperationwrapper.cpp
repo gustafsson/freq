@@ -132,6 +132,9 @@ OperationDesc::Ptr OldOperationDescWrapper::
 Operation::Ptr OldOperationDescWrapper::
         createOperation(ComputingEngine* engine) const
 {
+    // This only works in one thread becuase there's only one instance of old_operation_.
+    // And there's only one instance of OldOperationWrapper::LastRequiredInterval per OldOperationDescWrapper.
+
     if (engine)
         return Operation::Ptr();
 
