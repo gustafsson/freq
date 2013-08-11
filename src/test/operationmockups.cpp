@@ -41,4 +41,12 @@ Signal::OperationDesc::Ptr TransparentOperationDesc::
 }
 
 
+EmptySource::
+        EmptySource(float sample_rate, int number_of_channels)
+    :
+      BufferSource(Signal::pBuffer(new Signal::Buffer(Signal::Interval(), sample_rate, number_of_channels)))
+{
+}
+
+
 } // namespace Test

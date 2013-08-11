@@ -2,6 +2,7 @@
 #define TEST_OPERATIONMOCKUPS_H
 
 #include "signal/operation.h"
+#include "signal/buffersource.h"
 
 namespace Test {
 
@@ -17,6 +18,12 @@ public:
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
     virtual OperationDesc::Ptr copy() const;
+};
+
+
+class EmptySource: public Signal::BufferSource {
+public:
+    EmptySource(float sample_rate=1.f, int number_of_channels=1);
 };
 
 } // namespace Test
