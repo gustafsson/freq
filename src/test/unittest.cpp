@@ -45,8 +45,11 @@ using namespace std;
 
 namespace Test {
 
+string lastname;
+
 #define RUNTEST(x) do { \
         TaskTimer tt("%s", #x); \
+        lastname = #x; \
         x::test (); \
     } while(false)
 
@@ -97,8 +100,13 @@ int UnitTest::
         RUNTEST(VolatilePtrTest);
         RUNTEST(Adapters::Playback);
 
-    } catch (exception& x) {
-        printf("\n%s\n\n", boost::diagnostic_information(x).c_str());
+    } catch (const exception& x) {
+        TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
+        printf("\n FAILED in %s::test()\n\n", lastname.c_str ());
+        return 1;
+    } catch (...) {
+        TaskInfo(boost::format("Not an std::exception\n%s") % boost::current_exception_diagnostic_information ());
+        printf("\n FAILED in %s::test()\n\n", lastname.c_str ());
         return 1;
     }
 
