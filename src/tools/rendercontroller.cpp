@@ -438,6 +438,8 @@ void RenderController::
     stateChanged();
 
     view->emitTransformChanged();
+
+    // updateTransformDesc is called each frame
 }
 
 
