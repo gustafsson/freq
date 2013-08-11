@@ -63,9 +63,10 @@ pBuffer OldOperationWrapper::
 {
     //PRINT_BUFFER_STATS (b,"process");
 
-    pOperation buffer_source(new OldOperationTrackBufferSource(b));
-    if (!dynamic_cast<FinalSource*>(old_operation_.get ()))
+    if (!dynamic_cast<FinalSource*>(old_operation_.get ())) {
+        pOperation buffer_source(new OldOperationTrackBufferSource(b));
         old_operation_->source(buffer_source);
+    }
 
     Interval I = required_interval_->last_required_interval;
     pBuffer r = old_operation_->readFixedLength( I );
@@ -106,17 +107,22 @@ OldOperationDescWrapper::
 Interval OldOperationDescWrapper::
         requiredInterval( const Interval& I, Interval* expectedOutput ) const
 {
-    Interval r;
-    Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(old_operation_.get ());
-
     lri_->last_required_interval = I;
-    if (f)
-        r = f->requiredInterval (lri_->last_required_interval);
-    else
-        r = I;
 
     if (expectedOutput)
-        *expectedOutput = lri_->last_required_interval;
+        *expectedOutput = I;
+
+    Interval r = I;
+    pOperation s = old_operation_;
+
+    while (s) {
+        Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s.get ());
+
+        if (f)
+            r = f->requiredInterval (r);
+
+        s = s->DeprecatedOperation::source ();
+    }
 
     return r;
 }
