@@ -50,7 +50,7 @@ BlockFilter::
 bool BlockFilter::
         applyFilter( ChunkAndInverse& pchunk )
 {
-    Collection::Ptr collection;
+    Collection::Ptr collectionp;
 
     {
         Heightmap::TfrMap::ReadPtr tfr_map(tfr_map_);
@@ -59,12 +59,16 @@ bool BlockFilter::
             return false;
         }
 
-        collection = tfr_map->collections()[pchunk.channel];
+        collectionp = tfr_map->collections()[pchunk.channel];
     }
+
+    // pBlock should be deleted from the main thread with the OpenGL context.
+    // Lock collection from leaving blocks to this thread.
+    Collection::ReadPtr collection(collectionp);
 
     Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getCoveredInterval();
-    std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
+    std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt(format("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks")
         % chunk_interval % chunk.minHz() % chunk.maxHz() % intersecting_blocks.size());
 
@@ -96,7 +100,7 @@ bool BlockFilter::
                 TaskInfo(format("%s") %
                          Heightmap::ReferenceInfo(
                              block->reference (),
-                             read1(tfr_map_)->tfr_mapping ()
+                             block->tfr_mapping ()
                              ));
                 EXCEPTION_ASSERT( block->cpu_copy );
             }
@@ -120,7 +124,7 @@ bool BlockFilter::
 void BlockFilter::
         mergeColumnMajorChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData, float normalization_factor )
 {
-    Heightmap::TfrMapping tfr_mapping = read1(tfr_map_)->tfr_mapping ();
+    Heightmap::TfrMapping tfr_mapping = block->tfr_mapping ();
 
     Tfr::Chunk& chunk = *pchunk.chunk;
     Region r = block->getRegion();
@@ -209,10 +213,9 @@ void BlockFilter::
     TIME_BLOCKFILTER ComputationSynchronize();
     }
 
-    TfrMap::pCollection collection = read1(tfr_map_)->collections()[pchunk.channel];
     DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
             % transfer
-            % Heightmap::ReferenceInfo(block->reference (), read1(collection)->tfr_mapping ())
+            % Heightmap::ReferenceInfo(block->reference (), block->tfr_mapping ())
             % block->valid_samples);
     block->valid_samples |= transfer;
     block->non_zero |= transfer;

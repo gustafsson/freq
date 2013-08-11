@@ -155,7 +155,7 @@ public:
 
       This method is called by working threads.
       */
-    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible );
+    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible ) const;
 
 
     unsigned long cacheByteSize();

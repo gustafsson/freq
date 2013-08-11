@@ -319,7 +319,7 @@ pBlock Collection::
 
 
 std::vector<pBlock> Collection::
-        getIntersectingBlocks( const Intervals& I, bool only_visible )
+        getIntersectingBlocks( const Intervals& I, bool only_visible ) const
 {
     std::vector<pBlock> r;
     r.reserve(32);
