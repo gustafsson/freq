@@ -19,7 +19,7 @@ Task::
       children_(children),
       expected_output_(expected_output)
 {
-    EXCEPTION_ASSERT_EQUALS(writeable_step, &*step);
+    EXCEPTION_ASSERT_EQUALS(writeable_step, step.get ());
 
     if (writeable_step)
         writeable_step->registerTask (this, expected_output);
