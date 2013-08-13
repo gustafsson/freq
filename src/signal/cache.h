@@ -3,9 +3,12 @@
 
 #include "buffer.h"
 
+#include <boost/exception/all.hpp>
+
 #include <vector>
 
 namespace Signal {
+
 
 /**
  * @brief The Cache class
@@ -14,6 +17,8 @@ namespace Signal {
 class Cache
 {
 public:
+    class InvalidBufferDimensions: virtual public boost::exception, virtual public std::exception {};
+
     Cache( );
     Cache( const Cache& b);
     Cache& operator=( const Cache& b);

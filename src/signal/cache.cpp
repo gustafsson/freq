@@ -51,13 +51,15 @@ void Cache::
 {
     int N = this->num_channels ();
     if (N>0 && N != num_channels)
-        throw std::invalid_argument(str(boost::format("Expected %d channels, got %d\n%s") %
-                                        N % num_channels % BACKTRACE()));
+        BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                              (boost::format("Expected %d channels, got %d") %
+                                        N % num_channels) << Backtrace::make ());
 
     float F = this->sample_rate ();
     if (F>0 && F != fs) // Not fuzzy compare, must be identical.
-        throw std::invalid_argument(str(boost::format("Expected fs=%g channels, got %g\n%s") %
-                                        F % fs % BACKTRACE()));
+        BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                              (boost::format("Expected fs=%g, got %g") %
+                               F % fs) << Backtrace::make ());
 
     // chunkSize 1 << ...
     // 22 -> 1.8 ms
@@ -297,12 +299,12 @@ void Cache::
     try {
         cache.put (pBuffer(new Buffer(Interval(14, 25), 5.11, 7)));
         EXCEPTION_ASSERTX( false, "expected an exception to be thrown when supplying a non-consistent sample rate" );
-    } catch (const std::invalid_argument&) {}
+    } catch (const InvalidBufferDimensions&) {}
 
     try {
         cache.put (pBuffer(new Buffer(Interval(14, 25), 5.1, 6)));
         EXCEPTION_ASSERTX( false, "expected an exception to be thrown when supplying a non-consistent number of channels" );
-    } catch (const std::invalid_argument&) {}
+    } catch (const InvalidBufferDimensions&) {}
 }
 
 } // namespace Signal
