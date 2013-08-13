@@ -1156,7 +1156,12 @@ void RenderView::
             needed_samples |= wc->needed_samples();
         }
 
-        //TaskInfo(boost::format("invalid_samples = %s") % invalid_samples);
+        TIME_PAINTGL_DETAILS TaskInfo(boost::format(
+                    "RenderView needed_samples %s\n"
+                    "things_to_add = %s")
+                     % needed_samples
+                     % things_to_add);
+
         write1(model->target_marker())->updateNeeds(
                     needed_samples,
                     0,
@@ -1166,6 +1171,20 @@ void RenderView::
 
         isWorking = model->target_marker ()->isWorking();
         workerCrashed = !model->target_marker ()->isWorking() && model->target_marker ()->hasWork();
+
+        TIME_PAINTGL_DETAILS {
+            Signal::Processing::Step::Ptr step = read1(model->target_marker ())->step().lock();
+
+            if (step)
+            {
+                Signal::Processing::Step::ReadPtr stepp(step);
+                TaskInfo(boost::format("RenderView step out_of_date%s\n"
+                                   "not_started = %s")
+                                 % stepp->out_of_date()
+                                 % stepp->not_started());
+            }
+        }
+
 /*
         //Use Signal::Processing namespace
         Signal::pTarget oldTarget = worker.target();
