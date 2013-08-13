@@ -160,7 +160,7 @@ unsigned Collection::
         {
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
-            TaskTimer tt("Deleting texture");
+            VERBOSE_COLLECTION TaskTimer tt("Deleting texture");
             block->glblock->delete_texture ();
         }
     }
