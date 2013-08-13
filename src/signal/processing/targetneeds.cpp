@@ -2,7 +2,7 @@
 #include "step.h"
 #include "bedroom.h"
 
-#include "tools/support/timer.h"
+#include "timer.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -87,7 +87,7 @@ Signal::Intervals TargetNeeds::
 }
 
 
-int left(const Tools::Support::Timer& t, int sleep_ms) {
+int left(const Timer& t, int sleep_ms) {
     if (sleep_ms < 0)
         return sleep_ms;
 
@@ -101,7 +101,7 @@ int left(const Tools::Support::Timer& t, int sleep_ms) {
 bool TargetNeeds::
         sleep(int sleep_ms) volatile
 {
-    Tools::Support::Timer t;
+    Timer t;
 
     Step::Ptr pstep = ReadPtr(this)->step_.lock();
     Bedroom::Ptr bedroom = ReadPtr(this)->bedroom_.lock();

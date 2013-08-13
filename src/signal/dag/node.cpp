@@ -1,7 +1,7 @@
 #include "node.h"
 #include "test/operationmockups.h"
 
-#include "tools/support/timer.h"
+#include "timer.h"
 
 namespace Signal {
 namespace Dag {

@@ -8,7 +8,9 @@
 #include "commentview.h"
 #include "sawe/toolmainloop.h"
 #include "tools/commands/viewstate.h"
-#include "support/timer.h"
+
+// gpumisc
+#include "timer.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -203,7 +205,7 @@ namespace Tools
         /**
           Adjusting sleep between frames based on fps.
           */
-        Support::Timer _last_frame;
+        Timer _last_frame;
         float _target_fps;
 
 

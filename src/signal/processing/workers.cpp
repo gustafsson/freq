@@ -4,7 +4,7 @@
 
 #include "workers.h"
 #include "targetschedule.h"
-#include "tools/support/timer.h"
+#include "timer.h"
 
 
 namespace Signal {
@@ -218,7 +218,7 @@ void Workers::
         Workers workers(schedule);
         workers.rethrow_worker_exception(); // Should do nothing
 
-        Tools::Support::Timer t;
+        Timer t;
         int worker_count = 40; // Multiplying by 10 multiplies the elapsed time by a factor of 100.
         std::list<Worker::Ptr> workerlist;
         Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr());

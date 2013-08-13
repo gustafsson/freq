@@ -500,7 +500,7 @@ Recorder* MicrophoneRecorderDesc::
 } // namespace Adapters
 
 
-#include "tools/support/timer.h"
+#include "timer.h"
 
 #include <QSemaphore>
 
@@ -543,7 +543,7 @@ void MicrophoneRecorderDesc::
 
         EXCEPTION_ASSERT( !mrd.isStopped() );
 
-        Tools::Support::Timer t;
+        Timer t;
         dynamic_cast<volatile GotDataCallback*>(callback.get ())->wait (6000);
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.200 );
 

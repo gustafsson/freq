@@ -1,5 +1,5 @@
 #include "tasktimertiming.h"
-#include "tools/support/timer.h"
+#include "timer.h"
 
 #include "TaskTimer.h"
 #include "ThreadChecker.h"
@@ -15,7 +15,7 @@ void TaskTimerTiming::
     std::stringstream dummy;
     try
     {
-        Tools::Support::Timer t;
+        Timer t;
         TaskTimer::setLogLevelStream (TaskTimer::LogSimple, &dummy);
         TaskTimer::setLogLevelStream (TaskTimer::LogVerbose, &dummy);
         TaskTimer::setLogLevelStream (TaskTimer::LogDetailed, &dummy);

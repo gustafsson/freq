@@ -29,12 +29,13 @@
 #include "signal/operationwrapper.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/recordmodel.h"
-#include "tools/support/timer.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
-#include "volatileptr.h"
 #include "adapters/playback.h"
+
+#include "timer.h"
+#include "volatileptr.h"
 #include "backtrace.h"
 
 #include <stdio.h>
@@ -58,7 +59,7 @@ int UnitTest::
         test()
 {
     try {
-        Tools::Support::Timer(); // Init performance counting
+        Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
         RUNTEST(Backtrace);
