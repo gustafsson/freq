@@ -63,6 +63,7 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(Backtrace);
+        RUNTEST(VolatilePtrTest);
         // SignalException only works for one segfault per execution.
         //RUNTEST(ExceptionAssert);
         //RUNTEST(ExceptionAssert);
@@ -100,7 +101,6 @@ int UnitTest::
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
         RUNTEST(Heightmap::CreateChunkBlockFilter);
-        RUNTEST(VolatilePtrTest);
         RUNTEST(Adapters::Playback);
 
     } catch (const exception& x) {
