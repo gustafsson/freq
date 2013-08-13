@@ -17,6 +17,9 @@ namespace Processing {
  *
  * It should store information about a crashed task (both segfault and std::exception)
  *
+ * It should swallow one LockFailed without aborting the thread but abort if
+ * several consecutive LockFailed are thrown.
+ *
  * Issues
  * should not subclass QThread
  * http://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/

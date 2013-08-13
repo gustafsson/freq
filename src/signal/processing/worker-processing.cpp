@@ -16,27 +16,50 @@ Worker::
 
 void Worker::
         run()
-{
-    try {
-
-        for (;;)
+    {
+    try
         {
-            ISchedule::Ptr schedule = schedule_.lock ();
-            if (!schedule)
-                break;
+        int consecutive_lock_failed_count = 0;
+        for (;;)
+            {
+            try
+                {
+                ISchedule::Ptr schedule = schedule_.lock ();
+                if (!schedule)
+                    break;
 
-            Task::Ptr task = schedule->getTask();
-            if (!task)
-                break;
+                Task::Ptr task = schedule->getTask();
+                if (!task)
+                    break;
 
-            write1(task)->run(computing_eninge_);
+                write1(task)->run(computing_eninge_);
+
+                consecutive_lock_failed_count = 0;
+                }
+
+            catch (const LockFailed& x)
+                {
+                TaskInfo("");
+                TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
+                TaskInfo("");
+
+                if (consecutive_lock_failed_count < 1)
+                    {
+                    TaskInfo("Trying again %d", consecutive_lock_failed_count);
+                    consecutive_lock_failed_count++;
+                    }
+                else
+                    throw;
+                }
+            }
         }
-    } catch (const std::exception&) {
+    catch (const std::exception&)
+        {
         exception_ = boost::current_exception ();
-    }
+        }
 
     deleteLater ();
-}
+    }
 
 
 void Worker::
@@ -74,7 +97,9 @@ public:
 
         TaskInfo("Causing deliberate segfault to test that the worker handles it correctly");
         int a = *(int*)0; // cause segfault
-        a=a;
+
+        // unreachable code
+        a=a; // hide compiler warning
         return Task::Ptr();
     }
 };
@@ -84,6 +109,23 @@ class GetTaskExceptionMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
         EXCEPTION_ASSERTX(false, "testing that worker catches exceptions from a scheduler");
+
+        // unreachable code
+        return Task::Ptr();
+    }
+};
+
+
+class DeadLockMock: public GetTaskMock {
+public:
+    virtual Task::Ptr getTask() volatile {
+        GetTaskMock::getTask ();
+
+        // cause dead lock
+        volatile DeadLockMock m;
+        WritePtr(&m) && WritePtr(&m);
+
+        // unreachable code
         return Task::Ptr();
     }
 };
@@ -115,11 +157,7 @@ void Worker::
         EXCEPTION_ASSERT_EQUALS( true, finished );
         EXCEPTION_ASSERT( worker.caught_exception () );
 
-        try {
-            rethrow_exception(worker.caught_exception ());
-            BOOST_THROW_EXCEPTION(boost::unknown_exception());
-        } catch (const SignalException&) {
-        }
+        EXPECT_EXCEPTION(SignalException, rethrow_exception(worker.caught_exception ()));
     }
 
     // It should store information about a crashed task (C++ exception)
@@ -139,6 +177,22 @@ void Worker::
             const std::string* message = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
             EXCEPTION_ASSERT_EQUALS( "testing that worker catches exceptions from a scheduler", message?*message:"" );
         }
+    }
+
+    // It should swallow one LockFailed without aborting the thread but abort if
+    // several consecutive LockFailed are thrown.
+    {
+        ISchedule::Ptr gettask(new DeadLockMock());
+
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        worker.run ();
+        bool finished = worker.wait (2);
+        EXCEPTION_ASSERT_EQUALS( true, finished );
+        EXCEPTION_ASSERT( worker.caught_exception () );
+
+        EXPECT_EXCEPTION(LockFailed, rethrow_exception(worker.caught_exception ()));
+
+        EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
     }
 }
 

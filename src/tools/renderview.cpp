@@ -1290,7 +1290,7 @@ void RenderView::
 
 
     //Use Signal::Processing namespace
-    if (isWorking || isRecording)
+    if (isWorking || isRecording || workerCrashed)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
 
 
@@ -1373,6 +1373,10 @@ void RenderView::
         {
             model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
         }
+    } catch (const LockFailed& x) {
+        TaskInfo("");
+        TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
+        TaskInfo("");
     }
 
 	{
