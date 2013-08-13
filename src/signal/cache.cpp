@@ -3,6 +3,7 @@
 #include "TaskTimer.h"
 #include "exceptionassert.h"
 #include "neat_math.h"
+#include "backtrace.h"
 
 using namespace boost;
 
