@@ -382,17 +382,23 @@ unsigned long Collection::
     // may be both a texture and a vbo, and possibly a mapped cuda copy.
     //
     // But most of the blocks will only have a heightmap vbo, and none of the
-    // others. It would be possible to look through the list and into each
-    // cache block to see what data is allocated at the momement. For a future
-    // release perhaps...
-    //unsigned long estimation = _cache.size() * scales_per_block()*samples_per_block()*1*sizeof(float)*2;
-    //return estimation;
+    // others.
 
     unsigned long sumsize = 0;
+
     BOOST_FOREACH (const cache_t::value_type& b, _cache)
-    {
+        {
         sumsize += b.second->glblock->allocated_bytes_per_element();
-    }
+        }
+
+    BOOST_FOREACH (const pBlock& b, _to_remove)
+        {
+        unsigned abpe = b->glblock->allocated_bytes_per_element();
+        if (abpe > sumsize)
+            sumsize = 0;
+        else
+            sumsize -= abpe;
+        }
 
     unsigned elements_per_block = tfr_mapping_.block_size.texels_per_block ();
     return sumsize*elements_per_block;
@@ -875,7 +881,7 @@ pBlock Collection::
 
                     TaskInfo(format("Soon removing block %s last used %u frames ago in favor of %s. Freeing %s, total free %s, cache %s, %u blocks")
                                  % back->reference ()
-                                 % (_frame_counter - block->frame_number_last_used)
+                                 % (_frame_counter - back->frame_number_last_used)
                                  % ref
                                  % DataStorageVoid::getMemorySizeText( blockMemory )
                                  % DataStorageVoid::getMemorySizeText( _free_memory )
