@@ -19,6 +19,7 @@ class TargetNeeds: public VolatilePtr<TargetNeeds>
 {
 public:
     TargetNeeds(boost::weak_ptr<volatile Step> step_, boost::weak_ptr<volatile Bedroom> bedroom);
+    ~TargetNeeds();
 
     /**
      * Large portions of step can be out_of_date yet not needed by the target.

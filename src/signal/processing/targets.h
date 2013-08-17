@@ -13,7 +13,7 @@ namespace Processing {
  * @brief The Targets class should keep track of targets and let callers update
  * what each target needs afterwards.
  *
- * Multiple target can be added for the same Step.
+ * Multiple targets can be added for the same Step.
  */
 class Targets: public VolatilePtr<Targets>
 {

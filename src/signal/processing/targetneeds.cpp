@@ -20,6 +20,13 @@ TargetNeeds::
 }
 
 
+TargetNeeds::
+        ~TargetNeeds()
+{
+    updateNeeds(Signal::Intervals());
+}
+
+
 void TargetNeeds::
         updateNeeds(Signal::Intervals needed_samples, int prio, Signal::IntervalType center, Signal::Intervals invalidate)
 {
