@@ -13,6 +13,7 @@ namespace Processing {
 typedef boost::directed_graph<Signal::Processing::Step::Ptr, boost::vecS> Graph;
 typedef boost::graph_traits<Graph>::vertex_descriptor GraphVertex;
 typedef boost::graph_traits<Graph>::edge_descriptor GraphEdge;
+GraphVertex NullVertex();
 
 
 /**
@@ -30,8 +31,8 @@ public:
 
     GraphVertex getVertex(Step::Ptr s) const;
 
-    GraphVertex appendStep(Step::Ptr step, GraphVertex gv=boost::graph_traits<Graph>::null_vertex ());
-    GraphVertex insertStep(Step::Ptr step, GraphVertex gv=boost::graph_traits<Graph>::null_vertex ());
+    GraphVertex appendStep(Step::Ptr step, GraphVertex gv=NullVertex ());
+    GraphVertex insertStep(Step::Ptr step, GraphVertex gv=NullVertex ());
     void removeStep(Step::Ptr step);
     std::vector<Step::Ptr> sourceSteps(Step::Ptr step) const;
     std::vector<Step::Ptr> targetSteps(Step::Ptr step) const;

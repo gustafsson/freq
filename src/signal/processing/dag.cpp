@@ -10,6 +10,14 @@ namespace og = boost::graph;
 namespace Signal {
 namespace Processing {
 
+
+GraphVertex
+        NullVertex()
+    {
+    return boost::graph_traits<Graph>::null_vertex ();
+    }
+
+
 Dag::
         Dag()
 {
@@ -36,7 +44,7 @@ GraphVertex Dag::
     GraphVertex new_vertex = g_.add_vertex (step);
     map[step] = new_vertex;
 
-    if (v != boost::graph_traits<Graph>::null_vertex ()) {
+    if (v != NullVertex ()) {
         // v should have new_vertex as target
         g_.add_edge (v, new_vertex);
     }
@@ -55,7 +63,7 @@ GraphVertex Dag::
     GraphVertex new_vertex = g_.add_vertex (step);
     map[step] = new_vertex;
 
-    if (v != boost::graph_traits<Graph>::null_vertex ()) {
+    if (v != NullVertex ()) {
         // All sources of v should have new_vertex as target instead of v.
         // new_vertex should have v as target
 

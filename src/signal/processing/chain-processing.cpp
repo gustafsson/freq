@@ -213,7 +213,7 @@ Chain::
 Step::Ptr Chain::
         createBranchStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
-    GraphVertex vertex = graph_traits<Graph>::null_vertex ();
+    GraphVertex vertex = NullVertex ();
     if (at) {
         Step::Ptr target_step = read1(at)->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
@@ -236,7 +236,7 @@ Step::Ptr Chain::
 Step::Ptr Chain::
         insertStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
-    GraphVertex vertex = graph_traits<Graph>::null_vertex ();
+    GraphVertex vertex = NullVertex ();
     if (at) {
         Step::Ptr target_step = read1(at)->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
