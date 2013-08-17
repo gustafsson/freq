@@ -11,9 +11,9 @@ namespace Processing {
 
 
 void ReverseGraph::
-        reverse_graph(const Graph& g, Graph& rev)
+        reverse_graph(const Graph& g, Graph& h)
 {
-    copy_graph(make_reverse_graph(g), rev);
+    copy_graph(make_reverse_graph(g), h);
 }
 
 
@@ -26,8 +26,6 @@ GraphVertex ReverseGraph::
         if (g[v] == property)
             u = v;
     }
-
-    EXCEPTION_ASSERTX(u != graph_traits<Graph>::null_vertex (), "Target was not found in graph");
 
     return u;
 }

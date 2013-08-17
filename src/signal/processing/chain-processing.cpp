@@ -168,19 +168,19 @@ public:
 Signal::OperationDesc::Extent Chain::
         extent(TargetMarker::Ptr at) const
 {
+    Signal::OperationDesc::Extent E;
+
     Step::Ptr step = read1(at)->step().lock();
     if (!step)
-        return Signal::OperationDesc::Extent();
+        return E;
 
-    Dag::ReadPtr dag(dag_);
-
-    Graph rev; ReverseGraph::reverse_graph (dag->g (), rev);
+    Graph rev; ReverseGraph::reverse_graph (read1(dag_)->g (), rev);
     GraphVertex at_vertex = ReverseGraph::find_first_vertex (rev, step);
 
-    Signal::OperationDesc::Extent I;
-    breadth_first_search(rev, at_vertex, visitor(find_extent(&I)));
+    if (at_vertex)
+        breadth_first_search(rev, at_vertex, visitor(find_extent(&E)));
 
-    return I;
+    return E;
 }
 
 
