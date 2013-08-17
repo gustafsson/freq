@@ -251,7 +251,7 @@ void Workers::
         workers.rethrow_worker_exception();
     }
 
-    EXCEPTION_ASSERT_LESS(maxwait, 0.006);
+    EXCEPTION_ASSERT_LESS(maxwait, 0.01);
 }
 
 
