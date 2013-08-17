@@ -80,7 +80,7 @@ Chain::
 TargetMarker::Ptr Chain::
         addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
-    Step::Ptr step = createBranchStep(*Dag::WritePtr(dag_), desc, at);
+    Step::WeakPtr step = createBranchStep(*Dag::WritePtr(dag_), desc, at);
 
     TargetNeeds::Ptr target_needs = write1(targets_)->addTarget(step);
 
@@ -95,7 +95,7 @@ IInvalidator::Ptr Chain::
 {
     EXCEPTION_ASSERT (at);
 
-    Step::Ptr step = insertStep(*Dag::WritePtr(dag_), desc, at);
+    Step::WeakPtr step = insertStep(*Dag::WritePtr(dag_), desc, at);
 
     IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
 
@@ -213,7 +213,7 @@ Chain::
 }
 
 
-Step::Ptr Chain::
+Step::WeakPtr Chain::
         createBranchStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
     GraphVertex vertex = NullVertex ();
@@ -223,7 +223,7 @@ Step::Ptr Chain::
 
         vertex = dag.getVertex (target_step);
         if (!vertex)
-            return Step::Ptr();
+            return Step::WeakPtr();
 
         BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag.g ())) {
             // Pick one of the sources on random and append to that one
@@ -239,7 +239,7 @@ Step::Ptr Chain::
 }
 
 
-Step::Ptr Chain::
+Step::WeakPtr Chain::
         insertStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
 {
     GraphVertex vertex = NullVertex ();
@@ -249,7 +249,7 @@ Step::Ptr Chain::
 
         vertex = dag.getVertex (target_step);
         if (!vertex)
-            return Step::Ptr();
+            return Step::WeakPtr();
     }
 
     Step::Ptr step(new Step(desc));

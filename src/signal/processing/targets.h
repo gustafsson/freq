@@ -34,7 +34,7 @@ public:
      *
      * Ownership is of TargetNeeds is given to the caller.
      */
-    TargetNeeds::Ptr              addTarget(Step::Ptr step);
+    TargetNeeds::Ptr              addTarget(Step::WeakPtr step);
     TargetNeedsCollection         getTargets() const;
 
 private:

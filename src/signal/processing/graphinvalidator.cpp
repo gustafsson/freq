@@ -13,9 +13,6 @@ GraphInvalidator::
       bedroom_(bedroom),
       step_(step)
 {
-    EXCEPTION_ASSERT(dag.lock ());
-    EXCEPTION_ASSERT(bedroom.lock ());
-    EXCEPTION_ASSERT(step.lock ());
 }
 
 

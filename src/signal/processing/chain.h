@@ -63,8 +63,8 @@ private:
 
     Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom);
 
-    Step::Ptr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    Step::Ptr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::WeakPtr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::WeakPtr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
 
 public:
     static void test();

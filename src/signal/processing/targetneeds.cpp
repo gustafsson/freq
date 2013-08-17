@@ -17,8 +17,6 @@ TargetNeeds::
       step_(step),
       bedroom_(bedroom)
 {
-    EXCEPTION_ASSERT(step.lock ());
-    EXCEPTION_ASSERT(bedroom.lock ());
 }
 
 

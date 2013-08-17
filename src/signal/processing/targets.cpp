@@ -15,7 +15,7 @@ Targets::
 
 
 TargetNeeds::Ptr Targets::
-        addTarget(Step::Ptr step)
+        addTarget(Step::WeakPtr step)
 {
     TargetNeeds::Ptr target(new TargetNeeds(step, bedroom_));
     targets.push_back (target);
