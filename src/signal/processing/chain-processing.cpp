@@ -117,6 +117,9 @@ void Chain::
     Dag::WritePtr dag(dag_);
 
     GraphVertex v = dag->getVertex (step);
+    if (!v)
+        return;
+
     const Graph& g = dag->g ();
 
     std::vector<Step::Ptr> steps_to_remove;
@@ -219,6 +222,9 @@ Step::Ptr Chain::
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
         vertex = dag.getVertex (target_step);
+        if (!vertex)
+            return Step::Ptr();
+
         BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag.g ())) {
             // Pick one of the sources on random and append to that one
             vertex = source(e, dag.g ());
@@ -242,6 +248,8 @@ Step::Ptr Chain::
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
         vertex = dag.getVertex (target_step);
+        if (!vertex)
+            return Step::Ptr();
     }
 
     Step::Ptr step(new Step(desc));

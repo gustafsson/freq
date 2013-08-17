@@ -19,7 +19,7 @@ GraphVertex NullVertex();
 /**
  * @brief The Dag class should manage the connections between the steps in the signal processing chain.
  *
- * TODO It should treat Step's that aren't a part of the Dag as lonely islands.
+ * It should treat Step's that aren't a part of the Dag as lonely islands.
  */
 class Dag: public VolatilePtr<Dag>
 {
@@ -28,7 +28,16 @@ public:
 
     const Graph& g() const { return g_; }
 
-
+    /**
+     * @brief getVertex locates where 's' is in the Dag.
+     * @param s The property to search for.
+     * @return The GraphVertex with 's' as a property (there's shoule only be
+     * one). If there is no such vertex NullVertex is returned. This may happen
+     * if the Step is removed from the Dag in another thread  while a Step::Ptr
+     * is kept in this thread.
+     * Note that NullVertex converts to false in a boolean expression.
+     * Note that most graph functions will crash if you give them a NullVertex.
+     */
     GraphVertex getVertex(Step::Ptr s) const;
 
     GraphVertex appendStep(Step::Ptr step, GraphVertex gv=NullVertex ());

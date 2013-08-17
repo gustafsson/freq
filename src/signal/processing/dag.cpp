@@ -28,7 +28,9 @@ GraphVertex Dag::
         getVertex(Step::Ptr s) const
 {
     StepVertexMap::const_iterator i = map.find (s);
-    EXCEPTION_ASSERTX (i != map.end (), "step was not found");
+
+    if (map.end () == i)
+        return NullVertex ();
 
     return i->second;
 }
@@ -91,6 +93,9 @@ void Dag::
     EXCEPTION_ASSERT (step);
 
     GraphVertex v = getVertex(step);
+    if (!v)
+        return;
+
     int id = in_degree(v, g_);
     int od = out_degree(v, g_);
 
@@ -139,7 +144,11 @@ std::vector<Step::Ptr> Dag::
 {
     std::vector<Step::Ptr> steps;
 
-    BOOST_FOREACH(GraphEdge e, in_edges(getVertex(step), g_)) {
+    GraphVertex v = getVertex(step);
+    if (!v)
+        return steps;
+
+    BOOST_FOREACH(GraphEdge e, in_edges(v, g_)) {
         GraphVertex u = source(e,g_);
         steps.push_back (g_[u]);
     }
@@ -153,7 +162,11 @@ std::vector<Step::Ptr> Dag::
 {
     std::vector<Step::Ptr> steps;
 
-    BOOST_FOREACH(GraphEdge e, out_edges(getVertex(step), g_)) {
+    GraphVertex v = getVertex(step);
+    if (!v)
+        return steps;
+
+    BOOST_FOREACH(GraphEdge e, out_edges(v, g_)) {
         GraphVertex u = boost::target(e,g_);
         Step::Ptr s = g_[u];
         //int nc = write1(s)->num_channels ();
@@ -204,6 +217,22 @@ void Dag::
         EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, step3));
         EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step2));
         EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
+    }
+
+    // It should treat Step's that aren't a part of the Dag as lonely islands.
+    {
+        Dag dag;
+
+        Step::Ptr step1(new Step(Signal::OperationDesc::Ptr()));
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+
+        dag.appendStep (step1);
+
+        dag.removeStep (step);
+        EXCEPTION_ASSERT( dag.sourceSteps (step) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT( dag.targetSteps (step) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT( dag.getVertex (step) == NullVertex() );
+        EXCEPTION_ASSERT_EQUALS (dag.g ().num_vertices (), 1);
     }
 }
 

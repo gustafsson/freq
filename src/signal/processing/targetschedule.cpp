@@ -52,6 +52,8 @@ Task::Ptr TargetSchedule::
         return Task::Ptr();
 
     GraphVertex vertex = dag->getVertex(step);
+    if (!vertex)
+        return Task::Ptr();
 
     Task::Ptr task = read1(self->algorithm)->getTask(
             dag->g(),

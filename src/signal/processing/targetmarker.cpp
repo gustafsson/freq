@@ -41,10 +41,15 @@ TargetMarker::
         ~TargetMarker()
 {
     Step::Ptr step = read1(target_needs_)->step().lock();
+    if (!step)
+        return;
 
     // Remove all steps than can only be reached from this target.
     Dag::WritePtr dag(dag_);
     GraphVertex start = dag->getVertex (step);
+    if (!start)
+        return;
+
     std::set<Step::Ptr> steps_to_remove = single_paths(start, dag->g ());
 
     BOOST_FOREACH( Step::Ptr s, steps_to_remove ) {
