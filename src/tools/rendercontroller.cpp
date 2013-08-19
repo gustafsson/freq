@@ -62,28 +62,17 @@ class BlockFilterSink2: public Signal::DeprecatedOperation
 public:
     BlockFilterSink2
         (
-            RenderModel* model,
-            RenderView* view
         )
         :
-            Signal::DeprecatedOperation(Signal::pOperation()),
-            model_(model),
-            view_(view)
+            Signal::DeprecatedOperation(Signal::pOperation())
     {
     }
 
     virtual Signal::pBuffer read(const Signal::Interval& I) {
         Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
 
-        // TODO call this after collection has been updated
-        view_->userinput_update();
-
         return r;
     }
-
-private:
-    RenderModel* model_;
-    RenderView* view_;
 };
 
 class BlockFilterSink: public Signal::Sink
@@ -509,13 +498,24 @@ void RenderController::
 class AdapterBlockFilterDesc : public Tools::Support::OperationSubOperations
 {
 public:
-    AdapterBlockFilterDesc(Signal::pOperation first, Signal::pOperation last)
+    AdapterBlockFilterDesc(Signal::pOperation embed, RenderView* view)
         :
-          Tools::Support::OperationSubOperations(Signal::pOperation(),"AdapterBlockFilterDesc")
+          Tools::Support::OperationSubOperations(Signal::pOperation(),"AdapterBlockFilterDesc"),
+          view_(view)
     {
-        last->source (source_sub_operation_);
-        DeprecatedOperation::source(first);
+        embed->source (source_sub_operation_);
+        DeprecatedOperation::source(embed);
     }
+
+
+    Signal::pBuffer read( const Signal::Interval& I ) {
+        Signal::pBuffer b = Tools::Support::OperationSubOperations::read (I);
+        view_->userinput_update ();
+        return b;
+    }
+
+private:
+    RenderView* view_;
 };
 
 void RenderController::
@@ -523,10 +523,8 @@ void RenderController::
 {
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
-    Signal::pOperation blockop( blockfilter );
-    Signal::pOperation channelop( new BlockFilterSink2(model(), view));
-    blockop->source (channelop);
-    Signal::pOperation adapter( new AdapterBlockFilterDesc(blockop, channelop) );
+    Signal::pOperation adapter(
+                new AdapterBlockFilterDesc (Signal::pOperation (blockfilter), view));
 
     //model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
 /*
