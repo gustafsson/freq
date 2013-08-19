@@ -1,6 +1,8 @@
 #include "worker.h"
 #include "task.h"
 #include "detectgdb.h"
+#include "expectexception.h"
+#include "prettifysegfault.h"
 
 namespace Signal {
 namespace Processing {
@@ -93,13 +95,12 @@ class GetTaskSegFaultMock: public ISchedule {
 public:
     virtual Task::Ptr getTask() volatile {
         if (DetectGdb::was_started_through_gdb ())
-            BOOST_THROW_EXCEPTION(SignalException(SIGSEGV));
+            BOOST_THROW_EXCEPTION(segfault_exception());
 
         TaskInfo("Causing deliberate segfault to test that the worker handles it correctly");
-        int a = *(int*)0; // cause segfault
+        *(int*)0 = 0; // cause segfault
 
         // unreachable code
-        a=a; // hide compiler warning
         return Task::Ptr();
     }
 };
@@ -157,7 +158,7 @@ void Worker::
         EXCEPTION_ASSERT_EQUALS( true, finished );
         EXCEPTION_ASSERT( worker.caught_exception () );
 
-        EXPECT_EXCEPTION(SignalException, rethrow_exception(worker.caught_exception ()));
+        EXPECT_EXCEPTION(segfault_exception, rethrow_exception(worker.caught_exception ()));
     }
 
     // It should store information about a crashed task (C++ exception)

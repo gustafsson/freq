@@ -34,6 +34,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "adapters/playback.h"
 
+#include "prettifysegfault.h"
 #include "timer.h"
 #include "volatileptr.h"
 #include "backtrace.h"
@@ -62,11 +63,10 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
+        RUNTEST(PrettifySegfault);
         RUNTEST(Backtrace);
         RUNTEST(VolatilePtrTest);
-        // SignalException only works for one segfault per execution.
-        //RUNTEST(ExceptionAssert);
-        //RUNTEST(ExceptionAssert);
+        RUNTEST(ExceptionAssert);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);

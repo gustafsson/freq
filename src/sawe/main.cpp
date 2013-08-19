@@ -10,7 +10,7 @@
 #include <neat_math.h>
 #include <computationkernel.h>
 #include <ThreadChecker.h>
-#include "exceptionassert.h"
+#include "prettifysegfault.h"
 
 // Qt
 #include <QtGui/QMessageBox>
@@ -226,7 +226,7 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
-    ExceptionAssert::installEventHandler ();
+    PrettifySegfault::setup ();
 
     if (argc == 2 && 0 == strcmp(argv[1],"--test"))
         return Test::UnitTest::test ();
