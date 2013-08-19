@@ -998,12 +998,12 @@ void RenderView::
 
     TIME_PAINTGL_DETAILS
     {
-        sumsize = write1(collections[0])->cacheByteSize();
-        cacheCount = write1(collections[0])->cacheCount();
+        sumsize = read1(collections[0])->cacheByteSize();
+        cacheCount = read1(collections[0])->cacheCount();
         for (unsigned i=1; i<N; ++i)
         {
-            TaskLogIfFalse( sumsize == write1(collections[i])->cacheByteSize() );
-            TaskLogIfFalse( cacheCount == write1(collections[i])->cacheCount() );
+            TaskLogIfFalse( sumsize == read1(collections[i])->cacheByteSize() );
+            TaskLogIfFalse( cacheCount == read1(collections[i])->cacheCount() );
         }
     }
 
@@ -1013,7 +1013,7 @@ void RenderView::
 
     if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
     {
-        write1(collections[i])->printCacheSize();
+        read1(collections[i])->printCacheSize();
     }
 
 

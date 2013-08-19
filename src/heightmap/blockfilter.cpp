@@ -50,7 +50,7 @@ BlockFilter::
 bool BlockFilter::
         applyFilter( ChunkAndInverse& pchunk )
 {
-    Collection::Ptr collectionp;
+    Collection::Ptr collection;
 
     {
         Heightmap::TfrMap::ReadPtr tfr_map(tfr_map_);
@@ -59,16 +59,16 @@ bool BlockFilter::
             return false;
         }
 
-        collectionp = tfr_map->collections()[pchunk.channel];
+        collection = tfr_map->collections()[pchunk.channel];
     }
 
-    // pBlock should be deleted from the main thread with the OpenGL context.
-    // Lock collection from leaving blocks to this thread.
-    Collection::ReadPtr collection(collectionp);
+    // pBlock is deleted from the main thread with the OpenGL context.
+    // Collection makes sure that it only discards its reference to a block
+    // if there is no copy. shared_ptr::unique.
 
     Tfr::Chunk& chunk = *pchunk.chunk;
     Signal::Interval chunk_interval = chunk.getCoveredInterval();
-    std::vector<pBlock> intersecting_blocks = collection->getIntersectingBlocks( chunk_interval, false );
+    std::vector<pBlock> intersecting_blocks = read1(collection)->getIntersectingBlocks( chunk_interval, false );
     TIME_BLOCKFILTER TaskTimer tt(format("BlockFilter %s [%g %g] Hz, intersects with %u visible blocks")
         % chunk_interval % chunk.minHz() % chunk.maxHz() % intersecting_blocks.size());
 

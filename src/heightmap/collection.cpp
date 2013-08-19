@@ -130,9 +130,6 @@ unsigned Collection::
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
     {
-        _recent.remove(b);
-        _cache.erase(b->reference());
-
         if (b.unique ())
             TaskInfo(format("Release block %s") % rr (b->reference()));
         else
@@ -376,7 +373,7 @@ std::vector<pBlock> Collection::
 
 
 unsigned long Collection::
-        cacheByteSize()
+        cacheByteSize() const
 {
     // For each block there may be both a slope map and heightmap. Also there
     // may be both a texture and a vbo, and possibly a mapped cuda copy.
@@ -406,14 +403,14 @@ unsigned long Collection::
 
 
 unsigned Collection::
-        cacheCount()
+        cacheCount() const
 {
     return _cache.size();
 }
 
 
 void Collection::
-        printCacheSize()
+        printCacheSize() const
 {
     size_t free=0, total=0;
 #ifdef USE_CUDA
@@ -804,6 +801,8 @@ pBlock Collection::
 void Collection::
         removeBlock (pBlock b)
 {
+    _recent.remove(b);
+    _cache.erase(b->reference());
     _to_remove.push_back( b );
 #ifndef SAWE_NO_MUTEX
     b->to_delete = true;

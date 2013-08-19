@@ -158,9 +158,9 @@ public:
     std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible ) const;
 
 
-    unsigned long cacheByteSize();
-    unsigned    cacheCount();
-    void        printCacheSize();
+    unsigned long cacheByteSize() const;
+    unsigned    cacheCount() const;
+    void        printCacheSize() const;
     void        gc();
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
