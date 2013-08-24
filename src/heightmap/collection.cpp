@@ -24,8 +24,8 @@
 #include <msc_stdc.h>
 
 
-//#define TIME_COLLECTION
-#define TIME_COLLECTION if(0)
+#define TIME_COLLECTION
+//#define TIME_COLLECTION if(0)
 
 //#define INFO_COLLECTION
 #define INFO_COLLECTION if(0)
@@ -222,10 +222,6 @@ void Collection::
     TaskInfo(boost::format("recently_created_ = %s") % recently_created_);
 */
 
-    if (b->frame_number_last_used+1 != _frame_counter) {
-        recently_created_ |= b->getInterval() - read1(b->block_data())->valid_samples;
-    }
-
     b->to_delete = false;
     b->frame_number_last_used = _frame_counter;
     _recent.remove( b );
@@ -270,6 +266,7 @@ pBlock Collection::
         {
             block = createBlock( ref );
             _created_count++;
+            recently_created_ |= block->getInterval ();
         }
         else
         {
@@ -737,6 +734,7 @@ pBlock Collection::
         // cpu_copy has already been allocated (i.e if it is stolen)
         // Each block is about 1 MB so this takes about 0.5-1 ms.
         write1(block->block_data())->cpu_copy->ClearContents ();
+        block->new_data_available = true;
 
         createBlockFromOthers( block );
 
@@ -831,9 +829,6 @@ pBlock Collection::
                                 % _cache.size()
                                  );
 
-                    _recent.remove( stealedBlock );
-                    _cache.erase( stealedBlock->reference() );
-
                     block.reset( new Block(ref, tfr_mapping_) );
                     block->glblock = stealedBlock->glblock;
                     write1(block->block_data())->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
@@ -841,6 +836,8 @@ pBlock Collection::
                     stealedBlock->glblock.reset();
                     const Region& r = block->getRegion();
                     block->glblock->reset( r.time(), r.scale() );
+
+                    removeBlock(stealedBlock);
                 }
 
                 // Need to release even more blocks? Release one at a time for each call to createBlock
