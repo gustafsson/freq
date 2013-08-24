@@ -42,16 +42,17 @@ bool ChunkBlockFilterKernel::
 
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
-        if (((block->getInterval() - block->valid_samples) & chunk_interval).empty() )
+        BlockData::WritePtr blockdata(block->block_data());
+
+        if (((block->getInterval() - blockdata->valid_samples) & chunk_interval).empty() )
             continue;
-        QMutexLocker l(&block->cpu_copy_mutex);
 
         if (pchunk.chunk->order == Tfr::Chunk::Order_row_major)
-            chunk_to_block.mergeRowMajorChunk ( block, pchunk.chunk, block->cpu_copy );
+            chunk_to_block.mergeRowMajorChunk ( *block, pchunk.chunk, *blockdata );
         else
-            chunk_to_block.mergeColumnMajorChunk ( block, pchunk.chunk, block->cpu_copy );
+            chunk_to_block.mergeColumnMajorChunk ( *block, pchunk.chunk, *blockdata );
 
-        block->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
+        blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 
         block->new_data_available = true;
     }

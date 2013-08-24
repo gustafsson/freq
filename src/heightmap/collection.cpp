@@ -223,12 +223,10 @@ void Collection::
 */
 
     if (b->frame_number_last_used+1 != _frame_counter) {
-        recently_created_ |= b->getInterval() - b->valid_samples;
+        recently_created_ |= b->getInterval() - read1(b->block_data())->valid_samples;
     }
 
-#ifndef SAWE_NO_MUTEX
     b->to_delete = false;
-#endif
     b->frame_number_last_used = _frame_counter;
     _recent.remove( b );
     _recent.push_front( b );
@@ -241,10 +239,7 @@ Signal::Intervals inline Collection::
     cache_t::const_iterator itr = _cache.find( r );
     if (itr != _cache.end())
     {
-#ifndef SAWE_NO_MUTEX
-        QMutexLocker l(&itr->second->cpu_copy_mutex);
-#endif
-        return itr->second->getInterval() - itr->second->valid_samples;
+        return itr->second->getInterval() - read1(itr->second->block_data())->valid_samples;
     }
 
     return Signal::Intervals();
@@ -285,16 +280,15 @@ pBlock Collection::
 
     if (block)
     {
-        #ifndef SAWE_NO_MUTEX
-            if (block->new_data_available) {
-                QMutexLocker l(&block->cpu_copy_mutex);
-                *block->glblock->height()->data = *block->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
-                block->new_data_available = false;
-            }
-        #endif
+        BlockData::ReadPtr bd(block->block_data ());
+
+        if (block->new_data_available) {
+            *block->glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
+            block->new_data_available = false;
+        }
 
         Intervals blockInt = block->getInterval();
-        if (blockInt -= block->valid_samples)
+        if (blockInt -= bd->valid_samples)
             _unfinished_count++;
 
         poke(block);
@@ -445,10 +439,11 @@ void Collection::
 {
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
+        pBlock block(itr->second);
         Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping_).getInterval();
         Signal::Interval toKeep = I & blockInterval;
         if ( !toKeep )
-            removeBlock(itr->second);
+            removeBlock(block);
         else if ( blockInterval == toKeep )
         {
         }
@@ -456,27 +451,22 @@ void Collection::
         {
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
-                bool hasValidOutside = itr->second->non_zero & ~Signal::Intervals(I);
+                bool hasValidOutside = read1(block->block_data())->non_zero & ~Signal::Intervals(I);
                 if (hasValidOutside)
                 {
                     Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
                     float t = I.last / tfr_mapping_.targetSampleRate - ir.a.time;
 
-#ifdef SAWE_NO_MUTEX
-                    GlBlock::pHeight block = itr->second->glblock->height();
-                    Block::pData data = block->data;
-#else
-                    QMutexLocker l(&itr->second->cpu_copy_mutex);
-                    Block::pData data = itr->second->cpu_copy;
-                    itr->second->new_data_available = true;
-#endif
+                    BlockData::WritePtr bd(block->block_data());
 
                     ReferenceInfo ri(itr->first, tfr_mapping_);
-                    ::blockClearPart( data,
+                    ::blockClearPart( bd->cpu_copy,
                                   ceil(t * ri.sample_rate()) );
 
-                    itr->second->valid_samples &= I;
-                    itr->second->non_zero &= I;
+                    bd->valid_samples &= I;
+                    bd->non_zero &= I;
+
+                    block->new_data_available = true;
                 }
             }
         }
@@ -554,7 +544,7 @@ void Collection::
                                  sid.toString().c_str());
 
     BOOST_FOREACH ( const cache_t::value_type& c, _cache )
-        c.second->valid_samples -= sid;
+        write1(c.second->block_data())->valid_samples -= sid;
 }
 
 
@@ -580,23 +570,17 @@ Intervals Collection::
         unsigned framediff = _frame_counter - b.frame_number_last_used;
         if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
         {
-#ifndef SAWE_NO_MUTEX
-            QMutexLocker l(&b.cpu_copy_mutex);
-#endif
-
             counter++;
             Intervals i = b.getInterval();
 
-            i -= b.valid_samples;
+            i -= read1(b.block_data())->valid_samples;
 
             r |= i;
 
             VERBOSE_EACH_FRAME_COLLECTION
             {
-                bool to_delete = false;
-#ifndef SAWE_NO_MUTEX
-                to_delete = b.to_delete;
-#endif
+                bool to_delete = b.to_delete;
+
                 if (i)
                     TaskInfo(format("block %s is invalid on %s%s") % b.reference() % i % (to_delete?" to delete":""));
                 else
@@ -688,10 +672,10 @@ pBlock Collection::
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( tfr_mapping ().block_size, r.time(), r.scale() ));
 
-#ifndef SAWE_NO_MUTEX
-        attempt->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
-#endif
-/*        {
+        write1(attempt->block_data())->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
+
+/*
+        {
             GlBlock::pHeight h = attempt->glblock->height();
             //GlBlock::pSlope sl = attempt->glblock->slope();
         }
@@ -748,17 +732,11 @@ pBlock Collection::
             return block;
 
         // set to zero
-#ifdef SAWE_NO_MUTEX
-        GlBlock::pHeight h = block->glblock->height();
-        h->data->ClearContents();
-        // will be unmapped right before it's drawn
-#else
-        QMutexLocker cpul(&block->cpu_copy_mutex);
+
         // DataStorage makes sure nothing actually happens here unless
         // cpu_copy has already been allocated (i.e if it is stolen)
-        // Each block is about 1 MB so this takes about 500-1000 us.
-        block->cpu_copy->ClearContents ();
-#endif
+        // Each block is about 1 MB so this takes about 0.5-1 ms.
+        write1(block->block_data())->cpu_copy->ClearContents ();
 
         createBlockFromOthers( block );
 
@@ -842,9 +820,6 @@ pBlock Collection::
 
                 if (allocatedMemory+memForNewBlock+margin > _free_memory*MAX_FRACTION_FOR_CACHES)
                 {
-    #ifndef SAWE_NO_MUTEX
-                    QMutexLocker l(&stealedBlock->cpu_copy_mutex);
-    #endif
                     pBlock stealedBlock = _recent.back();
 
                     TaskInfo ti(format("Stealing block %s last used %u frames ago for %s. Total free %s, total cache %s, %u blocks")
@@ -861,9 +836,8 @@ pBlock Collection::
 
                     block.reset( new Block(ref, tfr_mapping_) );
                     block->glblock = stealedBlock->glblock;
-    #ifndef SAWE_NO_MUTEX
-                    block->cpu_copy = stealedBlock->cpu_copy;
-    #endif
+                    write1(block->block_data())->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
+
                     stealedBlock->glblock.reset();
                     const Region& r = block->getRegion();
                     block->glblock->reset( r.time(), r.scale() );
@@ -960,9 +934,7 @@ void Collection::
     const Region& r = block->getRegion ();
 
     int merge_levels = 10;
-    #ifndef SAWE_NO_MUTEX
-    // Don't bother locking _cache to check size during debugging
-    #endif
+
     VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), _cache.size(), merge_levels);
 
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
@@ -980,7 +952,7 @@ void Collection::
             Interval v = bl->getInterval ();
 
             // Check if these samples are still considered for update
-            if ( (things_to_update & v & bl->non_zero).count() <= 1)
+            if ( (things_to_update & v & read1(bl->block_data())->non_zero).count() <= 1)
                 continue;
 
             int d = bl->reference().log2_samples_size[0];
@@ -995,7 +967,7 @@ void Collection::
                 {
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                     things_to_update -= v;
-                    mergeBlock( block, bl, 0 );
+                    mergeBlock( *block, *bl, *write1(block->block_data()), *read1(bl->block_data()) );
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -1018,59 +990,42 @@ void Collection::
 
 
 bool Collection::
-        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned /*cuda_stream*/ )
+        mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData )
 {
-#ifndef SAWE_NO_MUTEX
-    EXCEPTION_ASSERT( outBlock.get() != inBlock.get() );
-    EXCEPTION_ASSERT( !outBlock->cpu_copy_mutex.tryLock() );
-    QMutexLocker il (&inBlock->cpu_copy_mutex);
-#endif
+    EXCEPTION_ASSERT( &outBlock != &inBlock );
 
     // Find out what intervals that match
-    Intervals transferDesc = inBlock->getInterval() & inBlock->valid_samples & outBlock->getInterval();
+    Intervals transferDesc = inBlock.getInterval() & inData.valid_samples & outBlock.getInterval();
 
     // Remove already computed intervals
-    transferDesc -= outBlock->valid_samples;
+    transferDesc -= outData.valid_samples;
 
     // If block is already up to date, abort merge
     if (transferDesc.empty())
         return false;
 
-    const Region& ri = inBlock->getRegion();
-    const Region& ro = outBlock->getRegion();
+    const Region& ri = inBlock.getRegion();
+    const Region& ro = outBlock.getRegion();
 
     if (ro.b.scale <= ri.a.scale || ri.b.scale<=ro.a.scale || ro.b.time <= ri.a.time || ri.b.time <= ro.a.time)
         return false;
 
     INFO_COLLECTION TaskTimer tt(boost::format("%s, %s into %s") % __FUNCTION__ % ri % ro);
 
-#ifdef SAWE_NO_MUTEX
-    GlBlock::pHeight out_h = outBlock->glblock->height();
-    GlBlock::pHeight in_h = inBlock->glblock->height();
-    EXCEPTION_ASSERT( in_h.get() != out_h.get() );
-
-    Block::pData out_data = out_h->data;
-    Block::pData in_data = in_h->data;
-#else
-    Block::pData out_data = outBlock->cpu_copy;
-    Block::pData in_data = inBlock->cpu_copy;
-    outBlock->new_data_available = true;
-#endif
-    EXCEPTION_ASSERT( in_data.get() != out_data.get() );
-
     INFO_COLLECTION ComputationSynchronize();
 
     // TODO examine why blockMerge is really really slow
     {
         INFO_COLLECTION TaskTimer tt("blockMerge");
-        ::blockMerge( in_data,
-                      out_data,
+        ::blockMerge( inData.cpu_copy,
+                      outData.cpu_copy,
                       ResampleArea( ri.a.time, ri.a.scale, ri.b.time, ri.b.scale ),
                       ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );
         INFO_COLLECTION ComputationSynchronize();
     }
 
-    outBlock->valid_samples -= inBlock->getInterval();
+    outBlock.new_data_available = true;
+    outData.valid_samples -= inBlock.getInterval();
 
     //bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
     //bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
@@ -1085,13 +1040,13 @@ bool Collection::
         if (false) // disabled validation of blocks until this is stable
     {
         // Validate region of block if inBlock was source of higher resolution than outBlock
-        if (inBlock->reference().log2_samples_size[0] < outBlock->reference().log2_samples_size[0] &&
-            inBlock->reference().log2_samples_size[1] == outBlock->reference().log2_samples_size[1] &&
+        if (inBlock.reference().log2_samples_size[0] < outBlock.reference().log2_samples_size[0] &&
+            inBlock.reference().log2_samples_size[1] == outBlock.reference().log2_samples_size[1] &&
             ri.b.scale==ro.b.scale && ri.a.scale==ro.a.scale)
         {
-            outBlock->valid_samples -= inBlock->getInterval();
-            outBlock->valid_samples |= inBlock->valid_samples & inBlock->getInterval() & outBlock->getInterval ();
-            VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inBlock->valid_samples & outBlock->getInterval ()).toString().c_str() );
+            outData.valid_samples -= inBlock.getInterval();
+            outData.valid_samples |= inData.valid_samples & inBlock.getInterval() & outBlock.getInterval ();
+            VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inData.valid_samples & outBlock.getInterval ()).toString().c_str() );
         }
     }
 

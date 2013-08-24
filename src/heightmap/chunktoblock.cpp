@@ -15,20 +15,20 @@ ChunkToBlock::
 
 
 void ChunkToBlock::mergeColumnMajorChunk(
-        pBlock block,
+        const Block& block,
         Tfr::pChunk chunk,
-        Block::pData outData )
+        BlockData& outData )
 {
-    Region r = block->getRegion();
+    Region r = block.getRegion();
 
     Position chunk_a, chunk_b;
     //Signal::Interval inInterval = chunk.getInterval();
     Signal::Interval inInterval = chunk->getCoveredInterval();
-    Signal::Interval blockInterval = block->getInterval();
+    Signal::Interval blockInterval = block.getInterval();
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    ReferenceInfo ri(block->reference (), tfr_mapping);
+    ReferenceInfo ri(block.reference (), tfr_mapping);
     Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
@@ -47,7 +47,7 @@ void ChunkToBlock::mergeColumnMajorChunk(
     ::resampleStft( chunk->transform_data,
                     chunk->nScales(),
                     chunk->nSamples(),
-                  outData,
+                  outData.cpu_copy,
                   ValidInterval(spannedBlockSamples.first, spannedBlockSamples.last),
                   ResampleArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
@@ -59,18 +59,18 @@ void ChunkToBlock::mergeColumnMajorChunk(
                   normalization_factor,
                   true);
 
-    block->valid_samples |= transfer;
-    block->non_zero |= transfer;
+    outData.valid_samples |= transfer;
+    outData.non_zero |= transfer;
 }
 
 
 void ChunkToBlock::mergeRowMajorChunk(
-        pBlock block,
+        const Block& block,
         Tfr::pChunk chunk,
-        Block::pData outData )
+        BlockData& outData )
 {
     // Find out what intervals that match
-    Signal::Interval outInterval = block->getInterval();
+    Signal::Interval outInterval = block.getInterval();
     Signal::Interval inInterval = chunk->getCoveredInterval();
 
     // don't validate more texels than we have actual support for
@@ -81,7 +81,7 @@ void ChunkToBlock::mergeRowMajorChunk(
     // Remove already computed intervals
     if (!full_resolution)
     {
-        if (!(transfer - block->valid_samples))
+        if (!(transfer - outData.valid_samples))
         {
             transfer.last=transfer.first;
         }
@@ -92,7 +92,7 @@ void ChunkToBlock::mergeRowMajorChunk(
     if (!transfer)
         return;
 
-    Region r = block->getRegion();
+    Region r = block.getRegion();
 //    float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
 //    float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
 //    DEBUG_CWTTOBLOCK TaskTimer tt2("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
@@ -127,7 +127,7 @@ void ChunkToBlock::mergeRowMajorChunk(
 
     // Invoke kernel execution to merge chunk into block
     ::blockResampleChunk( chunk->transform_data,
-                     outData,
+                     outData.cpu_copy,
                      ValidInterval( chunk->first_valid_sample, chunk->first_valid_sample+chunk->n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      ResampleArea( chunk_a.time, chunk_a.scale,
@@ -145,13 +145,13 @@ void ChunkToBlock::mergeRowMajorChunk(
 
     if( full_resolution )
     {
-        block->valid_samples |= transfer;
+        outData.valid_samples |= transfer;
     }
     else
     {
-        block->valid_samples -= transfer;
+        outData.valid_samples -= transfer;
     }
-    block->non_zero |= transfer;
+    outData.non_zero |= transfer;
 }
 
 } // namespace Heightmap
@@ -203,17 +203,18 @@ void ChunkToBlock::
     Heightmap::Reference ref;
 
     pBlock block( new Block (ref, ctb.tfr_mapping));
-    Block::pData outData( new DataStorage<float>(32,32) );
+    BlockData blockdata;
+    blockdata.cpu_copy.reset( new DataStorage<float>(32,32) );
 
     ctb.mergeColumnMajorChunk(
-            block,
+            *block,
             chunk,
-            outData );
+            blockdata );
 
     ctb.mergeRowMajorChunk(
-            block,
+            *block,
             chunk,
-            outData );
+            blockdata );
 }
 
 } // namespace Heightmap

@@ -77,41 +77,18 @@ bool BlockFilter::
 //        if (((block->getInterval() - block->valid_samples) & chunk_interval).empty() )
 //            continue;
 
-#ifndef SAWE_NO_MUTEX
         // Multiple threads could create and share texture data using wglShareLists, but it's not really necessary.
         // More important would perhaps be to ensure that asynchronous transfers are used to transfer the textures,
         // and then to use an fence sync object to prevent it from being used during rendering until it's ready.
         // http://www.opengl.org/wiki/OpenGL_and_multithreading
         // http://www.opengl.org/wiki/Sync_Object
-        //if (write1(collection)->constructor_thread().isSameThread())
-        if (false)
-        {
-#endif
-            mergeChunk( block, pchunk, block->glblock->height()->data );
+        BlockData::WritePtr bd(block->block_data());
+        mergeChunk( *block, pchunk, *bd );
 
-            TIME_BLOCKFILTER ComputationCheckError();
-#ifndef SAWE_NO_MUTEX
-        }
-        else
-        {
-            QMutexLocker l(&block->cpu_copy_mutex);
-            if (!block->cpu_copy)
-            {
-                TaskInfo(format("%s") %
-                         Heightmap::ReferenceInfo(
-                             block->reference (),
-                             block->tfr_mapping ()
-                             ));
-                EXCEPTION_ASSERT( block->cpu_copy );
-            }
+        bd->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 
-            mergeChunk( block, pchunk, block->cpu_copy );
-
-            block->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-
-            block->new_data_available = true;
-        }
-#endif
+        // "should" lock this access
+        block->new_data_available = true;
     }
 
 
@@ -122,8 +99,9 @@ bool BlockFilter::
 
 
 void BlockFilter::
-        mergeColumnMajorChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData, float normalization_factor )
+        mergeColumnMajorChunk( const Block& blockr, const ChunkAndInverse& pchunk, BlockData& outData, float normalization_factor )
 {
+    Block const* block = &blockr;
     Heightmap::TfrMapping tfr_mapping = block->tfr_mapping ();
 
     Tfr::Chunk& chunk = *pchunk.chunk;
@@ -199,7 +177,7 @@ void BlockFilter::
     ::resampleStft( chunk.transform_data,
                     chunk.nScales(),
                     chunk.nSamples(),
-                  outData,
+                  outData.cpu_copy,
                   ValidInterval(spannedBlockSamples.first, spannedBlockSamples.last),
                   ResampleArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
@@ -216,17 +194,19 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
             % transfer
             % Heightmap::ReferenceInfo(block->reference (), block->tfr_mapping ())
-            % block->valid_samples);
-    block->valid_samples |= transfer;
-    block->non_zero |= transfer;
+            % outData.valid_samples);
+    outData.valid_samples |= transfer;
+    outData.non_zero |= transfer;
 }
 
 
 void BlockFilter::
-        mergeRowMajorChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData,
+        mergeRowMajorChunk( const Block& blockr, const ChunkAndInverse& pchunk, BlockData& outData,
                             bool full_resolution, ComplexInfo complex_info,
                             float normalization_factor, bool enable_subtexel_aggregation)
 {
+    Block const* block = &blockr;
+
     Heightmap::TfrMapping tfr_mapping = read1(tfr_map_)->tfr_mapping ();
     Tfr::Chunk& chunk = *pchunk.chunk;
 
@@ -258,7 +238,7 @@ void BlockFilter::
     // Remove already computed intervals
     if (!full_resolution)
     {
-        if (!(transfer - block->valid_samples))
+        if (!(transfer - outData.valid_samples))
         {
             TIME_CWTTOBLOCK TaskInfo(format("%s not accepting %s, early termination") % vartype(*this) % transfer);
             transfer.last=transfer.first;
@@ -343,8 +323,8 @@ void BlockFilter::
         schunk = Position( chunk_b.time - chunk_a.time, chunk_b.scale - chunk_a.scale);
     }
 
-    int samplesPerBlock = outData->size ().width;
-    int scalesPerBlock = outData->size ().height;
+    int samplesPerBlock = outData.cpu_copy->size ().width;
+    int scalesPerBlock = outData.cpu_copy->size ().height;
     TIME_CWTTOBLOCK TaskTimer tt("CwtToBlock [(%.2f %.2f), (%.2f %.2f)] <- [(%.2f %.2f), (%.2f %.2f)] |%.2f %.2f, %.2f %.2f| %ux%u=%u <- %ux%u=%u",
             r.a.time, r.b.time,
             r.a.scale, r.b.scale,
@@ -375,7 +355,7 @@ void BlockFilter::
     {
     TIME_BLOCKFILTER TaskTimer tt("blockResampleChunk");
     ::blockResampleChunk( chunk.transform_data,
-                     outData,
+                     outData.cpu_copy,
                      ValidInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      ResampleArea( chunk_a.time, chunk_a.scale,
@@ -396,21 +376,21 @@ void BlockFilter::
 
     if( full_resolution )
     {
-        block->valid_samples |= transfer;
+        outData.valid_samples |= transfer;
     }
     else
     {
-        block->valid_samples -= transfer;
+        outData.valid_samples -= transfer;
         TIME_CWTTOBLOCK TaskInfo(format("%s not accepting %s") % vartype(*this) % transfer);
     }
-    block->non_zero |= transfer;
+    outData.non_zero |= transfer;
 
     DEBUG_CWTTOBLOCK {
         TaskInfo ti(format("Block filter input and output %s") % block->reference());
         DataStorageSize sz = chunk.transform_data->size();
         sz.width *= 2;
         Statistics<float> o1( CpuMemoryStorage::BorrowPtr<float>( sz, (float*)CpuMemoryStorage::ReadOnly<2>(chunk.transform_data).ptr() ));
-        Statistics<float> o2( outData );
+        Statistics<float> o2( outData.cpu_copy );
     }
     TIME_CWTTOBLOCK ComputationSynchronize();
 }
@@ -456,7 +436,7 @@ CwtToBlock::
 
 
 void CwtToBlock::
-        mergeChunk( pBlock block, const ChunkAndInverse& chunk, Block::pData outData )
+        mergeChunk( const Block& block, const ChunkAndInverse& chunk, BlockData& outData )
 {
     Cwt* cwt = dynamic_cast<Cwt*>(transform().get());
     EXCEPTION_ASSERT( cwt );
@@ -486,7 +466,7 @@ StftToBlock::
 
 
 void StftToBlock::
-        mergeChunk( pBlock block, const ChunkAndInverse& chunk, Block::pData outData )
+        mergeChunk( const Block& block, const ChunkAndInverse& chunk, BlockData& outData )
 {
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
@@ -506,7 +486,7 @@ CepstrumToBlock::
 
 
 void CepstrumToBlock::
-        mergeChunk( pBlock block, const ChunkAndInverse& chunk, Block::pData outData )
+        mergeChunk( const Block& block, const ChunkAndInverse& chunk, BlockData& outData )
 {
     float normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
     mergeColumnMajorChunk(block, chunk, outData, normalization_factor);
@@ -536,7 +516,7 @@ Signal::Interval DrawnWaveformToBlock::
 
         BOOST_FOREACH( pBlock block, intersecting_blocks)
         {
-            missingSamples |= block->getInterval() - block->valid_samples;
+            missingSamples |= block->getInterval() - read1(block->block_data())->valid_samples;
         }
     }
 
@@ -557,7 +537,7 @@ Signal::Interval DrawnWaveformToBlock::
 
             BOOST_FOREACH( pBlock block, intersecting_blocks)
             {
-                if (((block->getInterval() - block->valid_samples) & first).empty() )
+                if (((block->getInterval() - read1(block->block_data())->valid_samples) & first).empty() )
                     continue;
 
                 largest_fs = std::max(largest_fs, block->sample_rate());
@@ -575,7 +555,7 @@ Signal::Interval DrawnWaveformToBlock::
 
 
 void DrawnWaveformToBlock::
-        mergeChunk( pBlock block, const ChunkAndInverse& pchunk, Block::pData outData )
+        mergeChunk( const Block& block, const ChunkAndInverse& pchunk, BlockData& outData )
 {
     TfrMap::Collections collections = read1(tfr_map_)->collections();
     TfrMap::pCollection c = collections[pchunk.channel];
@@ -594,7 +574,7 @@ void DrawnWaveformToBlock::
 
     DrawnWaveformChunk* dwc = dynamic_cast<DrawnWaveformChunk*>(&chunk);
 
-    float block_fs = block->sample_rate();
+    float block_fs = block.sample_rate();
 
     if (dwc->block_fs != block_fs)
         return;

@@ -95,6 +95,7 @@ namespace Heightmap {
 
 class Renderer;
 class Block;
+class BlockData;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -239,7 +240,7 @@ private:
     /**
       Add block information from another block. Returns whether any information was merged.
       */
-    bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
+    bool        mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData );
 
 
     /**

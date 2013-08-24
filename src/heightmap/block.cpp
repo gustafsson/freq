@@ -4,14 +4,14 @@
 
 namespace Heightmap {
 
+
 Block::
         Block( const Reference& ref, const TfrMapping& tfr_mapping)
     :
     frame_number_last_used(-1),
-#ifndef SAWE_NO_MUTEX
     new_data_available( false ),
     to_delete( false ),
-#endif
+    block_data_(new BlockData),
     ref_(ref),
     tfr_mapping_(tfr_mapping),
     block_interval_( ReferenceInfo(ref, tfr_mapping).getInterval() ),

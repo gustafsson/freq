@@ -198,10 +198,12 @@ Signal::Interval BrushModel::
         Heightmap::pBlock block = write1(collection)->getBlock( ref );
         if (block)
         {
-            Heightmap::Block::pData blockData = block->glblock->height()->data;
+            Heightmap::BlockData::WritePtr block_data( block->block_data() );
+            Heightmap::BlockData::pData data = block_data->cpu_copy;
+            //Heightmap::BlockData::pData data = block->glblock->height()->data;
 
             ::multiplyGauss( area,
-                           blockData,
+                           data,
                            gauss, render_model_->amplitude_axis() );
             // collection->invalidate_samples is called by brushcontroller on mouse release
         }

@@ -25,12 +25,12 @@ public:
 
     virtual bool applyFilter( Tfr::ChunkAndInverse& pchunk);
     unsigned smallestOk(const Signal::Interval& I);
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData ) = 0;
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData ) = 0;
     virtual bool createFromOthers() { return true; }
 
 protected:
-    virtual void mergeColumnMajorChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData, float normalization_factor );
-    virtual void mergeRowMajorChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData,
+    virtual void mergeColumnMajorChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData, float normalization_factor );
+    virtual void mergeRowMajorChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData,
                                      bool full_resolution, ComplexInfo complex_info, float normalization_factor, bool enable_subtexel_aggregation );
 
     Heightmap::TfrMap::Ptr tfr_map_;
@@ -56,7 +56,7 @@ public:
 
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-    Signal::DeprecatedOperation* affecting_source( const Signal::Interval& I)
+    Signal::DeprecatedOperation* affecting_source( const Signal::Interval& /*I*/)
     {
         return this;
 /*
@@ -201,8 +201,8 @@ public:
       */
     ComplexInfo complex_info;
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
-    void mergeChunkpart( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
+    void mergeChunkpart( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
     virtual bool disregardAtZero() { return true; }
 
 private:
@@ -230,7 +230,7 @@ public:
         return BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
     }
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
 };
 
 
@@ -239,7 +239,7 @@ class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 public:
     CepstrumToBlock( Heightmap::TfrMap::Ptr tfr_map_ );
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
 };
 
 
@@ -250,7 +250,7 @@ public:
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
     virtual bool createFromOthers() { return false; }
 };
 

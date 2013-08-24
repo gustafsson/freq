@@ -5,9 +5,7 @@
 
 // gpumisc
 #include "datastorage.h"
-
-// boost
-#include <boost/shared_ptr.hpp>
+#include "volatileptr.h"
 
 #ifndef SAWE_NO_MUTEX
 #include <QMutex>
@@ -16,6 +14,30 @@
 namespace Heightmap {
 
     class GlBlock;
+
+    class BlockData: public VolatilePtr<BlockData> {
+    public:
+        typedef DataStorage<float>::Ptr pData;
+
+        /**
+            TODO test this in a multi gpu environment
+            For multi-GPU or (just multithreaded) environments, each GPU-thread have
+            its own cuda context and data can't be transfered between cuda contexts
+            without first going to the cpu. Therefore a 'cpu_copy' is kept in CPU
+            memory so that the block data is readily available for merging new
+            blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
+            are updated from cpu_copy whenever new_data_available is set to true.
+        */
+        pData cpu_copy;
+
+
+        /**
+          valid_samples describes the intervals of valid samples contained in this block.
+          it is relative to the start of the heightmap, not relative to this block.
+          The samplerate is the sample rate of the full resolution signal.
+          */
+        Signal::Intervals valid_samples, non_zero;
+    };
 
     // FEATURE it would probably look awesome if new blocks weren't displayed
     // instantaneously but rather faded in from 0 or from their previous value.
@@ -31,38 +53,12 @@ namespace Heightmap {
 
         // TODO move this value to a complementary class
         unsigned frame_number_last_used;
+        bool new_data_available;
+        bool to_delete;
 
         // OpenGL data to render
         boost::shared_ptr<GlBlock> glblock;
-
-        typedef DataStorage<float>::Ptr pData;
-
-        /**
-            TODO test this in a multi gpu environment
-            For multi-GPU or (just multithreaded) environments, each GPU-thread have
-            its own cuda context and data can't be transfered between cuda contexts
-            without first going to the cpu. Therefore a 'cpu_copy' is kept in CPU
-            memory so that the block data is readily available for merging new
-            blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
-            are updated from cpu_copy whenever new_data_available is set to true.
-
-            For single-GPU environments, 'cpu_copy' is not used.
-        */
-    #ifndef SAWE_NO_MUTEX
-        // TODO make glblock private and create some interface here instead
-        pData cpu_copy;
-        bool new_data_available;
-        bool to_delete;
-        QMutex cpu_copy_mutex;
-    #endif
-
-        /**
-          valid_samples describes the intervals of valid samples contained in this block.
-          it is relative to the start of the heightmap, not relative to this block unless this is
-          the first block in the heightmap. The samplerate is the sample rate of the full
-          resolution signal.
-          */
-        Signal::Intervals valid_samples, non_zero;
+        BlockData::Ptr block_data() const { return block_data_; }
 
         const Reference& reference() const { return ref_; }
         const TfrMapping& tfr_mapping() const { return tfr_mapping_; }
@@ -72,6 +68,7 @@ namespace Heightmap {
         float sample_rate() const { return sample_rate_; }
 
     private:
+        BlockData::Ptr block_data_;
         const Reference ref_;
         const TfrMapping tfr_mapping_;
 

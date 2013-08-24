@@ -20,14 +20,14 @@ public:
     Heightmap::TfrMapping tfr_mapping;
 
     void mergeColumnMajorChunk(
-            pBlock block,
+            const Block& block,
             Tfr::pChunk,
-            Block::pData outData );
+            BlockData& outData );
 
     void mergeRowMajorChunk(
-            pBlock block,
+            const Block& block,
             Tfr::pChunk,
-            Block::pData outData );
+            BlockData& outData );
 
     static void test();
 };

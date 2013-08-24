@@ -302,7 +302,7 @@ float RenderView::
     {
         Signal::IntervalType s = pos.time * ri.sample_rate();
         Signal::Intervals I = Signal::Intervals(s, s+1);
-        I -= block->valid_samples;
+        I -= read1(block->block_data())->valid_samples;
         I &= ri.getInterval ();
         if (I.empty())
         {
