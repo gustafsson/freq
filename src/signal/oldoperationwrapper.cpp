@@ -167,7 +167,7 @@ Signal::OperationDesc::Extent OldOperationDescWrapper::
 QString OldOperationDescWrapper::
         toString() const
 {
-    return ("OldOperationDescWrapper {" + old_operation_->toString () + "}").c_str ();
+    return ("OldOperationDescWrapper {" + old_operation_->toStringSkipSource () + "}").c_str ();
 }
 
 

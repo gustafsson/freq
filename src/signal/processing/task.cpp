@@ -3,8 +3,11 @@
 #include <boost/foreach.hpp>
 #include <QThread>
 
-//#define DEBUGINFO
-#define DEBUGINFO if(0)
+#define TIME_TASK
+//#define TIME_TASK if(0)
+
+//#define DEBUG_GETINPUT
+#define DEBUG_GETINPUT if(0)
 
 namespace Signal {
 namespace Processing {
@@ -43,28 +46,34 @@ Signal::Interval Task::
 void Task::
         run(Signal::ComputingEngine::Ptr ce)
 {
-    DEBUGINFO TaskTimer tt(boost::format("run %1%") % expected_output());
+    TIME_TASK TaskTimer tt(boost::format("Task::run %1%") % expected_output());
 
     Signal::Operation::Ptr o = write1(step_)->operation (ce);
 
     if (!o) {
-        DEBUGINFO TaskInfo("Oups, this engine does not support this operation");
+        TIME_TASK TaskInfo("Oups, this engine does not support this operation");
         return;
     }
 
-    Signal::pBuffer input_buffer = get_input();
-    Signal::pBuffer output_buffer = o->process (input_buffer);
-    DEBUGINFO TaskInfo("finishing");
-    finish(output_buffer);
-    DEBUGINFO TaskInfo("finished");
+    Signal::pBuffer input_buffer, output_buffer;
+
+    {
+        TIME_TASK TaskTimer tt(boost::format("get input for %s")
+                               % read1(step_)->operation_desc ()->toString ().toStdString ());
+        input_buffer = get_input();
+    }
+
+    {
+        TIME_TASK TaskTimer tt(boost::format("processing %s") % input_buffer->getInterval ());
+        output_buffer = o->process (input_buffer);
+        finish(output_buffer);
+    }
 }
 
 
 Signal::pBuffer Task::
         get_input() const
 {
-    DEBUGINFO TaskTimer tt("get input");
-
     Signal::Intervals needed = expected_output_;
     Signal::OperationDesc::Ptr operation_desc = read1(step_)->operation_desc ();
 
@@ -113,7 +122,7 @@ Signal::pBuffer Task::
         for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
             *input_buffer->getChannel (c) += *b->getChannel(c);
     }
-    DEBUGINFO TaskInfo(boost::format("got input %s for %s")
+    DEBUG_GETINPUT TaskInfo(boost::format("got input %s for %s")
                        % input_buffer->getInterval ()
                        % operation_desc->toString ().toStdString ());
 

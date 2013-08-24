@@ -40,16 +40,15 @@ public:
         if (*task)
             return;
 
-        DEBUGINFO TaskTimer tt(format("discover_vertex %1%") % u);
-
         Step::WritePtr step( g[u] ); // lock while studying what's needed
         Signal::Intervals I = needed[u] & step->not_started ();
         Signal::OperationDesc::Ptr od = step->operation_desc();
 
         // Compute what we need from sources
-        DEBUGINFO TaskInfo(format("step %1%: missing samples %2%") % ((void*)&*step) % I);
         if (!I)
             return;
+
+        DEBUGINFO TaskTimer tt(format("discover_vertex %1% missing %2%") % od->toString ().toStdString () % I);
 
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;

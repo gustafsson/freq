@@ -2,8 +2,8 @@
 
 #include <boost/foreach.hpp>
 
-//#define DEBUGINFO
-#define DEBUGINFO if(0)
+#define DEBUGINFO
+//#define DEBUGINFO if(0)
 
 using namespace boost;
 
@@ -35,13 +35,15 @@ Signal::Intervals Step::
 Signal::Intervals Step::
         deprecateCache(Signal::Intervals deprecated)
 {
-    DEBUGINFO TaskInfo ti(format("step %1%: deprecate %2%") % (void*)this % deprecated);
-
     if (deprecated == Signal::Interval::Interval_ALL)
         cache_.reset ();
 
     if (operation_desc_ && deprecated)
         deprecated = operation_desc_->affectedInterval(deprecated);
+
+    DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
+              % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
+              % deprecated);
 
     not_started_ |= deprecated;
 
@@ -93,7 +95,9 @@ Signal::OperationDesc::Ptr Step::
 void Step::
         registerTask(Task* taskid, Signal::Interval expected_output)
 {
-    DEBUGINFO TaskInfo tt(format("step %1%: starting %2% - task %3%") % (void*)this % expected_output % (void*)taskid );
+    DEBUGINFO TaskInfo ti(format("Step %1%. Starting %2%")
+              % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
+              % expected_output);
     running_tasks[taskid] = expected_output;
     not_started_ -= expected_output;
 }
@@ -106,7 +110,9 @@ void Step::
     if (result)
         result_interval = result->getInterval ();
 
-    DEBUGINFO TaskInfo tt(format("step %1%: finish %2% - task %3%") % (void*)this % result_interval % (void*)taskid );
+    DEBUGINFO TaskInfo ti(format("Step %1%. Finish %2%")
+              % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
+              % result_interval);
 
     if (result) {
         if (!cache_)

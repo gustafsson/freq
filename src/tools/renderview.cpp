@@ -1157,7 +1157,9 @@ void RenderView::
             needed_samples |= wc->needed_samples();
         }
 
-        TIME_PAINTGL_DETAILS TaskInfo(boost::format(
+        //TIME_PAINTGL_DETAILS
+        if (things_to_add)
+            TaskInfo(boost::format(
                     "RenderView needed_samples %s\n"
                     "things_to_add = %s")
                      % needed_samples

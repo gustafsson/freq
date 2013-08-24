@@ -55,11 +55,16 @@ Task::Ptr TargetSchedule::
     if (!vertex)
         return Task::Ptr();
 
+    TaskTimer tt(boost::format("getTask(%s,%g)") % needed % work_center);
+
     Task::Ptr task = read1(self->algorithm)->getTask(
             dag->g(),
             vertex,
             needed,
             work_center);
+
+    if (task)
+        TaskInfo(boost::format("task->expected_output() = %s") % read1(task)->expected_output());
 
     return task;
 }
