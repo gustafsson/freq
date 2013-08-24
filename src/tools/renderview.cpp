@@ -1081,6 +1081,7 @@ void RenderView::
     }
 
     bool onlyComputeBlocksForRenderView = false;
+    Signal::OperationDesc::Extent x;
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
         float length=0.f;
@@ -1092,7 +1093,7 @@ void RenderView::
         }
 
         {
-            Signal::OperationDesc::Extent x = model->project()->extent ();
+            x = model->project()->extent ();
             length = x.interval.get ().count() / x.sample_rate.get ();
 
             Heightmap::TfrMap::WritePtr w(model->tfr_map ());
@@ -1165,7 +1166,7 @@ void RenderView::
         write1(model->target_marker())->updateNeeds(
                     needed_samples,
                     0,
-                    model->_qx,
+                    model->_qx * x.sample_rate.get (),
                     things_to_add
                 );
 
