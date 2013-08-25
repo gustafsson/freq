@@ -119,50 +119,9 @@ void BlockFilter::
 
     Signal::Interval transfer = usableInInterval&blockInterval;
 
-#ifdef _DEBUG
-    if (!transfer || !spannedBlockSamples)
-    {
-        TaskInfo(format("Warning: !transfer || !spannedBlockSamples.~\nspannedBlockSamples=%s\ntransfer=%s\nusableInInterval=%s\nblockInterval=%s") % spannedBlockSamples % transfer % usableInInterval % blockInterval);
-    }
-#endif
-
+    // spannedElementsInterval looks more closely at what in chunk that can be used
     if (!transfer || !spannedBlockSamples)
         return;
-
-#ifdef _DEBUG
-//    blockInterval = block->getInterval();
-//    Signal::Interval blockSpannedBlockSamples(0,0);
-//    Signal::Interval usableBlockInterval = block->reference().spannedElementsInterval(blockInterval, blockSpannedBlockSamples);
-//    blockInterval = block->getInterval();
-//    usableBlockInterval = block->reference().spannedElementsInterval(blockInterval, blockSpannedBlockSamples);
-//    Signal::Intervals invalidBlockInterval = blockInterval - block->valid_samples;
-
-//    if (blockSpannedBlockSamples.count() != block->reference().samplesPerBlock())
-//    {
-//        Signal::Interval blockSpannedBlockSamples2(0,0);
-//        Signal::Interval usableBlockInterval = block->reference().spannedElementsInterval(blockInterval, blockSpannedBlockSamples2);
-//    }
-
-//    float s1=(spannedBlockSamples.first - .5*0 - 1.5) / (float)(block->reference().samplesPerBlock()-1);
-//    float s2=(spannedBlockSamples.last - .5*0 + 1.5) / (float)(block->reference().samplesPerBlock()-1);
-//    float t1=(transfer.first - blockInterval.first) / (float)blockInterval.count();
-//    float t2=(transfer.last - blockInterval.first) / (float)blockInterval.count();
-
-//    Signal::Interval spannedBlockSamples3(0,0);
-//    Signal::Interval usableInInterval3 = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples3);
-
-//    if( s2-s1 < t2-t1 || spannedBlockSamples.count()>4)
-//    {
-//        Signal::Interval spannedBlockSamples2(0,0);
-//        Signal::Interval usableInInterval2 = block->reference().spannedElementsInterval(inInterval, spannedBlockSamples2);
-//    }
-
-//    EXCEPTION_ASSERT( s2 >= t2 );
-//    EXCEPTION_ASSERT( s1 <= t1 );
-//    EXCEPTION_ASSERT(blockSpannedBlockSamples.count() == block->reference().samplesPerBlock());
-//    EXCEPTION_ASSERT(usableBlockInterval == blockInterval);
-//    EXCEPTION_ASSERT(usableInInterval.first >= inInterval.first || usableInInterval.last <= inInterval.last);
-#endif
 
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
