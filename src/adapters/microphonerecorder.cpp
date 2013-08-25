@@ -43,10 +43,7 @@ void MicrophoneRecorder::
         _offset = 0;
         _sample_rate = 1;
 
-        static bool first = true;
-        if (first) Playback::list_devices();
-
-        TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
+        TIME_MICROPHONERECORDER TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
         portaudio::System &sys = portaudio::System::instance();
 
         _has_input_device = false;
@@ -68,13 +65,13 @@ void MicrophoneRecorder::
             input_device_ = sys.defaultInputDevice().index();
             TaskInfo("Total number of devices is %d, reverting to default input device %d", sys.deviceCount(), input_device_);
         } else if ( sys.deviceByIndex(input_device_).isOutputOnlyDevice() ) {
-            tt.getStream() << "Requested device '" << sys.deviceByIndex(input_device_).name() << "' can only be used for output";
+            TaskInfo(boost::format("Requested device '%s' can only be used for output") % sys.deviceByIndex(input_device_).name());
             input_device_ = sys.defaultInputDevice().index();
         } else {
             ;
         }
 
-        tt.getStream() << "Using device '" << sys.deviceByIndex(input_device_).name() << "' for audio input";
+        TIME_MICROPHONERECORDER TaskInfo(boost::format("Using device '%s' for audio input") % sys.deviceByIndex(input_device_).name());
 
         portaudio::Device& device = sys.deviceByIndex(input_device_);
         _sample_rate = device.defaultSampleRate();
@@ -82,9 +79,14 @@ void MicrophoneRecorder::
         unsigned channel_count = device.maxInputChannels();
         if (channel_count>2)
             channel_count = 2;
-        tt.getStream() << "Opening recording input stream on '" << device.name() << "' with " << channel_count
-                       << " channels, " << device.defaultSampleRate() << " samples/second"
-                       << " and input latency " << device.defaultHighInputLatency() << " s";
+
+        TIME_MICROPHONERECORDER TaskInfo(boost::format("Opening recording input stream on '%s' with %d"
+                       " channels, %g samples/second"
+                       " and input latency %g s")
+                                         % device.name()
+                                         % channel_count
+                                         % device.defaultSampleRate()
+                                         % device.defaultHighInputLatency());
 
         QMutexLocker lock(&_data_lock);
         if (_rolling_mean.empty ())
@@ -149,13 +151,11 @@ void MicrophoneRecorder::
 
 MicrophoneRecorder::~MicrophoneRecorder()
 {
-	TaskTimer tt("%s", __FUNCTION__);
-
     stopRecording();
 
     QMutexLocker lock(&_data_lock);
     if (0<_data.length()) {
-        TaskTimer tt("Releasing %s recorded data in %u channels",
+        TIME_MICROPHONERECORDER TaskTimer tt("Releasing %s recorded data in %u channels",
                      _data.lengthLongFormat().c_str(),
                      _data.num_channels());
         _data.clear();
@@ -205,7 +205,7 @@ void MicrophoneRecorder::stopRecording()
     if (_stream_record) {
         try
         {
-        TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
+        TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
         //stop could hang the ui (codaset #24)
         //_stream_record->isStopped()? void(): _stream_record->stop();
         _stream_record->isStopped()? void(): _stream_record->abort();
