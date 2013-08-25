@@ -61,8 +61,6 @@ Collection::
     failed_allocation_(false),
     failed_allocation_prev_(false)
 {
-    TaskTimer tt("%s = %p", __FUNCTION__, this);
-
     _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
 
     // set _max_sample_size.time
@@ -73,7 +71,6 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskInfo ti("%s = %p", __FUNCTION__, this);
     reset();
 }
 
@@ -81,7 +78,7 @@ Collection::
 void Collection::
         reset()
 {
-    {
+    VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
         ReferenceRegion rr(this->tfr_mapping ().block_size);
         BOOST_FOREACH (const cache_t::value_type& b, _cache)

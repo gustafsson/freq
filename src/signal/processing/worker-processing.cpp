@@ -7,6 +7,8 @@
 namespace Signal {
 namespace Processing {
 
+bool enable_lockfailed_print = true;
+
 Worker::
         Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::WeakPtr schedule)
     :
@@ -47,13 +49,17 @@ void Worker::
 
             catch (const LockFailed& x)
                 {
-                TaskInfo("");
-                TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
-                TaskInfo("");
+                if (enable_lockfailed_print)
+                    {
+                    TaskInfo("");
+                    TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
+                    TaskInfo("");
+                    }
 
                 if (consecutive_lock_failed_count < 1)
                     {
-                    TaskInfo("Trying again %d", consecutive_lock_failed_count);
+                    if (enable_lockfailed_print)
+                        TaskInfo("Trying again %d", consecutive_lock_failed_count);
                     consecutive_lock_failed_count++;
                     }
                 else
@@ -156,6 +162,8 @@ void Worker::
 
     // It should store information about a crashed task (segfault)
     {
+        PrettifySegfault::EnableDirectPrint (false);
+
         ISchedule::Ptr gettask(new GetTaskSegFaultMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
@@ -165,6 +173,8 @@ void Worker::
         EXCEPTION_ASSERT( worker.caught_exception () );
 
         EXPECT_EXCEPTION(segfault_exception, rethrow_exception(worker.caught_exception ()));
+
+        PrettifySegfault::EnableDirectPrint (true);
     }
 
     // It should store information about a crashed task (C++ exception)
@@ -189,6 +199,8 @@ void Worker::
     // It should swallow one LockFailed without aborting the thread but abort if
     // several consecutive LockFailed are thrown.
     {
+        enable_lockfailed_print = false;
+
         ISchedule::Ptr gettask(new DeadLockMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
@@ -200,6 +212,8 @@ void Worker::
         EXPECT_EXCEPTION(LockFailed, rethrow_exception(worker.caught_exception ()));
 
         EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+
+        enable_lockfailed_print = true;
     }
 }
 

@@ -3,8 +3,8 @@
 #include <boost/foreach.hpp>
 #include <QThread>
 
-#define TIME_TASK
-//#define TIME_TASK if(0)
+//#define TIME_TASK
+#define TIME_TASK if(0)
 
 namespace Signal {
 namespace Processing {
@@ -56,13 +56,13 @@ void Task::
     Signal::pBuffer input_buffer, output_buffer;
 
     {
-        TIME_TASK TaskTimer tt(boost::format("%s")
+        TIME_TASK TaskTimer tt(boost::format("expect  %s")
                                % expected_output());
         input_buffer = get_input();
     }
 
     {
-        TIME_TASK TaskTimer tt(boost::format("%s") % input_buffer->getInterval ());
+        TIME_TASK TaskTimer tt(boost::format("process %s") % input_buffer->getInterval ());
         output_buffer = o->process (input_buffer);
         finish(output_buffer);
     }

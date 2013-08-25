@@ -335,7 +335,6 @@ void Workers::
             Timer t;
             {
                 ISchedule::Ptr s = schedule[i];
-                TaskInfo ti(boost::format("%s") % vartype(*s));
 
                 Workers workers(s);
                 Bedroom::Bed bed = dynamic_cast<volatile Bedroom*>(s.get ())->getBed();
