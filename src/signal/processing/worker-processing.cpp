@@ -136,7 +136,7 @@ public:
 
         // cause dead lock
         volatile DeadLockMock m;
-        WritePtr(&m) && WritePtr(&m);
+        WritePtr(&m, 1) && WritePtr(&m, 1);
 
         // unreachable code
         return Task::Ptr();
