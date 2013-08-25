@@ -727,7 +727,7 @@ Signal::Intervals Collection::
 pBlock Collection::
         createBlock( const Reference& ref )
 {
-    TIME_COLLECTION TaskTimer tt(format("Creating a new block %s") % ReferenceInfo(ref, tfr_mapping ()));
+    TIME_COLLECTION TaskTimer tt(format("New block %s") % ReferenceInfo(ref, tfr_mapping ()));
 
     pBlock result;
     // Try to create a new block

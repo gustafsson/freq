@@ -137,11 +137,9 @@ std::string ReferenceInfo::
         toString() const
 {
     stringstream ss;
-    ss << "(" << r.a.time << ":" << r.b.time << " " << r.a.scale << ":" << r.b.scale << " "
-            << getInterval() << " "
-            << reference_.log2_samples_size[0] << ":" << reference_.log2_samples_size[1] << " "
-            << reference_.block_index[0] << ":" << reference_.block_index[1]
-            << ")";
+    ss      << "T[" << r.a.time << ":" << r.b.time << ") "
+            << "F[" << r.a.scale << ":" << r.b.scale << ") "
+            << "S" << getInterval();
     return ss.str();
 }
 
