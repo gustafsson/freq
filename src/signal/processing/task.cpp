@@ -6,9 +6,6 @@
 #define TIME_TASK
 //#define TIME_TASK if(0)
 
-//#define DEBUG_GETINPUT
-#define DEBUG_GETINPUT if(0)
-
 namespace Signal {
 namespace Processing {
 
@@ -46,7 +43,8 @@ Signal::Interval Task::
 void Task::
         run(Signal::ComputingEngine::Ptr ce)
 {
-    TIME_TASK TaskTimer tt(boost::format("Task::run %1%") % expected_output());
+    TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
+                           % read1(step_)->operation_desc ()->toString ().toStdString ());
 
     Signal::Operation::Ptr o = write1(step_)->operation (ce);
 
@@ -58,13 +56,13 @@ void Task::
     Signal::pBuffer input_buffer, output_buffer;
 
     {
-        TIME_TASK TaskTimer tt(boost::format("get input for %s")
-                               % read1(step_)->operation_desc ()->toString ().toStdString ());
+        TIME_TASK TaskTimer tt(boost::format("%s")
+                               % expected_output());
         input_buffer = get_input();
     }
 
     {
-        TIME_TASK TaskTimer tt(boost::format("processing %s") % input_buffer->getInterval ());
+        TIME_TASK TaskTimer tt(boost::format("%s") % input_buffer->getInterval ());
         output_buffer = o->process (input_buffer);
         finish(output_buffer);
     }
@@ -122,9 +120,6 @@ Signal::pBuffer Task::
         for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
             *input_buffer->getChannel (c) += *b->getChannel(c);
     }
-    DEBUG_GETINPUT TaskInfo(boost::format("got input %s for %s")
-                       % input_buffer->getInterval ()
-                       % operation_desc->toString ().toStdString ());
 
     return input_buffer;
 }

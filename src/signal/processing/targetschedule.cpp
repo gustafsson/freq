@@ -4,6 +4,9 @@
 
 #include "targetschedule.h"
 
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
+
 using namespace boost::posix_time;
 
 namespace Signal {
@@ -55,7 +58,7 @@ Task::Ptr TargetSchedule::
     if (!vertex)
         return Task::Ptr();
 
-    TaskTimer tt(boost::format("getTask(%s,%g)") % needed % work_center);
+    DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % needed % work_center);
 
     Task::Ptr task = read1(self->algorithm)->getTask(
             dag->g(),
@@ -63,7 +66,7 @@ Task::Ptr TargetSchedule::
             needed,
             work_center);
 
-    if (task)
+    DEBUGINFO if (task)
         TaskInfo(boost::format("task->expected_output() = %s") % read1(task)->expected_output());
 
     return task;

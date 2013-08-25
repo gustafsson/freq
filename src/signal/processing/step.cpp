@@ -2,8 +2,8 @@
 
 #include <boost/foreach.hpp>
 
-#define DEBUGINFO
-//#define DEBUGINFO if(0)
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
 
 using namespace boost;
 

@@ -1160,10 +1160,11 @@ void RenderView::
         //TIME_PAINTGL_DETAILS
         if (things_to_add)
             TaskInfo(boost::format(
-                    "RenderView needed_samples %s\n"
-                    "things_to_add = %s")
+                    "RenderView needed_samples = %s, "
+                    "things_to_add = %s, center = %d")
                      % needed_samples
-                     % things_to_add);
+                     % things_to_add
+                     % ((int)model->_qx * x.sample_rate.get ()));
 
         write1(model->target_marker())->updateNeeds(
                     needed_samples,
