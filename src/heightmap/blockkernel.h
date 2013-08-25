@@ -62,7 +62,8 @@ namespace Heightmap {
             //
             // which doesn't work in Sonic AWE (too dark)
             // fiddling around to get something similar ended up as
-            return 0.029f * log2f(v) + 0.3333f;
+            float f = 0.029f * log2f(v) + 0.3333f;
+            return f<0.f ? 0.f : f;
         }
     };
 
