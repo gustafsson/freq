@@ -93,6 +93,18 @@ void Collection::
         }
     }
 
+    BOOST_FOREACH (const cache_t::value_type& v, _cache)
+    {
+        pBlock b = v.second;
+        b->glblock.reset ();
+    }
+
+    BOOST_FOREACH (const pBlock b, _recent)
+        b->glblock.reset ();
+
+    BOOST_FOREACH (const pBlock b, _to_remove)
+        b->glblock.reset ();
+
     _cache.clear();
     _recent.clear();
 
@@ -777,9 +789,8 @@ void Collection::
     _recent.remove(b);
     _cache.erase(b->reference());
     _to_remove.push_back( b );
-#ifndef SAWE_NO_MUTEX
     b->to_delete = true;
-#endif
+    b->glblock.reset ();
 }
 
 

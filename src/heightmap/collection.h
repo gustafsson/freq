@@ -155,6 +155,8 @@ public:
       all existing blocks that intersect with the chunk interval.
 
       This method is called by working threads.
+
+      TODO don't expose OpenGL data to other threads.
       */
     std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible ) const;
 
