@@ -236,8 +236,6 @@ void OldOperationDescWrapper::
         // Should wait for workers to fininsh
         EXCEPTION_ASSERT(target->sleep(1000));
 
-        //read1(chain)->print_dead_workers();
-
         // Should produce a cache in the target that matches the chain
         Step::Ptr target_step = read1(target)->step ().lock();
         EXCEPTION_ASSERT(target_step);

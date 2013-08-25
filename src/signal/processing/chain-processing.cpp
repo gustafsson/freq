@@ -6,6 +6,8 @@
 #include "reversegraph.h"
 #include "graphinvalidator.h"
 
+#include "timer.h"
+
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
@@ -44,33 +46,22 @@ Chain::Ptr Chain::
 Chain::
         ~Chain()
 {
-    print_dead_workers();
-
-    // Workers will ask all instances of Worker to quit at will. class Workers
-    // does not know about any sleeping. class Bedroom takes care of waking
-    // them up so that the Worker threads can quit.
-    workers_.reset ();
-
-    // Notify sleeping workers that something has changed. They will notice
-    // that there's nothing to work on anymore and close.
-    bedroom_->wakeup();
-
-    // Wait for targets to finish.
-    // 1.0 s 'should' be enough.
-    // If it isn't, well then there will probably be a crash if
-    // OpenGL resources are released from a different thread.
     Targets::TargetNeedsCollection T = read1(targets_)->getTargets();
 
-    BOOST_FOREACH( TargetNeeds::Ptr t, T ) {
-        write1(t)->updateNeeds(
-                    Signal::Intervals(),
-                    0,
-                    Signal::Interval::IntervalType_MIN,
-                    Signal::Intervals());
+    // Ask workers to not start anything new
+    read1(workers_)->remove_all_engines(0);
 
-        bedroom_->wakeup();
-        t->sleep(1000);
-    }
+    // Make scheduler return to worker
+    bedroom_->close();
+
+    // Wait 1.0 s for workers to finish
+    read1(workers_)->remove_all_engines(1000);
+
+    // Suppress output
+    write1(workers_)->clean_dead_workers();
+
+    // Remove all workers
+    workers_.reset ();
 
     // Remove all edges, all vertices and their properties (i.e Step::Ptr)
     dag_.reset ();
@@ -188,14 +179,6 @@ Signal::OperationDesc::Extent Chain::
 
 
 void Chain::
-        print_dead_workers() const
-{
-    Workers::DeadEngines engines = write1(workers_)->clean_dead_workers();
-    Workers::print (engines);
-}
-
-
-void Chain::
         rethrow_worker_exception() const
 {
     write1(workers_)->rethrow_worker_exception();
@@ -293,10 +276,16 @@ void Chain::
         breadth_first_search(g, v2, visitor(default_bfs_visitor()));
     }
 
+    {
+        Timer t;
+        Chain::createDefaultChain ();
+        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.01);
+    }
 
     // It should make the signal processing namespace easy to use with a clear
     // and simple interface.
     {
+        Timer t;
         Chain::Ptr chain = Chain::createDefaultChain ();
         Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
         Signal::OperationDesc::Ptr source_desc(new OperationDescChainMock);
@@ -332,9 +321,10 @@ void Chain::
 
         usleep(4000);
         read1(chain)->rethrow_worker_exception();
+
+        chain.reset ();
+        EXCEPTION_ASSERT_LESS(t.elapsed (), 0.02);
     }
-    // Wait for threads to exit.
-    usleep(4000);
 }
 
 } // namespace Processing

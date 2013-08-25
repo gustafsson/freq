@@ -56,6 +56,8 @@ Task::Ptr SleepSchedule::
         DEBUGINFO TaskInfo(boost::format("didn't find a task. Going to bed"));
         bedroom->sleep();
         DEBUGINFO TaskInfo(boost::format("woke up"));
+    } catch (const Signal::Processing::BedroomClosed&) {
+        return Task::Ptr();
     } catch (const std::exception&) {
         // Ask another worker to try instead
         Bedroom::Ptr bedroom = wbedroom.lock ();

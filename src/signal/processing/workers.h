@@ -15,8 +15,10 @@ namespace Processing {
  * @brief The Schedule class should start and stop computing engines as they
  * are added and removed.
  *
- * A started engine uses class Worker which queries a GetTask for tasks to work
- * on.
+ * A started engine is a thread that uses class Worker which queries a GetTask
+ * for tasks to work on.
+ *
+ * It should terminate all threads when it's closed.
  */
 class Workers: public VolatilePtr<Workers>
 {
@@ -47,6 +49,28 @@ public:
     typedef std::map<Signal::ComputingEngine::Ptr, boost::exception_ptr > DeadEngines;
     DeadEngines clean_dead_workers();
     void rethrow_worker_exception();
+
+    /**
+     * @brief terminate_workers terminates all worker threads and doesn't
+     * return until all threads have been terminated.
+     *
+     * Use of this function is discouraged because it doesn't allow threads
+     * to clean up any resources nor to release any locks.
+     *
+     * The thread might not terminate until it activates the OS scheduler by
+     * entering a lock or going to sleep.
+     *
+     * Returns true if all threads were terminated within 'timeout'.
+     */
+    bool terminate_workers(int timeout=1000);
+
+    /**
+     * @brief remove_all_engines will ask all workers to not start any new
+     * task from now on.
+     *
+     * Returns true if all threads finished within 'timeout'.
+     */
+    bool remove_all_engines(int timeout=0) const;
 
     static void print(const DeadEngines&);
 

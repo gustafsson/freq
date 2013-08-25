@@ -19,6 +19,8 @@ Worker::
 void Worker::
         run()
     {
+    setTerminationEnabled ();
+
     try
         {
         int consecutive_lock_failed_count = 0;
@@ -32,6 +34,10 @@ void Worker::
 
                 Task::Ptr task = schedule->getTask();
                 if (!task)
+                    break;
+
+                // Abort if the worker was asked to stop
+                if (!schedule_.lock ())
                     break;
 
                 write1(task)->run(computing_eninge_);

@@ -1,16 +1,41 @@
 #include "bedroom.h"
 
 #include "exceptionassert.h"
+#include "expectexception.h"
+
+#include <QSemaphore>
 
 namespace Signal {
 namespace Processing {
 
 
+class Void {};
+typedef boost::shared_ptr<Void> Bed;
+
+
+class BedroomData {
+public:
+    BedroomData()
+        :
+          bed(new Bed::value_type),
+          is_closed(false)
+    {
+    }
+
+    // TODO use QWaitCondition
+    QSemaphore work;
+    Bed bed;
+    bool is_closed;
+};
+
+
 Bedroom::
-        Bedroom()
+        Bedroom(Bedroom::DataPtr data)
     :
-      bed_(new Bed::value_type)
+      data_(data)
 {
+    if (!data_)
+        data_.reset (new BedroomData);
 }
 
 
@@ -22,11 +47,19 @@ int Bedroom::
 
     WritePtr self(this);
 
-    int to_release = should_be_available - self->work_.available ();
+    int to_release = should_be_available - self->data_->work.available ();
     if (0<to_release)
-        self->work_.release (to_release);
+        self->data_->work.release (to_release);
 
     return std::max(0,to_release);
+}
+
+
+void Bedroom::
+        close() volatile
+{
+    WritePtr(this)->data_->is_closed = true;
+    wakeup();
 }
 
 
@@ -40,11 +73,16 @@ void Bedroom::
 void Bedroom::
         sleep(int ms_timeout) volatile
 {
-    // Increment usage count
-    Bed b = ReadPtr(this)->bed_;
+    if (ReadPtr(this)->data_->is_closed)
+    {
+        BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
+    }
 
-    // Don't keep a lock when acquiring
-    const_cast<Bedroom*>(this)->work_.tryAcquire (1, ms_timeout);
+    // Increment usage count
+    Bed b = ReadPtr(this)->data_->bed;
+
+    // Don't keep a lock to this when acquiring
+    const_cast<Bedroom*>(this)->data_->work.tryAcquire (1, ms_timeout);
 }
 
 
@@ -52,8 +90,9 @@ int Bedroom::
         sleepers() const volatile
 {
     // Remove 1 to compensate for the instance used by 'this'
-    return ReadPtr(this)->bed_.use_count() - 1;
+    return ReadPtr(this)->data_->bed.use_count() - 1;
 }
+
 
 } // namespace Processing
 } // namespace Signal
@@ -118,6 +157,14 @@ void Bedroom::
         EXCEPTION_ASSERT(sleepyface1.isFinished ());
         EXCEPTION_ASSERT(sleepyface2.isFinished ());
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), 0);
+    }
+
+    // It should throw a BedroomClosed exception if someone tries to go to
+    // sleep when the bedroom is closed.
+    {
+        Bedroom b;
+        b.close ();
+        EXPECT_EXCEPTION(BedroomClosed, b.sleep ());
     }
 }
 

@@ -4,6 +4,8 @@
 #include "adapters/microphonerecorder.h"
 #include "sawe/project.h"
 
+#include <QSemaphore>
+
 namespace Tools
 {
 

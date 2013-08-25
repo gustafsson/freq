@@ -6,6 +6,8 @@
 #include "targetschedule.h"
 #include "timer.h"
 
+//#define TIME_TERMINATE
+#define TIME_TERMINATE if(0)
 
 namespace Signal {
 namespace Processing {
@@ -24,27 +26,9 @@ Workers::
 {
     schedule_.reset ();
 
-    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
-        Worker::Ptr worker = ewp.second;
-        if (worker && worker->isRunning ())
-            worker->exit_nicely_and_delete(); // will still wait for ISchedule to return
-    }
+    terminate_workers ();
 
-//    // terminate and delete
-//    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
-//        Worker::Ptr worker = ewp.second;
-//        if (worker && worker->isRunning ()) {
-//            worker->wait (1);
-//            worker->terminate ();
-//        }
-//    }
-//    BOOST_FOREACH(EngineWorkerMap::value_type ewp, workers_map_) {
-//        Worker::Ptr worker = ewp.second;
-//        if (worker) {
-//            worker->wait (1);
-//            delete worker.data ();
-//        }
-//    }
+    print (clean_dead_workers());
 }
 
 
@@ -76,7 +60,6 @@ void Workers::
     // Don't try to delete a running thread.
     if (worker->second)
         worker->second->exit_nicely_and_delete();
-    workers_map_.erase (worker); // This doesn't delete worker, worker deletes itself (if there are any additional tasks).
 
     updateWorkers();
 }
@@ -162,6 +145,52 @@ void Workers::
 }
 
 
+bool Workers::
+        terminate_workers(int timeout)
+{
+    TIME_TERMINATE TaskTimer ti("terminate_workers");
+
+    remove_all_engines(timeout);
+
+    bool ok = true;
+
+    TIME_TERMINATE TaskInfo("terminate");
+    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
+        if (i.second) i.second->terminate ();
+    }
+
+    TIME_TERMINATE TaskInfo("wait(1000)");
+    // Wait for terminate to take effect
+    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
+        if (i.second) ok &= i.second->wait (1000);
+    }
+
+    return ok;
+}
+
+
+bool Workers::
+        remove_all_engines(int timeout) const
+{
+    TIME_TERMINATE TaskTimer ti("remove_all_engines");
+
+    bool ok = true;
+
+    // Make sure the workers doesn't start anything new
+    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
+        if (i.second) i.second->exit_nicely_and_delete();
+    }
+
+    TIME_TERMINATE TaskInfo("wait(%d)", timeout);
+    // Give ISchedule and Task 1.0 s to return.
+    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
+        if (i.second) ok &= i.second->wait (timeout);
+    }
+
+    return ok;
+}
+
+
 void Workers::
         print(const DeadEngines& engines)
 {
@@ -179,7 +208,7 @@ void Workers::
                      % (engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0"))
                      % boost::diagnostic_information(x));
         else
-            TaskInfo(boost::format("engine %1% stopped.")
+            TaskInfo(boost::format("engine %1% stopped")
                      % (engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0")));
     }
 }
@@ -204,6 +233,47 @@ public:
             throw std::logic_error("test crash");
         else
             return Task::Ptr();
+    }
+};
+
+
+class BlockScheduleMock: public ISchedule, public Bedroom {
+protected:
+    virtual Task::Ptr getTask() volatile {
+        wakeup ();
+
+        // This should block the thread and be aborted by QThread::terminate
+        dont_return();
+
+        EXCEPTION_ASSERT( false );
+
+        return Task::Ptr();
+    }
+
+    virtual void dont_return() volatile = 0;
+};
+
+class SleepScheduleMock: public BlockScheduleMock {
+    virtual void dont_return() volatile {
+        // Don't use this->sleep() as that semaphore is used for something else.
+        Bedroom().sleep ();
+    }
+};
+
+
+class LockScheduleMock: public BlockScheduleMock {
+    virtual void dont_return() volatile {
+        ISchedule::readWriteLock()->lockForWrite (); // ok
+        ISchedule::readWriteLock()->lockForWrite (); // lock
+    }
+};
+
+
+class BusyScheduleMock: public BlockScheduleMock {
+    virtual void dont_return() volatile {
+        for(;;) {
+            usleep(0); // Allow OS scheduling to kill the thread ("for(;;);" would not)
+        }
     }
 };
 
@@ -251,7 +321,39 @@ void Workers::
         workers.rethrow_worker_exception();
     }
 
-    EXCEPTION_ASSERT_LESS(maxwait, 0.01);
+    EXCEPTION_ASSERT_LESS(maxwait, 0.02);
+
+    // It should terminate all threads when it's closed
+    {
+        ISchedule::Ptr schedule[] = {
+            ISchedule::Ptr(new SleepScheduleMock),
+            ISchedule::Ptr(new LockScheduleMock),
+            ISchedule::Ptr(new BusyScheduleMock)
+        };
+
+        for (unsigned i=0; i<sizeof(schedule)/sizeof(schedule[0]); i++) {
+            Timer t;
+            {
+                ISchedule::Ptr s = schedule[i];
+                TaskInfo ti(boost::format("%s") % vartype(*s));
+
+                Workers workers(s);
+
+                workers.addComputingEngine(Signal::ComputingEngine::Ptr());
+
+                // Wait until the schedule has been called
+                dynamic_cast<volatile Bedroom*>(s.get ())->sleep ();
+
+                workers.terminate_workers (10);
+                workers.rethrow_worker_exception ();
+                workers.clean_dead_workers ();
+            }
+            float elapsed = t.elapsed ();
+            float n = (i+1)*0.00001;
+            EXCEPTION_ASSERT_LESS(0.01+n, elapsed);
+            EXCEPTION_ASSERT_LESS(elapsed, 0.012+n);
+        }
+    }
 }
 
 
