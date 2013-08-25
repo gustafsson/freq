@@ -15,13 +15,13 @@ namespace Processing {
 class SleepSchedule: public ISchedule
 {
 public:
-    SleepSchedule(Bedroom::WeakPtr bedroom, ISchedule::Ptr schedule);
+    SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule);
 
     // Sleeps until a task can be returned
     virtual boost::shared_ptr<volatile Task> getTask() volatile;
 
 private:
-    Bedroom::WeakPtr bedroom_;
+    Bedroom::Ptr bedroom_;
     ISchedule::Ptr schedule_;
 
 public:

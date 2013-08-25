@@ -3,6 +3,10 @@
 
 #include "volatileptr.h"
 
+#include <set>
+
+#include <QWaitCondition>
+
 namespace Signal {
 namespace Processing {
 
@@ -15,26 +19,61 @@ class BedroomClosed: public virtual boost::exception, public virtual std::except
  *
  * It should throw a BedroomClosed exception if someone tries to go to
  * sleep when the bedroom is closed.
+ *
+ * See Bedroom::test for usage example.
  */
 class Bedroom: public VolatilePtr<Bedroom>
 {
 public:
-    typedef boost::shared_ptr<class BedroomData> DataPtr;
+    class Bed;
 
-    Bedroom(DataPtr d=DataPtr());
+    class Void {};
+    typedef boost::shared_ptr<Void> Counter;
+
+    class Data: public VolatilePtr<Data> {
+    public:
+        Data();
+
+        QWaitCondition work;
+
+        std::set<Bed*> beds;
+        Counter sleepers;
+        Counter skip_sleep_marker;
+        bool is_closed;
+
+        QReadWriteLock* readWriteLock() const volatile;
+    };
+
+
+    class Bed {
+    public:
+        Bed(const Bed&);
+        ~Bed();
+
+        void sleep();
+        void sleep(unsigned long ms_timeout);
+
+    private:
+        friend class Bedroom;
+
+        Bed(Data::Ptr data);
+        Data::Ptr data_;
+        Counter skip_sleep_;
+    };
+
+
+    Bedroom();
 
     // Wake up sleepers
-    int wakeup() volatile;
+    void wakeup() volatile;
     void close() volatile;
 
-    void sleep() volatile;
-    void sleep(int ms_timeout) volatile;
+    Bed getBed() volatile;
 
-    int sleepers() const volatile;
-
+    int sleepers() volatile;
 
 private:
-    DataPtr data_;
+    Data::Ptr data_;
 
 public:
     static void test();

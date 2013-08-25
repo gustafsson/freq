@@ -114,9 +114,9 @@ bool TargetNeeds::
     if (!pstep || !bedroom)
         return false;
 
-    for (;;) {
-        bedroom->wakeup();
+    Bedroom::Bed bed = bedroom->getBed();
 
+    for (;;) {
         {
             Step::WritePtr step(pstep);
 
@@ -129,7 +129,7 @@ bool TargetNeeds::
                 return true;
         }
 
-        bedroom->sleep(left(t, sleep_ms));
+        bed.sleep(left(t, sleep_ms));
 
         if (0 <= sleep_ms && 0 == left(t, sleep_ms))
             return false;

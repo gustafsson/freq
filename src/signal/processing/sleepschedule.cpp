@@ -11,7 +11,7 @@ namespace Processing {
 
 
 SleepSchedule::
-        SleepSchedule(Bedroom::WeakPtr bedroom, ISchedule::Ptr schedule)
+        SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule)
     :
       bedroom_(bedroom),
       schedule_(schedule)
@@ -22,47 +22,38 @@ SleepSchedule::
 Task::Ptr SleepSchedule::
         getTask() volatile
 {
-    Bedroom::WeakPtr wbedroom;
+    Bedroom::Ptr bedroom;
     ISchedule::Ptr schedule;
 
     {
         ReadPtr that(this);
         const SleepSchedule* self = (const SleepSchedule*)&*that;
 
-        wbedroom = self->bedroom_;
+        bedroom = self->bedroom_;
         schedule = self->schedule_;
-
-        Bedroom::Ptr bedroom = wbedroom.lock ();
-        if (bedroom) {
-            DEBUGINFO TaskInfo("wakeup");
-            bedroom->wakeup();
-        }
     }
 
-    for (;;) try {
-        Bedroom::Ptr bedroom = wbedroom.lock ();
-        if (!bedroom)
-            return Task::Ptr();
+    // Wake up TargetNeeds::sleep... random hack that depends on the behaviour of "everything"...
+    // It would make more sense if TargetNeeds monitored when things got updated in the target.
+    bedroom->wakeup ();
 
+    Bedroom::Bed bed = bedroom->getBed();
+    for (;;) try {
         DEBUGINFO TaskInfo(boost::format("starts searching for a task"));
 
         Task::Ptr task = schedule->getTask();
 
-        if (task) {
-            bedroom->wakeup();
+        if (task)
             return task;
-        }
 
         DEBUGINFO TaskInfo(boost::format("didn't find a task. Going to bed"));
-        bedroom->sleep();
+        bed.sleep();
         DEBUGINFO TaskInfo(boost::format("woke up"));
     } catch (const Signal::Processing::BedroomClosed&) {
         return Task::Ptr();
     } catch (const std::exception&) {
         // Ask another worker to try instead
-        Bedroom::Ptr bedroom = wbedroom.lock ();
-        if (bedroom)
-            bedroom->wakeup();
+        bedroom->wakeup ();
         throw;
     }
 }
@@ -82,7 +73,7 @@ public:
 
     Task::Ptr getTask() volatile {
         get_task_calls++;
-        if (get_task_calls <= 2)
+        if (get_task_calls <= 1)
             return Task::Ptr();
         return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(4,5)));
     }
@@ -121,7 +112,7 @@ void SleepSchedule::
         EXCEPTION_ASSERT(worker_mock.wait (1));
 
         int get_task_calls = dynamic_cast<const ScheduleMock*>(&*read1(schedule_mock))->get_task_calls;
-        EXCEPTION_ASSERT_EQUALS(get_task_calls, 3);
+        EXCEPTION_ASSERT_EQUALS(get_task_calls, 2);
     }
 }
 

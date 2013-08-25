@@ -3,94 +3,121 @@
 #include "exceptionassert.h"
 #include "expectexception.h"
 
-#include <QSemaphore>
+#include <boost/foreach.hpp>
 
 namespace Signal {
 namespace Processing {
 
 
-class Void {};
-typedef boost::shared_ptr<Void> Bed;
-
-
-class BedroomData {
-public:
-    BedroomData()
-        :
-          bed(new Bed::value_type),
-          is_closed(false)
-    {
-    }
-
-    // TODO use QWaitCondition
-    QSemaphore work;
-    Bed bed;
-    bool is_closed;
-};
-
-
-Bedroom::
-        Bedroom(Bedroom::DataPtr data)
+Bedroom::Data::
+    Data()
     :
-      data_(data)
+        sleepers(new Counter::value_type),
+        skip_sleep_marker(new Counter::value_type),
+        is_closed(false)
 {
-    if (!data_)
-        data_.reset (new BedroomData);
 }
 
 
-int Bedroom::
+QReadWriteLock* Bedroom::Data::
+        readWriteLock() const volatile
+{
+    return VolatilePtr<Data>::readWriteLock();
+}
+
+
+Bedroom::Bed::
+        Bed(Data::Ptr data)
+    :
+      data_(data)
+{
+    write1(data_)->beds.insert(this);
+}
+
+
+Bedroom::Bed::
+        ~Bed()
+{
+    write1(data_)->beds.erase(this);
+}
+
+
+void Bedroom::Bed::
+        sleep()
+{
+    sleep(ULONG_MAX);
+}
+
+
+void Bedroom::Bed::
+        sleep(unsigned long ms_timeout)
+{
+    Data::WritePtr data(data_);
+
+    if (data->is_closed) {
+        BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
+    }
+
+    if (!skip_sleep_) {
+        // Increment usage count
+        Counter b = data->sleepers;
+
+        data->work.wait (data_->readWriteLock(), ms_timeout);
+    }
+
+    skip_sleep_.reset();
+
+    return;
+}
+
+
+Bedroom::
+        Bedroom()
+    :
+      data_(new Data)
+{
+}
+
+
+void Bedroom::
         wakeup() volatile
 {
-    int N = sleepers();
-    int should_be_available = std::max(1, N);
+    Data::WritePtr data(WritePtr(this)->data_);
+    // no one is going into sleep as long as data_ is locked
 
-    WritePtr self(this);
+    BOOST_FOREACH(Bed* b, data->beds) {
+        b->skip_sleep_ = data->skip_sleep_marker;
+    }
 
-    int to_release = should_be_available - self->data_->work.available ();
-    if (0<to_release)
-        self->data_->work.release (to_release);
-
-    return std::max(0,to_release);
+    data->work.wakeAll ();
 }
 
 
 void Bedroom::
         close() volatile
 {
-    WritePtr(this)->data_->is_closed = true;
+    {
+        Data::WritePtr data(WritePtr(this)->data_);
+        data->is_closed = true;
+    }
+
     wakeup();
 }
 
 
-void Bedroom::
-        sleep() volatile
+Bedroom::Bed Bedroom::
+        getBed() volatile
 {
-    sleep(-1);
-}
-
-
-void Bedroom::
-        sleep(int ms_timeout) volatile
-{
-    if (ReadPtr(this)->data_->is_closed)
-    {
-        BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
-    }
-
-    // Increment usage count
-    Bed b = ReadPtr(this)->data_->bed;
-
-    // Don't keep a lock to this when acquiring
-    const_cast<Bedroom*>(this)->data_->work.tryAcquire (1, ms_timeout);
+    return Bed(ReadPtr(this)->data_);
 }
 
 
 int Bedroom::
-        sleepers() const volatile
+        sleepers() volatile
 {
     // Remove 1 to compensate for the instance used by 'this'
-    return ReadPtr(this)->data_->bed.use_count() - 1;
+    Data::ReadPtr data(ReadPtr(this)->data_);
+    return data->sleepers.use_count() - 1;
 }
 
 
@@ -108,8 +135,9 @@ public:
     SleepyFaceMock(Bedroom::Ptr bedroom, int snooze) : bedroom_(bedroom), snooze_(snooze) {}
 
     void run() {
+        Bedroom::Bed bed = bedroom_->getBed();
         do {
-            bedroom_->sleep();
+            bed.sleep ();
             --snooze_;
             usleep(60);
         } while(snooze_ > 0);
@@ -148,10 +176,7 @@ void Bedroom::
                               (boost::format("sleepyface1=%d, sleepyface2=%d, i=%d")
                               % sleepyface1.snooze () % sleepyface2.snooze () % i));
 
-            // TODO Bedroom::wakeup may wake the same sleepyface twice instead of waking up both,
-            // this behaviour is valid but it doesn't pass this test.
-            int w = bedroom->wakeup();
-            EXCEPTION_ASSERT_EQUALS(w, i>0?2:1);
+            bedroom->wakeup();
         }
 
         EXCEPTION_ASSERT(sleepyface1.isFinished ());
@@ -164,7 +189,7 @@ void Bedroom::
     {
         Bedroom b;
         b.close ();
-        EXPECT_EXCEPTION(BedroomClosed, b.sleep ());
+        EXPECT_EXCEPTION(BedroomClosed, b.getBed().sleep ());
     }
 }
 

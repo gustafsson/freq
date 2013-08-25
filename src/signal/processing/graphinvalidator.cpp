@@ -60,7 +60,7 @@ public:
     WaitForWakeupMock(Bedroom::Ptr bedroom) : bedroom_(bedroom) {}
 
     void run() {
-        bedroom_->sleep();
+        bedroom_->getBed().sleep();
     }
 
 private:

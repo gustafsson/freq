@@ -255,8 +255,8 @@ protected:
 
 class SleepScheduleMock: public BlockScheduleMock {
     virtual void dont_return() volatile {
-        // Don't use this->sleep() as that semaphore is used for something else.
-        Bedroom().sleep ();
+        // Don't use this->getBed() as that Bedroom is used for something else.
+        Bedroom().getBed().sleep ();
     }
 };
 
@@ -338,11 +338,13 @@ void Workers::
                 TaskInfo ti(boost::format("%s") % vartype(*s));
 
                 Workers workers(s);
+                Bedroom::Bed bed = dynamic_cast<volatile Bedroom*>(s.get ())->getBed();
 
                 workers.addComputingEngine(Signal::ComputingEngine::Ptr());
 
-                // Wait until the schedule has been called
-                dynamic_cast<volatile Bedroom*>(s.get ())->sleep ();
+                // Wait until the schedule has been called (Bedroom supports
+                // that the wakeup in schedule is called even before this sleep call)
+                bed.sleep ();
 
                 workers.terminate_workers (10);
                 workers.rethrow_worker_exception ();
