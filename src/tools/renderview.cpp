@@ -82,7 +82,8 @@ RenderView::
             _last_x(0),
             _last_y(0),
             _try_gc(0),
-            _target_fps(10.0f)
+            _target_fps(10.0f),
+            _last_update_size(0)
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -841,6 +842,13 @@ void RenderView::
 }
 
 
+void RenderView::
+        setLastUpdateSize( Signal::IntervalType last_update_size )
+{
+    _last_update_size = last_update_size;
+}
+
+
 Support::ToolSelector* RenderView::
         toolSelector()
 {
@@ -1158,6 +1166,10 @@ void RenderView::
             things_to_add |= wc->recently_created();
             needed_samples |= wc->needed_samples();
         }
+
+        // It should update the view in sections with the same size as it's invalidated.
+        if (_last_update_size < update_size)
+            update_size = _last_update_size;
 
         //TIME_PAINTGL_DETAILS
         if (things_to_add)

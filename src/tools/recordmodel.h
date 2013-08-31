@@ -14,6 +14,9 @@ class RenderView;
 
 /**
  * @brief The RecordModel class should describe the operation required to perform a recording.
+ *
+ * Note that it's up to each renderview to update the stuff that it needs.
+ * RecordModel doesn't concern itself with the framerate of RenderView.
  */
 class RecordModel
 {

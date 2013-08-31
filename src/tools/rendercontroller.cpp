@@ -510,8 +510,21 @@ public:
 
     Signal::pBuffer read( const Signal::Interval& I ) {
         Signal::pBuffer b = Tools::Support::OperationSubOperations::read (I);
+
+        // Something has been added to the rendermodel. Issue a repaint.
         view_->userinput_update ();
+
         return b;
+    }
+
+
+    Signal::Intervals affectedInterval( const Signal::Interval& I ) const {
+        Signal::Interval a = Tools::Support::OperationSubOperations::affectedInterval( I );
+
+        // This will result in a update rate that matches the invalidated intervals if possible.
+        view_->setLastUpdateSize( a.count () );
+
+        return a;
     }
 
 private:

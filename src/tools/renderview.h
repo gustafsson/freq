@@ -61,6 +61,7 @@ namespace Tools
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
         void setPosition( Heightmap::Position pos );
+        void setLastUpdateSize( Signal::IntervalType length );
 
         float last_ysize;
         Tools::Commands::ViewState viewstate;
@@ -208,6 +209,7 @@ namespace Tools
         Timer _last_frame;
         float _target_fps;
 
+        Signal::IntervalType _last_update_size;
 
         double modelview_matrix[16], projection_matrix[16];
         int viewport_matrix[4];
