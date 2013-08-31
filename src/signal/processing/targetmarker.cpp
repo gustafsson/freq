@@ -61,11 +61,12 @@ TargetMarker::
 void TargetMarker::
         updateNeeds(
             Signal::Intervals needed_samples,
-            int prio,
             Signal::IntervalType center,
-            Signal::Intervals invalidate)
+            Signal::IntervalType preferred_size,
+            Signal::Intervals invalidate,
+            int prio )
 {
-    write1(target_needs_)->updateNeeds(needed_samples, prio, center, invalidate);
+    write1(target_needs_)->updateNeeds(needed_samples, center, preferred_size, invalidate, prio);
 }
 
 

@@ -22,9 +22,10 @@ public:
      */
     void updateNeeds(
             Signal::Intervals needed_samples,
-            int prio=0,
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
-            Signal::Intervals invalidate=Signal::Intervals());
+            Signal::IntervalType preferred=Signal::Interval::IntervalType_MAX,
+            Signal::Intervals invalidate=Signal::Intervals(),
+            int prio=0);
 
     boost::weak_ptr<volatile Step> step() const;
     bool sleep(int sleep_ms) volatile;

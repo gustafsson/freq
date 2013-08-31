@@ -15,6 +15,8 @@ TargetNeeds::
         TargetNeeds(Step::WeakPtr step, Bedroom::WeakPtr bedroom)
     :
       step_(step),
+      work_center_(Signal::Interval::IntervalType_MIN),
+      preferred_update_size_(Signal::Interval::IntervalType_MAX),
       bedroom_(bedroom)
 {
 }
@@ -28,7 +30,14 @@ TargetNeeds::
 
 
 void TargetNeeds::
-        updateNeeds(Signal::Intervals needed_samples, int prio, Signal::IntervalType center, Signal::Intervals invalidate)
+        updateNeeds
+        (
+        Signal::Intervals needed_samples,
+        Signal::IntervalType center,
+        Signal::IntervalType preferred_update_size,
+        Signal::Intervals invalidate,
+        int prio
+        )
 {
     needed_samples_ = needed_samples;
 
@@ -36,6 +45,8 @@ void TargetNeeds::
     last_request_ = now + time_duration(0,0,prio);
 
     work_center_ = center;
+
+    preferred_update_size_ = preferred_update_size;
 
     Step::Ptr step = step_.lock ();
     if (step && invalidate)
@@ -65,6 +76,13 @@ Signal::IntervalType TargetNeeds::
         work_center() const
 {
     return work_center_;
+}
+
+
+Signal::IntervalType TargetNeeds::
+        preferred_update_size() const
+{
+    return preferred_update_size_;
 }
 
 
@@ -160,7 +178,7 @@ void TargetNeeds::
     EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
     EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
     EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval() );
-    write1(target_needs)->updateNeeds(Signal::Interval(-15,5), 0, 0);
+    write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
     EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
     EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
     EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval(-15,5) );

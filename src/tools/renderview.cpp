@@ -1149,6 +1149,8 @@ void RenderView::
         //Signal::Intervals invalid_samples;
         Signal::Intervals things_to_add;
         Signal::Intervals needed_samples;
+        Signal::IntervalType center = model->_qx * x.sample_rate.get ();
+        Signal::IntervalType update_size = Signal::Interval::IntervalType_MAX;
 
         BOOST_FOREACH(Heightmap::Collection::Ptr c, model->collections ()) {
             Heightmap::Collection::WritePtr wc(c);
@@ -1168,9 +1170,10 @@ void RenderView::
 
         write1(model->target_marker())->updateNeeds(
                     needed_samples,
-                    0,
-                    model->_qx * x.sample_rate.get (),
-                    things_to_add
+                    center,
+                    update_size,
+                    things_to_add,
+                    0
                 );
 
         isWorking = model->target_marker ()->isWorking();

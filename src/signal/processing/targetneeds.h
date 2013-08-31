@@ -39,13 +39,15 @@ public:
      */
     void updateNeeds(
             Signal::Intervals needed_samples,
-            int prio=0,
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
-            Signal::Intervals invalidate=Signal::Intervals());
+            Signal::IntervalType preferred_update_size=Signal::Interval::IntervalType_MAX,
+            Signal::Intervals invalidate=Signal::Intervals(),
+            int prio=0 );
 
     boost::weak_ptr<volatile Step> step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
+    Signal::IntervalType preferred_update_size() const;
     Signal::Intervals out_of_date() const;
     Signal::Intervals not_started() const;
 
@@ -60,6 +62,7 @@ private:
     const boost::weak_ptr<volatile Step> step_;
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;
+    Signal::IntervalType preferred_update_size_;
     Signal::Intervals needed_samples_;
 
     boost::weak_ptr<volatile Bedroom> bedroom_;

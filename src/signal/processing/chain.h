@@ -32,7 +32,7 @@ public:
      * @brief addTarget
      * @param desc
      * @param at
-     * @return A marker to keep track of the target. The Target is removed from the Dag when TargetNeeds is deleted.
+     * @return A marker to keep track of the target. The Target is removed from the Dag when TargetMarker is deleted.
      */
     TargetMarker::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at=TargetMarker::Ptr());
 

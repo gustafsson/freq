@@ -109,17 +109,13 @@ Task::Ptr FirstMissAlgorithm::
                 GraphVertex straight_target,
                 Signal::Intervals needed,
                 Signal::IntervalType center,
+                Signal::IntervalType preferred_size,
                 Workers::Ptr workers,
                 Signal::ComputingEngine::Ptr engine) const
 {
     DEBUGINFO TaskTimer tt("getTask");
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
-
-    int preferred_size = needed.count ();
-
-    if (workers)
-        preferred_size = 1 + preferred_size/read1(workers)->n_workers();
 
     ScheduleParams schedule_params = { engine, preferred_size, center };
 

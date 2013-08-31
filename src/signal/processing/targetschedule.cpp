@@ -42,6 +42,7 @@ Task::Ptr TargetSchedule::
     Step::Ptr step;
     Signal::Intervals needed;
     Signal::IntervalType work_center;
+    Signal::IntervalType preferred_update_size;
 
     // Read info from target
     {
@@ -49,6 +50,7 @@ Task::Ptr TargetSchedule::
         step = target->step().lock ();
         needed = target->not_started();
         work_center = target->work_center();
+        preferred_update_size = target->preferred_update_size();
     }
 
     if (!needed || !step)
@@ -64,7 +66,8 @@ Task::Ptr TargetSchedule::
             dag->g(),
             vertex,
             needed,
-            work_center);
+            work_center,
+            preferred_update_size);
 
     DEBUGINFO if (task)
         TaskInfo(boost::format("task->expected_output() = %s") % read1(task)->expected_output());
@@ -100,6 +103,7 @@ public:
             const Graph&,
             GraphVertex,
             Signal::Intervals,
+            Signal::IntervalType,
             Signal::IntervalType,
             Workers::Ptr,
             Signal::ComputingEngine::Ptr) const
