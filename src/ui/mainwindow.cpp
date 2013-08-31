@@ -19,6 +19,9 @@
 using namespace std;
 using namespace boost;
 
+//#define DEBUG_SETTINGS
+#define DEBUG_SETTINGS if(0)
+
 namespace Ui {
 
 SaweMainWindow::
@@ -496,7 +499,7 @@ void SaweMainWindow::
     QDataStream ds(&array, QIODevice::ReadOnly );
     ds >> state;
 
-    {
+    DEBUG_SETTINGS {
         TaskInfo("SaweMainWindow::readSettings - {%u actions and sliders}", state.size());
         QMapIterator<QString, QVariant> i(state);
         while (i.hasNext())
@@ -535,7 +538,7 @@ QByteArray SaweMainWindow::
 
     getGuiState( this, state);
 
-    {
+    DEBUG_SETTINGS {
         TaskInfo("SaweMainWindow::writeSettings - {%u actions and sliders}", state.size());
         QMapIterator<QString, QVariant> i(state);
         while (i.hasNext())
