@@ -641,7 +641,7 @@ Intervals Collection::
 
 
 Intervals Collection::
-        needed_samples()
+        needed_samples(IntervalType& smallest_length)
 {
     Intervals r;
 
@@ -654,7 +654,10 @@ Intervals Collection::
         unsigned framediff = _frame_counter - b.frame_number_last_used;
         if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
         {
-            r |= b.getInterval();
+            Interval i = b.getInterval();
+            r |= i;
+            if (i.count () < smallest_length)
+                smallest_length = i.count ();
         }
     }
 

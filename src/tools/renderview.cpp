@@ -1164,8 +1164,13 @@ void RenderView::
             Heightmap::Collection::WritePtr wc(c);
             //invalid_samples |= wc->invalid_samples();
             things_to_add |= wc->recently_created();
-            needed_samples |= wc->needed_samples();
+            needed_samples |= wc->needed_samples(update_size);
         }
+
+        if (needed_samples & x.interval.get ())
+            needed_samples &= x.interval.get ();
+        else
+            needed_samples = needed_samples.fetchInterval (1, center);
 
         // It should update the view in sections with the same size as it's invalidated.
         if (_last_update_size < update_size)
@@ -1187,6 +1192,15 @@ void RenderView::
                     things_to_add,
                     0
                 );
+
+        // It should update the view in sections equal in size to the smallest
+        // visible block if the view isn't currently being invalidated.
+        if (_last_update_size < Signal::Interval::IntervalType_MAX/ 5 * 4)
+        {
+            if (_last_update_size == _last_update_size * 5 / 4)
+                _last_update_size++;
+            _last_update_size = _last_update_size * 5 / 4;
+        }
 
         isWorking = model->target_marker ()->isWorking();
         workerCrashed = !model->target_marker ()->isWorking() && model->target_marker ()->hasWork();
