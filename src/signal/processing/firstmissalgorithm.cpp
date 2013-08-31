@@ -48,7 +48,7 @@ public:
         if (!I)
             return;
 
-        DEBUGINFO TaskTimer tt(format("discover_vertex %1% missing %2%") % od->toString ().toStdString () % I);
+        DEBUGINFO TaskTimer tt(format("Missing %2% in %1%") % od->toString ().toStdString () % I);
 
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;
