@@ -193,10 +193,11 @@ Tfr::TransformDesc::Ptr RenderModel::
         return f->transformDesc ();
 
 //Use Signal::Processing namespace
-    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(o.get ());
+    Signal::OperationDescWrapper* dw = dynamic_cast<Signal::OperationDescWrapper*>(o.get());
+    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(dw?dw->getWrappedOperationDesc ().get ():0);
     if (w)
     {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ()->DeprecatedOperation::source ().get ());
+        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
         if (f2)
             return f2->transform ()->transformDesc ()->copy ();
     }
@@ -213,10 +214,11 @@ void RenderModel::
         f->transformDesc (t);
 
 //Use Signal::Processing namespace
-    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(o.get ());
+    Signal::OperationDescWrapper* dw = dynamic_cast<Signal::OperationDescWrapper*>(o.get());
+    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(dw?dw->getWrappedOperationDesc ().get ():0);
     if (w)
     {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ()->DeprecatedOperation::source ().get ());
+        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
         if (f2)
             return f2->transform (t->createTransform ());
     }

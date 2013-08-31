@@ -26,6 +26,7 @@
 #include "signal/worker.h"
 #include "signal/reroutechannels.h"
 #include "signal/oldoperationwrapper.h"
+#include "signal/operationwrapper.h"
 #include "tools/support/operation-composite.h"
 
 // gpumisc
@@ -495,31 +496,47 @@ void RenderController::
 }
 
 
-class AdapterBlockFilterDesc : public Tools::Support::OperationSubOperations
+class RenderControllerOperationDesc : public Signal::OperationDescWrapper
 {
 public:
-    AdapterBlockFilterDesc(Signal::pOperation embed, RenderView* view)
+    class Opeation: public Signal::OperationWrapper {
+    public:
+        Opeation(Signal::Operation::Ptr wrapped, RenderView* view)
+            :
+              Signal::OperationWrapper(wrapped),
+              view_(view)
+        {}
+
+
+        Signal::pBuffer process(Signal::pBuffer b) {
+            b = Signal::OperationWrapper::process (b);
+
+            view_->userinput_update ();
+
+            return b;
+        }
+
+    private:
+        RenderView* view_;
+    };
+
+
+    RenderControllerOperationDesc(Signal::OperationDesc::Ptr embed, RenderView* view)
         :
-          Tools::Support::OperationSubOperations(Signal::pOperation(),"AdapterBlockFilterDesc"),
+          OperationDescWrapper(embed),
           view_(view)
     {
-        embed->source (source_sub_operation_);
-        DeprecatedOperation::source(embed);
     }
 
 
-    Signal::pBuffer read( const Signal::Interval& I ) {
-        Signal::pBuffer b = Tools::Support::OperationSubOperations::read (I);
-
-        // Something has been added to the rendermodel. Issue a repaint.
-        view_->userinput_update ();
-
-        return b;
+    Signal::OperationWrapper* createOperationWrapper(Signal::ComputingEngine*, Signal::Operation::Ptr wrapped) const
+    {
+        return new Opeation(wrapped, view_);
     }
 
 
-    Signal::Intervals affectedInterval( const Signal::Interval& I ) const {
-        Signal::Interval a = Tools::Support::OperationSubOperations::affectedInterval( I );
+    Signal::Intervals affectedInterval( const Signal::Intervals& I ) const {
+        const Signal::Intervals& a = Signal::OperationDescWrapper::affectedInterval( I );
 
         // This will result in a update rate that matches the invalidated intervals if possible.
         view_->setLastUpdateSize( a.count () );
@@ -536,9 +553,6 @@ void RenderController::
 {
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
-    Signal::pOperation adapter(
-                new AdapterBlockFilterDesc (Signal::pOperation (blockfilter), view));
-
     //model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
 /*
 //Use Signal::Processing namespace
@@ -549,7 +563,8 @@ void RenderController::
     bfs->validateSize();
     bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
 */
-    Signal::OperationDesc::Ptr od(new Signal::OldOperationDescWrapper(adapter));
+    Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
+    Signal::OperationDesc::Ptr od(new RenderControllerOperationDesc(adapter, view));
     model()->set_filter (od);
 
     stateChanged();

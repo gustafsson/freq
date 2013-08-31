@@ -51,6 +51,9 @@ public:
     virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;
 
+protected:
+    virtual OperationWrapper* createOperationWrapper(ComputingEngine* engine, Operation::Ptr wrapped) const;
+
 private:
     OperationDesc::Ptr wrap_;
     typedef std::map<ComputingEngine*, Operation::WeakPtr> OperationMap;

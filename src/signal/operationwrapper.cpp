@@ -122,10 +122,17 @@ Operation::Ptr OperationDescWrapper::
     if (wrap_)
         o = wrap_->createOperation (engine);
 
-    Operation::Ptr wo(new OperationWrapper(o));
+    Operation::Ptr wo(createOperationWrapper(engine, o));
     (*map_)[engine] = wo;
 
     return wo;
+}
+
+
+OperationWrapper* OperationDescWrapper::
+        createOperationWrapper(ComputingEngine*, Operation::Ptr wrapped) const
+{
+    return new OperationWrapper(wrapped);
 }
 
 
