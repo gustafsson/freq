@@ -59,6 +59,24 @@ namespace Tools
 {
 
 
+class RenderViewUpdater: public Support::RenderOperationDesc::RenderTarget
+{
+public:
+    RenderViewUpdater(RenderView* view): view_(view) {}
+
+    virtual void refreshSamples(const Signal::Intervals& I) {
+        view_->setLastUpdateSize( I.count () );
+    }
+
+    virtual void processedData() {
+        view_->userinput_update ();
+    }
+
+private:
+    RenderView* view_;
+};
+
+
 RenderController::
         RenderController( QPointer<RenderView> view )
             :
@@ -397,7 +415,8 @@ void RenderController::
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
-    Signal::OperationDesc::Ptr od(new Support::RenderOperationDesc(adapter, view));
+    Support::RenderOperationDesc::RenderTarget::Ptr rvu(new RenderViewUpdater(view));
+    Signal::OperationDesc::Ptr od(new Support::RenderOperationDesc(adapter, rvu));
     model()->set_filter (od);
 
     stateChanged();
