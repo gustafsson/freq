@@ -9,6 +9,8 @@
 
 #include "tfr/filter.h"
 
+#include "support/renderoperation.h"
+
 #include <GlTexture.h>
 
 namespace Tools
@@ -188,20 +190,11 @@ Tfr::TransformDesc::Ptr RenderModel::
 {
     Signal::OperationDesc::Ptr o = get_filter();
 
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
-    if (f)
-        return f->transformDesc ();
+    Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(o.get());
 
-//Use Signal::Processing namespace
-    Signal::OperationDescWrapper* dw = dynamic_cast<Signal::OperationDescWrapper*>(o.get());
-    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(dw?dw->getWrappedOperationDesc ().get ():0);
-    if (w)
-    {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
-        if (f2)
-            return f2->transform ()->transformDesc ()->copy ();
-    }
-    return Tfr::TransformDesc::Ptr();
+    return rod
+            ? rod->transform_desc ()
+            : Tfr::TransformDesc::Ptr();
 }
 
 
@@ -209,19 +202,11 @@ void RenderModel::
         set_transform_desc(Tfr::TransformDesc::Ptr t)
 {
     Signal::OperationDesc::Ptr o = get_filter();
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
-    if (f)
-        f->transformDesc (t);
 
-//Use Signal::Processing namespace
-    Signal::OperationDescWrapper* dw = dynamic_cast<Signal::OperationDescWrapper*>(o.get());
-    Signal::OldOperationDescWrapper* w = dynamic_cast<Signal::OldOperationDescWrapper*>(dw?dw->getWrappedOperationDesc ().get ():0);
-    if (w)
-    {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
-        if (f2)
-            return f2->transform (t->createTransform ());
-    }
+    Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(o.get());
+
+    if (rod)
+        rod->transform_desc (t);
 }
 
 
@@ -247,6 +232,8 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::Ptr o)
 {
+    EXCEPTION_ASSERT( dynamic_cast<Support::RenderOperationDesc*>(o.get()) );
+
     Signal::Processing::Step::Ptr s = read1(target_marker_)->step().lock();
     Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
     Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());

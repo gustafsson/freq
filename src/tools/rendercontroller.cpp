@@ -26,8 +26,8 @@
 #include "signal/worker.h"
 #include "signal/reroutechannels.h"
 #include "signal/oldoperationwrapper.h"
-#include "signal/operationwrapper.h"
 #include "tools/support/operation-composite.h"
+#include "tools/support/renderoperation.h"
 
 // gpumisc
 #include <demangle.h>
@@ -57,111 +57,6 @@ using namespace boost;
 
 namespace Tools
 {
-
-class BlockFilterSink2: public Signal::DeprecatedOperation
-{
-public:
-    BlockFilterSink2
-        (
-        )
-        :
-            Signal::DeprecatedOperation(Signal::pOperation())
-    {
-    }
-
-    virtual Signal::pBuffer read(const Signal::Interval& I) {
-        Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
-
-        return r;
-    }
-};
-
-class BlockFilterSink: public Signal::Sink
-{
-public:
-    BlockFilterSink
-        (
-            Signal::pOperation o,
-            RenderModel* model,
-            RenderView* view,
-            RenderController* controller
-        )
-        :
-            model_(model),
-            view_(view),
-            controller_(controller),
-            prevSignal( o->getInterval() )
-    {
-        EXCEPTION_ASSERT( o );
-        DeprecatedOperation::source(o);
-    }
-
-
-    virtual void source(Signal::pOperation v) { DeprecatedOperation::source()->source(v); }
-    virtual bool deleteMe() { return false; } // Never delete this sink
-
-    virtual Signal::pBuffer read(const Signal::Interval& I) {
-        Signal::pBuffer r = Signal::DeprecatedOperation::read( I );
-        return r;
-    }
-
-
-    virtual void invalidate_samples(const Signal::Intervals& I)
-    {
-        validateSize();
-
-        // If BlockFilter is a CwtFilter wavelet time support has already been included in I
-
-        foreach(const Heightmap::Collection::Ptr& c, model_->collections())
-            write1(c)->invalidate_samples( I );
-
-        DeprecatedOperation::invalidate_samples( I );
-
-        view_->update();
-    }
-
-
-    virtual Signal::Intervals invalid_samples()
-    {
-        Signal::Intervals I;
-        foreach ( const Heightmap::Collection::Ptr& c, model_->collections())
-        {
-            Signal::Intervals inv_coll = write1(c)->invalid_samples();
-            I |= inv_coll;
-        }
-
-        return I;
-    }
-
-
-    void validateSize()
-    {
-        unsigned N = num_channels();
-        EXCEPTION_ASSERT_EQUALS( N, model_->collections ().size() );
-
-        Signal::Interval currentInterval = getInterval();
-        if (prevSignal != currentInterval)
-        {
-            foreach (const Heightmap::Collection::Ptr& c, model_->collections())
-                write1(c)->discardOutside( currentInterval );
-
-            if (currentInterval.last < prevSignal.last)
-            {
-                if (view_->model->_qx > currentInterval.last/sample_rate())
-                    view_->model->_qx = currentInterval.last/sample_rate();
-            }
-        }
-        prevSignal = currentInterval;
-    }
-
-
-private:
-    RenderModel* model_;
-    RenderView* view_;
-    RenderController* controller_;
-
-    Signal::Interval prevSignal;
-};
 
 
 RenderController::
@@ -496,75 +391,13 @@ void RenderController::
 }
 
 
-class RenderControllerOperationDesc : public Signal::OperationDescWrapper
-{
-public:
-    class Opeation: public Signal::OperationWrapper {
-    public:
-        Opeation(Signal::Operation::Ptr wrapped, RenderView* view)
-            :
-              Signal::OperationWrapper(wrapped),
-              view_(view)
-        {}
-
-
-        Signal::pBuffer process(Signal::pBuffer b) {
-            b = Signal::OperationWrapper::process (b);
-
-            view_->userinput_update ();
-
-            return b;
-        }
-
-    private:
-        RenderView* view_;
-    };
-
-
-    RenderControllerOperationDesc(Signal::OperationDesc::Ptr embed, RenderView* view)
-        :
-          OperationDescWrapper(embed),
-          view_(view)
-    {
-    }
-
-
-    Signal::OperationWrapper* createOperationWrapper(Signal::ComputingEngine*, Signal::Operation::Ptr wrapped) const
-    {
-        return new Opeation(wrapped, view_);
-    }
-
-
-    Signal::Intervals affectedInterval( const Signal::Intervals& I ) const {
-        const Signal::Intervals& a = Signal::OperationDescWrapper::affectedInterval( I );
-
-        // This will result in a update rate that matches the invalidated intervals if possible.
-        view_->setLastUpdateSize( a.count () );
-
-        return a;
-    }
-
-private:
-    RenderView* view_;
-};
-
 void RenderController::
         setBlockFilter(Signal::DeprecatedOperation* blockfilter)
 {
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
-    //model()->renderSignalTarget->allow_cheat_resolution( dynamic_cast<Tfr::CwtFilter*>(blockfilter) );
-/*
-//Use Signal::Processing namespace
-    std::vector<Signal::pOperation> v;
-    v.push_back( channelop );
-    Signal::PostSink* ps = model()->renderSignalTarget->post_sink();
-    ps->sinks(v);
-    bfs->validateSize();
-    bfs->invalidate_samples( Signal::Intervals::Intervals_ALL );
-*/
     Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
-    Signal::OperationDesc::Ptr od(new RenderControllerOperationDesc(adapter, view));
+    Signal::OperationDesc::Ptr od(new Support::RenderOperationDesc(adapter, view));
     model()->set_filter (od);
 
     stateChanged();
@@ -611,21 +444,6 @@ void RenderController::
     //return ps;
 }
 
-/*
-//Use Signal::Processing namespace
-Tfr::Filter* RenderController::
-        currentFilter()
-{
-    Signal::pTarget t = model()->renderSignalTarget;
-    Signal::PostSink* ps = t->post_sink();
-    if (ps->sinks().empty())
-        return 0;
-    BlockFilterSink* bfs = dynamic_cast<BlockFilterSink*>(ps->sinks()[0].get());
-    EXCEPTION_ASSERT( bfs != 0 );
-    Tfr::Filter* filter = dynamic_cast<Tfr::Filter*>(bfs->DeprecatedOperation::source().get());
-    return filter;
-}
-*/
 
 Tfr::TransformDesc::Ptr RenderController::
         currentTransform()
