@@ -2,7 +2,6 @@
 #define HEIGHTMAP_CHUNKBLOCKFILTER_H
 
 #include "tfr/filter.h"
-#include "signal/dag/node.h"
 #include "heightmap/tfrmapping.h"
 
 namespace Heightmap {

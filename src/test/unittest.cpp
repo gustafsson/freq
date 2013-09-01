@@ -8,9 +8,6 @@
 #include "adapters/microphonerecorder.h"
 #include "signal/buffer.h"
 #include "signal/cache.h"
-#include "signal/dag/dagcommand.h"
-#include "signal/dag/node.h"
-#include "signal/dag/scheduler.h"
 #include "signal/processing/bedroom.h"
 #include "signal/processing/chain.h"
 #include "signal/processing/dag.h"
@@ -84,9 +81,6 @@ int UnitTest::
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
         RUNTEST(Signal::Cache);
-        RUNTEST(Signal::Dag::Node);
-        RUNTEST(Signal::Dag::ICommand);
-        RUNTEST(Signal::Dag::Scheduler);
         RUNTEST(Signal::Processing::Bedroom);
         RUNTEST(Signal::Processing::Chain);
         RUNTEST(Signal::Processing::Dag);
