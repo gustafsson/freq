@@ -9,7 +9,9 @@
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 #include "support/transformdescs.h"
+#include "signal/processing/chain.h"
 #include "signal/processing/targetmarker.h"
+#include "support/renderoperation.h"
 
 // gpumisc
 #include <TAni.h>
@@ -42,6 +44,7 @@ namespace Tools
         RenderModel(Sawe::Project* p);
         ~RenderModel();
 
+        void init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt);
         void resetSettings();
 
         Heightmap::TfrMap::Collections collections();
@@ -65,6 +68,8 @@ namespace Tools
         void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
         void recompute_extent();
+
+        Signal::OperationDesc::Ptr renderOperationDesc();
 
         Signal::Processing::TargetMarker::Ptr target_marker();
         void set_filter(Signal::OperationDesc::Ptr o);
@@ -91,7 +96,9 @@ namespace Tools
         Sawe::Project* _project; // project should probably be a member of RenderController instead
         Support::TransformDescs::Ptr transform_descs_;
         Heightmap::TfrMap::Ptr tfr_map_;
+        Signal::OperationDesc::Ptr render_operation_desc_;
         Signal::Processing::TargetMarker::Ptr target_marker_;
+        Signal::Processing::Chain::Ptr chain_;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called

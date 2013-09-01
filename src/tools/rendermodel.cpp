@@ -31,22 +31,12 @@ RenderModel::
         _project(p),
         transform_descs_(new Support::TransformDescs)
 {
-    Signal::OperationDescWrapper::Ptr w(new Signal::OperationDescWrapper());
-    target_marker_ = write1(p->processing_chain ())->addTarget(w);
-
-    resetSettings();
-
-    // initialize tfr_map_
-    //Signal::PostSink* o = renderSignalTarget->post_sink();
-    //EXCEPTION_ASSERT_LESS( 0, o->num_channels () );
-
     Heightmap::BlockSize bs(1<<8,1<<8);
     tfr_map_.reset (new Heightmap::TfrMap(Heightmap::TfrMapping(bs,1), 0));
 
-    recompute_extent ();
-
     renderer.reset( new Heightmap::Renderer() );
 
+    resetSettings();
 //    setTestCamera();
 }
 
@@ -57,7 +47,18 @@ RenderModel::
     TaskInfo ti(__FUNCTION__);
     renderer.reset();
     tfr_map_.reset ();
-    //renderSignalTarget.reset();
+}
+
+
+void RenderModel::
+        init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt)
+{
+    // specify wrapped filter with set_filter
+    render_operation_desc_.reset(new Support::RenderOperationDesc(Signal::OperationDesc::Ptr(), rt));
+    target_marker_ = write1(chain)->addTarget(render_operation_desc_);
+    chain_ = chain;
+
+    recompute_extent ();
 }
 
 
@@ -188,7 +189,7 @@ Tfr::Filter* RenderModel::
 Tfr::TransformDesc::Ptr RenderModel::
         transform_desc()
 {
-    Signal::OperationDesc::Ptr o = get_filter();
+    Signal::OperationDesc::Ptr o = render_operation_desc_;
 
     Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(o.get());
 
@@ -201,7 +202,7 @@ Tfr::TransformDesc::Ptr RenderModel::
 void RenderModel::
         set_transform_desc(Tfr::TransformDesc::Ptr t)
 {
-    Signal::OperationDesc::Ptr o = get_filter();
+    Signal::OperationDesc::Ptr o = render_operation_desc_;
 
     Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(o.get());
 
@@ -213,7 +214,7 @@ void RenderModel::
 void RenderModel::
         recompute_extent()
 {
-    Signal::OperationDesc::Extent extent = read1(project ()->processing_chain ())->extent(target_marker_);
+    Signal::OperationDesc::Extent extent = read1(chain_)->extent(target_marker_);
 
     Heightmap::TfrMap::WritePtr w(tfr_map_);
     w->targetSampleRate( extent.sample_rate.get_value_or (1) );
@@ -232,11 +233,7 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::Ptr o)
 {
-    EXCEPTION_ASSERT( dynamic_cast<Support::RenderOperationDesc*>(o.get()) );
-
-    Signal::Processing::Step::Ptr s = read1(target_marker_)->step().lock();
-    Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
-    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
+    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(render_operation_desc_.get());
     w->setWrappedOperationDesc (o);
 }
 
@@ -244,11 +241,8 @@ void RenderModel::
 Signal::OperationDesc::Ptr RenderModel::
         get_filter()
 {
-    Signal::Processing::Step::Ptr s = read1(target_marker_)->step().lock();
-    Signal::OperationDesc::Ptr od = read1(s)->operation_desc();
-    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(od.get());
-    Signal::OperationDesc::Ptr o = w->getWrappedOperationDesc ();
-    return o;
+    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(render_operation_desc_.get());
+    return w->getWrappedOperationDesc ();
 }
 
 

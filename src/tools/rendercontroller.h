@@ -27,7 +27,7 @@ namespace Tools
         RenderController( QPointer<RenderView> view );
         ~RenderController();
 
-        RenderModel *model();
+        RenderModel* model();
 
     public slots:
         // GUI bindings are set up in RenderController constructor

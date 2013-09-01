@@ -98,9 +98,11 @@ RenderController::
             color(0),
             transform(0)
 {
-    setupGui();
+    Support::RenderOperationDesc::RenderTarget::Ptr rvu(new RenderViewUpdater(view));
+    model()->init(model()->project ()->processing_chain (), rvu);
 
-    // Default values for rendermodel are set in rendermodel constructor
+
+    setupGui();
 
     {
         // Default values for rendercontroller
@@ -422,9 +424,7 @@ void RenderController::
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
-    Support::RenderOperationDesc::RenderTarget::Ptr rvu(new RenderViewUpdater(view));
-    Signal::OperationDesc::Ptr od(new Support::RenderOperationDesc(adapter, rvu));
-    model()->set_filter (od);
+    model()->set_filter (adapter);
 
     stateChanged();
 
