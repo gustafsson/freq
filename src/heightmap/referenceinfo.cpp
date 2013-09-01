@@ -211,13 +211,17 @@ Signal::Interval ReferenceInfo::
     spannedBlockSamples.first = min((double)samples_per_block, max(0.0, ceil(localStartTime) - first));  // Interval::first is inclusive
     spannedBlockSamples.last = min((double)samples_per_block, max(0.0, ceil(localEndTime) - first)); // Interval::last is exclusive
 
+    // TODO make this work
+    spannedBlockSamples.first = 0;
+    spannedBlockSamples.last = samples_per_block;
+
     long double
         a = floor(localStartTime*p),
         b = ceil(localEndTime*p);
 
     Signal::Interval r(
-            max(0.L, a),
-            max(0.L, b));
+            max(0.L, min((long double)Signal::Interval::IntervalType_MAX, a)),
+            max(0.L, min((long double)Signal::Interval::IntervalType_MAX, b)));
 
     return r&I;
 }
