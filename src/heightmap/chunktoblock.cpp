@@ -61,14 +61,14 @@ void ChunkToBlock::mergeColumnMajorChunk(
 
 void ChunkToBlock::mergeRowMajorChunk(
         const Block& block,
-        Tfr::pChunk chunk,
+        const Tfr::Chunk& chunk,
         BlockData& outData )
 {
-    TfrMapping tfr_mapping( BlockSize(1<<8,1<<8),2);
+    TfrMapping tfr_mapping = block.tfr_mapping ();
 
     // Find out what intervals that match
     Signal::Interval outInterval = block.getInterval();
-    Signal::Interval inInterval = chunk->getCoveredInterval();
+    Signal::Interval inInterval = chunk.getCoveredInterval();
 
     // don't validate more texels than we have actual support for
     //Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval);
@@ -80,15 +80,11 @@ void ChunkToBlock::mergeRowMajorChunk(
         return;
 
     Region r = block.getRegion();
-//    float chunk_startTime = (chunk.chunk_offset.asFloat() + chunk.first_valid_sample)/chunk.sample_rate;
-//    float chunk_length = chunk.n_valid_samples / chunk.sample_rate;
-//    DEBUG_CWTTOBLOCK TaskTimer tt2("CwtToBlock::mergeChunk chunk t=[%g, %g) into block t=[%g,%g] ff=[%g,%g]",
-//                                 chunk_startTime, chunk_startTime + chunk_length, r.a.time, r.b.time, r.a.scale, r.b.scale);
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = tfr_mapping.display_scale.getFrequencyScalar( chunk->minHz() );
-    float chunk_last_scale = tfr_mapping.display_scale.getFrequencyScalar( chunk->maxHz() );
+    float chunk_first_scale = tfr_mapping.display_scale.getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = tfr_mapping.display_scale.getFrequencyScalar( chunk.maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -99,11 +95,10 @@ void ChunkToBlock::mergeRowMajorChunk(
     Position chunk_a, chunk_b;
     chunk_a.scale = chunk_first_scale;
     chunk_b.scale = chunk_last_scale;
-    chunk_a.time = inInterval.first/chunk->original_sample_rate;
-    chunk_b.time = inInterval.last/chunk->original_sample_rate;
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
     Position s, sblock, schunk;
-    EXCEPTION_ASSERT( chunk->first_valid_sample+chunk->n_valid_samples <= chunk->transform_data->size().width );
 
     enable_subtexel_aggregation &= full_resolution;
 
@@ -113,9 +108,9 @@ void ChunkToBlock::mergeRowMajorChunk(
 #endif
 
     // Invoke kernel execution to merge chunk into block
-    ::blockResampleChunk( chunk->transform_data,
+    ::blockResampleChunk( chunk.transform_data,
                      outData.cpu_copy,
-                     ValidInterval( chunk->first_valid_sample, chunk->first_valid_sample+chunk->n_valid_samples ),
+                     ValidInterval( chunk.first_valid_sample, chunk.first_valid_sample+chunk.n_valid_samples ),
                      //make_uint2( 0, chunk.transform_data->getNumberOfElements().width ),
                      ResampleArea( chunk_a.time, chunk_a.scale,
                                   //chunk_b.time, chunk_b.scale+(chunk_b.scale==1?0.01:0) ), // numerical error workaround, only affects visual
@@ -123,7 +118,7 @@ void ChunkToBlock::mergeRowMajorChunk(
                      ResampleArea( r.a.time, r.a.scale,
                                   r.b.time, r.b.scale ),
                      complex_info,
-                     chunk->freqAxis,
+                     chunk.freqAxis,
                      tfr_mapping.display_scale,
                      tfr_mapping.amplitude_axis,
                      normalization_factor,
@@ -191,7 +186,7 @@ void ChunkToBlock::
 
     ctb.mergeRowMajorChunk(
             *block,
-            chunk,
+            *chunk,
             blockdata );
 }
 

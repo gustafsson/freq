@@ -836,7 +836,11 @@ void Cwt::
 void Cwt::
         scales_per_octave_internal( float value )
 {
-    if (value==_scales_per_octave) return;
+    if (value==_scales_per_octave)
+        return;
+
+    EXCEPTION_ASSERT(!isinf(value));
+    EXCEPTION_ASSERT(!isnan(value));
 
     _scales_per_octave=value;
 
@@ -908,7 +912,7 @@ float Cwt::
 unsigned Cwt::
         wavelet_time_support_samples( float fs ) const
 {
-    return wavelet_time_support_samples( fs, get_min_hz(fs) );
+    return std::max(1u, wavelet_time_support_samples( fs, get_min_hz(fs) ));
 }
 
 

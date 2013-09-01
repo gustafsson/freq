@@ -25,7 +25,7 @@ public:
 
     void mergeRowMajorChunk(
             const Block& block,
-            Tfr::pChunk,
+            const Tfr::Chunk&,
             BlockData& outData );
 
     static void test();

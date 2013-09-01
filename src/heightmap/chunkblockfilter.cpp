@@ -44,7 +44,7 @@ bool ChunkBlockFilterKernel::
         BlockData::WritePtr blockdata(block->block_data());
 
         if (pchunk.chunk->order == Tfr::Chunk::Order_row_major)
-            chunk_to_block.mergeRowMajorChunk ( *block, pchunk.chunk, *blockdata );
+            chunk_to_block.mergeRowMajorChunk ( *block, *pchunk.chunk, *blockdata );
         else
             chunk_to_block.mergeColumnMajorChunk ( *block, *pchunk.chunk, *blockdata );
 
