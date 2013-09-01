@@ -7,6 +7,8 @@ namespace Signal {
 
 OperationWrapper::
         OperationWrapper(Operation::Ptr wrap)
+    :
+      private_(new private_data)
 {
     setWrappedOperation(wrap);
 }
@@ -15,24 +17,25 @@ OperationWrapper::
 void OperationWrapper::
         setWrappedOperation(Operation::Ptr wrap)
 {
-    wrap_ = wrap;
+    write1(private_)->wrap = wrap;
 }
 
 
 Signal::pBuffer OperationWrapper::
         process(Signal::pBuffer b)
 {
-    if (!wrap_)
+    Operation::Ptr wrap = read1(private_)->wrap;
+    if (!wrap)
         return b;
 
-    return wrap_->process (b);
+    return wrap->process (b);
 }
 
 
 OperationDescWrapper::
         OperationDescWrapper(OperationDesc::Ptr wrap)
     :
-      map_(new OperationMap())
+      private_(new private_data)
 {
     setWrappedOperationDesc(wrap);
 }
@@ -41,7 +44,8 @@ OperationDescWrapper::
 void OperationDescWrapper::
         setWrappedOperationDesc(OperationDesc::Ptr wrap)
 {
-    BOOST_FOREACH(OperationMap::value_type& v, *map_)
+    private_data::WritePtr pd(private_);
+    BOOST_FOREACH(private_data::OperationMap::value_type& v, pd->map)
     {
         Operation::Ptr o = v.second.lock();
         if (o) {
@@ -50,7 +54,7 @@ void OperationDescWrapper::
 
             Operation::Ptr o;
             if (wrap)
-                o = wrap->createOperation (v.first);
+                o = read1(wrap)->createOperation (v.first);
 
             w->setWrappedOperation (o);
         }
@@ -61,7 +65,7 @@ void OperationDescWrapper::
 
 
 OperationDesc::Ptr OperationDescWrapper::
-        getWrappedOperationDesc()
+        getWrappedOperationDesc() const
 {
     return wrap_;
 }
@@ -71,7 +75,7 @@ Signal::Interval OperationDescWrapper::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
     if (wrap_)
-        return wrap_->requiredInterval (I, expectedOutput);
+        return read1(wrap_)->requiredInterval (I, expectedOutput);
 
     if (expectedOutput)
         *expectedOutput = I;
@@ -83,7 +87,7 @@ Signal::Interval OperationDescWrapper::
         requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const
 {
     if (wrap_)
-        return wrap_->requiredInterval (I, expectedOutput);
+        return read1(wrap_)->requiredInterval (I, expectedOutput);
 
     return OperationDesc::requiredInterval (I, expectedOutput);
 }
@@ -93,7 +97,7 @@ Interval OperationDescWrapper::
         affectedInterval( const Interval& I ) const
 {
     if (wrap_)
-        return wrap_->affectedInterval (I);
+        return read1(wrap_)->affectedInterval (I);
     return I;
 }
 
@@ -102,7 +106,7 @@ Intervals OperationDescWrapper::
         affectedInterval( const Intervals& I ) const
 {
     if (wrap_)
-        return wrap_->affectedInterval (I);
+        return read1(wrap_)->affectedInterval (I);
     return I;
 }
 
@@ -120,10 +124,10 @@ Operation::Ptr OperationDescWrapper::
 {
     Operation::Ptr o;
     if (wrap_)
-        o = wrap_->createOperation (engine);
+        o = read1(wrap_)->createOperation (engine);
 
     Operation::Ptr wo(createOperationWrapper(engine, o));
-    (*map_)[engine] = wo;
+    write1(private_)->map[engine] = wo;
 
     return wo;
 }
@@ -140,7 +144,7 @@ OperationDesc::Extent OperationDescWrapper::
         extent() const
 {
     if (wrap_)
-        return wrap_->extent ();
+        return read1(wrap_)->extent ();
 
     return Extent();
 }
@@ -150,6 +154,7 @@ Operation::Ptr OperationDescWrapper::
         recreateOperation(Operation::Ptr, ComputingEngine*) const
 {
     EXCEPTION_ASSERTX(false, "Not implemented");
+    return Operation::Ptr();
 }
 
 
@@ -157,7 +162,7 @@ QString OperationDescWrapper::
         toString() const
 {
     if (wrap_)
-        return wrap_->toString ();
+        return read1(wrap_)->toString ();
 
     return vartype(*this).c_str ();
 }
@@ -167,6 +172,7 @@ int OperationDescWrapper::
         getNumberOfSources() const
 {
     EXCEPTION_ASSERTX(false, "Not implemented");
+    return 0;
 }
 
 
@@ -184,7 +190,7 @@ bool OperationDescWrapper::
         return true;
 
     if (wrap_ && w->wrap_)
-        return *wrap_ == *w->wrap_;
+        return *read1(wrap_) == *read1(w->wrap_);
 
     return false;
 }

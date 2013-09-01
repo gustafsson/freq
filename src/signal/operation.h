@@ -13,6 +13,7 @@
 // For debug info while serializing
 #include <demangle.h>
 #include <TaskTimer.h>
+#include <volatileptr.h>
 
 // std
 #include <set>
@@ -63,14 +64,11 @@ public:
 /**
  * @brief The OperationDesc class should describe the interface for creating instances of the Operation interface.
  *
- * TODO should use VolatilePtr as the operation description might be accessed from different threads.
+ * All methods have const access to make it more likely that there are none or few side-effects.
  */
-class SaweDll OperationDesc
+class SaweDll OperationDesc: public VolatilePtr<OperationDesc>
 {
 public:
-    typedef boost::shared_ptr<OperationDesc> Ptr;
-
-
     /**
       Virtual housekeeping.
       */

@@ -47,7 +47,7 @@ public:
     Signal::Intervals           affectedInterval( const Signal::Intervals& I ) const;
 
 
-    Tfr::TransformDesc::Ptr     transform_desc();
+    Tfr::TransformDesc::Ptr     transform_desc() const;
     void                        transform_desc(Tfr::TransformDesc::Ptr);
 
 private:

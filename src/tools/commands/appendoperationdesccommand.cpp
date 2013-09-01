@@ -38,7 +38,7 @@ void AppendOperationDescCommand::
 std::string AppendOperationDescCommand::
         toString()
 {
-    return operation_->toString ().toStdString ();
+    return read1(operation_)->toString ().toStdString ();
 }
 
 

@@ -42,10 +42,10 @@ Signal::Intervals Step::
         cache_.reset ();
 
     if (operation_desc_ && deprecated)
-        deprecated = operation_desc_->affectedInterval(deprecated);
+        deprecated = read1(operation_desc_)->affectedInterval(deprecated);
 
     DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
-              % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
+              % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
               % deprecated);
 
     not_started_ |= deprecated;
@@ -81,7 +81,7 @@ Signal::Operation::Ptr Step::
         return oi->second;
     }
 
-    Signal::Operation::Ptr o = operation_desc_->createOperation (ce.get ());
+    Signal::Operation::Ptr o = read1(operation_desc_)->createOperation (ce.get ());
     operations_[wp] = o;
 
     return o;
@@ -99,7 +99,7 @@ void Step::
         registerTask(Task* taskid, Signal::Interval expected_output)
 {
     TASKINFO TaskInfo ti(format("Step %1%. Starting %2%")
-              % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
+              % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
               % expected_output);
     running_tasks[taskid] = expected_output;
     not_started_ -= expected_output;
@@ -114,7 +114,7 @@ void Step::
         result_interval = result->getInterval ();
 
     TASKINFO TaskInfo ti(format("Step %1%. Finish %2%")
-              % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
+              % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
               % result_interval);
 
     if (result) {

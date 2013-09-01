@@ -189,9 +189,8 @@ Tfr::Filter* RenderModel::
 Tfr::TransformDesc::Ptr RenderModel::
         transform_desc()
 {
-    Signal::OperationDesc::Ptr o = render_operation_desc_;
-
-    Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(o.get());
+    Signal::OperationDesc::ReadPtr o (render_operation_desc_);
+    const Support::RenderOperationDesc* rod = dynamic_cast<const Support::RenderOperationDesc*>(&*o);
 
     return rod
             ? rod->transform_desc ()
@@ -202,9 +201,8 @@ Tfr::TransformDesc::Ptr RenderModel::
 void RenderModel::
         set_transform_desc(Tfr::TransformDesc::Ptr t)
 {
-    Signal::OperationDesc::Ptr o = render_operation_desc_;
-
-    Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(o.get());
+    Signal::OperationDesc::WritePtr o (render_operation_desc_);
+    Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(&*o);
 
     if (rod)
         rod->transform_desc (t);
@@ -233,7 +231,9 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::Ptr o)
 {
-    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(render_operation_desc_.get());
+    Signal::OperationDesc::WritePtr ow (render_operation_desc_);
+    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(&*ow);
+
     w->setWrappedOperationDesc (o);
 }
 
@@ -241,7 +241,8 @@ void RenderModel::
 Signal::OperationDesc::Ptr RenderModel::
         get_filter()
 {
-    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(render_operation_desc_.get());
+    Signal::OperationDesc::ReadPtr ow (render_operation_desc_);
+    const Signal::OperationDescWrapper* w = dynamic_cast<const Signal::OperationDescWrapper*>(&*ow);
     return w->getWrappedOperationDesc ();
 }
 

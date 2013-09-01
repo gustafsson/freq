@@ -37,15 +37,15 @@ Intervals RenderOperationDesc::
 
 
 Tfr::TransformDesc::Ptr RenderOperationDesc::
-        transform_desc()
+        transform_desc() const
 {
     // TODO use Processing
-    OperationDesc::Ptr o = getWrappedOperationDesc();
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
+    OperationDesc::WritePtr o(getWrappedOperationDesc());
+    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
     if (f)
         return f->transformDesc ();
 
-    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(o.get ());
+    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(&*o);
     if (w)
     {
         Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
@@ -60,12 +60,12 @@ void RenderOperationDesc::
         transform_desc(Tfr::TransformDesc::Ptr t)
 {
     // TODO use Processing
-    OperationDesc::Ptr o = getWrappedOperationDesc();
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(o.get ());
+    OperationDesc::WritePtr o(getWrappedOperationDesc());
+    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
     if (f)
         return f->transformDesc (t);
 
-    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(o.get ());
+    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(&*o);
     if (w)
     {
         Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());

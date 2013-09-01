@@ -110,7 +110,7 @@ void CreateChunkBlockFilter::
 
     Signal::OperationDesc::Ptr opdesc = createOperationDesc (tfrmap);
 
-    Signal::Operation::Ptr op = opdesc->createOperation ();
+    Signal::Operation::Ptr op = read1(opdesc)->createOperation ();
 }
 
 

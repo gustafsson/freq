@@ -42,7 +42,7 @@ public:
 
         Step::WritePtr step( g[u] ); // lock while studying what's needed
         Signal::Intervals I = needed[u] & step->not_started ();
-        Signal::OperationDesc::Ptr od = step->operation_desc();
+        Signal::OperationDesc::ReadPtr od (step->operation_desc());
 
         // Compute what we need from sources
         if (!I)

@@ -43,8 +43,10 @@ Signal::Interval Task::
 void Task::
         run(Signal::ComputingEngine::Ptr ce)
 {
+    Signal::OperationDesc::Ptr od;
+    TIME_TASK od = read1(step_)->operation_desc ();
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
-                           % read1(step_)->operation_desc ()->toString ().toStdString ());
+                           % read1(od)->toString ().toStdString ());
 
     Signal::Operation::Ptr o = write1(step_)->operation (ce);
 
@@ -73,7 +75,8 @@ Signal::pBuffer Task::
         get_input() const
 {
     Signal::Intervals needed = expected_output_;
-    Signal::OperationDesc::Ptr operation_desc = read1(step_)->operation_desc ();
+    Signal::OperationDesc::Ptr operation_desc_ptr = read1(step_)->operation_desc ();
+    Signal::OperationDesc::ReadPtr operation_desc(operation_desc_ptr);
 
 
     Signal::Intervals required_input;

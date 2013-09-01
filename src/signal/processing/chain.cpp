@@ -138,8 +138,8 @@ public:
 
     void discover_vertex(GraphVertex u, const Graph & g)
     {
-        Step::WritePtr step( g[u] ); // lock while studying what's needed
-        Signal::OperationDesc::Ptr od = step->operation_desc();
+        Step::Ptr step( g[u] ); // lock while studying what's needed
+        Signal::OperationDesc::ReadPtr od(read1(step)->operation_desc());
         Signal::OperationDesc::Extent x = od->extent ();
 
         // TODO This doesn't really work with merged paths

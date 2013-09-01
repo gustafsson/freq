@@ -20,7 +20,11 @@ public:
     virtual Signal::pBuffer process(Signal::pBuffer b);
 
 private:
-    Operation::Ptr wrap_;
+    class private_data: public VolatilePtr<private_data> {
+    public:
+        Operation::Ptr wrap;
+    };
+    private_data::Ptr private_;
 };
 
 
@@ -37,7 +41,7 @@ public:
     OperationDescWrapper(OperationDesc::Ptr wrap=OperationDesc::Ptr());
 
     void setWrappedOperationDesc(OperationDesc::Ptr wrap);
-    OperationDesc::Ptr getWrappedOperationDesc();
+    OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
@@ -56,8 +60,14 @@ protected:
 
 private:
     OperationDesc::Ptr wrap_;
-    typedef std::map<ComputingEngine*, Operation::WeakPtr> OperationMap;
-    boost::shared_ptr<OperationMap> map_;
+
+    // Cause side effects from const OperationDesc interface
+    class private_data: public VolatilePtr<private_data> {
+    public:
+        typedef std::map<ComputingEngine*, Operation::WeakPtr> OperationMap;
+        OperationMap map;
+    };
+    private_data::Ptr private_;
 
 public:
     static void test();
