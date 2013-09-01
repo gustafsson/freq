@@ -208,7 +208,7 @@ namespace Tools
         Timer _last_frame;
         float _target_fps;
 
-        Signal::IntervalType _last_update_size;
+        Signal::UnsignedIntervalType _last_update_size;
 
         double modelview_matrix[16], projection_matrix[16];
         int viewport_matrix[4];

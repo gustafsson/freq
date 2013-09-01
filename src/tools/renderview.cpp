@@ -301,7 +301,6 @@ float RenderView::
     {
         Signal::IntervalType s = pos.time * ri.sample_rate();
         Signal::Intervals I = Signal::Intervals(s, s+1);
-        I -= read1(block->block_data())->valid_samples;
         I &= ri.getInterval ();
         if (I.empty())
         {
@@ -1154,7 +1153,7 @@ void RenderView::
         Signal::Intervals things_to_add;
         Signal::Intervals needed_samples;
         Signal::IntervalType center = model->_qx * x.sample_rate.get ();
-        Signal::IntervalType update_size = Signal::Interval::IntervalType_MAX;
+        Signal::UnsignedIntervalType update_size = Signal::Interval::IntervalType_MAX;
 
         BOOST_FOREACH(Heightmap::Collection::Ptr c, model->collections ()) {
             Heightmap::Collection::WritePtr wc(c);

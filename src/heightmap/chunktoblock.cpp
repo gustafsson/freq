@@ -59,8 +59,6 @@ void ChunkToBlock::mergeColumnMajorChunk(
                   normalization_factor,
                   true);
 
-    outData.valid_samples |= transfer;
-    outData.non_zero |= transfer;
 }
 
 
@@ -77,16 +75,6 @@ void ChunkToBlock::mergeRowMajorChunk(
     //Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval);
     Signal::Interval usableInInterval = inInterval;
     Signal::Interval transfer = usableInInterval & outInterval;
-
-    // Remove already computed intervals
-    if (!full_resolution)
-    {
-        if (!(transfer - outData.valid_samples))
-        {
-            transfer.last=transfer.first;
-        }
-    }
-    // transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
     if (!transfer)
@@ -143,15 +131,6 @@ void ChunkToBlock::mergeRowMajorChunk(
                      enable_subtexel_aggregation
                      );
 
-    if( full_resolution )
-    {
-        outData.valid_samples |= transfer;
-    }
-    else
-    {
-        outData.valid_samples -= transfer;
-    }
-    outData.non_zero |= transfer;
 }
 
 } // namespace Heightmap

@@ -53,7 +53,6 @@ Collection::
         Collection( TfrMapping tfr_mapping )
 :   tfr_mapping_( tfr_mapping ),
     _is_visible( true ),
-    _unfinished_count(0),
     _created_count(0),
     _frame_counter(0),
     _prev_length(.0f),
@@ -121,17 +120,13 @@ bool Collection::
 }
 
 
-unsigned Collection::
+void Collection::
         next_frame()
 {
-    boost::shared_ptr<TaskTimer> tt;
-    if (_unfinished_count)
-        VERBOSE_EACH_FRAME_COLLECTION tt.reset( new TaskTimer("%s(), %u, %u, %u",
-            __FUNCTION__, _unfinished_count, _created_count, (unsigned)_recent.size()) );
+    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u, %u")
+            % __FUNCTION__ % _created_count % _recent.size());
 
 
-    unsigned t = _unfinished_count;
-    _unfinished_count = 0;
     _created_count = 0;
 
     ReferenceRegion rr(this->tfr_mapping ().block_size);
@@ -214,8 +209,6 @@ unsigned Collection::
     _free_memory = availableMemoryForSingleAllocation();
 
     _frame_counter++;
-
-    return t;
 }
 
 
@@ -235,19 +228,6 @@ void Collection::
     b->frame_number_last_used = _frame_counter;
     _recent.remove( b );
     _recent.push_front( b );
-}
-
-
-Signal::Intervals inline Collection::
-        getInvalid(const Reference& r) const
-{
-    cache_t::const_iterator itr = _cache.find( r );
-    if (itr != _cache.end())
-    {
-        return itr->second->getInterval() - read1(itr->second->block_data())->valid_samples;
-    }
-
-    return Signal::Intervals();
 }
 
 
@@ -292,10 +272,6 @@ pBlock Collection::
             *block->glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
             block->new_data_available = false;
         }
-
-        Intervals blockInt = block->getInterval();
-        if (blockInt -= bd->valid_samples)
-            _unfinished_count++;
 
         poke(block);
     }
@@ -448,32 +424,30 @@ void Collection::
         pBlock block(itr->second);
         Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping_).getInterval();
         Signal::Interval toKeep = I & blockInterval;
-        if ( !toKeep )
+        bool remove_entire_block = toKeep == Signal::Interval();
+        bool keep_entire_block = toKeep == blockInterval;
+        if ( remove_entire_block )
+        {
             removeBlock(block);
-        else if ( blockInterval == toKeep )
+        }
+        else if ( keep_entire_block )
         {
         }
         else
         {
+            // clear partial block
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
-                bool hasValidOutside = read1(block->block_data())->non_zero & ~Signal::Intervals(I);
-                if (hasValidOutside)
-                {
-                    Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
-                    float t = I.last / tfr_mapping_.targetSampleRate - ir.a.time;
+                Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
+                float t = I.last / tfr_mapping_.targetSampleRate - ir.a.time;
 
-                    BlockData::WritePtr bd(block->block_data());
+                BlockData::WritePtr bd(block->block_data());
 
-                    ReferenceInfo ri(itr->first, tfr_mapping_);
-                    ::blockClearPart( bd->cpu_copy,
-                                  ceil(t * ri.sample_rate()) );
+                ReferenceInfo ri(itr->first, tfr_mapping_);
+                ::blockClearPart( bd->cpu_copy,
+                              ceil(t * ri.sample_rate()) );
 
-                    bd->valid_samples &= I;
-                    bd->non_zero &= I;
-
-                    block->new_data_available = true;
-                }
+                block->new_data_available = true;
             }
         }
     }
@@ -539,109 +513,8 @@ void Collection::
 }
 
 
-void Collection::
-        invalidate_samples( const Intervals& sid )
-{
-    return;
-
-    EXCEPTION_ASSERT(false);
-
-    INFO_COLLECTION TaskTimer tt("Invalidating Heightmap::Collection, %s",
-                                 sid.toString().c_str());
-
-    BOOST_FOREACH ( const cache_t::value_type& c, _cache )
-        write1(c.second->block_data())->valid_samples -= sid;
-}
-
-
 Intervals Collection::
-        invalid_samples()
-{
-    return Intervals();
-
-    EXCEPTION_ASSERT(false);
-
-    Intervals r;
-
-    if (!_is_visible)
-        return r;
-
-    unsigned counter = 0;
-    {
-    //TIME_COLLECTION TaskTimer tt("Collection::invalid_samples, %u, %p", _recent.size(), this);
-
-    BOOST_FOREACH ( const recent_t::value_type& a, _recent )
-    {
-        Block& b = *a;
-        unsigned framediff = _frame_counter - b.frame_number_last_used;
-        if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
-        {
-            counter++;
-            Intervals i = b.getInterval();
-
-            i -= read1(b.block_data())->valid_samples;
-
-            r |= i;
-
-            VERBOSE_EACH_FRAME_COLLECTION
-            {
-                bool to_delete = b.to_delete;
-
-                if (i)
-                    TaskInfo(format("block %s is invalid on %s%s") % b.reference() % i % (to_delete?" to delete":""));
-                else
-                    TaskInfo(format("block %s is valid%s") % b.reference() % (to_delete?" to delete":""));
-            }
-        } else
-            break;
-    }
-    }
-
-    TIME_COLLECTION TaskInfo("%u recently used blocks. Total invalid samples %s", counter, r.toString().c_str());
-
-    // If all recently used block are up-to-date then also update all their children, if any children are allocated
-    if (false) if (!r)
-    {
-        //TIME_COLLECTION TaskTimer tt("Collection::invalid_samples recent_t, %u, %p", _recent.size(), this);
-        BOOST_FOREACH (const recent_t::value_type& a, _recent)
-        {
-            Block const& b = *a;
-            if (b.frame_number_last_used == _frame_counter)
-            {
-                const Reference &p = b.reference();
-                // children
-                r |= getInvalid(p.left());
-                r |= getInvalid(p.right());
-                r |= getInvalid(p.top());
-                r |= getInvalid(p.bottom());
-
-                // parent
-                r |= getInvalid(p.parent());
-
-                // surrounding sibblings
-                Reference q = p;
-                for (q.block_index[0] = std::max(1u, p.block_index[0]) - 1;
-                     q.block_index[0] <= p.block_index[0] + 1;
-                     q.block_index[0]++)
-                {
-                    for (q.block_index[1] = std::max(1u, p.block_index[1]) - 1;
-                         q.block_index[1] <= p.block_index[1] + 1;
-                         q.block_index[1]++)
-                    {
-                        r |= getInvalid(q);
-                    }
-                }
-            }
-        }
-    }
-
-//    TaskInfo(boost::format("collection %p invalid_samples = %s") % (size_t)this % r);
-    return r;
-}
-
-
-Intervals Collection::
-        needed_samples(IntervalType& smallest_length)
+        needed_samples(UnsignedIntervalType& smallest_length)
 {
     Intervals r;
 
@@ -960,7 +833,7 @@ void Collection::
             Interval v = bl->getInterval ();
 
             // Check if these samples are still considered for update
-            if ( (things_to_update & v & read1(bl->block_data())->non_zero).count() <= 1)
+            if ( (things_to_update & v).count() <= 1)
                 continue;
 
             int d = bl->reference().log2_samples_size[0];
@@ -1003,18 +876,16 @@ bool Collection::
     EXCEPTION_ASSERT( &outBlock != &inBlock );
 
     // Find out what intervals that match
-    Intervals transferDesc = inBlock.getInterval() & inData.valid_samples & outBlock.getInterval();
+    Intervals transferDesc = inBlock.getInterval() & outBlock.getInterval();
 
-    // Remove already computed intervals
-    transferDesc -= outData.valid_samples;
-
-    // If block is already up to date, abort merge
-    if (transferDesc.empty())
+    // If the blocks doesn't overlap, there's nothing to do
+    if (!transferDesc)
         return false;
 
     const Region& ri = inBlock.getRegion();
     const Region& ro = outBlock.getRegion();
 
+    // If the blocks doesn't overlap, there's nothing to do
     if (ro.b.scale <= ri.a.scale || ri.b.scale<=ro.a.scale || ro.b.time <= ri.a.time || ri.b.time <= ro.a.time)
         return false;
 
@@ -1033,7 +904,6 @@ bool Collection::
     }
 
     outBlock.new_data_available = true;
-    outData.valid_samples -= inBlock.getInterval();
 
     //bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
     //bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);
@@ -1052,9 +922,7 @@ bool Collection::
             inBlock.reference().log2_samples_size[1] == outBlock.reference().log2_samples_size[1] &&
             ri.b.scale==ro.b.scale && ri.a.scale==ro.a.scale)
         {
-            outData.valid_samples -= inBlock.getInterval();
-            outData.valid_samples |= inData.valid_samples & inBlock.getInterval() & outBlock.getInterval ();
-            VERBOSE_COLLECTION TaskTimer tt("Using block %s", (inData.valid_samples & outBlock.getInterval ()).toString().c_str() );
+            VERBOSE_COLLECTION TaskInfo(boost::format("Using block %s") % ReferenceInfo(inBlock.reference (), tfr_mapping ()));
         }
     }
 

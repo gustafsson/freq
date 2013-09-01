@@ -150,12 +150,9 @@ void BlockFilter::
     TIME_BLOCKFILTER ComputationSynchronize();
     }
 
-    DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s (was %s)")
+    DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s")
             % transfer
-            % Heightmap::ReferenceInfo(block->reference (), block->tfr_mapping ())
-            % outData.valid_samples);
-    outData.valid_samples |= transfer;
-    outData.non_zero |= transfer;
+            % Heightmap::ReferenceInfo(block->reference (), block->tfr_mapping ()));
 }
 
 
@@ -193,17 +190,6 @@ void BlockFilter::
     DEBUG_CWTTOBLOCK TaskTimer("transfer=[%g, %g)",
             transfer.first / chunk.original_sample_rate,
             transfer.last / chunk.original_sample_rate ).suppressTiming();
-
-    // Remove already computed intervals
-    if (!full_resolution)
-    {
-        if (!(transfer - outData.valid_samples))
-        {
-            TIME_CWTTOBLOCK TaskInfo(format("%s not accepting %s, early termination") % vartype(*this) % transfer);
-            transfer.last=transfer.first;
-        }
-    }
-    // transferDesc -= block->valid_samples;
 
     // If block is already up to date, abort merge
     if (!transfer)
@@ -333,17 +319,6 @@ void BlockFilter::
 
     ComputationCheckError();
 
-    if( full_resolution )
-    {
-        outData.valid_samples |= transfer;
-    }
-    else
-    {
-        outData.valid_samples -= transfer;
-        TIME_CWTTOBLOCK TaskInfo(format("%s not accepting %s") % vartype(*this) % transfer);
-    }
-    outData.non_zero |= transfer;
-
     DEBUG_CWTTOBLOCK {
         TaskInfo ti(format("Block filter input and output %s") % block->reference());
         DataStorageSize sz = chunk.transform_data->size();
@@ -465,30 +440,13 @@ DrawnWaveformToBlock::
 Signal::Interval DrawnWaveformToBlock::
         requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    Signal::Intervals missingSamples;
-    TfrMap::Collections collections = read1(tfr_map_)->collections();
-
-    for (unsigned c=0; c<collections.size (); ++c)
-    {
-        TfrMap::pCollection collection = collections[c];
-        std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( I, false );
-
-        BOOST_FOREACH( pBlock block, intersecting_blocks)
-        {
-            missingSamples |= block->getInterval() - read1(block->block_data())->valid_samples;
-        }
-    }
-
-    missingSamples &= I;
+    Signal::Intervals missingSamples = I;
 
     float largest_fs = 0;
     Signal::Interval toCompute = I;
     if (missingSamples)
     {
-        Signal::Interval first(0, 0);
-        first.first = missingSamples.spannedInterval().first;
-        first.last = first.first + 1;
-
+        TfrMap::Collections collections = read1(tfr_map_)->collections();
         for (unsigned c=0; c<collections.size (); ++c)
         {
             TfrMap::pCollection collection = collections[c];
@@ -496,9 +454,6 @@ Signal::Interval DrawnWaveformToBlock::
 
             BOOST_FOREACH( pBlock block, intersecting_blocks)
             {
-                if (((block->getInterval() - read1(block->block_data())->valid_samples) & first).empty() )
-                    continue;
-
                 largest_fs = std::max(largest_fs, block->sample_rate());
             }
         }

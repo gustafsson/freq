@@ -117,19 +117,14 @@ public:
     bool empty();
 
 
-    Signal::Intervals invalid_samples();
-    void invalidate_samples( const Signal::Intervals& );
-
-
-    Signal::Intervals needed_samples(Signal::IntervalType& smallest_length);
+    Signal::Intervals needed_samples(Signal::UnsignedIntervalType& smallest_length);
     Signal::Intervals recently_created();
 
 
     /**
-      getBlock increases a counter for each block that hasn't been computed yet.
-      next_frame returns that counter.
+      next_frame garbage collects blocks that have been deleted since the last call.
       */
-    unsigned    next_frame();
+    void    next_frame();
 
 
     /**
@@ -183,7 +178,6 @@ private:
         _is_visible;
 
     unsigned
-        _unfinished_count,
         _created_count,
         _frame_counter;
 
@@ -276,12 +270,6 @@ private:
      * @param block
      */
     void        createBlockFromOthers(pBlock block);
-
-
-    /**
-      Try to create 'r' and return its invalid samples if it was created.
-      */
-    Signal::Intervals getInvalid(const Reference& r) const;
 };
 
 } // namespace Heightmap

@@ -44,9 +44,6 @@ bool ChunkBlockFilterKernel::
     {
         BlockData::WritePtr blockdata(block->block_data());
 
-        if (((block->getInterval() - blockdata->valid_samples) & chunk_interval).empty() )
-            continue;
-
         if (pchunk.chunk->order == Tfr::Chunk::Order_row_major)
             chunk_to_block.mergeRowMajorChunk ( *block, pchunk.chunk, *blockdata );
         else

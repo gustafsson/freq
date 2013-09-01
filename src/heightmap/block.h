@@ -29,14 +29,6 @@ namespace Heightmap {
             are updated from cpu_copy whenever new_data_available is set to true.
         */
         pData cpu_copy;
-
-
-        /**
-          valid_samples describes the intervals of valid samples contained in this block.
-          it is relative to the start of the heightmap, not relative to this block.
-          The samplerate is the sample rate of the full resolution signal.
-          */
-        Signal::Intervals valid_samples, non_zero;
     };
 
     // FEATURE it would probably look awesome if new blocks weren't displayed
