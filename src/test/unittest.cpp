@@ -35,6 +35,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "adapters/playback.h"
 
+#include "glinfo.h"
 #include "prettifysegfault.h"
 #include "timer.h"
 #include "volatileptr.h"
@@ -68,6 +69,7 @@ int UnitTest::
         RUNTEST(Backtrace);
         RUNTEST(VolatilePtrTest);
         RUNTEST(ExceptionAssert);
+        RUNTEST(glinfo);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);

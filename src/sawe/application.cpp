@@ -10,6 +10,7 @@
 // gpumisc
 #include <demangle.h>
 #include <computationkernel.h>
+#include <glinfo.h>
 
 // std
 #include <sstream>
@@ -156,14 +157,7 @@ void Application::
     TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
     TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
     TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
-    {
-        TaskInfo ti("OpenGL information");
-        TaskInfo("vendor: %s", glGetString(GL_VENDOR));
-        TaskInfo("renderer: %s", glGetString(GL_RENDERER));
-        TaskInfo("version: %s", glGetString(GL_VERSION));
-        TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-        TaskInfo("extensions/capabilities/caps: %s", glGetString(GL_EXTENSIONS));
-    }
+    TaskInfo("OpenGL information\n%s", glinfo::driver_info().c_str ());
 }
 
 

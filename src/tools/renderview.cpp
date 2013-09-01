@@ -937,8 +937,6 @@ void RenderView::
 void RenderView::
         initializeGL()
 {
-    //printQGLWidget(*this, "this");
-    //TaskTimer("autoBufferSwap=%d", autoBufferSwap()).suppressTiming();
     _inited = true;
 
     TaskInfo("_renderview_fbo");
@@ -1586,58 +1584,3 @@ void RenderView::
 
 
 } // namespace Tools
-
-
-// todo remove
-//static void printQGLFormat(const QGLFormat& f, std::string title)
-//{
-//    TaskTimer tt("QGLFormat %s", title.c_str());
-//    tt.info("accum=%d",f.accum());
-//    tt.info("accumBufferSize=%d",f.accumBufferSize());
-//    tt.info("alpha=%d",f.alpha());
-//    tt.info("alphaBufferSize=%d",f.alphaBufferSize());
-//    tt.info("blueBufferSize=%d",f.blueBufferSize());
-//    tt.info("depth=%d",f.depth());
-//    tt.info("depthBufferSize=%d",f.depthBufferSize());
-//    tt.info("directRendering=%d",f.directRendering());
-//    tt.info("doubleBuffer=%d",f.doubleBuffer());
-//    tt.info("greenBufferSize=%d",f.greenBufferSize());
-//    tt.info("hasOverlay=%d",f.hasOverlay());
-//    tt.info("redBufferSize=%d",f.redBufferSize());
-//    tt.info("rgba=%d",f.rgba());
-//    tt.info("sampleBuffers=%d",f.sampleBuffers());
-//    tt.info("samples=%d",f.samples());
-//    tt.info("stencil=%d",f.stencil());
-//    tt.info("stencilBufferSize=%d",f.stencilBufferSize());
-//    tt.info("stereo=%d",f.stereo());
-//    tt.info("swapInterval=%d",f.swapInterval());
-//    tt.info("");
-//    tt.info("hasOpenGL=%d",f.hasOpenGL());
-//    tt.info("hasOpenGLOverlays=%d",f.hasOpenGLOverlays());
-//    QGLFormat::OpenGLVersionFlags flag = f.openGLVersionFlags();
-//    tt.info("OpenGL_Version_None=%d", QGLFormat::OpenGL_Version_None == flag);
-//    tt.info("OpenGL_Version_1_1=%d", QGLFormat::OpenGL_Version_1_1 & flag);
-//    tt.info("OpenGL_Version_1_2=%d", QGLFormat::OpenGL_Version_1_2 & flag);
-//    tt.info("OpenGL_Version_1_3=%d", QGLFormat::OpenGL_Version_1_3 & flag);
-//    tt.info("OpenGL_Version_1_4=%d", QGLFormat::OpenGL_Version_1_4 & flag);
-//    tt.info("OpenGL_Version_1_5=%d", QGLFormat::OpenGL_Version_1_5 & flag);
-//    tt.info("OpenGL_Version_2_0=%d", QGLFormat::OpenGL_Version_2_0 & flag);
-//    tt.info("OpenGL_Version_2_1=%d", QGLFormat::OpenGL_Version_2_1 & flag);
-//    tt.info("OpenGL_Version_3_0=%d", QGLFormat::OpenGL_Version_3_0 & flag);
-//    tt.info("OpenGL_ES_CommonLite_Version_1_0=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_0 & flag);
-//    tt.info("OpenGL_ES_Common_Version_1_0=%d", QGLFormat::OpenGL_ES_Common_Version_1_0 & flag);
-//    tt.info("OpenGL_ES_CommonLite_Version_1_1=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_1 & flag);
-//    tt.info("OpenGL_ES_Common_Version_1_1=%d", QGLFormat::OpenGL_ES_Common_Version_1_1 & flag);
-//    tt.info("OpenGL_ES_Version_2_0=%d", QGLFormat::OpenGL_ES_Version_2_0 & flag);
-//}
-
-
-// todo remove
-//static void printQGLWidget(const QGLWidget& w, std::string title)
-//{
-//    TaskTimer tt("QGLWidget %s", title.c_str());
-//    tt.info("doubleBuffer=%d", w.doubleBuffer());
-//    tt.info("isSharing=%d", w.isSharing());
-//    tt.info("isValid=%d", w.isValid());
-//    printQGLFormat( w.format(), "");
-//}
