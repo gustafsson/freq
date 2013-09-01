@@ -89,9 +89,13 @@ RenderOperationDesc::Operation::
 pBuffer RenderOperationDesc::Operation::
         process(pBuffer b)
 {
+    Signal::Interval input = b?b->getInterval ():Signal::Interval();
+
     b = OperationWrapper::process (b);
 
-    write1(render_target_)->processedData ();
+    Signal::Interval output = b?b->getInterval ():Signal::Interval();
+
+    write1(render_target_)->processedData (input, output);
 
     return b;
 }
@@ -119,7 +123,7 @@ public:
     }
 
 
-    void processedData() {
+    void processedData(const Interval&, const Interval&) {
         processed_count++;
     }
 

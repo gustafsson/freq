@@ -55,6 +55,9 @@ using namespace boost;
 #undef min
 #endif
 
+//#define UPDATEINFO
+#define UPDATEINFO if(0)
+
 namespace Tools
 {
 
@@ -65,10 +68,14 @@ public:
     RenderViewUpdater(RenderView* view): view_(view) {}
 
     virtual void refreshSamples(const Signal::Intervals& I) {
+        UPDATEINFO TaskInfo(format("refreshSamples %s") % I);
+
         view_->setLastUpdateSize( I.count () );
     }
 
-    virtual void processedData() {
+    virtual void processedData(const Signal::Interval& input, const Signal::Interval& output) {
+        UPDATEINFO TaskInfo(format("processedData %s -> %s") % input % output);
+
         view_->userinput_update ();
     }
 

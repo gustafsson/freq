@@ -5,6 +5,9 @@
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
 
+//#define TASKINFO
+#define TASKINFO if(0)
+
 using namespace boost;
 
 namespace Signal {
@@ -95,7 +98,7 @@ Signal::OperationDesc::Ptr Step::
 void Step::
         registerTask(Task* taskid, Signal::Interval expected_output)
 {
-    DEBUGINFO TaskInfo ti(format("Step %1%. Starting %2%")
+    TASKINFO TaskInfo ti(format("Step %1%. Starting %2%")
               % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
               % expected_output);
     running_tasks[taskid] = expected_output;
@@ -110,7 +113,7 @@ void Step::
     if (result)
         result_interval = result->getInterval ();
 
-    DEBUGINFO TaskInfo ti(format("Step %1%. Finish %2%")
+    TASKINFO TaskInfo ti(format("Step %1%. Finish %2%")
               % (operation_desc_?operation_desc_->toString ().toStdString ():"(no operation)")
               % result_interval);
 
@@ -125,7 +128,7 @@ void Step::
 
     int C = running_tasks.count (taskid);
     if (C!=1) {
-        DEBUGINFO TaskInfo("C = %d, taskid = %x", C, taskid);
+        TaskInfo("C = %d, taskid = %x", C, taskid);
         EXCEPTION_ASSERTX( running_tasks.count (taskid)==1, "Could not find given task");
     }
 
@@ -135,11 +138,16 @@ void Step::
     not_started_ |= update_miss;
 
     if (!expected_output) {
-        DEBUGINFO TaskInfo(format("The task was not recognized. %1%") % result_interval);
+        TaskInfo(format("The task was not recognized. %1%") % result_interval);
     } else if (!result_interval) {
-        DEBUGINFO TaskInfo(format("The task was cancelled. Restoring %1%") % update_miss);
-    } else if (update_miss) {
-        DEBUGINFO TaskInfo(format("These samples were supposed to be updated by the task but missed: %1%") % update_miss);
+        TaskInfo(format("The task was cancelled. Restoring %1%") % update_miss);
+    } else {
+        if (update_miss) {
+            TaskInfo(format("These samples were supposed to be updated by the task but missed: %1%") % update_miss);
+        }
+        if (result_interval - expected_output) {
+            TaskInfo(format("These samples were not supposed to be updated by the task but were updated anyway: %1%") % (result_interval - expected_output));
+        }
     }
 
     running_tasks.erase ( taskid );

@@ -29,8 +29,10 @@ public:
 
         /**
          * @brief processedData is called whenever new samples have been processed.
+         * @param input extent of the buffer that was sent to process.
+         * @param output extent of the buffer that is returned from process.
          */
-        virtual void processedData() = 0;
+        virtual void processedData(const Signal::Interval& input, const Signal::Interval& output) = 0;
     };
 
 
