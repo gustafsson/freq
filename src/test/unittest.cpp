@@ -35,11 +35,16 @@
 #include "heightmap/chunkblockfilter.h"
 #include "adapters/playback.h"
 
+// gpumisc units
+#include "backtrace.h"
+#include "exceptionassert.h"
 #include "glinfo.h"
 #include "prettifysegfault.h"
-#include "timer.h"
 #include "volatileptr.h"
-#include "backtrace.h"
+
+// gpumisc tool
+#include "TaskTimer.h"
+#include "timer.h"
 
 #include <stdio.h>
 #include <exception>
@@ -65,11 +70,11 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
-        RUNTEST(PrettifySegfault);
         RUNTEST(Backtrace);
-        RUNTEST(VolatilePtrTest);
         RUNTEST(ExceptionAssert);
         RUNTEST(glinfo);
+        RUNTEST(PrettifySegfault);
+        RUNTEST(VolatilePtrTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
