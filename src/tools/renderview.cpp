@@ -1172,18 +1172,13 @@ void RenderView::
         if (_last_update_size < update_size)
             update_size = _last_update_size;
 
-        //TIME_PAINTGL_DETAILS
-        if (things_to_add)
-            TaskInfo(boost::format("RenderView invalidate %s. update_size=%d")
-                     % things_to_add
-                     % update_size);
-//            TaskInfo(boost::format(
-//                    "RenderView needed_samples = %s, "
-//                    "things_to_add = %s, center = %d, size = %d")
-//                     % needed_samples
-//                     % things_to_add
-//                     % ((int)model->_qx * x.sample_rate.get ())
-//                     % update_size);
+        TIME_PAINTGL_DETAILS TaskInfo(boost::format(
+                "RenderView needed_samples = %s, "
+                "things_to_add = %s, center = %d, size = %d")
+                % needed_samples
+                % things_to_add
+                % center
+                % update_size);
 
         write1(model->target_marker())->updateNeeds(
                     needed_samples,
