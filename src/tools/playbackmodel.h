@@ -3,7 +3,6 @@
 
 #include "signal/operation.h"
 #include "signal/postsink.h"
-#include "signal/target.h"
 #include "signal/processing/targetmarker.h"
 
 #include <string>

@@ -89,6 +89,8 @@ void PlaybackController::
 void PlaybackController::
         receivePlaySection( bool active )
 {
+    EXCEPTION_ASSERTX(false, "not implemented");
+#if 0
     if (!active)
     {
         receiveStop();
@@ -110,6 +112,7 @@ void PlaybackController::
             _view->model->markers->currentInterval( project_->head->head_source()->sample_rate() ) ));
 
     startPlayback( filter );
+#endif
 }
 
 

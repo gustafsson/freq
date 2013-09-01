@@ -75,11 +75,12 @@ SOURCES += \
     tfr/*.cpp \
     tools/*.cpp \
     tools/commands/*.cpp \
-    tools/selections/*.cpp \
-    tools/selections/support/*.cpp \
     tools/support/*.cpp \
     tools/widgets/*.cpp \
     ui/*.cpp \
+
+#    tools/selections/*.cpp \
+#    tools/selections/support/*.cpp \
 
 #Windows Icon
 win32:SOURCES += sonicawe.rc \
@@ -97,11 +98,12 @@ HEADERS += \
     tfr/*.h \
     tools/*.h \
     tools/commands/*.h \
-    tools/selections/*.h \
-    tools/selections/support/*.h \
     tools/support/*.h \
     tools/widgets/*.h \
     ui/*.h \
+
+#    tools/selections/*.h \
+#    tools/selections/support/*.h \
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -117,7 +119,6 @@ FORMS += \
     tools/exportaudiodialog.ui \
     tools/harmonicsinfoform.ui \
     tools/matlaboperationwidget.ui \
-    tools/selections/rectangleform.ui \
     sawe/enterlicense.ui \
     tools/settingsdialog.ui \
     tools/dropnotifyform.ui \
@@ -125,12 +126,15 @@ FORMS += \
     tools/commands/commandhistory.ui \
     tools/splashscreen.ui \
 
+#    tools/selections/rectangleform.ui \
+
 CUDA_SOURCES += \
     filters/*.cu \
     heightmap/*.cu \
     tfr/*.cu \
     tools/support/*.cu \
-    tools/selections/support/*.cu \
+
+#    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
     heightmap/heightmap.frag \

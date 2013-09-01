@@ -2,7 +2,6 @@
 #define REASSIGNCONTROLLER_H
 
 #include <QObject>
-#include "signal/chain.h"
 
 namespace Sawe { class Project; }
 namespace Signal { class Worker; }

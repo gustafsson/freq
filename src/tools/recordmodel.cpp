@@ -10,19 +10,6 @@ namespace Tools
 {
 
 RecordModel::
-        RecordModel( Sawe::Project* project, RenderView* render_view )
-    :
-    project(project),
-    render_view(render_view)
-{
-    recording = dynamic_cast<Adapters::Recorder*>
-                (project->head->head_source()->root());
-
-    EXCEPTION_ASSERT( recording );
-}
-
-
-RecordModel::
         RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder* recording )
     :
     recording(recording),
@@ -75,10 +62,9 @@ RecordModel* RecordModel::
 
 
 bool RecordModel::
-        canCreateRecordModel( Sawe::Project* project )
+        canCreateRecordModel( Sawe::Project* )
 {
-    return dynamic_cast<Adapters::Recorder*>
-                (project->head->head_source()->root());
+    return Adapters::MicrophoneRecorder(-1).canRecord ();
 }
 
 

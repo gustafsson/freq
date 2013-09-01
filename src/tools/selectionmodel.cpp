@@ -6,7 +6,7 @@
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
 #include "filters/bandpass.h"
-#include "tools/selections/support/splinefilter.h"
+//#include "tools/selections/support/splinefilter.h"
 
 namespace Tools
 {
@@ -130,17 +130,17 @@ Signal::pOperation SelectionModel::
 }
 
 
-template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Selections::Support::SplineFilter* src, SaveInside si)
-{
-    Selections::Support::SplineFilter* dst;
-    Signal::pOperation o( dst=new Selections::Support::SplineFilter( *src ));
+//template<>
+//Signal::pOperation SelectionModel::
+//        copy_selection_type(Selections::Support::SplineFilter* src, SaveInside si)
+//{
+//    Selections::Support::SplineFilter* dst;
+//    Signal::pOperation o( dst=new Selections::Support::SplineFilter( *src ));
 
-    if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
+//    if (si != SaveInside_UNCHANGED)
+//        dst->_save_inside = si == SaveInside_TRUE;
+//    return o;
+//}
 
 
 Signal::pOperation SelectionModel::
@@ -160,7 +160,7 @@ Signal::pOperation SelectionModel::
     TEST_TYPE(Filters::Bandpass);
     TEST_TYPE(Tools::Support::OperationOtherSilent);
     TEST_TYPE(Signal::OperationSetSilent);
-    TEST_TYPE(Selections::Support::SplineFilter);
+//    TEST_TYPE(Selections::Support::SplineFilter);
 
     throw std::logic_error("SelectionModel::copy_selection(" + vartype(*o) + ") is not implemented");
 }

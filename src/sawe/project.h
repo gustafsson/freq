@@ -3,8 +3,6 @@
 
 #include "toolmodel.h"
 #include "toolmainloop.h"
-#include "signal/worker.h"
-#include "signal/target.h"
 #include "tools/toolfactory.h"
 #include "tools/commands/commandinvoker.h"
 #include "signal/processing/chain.h"
@@ -50,25 +48,9 @@ namespace Sawe {
 class SaweDll Project
 {
 public:
-/**
-      A project currently is entirely defined by its head source.
-      */
     Project(std::string filename);
     //Project(Signal::pOperation head_source, std::string filename);
     ~Project();
-
-//    Signal::Worker worker;
-
-//    Signal::Layers layers;
-//    std::set<Signal::pTarget> targets;
-
-
-    /**
-      The HEAD is were edits take place. This is not necessairly the same as the position being played back
-      or the position being rendered.
-      */
-    // TODO remove head
-    Signal::pChainHead head;
 
 
     /**
@@ -226,11 +208,6 @@ private:
         TaskInfo ti("Project::serialize");
 
         //Use Signal::Processing namespace
-        Signal::Layers layers(const_cast<Project*>(this));
-        ar & BOOST_SERIALIZATION_NVP(layers);
-
-        ar & BOOST_SERIALIZATION_NVP(head);
-
         QByteArray guiState = getGuiState();
         save_bytearray( ar, guiState );
 
@@ -241,12 +218,6 @@ private:
         TaskInfo ti("Project::deserialize");
 
         //Use Signal::Processing namespace
-        Signal::Layers layers(this);
-        ar & BOOST_SERIALIZATION_NVP(layers);
-
-
-        ar & BOOST_SERIALIZATION_NVP(head);
-
 		createMainWindow();
 
         QByteArray guiState;

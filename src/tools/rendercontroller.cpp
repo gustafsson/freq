@@ -23,7 +23,6 @@
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
-#include "signal/worker.h"
 #include "signal/reroutechannels.h"
 #include "signal/oldoperationwrapper.h"
 #include "tools/support/operation-composite.h"

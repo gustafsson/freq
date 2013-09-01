@@ -107,7 +107,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
-    connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
+    //connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
     connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
@@ -163,11 +163,13 @@ void TransformInfoForm::
     const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformDesc());
     if (cepstrum) stft = 0; // CepstrumParams inherits StftDesc
 
-    Signal::pOperation head = project->head->head_source();
-    float fs = head->sample_rate();
+    Signal::OperationDesc::Extent x = project->extent ();
+    float fs = x.sample_rate.get ();
+    float L = x.interval.get ().count() / fs;
 
-    addRow("Length", QString("%1").arg(head->lengthLongFormat().c_str()));
-    bool adjustable_sample_rate = 0 != dynamic_cast<Adapters::CsvTimeseries*>(project->head->head_source()->root());
+    addRow("Length", QString("%1").arg( Signal::SourceBase::lengthLongFormat ( L ).c_str ()));
+    //bool adjustable_sample_rate = 0 != dynamic_cast<Adapters::CsvTimeseries*>(project->head->head_source()->root());
+    bool adjustable_sample_rate = false;
     ui->sampleRateEdit->setVisible(adjustable_sample_rate);
     ui->sampleRateLabel->setVisible(adjustable_sample_rate);
     if (adjustable_sample_rate)
@@ -180,7 +182,7 @@ void TransformInfoForm::
     {
         addRow("Sample rate", QString("%1").arg(fs));
     }
-    addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
+    addRow("Number of samples", QString("%1").arg(x.interval.get ().count()));
 
 #ifdef TARGET_hast
     {
@@ -310,7 +312,8 @@ void TransformInfoForm::
 void TransformInfoForm::
         minHzChanged()
 {
-    float fs = project->head->head_source()->sample_rate();
+    Signal::OperationDesc::Extent x = project->extent ();
+    float fs = x.sample_rate.get ();
     float newValue = ui->minHzEdit->text().toFloat();
     if (newValue<fs/100000)
         newValue=fs/100000;
@@ -326,7 +329,6 @@ void TransformInfoForm::
         cwt.set_wanted_min_hz(newValue);
     }
 
-    project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
     renderview->emitTransformChanged();
 }
 
@@ -334,7 +336,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         binResolutionChanged()
 {
-    float fs = project->head->head_source()->sample_rate();
+    float fs = project->extent().sample_rate.get ();
     float newValue = ui->binResolutionEdit->text().toFloat();
     if (newValue<0.1)
         newValue=0.1;
@@ -352,7 +354,6 @@ void TransformInfoForm::
         stft.set_exact_chunk_size( new_chunk_size );
     }
 
-    project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
     renderview->emitTransformChanged();
 }
 
@@ -361,7 +362,7 @@ void TransformInfoForm::
         windowSizeChanged()
 {
     int newValue = ui->windowSizeEdit->text().toInt();
-    Signal::IntervalType N = project->head->head_source()->number_of_samples();
+    Signal::IntervalType N = project->extent().interval.get ().count();
     if (newValue<1)
         newValue=1;
     if ((unsigned)newValue>N*2)
@@ -377,35 +378,35 @@ void TransformInfoForm::
         stft.set_approximate_chunk_size( newValue );
     }
 
-    project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
     renderview->emitTransformChanged();
 }
 
 
-void TransformInfoForm::
-        sampleRateChanged()
-{
-    float newValue = ui->sampleRateEdit->text().toFloat();
-    if (newValue<0.01)
-        newValue=0.01;
-    float minHz = ui->minHzEdit->text().toFloat();
-    float orgMinHz = minHz;
-    if (minHz<newValue/100000)
-        minHz=newValue/100000;
-    if (minHz>newValue/2)
-        minHz=newValue/2;
-    if (orgMinHz != minHz)
-        write1(renderview->model->transform_descs ())->getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
+//void TransformInfoForm::
+//        sampleRateChanged()
+//{
+//    csv_source = ...
 
-    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
-    if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
-    {
-        bs->set_sample_rate( newValue );
+//    float newValue = ui->sampleRateEdit->text().toFloat();
+//    if (newValue<0.01)
+//        newValue=0.01;
+//    float minHz = ui->minHzEdit->text().toFloat();
+//    float orgMinHz = minHz;
+//    if (minHz<newValue/100000)
+//        minHz=newValue/100000;
+//    if (minHz>newValue/2)
+//        minHz=newValue/2;
+//    if (orgMinHz != minHz)
+//        write1(renderview->model->transform_descs ())->getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
 
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        renderview->emitTransformChanged();
-    }
-}
+//    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
+//    if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
+//    {
+//        bs->set_sample_rate( newValue );
+
+//        // TODO invalidate samples
+//    }
+//}
 
 
 void TransformInfoForm::

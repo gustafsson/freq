@@ -4,7 +4,6 @@
 #include "recordmodel.h"
 
 #include <QObject>
-#include "signal/worker.h"
 
 namespace Tools
 {

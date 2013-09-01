@@ -16,7 +16,6 @@
 #include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
-#include "tools/commands/appendoperationcommand.h"
 #include "tools/commands/appendoperationdesccommand.h"
 
 // Qt
@@ -90,8 +89,6 @@ Project::
 void Project::
         appendOperation(Signal::pOperation s)
 {
-//    Tools::Commands::pCommand c( new Tools::Commands::AppendOperationCommand(this, s));
-//    commandInvoker()->invokeCommand(c);
     Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(s));
     appendOperation(oodw);
 }

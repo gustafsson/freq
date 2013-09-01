@@ -3,8 +3,6 @@
 
 #include "renderview.h"
 
-#include "signal/worker.h"
-
 #include <QWidget>
 #include <QPointer>
 

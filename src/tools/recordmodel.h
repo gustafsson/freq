@@ -21,8 +21,6 @@ class RenderView;
 class RecordModel
 {
 public:
-    RecordModel( Sawe::Project* project, RenderView* render_view ); // TODO deprecated
-
     /**
      * @brief createRecorder returns a new MicrophoneRecorder operation
      * description that can be added to a signal processing chain.

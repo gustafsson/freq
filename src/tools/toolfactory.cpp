@@ -4,31 +4,22 @@
 #include "navigationcontroller.h"
 #include "rendercontroller.h"
 #include "renderview.h"
-#include "selectioncontroller.h"
 #include "timelinecontroller.h"
 #include "timelineview.h"
 #include "playbackcontroller.h"
 #include "playbackview.h"
-#include "brushcontroller.h"
-#include "brushview.h"
 #include "recordmodel.h"
 #include "recordcontroller.h"
 #include "recordview.h"
 #include "commentcontroller.h"
-#include "matlabcontroller.h"
-#include "graphcontroller.h"
 #include "tooltipcontroller.h"
 #include "aboutdialog.h"
 #include "playbackmarkerscontroller.h"
 #include "transforminfoform.h"
-#include "exportaudiodialog.h"
 #include "harmonicsinfoform.h"
 #include "workercontroller.h"
-#include "fantrackercontroller.h"
 #include "fantrackerview.h"
 #include "fantrackermodel.h"
-#include "selectionviewinfo.h"
-#include "openandcomparecontroller.h"
 #include "settingscontroller.h"
 #include "clickableimageview.h"
 #include "dropnotifyform.h"
@@ -40,6 +31,16 @@
 #include "widgets/widgetoverlaycontroller.h"
 #include "filtercontroller.h"
 #include "printscreencontroller.h"
+
+//#include "selectioncontroller.h"
+//#include "brushcontroller.h"
+//#include "brushview.h"
+//#include "matlabcontroller.h"
+//#include "graphcontroller.h"
+//#include "exportaudiodialog.h"
+//#include "fantrackercontroller.h"
+//#include "selectionviewinfo.h"
+//#include "openandcomparecontroller.h"
 
 // Sonic AWE
 #include "sawe/project.h"
@@ -157,7 +158,7 @@ ToolFactory::
 
     _selection_view_info = new SelectionViewInfo(p, &selection_model );
 */
-    _objects.push_back( QPointer<QObject>( new OpenAndCompareController( p ) ));
+//    _objects.push_back( QPointer<QObject>( new OpenAndCompareController( p ) ));
 
     _objects.push_back( QPointer<QObject>( new SettingsController( p )));
 
@@ -215,11 +216,11 @@ ToolFactory::
         _objects.pop_back();
     }
 
-    delete _selection_view_info;
+//    delete _selection_view_info;
 
     delete _harmonics_info_form;
 
-    delete _export_audio_dialog;
+//    delete _export_audio_dialog;
 
     delete _transform_info_form;
 
@@ -227,25 +228,25 @@ ToolFactory::
 
     delete _about_dialog;
 
-    delete _selection_controller;
+//    delete _selection_controller;
 
     delete _navigation_controller;
 
     delete _playback_controller;
 
-    delete _brush_controller;
+//    delete _brush_controller;
 
     delete _record_controller;
 
     delete _comment_controller;
 
-    delete _matlab_controller;
+//    delete _matlab_controller;
 
-    delete _graph_controller;
+//    delete _graph_controller;
 
     delete _tooltip_controller;
 
-    delete _fantracker_controller;
+//    delete _fantracker_controller;
 
     EXCEPTION_ASSERT( _timeline_controller );
 	delete _timeline_controller;
