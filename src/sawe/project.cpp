@@ -411,11 +411,7 @@ void Project::
     Ui::SaweMainWindow* saweMain = 0;
     _mainWindow = saweMain = new Ui::SaweMainWindow( title.c_str(), this );
 
-    {
-        TaskTimer tt("new Tools::ToolFactory");
-        _tools.reset( new Tools::ToolFactory(this) );
-        tt.info("Created tools");
-    }
+    _tools.reset( new Tools::ToolFactory(this) );
 
     defaultGuiState = saweMain->saveSettings();
 

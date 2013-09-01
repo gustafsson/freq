@@ -191,7 +191,6 @@ namespace Tools
         void setRotationForAxes(bool);
         void computeChannelColors();
 
-        boost::scoped_ptr<TaskTimer> _work_timer;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 

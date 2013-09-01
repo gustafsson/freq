@@ -23,7 +23,6 @@ OpenAndCompareController::
             :
             _project(project)
 {
-    TaskInfo ti("OpenAndCompareController(Sawe::Project* %s)", project->project_title().c_str());
     setupGui();
 }
 
@@ -31,7 +30,6 @@ OpenAndCompareController::
 OpenAndCompareController::
         ~OpenAndCompareController()
 {
-    TaskInfo("~OpenAndCompareController");
 }
 
 void OpenAndCompareController::

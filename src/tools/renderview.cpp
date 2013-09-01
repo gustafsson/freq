@@ -75,7 +75,6 @@ RenderView::
             model(model),
             glwidget(0),
             graphicsview(0),
-            _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
             _last_width(0),
             _last_height(0),
@@ -117,7 +116,6 @@ RenderView::
     emit destroying();
 
     _render_timer.reset();
-    _work_timer.reset();
     _renderview_fbo.reset();
 
     QGraphicsScene::clear();
@@ -939,8 +937,8 @@ void RenderView::
 {
     _inited = true;
 
-    TaskInfo("_renderview_fbo");
-    if (!_renderview_fbo) _renderview_fbo.reset( new GlFrameBuffer );
+    if (!_renderview_fbo)
+        _renderview_fbo.reset( new GlFrameBuffer );
 }
 
 

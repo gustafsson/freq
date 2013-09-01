@@ -65,8 +65,6 @@ string attachShader(GLuint prg, GLenum type, const char *name)
 
         char shaderInfoLog[2048];
         glGetShaderInfoLog(shader, sizeof(shaderInfoLog), 0, shaderInfoLog);
-        TaskInfo("Compiling shader %s\n%s",
-                 name, shaderInfoLog);
 
         bool showShaderLog = !compiled;
 #ifdef _DEBUG
@@ -114,7 +112,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
         char programInfoLog[2048];
         glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
-        TaskInfo("Linking vertex shader %s with fragment shader %s\n%s",
+        TaskTimer tt("Linking vertex shader %s with fragment shader %s\n%s",
                  vertFileName, fragFileName, programInfoLog);
 
         bool showProgramLog = !linked;
