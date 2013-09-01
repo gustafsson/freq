@@ -17,11 +17,10 @@ public:
     float normalization_factor;
     bool full_resolution;
     bool enable_subtexel_aggregation;
-    Heightmap::TfrMapping tfr_mapping;
 
     void mergeColumnMajorChunk(
             const Block& block,
-            Tfr::pChunk,
+            const Tfr::Chunk&,
             BlockData& outData );
 
     void mergeRowMajorChunk(

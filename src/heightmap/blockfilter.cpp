@@ -4,6 +4,7 @@
 #include "collection.h"
 #include "renderer.h"
 #include "glblock.h"
+#include "chunktoblock.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/drawnwaveform.h"
@@ -101,58 +102,9 @@ bool BlockFilter::
 void BlockFilter::
         mergeColumnMajorChunk( const Block& blockr, const ChunkAndInverse& pchunk, BlockData& outData, float normalization_factor )
 {
-    Block const* block = &blockr;
-    Heightmap::TfrMapping tfr_mapping = block->tfr_mapping ();
-
-    Tfr::Chunk& chunk = *pchunk.chunk;
-    Region r = block->getRegion();
-
-    Position chunk_a, chunk_b;
-    //Signal::Interval inInterval = chunk.getInterval();
-    Signal::Interval inInterval = chunk.getCoveredInterval();
-    Signal::Interval blockInterval = block->getInterval();
-
-    // don't validate more texels than we have actual support for
-    Signal::Interval spannedBlockSamples(0,0);
-    Heightmap::ReferenceInfo ri(block->reference (), tfr_mapping);
-    Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
-
-    Signal::Interval transfer = usableInInterval&blockInterval;
-
-    // spannedElementsInterval looks more closely at what in chunk that can be used
-    if (!transfer || !spannedBlockSamples)
-        return;
-
-    chunk_a.time = inInterval.first/chunk.original_sample_rate;
-    chunk_b.time = inInterval.last/chunk.original_sample_rate;
-
-    // ::resampleStft computes frequency rows properly with its two instances
-    // of FreqAxis.
-    chunk_a.scale = 0;
-    chunk_b.scale = 1;
-
-    {
-    TIME_BLOCKFILTER TaskTimer tt("resampleStft");
-    ::resampleStft( chunk.transform_data,
-                    chunk.nScales(),
-                    chunk.nSamples(),
-                  outData.cpu_copy,
-                  ValidInterval(spannedBlockSamples.first, spannedBlockSamples.last),
-                  ResampleArea( chunk_a.time, chunk_a.scale,
-                               chunk_b.time, chunk_b.scale ),
-                  ResampleArea( r.a.time, r.a.scale,
-                               r.b.time, r.b.scale ),
-                  chunk.freqAxis,
-                  tfr_mapping.display_scale,
-                  tfr_mapping.amplitude_axis,
-                  normalization_factor,
-                  true);
-    TIME_BLOCKFILTER ComputationSynchronize();
-    }
-
-    DEBUG_CWTTOBLOCK TaskInfo(format("Validating %s in %s")
-            % transfer
-            % Heightmap::ReferenceInfo(block->reference (), block->tfr_mapping ()));
+    Heightmap::ChunkToBlock chunktoblock;
+    chunktoblock.normalization_factor = normalization_factor;
+    chunktoblock.mergeColumnMajorChunk (blockr, *pchunk.chunk, outData);
 }
 
 

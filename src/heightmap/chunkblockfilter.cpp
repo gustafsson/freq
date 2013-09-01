@@ -33,7 +33,6 @@ bool ChunkBlockFilterKernel::
     chunk_to_block.normalization_factor = 1;
     chunk_to_block.full_resolution = true;
     chunk_to_block.enable_subtexel_aggregation = false;
-    chunk_to_block.tfr_mapping = read1(tfrmap_)->tfr_mapping();
 
     TfrMap::pCollection collection = read1(tfrmap_)->collections()[pchunk.channel];
 
@@ -47,7 +46,7 @@ bool ChunkBlockFilterKernel::
         if (pchunk.chunk->order == Tfr::Chunk::Order_row_major)
             chunk_to_block.mergeRowMajorChunk ( *block, pchunk.chunk, *blockdata );
         else
-            chunk_to_block.mergeColumnMajorChunk ( *block, pchunk.chunk, *blockdata );
+            chunk_to_block.mergeColumnMajorChunk ( *block, *pchunk.chunk, *blockdata );
 
         blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 

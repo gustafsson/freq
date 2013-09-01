@@ -7,8 +7,6 @@ namespace Heightmap {
 
 ChunkToBlock::
         ChunkToBlock()
-    :
-      tfr_mapping( BlockSize(1<<8,1<<8),2)
 {
 
 }
@@ -16,49 +14,48 @@ ChunkToBlock::
 
 void ChunkToBlock::mergeColumnMajorChunk(
         const Block& block,
-        Tfr::pChunk chunk,
+        const Tfr::Chunk& chunk,
         BlockData& outData )
 {
     Region r = block.getRegion();
 
     Position chunk_a, chunk_b;
-    //Signal::Interval inInterval = chunk.getInterval();
-    Signal::Interval inInterval = chunk->getCoveredInterval();
+    Signal::Interval inInterval = chunk.getCoveredInterval();
     Signal::Interval blockInterval = block.getInterval();
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    ReferenceInfo ri(block.reference (), tfr_mapping);
+    ReferenceInfo ri(block.reference (), block.tfr_mapping ());
     Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
 
+    // spannedElementsInterval looks more closely at what in chunk that can be used
     if (!transfer || !spannedBlockSamples)
         return;
 
-    chunk_a.time = inInterval.first/chunk->original_sample_rate;
-    chunk_b.time = inInterval.last/chunk->original_sample_rate;
+    chunk_a.time = inInterval.first/chunk.original_sample_rate;
+    chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
     // ::resampleStft computes frequency rows properly with its two instances
     // of FreqAxis.
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
-    ::resampleStft( chunk->transform_data,
-                    chunk->nScales(),
-                    chunk->nSamples(),
+    ::resampleStft( chunk.transform_data,
+                    chunk.nScales(),
+                    chunk.nSamples(),
                   outData.cpu_copy,
                   ValidInterval(spannedBlockSamples.first, spannedBlockSamples.last),
                   ResampleArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
-                  chunk->freqAxis,
-                  tfr_mapping.display_scale,
-                  tfr_mapping.amplitude_axis,
+                  chunk.freqAxis,
+                  block.tfr_mapping ().display_scale,
+                  block.tfr_mapping ().amplitude_axis,
                   normalization_factor,
                   true);
-
 }
 
 
@@ -67,6 +64,8 @@ void ChunkToBlock::mergeRowMajorChunk(
         Tfr::pChunk chunk,
         BlockData& outData )
 {
+    TfrMapping tfr_mapping( BlockSize(1<<8,1<<8),2);
+
     // Find out what intervals that match
     Signal::Interval outInterval = block.getInterval();
     Signal::Interval inInterval = chunk->getCoveredInterval();
@@ -160,9 +159,9 @@ void ChunkToBlock::
     ctb.enable_subtexel_aggregation = false;
     ctb.full_resolution = false;
     ctb.normalization_factor = 1;
-    ctb.tfr_mapping = TfrMapping( BlockSize(1<<8,1<<8),100);
-    ctb.tfr_mapping.display_scale.setLinear (1);
-    ctb.tfr_mapping.amplitude_axis = AmplitudeAxis_Linear;
+    TfrMapping tfr_mapping( BlockSize(1<<8,1<<8),100);
+    tfr_mapping.display_scale.setLinear (1);
+    tfr_mapping.amplitude_axis = AmplitudeAxis_Linear;
 
     Tfr::StftDesc* tfr;
     Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
@@ -181,13 +180,13 @@ void ChunkToBlock::
 
     Heightmap::Reference ref;
 
-    pBlock block( new Block (ref, ctb.tfr_mapping));
+    pBlock block( new Block (ref, tfr_mapping));
     BlockData blockdata;
     blockdata.cpu_copy.reset( new DataStorage<float>(32,32) );
 
     ctb.mergeColumnMajorChunk(
             *block,
-            chunk,
+            *chunk,
             blockdata );
 
     ctb.mergeRowMajorChunk(
