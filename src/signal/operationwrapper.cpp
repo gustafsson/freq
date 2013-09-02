@@ -7,8 +7,6 @@ namespace Signal {
 
 OperationWrapper::
         OperationWrapper(Operation::Ptr wrap)
-    :
-      private_(new private_data)
 {
     setWrappedOperation(wrap);
 }
@@ -17,18 +15,17 @@ OperationWrapper::
 void OperationWrapper::
         setWrappedOperation(Operation::Ptr wrap)
 {
-    write1(private_)->wrap = wrap;
+    wrap_ = wrap;
 }
 
 
 Signal::pBuffer OperationWrapper::
         process(Signal::pBuffer b)
 {
-    Operation::Ptr wrap = read1(private_)->wrap;
-    if (!wrap)
+    if (!wrap_)
         return b;
 
-    return wrap->process (b);
+    return write1(wrap_)->process (b);
 }
 
 
@@ -49,14 +46,12 @@ void OperationDescWrapper::
     {
         Operation::Ptr o = v.second.lock();
         if (o) {
-            OperationWrapper* w = dynamic_cast<OperationWrapper*>(o.get());
-            EXCEPTION_ASSERT(w);
-
-            Operation::Ptr o;
+            Operation::Ptr newo;
             if (wrap)
-                o = read1(wrap)->createOperation (v.first);
+                newo = read1(wrap)->createOperation (v.first);
 
-            w->setWrappedOperation (o);
+            Operation::WritePtr wo(o);
+            dynamic_cast<OperationWrapper*>(&*wo)->setWrappedOperation (o);
         }
     }
 

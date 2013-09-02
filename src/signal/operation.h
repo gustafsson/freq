@@ -30,15 +30,11 @@ class OperationDesc;
 /**
  * @brief The Operation class should describe the interface for performing signal processing on signal data.
  *
- * 'process' will only be called from one thread.
+ * 'process' should only be called from one thread. But use VolatilePtr anyways. The overhead is low.
  */
-class SaweDll Operation
+class SaweDll Operation: public VolatilePtr<Operation>
 {
 public:
-    typedef boost::shared_ptr<Operation> Ptr;
-    typedef boost::weak_ptr<Operation> WeakPtr;
-
-
     /**
       Virtual housekeeping.
       */

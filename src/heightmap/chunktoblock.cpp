@@ -162,9 +162,9 @@ void ChunkToBlock::
     Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
     Tfr::FilterKernelDesc::Ptr fdesc( new DummyKernelDesc );
     Signal::OperationDesc::Ptr desc(new Tfr::FilterDesc(tdesc, fdesc));
-    Signal::Operation::Ptr operation = read1(desc)->createOperation (0);
+    Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
 
-    Tfr::TransformKernel* transformkernel = dynamic_cast<Tfr::TransformKernel*>( operation.get ());
+    Tfr::TransformKernel* transformkernel = dynamic_cast<Tfr::TransformKernel*>( &*operation );
 
     Signal::Interval expectedOutput;
     Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);

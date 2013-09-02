@@ -149,7 +149,7 @@ void RenderOperationDesc::
         // Operations are processed through a Processing::Step
         Processing::Step step(ro);
         step.deprecateCache (Interval(4,9));
-        step.operation(ComputingEngine::Ptr())->process (pBuffer());
+        write1(step.operation(ComputingEngine::Ptr()))->process (pBuffer());
 
         EXCEPTION_ASSERT_EQUALS( Interval(4,9), target->I );
         EXCEPTION_ASSERT_EQUALS( 1, target->processed_count );

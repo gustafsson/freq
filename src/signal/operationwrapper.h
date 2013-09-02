@@ -20,11 +20,7 @@ public:
     virtual Signal::pBuffer process(Signal::pBuffer b);
 
 private:
-    class private_data: public VolatilePtr<private_data> {
-    public:
-        Operation::Ptr wrap;
-    };
-    private_data::Ptr private_;
+    Operation::Ptr wrap_;
 };
 
 

@@ -22,7 +22,7 @@ void Operation::
     Interval ri = desc->requiredInterval (I, &expectedOutput);
     EXCEPTION_ASSERT( (Interval(I.first, I.first+1) & ri).count() > 0 );
     pBuffer d(new Buffer(ri, 40, 7));
-    pBuffer p = o->process (d);
+    pBuffer p = write1(o)->process (d);
     EXCEPTION_ASSERT_EQUALS( p->getInterval (), expectedOutput );
 }
 
