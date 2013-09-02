@@ -42,24 +42,28 @@ public:
 
         Step::WritePtr step( g[u] ); // lock while studying what's needed
         Signal::Intervals I = needed[u] & step->not_started ();
-        Signal::OperationDesc::ReadPtr od (step->operation_desc());
+        Signal::OperationDesc::Ptr o = step->operation_desc();
 
         // Compute what we need from sources
         if (!I)
             return;
 
-        DEBUGINFO TaskTimer tt(format("Missing %2% in %1%") % od->toString ().toStdString () % I);
+        DEBUGINFO TaskTimer tt(format("Missing %2% in %1%") % read1(o)->toString ().toStdString () % I);
 
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;
-        for (Signal::Intervals x = expected_output; x;) {
-            Signal::Interval actual_output;
-            Signal::Interval r1 = od->requiredInterval (x, &actual_output);
-            required_input |= r1;
-            EXCEPTION_ASSERTX (actual_output & x,
-                               boost::format("actual_output = %1%, x = %2%")
-                               % actual_output % x); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
-            x -= actual_output;
+        {
+            // lock OperationDesc while querying requiredInterval
+            Signal::OperationDesc::ReadPtr od (o);
+            for (Signal::Intervals x = expected_output; x;) {
+                Signal::Interval actual_output;
+                Signal::Interval r1 = od->requiredInterval (x, &actual_output);
+                required_input |= r1;
+                EXCEPTION_ASSERTX (actual_output & x,
+                                   boost::format("actual_output = %1%, x = %2%")
+                                   % actual_output % x); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
+                x -= actual_output;
+            }
         }
 
         // Compute what the sources have available
@@ -76,7 +80,7 @@ public:
             // Then this operation must specify sample rate and number of
             // samples for this to be a valid read. Otherwise the signal is
             // undefined.
-            Signal ::OperationDesc::Extent x = od->extent ();
+            Signal ::OperationDesc::Extent x = read1(o)->extent ();
             if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
                 total_missing = Signal::Interval::Interval_ALL; // A non-empty interval
         }
