@@ -40,7 +40,11 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
         transform_desc() const
 {
     // TODO use Processing
-    OperationDesc::WritePtr o(getWrappedOperationDesc());
+    Signal::OperationDesc::Ptr wo = getWrappedOperationDesc();
+    if (!wo)
+        return Tfr::TransformDesc::Ptr();
+
+    OperationDesc::WritePtr o(wo);
     Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
     if (f)
         return f->transformDesc ();
@@ -60,7 +64,11 @@ void RenderOperationDesc::
         transform_desc(Tfr::TransformDesc::Ptr t)
 {
     // TODO use Processing
-    OperationDesc::WritePtr o(getWrappedOperationDesc());
+    Signal::OperationDesc::Ptr wo = getWrappedOperationDesc();
+    if (!wo)
+        return;
+
+    OperationDesc::WritePtr o(wo);
     Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
     if (f)
         return f->transformDesc (t);
