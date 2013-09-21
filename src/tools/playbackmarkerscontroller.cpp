@@ -74,6 +74,7 @@ void PlaybackMarkersController::
     else
     {
         EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+        pos = 0.f;
 //        pos = render_view_->model->project()->worker.length();
     }
 
