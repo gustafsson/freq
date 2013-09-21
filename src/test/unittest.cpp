@@ -71,6 +71,7 @@ int UnitTest::
         RUNTEST(Backtrace);
         RUNTEST(ExceptionAssert);
         RUNTEST(glinfo);
+        RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
         RUNTEST(VolatilePtrTest);
         RUNTEST(Test::ImplicitOrdering);
