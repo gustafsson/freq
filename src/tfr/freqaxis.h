@@ -34,7 +34,7 @@ public:
     FreqAxis() : axis_scale(AxisScale_Unknown) {}
 
 
-    bool operator==(const FreqAxis& b)
+    bool operator==(const FreqAxis& b) const
     {
         return axis_scale == b.axis_scale &&
                 max_frequency_scalar == b.max_frequency_scalar &&

@@ -404,3 +404,94 @@ Signal::Intervals StftDesc::
 }
 
 } // namespace Tfr
+
+#include "exceptionassert.h"
+
+using namespace Signal;
+
+namespace Tfr {
+
+std::ostream& operator<< (std::ostream& o, const AxisScale& a) {
+    switch(a) {
+    case AxisScale_Linear: return o << "Linear";
+    case AxisScale_Logarithmic: return o << "Logarithmic";
+    case AxisScale_Quefrency: return o << "Quefrency";
+    case AxisScale_Unknown: return o << "Unknown";
+    default: return o << "Invalid";
+    }
+}
+
+
+std::ostream& operator<< (std::ostream& o, const FreqAxis& i) {
+    return o << "axis = " << i.axis_scale
+      << ", step = " << i.f_step
+      << ", max = " << i.max_frequency_scalar;
+}
+
+
+std::ostream& operator<< (std::ostream& o, const TransformDesc& d) {
+    return o << d.toString ();
+}
+
+
+void StftDesc::
+        test()
+{
+    // It should create stft transforms.
+    {
+        StftDesc d;
+        EXCEPTION_ASSERT_EQUALS( vartype(*d.createTransform()), vartype(Stft()) );
+    }
+
+
+    // It should describe how an stft transform behaves.
+    {
+        StftDesc d;
+        EXCEPTION_ASSERT_EQUALS( vartype(*d.copy()), vartype(StftDesc()) );
+        EXCEPTION_ASSERT_EQUALS( vartype(*d.createTransform()), vartype(Stft()) );
+        EXCEPTION_ASSERT_EQUALS( d.displayedTimeResolution(4,1), 0.125f*d.chunk_size() / 4 );
+        EXCEPTION_ASSERT_EQUALS( d.freqAxis(4), [](){ FreqAxis f; f.setLinear(4, 1024); return f; }());
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (1,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (1,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2047,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2048,4), 4096 );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2049,4), 8192 ); // <-- unexpected behaviour
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4097,4), 4096 );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4096,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4095,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (2049,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(0,2048) );
+        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(1,2) );
+        EXCEPTION_ASSERT( !d.toString().empty () );
+        EXCEPTION_ASSERT_EQUALS( d, *d.copy () );
+
+        EXCEPTION_ASSERT_EQUALS( d.increment(), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
+        d.set_approximate_chunk_size(2);
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 4 );
+        d.set_approximate_chunk_size(7);
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 8 );
+        d.set_approximate_chunk_size(9);
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 8 );
+        d.set_exact_chunk_size (7);
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 7 );
+        EXCEPTION_ASSERT( !d.compute_redundant () );
+        d.compute_redundant (true);
+        EXCEPTION_ASSERT( d.compute_redundant () );
+        EXCEPTION_ASSERT( d.averaging () );
+        EXCEPTION_ASSERT_EQUALS( d.averaging (), 1 );
+        d.averaging (2);
+        EXCEPTION_ASSERT_EQUALS( d.averaging (), 2 );
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.f );
+        EXCEPTION_ASSERT_EQUALS( d.windowType (), WindowType_Rectangular );
+        EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Rectangular" );
+        d.setWindow (WindowType_Nuttail, 0.75);
+        EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Nuttail" );
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.75 );
+        EXCEPTION_ASSERT_EQUALS( d.affected_samples (), Signal::Interval::Interval_ALL );
+    }
+}
+
+
+
+} // namespace Tfr

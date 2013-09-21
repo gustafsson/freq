@@ -5,6 +5,11 @@
 
 namespace Tfr {
 
+/**
+ * @brief The StftDesc class should create stft transforms.
+ *
+ * It should describe how an stft transform behaves.
+ */
 class SaweDll StftDesc: public TransformDesc
 {
 public:
@@ -97,6 +102,9 @@ private:
     int _averaging;
     float _overlap;
     WindowType _window_type;
+
+public:
+    static void test();
 };
 
 } // namespace Tfr

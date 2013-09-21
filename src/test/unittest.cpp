@@ -24,6 +24,7 @@
 #include "signal/processing/workers.h"
 #include "signal/oldoperationwrapper.h"
 #include "signal/operationwrapper.h"
+#include "tfr/stftdesc.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/recordmodel.h"
 #include "tools/support/renderoperation.h"
@@ -99,6 +100,7 @@ int UnitTest::
         RUNTEST(Signal::OldOperationWrapper);
         RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Signal::OperationDescWrapper);
+        RUNTEST(Tfr::StftDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::RenderOperationDesc);
