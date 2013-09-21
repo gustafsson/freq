@@ -11,8 +11,9 @@ namespace Signal {
 typedef long long IntervalType;
 typedef unsigned long long UnsignedIntervalType;
 
+
 /**
-  Describes one discrete intervals. Always in the same sample rate as the
+  Describes one discrete interval. Always in the same sample rate as the
   signal they are referring to. So, one 'Interval' is given an including
   beginning 'first' and exclusive end 'last' in integers such that
 
@@ -59,6 +60,7 @@ public:
     std::string toString() const;
 };
 
+
 #ifdef _MSC_VER
 #pragma warning (push)
 // warning C4251: 'Signal::Intervals::base_' : class 'std::list<_Ty>' needs to
@@ -67,6 +69,7 @@ public:
 // As long as the .dll is only used internally for testing, this is not a problem.
 #pragma warning (disable:4251)
 #endif
+
 
 /**
   Describes a bunch of discrete intervals. Always in the same sample rate as the
@@ -137,6 +140,9 @@ public:
 
 private:
     base::iterator firstIntersecting( const Interval& b );
+
+public:
+    static void test();
 };
 
 SaweDll std::ostream& operator<< (std::ostream& o, const Interval& I);

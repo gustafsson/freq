@@ -621,3 +621,36 @@ Intervals  operator ^  (const Interval& a, const Intervals& b) { return Interval
 Intervals  operator |  (const Interval& a, const Interval& b)  { return a|Intervals(b); }
 
 } // namespace Signal
+
+#include "timer.h"
+#include "exceptionassert.h"
+
+namespace Signal {
+
+void Intervals::
+        test()
+{
+    // It should be fast
+    {
+        const int N = 1000000;
+        Intervals I;
+        Timer t;
+        for (int i=0; i<N; ++i) {
+            I |= Interval(i,i+1);
+        }
+        double T = t.elapsed ()/N;
+        EXCEPTION_ASSERT_LESS(T,0.0000005);
+        EXCEPTION_ASSERT_EQUALS(I, Intervals(0,N));
+
+        I = Intervals(0,N);
+        t.restart ();
+        for (int i=0; i<N; ++i) {
+            (I & Interval(i,i+1));
+        }
+        T = t.elapsed ()/N;
+        EXCEPTION_ASSERT_LESS(T,0.000002);
+    }
+}
+
+
+} // namespace Signal
