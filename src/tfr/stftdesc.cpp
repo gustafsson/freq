@@ -89,73 +89,29 @@ unsigned StftDesc::
 Signal::Interval StftDesc::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
-    const StftDesc& p = *this;
-    long averaging = p.averaging();
-    long window_size = p.chunk_size();
-    long window_increment = p.increment();
-    long chunk_size  = window_size*averaging;
-    long increment   = window_increment*averaging;
+    // _averaging shouldn't be a property of the transform but of the visualization
+    int increment = _averaging*this->increment();
+    int chunk_size = _averaging*this->chunk_size ();
 
-    // Add a margin to make sure that the inverse of the STFT will cover I
-    long first_chunk = 0,
-         last_chunk = (I.last + 2*window_size - window_increment-1)/increment;
-
-    first_chunk = I.first + window_increment - window_size;
-    if (first_chunk < 0)
-        first_chunk = floor(first_chunk/float(increment));
-    else
-        first_chunk = first_chunk/increment;
-
-    Signal::Interval chunk_interval(
-                first_chunk*increment,
-                last_chunk*increment);
-
-    if (!(affected_samples() & chunk_interval))
-    {
-        // Add a margin to make sure that the STFT is computed for one window
-        // before and one window after 'chunk_interval'.
-
-        first_chunk = 0;
-        last_chunk = (I.last + chunk_size/2 + increment - 1)/increment;
-
-        if (I.first >= chunk_size/2)
-            first_chunk = (I.first - chunk_size/2)/increment;
-        else
-        {
-            first_chunk = floor((I.first - chunk_size/2.f)/increment);
-
-            if (last_chunk*increment < chunk_size + increment)
-                last_chunk = (chunk_size + increment)/increment;
-        }
-
-        chunk_interval = Signal::Interval(
-                    first_chunk*increment,
-                    last_chunk*increment);
-
-/*        if (_exclude_end_block)
-        {
-            if (chunk_interval.last>number_of_samples())
-            {
-                last_chunk = number_of_samples()/chunk_size;
-                if (1+first_chunk<last_chunk)
-                    chunk_interval.last = last_chunk*chunk_size;
-            }
-        }*/
-    }
+    // align down to multiple of increment
+    int half1 = chunk_size/2;
+    int half2 = chunk_size - half1;
+    int first = align_down(I.first, increment) - half1,
+        last = align_up(I.last, increment) + half2;
 
     if (expectedOutput)
-        *expectedOutput = I;
+        *expectedOutput = Signal::Interval(
+                first + chunk_size-increment,
+                last - chunk_size+increment);
 
-    return chunk_interval;
+    return Signal::Interval(first, last);
 }
 
 
 Signal::Interval StftDesc::
         affectedInterval( const Signal::Interval& I ) const
 {
-    int window_size = chunk_size();
-
-    return Signal::Intervals(I).enlarge(window_size-increment()).spannedInterval ();
+    return requiredInterval(I, 0);
 }
 
 
@@ -396,13 +352,6 @@ bool StftDesc::
             _window_type == p->_window_type;
 }
 
-
-Signal::Intervals StftDesc::
-        affected_samples() const
-{
-    return Signal::Intervals::Intervals_ALL;
-}
-
 } // namespace Tfr
 
 #include "exceptionassert.h"
@@ -448,7 +397,6 @@ void StftDesc::
     {
         StftDesc d;
         EXCEPTION_ASSERT_EQUALS( vartype(*d.copy()), vartype(StftDesc()) );
-        EXCEPTION_ASSERT_EQUALS( vartype(*d.createTransform()), vartype(Stft()) );
         EXCEPTION_ASSERT_EQUALS( d.displayedTimeResolution(4,1), 0.125f*d.chunk_size() / 4 );
         EXCEPTION_ASSERT_EQUALS( d.freqAxis(4), [](){ FreqAxis f; f.setLinear(4, 1024); return f; }());
         EXCEPTION_ASSERT_EQUALS( d.next_good_size (1,4), 2048 );
@@ -460,8 +408,10 @@ void StftDesc::
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4096,4), 2048 );
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4095,4), 2048 );
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (2049,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(0,2048) );
-        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(1,2) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-1024,3*1024) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,2), 0 ), Interval(-3*1024,3*1024) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-3*1024,1024) );
+        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-1024,3*1024) );
         EXCEPTION_ASSERT( !d.toString().empty () );
         EXCEPTION_ASSERT_EQUALS( d, *d.copy () );
 
@@ -488,7 +438,6 @@ void StftDesc::
         d.setWindow (WindowType_Nuttail, 0.75);
         EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Nuttail" );
         EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.75 );
-        EXCEPTION_ASSERT_EQUALS( d.affected_samples (), Signal::Interval::Interval_ALL );
     }
 }
 
