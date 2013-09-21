@@ -48,3 +48,4 @@ image_works
 *.suo
 .DS_Store
 *.autosave
+.qmake.cache
