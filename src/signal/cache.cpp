@@ -68,7 +68,7 @@ void Cache::
     // 19 -> 1.2 ms
     // 18 -> 1.2 ms
     // 10 -> 1.2 ms
-    const int chunkSize = 1<<20;
+    const Signal::IntervalType chunkSize = 1<<20;
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 

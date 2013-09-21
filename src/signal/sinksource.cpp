@@ -97,7 +97,7 @@ void SinkSource::
     QWriteLocker l(&_cache_lock);
 #endif
 
-    const int chunkSize = 1<<22; // 16 MB = sizeof(float)*(1<<22)
+    const Signal::IntervalType chunkSize = 1<<22; // 16 MB = sizeof(float)*(1<<22)
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 

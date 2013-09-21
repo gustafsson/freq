@@ -90,7 +90,7 @@ Signal::Interval StftDesc::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
     // _averaging shouldn't be a property of the transform but of the visualization
-    int increment = _averaging*this->increment();
+    Signal::IntervalType increment = _averaging*this->increment();
     int chunk_size = _averaging*this->chunk_size ();
 
     // align down to multiple of increment
