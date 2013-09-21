@@ -36,21 +36,6 @@ CONFIG += buildflags
 # QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
-# Macports gcc 4.7 is necessary to build for OpenMP on Mac (to use OpenMP in anything but the main thread)
-macx: system(which /opt/local/bin/g++-mp-4.7 > /dev/null): CONFIG(release, debug|release) : CONFIG += useomp
-!macx: CONFIG(release, debug|release) : CONFIG += useomp
-llvm: CONFIG += noomp
-clang: CONFIG += noomp
-noomp: CONFIG -= useomp
-
-useomp {
-    DEFINES += USE_OMP
-    win32:QMAKE_CXXFLAGS += /openmp
-    unix:QMAKE_CXXFLAGS += -fopenmp
-    unix:QMAKE_LFLAGS += -fopenmp
-    macx:LIBS += -lgomp
-}
-
 
 ####################
 # Source code

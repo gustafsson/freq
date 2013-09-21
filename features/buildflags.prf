@@ -2,6 +2,10 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 CONFIG += warn_on
 
+# Use macports gcc 4.7 if available, necessary to build for openmp on Mac
+system(which /opt/local/bin/g++-mp-4.7 > /dev/null): CONFIG += gcc-mp-4.7
+CONFIG += openmp
+
 usecuda {
     DEFINES += SAWE_NO_MUTEX
     DEFINES += THREADCHECKER_NO_CHECK
@@ -84,8 +88,15 @@ profiling {
 }
 
 
-# Use macports gcc 4.8 if available, necessary to build for openmp on Mac
-system(which /opt/local/bin/g++-mp-4.8 > /dev/null): CONFIG += gcc-mp-4.7
+gcc-mp-4.8 {
+    # -rdynamic is the preferred way for enabling backtrace, but doesn't work with gcc-mp-4.7
+    #QMAKE_LFLAGS -= -rdynamic
+
+    QMAKE_CXX = /opt/local/bin/g++-mp-4.8
+    QMAKE_CC = /opt/local/bin/gcc-mp-4.8
+    QMAKE_LINK = /opt/local/bin/g++-mp-4.8
+}
+
 gcc-mp-4.7 {
     # -rdynamic is the preferred way for enabling backtrace, but doesn't work with gcc-mp-4.7
     QMAKE_LFLAGS -= -rdynamic
