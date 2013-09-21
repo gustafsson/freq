@@ -632,7 +632,7 @@ void Intervals::
 {
     // It should be fast
     {
-        const int N = 1000000;
+        const int N = 1000;
         Intervals I;
         Timer t;
         for (int i=0; i<N; ++i) {
