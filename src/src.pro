@@ -3,10 +3,6 @@
 # -------------------------------------------------
 
 
-# features directory
-qtfeatures = ../qtfeatures/
-win32:qtfeatures = "..\\qtfeatures\\"
-
 ####################
 # Project settings
 
@@ -35,7 +31,7 @@ testlib {
 
 CONFIG(debug, debug|release): CONFIG += console
 
-CONFIG += $${qtfeatures}buildflags
+CONFIG += buildflags
 #CONFIG += console # console output
 # QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
@@ -143,7 +139,7 @@ CONFIGURATION_SOURCES = \
     sawe/configuration/configuration.cpp
 
 FEATURE_SOURCES += \
-    $${qtfeatures}*.prf
+    ../features/*.prf
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
@@ -161,12 +157,12 @@ OTHER_FILES_VS += \
     *.pro \
     ../README \
 
-CONFIG += $${qtfeatures}otherfilesvs
+CONFIG += otherfilesvs
 
 
 ####################
 # Build settings
-CONFIG += $${qtfeatures}sawelibs
+CONFIG += sawelibs
 #DEFINES += CUDA_MEMCHECK_TEST
 
 
@@ -179,7 +175,7 @@ testlib {
     TMPDIR = lib/$${TMPDIR}
 }
 
-CONFIG += $${qtfeatures}tmpdir
+CONFIG += tmpdir
 
 
 # #######################################################################
@@ -192,14 +188,14 @@ useopencl {
     HEADERS += \
         tfr/clfft/*.h
 
-    CONFIG += $${qtfeatures}opencl
+    CONFIG += opencl
 }
 
 
 # #######################################################################
 # CUDA
 # #######################################################################
-usecuda: CONFIG += $${qtfeatures}cuda
+usecuda: CONFIG += cuda
 
 
 # #######################################################################
