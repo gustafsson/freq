@@ -148,6 +148,21 @@ bool ChunkFilter::
 }
 
 
+bool ChunkFilter::
+        operator()( Chunk& )
+{
+    EXCEPTION_ASSERTX(false, "deprecated and not implemented");
+    return false;
+}
+
+
+bool ChunkFilter::
+        operator()( ChunkAndInverse& chunk )
+{
+    return applyFilter( chunk );
+}
+
+
 Tfr::pTransform Filter::
         transform()
 {
@@ -247,7 +262,7 @@ Signal::Operation::Ptr FilterDesc::
         createOperation(Signal::ComputingEngine*engine) const
 {
     Tfr::pTransform t = transform_desc_->createTransform ();
-    pChunkFilter f = chunk_filter_->createChunkFilter (engine);
+    pChunkFilter f = read1(chunk_filter_)->createChunkFilter (engine);
     return Signal::Operation::Ptr (new TransformKernel( t, f ));
 }
 

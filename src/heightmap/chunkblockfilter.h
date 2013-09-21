@@ -3,43 +3,75 @@
 
 #include "tfr/filter.h"
 #include "heightmap/tfrmapping.h"
+#include "heightmap/block.h"
 
 namespace Heightmap {
 
-
-class ChunkBlockFilterKernel : public Tfr::ChunkFilter
-{
+class MergeChunk : public VolatilePtr<MergeChunk> {
 public:
-    ChunkBlockFilterKernel(Heightmap::TfrMap::Ptr tfrmap);
+    virtual ~MergeChunk() {}
 
-    virtual bool applyFilter( Tfr::ChunkAndInverse& chunk );
-
-    virtual bool operator()( Tfr::Chunk& );
-
-private:
-    Heightmap::TfrMap::Ptr tfrmap_;
+    virtual void mergeChunk(
+            const Heightmap::Block& block,
+            const Tfr::ChunkAndInverse& chunk,
+            Heightmap::BlockData& outData ) = 0;
 };
 
 
-class ChunkBlockFilterKernelDesc : public Tfr::FilterKernelDesc
+class MergeChunkDesc : public VolatilePtr<MergeChunkDesc>
 {
 public:
-    typedef boost::shared_ptr<ChunkBlockFilterKernelDesc> Ptr;
+    virtual ~MergeChunkDesc() {}
 
-    ChunkBlockFilterKernelDesc(Heightmap::TfrMap::Ptr tfrmap);
-    virtual ~ChunkBlockFilterKernelDesc();
-
-    virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const;
-
-private:
-    Heightmap::TfrMap::Ptr tfrmap_;
+    virtual MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
 };
 
 
-class CreateChunkBlockFilter {
+/**
+ * @brief The ChunkBlockFilter class should use a MergeChunk to update all
+ * blocks in a tfrmap that matches a given Tfr::Chunk.
+ */
+class ChunkBlockFilter: public Tfr::ChunkFilter
+{
 public:
-    static Signal::OperationDesc::Ptr createOperationDesc (Heightmap::TfrMap::Ptr tfrmap);
+    ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMap::Ptr tfrmap );
 
+    bool operator()( Tfr::ChunkAndInverse& chunk );
+
+private:
+    Heightmap::TfrMap::Ptr tfrmap_;
+    MergeChunk::Ptr merge_chunk_;
+
+public:
+    static void test();
+};
+
+
+/**
+ * @brief The ChunkBlockFilterDesc class should instantiate ChunkBlockFilters
+ * for different engines.
+ */
+class ChunkBlockFilterDesc: public Tfr::FilterKernelDesc
+{
+public:
+    ChunkBlockFilterDesc( Heightmap::TfrMap::Ptr tfrmap );
+
+    /**
+     * @brief createChunkFilter creates a ChunkFilter.
+     * If 'setMergeChunkDesc' has not been set createChunkFilter will return null.
+     * @param engine to create a filter kernel for.
+     * @return null or a ChunkFilter for the given engine.
+     */
+    Tfr::pChunkFilter createChunkFilter( Signal::ComputingEngine* engine=0 ) const;
+
+
+    void setMergeChunkDesc( MergeChunkDesc::Ptr mcdp ) { merge_chunk_desc_ = mcdp; }
+
+private:
+    MergeChunkDesc::Ptr merge_chunk_desc_;
+    Heightmap::TfrMap::Ptr tfrmap_;
+
+public:
     static void test();
 };
 

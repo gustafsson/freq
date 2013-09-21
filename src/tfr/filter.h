@@ -3,6 +3,7 @@
 
 #include "signal/intervals.h"
 #include "signal/operation.h"
+#include "deprecated.h"
 
 #include <QMutex>
 
@@ -56,18 +57,15 @@ public:
     virtual ~ChunkFilter() {}
 
     /**
-      The default implementation of applyFilter is to call operator()( Chunk& )
-      @see computeChunk
+      Apply the filter to a computed Tfr::Chunk. Return true if it makes sense
+      to compute the inverse afterwards.
       */
+    virtual bool operator()( ChunkAndInverse& chunk );
+
+    //DEPRECATED(virtual bool applyFilter( ChunkAndInverse& chunk ));
     virtual bool applyFilter( ChunkAndInverse& chunk );
 
-protected:
-    /**
-      Apply the filter to a computed Tfr::Chunk. This is the method that should
-      be implemented to create new filters. Return true if it makes sense to
-      compute the inverse afterwards.
-      */
-    virtual bool operator()( Chunk& ) = 0;
+    virtual bool operator()( Chunk& chunk ); // DEPRECATED
 };
 typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
 
@@ -180,10 +178,9 @@ private:
 };
 
 
-class FilterKernelDesc
+class FilterKernelDesc: public VolatilePtr<FilterKernelDesc>
 {
 public:
-    typedef boost::shared_ptr<FilterKernelDesc> Ptr;
     virtual ~FilterKernelDesc() {}
 
     virtual pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;

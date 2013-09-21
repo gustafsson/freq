@@ -164,7 +164,7 @@ CwtToBlock::
 void CwtToBlock::
         mergeChunk( const Block& block, const ChunkAndInverse& chunk, BlockData& outData )
 {
-    Cwt* cwt = dynamic_cast<Cwt*>(transform().get());
+    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(chunk.t.get ());
     EXCEPTION_ASSERT( cwt );
     bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
     float normalization_factor = cwt->nScales( chunk.chunk->original_sample_rate )/cwt->sigma();

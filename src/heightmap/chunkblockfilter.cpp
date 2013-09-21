@@ -13,27 +13,18 @@ using namespace boost;
 
 namespace Heightmap {
 
-
-///////////////////////////////////////////////////////////////////////////////
-
-
-ChunkBlockFilterKernel::
-        ChunkBlockFilterKernel(Heightmap::TfrMap::Ptr tfrmap)
+ChunkBlockFilter::
+        ChunkBlockFilter(MergeChunk::Ptr merge_chunk, Heightmap::TfrMap::Ptr tfrmap)
     :
-      tfrmap_(tfrmap)
+      tfrmap_(tfrmap),
+      merge_chunk_(merge_chunk)
 {
 }
 
 
-bool ChunkBlockFilterKernel::
-        applyFilter( Tfr::ChunkAndInverse& pchunk )
+bool ChunkBlockFilter::
+        operator()( Tfr::ChunkAndInverse& pchunk )
 {
-    Heightmap::ChunkToBlock chunk_to_block;
-    chunk_to_block.complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
-    chunk_to_block.normalization_factor = 1;
-    chunk_to_block.full_resolution = true;
-    chunk_to_block.enable_subtexel_aggregation = false;
-
     TfrMap::pCollection collection = read1(tfrmap_)->collections()[pchunk.channel];
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
@@ -43,10 +34,7 @@ bool ChunkBlockFilterKernel::
     {
         BlockData::WritePtr blockdata(block->block_data());
 
-        if (pchunk.chunk->order == Tfr::Chunk::Order_row_major)
-            chunk_to_block.mergeRowMajorChunk ( *block, *pchunk.chunk, *blockdata );
-        else
-            chunk_to_block.mergeColumnMajorChunk ( *block, *pchunk.chunk, *blockdata );
+        write1(merge_chunk_)->mergeChunk( *block, pchunk, *blockdata );
 
         blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 
@@ -57,61 +45,124 @@ bool ChunkBlockFilterKernel::
 }
 
 
-bool ChunkBlockFilterKernel::
-        operator()( Tfr::Chunk& )
-{
-    EXCEPTION_ASSERTX( false, "Invalid call");
-
-    return false;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-
-ChunkBlockFilterKernelDesc::
-        ChunkBlockFilterKernelDesc(Heightmap::TfrMap::Ptr tfrmap)
+ChunkBlockFilterDesc::
+        ChunkBlockFilterDesc(Heightmap::TfrMap::Ptr tfrmap)
     :
       tfrmap_(tfrmap)
 {
+
 }
 
 
-ChunkBlockFilterKernelDesc::
-        ~ChunkBlockFilterKernelDesc()
+Tfr::pChunkFilter ChunkBlockFilterDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
 {
+    MergeChunk::Ptr merge_chunk;
+    if (merge_chunk_desc_)
+        merge_chunk = read1(merge_chunk_desc_)->createMergeChunk(engine);
+
+    if (!merge_chunk)
+        return Tfr::pChunkFilter();
+
+    return Tfr::pChunkFilter( new ChunkBlockFilter(merge_chunk, tfrmap_));
 }
 
+} // namespace Heightmap
 
-Tfr::pChunkFilter ChunkBlockFilterKernelDesc::
-        createChunkFilter(Signal::ComputingEngine* /*engine*/) const
-{
-    return Tfr::pChunkFilter(new ChunkBlockFilterKernel(tfrmap_));
-}
+#include "signal/computingengine.h"
+#include "tfr/stft.h"
+
+namespace Heightmap {
+
+class MergeChunkMock : public MergeChunk {
+public:
+    void mergeChunk(
+            const Heightmap::Block&,
+            const Tfr::ChunkAndInverse& chunk,
+            Heightmap::BlockData&)
+    {
+        called |= chunk.chunk->getInterval ();
+    }
+
+    Signal::Intervals called;
+};
 
 
-///////////////////////////////////////////////////////////////////////////////
+class MergeChunkDescMock : public MergeChunkDesc {
+    MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const {
+        MergeChunk::Ptr r;
+        if (0 == engine) {
+            r.reset (new MergeChunkMock());
+        }
+        return r;
+    }
+};
 
 
-Signal::OperationDesc::Ptr CreateChunkBlockFilter::
-        createOperationDesc (Heightmap::TfrMap::Ptr tfrmap)
-{
-    Tfr::TransformDesc::Ptr ttd = read1(tfrmap)->transform_desc();
-    Tfr::FilterKernelDesc::Ptr fkdp (new ChunkBlockFilterKernelDesc(tfrmap));
-    Signal::OperationDesc::Ptr odp (new Tfr::FilterDesc(ttd, fkdp));
-    return odp;
-}
-
-
-void CreateChunkBlockFilter::
+void ChunkBlockFilter::
         test()
 {
-    Heightmap::TfrMap::Ptr tfrmap = Heightmap::TfrMap::testInstance ();
+    // It should use a MergeChunk to update all blocks in a tfrmap that matches a given Tfr::Chunk.
+    {
+        MergeChunkMock* merge_chunk_mock;
+        MergeChunk::Ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
+        TfrMapping tfr_mapping(BlockSize(4,4), SampleRate(4));
+        Heightmap::TfrMap::Ptr tfrmap(new Heightmap::TfrMap(tfr_mapping, ChannelCount(1)));
+        write1(tfrmap)->length( 1 );
+        ChunkBlockFilter cbf( merge_chunk, tfrmap );
 
-    Signal::OperationDesc::Ptr opdesc = createOperationDesc (tfrmap);
+        Tfr::StftDesc stftdesc;
+        Signal::Interval data = stftdesc.requiredInterval (Signal::Interval(0,4), 0);
+        Signal::pMonoBuffer buffer(new Signal::MonoBuffer(data, data.count ()));
 
-    Signal::Operation::Ptr op = read1(opdesc)->createOperation ();
+        {
+            Heightmap::Collection::WritePtr c(read1(tfrmap)->collections()[0]);
+            c->getBlock (c->entireHeightmap ());
+        }
+
+        Tfr::ChunkAndInverse cai;
+        cai.channel = 0;
+        cai.inverse = buffer;
+        cai.t = stftdesc.createTransform ();
+        cai.chunk = (*cai.t)( buffer );
+
+        cbf(cai);
+
+        EXCEPTION_ASSERT( merge_chunk_mock->called );
+    }
 }
 
+
+void ChunkBlockFilterDesc::
+        test()
+{
+    // It should instantiate ChunkBlockFilters for different engines.
+    {
+        TfrMapping tfr_mapping(BlockSize(4,4), 4);
+        Heightmap::TfrMap::Ptr tfrmap(new Heightmap::TfrMap(tfr_mapping, 1));
+
+        ChunkBlockFilterDesc cbfd( tfrmap );
+
+        Tfr::pChunkFilter cf = cbfd.createChunkFilter (0);
+        EXCEPTION_ASSERT( !cf );
+
+        cbfd.setMergeChunkDesc (MergeChunkDesc::Ptr( new MergeChunkDescMock ));
+        cf = cbfd.createChunkFilter (0);
+        EXCEPTION_ASSERT( cf );
+        EXCEPTION_ASSERT_EQUALS( vartype(*cf), "Heightmap::ChunkBlockFilter" );
+
+        Signal::ComputingCpu cpu;
+        cf = cbfd.createChunkFilter (&cpu);
+        EXCEPTION_ASSERT( !cf );
+
+        Signal::ComputingCuda cuda;
+        cf = cbfd.createChunkFilter (&cuda);
+        EXCEPTION_ASSERT( !cf );
+
+        Signal::ComputingOpenCL opencl;
+        cf = cbfd.createChunkFilter (&opencl);
+        EXCEPTION_ASSERT( !cf );
+    }
+}
 
 } // namespace Heightmap

@@ -31,6 +31,8 @@
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
+#include "heightmap/tfrmappings/stftblockfilter.h"
+#include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "adapters/playback.h"
 
 // gpumisc units
@@ -107,7 +109,12 @@ int UnitTest::
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
-        RUNTEST(Heightmap::CreateChunkBlockFilter);
+        RUNTEST(Heightmap::ChunkBlockFilter);
+        RUNTEST(Heightmap::ChunkBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::StftBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
         RUNTEST(Adapters::Playback);
 
     } catch (const exception& x) {

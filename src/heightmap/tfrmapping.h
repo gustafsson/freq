@@ -10,10 +10,12 @@
 
 namespace Heightmap {
 class Collection;
+typedef float SampleRate;
+typedef int ChannelCount;
 
 class TfrMapping {
 public:
-    TfrMapping(BlockSize, float fs);
+    TfrMapping(BlockSize, SampleRate fs);
 
     bool operator==(const TfrMapping& b);
 
@@ -43,7 +45,7 @@ public:
 
 class TfrMap: public VolatilePtr<TfrMap> {
 public:
-    TfrMap(TfrMapping tfr_mapping, int channels);
+    TfrMap(TfrMapping tfr_mapping, ChannelCount channels);
     ~TfrMap();
 
     BlockSize block_size() const;
