@@ -220,12 +220,17 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #include "adapters/writewav.h"
 #include <fstream>
 #include <boost/algorithm/string.hpp>
+#include <omp.h>
 
 using namespace Signal;
 
 
 int main(int argc, char *argv[])
 {
+#ifdef _DEBUG
+    omp_set_num_threads(1);
+#endif
+
     PrettifySegfault::setup ();
 
     if (argc == 2 && 0 == strcmp(argv[1],"--test"))
