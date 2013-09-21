@@ -136,7 +136,7 @@ void SlidingMedian( I inIter, I inEnd, J output, float fraction )
     int readindex = 0;
     for( int j = 0; j<N; ++j )
     {
-        int window = j*fraction + 0.5f;
+        unsigned window = std::max(0.f, j*fraction + 0.5f);
         if (window < 2) window = 2;
 
         // when window increases we can't be sure that ordered is still full

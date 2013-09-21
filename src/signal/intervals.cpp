@@ -395,9 +395,9 @@ Interval Intervals::
 
 
 Interval Intervals::
-        fetchInterval( IntervalType dt, IntervalType center ) const
+        fetchInterval( UnsignedIntervalType dt, IntervalType center ) const
 {
-    if (center < dt/2)
+    if (center < IntervalType(dt/2))
         center = 0;
     else
         center -= dt/2;
@@ -411,8 +411,8 @@ Interval Intervals::
         if ( itr->first > center )
             break;
 
-    IntervalType distance_to_next = Interval::IntervalType_MAX;
-    IntervalType distance_to_prev = Interval::IntervalType_MAX;
+    UnsignedIntervalType distance_to_next = Interval::IntervalType_MAX;
+    UnsignedIntervalType distance_to_prev = Interval::IntervalType_MAX;
 
     if (itr != end()) {
         distance_to_next = itr->first - center;
@@ -445,12 +445,12 @@ Interval Intervals::
         IntervalType start = f.first + dt*int_div_ceil;
 
         if (f.last <= start ) {
-            return Interval( f.last-dt, f.last );
+            return Interval( IntervalType(f.last-dt), f.last );
         }
 
         EXCEPTION_ASSERT(start>=f.first);
 
-        return Interval( start, std::min(start+dt, f.last) );
+        return Interval( start, std::min(IntervalType(start+dt), f.last) );
     }
 }
 

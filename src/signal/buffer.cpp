@@ -199,7 +199,7 @@ MonoBuffer& MonoBuffer::
 #ifdef _DEBUG
     if (!clearWithZeros && !fromCpu && !fromGpu) {
         float *p = CpuMemoryStorage::WriteAll<1>( write ).ptr();
-        for (int j=0; j<i.count (); ++j)
+        for (unsigned j=0; j<i.count (); ++j)
             p[j] = 1e100;
     }
 #endif

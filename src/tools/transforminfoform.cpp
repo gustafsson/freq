@@ -483,7 +483,7 @@ void TransformInfoForm::
 
 
 void TransformInfoForm::
-        timeNormalizationChanged(qreal newValue)
+        timeNormalizationChanged(qreal /*newValue*/)
 {
     EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
 /*
@@ -502,7 +502,7 @@ void TransformInfoForm::
 
 
 void TransformInfoForm::
-        freqNormalizationChanged(qreal newValue)
+        freqNormalizationChanged(qreal /*newValue*/)
 {
     EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
 /*

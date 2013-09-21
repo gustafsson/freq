@@ -104,8 +104,8 @@ Signal::pBuffer Filter::
             Interval i(I.first, I.first+1);
             if (!( i & invinterval ) && !applied_filter)
             {
-                Signal::Interval required2 = requiredInterval(I, t);
-                Interval cgi2 = ci.chunk->getInterval ();
+                Signal::Interval required2 __attribute__ ((unused)) = requiredInterval(I, t);
+                Interval cgi2 __attribute__ ((unused)) = ci.chunk->getInterval ();
                 ci.inverse = b->getChannel (c);
                 ci.chunk = (*t)( ci.inverse );
                 ci.inverse = t->inverse (ci.chunk);

@@ -325,7 +325,7 @@ pBuffer SinkSource::
         bool nonzeron = false;
         for (int i=0; i<N; ++i)
             nonzerob |= p[i] != 0;
-        for (int i=0; i<validFetch.count (); ++i)
+        for (unsigned i=0; i<validFetch.count (); ++i)
             nonzeron |= q[i] != 0;
 
         EXCEPTION_ASSERT( nonzerob );

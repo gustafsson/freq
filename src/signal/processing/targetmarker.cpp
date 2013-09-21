@@ -1,5 +1,6 @@
 #include "targetmarker.h"
 #include "dag.h"
+#include "unused.h"
 
 #include <boost/foreach.hpp>
 
@@ -20,8 +21,8 @@ TargetMarker::
 std::set<Step::Ptr> single_paths(GraphVertex v, const Graph& g) {
     std::set<Step::Ptr> S;
 
-    int od = boost::out_degree(v, g);
-    int id = boost::in_degree(v, g);
+    UNUSED(int od) = boost::out_degree(v, g);
+    UNUSED(int id) = boost::in_degree(v, g);
 
     if (boost::out_degree(v, g) > 1)
         return S;

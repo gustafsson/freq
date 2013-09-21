@@ -97,8 +97,8 @@ Signal::Intervals OperationRemoveSection::
     Interval rightkeep(section_.last, Interval::IntervalType_MAX);
     Interval leftkeep(Interval::IntervalType_MIN, section_.first);
 
-    Intervals left = (I & leftkeep) << (section_ & neg).count ();
-    Intervals right = (I & rightkeep) >> (section_ & pos).count ();
+    Intervals left = (I & leftkeep) <<= (section_ & neg).count ();
+    Intervals right = (I & rightkeep) >>= (section_ & pos).count ();
 
     left |= I & rightkeep;
     right |= I & leftkeep;
@@ -116,8 +116,8 @@ Signal::Intervals OperationRemoveSection::
     Interval rightmove(section_.first, Interval::IntervalType_MAX);
     Interval leftmove(Interval::IntervalType_MIN, section_.last);
 
-    Intervals left = (leftmove & neg & I) >> (section_ & neg).count();
-    Intervals right = (rightmove & pos & I) << (section_ & pos).count();
+    Intervals left = (leftmove & neg & I) >>= (section_ & neg).count();
+    Intervals right = (rightmove & pos & I) <<= (section_ & pos).count();
 
     Interval rightkeep(section_.last, Interval::IntervalType_MAX);
     Interval leftkeep(Interval::IntervalType_MIN, section_.first);
@@ -152,7 +152,7 @@ pBuffer OperationInsertSilence::
 
     if (I.first >= section_.last) {
         pBuffer b = source()->readFixedLength(
-                (Intervals( I ) >> section_.count()).spannedInterval());
+                (Intervals( I ) >>= section_.count()).spannedInterval());
         b->set_sample_offset ( b->sample_offset () + section_.count() );
         return b;
     }
@@ -168,8 +168,8 @@ pBuffer OperationInsertSilence::
 IntervalType OperationInsertSilence::
         number_of_samples()
 {
-    IntervalType N = DeprecatedOperation::number_of_samples();
-    if (N <= section_.first)
+    UnsignedIntervalType N = DeprecatedOperation::number_of_samples();
+    if (0 <= section_.first && N <= (UnsignedIntervalType)section_.first)
         return section_.last;
     if (N + section_.count() < N)
         return Interval::IntervalType_MAX;
@@ -192,7 +192,7 @@ Signal::Intervals OperationInsertSilence::
 
     ending = Signal::Interval( section_.first, Signal::Interval::IntervalType_MAX );
 
-    return (I&beginning) | ((I&ending) << section_.count());
+    return (I&beginning) | ((I&ending) <<= section_.count());
 }
 
 Signal::Intervals OperationInsertSilence::
@@ -205,7 +205,7 @@ Signal::Intervals OperationInsertSilence::
 
     ending = Signal::Interval(section_.last, Signal::Interval::IntervalType_MAX);
 
-    return (I&beginning) | ((I&ending) >> section_.count());
+    return (I&beginning) | ((I&ending) >>= section_.count());
 }
 
 

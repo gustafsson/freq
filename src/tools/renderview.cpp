@@ -1189,7 +1189,7 @@ void RenderView::
 
         // It should update the view in sections equal in size to the smallest
         // visible block if the view isn't currently being invalidated.
-        if (_last_update_size < Signal::Interval::IntervalType_MAX/ 5 * 4)
+        if (_last_update_size < Signal::UnsignedIntervalType(Signal::Interval::IntervalType_MAX) / 5 * 4)
         {
             if (_last_update_size == _last_update_size * 5 / 4)
                 _last_update_size++;

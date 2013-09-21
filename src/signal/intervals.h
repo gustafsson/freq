@@ -98,9 +98,10 @@ public:
     Intervals& operator &= (const Interval&);
     Intervals  operator ^  (const Intervals& b) const { return Intervals(*this)^=b; }
     Intervals& operator ^= (const Intervals&);
-    Intervals  operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
+    // These are ambiguous due to 'operator bool' below. 'operator bool' is more commonly used.
+    //Intervals  operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
+    //Intervals  operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
     Intervals& operator >>=(const IntervalType&);
-    Intervals  operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
     Intervals& operator <<=(const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
@@ -112,7 +113,7 @@ public:
     bool                    contains    (const IntervalType& t) const;
     Intervals               inverse() const;
     Interval                fetchFirstInterval() const;
-    Interval                fetchInterval( IntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
+    Interval                fetchInterval( UnsignedIntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                spannedInterval() const;
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;

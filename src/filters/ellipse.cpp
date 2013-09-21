@@ -50,9 +50,9 @@ bool Ellipse::
     TIME_FILTER TaskTimer tt("Ellipse");
 
     Area area = {
-            _centre_t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+            (float)(_centre_t * chunk.sample_rate - chunk.chunk_offset.asFloat()),
             chunk.freqAxis.getFrequencyScalarNotClamped( _centre_f ),
-            _centre_plus_radius_t * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+            (float)(_centre_plus_radius_t * chunk.sample_rate - chunk.chunk_offset.asFloat()),
             chunk.freqAxis.getFrequencyScalarNotClamped( _centre_plus_radius_f )};
 
     ::removeDisc( chunk.transform_data,

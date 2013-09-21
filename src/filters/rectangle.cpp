@@ -58,9 +58,9 @@ bool Rectangle::operator()( Chunk& chunk) {
     TIME_FILTER TaskTimer tt("Rectangle");
 
     Area area = {
-            _t1 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+            (float)(_t1 * chunk.sample_rate - chunk.chunk_offset.asFloat()),
             chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
-            _t2 * chunk.sample_rate - chunk.chunk_offset.asFloat(),
+            (float)(_t2 * chunk.sample_rate - chunk.chunk_offset.asFloat()),
             chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ) };
 
     ::removeRect( chunk.transform_data,

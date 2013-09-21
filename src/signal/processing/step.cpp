@@ -234,8 +234,6 @@ void Step::
 
         EXCEPTION_ASSERT( *b == *s.readFixedLengthFromCache (b->getInterval ()) );
     }
-
-
 }
 
 

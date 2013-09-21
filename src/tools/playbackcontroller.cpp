@@ -87,7 +87,7 @@ void PlaybackController::
 
 
 void PlaybackController::
-        receivePlaySection( bool active )
+        receivePlaySection( bool /*active*/ )
 {
     EXCEPTION_ASSERTX(false, "not implemented");
 #if 0

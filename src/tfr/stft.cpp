@@ -8,6 +8,7 @@
 #include <throwInvalidArgument.h>
 #include <neat_math.h>
 #include <computationkernel.h>
+#include <unused.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -936,7 +937,7 @@ unsigned Stft::
 
     time_duration fastest_time;
     unsigned fastest_size = 0;
-    unsigned ok_size = 0;
+    UNUSED(unsigned ok_size) = 0;
     Tfr::pChunk C;
     time_duration latest_time[4];
     unsigned max_base = 3;

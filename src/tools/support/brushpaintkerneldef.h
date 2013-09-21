@@ -84,6 +84,9 @@ void multiplyGauss( ResampleArea imageArea, DataStorage<float>::Ptr imagep, Gaus
     case Heightmap::AmplitudeAxis_5thRoot:
         element_operate<float, MultiplyGaussOperator5th>(imagep, imageArea, MultiplyGaussOperator5th(g));
         break;
+    case Heightmap::AmplitudeAxis_Real:
+        // Is this used?
+        break;
     }
 }
 

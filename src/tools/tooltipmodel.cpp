@@ -63,7 +63,7 @@ const Heightmap::Position& TooltipModel::
 
 
 void TooltipModel::
-        showToolTip( Heightmap::Position p, bool adjustScaleToLocalPeak )
+        showToolTip( Heightmap::Position /*p*/, bool /*adjustScaleToLocalPeak*/ )
 {
     EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
 /*

@@ -114,7 +114,7 @@ Task::Ptr FirstMissAlgorithm::
                 Signal::Intervals needed,
                 Signal::IntervalType center,
                 Signal::IntervalType preferred_size,
-                Workers::Ptr workers,
+                Workers::Ptr /*workers*/,
                 Signal::ComputingEngine::Ptr engine) const
 {
     DEBUGINFO TaskTimer tt("getTask");

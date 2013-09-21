@@ -12,6 +12,7 @@
 #include <computationkernel.h>
 #include <neat_math.h>
 #include <Statistics.h>
+#include <unused.h>
 
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"
@@ -238,9 +239,9 @@ pChunk Cwt::
                 EXCEPTION_ASSERT( 0 == extra );
 
 #ifdef _DEBUG
-        Signal::IntervalType sub_start_org = sub_start;
-        unsigned sub_std_samples_org = sub_std_samples;
-        unsigned sub_length_org = sub_length;
+        UNUSED( Signal::IntervalType sub_start_org ) = sub_start;
+        UNUSED( unsigned sub_std_samples_org ) = sub_std_samples;
+        UNUSED( unsigned sub_length_org ) = sub_length;
 #endif
 
         sub_std_samples += extra/2;
