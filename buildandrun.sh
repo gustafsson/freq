@@ -25,5 +25,5 @@ elif [ "$(uname -s)" == "Darwin" ]; then
         open sonicawe.app
     )
 else
-	echo "Don't know hos to start Sonic AWE on this platform"
+	echo "Don't know how to start Sonic AWE on this platform"
 fi

@@ -24,8 +24,8 @@
 #include <msc_stdc.h>
 
 
-#define TIME_COLLECTION
-//#define TIME_COLLECTION if(0)
+//#define TIME_COLLECTION
+#define TIME_COLLECTION if(0)
 
 //#define INFO_COLLECTION
 #define INFO_COLLECTION if(0)
@@ -297,7 +297,21 @@ std::vector<pBlock> Collection::
     std::vector<pBlock> r;
     r.reserve(32);
 
-    //TIME_COLLECTION TaskTimer tt("getIntersectingBlocks( %s, %s ) from %u caches", I.toString().c_str(), only_visible?"only visible":"all", _cache.size());
+    INFO_COLLECTION TaskTimer tt(boost::format("getIntersectingBlocks( %s, %s ) from %u caches spanning %s")
+                 % I
+                 % (only_visible?"only visible":"all")
+                 % _cache.size()
+                 % [&]()
+                 {
+                    Intervals J;
+                    BOOST_FOREACH( const cache_t::value_type& c, _cache )
+                    {
+                        const pBlock& pb = c.second;
+                        J |= pb->getInterval();
+                    }
+                    return J;
+                }());
+
 
     BOOST_FOREACH( const cache_t::value_type& c, _cache )
     {
