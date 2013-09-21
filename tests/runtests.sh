@@ -2,7 +2,6 @@
 set -e
 
 configurations="onlycpu"
-#configurations="onlycpu usecuda"
 defaulttimeout=10
 
 if [ "$1" = "--help" ]; then
@@ -144,6 +143,7 @@ rm -f *_failed.log
 
 logbasedir="${startdir}/logs/${testtimestamp}"
 echo "Saving logs in $logbasedir for {$configurations}"
+libfailed=
 
 for configname in $configurations; do
   logdir="${logbasedir}/${configname}"
@@ -185,6 +185,7 @@ for configname in $configurations; do
   if (( 0 != ret )); then
     $linkcmd ${logdir}/${build_logname}.log ${build_logname}_failed.log
     echo "X!"
+    libfailed=1
     failed="${failed}${configname}\n"
 
   else
@@ -292,6 +293,9 @@ echo -e $failed
 echo
 echo "Test run timestamp: $testtimestamp"
 echo "Test finished at:   $(formatedtimestamp)"
+
+# exit with the return code 125 if the library build failed, see git bisect
+[ -z "$libfailed" ] || exit 125
 
 # exit with a successfull return code if failed is empty
 [ -z "$failed" ]
