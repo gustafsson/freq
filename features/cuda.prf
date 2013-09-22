@@ -1,6 +1,6 @@
 usecuda {
 DEFINES += USE_CUDA
-SAWEROOT = $${qtfeatures}..
+SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe).*|\\1|\')
 
 win32 {
     usecuda {
