@@ -112,6 +112,7 @@ void ChunkBlockFilter::
         ChunkBlockFilter cbf( merge_chunk, tfrmap );
 
         Tfr::StftDesc stftdesc;
+        stftdesc.enable_inverse (false);
         Signal::Interval data = stftdesc.requiredInterval (Signal::Interval(0,4), 0);
         Signal::pMonoBuffer buffer(new Signal::MonoBuffer(data, data.count ()));
 
