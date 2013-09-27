@@ -78,16 +78,6 @@ Signal::Interval OperationDescWrapper::
 }
 
 
-Signal::Interval OperationDescWrapper::
-        requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const
-{
-    if (wrap_)
-        return read1(wrap_)->requiredInterval (I, expectedOutput);
-
-    return OperationDesc::requiredInterval (I, expectedOutput);
-}
-
-
 Interval OperationDescWrapper::
         affectedInterval( const Interval& I ) const
 {

@@ -27,13 +27,6 @@ void Operation::
 }
 
 
-Signal::Interval OperationDesc::
-        requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const
-{
-    return requiredInterval (I.fetchFirstInterval (), expectedOutput );
-}
-
-
 Intervals OperationDesc::
         affectedInterval( const Intervals& I ) const
 {

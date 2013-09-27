@@ -27,7 +27,7 @@ private:
 /**
  * @brief The OperationDescWrapper class should behave as another OperationDesc.
  *
- * It should ensure that when the wrapped operation is changed all instanciated
+ * It should ensure that when the wrapped operation is changed all instantiated
  * operations must be recreated.
  *
  * It should behave as a transparent operation if no operation is wrapped.
@@ -40,7 +40,6 @@ public:
     OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
-    virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
     virtual Interval affectedInterval( const Interval& I ) const;
     virtual Intervals affectedInterval( const Intervals& I ) const;
     virtual OperationDesc::Ptr copy() const;

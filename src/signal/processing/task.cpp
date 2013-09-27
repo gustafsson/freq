@@ -82,7 +82,7 @@ Signal::pBuffer Task::
     Signal::Intervals required_input;
     while (needed) {
         Signal::Interval actual_output;
-        Signal::Interval r1 = operation_desc->requiredInterval (needed, &actual_output);
+        Signal::Interval r1 = operation_desc->requiredInterval (needed.fetchFirstInterval (), &actual_output);
         required_input |= r1;
         EXCEPTION_ASSERT (actual_output & needed); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
         needed -= actual_output;

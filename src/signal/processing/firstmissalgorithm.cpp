@@ -57,7 +57,7 @@ public:
             Signal::OperationDesc::ReadPtr od (o);
             for (Signal::Intervals x = expected_output; x;) {
                 Signal::Interval actual_output;
-                Signal::Interval r1 = od->requiredInterval (x, &actual_output);
+                Signal::Interval r1 = od->requiredInterval (x.fetchFirstInterval (), &actual_output);
                 required_input |= r1;
                 EXCEPTION_ASSERTX (actual_output & x,
                                    boost::format("actual_output = %1%, x = %2%")

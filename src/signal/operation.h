@@ -72,28 +72,18 @@ public:
 
 
     /**
-     * @brief requiredInterval returns the interval that is required to compute
-     * a valid chunk representing interval I. If the operation can not compute
-     * a valid chunk representing the at least interval I at once the operation
-     * can request a smaller chunk for processing instead by modifying I before
-     * returning.
-     * @param expectedOutput will overlap I. expectedOutput may be zero. If
-     * 'expectedOutput' is non-zero it will be assigned an Interval by
-     * requiredInterval.
+     * @brief requiredInterval should figure out which input interval that is
+     * needed for a given output interval.
+     * @param I describes an interval in the output.
+     * @param expectedOutput describes which interval that will be computed
+     * when 'requiredInterval' is processed. This will overlap 'I.first'.
+     * expectedOutput may be null to be ignored.
+     * @return the interval that is required to compute a valid chunk
+     * representing interval I. If the operation can not compute a valid chunk
+     * representing the at least interval I at once the operation can request
+     * a smaller chunk for processing instead by setting 'expectedOutput'.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
-
-
-    /**
-     * @brief requiredInterval takes a Signal::Intervals with the same logic as
-     * the version for Signal::Interval. The default implementation calls the
-     * other version with I.fetchFirstInterval ();
-     * Used to let an Operation prioritize in which order to compute stuff.
-     * Such as starting computing closer to the camera.
-     * @param 'I' may be modified by Operation if another interval is preferred.
-     * I.first must be contained in a modified interval.
-     */
-    virtual Signal::Interval requiredInterval( const Signal::Intervals& I, Signal::Interval* expectedOutput ) const;
 
 
     /**
