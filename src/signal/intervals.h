@@ -55,7 +55,7 @@ public:
     bool        operator!=  (const Interval& r) const;
     bool        contains    (const Interval& t) const;
     bool        contains    (const IntervalType& t) const;
-    operator    bool        () const { return 0 < count(); }
+    operator    bool        () const { return first < last; } // == 0 < count()
 
     std::string toString() const;
 };
