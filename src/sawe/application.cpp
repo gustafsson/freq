@@ -51,11 +51,24 @@ static void show_fatal_exception_cerr( const string& str )
     cerr.flush();
 }
 
-static void show_fatal_exception_qt( const string& str )
+static void show_fatal_exception_qt( const string& /*str*/ )
 {
+    int t = time(0);
+    srand(t);
+    int r = rand();
+    QString alt[] = {
+        "Darn",
+        "Oups",
+        "Not again",
+        "Uhm",
+        "Ah well"
+    };
+
+    QString a = alt[r%(sizeof(alt)/sizeof(alt[0]))];
+    QString name = QApplication::instance ()->applicationName ();
     QMessageBox::critical( 0,
-                 QString("Error, closing application"),
-				 QString::fromLocal8Bit(str.c_str()) );
+                 a,
+                 QString("%1, need to restart %2.\nThe log file may contain some cryptic details").arg (a).arg (name));
 }
 
 void Application::
@@ -68,10 +81,7 @@ void Application::
 
 static string fatal_exception_string( const exception &x )
 {
-    stringstream ss;
-    ss   << "Error: " << vartype(x) << endl
-         << "Message: " << x.what();
-    return ss.str();
+    return boost::diagnostic_information(x);
 }
 
 static string fatal_unknown_exception_string() {
@@ -254,17 +264,6 @@ bool Application::
         }
 
         v = QApplication::notify(receiver,e);
-    //} catch (const exception &x) {
-    } catch (const invalid_argument &x) {
-        const char* what = x.what();
-        if (1 == QMessageBox::warning( 0,
-                                       QString("Couldn't complete the requested action"),
-                                       QString("Couldn't complete the requested action.\nDetails on the error follow:\n\n")+
-                                       QString::fromLocal8Bit(what),
-                                       "Ignore", "Exit program", QString::null, 0, 0 ))
-        {
-            err = fatal_exception_string(x);
-        }
     } catch (const exception &x) {
         err = fatal_exception_string(x);
     } catch (...) {
