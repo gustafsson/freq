@@ -643,7 +643,7 @@ void Intervals::
             (I & Interval(i,i+1));
         }
         T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.000002);
+        EXCEPTION_ASSERT_LESS(T,0.000003);
     }
 }
 
