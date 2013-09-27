@@ -309,7 +309,7 @@ void Renderer::init()
     char dummy;
     versionreader >> gl_major >> dummy >> gl_minor;
 
-    TaskInfo("OpenGL version %d.%d (%s)", gl_major, gl_minor, glversion);
+    //TaskInfo("OpenGL version %d.%d (%s)", gl_major, gl_minor, glversion);
 
     if ((1 > gl_major )
         || ( 1 == gl_major && 4 > gl_minor ))
@@ -317,8 +317,8 @@ void Renderer::init()
         Sawe::NonblockingMessageBox::show(
                 QMessageBox::Critical,
                 "Couldn't properly setup graphics",
-                "Sonic AWE requires a graphics card that supports OpenGL 2.0 and no such graphics card was found.\n\n"
-                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.");
+                "Sonic AWE requires a graphics driver that supports OpenGL 2.0 and no such graphics driver was found.\n\n"
+                "If you think this messge is an error, please file this as a bug report at muchdifferent.com to help us fix this.");
 
         // fail
         return;
@@ -333,7 +333,7 @@ void Renderer::init()
 
     bool required_extension = true;
     const char* all_extensions = (const char*)glGetString(GL_EXTENSIONS);
-    TaskInfo("Checking extensions %s", all_extensions);
+    //TaskInfo("Checking extensions %s", all_extensions);
     for (unsigned i=0; i < sizeof(exstensions)/sizeof(exstensions[0]); ++i)
     {
         if (0 == strlen(exstensions[i]))
@@ -344,10 +344,11 @@ void Renderer::init()
 
 
         bool hasExtension = 0 != strstr(all_extensions, exstensions[i]);
-        TaskInfo("%s %s extension %s",
-                 hasExtension?"Found":"Couldn't find",
-                 required_extension?"required":"preferred",
-                 exstensions[i]);
+        if (!hasExtension)
+            TaskInfo("%s %s extension %s",
+                     hasExtension?"Found":"Couldn't find",
+                     required_extension?"required":"preferred",
+                     exstensions[i]);
 
         if (hasExtension)
             continue;
