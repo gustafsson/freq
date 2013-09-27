@@ -35,6 +35,8 @@ MergeChunk::Ptr StftBlockFilterDesc::
 #include "timer.h"
 #include "neat_math.h"
 #include "signal/computingengine.h"
+#include "detectgdb.h"
+
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -85,7 +87,11 @@ void StftBlockFilter::
         write1(mc)->mergeChunk( block, cai, *write1(block.block_data ()) );
 
         float T = t.elapsed ();
-        EXCEPTION_ASSERT_LESS(T, 1e-3);
+        if (DetectGdb::is_running_through_gdb ()) {
+            EXCEPTION_ASSERT_LESS(T, 2e-3);
+        } else {
+            EXCEPTION_ASSERT_LESS(T, 1e-3);
+        }
     }
 }
 
