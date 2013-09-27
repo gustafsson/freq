@@ -15,6 +15,8 @@
 #include "filters/ridge.h"
 #include "heightmap/blockfilter.h"
 #include "heightmap/renderer.h"
+#include "heightmap/chunkblockfilter.h"
+#include "heightmap/tfrmappings/stftblockfilter.h"
 #include "signal/postsink.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
@@ -126,6 +128,7 @@ RenderController::
 //#endif
 
         write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
+        write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().enable_inverse(false);
 
         ui->actionToggleTransformToolBox->setChecked( true );
     }
@@ -420,9 +423,16 @@ void RenderController::
 void RenderController::
         setBlockFilter(Signal::DeprecatedOperation* blockfilter)
 {
+    Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
+    setBlockFilter(adapter);
+}
+
+
+void RenderController::
+        setBlockFilter(Signal::OperationDesc::Ptr adapter)
+{
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
-    Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
     model()->set_filter (adapter);
 
     stateChanged();
@@ -434,7 +444,7 @@ void RenderController::
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
-    {
+    if (isCwt || wasCwt) {
         Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
         Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
         Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
@@ -520,9 +530,19 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Stft()
 {
-    Heightmap::StftToBlock* stftblock = new Heightmap::StftToBlock(model()->tfr_map ());
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::StftBlockFilterDesc);
 
-    setBlockFilter( stftblock );
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc( write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().copy());
+
+    // Wire it up to a FilterDesc
+    Heightmap::ChunkBlockFilterDesc* cbfd;
+    Tfr::FilterKernelDesc::Ptr kernel(cbfd
+            = new Heightmap::ChunkBlockFilterDesc(model()->tfr_map ()));
+    cbfd->setMergeChunkDesc( mcdp );
+    Tfr::FilterDesc::Ptr desc( new Tfr::FilterDesc(transform_desc, kernel));
+    setBlockFilter( desc );
 }
 
 

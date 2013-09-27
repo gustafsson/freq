@@ -222,7 +222,7 @@ public:
         // TODO use a chain of commands instead to be processed by the worker thread
         Tfr::pChunkFilter f = freqNormalization;
         if (f)
-            f->applyFilter(pchunk);
+            (*f)(pchunk);
 
         if (f != freqNormalization)
             return false;

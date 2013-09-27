@@ -60,12 +60,7 @@ public:
       Apply the filter to a computed Tfr::Chunk. Return true if it makes sense
       to compute the inverse afterwards.
       */
-    virtual bool operator()( ChunkAndInverse& chunk );
-
-    //DEPRECATED(virtual bool applyFilter( ChunkAndInverse& chunk ));
-    virtual bool applyFilter( ChunkAndInverse& chunk );
-
-    virtual bool operator()( Chunk& chunk ); // DEPRECATED
+    virtual bool operator()( ChunkAndInverse& chunk ) = 0;
 };
 typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
 
@@ -138,6 +133,11 @@ public:
       'current_valid_samples_per_chunk').
       */
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
+
+
+    virtual bool operator()( ChunkAndInverse& chunk );
+    virtual bool applyFilter( ChunkAndInverse& chunk );
+    virtual bool operator()( Chunk& chunk ) = 0;
 
 protected:
     Filter(Filter&);

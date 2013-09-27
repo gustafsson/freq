@@ -135,7 +135,7 @@ void ChunkToBlock::mergeRowMajorChunk(
 namespace Heightmap {
 
 class DummyKernel: public Tfr::ChunkFilter {
-    virtual bool operator()( Tfr::Chunk& ) {
+    virtual bool operator()( Tfr::ChunkAndInverse& ) {
         return false;
     }
 };

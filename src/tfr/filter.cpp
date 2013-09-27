@@ -92,7 +92,7 @@ Signal::pBuffer Filter::
             EXCEPTION_ASSERTX( cii & I, boost::format("cii = %s, I = %s") % cii % I);
         #endif
 
-        bool applied_filter = applyFilter( ci );
+        bool applied_filter = (*this)( ci );
         if (applied_filter)
             ci.inverse = t->inverse (ci.chunk);
 
@@ -141,22 +141,14 @@ unsigned Filter::
 }
 
 
-bool ChunkFilter::
+bool Filter::
         applyFilter( ChunkAndInverse& chunk )
 {
     return (*this)( *chunk.chunk );
 }
 
 
-bool ChunkFilter::
-        operator()( Chunk& )
-{
-    EXCEPTION_ASSERTX(false, "deprecated and not implemented");
-    return false;
-}
-
-
-bool ChunkFilter::
+bool Filter::
         operator()( ChunkAndInverse& chunk )
 {
     return applyFilter( chunk );
@@ -215,7 +207,7 @@ Signal::pBuffer TransformKernel::
 
         ci.chunk = (*t)( ci.inverse );
 
-        if (chunk_filter_->applyFilter ( ci ))
+        if ((*chunk_filter_)( ci ))
             ci.inverse = t->inverse (ci.chunk);
 
         if (!r)
