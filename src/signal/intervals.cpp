@@ -12,13 +12,8 @@
 
 namespace Signal {
 
-// long unsigned
-//const IntervalType Interval::IntervalType_MIN = (IntervalType)0;
-//const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
-
-// long long
-const IntervalType Interval::IntervalType_MIN = LLONG_MIN;
-const IntervalType Interval::IntervalType_MAX = LLONG_MAX;
+const IntervalType Interval::IntervalType_MIN = std::numeric_limits<IntervalType>::min();
+const IntervalType Interval::IntervalType_MAX = std::numeric_limits<IntervalType>::max();
 
 const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
