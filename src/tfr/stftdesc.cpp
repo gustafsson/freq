@@ -12,6 +12,7 @@ StftDesc::
       _window_size( 1<<11 ),
       _compute_redundant(false),
       _averaging(1),
+      _enable_inverse(true),
       _overlap(0.f),
       _window_type(WindowType_Rectangular)
 {
@@ -90,19 +91,37 @@ Signal::Interval StftDesc::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
     // _averaging shouldn't be a property of the transform but of the visualization
-    Signal::IntervalType increment = _averaging*this->increment();
-    int chunk_size = _averaging*this->chunk_size ();
+    Signal::IntervalType
+            increment = _averaging*this->increment(),
+            chunk_size = _averaging*this->chunk_size (),
+            first = I.first,
+            last = I.last,
+            preload,
+            postload;
 
-    // align down to multiple of increment
-    int half1 = chunk_size/2;
-    int half2 = chunk_size - half1;
-    int first = align_down(I.first, increment) - half1,
-        last = align_up(I.last, increment) + half2;
+    if (enable_inverse ())
+        {
+        // To compute the inverse we need almost an entire chunk before 'first'
+        // rationale: the sample at 'first - chunk_size + 1' might take part
+        // in the same fft as the sample at 'first'
+        preload = postload = chunk_size - increment;
+        }
+    else
+        {
+        // To compute the TFR at 'first' we only need half a chunk before
+        // rationale: the position in time for an stft is defined as
+        // 'the first sample in the chunk' + floor(chunk_size/2)
+        preload = chunk_size/2;
+        postload = chunk_size - preload; // don't assume chunk_size is even
+        }
+
+    // align to multiple of increment
+    // first or last is allowed to be edge cases of IntervalType
+    first = align_down(clamped_sub(first, preload), increment),
+    last = align_up(clamped_add(last, postload), increment);
 
     if (expectedOutput)
-        *expectedOutput = Signal::Interval(
-                first + chunk_size-increment,
-                last - chunk_size+increment);
+        *expectedOutput = Signal::Interval(first + preload, last - postload);
 
     return Signal::Interval(first, last);
 }
@@ -111,7 +130,20 @@ Signal::Interval StftDesc::
 Signal::Interval StftDesc::
         affectedInterval( const Signal::Interval& I ) const
 {
-    return requiredInterval(I, 0);
+    if (enable_inverse ())
+        return requiredInterval(I, 0);
+    else
+        {
+        Signal::IntervalType
+            increment = _averaging*this->increment(),
+            chunk_size = _averaging*this->chunk_size (),
+            first = align_down(clamped_sub(I.first, chunk_size), increment),
+            last = align_up(clamped_add(I.last, chunk_size), increment),
+            preload = chunk_size/2,
+            postload = chunk_size - preload; // don't assume chunk_size is even
+
+        return Signal::Interval(first + preload, last - postload);
+        }
 }
 
 
@@ -226,10 +258,24 @@ void StftDesc::
 }
 
 
+bool StftDesc::
+        enable_inverse() const
+{
+    return _enable_inverse;
+}
+
+
+void StftDesc::
+        enable_inverse(bool value)
+{
+    _enable_inverse = value;
+}
+
+
 float StftDesc::
         overlap() const
 {
-    return _overlap;
+    return 1.f - increment ()/(float)chunk_size ();
 }
 
 
@@ -300,8 +346,7 @@ int StftDesc::
         increment() const
 {
     int window_size = chunk_size();
-    float overlap = this->overlap();
-    float wanted_increment = window_size*(1.f-overlap);
+    float wanted_increment = window_size*(1.f-_overlap);
 
     // _window_size must be a multiple of increment for inverse to be correct
     int divs = std::max(1.f, std::floor(window_size/wanted_increment));
@@ -382,6 +427,11 @@ std::ostream& operator<< (std::ostream& o, const TransformDesc& d) {
     return o << d.toString ();
 }
 
+} // namespace Tfr
+
+#include "TaskTimer.h"
+
+namespace Tfr {
 
 void StftDesc::
         test()
@@ -396,7 +446,6 @@ void StftDesc::
     // It should describe how an stft transform behaves.
     {
         StftDesc d;
-        EXCEPTION_ASSERT_EQUALS( vartype(*d.copy()), vartype(StftDesc()) );
         EXCEPTION_ASSERT_EQUALS( d.displayedTimeResolution(4,1), 0.125f*d.chunk_size() / 4 );
         EXCEPTION_ASSERT_EQUALS( d.freqAxis(4), [](){ FreqAxis f; f.setLinear(4, 1024); return f; }());
         EXCEPTION_ASSERT_EQUALS( d.next_good_size (1,4), 2048 );
@@ -408,15 +457,76 @@ void StftDesc::
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4096,4), 2048 );
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4095,4), 2048 );
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (2049,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-1024,3*1024) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,2), 0 ), Interval(-3*1024,3*1024) );
-        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-3*1024,1024) );
-        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-1024,3*1024) );
-        EXCEPTION_ASSERT( !d.toString().empty () );
-        EXCEPTION_ASSERT_EQUALS( d, *d.copy () );
 
         EXCEPTION_ASSERT_EQUALS( d.increment(), 2048 );
         EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.f );
+        EXCEPTION_ASSERT_EQUALS( d.windowType (), WindowType_Rectangular );
+        EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Rectangular" );
+        d.setWindow (WindowType_Nuttail, 0.75);
+        EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Nuttail" );
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.75 );
+        d.setWindow (WindowType_Rectangular, 0.0);
+
+        EXCEPTION_ASSERT_EQUALS( d.enable_inverse (), true );
+        d.setWindow (WindowType_Rectangular, 0.5);
+        EXCEPTION_ASSERT_EQUALS( d.increment(), 1024 );
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
+        d.setWindow (WindowType_Rectangular, 0.15);
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.f );
+        d.setWindow (WindowType_Rectangular, 0.66);
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.5f );
+        d.setWindow (WindowType_Rectangular, 0.67);
+        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.75f );
+        d.setWindow (WindowType_Rectangular, 0.75);
+        EXCEPTION_ASSERT_EQUALS( d.increment(), 512 );
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
+
+        int c = d.chunk_size ();
+        d.enable_inverse (true);
+
+        for (float overlap : std::vector<float>{0.0, 0.5, 0.75, 1-1/8.0, 0.98}) {
+            d.setWindow (WindowType_Rectangular, overlap);
+            int i = d.increment ();
+
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-c+i,c) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,1), 0 ), Interval(-c,c) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-c,c-i) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,1), 0 ), Interval(-c+i,c) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,c), 0 ), Interval(-c+i,c+c-i) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-c,0), 0 ), Interval(-c-c+i,c-i) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-2,-1), 0 ), Interval(-c,c-i) );
+            EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-c+i,c) );
+        }
+
+        d.enable_inverse (false);
+        d.setWindow (WindowType_Rectangular, 0.0);
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-c,c) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,1), 0 ), Interval(-c,c) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-c,c) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,1), 0 ), Interval(-c,c) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,c), 0 ), Interval(-c,c+c) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-c,0), 0 ), Interval(-c-c,c) );
+        EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-2,-1), 0 ), Interval(-c,c) );
+        EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-c/2,c/2+c) );
+
+        for (float overlap : std::vector<float>{0.5, 0.75, 1-1/8.0, 0.98}) {
+            d.setWindow (WindowType_Rectangular, overlap);
+            int i = d.increment ();
+            int h2 = c/2,
+                h1 = c - h2;
+
+            EXCEPTION_ASSERT_LESS( i, c/2+i );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(1,2), 0 ), Interval(-h1,h2+i) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,1), 0 ), Interval(-h1-i,h2+i) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-1,0), 0 ), Interval(-h1-i,h2) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,1), 0 ), Interval(-h1,h2+i) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(0,c), 0 ), Interval(-h1,c+h2) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-c,0), 0 ), Interval(-c-h1,h2) );
+            EXCEPTION_ASSERT_EQUALS( d.requiredInterval (Interval(-2,-1), 0 ), Interval(-h1-i,h2) );
+            EXCEPTION_ASSERT_EQUALS( d.affectedInterval (Interval(1,2) ), Interval(-h2,h1+i) );
+        }
+
         d.set_approximate_chunk_size(2);
         EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 4 );
         d.set_approximate_chunk_size(7);
@@ -432,12 +542,55 @@ void StftDesc::
         EXCEPTION_ASSERT_EQUALS( d.averaging (), 1 );
         d.averaging (2);
         EXCEPTION_ASSERT_EQUALS( d.averaging (), 2 );
-        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.f );
-        EXCEPTION_ASSERT_EQUALS( d.windowType (), WindowType_Rectangular );
-        EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Rectangular" );
-        d.setWindow (WindowType_Nuttail, 0.75);
-        EXCEPTION_ASSERT_EQUALS( d.windowTypeName (), "Nuttail" );
-        EXCEPTION_ASSERT_EQUALS( d.overlap (), 0.75 );
+
+        d.set_approximate_chunk_size (32);
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 32 );
+
+        srand(0);
+        for (int i=0; i<100; i++) {
+            d.setWindow (WindowType_Rectangular, rand()/(float)RAND_MAX);
+            d.enable_inverse (rand()%2);
+            if (d.enable_inverse ())
+                d.averaging (1);
+            else
+                d.averaging (rand()%8);
+            d.averaging (1);
+            d.compute_redundant (rand()%2);
+
+            Signal::Interval expectedOutput;
+            Interval I;
+            I.first = rand()%100;
+            I.last = I.first + 1 + (rand()%100);
+            Signal::Interval r = d.requiredInterval (I, &expectedOutput );
+            EXCEPTION_ASSERT( Signal::Interval(I.first, I.first+1) & r );
+            Signal::pMonoBuffer m(new Signal::MonoBuffer(r, 1));
+            Tfr::pTransform t = d.createTransform ();
+            Tfr::pChunk c = (*t)(m);
+            if (d.enable_inverse ()) {
+                Signal::pMonoBuffer inverse = t->inverse (c);
+                EXCEPTION_ASSERT_EQUALS( inverse->getInterval (), c->getInterval () );
+                EXCEPTION_ASSERT_EQUALS( expectedOutput, inverse->getInterval () );
+                EXCEPTION_ASSERT_EQUALS( expectedOutput, c->getInterval () );
+            } else {
+                EXCEPTION_ASSERT_EQUALS( expectedOutput, c->getCoveredInterval () );
+            }
+        }
+    }
+
+
+    // It should be copyable and stringable.
+    {
+        StftDesc d;
+        EXCEPTION_ASSERT_EQUALS( vartype(*d.copy()), vartype(StftDesc()) );
+        EXCEPTION_ASSERT( !d.toString().empty () );
+        EXCEPTION_ASSERT_EQUALS( d, *d.copy () );
+
+        TransformDesc::Ptr t = d.copy ();
+        StftDesc* d2 = dynamic_cast<StftDesc*>(t.get ());
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
+        d.set_approximate_chunk_size(7);
+        EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 8 );
+        EXCEPTION_ASSERT_EQUALS( d2->chunk_size(), 2048 );
     }
 }
 

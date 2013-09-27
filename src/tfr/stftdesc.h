@@ -9,6 +9,8 @@ namespace Tfr {
  * @brief The StftDesc class should create stft transforms.
  *
  * It should describe how an stft transform behaves.
+ *
+ * It should be copyable and stringable.
  */
 class SaweDll StftDesc: public TransformDesc
 {
@@ -67,6 +69,20 @@ public:
     int averaging() const;
     void averaging(int);
 
+    /**
+     * @brief enable_inverse describes if the inverse transform is enabled.
+     * This affects requiredInterval and affectedInterval which only compute
+     * what's needed to produce a time-frequency representation of an interval
+     * but not what's needed to produce a stable inverse of that representation.
+     *
+     * An exception is thrown if Transform::inverse is called while
+     * enabled_inverse is false.
+     *
+     * Default: true
+     */
+    bool enable_inverse() const;
+    void enable_inverse(bool);
+
     float overlap() const;
     WindowType windowType() const;
     std::string windowTypeName() const { return windowTypeName(windowType()); }
@@ -87,6 +103,7 @@ private:
     int _window_size;
     bool _compute_redundant;
     int _averaging;
+    bool _enable_inverse;
     float _overlap;
     WindowType _window_type;
 

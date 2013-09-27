@@ -321,7 +321,7 @@ Tfr::pChunk Stft::
     // (note that "first_valid_sample" only makes sense if the transform is invertible, which it isn't if averaging != 1)
     chunk->first_valid_sample = ceil((alignment - increment)/increment);
     int nSamples = chunk->nSamples();
-    int last_valid_sample = floor((nSamples*increment - alignment + increment)/increment);
+    int last_valid_sample = nSamples/p.averaging();
     if ( last_valid_sample >= chunk->first_valid_sample)
         chunk->n_valid_samples = last_valid_sample - chunk->first_valid_sample;
     else
@@ -416,6 +416,8 @@ Tfr::pChunk Stft::
 Signal::pMonoBuffer Stft::
         inverse( pChunk chunk )
 {
+    STFT_ASSERT( p.enable_inverse () );
+
     STFT_ASSERT( p.averaging() == 1 );
 
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
@@ -745,8 +747,6 @@ void Stft::
     int out0 = c->first_valid_sample*increment;
     //int out0 = p.chunk_size()/2 - increment/2 + c->first_valid_sample*increment;
     int N = signal->size().width;
-
-    TaskInfo("signal->size().width = %u", signal->size().width);
 
     STFT_ASSERT( c->n_valid_samples*increment == signal->size().width );
 
