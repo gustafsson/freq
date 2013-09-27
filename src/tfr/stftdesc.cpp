@@ -571,8 +571,22 @@ void StftDesc::
                 EXCEPTION_ASSERT_EQUALS( inverse->getInterval (), c->getInterval () );
                 EXCEPTION_ASSERT_EQUALS( expectedOutput, inverse->getInterval () );
                 EXCEPTION_ASSERT_EQUALS( expectedOutput, c->getInterval () );
+
+                // don't use c->getCoveredInterval if d.enable_inverse ()
+                if (d.overlap ()>0) {
+                    EXCEPTION_ASSERT( !(Signal::Intervals(expectedOutput) - c->getCoveredInterval ()));
+                }
+                // c->getCoveredInterval () is not necessarily non-empty,
+                // i.e if overlap=0 and I=[0,1) -> !getCoveredInterval ().
             } else {
                 EXCEPTION_ASSERT_EQUALS( expectedOutput, c->getCoveredInterval () );
+
+                // don't use c->getInterval if !d.enable_inverse ()
+                if (d.overlap ()==0) {
+                    EXCEPTION_ASSERT( !(Signal::Intervals(expectedOutput) - c->getInterval ()));
+                } else {
+                    EXCEPTION_ASSERT( !(Signal::Intervals(c->getInterval ()) - expectedOutput));
+                }
             }
         }
     }
