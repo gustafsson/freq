@@ -15,22 +15,31 @@ class OperationWrapper: public Operation {
 public:
     OperationWrapper(Operation::Ptr wrap);
 
-    void setWrappedOperation(Operation::Ptr wrap);
+    void setWrappedOperation(Operation::Ptr wrap) volatile;
 
     virtual Signal::pBuffer process(Signal::pBuffer b);
 
 private:
-    Operation::Ptr wrap_;
+    class private_data: public VolatilePtr<private_data> {
+    public:
+        void wrappedOperation(Operation::Ptr wrap) { wrap_ = wrap; }
+        Operation::Ptr wrappedOperation() const { return wrap_; }
+    private:
+        Operation::Ptr wrap_;
+    };
+
+    private_data::Ptr private_data_;
 };
 
 
 /**
  * @brief The OperationDescWrapper class should behave as another OperationDesc.
  *
- * It should ensure that when the wrapped operation is changed all instantiated
- * operations must be recreated.
+ * It should recreate instantiated operations when the wrapped operation is changed.
  *
  * It should behave as a transparent operation if no operation is wrapped.
+ *
+ * It should allow new opertions without blocking while processing existing operations.
  */
 class OperationDescWrapper: public OperationDesc {
 public:
