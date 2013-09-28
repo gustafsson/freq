@@ -266,12 +266,15 @@ pBlock Collection::
 
     if (block)
     {
-        BlockData::ReadPtr bd(block->block_data ());
+        try {
+            // Lock if available but don't wait for it to become available
+            BlockData::ReadPtr bd(block->block_data (), 0);
 
-        if (block->new_data_available) {
-            *block->glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
-            block->new_data_available = false;
-        }
+            if (block->new_data_available) {
+                *block->glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
+                block->new_data_available = false;
+            }
+        } catch (const LockFailed&) {}
 
         poke(block);
     }
@@ -837,7 +840,7 @@ void Collection::
         VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
 
         std::vector<pBlock> next;
-        BOOST_FOREACH ( const pBlock& bl, gib )
+        BOOST_FOREACH ( const pBlock& bl, gib ) try
         {
             // The switch from high resolution blocks to low resolution blocks (or
             // the other way around) should be as invisible as possible. Therefor
@@ -862,7 +865,10 @@ void Collection::
                 {
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                     things_to_update -= v;
-                    mergeBlock( *block, *bl, *write1(block->block_data()), *read1(bl->block_data()) );
+
+                    // Lock if available but don't wait for it to become available
+                    BlockData::ReadPtr bd(bl->block_data (), 0);
+                    mergeBlock( *block, *bl, *write1(block->block_data()), *bd );
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -878,7 +884,8 @@ void Collection::
             {
                 next.push_back ( bl );
             }
-        }
+        } catch (const LockFailed&) {}
+
         gib = next;
     }
 }
