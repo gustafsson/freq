@@ -201,11 +201,21 @@ Tfr::TransformDesc::Ptr RenderModel::
 void RenderModel::
         set_transform_desc(Tfr::TransformDesc::Ptr t)
 {
-    Signal::OperationDesc::WritePtr o (render_operation_desc_);
-    Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(&*o);
+    {
+        Signal::OperationDesc::WritePtr o (render_operation_desc_);
+        Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(&*o);
 
-    if (rod)
+        if (!rod)
+            return;
+
         rod->transform_desc (t);
+    }
+
+//    write1(target_marker ())->updateNeeds(
+//                Signal::Intervals(),
+//                Signal::Interval::IntervalType_MIN,
+//                Signal::Interval::IntervalType_MAX,
+//                Signal::Intervals::Intervals_ALL);
 }
 
 

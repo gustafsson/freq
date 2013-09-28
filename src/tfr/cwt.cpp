@@ -73,7 +73,7 @@ Cwt::
     _wavelet_def_time_suppport( wavelet_time_suppport ),
     _wavelet_scale_suppport( 6 ),
     _jibberish_normalization( 1 ),
-    last_fs( 1 )
+    last_fs( 0 )
 {
 #ifdef USE_CUDA
     storageCudaMemsetFix = &cudaMemsetFix;
@@ -390,6 +390,8 @@ TransformDesc::Ptr Cwt::
 pTransform Cwt::
         createTransform() const
 {
+    if (0==last_fs)
+        EXCEPTION_ASSERT_LESS(0, last_fs);
     return pTransform(new Cwt(*this));
 }
 
@@ -474,7 +476,8 @@ bool Cwt::
             _wavelet_time_suppport == p->_wavelet_time_suppport &&
             _wavelet_def_time_suppport == p->_wavelet_def_time_suppport &&
             _wavelet_scale_suppport == p->_wavelet_scale_suppport &&
-            _jibberish_normalization == p->_jibberish_normalization;
+            _jibberish_normalization == p->_jibberish_normalization &&
+            last_fs == p->last_fs;
 }
 
 
@@ -1273,6 +1276,20 @@ unsigned Cwt::
         chunk_alignment(float fs) const
 {
     return chunkpart_alignment(nBins(fs));
+}
+
+
+float Cwt::
+        get_fs() const
+{
+    return last_fs;
+}
+
+
+void Cwt::
+        set_fs(float fs)
+{
+    last_fs = fs;
 }
 
 

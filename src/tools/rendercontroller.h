@@ -2,6 +2,7 @@
 #define RENDERCONTROLLER_H
 
 #include "renderview.h"
+#include "heightmap/chunkblockfilter.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -94,6 +95,7 @@ namespace Tools
         void stateChanged();
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
         void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
+        void setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc);
         void setBlockFilter(Signal::OperationDesc::Ptr adapter);
         //Tfr::Filter* currentFilter();
         Tfr::TransformDesc::Ptr currentTransform();

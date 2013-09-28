@@ -34,7 +34,7 @@ void CwtBlockFilter::
 
     BOOST_FOREACH( const Tfr::pChunk& chunkpart, chunks.chunks )
     {
-        chunktoblock.mergeColumnMajorChunk (block, *chunkpart, outData);
+        chunktoblock.mergeRowMajorChunk (block, *chunkpart, outData);
     }
 }
 
@@ -75,6 +75,7 @@ void CwtBlockFilter::
         Timer t;
 
         Tfr::Cwt cwtdesc;
+        cwtdesc.set_fs (1);
         Signal::Interval data = cwtdesc.requiredInterval (Signal::Interval(0,4), 0);
 
         // Create some data to plot into the block

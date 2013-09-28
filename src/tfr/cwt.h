@@ -102,6 +102,8 @@ public:
     size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
     unsigned        chunk_alignment(float fs) const;
+    float           get_fs() const;
+    void            set_fs(float fs);
 private:
     pChunk          computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales );
 
