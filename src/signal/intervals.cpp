@@ -392,6 +392,8 @@ Interval Intervals::
 Interval Intervals::
         fetchInterval( UnsignedIntervalType dt, IntervalType center ) const
 {
+    EXCEPTION_ASSERT_LESS( 0, dt );
+
     if (center < IntervalType(dt/2))
         center = 0;
     else
@@ -634,7 +636,7 @@ void Intervals::
             I |= Interval(i,i+1);
         }
         double T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.0000005);
+        EXCEPTION_ASSERT_LESS(T,0.0000006);
         EXCEPTION_ASSERT_EQUALS(I, Intervals(0,N));
 
         I = Intervals(0,N);

@@ -82,7 +82,7 @@ RenderView::
             _last_y(0),
             _try_gc(0),
             _target_fps(10.0f),
-            _last_update_size(0)
+            _last_update_size(std::numeric_limits<Signal::UnsignedIntervalType>::max())
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -842,6 +842,8 @@ void RenderView::
 void RenderView::
         setLastUpdateSize( Signal::IntervalType last_update_size )
 {
+    EXCEPTION_ASSERT_LESS(0, last_update_size);
+
     _last_update_size = last_update_size;
 }
 
@@ -1189,11 +1191,13 @@ void RenderView::
 
         // It should update the view in sections equal in size to the smallest
         // visible block if the view isn't currently being invalidated.
-        if (_last_update_size < Signal::UnsignedIntervalType(Signal::Interval::IntervalType_MAX) / 5 * 4)
+        if (_last_update_size < std::numeric_limits<Signal::UnsignedIntervalType>::max() / 5 * 4)
         {
             if (_last_update_size == _last_update_size * 5 / 4)
                 _last_update_size++;
             _last_update_size = _last_update_size * 5 / 4;
+        } else {
+            _last_update_size = std::numeric_limits<Signal::UnsignedIntervalType>::max();
         }
 
         isWorking = model->target_marker ()->isWorking();

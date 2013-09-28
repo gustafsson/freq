@@ -39,6 +39,8 @@ void TargetNeeds::
         int prio
         )
 {
+    EXCEPTION_ASSERT_LESS( 0, preferred_update_size_ );
+
     needed_samples_ = needed_samples;
 
     ptime now = microsec_clock::local_time();

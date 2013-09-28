@@ -88,7 +88,7 @@ void StftBlockFilter::
 
         float T = t.elapsed ();
         if (DetectGdb::is_running_through_gdb ()) {
-            EXCEPTION_ASSERT_LESS(T, 2e-3);
+            EXCEPTION_ASSERT_LESS(T, 3e-3);
         } else {
             EXCEPTION_ASSERT_LESS(T, 1e-3);
         }

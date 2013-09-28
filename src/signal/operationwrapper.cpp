@@ -317,7 +317,7 @@ void OperationDescWrapper::
             Timer t;
             w.setWrappedOperationDesc (b); // this should not be blocking
             float T = t.elapsed ();
-            EXCEPTION_ASSERT_LESS( T, 40e-6 );
+            EXCEPTION_ASSERT_LESS( T, 60e-6 );
         }
         {
             Timer t;
