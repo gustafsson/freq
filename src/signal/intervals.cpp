@@ -30,8 +30,7 @@ Interval::
     :
     first(first), last(last)
 {
-    if (!valid())
-        EXCEPTION_ASSERT( valid() );
+    EXCEPTION_ASSERT( valid() );
 }
 
 

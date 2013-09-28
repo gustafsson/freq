@@ -74,7 +74,9 @@ Signal::pBuffer Filter::
         process(Signal::pBuffer b)
 {
     pTransform t = _transform;
+#ifdef _DEBUG
     const Interval I = b->getInterval ();
+#endif
 
     pBuffer r;
     for (unsigned c=0; c<b->number_of_channels (); ++c)

@@ -45,7 +45,7 @@ public:
     /**
      * count() returns the number of elements between first and last or 0 if last>first.
      */
-    UnsignedIntervalType count() const { return valid() ? last - first : 0; }
+    UnsignedIntervalType count() const { return valid() ? (UnsignedIntervalType)(last - first): 0u; }
 
     bool        valid       () const { return first <= last; }
     Interval    spanned     (const Interval& r) const;
