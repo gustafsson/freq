@@ -506,14 +506,17 @@ void Collection::
         tfr_mapping(TfrMapping new_tfr_mapping)
 {
     float length = new_tfr_mapping.length;
-    bool doreset;
     // If only the length has changed, don't invalidate the entire heightmap.
-    doreset = [&]() {
+    bool same_but_length = [&]() {
         TfrMapping tfr_mapping_length = tfr_mapping_;
-        tfr_mapping_length.length = new_tfr_mapping.length;
-        return new_tfr_mapping != tfr_mapping_length;
+        tfr_mapping_length.length = length;
+        return new_tfr_mapping == tfr_mapping_length;
     }();
-    //doreset = new_tfr_mapping.block_size != tfr_mapping_.block_size;
+    if (!same_but_length)
+        recently_created_ = Signal::Intervals::Intervals_ALL;
+
+    if (new_tfr_mapping.block_size != tfr_mapping_.block_size)
+        reset();
 
     tfr_mapping_ = new_tfr_mapping;
     _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
@@ -525,11 +528,6 @@ void Collection::
         discardOutside( Signal::Interval(0, length*tfr_mapping_.targetSampleRate) );
 
     _prev_length = length;
-
-    if (doreset)
-        reset();
-//    else
-//        invalidate_samples( Signal::Interval::Interval_ALL );
 }
 
 
