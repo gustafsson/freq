@@ -61,7 +61,6 @@ namespace Tools
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
         void setPosition( Heightmap::Position pos );
-        void setLastUpdateSize( Signal::IntervalType length );
 
         float last_ysize;
         Tools::Commands::ViewState viewstate;
@@ -102,6 +101,7 @@ namespace Tools
         void emitAxisChanged();
 
     public slots:
+        void setLastUpdateSize( Signal::IntervalType length );
         void userinput_update( bool request_high_fps = true, bool post_update = true, bool cheat_also_high=true );
 
     signals:

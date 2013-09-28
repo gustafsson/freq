@@ -28,6 +28,7 @@
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/recordmodel.h"
 #include "tools/support/renderoperation.h"
+#include "tools/support/renderviewupdateadapter.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
@@ -107,6 +108,7 @@ int UnitTest::
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::RenderOperationDesc);
+        RUNTEST(Tools::Support::RenderViewUpdateAdapter);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
         RUNTEST(Heightmap::ChunkBlockFilter);

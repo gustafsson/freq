@@ -29,6 +29,7 @@
 #include "signal/oldoperationwrapper.h"
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
+#include "tools/support/renderviewupdateadapter.h"
 
 // gpumisc
 #include <demangle.h>
@@ -56,34 +57,8 @@ using namespace boost;
 #undef min
 #endif
 
-//#define UPDATEINFO
-#define UPDATEINFO if(0)
-
 namespace Tools
 {
-
-
-class RenderViewUpdater: public Support::RenderOperationDesc::RenderTarget
-{
-public:
-    RenderViewUpdater(RenderView* view): view_(view) {}
-
-    virtual void refreshSamples(const Signal::Intervals& I) {
-        UPDATEINFO TaskInfo(format("refreshSamples %s") % I);
-
-        view_->setLastUpdateSize( I.count () );
-    }
-
-    virtual void processedData(const Signal::Interval& input, const Signal::Interval& output) {
-        UPDATEINFO TaskInfo(format("processedData %s -> %s") % input % output);
-
-        view_->userinput_update ();
-    }
-
-private:
-    RenderView* view_;
-};
-
 
 RenderController::
         RenderController( QPointer<RenderView> view )
@@ -99,7 +74,13 @@ RenderController::
             color(0),
             transform(0)
 {
-    Support::RenderOperationDesc::RenderTarget::Ptr rvu(new RenderViewUpdater(view));
+    Support::RenderViewUpdateAdapter* rvup;
+    Support::RenderOperationDesc::RenderTarget::Ptr rvu(
+                rvup = new Support::RenderViewUpdateAdapter);
+
+    connect(rvup, SIGNAL(userinput_update()), view, SLOT(userinput_update()));
+    connect(rvup, SIGNAL(setLastUpdateSize(IntervalType)), view, SLOT(setLastUpdateSize(IntervalType)));
+
     model()->init(model()->project ()->processing_chain (), rvu);
 
 
