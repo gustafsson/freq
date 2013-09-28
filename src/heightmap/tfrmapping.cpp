@@ -31,6 +31,13 @@ bool TfrMapping::
 }
 
 
+bool TfrMapping::
+        operator!=(const TfrMapping& b)
+{
+    return !(*this == b);
+}
+
+
 TfrMap::
         TfrMap( TfrMapping tfr_mapping, int channels )
     :

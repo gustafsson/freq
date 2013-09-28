@@ -506,11 +506,14 @@ void Collection::
         tfr_mapping(TfrMapping new_tfr_mapping)
 {
     float length = new_tfr_mapping.length;
-
+    bool doreset;
     // If only the length has changed, don't invalidate the entire heightmap.
-    TfrMapping tfr_mapping_length = tfr_mapping_;
-    tfr_mapping_length.length = new_tfr_mapping.length;
-    bool doreset = !(new_tfr_mapping == tfr_mapping_length);
+    doreset = [&]() {
+        TfrMapping tfr_mapping_length = tfr_mapping_;
+        tfr_mapping_length.length = new_tfr_mapping.length;
+        return new_tfr_mapping != tfr_mapping_length;
+    }();
+    //doreset = new_tfr_mapping.block_size != tfr_mapping_.block_size;
 
     tfr_mapping_ = new_tfr_mapping;
     _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();

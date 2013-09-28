@@ -18,6 +18,7 @@ public:
     TfrMapping(BlockSize, SampleRate fs);
 
     bool operator==(const TfrMapping& b);
+    bool operator!=(const TfrMapping& b);
 
     BlockSize               block_size;
     float                   targetSampleRate;
