@@ -509,7 +509,11 @@ void Collection::
     if (!same_but_length)
         recently_created_ = Signal::Intervals::Intervals_ALL;
 
-    if (new_tfr_mapping.block_size != tfr_mapping_.block_size)
+    bool same_layout = [&]() {
+        return tfr_mapping_.block_size == new_tfr_mapping.block_size
+                && tfr_mapping_.targetSampleRate == new_tfr_mapping.targetSampleRate;
+    }();
+    if (!same_layout)
         reset();
 
     tfr_mapping_ = new_tfr_mapping;
