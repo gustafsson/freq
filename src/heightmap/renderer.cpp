@@ -647,7 +647,7 @@ void Renderer::draw( float scaley )
     if (!collection)
         return;
 
-    if (!read1(collection)->tfr_mapping ().transform_desc)
+    if (!read1(collection)->tfr_mapping ().transform_desc())
         return;
 
     GlException_CHECK_ERROR();
@@ -663,7 +663,7 @@ void Renderer::draw( float scaley )
         scaley = 0.001;
     else
     {
-        BlockSize block_size = read1(collection)->tfr_mapping ().block_size;
+        BlockSize block_size = read1(collection)->tfr_mapping ().block_size();
         setSize( block_size.texels_per_row ()/_mesh_fraction_width,
                  block_size.texels_per_column ()/_mesh_fraction_height );
     }
@@ -757,7 +757,7 @@ void Renderer::beginVboRendering()
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
 
-        BlockSize block_size = read1(collection)->tfr_mapping ().block_size;
+        BlockSize block_size = read1(collection)->tfr_mapping ().block_size();
         float
                 w = block_size.texels_per_row (),
                 h = block_size.texels_per_column ();
@@ -877,11 +877,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*tfr_mapping.block_size.texels_per_column ());
+        needBetterF = scalePixels / (_redundancy*tfr_mapping.block_size().texels_per_column ());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*tfr_mapping.block_size.texels_per_row ());
+        needBetterT = timePixels / (_redundancy*tfr_mapping.block_size().texels_per_row ());
 
     if (!ReferenceInfo(ref.top(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
         !ReferenceInfo(ref.bottom(), tfr_mapping).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
@@ -1370,7 +1370,7 @@ void Renderer::drawAxes( float T )
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Tfr::FreqAxis fa = read1(collection)->tfr_mapping ().display_scale;
+    Tfr::FreqAxis fa = read1(collection)->tfr_mapping ().display_scale();
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
     typedef tvector<2,GLfloat> GLvector2F;

@@ -2,16 +2,16 @@
 #define HEIGHTMAP_TFRMAPPING_H
 
 #include "blocksize.h"
-#include "tfr/transform.h"
 #include "volatileptr.h"
 #include "signal/poperation.h"
+#include "visualizationparams.h"
 
 #include <vector>
 
 namespace Heightmap {
 class Collection;
-typedef float SampleRate;
 typedef int ChannelCount;
+
 
 class TfrMapping {
 public:
@@ -20,27 +20,17 @@ public:
     bool operator==(const TfrMapping& b);
     bool operator!=(const TfrMapping& b);
 
-    BlockSize               block_size;
-    float                   targetSampleRate;
-    float                   length;
+    BlockLayout               block_layout;
 
-    /**
-     * Not that this is the transform that should be used. Blocks computed by
-     * an old transform desc might still exist as they are being processed.
-     */
-    Tfr::TransformDesc::Ptr transform_desc;
+    VisualizationParams::Ptr  visualization_params() const;
+    BlockSize                 block_size() const;
+    float                     targetSampleRate() const;
+    Tfr::FreqAxis             display_scale() const;
+    AmplitudeAxis             amplitude_axis() const;
+    Tfr::TransformDesc::Ptr   transform_desc() const;
 
-    /**
-     * Heightmap blocks are rather agnostic to FreqAxis. But it's needed to
-     * create them.
-     */
-    Tfr::FreqAxis display_scale;
-
-    /**
-     * Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But
-     * it's needed to create them.
-     */
-    AmplitudeAxis amplitude_axis;
+private:
+    VisualizationParams::Ptr  visualization_params_;
 };
 
 
@@ -81,6 +71,7 @@ private:
 
     TfrMapping  tfr_mapping_;
     Collections collections_;
+    float       length_;
 
 public:
     static void test();

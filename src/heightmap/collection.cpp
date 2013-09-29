@@ -51,7 +51,7 @@ namespace Heightmap {
 
 Collection::
         Collection( TfrMapping tfr_mapping )
-:   tfr_mapping_( tfr_mapping ),
+:   tfr_mapping_( TfrMapping(BlockSize(2,2),FLT_MAX) ),
     _is_visible( true ),
     _created_count(0),
     _frame_counter(0),
@@ -60,10 +60,8 @@ Collection::
     failed_allocation_(false),
     failed_allocation_prev_(false)
 {
-    _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
-
-    // set _max_sample_size.time
-    reset();
+    // set _max_sample_size
+    this->tfr_mapping (tfr_mapping);
 }
 
 
@@ -79,7 +77,7 @@ void Collection::
 {
     VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
-        ReferenceRegion rr(this->tfr_mapping ().block_size);
+        ReferenceRegion rr(this->tfr_mapping ().block_size());
         BOOST_FOREACH (const cache_t::value_type& b, _cache)
         {
             TaskInfo(format("%s") % rr(b.first));
@@ -106,10 +104,6 @@ void Collection::
 
     _cache.clear();
     _recent.clear();
-
-/*
-    invalidate_samples(Signal::Intervals::Intervals_ALL);
-*/
 }
 
 
@@ -129,7 +123,7 @@ void Collection::
 
     _created_count = 0;
 
-    ReferenceRegion rr(this->tfr_mapping ().block_size);
+    ReferenceRegion rr(this->tfr_mapping ().block_size());
 
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
@@ -259,7 +253,7 @@ pBlock Collection::
         else
         {
             failed_allocation_ = true;
-            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(tfr_mapping().block_size)(ref));
+            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(tfr_mapping().block_size())(ref));
         }
     }
 
@@ -273,7 +267,7 @@ pBlock Collection::
                 *block->glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
                 block->new_data_available = false;
             }
-        } catch (const LockFailed&) {}
+        } catch (const BlockData::LockFailed&) {}
 
         poke(block);
     }
@@ -384,7 +378,7 @@ unsigned long Collection::
             sumsize -= abpe;
         }
 
-    unsigned elements_per_block = tfr_mapping_.block_size.texels_per_block ();
+    unsigned elements_per_block = tfr_mapping_.block_size().texels_per_block ();
     return sumsize*elements_per_block;
 }
 
@@ -450,7 +444,7 @@ void Collection::
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
                 Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
-                float t = I.last / tfr_mapping_.targetSampleRate - ir.a.time;
+                float t = I.last / tfr_mapping_.targetSampleRate() - ir.a.time;
 
                 BlockData::WritePtr bd(block->block_data());
 
@@ -497,35 +491,32 @@ const TfrMapping& Collection::
 
 
 void Collection::
-        tfr_mapping(TfrMapping new_tfr_mapping)
+        length(float length)
 {
-    float length = new_tfr_mapping.length;
-    // If only the length has changed, don't invalidate the entire heightmap.
-    bool same_but_length = [&]() {
-        TfrMapping tfr_mapping_length = tfr_mapping_;
-        tfr_mapping_length.length = length;
-        return new_tfr_mapping == tfr_mapping_length;
-    }();
-    if (!same_but_length)
-        recently_created_ = Signal::Intervals::Intervals_ALL;
-
-    bool same_layout = [&]() {
-        return tfr_mapping_.block_size == new_tfr_mapping.block_size
-                && tfr_mapping_.targetSampleRate == new_tfr_mapping.targetSampleRate;
-    }();
-    if (!same_layout)
-        reset();
-
-    tfr_mapping_ = new_tfr_mapping;
-    _max_sample_size.scale = 1.f/tfr_mapping_.block_size.texels_per_column ();
-    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size.texels_per_row ();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size().texels_per_row ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
     if (_prev_length > length)
-        discardOutside( Signal::Interval(0, length*tfr_mapping_.targetSampleRate) );
+        discardOutside( Signal::Interval(0, length*tfr_mapping_.targetSampleRate()) );
 
     _prev_length = length;
+}
+
+
+void Collection::
+        tfr_mapping(TfrMapping new_tfr_mapping)
+{
+    recently_created_ = Signal::Intervals::Intervals_ALL;
+
+    bool do_reset = new_tfr_mapping.block_layout != tfr_mapping_.block_layout;
+    tfr_mapping_ = new_tfr_mapping;
+
+    if (do_reset) {
+        _max_sample_size.scale = 1.f/tfr_mapping_.block_size().texels_per_column ();
+        length(_prev_length);
+        reset();
+    }
 }
 
 
@@ -568,7 +559,7 @@ pBlock Collection::
         pBlock attempt( new Block( ref, tfr_mapping_ ));
         Region r = ReferenceRegion( tfr_mapping_ )( ref );
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
-        attempt->glblock.reset( new GlBlock( tfr_mapping ().block_size, r.time(), r.scale() ));
+        attempt->glblock.reset( new GlBlock( tfr_mapping ().block_size(), r.time(), r.scale() ));
 
         write1(attempt->block_data())->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
 
@@ -710,7 +701,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // Cuda device memory
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
-                memForNewBlock *= tfr_mapping_.block_size.texels_per_block ();
+                memForNewBlock *= tfr_mapping_.block_size().texels_per_block ();
                 size_t allocatedMemory = this->cacheByteSize();
 
                 size_t margin = 2*memForNewBlock;
@@ -744,7 +735,7 @@ pBlock Collection::
                 {
                     pBlock back = _recent.back();
 
-                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*tfr_mapping_.block_size.texels_per_block ();
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*tfr_mapping_.block_size().texels_per_block ();
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
@@ -772,7 +763,7 @@ pBlock Collection::
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
         s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-        s*=tfr_mapping_.block_size.texels_per_block ();
+        s*=tfr_mapping_.block_size().texels_per_block ();
         s*=1.5f; // 50% arbitrary extra
 
         if (s>_free_memory)
@@ -808,8 +799,8 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    unsigned samples = tfr_mapping_.block_size.texels_per_row (),
-            scales = tfr_mapping_.block_size.texels_per_column ();
+    unsigned samples = tfr_mapping_.block_size().texels_per_row (),
+            scales = tfr_mapping_.block_size().texels_per_column ();
     for (unsigned s = 0; s<samples/2; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);
@@ -882,7 +873,7 @@ void Collection::
             {
                 next.push_back ( bl );
             }
-        } catch (const LockFailed&) {}
+        } catch (const BlockData::LockFailed&) {}
 
         gib = next;
     }

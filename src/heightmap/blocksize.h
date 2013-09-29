@@ -1,17 +1,18 @@
 #ifndef HEIGHTMAP_BLOCKCONFIGURATION_H
 #define HEIGHTMAP_BLOCKCONFIGURATION_H
 
-#include "tfr/freqaxis.h"
-#include "amplitudeaxis.h"
-#include "signal/intervals.h"
-
-#include <boost/shared_ptr.hpp>
+#include <string>
 
 namespace Heightmap {
+
+typedef float SampleRate;
+
 
 /**
  * @brief The BlockSize class should describe the size in texels of blocks in
  * a heightmap.
+ *
+ * It should be immutable POD.
  */
 class BlockSize {
 public:
@@ -34,6 +35,30 @@ public:
 private:
     int texels_per_column_;
     int texels_per_row_;
+
+public:
+    static void test();
+};
+
+
+/**
+ * @brief The BlockLayout class should describe the sizes of blocks.
+ *
+ * It should be immutable POD.
+ */
+class BlockLayout {
+public:
+    BlockLayout(BlockSize, SampleRate fs);
+
+    BlockSize               block_size() const;
+    SampleRate              targetSampleRate() const;
+
+    bool operator==(const BlockLayout& b);
+    bool operator!=(const BlockLayout& b);
+
+private:
+    BlockSize               block_size_;
+    SampleRate              targetSampleRate_;
 
 public:
     static void test();

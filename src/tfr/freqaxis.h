@@ -36,7 +36,9 @@ public:
 
     bool operator==(const FreqAxis& b) const
     {
-        return axis_scale == b.axis_scale &&
+        return axis_scale != AxisScale_Unknown &&
+                b.axis_scale != AxisScale_Unknown &&
+                axis_scale == b.axis_scale &&
                 max_frequency_scalar == b.max_frequency_scalar &&
                 min_hz == b.min_hz &&
                 f_step == b.f_step;

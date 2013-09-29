@@ -7,27 +7,22 @@ namespace Heightmap {
 TfrMapping::
         TfrMapping( BlockSize block_size, float fs )
     :
-      block_size( block_size ),
-      targetSampleRate( fs ),
-      length( 0 ),
-      amplitude_axis(AmplitudeAxis_5thRoot)
+      block_layout( block_size, fs ),
+      //length( 0 ),
+      visualization_params_( new VisualizationParams )
 {
-    EXCEPTION_ASSERT_LESS( 0, fs );
-    display_scale.setLinear( fs );
-    // by default there is no transform_desc, and nothing will be drawn
+    Tfr::FreqAxis f;
+    f.setLinear( fs );
+    visualization_params_->display_scale(f);
 }
 
 
 bool TfrMapping::
         operator==(const TfrMapping& b)
 {
-    return block_size == b.block_size &&
-            targetSampleRate == b.targetSampleRate &&
-            length == b.length &&
-            transform_desc == b.transform_desc &&
-            (transform_desc ? *transform_desc == *b.transform_desc : true) &&
-            display_scale == b.display_scale &&
-            amplitude_axis == b.amplitude_axis;
+    return block_layout == b.block_layout &&
+           //length == b.length &&
+           *visualization_params_ == *b.visualization_params_;
 }
 
 
@@ -38,10 +33,53 @@ bool TfrMapping::
 }
 
 
+VisualizationParams::Ptr TfrMapping::
+        visualization_params() const
+{
+    return visualization_params_;
+}
+
+
+BlockSize TfrMapping::
+        block_size() const
+{
+    return block_layout.block_size ();
+}
+
+
+float TfrMapping::
+        targetSampleRate() const
+{
+    return block_layout.targetSampleRate ();
+}
+
+
+Tfr::FreqAxis TfrMapping::
+        display_scale() const
+{
+    return visualization_params ()->display_scale();
+}
+
+
+AmplitudeAxis TfrMapping::
+        amplitude_axis() const
+{
+    return visualization_params ()->amplitude_axis();
+}
+
+
+Tfr::TransformDesc::Ptr TfrMapping::
+        transform_desc() const
+{
+    return visualization_params ()->transform_desc();
+}
+
+
 TfrMap::
         TfrMap( TfrMapping tfr_mapping, int channels )
     :
-      tfr_mapping_( tfr_mapping )
+      tfr_mapping_( tfr_mapping ),
+      length_( 0 )
 {
     this->channels (channels);
 }
@@ -57,17 +95,17 @@ TfrMap::
 BlockSize TfrMap::
     block_size() const
 {
-    return tfr_mapping_.block_size;
+    return tfr_mapping_.block_layout.block_size ();
 }
 
 
 void TfrMap::
         block_size(BlockSize bs)
 {
-    if (bs == tfr_mapping_.block_size)
+    if (bs == tfr_mapping_.block_layout.block_size())
         return;
 
-    tfr_mapping_.block_size = bs;
+    tfr_mapping_.block_layout = BlockLayout(bs, targetSampleRate());
 
     updateCollections();
 }
@@ -76,24 +114,24 @@ void TfrMap::
 Tfr::FreqAxis TfrMap::
         display_scale() const
 {
-    return tfr_mapping_.display_scale;
+    return tfr_mapping_.visualization_params ()->display_scale();
 }
 
 
 AmplitudeAxis TfrMap::
         amplitude_axis() const
 {
-    return tfr_mapping_.amplitude_axis;
+    return tfr_mapping_.visualization_params ()->amplitude_axis();
 }
 
 
 void TfrMap::
         display_scale(Tfr::FreqAxis v)
 {
-    if (v == tfr_mapping_.display_scale)
+    if (v == tfr_mapping_.visualization_params ()->display_scale())
         return;
 
-    tfr_mapping_.display_scale = v;
+    tfr_mapping_.visualization_params ()->display_scale( v );
 
     updateCollections();
 }
@@ -102,10 +140,10 @@ void TfrMap::
 void TfrMap::
         amplitude_axis(AmplitudeAxis v)
 {
-    if (v == tfr_mapping_.amplitude_axis)
+    if (v == tfr_mapping_.visualization_params ()->amplitude_axis())
         return;
 
-    tfr_mapping_.amplitude_axis = v;
+    tfr_mapping_.visualization_params ()->amplitude_axis( v );
 
     updateCollections();
 }
@@ -114,17 +152,17 @@ void TfrMap::
 float TfrMap::
         targetSampleRate() const
 {
-    return tfr_mapping_.targetSampleRate;
+    return tfr_mapping_.block_layout.targetSampleRate ();
 }
 
 
 void TfrMap::
         targetSampleRate(float v)
 {
-    if (v == tfr_mapping_.targetSampleRate)
+    if (v == tfr_mapping_.block_layout.targetSampleRate ())
         return;
 
-    tfr_mapping_.targetSampleRate = v;
+    tfr_mapping_.block_layout = BlockLayout(block_size (), v);
 
     updateCollections();
 }
@@ -133,20 +171,21 @@ void TfrMap::
 Tfr::TransformDesc::Ptr TfrMap::
         transform_desc() const
 {
-    return tfr_mapping_.transform_desc;
+    return tfr_mapping_.visualization_params ()->transform_desc();
 }
 
 
 void TfrMap::
         transform_desc(Tfr::TransformDesc::Ptr t)
 {
-    if (t == tfr_mapping_.transform_desc)
+    VisualizationParams::Ptr vp = tfr_mapping_.visualization_params ();
+    if (t == vp->transform_desc())
         return;
 
-    if (t && tfr_mapping_.transform_desc && (*t == *tfr_mapping_.transform_desc))
+    if (t && vp->transform_desc() && (*t == *vp->transform_desc()))
         return;
 
-    tfr_mapping_.transform_desc = t;
+    tfr_mapping_.visualization_params ()->transform_desc( t );
 
     updateCollections();
 }
@@ -162,19 +201,20 @@ const TfrMapping& TfrMap::
 float TfrMap::
         length() const
 {
-    return tfr_mapping_.length;
+    return length_;
 }
 
 
 void TfrMap::
         length(float L)
 {
-    if (L == tfr_mapping_.length)
+    if (L == length_)
         return;
 
-    tfr_mapping_.length = L;
+    length_ = L;
 
-    updateCollections();
+    for (unsigned c=0; c<collections_.size(); ++c)
+        write1(collections_[c])->length( length_ );
 }
 
 
@@ -225,7 +265,7 @@ void TfrMap::
 {
     TfrMap::Ptr t = testInstance();
     write1(t)->block_size( BlockSize(123,456) );
-    EXCEPTION_ASSERT_EQUALS( BlockSize(123,456), read1(t)->tfr_mapping().block_size );
+    EXCEPTION_ASSERT_EQUALS( BlockSize(123,456), read1(t)->tfr_mapping().block_layout.block_size() );
 }
 
 

@@ -112,6 +112,7 @@ int UnitTest::
         RUNTEST(Heightmap::BlockSize);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);
+        RUNTEST(Heightmap::VisualizationParams);
         RUNTEST(Heightmap::ChunkBlockFilter);
         RUNTEST(Heightmap::ChunkBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::StftBlockFilter);

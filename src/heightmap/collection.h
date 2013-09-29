@@ -170,7 +170,10 @@ public:
 
 private:
     friend class Heightmap::TfrMap;
+    void length(float length);
     void tfr_mapping(TfrMapping new_mapping);
+    //void block_layout(BlockLayout block_layout);
+    //void visualization_params(VisualizationParams block_layout);
     TfrMapping tfr_mapping_;
     Signal::Intervals recently_created_;
 

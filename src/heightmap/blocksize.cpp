@@ -42,10 +42,53 @@ std::string BlockSize::
 }
 
 
+BlockLayout::
+        BlockLayout(BlockSize bs, SampleRate fs)
+    :
+      block_size_(bs),
+      targetSampleRate_(fs)
+{
+    EXCEPTION_ASSERT_LESS( 0, fs );
+}
+
+
+BlockSize BlockLayout::
+        block_size() const
+{
+    return block_size_;
+}
+
+
+SampleRate BlockLayout::
+        targetSampleRate() const
+{
+    return targetSampleRate_;
+}
+
+
+bool BlockLayout::
+        operator==(const BlockLayout& b)
+{
+    return block_size_ == b.block_size_ &&
+            targetSampleRate_ == b.targetSampleRate_;
+}
+
+
+bool BlockLayout::
+        operator!=(const BlockLayout& b)
+{
+    return !(*this == b);
+}
+
+} // namespace Heightmap
+
+
+namespace Heightmap {
+
 void BlockSize::
         test()
 {
-    // It should describe the size in texels of blocks in a heightmap.
+    // It should describe the size in texels of blocks in a heightmap
     {
         BlockSize b(12, 34);
         EXCEPTION_ASSERT_EQUALS(b.texels_per_block (), 12*34);
@@ -54,7 +97,28 @@ void BlockSize::
         EXCEPTION_ASSERT_EQUALS((boost::format("%1%")%b).str(), "BlockSize(12, 34)");
         EXCEPTION_ASSERT_EQUALS(b, BlockSize(12, 34));
     }
+
+    // It should be immutable POD
+    {
+        // Implemented by no setters, only getters
+    }
 }
 
+
+void BlockLayout::
+        test()
+{
+    // It should describe the sizes of blocks
+    {
+        BlockLayout b(BlockSize(1,2),3);
+        EXCEPTION_ASSERT_EQUALS(b.block_size (), BlockSize(1,2));
+        EXCEPTION_ASSERT_EQUALS(b.targetSampleRate (), 4);
+    }
+
+    // It should be immutable POD
+    {
+        // Implemented by no setters, only getters
+    }
+}
 
 } // namespace Heightmap

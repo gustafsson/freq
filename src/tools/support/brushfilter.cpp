@@ -60,7 +60,7 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        Heightmap::BlockSize block_size = tfr_mapping_.block_size;
+        Heightmap::BlockSize block_size = tfr_mapping_.block_size();
         img.reset( new DataStorage<float>( block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }
 
@@ -128,8 +128,8 @@ bool MultiplyBrush::
     if (imgs.empty())
         return false;
 
-    float scale1 = this->tfr_mapping_.display_scale.getFrequencyScalar( chunk.minHz() );
-    float scale2 = this->tfr_mapping_.display_scale.getFrequencyScalar( chunk.maxHz() );
+    float scale1 = this->tfr_mapping_.display_scale().getFrequencyScalar( chunk.minHz() );
+    float scale2 = this->tfr_mapping_.display_scale().getFrequencyScalar( chunk.maxHz() );
     float time1 = (chunk.chunk_offset/chunk.sample_rate).asFloat();
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 

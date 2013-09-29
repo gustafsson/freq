@@ -90,8 +90,8 @@ void CwtBlockFilter::
         TfrMapping tfr_mapping(BlockSize(4,4), buffer->sample_rate ());
         Reference ref; {
             Position max_sample_size;
-            max_sample_size.time = 2.f*std::max(1.f, buffer->length ())/tfr_mapping.block_size.texels_per_row ();
-            max_sample_size.scale = 1.f/tfr_mapping.block_size.texels_per_column ();
+            max_sample_size.time = 2.f*std::max(1.f, buffer->length ())/tfr_mapping.block_size().texels_per_row ();
+            max_sample_size.scale = 1.f/tfr_mapping.block_size().texels_per_column ();
             ref.log2_samples_size = Reference::Scale(
                         floor_log2( max_sample_size.time ),
                         floor_log2( max_sample_size.scale ));
@@ -99,7 +99,7 @@ void CwtBlockFilter::
         }
 
         Heightmap::Block block(ref, tfr_mapping);
-        DataStorageSize s(tfr_mapping.block_size.texels_per_row (), tfr_mapping.block_size.texels_per_column ());
+        DataStorageSize s(tfr_mapping.block_size().texels_per_row (), tfr_mapping.block_size().texels_per_column ());
         write1(block.block_data ())->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block

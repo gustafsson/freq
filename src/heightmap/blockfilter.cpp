@@ -267,7 +267,7 @@ void DrawnWaveformToBlock::
     TfrMap::pCollection c = collections[pchunk.channel];
     TfrMapping tm = read1(tfr_map_)->tfr_mapping ();
     Chunk& chunk = *pchunk.chunk;
-    Tfr::FreqAxis fa = tm.display_scale;
+    Tfr::FreqAxis fa = tm.display_scale();
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
     {
         EXCEPTION_ASSERT( fa.max_frequency_scalar == 1.f );
