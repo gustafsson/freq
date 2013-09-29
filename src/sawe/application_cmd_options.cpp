@@ -156,10 +156,12 @@ void Application::
 
     tools.playback_model.selection_filename  = Sawe::Configuration::selection_output_file();
 
-    Heightmap::BlockSize newbc =
-                Heightmap::BlockSize(
+    Heightmap::BlockLayout newbc =
+                Heightmap::BlockLayout(
                     Sawe::Configuration::samples_per_block(),
-                    Sawe::Configuration::scales_per_block ());
+                    Sawe::Configuration::scales_per_block (),
+                    read1(tools.render_model.tfr_map ())->targetSampleRate()
+                );
 
     tools.render_model.block_size ( newbc );
 

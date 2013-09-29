@@ -109,7 +109,6 @@ int UnitTest::
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
-        RUNTEST(Heightmap::BlockSize);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::TfrMap);

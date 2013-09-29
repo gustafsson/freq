@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAPVBO_H
 #define HEIGHTMAPVBO_H
 
-#include "blocksize.h"
+#include "blocklayout.h"
 
 // gpumisc
 #include "mappedvbo.h"
@@ -20,7 +20,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 class GlBlock
 {
 public:
-    GlBlock( BlockSize block_size, float width, float height );
+    GlBlock( BlockLayout block_size, float width, float height );
     ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
@@ -66,7 +66,7 @@ private:
     bool create_texture( HeightMode heightMode );
     void update_texture( HeightMode heightMode );
 
-    const BlockSize block_size_;
+    const BlockLayout block_size_;
 
     pHeightReadOnlyCpu _read_only_cpu;
     //cudaGraphicsResource* _read_only_array_resource;

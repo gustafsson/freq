@@ -7,7 +7,7 @@ using namespace std;
 namespace Heightmap {
 
 RegionFactory::
-        RegionFactory(const BlockSize& block_size)
+        RegionFactory(const BlockLayout& block_size)
     :
       block_size_(block_size)
 {
@@ -37,7 +37,7 @@ ReferenceInfo::
       block_layout_(tfr_mapping.block_layout),
       visualization_params_(tfr_mapping.visualization_params ()),
       reference_(reference),
-      r(RegionFactory(tfr_mapping.block_layout.block_size ())(reference_))
+      r(RegionFactory(tfr_mapping.block_layout)(reference_))
 {
 }
 
@@ -48,7 +48,7 @@ ReferenceInfo::
       block_layout_(block_layout),
       visualization_params_(visualization_params),
       reference_(reference),
-      r(RegionFactory(block_layout.block_size ())(reference_))
+      r(RegionFactory(block_layout)(reference_))
 {
 }
 
@@ -85,7 +85,7 @@ bool ReferenceInfo::
 
     if (c & ReferenceInfo::BoundsCheck_HighS)
     {
-        float scaledelta = (r.scale())/block_layout_.block_size().texels_per_column ();
+        float scaledelta = (r.scale())/block_layout_.texels_per_column ();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
@@ -103,7 +103,7 @@ bool ReferenceInfo::
     {
         float atres = displayedTimeResolution (ahz);
         float btres = displayedTimeResolution (bhz);
-        float tdelta = 2*r.time()/block_layout_.block_size().texels_per_row ();
+        float tdelta = 2*r.time()/block_layout_.texels_per_row ();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -151,7 +151,7 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    int samplesPerBlock = block_layout_.block_size().texels_per_row ();
+    int samplesPerBlock = block_layout_.texels_per_row ();
     long double blockSize = samplesPerBlock * ldexp(1.f,reference_.log2_samples_size[0]);
     long double elementSize = 1.0 / sample_rate();
     long double blockLocalSize = samplesPerBlock * elementSize;
@@ -175,7 +175,7 @@ Signal::Interval ReferenceInfo::
 Signal::Interval ReferenceInfo::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    unsigned samples_per_block = block_layout_.block_size().texels_per_row ();
+    unsigned samples_per_block = block_layout_.texels_per_row ();
     long double blockSize = samples_per_block * ldexp(1.,reference_.log2_samples_size[0]);
     long double FS = block_layout_.targetSampleRate();
 

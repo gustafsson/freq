@@ -106,7 +106,7 @@ void ChunkBlockFilter::
     {
         MergeChunkMock* merge_chunk_mock;
         MergeChunk::Ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
-        TfrMapping tfr_mapping(BlockSize(4,4), SampleRate(4));
+        TfrMapping tfr_mapping(BlockLayout(4,4, SampleRate(4)));
         Heightmap::TfrMap::Ptr tfrmap(new Heightmap::TfrMap(tfr_mapping, ChannelCount(1)));
         write1(tfrmap)->length( 1 );
         ChunkBlockFilter cbf( merge_chunk, tfrmap );
@@ -139,7 +139,7 @@ void ChunkBlockFilterDesc::
 {
     // It should instantiate ChunkBlockFilters for different engines.
     {
-        TfrMapping tfr_mapping(BlockSize(4,4), 4);
+        TfrMapping tfr_mapping(BlockLayout(4,4,4));
         Heightmap::TfrMap::Ptr tfrmap(new Heightmap::TfrMap(tfr_mapping, 1));
 
         ChunkBlockFilterDesc cbfd( tfrmap );

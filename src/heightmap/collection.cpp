@@ -51,7 +51,7 @@ namespace Heightmap {
 
 Collection::
         Collection( TfrMapping tfr_mapping )
-:   block_layout_( BlockSize(2,2), FLT_MAX ),
+:   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_( new VisualizationParams ),
     _is_visible( true ),
     _created_count(0),
@@ -79,7 +79,7 @@ void Collection::
 {
     VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
-        RegionFactory rr(block_layout_.block_size ());
+        RegionFactory rr(block_layout_);
         BOOST_FOREACH (const cache_t::value_type& b, _cache)
         {
             TaskInfo(format("%s") % rr(b.first));
@@ -125,7 +125,7 @@ void Collection::
 
     _created_count = 0;
 
-    RegionFactory rr(block_layout_.block_size ());
+    RegionFactory rr(block_layout_);
 
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
@@ -255,7 +255,7 @@ pBlock Collection::
         else
         {
             failed_allocation_ = true;
-            TaskInfo(format("Delaying creation of block %s") % RegionFactory(block_layout_.block_size())(ref));
+            TaskInfo(format("Delaying creation of block %s") % RegionFactory(block_layout_)(ref));
         }
     }
 
@@ -380,7 +380,7 @@ unsigned long Collection::
             sumsize -= abpe;
         }
 
-    unsigned elements_per_block = block_layout_.block_size().texels_per_block ();
+    unsigned elements_per_block = block_layout_.texels_per_block ();
     return sumsize*elements_per_block;
 }
 
@@ -445,7 +445,7 @@ void Collection::
             // clear partial block
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
-                Region ir = RegionFactory(block_layout_.block_size ())(itr->first);
+                Region ir = RegionFactory(block_layout_)(itr->first);
                 float t = I.last / block_layout_.targetSampleRate() - ir.a.time;
 
                 BlockData::WritePtr bd(block->block_data());
@@ -502,7 +502,7 @@ VisualizationParams::ConstPtr Collection::
 void Collection::
         length(float length)
 {
-    _max_sample_size.time = 2.f*std::max(1.f, length)/block_layout_.block_size().texels_per_row ();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/block_layout_.texels_per_row ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
@@ -521,7 +521,7 @@ void Collection::
 
     block_layout_ = v;
 
-    _max_sample_size.scale = 1.f/block_layout_.block_size().texels_per_column ();
+    _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
     reset();
 }
@@ -580,9 +580,9 @@ pBlock Collection::
         ComputationCheckError();
 
         pBlock attempt( new Block( ref, block_layout_, visualization_params_ ));
-        Region r = RegionFactory( block_layout_.block_size () )( ref );
+        Region r = RegionFactory( block_layout_ )( ref );
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
-        attempt->glblock.reset( new GlBlock( block_layout_.block_size(), r.time(), r.scale() ));
+        attempt->glblock.reset( new GlBlock( block_layout_, r.time(), r.scale() ));
 
         write1(attempt->block_data())->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
 
@@ -724,7 +724,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // Cuda device memory
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
-                memForNewBlock *= block_layout_.block_size().texels_per_block ();
+                memForNewBlock *= block_layout_.texels_per_block ();
                 size_t allocatedMemory = this->cacheByteSize();
 
                 size_t margin = 2*memForNewBlock;
@@ -758,7 +758,7 @@ pBlock Collection::
                 {
                     pBlock back = _recent.back();
 
-                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*block_layout_.block_size().texels_per_block ();
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*block_layout_.texels_per_block ();
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
@@ -786,7 +786,7 @@ pBlock Collection::
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
         s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-        s*=block_layout_.block_size().texels_per_block ();
+        s*=block_layout_.texels_per_block ();
         s*=1.5f; // 50% arbitrary extra
 
         if (s>_free_memory)
@@ -822,8 +822,8 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    unsigned samples = block_layout_.block_size().texels_per_row (),
-            scales = block_layout_.block_size().texels_per_column ();
+    unsigned samples = block_layout_.texels_per_row (),
+            scales = block_layout_.texels_per_column ();
     for (unsigned s = 0; s<samples/2; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);

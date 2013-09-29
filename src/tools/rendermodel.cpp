@@ -31,8 +31,8 @@ RenderModel::
         _project(p),
         transform_descs_(new Support::TransformDescs)
 {
-    Heightmap::BlockSize bs(1<<8,1<<8);
-    tfr_map_.reset (new Heightmap::TfrMap(Heightmap::TfrMapping(bs,1), 0));
+    Heightmap::BlockLayout bl(1<<8,1<<8,1);
+    tfr_map_.reset (new Heightmap::TfrMap(Heightmap::TfrMapping(bl), 0));
 
     renderer.reset( new Heightmap::Renderer() );
 
@@ -117,7 +117,7 @@ Heightmap::TfrMap::Collections RenderModel::
 
 
 void RenderModel::
-        block_size(Heightmap::BlockSize bs)
+        block_size(Heightmap::BlockLayout bs)
 {
     write1(tfr_map_)->block_size( bs );
 }

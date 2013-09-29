@@ -163,7 +163,7 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 
 
 GlBlock::
-GlBlock( BlockSize block_size, float width, float height )
+GlBlock( BlockLayout block_size, float width, float height )
 :   block_size_( block_size ),
 //    _read_only_array_resource( 0 ),
 //    _read_only_array( 0 ),

@@ -14,12 +14,12 @@ namespace Heightmap {
 
 class RegionFactory {
 public:
-    RegionFactory(const BlockSize& block_size);
+    RegionFactory(const BlockLayout& block_size);
 
     Region operator()(const Reference& ref) const;
 
 private:
-    const BlockSize block_size_;
+    const BlockLayout block_size_;
 };
 
 

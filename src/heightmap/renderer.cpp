@@ -600,7 +600,7 @@ Reference Renderer::
 {
     //Position max_ss = collection->max_sample_size();
     Reference ref = read1(collection)->entireHeightmap();
-    BlockSize bc = read1(collection)->block_layout ().block_size();
+    BlockLayout bc = read1(collection)->block_layout ();
 
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
@@ -664,7 +664,7 @@ void Renderer::draw( float scaley )
         scaley = 0.001;
     else
     {
-        BlockSize block_size = read1(collection)->block_layout ().block_size();
+        BlockLayout block_size = read1(collection)->block_layout ();
         setSize( block_size.texels_per_row ()/_mesh_fraction_width,
                  block_size.texels_per_column ()/_mesh_fraction_height );
     }
@@ -758,7 +758,7 @@ void Renderer::beginVboRendering()
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, y_scale);
 
-        BlockSize block_size = read1(collection)->block_layout ().block_size();
+        BlockLayout block_size = read1(collection)->block_layout ();
         float
                 w = block_size.texels_per_row (),
                 h = block_size.texels_per_column ();
@@ -795,7 +795,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
-    Region r = RegionFactory (read1 (collection)->block_layout ().block_size()) ( ref );
+    Region r = RegionFactory (read1 (collection)->block_layout ()) ( ref );
     glPushMatrixContext mc( GL_MODELVIEW );
 
     glTranslatef(r.a.time, 0, r.a.scale);
@@ -879,11 +879,11 @@ Renderer::LevelOfDetal Renderer::testLod( Reference ref )
     if (0==scalePixels)
         needBetterF = 1.01;
     else
-        needBetterF = scalePixels / (_redundancy*bl.block_size().texels_per_column ());
+        needBetterF = scalePixels / (_redundancy*bl.texels_per_column ());
     if (0==timePixels)
         needBetterT = 1.01;
     else
-        needBetterT = timePixels / (_redundancy*bl.block_size().texels_per_row ());
+        needBetterT = timePixels / (_redundancy*bl.texels_per_row ());
 
     if (!ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
         !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
@@ -1169,7 +1169,7 @@ std::vector<GLvector> Renderer::
 bool Renderer::
         computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
 {
-    Region r = RegionFactory ( read1(collection)->block_layout ().block_size() )(ref);
+    Region r = RegionFactory ( read1(collection)->block_layout () )(ref);
     const Position p[2] = { r.a, r.b };
 
     float y[]={0, float(projectionPlane[1]*.5)};

@@ -5,14 +5,14 @@
 namespace Heightmap {
 
 TfrMapping::
-        TfrMapping( BlockSize block_size, float fs )
+        TfrMapping( BlockLayout block_size )
     :
-      block_layout( block_size, fs ),
+      block_layout( block_size ),
       //length( 0 ),
       visualization_params_( new VisualizationParams )
 {
     Tfr::FreqAxis f;
-    f.setLinear( fs );
+    f.setLinear( block_size.sample_rate () );
     visualization_params_->display_scale(f);
 }
 
@@ -40,10 +40,10 @@ VisualizationParams::Ptr TfrMapping::
 }
 
 
-BlockSize TfrMapping::
+BlockLayout TfrMapping::
         block_size() const
 {
-    return block_layout.block_size ();
+    return block_layout;
 }
 
 
@@ -92,20 +92,20 @@ TfrMap::
 }
 
 
-BlockSize TfrMap::
+BlockLayout TfrMap::
     block_size() const
 {
-    return tfr_mapping_.block_layout.block_size ();
+    return tfr_mapping_.block_layout;
 }
 
 
 void TfrMap::
-        block_size(BlockSize bs)
+        block_size(BlockLayout bl)
 {
-    if (bs == tfr_mapping_.block_layout.block_size())
+    if (bl == tfr_mapping_.block_layout)
         return;
 
-    tfr_mapping_.block_layout = BlockLayout(bs, targetSampleRate());
+    tfr_mapping_.block_layout = bl;
 
     updateCollections();
 }
@@ -162,7 +162,10 @@ void TfrMap::
     if (v == tfr_mapping_.block_layout.targetSampleRate ())
         return;
 
-    tfr_mapping_.block_layout = BlockLayout(block_size (), v);
+    tfr_mapping_.block_layout = BlockLayout(
+                tfr_mapping_.block_layout.texels_per_row (),
+                tfr_mapping_.block_layout.texels_per_column (),
+                v);
 
     updateCollections();
 }
@@ -267,8 +270,8 @@ void TfrMap::
         test()
 {
     TfrMap::Ptr t = testInstance();
-    write1(t)->block_size( BlockSize(123,456) );
-    EXCEPTION_ASSERT_EQUALS( BlockSize(123,456), read1(t)->tfr_mapping().block_layout.block_size() );
+    write1(t)->block_size( BlockLayout(123,456,789) );
+    EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), read1(t)->tfr_mapping().block_layout );
 }
 
 
@@ -282,7 +285,7 @@ namespace Heightmap
 TfrMap::Ptr TfrMap::
         testInstance()
 {
-    TfrMapping tfrmapping(BlockSize(1<<8, 1<<8), 10);
+    TfrMapping tfrmapping(BlockLayout(1<<8, 1<<8, 10));
     TfrMap::Ptr tfrmap(new TfrMap(tfrmapping, 1));
     write1(tfrmap)->transform_desc( Tfr::StftDesc ().copy ());
     return tfrmap;

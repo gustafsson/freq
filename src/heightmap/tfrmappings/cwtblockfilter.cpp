@@ -87,13 +87,13 @@ void CwtBlockFilter::
         }
 
         // Create a block to plot into
-        BlockLayout bl(BlockSize(4,4), buffer->sample_rate ());
+        BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::Ptr vp(new VisualizationParams);
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
-            max_sample_size.time = 2.f*std::max(1.f, buffer->length ())/bl.block_size().texels_per_row ();
-            max_sample_size.scale = 1.f/bl.block_size().texels_per_column ();
+            max_sample_size.time = 2.f*std::max(1.f, buffer->length ())/bl.texels_per_row ();
+            max_sample_size.scale = 1.f/bl.texels_per_column ();
             ref.log2_samples_size = Reference::Scale(
                         floor_log2( max_sample_size.time ),
                         floor_log2( max_sample_size.scale ));
@@ -102,7 +102,7 @@ void CwtBlockFilter::
         }();
 
         Heightmap::Block block(ref, bl, vp);
-        DataStorageSize s(bl.block_size().texels_per_row (), bl.block_size().texels_per_column ());
+        DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         write1(block.block_data ())->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block

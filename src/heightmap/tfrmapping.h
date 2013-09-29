@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAP_TFRMAPPING_H
 #define HEIGHTMAP_TFRMAPPING_H
 
-#include "blocksize.h"
+#include "blocklayout.h"
 #include "volatileptr.h"
 #include "signal/poperation.h"
 #include "visualizationparams.h"
@@ -15,7 +15,7 @@ typedef int ChannelCount;
 
 class TfrMapping {
 public:
-    TfrMapping(BlockSize, SampleRate fs);
+    TfrMapping(BlockLayout);
 
     bool operator==(const TfrMapping& b);
     bool operator!=(const TfrMapping& b);
@@ -23,7 +23,7 @@ public:
     BlockLayout               block_layout;
 
     VisualizationParams::Ptr  visualization_params() const;
-    BlockSize                 block_size() const;
+    BlockLayout               block_size() const;
     float                     targetSampleRate() const;
     Tfr::FreqAxis             display_scale() const;
     AmplitudeAxis             amplitude_axis() const;
@@ -39,15 +39,14 @@ public:
     TfrMap(TfrMapping tfr_mapping, ChannelCount channels);
     ~TfrMap();
 
-    BlockSize block_size() const;
-    void block_size(BlockSize bs);
+    BlockLayout block_size() const;
+    void block_size(BlockLayout bs);
 
     Tfr::FreqAxis display_scale() const;
     AmplitudeAxis amplitude_axis() const;
     void display_scale(Tfr::FreqAxis);
     void amplitude_axis(AmplitudeAxis);
 
-    // targetSampleRate is used to compute which rawdata (Signal::Interval) that a block represents
     float targetSampleRate() const;
     void targetSampleRate(float);
 

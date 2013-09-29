@@ -60,7 +60,7 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        Heightmap::BlockSize block_size = tfr_mapping_.block_size();
+        Heightmap::BlockLayout block_size = tfr_mapping_.block_size();
         img.reset( new DataStorage<float>( block_size.texels_per_row (), block_size.texels_per_column (), 1));
     }
 

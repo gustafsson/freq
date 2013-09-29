@@ -153,9 +153,9 @@ void ChunkToBlock::
     ctb.enable_subtexel_aggregation = false;
     ctb.full_resolution = false;
     ctb.normalization_factor = 1;
-    BlockLayout bl(BlockSize(1<<8,1<<8),100);
+    BlockLayout bl(1<<8,1<<8,100);
     VisualizationParams::Ptr vp(new VisualizationParams);
-    TfrMapping tfr_mapping( BlockSize(1<<8,1<<8),100);
+    TfrMapping tfr_mapping( BlockLayout(1<<8,1<<8,100));
     Tfr::FreqAxis ds; ds.setLinear (1);
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);

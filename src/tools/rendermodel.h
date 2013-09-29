@@ -48,7 +48,7 @@ namespace Tools
 
         Heightmap::TfrMap::Collections collections();
 
-        void block_size(Heightmap::BlockSize);
+        void block_size(Heightmap::BlockLayout);
 
         Tfr::FreqAxis display_scale();
         void display_scale(Tfr::FreqAxis x);
