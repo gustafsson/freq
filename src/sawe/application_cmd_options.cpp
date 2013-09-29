@@ -163,7 +163,7 @@ void Application::
                     read1(tools.render_model.tfr_map ())->targetSampleRate()
                 );
 
-    tools.render_model.block_size ( newbc );
+    tools.render_model.block_layout ( newbc );
 
     tools.render_view()->emitTransformChanged();
 }

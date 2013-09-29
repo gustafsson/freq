@@ -34,7 +34,6 @@ public:
         BoundsCheck_All = 15
     };
 
-    ReferenceInfo(const Reference&, const TfrMapping&);
     ReferenceInfo(const Reference&, const BlockLayout&, const VisualizationParams::ConstPtr&);
 
     Region region() const;

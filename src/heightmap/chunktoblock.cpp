@@ -155,7 +155,6 @@ void ChunkToBlock::
     ctb.normalization_factor = 1;
     BlockLayout bl(1<<8,1<<8,100);
     VisualizationParams::Ptr vp(new VisualizationParams);
-    TfrMapping tfr_mapping( BlockLayout(1<<8,1<<8,100));
     Tfr::FreqAxis ds; ds.setLinear (1);
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);

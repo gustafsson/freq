@@ -48,7 +48,7 @@ namespace Tools
 
         Heightmap::TfrMap::Collections collections();
 
-        void block_size(Heightmap::BlockLayout);
+        void block_layout(Heightmap::BlockLayout);
 
         Tfr::FreqAxis display_scale();
         void display_scale(Tfr::FreqAxis x);
@@ -56,7 +56,6 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-        Heightmap::TfrMapping tfr_mapping();
         Heightmap::TfrMap::Ptr tfr_map();
         Support::TransformDescs::Ptr transform_descs();
 

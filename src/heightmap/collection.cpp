@@ -50,7 +50,7 @@ namespace Heightmap {
 
 
 Collection::
-        Collection( TfrMapping tfr_mapping )
+        Collection( BlockLayout block_layout, VisualizationParams::ConstPtr visualization_params)
 :   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_( new VisualizationParams ),
     _is_visible( true ),
@@ -62,8 +62,8 @@ Collection::
     failed_allocation_prev_(false)
 {
     // set _max_sample_size
-    this->block_layout (tfr_mapping.block_layout);
-    this->visualization_params (tfr_mapping.visualization_params ());
+    this->block_layout (block_layout);
+    this->visualization_params (visualization_params);
 }
 
 

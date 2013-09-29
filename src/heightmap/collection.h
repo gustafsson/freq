@@ -106,7 +106,7 @@ typedef boost::shared_ptr<Block> pBlock;
   */
 class Collection: public VolatilePtr<Collection> {
 public:
-    Collection(TfrMapping tfr_mapping);
+    Collection(BlockLayout, VisualizationParams::ConstPtr);
     ~Collection();
 
 

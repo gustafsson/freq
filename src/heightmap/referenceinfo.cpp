@@ -32,17 +32,6 @@ Region RegionFactory::
 
 
 ReferenceInfo::
-        ReferenceInfo(const Reference& reference, const TfrMapping& tfr_mapping)
-    :
-      block_layout_(tfr_mapping.block_layout),
-      visualization_params_(tfr_mapping.visualization_params ()),
-      reference_(reference),
-      r(RegionFactory(tfr_mapping.block_layout)(reference_))
-{
-}
-
-
-ReferenceInfo::
         ReferenceInfo(const Reference& reference, const BlockLayout& block_layout, const VisualizationParams::ConstPtr& visualization_params)
     :
       block_layout_(block_layout),

@@ -12,35 +12,13 @@ namespace Heightmap {
 class Collection;
 typedef int ChannelCount;
 
-
-class TfrMapping {
-public:
-    TfrMapping(BlockLayout);
-
-    bool operator==(const TfrMapping& b);
-    bool operator!=(const TfrMapping& b);
-
-    BlockLayout               block_layout;
-
-    VisualizationParams::Ptr  visualization_params() const;
-    BlockLayout               block_size() const;
-    float                     targetSampleRate() const;
-    Tfr::FreqAxis             display_scale() const;
-    AmplitudeAxis             amplitude_axis() const;
-    Tfr::TransformDesc::Ptr   transform_desc() const;
-
-private:
-    VisualizationParams::Ptr  visualization_params_;
-};
-
-
 class TfrMap: public VolatilePtr<TfrMap> {
 public:
-    TfrMap(TfrMapping tfr_mapping, ChannelCount channels);
+    TfrMap(BlockLayout, ChannelCount channels);
     ~TfrMap();
 
-    BlockLayout block_size() const;
-    void block_size(BlockLayout bs);
+    BlockLayout block_layout() const;
+    void block_layout(BlockLayout bs);
 
     Tfr::FreqAxis display_scale() const;
     AmplitudeAxis amplitude_axis() const;
@@ -52,8 +30,6 @@ public:
 
     Tfr::TransformDesc::Ptr transform_desc() const;
     void transform_desc(Tfr::TransformDesc::Ptr);
-
-    const TfrMapping& tfr_mapping() const;
 
     float length() const;
     void length(float L);
@@ -68,9 +44,10 @@ public:
 private:
     void updateCollections();
 
-    TfrMapping  tfr_mapping_;
-    Collections collections_;
-    float       length_;
+    Collections                 collections_;
+    BlockLayout                 block_layout_;
+    VisualizationParams::Ptr    visualization_params_;
+    float                       length_;
 
 public:
     static void test();

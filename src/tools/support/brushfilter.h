@@ -20,7 +20,7 @@ namespace Support {
 class BrushFilter : public Tfr::CwtFilter, public boost::noncopyable
 {
 public:
-    BrushFilter(Heightmap::TfrMapping tfr_mapping);
+    BrushFilter(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
     ~BrushFilter();
 
     typedef DataStorage<float>::Ptr BrushImageDataP;
@@ -38,9 +38,11 @@ public:
 
 protected:
     /**
-     * @brief tfr_mapping describes how 'images' is mapped to the heightmap
+     * @brief block_layout_ and visualization_params_ describes how brush images
+     * are mapped to the heightmap
      */
-    const Heightmap::TfrMapping tfr_mapping_;
+    const Heightmap::BlockLayout block_layout_;
+    Heightmap::VisualizationParams::ConstPtr visualization_params_;
 
 private:
     class BrushFilterSupport* resource_releaser_;
@@ -50,7 +52,7 @@ private:
 class MultiplyBrush: public BrushFilter
 {
 public:
-    MultiplyBrush(Heightmap::TfrMapping tfr_mapping);
+    MultiplyBrush(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
 
     virtual Signal::Intervals affected_samples();
 
@@ -59,7 +61,7 @@ public:
 
 private:
     friend class boost::serialization::access;
-    MultiplyBrush():BrushFilter(Heightmap::TfrMapping(Heightmap::BlockLayout(0,0, 0)))
+    MultiplyBrush():BrushFilter(Heightmap::BlockLayout(0,0, 0), Heightmap::VisualizationParams::ConstPtr())
     { BOOST_ASSERT(false); } // required by serialization, should never be called
 
     template<class archive> void save(archive& ar, const unsigned int version) const {
