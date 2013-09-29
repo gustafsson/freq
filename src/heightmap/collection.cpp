@@ -79,7 +79,7 @@ void Collection::
 {
     VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
-        ReferenceRegion rr(block_layout_.block_size ());
+        RegionFactory rr(block_layout_.block_size ());
         BOOST_FOREACH (const cache_t::value_type& b, _cache)
         {
             TaskInfo(format("%s") % rr(b.first));
@@ -125,7 +125,7 @@ void Collection::
 
     _created_count = 0;
 
-    ReferenceRegion rr(block_layout_.block_size ());
+    RegionFactory rr(block_layout_.block_size ());
 
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
@@ -255,7 +255,7 @@ pBlock Collection::
         else
         {
             failed_allocation_ = true;
-            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(block_layout_.block_size())(ref));
+            TaskInfo(format("Delaying creation of block %s") % RegionFactory(block_layout_.block_size())(ref));
         }
     }
 
@@ -445,7 +445,7 @@ void Collection::
             // clear partial block
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
-                Region ir = ReferenceRegion(block_layout_.block_size ())(itr->first);
+                Region ir = RegionFactory(block_layout_.block_size ())(itr->first);
                 float t = I.last / block_layout_.targetSampleRate() - ir.a.time;
 
                 BlockData::WritePtr bd(block->block_data());
@@ -580,7 +580,7 @@ pBlock Collection::
         ComputationCheckError();
 
         pBlock attempt( new Block( ref, block_layout_, visualization_params_ ));
-        Region r = ReferenceRegion( block_layout_.block_size () )( ref );
+        Region r = RegionFactory( block_layout_.block_size () )( ref );
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
         attempt->glblock.reset( new GlBlock( block_layout_.block_size(), r.time(), r.scale() ));
 

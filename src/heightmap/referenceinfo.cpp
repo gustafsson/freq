@@ -6,8 +6,8 @@ using namespace std;
 
 namespace Heightmap {
 
-ReferenceRegion::
-        ReferenceRegion(const BlockSize& block_size)
+RegionFactory::
+        RegionFactory(const BlockSize& block_size)
     :
       block_size_(block_size)
 {
@@ -15,7 +15,7 @@ ReferenceRegion::
 }
 
 
-Region ReferenceRegion::
+Region RegionFactory::
         operator()(const Reference& ref) const
 {
     Position a, b;
@@ -37,7 +37,7 @@ ReferenceInfo::
       block_layout_(tfr_mapping.block_layout),
       visualization_params_(tfr_mapping.visualization_params ()),
       reference_(reference),
-      r(ReferenceRegion(tfr_mapping.block_layout.block_size ())(reference_))
+      r(RegionFactory(tfr_mapping.block_layout.block_size ())(reference_))
 {
 }
 
@@ -48,7 +48,7 @@ ReferenceInfo::
       block_layout_(block_layout),
       visualization_params_(visualization_params),
       reference_(reference),
-      r(ReferenceRegion(block_layout.block_size ())(reference_))
+      r(RegionFactory(block_layout.block_size ())(reference_))
 {
 }
 

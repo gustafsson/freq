@@ -15,7 +15,7 @@ Block::
     block_layout_(block_layout),
     visualization_params_(visualization_params),
     block_interval_( ReferenceInfo(ref, block_layout_, visualization_params_).getInterval() ),
-    region_( ReferenceRegion(block_layout_.block_size ())(ref) ),
+    region_( RegionFactory(block_layout_.block_size ())(ref) ),
     sample_rate_( ReferenceInfo(ref, block_layout_, visualization_params_).sample_rate() )
 {
 }

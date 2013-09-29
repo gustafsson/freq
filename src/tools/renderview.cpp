@@ -286,7 +286,7 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::ReferenceRegion rr(model->tfr_mapping ().block_size ());
+    Heightmap::RegionFactory rr(model->tfr_mapping ().block_size ());
     Heightmap::Region r = rr(*ref);
 
     ref->block_index[0] = pos.time / r.time();

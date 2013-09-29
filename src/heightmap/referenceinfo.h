@@ -12,9 +12,9 @@
 
 namespace Heightmap {
 
-class ReferenceRegion {
+class RegionFactory {
 public:
-    ReferenceRegion(const BlockSize& block_size);
+    RegionFactory(const BlockSize& block_size);
 
     Region operator()(const Reference& ref) const;
 
