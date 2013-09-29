@@ -927,19 +927,6 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     return true;
 }
 
-void Renderer::renderParentSpectrogramRef( Reference ref )
-{
-    // Assume that ref has already been drawn, draw sibblings, and call renderParent again
-    renderChildrenSpectrogramRef( ref.sibbling1() );
-    renderChildrenSpectrogramRef( ref.sibbling2() );
-    renderChildrenSpectrogramRef( ref.sibbling3() );
-
-    if (!ReferenceInfo(ref.parent (), read1(collection)->tfr_mapping ())
-            .tooLarge() )
-    {
-        renderParentSpectrogramRef( ref.parent() );
-    }
-}
 
 // the normal does not need to be normalized
 static GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, GLvector const& plane, GLvector const& normal ) {

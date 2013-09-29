@@ -135,7 +135,6 @@ private:
     void renderSpectrogramRef( Reference ref );
     LevelOfDetal testLod( Reference ref );
     bool renderChildrenSpectrogramRef( Reference ref );
-    void renderParentSpectrogramRef( Reference ref );
     bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );
     void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
 

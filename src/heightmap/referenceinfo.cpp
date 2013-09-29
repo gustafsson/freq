@@ -124,15 +124,6 @@ bool ReferenceInfo::
 }
 
 
-bool ReferenceInfo::
-        tooLarge() const
-{
-    if (r.b.time > 2 * tfr_mapping_.length && r.b.scale > 2 )
-        return true;
-    return false;
-}
-
-
 std::string ReferenceInfo::
         toString() const
 {
