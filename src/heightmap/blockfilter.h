@@ -21,7 +21,7 @@ class Renderer;
 class BlockFilter
 {
 public:
-    BlockFilter( Heightmap::TfrMap::Ptr tfr_map );
+    BlockFilter( Heightmap::TfrMapping::Ptr tfr_map );
 
     virtual bool applyFilter( Tfr::ChunkAndInverse& pchunk);
     unsigned smallestOk(const Signal::Interval& I);
@@ -33,7 +33,7 @@ protected:
     virtual void mergeRowMajorChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData,
                                      bool full_resolution, ComplexInfo complex_info, float normalization_factor, bool enable_subtexel_aggregation );
 
-    Heightmap::TfrMap::Ptr tfr_map_;
+    Heightmap::TfrMapping::Ptr tfr_map_;
 };
 
 
@@ -41,7 +41,7 @@ template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
 public:
-    BlockFilterImpl( Heightmap::TfrMap::Ptr tfr_map )
+    BlockFilterImpl( Heightmap::TfrMapping::Ptr tfr_map )
         :
         BlockFilter(tfr_map),
         largestApplied(0)
@@ -189,7 +189,7 @@ private:
 class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
-    CwtToBlock( Heightmap::TfrMap::Ptr tfr_map_, Renderer* renderer );
+    CwtToBlock( Heightmap::TfrMapping::Ptr tfr_map_, Renderer* renderer );
 
     /**
       Tells the "chunk-to-block" what information to extract from the complex
@@ -213,7 +213,7 @@ private:
 class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Heightmap::TfrMap::Ptr tfr_map_ );
+    StftToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
     Tfr::pChunkFilter freqNormalization;
 
@@ -237,7 +237,7 @@ public:
 class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 {
 public:
-    CepstrumToBlock( Heightmap::TfrMap::Ptr tfr_map_ );
+    CepstrumToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
     virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
 };
@@ -246,7 +246,7 @@ public:
 class DrawnWaveformToBlock: public BlockFilterImpl<Tfr::DrawnWaveformFilter>
 {
 public:
-    DrawnWaveformToBlock( Heightmap::TfrMap::Ptr tfr_map_ );
+    DrawnWaveformToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 

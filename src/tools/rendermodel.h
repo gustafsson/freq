@@ -46,7 +46,7 @@ namespace Tools
         void init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt);
         void resetSettings();
 
-        Heightmap::TfrMap::Collections collections();
+        Heightmap::TfrMapping::Collections collections();
 
         void block_layout(Heightmap::BlockLayout);
 
@@ -56,7 +56,7 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-        Heightmap::TfrMap::Ptr tfr_map();
+        Heightmap::TfrMapping::Ptr tfr_mapping();
         Support::TransformDescs::Ptr transform_descs();
 
 
@@ -93,7 +93,7 @@ namespace Tools
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
         Support::TransformDescs::Ptr transform_descs_;
-        Heightmap::TfrMap::Ptr tfr_map_;
+        Heightmap::TfrMapping::Ptr tfr_map_;
         Signal::OperationDesc::Ptr render_operation_desc_;
         Signal::Processing::TargetMarker::Ptr target_marker_;
         Signal::Processing::Chain::Ptr chain_;

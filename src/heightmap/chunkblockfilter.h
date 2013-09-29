@@ -34,12 +34,12 @@ public:
 class ChunkBlockFilter: public Tfr::ChunkFilter
 {
 public:
-    ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMap::Ptr tfrmap );
+    ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap );
 
     bool operator()( Tfr::ChunkAndInverse& chunk );
 
 private:
-    Heightmap::TfrMap::Ptr tfrmap_;
+    Heightmap::TfrMapping::Ptr tfrmap_;
     MergeChunk::Ptr merge_chunk_;
 
 public:
@@ -54,7 +54,7 @@ public:
 class ChunkBlockFilterDesc: public Tfr::FilterKernelDesc
 {
 public:
-    ChunkBlockFilterDesc( Heightmap::TfrMap::Ptr tfrmap );
+    ChunkBlockFilterDesc( Heightmap::TfrMapping::Ptr tfrmap );
 
     /**
      * @brief createChunkFilter creates a ChunkFilter.
@@ -69,7 +69,7 @@ public:
 
 private:
     MergeChunkDesc::Ptr merge_chunk_desc_;
-    Heightmap::TfrMap::Ptr tfrmap_;
+    Heightmap::TfrMapping::Ptr tfrmap_;
 
 public:
     static void test();

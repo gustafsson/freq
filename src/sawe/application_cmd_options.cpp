@@ -160,7 +160,7 @@ void Application::
                 Heightmap::BlockLayout(
                     Sawe::Configuration::samples_per_block(),
                     Sawe::Configuration::scales_per_block (),
-                    read1(tools.render_model.tfr_map ())->targetSampleRate()
+                    read1(tools.render_model.tfr_mapping ())->targetSampleRate()
                 );
 
     tools.render_model.block_layout ( newbc );

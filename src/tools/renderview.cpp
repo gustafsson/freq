@@ -286,7 +286,7 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::RegionFactory rr(read1(model->tfr_map ())->block_layout ());
+    Heightmap::RegionFactory rr(read1(model->tfr_mapping ())->block_layout ());
     Heightmap::Region r = rr(*ref);
 
     ref->block_index[0] = pos.time / r.time();
@@ -312,7 +312,7 @@ float RenderView::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
-    Heightmap::BlockLayout block_layout = read1(model->tfr_map ())->block_layout();
+    Heightmap::BlockLayout block_layout = read1(model->tfr_mapping ())->block_layout();
     unsigned w = block_layout.texels_per_row ();
     unsigned h = block_layout.texels_per_column ();
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
@@ -622,7 +622,7 @@ void RenderView::
 
     unsigned i=0;
 
-    const Heightmap::TfrMap::Collections collections = model->collections ();
+    const Heightmap::TfrMapping::Collections collections = model->collections ();
 
     // draw the first without fbo
     for (; i < N; ++i)
@@ -976,7 +976,7 @@ void RenderView::
 //    if (!model->renderSignalTarget)
 //        return;
 
-    model->renderer->collection = read1(model->tfr_map ())->collections()[0];
+    model->renderer->collection = read1(model->tfr_mapping ())->collections()[0];
     model->renderer->init();
     if (!model->renderer->isInitialized())
         return;
@@ -995,7 +995,7 @@ void RenderView::
     TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
                               first_source?first_source->name().c_str():0, first_source);
 
-    Heightmap::TfrMap::Collections collections = model->collections ();
+    Heightmap::TfrMapping::Collections collections = model->collections ();
 
     unsigned N = collections.size();
     unsigned long sumsize = 0;
@@ -1101,7 +1101,7 @@ void RenderView::
             x = model->project()->extent ();
             length = x.interval.get ().count() / x.sample_rate.get ();
 
-            Heightmap::TfrMap::WritePtr w(model->tfr_map ());
+            Heightmap::TfrMapping::WritePtr w(model->tfr_mapping ());
             w->length( length );
 
             if (w->channels() != x.number_of_channels ||

@@ -12,10 +12,10 @@ namespace Heightmap {
 class Collection;
 typedef int ChannelCount;
 
-class TfrMap: public VolatilePtr<TfrMap> {
+class TfrMapping: public VolatilePtr<TfrMapping> {
 public:
-    TfrMap(BlockLayout, ChannelCount channels);
-    ~TfrMap();
+    TfrMapping(BlockLayout, ChannelCount channels);
+    ~TfrMapping();
 
     BlockLayout block_layout() const;
     void block_layout(BlockLayout bs);
@@ -51,7 +51,7 @@ private:
 
 public:
     static void test();
-    static TfrMap::Ptr testInstance();
+    static TfrMapping::Ptr testInstance();
 };
 
 } // namespace Heightmap

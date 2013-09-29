@@ -363,7 +363,7 @@ void RenderController::
         return;
 
     {
-        Heightmap::TfrMap::WritePtr tfr_map(model()->tfr_map ());
+        Heightmap::TfrMapping::WritePtr tfr_map(model()->tfr_mapping ());
 
         // If the transform currently in use differs from the transform settings
         // that should be used, change the transform.
@@ -420,7 +420,7 @@ void RenderController::
     // Wire it up to a FilterDesc
     Heightmap::ChunkBlockFilterDesc* cbfd;
     Tfr::FilterKernelDesc::Ptr kernel(cbfd
-            = new Heightmap::ChunkBlockFilterDesc(model()->tfr_map ()));
+            = new Heightmap::ChunkBlockFilterDesc(model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     Tfr::FilterDesc::Ptr desc( new Tfr::FilterDesc(transform_desc, kernel));
     setBlockFilter( desc );
@@ -472,7 +472,7 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    write1(model()->tfr_map ())->transform_desc( currentTransform()->copy() );
+    write1(model()->tfr_mapping ())->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
     //return ps;
@@ -555,7 +555,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
 
     setBlockFilter( cwtblock );
@@ -594,7 +594,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
+    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
     cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
 
     setBlockFilter( cwtblock );
@@ -604,7 +604,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cepstrum()
 {
-    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->tfr_map ());
+    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->tfr_mapping ());
 
     setBlockFilter( cepstrumblock );
 }
@@ -613,7 +613,7 @@ void RenderController::
 void RenderController::
         receiveSetTransform_DrawnWaveform()
 {
-    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(model()->tfr_map ());
+    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(model()->tfr_mapping ());
 
     setBlockFilter( drawnwaveformblock );
 
@@ -1159,7 +1159,7 @@ void RenderController::
     unsigned N = channels->source()->num_channels();
 */
     unsigned  N = model()->project ()->extent().number_of_channels.get_value_or (0);
-    if (read1(model()->tfr_map ())->channels() != (int)N)
+    if (read1(model()->tfr_mapping ())->channels() != (int)N)
         model()->recompute_extent ();
     for (unsigned i=0; i<N; ++i)
     {

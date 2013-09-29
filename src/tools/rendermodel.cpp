@@ -32,7 +32,7 @@ RenderModel::
         transform_descs_(new Support::TransformDescs)
 {
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
-    tfr_map_.reset (new Heightmap::TfrMap(bl, 0));
+    tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
     renderer.reset( new Heightmap::Renderer() );
 
@@ -109,7 +109,7 @@ void RenderModel::
 }
 
 
-Heightmap::TfrMap::Collections RenderModel::
+Heightmap::TfrMapping::Collections RenderModel::
         collections()
 {
     return read1(tfr_map_)->collections();
@@ -151,8 +151,8 @@ void RenderModel::
 }
 
 
-Heightmap::TfrMap::Ptr RenderModel::
-        tfr_map()
+Heightmap::TfrMapping::Ptr RenderModel::
+        tfr_mapping()
 {
     return tfr_map_;
 }
@@ -217,7 +217,7 @@ void RenderModel::
 {
     Signal::OperationDesc::Extent extent = read1(chain_)->extent(target_marker_);
 
-    Heightmap::TfrMap::WritePtr w(tfr_map_);
+    Heightmap::TfrMapping::WritePtr w(tfr_map_);
     w->targetSampleRate( extent.sample_rate.get_value_or (1) );
     w->length( extent.interval.get_value_or (Signal::Interval()).count() / w->targetSampleRate() );
     w->channels( extent.number_of_channels.get_value_or (1) );

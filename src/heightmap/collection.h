@@ -170,7 +170,7 @@ public:
     VisualizationParams::ConstPtr visualization_params() const;
 
 private:
-    friend class Heightmap::TfrMap;
+    friend class Heightmap::TfrMapping;
     void length(float length);
     void block_layout(BlockLayout block_layout);
     void visualization_params(VisualizationParams::ConstPtr visualization_params);

@@ -40,7 +40,7 @@ namespace Heightmap
 
 
 BlockFilter::
-        BlockFilter( Heightmap::TfrMap::Ptr tfr_map )
+        BlockFilter( Heightmap::TfrMapping::Ptr tfr_map )
     :
       tfr_map_( tfr_map )
 {
@@ -54,7 +54,7 @@ bool BlockFilter::
     Collection::Ptr collection;
 
     {
-        Heightmap::TfrMap::ReadPtr tfr_map(tfr_map_);
+        Heightmap::TfrMapping::ReadPtr tfr_map(tfr_map_);
         if (pchunk.channel >= tfr_map->channels()) {
             // Just ignore
             return false;
@@ -125,7 +125,7 @@ void BlockFilter::
 unsigned BlockFilter::
         smallestOk(const Signal::Interval& I)
 {
-    TfrMap::pCollection collection = read1(tfr_map_)->collections()[0];
+    TfrMapping::pCollection collection = read1(tfr_map_)->collections()[0];
     float FS = read1(tfr_map_)->targetSampleRate();
     long double min_fs = FS;
 /*
@@ -152,7 +152,7 @@ unsigned BlockFilter::
 //////////////////////////////// CwtToBlock ///////////////////////////////
 
 CwtToBlock::
-        CwtToBlock( TfrMap::Ptr tfr_map, Renderer* renderer )
+        CwtToBlock( TfrMapping::Ptr tfr_map, Renderer* renderer )
             :
             BlockFilterImpl<Tfr::CwtFilter>(tfr_map),
             complex_info(ComplexInfo_Amplitude_Non_Weighted),
@@ -184,7 +184,7 @@ void CwtToBlock::
 /////////////////////////////// StftToBlock ///////////////////////////////
 
 StftToBlock::
-        StftToBlock( TfrMap::Ptr tfr_map )
+        StftToBlock( TfrMapping::Ptr tfr_map )
             :
             BlockFilterImpl<Tfr::StftFilter>(tfr_map)
 {
@@ -204,7 +204,7 @@ void StftToBlock::
 ///////////////////////////// CepstrumToBlock /////////////////////////////
 
 CepstrumToBlock::
-        CepstrumToBlock( TfrMap::Ptr tfr_map )
+        CepstrumToBlock( TfrMapping::Ptr tfr_map )
             :
             BlockFilterImpl<Tfr::CepstrumFilter>(tfr_map)
 {
@@ -222,7 +222,7 @@ void CepstrumToBlock::
 /////////////////////////// DrawnWaveformToBlock ///////////////////////////
 
 DrawnWaveformToBlock::
-        DrawnWaveformToBlock( TfrMap::Ptr tfr_map )
+        DrawnWaveformToBlock( TfrMapping::Ptr tfr_map )
             :
             BlockFilterImpl<Tfr::DrawnWaveformFilter>(tfr_map)
 {
@@ -238,10 +238,10 @@ Signal::Interval DrawnWaveformToBlock::
     Signal::Interval toCompute = I;
     if (missingSamples)
     {
-        TfrMap::Collections collections = read1(tfr_map_)->collections();
+        TfrMapping::Collections collections = read1(tfr_map_)->collections();
         for (unsigned c=0; c<collections.size (); ++c)
         {
-            TfrMap::pCollection collection = collections[c];
+            TfrMapping::pCollection collection = collections[c];
             std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( I, false );
 
             BOOST_FOREACH( pBlock block, intersecting_blocks)
@@ -263,8 +263,8 @@ Signal::Interval DrawnWaveformToBlock::
 void DrawnWaveformToBlock::
         mergeChunk( const Block& block, const ChunkAndInverse& pchunk, BlockData& outData )
 {
-    TfrMap::Collections collections = read1(tfr_map_)->collections();
-    TfrMap::pCollection c = collections[pchunk.channel];
+    TfrMapping::Collections collections = read1(tfr_map_)->collections();
+    TfrMapping::pCollection c = collections[pchunk.channel];
     Tfr::FreqAxis fa = read1(tfr_map_)->display_scale();
     Chunk& chunk = *pchunk.chunk;
     if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)

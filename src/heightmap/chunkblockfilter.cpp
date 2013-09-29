@@ -14,7 +14,7 @@ using namespace boost;
 namespace Heightmap {
 
 ChunkBlockFilter::
-        ChunkBlockFilter(MergeChunk::Ptr merge_chunk, Heightmap::TfrMap::Ptr tfrmap)
+        ChunkBlockFilter(MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap)
     :
       tfrmap_(tfrmap),
       merge_chunk_(merge_chunk)
@@ -25,7 +25,7 @@ ChunkBlockFilter::
 bool ChunkBlockFilter::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
-    TfrMap::pCollection collection = read1(tfrmap_)->collections()[pchunk.channel];
+    TfrMapping::pCollection collection = read1(tfrmap_)->collections()[pchunk.channel];
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
@@ -46,7 +46,7 @@ bool ChunkBlockFilter::
 
 
 ChunkBlockFilterDesc::
-        ChunkBlockFilterDesc(Heightmap::TfrMap::Ptr tfrmap)
+        ChunkBlockFilterDesc(Heightmap::TfrMapping::Ptr tfrmap)
     :
       tfrmap_(tfrmap)
 {
@@ -107,7 +107,7 @@ void ChunkBlockFilter::
         MergeChunkMock* merge_chunk_mock;
         MergeChunk::Ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
         BlockLayout bl(4, 4, SampleRate(4));
-        Heightmap::TfrMap::Ptr tfrmap(new Heightmap::TfrMap(bl, ChannelCount(1)));
+        Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
         write1(tfrmap)->length( 1 );
         ChunkBlockFilter cbf( merge_chunk, tfrmap );
 
@@ -140,7 +140,7 @@ void ChunkBlockFilterDesc::
     // It should instantiate ChunkBlockFilters for different engines.
     {
         BlockLayout bl(4,4,4);
-        Heightmap::TfrMap::Ptr tfrmap(new Heightmap::TfrMap(bl, 1));
+        Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
 
         ChunkBlockFilterDesc cbfd( tfrmap );
 
