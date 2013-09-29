@@ -51,7 +51,8 @@ namespace Heightmap {
 
 Collection::
         Collection( TfrMapping tfr_mapping )
-:   tfr_mapping_( TfrMapping(BlockSize(2,2),FLT_MAX) ),
+:   block_layout_( BlockSize(2,2), FLT_MAX ),
+    visualization_params_( new VisualizationParams ),
     _is_visible( true ),
     _created_count(0),
     _frame_counter(0),
@@ -61,7 +62,8 @@ Collection::
     failed_allocation_prev_(false)
 {
     // set _max_sample_size
-    this->tfr_mapping (tfr_mapping);
+    this->block_layout (tfr_mapping.block_layout);
+    this->visualization_params (tfr_mapping.visualization_params ());
 }
 
 
@@ -77,7 +79,7 @@ void Collection::
 {
     VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", _cache.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
-        ReferenceRegion rr(this->tfr_mapping ().block_size());
+        ReferenceRegion rr(block_layout_.block_size ());
         BOOST_FOREACH (const cache_t::value_type& b, _cache)
         {
             TaskInfo(format("%s") % rr(b.first));
@@ -123,7 +125,7 @@ void Collection::
 
     _created_count = 0;
 
-    ReferenceRegion rr(this->tfr_mapping ().block_size());
+    ReferenceRegion rr(block_layout_.block_size ());
 
     recent_t delayremoval;
     BOOST_FOREACH(const recent_t::value_type& b, _to_remove)
@@ -238,7 +240,7 @@ pBlock Collection::
         getBlock( const Reference& ref )
 {
     // Look among cached blocks for this reference
-    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, tfr_mapping ()));
+    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
     pBlock block = findBlock( ref );
 
@@ -253,7 +255,7 @@ pBlock Collection::
         else
         {
             failed_allocation_ = true;
-            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(tfr_mapping().block_size())(ref));
+            TaskInfo(format("Delaying creation of block %s") % ReferenceRegion(block_layout_.block_size())(ref));
         }
     }
 
@@ -378,7 +380,7 @@ unsigned long Collection::
             sumsize -= abpe;
         }
 
-    unsigned elements_per_block = tfr_mapping_.block_size().texels_per_block ();
+    unsigned elements_per_block = block_layout_.block_size().texels_per_block ();
     return sumsize*elements_per_block;
 }
 
@@ -427,7 +429,7 @@ void Collection::
     for (cache_t::iterator itr = _cache.begin(); itr!=_cache.end(); ++itr)
     {
         pBlock block(itr->second);
-        Signal::Interval blockInterval = ReferenceInfo(itr->first, tfr_mapping_).getInterval();
+        Signal::Interval blockInterval = ReferenceInfo(itr->first, block_layout_, visualization_params_).getInterval();
         Signal::Interval toKeep = I & blockInterval;
         bool remove_entire_block = toKeep == Signal::Interval();
         bool keep_entire_block = toKeep == blockInterval;
@@ -443,12 +445,12 @@ void Collection::
             // clear partial block
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
-                Region ir = ReferenceRegion(tfr_mapping_)(itr->first);
-                float t = I.last / tfr_mapping_.targetSampleRate() - ir.a.time;
+                Region ir = ReferenceRegion(block_layout_.block_size ())(itr->first);
+                float t = I.last / block_layout_.targetSampleRate() - ir.a.time;
 
                 BlockData::WritePtr bd(block->block_data());
 
-                ReferenceInfo ri(itr->first, tfr_mapping_);
+                ReferenceInfo ri(itr->first, block_layout_, visualization_params_);
                 ::blockClearPart( bd->cpu_copy,
                               ceil(t * ri.sample_rate()) );
 
@@ -483,40 +485,61 @@ void Collection::
 }
 
 
-const TfrMapping& Collection::
-        tfr_mapping() const
+BlockLayout Collection::
+        block_layout() const
 {
-    return tfr_mapping_;
+    return block_layout_;
+}
+
+
+VisualizationParams::ConstPtr Collection::
+        visualization_params() const
+{
+    return visualization_params_;
 }
 
 
 void Collection::
         length(float length)
 {
-    _max_sample_size.time = 2.f*std::max(1.f, length)/tfr_mapping_.block_size().texels_per_row ();
+    _max_sample_size.time = 2.f*std::max(1.f, length)/block_layout_.block_size().texels_per_row ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
     if (_prev_length > length)
-        discardOutside( Signal::Interval(0, length*tfr_mapping_.targetSampleRate()) );
+        discardOutside( Signal::Interval(0, length*block_layout_.targetSampleRate ()) );
 
     _prev_length = length;
 }
 
 
 void Collection::
-        tfr_mapping(TfrMapping new_tfr_mapping)
+        block_layout(BlockLayout v)
 {
-    recently_created_ = Signal::Intervals::Intervals_ALL;
+    if (block_layout_ == v)
+        return;
 
-    bool do_reset = new_tfr_mapping.block_layout != tfr_mapping_.block_layout;
-    tfr_mapping_ = new_tfr_mapping;
+    block_layout_ = v;
 
-    if (do_reset) {
-        _max_sample_size.scale = 1.f/tfr_mapping_.block_size().texels_per_column ();
-        length(_prev_length);
+    _max_sample_size.scale = 1.f/block_layout_.block_size().texels_per_column ();
+    length(_prev_length);
+    reset();
+}
+
+
+void Collection::
+        visualization_params(VisualizationParams::ConstPtr v)
+{
+    EXCEPTION_ASSERT( v );
+
+    if (visualization_params_ != v)
+    {
         reset();
+
+        visualization_params_ = v;
     }
+
+    recently_created_ = Signal::Intervals::Intervals_ALL;
 }
 
 
@@ -556,10 +579,10 @@ pBlock Collection::
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
-        pBlock attempt( new Block( ref, tfr_mapping_ ));
-        Region r = ReferenceRegion( tfr_mapping_ )( ref );
+        pBlock attempt( new Block( ref, block_layout_, visualization_params_ ));
+        Region r = ReferenceRegion( block_layout_.block_size () )( ref );
         EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
-        attempt->glblock.reset( new GlBlock( tfr_mapping ().block_size(), r.time(), r.scale() ));
+        attempt->glblock.reset( new GlBlock( block_layout_.block_size(), r.time(), r.scale() ));
 
         write1(attempt->block_data())->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
 
@@ -610,7 +633,7 @@ Signal::Intervals Collection::
 pBlock Collection::
         createBlock( const Reference& ref )
 {
-    TIME_COLLECTION TaskTimer tt(format("New block %s") % ReferenceInfo(ref, tfr_mapping ()));
+    TIME_COLLECTION TaskTimer tt(format("New block %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
     pBlock result;
     // Try to create a new block
@@ -701,7 +724,7 @@ pBlock Collection::
                 memForNewBlock += sizeof(float); // Cuda device memory
                 memForNewBlock += sizeof(float); // OpenGL texture
                 memForNewBlock += sizeof(float); // OpenGL neareset texture
-                memForNewBlock *= tfr_mapping_.block_size().texels_per_block ();
+                memForNewBlock *= block_layout_.block_size().texels_per_block ();
                 size_t allocatedMemory = this->cacheByteSize();
 
                 size_t margin = 2*memForNewBlock;
@@ -719,7 +742,7 @@ pBlock Collection::
                                 % _cache.size()
                                  );
 
-                    block.reset( new Block(ref, tfr_mapping_) );
+                    block.reset( new Block(ref, block_layout_, visualization_params_) );
                     block->glblock = stealedBlock->glblock;
                     write1(block->block_data())->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
 
@@ -735,7 +758,7 @@ pBlock Collection::
                 {
                     pBlock back = _recent.back();
 
-                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*tfr_mapping_.block_size().texels_per_block ();
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*block_layout_.block_size().texels_per_block ();
                     allocatedMemory -= std::min(allocatedMemory,blockMemory);
                     _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
@@ -763,7 +786,7 @@ pBlock Collection::
         s += sizeof(float); // Cuda device memory
         s += 2*sizeof(float); // OpenGL texture, 2 times the size for mipmaps
         s += 2*sizeof(std::complex<float>); // OpenGL texture, 2 times the size for mipmaps
-        s*=tfr_mapping_.block_size().texels_per_block ();
+        s*=block_layout_.block_size().texels_per_block ();
         s*=1.5f; // 50% arbitrary extra
 
         if (s>_free_memory)
@@ -799,8 +822,8 @@ void Collection::
 {
     GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
-    unsigned samples = tfr_mapping_.block_size().texels_per_row (),
-            scales = tfr_mapping_.block_size().texels_per_column ();
+    unsigned samples = block_layout_.block_size().texels_per_row (),
+            scales = block_layout_.block_size().texels_per_column ();
     for (unsigned s = 0; s<samples/2; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);
@@ -932,7 +955,7 @@ bool Collection::
             inBlock.reference().log2_samples_size[1] == outBlock.reference().log2_samples_size[1] &&
             ri.b.scale==ro.b.scale && ri.a.scale==ro.a.scale)
         {
-            VERBOSE_COLLECTION TaskInfo(boost::format("Using block %s") % ReferenceInfo(inBlock.reference (), tfr_mapping ()));
+            VERBOSE_COLLECTION TaskInfo(boost::format("Using block %s") % ReferenceInfo(inBlock.reference (), block_layout_, visualization_params_ ));
         }
     }
 

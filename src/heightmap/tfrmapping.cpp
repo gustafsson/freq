@@ -256,7 +256,10 @@ void TfrMap::
         updateCollections()
 {
     for (unsigned c=0; c<collections_.size(); ++c)
-        write1(collections_[c])->tfr_mapping( tfr_mapping_ );
+        write1(collections_[c])->block_layout( tfr_mapping_.block_layout );
+
+    for (unsigned c=0; c<collections_.size(); ++c)
+        write1(collections_[c])->visualization_params( tfr_mapping_.visualization_params () );
 }
 
 

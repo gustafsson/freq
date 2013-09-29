@@ -50,6 +50,19 @@ ReferenceInfo::
 }
 
 
+ReferenceInfo::
+        ReferenceInfo(const Reference& reference, const BlockLayout& block_layout, const VisualizationParams::ConstPtr& visualization_params)
+    :
+      tfr_mapping_(block_layout.block_size (),block_layout.targetSampleRate ()),
+      reference_(reference),
+      r(ReferenceRegion(block_layout.block_size ())(reference_))
+{
+    tfr_mapping_.visualization_params ()->transform_desc(visualization_params->transform_desc());
+    tfr_mapping_.visualization_params ()->display_scale(visualization_params->display_scale());
+    tfr_mapping_.visualization_params ()->amplitude_axis(visualization_params->amplitude_axis());
+}
+
+
 Region ReferenceInfo::
         region() const
 {

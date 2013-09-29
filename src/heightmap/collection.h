@@ -166,15 +166,16 @@ public:
     bool isVisible() const;
     void setVisible(bool v);
 
-    const TfrMapping& tfr_mapping() const;
+    BlockLayout block_layout() const;
+    VisualizationParams::ConstPtr visualization_params() const;
 
 private:
     friend class Heightmap::TfrMap;
     void length(float length);
-    void tfr_mapping(TfrMapping new_mapping);
-    //void block_layout(BlockLayout block_layout);
-    //void visualization_params(VisualizationParams block_layout);
-    TfrMapping tfr_mapping_;
+    void block_layout(BlockLayout block_layout);
+    void visualization_params(VisualizationParams::ConstPtr visualization_params);
+    BlockLayout block_layout_;
+    VisualizationParams::ConstPtr visualization_params_;
     Signal::Intervals recently_created_;
 
     bool

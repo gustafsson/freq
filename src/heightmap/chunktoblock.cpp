@@ -18,6 +18,7 @@ void ChunkToBlock::mergeColumnMajorChunk(
         BlockData& outData )
 {
     Region r = block.getRegion();
+    VisualizationParams::ConstPtr vp = block.visualization_params ();
 
     Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getCoveredInterval();
@@ -25,7 +26,7 @@ void ChunkToBlock::mergeColumnMajorChunk(
 
     // don't validate more texels than we have actual support for
     Signal::Interval spannedBlockSamples(0,0);
-    ReferenceInfo ri(block.reference (), block.tfr_mapping ());
+    ReferenceInfo ri(block.referenceInfo ());
     Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
 
     Signal::Interval transfer = usableInInterval&blockInterval;
@@ -52,8 +53,8 @@ void ChunkToBlock::mergeColumnMajorChunk(
                   ResampleArea( r.a.time, r.a.scale,
                                r.b.time, r.b.scale ),
                   chunk.freqAxis,
-                  block.tfr_mapping ().display_scale(),
-                  block.tfr_mapping ().amplitude_axis(),
+                  vp->display_scale(),
+                  vp->amplitude_axis(),
                   normalization_factor,
                   true);
 }
@@ -64,7 +65,7 @@ void ChunkToBlock::mergeRowMajorChunk(
         const Tfr::Chunk& chunk,
         BlockData& outData )
 {
-    TfrMapping tfr_mapping = block.tfr_mapping ();
+    VisualizationParams::ConstPtr vp = block.visualization_params ();
 
     // Find out what intervals that match
     Signal::Interval outInterval = block.getInterval();
@@ -83,8 +84,8 @@ void ChunkToBlock::mergeRowMajorChunk(
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;
-    float chunk_first_scale = tfr_mapping.display_scale().getFrequencyScalar( chunk.minHz() );
-    float chunk_last_scale = tfr_mapping.display_scale().getFrequencyScalar( chunk.maxHz() );
+    float chunk_first_scale = vp->display_scale().getFrequencyScalar( chunk.minHz() );
+    float chunk_last_scale = vp->display_scale().getFrequencyScalar( chunk.maxHz() );
 
     merge_first_scale = std::max( merge_first_scale, chunk_first_scale );
     merge_last_scale = std::min( merge_last_scale, chunk_last_scale );
@@ -97,8 +98,6 @@ void ChunkToBlock::mergeRowMajorChunk(
     chunk_b.scale = chunk_last_scale;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
-
-    Position s, sblock, schunk;
 
     enable_subtexel_aggregation &= full_resolution;
 
@@ -119,8 +118,8 @@ void ChunkToBlock::mergeRowMajorChunk(
                                   r.b.time, r.b.scale ),
                      complex_info,
                      chunk.freqAxis,
-                     tfr_mapping.display_scale(),
-                     tfr_mapping.amplitude_axis(),
+                     vp->display_scale(),
+                     vp->amplitude_axis(),
                      normalization_factor,
                      enable_subtexel_aggregation
                      );
@@ -154,10 +153,12 @@ void ChunkToBlock::
     ctb.enable_subtexel_aggregation = false;
     ctb.full_resolution = false;
     ctb.normalization_factor = 1;
+    BlockLayout bl(BlockSize(1<<8,1<<8),100);
+    VisualizationParams::Ptr vp(new VisualizationParams);
     TfrMapping tfr_mapping( BlockSize(1<<8,1<<8),100);
     Tfr::FreqAxis ds; ds.setLinear (1);
-    tfr_mapping.visualization_params ()->display_scale(ds);
-    tfr_mapping.visualization_params ()->amplitude_axis(AmplitudeAxis_Linear);
+    vp->display_scale(ds);
+    vp->amplitude_axis(AmplitudeAxis_Linear);
 
     Tfr::StftDesc* tfr;
     Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
@@ -176,7 +177,7 @@ void ChunkToBlock::
 
     Heightmap::Reference ref;
 
-    pBlock block( new Block (ref, tfr_mapping));
+    pBlock block( new Block (ref, bl, vp));
     BlockData blockdata;
     blockdata.cpu_copy.reset( new DataStorage<float>(32,32) );
 

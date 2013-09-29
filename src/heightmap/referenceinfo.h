@@ -36,6 +36,7 @@ public:
     };
 
     ReferenceInfo(const Reference&, const TfrMapping&);
+    ReferenceInfo(const Reference&, const BlockLayout&, const VisualizationParams::ConstPtr&);
 
     Region region() const;
     long double sample_rate() const;
@@ -68,7 +69,7 @@ private:
     Tfr::FreqAxis transformScale() const;
     float displayedTimeResolution(float ahz) const;
 
-    const TfrMapping& tfr_mapping_;
+    const TfrMapping tfr_mapping_;
     const Reference& reference_;
     const Region r;
 };

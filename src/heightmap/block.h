@@ -40,7 +40,7 @@ namespace Heightmap {
     // transfer results between them.
     class Block {
     public:
-        Block( const Reference&, const TfrMapping& );
+        Block( Reference, BlockLayout, VisualizationParams::ConstPtr);
         ~Block();
 
         // TODO move this value to a complementary class
@@ -51,18 +51,23 @@ namespace Heightmap {
         boost::shared_ptr<GlBlock> glblock;
         BlockData::Ptr block_data() const { return block_data_; }
 
-        const TfrMapping& tfr_mapping() const { return tfr_mapping_; }
+        // Shared state
+        const VisualizationParams::ConstPtr visualization_params() const { return visualization_params_; }
 
         // POD properties
+        const BlockLayout block_layout() const { return block_layout_; }
         Reference reference() const { return ref_; }
         Signal::Interval getInterval() const { return block_interval_; }
         Region getRegion() const { return region_; }
         float sample_rate() const { return sample_rate_; }
 
+        // Helper
+        ReferenceInfo referenceInfo() const { return ReferenceInfo(reference (), block_layout (), visualization_params ()); }
     private:
         BlockData::Ptr block_data_;
         const Reference ref_;
-        const TfrMapping tfr_mapping_;
+        const BlockLayout block_layout_;
+        const VisualizationParams::ConstPtr visualization_params_;
 
         const Signal::Interval block_interval_;
         const Region region_;

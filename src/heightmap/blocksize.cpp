@@ -110,8 +110,8 @@ void BlockLayout::
 {
     // It should describe the sizes of blocks
     {
-        BlockLayout b(BlockSize(1,2),3);
-        EXCEPTION_ASSERT_EQUALS(b.block_size (), BlockSize(1,2));
+        BlockLayout b(BlockSize(2,3),4);
+        EXCEPTION_ASSERT_EQUALS(b.block_size (), BlockSize(2,3));
         EXCEPTION_ASSERT_EQUALS(b.targetSampleRate (), 4);
     }
 
