@@ -46,17 +46,17 @@ namespace Heightmap {
         // TODO move this value to a complementary class
         unsigned frame_number_last_used;
         bool new_data_available;
-        bool to_delete;
 
         // OpenGL data to render
         boost::shared_ptr<GlBlock> glblock;
         BlockData::Ptr block_data() const { return block_data_; }
 
-        const Reference& reference() const { return ref_; }
         const TfrMapping& tfr_mapping() const { return tfr_mapping_; }
 
-        const Signal::Interval& getInterval() const { return block_interval_; }
-        const Region& getRegion() const { return region_; }
+        // POD properties
+        Reference reference() const { return ref_; }
+        Signal::Interval getInterval() const { return block_interval_; }
+        Region getRegion() const { return region_; }
         float sample_rate() const { return sample_rate_; }
 
     private:

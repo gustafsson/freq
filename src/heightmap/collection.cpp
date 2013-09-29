@@ -224,7 +224,6 @@ void Collection::
     TaskInfo(boost::format("recently_created_ = %s") % recently_created_);
 */
 
-    b->to_delete = false;
     b->frame_number_last_used = _frame_counter;
     _recent.remove( b );
     _recent.push_front( b );
@@ -323,11 +322,6 @@ std::vector<pBlock> Collection::
         unsigned framediff = _frame_counter - pb->frame_number_last_used;
         if (only_visible && framediff != 0 && framediff != 1)
             continue;
-
-#ifndef SAWE_NO_MUTEX
-        if (pb->to_delete)
-            continue;
-#endif
 
         if ((I & pb->getInterval()).count())
             r.push_back(pb);
@@ -683,7 +677,6 @@ void Collection::
     _recent.remove(b);
     _cache.erase(b->reference());
     _to_remove.push_back( b );
-    b->to_delete = true;
     b->glblock.reset ();
 }
 

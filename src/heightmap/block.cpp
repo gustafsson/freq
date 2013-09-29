@@ -10,7 +10,6 @@ Block::
     :
     frame_number_last_used(-1),
     new_data_available( false ),
-    to_delete( false ),
     block_data_(new BlockData),
     ref_(ref),
     tfr_mapping_(tfr_mapping),
