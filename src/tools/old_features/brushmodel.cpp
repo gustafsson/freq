@@ -9,7 +9,7 @@
 #include "sawe/project.h"
 #include "tfr/cwt.h"
 
-#include <demangle.h>
+#include "demangle.h"
 
 
 #define TIME_BRUSH

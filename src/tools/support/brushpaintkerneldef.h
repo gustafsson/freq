@@ -2,7 +2,7 @@
 #define BRUSHPAINTKERNELDEF_H
 
 #include "brushpaintkernel.h"
-#include <operate.h>
+#include "operate.h"
 
 class AddGaussOperator
 {

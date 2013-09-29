@@ -1,6 +1,6 @@
 #include "signal/operation.h"
 
-#include <demangle.h>
+#include "demangle.h"
 
 #include <boost/foreach.hpp>
 

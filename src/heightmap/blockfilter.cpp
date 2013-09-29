@@ -11,9 +11,9 @@
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
 
-#include <computationkernel.h>
-#include <TaskTimer.h>
-#include <Statistics.h>
+#include "computationkernel.h"
+#include "TaskTimer.h"
+#include "Statistics.h"
 
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>

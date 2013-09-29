@@ -6,7 +6,7 @@
 #include "position.h"
 
 // gpumisc
-#include <tmatrix.h>
+#include "tmatrix.h"
 #include "volatileptr.h"
 
 // std

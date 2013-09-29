@@ -1,5 +1,5 @@
 // gl
-#include <gl.h>
+#include "gl.h"
 
 #include "renderview.h"
 
@@ -23,12 +23,12 @@
 #include "toolfactory.h"
 
 // gpumisc
-#include <computationkernel.h>
-#include <GlException.h>
-#include <glPushContext.h>
-#include <demangle.h>
-#include <glframebuffer.h>
-#include <neat_math.h>
+#include "computationkernel.h"
+#include "GlException.h"
+#include "glPushContext.h"
+#include "demangle.h"
+#include "glframebuffer.h"
+#include "neat_math.h"
 
 #ifdef USE_CUDA
 // cuda

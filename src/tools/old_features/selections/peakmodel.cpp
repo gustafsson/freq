@@ -12,9 +12,9 @@
 #include "heightmap/glblock.h"
 
 // gpumisc
-#include <tvector.h>
+#include "tvector.h"
 #ifdef USE_CUDA
-#include <cudaglobalstorage.h>
+#include "cudaglobalstorage.h"
 #endif
 
 // std

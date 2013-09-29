@@ -15,7 +15,7 @@
 #include "adapters/playback.h"
 
 // gpumisc
-#include <redirectstdout.h>
+#include "redirectstdout.h"
 
 // boost
 #include <boost/foreach.hpp>

@@ -19,7 +19,7 @@
 #include "tools/support/operation-composite.h"
 
 // GpuMisc
-#include <demangle.h>
+#include "demangle.h"
 
 // Std
 #include <fstream>

@@ -3,7 +3,7 @@
 #include "rectanglekerneldef.h"
 
 // gpumisc
-#include <cudaUtil.h>
+#include "cudaUtil.h"
 
 // stdc
 #include <stdio.h>

@@ -4,7 +4,7 @@
 
 #include "tools/support/toolglbrush.h"
 
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 namespace Tools { namespace Selections
 {

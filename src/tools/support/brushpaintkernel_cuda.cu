@@ -1,4 +1,4 @@
-#include <resamplecuda.cu.h>
+#include "resamplecuda.cu.h"
 
 #include "brushpaintkerneldef.h"
 

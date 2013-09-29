@@ -10,10 +10,10 @@
 #include "heightmap/renderer.h"
 
 // gpumisc
-#include <computationkernel.h>
-#include <GlException.h>
-#include <glPushContext.h>
-#include <glframebuffer.h>
+#include "computationkernel.h"
+#include "GlException.h"
+#include "glPushContext.h"
+#include "glframebuffer.h"
 
 // boost
 #include <boost/assert.hpp>

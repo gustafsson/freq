@@ -1,8 +1,8 @@
 #include "resampletest.cu.h"
 #include <stdio.h>
 
-#include <resamplecuda.cu.h>
-#include <operate.h>
+#include "resamplecuda.cu.h"
+#include "operate.h"
 
 void simple_resample2d(
         cudaPitchedPtrType<float2> input,

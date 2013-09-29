@@ -2,7 +2,7 @@
 #define SPLINEFILTERKERNELDEF_H
 
 #include "splinefilterkernel.h"
-#include <operate.h>
+#include "operate.h"
 
 template<typename Reader, typename T>
 class Spliner

@@ -1,7 +1,7 @@
 #define BLOCKDIM_X 16
 #define BLOCKDIM_Y 1
 
-#include <resamplecuda.cu.h>
+#include "resamplecuda.cu.h"
 
 #include <complex>
 

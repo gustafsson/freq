@@ -1,6 +1,6 @@
-#include <resamplecuda.cu.h>
+#include "resamplecuda.cu.h"
 
-#include <cuda_vector_types_op.h>
+#include "cuda_vector_types_op.h"
 
 #include "splinefilterkerneldef.h"
 

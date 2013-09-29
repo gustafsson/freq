@@ -4,7 +4,7 @@
 #include <QMutexLocker>
 #endif
 #include <sstream>
-#include <neat_math.h>
+#include "neat_math.h"
 
 #include <boost/foreach.hpp>
 

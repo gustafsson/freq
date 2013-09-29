@@ -4,7 +4,7 @@
 #include "tfr/chunk.h"
 
 // gpumisc
-#include <computationkernel.h>
+#include "computationkernel.h"
 
 // boost
 #include <boost/foreach.hpp>

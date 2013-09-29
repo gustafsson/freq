@@ -33,8 +33,8 @@
 #include "tools/support/renderviewupdateadapter.h"
 
 // gpumisc
-#include <demangle.h>
-#include <computationkernel.h>
+#include "demangle.h"
+#include "computationkernel.h"
 
 // Qt
 #include <QSlider>

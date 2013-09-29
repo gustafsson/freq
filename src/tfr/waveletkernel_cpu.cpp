@@ -1,9 +1,9 @@
 #ifndef USE_CUDA
-#include <resamplecpu.h>
+#include "resamplecpu.h"
 
 #include "waveletkerneldef.h"
 
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 #define SQRTLOG2E        1.201122409f
 #define PI               3.141592654f

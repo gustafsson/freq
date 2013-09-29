@@ -3,7 +3,7 @@
 //#ifndef USE_CUDA
 
 #include "normalizekernel.h"
-#include <cpumemorystorage.h>
+#include "cpumemorystorage.h"
 
 #if defined(__GNUC__)
     #include <cmath>

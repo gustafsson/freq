@@ -1,14 +1,14 @@
 #include "drawwatermark.h"
 
-#include <gl.h>
+#include "gl.h"
 
 // Gpumisc
-#include <GlTexture.h>
-#include <glPushContext.h>
-#include <GlException.h>
-#include <TaskTimer.h>
-#include <Statistics.h>
-#include <vbo.h>
+#include "GlTexture.h"
+#include "glPushContext.h"
+#include "GlException.h"
+#include "TaskTimer.h"
+#include "Statistics.h"
+#include "vbo.h"
 
 // Qt
 #include <QImage>

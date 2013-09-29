@@ -8,11 +8,11 @@
 
 // gpumisc
 //#include <cufft.h>
-#include <throwInvalidArgument.h>
-#include <computationkernel.h>
-#include <neat_math.h>
-#include <Statistics.h>
-#include <unused.h>
+#include "throwInvalidArgument.h"
+#include "computationkernel.h"
+#include "neat_math.h"
+#include "Statistics.h"
+#include "unused.h"
 
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"
@@ -28,7 +28,7 @@
 #include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
-    #include <msc_stdc.h>
+    #include "msc_stdc.h"
 
     #define _USE_MATH_DEFINES
     #include <math.h>

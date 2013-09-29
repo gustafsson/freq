@@ -6,10 +6,10 @@
 #include "test/unittest.h"
 
 // gpumisc
-#include <redirectstdout.h>
-#include <neat_math.h>
-#include <computationkernel.h>
-#include <ThreadChecker.h>
+#include "redirectstdout.h"
+#include "neat_math.h"
+#include "computationkernel.h"
+#include "ThreadChecker.h"
 #include "prettifysegfault.h"
 
 // Qt
@@ -215,7 +215,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
 #include "tools/support/brushpaintkernel.h" // test class Gauss
 #include "tfr/supersample.h"
-#include <Statistics.h>
+#include "Statistics.h"
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
 #include <fstream>

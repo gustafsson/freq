@@ -4,7 +4,7 @@
 #include <QTcpSocket>
 #include <QErrorMessage>
 
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 namespace Adapters {
 

@@ -5,8 +5,8 @@
 #include "tfr/chunk.h"
 
 // gpumisc
-#include <TaskTimer.h>
-#include <computationkernel.h>
+#include "TaskTimer.h"
+#include "computationkernel.h"
 
 // std
 #include <iomanip>

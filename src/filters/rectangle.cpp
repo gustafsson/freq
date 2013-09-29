@@ -3,7 +3,7 @@
 #include "tfr/chunk.h"
 
 // gpumisc
-#include <computationkernel.h>
+#include "computationkernel.h"
 
 // std
 #include <iomanip>

@@ -1,5 +1,5 @@
 #ifndef USE_CUDA
-#include <cpumemorystorage.h>
+#include "cpumemorystorage.h"
 
 #include "stftkernel.h"
 

@@ -7,7 +7,7 @@
 #include "filters/ellipse.h"
 #include "tfr/cwt.h"
 
-#include <glPushContext.h>
+#include "glPushContext.h"
 
 // Qt
 #include <QTimer>

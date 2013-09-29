@@ -3,7 +3,7 @@
 #include "signal/operation-basic.h"
 #include "filters/move.h"
 #include "filters/ellipse.h"
-#include <demangle.h>
+#include "demangle.h"
 
 using namespace Signal;
 

@@ -11,7 +11,7 @@
 
 #include "support/renderoperation.h"
 
-#include <GlTexture.h>
+#include "GlTexture.h"
 
 namespace Tools
 {

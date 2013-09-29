@@ -1,4 +1,4 @@
-#include <cudaglobalstorage.h>
+#include "cudaglobalstorage.h"
 
 #include "stftkernel.h"
 

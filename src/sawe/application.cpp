@@ -8,9 +8,9 @@
 #include "configuration.h"
 
 // gpumisc
-#include <demangle.h>
-#include <computationkernel.h>
-#include <glinfo.h>
+#include "demangle.h"
+#include "computationkernel.h"
+#include "glinfo.h"
 
 // std
 #include <sstream>

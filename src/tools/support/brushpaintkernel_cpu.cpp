@@ -1,6 +1,6 @@
 #ifndef USE_CUDA
 
-#include <resamplecpu.h>
+#include "resamplecpu.h"
 
 #include "brushpaintkerneldef.h"
 

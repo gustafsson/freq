@@ -1,8 +1,8 @@
 #include "drawworking.h"
 
 // gpumisc
-#include <gl.h>
-#include <glPushContext.h>
+#include "gl.h"
+#include "glPushContext.h"
 
 // std
 #if defined(_MSC_VER)

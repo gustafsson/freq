@@ -7,7 +7,7 @@
 #include "heightmap/position.h"
 
 // gpumisc
-#include <gl.h>
+#include "gl.h"
 
 // Qt
 #include <QGLWidget>

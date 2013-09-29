@@ -12,9 +12,9 @@
 #include "heightmap/collection.h"
 #include "tools/commands/recordedcommand.h"
 
-#include <TaskTimer.h>
-#include <demangle.h>
-#include <Statistics.h>
+#include "TaskTimer.h"
+#include "demangle.h"
+#include "Statistics.h"
 
 namespace Tools
 {

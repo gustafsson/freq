@@ -16,7 +16,7 @@ Signal::Processing
 #include "heightmap/collection.h"
 
 // gpumisc
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 // Qt
 #include <QMouseEvent>

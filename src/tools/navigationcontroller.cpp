@@ -16,7 +16,7 @@
 #include "sawe/project.h"
 #include "toolfactory.h"
 
-#include <demangle.h>
+#include "demangle.h"
 
 namespace Tools
 {

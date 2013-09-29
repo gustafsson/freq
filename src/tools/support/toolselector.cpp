@@ -4,7 +4,7 @@
 
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
-#include <demangle.h>
+#include "demangle.h"
 // Qt
 #include <QHBoxLayout>
 #include <QWidget>

@@ -3,7 +3,7 @@
 
 #include "sawedll.h"
 
-#include <HasSingleton.h>
+#include "HasSingleton.h"
 #include <sstream>
 #include <vector>
 

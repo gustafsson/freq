@@ -11,7 +11,7 @@
 #include "tools/renderview.h"
 
 // gpumisc
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 // Qt
 #include <QMouseEvent>

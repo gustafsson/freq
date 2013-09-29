@@ -4,8 +4,8 @@
 
 #include "tools/renderview.h"
 
-#include <glPushContext.h>
-#include <GlException.h>
+#include "glPushContext.h"
+#include "GlException.h"
 
 #include <QColor>
 

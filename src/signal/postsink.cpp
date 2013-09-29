@@ -3,9 +3,9 @@
 #include "buffersource.h"
 
 // gpumisc
-#include <Statistics.h>
-#include <TaskTimer.h>
-#include <demangle.h>
+#include "Statistics.h"
+#include "TaskTimer.h"
+#include "demangle.h"
 
 // boost
 #include <boost/foreach.hpp>

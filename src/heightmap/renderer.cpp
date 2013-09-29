@@ -1,7 +1,7 @@
 #include <cstdio>
 
 // gpusmisc/OpenGL
-#include <gl.h>
+#include "gl.h"
 
 // glut
 #ifndef __APPLE__
@@ -21,11 +21,11 @@
 
 // gpumisc
 #include <float.h>
-#include <GlException.h>
-#include <computationkernel.h>
-#include <glPushContext.h>
-#include <TaskTimer.h>
-#include <GlTexture.h>
+#include "GlException.h"
+#include "computationkernel.h"
+#include "glPushContext.h"
+#include "TaskTimer.h"
+#include "GlTexture.h"
 
 // boost
 #include <boost/foreach.hpp>

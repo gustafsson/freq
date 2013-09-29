@@ -3,7 +3,7 @@
 #include "resamplecpu.h"
 #include "drawnwaveformkerneldef.h"
 #include <stdio.h>
-#include <msc_stdc.h>
+#include "msc_stdc.h"
 
 
 void drawWaveform(
