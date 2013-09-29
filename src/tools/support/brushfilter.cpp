@@ -136,7 +136,7 @@ bool MultiplyBrush::
     ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
-        Heightmap::Region r = Heightmap::ReferenceRegion( tfr_mapping_)( v.first );
+        Heightmap::Region r = Heightmap::ReferenceRegion( tfr_mapping_.block_size () )( v.first );
 
         ResampleArea imgarea( r.a.time, r.a.scale, r.b.time, r.b.scale );
 

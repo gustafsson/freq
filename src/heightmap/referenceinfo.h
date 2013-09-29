@@ -15,7 +15,6 @@ namespace Heightmap {
 class ReferenceRegion {
 public:
     ReferenceRegion(const BlockSize& block_size);
-    ReferenceRegion(const TfrMapping& block_size);
 
     Region operator()(const Reference& ref) const;
 
@@ -53,7 +52,6 @@ public:
     Signal::Interval spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const;
 
     Reference reference() const;
-    const TfrMapping& tfr_mapping() const;
 
 
     std::string toString() const;
@@ -69,7 +67,8 @@ private:
     Tfr::FreqAxis transformScale() const;
     float displayedTimeResolution(float ahz) const;
 
-    const TfrMapping tfr_mapping_;
+    const BlockLayout block_layout_;
+    const VisualizationParams::ConstPtr visualization_params_;
     const Reference& reference_;
     const Region r;
 };

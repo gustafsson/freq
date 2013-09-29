@@ -15,15 +15,6 @@ ReferenceRegion::
 }
 
 
-ReferenceRegion::
-        ReferenceRegion(const TfrMapping& tfr_mapping)
-    :
-      block_size_(tfr_mapping.block_size())
-{
-
-}
-
-
 Region ReferenceRegion::
         operator()(const Reference& ref) const
 {
@@ -43,9 +34,10 @@ Region ReferenceRegion::
 ReferenceInfo::
         ReferenceInfo(const Reference& reference, const TfrMapping& tfr_mapping)
     :
-      tfr_mapping_(tfr_mapping),
+      block_layout_(tfr_mapping.block_layout),
+      visualization_params_(tfr_mapping.visualization_params ()),
       reference_(reference),
-      r(ReferenceRegion(tfr_mapping_)(reference_))
+      r(ReferenceRegion(tfr_mapping.block_layout.block_size ())(reference_))
 {
 }
 
@@ -53,13 +45,11 @@ ReferenceInfo::
 ReferenceInfo::
         ReferenceInfo(const Reference& reference, const BlockLayout& block_layout, const VisualizationParams::ConstPtr& visualization_params)
     :
-      tfr_mapping_(block_layout.block_size (),block_layout.targetSampleRate ()),
+      block_layout_(block_layout),
+      visualization_params_(visualization_params),
       reference_(reference),
       r(ReferenceRegion(block_layout.block_size ())(reference_))
 {
-    tfr_mapping_.visualization_params ()->transform_desc(visualization_params->transform_desc());
-    tfr_mapping_.visualization_params ()->display_scale(visualization_params->display_scale());
-    tfr_mapping_.visualization_params ()->amplitude_axis(visualization_params->amplitude_axis());
 }
 
 
@@ -89,13 +79,13 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         boundsCheck(BoundsCheck c) const
 {
-    const Tfr::FreqAxis& cfa = tfr_mapping_.display_scale();
+    const Tfr::FreqAxis& cfa = visualization_params_->display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
     if (c & ReferenceInfo::BoundsCheck_HighS)
     {
-        float scaledelta = (r.scale())/tfr_mapping_.block_size().texels_per_column ();
+        float scaledelta = (r.scale())/block_layout_.block_size().texels_per_column ();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
@@ -113,7 +103,7 @@ bool ReferenceInfo::
     {
         float atres = displayedTimeResolution (ahz);
         float btres = displayedTimeResolution (bhz);
-        float tdelta = 2*r.time()/tfr_mapping_.block_size().texels_per_row ();
+        float tdelta = 2*r.time()/block_layout_.block_size().texels_per_row ();
         if (btres > tdelta && atres > tdelta)
             return false;
     }
@@ -161,7 +151,7 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    int samplesPerBlock = tfr_mapping_.block_size().texels_per_row ();
+    int samplesPerBlock = block_layout_.block_size().texels_per_row ();
     long double blockSize = samplesPerBlock * ldexp(1.f,reference_.log2_samples_size[0]);
     long double elementSize = 1.0 / sample_rate();
     long double blockLocalSize = samplesPerBlock * elementSize;
@@ -172,7 +162,7 @@ Signal::Interval ReferenceInfo::
     // where the last element ends
     long double endTime = startTime + blockLocalSize;
 
-    long double FS = tfr_mapping_.targetSampleRate();
+    long double FS = block_layout_.targetSampleRate();
     Signal::Interval i( max(0.L, floor(startTime * FS)), ceil(endTime * FS) );
 
     //Position a, b;
@@ -185,9 +175,9 @@ Signal::Interval ReferenceInfo::
 Signal::Interval ReferenceInfo::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
-    unsigned samples_per_block = tfr_mapping_.block_size().texels_per_row ();
+    unsigned samples_per_block = block_layout_.block_size().texels_per_row ();
     long double blockSize = samples_per_block * ldexp(1.,reference_.log2_samples_size[0]);
-    long double FS = tfr_mapping_.targetSampleRate();
+    long double FS = block_layout_.targetSampleRate();
 
     unsigned stepsPerBlock = samples_per_block - 1;
     long double p = FS*blockSize/stepsPerBlock;
@@ -238,24 +228,17 @@ Reference ReferenceInfo::
 }
 
 
-const TfrMapping& ReferenceInfo::
-        tfr_mapping() const
-{
-    return tfr_mapping_;
-}
-
-
 Tfr::FreqAxis ReferenceInfo::
         transformScale() const
 {
-    return tfr_mapping_.transform_desc()->freqAxis(tfr_mapping_.targetSampleRate());
+    return visualization_params_->transform_desc()->freqAxis(block_layout_.targetSampleRate());
 }
 
 
 float ReferenceInfo::
         displayedTimeResolution(float hz) const
 {
-    return tfr_mapping_.transform_desc()->displayedTimeResolution(tfr_mapping_.targetSampleRate(), hz);
+    return visualization_params_->transform_desc()->displayedTimeResolution(block_layout_.targetSampleRate(), hz);
 }
 
 
