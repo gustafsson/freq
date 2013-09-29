@@ -41,4 +41,20 @@ std::string BlockSize::
     return ss.str();
 }
 
+
+void BlockSize::
+        test()
+{
+    // It should describe the size in texels of blocks in a heightmap.
+    {
+        BlockSize b(12, 34);
+        EXCEPTION_ASSERT_EQUALS(b.texels_per_block (), 12*34);
+        EXCEPTION_ASSERT_EQUALS(b.texels_per_row (), 12);
+        EXCEPTION_ASSERT_EQUALS(b.texels_per_column (), 34);
+        EXCEPTION_ASSERT_EQUALS((boost::format("%1%")%b).str(), "BlockSize(12, 34)");
+        EXCEPTION_ASSERT_EQUALS(b, BlockSize(12, 34));
+    }
+}
+
+
 } // namespace Heightmap

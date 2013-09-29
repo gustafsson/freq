@@ -9,6 +9,10 @@
 
 namespace Heightmap {
 
+/**
+ * @brief The BlockSize class should describe the size in texels of blocks in
+ * a heightmap.
+ */
 class BlockSize {
 public:
     BlockSize(int texels_per_row, int texels_per_column);
@@ -26,9 +30,13 @@ public:
     friend ostream_t& operator<<(ostream_t& os, const BlockSize& r) {
         return os << r.toString();
     }
+
 private:
     int texels_per_column_;
     int texels_per_row_;
+
+public:
+    static void test();
 };
 
 
