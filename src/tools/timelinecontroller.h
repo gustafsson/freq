@@ -19,6 +19,9 @@ namespace Tools
         TimelineController( TimelineView* timeline_view );
         ~TimelineController();
 
+        // QWidget
+        void paintEvent ( QPaintEvent * event );
+
     private:
         RenderModel *model;
         TimelineView *view;

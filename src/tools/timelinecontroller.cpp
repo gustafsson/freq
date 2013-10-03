@@ -48,6 +48,22 @@ TimelineController::
 
 
 void TimelineController::
+        paintEvent ( QPaintEvent * )
+{
+    if (!moveButton.isDown())
+        return;
+
+    QMouseEvent me(
+                QMouseEvent::MouseMove,
+                QPoint(moveButton.getLastx (),
+                       moveButton.getLasty ()),
+                Qt::NoButton, Qt::LeftButton | Qt::RightButton, Qt::NoModifier);
+
+    mousePressEvent(&me);
+}
+
+
+void TimelineController::
         hideTimeline()
 {
     if (dock)
