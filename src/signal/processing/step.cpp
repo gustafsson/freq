@@ -146,7 +146,8 @@ void Step::
             TaskInfo(format("These samples were supposed to be updated by the task but missed: %1%") % update_miss);
         }
         if (result_interval - expected_output) {
-            TaskInfo(format("These samples were not supposed to be updated by the task but were updated anyway: %1%") % (result_interval - expected_output));
+            // These samples were not supposed to be updated by the task but were updated anyway
+            TaskInfo(format("Unexpected update: %1% = (%2%) - (%3%)") % (result_interval - expected_output) % result_interval % expected_output );
         }
     }
 

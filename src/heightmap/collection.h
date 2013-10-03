@@ -2,11 +2,11 @@
 #define HEIGHTMAPCOLLECTION_H
 
 // Heightmap namespace
-#include "reference_hash.h"
 #include "amplitudeaxis.h"
 #include "tfr/freqaxis.h"
 #include "position.h"
 #include "tfrmapping.h"
+#include "blockcache.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
@@ -16,9 +16,6 @@
 #include "ThreadChecker.h"
 #include "deprecated.h"
 #include "volatileptr.h"
-
-// boost
-#include <boost/unordered_map.hpp>
 
 // std
 #include <vector>
@@ -159,7 +156,6 @@ public:
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
-    void        gc();
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 
@@ -171,12 +167,19 @@ public:
 
 private:
     friend class Heightmap::TfrMapping;
+
     void length(float length);
     void block_layout(BlockLayout block_layout);
     void visualization_params(VisualizationParams::ConstPtr visualization_params);
+
     BlockLayout block_layout_;
     VisualizationParams::ConstPtr visualization_params_;
     Signal::Intervals recently_created_;
+
+    typedef std::list<pBlock> toremove_t;
+    toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
+
+    BlockCache::Ptr cache_;
 
     bool
         _is_visible;
@@ -201,46 +204,6 @@ private:
     bool failed_allocation_;
     bool failed_allocation_prev_;
 
-    /**
-      The cache contains as many blocks as there are space for in the GPU ram.
-      If allocation of a new block fails to be allocated
-            1) all unused blocks are freed.
-            2) if no unused blocks are found and _cache is non-empty, the entire _cache is cleared.
-            3) if _cache is empty, Sonic AWE is terminated with an OpenGL or Cuda error.
-      */
-
-    typedef boost::unordered_map<Reference, pBlock> cache_t;
-    typedef std::list<pBlock> recent_t;
-
-    cache_t _cache;
-    recent_t _recent; /// Ordered with the most recently accessed blocks first
-    recent_t _to_remove;
-
-
-    /**
-     * @brief findBlock searches through the cache for a block with reference 'ref'
-     * @param ref the block to search for.
-     * @return a block if it is found or pBlock() otherwise.
-     */
-    pBlock      findBlock( const Reference& ref );
-
-
-    /**
-      Attempts to allocate a new block.
-      */
-    pBlock      attempt( const Reference& ref );
-
-
-    /**
-      Creates a new block.
-      */
-    pBlock      createBlock( const Reference& ref );
-
-
-    /**
-      Add block information from another block. Returns whether any information was merged.
-      */
-    bool        mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData );
 
 
     /**
@@ -249,31 +212,7 @@ private:
     void        poke( pBlock b );
 
 
-    /**
-     * Queue a block for removal.
-     */
     void        removeBlock( pBlock b );
-
-
-    /**
-     * @brief getAllocatedBlock returns an allocated block either by new a
-     * memory allocation or by reusing the data from an old block.
-     */
-    pBlock      getAllocatedBlock( const Reference& ref );
-
-
-    /**
-     * @brief setDummyValues fills a block with dummy values, used for testing.
-     * @param block
-     */
-    void        setDummyValues( pBlock block );
-
-
-    /**
-     * @brief createBlockFromOthers fills a block with data from other blocks.
-     * @param block
-     */
-    void        createBlockFromOthers(pBlock block);
 };
 
 } // namespace Heightmap
