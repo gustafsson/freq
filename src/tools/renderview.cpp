@@ -29,6 +29,7 @@
 #include "demangle.h"
 #include "glframebuffer.h"
 #include "neat_math.h"
+#include "gluunproject.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -383,9 +384,10 @@ float RenderView::
 Heightmap::Reference RenderView::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
-    memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
-    memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+    model->renderer->gl_projection.update ();
+//    memcpy( model->renderer->gl_projection.viewport_matrix (), viewport_matrix, sizeof(viewport_matrix));
+//    memcpy( model->renderer->gl_projection.modelview_matrix (), modelview_matrix, sizeof(modelview_matrix));
+//    memcpy( model->renderer->gl_projection.projection_matrix (), projection_matrix, sizeof(projection_matrix));
 
     model->renderer->collection = model->collections()[0];
 
@@ -409,8 +411,8 @@ QPointF RenderView::
     {
         GLint const* const& vp = viewport_matrix;
         float z0 = .1, z1=.2;
-        GLvector projectionPlane = Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
-        GLvector projectionNormal = (Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane);
+        GLvector projectionPlane = ::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
+        GLvector projectionNormal = (::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane);
 
         GLvector p;
         p[0] = pos.time;
@@ -1135,9 +1137,10 @@ void RenderView::
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
-            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
-            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
-            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+            model->renderer->gl_projection.update ();
+//            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
+//            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
+//            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
 
             model->renderer->drawAxes( length ); // 4.7 ms
 

@@ -47,6 +47,7 @@ SOURCES += \
     adapters/*.cpp \
     filters/*.cpp \
     heightmap/*.cpp \
+    heightmap/render/*.cpp \
     heightmap/tfrmappings/*.cpp \
     sawe/*.cpp \
     signal/*.cpp \
@@ -70,6 +71,7 @@ HEADERS += \
     adapters/*.h \
     filters/*.h \
     heightmap/*.h \
+    heightmap/render/*.h \
     heightmap/tfrmappings/*.h \
     sawe/*.h \
     signal/*.h \

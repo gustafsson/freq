@@ -5,6 +5,7 @@
 #include "reference.h"
 #include "position.h"
 #include "rendersettings.h"
+#include "render/frustumclip.h"
 
 // gpumisc
 #include "volatileptr.h"
@@ -22,9 +23,6 @@ typedef boost::shared_ptr<Vbo> pVbo;
 
 namespace Heightmap {
 
-    GLvector gluProject(GLvector obj, const double* model, const double* proj, const int *view, bool *r=0);
-    GLvector gluUnProject(GLvector win, const double* model, const double* proj, const int *view, bool *r=0);
-
     class Collection;
 
 class Renderer
@@ -34,9 +32,7 @@ public:
 
     VolatilePtr<Collection>::Ptr    collection;
     RenderSettings                  render_settings;
-    double                          modelview_matrix[16];
-    double                          projection_matrix[16];
-    int                             viewport_matrix[4];
+    glProjection                    gl_projection;
 
     Reference findRefAtCurrentZoomLevel( Heightmap::Position p );
 
@@ -49,11 +45,6 @@ public:
     unsigned trianglesPerBlock();
     bool isInitialized();
     void init();
-
-    GLvector gluProject(GLvector obj, bool *r=0);
-    GLvector gluUnProject(GLvector win, bool *r=0);
-
-    void frustumMinMaxT( float& min_t, float& max_t);
 
     float redundancy();
     void redundancy(float value);
@@ -74,7 +65,6 @@ private:
         InitializationFailed
     };
 
-    std::vector<GLvector> clippedFrustum;
     unsigned _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
@@ -88,11 +78,8 @@ private:
     float _redundancy;
     bool _invalid_frustum;
     bool _drawcrosseswhen0;
-    GLvector projectionPlane, projectionNormal, // for clipFrustum
-        rightPlane, rightNormal,
-        leftPlane, leftNormal,
-        topPlane, topNormal,
-        bottomPlane, bottomNormal;
+    Render::FrustumClip _frustum_clip;
+    std::vector<GLvector> clippedFrustum;
 
     RenderSettings::ColorMode _color_texture_colors;
     boost::shared_ptr<GlTexture> _colorTexture;
@@ -110,9 +97,6 @@ private:
     bool renderChildrenSpectrogramRef( Reference ref );
     bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );
     void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
-
-    std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i, float w=0, float h=0 );
-    std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i, float w=0, float h=0 );
 };
 typedef boost::shared_ptr<Renderer> pRenderer;
 

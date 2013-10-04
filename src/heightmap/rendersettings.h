@@ -2,9 +2,7 @@
 #define HEIGHTMAP_RENDERSETTINGS_H
 
 // gpumisc
-#include "tmatrix.h"
-
-typedef tvector<3,double> GLvector;
+#include "GLvector.h"
 
 namespace Heightmap {
 

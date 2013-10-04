@@ -14,6 +14,7 @@
 #include "GlException.h"
 #include "glPushContext.h"
 #include "glframebuffer.h"
+#include "gluunproject.h"
 
 // boost
 #include <boost/assert.hpp>
@@ -76,7 +77,7 @@ Heightmap::Position TimelineView::
 
     GLvector win_coord( pos.x(), pos.y(), 0.1);
 
-    GLvector world_coord = Heightmap::gluUnProject(
+    GLvector world_coord = gluUnProject(
             win_coord,
             modelview_matrix,
             projection_matrix,
