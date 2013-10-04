@@ -109,7 +109,9 @@ public:
         if (DetectGdb::was_started_through_gdb ())
             BOOST_THROW_EXCEPTION(segfault_exception());
 
-        TaskInfo("Causing deliberate segfault to test that the worker handles it correctly");
+        // Causing deliberate segfault to test that the worker handles it correctly
+        // The test verifies that it works to instantiate a TaskInfo works
+        TaskInfo("testing instantiated TaskInfo");
         *(int*)0 = 0; // cause segfault
 
         // unreachable code
