@@ -224,7 +224,7 @@ void TransformInfoForm::
         addRow("Bins", QString("%1").arg(cwt->nBins(fs)));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         setEditText( ui->minHzEdit, QString("%1").arg(cwt->wanted_min_hz()) );
         //setEditText( ui->maxHzEdit, QString("%1").arg(cwt->get_max_hz(fs)) );
     }
@@ -241,7 +241,7 @@ void TransformInfoForm::
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
         addRow("Rendered height", QString("%1 px").arg(renderview->height()));
         addRow("Rendered width", QString("%1 px").arg(renderview->width()));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
@@ -259,7 +259,7 @@ void TransformInfoForm::
             addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
 */
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
 
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/cepstrum->chunk_size(),0,'f',2) );

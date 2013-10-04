@@ -180,7 +180,7 @@ void RenderView::
 void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
-    if (model->renderer->draw_cursor_marker)
+    if (model->renderer->render_settings.draw_cursor_marker)
         update();
 
     bool request_high_fps = false;
@@ -398,7 +398,7 @@ QPointF RenderView::
 {
     GLdouble objY = 0;
     if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
-        objY = getHeightmapValue(pos) * model->renderer->y_scale * last_ysize;
+        objY = getHeightmapValue(pos) * model->renderer->render_settings.y_scale * last_ysize;
 
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
@@ -506,12 +506,12 @@ Heightmap::Position RenderView::
         //if (e < 1e-5 )
         //    break;
 
-        y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
+        y = getHeightmapValue(p) * model->renderer->render_settings.y_scale * 4 * last_ysize;
         tt.info("(%g, %g) %g is Screen(%g, %g), s = %g", p.time, p.scale, y, r.x(), r.y(), s);
         prevs = s;
     }
 
-    y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
+    y = getHeightmapValue(p) * model->renderer->render_settings.y_scale * 4 * last_ysize;
     TaskInfo("Screen(%g, %g) projects at Heightmap(%g, %g, %g)", widget_pos.x(), widget_pos.y(), p.time, p.scale, y);
     QPointF r = getWidgetPos( p, 0 );
     TaskInfo("Heightmap(%g, %g) projects at Screen(%g, %g)", p.time, p.scale, r.x(), r.y() );
@@ -602,11 +602,11 @@ void RenderView::
     TIME_PAINTGL_DETAILS ComputationCheckError();
 
     // Draw the first channel without a frame buffer
-    model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
-    model->renderer->cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
+    model->renderer->render_settings.camera = GLvector(model->_qx, model->_qy, model->_qz);
+    model->renderer->render_settings.cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
 
     Heightmap::Position cursorPos = getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
-    model->renderer->cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+    model->renderer->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
 
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
@@ -711,10 +711,10 @@ void RenderView::
 
         TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
         collections_n,
-        model->renderer->drawn_blocks, 
-        model->renderer->drawn_blocks==1?"":"s",
+        model->renderer->render_settings.drawn_blocks,
+        model->renderer->render_settings.drawn_blocks==1?"":"s",
         model->renderer->trianglesPerBlock(),
-        collections_n*model->renderer->drawn_blocks*model->renderer->trianglesPerBlock(),
+        collections_n*model->renderer->render_settings.drawn_blocks*model->renderer->trianglesPerBlock(),
         current_viewport[2], current_viewport[3]);
     }
 }
@@ -724,7 +724,7 @@ void RenderView::
         drawCollection(int i, float yscale )
 {
     model->renderer->collection = model->collections()[i];
-    model->renderer->fixed_color = channel_colors[i];
+    model->renderer->render_settings.fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
     if (0 != model->_rx)
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
@@ -747,13 +747,13 @@ void RenderView::
 
     glShadeModel(GL_SMOOTH);
 
-    tvector<4,float> a = model->renderer->clear_color;
+    tvector<4,float> a = model->renderer->render_settings.clear_color;
     glClearColor(a[0], a[1], a[2], a[3]);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glFrontFace( model->renderer->left_handed_axes ? GL_CCW : GL_CW );
+    glFrontFace( model->renderer->render_settings.left_handed_axes ? GL_CCW : GL_CW );
     glCullFace( GL_BACK );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -1118,7 +1118,7 @@ void RenderView::
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
-        last_ysize = model->renderer->last_ysize;
+        last_ysize = model->renderer->render_settings.last_ysize;
         glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
 
 		{
@@ -1129,9 +1129,9 @@ void RenderView::
         {
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
 
-            bool draw_piano = model->renderer->draw_piano;
-            bool draw_hz = model->renderer->draw_hz;
-            bool draw_t = model->renderer->draw_t;
+            bool draw_piano = model->renderer->render_settings.draw_piano;
+            bool draw_hz = model->renderer->render_settings.draw_hz;
+            bool draw_t = model->renderer->render_settings.draw_t;
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
@@ -1141,9 +1141,9 @@ void RenderView::
 
             model->renderer->drawAxes( length ); // 4.7 ms
 
-            model->renderer->draw_piano = draw_piano;
-            model->renderer->draw_hz = draw_hz;
-            model->renderer->draw_t = draw_t;
+            model->renderer->render_settings.draw_piano = draw_piano;
+            model->renderer->render_settings.draw_hz = draw_hz;
+            model->renderer->render_settings.draw_t = draw_t;
         }
     }
 
@@ -1480,7 +1480,7 @@ void RenderView::
     glRotated( model->effective_ry(), 0, 1, 0 );
     glRotated( model->_rz, 0, 0, 1 );
 
-    if (model->renderer->left_handed_axes)
+    if (model->renderer->render_settings.left_handed_axes)
         glScaled(-1, 1, 1);
     else
         glRotated(-90,0,1,0);
@@ -1519,7 +1519,7 @@ void RenderView::
     float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
     float limit = 5, middle=45;
-    model->renderer->draw_axis_at0 = 0;
+    model->renderer->render_settings.draw_axis_at0 = 0;
     if (model->_rx<limit)
     {
         float f = 1 - model->_rx/limit;
@@ -1537,14 +1537,14 @@ void RenderView::
         {
             if (dyx<middle || dyx2<middle)
             {
-                model->renderer->draw_hz = false;
-                model->renderer->draw_piano = false;
-                model->renderer->draw_axis_at0 = dyx<middle?1:-1;
+                model->renderer->render_settings.draw_hz = false;
+                model->renderer->render_settings.draw_piano = false;
+                model->renderer->render_settings.draw_axis_at0 = dyx<middle?1:-1;
             }
             if (dyz<middle || dyz2<middle)
             {
-                model->renderer->draw_t = false;
-                model->renderer->draw_axis_at0 = dyz2<middle?1:-1;
+                model->renderer->render_settings.draw_t = false;
+                model->renderer->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
             }
         }
     }

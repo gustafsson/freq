@@ -111,7 +111,6 @@ public:
       Releases all GPU resources allocated by Heightmap::Collection.
       */
     void reset();
-    bool empty();
 
 
     Signal::Intervals needed_samples(Signal::UnsignedIntervalType& smallest_length);

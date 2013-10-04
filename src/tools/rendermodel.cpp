@@ -94,7 +94,7 @@ void RenderModel::
 void RenderModel::
         setTestCamera()
 {
-    renderer->y_scale = 0.01f;
+    renderer->render_settings.y_scale = 0.01f;
     _qx = 63.4565;
     _qy = 0;
     _qz = 0.37;

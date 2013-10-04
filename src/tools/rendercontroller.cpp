@@ -138,7 +138,7 @@ void RenderController::
 void RenderController::
         receiveSetRainbowColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Rainbow;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Rainbow;
     stateChanged();
 }
 
@@ -146,7 +146,7 @@ void RenderController::
 void RenderController::
         receiveSetGrayscaleColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Grayscale;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Grayscale;
     stateChanged();
 }
 
@@ -154,7 +154,7 @@ void RenderController::
 void RenderController::
         receiveSetBlackGrayscaleColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_BlackGrayscale;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_BlackGrayscale;
     stateChanged();
 }
 
@@ -162,7 +162,7 @@ void RenderController::
 void RenderController::
         receiveSetColorscaleColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_FixedColor;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_FixedColor;
     stateChanged();
 }
 
@@ -170,7 +170,7 @@ void RenderController::
 void RenderController::
         receiveSetGreenRedColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenRed;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_GreenRed;
     stateChanged();
 }
 
@@ -178,7 +178,7 @@ void RenderController::
 void RenderController::
         receiveSetGreenWhiteColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_GreenWhite;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_GreenWhite;
     stateChanged();
 }
 
@@ -186,7 +186,7 @@ void RenderController::
 void RenderController::
         receiveSetGreenColors()
 {
-    model()->renderer->color_mode = Heightmap::Renderer::ColorMode_Green;
+    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Green;
     stateChanged();
 }
 
@@ -194,7 +194,7 @@ void RenderController::
 void RenderController::
         receiveToogleHeightlines(bool value)
 {
-    model()->renderer->draw_contour_plot = value;
+    model()->renderer->render_settings.draw_contour_plot = value;
     stateChanged();
 }
 
@@ -202,7 +202,7 @@ void RenderController::
 void RenderController::
         receiveToggleOrientation(bool value)
 {
-    model()->renderer->left_handed_axes = !value;
+    model()->renderer->render_settings.left_handed_axes = !value;
 
     view->graphicsview->setLayoutDirection( value
                                             ? QBoxLayout::RightToLeft
@@ -215,7 +215,7 @@ void RenderController::
 void RenderController::
         receiveTogglePiano(bool value)
 {
-    model()->renderer->draw_piano = value;
+    model()->renderer->render_settings.draw_piano = value;
 
     ::Ui::MainWindow* ui = getItems();
 
@@ -228,7 +228,7 @@ void RenderController::
 void RenderController::
         receiveToggleHz(bool value)
 {
-    model()->renderer->draw_hz = value;
+    model()->renderer->render_settings.draw_hz = value;
 
     ::Ui::MainWindow* ui = getItems();
 
@@ -241,7 +241,7 @@ void RenderController::
 void RenderController::
         receiveToggleTAxis(bool value)
 {
-    model()->renderer->draw_t = value;
+    model()->renderer->render_settings.draw_t = value;
 
     ::Ui::MainWindow* ui = getItems();
 
@@ -254,7 +254,7 @@ void RenderController::
 void RenderController::
     receiveToggleCursorMarker(bool value)
 {
-    model()->renderer->draw_cursor_marker = value;
+    model()->renderer->render_settings.draw_cursor_marker = value;
     stateChanged();
 }
 
@@ -279,24 +279,24 @@ void RenderController::
         tf_resolution->setValue ( chunk_size );
     }
 
-    this->yscale->setValue( model()->renderer->y_scale );
+    this->yscale->setValue( model()->renderer->render_settings.y_scale );
 
     // keep buttons in sync
     ::Ui::MainWindow* ui = getItems();
-    if (model()->renderer->draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
-    if (model()->renderer->draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
-    switch( model()->renderer->color_mode )
+    if (model()->renderer->render_settings.draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
+    if (model()->renderer->render_settings.draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
+    switch( model()->renderer->render_settings.color_mode )
     {
-    case Heightmap::Renderer::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_rainbow_colors); break;
-    case Heightmap::Renderer::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
-    case Heightmap::Renderer::ColorMode_BlackGrayscale: color->setCheckedAction(ui->actionSet_blackgrayscale); break;
-    case Heightmap::Renderer::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
-    case Heightmap::Renderer::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
-    case Heightmap::Renderer::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
-    case Heightmap::Renderer::ColorMode_Green: color->setCheckedAction(ui->actionSet_green_colors); break;
+    case Heightmap::RenderSettings::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_rainbow_colors); break;
+    case Heightmap::RenderSettings::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
+    case Heightmap::RenderSettings::ColorMode_BlackGrayscale: color->setCheckedAction(ui->actionSet_blackgrayscale); break;
+    case Heightmap::RenderSettings::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
+    case Heightmap::RenderSettings::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
+    case Heightmap::RenderSettings::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
+    case Heightmap::RenderSettings::ColorMode_Green: color->setCheckedAction(ui->actionSet_green_colors); break;
     }
-    ui->actionSet_contour_plot->setChecked(model()->renderer->draw_contour_plot);
-    ui->actionToggleOrientation->setChecked(!model()->renderer->left_handed_axes);
+    ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
+    ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
 
 
     // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
@@ -318,11 +318,11 @@ void RenderController::
 {
     // Keep in sync with transformChanged()
     //float f = 2.f * value / yscale->maximum() - 1.f;
-    model()->renderer->y_scale = value; //exp( 8.f*f*f * (f>0?1:-1));
+    model()->renderer->render_settings.y_scale = value; //exp( 8.f*f*f * (f>0?1:-1));
 
     stateChanged();
 
-    yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->y_scale));
+    yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->render_settings.y_scale));
 }
 
 

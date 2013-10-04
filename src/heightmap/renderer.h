@@ -4,9 +4,9 @@
 // Heightmap namespace
 #include "reference.h"
 #include "position.h"
+#include "rendersettings.h"
 
 // gpumisc
-#include "tmatrix.h"
 #include "volatileptr.h"
 
 // std
@@ -15,7 +15,6 @@
 // boost
 #include <boost/shared_ptr.hpp>
 
-typedef tvector<3,double> GLvector;
 class GlTexture;
 
 class Vbo;
@@ -31,52 +30,25 @@ namespace Heightmap {
 class Renderer
 {
 public:
-    enum ColorMode {
-        ColorMode_Rainbow,
-        ColorMode_Grayscale,
-        ColorMode_BlackGrayscale,
-        ColorMode_FixedColor,
-        ColorMode_GreenRed,
-        ColorMode_GreenWhite,
-        ColorMode_Green
-    };
-
     Renderer();
 
+    VolatilePtr<Collection>::Ptr    collection;
+    RenderSettings                  render_settings;
+    double                          modelview_matrix[16];
+    double                          projection_matrix[16];
+    int                             viewport_matrix[4];
+
     Reference findRefAtCurrentZoomLevel( Heightmap::Position p );
-    VolatilePtr<Collection>::Ptr collection;
 
     void draw( float scaley );
     void drawAxes( float T );
     void drawFrustum();
-
-    bool draw_piano;
-    bool draw_hz;
-    bool draw_t;
-    bool draw_cursor_marker;
-    int draw_axis_at0;
-    GLvector camera, cameraRotation;
-    GLvector cursor;
-
-    bool draw_contour_plot;
-    ColorMode color_mode;
-    tvector<4, float> fixed_color;
-    tvector<4, float> clear_color;
-    float y_scale;
-    float last_ysize;
-    float last_axes_length;
-    unsigned drawn_blocks;
-    bool left_handed_axes;
-    bool vertex_texture;
 
     void setFractionSize( unsigned divW=1, unsigned divH=1);
     bool fullMeshResolution();
     unsigned trianglesPerBlock();
     bool isInitialized();
     void init();
-
-    double modelview_matrix[16], projection_matrix[16];
-    int viewport_matrix[4];
 
     GLvector gluProject(GLvector obj, bool *r=0);
     GLvector gluUnProject(GLvector win, bool *r=0);
@@ -87,6 +59,7 @@ public:
     void redundancy(float value);
 
     void clearCaches();
+
 private:
     enum LevelOfDetal {
         Lod_NeedBetterF,
@@ -121,8 +94,8 @@ private:
         topPlane, topNormal,
         bottomPlane, bottomNormal;
 
-    ColorMode _color_texture_colors;
-    boost::shared_ptr<GlTexture> colorTexture;
+    RenderSettings::ColorMode _color_texture_colors;
+    boost::shared_ptr<GlTexture> _colorTexture;
 
     void setSize( unsigned w, unsigned h);
     void createMeshIndexBuffer(int w, int h);

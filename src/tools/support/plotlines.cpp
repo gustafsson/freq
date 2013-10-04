@@ -102,7 +102,7 @@ void PlotLines::
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
-    glScalef(1, render_view_->model->renderer->y_scale, 1);
+    glScalef(1, render_view_->model->renderer->render_settings.y_scale, 1);
 
     if (0 == display_list_)
     {

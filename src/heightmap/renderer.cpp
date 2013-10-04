@@ -49,22 +49,7 @@ namespace Heightmap {
 
 
 Renderer::Renderer()
-:   draw_piano(false),
-    draw_hz(true),
-    draw_t(true),
-    draw_cursor_marker(false),
-    draw_axis_at0(0),
-    camera(0,0,0),
-    draw_contour_plot(false),
-    color_mode( ColorMode_Rainbow ),
-    fixed_color( 1,0,0,1 ),
-    clear_color( 1,1,1,0 ),
-    y_scale( 1 ),
-    last_ysize( 1 ),
-    last_axes_length( 0 ),
-    drawn_blocks(0),
-    left_handed_axes(true),
-    vertex_texture(true),
+    :
     _mesh_index_buffer(0),
     _mesh_width(0),
     _mesh_height(0),
@@ -87,7 +72,7 @@ Renderer::Renderer()
     _redundancy(1.0f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
     _invalid_frustum(true),
     _drawcrosseswhen0( Sawe::Configuration::version().empty() ),
-    _color_texture_colors( (ColorMode)-1 )
+    _color_texture_colors( (RenderSettings::ColorMode)-1 )
 {
     memset(modelview_matrix, 0, sizeof(modelview_matrix));
     memset(projection_matrix, 0, sizeof(projection_matrix));
@@ -387,7 +372,7 @@ void Renderer::init()
     }
 
     // load shader
-    if (vertex_texture)
+    if (render_settings.vertex_texture)
         _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
     else
         _shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
@@ -459,8 +444,8 @@ void Renderer::
     glDeleteProgram(_shader_prog);
     _shader_prog = 0;
     _invalid_frustum = true;
-    colorTexture.reset();
-    _color_texture_colors = (ColorMode)-1;
+    _colorTexture.reset();
+    _color_texture_colors = (RenderSettings::ColorMode)-1;
 }
 
 
@@ -469,14 +454,14 @@ tvector<4,float> mix(tvector<4,float> a, tvector<4,float> b, float f)
     return a*(1-f) + b*f;
 }
 
-tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::ColorMode scheme ) {
+tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, RenderSettings::ColorMode scheme ) {
     tvector<4,float> spectrum[12];
     int count = 0;
     spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
 
     switch (scheme)
     {
-    case Renderer::ColorMode_GreenRed:
+    case RenderSettings::ColorMode_GreenRed:
         spectrum[0] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[1] = tvector<4,float>( 0, 1, 0, 0 ),
         spectrum[2] = tvector<4,float>( 0, 1, 0, 0 ),
@@ -491,7 +476,7 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         spectrum[11] = tvector<4,float>( 0.75, 0, 0, 0 ); // dark red when over the top
         count = 11;
         break;
-    case Renderer::ColorMode_GreenWhite:
+    case RenderSettings::ColorMode_GreenWhite:
         if (wavelengthScalar<0)
             return tvector<4,float>( 0, 0, 0, 0 );
         spectrum[0] = tvector<4,float>( 0, 1, 0, 0 ),
@@ -505,7 +490,7 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         spectrum[7] = tvector<4,float>( 1, 1, 1, 0 ); // darker when over the top
         count = 7;
         break;
-    case Renderer::ColorMode_Green:
+    case RenderSettings::ColorMode_Green:
         if (wavelengthScalar<0)
             return tvector<4,float>( 0, 0, 0, 0 );
         spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
@@ -517,9 +502,9 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
         spectrum[6] = tvector<4,float>( 0, 1, 0, 0 );
         count = 6;
         break;
-    case Renderer::ColorMode_Grayscale:
+    case RenderSettings::ColorMode_Grayscale:
         break;
-    case Renderer::ColorMode_BlackGrayscale:
+    case RenderSettings::ColorMode_BlackGrayscale:
         if (wavelengthScalar<0)
             return tvector<4,float>( 0, 0, 0, 0 );
         break;
@@ -581,18 +566,18 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, Renderer::Co
 }
 
 void Renderer::createColorTexture(unsigned N) {
-    if (_color_texture_colors == color_mode && colorTexture && colorTexture->getWidth()==N)
+    if (_color_texture_colors == render_settings.color_mode && _colorTexture && _colorTexture->getWidth()==N)
         return;
 
-    _color_texture_colors = color_mode;
+    _color_texture_colors = render_settings.color_mode;
 
     std::vector<tvector<4,float> > texture(N);
     for (unsigned i=0; i<N; ++i) {
         texture[i] = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
     }
-    colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
+    _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
 
-    clear_color = getWavelengthColorCompute( -1.f, _color_texture_colors );
+    render_settings.clear_color = getWavelengthColorCompute( -1.f, _color_texture_colors );
 }
 
 Reference Renderer::
@@ -669,8 +654,8 @@ void Renderer::draw( float scaley )
                  block_size.texels_per_column ()/_mesh_fraction_height );
     }
 
-    last_ysize = scaley;
-    drawn_blocks = 0;
+    render_settings.last_ysize = scaley;
+    render_settings.drawn_blocks = 0;
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
@@ -702,7 +687,7 @@ void Renderer::beginVboRendering()
 
     createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
     glActiveTexture(GL_TEXTURE2);
-    colorTexture->bindTexture2D();
+    _colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
     glUseProgram(_shader_prog);
@@ -722,29 +707,33 @@ void Renderer::beginVboRendering()
         glUniform1i(uniVertText2, 2); // GL_TEXTURE2
 
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
-        switch (color_mode)
+        switch (render_settings.color_mode)
         {
-        case ColorMode_Grayscale:
+        case RenderSettings::ColorMode_Grayscale:
             glUniform4f(uniFixedColor, 0.f, 0.f, 0.f, 0.f);
             break;
-        case ColorMode_BlackGrayscale:
+        case RenderSettings::ColorMode_BlackGrayscale:
             glUniform4f(uniFixedColor, 1.f, 1.f, 1.f, 0.f);
             break;
         default:
+        {
+            tvector<4, float> fixed_color = render_settings.fixed_color;
             glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
             break;
         }
+        }
 
         uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
+        tvector<4, float> clear_color = render_settings.clear_color;
         glUniform4f(uniClearColor, clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
 
         uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
-        switch(color_mode)
+        switch(render_settings.color_mode)
         {
-        case ColorMode_Rainbow:
-        case ColorMode_GreenRed:
-        case ColorMode_GreenWhite:
-        case ColorMode_Green:
+        case RenderSettings::ColorMode_Rainbow:
+        case RenderSettings::ColorMode_GreenRed:
+        case RenderSettings::ColorMode_GreenWhite:
+        case RenderSettings::ColorMode_Green:
             glUniform1f(uniColorTextureFactor, 1.f);
             break;
         default:
@@ -753,10 +742,10 @@ void Renderer::beginVboRendering()
         }
 
         uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
-        glUniform1f(uniContourPlot, draw_contour_plot ? 1.f : 0.f );
+        glUniform1f(uniContourPlot, render_settings.draw_contour_plot ? 1.f : 0.f );
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
-        glUniform1f(uniYScale, y_scale);
+        glUniform1f(uniYScale, render_settings.y_scale);
 
         BlockLayout block_size = read1(collection)->block_layout ();
         float
@@ -783,7 +772,7 @@ void Renderer::endVboRendering() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glActiveTexture(GL_TEXTURE2);
-    colorTexture->unbindTexture2D();
+    _colorTexture->unbindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -804,13 +793,13 @@ void Renderer::renderSpectrogramRef( Reference ref )
     pBlock block = write1 (collection)->getBlock( ref );
 
     float yscalelimit = _drawcrosseswhen0 ? 0.0004f : 0.f;
-    if (0!=block.get() && y_scale > yscalelimit) {
+    if (0!=block.get() && render_settings.y_scale > yscalelimit) {
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ )
-            block->glblock->draw( _vbo_size, _draw_flat ? GlBlock::HeightMode_Flat : vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
+            block->glblock->draw( _vbo_size, _draw_flat ? GlBlock::HeightMode_Flat : render_settings.vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
 
-    } else if ( 0 == "render red warning cross" || y_scale < yscalelimit) {
+    } else if ( 0 == "render red warning cross" || render_settings.y_scale < yscalelimit) {
         endVboRendering();
         // getBlock would try to find something else if the requested block
         // wasn't readily available.
@@ -853,7 +842,7 @@ void Renderer::renderSpectrogramRef( Reference ref )
         beginVboRendering();
     }
 
-    drawn_blocks++;
+    render_settings.drawn_blocks++;
 
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
@@ -1114,7 +1103,7 @@ std::vector<GLvector> Renderer::
         bottomNormal = ((bottomX-bottomPlane)^(bottomZ-bottomPlane)).Normalized();
 
         // must make all normals negative because one of the axes is flipped (glScale with a minus sign on the x-axis)
-        if (left_handed_axes)
+        if (render_settings.left_handed_axes)
         {
             rightNormal = -rightNormal;
             leftNormal = -leftNormal;
@@ -1282,7 +1271,7 @@ void swap( T& x, T& y) {
 
 void Renderer::drawAxes( float T )
 {
-    last_axes_length = T;
+    render_settings.last_axes_length = T;
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -1424,7 +1413,7 @@ void Renderer::drawAxes( float T )
         GLvector::T timePerPixel_closest, scalePerPixel_closest;
         computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
 
-        if (draw_axis_at0==-1)
+        if (render_settings.draw_axis_at0==-1)
         {
             (taxis?p[2]:p[0]) = ((taxis?p[2]:p[0])==0) ? 1 : 0;
             (taxis?p1[2]:p1[0]) = ((taxis?p1[2]:p1[0])==0) ? 1 : 0;
@@ -1434,8 +1423,8 @@ void Renderer::drawAxes( float T )
         GLvector pp = p;
         double f = fa.getFrequencyT( p[2] );
 
-        if (((taxis && draw_t) || (!taxis && draw_hz)) &&
-            (draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
+        if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
+            (render_settings.draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
         for (double u=-1; true; )
         {
             GLvector::T timePerPixel, scalePerPixel;
@@ -1521,9 +1510,9 @@ void Renderer::drawAxes( float T )
                 sf--;
 
 
-            if (taxis && draw_cursor_marker)
+            if (taxis && render_settings.draw_cursor_marker)
             {
-                float w = (cursor[0] - pp[0])/(p[0] - pp[0]);
+                float w = (render_settings.cursor[0] - pp[0])/(p[0] - pp[0]);
 
                 if (0 < w && w <= 1)
                     if (!tmarkanyways)
@@ -1535,10 +1524,10 @@ void Renderer::drawAxes( float T )
                 if (0 < w && w <= 1)
                 {
                     DT /= 10;
-                    t = floor(cursor[0]/DT + 0.5); // t marker index along t
+                    t = floor(render_settings.cursor[0]/DT + 0.5); // t marker index along t
 
-                    p = p1 + v*((cursor[0] - p1[0])/v[0]);
-                    p[0] = cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
+                    p = p1 + v*((render_settings.cursor[0] - p1[0])/v[0]);
+                    p[0] = render_settings.cursor[0]; // exact float value so that "cursor[0] - pp[0]" == 0
 
                     if (!tmarkanyways)
                         st--;
@@ -1546,9 +1535,9 @@ void Renderer::drawAxes( float T )
                     tmarkanyways = 2;
                 }
             }
-            else if(draw_cursor_marker)
+            else if(render_settings.draw_cursor_marker)
             {
-                float w = (cursor[2] - pp[2])/(p[2] - pp[2]);
+                float w = (render_settings.cursor[2] - pp[2])/(p[2] - pp[2]);
 
                 if (0 < w && w <= 1)
                     if (!fmarkanyways)
@@ -1559,13 +1548,13 @@ void Renderer::drawAxes( float T )
 
                 if (0 < w && w <= 1)
                 {
-                    f = fa.getFrequencyT( cursor[2] );
+                    f = fa.getFrequencyT( render_settings.cursor[2] );
                     fc /= 10;
                     mif = floor(f / fc + .5); // f marker index along f
                     f = mif * fc;
 
-                    p = p1 + v*((cursor[2] - p1[2])/v[2]);
-                    p[2] = cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
+                    p = p1 + v*((render_settings.cursor[2] - p1[2])/v[2]);
+                    p[2] = render_settings.cursor[2]; // exact float value so that "cursor[2] - pp[2]" == 0
 
                     fmarkanyways = 2;
                 }
@@ -1642,7 +1631,7 @@ void Renderer::drawAxes( float T )
                             w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                         }
 
-                        if (!left_handed_axes)
+                        if (!render_settings.left_handed_axes)
                             glScalef(-1,1,1);
                         glTranslatef(0,70.f,0);
                         if (sign<0)
@@ -1708,7 +1697,7 @@ void Renderer::drawAxes( float T )
                                 w+=letter_spacing;
                             w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                         }
-                        if (!left_handed_axes)
+                        if (!render_settings.left_handed_axes)
                             glScalef(-1,1,1);
                         glTranslatef(0,70.f,0);
                         if (sign<0)
@@ -1738,7 +1727,7 @@ void Renderer::drawAxes( float T )
             t = nt;
         }
 
-        if (!taxis && draw_piano && (draw_axis_at0?p[0]==0:true))
+        if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p[0]==0:true))
         {
             GLvector::T timePerPixel, scalePerPixel;
             computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
@@ -1766,7 +1755,7 @@ void Renderer::drawAxes( float T )
             int startTone = log(F1/440.f)/log(tva12) + 45;
             int endTone = ceil(log(F2/440.f)/log(tva12)) + 45;
             float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
-            if (!left_handed_axes)
+            if (!render_settings.left_handed_axes)
                 sign *= -1;
 
             for( int tone = startTone; tone<=endTone; tone++)
@@ -1811,9 +1800,9 @@ void Renderer::drawAxes( float T )
                     glTranslatef( xscale*ST, 0.f, 0.f );
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
-                if (draw_cursor_marker)
+                if (render_settings.draw_cursor_marker)
                 {
-                    float w = (cursor[2] - ff)/(ffN - ff);
+                    float w = (render_settings.cursor[2] - ff)/(ffN - ff);
                     w = fabsf(w/1.6f);
                     if (w < 1)
                     {
@@ -1892,7 +1881,7 @@ void Renderer::drawAxes( float T )
                     float w=10;
                     for (char*c=a;*c!=0; c++)
                         w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    if (!left_handed_axes)
+                    if (!render_settings.left_handed_axes)
                         glScalef(-1,1,1);
                     glTranslatef(-w,0,0);
                     glColor4f(1,1,1,0.5);
@@ -1947,7 +1936,7 @@ void Renderer::
             i!=clippedFrustum.end();
             i++)
     {
-        if ((closest-camera).dot() > (*i - camera).dot())
+        if ((closest - render_settings.camera).dot() > (*i - render_settings.camera).dot())
             closest = *i;
     }
 

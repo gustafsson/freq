@@ -109,13 +109,6 @@ void Collection::
 }
 
 
-bool Collection::
-        empty()
-{
-    return read1(cache_)->cache ().empty();
-}
-
-
 void Collection::
         next_frame()
 {
