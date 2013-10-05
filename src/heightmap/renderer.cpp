@@ -573,6 +573,7 @@ void Renderer::draw( float scaley )
     Reference ref = read1(collection)->entireHeightmap();
 
     gl_projection.update();
+    _frustum_clip.update (0, 0);
 
     glScalef(1, _draw_flat ? 0 : scaley, 1);
 
