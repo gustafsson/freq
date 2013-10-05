@@ -2,11 +2,10 @@
 
 // gpusmisc
 #include "gluunproject.h"
-
-#include <cmath>
-#include <float.h>
+#include "geometricalgebra.h"
 
 using namespace std;
+using namespace GeometricAlgebra;
 
 namespace Heightmap {
 namespace Render {
@@ -68,147 +67,6 @@ void FrustumClip::
 }
 
 
-/* distance along normal, a negative distance means obj is in front of plane */
-static float distanceToPlane( GLvector obj, const GLvector& plane, const GLvector& normal ) {
-    return (plane-obj)%normal;
-}
-
-
-/* returns the point on the border of the polygon 'l' that lies closest to 'target' */
-static GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &target)
-{
-    GLvector r;
-    // check if point lies inside
-    bool allNeg = true, allPos = true;
-
-    // find point in poly closest to projectionPlane
-    float min = FLT_MAX;
-    for (unsigned i=0; i<l.size(); i++) {
-        float f = (l[i]-target).dot();
-        if (f<min) {
-            min = f;
-            r = l[i];
-        }
-
-        GLvector d = (l[(i+1)%l.size()] - l[i]),
-                 v = target - l[i];
-
-        if (0==d.dot())
-            continue;
-
-        if (d%v < 0) allNeg=false;
-        if (d%v > 0) allPos=false;
-        float k = d%v / (d.dot());
-        if (0<k && k<1) {
-            f = (l[i] + d*k-target).dot();
-            if (f<min) {
-                min = f;
-                r = l[i]+d*k;
-            }
-        }
-    }
-
-    if (allNeg || allPos) {
-        // point lies within convex polygon, create normal and project to surface
-        if (l.size()>2) {
-            GLvector n = (l[0]-l[1])^(l[0]-l[2]);
-            if (0 != n.dot()) {
-                n = n.Normalized();
-                r = target + n*distanceToPlane( target, l[0], n );
-            }
-        }
-    }
-    return r;
-}
-
-
-// the normal does not need to be normalized
-static GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, GLvector const& plane, GLvector const& normal ) {
-    GLvector dir = pt2-pt1;
-
-    s = ((plane-pt1)%normal)/(dir % normal);
-    GLvector p = pt1 + dir * s;
-
-//    float v = (p-plane ) % normal;
-//    fprintf(stdout,"p[2] = %g, v = %g\n", p[2], v);
-//    fflush(stdout);
-    return p;
-}
-
-
-static void clipPlane( vector<GLvector>& p, const GLvector& p0, const GLvector& n )
-{
-    if (p.empty())
-        return;
-
-    unsigned i;
-
-    GLvector const* a, * b = &p[p.size()-1];
-    bool a_side, b_side = (p0-*b)%n < 0;
-    for (i=0; i<p.size(); i++) {
-        a = b;
-        b = &p[i];
-
-        a_side = b_side;
-        b_side = (p0-*b)%n < 0;
-
-        if (a_side != b_side )
-        {
-            GLvector dir = *b-*a;
-
-            // planeIntersection
-            float s = ((p0-*a)%n)/(dir % n);
-
-            // TODO why [-.1, 1.1]?
-            //if (!isnan(s) && -.1 <= s && s <= 1.1)
-            if (!isnan(s) && 0 <= s && s <= 1)
-            {
-                break;
-            }
-        }
-    }
-
-    if (i==p.size())
-    {
-        if (!b_side)
-            p.clear();
-
-        return;
-    }
-
-    vector<GLvector> r;
-    r.reserve(2*p.size());
-
-    b = &p[p.size()-1];
-    b_side = (p0-*b)%n < 0;
-
-    for (unsigned i=0; i<p.size(); i++) {
-        a = b;
-        b = &p[i];
-
-        a_side = b_side;
-        b_side = (p0-*b)%n <0;
-
-        if (a_side)
-            r.push_back( *a );
-
-        if (a_side != b_side )
-        {
-            float s;
-            GLvector xy = planeIntersection( *a, *b, s, p0, n );
-
-            //if (!isnan(s) && -.1 <= s && s <= 1.1)
-            if (!isnan(s) && 0 <= s && s <= 1)
-            {
-                r.push_back( xy );
-            }
-        }
-    }
-
-    p = r;
-}
-
-
 vector<GLvector> FrustumClip::
         clipFrustum( vector<GLvector> l, GLvector &closest_i )
 {
@@ -216,13 +74,13 @@ vector<GLvector> FrustumClip::
     // Don't bother with projectionNormal?
     //clipPlane(l, projectionPlane, projectionNormal);
     //printl("Projectionclipped",l);
-    clipPlane(l, rightPlane, rightNormal);
+    l = clipPlane(l, rightPlane, rightNormal);
     //printl("Right", l);
-    clipPlane(l, leftPlane, leftNormal);
+    l = clipPlane(l, leftPlane, leftNormal);
     //printl("Left", l);
-    clipPlane(l, topPlane, topNormal);
+    l = clipPlane(l, topPlane, topNormal);
     //printl("Top",l);
-    clipPlane(l, bottomPlane, bottomNormal);
+    l = clipPlane(l, bottomPlane, bottomNormal);
     //printl("Bottom",l);
     //printl("Clipped polygon",l);
 

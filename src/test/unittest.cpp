@@ -39,6 +39,7 @@
 // gpumisc units
 #include "backtrace.h"
 #include "exceptionassert.h"
+#include "geometricalgebra.h"
 #include "glinfo.h"
 #include "prettifysegfault.h"
 #include "volatileptr.h"
@@ -73,6 +74,7 @@ int UnitTest::
 
         RUNTEST(Backtrace);
         RUNTEST(ExceptionAssert);
+        RUNTEST(GeometricAlgebra);
         RUNTEST(glinfo);
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
