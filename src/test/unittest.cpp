@@ -41,6 +41,7 @@
 #include "exceptionassert.h"
 #include "geometricalgebra.h"
 #include "glinfo.h"
+#include "glprojection.h"
 #include "prettifysegfault.h"
 #include "volatileptr.h"
 
@@ -76,6 +77,7 @@ int UnitTest::
         RUNTEST(ExceptionAssert);
         RUNTEST(GeometricAlgebra);
         RUNTEST(glinfo);
+        RUNTEST(glProjection);
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
         RUNTEST(VolatilePtrTest);
