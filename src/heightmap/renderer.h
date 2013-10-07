@@ -6,6 +6,7 @@
 #include "position.h"
 #include "rendersettings.h"
 #include "render/frustumclip.h"
+#include "render/renderblock.h"
 
 // gpumisc
 #include "volatileptr.h"
@@ -17,9 +18,6 @@
 #include <boost/shared_ptr.hpp>
 
 class GlTexture;
-
-class Vbo;
-typedef boost::shared_ptr<Vbo> pVbo;
 
 namespace Heightmap {
 
@@ -40,9 +38,10 @@ public:
     void drawAxes( float T );
     void drawFrustum();
 
-    void setFractionSize( unsigned divW=1, unsigned divH=1);
+    void setFractionSize( unsigned divW=1, unsigned divH=1 );
     bool fullMeshResolution();
     unsigned trianglesPerBlock();
+    void setSize( unsigned w, unsigned h );
     bool isInitialized();
     void init();
 
@@ -65,29 +64,15 @@ private:
         InitializationFailed
     };
 
-    unsigned _mesh_index_buffer;
-    unsigned _mesh_width;
-    unsigned _mesh_height;
-    unsigned _mesh_fraction_width;
-    unsigned _mesh_fraction_height;
-    unsigned _vbo_size;
-    pVbo _mesh_position;
-    unsigned _shader_prog;
     InitializedLevel _initialized;
     bool _draw_flat;
     float _redundancy;
     bool _invalid_frustum;
-    bool _drawcrosseswhen0;
     Render::FrustumClip _frustum_clip;
     std::vector<GLvector> clippedFrustum;
-
-    RenderSettings::ColorMode _color_texture_colors;
-    boost::shared_ptr<GlTexture> _colorTexture;
-
-    void setSize( unsigned w, unsigned h);
-    void createMeshIndexBuffer(int w, int h);
-    void createMeshPositionVBO(int w, int h);
-    void createColorTexture(unsigned N);
+    Render::RenderBlock _render_block;
+    unsigned _mesh_fraction_width;
+    unsigned _mesh_fraction_height;
 
     void beginVboRendering();
     void endVboRendering();
