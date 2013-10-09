@@ -551,16 +551,18 @@ Intervals::base::iterator Intervals::
 std::string Intervals::
         toString() const
 {
+    if (1 == size())
+        return begin()->toString();
+
     std::stringstream ss;
     ss << "{";
-    if (1<size())
-        ss << size() << "#";
 
     BOOST_FOREACH (const Interval& r, *this)
     {
-        if (1<size())
-            ss << " ";
-        ss << r.toString();
+        if (r != *begin())
+            ss << ", ";
+
+        ss << r;
     }
 
     ss << "}";
@@ -596,7 +598,7 @@ std::string Interval::
 
     ss << ")";
 
-    if (0 != first && first != IntervalType_MIN && last != IntervalType_MAX)
+    if (0 != first && 0 != last && first != IntervalType_MIN && last != IntervalType_MAX)
         ss << count() << "#";
 
     return ss.str();
@@ -620,6 +622,9 @@ Intervals  operator |  (const Interval& a, const Interval& b)  { return a|Interv
 
 #include "timer.h"
 #include "exceptionassert.h"
+#include <boost/format.hpp>
+
+using namespace boost;
 
 namespace Signal {
 
@@ -646,6 +651,19 @@ void Intervals::
         T = t.elapsed ()/N;
         EXCEPTION_ASSERT_LESS(T,0.000003);
     }
+
+    // It should have neat string representations
+    {
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(0,100)), "[0, 100)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(1,100)), "[1, 100)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(-100,0)), "[-100, 0)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(-100,-1)), "[-100, -1)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(0,100)), "[0, 100)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(-100,0)), "[-100, 0)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(-100,-1)), "[-100, -1)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Intervals(-100,-1) | Intervals(1,100))), "{[-100, -1)99#, [1, 100)99#}" );
+    }
+
 }
 
 
