@@ -19,7 +19,7 @@ class BlockCache: public VolatilePtr<BlockCache>
 {
 public:
     typedef boost::unordered_map<Reference, pBlock> cache_t;
-    //typedef std::set<Reference> cache_misses_t;
+    typedef std::list<Reference> cache_misses_t;
     typedef std::list<pBlock> recent_t;
 
     BlockCache();
@@ -29,9 +29,18 @@ public:
      * @param ref the block to search for.
      * @return a block if it is found or pBlock() otherwise.
      *
-     * Is not const because it updates a list of recently accessed blocks.
+     * Is not const because it updates a list of recently accessed blocks and updates cache_misses.
      */
     pBlock      find( const Reference& ref );
+
+
+    /**
+     * @brief probe tests if 'ref' can be found in the BlockCache.
+     * @param ref the block to search for.
+     * @return a block if it is found or pBlock() otherwise.
+     */
+    pBlock      probe( const Reference& ref ) const;
+
 
     /**
      * @brief insertBlock
@@ -53,9 +62,8 @@ public:
     const cache_t& cache() const;
     const recent_t& recent() const;
     //const recent_t& to_remove() const { return to_remove_; }
-    //const cache_misses_t& cache_misses() { return cache_misses_; }
-    //void clear_cache_misses() { cache_misses_.clear(); }
-
+    const cache_misses_t& cache_misses() const;
+    void clear_cache_misses();
 
 private:
 
@@ -69,7 +77,7 @@ private:
       */
 
     cache_t         cache_;
-    //cache_misses_t  cache_misses_;
+    cache_misses_t  cache_misses_;
     recent_t        recent_;     /// Ordered with the most recently accessed blocks first
 
 public:

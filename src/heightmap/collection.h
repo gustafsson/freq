@@ -119,8 +119,16 @@ public:
 
     /**
       next_frame garbage collects blocks that have been deleted since the last call.
+      increments frame_number()
       */
-    void    next_frame();
+    void     next_frame();
+
+
+    /**
+     * @brief frame_number is the current frame number. Wrapping around at frame
+     * number 1 << 32 is assumed to be not an issue.
+     */
+    unsigned frame_number() const;
 
 
     /**
@@ -155,6 +163,7 @@ public:
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
+    BlockCache::Ptr cache() const;
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 

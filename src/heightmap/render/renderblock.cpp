@@ -31,7 +31,8 @@ RenderBlock::
         _shader_prog(0),
       _mesh_index_buffer(0),
       _mesh_width(0),
-      _mesh_height(0)
+      _mesh_height(0),
+      _frame_number(0)
 {
 }
 
@@ -64,7 +65,7 @@ void RenderBlock::
 
 
 void RenderBlock::
-        beginVboRendering(BlockLayout block_size)
+        beginVboRendering(BlockLayout block_size, unsigned frame_number)
 {
     GlException_CHECK_ERROR();
     //unsigned meshW = collection->samples_per_block();
@@ -149,6 +150,8 @@ void RenderBlock::
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
 
+    this->_frame_number = frame_number;
+
     GlException_CHECK_ERROR();
 }
 
@@ -184,8 +187,11 @@ bool RenderBlock::
     if (draw) {
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
-        else if (1 /* vbo */ )
+        else if (1 /* vbo */ ) {
+            block->frame_number_last_used = _frame_number;
+            block->update_glblock_data ();
             block->glblock->draw( _vbo_size, draw_flat ? GlBlock::HeightMode_Flat : render_settings->vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
+        }
     }
 
     TIME_RENDERER_BLOCKS ComputationCheckError();
@@ -245,8 +251,9 @@ void RenderBlock::
         glVertex3f( 0, y, 1 );
     glEnd();
 
-    beginVboRendering( block_size );
+    beginVboRendering( block_size, _frame_number );
 }
+
 
 void RenderBlock::
         setSize( unsigned w, unsigned h)

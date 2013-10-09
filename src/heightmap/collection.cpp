@@ -191,7 +191,7 @@ void Collection::
 
     BOOST_FOREACH(const Reference& r, blocksToPoke2)
     {
-        pBlock b = cache->find(r);
+        pBlock b = cache->probe (r);
         if (b)
             poke(b);
     }
@@ -199,6 +199,13 @@ void Collection::
     _free_memory = availableMemoryForSingleAllocation();
 
     _frame_counter++;
+}
+
+
+unsigned Collection::
+        frame_number() const
+{
+    return _frame_counter;
 }
 
 
@@ -254,21 +261,6 @@ pBlock Collection::
         }
     }
 
-    if (block)
-    {
-        try {
-            // Lock if available but don't wait for it to become available
-            BlockData::ReadPtr bd(block->block_data (), 0);
-
-            if (block->new_data_available) {
-                *block->glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
-                block->new_data_available = false;
-            }
-        } catch (const BlockData::LockFailed&) {}
-
-        poke(block);
-    }
-
     return block;
 }
 
@@ -298,6 +290,13 @@ void Collection::
         printCacheSize() const
 {
     BlockCacheInfo::printCacheSize(read1(cache_)->cache(), block_layout_);
+}
+
+
+BlockCache::Ptr Collection::
+        cache() const
+{
+    return cache_;
 }
 
 

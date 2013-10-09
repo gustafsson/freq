@@ -38,6 +38,9 @@ namespace Heightmap {
     // more separate collections in Heightmap::Renderer. It would fetch Blocks by
     // their 'Reference' from the different collections and use a shader to
     // transfer results between them.
+    /**
+     * @brief The Block class should store information and data about a block.
+     */
     class Block {
     public:
         Block( Reference, BlockLayout, VisualizationParams::ConstPtr);
@@ -51,6 +54,13 @@ namespace Heightmap {
         boost::shared_ptr<GlBlock> glblock;
         BlockData::Ptr block_data() const { return block_data_; }
 
+        /**
+         * @brief update_data updates glblock from block_data
+         * @return true if data was updated. false if block_data is currently
+         * in use or if glblock is already up-to-date.
+         */
+        bool update_glblock_data();
+
         // Shared state
         const VisualizationParams::ConstPtr visualization_params() const { return visualization_params_; }
 
@@ -63,6 +73,7 @@ namespace Heightmap {
 
         // Helper
         ReferenceInfo referenceInfo() const { return ReferenceInfo(reference (), block_layout (), visualization_params ()); }
+
     private:
         BlockData::Ptr block_data_;
         const Reference ref_;
@@ -72,6 +83,9 @@ namespace Heightmap {
         const Signal::Interval block_interval_;
         const Region region_;
         const float sample_rate_;
+
+    public:
+        static void test();
     };
     typedef boost::shared_ptr<Block> pBlock;
 

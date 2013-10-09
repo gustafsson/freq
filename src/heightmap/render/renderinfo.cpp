@@ -6,7 +6,7 @@ namespace Heightmap {
 namespace Render {
 
 RenderInfo::
-        RenderInfo(glProjection* gl_projection)
+        RenderInfo(glProjection* /*gl_projection*/)
 {
 }
 

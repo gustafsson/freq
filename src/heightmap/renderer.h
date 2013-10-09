@@ -7,6 +7,7 @@
 #include "rendersettings.h"
 #include "render/frustumclip.h"
 #include "render/renderblock.h"
+#include "collection.h"
 
 // gpumisc
 #include "volatileptr.h"
@@ -20,8 +21,6 @@
 class GlTexture;
 
 namespace Heightmap {
-
-    class Collection;
 
 class Renderer
 {

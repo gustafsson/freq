@@ -1,4 +1,5 @@
 #include "block.h"
+#include "glblock.h"
 
 #include "TaskTimer.h"
 
@@ -31,5 +32,35 @@ Block::
     }
 }
 
+
+bool Block::
+        update_glblock_data()
+{
+    bool r = false;
+
+    try {
+        // Lock if available but don't wait for it to become available
+        BlockData::ReadPtr bd(block_data (), 0);
+
+        if (new_data_available) {
+            *glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
+            new_data_available = false;
+
+            r = true;
+        }
+    } catch (const BlockData::LockFailed&) {}
+
+    return r;
+}
+
+
+void Block::
+        test()
+{
+    // It should store information and data about a block.
+    {
+        // ...
+    }
+}
 
 } // namespace Heightmap

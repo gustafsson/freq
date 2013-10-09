@@ -357,8 +357,25 @@ void Renderer::draw( float scaley )
 
     beginVboRendering();
 
-    if (!renderChildrenSpectrogramRef(ref))
+    if (!renderChildrenSpectrogramRef( ref ))
         renderSpectrogramRef( ref );
+
+    BlockCache::Ptr cache = read1(collection)->cache();
+    RegionFactory region(read1(collection)->block_layout());
+    BlockCache::cache_misses_t C = read1(cache)->cache_misses (); // copy
+
+    {
+        Collection::WritePtr collectionp(collection);
+
+        BOOST_FOREACH(const Reference& r, C) {
+            if (region(r).b.scale > 1)
+                continue;
+
+            collectionp->getBlock (r);
+        }
+    }
+
+    write1(cache)->clear_cache_misses ();
 
     endVboRendering();
 
@@ -369,7 +386,8 @@ void Renderer::draw( float scaley )
 void Renderer::beginVboRendering()
 {
     BlockLayout block_size = read1(collection)->block_layout ();
-    _render_block.beginVboRendering (block_size);
+    int frame_number = read1(collection)->frame_number ();
+    _render_block.beginVboRendering (block_size, frame_number);
 }
 
 
@@ -380,14 +398,17 @@ void Renderer::endVboRendering() {
 
 void Renderer::renderSpectrogramRef( Reference ref )
 {
-    pBlock block = write1 (collection)->getBlock( ref );
+    BlockCache::WritePtr cache( read1(collection)->cache() );
+    pBlock block = cache->find( ref );
 
-    if (!_render_block.renderBlock(block, _draw_flat)) {
-        float y = _frustum_clip.projectionPlane[1]*.05;
-        _render_block.renderBlockError(block->block_layout (), block->getRegion (), y);
+    if (block) {
+        if (!_render_block.renderBlock(block, _draw_flat)) {
+            float y = _frustum_clip.projectionPlane[1]*.05;
+            _render_block.renderBlockError(block->block_layout (), block->getRegion (), y);
+        }
+
+        render_settings.drawn_blocks++;
     }
-
-    render_settings.drawn_blocks++;
 }
 
 
@@ -461,15 +482,6 @@ bool Renderer::renderChildrenSpectrogramRef( Reference ref )
     }
 
     return true;
-}
-
-
-static void printl(const char* str, const std::vector<GLvector>& l) {
-    fprintf(stdout,"%s (%lu)\n",str,(unsigned long)l.size());
-    for (unsigned i=0; i<l.size(); i++) {
-        fprintf(stdout,"  %g\t%g\t%g\n",l[i][0],l[i][1],l[i][2]);
-    }
-    fflush(stdout);
 }
 
 

@@ -4,6 +4,8 @@
 #include "gluunproject.h"
 #include "geometricalgebra.h"
 
+#include <stdio.h>
+
 using namespace std;
 using namespace GeometricAlgebra;
 
@@ -64,6 +66,15 @@ void FrustumClip::
 
     // Don't bother with projectionNormal?
     projectionNormal = projectionNormal;
+}
+
+
+inline void printl(const char* str, const std::vector<GLvector>& l) {
+    fprintf(stdout,"%s (%lu)\n",str,(unsigned long)l.size());
+    for (unsigned i=0; i<l.size(); i++) {
+        fprintf(stdout,"  %g\t%g\t%g\n",l[i][0],l[i][1],l[i][2]);
+    }
+    fflush(stdout);
 }
 
 

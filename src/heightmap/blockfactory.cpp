@@ -109,7 +109,8 @@ pBlock BlockFactory::
 
         pBlock attempt( new Block( ref, block_layout_, visualization_params_ ));
         Region r = RegionFactory( block_layout_ )( ref );
-        EXCEPTION_ASSERT( r.a.scale < 1 && r.b.scale <= 1 );
+        EXCEPTION_ASSERT_LESS( r.a.scale, 1 );
+        EXCEPTION_ASSERT_LESS_OR_EQUAL( r.b.scale, 1 );
         attempt->glblock.reset( new GlBlock( block_layout_, r.time(), r.scale() ));
 
         write1(attempt->block_data())->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );

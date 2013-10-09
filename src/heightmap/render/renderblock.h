@@ -22,7 +22,7 @@ public:
     void renderBlockError( BlockLayout block_size, Region r, float y );
 
 // private:
-    void beginVboRendering(BlockLayout block_size);
+    void beginVboRendering(BlockLayout block_size, unsigned frame_number);
     void endVboRendering();
 
     void setSize( unsigned w, unsigned h);
@@ -40,6 +40,7 @@ private:
     unsigned _mesh_height;
     unsigned _vbo_size;
     pVbo _mesh_position;
+    unsigned _frame_number;
 
     void createMeshIndexBuffer(int w, int h);
     void createMeshPositionVBO(int w, int h);

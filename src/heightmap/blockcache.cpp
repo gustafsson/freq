@@ -16,17 +16,32 @@ BlockCache::
 pBlock BlockCache::
         find( const Reference& ref )
 {
-    cache_t::const_iterator itr = cache_.find( ref );
-    if (itr != cache_.end()) {
-        pBlock b = itr->second;
+    if (pBlock b = probe(ref))
+        {
         recent_.remove (b);
         recent_.push_front (b);
         return b;
-    }
+        }
+    else
+        {
+        cache_misses_.push_back ( ref );
+        return pBlock();
+        }
+}
 
-    // cache_misses_.insert(ref);
 
-    return pBlock();
+pBlock BlockCache::
+        probe( const Reference& ref ) const
+{
+    cache_t::const_iterator itr = cache_.find( ref );
+    if (itr != cache_.end())
+        {
+        return itr->second;
+        }
+    else
+        {
+        return pBlock();
+        }
 }
 
 
@@ -70,6 +85,20 @@ const BlockCache::recent_t& BlockCache::
 }
 
 
+const BlockCache::cache_misses_t& BlockCache::
+        cache_misses() const
+{
+    return cache_misses_;
+}
+
+
+void BlockCache::
+        clear_cache_misses()
+{
+    cache_misses_.clear();
+}
+
+
 void BlockCache::
         test()
 {
@@ -88,9 +117,15 @@ void BlockCache::
         c.insert (b2);
         pBlock b3 = c.find(r1);
         pBlock b4 = c.find(r2);
+        pBlock b5 = c.probe (r2.parentHorizontal ());
+        pBlock b6 = c.probe (r1.left ());
 
         EXCEPTION_ASSERT( b1 == b3 );
         EXCEPTION_ASSERT( b2 == b4 );
+        EXCEPTION_ASSERT( r2 == r1.right () );
+        EXCEPTION_ASSERT_EQUALS( r2.parentHorizontal (), r1 );
+        EXCEPTION_ASSERT( b1 == b5 );
+        EXCEPTION_ASSERT( b6 == pBlock() );
     }
 }
 
