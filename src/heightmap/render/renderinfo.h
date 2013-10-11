@@ -3,6 +3,7 @@
 
 #include "glprojection.h"
 #include "heightmap/reference.h"
+#include "heightmap/referenceinfo.h"
 #include "heightmap/position.h"
 #include "heightmap/blocklayout.h"
 #include "heightmap/visualizationparams.h"
@@ -21,14 +22,20 @@ public:
         Lod_Invalid
     };
 
-    RenderInfo(glProjection* gl_projection);
+    RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::ConstPtr vp, FrustumClip* frustum_clip, float redundancy);
 
-    RenderInfo::LevelOfDetal testLod( Reference ref, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy );
-    Reference findRefAtCurrentZoomLevel( Heightmap::Position p, Reference entireHeightmap, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy );
+    RenderInfo::LevelOfDetal testLod( Reference ref ) const;
+    bool boundsCheck( Reference ref, ReferenceInfo::BoundsCheck) const;
+
+    Reference findRefAtCurrentZoomLevel( Heightmap::Position p, Reference entireHeightmap ) const;
 private:
     glProjection* gl_projection;
+    BlockLayout bl;
+    VisualizationParams::ConstPtr vp;
+    FrustumClip* frustum_clip;
+    float redundancy;
 
-    bool computePixelsPerUnit( Region r, const FrustumClip& frustum_clip, float& timePixels, float& scalePixels );
+    bool computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const;
 };
 
 } // namespace Render

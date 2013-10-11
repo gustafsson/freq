@@ -14,34 +14,41 @@ namespace Render {
 class RenderBlock
 {
 public:
+    class Renderer : boost::noncopyable {
+    public:
+        Renderer(RenderBlock* render_block, BlockLayout block_size);
+        ~Renderer();
+
+        void renderBlock( pBlock ref );
+
+    private:
+        unsigned vbo_size;
+        RenderSettings render_settings;
+    };
+
     RenderBlock(RenderSettings* render_settings);
 
-    void init();
-    void clearCaches();
-    bool renderBlock( pBlock ref );
-    void renderBlockError( BlockLayout block_size, Region r );
-
-// private:
-    void beginVboRendering(BlockLayout block_size, unsigned frame_number);
-    void endVboRendering();
-
-    void setSize( unsigned w, unsigned h);
-    unsigned trianglesPerBlock();
+    void        init();
+    void        clearCaches();
+    void        setSize( unsigned w, unsigned h);
+    unsigned    trianglesPerBlock();
 
 private:
+    friend class RenderBlock::Renderer;
+
     RenderSettings* render_settings;
     RenderSettings::ColorMode _color_texture_colors;
     boost::shared_ptr<GlTexture> _colorTexture;
 
-    bool _drawcrosseswhen0;
     unsigned _shader_prog;
     unsigned _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
     unsigned _vbo_size;
     pVbo _mesh_position;
-    unsigned _frame_number;
 
+    void beginVboRendering(BlockLayout block_size);
+    static void endVboRendering();
     void createMeshIndexBuffer(int w, int h);
     void createMeshPositionVBO(int w, int h);
     void createColorTexture(unsigned N);

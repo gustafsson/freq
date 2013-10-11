@@ -22,17 +22,55 @@ using namespace std;
 namespace Heightmap {
 namespace Render {
 
+
+RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size)
+    :
+      vbo_size(render_block->_vbo_size),
+      render_settings(*render_block->render_settings)
+{
+    render_block->beginVboRendering(block_size);
+}
+
+
+RenderBlock::Renderer::~Renderer()
+{
+    RenderBlock::endVboRendering();
+}
+
+
+void RenderBlock::Renderer::
+        renderBlock( pBlock block )
+{
+    TIME_RENDERER_BLOCKS ComputationCheckError();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
+
+    Region r = block->getRegion ();
+    glPushMatrixContext mc( GL_MODELVIEW );
+
+    glTranslatef(r.a.time, 0, r.a.scale);
+    glScalef(r.time(), 1, r.scale());
+
+    if (0 /* direct rendering */ )
+        ;//block->glblock->draw_directMode();
+    else if (1 /* vbo */ ) {
+        block->update_glblock_data ();
+        block->glblock->draw( vbo_size, render_settings.draw_flat ? GlBlock::HeightMode_Flat : render_settings.vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
+    }
+
+    TIME_RENDERER_BLOCKS ComputationCheckError();
+    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
+}
+
+
 RenderBlock::
         RenderBlock(RenderSettings* render_settings)
     :
         render_settings( render_settings ),
         _color_texture_colors( (RenderSettings::ColorMode)-1 ),
-        _drawcrosseswhen0( Sawe::Configuration::version().empty() ),
         _shader_prog(0),
       _mesh_index_buffer(0),
       _mesh_width(0),
-      _mesh_height(0),
-      _frame_number(0)
+      _mesh_height(0)
 {
 }
 
@@ -65,7 +103,7 @@ void RenderBlock::
 
 
 void RenderBlock::
-        beginVboRendering(BlockLayout block_size, unsigned frame_number)
+        beginVboRendering(BlockLayout block_size)
 {
     GlException_CHECK_ERROR();
     //unsigned meshW = collection->samples_per_block();
@@ -150,8 +188,6 @@ void RenderBlock::
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
 
-    this->_frame_number = frame_number;
-
     GlException_CHECK_ERROR();
 }
 
@@ -162,101 +198,11 @@ void RenderBlock::
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glActiveTexture(GL_TEXTURE2);
-    _colorTexture->unbindTexture2D();
+    GlTexture::unbindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glUseProgram(0);
-}
-
-
-bool RenderBlock::
-        renderBlock( pBlock block )
-{
-    TIME_RENDERER_BLOCKS ComputationCheckError();
-    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
-
-    Region r = block->getRegion ();
-    glPushMatrixContext mc( GL_MODELVIEW );
-
-    glTranslatef(r.a.time, 0, r.a.scale);
-    glScalef(r.time(), 1, r.scale());
-
-    float yscalelimit = _drawcrosseswhen0 ? 0.0004f : 0.f;
-    bool draw = 0!=block.get() && render_settings->y_scale > yscalelimit;
-
-    if (draw) {
-        if (0 /* direct rendering */ )
-            ;//block->glblock->draw_directMode();
-        else if (1 /* vbo */ ) {
-            block->frame_number_last_used = _frame_number;
-            block->update_glblock_data ();
-            block->glblock->draw( _vbo_size, render_settings->draw_flat ? GlBlock::HeightMode_Flat : render_settings->vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
-        }
-
-        render_settings->drawn_blocks++;
-    }
-
-    TIME_RENDERER_BLOCKS ComputationCheckError();
-    TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
-
-    return draw;
-}
-
-
-void RenderBlock::
-        renderBlockError( BlockLayout block_size, Region r )
-{
-    // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
-    //float y = _frustum_clip.projectionPlane[1]*.05;
-    float y = 0.05f;
-
-    UNUSED(glPushMatrixContext mc)( GL_MODELVIEW );
-
-    glTranslatef(r.a.time, 0, r.a.scale);
-    glScalef(r.time(), 1, r.scale());
-
-
-    endVboRendering();
-    // getBlock would try to find something else if the requested block
-    // wasn't readily available.
-
-    // If getBlock fails, we're most likely out of memory. Indicate this
-    // silently by not drawing the surface but only a wireframe.
-
-    UNUSED(glPushAttribContext attribs);
-
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
-    glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_LIGHTING);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
-    glLineWidth(2);
-
-    glBegin(GL_LINE_STRIP);
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 1, 0, 1 );
-        glVertex3f( 1, 0, 0 );
-        glVertex3f( 0, 0, 1 );
-        glVertex3f( 0, 0, 0 );
-        glVertex3f( 1, 0, 0 );
-        glVertex3f( 1, 0, 1 );
-        glVertex3f( 0, 0, 1 );
-    glEnd();
-    glColor4f( 0.2f, 0.8f, 0.8f, 0.5f );
-    glBegin(GL_LINE_STRIP);
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 1, y, 1 );
-        glVertex3f( 1, y, 0 );
-        glVertex3f( 0, y, 1 );
-        glVertex3f( 0, y, 0 );
-        glVertex3f( 1, y, 0 );
-        glVertex3f( 1, y, 1 );
-        glVertex3f( 0, y, 1 );
-    glEnd();
-
-    beginVboRendering( block_size, _frame_number );
 }
 
 

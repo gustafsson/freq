@@ -8,63 +8,23 @@ namespace Heightmap {
 namespace Render {
 
 RenderInfo::
-        RenderInfo(glProjection* gl_projection)
+        RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::ConstPtr vp, FrustumClip* frustum_clip, float redundancy)
     :
-      gl_projection(gl_projection)
+      gl_projection(gl_projection),
+      bl(bl),
+      vp(vp),
+      frustum_clip(frustum_clip),
+      redundancy(redundancy)
 {
 }
 
-/*
-Reference RenderInfo::
-        findRefAtCurrentZoomLevel( Heightmap::Position p )
-{
-    //Position max_ss = collection->max_sample_size();
-    Reference ref = read1(collection)->entireHeightmap();
-    BlockLayout bc = read1(collection)->block_layout ();
-
-    // The first 'ref' will be a super-ref containing all other refs, thus
-    // containing 'p' too. This while-loop zooms in on a ref containing
-    // 'p' with enough details.
-
-    // 'p' is assumed to be valid to start with. Ff they're not valid
-    // this algorithm will choose some ref along the border closest to the
-    // point 'p'.
-
-    while (true)
-    {
-        LevelOfDetal lod = testLod(ref);
-
-        Region r = RegionFactory(bc)(ref);
-
-        switch(lod)
-        {
-        case Lod_NeedBetterF:
-            if ((r.a.scale+r.b.scale)/2 > p.scale)
-                ref = ref.bottom();
-            else
-                ref = ref.top();
-            break;
-
-        case Lod_NeedBetterT:
-            if ((r.a.time+r.b.time)/2 > p.time)
-                ref = ref.left();
-            else
-                ref = ref.right();
-            break;
-
-        default:
-            return ref;
-        }
-    }
-}
-*/
 
 RenderInfo::LevelOfDetal RenderInfo::
-        testLod( Reference ref, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy )
+        testLod( Reference ref ) const
 {
     float timePixels, scalePixels;
     Region r = RegionFactory ( bl )(ref);
-    if (!computePixelsPerUnit( r, frustum_clip, timePixels, scalePixels ))
+    if (!computePixelsPerUnit( r, timePixels, scalePixels ))
         return Lod_Invalid;
 
     if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
@@ -101,23 +61,28 @@ RenderInfo::LevelOfDetal RenderInfo::
 }
 
 
-Reference RenderInfo::
-        findRefAtCurrentZoomLevel( Heightmap::Position p, Reference entireHeightmap, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy )
+bool RenderInfo::
+        boundsCheck(Reference ref, ReferenceInfo::BoundsCheck bc) const
 {
-    //Position max_ss = collection->max_sample_size();
+    return ReferenceInfo(ref, bl, vp).boundsCheck(bc);
+}
+
+
+Reference RenderInfo::
+        findRefAtCurrentZoomLevel( Heightmap::Position p, Reference entireHeightmap ) const
+{
     Reference ref = entireHeightmap;
 
     // The first 'ref' will be a super-ref containing all other refs, thus
     // containing 'p' too. This while-loop zooms in on a ref containing
     // 'p' with enough details.
 
-    // 'p' is assumed to be valid to start with. Ff they're not valid
-    // this algorithm will choose some ref along the border closest to the
-    // point 'p'.
+    // If 'p' is not within entireHeightmap this algorithm will choose some ref
+    // along the border closest to the point 'p'.
 
     while (true)
     {
-        LevelOfDetal lod = testLod(ref, bl, vp, frustum_clip, redundancy);
+        LevelOfDetal lod = testLod(ref);
 
         Region r = RegionFactory(bl)(ref);
 
@@ -150,11 +115,11 @@ Reference RenderInfo::
   @arg scalePixels Estimated longest line of pixels along scale axis within ref measured in pixels
   */
 bool RenderInfo::
-        computePixelsPerUnit( Region r, const FrustumClip& frustum_clip, float& timePixels, float& scalePixels )
+        computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const
 {
     const Position p[2] = { r.a, r.b };
 
-    float y[]={0, float(frustum_clip.projectionPlane[1]*.5)};
+    float y[]={0, float(frustum_clip->projectionPlane[1]*.5)};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
         GLvector corner[]=
@@ -166,7 +131,7 @@ bool RenderInfo::
         };
 
         GLvector closest_i;
-        std::vector<GLvector> clippedCorners = frustum_clip.clipFrustum(corner, closest_i); // about 10 us
+        std::vector<GLvector> clippedCorners = frustum_clip->clipFrustum(corner, closest_i); // about 10 us
         if (clippedCorners.empty ())
             continue;
 

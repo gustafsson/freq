@@ -1,6 +1,7 @@
 #include "renderheightmap.h"
 #include "TaskTimer.h"
 #include "renderinfo.h"
+#include "heightmap/reference_hash.h"
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
@@ -8,68 +9,62 @@
 namespace Heightmap {
 namespace Render {
 
+
+RenderHeightmap::references_t& operator|=(RenderHeightmap::references_t& A, const RenderHeightmap::references_t& B) {
+    A.insert(B.begin(), B.end());
+    return A;
+}
+
+
+RenderHeightmap::references_t& operator|=(RenderHeightmap::references_t& A, const Heightmap::Reference& r) {
+    A.insert(r);
+    return A;
+}
+
+
 RenderHeightmap::
-        RenderHeightmap(BlockCache::Ptr cache, glProjection* gl_projection, RenderBlock* render_block)
+        RenderHeightmap(RenderInfo* render_info)
     :
-      cache_(cache),
-      gl_projection_(gl_projection),
-      render_block_(render_block)
+      render_info(render_info)
 {
 }
 
 
-void RenderHeightmap::
-        render( Reference ref, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy )
+RenderHeightmap::references_t RenderHeightmap::
+        computeRenderSet( Reference ref )
 {
-    if (!renderChildrenSpectrogramRef( ref, bl, vp, frustum_clip, redundancy ))
-        renderSpectrogramRef( ref );
+    references_t R = computeChildrenRenderSet( ref );
+    if (R.empty()) {
+        R |= ref;
+    }
+    return R;
 }
 
 
-bool RenderHeightmap::
-        renderChildrenSpectrogramRef( Reference ref, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy )
+RenderHeightmap::references_t RenderHeightmap::
+        computeChildrenRenderSet( Reference ref )
 {
-    TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("%s")
-          % ReferenceInfo(ref, bl, vp));
+    references_t R;
 
-    RenderInfo::LevelOfDetal lod = RenderInfo(gl_projection_).testLod (ref, bl, vp, frustum_clip, redundancy);
+    RenderInfo::LevelOfDetal lod = render_info->testLod (ref );
     switch(lod) {
     case RenderInfo::Lod_NeedBetterF:
-        renderChildrenSpectrogramRef( ref.bottom(), bl, vp, frustum_clip, redundancy );
-        renderChildrenSpectrogramRef( ref.top(), bl, vp, frustum_clip, redundancy );
+        R |= computeChildrenRenderSet( ref.bottom() );
+        R |= computeChildrenRenderSet( ref.top() );
         break;
     case RenderInfo::Lod_NeedBetterT:
-        renderChildrenSpectrogramRef( ref.left(), bl, vp, frustum_clip, redundancy );
-        if (ReferenceInfo(ref.right (), bl, vp)
-                .boundsCheck(ReferenceInfo::BoundsCheck_OutT))
-            renderChildrenSpectrogramRef( ref.right(), bl, vp, frustum_clip, redundancy );
+        R |= computeChildrenRenderSet( ref.left() );
+        if (render_info->boundsCheck(ref.right (), ReferenceInfo::BoundsCheck_OutT))
+            R |= computeChildrenRenderSet( ref.right() );
         break;
     case RenderInfo::Lod_Ok:
-        renderSpectrogramRef( ref );
+        R |= ref;
         break;
     case RenderInfo::Lod_Invalid: // ref is not within the current view frustum
-        return false;
+        break;
     }
 
-    return true;
-}
-
-
-void RenderHeightmap::
-        renderSpectrogramRef( Reference ref )
-{
-    try {
-        BlockCache::WritePtr cache( cache_, 0 );
-        pBlock block = cache->find( ref );
-
-        if (block) {
-            if (!render_block_->renderBlock(block)) {
-                render_block_->renderBlockError(block->block_layout (), block->getRegion ());
-            }
-        }
-    } catch (const BlockCache::LockFailed&) {
-        // ok, skip
-    }
+    return R;
 }
 
 

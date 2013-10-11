@@ -8,6 +8,8 @@
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
+#include "heightmap/reference_hash.h"
+#include "heightmap/render/renderregion.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"
 #include "signal/operation.h"
@@ -233,8 +235,7 @@ void Renderer::init()
     _render_block.init();
 
     setSize(2,2);
-    beginVboRendering();
-    endVboRendering();
+    drawBlocks(Render::RenderHeightmap::references_t());
 
     _initialized=Initialized;
 
@@ -271,8 +272,8 @@ Reference Renderer::
     Reference entireHeightmap = read1(collection)->entireHeightmap();
     BlockLayout bl = read1(collection)->block_layout();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params();
-    Render::RenderInfo ri(&gl_projection);
-    Reference r = ri.findRefAtCurrentZoomLevel( p, entireHeightmap, bl, vp, _frustum_clip, _redundancy );
+    Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
+    Reference r = ri.findRefAtCurrentZoomLevel( p, entireHeightmap );
     return r;
 }
 
@@ -321,60 +322,80 @@ void Renderer::draw( float scaley )
 
     glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
 
-    beginVboRendering();
-
     BlockLayout bl = read1(collection)->block_layout ();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
-    BlockCache::Ptr cache = read1(collection)->cache ();
-    Render::RenderHeightmap(cache, &gl_projection, &_render_block).render( ref, bl, vp, _frustum_clip, _redundancy );
-
-    endVboRendering();
-
-    RegionFactory region(bl);
-    BlockCache::cache_misses_t C = read1(cache)->cache_misses (); // copy
+    Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
+    Render::RenderHeightmap rh(&render_info);
+    Render::RenderHeightmap::references_t R = rh.computeRenderSet( ref );
 
     {
         Collection::WritePtr collectionp(collection);
 
-        BOOST_FOREACH(const Reference& r, C) {
-            if (region(r).b.scale > 1)
-                continue;
-
+        BOOST_FOREACH(const Reference& r, R) {
+            // Create blocks
             collectionp->getBlock (r);
         }
     }
 
-    write1(cache)->clear_cache_misses ();
+    float yscalelimit = render_settings.drawcrosseswhen0 ? 0.0004f : 0.f;
+    bool draw = render_settings.y_scale > yscalelimit;
+    if (draw)
+        drawBlocks(R);
+    else
+        drawReferences(R);
 
     GlException_CHECK_ERROR();
 }
 
 
-void Renderer::beginVboRendering()
-{
-    BlockLayout block_size = read1(collection)->block_layout ();
-    int frame_number = read1(collection)->frame_number ();
-    _render_block.beginVboRendering (block_size, frame_number);
-}
-
-
-void Renderer::endVboRendering() {
-    _render_block.endVboRendering ();
-}
-
-
-/*Renderer::LevelOfDetal Renderer::testLod( Reference ref )
-{
-    BlockLayout bl = read1(collection)->block_layout ();
-    VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
-    RenderInfo().testLod(ref, bl, vp);
-}*/
-
-
 void Renderer::
-        computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel )
+        drawBlocks(const Render::RenderHeightmap::references_t& R)
 {
-    gl_projection.computeUnitsPerPixel (p, timePerPixel, scalePerPixel);
+    Render::RenderHeightmap::references_t failed;
+
+    {
+        int frame_number = read1(collection)->frame_number ();
+        BlockLayout bl = read1(collection)->block_layout ();
+        BlockCache::Ptr cache = read1(collection)->cache ();
+
+        BlockCache::WritePtr cachep( cache );
+        Render::RenderBlock::Renderer block_renderer(&_render_block, bl);
+
+        BOOST_FOREACH(const Reference& r, R)
+        {
+            if (pBlock block = cachep->find( r ))
+            {
+                block_renderer.renderBlock(block);
+                block->frame_number_last_used = frame_number;
+                render_settings.drawn_blocks++;
+            }
+            else
+            {
+                // getBlock would try to find something else if the requested block
+                // wasn't readily available.
+
+                // If getBlock fails, we're most likely out of memory. Indicate this
+                // silently by not drawing the surface but only a wireframe.
+                failed.insert(r);
+            }
+        }
+
+        // Don't use cache misses...
+        cachep->clear_cache_misses ();
+
+    } // finish Render::RenderBlock::Renderer
+
+    drawReferences(failed);
+}
+
+
+void Renderer::drawReferences(const Render::RenderHeightmap::references_t& R) {
+    BlockLayout bl = read1(collection)->block_layout ();
+    RegionFactory region(bl);
+
+    BOOST_FOREACH(const Reference& r, R) {
+        Render::RenderRegion(region(r)).render();
+    }
 }
 
 

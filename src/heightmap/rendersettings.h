@@ -40,6 +40,7 @@ public:
     bool left_handed_axes;
     bool vertex_texture;
     bool draw_flat;
+    bool drawcrosseswhen0;
 };
 
 } // namespace Heightmap

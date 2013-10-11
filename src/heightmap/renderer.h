@@ -68,11 +68,8 @@ private:
     unsigned _mesh_fraction_width;
     unsigned _mesh_fraction_height;
 
-    void beginVboRendering();
-    void endVboRendering();
-
-    //LevelOfDetal testLod( Reference ref );
-    void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
+    void drawBlocks(const Render::RenderHeightmap::references_t& R);
+    void drawReferences(const Render::RenderHeightmap::references_t& R);
 };
 typedef boost::shared_ptr<Renderer> pRenderer;
 

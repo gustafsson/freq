@@ -1,4 +1,5 @@
 #include "rendersettings.h"
+#include "sawe/configuration.h"
 
 namespace Heightmap {
 
@@ -19,7 +20,8 @@ RenderSettings::RenderSettings()
         drawn_blocks(0),
         left_handed_axes(true),
         vertex_texture(true),
-        draw_flat(true)
+        draw_flat(true),
+        drawcrosseswhen0( Sawe::Configuration::version().empty() )
 {
 }
 

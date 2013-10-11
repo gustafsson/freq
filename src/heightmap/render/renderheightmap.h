@@ -5,27 +5,29 @@
 #include "heightmap/render/frustumclip.h"
 #include "glprojection.h"
 #include "renderblock.h"
+#include "renderinfo.h"
+
+#include <boost/unordered_set.hpp>
 
 namespace Heightmap {
 namespace Render {
 
 /**
- * @brief The RenderHeightmap class should render a block cache within a frustum.
+ * @brief The RenderHeightmap class should find references within a frustum.
  */
 class RenderHeightmap
 {
 public:
-    RenderHeightmap(BlockCache::Ptr cache, glProjection* gl_projection, RenderBlock* render_block);
+    typedef boost::unordered_set<Reference> references_t;
 
-    void render( Reference ref, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy );
+    RenderHeightmap(RenderInfo* render_info);
+
+    references_t computeRenderSet( Reference ref );
 
 private:
-    BlockCache::Ptr cache_;
-    glProjection* gl_projection_;
-    RenderBlock* render_block_;
+    RenderInfo* render_info;
 
-    void renderSpectrogramRef( Reference ref );
-    bool renderChildrenSpectrogramRef( Reference ref, BlockLayout bl, VisualizationParams::ConstPtr vp, const FrustumClip& frustum_clip, float redundancy );
+    references_t computeChildrenRenderSet( Reference ref );
 
 public:
     static void test();
