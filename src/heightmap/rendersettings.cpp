@@ -18,7 +18,8 @@ RenderSettings::RenderSettings()
         last_axes_length( 0 ),
         drawn_blocks(0),
         left_handed_axes(true),
-        vertex_texture(true)
+        vertex_texture(true),
+        draw_flat(true)
 {
 }
 

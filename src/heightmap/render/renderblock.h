@@ -18,8 +18,8 @@ public:
 
     void init();
     void clearCaches();
-    bool renderBlock( pBlock ref, bool draw_flat );
-    void renderBlockError( BlockLayout block_size, Region r, float y );
+    bool renderBlock( pBlock ref );
+    void renderBlockError( BlockLayout block_size, Region r );
 
 // private:
     void beginVboRendering(BlockLayout block_size, unsigned frame_number);

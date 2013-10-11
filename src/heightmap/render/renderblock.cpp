@@ -171,7 +171,7 @@ void RenderBlock::
 
 
 bool RenderBlock::
-        renderBlock( pBlock block, bool draw_flat )
+        renderBlock( pBlock block )
 {
     TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
@@ -184,14 +184,17 @@ bool RenderBlock::
 
     float yscalelimit = _drawcrosseswhen0 ? 0.0004f : 0.f;
     bool draw = 0!=block.get() && render_settings->y_scale > yscalelimit;
+
     if (draw) {
         if (0 /* direct rendering */ )
             ;//block->glblock->draw_directMode();
         else if (1 /* vbo */ ) {
             block->frame_number_last_used = _frame_number;
             block->update_glblock_data ();
-            block->glblock->draw( _vbo_size, draw_flat ? GlBlock::HeightMode_Flat : render_settings->vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
+            block->glblock->draw( _vbo_size, render_settings->draw_flat ? GlBlock::HeightMode_Flat : render_settings->vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
         }
+
+        render_settings->drawn_blocks++;
     }
 
     TIME_RENDERER_BLOCKS ComputationCheckError();
@@ -202,9 +205,11 @@ bool RenderBlock::
 
 
 void RenderBlock::
-        renderBlockError( BlockLayout block_size, Region r, float y )
+        renderBlockError( BlockLayout block_size, Region r )
 {
     // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
+    //float y = _frustum_clip.projectionPlane[1]*.05;
+    float y = 0.05f;
 
     UNUSED(glPushMatrixContext mc)( GL_MODELVIEW );
 

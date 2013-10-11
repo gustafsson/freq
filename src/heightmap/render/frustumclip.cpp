@@ -79,7 +79,7 @@ inline void printl(const char* str, const std::vector<GLvector>& l) {
 
 
 vector<GLvector> FrustumClip::
-        clipFrustum( vector<GLvector> l, GLvector &closest_i )
+        clipFrustum( vector<GLvector> l, GLvector &closest_i ) const
 {
     //printl("Start",l);
     // Don't bother with projectionNormal?
@@ -101,7 +101,7 @@ vector<GLvector> FrustumClip::
 
 
 vector<GLvector> FrustumClip::
-        clipFrustum( GLvector corner[4], GLvector &closest_i )
+        clipFrustum( GLvector corner[4], GLvector &closest_i ) const
 {
     vector<GLvector> l;
     l.reserve(4);

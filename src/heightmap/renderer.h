@@ -7,6 +7,7 @@
 #include "rendersettings.h"
 #include "render/frustumclip.h"
 #include "render/renderblock.h"
+#include "render/renderheightmap.h"
 #include "collection.h"
 
 // gpumisc
@@ -50,12 +51,6 @@ public:
     void clearCaches();
 
 private:
-    enum LevelOfDetal {
-        Lod_NeedBetterF,
-        Lod_NeedBetterT,
-        Lod_Ok,
-        Lod_Invalid
-    };
 
     enum InitializedLevel {
         NotInitialized,
@@ -76,10 +71,7 @@ private:
     void beginVboRendering();
     void endVboRendering();
 
-    void renderSpectrogramRef( Reference ref );
-    LevelOfDetal testLod( Reference ref );
-    bool renderChildrenSpectrogramRef( Reference ref );
-    bool computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels );
+    //LevelOfDetal testLod( Reference ref );
     void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
 };
 typedef boost::shared_ptr<Renderer> pRenderer;

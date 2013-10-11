@@ -13,6 +13,7 @@
 #include "signal/operation.h"
 #include "render/renderaxes.h"
 #include "render/renderfrustum.h"
+#include "render/renderinfo.h"
 
 // gpumisc
 #include <float.h>
@@ -34,9 +35,6 @@
 
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
-
-//#define TIME_RENDERER_BLOCKS
-#define TIME_RENDERER_BLOCKS if(0)
 
 using namespace std;
 
@@ -270,44 +268,12 @@ void Renderer::
 Reference Renderer::
         findRefAtCurrentZoomLevel( Heightmap::Position p )
 {
-    //Position max_ss = collection->max_sample_size();
-    Reference ref = read1(collection)->entireHeightmap();
-    BlockLayout bc = read1(collection)->block_layout ();
-
-    // The first 'ref' will be a super-ref containing all other refs, thus
-    // containing 'p' too. This while-loop zooms in on a ref containing
-    // 'p' with enough details.
-
-    // 'p' is assumed to be valid to start with. Ff they're not valid
-    // this algorithm will choose some ref along the border closest to the
-    // point 'p'.
-
-    while (true)
-    {
-        LevelOfDetal lod = testLod(ref);
-
-        Region r = RegionFactory(bc)(ref);
-
-        switch(lod)
-        {
-        case Lod_NeedBetterF:
-            if ((r.a.scale+r.b.scale)/2 > p.scale)
-                ref = ref.bottom();
-            else
-                ref = ref.top();
-            break;
-
-        case Lod_NeedBetterT:
-            if ((r.a.time+r.b.time)/2 > p.time)
-                ref = ref.left();
-            else
-                ref = ref.right();
-            break;
-
-        default:
-            return ref;
-        }
-    }
+    Reference entireHeightmap = read1(collection)->entireHeightmap();
+    BlockLayout bl = read1(collection)->block_layout();
+    VisualizationParams::ConstPtr vp = read1(collection)->visualization_params();
+    Render::RenderInfo ri(&gl_projection);
+    Reference r = ri.findRefAtCurrentZoomLevel( p, entireHeightmap, bl, vp, _frustum_clip, _redundancy );
+    return r;
 }
 
 /**
@@ -331,7 +297,7 @@ void Renderer::draw( float scaley )
 
     _invalid_frustum = true;
 
-    if ((_draw_flat = .001 > scaley))
+    if ((render_settings.draw_flat = .001 > scaley))
         setSize(2,2),
         scaley = 0.001;
     else
@@ -353,15 +319,18 @@ void Renderer::draw( float scaley )
     gl_projection.update();
     _frustum_clip.update (0, 0);
 
-    glScalef(1, _draw_flat ? 0 : scaley, 1);
+    glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
 
     beginVboRendering();
 
-    if (!renderChildrenSpectrogramRef( ref ))
-        renderSpectrogramRef( ref );
+    BlockLayout bl = read1(collection)->block_layout ();
+    VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
+    BlockCache::Ptr cache = read1(collection)->cache ();
+    Render::RenderHeightmap(cache, &gl_projection, &_render_block).render( ref, bl, vp, _frustum_clip, _redundancy );
 
-    BlockCache::Ptr cache = read1(collection)->cache();
-    RegionFactory region(read1(collection)->block_layout());
+    endVboRendering();
+
+    RegionFactory region(bl);
     BlockCache::cache_misses_t C = read1(cache)->cache_misses (); // copy
 
     {
@@ -376,8 +345,6 @@ void Renderer::draw( float scaley )
     }
 
     write1(cache)->clear_cache_misses ();
-
-    endVboRendering();
 
     GlException_CHECK_ERROR();
 }
@@ -396,137 +363,12 @@ void Renderer::endVboRendering() {
 }
 
 
-void Renderer::renderSpectrogramRef( Reference ref )
-{
-    BlockCache::WritePtr cache( read1(collection)->cache() );
-    pBlock block = cache->find( ref );
-
-    if (block) {
-        if (!_render_block.renderBlock(block, _draw_flat)) {
-            float y = _frustum_clip.projectionPlane[1]*.05;
-            _render_block.renderBlockError(block->block_layout (), block->getRegion (), y);
-        }
-
-        render_settings.drawn_blocks++;
-    }
-}
-
-
-Renderer::LevelOfDetal Renderer::testLod( Reference ref )
+/*Renderer::LevelOfDetal Renderer::testLod( Reference ref )
 {
     BlockLayout bl = read1(collection)->block_layout ();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
-
-    float timePixels, scalePixels;
-    if (!computePixelsPerUnit( ref, timePixels, scalePixels ))
-        return Lod_Invalid;
-
-    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
-        fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
-        fflush(stdout);
-    }
-
-    GLdouble needBetterF, needBetterT;
-
-    if (0==scalePixels)
-        needBetterF = 1.01;
-    else
-        needBetterF = scalePixels / (_redundancy*bl.texels_per_column ());
-    if (0==timePixels)
-        needBetterT = 1.01;
-    else
-        needBetterT = timePixels / (_redundancy*bl.texels_per_row ());
-
-    if (!ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
-        !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
-        needBetterF = 0;
-
-    if (!ReferenceInfo(ref.left(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighT))
-        needBetterT = 0;
-
-    if ( needBetterF > needBetterT && needBetterF > 1 )
-        return Lod_NeedBetterF;
-
-    else if ( needBetterT > 1 )
-        return Lod_NeedBetterT;
-
-    else
-        return Lod_Ok;
-}
-
-bool Renderer::renderChildrenSpectrogramRef( Reference ref )
-{
-    BlockLayout bl = read1(collection)->block_layout ();
-    VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
-
-    TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("%s")
-          % ReferenceInfo(ref, bl, vp));
-
-    LevelOfDetal lod = testLod( ref );
-    switch(lod) {
-    case Lod_NeedBetterF:
-        renderChildrenSpectrogramRef( ref.bottom() );
-        renderChildrenSpectrogramRef( ref.top() );
-        break;
-    case Lod_NeedBetterT:
-        renderChildrenSpectrogramRef( ref.left() );
-        if (ReferenceInfo(ref.right (), bl, vp)
-                .boundsCheck(ReferenceInfo::BoundsCheck_OutT))
-            renderChildrenSpectrogramRef( ref.right() );
-        break;
-    case Lod_Ok:
-        renderSpectrogramRef( ref );
-        break;
-    case Lod_Invalid: // ref is not within the current view frustum
-        return false;
-    }
-
-    return true;
-}
-
-
-/**
-  @arg ref See timePixels and scalePixels
-  @arg timePixels Estimated longest line of pixels along time axis within ref measured in pixels
-  @arg scalePixels Estimated longest line of pixels along scale axis within ref measured in pixels
-  */
-bool Renderer::
-        computePixelsPerUnit( Reference ref, float& timePixels, float& scalePixels )
-{
-    Region r = RegionFactory ( read1(collection)->block_layout () )(ref);
-    const Position p[2] = { r.a, r.b };
-
-    float y[]={0, float(_frustum_clip.projectionPlane[1]*.5)};
-    for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
-    {
-        GLvector corner[]=
-        {
-            GLvector( p[0].time, y[i], p[0].scale),
-            GLvector( p[0].time, y[i], p[1].scale),
-            GLvector( p[1].time, y[i], p[1].scale),
-            GLvector( p[1].time, y[i], p[0].scale)
-        };
-
-        GLvector closest_i;
-        std::vector<GLvector> clippedCorners = _frustum_clip.clipFrustum(corner, closest_i); // about 10 us
-        if (clippedCorners.empty ())
-            continue;
-
-        GLvector::T
-                timePerPixel = 0,
-                freqPerPixel = 0;
-
-        gl_projection.computeUnitsPerPixel( closest_i, timePerPixel, freqPerPixel );
-
-        // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-        timePixels = (p[1].time - p[0].time)/timePerPixel;
-        scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
-
-        return true;
-    }
-
-    return false;
-}
+    RenderInfo().testLod(ref, bl, vp);
+}*/
 
 
 void Renderer::

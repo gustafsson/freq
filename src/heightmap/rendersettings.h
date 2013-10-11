@@ -39,6 +39,7 @@ public:
     unsigned drawn_blocks;
     bool left_handed_axes;
     bool vertex_texture;
+    bool draw_flat;
 };
 
 } // namespace Heightmap

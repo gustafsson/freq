@@ -20,8 +20,8 @@ public:
     void update(float w, float h);
     const std::vector<GLvector> clippedFrustum() const;
 
-    std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i );
-    std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i );
+    std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector &closest_i ) const;
+    std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector &closest_i ) const;
 
     GLvector projectionPlane, projectionNormal; // for clipFrustum
 
