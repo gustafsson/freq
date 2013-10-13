@@ -29,8 +29,8 @@ public:
     {
         BoundsCheck_HighS = 1,
         BoundsCheck_HighT = 2,
-        BoundsCheck_OutS = 4,
-        BoundsCheck_OutT = 8,
+        //BoundsCheck_OutS = 4,
+        //BoundsCheck_OutT = 8,
         BoundsCheck_All = 15
     };
 
