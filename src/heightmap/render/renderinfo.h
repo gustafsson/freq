@@ -12,7 +12,7 @@
 namespace Heightmap {
 namespace Render {
 
-class RenderInfo
+class RenderInfoI
 {
 public:
     enum LevelOfDetal {
@@ -22,12 +22,21 @@ public:
         Lod_Invalid
     };
 
+    virtual ~RenderInfoI() {}
+
+    virtual RenderInfoI::LevelOfDetal testLod( Reference ref ) const = 0;
+    virtual Region                    region(Reference ref) const = 0;
+};
+
+
+class RenderInfo: public RenderInfoI
+{
+public:
     RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::ConstPtr vp, FrustumClip* frustum_clip, float redundancy);
 
-    RenderInfo::LevelOfDetal testLod( Reference ref ) const;
-    bool boundsCheck( Reference ref, ReferenceInfo::BoundsCheck) const;
+    RenderInfoI::LevelOfDetal   testLod( Reference ref ) const;
+    Region                      region(Reference ref) const;
 
-    Reference findRefAtCurrentZoomLevel( Heightmap::Position p, Reference entireHeightmap ) const;
 private:
     glProjection* gl_projection;
     BlockLayout bl;
@@ -35,6 +44,7 @@ private:
     FrustumClip* frustum_clip;
     float redundancy;
 
+    bool boundsCheck( Reference ref, ReferenceInfo::BoundsCheck) const;
     bool computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const;
 };
 

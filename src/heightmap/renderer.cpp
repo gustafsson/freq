@@ -235,7 +235,7 @@ void Renderer::init()
     _render_block.init();
 
     setSize(2,2);
-    drawBlocks(Render::RenderHeightmap::references_t());
+    drawBlocks(Render::RenderSet::references_t());
 
     _initialized=Initialized;
 
@@ -273,7 +273,7 @@ Reference Renderer::
     BlockLayout bl = read1(collection)->block_layout();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params();
     Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
-    Reference r = ri.findRefAtCurrentZoomLevel( p, entireHeightmap );
+    Reference r = Render::RenderSet(&ri).computeRefAt (p, entireHeightmap);
     return r;
 }
 
@@ -325,8 +325,8 @@ void Renderer::draw( float scaley )
     BlockLayout bl = read1(collection)->block_layout ();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
     Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
-    Render::RenderHeightmap rh(&render_info);
-    Render::RenderHeightmap::references_t R = rh.computeRenderSet( ref );
+    Render::RenderSet rh(&render_info);
+    Render::RenderSet::references_t R = rh.computeRenderSet( ref );
 
     {
         Collection::WritePtr collectionp(collection);
@@ -349,9 +349,9 @@ void Renderer::draw( float scaley )
 
 
 void Renderer::
-        drawBlocks(const Render::RenderHeightmap::references_t& R)
+        drawBlocks(const Render::RenderSet::references_t& R)
 {
-    Render::RenderHeightmap::references_t failed;
+    Render::RenderSet::references_t failed;
 
     {
         int frame_number = read1(collection)->frame_number ();
@@ -389,7 +389,9 @@ void Renderer::
 }
 
 
-void Renderer::drawReferences(const Render::RenderHeightmap::references_t& R) {
+void Renderer::
+        drawReferences(const Render::RenderSet::references_t& R)
+{
     BlockLayout bl = read1(collection)->block_layout ();
     RegionFactory region(bl);
 

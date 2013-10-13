@@ -18,16 +18,12 @@ namespace Render {
 class RenderHeightmap
 {
 public:
-    typedef boost::unordered_set<Reference> references_t;
-
     RenderHeightmap(RenderInfo* render_info);
 
-    references_t computeRenderSet( Reference ref );
 
 private:
     RenderInfo* render_info;
 
-    references_t computeChildrenRenderSet( Reference ref );
 
 public:
     static void test();

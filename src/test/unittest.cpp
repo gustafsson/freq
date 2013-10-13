@@ -34,6 +34,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
+#include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
 
 // gpumisc units
@@ -117,6 +118,7 @@ int UnitTest::
         RUNTEST(Heightmap::BlockCache);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
+        RUNTEST(Heightmap::Render::RenderSet);
         RUNTEST(Heightmap::TfrMapping);
         RUNTEST(Heightmap::VisualizationParams);
         RUNTEST(Heightmap::ChunkBlockFilter);

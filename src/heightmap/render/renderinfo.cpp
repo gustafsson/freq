@@ -7,6 +7,7 @@
 namespace Heightmap {
 namespace Render {
 
+
 RenderInfo::
         RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::ConstPtr vp, FrustumClip* frustum_clip, float redundancy)
     :
@@ -68,44 +69,10 @@ bool RenderInfo::
 }
 
 
-Reference RenderInfo::
-        findRefAtCurrentZoomLevel( Heightmap::Position p, Reference entireHeightmap ) const
+Region RenderInfo::
+        region(Reference ref) const
 {
-    Reference ref = entireHeightmap;
-
-    // The first 'ref' will be a super-ref containing all other refs, thus
-    // containing 'p' too. This while-loop zooms in on a ref containing
-    // 'p' with enough details.
-
-    // If 'p' is not within entireHeightmap this algorithm will choose some ref
-    // along the border closest to the point 'p'.
-
-    while (true)
-    {
-        LevelOfDetal lod = testLod(ref);
-
-        Region r = RegionFactory(bl)(ref);
-
-        switch(lod)
-        {
-        case Lod_NeedBetterF:
-            if ((r.a.scale+r.b.scale)/2 > p.scale)
-                ref = ref.bottom();
-            else
-                ref = ref.top();
-            break;
-
-        case Lod_NeedBetterT:
-            if ((r.a.time+r.b.time)/2 > p.time)
-                ref = ref.left();
-            else
-                ref = ref.right();
-            break;
-
-        default:
-            return ref;
-        }
-    }
+    return RegionFactory(bl)(ref);
 }
 
 

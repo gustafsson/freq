@@ -7,7 +7,7 @@
 #include "rendersettings.h"
 #include "render/frustumclip.h"
 #include "render/renderblock.h"
-#include "render/renderheightmap.h"
+#include "render/renderset.h"
 #include "collection.h"
 
 // gpumisc
@@ -68,8 +68,8 @@ private:
     unsigned _mesh_fraction_width;
     unsigned _mesh_fraction_height;
 
-    void drawBlocks(const Render::RenderHeightmap::references_t& R);
-    void drawReferences(const Render::RenderHeightmap::references_t& R);
+    void drawBlocks(const Render::RenderSet::references_t& R);
+    void drawReferences(const Render::RenderSet::references_t& R);
 };
 typedef boost::shared_ptr<Renderer> pRenderer;
 
