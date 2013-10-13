@@ -401,14 +401,6 @@ void Renderer::
 }
 
 
-template<typename T>
-void swap( T& x, T& y) {
-    x = x + y;
-    y = x - y;
-    x = x - y;
-}
-
-
 void Renderer::
         drawAxes( float T )
 {
@@ -424,11 +416,6 @@ void Renderer::
     clippedFrustum = ra.getClippedFrustum ();
 }
 
-
-template<typename T> void glVertex3v( const T* );
-
-template<> void glVertex3v( const GLdouble* t ) {    glVertex3dv(t); }
-template<>  void glVertex3v( const GLfloat* t )  {    glVertex3fv(t); }
 
 void Renderer::
         drawFrustum()
