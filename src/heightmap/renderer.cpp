@@ -59,7 +59,6 @@ Renderer::Renderer()
      takes too long.
      */
     _redundancy(1.0f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
-    _invalid_frustum(true),
     _frustum_clip( &gl_projection, &render_settings.left_handed_axes ),
     _render_block( &render_settings ),
     _mesh_fraction_width(1),
@@ -88,13 +87,6 @@ unsigned Renderer::
         trianglesPerBlock()
 {
     return _render_block.trianglesPerBlock ();
-}
-
-
-void Renderer::
-        setSize( unsigned w, unsigned h)
-{
-    _render_block.setSize (w, h);
 }
 
 
@@ -234,7 +226,7 @@ void Renderer::init()
 
     _render_block.init();
 
-    setSize(2,2);
+    _render_block.setSize (2, 2);
     drawBlocks(Render::RenderSet::references_t());
 
     _initialized=Initialized;
@@ -261,7 +253,6 @@ void Renderer::
         clearCaches()
 {
     _initialized = NotInitialized;
-    _invalid_frustum = true;
     _render_block.clearCaches();
 }
 
@@ -277,12 +268,9 @@ Reference Renderer::
     return r;
 }
 
-/**
-  Note: the parameter scaley is used by RenderView to go seamlessly from 3D to 2D.
-  This is different from the 'attribute' Renderer::y_scale which is used to change the
-  height of the mountains.
-  */
-void Renderer::draw( float scaley )
+
+void Renderer::
+        draw( float scaley )
 {
     if (!collection)
         return;
@@ -296,55 +284,77 @@ void Renderer::draw( float scaley )
     if (NotInitialized == _initialized) init();
     if (Initialized != _initialized) return;
 
-    _invalid_frustum = true;
+    glPushMatrixContext mc(GL_MODELVIEW);
+    setupGlStates(scaley);
 
+    float yscalelimit = render_settings.drawcrosseswhen0 ? 0.0004f : 0.f;
+    bool draw = render_settings.y_scale > yscalelimit;
+
+    if (draw)
+    {
+        Render::RenderSet::references_t R = getRenderSet();
+        createMissingBlocks(R);
+        drawBlocks(R);
+    }
+    else
+    {
+        Render::RenderSet::references_t R = getRenderSet();
+        drawReferences(R);
+    }
+
+    GlException_CHECK_ERROR();
+}
+
+
+void Renderer::
+        setupGlStates(float scaley)
+{
     if ((render_settings.draw_flat = .001 > scaley))
-        setSize(2,2),
+    {
+        _render_block.setSize (2, 2);
         scaley = 0.001;
+    }
     else
     {
         BlockLayout block_size = read1(collection)->block_layout ();
-        setSize( block_size.texels_per_row ()/_mesh_fraction_width,
+        _render_block.setSize (
+                 block_size.texels_per_row ()/_mesh_fraction_width,
                  block_size.texels_per_column ()/_mesh_fraction_height );
     }
 
     render_settings.last_ysize = scaley;
     render_settings.drawn_blocks = 0;
 
-    glPushMatrixContext mc(GL_MODELVIEW);
-
-    //Position mss = collection->max_sample_size();
-    //Reference ref = collection->findReference(Position(0,0), mss);
-    Reference ref = read1(collection)->entireHeightmap();
 
     gl_projection.update();
     _frustum_clip.update (0, 0);
 
     glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
+}
 
-    BlockLayout bl = read1(collection)->block_layout ();
+
+Render::RenderSet::references_t Renderer::
+        getRenderSet()
+{
+    BlockLayout bl                   = read1(collection)->block_layout ();
+    Reference ref                    = read1(collection)->entireHeightmap();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
     Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
-    Render::RenderSet rh(&render_info);
-    Render::RenderSet::references_t R = rh.computeRenderSet( ref );
+    Render::RenderSet::references_t R = Render::RenderSet(&render_info).computeRenderSet( ref );
 
-    {
-        Collection::WritePtr collectionp(collection);
+    return R;
+}
 
-        BOOST_FOREACH(const Reference& r, R) {
-            // Create blocks
-            collectionp->getBlock (r);
-        }
+
+void Renderer::
+        createMissingBlocks(const Render::RenderSet::references_t& R)
+{
+    Collection::WritePtr collectionp(collection);
+
+    BOOST_FOREACH(const Reference& r, R) {
+        // Create blocks
+        collectionp->getBlock (r);
     }
-
-    float yscalelimit = render_settings.drawcrosseswhen0 ? 0.0004f : 0.f;
-    bool draw = render_settings.y_scale > yscalelimit;
-    if (draw)
-        drawBlocks(R);
-    else
-        drawReferences(R);
-
-    GlException_CHECK_ERROR();
 }
 
 

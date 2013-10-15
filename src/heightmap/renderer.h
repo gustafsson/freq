@@ -34,6 +34,11 @@ public:
 
     Reference findRefAtCurrentZoomLevel( Heightmap::Position p );
 
+    /**
+      Note: the parameter scaley is used by RenderView to go seamlessly from 3D to 2D.
+      This is different from the 'attribute' Renderer::y_scale which is used to change the
+      height of the mountains.
+      */
     void draw( float scaley );
     void drawAxes( float T );
     void drawFrustum();
@@ -61,13 +66,15 @@ private:
     InitializedLevel _initialized;
     bool _draw_flat;
     float _redundancy;
-    bool _invalid_frustum;
     Render::FrustumClip _frustum_clip;
     std::vector<GLvector> clippedFrustum;
     Render::RenderBlock _render_block;
     unsigned _mesh_fraction_width;
     unsigned _mesh_fraction_height;
 
+    void setupGlStates(float scaley);
+    Render::RenderSet::references_t getRenderSet();
+    void createMissingBlocks(const Render::RenderSet::references_t& R);
     void drawBlocks(const Render::RenderSet::references_t& R);
     void drawReferences(const Render::RenderSet::references_t& R);
 };
