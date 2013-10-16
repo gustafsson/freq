@@ -90,6 +90,7 @@ int UnitTest::
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
+        RUNTEST(Timer);
         RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
         RUNTEST(Signal::Processing::Bedroom);
