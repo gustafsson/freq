@@ -390,9 +390,6 @@ void Renderer::
             }
         }
 
-        // Don't use cache misses...
-        cachep->clear_cache_misses ();
-
     } // finish Render::RenderBlock::Renderer
 
     drawReferences(failed);

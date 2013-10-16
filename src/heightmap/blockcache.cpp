@@ -24,7 +24,6 @@ pBlock BlockCache::
         }
     else
         {
-        cache_misses_.push_back ( ref );
         return pBlock();
         }
 }
@@ -82,20 +81,6 @@ const BlockCache::recent_t& BlockCache::
         recent() const
 {
     return recent_;
-}
-
-
-const BlockCache::cache_misses_t& BlockCache::
-        cache_misses() const
-{
-    return cache_misses_;
-}
-
-
-void BlockCache::
-        clear_cache_misses()
-{
-    cache_misses_.clear();
 }
 
 

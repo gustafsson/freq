@@ -151,7 +151,6 @@ pBlock BlockFactory::
 }
 
 
-
 pBlock BlockFactory::
         getAllocatedBlock(const Reference& ref)
 {    
