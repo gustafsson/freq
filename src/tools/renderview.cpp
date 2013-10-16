@@ -975,9 +975,6 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-//    if (!model->renderSignalTarget)
-//        return;
-
     model->renderer->collection = read1(model->tfr_mapping ())->collections()[0];
     model->renderer->init();
     if (!model->renderer->isInitialized())
@@ -990,8 +987,6 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-//    Signal::Worker& worker = model->project()->worker;
-//    Signal::pOperation source = worker.source();
     Signal::DeprecatedOperation* first_source = 0; //source ? source->root() : 0;
 
     TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
@@ -999,12 +994,12 @@ void RenderView::
 
     Heightmap::TfrMapping::Collections collections = model->collections ();
 
-    unsigned N = collections.size();
-    unsigned long sumsize = 0;
-    unsigned cacheCount = 0;
-
     TIME_PAINTGL_DETAILS
     {
+        unsigned N = collections.size();
+        unsigned long sumsize = 0;
+        unsigned cacheCount = 0;
+
         sumsize = read1(collections[0])->cacheByteSize();
         cacheCount = read1(collections[0])->cacheCount();
         for (unsigned i=1; i<N; ++i)
@@ -1012,15 +1007,15 @@ void RenderView::
             TaskLogIfFalse( sumsize == read1(collections[i])->cacheByteSize() );
             TaskLogIfFalse( cacheCount == read1(collections[i])->cacheCount() );
         }
-    }
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drawing (%s cache for %u*%u blocks) of %s (%p) %s",
-        DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
-        N, cacheCount, first_source?vartype(*first_source).c_str():0, first_source, first_source?first_source->name().c_str():0);
+        TaskInfo("Drawing (%s cache for %u*%u blocks) of %s (%p) %s",
+            DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
+            N, cacheCount, first_source?vartype(*first_source).c_str():0, first_source, first_source?first_source->name().c_str():0);
 
-    if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
-    {
-        read1(collections[i])->printCacheSize();
+        if(0) foreach( const Heightmap::Collection::Ptr& c, collections )
+        {
+            read1(c)->printCacheSize();
+        }
     }
 
 
@@ -1160,7 +1155,7 @@ void RenderView::
         Signal::IntervalType center = model->_qx * x.sample_rate.get ();
         Signal::UnsignedIntervalType update_size = Signal::Interval::IntervalType_MAX;
 
-        BOOST_FOREACH(Heightmap::Collection::Ptr c, model->collections ()) {
+        foreach( const Heightmap::Collection::Ptr& c, collections ) {
             Heightmap::Collection::WritePtr wc(c);
             //invalid_samples |= wc->invalid_samples();
             things_to_add |= wc->recently_created();
@@ -1203,8 +1198,15 @@ void RenderView::
             _last_update_size = std::numeric_limits<Signal::UnsignedIntervalType>::max();
         }
 
+        bool failed_allocation = false;
+        foreach( const Heightmap::Collection::Ptr& c, collections )
+        {
+            failed_allocation |= write1(c)->failed_allocation ();
+        }
+
         isWorking = model->target_marker ()->isWorking();
         workerCrashed = !model->target_marker ()->isWorking() && model->target_marker ()->hasWork();
+        workerCrashed |= failed_allocation;
 
         TIME_PAINTGL_DETAILS {
             Signal::Processing::Step::Ptr step = read1(model->target_marker ())->step().lock();
@@ -1218,140 +1220,12 @@ void RenderView::
                                  % stepp->not_started());
             }
         }
-
-/*
-        //Use Signal::Processing namespace
-        Signal::pTarget oldTarget = worker.target();
-
-        emit populateTodoList();
-
-        Signal::pTarget populatedTarget = worker.target();
-        if (!populatedTarget || !populatedTarget->post_sink()->isUnderfed())
-        {
-            std::vector<Signal::pTarget> targetsToTry;
-            targetsToTry.push_back( model->renderSignalTarget );
-
-            write1(model->target_marker())->updateNeeds(
-                        model->collections ()[0]->invalid_samples(),
-                        0,
-                        model->_qx
-                    );
-
-            // Use the populated target (possibly set in populateTodoList) if
-            // renderSignalTarget has nothing to work on
-            if (model->renderSignalTarget != worker.target() )
-                targetsToTry.push_back( worker.target() );
-
-            foreach(Signal::pTarget t, model->project()->targets)
-                if (std::find(targetsToTry.begin(), targetsToTry.end(), t) == targetsToTry.end())
-                    targetsToTry.push_back( t );
-
-            // Search for something to work on
-            foreach(Signal::pTarget t, targetsToTry)
-            {
-                // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
-                worker.target( t );
-                if (worker.todo_list())
-                    break;
-            }
-
-            if (!worker.todo_list() && worker.target() != model->renderSignalTarget)
-                worker.target( model->renderSignalTarget );
-
-            if (worker.target() == model->renderSignalTarget)
-                worker.center = model->_qx;
-        }
-        else
-        {
-            if (populatedTarget == oldTarget)
-            {
-                // make sure the todo list is updated
-                worker.target(oldTarget);
-            }
-        }
-*/
-    }
-
-#ifndef SAWE_NO_MUTEX
-/*
-    //Use Signal::Processing namespace
-    workerCrashed = !worker.isRunning ();
-*/
-#endif
-
-    {   // Work
-/*
-        //Use Signal::Processing namespace
-        isWorking = worker.todo_list();
-
-        bool failed_allocation = false;
-        foreach( const Heightmap::Collection::Ptr& collection, collections )
-        {
-            failed_allocation |= write1(collection)->failed_allocation ();
-        }
-
-        isWorking |= failed_allocation;
-
-        TIME_PAINTGL_DETAILS TaskTimer tt("Work target = %s, todo list = %s, isWorking = %d",
-                 worker.target()->name().c_str(),
-                 worker.todo_list().toString().c_str(), isWorking);
-
-        if ((isWorking || isRecording) && !workerCrashed) {
-            if (!_work_timer.get())
-                _work_timer.reset( new TaskTimer("Working"));
-
-            // project->worker can be run in one or more separate threads, but if it isn't
-            // execute the computations for one chunk
-#ifndef SAWE_NO_MUTEX
-            if (worker.isRunning ())
-                restartUpdateTimer();
-#else
-            worker.workOne(!isRecording && !worker.target()->post_sink()->isUnderfed());
-            emit postUpdate();
-#endif
-        } else {
-#ifdef SAWE_NO_MUTEX
-            // will only update interal stats and not do any work since worker.todo_list() is empty.
-            worker.workOne(true);
-#endif
-
-            static unsigned workcount = 0;
-            if (_work_timer) {
-                Signal::IntervalType wsc = worker.worked_samples.count();
-                float worked_time = wsc/worker.source()->sample_rate();
-                _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Project %s. Work session #%u",
-                                  worker.work_chunks,
-                                  worked_time,
-                                  worked_time/_work_timer->elapsedTime(),
-                                  model->project ()->project_title ().c_str (),
-                                  workcount);
-                worker.work_chunks = 0;
-                worker.worked_samples.clear();
-                workcount++;
-                _work_timer.reset();
-
-                // Might be 0 due to race conditions
-                if (0<wsc)
-                {
-                    // Useful when debugging to close application or do something else after finishing first work chunk
-                    emit finishedWorkSection();
-                }
-            }
-        }
-*/
     }
 
 
     //Use Signal::Processing namespace
     if (isWorking || isRecording || workerCrashed)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
-
-
-//    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
-//    {
-//        model->renderer->setFractionSize( 1, 1 );
-//        emit postUpdate();
-//    }
 
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
