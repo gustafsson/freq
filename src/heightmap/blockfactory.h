@@ -14,12 +14,12 @@ namespace Heightmap {
 class BlockFactory
 {
 public:
-    BlockFactory(BlockCache::Ptr cache, BlockLayout, VisualizationParams::ConstPtr, unsigned frame_counter);
+    BlockFactory(BlockLayout, VisualizationParams::ConstPtr);
 
     /**
       Creates a new block.
       */
-    pBlock      createBlock( const Reference& ref );
+    pBlock      createBlock( const Reference& ref, pBlock reuse );
 
 private:
     /**
@@ -48,23 +48,8 @@ private:
     void        setDummyValues( pBlock block );
 
 
-    /**
-     * @brief createBlockFromOthers fills a block with data from other blocks.
-     * @param block
-     */
-    void        createBlockFromOthers(pBlock block);
-
-
-    /**
-     * @brief gc doesn't belong here...
-     */
-    void        gc();
-
-
-    BlockCache::Ptr cache_;
     BlockLayout block_layout_;
     VisualizationParams::ConstPtr visualization_params_;
-    unsigned _frame_counter;
     size_t _free_memory;
 
 public:

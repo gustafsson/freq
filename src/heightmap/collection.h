@@ -202,10 +202,6 @@ private:
     Position
             _max_sample_size;
 
-    // free memory is updated in next_frame()
-    size_t
-            _free_memory;
-
     /**
      * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
      */

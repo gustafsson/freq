@@ -9,6 +9,8 @@
 #include "tfr/stft.h"
 #include "signal/operationcache.h"
 #include "reference_hash.h"
+#include "blocks/garbagecollector.h"
+#include "blocks/merger.h"
 
 // Gpumisc
 //#include "GlException.h"
@@ -56,7 +58,6 @@ Collection::
     _created_count(0),
     _frame_counter(0),
     _prev_length(.0f),
-    _free_memory(availableMemoryForSingleAllocation()),
     failed_allocation_(false),
     failed_allocation_prev_(false)
 {
@@ -196,8 +197,6 @@ void Collection::
             poke(b);
     }
 
-    _free_memory = availableMemoryForSingleAllocation();
-
     _frame_counter++;
 }
 
@@ -247,8 +246,25 @@ pBlock Collection::
     {
         if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count )
         {
-            BlockFactory bf(cache_, block_layout_, visualization_params_, _frame_counter);
-            block = bf.createBlock (ref);
+            pBlock reuse;
+            if (0!= "Reuse old redundant blocks")
+            {
+                // prefer to use block rather than discard an old block and then reallocate it
+                reuse = Blocks::GarbageCollector(cache_).releaseOneBlock(_frame_counter);
+            }
+
+            BlockFactory bf(block_layout_, visualization_params_);
+            block = bf.createBlock (ref, reuse);
+            bool empty_cache = this->cacheCount () == 0;
+            if ( !block && !empty_cache ) {
+                TaskTimer tt(format("Memory allocation failed creating new block %s. Doing garbage collection") % ref);
+                Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (_frame_counter);
+                reuse.reset ();
+                block = bf.createBlock (ref, pBlock());
+            }
+
+            Blocks::Merger(cache_).fillBlockFromOthers (block);
+
             write1(cache_)->insert(block);
 
             _created_count++;
@@ -275,7 +291,7 @@ std::vector<pBlock> Collection::
 unsigned long Collection::
         cacheByteSize() const
 {
-    return BlockCacheInfo::cacheByteSize (read1(cache_)->cache(), block_layout_);
+    return BlockCacheInfo::cacheByteSize (read1(cache_)->cache());
 }
 
 
@@ -289,7 +305,7 @@ unsigned Collection::
 void Collection::
         printCacheSize() const
 {
-    BlockCacheInfo::printCacheSize(read1(cache_)->cache(), block_layout_);
+    BlockCacheInfo::printCacheSize(read1(cache_)->cache());
 }
 
 

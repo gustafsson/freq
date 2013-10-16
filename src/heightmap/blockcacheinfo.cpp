@@ -9,7 +9,7 @@
 namespace Heightmap {
 
 unsigned long BlockCacheInfo::
-        cacheByteSize(const BlockCache::cache_t& cache, const BlockLayout& block_layout)
+        cacheByteSize(const BlockCache::cache_t& cache)
 {
     // For each block there may be both a slope map and heightmap. Also there
     // may be both a texture and a vbo, and possibly a mapped cuda copy.
@@ -21,25 +21,16 @@ unsigned long BlockCacheInfo::
 
     BOOST_FOREACH (const BlockCache::cache_t::value_type& b, cache)
         {
-        sumsize += b.second->glblock->allocated_bytes_per_element();
+        sumsize += b.second->glblock->allocated_bytes_per_element()
+                * b.second->block_layout().texels_per_block ();
         }
 
-//    BOOST_FOREACH (const pBlock& b, to_remove)
-//        {
-//        unsigned abpe = b->glblock->allocated_bytes_per_element();
-//        if (abpe > sumsize)
-//            sumsize = 0;
-//        else
-//            sumsize -= abpe;
-//        }
-
-    unsigned elements_per_block = block_layout.texels_per_block ();
-    return sumsize*elements_per_block;
+    return sumsize;
 }
 
 
 void BlockCacheInfo::
-        printCacheSize(const BlockCache::cache_t& cache, const BlockLayout& block_layout)
+        printCacheSize(const BlockCache::cache_t& cache)
 {
     size_t free=0, total=0;
 #ifdef USE_CUDA
@@ -48,7 +39,7 @@ void BlockCacheInfo::
 
     TaskInfo("Currently has %u cached blocks (ca %s). There are %s graphics memory free of a total of %s",
              cache.size(),
-             DataStorageVoid::getMemorySizeText( cacheByteSize(cache, block_layout) ).c_str(),
+             DataStorageVoid::getMemorySizeText( cacheByteSize(cache) ).c_str(),
              DataStorageVoid::getMemorySizeText( free ).c_str(),
              DataStorageVoid::getMemorySizeText( total ).c_str());
 }

@@ -11,7 +11,7 @@ using namespace Signal;
 namespace Heightmap {
 
 BlockQuery::
-        BlockQuery(BlockCache::Ptr cache)
+        BlockQuery(BlockCache::ConstPtr cache)
     :
       cache_(cache)
 {
@@ -45,9 +45,11 @@ std::vector<pBlock> BlockQuery::
     {
         const pBlock& pb = c.second;
 
-        unsigned framediff = frame_counter - pb->frame_number_last_used;
-        if (only_visible && framediff != 0 && framediff != 1)
-            continue;
+        if (only_visible) {
+            unsigned framediff = frame_counter - pb->frame_number_last_used;
+            if (framediff != 0 && framediff != 1)
+                continue;
+        }
 
         if ((I & pb->getInterval()).count())
             r.push_back(pb);

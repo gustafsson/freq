@@ -8,8 +8,8 @@ namespace Heightmap {
 class BlockCacheInfo
 {
 public:
-    static unsigned long cacheByteSize(const BlockCache::cache_t& cache, const BlockLayout& block_layout);
-    static void printCacheSize(const BlockCache::cache_t& cache, const BlockLayout& block_layout);
+    static unsigned long cacheByteSize(const BlockCache::cache_t& cache);
+    static void printCacheSize(const BlockCache::cache_t& cache);
 
 public:
     static void test();
