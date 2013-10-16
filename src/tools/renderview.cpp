@@ -21,6 +21,7 @@
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "toolfactory.h"
+#include "tools/recordmodel.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -987,10 +988,7 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-    Signal::DeprecatedOperation* first_source = 0; //source ? source->root() : 0;
-
-    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
-                              first_source?first_source->name().c_str():0, first_source);
+    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL.............................");
 
     Heightmap::TfrMapping::Collections collections = model->collections ();
 
@@ -1008,9 +1006,9 @@ void RenderView::
             TaskLogIfFalse( cacheCount == read1(collections[i])->cacheCount() );
         }
 
-        TaskInfo("Drawing (%s cache for %u*%u blocks) of %s (%p) %s",
+        TaskInfo("Drawing (%s cache for %u*%u blocks)",
             DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
-            N, cacheCount, first_source?vartype(*first_source).c_str():0, first_source, first_source?first_source->name().c_str():0);
+            N, cacheCount);
 
         if(0) foreach( const Heightmap::Collection::Ptr& c, collections )
         {
@@ -1061,8 +1059,8 @@ void RenderView::
             QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
     }
 
-    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>( first_source );
-    if(r != 0 && !(r->isStopped()))
+    Tools::RecordModel* r = model->project ()->tools ().record_model ();
+    if(r && r->recording && !r->recording->isStopped ())
     {
         isRecording = true;
     }
@@ -1225,7 +1223,7 @@ void RenderView::
 
     //Use Signal::Processing namespace
     if (isWorking || isRecording || workerCrashed)
-        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed && !isRecording );
 
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
