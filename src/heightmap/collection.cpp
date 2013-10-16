@@ -1,5 +1,4 @@
 #include "collection.h"
-#include "blockkernel.h"
 #include "blockfilter.h"
 #include "glblock.h"
 #include "blockfactory.h"
@@ -11,6 +10,7 @@
 #include "reference_hash.h"
 #include "blocks/garbagecollector.h"
 #include "blocks/merger.h"
+#include "blocks/clearinterval.h"
 
 // Gpumisc
 //#include "GlException.h"
@@ -319,38 +319,9 @@ BlockCache::Ptr Collection::
 void Collection::
         discardOutside(Signal::Interval I)
 {
-    BlockCache::cache_t C = read1(cache_)->cache();
-    for (BlockCache::cache_t::iterator itr = C.begin(); itr!=C.end(); ++itr)
-    {
-        pBlock block(itr->second);
-        Signal::Interval blockInterval = ReferenceInfo(itr->first, block_layout_, visualization_params_).getInterval();
-        Signal::Interval toKeep = I & blockInterval;
-        bool remove_entire_block = toKeep == Signal::Interval();
-        bool keep_entire_block = toKeep == blockInterval;
-        if ( remove_entire_block )
-        {
-            removeBlock(block);
-        }
-        else if ( keep_entire_block )
-        {
-        }
-        else
-        {
-            // clear partial block
-            if( I.first <= blockInterval.first && I.last < blockInterval.last )
-            {
-                Region ir = RegionFactory(block_layout_)(itr->first);
-                float t = I.last / block_layout_.targetSampleRate() - ir.a.time;
-
-                BlockData::WritePtr bd(block->block_data());
-
-                ReferenceInfo ri(itr->first, block_layout_, visualization_params_);
-                ::blockClearPart( bd->cpu_copy,
-                              ceil(t * ri.sample_rate()) );
-
-                block->new_data_available = true;
-            }
-        }
+    std::list<pBlock> discarded = Blocks::ClearInterval(cache_).discardOutside (I);
+    BOOST_FOREACH(pBlock b, discarded) {
+        removeBlock (b);
     }
 }
 
