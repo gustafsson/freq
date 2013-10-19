@@ -48,11 +48,19 @@ namespace Heightmap {
 
         // TODO move this value to a complementary class
         unsigned frame_number_last_used;
-        bool new_data_available;
 
         // OpenGL data to render
         boost::shared_ptr<GlBlock> glblock;
-        BlockData::Ptr block_data() const { return block_data_; }
+        BlockData::WritePtr block_data() {
+            BlockData::WritePtr b(block_data_);
+            new_data_available_ = true;
+            return b;
+        }
+        // Lock if available but don't wait for it to become available
+        // Throws BlockData::LockFailed if data is not available
+        BlockData::ReadPtr block_data_const() const {
+            return BlockData::ReadPtr(block_data_, 0);
+        }
 
         /**
          * @brief update_data updates glblock from block_data
@@ -76,6 +84,7 @@ namespace Heightmap {
 
     private:
         BlockData::Ptr block_data_;
+        bool new_data_available_;
         const Reference ref_;
         const BlockLayout block_layout_;
         const VisualizationParams::ConstPtr visualization_params_;

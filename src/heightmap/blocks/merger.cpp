@@ -72,9 +72,8 @@ void Merger::
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                     things_to_update -= v;
 
-                    // Lock if available but don't wait for it to become available
-                    BlockData::ReadPtr bd(bl->block_data (), 0);
-                    mergeBlock( *block, *bl, *write1(block->block_data()), *bd );
+                    mergeBlock( *block,               *bl,
+                                *block->block_data(), *bl->block_data_const () );
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -129,8 +128,6 @@ bool Merger::
                       ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );
         INFO_COLLECTION ComputationSynchronize();
     }
-
-    outBlock.new_data_available = true;
 
     //bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
     //bool using_subtexel_aggregation = !isCwt || (renderer ? renderer->redundancy()<=1 : false);

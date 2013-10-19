@@ -87,9 +87,6 @@ bool BlockFilter::
         mergeChunk( *block, pchunk, *bd );
 
         bd->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-
-        // "should" lock this access
-        block->new_data_available = true;
     }
 
 

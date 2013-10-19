@@ -103,7 +103,7 @@ void CwtBlockFilter::
 
         Heightmap::Block block(ref, bl, vp);
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        write1(block.block_data ())->cpu_copy.reset( new DataStorage<float>(s) );
+        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -115,7 +115,7 @@ void CwtBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new CwtBlockFilter(complex_info) );
-        write1(mc)->mergeChunk( block, cai, *write1(block.block_data ()) );
+        write1(mc)->mergeChunk( block, cai, *block.block_data () );
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

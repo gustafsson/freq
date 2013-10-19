@@ -37,8 +37,6 @@ bool ChunkBlockFilter::
         write1(merge_chunk_)->mergeChunk( *block, pchunk, *blockdata );
 
         blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-
-        block->new_data_available = true;
     }
 
     return false;

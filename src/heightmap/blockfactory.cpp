@@ -44,7 +44,7 @@ pBlock BlockFactory::
                              block_layout_,
                              visualization_params_) );
             block->glblock = reuse->glblock;
-            write1(block->block_data())->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
+            block->block_data()->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
 
             reuse->glblock.reset();
             const Region& r = block->getRegion();
@@ -62,8 +62,7 @@ pBlock BlockFactory::
         // DataStorage makes sure nothing actually happens here unless
         // cpu_copy has already been allocated (i.e if it is stolen)
         // Each block is about 1 MB so this takes about 0.5-1 ms.
-        write1(block->block_data())->cpu_copy->ClearContents ();
-        block->new_data_available = true;
+        block->block_data()->cpu_copy->ClearContents ();
 
         // For some filters a block could be created with valid content from existing blocks
         //BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
@@ -115,7 +114,7 @@ pBlock BlockFactory::
         EXCEPTION_ASSERT_LESS_OR_EQUAL( r.b.scale, 1 );
         attempt->glblock.reset( new GlBlock( block_layout_, r.time(), r.scale() ));
 
-        write1(attempt->block_data())->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
+        attempt->block_data()->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
 
 /*
         {

@@ -48,8 +48,6 @@ std::list<pBlock> ClearInterval::
 
                 ::blockClearPart( bd->cpu_copy,
                               ceil(t * block->sample_rate ()) );
-
-                block->new_data_available = true;
             }
         }
     }
