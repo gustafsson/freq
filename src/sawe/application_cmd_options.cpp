@@ -13,6 +13,7 @@
 #include "adapters/csv.h"
 #include "adapters/hdf5.h"
 #include "adapters/playback.h"
+#include "signal/oldoperationwrapper.h"
 
 // gpumisc
 #include "redirectstdout.h"
@@ -77,8 +78,6 @@ void Application::
 
     bool sawe_exit = false;
 
-/*
-//Use Signal::Processing namespace
     unsigned get_csv = Sawe::Configuration::get_csv();
     if (get_csv != (unsigned)-1) {
         if (0==number_of_samples) {
@@ -86,9 +85,15 @@ void Application::
             ::exit(4);
         }
 
-        Adapters::Csv csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString());
-        csv.source( source );
-        csv.read( Signal::Interval( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk ));
+        Signal::pOperation o(new Adapters::Csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
+        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
+
+        Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
+        write1(needs)->updateNeeds (I);
+        needs->sleep(-1);
+
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
@@ -100,13 +105,18 @@ void Application::
             ::exit(5);
         }
 
-        Adapters::Hdf5Chunk hdf5(QString("sonicawe-%1.h5").arg(get_hdf).toStdString());
-        hdf5.source( source );
-        hdf5.read( Signal::Interval( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk ));
+        Signal::pOperation o(new Adapters::Hdf5Chunk(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
+        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
+
+        Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );
+        write1(needs)->updateNeeds (I);
+        needs->sleep(-1);
+
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
-*/
 
     if (Sawe::Configuration::get_chunk_count()) {
         TaskInfo("number of samples = %u", number_of_samples);
