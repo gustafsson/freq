@@ -167,7 +167,7 @@ void Task::
         Signal::Interval expected_output(-10,80);
 
         // perform a signal processing task
-        Task t(write1(step), step, children, expected_output);
+        Task t(write1(step).get(), step, children, expected_output);
         t.run (Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
