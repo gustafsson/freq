@@ -1106,7 +1106,7 @@ void RenderView::
                 w->targetSampleRate( x.sample_rate.get ());
                 w->channels( x.number_of_channels.get ());
 
-                Signal::Processing::Step::Ptr s = read1(model->target_marker ())->step().lock();
+                Signal::Processing::Step::Ptr s = model->target_marker ()->step().lock();
                 if (s)
                     write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
             }
@@ -1146,7 +1146,7 @@ void RenderView::
 
 
     // It should update the view in sections with the same size as it's invalidated.
-    Signal::Processing::TargetNeeds::Ptr target_needs = write1(model->target_marker())->target_needs();
+    Signal::Processing::TargetNeeds::Ptr target_needs = model->target_marker()->target_needs();
     Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
     wu.update(model->_qx, x, _last_update_size);
     isWorking = wu.isWorking ();

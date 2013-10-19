@@ -302,7 +302,7 @@ class TooltipModel::FetchDataTransform: public TooltipModel::FetchData
 public:
     FetchDataTransform( RenderModel* m, const Tfr::StftDesc* stft, float t )
     {
-        Signal::Processing::Step::Ptr s = read1(m->project ()->default_target ())->step().lock();
+        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
         Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
@@ -336,7 +336,7 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::CepstrumDesc* cepstrum, float t )
     {
-        Signal::Processing::Step::Ptr s = read1(m->project ()->default_target ())->step().lock();
+        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
         Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
@@ -369,7 +369,7 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::Cwt* cwt, float t )
     {
-        Signal::Processing::Step::Ptr s = read1(m->project ()->default_target ())->step().lock();
+        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
         Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
         float fs = x.sample_rate.get_value_or (1);
 

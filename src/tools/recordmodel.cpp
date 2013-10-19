@@ -118,7 +118,7 @@ void RecordModel::
 
 
         Signal::Processing::TargetMarker::Ptr target_marker = write1(chain)->addTarget(target_desc);
-        Signal::Processing::Step::Ptr step = read1(target_marker)->step().lock();
+        Signal::Processing::Step::Ptr step = target_marker->step().lock();
 
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
@@ -132,13 +132,14 @@ void RecordModel::
 
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals());
 
-        write1(target_marker)->updateNeeds(Signal::Intervals(10,20));
+        Signal::Processing::TargetNeeds::Ptr needs = target_marker->target_needs();
+        write1(needs)->updateNeeds(Signal::Intervals(10,20));
 
         Signal::OperationDesc::Extent x = read1(chain)->extent(target_marker);
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        EXCEPTION_ASSERT( target_marker->sleep(1000) );
+        EXCEPTION_ASSERT( needs->sleep(1000) );
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());

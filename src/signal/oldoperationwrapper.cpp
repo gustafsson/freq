@@ -227,17 +227,18 @@ void OldOperationDescWrapper::
         OperationDesc::Ptr target_op_wrapper(new OldOperationDescWrapper(target_op));
         Chain::Ptr chain = Chain::createDefaultChain ();
         TargetMarker::Ptr target = write1(chain)->addTarget (target_op_wrapper);
+        TargetNeeds::Ptr needs = target->target_needs();
         IInvalidator::Ptr step = write1(chain)->addOperationAt (source_op_wrapper, target);
 
         Signal::OperationDesc::Extent extent = read1(chain)->extent(target);
         EXCEPTION_ASSERT_EQUALS(extent.interval, buffer->getInterval ());
-        write1(target)->updateNeeds(extent.interval.get ());
+        write1(needs)->updateNeeds(extent.interval.get ());
 
         // Should wait for workers to fininsh
-        EXCEPTION_ASSERT(target->sleep(1000));
+        EXCEPTION_ASSERT(needs->sleep(1000));
 
         // Should produce a cache in the target that matches the chain
-        Step::Ptr target_step = read1(target)->step ().lock();
+        Step::Ptr target_step = read1(needs)->step ().lock();
         EXCEPTION_ASSERT(target_step);
         pBuffer r = write1(target_step)->readFixedLengthFromCache(Interval(1,4));
         EXCEPTION_ASSERT(r);
@@ -253,7 +254,7 @@ void OldOperationDescWrapper::
         t[0] = 4;
         write1(step)->deprecateCache (Interval(1,2));
 
-        EXCEPTION_ASSERT(target->sleep(1000));
+        EXCEPTION_ASSERT(needs->sleep(1000));
         r = write1(target_step)->readFixedLengthFromCache(Interval(1,4));
         t[1] = 0;
         EXCEPTION_ASSERT(*r == *buffer);

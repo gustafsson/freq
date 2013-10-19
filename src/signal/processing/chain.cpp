@@ -101,7 +101,7 @@ void Chain::
 {
     EXCEPTION_ASSERT (at);
 
-    Step::Ptr step = read1(at)->step().lock();
+    Step::Ptr step = at->step().lock();
     if (!step)
         return;
 
@@ -164,7 +164,7 @@ Signal::OperationDesc::Extent Chain::
 {
     Signal::OperationDesc::Extent E;
 
-    Step::Ptr step = read1(at)->step().lock();
+    Step::Ptr step = at->step().lock();
     if (!step)
         return E;
 
@@ -201,7 +201,7 @@ Step::WeakPtr Chain::
 {
     GraphVertex vertex = NullVertex ();
     if (at) {
-        Step::Ptr target_step = read1(at)->step().lock();
+        Step::Ptr target_step = at->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
         vertex = dag.getVertex (target_step);
@@ -227,7 +227,7 @@ Step::WeakPtr Chain::
 {
     GraphVertex vertex = NullVertex ();
     if (at) {
-        Step::Ptr target_step = read1(at)->step().lock();
+        Step::Ptr target_step = at->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
         vertex = dag.getVertex (target_step);
@@ -308,7 +308,8 @@ void Chain::
 
         EXCEPTION_ASSERT_EQUALS (read1(chain)->extent(target).interval, Signal::Interval(3,5));
 
-        write1(target)->updateNeeds(Signal::Interval(4,6));
+        TargetNeeds::Ptr needs = target->target_needs();
+        write1(needs)->updateNeeds(Signal::Interval(4,6));
         usleep(4000);
         //target->sleep();
 

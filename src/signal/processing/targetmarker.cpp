@@ -59,15 +59,10 @@ TargetMarker::
 }
 
 
-void TargetMarker::
-        updateNeeds(
-            Signal::Intervals needed_samples,
-            Signal::IntervalType center,
-            Signal::IntervalType preferred_size,
-            Signal::Intervals invalidate,
-            int prio )
+boost::shared_ptr<volatile TargetNeeds> TargetMarker::
+        target_needs() const
 {
-    write1(target_needs_)->updateNeeds(needed_samples, center, preferred_size, invalidate, prio);
+    return target_needs_;
 }
 
 
@@ -75,14 +70,6 @@ Step::WeakPtr TargetMarker::
         step() const
 {
     return read1(target_needs_)->step();
-}
-
-
-bool TargetMarker::
-        sleep(int sleep_ms) volatile
-{
-    TargetNeeds::Ptr target_needs = ReadPtr(this)->target_needs_;
-    return target_needs->sleep(sleep_ms);
 }
 
 } // namespace Processing

@@ -222,7 +222,8 @@ void SettingsDialog::
     if (subtexelAggregationChanged)
     {
         Tools::RenderModel* rendermodel = &project->tools ().render_model;
-        write1(rendermodel->target_marker())->updateNeeds(
+        Signal::Processing::TargetNeeds::Ptr needs = rendermodel->target_marker()->target_needs();
+        write1(needs)->updateNeeds(
                     Signal::Intervals(),
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX,

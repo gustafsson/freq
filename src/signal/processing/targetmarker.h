@@ -7,6 +7,7 @@ namespace Signal {
 namespace Processing {
 
 class Dag;
+class TargetNeeds;
 
 /**
  * @brief The TargetMarker class should mark the position of a target in the
@@ -16,30 +17,19 @@ class Dag;
  *
  * Analogy: "marker" as in label in the sense of a version control branch
  */
-class TargetMarker: public VolatilePtr<TargetMarker>
+class TargetMarker
 {
 public:
-    TargetMarker(TargetNeeds::Ptr target_needs, boost::shared_ptr<volatile Dag> dag);
+    typedef boost::shared_ptr<TargetMarker> Ptr;
+
+    TargetMarker(boost::shared_ptr<volatile TargetNeeds> target_needs, boost::shared_ptr<volatile Dag> dag);
     ~TargetMarker();
 
-    TargetNeeds::Ptr target_needs() { return target_needs_; }
-    TargetNeeds::ConstPtr target_needs() const { return target_needs_; }
-
-    /**
-     * @see TargetNeeds::updateNeeds
-     */
-    void updateNeeds(
-            Signal::Intervals needed_samples,
-            Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
-            Signal::IntervalType preferred=Signal::Interval::IntervalType_MAX,
-            Signal::Intervals invalidate=Signal::Intervals(),
-            int prio=0);
-
+    boost::shared_ptr<volatile TargetNeeds> target_needs() const;
     boost::weak_ptr<volatile Step> step() const;
-    bool sleep(int sleep_ms) volatile;
 
 private:
-    TargetNeeds::Ptr target_needs_;
+    boost::shared_ptr<volatile TargetNeeds> target_needs_;
     boost::shared_ptr<volatile Dag> dag_;
 
 public:
