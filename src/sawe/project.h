@@ -48,8 +48,7 @@ namespace Sawe {
 class SaweDll Project
 {
 public:
-    Project(std::string filename);
-    //Project(Signal::pOperation head_source, std::string filename);
+    Project(std::string project_title);
     ~Project();
 
 

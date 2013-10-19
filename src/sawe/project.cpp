@@ -30,32 +30,12 @@
 using namespace std;
 
 namespace Sawe {
-/*
-//Use Signal::Processing namespace
-Project::
-        Project( Signal::pOperation root, std::string layer_title )
-:   worker(Signal::pTarget()),
-    layers(this),
-    is_modified_(false),
-    is_sawe_project_(false),
-    project_title_(layer_title)
-{
-    // class Project has two constructors. Initialize common stuff in createMainWindow instead of here.
-
-    Signal::pChain chain(new Signal::Chain(root));
-    chain->name = layer_title;
-    layers.addLayer( chain );
-    head.reset( new Signal::ChainHead(chain) );
-}
-*/
 
 Project::
-        Project( std::string layer_title )
-:   //worker(Signal::pTarget()),
-    //layers(this),
-    is_modified_(false),
+        Project( std::string project_title )
+:   is_modified_(false),
     is_sawe_project_(false),
-    project_title_(layer_title)
+    project_title_(project_title)
 {
     // class Project has two constructors. Initialize common stuff in createMainWindow instead of here.
 }
@@ -69,9 +49,6 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-#ifndef SAWE_NO_MUTEX
-    //worker.stopRunning();
-#endif
     this->processing_chain_.reset ();
 
     {
@@ -108,6 +85,8 @@ void Project::
 
     // TODO recompute_extent must be called again if the operation is undone.
     tools().render_model.recompute_extent();
+
+    setModified ();
 }
 
 
@@ -546,6 +525,8 @@ bool Project::
 
     addRecentFile( project_filename_ );
 
+    setModified (false);
+
     return r;
 }
 #endif
@@ -562,6 +543,7 @@ pProject Project::
 
     pProject p( new Project(a->name() ));
     p->appendOperation (d);
+    p->setModified (false);
 
     return p;
 }
@@ -576,6 +558,8 @@ pProject Project::
     pProject p( new Project( a->name() ));
     p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
+    p->setModified (false);
+
     return p;
 }
 #endif

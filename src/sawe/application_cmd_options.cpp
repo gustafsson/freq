@@ -154,14 +154,6 @@ void Application::
         cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
     }
 
-/*
-//Use Signal::Processing namespace
-#ifndef SAWE_NO_MUTEX
-    if (Sawe::Configuration::feature("worker_thread"))
-        p->worker.start();
-#endif
-*/
-
     Tools::ToolFactory &tools = p->tools();
 
     tools.playback_model.selection_filename  = Sawe::Configuration::selection_output_file();
