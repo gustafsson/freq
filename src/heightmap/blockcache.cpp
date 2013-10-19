@@ -87,8 +87,7 @@ const BlockCache::recent_t& BlockCache::
 void BlockCache::
         test()
 {
-    // It should store allocated blocks readily available and register
-    // asynchronous cache misses
+    // It should store allocated blocks readily available
     {
         Reference r1;
         Reference r2 = r1.right ();

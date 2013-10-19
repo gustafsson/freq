@@ -13,7 +13,6 @@ namespace Heightmap {
 
 /**
  * @brief The BlockCache class should store allocated blocks readily available
- * and register asynchronous cache misses.
  */
 class BlockCache: public VolatilePtr<BlockCache>
 {
@@ -28,7 +27,7 @@ public:
      * @param ref the block to search for.
      * @return a block if it is found or pBlock() otherwise.
      *
-     * Is not const because it updates a list of recently accessed blocks and updates cache_misses.
+     * Is not const because it updates a list of recently accessed blocks.
      */
     pBlock      find( const Reference& ref );
 
