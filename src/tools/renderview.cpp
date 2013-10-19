@@ -1149,7 +1149,7 @@ void RenderView::
     Signal::Processing::TargetNeeds::Ptr target_needs = model->target_marker()->target_needs();
     Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
     wu.update(model->_qx, x, _last_update_size);
-    isWorking = wu.isWorking ();
+    isWorking = wu.isWorking () || wu.hasWork ();
     workerCrashed = wu.workerCrashed () || wu.failedAllocation ();
 
     //Use Signal::Processing namespace
