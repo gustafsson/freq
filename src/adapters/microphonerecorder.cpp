@@ -462,12 +462,8 @@ Signal::Interval MicrophoneRecorderDesc::
 Signal::OperationDesc::Ptr MicrophoneRecorderDesc::
         copy() const
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+    EXCEPTION_ASSERTX(false, "Can't make a copy of microphone recording");
     return Signal::OperationDesc::Ptr();
-
-    // Can't make a copy of recorder();
-    //Signal::OperationDesc::Ptr r(new MicrophoneRecorderDesc(new Adapters::MicrophoneRecorder(device), invalidator_));
-    //return r;
 }
 
 

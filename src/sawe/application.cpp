@@ -289,11 +289,8 @@ void Application::
     if (1 == _projects.size())
     {
         pProject q = *_projects.begin();
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-        if (!q->isModified() && q->worker.number_of_samples() == 0)
+        if (!q->isModified () && q->extent ().interval.get ().count() == 0)
             q->mainWindow()->close();
-*/
     }
 
     if ("not"==Reader::reader_text().substr(0,3))
