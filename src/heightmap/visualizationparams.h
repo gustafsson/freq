@@ -13,11 +13,15 @@ namespace Heightmap {
  * @brief The VisualizationParams class should describe all parameters that
  * define how waveform data turns into pixels on a heightmap.
  *
- * All methods are volatile to guarantee that they are thread-safe without
- * risking to wait for a long lock.
+ * All methods are thread-safe without risking to wait for a long lock.
+ * VolatilePtr is private to guarantee that the transient locks created
+ * internally are the only locks on VisualizationParams.
  */
-class VisualizationParams: public VolatilePtr<VisualizationParams> {
+class VisualizationParams: private VolatilePtr<VisualizationParams> {
 public:
+    typedef boost::shared_ptr<volatile VisualizationParams> Ptr;
+    typedef boost::shared_ptr<const volatile VisualizationParams> ConstPtr;
+
     VisualizationParams();
 
     bool operator==(const volatile VisualizationParams& b) const volatile;
@@ -45,6 +49,8 @@ public:
     void amplitude_axis(AmplitudeAxis) volatile;
 
 private:
+    friend class VolatilePtr<VisualizationParams>;
+
     Tfr::TransformDesc::Ptr transform_desc_;
     Tfr::FreqAxis display_scale_;
     AmplitudeAxis amplitude_axis_;

@@ -9,13 +9,21 @@ namespace Processing {
 class Dag;
 
 /**
- * @brief The TargetMarker class should mark the position of a target in the dag and remove it's vertices when the marker is deleted.
+ * @brief The TargetMarker class should mark the position of a target in the
+ * dag. It also functions as an insertion point to add operations to a signal
+ * processing chain. When it is removed all operations that can only be reached
+ * from this target are also removed.
+ *
+ * Analogy: "marker" as in label in the sense of a version control branch
  */
 class TargetMarker: public VolatilePtr<TargetMarker>
 {
 public:
     TargetMarker(TargetNeeds::Ptr target_needs, boost::shared_ptr<volatile Dag> dag);
     ~TargetMarker();
+
+    TargetNeeds::Ptr target_needs() { return target_needs_; }
+    TargetNeeds::ConstPtr target_needs() const { return target_needs_; }
 
     /**
      * @see TargetNeeds::updateNeeds
@@ -29,8 +37,6 @@ public:
 
     boost::weak_ptr<volatile Step> step() const;
     bool sleep(int sleep_ms) volatile;
-    bool isWorking() volatile;
-    bool hasWork() volatile;
 
 private:
     TargetNeeds::Ptr target_needs_;

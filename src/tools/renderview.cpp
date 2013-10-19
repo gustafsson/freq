@@ -22,6 +22,7 @@
 #include "tfr/stft.h"
 #include "toolfactory.h"
 #include "tools/recordmodel.h"
+#include "tools/support/heightmapprocessingpublisher.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -1144,82 +1145,12 @@ void RenderView::
     }
 
 
-    {   // Find things to work on (ie playback and file output)
-		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
-
-        //Signal::Intervals invalid_samples;
-        Signal::Intervals things_to_add;
-        Signal::Intervals needed_samples;
-        Signal::IntervalType center = model->_qx * x.sample_rate.get ();
-        Signal::UnsignedIntervalType update_size = Signal::Interval::IntervalType_MAX;
-
-        foreach( const Heightmap::Collection::Ptr& c, collections ) {
-            Heightmap::Collection::WritePtr wc(c);
-            //invalid_samples |= wc->invalid_samples();
-            things_to_add |= wc->recently_created();
-            needed_samples |= wc->needed_samples(update_size);
-        }
-
-        if (needed_samples & x.interval.get ())
-            needed_samples &= x.interval.get ();
-        else
-            needed_samples = needed_samples.fetchInterval (1, center);
-
-        // It should update the view in sections with the same size as it's invalidated.
-        if (_last_update_size < update_size)
-            update_size = _last_update_size;
-
-        TIME_PAINTGL_DETAILS TaskInfo(boost::format(
-                "RenderView needed_samples = %s, "
-                "things_to_add = %s, center = %d, size = %d")
-                % needed_samples
-                % things_to_add
-                % center
-                % update_size);
-
-        write1(model->target_marker())->updateNeeds(
-                    needed_samples,
-                    center,
-                    update_size,
-                    things_to_add,
-                    0
-                );
-
-        // It should update the view in sections equal in size to the smallest
-        // visible block if the view isn't currently being invalidated.
-        if (_last_update_size < std::numeric_limits<Signal::UnsignedIntervalType>::max() / 5 * 4)
-        {
-            if (_last_update_size == _last_update_size * 5 / 4)
-                _last_update_size++;
-            _last_update_size = _last_update_size * 5 / 4;
-        } else {
-            _last_update_size = std::numeric_limits<Signal::UnsignedIntervalType>::max();
-        }
-
-        bool failed_allocation = false;
-        foreach( const Heightmap::Collection::Ptr& c, collections )
-        {
-            failed_allocation |= write1(c)->failed_allocation ();
-        }
-
-        isWorking = model->target_marker ()->isWorking();
-        workerCrashed = !model->target_marker ()->isWorking() && model->target_marker ()->hasWork();
-        workerCrashed |= failed_allocation;
-
-        TIME_PAINTGL_DETAILS {
-            Signal::Processing::Step::Ptr step = read1(model->target_marker ())->step().lock();
-
-            if (step)
-            {
-                Signal::Processing::Step::ReadPtr stepp(step);
-                TaskInfo(boost::format("RenderView step out_of_date%s\n"
-                                   "not_started = %s")
-                                 % stepp->out_of_date()
-                                 % stepp->not_started());
-            }
-        }
-    }
-
+    // It should update the view in sections with the same size as it's invalidated.
+    Signal::Processing::TargetNeeds::Ptr target_needs = write1(model->target_marker())->target_needs();
+    Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
+    wu.update(model->_qx, x, _last_update_size);
+    isWorking = wu.isWorking ();
+    workerCrashed = wu.workerCrashed () || wu.failedAllocation ();
 
     //Use Signal::Processing namespace
     if (isWorking || isRecording || workerCrashed)

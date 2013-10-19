@@ -85,23 +85,6 @@ bool TargetMarker::
     return target_needs->sleep(sleep_ms);
 }
 
-
-bool TargetMarker::
-        isWorking() volatile
-{
-    TargetNeeds::ReadPtr target_needs(ReadPtr(this)->target_needs_);
-    return target_needs->not_started() != target_needs->out_of_date();
-}
-
-
-bool TargetMarker::
-        hasWork() volatile
-{
-    TargetNeeds::ReadPtr target_needs(ReadPtr(this)->target_needs_);
-    return target_needs->out_of_date();
-}
-
-
 } // namespace Processing
 } // namespace Signal
 
