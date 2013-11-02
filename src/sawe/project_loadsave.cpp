@@ -30,7 +30,7 @@
 #include <boost/algorithm/string.hpp>
 
 // Qt
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <QFileInfo>
 #include <QDir>
 

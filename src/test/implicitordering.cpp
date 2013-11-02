@@ -82,6 +82,10 @@ void tstc(C*c)
 void ImplicitOrdering::
         test()
 {
+#ifndef __GCC__
+    {A a;}
+    lout.seekp (0);
+#endif
     {
         C* c = new C;
         A* a = c;

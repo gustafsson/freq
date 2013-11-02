@@ -2,8 +2,8 @@
 #include "heightmap/collection.h"
 #include "signal/processing/step.h"
 
-#define TIME_PAINTGL_DETAILS
-//#define TIME_PAINTGL_DETAILS if(0)
+//#define TIME_PAINTGL_DETAILS
+#define TIME_PAINTGL_DETAILS if(0)
 
 using namespace Signal;
 using namespace Processing;

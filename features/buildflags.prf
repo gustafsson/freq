@@ -1,7 +1,10 @@
+!c++11 {
+    error("Add \"CONFIG += c++11 buildflags\" instead of \"CONFIG += buildflags\"")
+}
+
 win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 CONFIG += warn_on
-QMAKE_CXXFLAGS += -std=c++11
 
 # Use macports gcc 4.7 if available, necessary to build for openmp on Mac
 system(which /opt/local/bin/g++-mp-4.7 > /dev/null): CONFIG += gcc-mp-4.7
@@ -25,7 +28,7 @@ macx {
     }
     #QMAKE_CXXFLAGS += -Wfatal-errors
     #QMAKE_CFLAGS += -Wfatal-errors
-    DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
+    #DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
 }
 
 win32 {
@@ -88,11 +91,14 @@ profiling {
     !win32:QMAKE_LFLAGS_RELEASE += -pg
 }
 
+# todo remove these compilers and use mkspecs instead
+gcc-mp-4.9 {
+    QMAKE_CXX = /opt/local/bin/g++-mp-4.9
+    QMAKE_CC = /opt/local/bin/gcc-mp-4.9
+    QMAKE_LINK = /opt/local/bin/g++-mp-4.9
+}
 
 gcc-mp-4.8 {
-    # -rdynamic is the preferred way for enabling backtrace, but doesn't work with gcc-mp-4.7
-    #QMAKE_LFLAGS -= -rdynamic
-
     QMAKE_CXX = /opt/local/bin/g++-mp-4.8
     QMAKE_CC = /opt/local/bin/gcc-mp-4.8
     QMAKE_LINK = /opt/local/bin/g++-mp-4.8

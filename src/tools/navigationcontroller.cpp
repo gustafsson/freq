@@ -324,7 +324,7 @@ void NavigationController::
     {
         bool success1, success2;
         Heightmap::Position last = r.getPlanePos( QPointF(rescaleCommand->getLastx(), rescaleCommand->getLasty()), &success1);
-        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        Heightmap::Position current = r.getPlanePos( e->localPos (), &success2);
         if (success1 && success2)
         {
             zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
@@ -338,7 +338,7 @@ void NavigationController::
         //Controlling the position with the left button.
         bool success1, success2;
         Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
-        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        Heightmap::Position current = r.getPlanePos( e->localPos(), &success2);
         if (success1 && success2)
         {
             moveCamera( last.time - current.time, last.scale - current.scale);

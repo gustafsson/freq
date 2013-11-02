@@ -80,10 +80,12 @@ private:
             load( rawdata );
 
         uint64_t X = 0;
+        Signal::pBuffer b = read(getInterval());
         for (unsigned c=0; c<num_channels (); ++c)
         {
-            unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly<1>( buffer_->getChannel (c)->waveform_data() ).ptr();
-            unsigned N = buffer_->getChannel (c)->waveform_data()->numberOfBytes();
+            Signal::pTimeSeriesData m = b->getChannel (c)->waveform_data();
+            unsigned char* p = (unsigned char*)CpuMemoryStorage::ReadOnly<1>( m ).ptr();
+            unsigned N = m->numberOfBytes();
 
             for (unsigned i=0; i<N; ++i)
             {

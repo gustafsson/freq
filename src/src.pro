@@ -31,7 +31,7 @@ testlib {
 
 CONFIG(debug, debug|release): CONFIG += console
 
-CONFIG += buildflags
+CONFIG += c++11 buildflags
 #CONFIG += console # console output
 # QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
 QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
@@ -206,7 +206,7 @@ configuration.dependency_type = TYPE_C
 configuration.variable_out = OBJECTS
 configuration.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
 CONFIGURATION_FLAGS = $$QMAKE_CXXFLAGS
-macx:CONFIGURATION_DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
+#macx:CONFIGURATION_DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
 macx:CONFIGURATION_FLAGS += $$QMAKE_CFLAGS_X86_64
 CONFIG(debug, debug|release): CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_DEBUG
 else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE

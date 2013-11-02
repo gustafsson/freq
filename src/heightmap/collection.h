@@ -5,7 +5,6 @@
 #include "amplitudeaxis.h"
 #include "tfr/freqaxis.h"
 #include "position.h"
-#include "tfrmapping.h"
 #include "blockcache.h"
 
 // Sonic AWE

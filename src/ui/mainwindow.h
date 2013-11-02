@@ -1,8 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtGui/QMainWindow>
-#include <QtGui/QListWidgetItem>
+#include <QMainWindow>
+#include <QListWidgetItem>
 #include "sawe/project.h"
 #include <QTreeWidgetItem>
 #include <QComboBox>

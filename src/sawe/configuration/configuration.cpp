@@ -92,6 +92,11 @@ Configuration::
     computing_platform_ = "CPU";
 #endif
 
+#ifdef _DEBUG
+#ifdef USE_OMP
+    omp_set_num_threads(1);
+#endif
+#endif
 
     uname_ += " ";
     uname_ += computing_platform_;

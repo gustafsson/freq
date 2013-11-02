@@ -13,7 +13,7 @@
 #include "prettifysegfault.h"
 
 // Qt
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <qgl.h>
 #include <QDesktopServices>
 #include <QDir>
@@ -220,16 +220,14 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #include "adapters/writewav.h"
 #include <fstream>
 #include <boost/algorithm/string.hpp>
-#include <omp.h>
 
 using namespace Signal;
 
 
 int main(int argc, char *argv[])
 {
-#ifdef _DEBUG
-    omp_set_num_threads(1);
-#endif
+    // Init configuration
+    Sawe::Configuration::version();
 
     PrettifySegfault::setup ();
 
@@ -270,8 +268,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-
-    QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
+    //QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
     boost::shared_ptr<RedirectStdout> rs;
     std::string logpath;

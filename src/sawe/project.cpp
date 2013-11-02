@@ -19,9 +19,9 @@
 #include "tools/commands/appendoperationdesccommand.h"
 
 // Qt
-#include <QtGui/QFileDialog>
+#include <QFileDialog>
 #include <QVBoxLayout>
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <QSettings>
 
 // Std

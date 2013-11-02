@@ -17,10 +17,10 @@
 
 // qt
 #include <QTime>
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <QGLWidget>
 #include <QSettings>
-#include <QDesktopServices>
+#include <QStandardPaths>
 #include <QMouseEvent>
 #include <QHostInfo>
 
@@ -183,7 +183,7 @@ Application* Application::
 QString Application::
         log_directory()
 {
-    QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+    QString localAppDir = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
     return localAppDir;
 }
 
