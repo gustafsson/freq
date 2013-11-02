@@ -1,4 +1,3 @@
-#if 0
 #include "selectionviewinfo.h"
 #include "ui_selectionviewinfo.h"
 
@@ -267,4 +266,3 @@ Intervals SelectionViewInfoSink::
 }
 
 } // namespace Tools
-#endif

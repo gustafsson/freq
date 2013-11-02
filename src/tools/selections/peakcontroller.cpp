@@ -1,5 +1,3 @@
-#if 0
-Signal::Processing
 #include "peakcontroller.h"
 #include "peakmodel.h"
 
@@ -99,10 +97,13 @@ namespace Tools { namespace Selections
         {
             Heightmap::Collection::Ptr c = r.model->collections()[0];
 
-            Heightmap::Position p = r.getHeightmapPos( e->posF() );
+            Heightmap::Position p = r.getHeightmapPos( e->localPos () );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
-            Heightmap::ReferenceInfo ri(ref, read1(c)->tfr_mapping ());
-            if (ri.containsPoint(p))
+            if([&](){
+                Heightmap::Collection::ReadPtr rc (c);
+                Heightmap::ReferenceInfo ri(ref, rc->block_layout (), rc->visualization_params());
+                return ri.containsPoint(p);
+            }())
             {
                 model()->findAddPeak( c, ref, p );
             }
@@ -139,4 +140,3 @@ namespace Tools { namespace Selections
     }
 
 }} // namespace Tools::Selections
-#endif

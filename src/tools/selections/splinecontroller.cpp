@@ -1,6 +1,3 @@
-#if 0
-Signal::Processing
-
 #include "splinecontroller.h"
 #include "splinemodel.h"
 
@@ -96,7 +93,7 @@ namespace Tools { namespace Selections
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             bool success;
-            Heightmap::Position click = r.getPlanePos( e->posF(), &success);
+            Heightmap::Position click = r.getPlanePos( e->localPos (), &success);
 
             if (success)
             {
@@ -131,7 +128,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            Heightmap::Position click = r.getPlanePos( e->posF(), &success);
+            Heightmap::Position click = r.getPlanePos( e->localPos (), &success);
             if (success)
             {
                 if (!model()->drawing)
@@ -179,4 +176,3 @@ namespace Tools { namespace Selections
     }
 
 }} // namespace Tools::Selections
-#endif

@@ -1,4 +1,3 @@
-#if 0
 #include "rectanglemodel.h"
 #include "filters/rectangle.h"
 #include "filters/bandpass.h"
@@ -51,7 +50,7 @@ Signal::pOperation RectangleModel::
             f1 = freqAxis().getFrequency( a.scale ),
             f2 = freqAxis().getFrequency( b.scale );
 
-    float FS = project_->head->head_source()->sample_rate();
+    float FS = project_->extent ().sample_rate.get ();
     Signal::IntervalType
             a_index = std::max(0.f, a.time)*FS,
             b_index = std::max(0.f, b.time)*FS;
@@ -85,7 +84,7 @@ bool RectangleModel::
     Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(filter.get());
     Tools::Support::OperationOtherSilent* oos = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
     Signal::OperationSetSilent* oss = dynamic_cast<Signal::OperationSetSilent*>(filter.get());
-    float FS = project_->head->head_source()->sample_rate();
+    float FS = project_->extent ().sample_rate.get ();
     if (e)
     {
         type = RectangleType_RectangleSelection;
@@ -139,7 +138,7 @@ bool RectangleModel::
 void RectangleModel::
         validate()
 {
-    float L = project_->head->head_source()->length();
+    float L = project_->length ();
     switch (type)
     {
     case RectangleType_RectangleSelection:
@@ -186,4 +185,3 @@ Tfr::FreqAxis RectangleModel::
 
 
 } } // namespace Tools::Selections
-#endif

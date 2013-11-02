@@ -58,12 +58,11 @@ SOURCES += \
     tfr/*.cpp \
     tools/*.cpp \
     tools/commands/*.cpp \
+    tools/selections/*.cpp \
+    tools/selections/support/*.cpp \
     tools/support/*.cpp \
     tools/widgets/*.cpp \
     ui/*.cpp \
-
-#    tools/selections/*.cpp \
-#    tools/selections/support/*.cpp \
 
 #Windows Icon
 win32:SOURCES += sonicawe.rc \
@@ -83,12 +82,11 @@ HEADERS += \
     tfr/*.h \
     tools/*.h \
     tools/commands/*.h \
+    tools/selections/*.h \
+    tools/selections/support/*.h \
     tools/support/*.h \
     tools/widgets/*.h \
     ui/*.h \
-
-#    tools/selections/*.h \
-#    tools/selections/support/*.h \
 
 PRECOMPILED_HEADER += sawe/project_header.h
 
@@ -110,8 +108,7 @@ FORMS += \
     tools/sendfeedback.ui \
     tools/commands/commandhistory.ui \
     tools/splashscreen.ui \
-
-#    tools/selections/rectangleform.ui \
+    tools/selections/rectangleform.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \

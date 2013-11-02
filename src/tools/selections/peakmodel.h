@@ -4,6 +4,7 @@
 #include "support/splinefilter.h"
 #include "signal/operation.h"
 #include "heightmap/reference.h"
+#include "heightmap/reference_hash.h"
 #include <boost/unordered_map.hpp>
 #include "splinemodel.h"
 
@@ -43,12 +44,12 @@ private:
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
 
     PeakAreas classifictions;
+    Heightmap::Collection* c;
 
     void findBorder();
     std::vector<BorderCoordinates> border_nodes;
     unsigned pixel_count;
 
-    Heightmap::Collection* c;
     float found_max;
     float found_min;
     float middle_limit;

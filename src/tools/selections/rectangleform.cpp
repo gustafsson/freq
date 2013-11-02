@@ -1,4 +1,3 @@
-#if 0
 #include "rectangleform.h"
 #include "ui_rectangleform.h"
 
@@ -95,4 +94,3 @@ void RectangleForm::
 
 } // namespace Selections
 } // namespace Tools
-#endif

@@ -1,4 +1,3 @@
-#if 0
 #ifndef RECTANGLECONTROLLER_H
 #define RECTANGLECONTROLLER_H
 
@@ -59,4 +58,3 @@ private:
 }} // namespace Tools::Selections
 
 #endif // RECTANGLECONTROLLER_H
-#endif

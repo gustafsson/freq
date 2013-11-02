@@ -1,8 +1,7 @@
-#if 0
-#ifndef ELLIPSECONTROLLER_H
-#define ELLIPSECONTROLLER_H
+#ifndef PEAKCONTROLLER_H
+#define PEAKCONTROLLER_H
 
-#include "ellipseview.h"
+#include "peakview.h"
 #include "tools/selectioncontroller.h"
 #include "heightmap/position.h"
 
@@ -11,21 +10,20 @@
 namespace Tools { namespace Selections
 {
 
-class EllipseController: public QWidget
+class PeakController: public QWidget
 {
     Q_OBJECT
 public:
-    EllipseController(
-            EllipseView* view,
+    PeakController(
+            PeakView* view,
             SelectionController* selection_controller);
-    ~EllipseController();
+    ~PeakController();
 
 signals:
     void enabledChanged(bool active);
 
 private slots:
-    void enableEllipseSelection(bool active);
-    void selectionChanged();
+    void enablePeakSelection(bool active);
 
 private:
     // Event handlers
@@ -35,19 +33,15 @@ private:
     virtual void changeEvent ( QEvent * event );
 
     // View
-    EllipseView* view_;
-    EllipseModel* model() { return view_->model_; }
+    PeakView* view_;
+    PeakModel* model() { return view_->model_; }
 
     // GUI
     void setupGui();
     Qt::MouseButton selection_button_;
     Tools::SelectionController* selection_controller_;
-
-    // State
-    Heightmap::Position selectionStart;
 };
 
 }} // namespace Tools::Selections
 
-#endif // ELLIPSECONTROLLER_H
-#endif
+#endif // PEAKCONTROLLER_H

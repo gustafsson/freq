@@ -1,4 +1,3 @@
-#if 0
 #include "changeselectioncommand.h"
 #include "tools/selectioncontroller.h"
 
@@ -43,4 +42,3 @@ std::string ChangeSelectionCommand::
 
 } // namespace Commands
 } // namespace Tools
-#endif

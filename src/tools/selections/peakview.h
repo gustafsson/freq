@@ -1,4 +1,3 @@
-#if 0
 #ifndef PEAKVIEW_H
 #define PEAKVIEW_H
 
@@ -14,7 +13,7 @@ class PeakView: public QObject
 {
     Q_OBJECT
 public:
-    PeakView(PeakModel* model, Signal::Worker* worker);
+    PeakView(PeakModel* model);
     ~PeakView();
 
     void drawSelectionPeak();
@@ -30,10 +29,8 @@ private:
 
     friend class PeakController;
     PeakModel* model_;
-    Signal::Worker* worker_;
 };
 
 }} // namespace Tools::Selections
 
 #endif // PEAKVIEW_H
-#endif

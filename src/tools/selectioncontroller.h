@@ -1,4 +1,3 @@
-#if 0
 #ifndef SELECTIONCONTROLLER_H
 #define SELECTIONCONTROLLER_H
 
@@ -62,7 +61,7 @@ namespace Tools
         // Action slots
         void setThisAsCurrentTool( bool active );
         void onSelectionChanged();
-        void tryHeadAsSelection();
+        //void tryHeadAsSelection();
 
     private slots:
         // Action slots
@@ -126,4 +125,3 @@ namespace Tools
 }
 
 #endif // SELECTIONCONTROLLER_H
-#endif

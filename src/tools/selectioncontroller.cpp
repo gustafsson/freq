@@ -1,4 +1,3 @@
-#if 0
 #include "selectioncontroller.h"
 
 #include <QMouseEvent>
@@ -104,7 +103,7 @@ namespace Tools
         toolBarTool->setVisible( true );
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
-        connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
+        //connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
         connect(selectionComboBox_, SIGNAL(toggled(bool)), SLOT(selectionComboBoxToggled()));
         connect(this, SIGNAL(enabledChanged(bool)), selectionComboBox_, SLOT(setChecked(bool)));
 
@@ -237,10 +236,12 @@ namespace Tools
         setCurrentSelection( _model->current_selection() );
     }
 
-
+#if 0
     void SelectionController::
             tryHeadAsSelection()
     {
+        // SelectionController can't see the head.
+        // The SelectionChangedCommand can take care of this instead.
         Signal::pOperation t = _model->project()->head->head_source();
         if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
             t = t->source();
@@ -260,7 +261,7 @@ namespace Tools
             setThisAsCurrentTool( false );
         }
     }
-
+#endif
 
     void SelectionController::
             addComboBoxAction( QAction* action )
@@ -516,4 +517,3 @@ namespace Tools
     }
 */
 } // namespace Tools
-#endif

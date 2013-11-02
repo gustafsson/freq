@@ -1,5 +1,3 @@
-#if 0
-
 #ifndef SPLINEVIEW_H
 #define SPLINEVIEW_H
 
@@ -14,7 +12,7 @@ class SplineView: public QObject
 {
     Q_OBJECT
 public:
-    SplineView(SplineModel* model, Signal::Worker* worker);
+    SplineView(SplineModel* model);
     ~SplineView();
 
     void drawSelectionSpline();
@@ -28,10 +26,8 @@ public slots:
 private:
     friend class SplineController;
     SplineModel* model_;
-    Signal::Worker* worker_;
 };
 
 }} // namespace Tools::Selections
 
 #endif // SPLINEVIEW_H
-#endif

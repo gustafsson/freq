@@ -1,4 +1,3 @@
-#if 0
 #ifndef RECTANGLEFORM_H
 #define RECTANGLEFORM_H
 
@@ -39,4 +38,3 @@ private:
 } // namespace Selections
 } // namespace Tools
 #endif // RECTANGLEFORM_H
-#endif

@@ -1,4 +1,3 @@
-#if 0
 #ifndef RECTANGLEVIEW_H
 #define RECTANGLEVIEW_H
 
@@ -17,7 +16,7 @@ class RectangleView: public QObject
 {
     Q_OBJECT
 public:
-    RectangleView(RectangleModel* model, Signal::Worker* worker);
+    RectangleView(RectangleModel* model);
     ~RectangleView();
 
     bool enabled;
@@ -34,10 +33,8 @@ private:
     void drawSelectionRectangle2();
 
     RectangleModel* model_;
-    Signal::Worker* worker_;
 };
 
 }} // namespace Tools::Selections
 
 #endif // RECTANGLEVIEW_H
-#endif

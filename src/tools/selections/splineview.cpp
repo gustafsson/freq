@@ -1,6 +1,3 @@
-#if 0
-Signal::Processing
-
 #include "splineview.h"
 #include "splinemodel.h"
 
@@ -12,12 +9,11 @@ namespace Tools { namespace Selections
 {
 
 
-SplineView::SplineView(SplineModel* model, Signal::Worker* worker)
+SplineView::SplineView(SplineModel* model)
     :
     visible(true),
     enabled(false),
-    model_(model),
-    worker_(worker)
+    model_(model)
 {
 }
 
@@ -72,4 +68,3 @@ void SplineView::
 
 
 }} // namespace Tools::Selections
-#endif

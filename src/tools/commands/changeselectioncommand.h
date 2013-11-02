@@ -1,4 +1,3 @@
-#if 0
 #ifndef CHANGESELECTIONCOMMAND_H
 #define CHANGESELECTIONCOMMAND_H
 
@@ -29,4 +28,3 @@ private:
 } // namespace Tools
 
 #endif // CHANGESELECTIONCOMMAND_H
-#endif

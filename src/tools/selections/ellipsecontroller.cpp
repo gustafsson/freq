@@ -1,4 +1,3 @@
-#if 0
 #include "ellipsecontroller.h"
 #include "ellipsemodel.h"
 
@@ -76,7 +75,7 @@ namespace Tools { namespace Selections
         {
             Tools::RenderView &r = *selection_controller_->render_view();
             bool success;
-            selectionStart = r.getPlanePos( e->posF(), &success);
+            selectionStart = r.getPlanePos( e->localPos (), &success);
             if (!success)
             {
                 selectionStart.time = -FLT_MAX;
@@ -108,7 +107,7 @@ namespace Tools { namespace Selections
 
         //    TaskTimer tt("moving");
             bool success;
-            Heightmap::Position p = r.getPlanePos( e->posF(), &success);
+            Heightmap::Position p = r.getPlanePos( e->localPos (), &success);
 
             if (success)
             {
@@ -167,4 +166,3 @@ namespace Tools { namespace Selections
     }
 
 }} // namespace Tools::Selections
-#endif

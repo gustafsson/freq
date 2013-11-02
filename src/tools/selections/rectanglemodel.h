@@ -1,4 +1,3 @@
-#if 0
 #ifndef RECTANGLEMODEL_H
 #define RECTANGLEMODEL_H
 
@@ -45,4 +44,3 @@ namespace Tools { namespace Selections
     };
 } } // namespace Tools::Selections
 #endif // RECTANGLEMODEL_H
-#endif
