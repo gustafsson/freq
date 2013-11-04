@@ -22,7 +22,8 @@ rm -f src/sonicawe
 rm -f src/sonicawe-cuda
 
 typeset -i no_cores
-no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+#no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+no_cores=`sysctl -n hw.ncpu`
 no_cores=2*$no_cores
 if [ $no_cores -eq 8 ]; then
   no_cores=14;
