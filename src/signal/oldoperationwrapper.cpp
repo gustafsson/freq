@@ -16,7 +16,7 @@ void print_buffer(pBuffer b, const char* bname, const char* func, T arg, const c
     TaskInfo ti(format("%s(%s): %s(%s) -> %s = %s") % file % line % func % arg % bname % b->getInterval ());
 
     float *p = b->getChannel (0)->waveform_data()->getCpuMemory ();
-    for (int j=0; j<b->getInterval ().count (); ++j)
+    for (unsigned j=0; j<b->getInterval ().count (); ++j)
         TaskInfo("p[%d] = %g", j, p[j]);
 }
 

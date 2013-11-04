@@ -2,6 +2,7 @@
 #include "TaskTimer.h"
 #include "renderinfo.h"
 #include "heightmap/reference_hash.h"
+#include "unused.h"
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
@@ -15,6 +16,8 @@ RenderHeightmap::
     :
       render_info(render_info)
 {
+    // TODO define usage
+    UNUSED(RenderInfo*r) = this->render_info;
 }
 
 

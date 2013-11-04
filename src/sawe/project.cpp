@@ -140,7 +140,7 @@ Tools::ToolFactory& Project::
 bool Project::
         areToolsInitialized()
 {
-    return _tools;
+    return _tools.get ();
 }
 
 

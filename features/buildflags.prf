@@ -29,6 +29,15 @@ macx {
     #QMAKE_CXXFLAGS += -Wfatal-errors
     #QMAKE_CFLAGS += -Wfatal-errors
     #DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
+
+    # Apply warn_on before disabling spcific warnings
+    warn_on {
+        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
+        CONFIG -= warn_on
+    }
+
+    QMAKE_CXXFLAGS += -Wno-unused-parameter
+    QMAKE_CXXFLAGS += -Wno-tautological-constant-out-of-range-compare
 }
 
 win32 {

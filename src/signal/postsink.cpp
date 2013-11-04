@@ -197,7 +197,7 @@ pOperation PostSink::
 
 
 pOperation PostSink::
-        source()
+        source() const
 {
     return Sink::source();
 }

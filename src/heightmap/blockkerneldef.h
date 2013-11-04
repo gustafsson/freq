@@ -424,7 +424,6 @@ public:
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
 
-        phasediff = (phasediff);
         float f = freqAxis.getFrequency( q1.y );
         f *= (q2.x - q1.x)*2*M_PIf;
         return f*v;

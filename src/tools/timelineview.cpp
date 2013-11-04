@@ -346,6 +346,9 @@ void TimelineView::
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
         {
+        case 0:
+            break;
+
         case 1: // Clamp the timeline, prevent moving to much.
                 // This might be both annoying and confusing
             if (t < _xoffs) _xoffs = t;

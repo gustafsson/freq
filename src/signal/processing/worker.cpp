@@ -112,7 +112,10 @@ public:
         // Causing deliberate segfault to test that the worker handles it correctly
         // The test verifies that it works to instantiate a TaskInfo works
         TaskInfo("testing instantiated TaskInfo");
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnull-dereference"
         *(int*)0 = 0; // cause segfault
+#pragma clang diagnostic pop
 
         // unreachable code
         return Task::Ptr();

@@ -174,7 +174,7 @@ void ReadMatlabSettings::
 
     settings.arguments( h5.tryread<string>("arguments", settings.arguments()) );
     settings.chunksize( h5.tryread<double>("chunk_size", settings.chunksize() ));
-    settings.computeInOrder( h5.tryread<double>("compute_chunks_in_order", settings.computeInOrder()));
+    settings.computeInOrder( 0.0 != h5.tryread<double>("compute_chunks_in_order", settings.computeInOrder()));
     settings.operation = 0;
     settings.overlap( h5.tryread<double>("overlapping", settings.overlap()));
     iconpath_ = h5.tryread<string>("icon", "");

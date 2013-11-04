@@ -3,7 +3,10 @@ macx: system(which /opt/local/bin/g++-mp-4.8 > /dev/null): CONFIG += useomp
 !macx: CONFIG += useomp
 llvm: CONFIG += noomp
 clang: CONFIG += noomp
-noomp: CONFIG -= useomp
+noomp {
+    CONFIG -= useomp
+    QMAKE_CXXFLAGS += -Wno-unknown-pragmas
+}
 
 useomp {
     DEFINES += USE_OMP

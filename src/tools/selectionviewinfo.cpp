@@ -186,7 +186,7 @@ pBuffer SelectionViewInfoSink::
         stft.setWindow(Tfr::StftDesc::WindowType_Hann, 0.5);
         stft.set_approximate_chunk_size( f.count() );
         stft.compute_redundant(false);
-        EXCEPTION_ASSERT(stft.chunk_size() == f.count());
+        EXCEPTION_ASSERT(stft.chunk_size() == (int)f.count());
 
         b = DeprecatedOperation::source()->readFixedLength(f);
 

@@ -42,7 +42,7 @@ public:
 
 
     /// @overload Operation::source()
-    virtual pOperation source();
+    virtual pOperation source() const;
 
 
     /// @overload Operation::source(pOperation)

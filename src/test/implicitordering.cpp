@@ -1,6 +1,7 @@
 #include "implicitordering.h"
 
 #include "exceptionassert.h"
+#include "unused.h"
 
 #include <sstream>
 #include <map>
@@ -111,7 +112,7 @@ void ImplicitOrdering::
     }
     {
         const A& a = hej();
-        ((int)a.data);
+        UNUSED(int b) = a.data;
     }
     string expected =
             "A 2\n"

@@ -70,7 +70,7 @@ Signal::Intervals MatlabFilter::
 }
 
 Signal::Intervals MatlabFilter::
-        affected_samples( ) const
+        affected_samples( )
 {
     // As far as we know, the matlab filter may touch anything
     return Signal::Intervals();

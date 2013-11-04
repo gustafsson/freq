@@ -23,7 +23,7 @@ public:
     virtual pBuffer read( const Interval& I );
     virtual unsigned num_channels();
     virtual void source(pOperation v);
-    virtual pOperation source() { return DeprecatedOperation::source(); }
+    virtual pOperation source() const { return DeprecatedOperation::source(); }
 
     /**
       Validate bindings.
