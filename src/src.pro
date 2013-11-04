@@ -33,8 +33,6 @@ CONFIG(debug, debug|release): CONFIG += console
 
 CONFIG += c++11 buildflags
 #CONFIG += console # console output
-# QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
-QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
 
 
 ####################

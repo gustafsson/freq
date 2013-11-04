@@ -5,6 +5,7 @@
 win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 CONFIG += warn_on
+CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
 
 # Use macports gcc 4.7 if available, necessary to build for openmp on Mac
 system(which /opt/local/bin/g++-mp-4.7 > /dev/null): CONFIG += gcc-mp-4.7
