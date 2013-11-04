@@ -12,8 +12,8 @@ namespace Processing {
 Bedroom::Data::
     Data()
     :
-        sleepers(new Counter::value_type),
-        skip_sleep_marker(new Counter::value_type),
+        sleepers(new Counter::element_type),
+        skip_sleep_marker(new Counter::element_type),
         is_closed(false)
 {
 }
