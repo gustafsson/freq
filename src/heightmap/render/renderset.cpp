@@ -19,9 +19,10 @@ RenderSet::references_t& operator|=(RenderSet::references_t& A, const Heightmap:
 
 
 RenderSet::
-        RenderSet(RenderInfoI* render_info)
+        RenderSet(RenderInfoI* render_info, float L)
     :
-      render_info(render_info)
+      render_info(render_info),
+      L(L)
 {
 }
 
@@ -91,8 +92,9 @@ RenderSet::references_t RenderSet::
         break;
     case RenderInfo::Lod_NeedBetterT:
         R |= computeChildrenRenderSet( ref.left() );
-        //if (render_info->boundsCheck(ref.right (), ReferenceInfo::BoundsCheck_OutT))
-        R |= computeChildrenRenderSet( ref.right() );
+        if ( render_info->region(ref.right ()).a.time < L) {
+            R |= computeChildrenRenderSet( ref.right() );
+        }
         break;
     case RenderInfo::Lod_Ok:
         R |= ref;

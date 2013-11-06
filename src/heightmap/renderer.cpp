@@ -264,13 +264,13 @@ Reference Renderer::
     BlockLayout bl = read1(collection)->block_layout();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params();
     Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
-    Reference r = Render::RenderSet(&ri).computeRefAt (p, entireHeightmap);
+    Reference r = Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
     return r;
 }
 
 
 void Renderer::
-        draw( float scaley )
+        draw( float scaley, float L )
 {
     if (!collection)
         return;
@@ -292,13 +292,13 @@ void Renderer::
 
     if (draw)
     {
-        Render::RenderSet::references_t R = getRenderSet();
+        Render::RenderSet::references_t R = getRenderSet(L);
         createMissingBlocks(R);
         drawBlocks(R);
     }
     else
     {
-        Render::RenderSet::references_t R = getRenderSet();
+        Render::RenderSet::references_t R = getRenderSet(L);
         drawReferences(R);
     }
 
@@ -334,13 +334,13 @@ void Renderer::
 
 
 Render::RenderSet::references_t Renderer::
-        getRenderSet()
+        getRenderSet(float L)
 {
     BlockLayout bl                   = read1(collection)->block_layout ();
     Reference ref                    = read1(collection)->entireHeightmap();
     VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
     Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
-    Render::RenderSet::references_t R = Render::RenderSet(&render_info).computeRenderSet( ref );
+    Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
     return R;
 }

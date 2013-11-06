@@ -39,7 +39,7 @@ public:
       This is different from the 'attribute' Renderer::y_scale which is used to change the
       height of the mountains.
       */
-    void draw( float scaley );
+    void draw( float scaley, float T );
     void drawAxes( float T );
     void drawFrustum();
 
@@ -73,7 +73,7 @@ private:
     unsigned _mesh_fraction_height;
 
     void setupGlStates(float scaley);
-    Render::RenderSet::references_t getRenderSet();
+    Render::RenderSet::references_t getRenderSet(float L);
     void createMissingBlocks(const Render::RenderSet::references_t& R);
     void drawBlocks(const Render::RenderSet::references_t& R);
     void drawReferences(const Render::RenderSet::references_t& R);

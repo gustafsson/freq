@@ -18,7 +18,7 @@ class RenderSet
 public:
     typedef boost::unordered_set<Reference> references_t;
 
-    RenderSet(RenderInfoI* render_info);
+    RenderSet(RenderInfoI* render_info, float L);
 
 
     /**
@@ -41,6 +41,7 @@ public:
 
 private:
     RenderInfoI*    render_info;
+    float           L;
 
     references_t    computeChildrenRenderSet( Reference ref );
 
