@@ -91,8 +91,6 @@ RenderView::
     if (model->_rx<0) model->_rx=0;
     if (model->_rx>=90) { model->_rx=90; model->orthoview.reset(1); } else model->orthoview.reset(0);
 
-    computeChannelColors();
-
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
@@ -604,6 +602,8 @@ void RenderView::
     GlException_CHECK_ERROR();
 
     unsigned N = model->collections().size();
+    if (N != channel_colors.size ())
+        computeChannelColors ();
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
 
@@ -874,7 +874,7 @@ float RenderView::
 void RenderView::
         emitTransformChanged()
 {
-    computeChannelColors();
+    channel_colors.clear ();
     emit transformChanged();
 }
 
