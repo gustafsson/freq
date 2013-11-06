@@ -177,7 +177,7 @@ namespace Tools
         void initializeGL();
 
         /// Similiar to QGLWidget::resizeGL()
-        void resizeGL( int width, int height );
+        void resizeGL( int width, int height, int ratio );
 
         /// Similiar to QGLWidget::paintGL()
         void paintGL();

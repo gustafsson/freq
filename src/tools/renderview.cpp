@@ -224,6 +224,8 @@ void RenderView::
 		{
             unsigned w = painter->device()->width();
             unsigned h = painter->device()->height();
+            w *= painter->device ()->devicePixelRatio();
+            h *= painter->device ()->devicePixelRatio();
             if (w != _last_width || h != _last_height)
                 userinput_update();
             _last_width = w;
@@ -242,7 +244,7 @@ void RenderView::
             emit prePaint();
         }
 
-        resizeGL(_last_width, _last_height );
+        resizeGL(_last_width, _last_height, painter->device ()->devicePixelRatio() );
 
         paintGL();
 
@@ -948,12 +950,16 @@ void RenderView::
 
 
 void RenderView::
-        resizeGL( int width, int height )
+        resizeGL( int width, int height, int ratio )
 {
     TIME_PAINTGL_DETAILS TaskInfo("RenderView width=%d, height=%d", width, height);
     height = height?height:1;
 
     QRect rect = tool_selector->parentTool()->geometry();
+    rect.setWidth (rect.width ()*ratio);
+    rect.setHeight (rect.height ()*ratio);
+    rect.setLeft (rect.left ()*ratio);
+    rect.setTop (rect.top ()*ratio);
 
     // Might happen during the first (few) frame during startup. Before "parentTool()" knows which size it should have.
     if (width > 1 && rect.width () > width) rect.setWidth (width);
