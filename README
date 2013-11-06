@@ -158,6 +158,7 @@ Copy the mkspecs folders to your Qt installation and build with QMAKESPEC='macx-
 
 To build with openmp (which makes Sonic AWE way faster and is required for creating distribution packages) you need to get a later version of g++/clang than Xcode provides. To build with g++ 4.9 or later, install macports, install gcc49 and use QMAKESPEC='macx-sonicawe-g++49'.
 
+sudo port install portaudio libsndfile hdf5-18 boost tbb
 
 Build environment for Windows
 -----------------------------

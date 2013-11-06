@@ -9,7 +9,7 @@ echo "========================== Building ==========================="
 echo "Building ${packagename} ${versiontag}"
 
 echo "qmaketarget: $qmaketarget"
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
+qmake $qmaketarget -spec macx-clang CONFIG+=release
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean

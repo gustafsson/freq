@@ -28,15 +28,15 @@ QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
 
 macx {
 INCLUDEPATH += \
-    $$SAWEROOT/lib/sonicawe-maclib/include
+    /opt/local/include/
 LIBS += -lsndfile \
     -framework GLUT \
     -framework OpenGL \
-    -L$$SAWEROOT/lib/sonicawe-maclib/lib \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
-    -lboost_serialization \
-    -L$$SAWEROOT/lib/gpumisc -lgpumisc
+    -lboost_serialization-mt \
+    -L$$SAWEROOT/lib/gpumisc -lgpumisc \
+    -L/opt/local/lib
 }
 
 win32 {

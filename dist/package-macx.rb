@@ -37,8 +37,9 @@ def custom_lib_path(name, path = nil)
     return "#{$custom_library_path}/#{"#{path}/" if(path)}lib#{name}.dylib"
 end
 
-def gcc47_lib_path(name)
-    return "/opt/local/lib/gcc47/lib#{name}.dylib"
+def gcc_lib_path(name)
+#    return "/opt/local/lib/gcc49/lib#{name}.dylib"
+    return `xcode-select -p` + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib/lib#{name}.dylib"
 end
 
 def run(cmd)
@@ -61,9 +62,8 @@ def package_macos(app_name, version, packagename, zip = false)
                  custom_lib_path("vorbisenc"),
                  custom_lib_path("hdf5"),
                  custom_lib_path("hdf5_hl"),
-                 gcc47_lib_path("gomp.1"),
-                 gcc47_lib_path("gcc_s.1"),
-                 gcc47_lib_path("stdc++.6")];
+                 gcc_lib_path("gcc_s.1"),
+                 gcc_lib_path("stdc++.6")];
 
     directories = ["Contents/Frameworks",
                    "Contents/MacOS",
