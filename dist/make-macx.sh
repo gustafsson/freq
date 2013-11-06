@@ -39,7 +39,7 @@ echo "Building ${packagename} cuda ${versiontag}"
 if ( [ -e /usr/local/cuda/bin/nvcc ] || [ -e /Developer/NVIDIA/CUDA-5.0/bin/nvcc ] ) && [ "Y" == "$buildcuda" ]; then
     qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
     echo "qmaketarget: $qmaketarget"
-    qmake $qmaketarget -spec macx-g++ CONFIG+=release
+    qmake $qmaketarget -spec macx-clang CONFIG+=release
 
     if [ "Y" == "${rebuildall}" ]; then
       make clean

@@ -4,7 +4,10 @@
 
 $framework_path = "/Library/Frameworks"
 $cuda_library_path = "/usr/local/cuda/lib"
-$custom_library_path = "../lib/sonicawe-maclib/lib"
+$custom_library_path = "/opt/../lib/sonicawe-maclib/lib"
+$custom_library_path = "/opt/local/lib"
+$compiler_library_path = "/opt/local/lib/gcc49"
+$compiler_library_path = `xcode-select -p`[0..-2] + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib"
 $command_line_width = 80
 
 # Configuration
@@ -37,9 +40,8 @@ def custom_lib_path(name, path = nil)
     return "#{$custom_library_path}/#{"#{path}/" if(path)}lib#{name}.dylib"
 end
 
-def gcc_lib_path(name)
-#    return "/opt/local/lib/gcc49/lib#{name}.dylib"
-    return `xcode-select -p` + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib/lib#{name}.dylib"
+def compiler_lib_path(name)
+    return "#{$compiler_library_path}/lib#{name}.dylib"
 end
 
 def run(cmd)
@@ -62,8 +64,8 @@ def package_macos(app_name, version, packagename, zip = false)
                  custom_lib_path("vorbisenc"),
                  custom_lib_path("hdf5"),
                  custom_lib_path("hdf5_hl"),
-                 gcc_lib_path("gcc_s.1"),
-                 gcc_lib_path("stdc++.6")];
+                 compiler_lib_path("System.B"),
+                 compiler_lib_path("stdc++.6")];
 
     directories = ["Contents/Frameworks",
                    "Contents/MacOS",
@@ -101,6 +103,9 @@ def package_macos(app_name, version, packagename, zip = false)
         use_bin.push(local_lib)
         run("cp #{library} #{local_lib}")
     end
+
+    # Make libgcc_s a symbol reference to System.B
+    run("ln -s libSystem.B.dylib #{appfolder}/Contents/Frameworks/libgcc_s.1.dylib")
 
     # Copying executables
     puts " Copying executables ".center($command_line_width, "=")
@@ -156,7 +161,8 @@ def package_macos(app_name, version, packagename, zip = false)
         newtargetid = "#{newlibpath}/#{libname}"
 
         # set id #{newtargetid} in binary #{libfile}
-        run("install_name_tool -id #{newtargetid} #{libfile}")
+        system("install_name_tool -id #{newtargetid} #{libfile}")
+        #run("install_name_tool -id #{newtargetid} #{libfile}")
 
         use_bin.each do |path|
             binary_uses_this_lib = !`otool -L #{path} | grep #{targetid}`.empty?
@@ -164,7 +170,8 @@ def package_macos(app_name, version, packagename, zip = false)
 
             puts "  in binary: #{File.basename(path)}"
             # change install name for #{libpath}/#{libname} from #{targetid} to #{newtargetid} in binary #{path}
-            run("install_name_tool -change #{targetid} #{newtargetid} #{path}")
+            system("install_name_tool -change #{targetid} #{newtargetid} #{path}")
+            #run("install_name_tool -change #{targetid} #{newtargetid} #{path}")
         end
     end
 
