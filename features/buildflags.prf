@@ -6,6 +6,7 @@ win32:CONFIG += debug_and_release
 macx:CONFIG -= app_bundle
 CONFIG += warn_on
 CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
+CONFIG += openmp
 
 usecuda {
     DEFINES += SAWE_NO_MUTEX
@@ -34,17 +35,23 @@ macx {
     }
 
     QMAKE_CXXFLAGS += -Wno-unused-parameter
-    equals($$QMAKE_CXX, "clang++") {
+    CCNAME = $$system(basename $$QMAKE_CC)
+    equals(CCNAME, clang) {
         QMAKE_CXXFLAGS += -Wno-tautological-constant-out-of-range-compare
     }
 
     # Use default sysroot for g++-mp-4.9 et. al.
     # reverses flags from mkspecs/features/mac/sdk.prf
-    !equals($$QMAKE_CXX, "clang++") {
+    !equals(CCNAME, clang) {
         QMAKE_CFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
         QMAKE_CXXFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
         QMAKE_OBJECTIVE_CFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
         QMAKE_LFLAGS -= -Wl,-syslibroot,$$QMAKE_MAC_SDK_PATH
+    }
+
+    CONFIG(debug, debug|release) {
+        QMAKE_CXXFLAGS -= -gdwarf-2
+        QMAKE_CXXFLAGS += -gdwarf-4
     }
 }
 
