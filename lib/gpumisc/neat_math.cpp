@@ -301,11 +301,11 @@ void neat_math::
         for (float i=1; i<1000000.f; i*=1.00001f) {j++;}
         double T4 = t.elapsed()/j;
 
-        EXCEPTION_ASSERT_LESS(1.1*T, T3);
+        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.05: 1.1), T3);
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(1.4*T, T4);
 #else
-        EXCEPTION_ASSERT_LESS(1.2*T, T4);
+        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.05: 1.2), T4);
 #endif
         double ghz = 1e-9/T;
         EXCEPTION_ASSERT_LESS(debug_build ? 0.1 : 0.3, ghz);
@@ -352,7 +352,7 @@ void neat_math::
             T3 = t.elapsed ();
         }
         EXCEPTION_ASSERT_LESS( T1, 25e-3 );
-        EXCEPTION_ASSERT_LESS( T2, 20e-3 );
+        EXCEPTION_ASSERT_LESS( T2, debug_build? 60e-3: 20e-3 );
         EXCEPTION_ASSERT_LESS( T3, 10e-3 );
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS( 1.2*T2, T1 );
