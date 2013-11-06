@@ -2,9 +2,7 @@
 # http://doc.qt.nokia.com/4.7-snapshot/deployment-mac.html
 ####
 
-$framework_path = "/Library/Frameworks"
 $cuda_library_path = "/usr/local/cuda/lib"
-$custom_library_path = "/opt/../lib/sonicawe-maclib/lib"
 $custom_library_path = "/opt/local/lib"
 $compiler_library_path = "/opt/local/lib/gcc49"
 $compiler_library_path = `xcode-select -p`[0..-2] + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib"
@@ -24,13 +22,6 @@ $packagename = $build_name + "_" + $version
 $zip = true
 $zip = false if(ARGV.index("--nozip"))
 
-#def qt_lib_path(name, debug = false)
-#    return "#{$framework_path}/#{name}.framework/Versions/Current/#{name}#{"_debug" if(debug)}"
-#end
-
-def qt_install_name(name)
-    return "#{name}.framework/Versions/4/#{name}"
-end
 
 def cuda_lib_path(name)
     return "#{$cuda_library_path}/lib#{name}.dylib"
@@ -78,8 +69,7 @@ def package_macos(app_name, version, packagename, zip = false)
 
     additionals = [[$custom_exec + "-cuda", "sonicawe-cuda"]]
 
-    resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
-                 "package-macos~/aweicon-project.icns",
+    resources = ["package-macos~/aweicon-project.icns",
                  "package-macos~/aweicon.icns"]
 
     use_bin = Array.new()
