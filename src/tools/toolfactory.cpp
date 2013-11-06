@@ -75,7 +75,7 @@ ToolFactory::
 
 
 //Use Signal::Processing namespace
-    _selection_controller = new SelectionController(&selection_model, _render_view );
+    //_selection_controller = new SelectionController(&selection_model, _render_view );
 
 
     //_navigation_controller = new NavigationController(_render_view);
@@ -196,8 +196,8 @@ ToolFactory::
     _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
 
     } catch (const std::exception& x) {
-        TaskInfo("ToolFactory() caught exception: %s", x.what());
-        QMessageBox::critical(0, "Couldn't open Sonic AWE", QString("Crash during initialization: %1").arg(x.what()));
+        TaskInfo(boost::format("ToolFactory() caught exception\n%s") % boost::diagnostic_information(x));
+        QMessageBox::critical(0, "Init error", QString("Init error. See logfile for details"));
     }
 }
 
