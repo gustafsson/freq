@@ -736,7 +736,7 @@ void RenderView::
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     else
         glEnable( GL_DEPTH_TEST );
-    model->renderer->draw( yscale ); // 0.6 ms
+    model->renderer->draw( yscale, this->last_length ()); // 0.6 ms
     glDisable( GL_CULL_FACE );
     glEnable(GL_BLEND);
 }
@@ -848,19 +848,12 @@ void RenderView::
 void RenderView::
         setLastUpdateSize( Signal::UnsignedIntervalType last_update_size )
 {
-    // Trying to reproduce an error that caused last_update_size to be non-positive when using a signed type. The logical type of the value is unsigned.
     if (0 >= last_update_size)
     {
-        TaskInfo(boost::format("Ignoring last_update_size=0.\n%s:%d %s\n%s") % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % Backtrace::make_string());
+        // Ignore. Should mark somewhere that there is a non-fatal error to report.
+        TaskInfo(boost::format("Weird last_update_size=%d.\n%s:%d %s\n%s") % last_update_size % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % Backtrace::make_string());
         return;
     }
-
-    if (Signal::Interval::IntervalType_MAX < last_update_size)
-    {
-        TaskInfo(boost::format("Weird last_update_size=%d.\n%s:%d %s\n%s") % last_update_size % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % Backtrace::make_string());
-    }
-
-    EXCEPTION_ASSERT_LESS(0, last_update_size);
 
     _last_update_size = last_update_size;
 }
