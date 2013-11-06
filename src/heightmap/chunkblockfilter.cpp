@@ -25,7 +25,11 @@ ChunkBlockFilter::
 bool ChunkBlockFilter::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
-    TfrMapping::pCollection collection = read1(tfrmap_)->collections()[pchunk.channel];
+    Heightmap::TfrMapping::Collections C = read1(tfrmap_)->collections();
+    EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
+    EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
+
+    TfrMapping::pCollection collection = C[pchunk.channel];
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
