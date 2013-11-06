@@ -80,7 +80,7 @@ RenderController::
                 rvup = new Support::RenderViewUpdateAdapter);
 
     connect(rvup, SIGNAL(userinput_update()), view, SLOT(userinput_update()));
-    connect(rvup, SIGNAL(setLastUpdateSize(IntervalType)), view, SLOT(setLastUpdateSize(IntervalType)));
+    connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), view, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
 
     model()->init(model()->project ()->processing_chain (), rvu);
 

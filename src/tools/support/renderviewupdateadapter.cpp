@@ -44,7 +44,7 @@ void RenderViewUpdateAdapterMock::
 
 
 void RenderViewUpdateAdapterMock::
-        setLastUpdateSize( Signal::IntervalType )
+        setLastUpdateSize( Signal::UnsignedIntervalType )
 {
     setLastUpdateSize_count++;
 }
@@ -60,7 +60,7 @@ void RenderViewUpdateAdapter::
         RenderTarget::Ptr rt(a = new RenderViewUpdateAdapter);
         RenderViewUpdateAdapterMock mock;
 
-        connect(a, SIGNAL(setLastUpdateSize(Signal::IntervalType)), &mock, SLOT(setLastUpdateSize(Signal::IntervalType)));
+        connect(a, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), &mock, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
         connect(a, SIGNAL(userinput_update()), &mock, SLOT(userinput_update()));
 
         EXCEPTION_ASSERT_EQUALS(mock.userinput_update_count, 0);

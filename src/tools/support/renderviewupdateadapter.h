@@ -29,7 +29,7 @@ public:
 
 signals:
     void userinput_update();
-    void setLastUpdateSize( Signal::IntervalType length );
+    void setLastUpdateSize( Signal::UnsignedIntervalType length );
 
 public:
     static void test();
@@ -44,7 +44,7 @@ public:
 
 public slots:
     void userinput_update();
-    void setLastUpdateSize( Signal::IntervalType );
+    void setLastUpdateSize( Signal::UnsignedIntervalType );
 };
 
 } // namespace Support
