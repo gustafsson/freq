@@ -49,5 +49,11 @@
 	
 	<key>CFBundleIconFile</key>
 	<string>aweicon.icns</string>
+
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>
