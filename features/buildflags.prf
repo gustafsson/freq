@@ -7,10 +7,6 @@ macx:CONFIG -= app_bundle
 CONFIG += warn_on
 CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
 
-# Use macports gcc 4.7 if available, necessary to build for openmp on Mac
-system(which /opt/local/bin/g++-mp-4.7 > /dev/null): CONFIG += gcc-mp-4.7
-CONFIG += openmp
-
 usecuda {
     DEFINES += SAWE_NO_MUTEX
     DEFINES += THREADCHECKER_NO_CHECK
@@ -112,53 +108,5 @@ profiling {
     !win32:QMAKE_LFLAGS_RELEASE += -pg
 }
 
-# todo remove these compilers and use mkspecs instead
-gcc-mp-4.9 {
-    QMAKE_CXX = /opt/local/bin/g++-mp-4.9
-    QMAKE_CC = /opt/local/bin/gcc-mp-4.9
-    QMAKE_LINK = /opt/local/bin/g++-mp-4.9
-}
-
-gcc-mp-4.8 {
-    QMAKE_CXX = /opt/local/bin/g++-mp-4.8
-    QMAKE_CC = /opt/local/bin/gcc-mp-4.8
-    QMAKE_LINK = /opt/local/bin/g++-mp-4.8
-}
-
-gcc-mp-4.7 {
-    # -rdynamic is the preferred way for enabling backtrace, but doesn't work with gcc-mp-4.7
-    QMAKE_LFLAGS -= -rdynamic
-
-    QMAKE_CXX = /opt/local/bin/g++-mp-4.7
-    QMAKE_CC = /opt/local/bin/gcc-mp-4.7
-    QMAKE_LINK = /opt/local/bin/g++-mp-4.7
-}
-
-### Settings for using llvm instead of gcc on linux
-llvm {
-    QMAKE_CXX = llvm-g++
-    QMAKE_CC = llvm-gcc
-    QMAKE_LINK = llvm-g++
-}
-
-clang {
-    QMAKE_CXX = clang++
-    QMAKE_CC = clang
-    QMAKE_LINK = clang++
-}
-
-gcc-4.3 {
-    QMAKE_CXX = g++-4.3
-    QMAKE_CC = gcc-4.3
-    QMAKE_LINK = g++-4.3
-}
-
-
-#gold-linker {
-#    QMAKE_LINK = gold
-#    QMAKE_LINK = ld
-# TODO add system libraries which are included by g++-4.3, but not by 'gold' (nor 'ld'), could use output from compiling with "g++-4.3 -v"
-#    QMAKE_LFLAGS += -L/usr/lib -L/usr/X11R6/lib -shared-libgcc -mtune=generic /usr/lib/gcc/x86_64-linux-gnu/4.3.4/collect2 --build-id --eh-frame-hdr -m elf_x86_64 --hash-style=both -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o sonicawe -z relro /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crt1.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib/crti.o /usr/lib/gcc/x86_64-linux-gnu/4.3.4/crtbegin.o -L/usr/local/cuda/lib64 -L/usr/lib -L/usr/X11R6/lib -L../lib/gpumisc -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4 -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../../../lib -L/lib/../lib -L/usr/lib/../lib -L/usr/lib/gcc/x86_64-linux-gnu/4.3.4/../../.. -L/usr/lib/x86_64-linux-gnu
-#}
 #system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")
 DEFINES += $$system("basename '$$QMAKE_CC' | sed s/[-+.]//g | awk '{print \"QMAKE_CC_\" $1}'")
