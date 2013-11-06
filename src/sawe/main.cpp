@@ -276,27 +276,29 @@ int main(int argc, char *argv[])
     try {
         Sawe::Application a(argc, argv, true);
 
-        QString localAppDir = Sawe::Application::log_directory();
-        if (QDir(localAppDir).exists()==false)
-            QDir().mkpath(localAppDir);
+        if (Sawe::Configuration::feature("logfile")) {
+            QString localAppDir = Sawe::Application::log_directory();
+            if (QDir(localAppDir).exists()==false)
+                QDir().mkpath(localAppDir);
 
-        std::string logdir = (localAppDir + QDir::separator()).toLatin1().data();
-        logpath = logdir + "sonicawe.log";
-    #ifndef _MSC_VER
-        //The following line hinders the redirection from working in windows
-        cout << "Saving log file at \"" << logpath << "\"" << endl;
-    #endif
+            std::string logdir = (localAppDir + QDir::separator()).toLatin1().data();
+            logpath = logdir + "sonicawe.log";
+        #ifndef _MSC_VER
+            //The following line hinders the redirection from working in windows
+            cout << "Saving log file at \"" << logpath << "\"" << endl;
+        #endif
 
-        // Save previous log files
-        remove((logdir+"sonicawe~5.log").c_str());
-        rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
-        rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
-        rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
-        rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
-        rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
+            // Save previous log files
+            remove((logdir+"sonicawe~5.log").c_str());
+            rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
+            rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
+            rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
+            rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
+            rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
 
-        // Write all stdout and stderr to sonicawe.log instead
-        rs.reset(new RedirectStdout(logpath.c_str()));
+            // Write all stdout and stderr to sonicawe.log instead
+            rs.reset(new RedirectStdout(logpath.c_str()));
+        }
 
         TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 

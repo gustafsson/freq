@@ -23,6 +23,7 @@
 #elif defined(USE_CUDA)
 #include "CudaProperties.h"
 #endif
+#include "detectgdb.h"
 
 
 #define STRINGIFY(x) #x
@@ -487,12 +488,13 @@ int Configuration::
                 features_.erase( featureitr );
             else
             {
-                commandline_message_ << "Unknown features: " << skipfeature_ << endl;
+                commandline_message_ << "Unknown feature: " << skipfeature_ << endl << "Valid values: ";
                 bool first = true;
                 foreach(string f, features_)
                 {
                     if (!first)
-                        commandline_message_ << ", " << f;
+                        commandline_message_ << ", ";
+                    commandline_message_ << f;
                     first = false;
                 }
                 commandline_message_ << endl;
@@ -699,6 +701,8 @@ void Configuration::
     features_.push_back("worker_thread");
     features_.push_back("overlay_navigation");
     features_.push_back("compute_device_info_in_menu");
+    if (!DetectGdb::is_running_through_gdb() && !DetectGdb::was_started_through_gdb ())
+        features_.push_back("logfile");
 }
 
 
