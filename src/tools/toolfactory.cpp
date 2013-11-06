@@ -177,7 +177,8 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->commandInvoker() )));
 
-    _objects.push_back( QPointer<QObject>( new SplashScreen() ));
+    if (Sawe::Configuration::feature("splash_screen"))
+        _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
     if (Sawe::Configuration::feature("overlay_navigation"))
         _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view ) ));
