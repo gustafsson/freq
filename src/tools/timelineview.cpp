@@ -108,7 +108,8 @@ void TimelineView::
 
     EXCEPTION_ASSERT( tool_selector );
     QRect rect = tool_selector->parentTool()->geometry();
-    resizeGL( 0, 0, rect.width(), rect.height() );
+    int r = tool_selector->parentTool ()->devicePixelRatio ();
+    resizeGL( 0, 0, r*rect.width(), r*rect.height() );
     paintEventTime = boost::posix_time::microsec_clock::local_time();
     paintGL();
 }
