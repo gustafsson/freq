@@ -465,10 +465,9 @@ Signal::OperationDesc::Extent Project::
 {
     Signal::OperationDesc::Extent x;
 
-    if (!areToolsInitialized())
-        return x;
+    if (areToolsInitialized())
+        x = read1(processing_chain_)->extent(this->default_target ());
 
-    x = read1(processing_chain_)->extent(this->default_target ());
     if (!x.interval.is_initialized ())
         x.interval = Signal::Interval();
     if (!x.number_of_channels.is_initialized ())

@@ -130,21 +130,20 @@ namespace Tools
     void SelectionController::
             toolfactory()
     {
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
         setLayout(new QHBoxLayout());
         layout()->setMargin(0);
+        /*
 
 #ifndef TARGET_hast
         ellipse_model_.reset( new Selections::EllipseModel(      render_view()->model));
         ellipse_view_.reset( new Selections::EllipseView(        ellipse_model_.data() ));
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 #endif
-
+*/
         rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, render_view()->model->project() ));
-        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
+        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data() ));
         rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
-
+/*
 #ifndef TARGET_hast
         spline_model_.reset( new Selections::SplineModel(      render_view()->model));
         spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
@@ -154,9 +153,8 @@ namespace Tools
         peak_view_.reset( new Selections::PeakView(         peak_model_.data(), &render_view()->model->project()->worker ));
         peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
 #endif
-
-        connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
 */
+        connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
     }
 
 
@@ -330,23 +328,18 @@ namespace Tools
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-        TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
-*/
+        TaskInfo("Clear selection\n%s", o->toStringSkipSource ().c_str());
     }
 
 
     void SelectionController::
             receiveCropSelection()
     {
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
         if (!_model->current_selection())
             return;
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
-        o->source( _worker->source() );
+        //o->source( _worker->source() );
 
         Signal::Intervals I = o->affected_samples().spannedInterval();
         I -= o->zeroed_samples();
@@ -367,8 +360,7 @@ namespace Tools
         _model->project()->appendOperation( remove );
         _model->set_current_selection( o );
 
-        TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
-*/
+        TaskInfo("Crop selection\n%s", o->toStringSkipSource ().c_str ());
     }
 
 

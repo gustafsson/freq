@@ -23,6 +23,8 @@ class RenderViewUpdateAdapter: public QObject, public Support::RenderOperationDe
 {
     Q_OBJECT
 public:
+    RenderViewUpdateAdapter();
+
     // overloaded from Support::RenderOperationDesc::RenderTarget
     void refreshSamples(const Signal::Intervals& I);
     void processedData(const Signal::Interval& input, const Signal::Interval& output);

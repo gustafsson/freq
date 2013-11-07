@@ -11,6 +11,14 @@ using namespace Signal;
 namespace Tools {
 namespace Support {
 
+
+RenderViewUpdateAdapter::
+        RenderViewUpdateAdapter()
+{
+    qRegisterMetaType<Signal::UnsignedIntervalType>("Signal::UnsignedIntervalType");
+}
+
+
 // overloaded from Support::RenderOperationDesc::RenderTarget
 void RenderViewUpdateAdapter::
         refreshSamples(const Intervals& I)

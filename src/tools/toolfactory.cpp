@@ -75,7 +75,7 @@ ToolFactory::
 
 
 //Use Signal::Processing namespace
-    //_selection_controller = new SelectionController(&selection_model, _render_view );
+    _selection_controller = new SelectionController(&selection_model, _render_view );
 
 
     //_navigation_controller = new NavigationController(_render_view);
