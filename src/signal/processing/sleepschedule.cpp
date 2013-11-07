@@ -39,16 +39,18 @@ Task::Ptr SleepSchedule::
 
     Bedroom::Bed bed = bedroom->getBed();
     for (;;) try {
-        DEBUGINFO TaskInfo(boost::format("starts searching for a task"));
+        {
+            DEBUGINFO TaskTimer tt(boost::format("Searching for a task"));
 
-        Task::Ptr task = schedule->getTask();
+            Task::Ptr task = schedule->getTask();
 
-        if (task)
-            return task;
+            if (task)
+                return task;
 
-        DEBUGINFO TaskInfo(boost::format("didn't find a task. Going to bed"));
+            DEBUGINFO TaskInfo(boost::format("Didn't find a task. Going to bed"));
+        }
         bed.sleep();
-        DEBUGINFO TaskInfo(boost::format("woke up"));
+        DEBUGINFO TaskInfo(boost::format("Woke up"));
     } catch (const Signal::Processing::BedroomClosed&) {
         return Task::Ptr();
     } catch (const std::exception&) {
