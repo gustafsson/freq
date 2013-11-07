@@ -40,6 +40,19 @@ void TargetNeeds::
         )
 {
     EXCEPTION_ASSERT_LESS( 0, preferred_update_size_ );
+    Signal::Intervals not_started;
+    if (Step::Ptr pstep = step_.lock ()) {
+        Step::WritePtr step(pstep);
+        if (invalidate)
+            step->deprecateCache(invalidate);
+
+        not_started = step->not_started ();
+    }
+
+    // got news if something new is needed
+    bool got_news = needed_samples - needed_samples_;
+    // or if something new is invalidated that is also needed
+    got_news |= (invalidate - not_started) & needed_samples;
 
     needed_samples_ = needed_samples;
 
@@ -50,13 +63,11 @@ void TargetNeeds::
 
     preferred_update_size_ = preferred_update_size;
 
-    Step::Ptr step = step_.lock ();
-    if (step && invalidate)
-        write1(step)->deprecateCache(invalidate);
-
-    Bedroom::Ptr bedroom = bedroom_.lock ();
-    if (bedroom)
-        bedroom->wakeup();
+    if (got_news) {
+        Bedroom::Ptr bedroom = bedroom_.lock ();
+        if (bedroom)
+            bedroom->wakeup();
+    }
 }
 
 
@@ -169,22 +180,52 @@ namespace Processing {
 void TargetNeeds::
         test()
 {
-    Bedroom::Ptr bedroom(new Bedroom);
-    Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+    // It should describe what needs to be computed for a target.
+    {
+        Bedroom::Ptr bedroom(new Bedroom);
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
 
-    TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
+        TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
 
-    Signal::Intervals initial_valid(0,60);
-    write1(step)->registerTask(0, initial_valid.spannedInterval ());
+        Signal::Intervals initial_valid(0,60);
+        write1(step)->registerTask(0, initial_valid.spannedInterval ());
 
-    EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
-    EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
-    EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval() );
-    write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
-    EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
-    EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
-    EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval(-15,5) );
-    EXCEPTION_ASSERT_EQUALS( read1(target_needs)->not_started(), Signal::Interval(-15,0) );
+        EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
+        EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval() );
+        write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
+        EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
+        EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval(-15,5) );
+        EXCEPTION_ASSERT_EQUALS( read1(target_needs)->not_started(), Signal::Interval(-15,0) );
+    }
+
+    // It should not wakeup the bedroom if nothing has changed
+    {
+        // Note; this is more helpful to do a less noisy debugging than to increase any performance
+        Bedroom::Ptr bedroom(new Bedroom);
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+
+        TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since the bedroom was woken up
+        }
+
+        {
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
+
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+        }
+    }
 }
 
 } // namespace Processing
