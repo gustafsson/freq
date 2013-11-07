@@ -95,6 +95,7 @@ void PlaybackView::
         update();
     }
 
+    is_stopped |= model->playback()->hasReachedEnd ();
     // Playback has recently stopped
     if (is_stopped) {
         emit playback_stopped();

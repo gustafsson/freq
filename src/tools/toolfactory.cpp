@@ -80,12 +80,12 @@ ToolFactory::
 
     //_navigation_controller = new NavigationController(_render_view);
 
-/*
+
 //Use Signal::Processing namespace
     playback_model.selection = &selection_model;
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
-*/
+
 
 #ifndef TARGET_hast
     // No brushes for Sjostridsskolan, the Swedish Naval Academy

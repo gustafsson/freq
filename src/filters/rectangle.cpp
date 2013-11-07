@@ -55,7 +55,7 @@ std::string Rectangle::
 
 
 bool Rectangle::operator()( Chunk& chunk) {
-    TIME_FILTER TaskTimer tt("Rectangle");
+    TIME_FILTER TaskTimer tt(boost::format("Rectangle %s") % chunk.getCoveredInterval ());
 
     Area area = {
             (float)(_t1 * chunk.sample_rate - chunk.chunk_offset.asFloat()),

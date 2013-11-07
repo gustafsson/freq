@@ -116,6 +116,14 @@ void PlaybackController::
 }
 
 
+class NoZeros: public Signal::DeprecatedOperation
+{
+public:
+    NoZeros() : Signal::DeprecatedOperation(Signal::pOperation()) {}
+    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+};
+
+
 void PlaybackController::
         receivePlayEntireSound( bool active )
 {
@@ -125,21 +133,50 @@ void PlaybackController::
         return;
     }
 
-    TaskTimer tt("Initiating playback of entire sound");
+    TaskTimer tt("Initiating playback");
 
     ui_items_->actionPlaySelection->setChecked( false );
     ui_items_->actionPlaySection->setChecked( false );
     ui_items_->actionPausePlayBack->setChecked( false );
     ui_items_->actionPlayEntireSound->setChecked( true );
 
-    // startPlayback will insert it in the system so that the source is properly set
-    // here we just need to create a filter that does the right thing to an arbitrary source
-    // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
-    // and responds with no samples to zeroed_samples().
-    Signal::pOperation filter( new Signal::DeprecatedOperation(Signal::pOperation()) );
+    // startPlayback will insert it in the system so that the source is properly set    
+    Signal::pOperation filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
+    if (!filter) {
+        // here we just need to create a filter that does the right thing to an arbitrary source
+        // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
+        // and responds with no samples to zeroed_samples().
+        filter = Signal::pOperation( new NoZeros() );
+    }
 
     startPlayback( filter );
 }
+
+
+class ExtentOp : public Signal::DeprecatedOperation
+{
+public:
+    ExtentOp(Signal::OperationDesc::Extent x)
+        :
+          Signal::DeprecatedOperation(Signal::pOperation()),
+          x(x)
+    {}
+
+    virtual Signal::IntervalType number_of_samples() {
+        return x.interval.get_value_or (Signal::Interval()).last;
+    }
+
+    virtual unsigned num_channels() {
+        return x.number_of_channels.get_value_or (1);
+    }
+
+    virtual float sample_rate() {
+        return x.sample_rate.get_value_or (1);
+    }
+
+private:
+    Signal::OperationDesc::Extent x;
+};
 
 
 void PlaybackController::
@@ -154,12 +191,11 @@ void PlaybackController::
     _view->just_started = true;
     ui_items_->actionPausePlayBack->setEnabled( true );
 
-    TaskInfo("Selection is of type %s", vartype(*filter.get()).c_str());
+    TaskInfo("Selection is of type %s", filter->toStringSkipSource ().c_str());
 
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
-    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
+//    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
+//    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
+    if ( true )
     {
         int playback_device = QSettings().value("outputdevice", -1).toInt();
 
@@ -167,21 +203,37 @@ void PlaybackController::
         model()->adapter_playback.reset( new Adapters::Playback( playback_device ));
 
         Signal::OperationDesc::Ptr desc(new Signal::OldOperationDescWrapper(model()->adapter_playback) );
-        model()->target_marker = write1(project->processing_chain ())->addTarget(desc, project->default_target ());
+        model()->target_marker = write1(project_->processing_chain ())->addTarget(desc, project_->default_target ());
 
-        std::vector<Signal::pOperation> sinks;
-        postsink_operations->sinks( sinks ); // empty
-        sinks.push_back( model()->adapter_playback );
+//        std::vector<Signal::pOperation> sinks;
+//        postsink_operations->sinks( sinks ); // empty
+//        sinks.push_back( model()->adapter_playback );
         //sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
 
-        postsink_operations->filter( Signal::pOperation() );
-        postsink_operations->sinks( sinks );
-        postsink_operations->filter( filter );
+//        postsink_operations->filter( Signal::pOperation() );
+//        postsink_operations->sinks( sinks );
+//        postsink_operations->filter( filter );
 
         //Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
-        Signal::Intervals expected_data = ~filter->zeroed_samples();
-        //model()->playback ()->setExpectedSamples (expected_data.fetchFirstInterval ());
-        write1(model()->target_marker)->updateNeeds( expected_data, 1 );
+        Signal::OperationDesc::Extent x = write1(project_->processing_chain ())->extent(model()->target_marker);
+        Signal::pOperation extent_op(new ExtentOp(x));
+        filter->source (extent_op);
+        Signal::Intervals expected_data = ~filter->zeroed_samples() & x.interval.get_value_or (Signal::Interval());
+        TaskInfo(boost::format("expected_data = %s") % expected_data);
+        TaskInfo(boost::format("filter->zeroed_samples() = %s") % filter->zeroed_samples());
+        Signal::OperationDesc::Ptr filterdesc(new Signal::OldOperationDescWrapper(filter) );
+        write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
+
+        model()->playback ()->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
+        write1(model()->target_marker->target_needs ())->updateNeeds(
+                    expected_data,
+                    Signal::Interval::IntervalType_MIN,
+                    Signal::Interval::IntervalType_MAX,
+                    Signal::Intervals(),
+                    1 );
+
+        if (!expected_data)
+            receiveStop();
     }
     else
     {
@@ -189,7 +241,6 @@ void PlaybackController::
     }
 
     _view->update();
-*/
 }
 
 
@@ -222,18 +273,16 @@ void PlaybackController::
 void PlaybackController::
         onSelectionChanged()
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
     if (ui_items_->actionPlaySelection->isChecked())
         receiveStop();
 
     ui_items_->actionPlaySelection->setEnabled( 0 != _view->model->selection->current_selection() );
 
-    std::vector<Signal::pOperation> empty;
-    model()->playbackTarget->post_sink()->sinks( empty );
-    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
+//    std::vector<Signal::pOperation> empty;
+//    model()->playbackTarget->post_sink()->sinks( empty );
+//    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
+    model()->target_marker.reset();
     model()->adapter_playback.reset();
-*/
 }
 
 
@@ -263,8 +312,13 @@ void PlaybackController::
 void PlaybackController::
         receiveStop()
 {
+    TaskInfo("PlaybackController::receiveStop()");
+
     if (model()->playback())
         model()->playback()->stop();
+
+    model()->target_marker.reset();
+    model()->adapter_playback.reset();
 
     _view->just_started = false;
     ui_items_->actionPlaySelection->setChecked( false );
