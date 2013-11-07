@@ -37,7 +37,7 @@ pBuffer SourceBase::
     if ((i & r->getInterval()) != i)
     {
         TaskTimer tt("%s::readChecked( %s ) got %s", vartype(*this).c_str(), I.toString().c_str(), r->getInterval ().toString ().c_str ());
-        EXCEPTION_ASSERT( (i & r->getInterval()) == i );
+        EXCEPTION_ASSERT_EQUALS( i & r->getInterval(), i );
     }
 
     return r;
