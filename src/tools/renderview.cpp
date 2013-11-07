@@ -432,7 +432,8 @@ QPointF RenderView::
         *dist = d%projectionNormal;
     }
 
-    return QPointF( winX, _last_height-1 - winY );
+    int r = glwidget->devicePixelRatio ();
+    return QPointF( winX, _last_height-1 - winY ) /= r;
 }
 
 
@@ -452,6 +453,7 @@ Heightmap::Position RenderView::
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderView::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
+    widget_pos *= glwidget->devicePixelRatio ();
 
     QPointF pos;
     pos.setX( widget_pos.x() + _last_x );
@@ -525,6 +527,8 @@ Heightmap::Position RenderView::
 Heightmap::Position RenderView::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
+    pos *= glwidget->devicePixelRatio ();
+
     pos.setX( pos.x() + _last_x );
     pos.setY( _last_height - 1 - pos.y() + _last_y );
 
