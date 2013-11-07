@@ -86,7 +86,10 @@ bool is_running_through_gdb_terminus()
 bool DetectGdb::
         is_running_through_gdb()
 {
-    return is_running_through_gdb_terminus();
+    bool is_attached_by_system_debugger = is_running_through_gdb_terminus();
+    bool is_attached_in_qt_creator = is_running_through_gdb_xorl();
+
+    return is_attached_by_system_debugger || is_attached_in_qt_creator;
 }
 
 
