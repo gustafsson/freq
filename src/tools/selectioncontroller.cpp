@@ -340,25 +340,24 @@ namespace Tools
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
         //o->source( _worker->source() );
-
-        Signal::Intervals I = o->affected_samples().spannedInterval();
-        I -= o->zeroed_samples();
-
-        if (0==I.count())
-            return;
-
-        // Create OperationRemoveSection to remove everything else from the stream
-        Signal::pOperation remove(new Tools::Support::OperationCrop(
-                o, I.spannedInterval() ));
-
         if (0 == dynamic_cast<Tools::Support::OperationOtherSilent*>(o.get()))
         {
             _model->set_current_selection( Signal::pOperation() );
             _model->project()->appendOperation( o );
         }
-        _model->set_current_selection( Signal::pOperation() );
-        _model->project()->appendOperation( remove );
-        _model->set_current_selection( o );
+
+        Signal::Intervals I = o->affected_samples().spannedInterval();
+        I -= o->zeroed_samples();
+
+        if (false) if (I) {
+            // Create OperationRemoveSection to remove everything else from the stream
+            Signal::pOperation remove(new Tools::Support::OperationCrop(
+                    o, I.spannedInterval() ));
+
+            _model->set_current_selection( Signal::pOperation() );
+            _model->project()->appendOperation( remove );
+            _model->set_current_selection( o );
+        }
 
         TaskInfo("Crop selection\n%s", o->toStringSkipSource ().c_str ());
     }
