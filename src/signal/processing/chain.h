@@ -50,7 +50,7 @@ public:
     void removeOperationsAt(TargetMarker::Ptr at);
     Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
 
-    void rethrow_worker_exception() const;
+    Workers::Ptr workers() const;
 
     // Add jumping around with targets later.
 

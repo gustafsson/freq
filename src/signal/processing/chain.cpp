@@ -178,10 +178,10 @@ Signal::OperationDesc::Extent Chain::
 }
 
 
-void Chain::
-        rethrow_worker_exception() const
+Workers::Ptr Chain::
+        workers() const
 {
-    write1(workers_)->rethrow_worker_exception();
+    return workers_;
 }
 
 
@@ -321,7 +321,7 @@ void Chain::
         write1(invalidator)->deprecateCache(Signal::Interval(9,11));
 
         usleep(4000);
-        read1(chain)->rethrow_worker_exception();
+        write1(read1(chain)->workers())->rethrow_worker_exception();
 
         chain.reset ();
         EXCEPTION_ASSERT_LESS(t.elapsed (), 0.02);

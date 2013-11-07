@@ -66,13 +66,13 @@ void Worker::
                     throw;
                 }
             }
+
+            deleteLater ();
         }
     catch (const std::exception&)
         {
         exception_ = boost::current_exception ();
         }
-
-    deleteLater ();
     }
 
 

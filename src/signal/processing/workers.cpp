@@ -75,7 +75,16 @@ const Workers::Engines& Workers::
 size_t Workers::
         n_workers() const
 {
-    return workers_.size();
+    size_t N = 0;
+
+    for(EngineWorkerMap::const_iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
+        QPointer<Worker> worker = i->second;
+
+        if (worker)
+            N++;
+    }
+
+    return N;
 }
 
 
@@ -134,13 +143,14 @@ Workers::DeadEngines Workers::
 void Workers::
         rethrow_worker_exception()
 {
-    for(EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
+    for(EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end();) {
         QPointer<Worker> worker = i->second;
 
         if (worker && worker->caught_exception ()) {
-            workers_map_.erase (i);
+            i = workers_map_.erase (i);
             rethrow_exception(worker->caught_exception ());
-        }
+        } else
+            ++i;
     }
 }
 

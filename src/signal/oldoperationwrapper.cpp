@@ -259,7 +259,7 @@ void OldOperationDescWrapper::
         t[1] = 0;
         EXCEPTION_ASSERT(*r == *buffer);
 
-        read1(chain)->rethrow_worker_exception();
+        write1(read1(chain)->workers())->rethrow_worker_exception();
     }
 }
 
