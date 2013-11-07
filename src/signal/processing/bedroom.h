@@ -50,8 +50,17 @@ public:
         Bed(const Bed&);
         ~Bed();
 
+        /**
+         * @brief sleep sleeps indefinitely until a wakeup call. See below.
+         */
         void sleep();
-        void sleep(unsigned long ms_timeout);
+
+        /**
+         * @brief sleep blocks the calling thread until Bedroom::wakeup() is called on the bedroom that created this instance.
+         * @param ms_timeout time to wait for a wakeup call
+         * @return true if woken up, false if the timeout elapsed before the wakeup call
+         */
+        bool sleep(unsigned long ms_timeout);
 
     private:
         friend class Bedroom;

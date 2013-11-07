@@ -2,6 +2,7 @@
 
 #include "exceptionassert.h"
 #include "expectexception.h"
+#include "timer.h"
 
 #include <boost/foreach.hpp>
 
@@ -49,7 +50,7 @@ void Bedroom::Bed::
 }
 
 
-void Bedroom::Bed::
+bool Bedroom::Bed::
         sleep(unsigned long ms_timeout)
 {
     Data::WritePtr data(data_);
@@ -58,16 +59,18 @@ void Bedroom::Bed::
         BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
     }
 
+    bool r = true;
+
     if (!skip_sleep_) {
         // Increment usage count
         Counter b = data->sleepers;
 
-        data->work.wait (data_->readWriteLock(), ms_timeout);
+        r = data->work.wait (data_->readWriteLock(), ms_timeout);
     }
 
     skip_sleep_.reset();
 
-    return;
+    return r;
 }
 
 
@@ -190,6 +193,17 @@ void Bedroom::
         Bedroom b;
         b.close ();
         EXPECT_EXCEPTION(BedroomClosed, b.getBed().sleep ());
+    }
+
+    // It should just sleep until the given timeout has elapsed
+    {
+        Bedroom b;
+        Timer t;
+        bool woken_up_by_wakeup_call = b.getBed ().sleep (2);
+
+        EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3);
+        EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ());
+        EXCEPTION_ASSERT(!woken_up_by_wakeup_call); // timeout
     }
 }
 
