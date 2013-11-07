@@ -629,6 +629,8 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
         break;
     case Heightmap::AmplitudeAxis_Real:
         break;
+    default:
+        break;
     }
 }
 
@@ -742,6 +744,8 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                 enable_subtexel_aggregation);
         break;
     case Heightmap::AmplitudeAxis_Real:
+        break;
+    default:
         break;
     }
 }

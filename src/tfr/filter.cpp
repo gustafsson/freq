@@ -201,7 +201,7 @@ Signal::pBuffer TransformKernel::
 
     pBuffer r;
     for (unsigned c=0; c<b->number_of_channels (); ++c)
-    {
+      {
         ChunkAndInverse ci;
         ci.channel = c;
         ci.t = t;
@@ -209,14 +209,22 @@ Signal::pBuffer TransformKernel::
 
         ci.chunk = (*t)( ci.inverse );
 
-        if ((*chunk_filter_)( ci ))
+        bool compute_inverse = (*chunk_filter_)( ci );
+        if (compute_inverse)
+          {
             ci.inverse = t->inverse (ci.chunk);
 
-        if (!r)
-            r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
+            if (!r)
+                r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
 
-        *r->getChannel (c) |= *ci.inverse;
-    }
+            *r->getChannel (c) |= *ci.inverse;
+          }
+        else
+          {
+            r.reset ( new Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
+          }
+
+      }
 
     return r;
 }

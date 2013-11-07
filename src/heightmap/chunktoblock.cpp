@@ -20,21 +20,9 @@ void ChunkToBlock::mergeColumnMajorChunk(
     Region r = block.getRegion();
     VisualizationParams::ConstPtr vp = block.visualization_params ();
 
-    Position chunk_a, chunk_b;
     Signal::Interval inInterval = chunk.getCoveredInterval();
-    Signal::Interval blockInterval = block.getInterval();
 
-    // don't validate more texels than we have actual support for
-    Signal::Interval spannedBlockSamples(0,0);
-    ReferenceInfo ri(block.referenceInfo ());
-    Signal::Interval usableInInterval = ri.spannedElementsInterval(inInterval, spannedBlockSamples);
-
-    Signal::Interval transfer = usableInInterval&blockInterval;
-
-    // spannedElementsInterval looks more closely at what in chunk that can be used
-    if (!transfer || !spannedBlockSamples)
-        return;
-
+    Position chunk_a, chunk_b;
     chunk_a.time = inInterval.first/chunk.original_sample_rate;
     chunk_b.time = inInterval.last/chunk.original_sample_rate;
 
@@ -43,11 +31,13 @@ void ChunkToBlock::mergeColumnMajorChunk(
     chunk_a.scale = 0;
     chunk_b.scale = 1;
 
+    ValidInterval valid_out_interval(0, outData.cpu_copy->size ().width);
+
     ::resampleStft( chunk.transform_data,
                     chunk.nScales(),
                     chunk.nSamples(),
                   outData.cpu_copy,
-                  ValidInterval(spannedBlockSamples.first, spannedBlockSamples.last),
+                  valid_out_interval,
                   ResampleArea( chunk_a.time, chunk_a.scale,
                                chunk_b.time, chunk_b.scale ),
                   ResampleArea( r.a.time, r.a.scale,
@@ -65,22 +55,10 @@ void ChunkToBlock::mergeRowMajorChunk(
         const Tfr::Chunk& chunk,
         BlockData& outData )
 {
+    Region r = block.getRegion();
     VisualizationParams::ConstPtr vp = block.visualization_params ();
 
-    // Find out what intervals that match
-    Signal::Interval outInterval = block.getInterval();
     Signal::Interval inInterval = chunk.getCoveredInterval();
-
-    // don't validate more texels than we have actual support for
-    //Signal::Interval usableInInterval = block->ref.spannedElementsInterval(inInterval);
-    Signal::Interval usableInInterval = inInterval;
-    Signal::Interval transfer = usableInInterval & outInterval;
-
-    // If block is already up to date, abort merge
-    if (!transfer)
-        return;
-
-    Region r = block.getRegion();
 
     float merge_first_scale = r.a.scale;
     float merge_last_scale = r.b.scale;

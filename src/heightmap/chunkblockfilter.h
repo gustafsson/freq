@@ -50,6 +50,11 @@ public:
 /**
  * @brief The ChunkBlockFilterDesc class should instantiate ChunkBlockFilters
  * for different engines.
+ *
+ * OperationDesc::requiredInterval should take
+ * ReferenceInfo::spannedElementsInterval into account
+ * and correspondigly ChunkToBlock should only update those texels that have
+ * full support.
  */
 class ChunkBlockFilterDesc: public Tfr::FilterKernelDesc
 {
