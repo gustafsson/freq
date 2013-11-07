@@ -35,32 +35,24 @@ Task::Ptr TargetSchedule::
     // Lock the graph from writing during getTask
     Dag::ReadPtr dag(self->g);
 
-    TargetNeeds::Ptr priotarget = self->prioritizedTarget();
-    if (!priotarget)
+    boost::shared_ptr<TargetNeeds::ReadPtr> target = self->prioritizedTarget();
+    if (!target) {
+        DEBUGINFO TaskInfo("!target");
         return Task::Ptr();
-
-    Step::Ptr step;
-    Signal::Intervals needed;
-    Signal::IntervalType work_center;
-    Signal::IntervalType preferred_update_size;
-
-    // Read info from target
-    {
-        TargetNeeds::ReadPtr target(priotarget);
-        step = target->step().lock ();
-        needed = target->not_started();
-        work_center = target->work_center();
-        preferred_update_size = target->preferred_update_size();
     }
 
-    if (!needed || !step)
-        return Task::Ptr();
+    Step::Ptr step                              = target->get ()->step().lock ();
+    Signal::Intervals needed                    = target->get ()->not_started();
+    Signal::IntervalType work_center            = target->get ()->work_center();
+    Signal::IntervalType preferred_update_size  = target->get ()->preferred_update_size();
 
-    GraphVertex vertex = dag->getVertex(step);
-    if (!vertex)
-        return Task::Ptr();
+    target.reset (); // release lock on TargetNeeds
 
     DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % needed % work_center);
+
+    EXCEPTION_ASSERT(step);
+    GraphVertex vertex = dag->getVertex(step);
+    EXCEPTION_ASSERT(vertex);
 
     Task::Ptr task = read1(self->algorithm)->getTask(
             dag->g(),
@@ -76,19 +68,22 @@ Task::Ptr TargetSchedule::
 }
 
 
-TargetNeeds::Ptr TargetSchedule::
+boost::shared_ptr<TargetNeeds::ReadPtr> TargetSchedule::
         prioritizedTarget() const
 {
-    TargetNeeds::Ptr target;
+    boost::shared_ptr<TargetNeeds::ReadPtr> target;
 
     ptime latest(neg_infin);
     BOOST_FOREACH(const TargetNeeds::Ptr& t, read1(targets)->getTargets())
     {
-        ptime last_request = read1(t)->last_request();
+        boost::shared_ptr<TargetNeeds::ReadPtr> rt(new TargetNeeds::ReadPtr(t));
 
-        if (latest < last_request) {
+        Signal::Intervals needed = rt->get ()->not_started();
+        ptime last_request       = rt->get ()->last_request();
+
+        if (latest < last_request && needed) {
             latest = last_request;
-            target = t;
+            target = rt;
         }
     }
 
@@ -102,13 +97,13 @@ public:
     virtual Task::Ptr getTask(
             const Graph&,
             GraphVertex,
-            Signal::Intervals,
+            Signal::Intervals needed,
             Signal::IntervalType,
             Signal::IntervalType,
             Workers::Ptr,
             Signal::ComputingEngine::Ptr) const
     {
-        return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(5,6)));
+        return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), needed.spannedInterval ()));
     }
 };
 
@@ -140,12 +135,34 @@ void TargetSchedule::
         EXCEPTION_ASSERT(read1(targetneeds)->not_started());
         Task::Ptr task = targetschedule.getTask ();
         EXCEPTION_ASSERT(task);
-        EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(5,6));
+        EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(3,4));
     }
 
     // It should provide tasks to keep a Dag up-to-date with respect to all targets
     {
         Targets::Ptr targets(new Targets(Bedroom::Ptr(new Bedroom)));
+    }
+
+    // It should work on less prioritized tasks if the high prio tasks are done
+    {
+        Dag::Ptr dag(new Dag);
+        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Step::Ptr step2(new Step(Signal::OperationDesc::Ptr()));
+        write1(dag)->appendStep(step);
+        write1(dag)->appendStep(step2); // same dag object, but not connected
+        IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
+        Bedroom::Ptr bedroom(new Bedroom);
+        Targets::Ptr targets(new Targets(bedroom));
+
+        TargetNeeds::Ptr targetneeds ( write1(targets)->addTarget(step) );
+        TargetNeeds::Ptr targetneeds2 ( write1(targets)->addTarget(step2) );
+        write1(targetneeds)->updateNeeds(Signal::Interval(),0,10,Signal::Interval(),1);
+        write1(targetneeds2)->updateNeeds(Signal::Interval(5,6),0,10,Signal::Interval(),0);
+
+        TargetSchedule targetschedule(dag, algorithm, targets);
+        Task::Ptr task = targetschedule.getTask ();
+        EXCEPTION_ASSERT(task);
+        EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(5,6));
     }
 }
 

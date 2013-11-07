@@ -24,7 +24,7 @@ private:
     Dag::Ptr g;
     IScheduleAlgorithm::Ptr algorithm;
 
-    TargetNeeds::Ptr prioritizedTarget() const;
+    boost::shared_ptr<TargetNeeds::ReadPtr> prioritizedTarget() const;
 
 public:
     static void test();
