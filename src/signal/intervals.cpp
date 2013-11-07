@@ -584,17 +584,21 @@ std::string Interval::
 
     ss << "[";
 
-    if (first != IntervalType_MIN)
-        ss << first;
-    else
+    if (first == IntervalType_MIN)
         ss << "-";
+    else if (first == IntervalType_MAX)
+        ss << "+";
+    else
+        ss << first;
 
     ss << ", ";
 
-    if (last != IntervalType_MAX)
-        ss << last;
-    else
+    if (last == IntervalType_MIN)
+        ss << "-";
+    else if (last == IntervalType_MAX)
         ss << "+";
+    else
+        ss << last;
 
     ss << ")";
 
@@ -654,6 +658,8 @@ void Intervals::
 
     // It should have neat string representations
     {
+        IntervalType n = Interval::IntervalType_MIN;
+        IntervalType p = Interval::IntervalType_MAX;
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(0,100)), "[0, 100)" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(1,100)), "[1, 100)99#" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(-100,0)), "[-100, 0)" );
@@ -661,7 +667,13 @@ void Intervals::
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(0,100)), "[0, 100)" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(-100,0)), "[-100, 0)" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(-100,-1)), "[-100, -1)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,0)), "[-, 0)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(0,p)), "[0, +)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(n,n)), "[-, -)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,n)), "{}" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Intervals(-100,-1) | Intervals(1,100))), "{[-100, -1)99#, [1, 100)99#}" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,n+1)), "[-, -9223372036854775807)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Interval(n,n+1) & Interval(n, 9223372036854773759) )), "[-, -9223372036854775807)" );
     }
 
 }
