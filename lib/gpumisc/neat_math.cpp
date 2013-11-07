@@ -286,7 +286,7 @@ void neat_math::
         T2 += ju*1e-20;
 
         EXCEPTION_ASSERT_LESS(T, T2*1.2);
-        EXCEPTION_ASSERT_LESS(T2, T*1.22);
+        EXCEPTION_ASSERT_LESS(T2, debug_build? T*2: T*1.22);
 
         // time for float
         t.restart ();
@@ -301,7 +301,7 @@ void neat_math::
         for (float i=1; i<1000000.f; i*=1.00001f) {j++;}
         double T4 = t.elapsed()/j;
 
-        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.05: 1.1), T3);
+        EXCEPTION_ASSERT_LESS(debug_build? 0: T*1.1, T3);
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(1.4*T, T4);
 #else
@@ -357,7 +357,7 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS( 1.2*T2, T1 );
 #else
-        EXCEPTION_ASSERT_LESS( 1.2*T1, T2 );
+        EXCEPTION_ASSERT_LESS( debug_build? 0: T1*1.2, T2 );
 #endif
         EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
     }
