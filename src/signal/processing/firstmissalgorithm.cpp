@@ -81,8 +81,10 @@ public:
             // samples for this to be a valid read. Otherwise the signal is
             // undefined.
             Signal ::OperationDesc::Extent x = read1(o)->extent ();
-            if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
+            if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ()) {
+                DEBUGINFO TaskInfo("Undefined signal. No sources and no extent");
                 total_missing = Signal::Interval::Interval_ALL; // A non-empty interval
+            }
         }
 
         // If nothing is missing and this engine supports this operation
