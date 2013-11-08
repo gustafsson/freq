@@ -129,6 +129,7 @@ void RecordController::
     Adapters::Recorder* r = model()->recording;
     if (r)
     {
+        ui->actionRecord->setVisible (true);
         if (r->canRecord())
             ui->actionRecord->setEnabled( true );
         else

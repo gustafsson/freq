@@ -150,6 +150,7 @@ void SaweMainWindow::
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
 
+    ui->actionRecord->setVisible (false);
 
     {
         QSettings settings;
