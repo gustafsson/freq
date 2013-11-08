@@ -283,10 +283,10 @@ Signal::Interval FilterDesc::
 }
 
 
-Tfr::pTransformDesc FilterDesc::
-        transformDesc() const
+QString FilterDesc::
+        toString() const
 {
-    return transform_desc_;
+    return (vartype(*chunk_filter_) + " on " + transform_desc_->toString ()).c_str();
 }
 
 
@@ -301,6 +301,13 @@ bool FilterDesc::
        // return *f->transformDesc () == *transform_desc_;
     }
     return false;
+}
+
+
+Tfr::pTransformDesc FilterDesc::
+        transformDesc() const
+{
+    return transform_desc_;
 }
 
 } // namespace Tfr

@@ -65,6 +65,7 @@ private:
 
     QWaitCondition              wait_for_tasks_;
 
+    std::string                 operation_name();
     Signal::Intervals           currently_processing() const; // from running_tasks
     void                        gc();
 

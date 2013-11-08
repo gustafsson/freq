@@ -21,6 +21,13 @@ Step::Step(Signal::OperationDesc::Ptr operation_desc)
 }
 
 
+std::string Step::
+        operation_name ()
+{
+    return (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)");
+}
+
+
 Signal::Intervals Step::
         currently_processing() const
 {
@@ -99,7 +106,7 @@ void Step::
         registerTask(Task* taskid, Signal::Interval expected_output)
 {
     TASKINFO TaskInfo ti(format("Step %1%. Starting %2%")
-              % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
+              % operation_name()
               % expected_output);
     running_tasks[taskid] = expected_output;
     not_started_ -= expected_output;
@@ -114,7 +121,7 @@ void Step::
         result_interval = result->getInterval ();
 
     TASKINFO TaskInfo ti(format("Step %1%. Finish %2%")
-              % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
+              % operation_name()
               % result_interval);
 
     if (result) {
@@ -138,16 +145,32 @@ void Step::
     not_started_ |= update_miss;
 
     if (!expected_output) {
-        TaskInfo(format("The task was not recognized. %1%") % result_interval);
+        TaskInfo(format("The task was not recognized. %1% on %2%")
+                 % result_interval
+                 % operation_name());
     } else if (!result_interval) {
-        TaskInfo(format("The task was cancelled. Restoring %1%") % update_miss);
+        TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
+                 % update_miss
+                 % operation_name());
     } else {
         if (update_miss) {
-            TaskInfo(format("These samples were supposed to be updated by the task but missed: %1%") % update_miss);
+            TaskInfo(format("These samples were supposed to be updated by the task but missed: %1% by %2%")
+                     % update_miss
+                     % operation_name());
         }
         if (result_interval - expected_output) {
-            // These samples were not supposed to be updated by the task but were updated anyway
-            TaskInfo(format("Unexpected extras: %1% = (%2%) - (%3%)") % (result_interval - expected_output) % result_interval % expected_output );
+            // These samples were not supposed to be updated by the task but were calculated anyway
+            TaskInfo(format("Unexpected extras: %1% = (%2%) - (%3%) from %4%")
+                     % (result_interval - expected_output)
+                     % result_interval
+                     % expected_output
+                     % operation_name());
+
+            // The samples are still marked as invalid. Would need to remove the
+            // extra calculated samples from not_started_ but that would fail
+            // in a situation where deprecatedCache is called after the task has
+            // been created. So not_started_ can't be modified here (unless calls
+            // to deprecatedCache were tracked).
         }
     }
 

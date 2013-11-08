@@ -197,10 +197,11 @@ public:
     virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
     virtual Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
     virtual Signal::Interval affectedInterval(const Signal::Interval&) const;
+    virtual QString toString() const;
+    virtual bool operator==(const Signal::OperationDesc&d) const;
 
     Tfr::pTransformDesc transformDesc() const;
     void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
-    virtual bool operator==(const Signal::OperationDesc&d) const;
 protected:
     Tfr::pTransformDesc transform_desc_;
     FilterKernelDesc::Ptr chunk_filter_;
