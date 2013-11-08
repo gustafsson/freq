@@ -1115,6 +1115,8 @@ void RenderView::
 
             Heightmap::TfrMapping::WritePtr w(model->tfr_mapping ());
             w->length( length );
+            w->channels( x.number_of_channels.get () );
+            w->targetSampleRate( x.sample_rate.get () );
 
             if (w->channels() != x.number_of_channels ||
                 w->targetSampleRate() != x.sample_rate)

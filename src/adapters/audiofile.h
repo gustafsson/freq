@@ -442,6 +442,7 @@ public:
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
     virtual OperationDesc::Ptr copy() const;
+    virtual Extent extent() const;
     virtual QString toString() const;
     virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;

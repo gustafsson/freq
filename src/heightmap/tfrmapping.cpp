@@ -178,6 +178,7 @@ void TfrMapping::
     for (int c=0; c<v; ++c)
     {
         collections_[c].reset( new Heightmap::Collection(block_layout_, visualization_params_));
+        write1(collections_[c])->length( length_ );
     }
 }
 

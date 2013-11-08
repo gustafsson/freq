@@ -482,6 +482,17 @@ Signal::OperationDesc::Ptr AudiofileDesc::
 }
 
 
+Signal::OperationDesc::Extent AudiofileDesc::
+        extent() const
+{
+    Extent x;
+    x.interval = audiofile_->getInterval ();
+    x.number_of_channels = audiofile_->num_channels ();
+    x.sample_rate = audiofile_->sample_rate ();
+    return x;
+}
+
+
 QString AudiofileDesc::
         toString() const
 {

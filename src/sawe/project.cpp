@@ -541,6 +541,7 @@ pProject Project::
     Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
 
     pProject p( new Project(a->name() ));
+    p->createMainWindow ();
     p->appendOperation (d);
     p->setModified (false);
 
@@ -555,6 +556,7 @@ pProject Project::
     Adapters::CsvTimeseries*a;
     Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     pProject p( new Project( a->name() ));
+    p->createMainWindow ();
     p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
     p->setModified (false);
