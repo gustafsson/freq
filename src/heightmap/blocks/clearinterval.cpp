@@ -21,8 +21,8 @@ std::list<pBlock> ClearInterval::
 
     std::list<pBlock> discarded;
 
-    BlockCache::cache_t C = read1(cache_)->cache();
-    BOOST_FOREACH(BlockCache::cache_t::value_type itr, cache->cache ())
+    BlockCache::cache_t C = cache->cache();
+    BOOST_FOREACH(BlockCache::cache_t::value_type itr, C)
     {
         pBlock block(itr.second);
         Signal::Interval blockInterval = block->getInterval();
