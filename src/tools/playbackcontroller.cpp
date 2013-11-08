@@ -258,6 +258,8 @@ void PlaybackController::
     }
 
     model()->playback()->pausePlayback( active );
+
+    _view->update();
 }
 
 
