@@ -74,20 +74,25 @@ pBlock GarbageCollector::
             {
                 pBlock back = cache->recent ().back();
 
-                size_t blockMemory = back->glblock->allocated_bytes_per_element()*block->block_layout ().texels_per_block ();
-                allocatedMemory -= std::min(allocatedMemory,blockMemory);
-                _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
+                EXCEPTION_ASSERT_LESS_OR_EQUAL(3, back.use_count ());
 
-                TaskInfo(format("Removing block %s last used %u frames ago. Freeing %s, total free %s, cache %s, %u blocks")
-                             % back->reference ()
-                             % (_frame_counter - back->frame_number_last_used)
-                             % DataStorageVoid::getMemorySizeText( blockMemory )
-                             % DataStorageVoid::getMemorySizeText( _free_memory )
-                             % DataStorageVoid::getMemorySizeText( allocatedMemory )
-                             % cache->cache ().size()
-                             );
+                if (back.use_count () == 3) // recent, cache and back
+                {
+                    size_t blockMemory = back->glblock->allocated_bytes_per_element()*block->block_layout ().texels_per_block ();
+                    allocatedMemory -= std::min(allocatedMemory,blockMemory);
+                    _free_memory = _free_memory > blockMemory ? _free_memory + blockMemory : 0;
 
-                cache->erase (back->reference ());
+                    TaskInfo(format("Removing block %s last used %u frames ago. Freeing %s, total free %s, cache %s, %u blocks")
+                                 % back->reference ()
+                                 % (_frame_counter - back->frame_number_last_used)
+                                 % DataStorageVoid::getMemorySizeText( blockMemory )
+                                 % DataStorageVoid::getMemorySizeText( _free_memory )
+                                 % DataStorageVoid::getMemorySizeText( allocatedMemory )
+                                 % cache->cache ().size()
+                                 );
+
+                    cache->erase (back->reference ());
+                }
             }
         }
     }
@@ -103,12 +108,15 @@ void GarbageCollector::
     const BlockCache::cache_t C = cache->cache (); // copy
     TaskTimer tt("Collection doing garbage collection", C.size());
     BlockCacheInfo::printCacheSize(C);
-    TaskInfo("Of which %u are recently used", cache->recent().size());
 
     for (BlockCache::cache_t::const_iterator itr = C.begin(); itr!=C.end(); itr++ )
     {
-        if (_frame_counter != itr->second->frame_number_last_used )
-            cache->erase( itr->first );
+        EXCEPTION_ASSERT_LESS_OR_EQUAL(4, itr->second.use_count ());
+        if (itr->second.use_count () == 4) // recent, cache, C and itr->second
+        {
+            if (_frame_counter != itr->second->frame_number_last_used )
+                cache->erase( itr->first );
+        }
     }
 }
 
