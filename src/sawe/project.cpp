@@ -124,7 +124,7 @@ Tools::ToolRepo& Project::
         toolRepo()
 {
     if (!areToolsInitialized())
-        throw std::logic_error("tools() was called before createMainWindow()");
+        EXCEPTION_ASSERTX(false, "tools() was called before createMainWindow()");
 
     return *_tools;
 }
@@ -249,8 +249,7 @@ pProject Project::
         catch (const exception& x) {
             if (!err.empty())
                 err += '\n';
-            err += "Error: " + vartype(x);
-            err += "\nDetails: " + (std::string)x.what();
+            err += boost::diagnostic_information(x);
         }
     }
 
@@ -259,13 +258,20 @@ pProject Project::
         if (!openfile_err.empty())
             err = openfile_err;
 
-        QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
-        TaskInfo("======================\n"
-                 "Can't open file '%s' as project nor audio file\n"
+        QMessageBox::warning(
+                    0,
+                    "Can't open file",
+                    QString("Can't open file\n%1")
+                        .arg (filename.c_str ())
+                    );
+
+        TaskInfo(boost::format(
+                 "======================\n"
+                 "Can't open file '%s'\n"
                  "%s\n"
-                 "======================",
-                 filename.c_str(),
-                 err.c_str());
+                 "======================")
+                 % filename
+                 % err);
         return pProject();
     }
 
