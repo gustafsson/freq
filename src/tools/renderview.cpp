@@ -1168,7 +1168,9 @@ void RenderView::
     Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
     wu.update(model->_qx, x, _last_update_size);
     isWorking = wu.isWorking () || wu.hasWork ();
-    workerCrashed = wu.workerCrashed () || wu.failedAllocation ();
+    workerCrashed = false;
+    //workerCrashed |= wu.workerCrashed ();
+    workerCrashed |= wu.failedAllocation ();
 
     workerCrashed |= read1(read1(model->project ()->processing_chain ())->workers())->n_workers() == 0;
 
