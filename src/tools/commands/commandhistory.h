@@ -25,13 +25,11 @@ public:
 
 private slots:
     void redrawHistory();
-    void checkVisibility(bool visible);
 
 private:
     Ui::CommandHistory *ui;
     CommandInvoker* command_invoker_;
     QDockWidget* dock;
-    QAction* actionCommandHistory;
 };
 
 

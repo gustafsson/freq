@@ -175,7 +175,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new UndoRedo( p )));
 
-    _objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->commandInvoker() )));
+    //_objects.push_back( QPointer<QObject>( new Commands::CommandHistory( p->commandInvoker() )));
 
     if (Sawe::Configuration::feature("splash_screen"))
         _objects.push_back( QPointer<QObject>( new SplashScreen() ));
