@@ -18,7 +18,8 @@ public:
 
 #ifdef _DEBUG
 // disable timeouts during debug sessions
-#define VolatilePtr_lock_timeout_ms -1
+//#define VolatilePtr_lock_timeout_ms -1
+#define VolatilePtr_lock_timeout_ms 1000
 #else
 #define VolatilePtr_lock_timeout_ms 1000
 #endif
