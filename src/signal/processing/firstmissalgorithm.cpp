@@ -53,16 +53,24 @@ public:
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;
         {
+            bool must_have_entire_expected_output = false; // it's just a preferred update size, not a required update size
+
             // lock OperationDesc while querying requiredInterval
             Signal::OperationDesc::ReadPtr od (o);
             for (Signal::Intervals x = expected_output; x;) {
                 Signal::Interval actual_output;
-                Signal::Interval r1 = od->requiredInterval (x.fetchFirstInterval (), &actual_output);
+                Signal::Interval e = x.fetchFirstInterval ();
+                Signal::Interval r1 = od->requiredInterval (e, &actual_output);
                 required_input |= r1;
-                EXCEPTION_ASSERTX (actual_output & x,
+                EXCEPTION_ASSERTX (actual_output & Signal::Interval(e.first, e.first+1),
                                    boost::format("actual_output = %1%, x = %2%")
                                    % actual_output % x); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
                 x -= actual_output;
+
+                if (!must_have_entire_expected_output) {
+                    expected_output = actual_output;
+                    break;
+                }
             }
         }
 
