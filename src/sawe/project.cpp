@@ -548,6 +548,7 @@ pProject Project::
 
     pProject p( new Project(a->name() ));
     p->createMainWindow ();
+    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
     p->appendOperation (d);
     p->setModified (false);
 
@@ -563,6 +564,7 @@ pProject Project::
     Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     pProject p( new Project( a->name() ));
     p->createMainWindow ();
+    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
     p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
     p->setModified (false);
