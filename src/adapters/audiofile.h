@@ -332,6 +332,7 @@ public:
 
     virtual void invalidate_samples(const Signal::Intervals& I);
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
+    Signal::Interval readRawInterval( const Signal::Interval& I );
 private:
     Audiofile();
     bool tryload();

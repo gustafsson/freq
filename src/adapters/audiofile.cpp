@@ -304,28 +304,10 @@ Signal::pBuffer Audiofile::
     EXCEPTION_ASSERTX(tryload(), str(format("Loading '%s' failed (this=%p), requested %s") %
                                         filename() % this % J.toString()));
 
-    Signal::Interval I = J;
-    Signal::IntervalType fixedReadLength = 1<<20;
+    Signal::Interval I = readRawInterval(J);
 
-    I.first = align_down(I.first,fixedReadLength);
-    I.last = I.first + fixedReadLength;
-
-    if (I.last > number_of_samples())
-        I.last = number_of_samples();
-
-    if (I.first < 0)
-    {
-        // Treat out of range samples as zeros.
-        I.last = 0;
-        return zeros( I );
-    }
-
-    if (0==I.count())
-    {
-        TaskInfo("Couldn't load %s from '%s', getInterval is %s (this=%p), number_of_samples()=%d",
-                 J.toString().c_str(), filename().c_str(), getInterval().toString().c_str(), this, (int)number_of_samples());
-        return zeros( J );
-    }
+    if (!(I & getInterval ()))
+        return zeros(I);
 
     boost::shared_ptr<TaskTimer> tt;
     VERBOSE_AUDIOFILE tt.reset(new TaskTimer("Loading %s from '%s' (this=%p)",
@@ -370,6 +352,30 @@ Signal::pBuffer Audiofile::
     }
 
     return waveform;
+}
+
+
+Signal::Interval Audiofile::
+        readRawInterval( const Signal::Interval& J )
+{
+    Signal::Interval L = getInterval ();
+    Signal::Interval I;
+    Signal::IntervalType fixedReadLength = 1<<20;
+
+    I.first = align_down(J.first,fixedReadLength);
+    I.last = I.first + fixedReadLength;
+
+    if (J.first < L.first) {
+        // Treat out of range samples as zeros.
+        I.last = std::min(I.last, L.first);
+    } else if (J.first < L.last) {
+        I &= L;
+    } else {
+        // Treat out of range samples as zeros.
+        I.first = std::max(I.first, L.last);
+    }
+
+    return  I;
 }
 
 
@@ -439,7 +445,9 @@ AudiofileOperation::
 Signal::pBuffer AudiofileOperation::
         process(Signal::pBuffer b)
 {
-    return audiofile_->readRaw(b->getInterval ());
+    Signal::pBuffer p = audiofile_->readRaw(b->getInterval ());
+    EXCEPTION_ASSERT_EQUALS(p->getInterval (), b->getInterval ());
+    return p;
 }
 
 
@@ -451,13 +459,14 @@ AudiofileDesc::
 
 
 Signal::Interval AudiofileDesc::
-        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+        requiredInterval( const Signal::Interval& J, Signal::Interval* expectedOutput ) const
 {
-    Signal::IntervalType fixedReadLength = 1<<20;
-    Signal::Interval r = I & Signal::Interval(I.first, I.first + fixedReadLength);
+    Signal::Interval I = audiofile_->readRawInterval (J);
+
     if (expectedOutput)
-        *expectedOutput = r;
-    return r;
+        *expectedOutput = I;
+
+    return I;
 }
 
 
