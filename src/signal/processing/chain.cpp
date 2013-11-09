@@ -321,7 +321,7 @@ void Chain::
         write1(invalidator)->deprecateCache(Signal::Interval(9,11));
 
         usleep(4000);
-        write1(read1(chain)->workers())->rethrow_worker_exception();
+        write1(read1(chain)->workers())->rethrow_any_worker_exception();
 
         chain.reset ();
         EXCEPTION_ASSERT_LESS(t.elapsed (), 0.02);

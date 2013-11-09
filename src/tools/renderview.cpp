@@ -1186,28 +1186,27 @@ void RenderView::
     //worker.checkForErrors();
     {
         Signal::Processing::Workers::Ptr workers = read1(model->project ()->processing_chain ())->workers();
+
         try {
-            write1(workers)->rethrow_worker_exception();
+            write1(workers)->rethrow_any_worker_exception();
         } catch ( const std::exception& x) {
             TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
             switch (QMessageBox::warning( 0,
                                            QString("Oups"),
                                            "Oups... that didn't work as expected",
-                                           "File bug report now", "Try again", "Stop doing that", 0, 0 ))
+                                           "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
             {
             case 0:
                 model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
                 break;
             case 1:
             {
-                TaskInfo("Cleaning dead workers");
-                Signal::Processing::Workers::DeadEngines d = write1(workers)->clean_dead_workers();
-                size_t N = d.size ();
-                d.clear ();
-                TaskInfo(boost::format("Recreating %d workers") % N);
-                for (size_t i=0; i<N; i++) {
-                    write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr());
-                }
+                const Signal::ComputingEngine::Ptr* ce =
+                        boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
+
+                TaskInfo(boost::format("Recreating worker %s")
+                         % (*ce?vartype(**ce):vartype(*ce)));
+                write1(workers)->addComputingEngine(*ce);
             }
             case 2:
                 break;

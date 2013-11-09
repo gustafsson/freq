@@ -23,6 +23,9 @@ namespace Processing {
 class Workers: public VolatilePtr<Workers>
 {
 public:
+    // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
+    typedef boost::error_info<struct crashed_engine, Signal::ComputingEngine::Ptr> crashed_engine_value;
+
     Workers(ISchedule::Ptr schedule);
     ~Workers();
 
@@ -48,7 +51,7 @@ public:
      */
     typedef std::map<Signal::ComputingEngine::Ptr, boost::exception_ptr > DeadEngines;
     DeadEngines clean_dead_workers();
-    void rethrow_worker_exception();
+    void rethrow_any_worker_exception();
 
     /**
      * @brief terminate_workers terminates all worker threads and doesn't
