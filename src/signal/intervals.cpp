@@ -517,10 +517,10 @@ Intervals Intervals::
 }
 
 
-IntervalType Intervals::
+UnsignedIntervalType Intervals::
         count() const
 {
-    IntervalType c = 0;
+    UnsignedIntervalType c = 0;
 
     BOOST_FOREACH (const Interval& r, *this)
     {

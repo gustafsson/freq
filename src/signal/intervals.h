@@ -120,7 +120,7 @@ public:
     Interval                spannedInterval() const;
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;
-    IntervalType            count() const;
+    UnsignedIntervalType    count() const;
     int                     numSubIntervals() const { return base::size(); }
     bool                    testSample( IntervalType const &p) const;
 

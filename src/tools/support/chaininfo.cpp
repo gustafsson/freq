@@ -16,16 +16,7 @@ ChainInfo::
 bool ChainInfo::
         hasWork()
 {
-    Targets::Ptr targets = read1(chain_)->targets();
-    const std::vector<TargetNeeds::Ptr>& T = read1(targets)->getTargets();
-    for (auto i=T.begin(); i!=T.end(); i++)
-    {
-        const TargetNeeds::Ptr& t = *i;
-        if (read1(t)->out_of_date())
-            return true;
-    }
-
-    return false;
+    return 0 < out_of_date_sum();
 }
 
 
@@ -35,6 +26,24 @@ int ChainInfo::
     Workers::Ptr workers = read1(chain_)->workers();
     return read1(workers)->n_workers();
 }
+
+
+Signal::UnsignedIntervalType ChainInfo::
+        out_of_date_sum()
+{
+    Signal::Intervals I;
+
+    Targets::Ptr targets = read1(chain_)->targets();
+    const std::vector<TargetNeeds::Ptr>& T = read1(targets)->getTargets();
+    for (auto i=T.begin(); i!=T.end(); i++)
+    {
+        const TargetNeeds::Ptr& t = *i;
+        I |= read1(t)->out_of_date();
+    }
+
+    return I.count ();
+}
+
 
 
 void ChainInfo::

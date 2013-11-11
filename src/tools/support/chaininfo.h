@@ -18,6 +18,8 @@ public:
     bool hasWork();
     int n_workers();
 
+    Signal::UnsignedIntervalType out_of_date_sum();
+
 private:
     Signal::Processing::Chain::ConstPtr chain_;
 

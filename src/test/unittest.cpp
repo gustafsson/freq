@@ -27,6 +27,7 @@
 #include "tfr/stftdesc.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/recordmodel.h"
+#include "tools/support/chaininfo.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
@@ -114,6 +115,7 @@ int UnitTest::
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::RecordModel);
+        RUNTEST(Tools::Support::ChainInfo);
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
