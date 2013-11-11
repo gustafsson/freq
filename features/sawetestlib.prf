@@ -6,7 +6,7 @@ DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 CONFIG += sawedefault
 
-SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe).*|\\1|\')
+SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
 
 win32 {
     LIB_OUTPUT_FOLDER=release
