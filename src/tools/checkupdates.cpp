@@ -28,9 +28,6 @@ CheckUpdates::
     ::Ui::MainWindow* ui = parent->getItems();
     connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(checkForUpdates()));
 
-    if (Sawe::Configuration::skip_update_check())
-        return;
-
     // Only check for updates automatically once per process
     static bool hasChecked = false;
     if (hasChecked)
