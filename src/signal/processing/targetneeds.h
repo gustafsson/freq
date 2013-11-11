@@ -32,17 +32,22 @@ public:
      * @arg prio A higher number makes sure this TargetNeed is computed before
      *           others.
      * @arg center From where to work of intervals from this->not_started()
-     * @arg invalidate Samples to invalidate in the step cache while at it.
-     *                 Note that Only the part overlapping with
-     *                 arg 'needed_samples' will actually be scheduled for
-     *                 calculation (as returned by this->not_started()).
      */
     void updateNeeds(
             Signal::Intervals needed_samples,
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
             Signal::IntervalType preferred_update_size=Signal::Interval::IntervalType_MAX,
-            Signal::Intervals invalidate=Signal::Intervals(),
             int prio=0 );
+
+    /**
+     * @brief deprecateCache invalidates
+     * @arg invalidate Samples to invalidate in the step cache.
+     *                 Note that only the part overlapping with
+     *                 arg 'needed_samples' will actually be scheduled for
+     *                 calculation (this->not_started() returns the intersection
+     *                 of deprecated caches and needed samples).
+     */
+    void deprecateCache(Signal::Intervals invalidate);
 
     boost::weak_ptr<volatile Step> step() const;
     boost::posix_time::ptime last_request() const;

@@ -248,7 +248,6 @@ void PlaybackController::
                     expected_data,
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX,
-                    Signal::Intervals(),
                     1 );
 
         if (!expected_data)

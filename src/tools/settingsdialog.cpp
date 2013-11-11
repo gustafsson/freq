@@ -223,11 +223,11 @@ void SettingsDialog::
     {
         Tools::RenderModel* rendermodel = &project->tools ().render_model;
         Signal::Processing::TargetNeeds::Ptr needs = rendermodel->target_marker()->target_needs();
+        write1(needs)->deprecateCache(Signal::Intervals::Intervals_ALL);
         write1(needs)->updateNeeds(
                     Signal::Intervals(),
                     Signal::Interval::IntervalType_MIN,
-                    Signal::Interval::IntervalType_MAX,
-                    Signal::Intervals::Intervals_ALL);
+                    Signal::Interval::IntervalType_MAX);
     }
 
     project->tools().render_view()->userinput_update();

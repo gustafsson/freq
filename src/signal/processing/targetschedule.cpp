@@ -156,8 +156,8 @@ void TargetSchedule::
 
         TargetNeeds::Ptr targetneeds ( write1(targets)->addTarget(step) );
         TargetNeeds::Ptr targetneeds2 ( write1(targets)->addTarget(step2) );
-        write1(targetneeds)->updateNeeds(Signal::Interval(),0,10,Signal::Interval(),1);
-        write1(targetneeds2)->updateNeeds(Signal::Interval(5,6),0,10,Signal::Interval(),0);
+        write1(targetneeds)->updateNeeds(Signal::Interval(),0,10,1);
+        write1(targetneeds2)->updateNeeds(Signal::Interval(5,6),0,10,0);
 
         TargetSchedule targetschedule(dag, algorithm, targets);
         Task::Ptr task = targetschedule.getTask ();

@@ -56,11 +56,11 @@ void HeightmapProcessingPublisher::
             % center
             % update_size);
 
+    write1(target_needs_)->deprecateCache(things_to_add);
     write1(target_needs_)->updateNeeds(
                 needed_samples,
                 center,
                 update_size,
-                things_to_add,
                 0
             );
 
