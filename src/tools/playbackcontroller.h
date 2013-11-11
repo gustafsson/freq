@@ -29,12 +29,10 @@ namespace Tools
         QAction *actionRecord();
 
     private slots:
-        void receivePlaySelection( bool active );
-        void receivePlaySection( bool active );
-        void receivePlayEntireSound( bool active );
-        void receivePause( bool active );
-        void receiveStop();
-        void receiveFollowPlayMarker( bool v );
+        void play( bool active );
+        void pause( bool active );
+        void stop();
+        void followPlayMarker( bool v );
         void onSelectionChanged();
 
     private:
@@ -48,12 +46,9 @@ namespace Tools
 
             QAction *actionFollowPlayMarker;
             QAction *actionPausePlayBack;
-            QAction *actionPlayEntireSound;
-            QAction *actionPlaySection;
-            QAction *actionPlaySelection;
+            QAction *actionPlay;
             QAction *actionRecord;
-            QAction *actionSetPlayMarker;
-            QAction *actionStopPlayBack;
+            QAction *actionStop;
         };
         boost::shared_ptr<Actions> ui_items_;
 
