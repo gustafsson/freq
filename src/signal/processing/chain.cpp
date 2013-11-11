@@ -185,6 +185,13 @@ Workers::Ptr Chain::
 }
 
 
+Targets::Ptr Chain::
+        targets() const
+{
+    return targets_;
+}
+
+
 Chain::
         Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom)
     :

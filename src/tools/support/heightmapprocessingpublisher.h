@@ -27,9 +27,7 @@ public:
 
     void update(float t_center, Signal::OperationDesc::Extent x, Signal::UnsignedIntervalType preferred_update_size);
 
-    bool hasWork() const;
-    bool isWorking() const;
-    bool workerCrashed() const;
+    bool isHeightmapDone() const;
     bool failedAllocation() const;
 
 private:

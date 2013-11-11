@@ -51,6 +51,7 @@ public:
     Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
 
     Workers::Ptr workers() const;
+    Targets::Ptr targets() const;
 
     // Add jumping around with targets later.
 

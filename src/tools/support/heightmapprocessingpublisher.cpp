@@ -98,31 +98,10 @@ void HeightmapProcessingPublisher::
 
 
 bool HeightmapProcessingPublisher::
-        hasWork() const
+        isHeightmapDone() const
 {
     TargetNeeds::ReadPtr target_needs(target_needs_);
-    return target_needs->out_of_date();
-}
-
-
-bool HeightmapProcessingPublisher::
-        isWorking() const
-{
-    TargetNeeds::ReadPtr target_needs(target_needs_);
-    return target_needs->not_started() != target_needs->out_of_date();
-}
-
-
-bool HeightmapProcessingPublisher::
-        workerCrashed() const
-{
-    // TODO this is not a reliable way to detect if the worker has crashed.
-    // Right after a call to update this will return true before the worker
-    // has noticed the change.
-    TargetNeeds::ReadPtr target_needs(target_needs_);
-    bool is_working = target_needs->not_started() != target_needs->out_of_date();
-    bool has_work = target_needs->out_of_date();
-    return !is_working && has_work;
+    return !target_needs->out_of_date();
 }
 
 
@@ -169,38 +148,35 @@ void HeightmapProcessingPublisher::
         x.sample_rate = 1;
         UnsignedIntervalType preferred_update_size = 5;
 
-        EXCEPTION_ASSERT(!hpp.isWorking ());
-        EXCEPTION_ASSERT(!hpp.hasWork ());
+        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         hpp.update(t_center, x, preferred_update_size);
 
-        EXCEPTION_ASSERT(!hpp.isWorking ());
+        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         Heightmap::Reference entireHeightmap = read1(collection)->entireHeightmap();
         write1(collection)->getBlock(entireHeightmap);
 
-        EXCEPTION_ASSERT(!hpp.isWorking ());
+        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         hpp.update(t_center, x, preferred_update_size);
 
-        EXCEPTION_ASSERT(!hpp.isWorking ());
+        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         unsigned frame_number = read1(collection)->frame_number();
         write1(collection)->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
 
-        EXCEPTION_ASSERT(!hpp.isWorking ());
-        EXCEPTION_ASSERT(!hpp.hasWork ());
+        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         hpp.update(t_center, x, preferred_update_size);
 
-        EXCEPTION_ASSERT(!hpp.isWorking ());
-        EXCEPTION_ASSERT(hpp.hasWork ());
+        EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
         Task task(&*write1(step), step,
                   std::vector<Signal::Processing::Step::Ptr>(),
                   Signal::Interval(0,2));
 
-        EXCEPTION_ASSERT(hpp.isWorking ());
+        EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
     }
 }
 

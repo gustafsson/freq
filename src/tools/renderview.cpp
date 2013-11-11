@@ -23,6 +23,7 @@
 #include "toolfactory.h"
 #include "tools/recordmodel.h"
 #include "tools/support/heightmapprocessingpublisher.h"
+#include "tools/support/chaininfo.h"
 #include "signal/processing/workers.h"
 
 // gpumisc
@@ -1163,16 +1164,14 @@ void RenderView::
     }
 
 
-    // It should update the view in sections with the same size as it's invalidated.
+    // It should update the view in sections with the same size as blocks
     Signal::Processing::TargetNeeds::Ptr target_needs = model->target_marker()->target_needs();
     Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
     wu.update(model->_qx, x, _last_update_size);
-    isWorking = wu.isWorking () || wu.hasWork ();
-    workerCrashed = false;
-    //workerCrashed |= wu.workerCrashed ();
-    workerCrashed |= wu.failedAllocation ();
 
-    workerCrashed |= read1(read1(model->project ()->processing_chain ())->workers())->n_workers() == 0;
+    Support::ChainInfo ci(model->project ()->processing_chain ());
+    isWorking = ci.hasWork ();
+    workerCrashed = wu.failedAllocation () || ci.n_workers () == 0;
 
     //Use Signal::Processing namespace
     if (isWorking || isRecording || workerCrashed)
