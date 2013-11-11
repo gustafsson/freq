@@ -135,7 +135,6 @@ void SaweMainWindow::
 //    ui->topFilterWindow->raise();
 
     // todo move into toolfactory
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     //this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );

@@ -52,8 +52,6 @@
      <property name="title">
       <string>&amp;Toolbars</string>
      </property>
-     <addaction name="actionToggleNavigationToolBox"/>
-     <addaction name="actionToggleTimeControlToolBox"/>
      <addaction name="actionToggleSelectionToolBox"/>
      <addaction name="actionToggleTransformToolBox"/>
     </widget>
@@ -106,11 +104,9 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="separator"/>
-    <addaction name="actionAsk_for_help"/>
     <addaction name="actionReport_a_bug"/>
     <addaction name="separator"/>
     <addaction name="actionFind_updates"/>
-    <addaction name="actionFind_plugins"/>
     <addaction name="separator"/>
     <addaction name="action_Enter_product_key"/>
     <addaction name="separator"/>
@@ -225,23 +221,6 @@
     </layout>
    </widget>
   </widget>
-  <widget class="Tools::Support::ToolBar" name="toolBarOperation">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionActivateInfoTool"/>
-   <addaction name="actionAddComment"/>
-   <addaction name="actionShowComments"/>
-  </widget>
   <action name="actionEllipseSelection">
    <property name="checkable">
     <bool>true</bool>
@@ -258,30 +237,6 @@
    </property>
    <property name="shortcut">
     <string>S</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
-  </action>
-  <action name="actionActivateNavigation">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-navigation.png</normaloff>:/icons/icons/icon-navigation.png</iconset>
-   </property>
-   <property name="text">
-    <string>Activate Navigation</string>
-   </property>
-   <property name="toolTip">
-    <string>Rotate with right mouse button [N]</string>
-   </property>
-   <property name="shortcut">
-    <string>N</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -536,34 +491,6 @@
    </property>
    <property name="toolTip">
     <string>Toggle the transform toolbox</string>
-   </property>
-  </action>
-  <action name="actionToggleNavigationToolBox">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Navigation</string>
-   </property>
-   <property name="toolTip">
-    <string>Toggle the navigation toolbox</string>
-   </property>
-  </action>
-  <action name="actionToggleTimeControlToolBox">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Playback</string>
-   </property>
-   <property name="toolTip">
-    <string>Toggle the playback control toolbox</string>
    </property>
   </action>
   <action name="actionNew_recording">
@@ -1569,15 +1496,32 @@
     <bool>true</bool>
    </property>
   </action>
+  <action name="actionActivateNavigation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-navigation.png</normaloff>:/icons/icons/icon-navigation.png</iconset>
+   </property>
+   <property name="text">
+    <string>Activate Navigation</string>
+   </property>
+   <property name="toolTip">
+    <string>Rotate with right mouse button [N]</string>
+   </property>
+   <property name="shortcut">
+    <string>N</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <customwidgets>
-  <customwidget>
-   <class>Tools::Support::ToolBar</class>
-   <extends>QToolBar</extends>
-   <header>tools/support/toolbar.h</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="icon-resources.qrc"/>
  </resources>

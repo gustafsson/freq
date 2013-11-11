@@ -3,6 +3,7 @@
 
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
+#include "tools/support/toolbar.h"
 
 #include "graphicsview.h"
 
@@ -16,10 +17,49 @@
 namespace Tools
 {
 
+TooltipController::Actions::
+        Actions(QObject* parent)
+{
+    actionActivateInfoTool = new QAction(parent);
+    actionActivateInfoTool->setObjectName(QStringLiteral("actionActivateInfoTool"));
+    actionActivateInfoTool->setCheckable(true);
+    actionActivateInfoTool->setChecked(false);
+    QIcon icon27;
+    icon27.addFile(QStringLiteral(":/icons/icons/icon-show-info.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionActivateInfoTool->setIcon(icon27);
+    actionActivateInfoTool->setIconVisibleInMenu(true);
+
+    actionAddComment = new QAction(parent);
+    actionAddComment->setObjectName(QStringLiteral("actionAddComment"));
+    actionAddComment->setCheckable(true);
+    actionAddComment->setChecked(false);
+    QIcon icon28;
+    icon28.addFile(QStringLiteral(":/icons/icons/icon-place-comment.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionAddComment->setIcon(icon28);
+    actionAddComment->setIconVisibleInMenu(true);
+
+    actionShowComments = new QAction(parent);
+    actionShowComments->setObjectName(QStringLiteral("actionShowComments"));
+    actionShowComments->setCheckable(true);
+    QIcon icon29;
+    icon29.addFile(QStringLiteral(":/icons/icons/icon-show-comment.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionShowComments->setIcon(icon29);
+    actionShowComments->setIconVisibleInMenu(true);
+
+    actionActivateInfoTool->setText(QApplication::translate("MainWindow", "Get info", 0));
+    actionActivateInfoTool->setToolTip(QApplication::translate("MainWindow", "Drag slowly over a ridge to see information of the peak. Show continius information [J]", 0));
+    actionAddComment->setText(QApplication::translate("MainWindow", "Add comment", 0));
+    actionAddComment->setToolTip(QApplication::translate("MainWindow", "Add comment [A]", 0));
+    actionShowComments->setText(QApplication::translate("MainWindow", "Hide/show comments", 0));
+    actionShowComments->setToolTip(QApplication::translate("MainWindow", "Hide/show comments", 0));
+    actionShowComments->setShortcut(QApplication::translate("MainWindow", "Ctrl+H", 0));
+}
+
 TooltipController::
         TooltipController(RenderView *render_view,
                           CommentController* comments)
             :
+            ui(new Actions(this)),
             render_view_(render_view),
             comments_(comments),
             current_view_(0)
@@ -221,7 +261,6 @@ void TooltipController::
 {
     if (enabled)
     {
-        Ui::MainWindow* ui = render_view_->model->project()->mainWindow()->getItems();
         ui->actionActivateInfoTool->setChecked( true );
 
         hover_info_model_.reset( new TooltipModel() );
@@ -250,7 +289,19 @@ void TooltipController::
         setupGui()
 {
     Ui::SaweMainWindow* mainWindow = render_view_->model->project()->mainWindow();
-    Ui::MainWindow* ui = mainWindow->getItems();
+
+    Tools::Support::ToolBar *toolBarOperation;
+    toolBarOperation = new Tools::Support::ToolBar(mainWindow);
+
+    toolBarOperation->setObjectName(QStringLiteral("toolBarOperation"));
+    toolBarOperation->setEnabled(true);
+    toolBarOperation->setWindowTitle(QApplication::translate("MainWindow", "toolBar", 0));
+    mainWindow->addToolBar( Qt::TopToolBarArea, toolBarOperation );
+
+    toolBarOperation->addAction(ui->actionActivateInfoTool);
+    toolBarOperation->addAction(ui->actionAddComment);
+    toolBarOperation->addAction(ui->actionShowComments);
+
     connect(ui->actionActivateInfoTool, SIGNAL(toggled(bool)), SLOT(receiveToggleInfoTool(bool)));
     connect(this, SIGNAL(enabledChanged(bool)), ui->actionActivateInfoTool, SLOT(setChecked(bool)));
 
