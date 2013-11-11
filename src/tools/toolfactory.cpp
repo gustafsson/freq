@@ -121,10 +121,12 @@ ToolFactory::
 */
 #endif
 
+/*
+//Use Signal::Processing namespace
     _tooltip_controller = new TooltipController(
             _render_view, dynamic_cast<CommentController*>(_comment_controller.data()) );
     tool_controllers_.push_back( _tooltip_controller );
-
+*/
 #ifndef TARGET_hast
 /*
 //Use Signal::Processing namespace
