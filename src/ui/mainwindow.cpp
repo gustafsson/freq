@@ -127,7 +127,6 @@ void SaweMainWindow::
 //    ui->topFilterWindow->raise();
 
     // todo move into toolfactory
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarPlay );
     this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     //this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
 
@@ -149,8 +148,6 @@ void SaweMainWindow::
         ui->toolBarTool->addWidget( tb );
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
-
-    ui->actionRecord->setVisible (false);
 
     {
         QSettings settings;
@@ -525,9 +522,6 @@ void SaweMainWindow::
 
     // Always start with the navigation tool activated
     ui->actionActivateNavigation->trigger();
-
-    // Always start stopped
-    ui->actionStopPlayBack->trigger();
 }
 
 

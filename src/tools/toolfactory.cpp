@@ -272,7 +272,7 @@ void ToolFactory::
                 p, _render_view ));
 
     _record_view.reset( new RecordView(_record_model.data() ));
-    _record_controller = new RecordController( _record_view.data() );
+    _record_controller = new RecordController( _record_view.data(), _playback_controller->actionRecord () );
 }
 
 

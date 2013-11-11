@@ -71,11 +71,9 @@ void RecordView::
                     "It looks like your recording device doesn't report any "
                     "data, so the recording has been stopped.\n"
                     "Restarting the recording might help temporarily. "
-                    "You can also try another recording device by the command "
-                    "line argument '--record-device=\"number\"'. "
-                    "Available devices are listed in 'sonicawe.log'.", "No data from recording device");
-                Ui::MainWindow* ui = model_->project->mainWindow()->getItems();
-                ui->actionRecord->setChecked(false);
+                    "You can also try another recording device in the "
+                    "settings dialog.", "No data from recording device");
+                emit gotNoData();
             }
         }
         prev_limit_ = limit;

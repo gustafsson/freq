@@ -5,6 +5,8 @@
 
 #include "recordview.h"
 
+class QAction;
+
 namespace Tools
 {
     class RecordModel;
@@ -16,7 +18,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        RecordController( RecordView* view );
+        RecordController( RecordView* view, QAction* actionRecord );
         ~RecordController();
 
     protected slots:
@@ -29,6 +31,12 @@ namespace Tools
         // Model
         RecordView* view_;
         RecordModel* model() { return view_->model_; }
+
+        struct Actions {
+            QAction* actionRecord;
+        };
+        boost::shared_ptr<Actions> ui;
+
         bool destroyed_;
         Signal::IntervalType prev_length_;
 

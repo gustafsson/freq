@@ -20,12 +20,17 @@ namespace Tools
 {
 
 RecordController::
-        RecordController( RecordView* view )
+        RecordController( RecordView* view, QAction* actionRecord )
             :   view_ ( view ),
+                ui( new Actions() ),
                 destroyed_ ( false ),
                 prev_length_( 0 )
 {
+    ui->actionRecord = actionRecord;
+
     setupGui();
+
+    connect(view_, SIGNAL(gotNoData()), SLOT(receiveStop()));
 }
 
 
@@ -72,7 +77,7 @@ void RecordController::
         r->startRecording();
 
         if (!r->canRecord())
-            model()->project->mainWindow()->getItems()->actionRecord->setChecked( false );
+            ui->actionRecord->setChecked( false );
     }
     else
     {
@@ -96,7 +101,6 @@ void RecordController::
 void RecordController::
         receiveStop()
 {
-    Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
     ui->actionRecord->setChecked(false);
 }
 
@@ -117,15 +121,12 @@ void RecordController::
 void RecordController::
         setupGui()
 {
-    Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
-
     connect(ui->actionRecord, SIGNAL(toggled(bool)), SLOT(receiveRecord(bool)));
-    connect(ui->actionStopPlayBack, SIGNAL(triggered()), SLOT(receiveStop()));
+//    connect(ui->actionStopPlayBack, SIGNAL(triggered()), SLOT(receiveStop()));
 
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-//    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(model()->project->head->head_source()->root());
     Adapters::Recorder* r = model()->recording;
     if (r)
     {

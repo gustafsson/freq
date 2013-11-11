@@ -17,6 +17,9 @@ public:
 
     bool enabled;
 
+signals:
+    void gotNoData();
+
 public slots:
     /// Connected in RecordController
     virtual void prePaint();

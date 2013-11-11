@@ -225,23 +225,6 @@
     </layout>
    </widget>
   </widget>
-  <widget class="Tools::Support::ToolBar" name="toolBarPlay">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionPausePlayBack"/>
-   <addaction name="actionPlayEntireSound"/>
-   <addaction name="actionStopPlayBack"/>
-   <addaction name="actionRecord"/>
-   <addaction name="separator"/>
-   <addaction name="actionFollowPlayMarker"/>
-  </widget>
   <widget class="Tools::Support::ToolBar" name="toolBarOperation">
    <property name="enabled">
     <bool>true</bool>
@@ -337,27 +320,6 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
-   </property>
-  </action>
-  <action name="actionPlaySelection">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-play-sel.png</normaloff>:/icons/icons/icon-play-sel.png</iconset>
-   </property>
-   <property name="text">
-    <string>Play Selection</string>
-   </property>
-   <property name="toolTip">
-    <string>Play the selected area [Ctrl+Space]</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Space</string>
    </property>
   </action>
   <action name="actionToggleSelectionToolBox">
@@ -543,51 +505,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+O</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
-  </action>
-  <action name="actionRecord">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-record.png</normaloff>:/icons/icons/icon-record.png</iconset>
-   </property>
-   <property name="text">
-    <string>Record</string>
-   </property>
-   <property name="toolTip">
-    <string>Toggle recording [R]</string>
-   </property>
-   <property name="shortcut">
-    <string>R</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
-  </action>
-  <action name="actionFollowPlayMarker">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-lockplayback.png</normaloff>:/icons/icons/icon-lockplayback.png</iconset>
-   </property>
-   <property name="text">
-    <string>Follow play marker</string>
-   </property>
-   <property name="toolTip">
-    <string>Follow the play marker when playing</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -909,42 +826,6 @@
    </property>
    <property name="toolTip">
     <string>Set playback markers with left mouse button, remove with right mouse button</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
-  </action>
-  <action name="actionStopPlayBack">
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-stop.png</normaloff>:/icons/icons/icon-stop.png</iconset>
-   </property>
-   <property name="text">
-    <string>Stop playback</string>
-   </property>
-   <property name="toolTip">
-    <string>Stop playback</string>
-   </property>
-   <property name="iconVisibleInMenu">
-    <bool>true</bool>
-   </property>
-  </action>
-  <action name="actionPausePlayBack">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-paus.png</normaloff>:/icons/icons/icon-paus.png</iconset>
-   </property>
-   <property name="text">
-    <string>Pause playback</string>
-   </property>
-   <property name="toolTip">
-    <string>Pause playback</string>
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
@@ -1375,42 +1256,6 @@
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About Sonic AWE</string>
-   </property>
-  </action>
-  <action name="actionPlaySection">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-play-sec.png</normaloff>:/icons/icons/icon-play-sec.png</iconset>
-   </property>
-   <property name="text">
-    <string>Play current section</string>
-   </property>
-   <property name="toolTip">
-    <string>Play the current section [Space]</string>
-   </property>
-   <property name="shortcut">
-    <string>Space</string>
-   </property>
-  </action>
-  <action name="actionPlayEntireSound">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="icon-resources.qrc">
-     <normaloff>:/icons/icons/icon-play.png</normaloff>:/icons/icons/icon-play.png</iconset>
-   </property>
-   <property name="text">
-    <string>Play entire sound starting at current section</string>
-   </property>
-   <property name="toolTip">
-    <string>Play entire sound starting at current section [ [Ctrl+Shift+Space]</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+Space</string>
    </property>
   </action>
   <action name="actionToggleFullscreenNoMenus">

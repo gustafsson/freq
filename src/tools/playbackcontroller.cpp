@@ -24,22 +24,110 @@
 namespace Tools
 {
 
+PlaybackController::Actions::
+        Actions(QObject *parent)
+{
+    actionPlaySelection = new QAction(parent);
+    actionPlaySelection->setObjectName(QStringLiteral("actionPlaySelection"));
+    actionPlaySelection->setCheckable(true);
+    actionPlaySelection->setEnabled(false);
+    QIcon icon4;
+    icon4.addFile(QStringLiteral(":/icons/icons/icon-play-sel.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionPlaySelection->setIcon(icon4);
+
+    actionFollowPlayMarker = new QAction(parent);
+    actionFollowPlayMarker->setObjectName(QStringLiteral("actionFollowPlayMarker"));
+    actionFollowPlayMarker->setCheckable(true);
+    QIcon icon14;
+    icon14.addFile(QStringLiteral(":/icons/icons/icon-lockplayback.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionFollowPlayMarker->setIcon(icon14);
+    actionFollowPlayMarker->setIconVisibleInMenu(true);
+
+    actionSetPlayMarker = new QAction(parent);
+    actionSetPlayMarker->setObjectName(QStringLiteral("actionSetPlayMarker"));
+    actionSetPlayMarker->setCheckable(true);
+    QIcon icon24;
+    icon24.addFile(QStringLiteral(":/icons/icons/icon-set-mark.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionSetPlayMarker->setIcon(icon24);
+    actionSetPlayMarker->setIconVisibleInMenu(true);
+
+    actionStopPlayBack = new QAction(parent);
+    actionStopPlayBack->setObjectName(QStringLiteral("actionStopPlayBack"));
+    QIcon icon25;
+    icon25.addFile(QStringLiteral(":/icons/icons/icon-stop.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionStopPlayBack->setIcon(icon25);
+    actionStopPlayBack->setIconVisibleInMenu(true);
+
+    actionPausePlayBack = new QAction(parent);
+    actionPausePlayBack->setObjectName(QStringLiteral("actionPausePlayBack"));
+    actionPausePlayBack->setCheckable(true);
+    actionPausePlayBack->setEnabled(false);
+    QIcon icon26;
+    icon26.addFile(QStringLiteral(":/icons/icons/icon-paus.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionPausePlayBack->setIcon(icon26);
+    actionPausePlayBack->setIconVisibleInMenu(true);
+
+    actionPlaySection = new QAction(parent);
+    actionPlaySection->setObjectName(QStringLiteral("actionPlaySection"));
+    actionPlaySection->setCheckable(true);
+    QIcon icon36;
+    icon36.addFile(QStringLiteral(":/icons/icons/icon-play-sec.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionPlaySection->setIcon(icon36);
+    actionPlayEntireSound = new QAction(parent);
+    actionPlayEntireSound->setObjectName(QStringLiteral("actionPlayEntireSound"));
+    actionPlayEntireSound->setCheckable(true);
+    QIcon icon37;
+    icon37.addFile(QStringLiteral(":/icons/icons/icon-play.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionPlayEntireSound->setIcon(icon37);
+
+    actionRecord = new QAction(parent);
+    actionRecord->setObjectName(QStringLiteral("actionRecord"));
+    actionRecord->setCheckable(true);
+    actionRecord->setChecked(false);
+    actionRecord->setEnabled(false);
+    actionRecord->setVisible(false);
+    QIcon icon13;
+    icon13.addFile(QStringLiteral(":/icons/icons/icon-record.png"), QSize(), QIcon::Normal, QIcon::Off);
+    actionRecord->setIcon(icon13);
+    actionRecord->setIconVisibleInMenu(true);
+
+    actionPlaySelection->setText(QApplication::translate("MainWindow", "Play Selection", 0));
+    actionPlaySelection->setToolTip(QApplication::translate("MainWindow", "Play the selected area [Ctrl+Space]", 0));
+    actionFollowPlayMarker->setText(QApplication::translate("MainWindow", "Follow play marker", 0));
+    actionFollowPlayMarker->setToolTip(QApplication::translate("MainWindow", "Follow the play marker when playing", 0));
+    actionSetPlayMarker->setText(QApplication::translate("MainWindow", "Set playback marker", 0));
+    actionSetPlayMarker->setToolTip(QApplication::translate("MainWindow", "Set playback markers with left mouse button, remove with right mouse button", 0));
+    actionStopPlayBack->setText(QApplication::translate("MainWindow", "Stop playback", 0));
+    actionStopPlayBack->setToolTip(QApplication::translate("MainWindow", "Stop playback", 0));
+    actionPausePlayBack->setText(QApplication::translate("MainWindow", "Pause playback", 0));
+    actionPausePlayBack->setToolTip(QApplication::translate("MainWindow", "Pause playback", 0));
+    actionPlaySection->setText(QApplication::translate("MainWindow", "Play current section", 0));
+    actionPlaySection->setToolTip(QApplication::translate("MainWindow", "Play the current section [Space]", 0));
+    actionPlaySection->setShortcut(QApplication::translate("MainWindow", "Space", 0));
+    actionPlayEntireSound->setText(QApplication::translate("MainWindow", "Play entire sound starting at current section", 0));
+    actionPlayEntireSound->setToolTip(QApplication::translate("MainWindow", "Play entire sound starting at current section [ [Ctrl+Shift+Space]", 0));
+    actionPlayEntireSound->setShortcut(QApplication::translate("MainWindow", "Ctrl+Shift+Space", 0));
+    actionRecord->setText(QApplication::translate("MainWindow", "Record", 0));
+    actionRecord->setToolTip(QApplication::translate("MainWindow", "Toggle recording [R]", 0));
+}
+
+
 PlaybackController::
         PlaybackController( Sawe::Project* project, PlaybackView* view, RenderView* render_view )
             :
             _view(view),
-            project_( project ),
-            ui_items_( project_->mainWindow()->getItems() )
+            project_( project )
 {
     setupGui( render_view );
+    addPlaybackToolbar( project_->mainWindow(), project_->mainWindow()->getItems()->menuToolbars );
 }
 
 
 void PlaybackController::
         setupGui( RenderView* render_view )
 {
-    connect(ui_items_->actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), ui_items_->toolBarPlay, SLOT(setVisible(bool)));
-    connect(ui_items_->toolBarPlay, SIGNAL(visibleChanged(bool)), ui_items_->actionToggleTimeControlToolBox, SLOT(setChecked(bool)));
+    if (!ui_items_)
+        ui_items_.reset (new Actions(this));
 
     // User interface buttons
     connect(ui_items_->actionPlaySelection, SIGNAL(toggled(bool)), SLOT(receivePlaySelection(bool)));
@@ -61,6 +149,45 @@ void PlaybackController::
     connect(render_view, SIGNAL(prePaint()), _view, SLOT(locatePlaybackMarker()));
     connect(render_view, SIGNAL(populateTodoList()), SLOT(populateTodoList()));
     connect(_view->model->selection, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
+
+    // Always start stopped
+    ui_items_->actionStopPlayBack->trigger();
+}
+
+
+void PlaybackController::
+        addPlaybackToolbar( QMainWindow* parent, QMenu* menu )
+{
+    Tools::Support::ToolBar* toolBarPlay = new Tools::Support::ToolBar(parent);
+    toolBarPlay->setWindowTitle(QApplication::translate("MainWindow", "toolBar", 0));
+    toolBarPlay->setObjectName(QStringLiteral("toolBarPlay"));
+    parent->addToolBar( Qt::TopToolBarArea, toolBarPlay );
+
+    toolBarPlay->addAction(ui_items_->actionPausePlayBack);
+    toolBarPlay->addAction(ui_items_->actionPlayEntireSound);
+    toolBarPlay->addAction(ui_items_->actionStopPlayBack);
+    toolBarPlay->addAction(ui_items_->actionRecord);
+    toolBarPlay->addSeparator();
+    toolBarPlay->addAction(ui_items_->actionFollowPlayMarker);
+
+    QAction *actionToggleTimeControlToolBox;
+    actionToggleTimeControlToolBox = new QAction(parent);
+    actionToggleTimeControlToolBox->setObjectName(QStringLiteral("actionToggleTimeControlToolBox"));
+    actionToggleTimeControlToolBox->setCheckable(true);
+    actionToggleTimeControlToolBox->setChecked(true);
+    menu->addAction(actionToggleTimeControlToolBox);
+
+    actionToggleTimeControlToolBox->setText(QApplication::translate("MainWindow", "&Playback", 0));
+    actionToggleTimeControlToolBox->setToolTip(QApplication::translate("MainWindow", "Toggle the playback control toolbox", 0));
+    connect(actionToggleTimeControlToolBox, SIGNAL(toggled(bool)), toolBarPlay, SLOT(setVisible(bool)));
+    connect(toolBarPlay, SIGNAL(visibleChanged(bool)), actionToggleTimeControlToolBox, SLOT(setChecked(bool)));
+}
+
+
+QAction *PlaybackController::
+        actionRecord()
+{
+    return ui_items_->actionRecord;
 }
 
 
