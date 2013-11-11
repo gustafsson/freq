@@ -303,6 +303,8 @@ void SaweMainWindow::
 bool SaweMainWindow::
         askSaveChanges()
 {
+    return true; // close
+
     TaskInfo("Save current state of the project?");
     QMessageBox save_changes_msgbox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
