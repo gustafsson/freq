@@ -51,14 +51,23 @@ Signal::pOperation RectangleModel::
             f2 = freqAxis().getFrequency( b.scale );
 
     float FS = project_->extent ().sample_rate.get ();
+    Signal::IntervalType L = project_->length ()*FS;
     Signal::IntervalType
             a_index = std::max(0.f, a.time)*FS,
             b_index = std::max(0.f, b.time)*FS;
 
     Signal::pOperation filter;
 
-    if (a.scale>=1 || b.scale<=0 || a_index==b_index || a.scale==b.scale)
+    if (a.scale>=1 || b.scale<=0)
         ;
+    else if (a_index>=L || b_index<=0)
+        ;
+    else if(a_index==b_index)
+    {
+        if (a.scale==b.scale || (a.scale==0 && b.scale==1))
+            filter.reset( new Tools::Support::OperationOtherSilent(
+                FS, Signal::Interval( a_index, L) ));
+    }
     else if (a.scale>0 || b.scale<1)
     {
         if (type == RectangleType_FrequencySelection)

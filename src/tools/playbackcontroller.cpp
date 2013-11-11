@@ -163,9 +163,7 @@ void PlaybackController::
     toolBarPlay->setObjectName(QStringLiteral("toolBarPlay"));
     parent->addToolBar( Qt::TopToolBarArea, toolBarPlay );
 
-    toolBarPlay->addAction(ui_items_->actionPausePlayBack);
     toolBarPlay->addAction(ui_items_->actionPlayEntireSound);
-    toolBarPlay->addAction(ui_items_->actionStopPlayBack);
     toolBarPlay->addAction(ui_items_->actionRecord);
     toolBarPlay->addSeparator();
     toolBarPlay->addAction(ui_items_->actionFollowPlayMarker);
@@ -256,7 +254,13 @@ void PlaybackController::
 {
     if (!active)
     {
-        receiveStop();
+        receivePause(true);
+        return;
+    }
+
+    if (model()->adapter_playback)
+    {
+        receivePause(false);
         return;
     }
 
@@ -403,8 +407,7 @@ void PlaybackController::
 void PlaybackController::
         onSelectionChanged()
 {
-    if (ui_items_->actionPlaySelection->isChecked())
-        receiveStop();
+    receiveStop();
 
     ui_items_->actionPlaySelection->setEnabled( 0 != _view->model->selection->current_selection() );
 

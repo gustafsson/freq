@@ -225,13 +225,16 @@ namespace Tools
 
             //model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
         }
+        else if (Signal::pOperation() == selection)
+        {
+            this->model ()->set_current_selection(Signal::pOperation());
+        }
     }
 
 
     void SelectionController::
             onSelectionChanged()
     {
-        setCurrentSelection( _model->current_selection() );
     }
 
 #if 0
