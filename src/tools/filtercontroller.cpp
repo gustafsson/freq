@@ -2,6 +2,7 @@
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
+#include "sawe/configuration.h"
 
 #include "filters/absolutevalue.h"
 #include "filters/envelope.h"
@@ -18,7 +19,9 @@ FilterController::
     if (!filterMenu)
         filterMenu = items->menuTools->addMenu ("&Filters");
     connect(filterMenu->addAction ("|y|"), SIGNAL(triggered()), SLOT(addAbsolute()));
-    connect(filterMenu->addAction ("envelope"), SIGNAL(triggered()), SLOT(addEnvelope()));
+    if (!Sawe::Configuration::feature("stable")) {
+        connect(filterMenu->addAction ("envelope"), SIGNAL(triggered()), SLOT(addEnvelope()));
+    }
 }
 
 

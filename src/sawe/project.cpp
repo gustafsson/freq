@@ -182,8 +182,12 @@ pProject Project::
 #if !defined(TARGET_reader) && !defined(TARGET_hast)
         filter += " " + Adapters::CsvTimeseries::getFileFormatsQtFilter( false );
 #endif
-        filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
-        filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
+        if (Sawe::Configuration::feature("stable")) {
+            filter = "All files (" + filter + ");;";
+        } else {
+            filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
+            filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
+        }
 #if !defined(TARGET_reader)
         filter += ";;" + Adapters::Audiofile::getFileFormatsQtFilter( true );
 #endif

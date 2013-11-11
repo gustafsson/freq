@@ -31,6 +31,7 @@
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
+#include "sawe/configuration.h"
 
 // gpumisc
 #include "demangle.h"
@@ -843,8 +844,11 @@ void RenderController::
         transform->setObjectName("ComboBoxActiontransform");
         transform->addActionItem( ui->actionTransform_Stft );
         transform->addActionItem( ui->actionTransform_Cwt );
-        transform->addActionItem( ui->actionTransform_Cepstrum );
-        transform->addActionItem( ui->actionTransform_Waveform );
+
+        if (!Sawe::Configuration::feature("stable")) {
+            transform->addActionItem( ui->actionTransform_Cepstrum );
+            transform->addActionItem( ui->actionTransform_Waveform );
+        }
 
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
 //        transform->addActionItem( ui->actionTransform_Cwt_reassign );
@@ -868,7 +872,9 @@ void RenderController::
 
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");
-        cepstraScale->setText("Cepstra scale");
+        if (!Sawe::Configuration::feature("stable")) {
+            cepstraScale->setText("Cepstra scale");
+        }
 
         // for serialization
         linearScale->setObjectName("linearScale");

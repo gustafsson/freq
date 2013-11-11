@@ -82,6 +82,14 @@ void SaweMainWindow::
 #if defined(TARGET_hast)
     ui->actionOperation_details->setVisible( false );
 #endif
+    if (Sawe::Configuration::feature("stable")) {
+        ui->actionOperation_details->setVisible( false );
+        ui->actionExport_audio->setVisible (false);
+        ui->actionExport_selection->setVisible (false);
+        ui->actionSave_project->setVisible (false);
+        ui->actionSave_project_as->setVisible (false);
+    }
+
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
     connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));

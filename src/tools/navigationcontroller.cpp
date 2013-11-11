@@ -382,15 +382,15 @@ void NavigationController::
     Ui::SaweMainWindow* main = _view->model->project()->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
-    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
-    connect(ui->toolBarOperation, SIGNAL(visibleChanged(bool)), ui->actionToggleNavigationToolBox, SLOT(setChecked(bool)));
+    //connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
+    //connect(ui->toolBarOperation, SIGNAL(visibleChanged(bool)), ui->actionToggleNavigationToolBox, SLOT(setChecked(bool)));
 
-    QList<QAction*> a = ui->toolBarOperation->actions();
-    QAction* first = 0;
-    //if (!a.empty()) first = a.first();
-    ui->toolBarOperation->insertAction(first, ui->actionActivateNavigation);
-    ui->toolBarOperation->insertAction(first, ui->actionZoom);
-    if (first) ui->toolBarOperation->insertSeparator(first);
+//    QList<QAction*> a = ui->toolBarOperation->actions();
+//    QAction* first = 0;
+//    //if (!a.empty()) first = a.first();
+//    ui->toolBarOperation->insertAction(first, ui->actionActivateNavigation);
+//    ui->toolBarOperation->insertAction(first, ui->actionZoom);
+//    if (first) ui->toolBarOperation->insertSeparator(first);
 
     connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), this, SLOT(receiveToggleNavigation(bool)));
     connect(ui->actionZoom, SIGNAL(toggled(bool)), this, SLOT(receiveToggleZoom(bool)));
