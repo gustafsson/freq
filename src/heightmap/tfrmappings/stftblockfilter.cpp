@@ -6,9 +6,24 @@
 namespace Heightmap {
 namespace TfrMappings {
 
+StftBlockFilter::
+        StftBlockFilter(StftBlockFilterParams::Ptr params)
+    :
+      params_(params)
+{
+
+}
+
+
 void StftBlockFilter::
         mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
 {
+    if (params_) {
+        StftBlockFilterParams::WritePtr P(params_);
+        if (P->freq_normalization)
+            (*P->freq_normalization)(const_cast<Tfr::ChunkAndInverse&>(pchunk));
+    }
+
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
@@ -19,11 +34,20 @@ void StftBlockFilter::
 }
 
 
+StftBlockFilterDesc::
+        StftBlockFilterDesc(StftBlockFilterParams::Ptr params)
+    :
+      params_(params)
+{
+
+}
+
+
 MergeChunk::Ptr StftBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
     if (0 == engine)
-        return MergeChunk::Ptr( new StftBlockFilter );
+        return MergeChunk::Ptr( new StftBlockFilter(params_) );
 
     return MergeChunk::Ptr();
 }
@@ -86,7 +110,7 @@ void StftBlockFilter::
         cai.chunk = (*cai.t)( buffer );
 
         // Do the merge
-        Heightmap::MergeChunk::Ptr mc( new StftBlockFilter );
+        Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
         write1(mc)->mergeChunk( block, cai, *block.block_data () );
 
         float T = t.elapsed ();
@@ -104,7 +128,7 @@ void StftBlockFilterDesc::
 {
     // It should instantiate StftBlockFilter for different engines.
     {
-        Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc);
+        Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::Ptr()));
         MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
 
         EXCEPTION_ASSERT( mc );

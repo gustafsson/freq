@@ -5,6 +5,7 @@
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
 #include "heightmap/tfrmapping.h"
+#include "heightmap/tfrmappings/stftblockfilter.h"
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 #include "support/transformdescs.h"
@@ -73,6 +74,8 @@ namespace Tools
         void set_filter(Signal::OperationDesc::Ptr o);
         Signal::OperationDesc::Ptr get_filter();
 
+        Heightmap::TfrMappings::StftBlockFilterParams::Ptr get_stft_block_filter_params();
+
         //Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
@@ -97,6 +100,7 @@ namespace Tools
         Signal::OperationDesc::Ptr render_operation_desc_;
         Signal::Processing::TargetMarker::Ptr target_marker_;
         Signal::Processing::Chain::Ptr chain_;
+        Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_block_filter_params_;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called

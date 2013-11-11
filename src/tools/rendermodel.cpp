@@ -29,7 +29,9 @@ RenderModel::
         zscale(0),
         orthoview(1),
         _project(p),
-        transform_descs_(new Support::TransformDescs)
+        transform_descs_(new Support::TransformDescs),
+        stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
+
 {
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
@@ -247,6 +249,13 @@ Signal::OperationDesc::Ptr RenderModel::
     Signal::OperationDesc::ReadPtr ow (render_operation_desc_);
     const Signal::OperationDescWrapper* w = dynamic_cast<const Signal::OperationDescWrapper*>(&*ow);
     return w->getWrappedOperationDesc ();
+}
+
+
+Heightmap::TfrMappings::StftBlockFilterParams::Ptr RenderModel::
+        get_stft_block_filter_params()
+{
+    return stft_block_filter_params_;
 }
 
 

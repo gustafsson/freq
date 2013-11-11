@@ -8,12 +8,24 @@
 namespace Heightmap {
 namespace TfrMappings {
 
+
+class StftBlockFilterParams: public VolatilePtr<StftBlockFilterParams> {
+public:
+    Tfr::pChunkFilter freq_normalization;
+};
+
 /**
  * @brief The StftBlockFilter class should update a block with stft transform data.
  */
 class StftBlockFilter: public Heightmap::MergeChunk
 {
+public:
+    StftBlockFilter(StftBlockFilterParams::Ptr params);
+
     void mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& chunk, Heightmap::BlockData& outData );
+
+private:
+    StftBlockFilterParams::Ptr params_;
 
 public:
     static void test();
@@ -25,7 +37,13 @@ public:
  */
 class StftBlockFilterDesc: public Heightmap::MergeChunkDesc
 {
+public:
+    StftBlockFilterDesc(StftBlockFilterParams::Ptr params);
+
     MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const;
+
+private:
+    StftBlockFilterParams::Ptr params_;
 
 public:
     static void test();

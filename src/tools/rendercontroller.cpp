@@ -544,7 +544,7 @@ void RenderController::
         receiveSetTransform_Stft()
 {
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::StftBlockFilterDesc);
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::StftBlockFilterDesc(model()->get_stft_block_filter_params ()));
 
     // Get a copy of the transform to use
     Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().copy();
