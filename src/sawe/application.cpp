@@ -238,7 +238,11 @@ bool Application::
                 case QEvent::KeyPress:
                 {
                     QKeyEvent* m = static_cast<QKeyEvent*>(e);
-                    TaskInfo("QEvent::KeyPress key=%d on %s %s %p", m->key(), vartype(*receiver).c_str(), receiver->objectName().toStdString().c_str(), receiver);
+                    TaskInfo(boost::format("QEvent::KeyPress key=0x%x on %s [%s %p]")
+                             % m->key()
+                             % vartype(*receiver)
+                             % receiver->objectName().toStdString()
+                             % receiver);
                     break;
                 }
                 default:
