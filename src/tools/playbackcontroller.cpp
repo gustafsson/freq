@@ -147,7 +147,6 @@ void PlaybackController::
     // RenderView paints.
     connect(render_view, SIGNAL(painting()), _view, SLOT(draw()));
     connect(render_view, SIGNAL(prePaint()), _view, SLOT(locatePlaybackMarker()));
-    connect(render_view, SIGNAL(populateTodoList()), SLOT(populateTodoList()));
     connect(_view->model->selection, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
 
     // Always start stopped
@@ -411,34 +410,8 @@ void PlaybackController::
 
     ui_items_->actionPlaySelection->setEnabled( 0 != _view->model->selection->current_selection() );
 
-//    std::vector<Signal::pOperation> empty;
-//    model()->playbackTarget->post_sink()->sinks( empty );
-//    model()->playbackTarget->post_sink()->filter( Signal::pOperation() );
     model()->target_marker.reset();
     model()->adapter_playback.reset();
-}
-
-
-void PlaybackController::
-        populateTodoList()
-{
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-    Signal::Intervals missing_for_playback=
-            model()->playbackTarget->post_sink()->invalid_samples();
-
-    if (missing_for_playback)
-    {
-        bool playback_is_underfed = project_->tools().playback_model.playbackTarget->post_sink()->isUnderfed();
-
-        // Don't bother with computing playback unless it is underfed
-        if (playback_is_underfed)
-        {
-            project_->worker.center = 0;
-            project_->worker.target( project_->tools().playback_model.playbackTarget );
-        }
-    }
-*/
 }
 
 

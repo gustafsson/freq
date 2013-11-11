@@ -128,11 +128,6 @@ namespace Tools
         void painting();
 
         /**
-         * @brief populateTodoList. Use 'Qt::DirectConnection'
-         */
-        void populateTodoList();
-
-        /**
          * @brief postPaint. Use 'Qt::DirectConnection'
          */
         void postPaint();
