@@ -22,6 +22,8 @@ class StftBlockFilter: public Heightmap::MergeChunk
 public:
     StftBlockFilter(StftBlockFilterParams::Ptr params);
 
+    void prepareChunk(Tfr::ChunkAndInverse& chunk);
+
     void mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& chunk, Heightmap::BlockData& outData );
 
 private:

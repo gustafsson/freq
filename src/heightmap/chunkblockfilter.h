@@ -11,6 +11,8 @@ class MergeChunk : public VolatilePtr<MergeChunk> {
 public:
     virtual ~MergeChunk() {}
 
+    virtual void prepareChunk(Tfr::ChunkAndInverse&) {}
+
     virtual void mergeChunk(
             const Heightmap::Block& block,
             const Tfr::ChunkAndInverse& chunk,

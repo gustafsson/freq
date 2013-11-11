@@ -16,6 +16,7 @@
 #include "filters/normalize.h"
 #include "filters/normalizespectra.h"
 #include "widgets/valueslider.h"
+#include "tools/support/chaininfo.h"
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -80,13 +81,16 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->timeNormalizationSlider->setUnit ("s");
 
         connect(ui->timeNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(timeNormalizationChanged(qreal)));
+
+        ui->timeNormalizationSlider->setVisible (false);
+        ui->normalizationLabel->setVisible (false);
     }
 
     {   ui->freqNormalizationSlider->setOrientation( Qt::Horizontal );
         ui->freqNormalizationSlider->setRange (0.0, 1500, Widgets::ValueSlider::Quadratic );
         ui->freqNormalizationSlider->setValue ( 0 );
         ui->freqNormalizationSlider->setDecimals (1);
-        ui->freqNormalizationSlider->setToolTip( "Normalization along frequency axis" );
+        ui->freqNormalizationSlider->setToolTip( "Normalization width along frequency axis in Hz" );
         ui->freqNormalizationSlider->setSliderSize ( 300 );
         ui->freqNormalizationSlider->setUnit ("Hz");
 
@@ -97,7 +101,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->freqNormalizationSliderPercent->setRange (0.0, 100.0, Widgets::ValueSlider::Linear );
         ui->freqNormalizationSliderPercent->setValue ( 0 );
         ui->freqNormalizationSliderPercent->setDecimals (1);
-        ui->freqNormalizationSliderPercent->setToolTip( "Normalization along frequency axis" );
+        ui->freqNormalizationSliderPercent->setToolTip( "Normalization width along frequency axis in fraction of octave" );
         ui->freqNormalizationSliderPercent->setSliderSize ( 300 );
         ui->freqNormalizationSliderPercent->setUnit ("%");
 
@@ -156,11 +160,11 @@ void TransformInfoForm::
     if (renderview->model->collections().empty())
         return;
 
-    Tfr::Filter* f = renderview->model->block_filter();
-    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(!f?0:f->transform()->transformDesc());
-    const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(!f?0:f->transform()->transformDesc());
-    const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(!f?0:f->transform()->transformDesc());
-    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformDesc());
+    Tfr::TransformDesc::Ptr f = renderview->model->transform_desc();
+    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(f.get ());
+    const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(f.get ());
+    const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(f.get ());
+    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(f.get ());
     if (cepstrum) stft = 0; // CepstrumParams inherits StftDesc
 
     Signal::OperationDesc::Extent x = project->extent ();
@@ -211,11 +215,7 @@ void TransformInfoForm::
     if (cwt)
     {
         addRow("Type", "Gabor wavelet");
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-        if (renderview->model->renderSignalTarget->post_sink()->filter())
-            addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
-*/
+
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
         addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
@@ -231,11 +231,7 @@ void TransformInfoForm::
     else if (stft)
     {
         addRow("Type", "Short time fourier");
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-        if (renderview->model->renderSignalTarget->post_sink()->filter())
-            addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
-*/
+
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
@@ -253,11 +249,7 @@ void TransformInfoForm::
     else if (cepstrum)
     {
         addRow("Type", "Cepstrum");
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-        if (renderview->model->renderSignalTarget->post_sink()->filter())
-            addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
-*/
+
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
@@ -296,16 +288,12 @@ void TransformInfoForm::
 
     EXCEPTION_ASSERT(project->areToolsInitialized());
 
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-    Signal::Intervals I = project->worker.todo_list();
-
-    if (I.count())
-    {
-        addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs, 0, 'f', 1));
-        timer.start();
-    }
-*/
+//    Tools::Support::ChainInfo ci(project->processing_chain ());
+//    if (ci.hasWork ())
+//    {
+//        addRow("Invalid heightmap", QString("%1 s").arg(ci.out_of_date_sum()/fs, 0, 'f', 1));
+//        timer.start();
+//    }
 }
 
 
@@ -329,7 +317,7 @@ void TransformInfoForm::
         cwt.set_wanted_min_hz(newValue);
     }
 
-    renderview->emitTransformChanged();
+    deprecateAll ();
 }
 
 
@@ -354,7 +342,7 @@ void TransformInfoForm::
         stft.set_exact_chunk_size( new_chunk_size );
     }
 
-    renderview->emitTransformChanged();
+    deprecateAll ();
 }
 
 
@@ -412,8 +400,6 @@ void TransformInfoForm::
 void TransformInfoForm::
         windowTypeChanged()
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
     {
@@ -429,17 +415,13 @@ void TransformInfoForm::
         stft.setWindow( (Tfr::StftDesc::WindowType)windowtype, overlap );
     }
 
-    renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-    renderview->emitTransformChanged();
-*/
+    deprecateAll();
 }
 
 
 void TransformInfoForm::
         overlapChanged()
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
     float newValue = ui->overlapEdit->text().toFloat();
 
     // Tfr::Stft::setWindow validates value range
@@ -454,17 +436,13 @@ void TransformInfoForm::
         stft.setWindow( windowtype, newValue );
     }
 
-    renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-    renderview->emitTransformChanged();
-*/
+    deprecateAll();
 }
 
 
 void TransformInfoForm::
         averagingChanged()
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
     float newValue = ui->averagingEdit->text().toFloat();
 
     {
@@ -476,9 +454,7 @@ void TransformInfoForm::
         stft.averaging( newValue );
     }
 
-    renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-    renderview->emitTransformChanged();
-*/
+    deprecateAll();
 }
 
 
@@ -502,68 +478,60 @@ void TransformInfoForm::
 
 
 void TransformInfoForm::
-        freqNormalizationChanged(qreal /*newValue*/)
+        freqNormalizationChanged(qreal newValue)
 {
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-    Tfr::Filter* filter = project->tools ().render_model.block_filter ();
-    EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
+    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+            project->tools ().render_model.get_stft_block_filter_params ();
+    EXCEPTION_ASSERT( stft_params );
 
-    const Tfr::StftDesc* stftDesc = dynamic_cast<const Tfr::StftDesc*>(filter->transform()->transformDesc());
-    EXCEPTION_ASSERT( stftDesc ); // Only if transform desc are based on StftDesc should it reach here (i.e Stft and Cepstrum)
-
-    Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
-    EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
-
-    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
     if (0.f < newValue)
     {
         ui->freqNormalizationSliderPercent->setValue ( 0 );
-        stftblock->freqNormalization = Tfr::pChunkFilter(
+        write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(newValue));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
     {
-        stftblock->freqNormalization.reset();
+        write1(stft_params)->freq_normalization.reset();
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
     }
 
-    stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
-    renderview->emitTransformChanged ();
-*/
+    deprecateAll();
 }
 
 
 void TransformInfoForm::
         freqNormalizationPercentChanged(qreal newValue)
 {
-    Tfr::Filter* filter = project->tools ().render_model.block_filter ();
-    EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
+    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+            project->tools ().render_model.get_stft_block_filter_params ();
+    EXCEPTION_ASSERT( stft_params );
 
-    const Tfr::StftDesc* stftdesc = dynamic_cast<const Tfr::StftDesc*>(filter->transform()->transformDesc());
-    EXCEPTION_ASSERT( stftdesc ); // Only if transform desc is based on StftDesc should it reach here (i.e Stft and Cepstrum)
-
-    Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
-    EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
-
-    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
     if (0.f < newValue)
     {
         ui->freqNormalizationSlider->setValue ( 0 );
         TaskInfo("new stuff: %f", -newValue/100.0f);
-        stftblock->freqNormalization = Tfr::pChunkFilter(
+
+        write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(-newValue/100.0f));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
     {
-        stftblock->freqNormalization.reset();
+        write1(stft_params)->freq_normalization.reset();
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
     }
 
-    stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
-    renderview->emitTransformChanged ();
+    deprecateAll();
+}
+
+
+void TransformInfoForm::
+        deprecateAll()
+{
+    write1(renderview->model->target_marker()->target_needs ())->deprecateCache( Signal::Intervals::Intervals_ALL );
+    renderview->emitTransformChanged();
 }
 
 

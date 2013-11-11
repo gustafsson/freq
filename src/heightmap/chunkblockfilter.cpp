@@ -34,6 +34,8 @@ bool ChunkBlockFilter::
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
 
+    write1(merge_chunk_)->prepareChunk( pchunk );
+
     BOOST_FOREACH( pBlock block, intersecting_blocks)
     {
         BlockData::WritePtr blockdata(block->block_data());

@@ -167,20 +167,6 @@ Support::TransformDescs::Ptr RenderModel::
 }
 
 
-Tfr::Filter* RenderModel::
-        block_filter()
-{
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-    std::vector<Signal::pOperation> s = renderSignalTarget->post_sink ()->sinks ();
-    Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s[0]->source().get());
-
-    return f;
-*/
-    return 0;
-}
-
-
 Tfr::TransformDesc::Ptr RenderModel::
         transform_desc()
 {

@@ -16,14 +16,19 @@ StftBlockFilter::
 
 
 void StftBlockFilter::
-        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+        prepareChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
         StftBlockFilterParams::WritePtr P(params_);
         if (P->freq_normalization)
-            (*P->freq_normalization)(const_cast<Tfr::ChunkAndInverse&>(pchunk));
+            (*P->freq_normalization)(chunk);
     }
+}
 
+
+void StftBlockFilter::
+        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+{
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());

@@ -138,6 +138,8 @@ ToolFactory::
 
     _about_dialog = new AboutDialog( p );
 
+    _transform_info_form = new TransformInfoForm(p, _render_view );
+
 /*
 //Use Signal::Processing namespace
     _playbackmarkers_model.reset( new PlaybackMarkersModel() );
@@ -145,8 +147,6 @@ ToolFactory::
     _playbackmarkers_controller = new PlaybackMarkersController(
             _playbackmarkers_view.data(), _render_view );
     playback_model.markers = _playbackmarkers_model.data();
-
-    _transform_info_form = new TransformInfoForm(p, _render_view );
 
 #ifndef TARGET_hast
     _export_audio_dialog = new ExportAudioDialog(p, &selection_model, _render_view);

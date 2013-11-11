@@ -61,8 +61,6 @@ namespace Tools
         Support::TransformDescs::Ptr transform_descs();
 
 
-        Tfr::Filter* block_filter();
-
         Tfr::TransformDesc::Ptr transform_desc();
         void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
