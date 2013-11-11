@@ -118,7 +118,7 @@ else
         staticlibname(){ echo lib${1}.a; }
         dynamiclibname(){ echo lib${1}.dylib; }
         qmakeargs="-spec macx-clang CONFIG+=release"
-        export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib/lib; pwd):$(cd ../src; pwd):/usr/local/cuda/lib"
+        export DYLD_LIBRARY_PATH="$(cd ../src; pwd):/usr/local/cuda/lib"
         no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
     else
         timestamp(){ date --rfc-3339=seconds; }
