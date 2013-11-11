@@ -6,6 +6,9 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+//#define DEBUG_INFO
+#define DEBUG_INFO if(0)
+
 using namespace boost::posix_time;
 
 namespace Signal {
@@ -43,16 +46,25 @@ void TargetNeeds::
     Signal::Intervals not_started;
     if (Step::Ptr pstep = step_.lock ()) {
         Step::WritePtr step(pstep);
+        not_started = step->not_started ();
+
         if (invalidate)
             step->deprecateCache(invalidate);
-
-        not_started = step->not_started ();
     }
 
     // got news if something new is needed
     bool got_news = needed_samples - needed_samples_;
     // or if something new is invalidated that is also needed
     got_news |= (invalidate - not_started) & needed_samples;
+
+    DEBUG_INFO {
+        TaskInfo ti(boost::format("news = %s, needed_samples = %s, not_started = %s")
+                 % got_news % needed_samples % not_started);
+        if (needed_samples != needed_samples_)
+            TaskInfo(boost::format("needed_samples_ = %s") % needed_samples_);
+        if (invalidate)
+            TaskInfo(boost::format("invalidate = %s") % invalidate);
+    }
 
     needed_samples_ = needed_samples;
 
@@ -205,6 +217,9 @@ void TargetNeeds::
         // Note; this is more helpful to do a less noisy debugging than to increase any performance
         Bedroom::Ptr bedroom(new Bedroom);
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        // Validate a bit Signal::Interval(0,10) of the step
+        write1(step)->registerTask(0, Signal::Interval(0,10));
+        write1(step)->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
 
         TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
 
@@ -213,7 +228,7 @@ void TargetNeeds::
             Bedroom::Bed bed = bedroom->getBed();
             write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since the bedroom was woken up
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
         }
 
         {
@@ -224,6 +239,66 @@ void TargetNeeds::
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
             EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+        }
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,4));
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+        }
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,6));
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
+        }
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,6),
+                                              Signal::Interval::IntervalType_MIN,
+                                              Signal::Interval::IntervalType_MAX,
+                                              Signal::Intervals(6,7) );
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+        }
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,7));
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
+        }
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,7),
+                                              Signal::Interval::IntervalType_MIN,
+                                              Signal::Interval::IntervalType_MAX,
+                                              Signal::Intervals(6,7) );
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+        }
+
+        {
+            Timer t;
+            Bedroom::Bed bed = bedroom->getBed();
+            write1(target_needs)->updateNeeds(Signal::Interval(-15,7),
+                                              Signal::Interval::IntervalType_MIN,
+                                              Signal::Interval::IntervalType_MAX,
+                                              Signal::Intervals(5,7) );
+            bed.sleep (2);
+            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
         }
     }
 }

@@ -83,14 +83,15 @@ void HeightmapProcessingPublisher::
 
     TIME_PAINTGL_DETAILS {
         Step::Ptr step = read1(target_needs_)->step().lock();
+        Signal::Intervals not_started = read1(target_needs_)->not_started();
 
         if (step)
         {
             Step::ReadPtr stepp(step);
-            TaskInfo(boost::format("RenderView step out_of_date%s\n"
-                               "not_started = %s")
+            TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
                              % stepp->out_of_date()
-                             % stepp->not_started());
+                             % stepp->not_started()
+                             % not_started);
         }
     }
 }
