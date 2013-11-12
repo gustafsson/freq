@@ -27,6 +27,7 @@ testlib {
     win32:TEMPLATE = vcapp
     win32:CONFIG -= embed_manifest_dll
     win32:CONFIG += embed_manifest_exe
+    macx:CONFIG -= app_bundle
 }
 
 CONFIG(debug, debug|release): CONFIG += console

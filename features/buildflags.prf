@@ -3,7 +3,6 @@
 }
 
 win32:CONFIG += debug_and_release
-macx:CONFIG -= app_bundle
 CONFIG += warn_on
 CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
 CONFIG += openmp
