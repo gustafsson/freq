@@ -1108,6 +1108,7 @@ void RenderController::
         break;
 
     default:
+        EXCEPTION_ASSERT(false);
         break;
     }
 }
