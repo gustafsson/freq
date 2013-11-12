@@ -97,10 +97,6 @@ void TfrMapping::
                 block_layout_.texels_per_column (),
                 v);
 
-    Tfr::FreqAxis f;
-    f.setLinear( v );
-    visualization_params_->display_scale(f);
-
     updateCollections();
 }
 
