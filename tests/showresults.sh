@@ -2,13 +2,14 @@
 
 set -e
 
+mkdir -p results
 outputname=results/results-`git rev-parse --short HEAD`.html
 rm -f "$outputname"
 
 echo "<html><body><h2>tests succeeded</h2></body></html>" > "$outputname"
 
-failedlogs=(`ls | egrep *-[a-z]+_failed.log`)
-failcount=`ls | egrep -c *-[a-z]+_failed.log`
+failedlogs=(`ls | egrep *-[a-z]*_failed.log`)
+failcount=`ls | egrep -c *-[a-z]*_failed.log`
 failedtests=(`ls | sed -n 's/\(.*\)-.*_failed\.log/\1/p'`)
 
 header="<html><body>"
