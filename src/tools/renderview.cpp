@@ -1177,6 +1177,16 @@ void RenderView::
     if (isWorking || isRecording || workerCrashed)
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed && !isRecording );
 
+    {
+        static bool hadwork = false;
+        if (isWorking)
+            hadwork = true;
+        if (!isWorking && hadwork) {
+            // Useful when debugging to close application or do something else after finishing first work chunk
+            emit finishedWorkSection();
+        }
+    }
+
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
