@@ -120,6 +120,7 @@ else
         qmakeargs="-spec macx-clang CONFIG+=release"
         export DYLD_LIBRARY_PATH="$(cd ../src; pwd):/usr/local/cuda/lib"
         no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+        outputdir="*.app/Contents/MacOS"
     else
         timestamp(){ date --rfc-3339=seconds; }
         staticlibname(){ echo lib${1}.a; }
@@ -128,11 +129,11 @@ else
         qmakeargs=
         export LD_LIBRARY_PATH="$(cd ../src; pwd):$(cd ../lib/sonicawe-ubuntulib/lib; pwd)"
         no_cores=$(cat /proc/cpuinfo | grep -c processor)
+        outputdir="."
     fi
     linkcmd="ln -s"
     makecmd="make -j$no_cores"
     makeonecmd=$makecmd
-    outputdir="."
 fi
 
 formatedtimestamp() {
@@ -225,6 +226,7 @@ for configname in $configurations; do
       rm -f Makefile &&
       rm -f "$outputdir/$testname" &&
       rm -f "$outputdir/$(staticlibname $testname)" &&
+      rm -f "$(staticlibname $testname)" &&
       echo qmake $qmakeargs CONFIG+=${configname} &&
       qmake $qmakeargs CONFIG+=${configname} &&
       eval echo $makeonecmd &&
