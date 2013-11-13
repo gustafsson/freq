@@ -20,7 +20,7 @@ SleepSchedule::
 
 
 Task::Ptr SleepSchedule::
-        getTask() volatile
+        getTask(Signal::ComputingEngine::Ptr engine) volatile
 {
     Bedroom::Ptr bedroom;
     ISchedule::Ptr schedule;
@@ -42,7 +42,7 @@ Task::Ptr SleepSchedule::
         {
             DEBUGINFO TaskTimer tt(boost::format("Searching for a task"));
 
-            Task::Ptr task = schedule->getTask();
+            Task::Ptr task = schedule->getTask(engine);
 
             if (task)
                 return task;
@@ -73,7 +73,7 @@ class ScheduleMock: public ISchedule {
 public:
     ScheduleMock() : get_task_calls(0) {}
 
-    Task::Ptr getTask() volatile {
+    Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         get_task_calls++;
         if (get_task_calls <= 1)
             return Task::Ptr();
@@ -88,7 +88,7 @@ public:
     WorkerMock(ISchedule::Ptr schedule) : schedule(schedule) {}
 
     virtual void run() {
-        schedule->getTask();
+        schedule->getTask(Signal::ComputingEngine::Ptr());
     }
 
     ISchedule::Ptr schedule;

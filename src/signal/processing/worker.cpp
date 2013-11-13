@@ -34,7 +34,7 @@ void Worker::
                 if (!schedule)
                     break;
 
-                Task::Ptr task = schedule->getTask();
+                Task::Ptr task = schedule->getTask(computing_eninge_);
                 if (!task)
                     break;
 
@@ -96,7 +96,7 @@ public:
 
     int get_task_count;
 
-    virtual Task::Ptr getTask() volatile {
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         get_task_count++;
         return Task::Ptr();
     }
@@ -105,7 +105,7 @@ public:
 
 class GetTaskSegFaultMock: public ISchedule {
 public:
-    virtual Task::Ptr getTask() volatile {
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         if (DetectGdb::was_started_through_gdb ())
             BOOST_THROW_EXCEPTION(segfault_exception());
 
@@ -125,7 +125,7 @@ public:
 
 class GetTaskExceptionMock: public ISchedule {
 public:
-    virtual Task::Ptr getTask() volatile {
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         EXCEPTION_ASSERTX(false, "testing that worker catches exceptions from a scheduler");
 
         // unreachable code
@@ -136,8 +136,8 @@ public:
 
 class DeadLockMock: public GetTaskMock {
 public:
-    virtual Task::Ptr getTask() volatile {
-        GetTaskMock::getTask ();
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile {
+        GetTaskMock::getTask (engine);
 
         // cause dead lock
         volatile DeadLockMock m;

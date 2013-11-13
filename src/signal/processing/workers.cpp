@@ -250,7 +250,7 @@ public:
 
     int get_task_count;
 
-    virtual Task::Ptr getTask() volatile {
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         WritePtr w(this);
         GetEmptyTaskMock* self = dynamic_cast<GetEmptyTaskMock*>(&*w);
 
@@ -269,7 +269,7 @@ public:
 
 class BlockScheduleMock: public ISchedule, public Bedroom {
 protected:
-    virtual Task::Ptr getTask() volatile {
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         wakeup ();
 
         // This should block the thread and be aborted by QThread::terminate

@@ -51,7 +51,8 @@ void Task::
     Signal::Operation::Ptr o = write1(step_)->operation (ce);
 
     if (!o) {
-        TIME_TASK TaskInfo("Oups, this engine does not support this operation");
+        TIME_TASK TaskInfo(boost::format("Oups, this engine %s does not support this operation") %
+                           (ce?vartype(*ce):"(null)"));
         return;
     }
 

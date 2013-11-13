@@ -26,7 +26,7 @@ TargetSchedule::
 
 
 Task::Ptr TargetSchedule::
-        getTask() volatile
+        getTask(Signal::ComputingEngine::Ptr engine) volatile
 {
     // Lock this from writing during getTask
     ReadPtr gettask(this);
@@ -59,7 +59,9 @@ Task::Ptr TargetSchedule::
             vertex,
             needed,
             work_center,
-            preferred_update_size);
+            preferred_update_size,
+            Workers::Ptr(),
+            engine);
 
     DEBUGINFO if (task)
         TaskInfo(boost::format("task->expected_output() = %s") % read1(task)->expected_output());
@@ -119,21 +121,22 @@ void TargetSchedule::
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Bedroom::Ptr bedroom(new Bedroom);
         Targets::Ptr targets(new Targets(bedroom));
+        Signal::ComputingEngine::Ptr engine;
 
         TargetSchedule targetschedule(dag, algorithm, targets);
 
         // It should not return a task without a target
-        EXCEPTION_ASSERT(!targetschedule.getTask ());
+        EXCEPTION_ASSERT(!targetschedule.getTask (engine));
 
         // It should not return a task for a target without needed_samples
         TargetNeeds::Ptr targetneeds ( write1(targets)->addTarget(step) );
-        EXCEPTION_ASSERT(!targetschedule.getTask ());
+        EXCEPTION_ASSERT(!targetschedule.getTask (engine));
 
         // The scheduler should be used to find a task when the target has
         // a non-empty not_started();
         write1(targetneeds)->updateNeeds(Signal::Interval(3,4));
         EXCEPTION_ASSERT(read1(targetneeds)->not_started());
-        Task::Ptr task = targetschedule.getTask ();
+        Task::Ptr task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
         EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(3,4));
     }
@@ -153,6 +156,7 @@ void TargetSchedule::
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Bedroom::Ptr bedroom(new Bedroom);
         Targets::Ptr targets(new Targets(bedroom));
+        Signal::ComputingEngine::Ptr engine;
 
         TargetNeeds::Ptr targetneeds ( write1(targets)->addTarget(step) );
         TargetNeeds::Ptr targetneeds2 ( write1(targets)->addTarget(step2) );
@@ -160,7 +164,7 @@ void TargetSchedule::
         write1(targetneeds2)->updateNeeds(Signal::Interval(5,6),0,10,0);
 
         TargetSchedule targetschedule(dag, algorithm, targets);
-        Task::Ptr task = targetschedule.getTask ();
+        Task::Ptr task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
         EXCEPTION_ASSERT_EQUALS(read1(task)->expected_output(), Signal::Interval(5,6));
     }

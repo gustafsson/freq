@@ -2,6 +2,7 @@
 #define SIGNAL_PROCESSING_ISCHEDULE_H
 
 #include "volatileptr.h"
+#include "signal/computingengine.h"
 
 namespace Signal {
 namespace Processing {
@@ -27,7 +28,7 @@ public:
      *
      * @return
      */
-    virtual boost::shared_ptr<volatile Task> getTask() volatile=0;
+    virtual boost::shared_ptr<volatile Task> getTask(Signal::ComputingEngine::Ptr engine) volatile=0;
 };
 
 } // namespace Processing

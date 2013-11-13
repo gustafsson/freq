@@ -127,7 +127,7 @@ Task::Ptr FirstMissAlgorithm::
                 Workers::Ptr /*workers*/,
                 Signal::ComputingEngine::Ptr engine) const
 {
-    DEBUGINFO TaskTimer tt("getTask");
+    DEBUGINFO TaskTimer tt("getTask %p", engine.get ());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 

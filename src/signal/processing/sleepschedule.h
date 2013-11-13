@@ -18,7 +18,7 @@ public:
     SleepSchedule(Bedroom::Ptr bedroom, ISchedule::Ptr schedule);
 
     // Sleeps until a task can be returned
-    virtual boost::shared_ptr<volatile Task> getTask() volatile;
+    virtual boost::shared_ptr<volatile Task> getTask(Signal::ComputingEngine::Ptr engine) volatile;
 
 private:
     Bedroom::Ptr bedroom_;

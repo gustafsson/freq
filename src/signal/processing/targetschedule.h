@@ -16,7 +16,7 @@ public:
     // Requires workers and/or current worker
     TargetSchedule(Dag::Ptr g, IScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets);
 
-    virtual Task::Ptr getTask() volatile;
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile;
 
 private:
     Targets::Ptr targets;
