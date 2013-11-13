@@ -38,12 +38,8 @@ public:
 
     RenderOperationDesc(Signal::OperationDesc::Ptr embed, RenderTarget::Ptr render_target);
 
-    // Signal::OperationDescWrapper
-    Signal::OperationWrapper*   createOperationWrapper(
-                                    Signal::ComputingEngine*,
-                                    Signal::Operation::Ptr wrapped) const;
-
     // Signal::OperationDesc
+    Signal::Operation::Ptr      createOperation( Signal::ComputingEngine* engine ) const;
     Signal::Intervals           affectedInterval( const Signal::Intervals& I ) const;
 
 
@@ -51,7 +47,7 @@ public:
     void                        transform_desc(Tfr::TransformDesc::Ptr);
 
 private:
-    class Operation : public Signal::OperationWrapper
+    class Operation : public Signal::Operation
     {
     public:
         Operation(Signal::Operation::Ptr wrapped, RenderTarget::Ptr render_target);
@@ -59,6 +55,7 @@ private:
         Signal::pBuffer process(Signal::pBuffer b);
 
     private:
+        Operation::Ptr wrapped_;
         RenderTarget::Ptr render_target_;
     };
 

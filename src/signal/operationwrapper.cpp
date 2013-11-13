@@ -5,59 +5,47 @@
 
 namespace Signal {
 
-OperationWrapper::
-        OperationWrapper(Operation::Ptr wrap)
-    :
-      private_data_(new private_data)
-{
-    setWrappedOperation(wrap);
-}
-
-
-void OperationWrapper::
-        setWrappedOperation(Operation::Ptr wrap) volatile
-{
-    write1(private_data_)->wrappedOperation(wrap);
-}
-
-
-Signal::pBuffer OperationWrapper::
-        process(Signal::pBuffer b)
-{
-    Operation::Ptr wrap = read1(private_data_)->wrappedOperation();
-    if (!wrap)
-        return b;
-
-    return write1(wrap)->process (b);
-}
+/**
+ * @brief The OperationWrapper class should wrap all calls to another Operation.
+ *
+ * It should be a transparent no-op operation if the other operation is null.
+ */
+class NoopOperationWrapper: public Operation {
+public:
+    virtual Signal::pBuffer process(Signal::pBuffer b) { return b; }
+};
 
 
 OperationDescWrapper::
         OperationDescWrapper(OperationDesc::Ptr wrap)
     :
-      private_(new private_data)
+      wrap_(wrap)
 {
-    setWrappedOperationDesc(wrap);
 }
 
 
 void OperationDescWrapper::
-        setWrappedOperationDesc(OperationDesc::Ptr wrap)
+        setInvalidator(Processing::IInvalidator::Ptr invalidator)
 {
-    private_data::WritePtr pd(private_);
-    BOOST_FOREACH(private_data::OperationMap::value_type& v, pd->map)
-    {
-        Operation::Ptr o = v.second.lock();
-        if (o) {
-            Operation::Ptr newo;
-            if (wrap)
-                newo = read1(wrap)->createOperation (v.first);
+    invalidator_ = invalidator;
+}
 
-            dynamic_cast<volatile OperationWrapper*>(o.get ())->setWrappedOperation (newo);
-        }
+
+void OperationDescWrapper::
+        setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile
+{
+    Processing::IInvalidator::Ptr invalidator;
+
+    {
+        WritePtr selfp(this);
+        OperationDescWrapper* self = dynamic_cast<OperationDescWrapper*>(&*selfp);
+
+        self->wrap_ = wrap;
+        invalidator = self->invalidator_;
     }
 
-    wrap_ = wrap;
+    if (invalidator)
+        read1(invalidator)->deprecateCache(Signal::Intervals::Intervals_ALL);
 }
 
 
@@ -109,21 +97,10 @@ OperationDesc::Ptr OperationDescWrapper::
 Operation::Ptr OperationDescWrapper::
         createOperation(ComputingEngine* engine=0) const
 {
-    Operation::Ptr o;
-    if (wrap_)
-        o = read1(wrap_)->createOperation (engine);
+    if (!wrap_)
+        return Operation::Ptr(new NoopOperationWrapper);
 
-    Operation::Ptr wo(createOperationWrapper(engine, o));
-    write1(private_)->map[engine] = wo;
-
-    return wo;
-}
-
-
-OperationWrapper* OperationDescWrapper::
-        createOperationWrapper(ComputingEngine*, Operation::Ptr wrapped) const
-{
-    return new OperationWrapper(wrapped);
+    return read1(wrap_)->createOperation (engine);
 }
 
 
@@ -187,6 +164,8 @@ bool OperationDescWrapper::
 
 #include "unused.h"
 #include "timer.h"
+#include "signal/computingengine.h"
+
 #include <QSemaphore>
 #include <QThread>
 
@@ -277,17 +256,27 @@ void OperationDescWrapper::
             EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
             w.setWrappedOperationDesc (b);
             EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 1 );
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
         }
         w.setWrappedOperationDesc (a);
         EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 1 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
     }
 
     // It should behave as a transparent operation if no operation is wrapped
     {
         OperationDescWrapper w;
+        OperationDesc::Ptr a(new WrappedOperationDescMock());
+
+        Signal::Operation::Ptr o0 = w.createOperation (0);
+        EXCEPTION_ASSERT(o0);
+        EXCEPTION_ASSERT_EQUALS(vartype(*o0.get ()), "Signal::NoopOperationWrapper");
+
+        w.setWrappedOperationDesc (a);
         Signal::Operation::Ptr o1 = w.createOperation (0);
+        EXCEPTION_ASSERT(o1);
+        EXCEPTION_ASSERT_EQUALS(vartype(*o1.get ()), "Signal::WrappedOperationMock");
+
         Signal::pBuffer b1(new Signal::Buffer(Signal::Interval(0,1),1,1));
         Signal::pBuffer b2(new Signal::Buffer(Signal::Interval(0,1),1,1));
         *b1->getChannel (0)->waveform_data ()->getCpuMemory () = 1234;
@@ -302,6 +291,7 @@ void OperationDescWrapper::
         OperationDescWrapper w;
         OperationDesc::Ptr a(new WrappedOperationDescMock());
         OperationDesc::Ptr b(new WrappedOperationDescMock());
+        OperationDesc::Ptr c(new WrappedOperationDescMock());
 
         WrappedOperationWorkerMock wowm;
         wowm.operation = w.createOperation (0);
@@ -309,13 +299,20 @@ void OperationDescWrapper::
 
         EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 0 );
         w.setWrappedOperationDesc (a);
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 0 );
+        wowm.operation = w.createOperation (0);
         EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
+        ComputingEngine::Ptr ce(new ComputingCpu);
+        wowm.operation = w.createOperation (ce.get());
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 2 );
+        w.setWrappedOperationDesc (b);
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 2 );
 
         wowm.start ();
         QSemaphore().tryAcquire (1, 1); // sleep 1 ms to make sure the operation is locked for writing
         {
             Timer t;
-            w.setWrappedOperationDesc (b); // this should not be blocking
+            w.setWrappedOperationDesc (c); // this should not be blocking
             float T = t.elapsed ();
             EXCEPTION_ASSERT_LESS( T, 60e-6 );
         }

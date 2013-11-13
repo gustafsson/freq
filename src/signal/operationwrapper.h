@@ -2,40 +2,15 @@
 #define SIGNAL_OPERATIONWRAPPER_H
 
 #include "operation.h"
+#include "signal/processing/iinvalidator.h"
 
 namespace Signal {
-
-
-/**
- * @brief The OperationWrapper class should wrap all calls to another Operation.
- *
- * It should be a transparent no-op operation if the other operation is null.
- */
-class OperationWrapper: public Operation {
-public:
-    OperationWrapper(Operation::Ptr wrap);
-
-    void setWrappedOperation(Operation::Ptr wrap) volatile;
-
-    virtual Signal::pBuffer process(Signal::pBuffer b);
-
-private:
-    class private_data: public VolatilePtr<private_data> {
-    public:
-        void wrappedOperation(Operation::Ptr wrap) { wrap_ = wrap; }
-        Operation::Ptr wrappedOperation() const { return wrap_; }
-    private:
-        Operation::Ptr wrap_;
-    };
-
-    private_data::Ptr private_data_;
-};
-
 
 /**
  * @brief The OperationDescWrapper class should behave as another OperationDesc.
  *
- * It should recreate instantiated operations when the wrapped operation is changed.
+ * It should ensure that instantiated operations are recreated when the wrapped
+ * operation is changed.
  *
  * It should behave as a transparent operation if no operation is wrapped.
  *
@@ -45,7 +20,21 @@ class OperationDescWrapper: public OperationDesc {
 public:
     OperationDescWrapper(OperationDesc::Ptr wrap=OperationDesc::Ptr());
 
-    void setWrappedOperationDesc(OperationDesc::Ptr wrap);
+    /**
+     * @brief setInvalidator specifies which invalidator to use.
+     * @param invalidator is called with Signal::Intervals::Intervals_ALL whenever
+     * the wrapped operation is changed. This makes Step recreate operations for
+     * computing engines as needed.
+     */
+    void setInvalidator(Processing::IInvalidator::Ptr invalidator);
+
+    /**
+     * @brief setWrappedOperationDesc makes this OperationDesc behave as a new
+     * operation. Will call invalidator if it has been set.
+     * @param wrap
+     * volatile so that it can call invalidator without keeping a lock to 'this'.
+     */
+    void setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile;
     OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
@@ -59,19 +48,9 @@ public:
     virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;
 
-protected:
-    virtual OperationWrapper* createOperationWrapper(ComputingEngine* engine, Operation::Ptr wrapped) const;
-
 private:
+    Processing::IInvalidator::Ptr invalidator_;
     OperationDesc::Ptr wrap_;
-
-    // Cause side effects from const OperationDesc interface
-    class private_data: public VolatilePtr<private_data> {
-    public:
-        typedef std::map<ComputingEngine*, Operation::WeakPtr> OperationMap;
-        OperationMap map;
-    };
-    private_data::Ptr private_;
 
 public:
     static void test();

@@ -16,7 +16,17 @@
 namespace Tools
 {
 
+class TargetInvalidator: public Signal::Processing::IInvalidator {
+public:
+    TargetInvalidator(Signal::Processing::TargetNeeds::Ptr needs):needs_(needs) {}
 
+    virtual void deprecateCache(Signal::Intervals what) const {
+        write1(needs_)->deprecateCache(what);
+    }
+
+private:
+    Signal::Processing::TargetNeeds::Ptr needs_;
+};
 
 RenderModel::
         RenderModel(Sawe::Project* p)
@@ -56,8 +66,11 @@ void RenderModel::
         init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt)
 {
     // specify wrapped filter with set_filter
-    render_operation_desc_.reset(new Support::RenderOperationDesc(Signal::OperationDesc::Ptr(), rt));
+    Support::RenderOperationDesc*rod;
+    render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::Ptr(), rt));
     target_marker_ = write1(chain)->addTarget(render_operation_desc_);
+    rod->setInvalidator(Signal::Processing::IInvalidator::Ptr(
+                                               new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
 
     recompute_extent ();
@@ -222,8 +235,8 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::Ptr o)
 {
-    Signal::OperationDesc::WritePtr ow (render_operation_desc_);
-    Signal::OperationDescWrapper* w = dynamic_cast<Signal::OperationDescWrapper*>(&*ow);
+    volatile Signal::OperationDescWrapper* w =
+            dynamic_cast<volatile Signal::OperationDescWrapper*>(&*render_operation_desc_);
 
     w->setWrappedOperationDesc (o);
 }

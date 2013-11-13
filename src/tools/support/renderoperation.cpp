@@ -17,10 +17,15 @@ RenderOperationDesc::
 }
 
 
-OperationWrapper* RenderOperationDesc::
-        createOperationWrapper(ComputingEngine*, Operation::Ptr wrapped) const
+Operation::Ptr RenderOperationDesc::
+        createOperation(ComputingEngine* engine=0) const
 {
-    return new Operation(wrapped, render_target_);
+    Operation::Ptr wrap = OperationDescWrapper::createOperation (engine);
+
+    if (!wrap)
+        return Operation::Ptr();
+
+    return Operation::Ptr(new Operation(wrap, render_target_));
 }
 
 
@@ -39,7 +44,6 @@ Intervals RenderOperationDesc::
 Tfr::TransformDesc::Ptr RenderOperationDesc::
         transform_desc() const
 {
-    // TODO use Processing
     Signal::OperationDesc::Ptr wo = getWrappedOperationDesc();
     if (!wo)
         return Tfr::TransformDesc::Ptr();
@@ -63,7 +67,6 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
 void RenderOperationDesc::
         transform_desc(Tfr::TransformDesc::Ptr t)
 {
-    // TODO use Processing
     Signal::OperationDesc::Ptr wo = getWrappedOperationDesc();
     if (!wo)
         return;
@@ -86,7 +89,7 @@ void RenderOperationDesc::
 RenderOperationDesc::Operation::
         Operation(Operation::Ptr wrapped, RenderTarget::Ptr render_target)
     :
-      OperationWrapper(wrapped),
+      wrapped_(wrapped),
       render_target_(render_target)
 {
     EXCEPTION_ASSERT( wrapped );
@@ -99,7 +102,7 @@ pBuffer RenderOperationDesc::Operation::
 {
     Signal::Interval input = b?b->getInterval ():Signal::Interval();
 
-    b = OperationWrapper::process (b);
+    b = write1(wrapped_)->process (b);
 
     Signal::Interval output = b?b->getInterval ():Signal::Interval();
 

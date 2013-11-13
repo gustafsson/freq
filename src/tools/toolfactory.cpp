@@ -252,13 +252,10 @@ ToolFactory::
 
 //    delete _fantracker_controller;
 
-    EXCEPTION_ASSERT( _timeline_controller );
 	delete _timeline_controller;
 
-    EXCEPTION_ASSERT( _timeline_view );
     delete _timeline_view;
 
-    EXCEPTION_ASSERT( _render_view );
     delete _render_view;
 }
 
