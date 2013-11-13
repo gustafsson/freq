@@ -45,8 +45,10 @@ Signal::Intervals Step::
 Signal::Intervals Step::
         deprecateCache(Signal::Intervals deprecated)
 {
-    if (deprecated == Signal::Interval::Interval_ALL)
+    if (deprecated == Signal::Interval::Interval_ALL) {
         cache_.reset ();
+        operations_.clear ();
+    }
 
     if (operation_desc_ && deprecated)
         deprecated = read1(operation_desc_)->affectedInterval(deprecated);

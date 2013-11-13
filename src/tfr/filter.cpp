@@ -265,6 +265,10 @@ Signal::Operation::Ptr FilterDesc::
 {
     Tfr::pTransform t = transform_desc_->createTransform ();
     pChunkFilter f = read1(chunk_filter_)->createChunkFilter (engine);
+
+    if (!f)
+        return Signal::Operation::Ptr();
+
     return Signal::Operation::Ptr (new TransformKernel( t, f ));
 }
 

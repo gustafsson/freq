@@ -55,7 +55,7 @@ void ChainInfo::
         ChainInfo c(cp);
 
         EXCEPTION_ASSERT( !c.hasWork () );
-        EXCEPTION_ASSERT( 1 == c.n_workers () );
+        EXCEPTION_ASSERT( QThread::idealThreadCount () == c.n_workers () );
     }
 }
 

@@ -27,8 +27,9 @@ public:
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
-     * @param deprecated_input If this is Signal::Interval::Interval_ALL the entire cache_ is released.
-     * @return when the an interval of the input is changed it may affect a larger interval.
+     * @param deprecated_input If this is Signal::Interval::Interval_ALL the entire cache_ is
+     * released and the operation map is cleared.
+     * @return when an interval of the input is changed it may affect a larger interval.
      * deprecateCache returns which intervals in the cache that was affected by 'deprecated_input'
      */
     Signal::Intervals           deprecateCache(Signal::Intervals deprecated_input);
