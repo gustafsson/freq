@@ -137,12 +137,12 @@ void StftBlockFilterDesc::
         Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::Ptr()));
         MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
 
-        EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::StftBlockFilter" );
+        EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingCpu cpu;
         mc = read1(mcd)->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::StftBlockFilter" );
 
         Signal::ComputingCuda cuda;
         mc = read1(mcd)->createMergeChunk (&cuda);
