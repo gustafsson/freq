@@ -12,7 +12,7 @@ namespace Tfr {
 class CwtChunk;
 class CwtChunkPart;
 
-class Cwt:public Transform, public TransformParams
+class Cwt:public Transform, public TransformDesc
 {
 public:
     /**
@@ -36,13 +36,16 @@ public:
 
     virtual pChunk operator()( Signal::pMonoBuffer );
     virtual Signal::pMonoBuffer inverse( pChunk );
-    virtual const TransformParams* transformParams() const { return this; }
+    virtual const TransformDesc* transformDesc() const { return this; }
 
+    TransformDesc::Ptr copy() const;
     virtual pTransform createTransform() const;
     virtual float displayedTimeResolution( float FS, float hz ) const;
     virtual FreqAxis freqAxis( float FS ) const;
     //virtual Signal::Interval validLength(Signal::pBuffer buffer);
-    virtual bool operator==(const TransformParams& b) const;
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    virtual bool operator==(const TransformDesc& b) const;
 
 
     float     get_min_hz(float fs) const;
@@ -99,6 +102,8 @@ public:
     size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
 
     unsigned        chunk_alignment(float fs) const;
+    float           get_fs() const;
+    void            set_fs(float fs);
 private:
     pChunk          computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales );
 
@@ -133,6 +138,9 @@ private:
     float  _wavelet_def_time_suppport;
     float _wavelet_scale_suppport;
     float _jibberish_normalization;
+
+    // TODO make Cwt not depend on fs at all.
+    float last_fs;
 };
 
 } // namespace Tfr

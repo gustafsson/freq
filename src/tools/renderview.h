@@ -8,7 +8,9 @@
 #include "commentview.h"
 #include "sawe/toolmainloop.h"
 #include "tools/commands/viewstate.h"
-#include "support/timer.h"
+
+// gpumisc
+#include "timer.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -42,6 +44,7 @@ namespace Tools
         Heightmap::Position getPlanePos( QPointF widget_coordinates, bool* success = 0, bool useRenderViewContext = true );
         QPointF widget_coordinates( QPointF window_coordinates );
         QPointF window_coordinates( QPointF widget_coordinates );
+        // TODO use a pointer to a smart pointer or something that has a semantic meaning instead of a magical value of ref.
         float getHeightmapValue( Heightmap::Position pos, Heightmap::Reference* ref = 0, float* find_local_max = 0, bool fetch_interpolation = false, bool* is_valid_value = 0 );
 
         /**
@@ -98,6 +101,7 @@ namespace Tools
         void emitAxisChanged();
 
     public slots:
+        void setLastUpdateSize( Signal::UnsignedIntervalType length );
         void userinput_update( bool request_high_fps = true, bool post_update = true, bool cheat_also_high=true );
 
     signals:
@@ -124,11 +128,6 @@ namespace Tools
         void painting();
 
         /**
-         * @brief populateTodoList. Use 'Qt::DirectConnection'
-         */
-        void populateTodoList();
-
-        /**
          * @brief postPaint. Use 'Qt::DirectConnection'
          */
         void postPaint();
@@ -153,7 +152,7 @@ namespace Tools
         /**
          * @brief transformChanged is emitted through emitTransformChanged.
          * emitTransformChanged should be called whenever the state of the
-         * transform parameters have changed. This signal might be issued
+         * transform description has changed. This signal might be issued
          * several times during a frame. Use 'Qt::QueuedConnection'.
          */
         void transformChanged();
@@ -173,7 +172,7 @@ namespace Tools
         void initializeGL();
 
         /// Similiar to QGLWidget::resizeGL()
-        void resizeGL( int width, int height );
+        void resizeGL( int width, int height, int ratio );
 
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
@@ -187,7 +186,6 @@ namespace Tools
         void setRotationForAxes(bool);
         void computeChannelColors();
 
-        boost::scoped_ptr<TaskTimer> _work_timer;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 
@@ -202,9 +200,10 @@ namespace Tools
         /**
           Adjusting sleep between frames based on fps.
           */
-        Support::Timer _last_frame;
+        Timer _last_frame;
         float _target_fps;
 
+        Signal::UnsignedIntervalType _last_update_size;
 
         double modelview_matrix[16], projection_matrix[16];
         int viewport_matrix[4];

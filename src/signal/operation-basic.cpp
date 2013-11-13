@@ -6,7 +6,7 @@ namespace Signal {
     // OperationSetSilent  /////////////////////////////////////////////////////////////////
 OperationSetSilent::
         OperationSetSilent( pOperation source, const Signal::Interval& section )
-:   Operation( source ),
+:   DeprecatedOperation( source ),
     section_( section )
 {
 }
@@ -14,9 +14,12 @@ OperationSetSilent::
 std::string OperationSetSilent::
         name()
 {
-    float fs = source()?sample_rate():1;
+    float fs = source()?sample_rate():0.f;
     std::stringstream ss;
-    ss << "Clear section [" << section_.first/fs << ", " << section_.last/fs << ") s";
+    if (fs > 0)
+        ss << "Clear section [" << section_.first/fs << ", " << section_.last/fs << ") s";
+    else
+        ss << "Clear section " << section_;
     return ss.str();
 }
 
@@ -34,7 +37,7 @@ pBuffer OperationSetSilent::
 
 OperationRemoveSection::
         OperationRemoveSection( pOperation source, Interval section )
-:   Operation( source ),
+:   DeprecatedOperation( source ),
     section_(section)
 {
     EXCEPTION_ASSERT(section_.count());
@@ -60,7 +63,7 @@ IntervalType OperationRemoveSection::
 {
     Interval pos(0, Interval::IntervalType_MAX);
     Interval sectionp = pos & section_;
-    IntervalType N = Operation::number_of_samples();
+    IntervalType N = DeprecatedOperation::number_of_samples();
     if (!sectionp.count ())
         return N;
 
@@ -94,8 +97,8 @@ Signal::Intervals OperationRemoveSection::
     Interval rightkeep(section_.last, Interval::IntervalType_MAX);
     Interval leftkeep(Interval::IntervalType_MIN, section_.first);
 
-    Intervals left = (I & leftkeep) << (section_ & neg).count ();
-    Intervals right = (I & rightkeep) >> (section_ & pos).count ();
+    Intervals left = (I & leftkeep) <<= (section_ & neg).count ();
+    Intervals right = (I & rightkeep) >>= (section_ & pos).count ();
 
     left |= I & rightkeep;
     right |= I & leftkeep;
@@ -113,8 +116,8 @@ Signal::Intervals OperationRemoveSection::
     Interval rightmove(section_.first, Interval::IntervalType_MAX);
     Interval leftmove(Interval::IntervalType_MIN, section_.last);
 
-    Intervals left = (leftmove & neg & I) >> (section_ & neg).count();
-    Intervals right = (rightmove & pos & I) << (section_ & pos).count();
+    Intervals left = (leftmove & neg & I) >>= (section_ & neg).count();
+    Intervals right = (rightmove & pos & I) <<= (section_ & pos).count();
 
     Interval rightkeep(section_.last, Interval::IntervalType_MAX);
     Interval leftkeep(Interval::IntervalType_MIN, section_.first);
@@ -131,7 +134,7 @@ Signal::Intervals OperationRemoveSection::
 
 OperationInsertSilence::
         OperationInsertSilence( pOperation source, Interval section )
-:   Operation( source ),
+:   DeprecatedOperation( source ),
     section_( section )
 {
     EXCEPTION_ASSERT( section.first >= 0 );
@@ -149,7 +152,7 @@ pBuffer OperationInsertSilence::
 
     if (I.first >= section_.last) {
         pBuffer b = source()->readFixedLength(
-                (Intervals( I ) >> section_.count()).spannedInterval());
+                (Intervals( I ) >>= section_.count()).spannedInterval());
         b->set_sample_offset ( b->sample_offset () + section_.count() );
         return b;
     }
@@ -165,8 +168,8 @@ pBuffer OperationInsertSilence::
 IntervalType OperationInsertSilence::
         number_of_samples()
 {
-    IntervalType N = Operation::number_of_samples();
-    if (N <= section_.first)
+    UnsignedIntervalType N = DeprecatedOperation::number_of_samples();
+    if (0 <= section_.first && N <= (UnsignedIntervalType)section_.first)
         return section_.last;
     if (N + section_.count() < N)
         return Interval::IntervalType_MAX;
@@ -189,7 +192,7 @@ Signal::Intervals OperationInsertSilence::
 
     ending = Signal::Interval( section_.first, Signal::Interval::IntervalType_MAX );
 
-    return (I&beginning) | ((I&ending) << section_.count());
+    return (I&beginning) | ((I&ending) <<= section_.count());
 }
 
 Signal::Intervals OperationInsertSilence::
@@ -202,7 +205,7 @@ Signal::Intervals OperationInsertSilence::
 
     ending = Signal::Interval(section_.last, Signal::Interval::IntervalType_MAX);
 
-    return (I&beginning) | ((I&ending) >> section_.count());
+    return (I&beginning) | ((I&ending) >>= section_.count());
 }
 
 
@@ -210,7 +213,7 @@ Signal::Intervals OperationInsertSilence::
 
 OperationSuperposition::
         OperationSuperposition( pOperation source, pOperation source2 )
-:   Operation( source ),
+:   DeprecatedOperation( source ),
     _source2( source2 )
 {
 //    if (Operation::source()->sample_rate() != _source2->sample_rate())
@@ -221,7 +224,7 @@ OperationSuperposition::
 std::string OperationSuperposition::
         name()
 {
-    return _name.empty() ? Operation::name() : _name;
+    return _name.empty() ? DeprecatedOperation::name() : _name;
 }
 
 
@@ -263,14 +266,14 @@ pBuffer OperationSuperposition::
 IntervalType OperationSuperposition::
         number_of_samples()
 {
-    return std::max( Operation::number_of_samples(), _source2->number_of_samples() );
+    return std::max( DeprecatedOperation::number_of_samples(), _source2->number_of_samples() );
 }
 
 
 unsigned OperationSuperposition::
         num_channels()
 {
-    return std::max( Operation::num_channels(), _source2->num_channels() );
+    return std::max( DeprecatedOperation::num_channels(), _source2->num_channels() );
 }
 
 
@@ -291,7 +294,7 @@ Intervals OperationSuperposition::
 Signal::Intervals OperationSuperposition::
         zeroed_samples_recursive()
 {
-    return Operation::zeroed_samples_recursive() & _source2->zeroed_samples();
+    return DeprecatedOperation::zeroed_samples_recursive() & _source2->zeroed_samples();
 }
 
 
@@ -301,7 +304,7 @@ Signal::Intervals OperationSuperposition::
 OperationAddChannels::
         OperationAddChannels( pOperation source, pOperation source2 )
     :
-    Operation(source),
+    DeprecatedOperation(source),
     source2_(source2)
 {
 }
@@ -347,7 +350,7 @@ unsigned OperationAddChannels::
 OperationSuperpositionChannels::
         OperationSuperpositionChannels( pOperation source )
     :
-    Operation(source)
+    DeprecatedOperation(source)
 {
 }
 

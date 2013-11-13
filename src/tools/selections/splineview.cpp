@@ -3,18 +3,17 @@
 
 #include "tools/support/toolglbrush.h"
 
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 namespace Tools { namespace Selections
 {
 
 
-SplineView::SplineView(SplineModel* model, Signal::Worker* worker)
+SplineView::SplineView(SplineModel* model)
     :
     visible(true),
     enabled(false),
-    model_(model),
-    worker_(worker)
+    model_(model)
 {
 }
 

@@ -44,4 +44,3 @@ namespace Tools { namespace Selections
     };
 } } // namespace Tools::Selections
 #endif // RECTANGLEMODEL_H
-

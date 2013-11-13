@@ -3,7 +3,7 @@
 
 #include "brushfilterkernel.h"
 #include "tfr/chunk.h"
-#include "heightmap/collection.h"
+#include "heightmap/referenceinfo.h"
 
 #include "cpumemorystorage.h"
 
@@ -12,7 +12,10 @@ namespace Support {
 
 
 BrushFilter::
-        BrushFilter()
+        BrushFilter(Heightmap::BlockLayout block_layout, Heightmap::VisualizationParams::ConstPtr visualization_params)
+    :
+      block_layout_(block_layout),
+      visualization_params_(visualization_params)
 {
     images.reset( new BrushImages );
     //transform( Tfr::pTransform(new Tfr::Cwt( Tfr::Cwt::Singleton())));
@@ -58,7 +61,7 @@ BrushFilter::BrushImageDataP BrushFilter::
 
     if (!img)
     {
-        img.reset( new DataStorage<float>( ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        img.reset( new DataStorage<float>( block_layout_.texels_per_row (), block_layout_.texels_per_column (), 1));
     }
 
     return img;
@@ -77,6 +80,15 @@ void BrushFilter::
 }
 
 
+MultiplyBrush::
+        MultiplyBrush(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp)
+    :
+      BrushFilter(bl, vp)
+{
+
+}
+
+
 Signal::Intervals MultiplyBrush::
         affected_samples()
 {
@@ -87,7 +99,7 @@ Signal::Intervals MultiplyBrush::
 
     foreach(BrushImages::value_type const& v, imgs)
     {
-        r |= v.first.getInterval();
+        r |= Heightmap::ReferenceInfo(v.first, block_layout_, visualization_params_).getInterval();
     }
 
     return r;
@@ -117,16 +129,15 @@ bool MultiplyBrush::
     if (imgs.empty())
         return false;
 
-    Tfr::FreqAxis const& heightmapAxis = imgs.begin()->first.collection()->display_scale();
-    float scale1 = heightmapAxis.getFrequencyScalar( chunk.minHz() );
-    float scale2 = heightmapAxis.getFrequencyScalar( chunk.maxHz() );
+    float scale1 = visualization_params_->display_scale().getFrequencyScalar( chunk.minHz() );
+    float scale2 = visualization_params_->display_scale().getFrequencyScalar( chunk.maxHz() );
     float time1 = (chunk.chunk_offset/chunk.sample_rate).asFloat();
     float time2 = time1 + (chunk.nSamples()-1)/chunk.sample_rate;
 
     ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
-        Heightmap::Region r = v.first.getRegion();
+        Heightmap::Region r = Heightmap::RegionFactory( block_layout_ )( v.first );
 
         ResampleArea imgarea( r.a.time, r.a.scale, r.b.time, r.b.scale );
 

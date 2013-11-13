@@ -4,7 +4,7 @@
 #include "tfr/chunk.h"
 
 // gpumisc
-#include <computationkernel.h>
+#include "computationkernel.h"
 
 #include <vector>
 #include <string.h>

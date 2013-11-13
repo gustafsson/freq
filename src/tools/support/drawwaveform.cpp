@@ -1,7 +1,7 @@
 #include "drawwaveform.h"
 
 // gpumisc
-#include <gl.h>
+#include "gl.h"
 
 // Boost
 #include <boost/foreach.hpp>

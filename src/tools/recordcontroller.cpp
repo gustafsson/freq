@@ -12,20 +12,25 @@
 #include "heightmap/collection.h"
 #include "tools/commands/recordedcommand.h"
 
-#include <TaskTimer.h>
-#include <demangle.h>
-#include <Statistics.h>
+#include "TaskTimer.h"
+#include "demangle.h"
+#include "Statistics.h"
 
 namespace Tools
 {
 
 RecordController::
-        RecordController( RecordView* view )
+        RecordController( RecordView* view, QAction* actionRecord )
             :   view_ ( view ),
+                ui( new Actions() ),
                 destroyed_ ( false ),
                 prev_length_( 0 )
 {
+    ui->actionRecord = actionRecord;
+
     setupGui();
+
+    connect(view_, SIGNAL(gotNoData()), SLOT(receiveStop()));
 }
 
 
@@ -54,6 +59,8 @@ void RecordController::
     Adapters::Recorder* r = model()->recording;
     if (active)
     {
+/*
+//If the recording is stopped because of an error, the button in the user interface should notice somehow ...
         Support::SinkSignalProxy* proxy;
         Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy() );
 
@@ -65,12 +72,12 @@ void RecordController::
                 SIGNAL(recievedInvalidSamples( Signal::Intervals )),
                 SLOT(recievedInvalidSamples( Signal::Intervals )),
                 Qt::QueuedConnection );
-
+*/
         prev_length_ = r->number_of_samples();
         r->startRecording();
 
         if (!r->canRecord())
-            model()->project->mainWindow()->getItems()->actionRecord->setChecked( false );
+            ui->actionRecord->setChecked( false );
     }
     else
     {
@@ -80,6 +87,7 @@ void RecordController::
 
             if (model()->recording->number_of_samples() > prev_length_)
             {
+// TODO this command really should be invoked when the recording is started.
                 Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand( model()->recording, prev_length_, model()->render_view->model ));
                 model()->project->commandInvoker()->invokeCommand(  cmd );
             }
@@ -93,7 +101,6 @@ void RecordController::
 void RecordController::
         receiveStop()
 {
-    Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
     ui->actionRecord->setChecked(false);
 }
 
@@ -114,17 +121,16 @@ void RecordController::
 void RecordController::
         setupGui()
 {
-    Ui::MainWindow* ui = model()->project->mainWindow()->getItems();
-
     connect(ui->actionRecord, SIGNAL(toggled(bool)), SLOT(receiveRecord(bool)));
-    connect(ui->actionStopPlayBack, SIGNAL(triggered()), SLOT(receiveStop()));
+//    connect(ui->actionStopPlayBack, SIGNAL(triggered()), SLOT(receiveStop()));
 
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>(model()->project->head->head_source()->root());
+    Adapters::Recorder* r = model()->recording;
     if (r)
     {
+        ui->actionRecord->setVisible (true);
         if (r->canRecord())
             ui->actionRecord->setEnabled( true );
         else

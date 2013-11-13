@@ -30,7 +30,7 @@ public slots:
     //void maxHzChanged();
     void binResolutionChanged();
     void windowSizeChanged();
-    void sampleRateChanged();
+    //void sampleRateChanged();
     void windowTypeChanged();
     void overlapChanged();
     void averagingChanged();
@@ -45,6 +45,7 @@ private:
 
     QDockWidget* dock;
 
+    void deprecateAll();
     void addRow(QString name, QString value);
     void setEditText(QLineEdit* edit, QString value);
 

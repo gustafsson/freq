@@ -45,7 +45,7 @@ QPixmap PrintScreen::
     TaskTimer ti("%s", __FUNCTION__);
 
     QPixmap pixmap(mainwindow->size());
-    QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
+    //QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
     QPainter painter(&pixmap);
 
     // update layout by calling render

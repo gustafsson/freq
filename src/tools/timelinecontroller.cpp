@@ -48,6 +48,22 @@ TimelineController::
 
 
 void TimelineController::
+        paintEvent ( QPaintEvent * )
+{
+    if (!moveButton.isDown())
+        return;
+
+    QMouseEvent me(
+                QMouseEvent::MouseMove,
+                QPoint(moveButton.getLastx (),
+                       moveButton.getLasty ()),
+                Qt::NoButton, Qt::LeftButton | Qt::RightButton, Qt::NoModifier);
+
+    mousePressEvent(&me);
+}
+
+
+void TimelineController::
         hideTimeline()
 {
     if (dock)
@@ -191,7 +207,7 @@ void TimelineController::
             //moveButton.spacePos(x, y, current[0], current[1]);
             current.time = (current.time - view->_xoffs) * view->_xscale;
 
-            float length = std::max( 1.f, model->project()->worker.source()->length());
+            float length = std::max( 1.f, model->project()->length());
             view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
             // Only update the timeline, leave the main render view unaffected

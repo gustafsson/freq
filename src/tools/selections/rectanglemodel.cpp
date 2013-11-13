@@ -50,15 +50,24 @@ Signal::pOperation RectangleModel::
             f1 = freqAxis().getFrequency( a.scale ),
             f2 = freqAxis().getFrequency( b.scale );
 
-    float FS = project_->head->head_source()->sample_rate();
+    float FS = project_->extent ().sample_rate.get ();
+    Signal::IntervalType L = project_->length ()*FS;
     Signal::IntervalType
             a_index = std::max(0.f, a.time)*FS,
             b_index = std::max(0.f, b.time)*FS;
 
     Signal::pOperation filter;
 
-    if (a.scale>=1 || b.scale<=0 || a_index==b_index || a.scale==b.scale)
+    if (a.scale>=1 || b.scale<=0)
         ;
+    else if (a_index>=L || b_index<=0)
+        ;
+    else if(a_index==b_index)
+    {
+        if (a.scale==b.scale || (a.scale==0 && b.scale==1))
+            filter.reset( new Tools::Support::OperationOtherSilent(
+                FS, Signal::Interval( a_index, L) ));
+    }
     else if (a.scale>0 || b.scale<1)
     {
         if (type == RectangleType_FrequencySelection)
@@ -84,7 +93,7 @@ bool RectangleModel::
     Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(filter.get());
     Tools::Support::OperationOtherSilent* oos = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
     Signal::OperationSetSilent* oss = dynamic_cast<Signal::OperationSetSilent*>(filter.get());
-    float FS = project_->head->head_source()->sample_rate();
+    float FS = project_->extent ().sample_rate.get ();
     if (e)
     {
         type = RectangleType_RectangleSelection;
@@ -138,7 +147,7 @@ bool RectangleModel::
 void RectangleModel::
         validate()
 {
-    float L = project_->head->head_source()->length();
+    float L = project_->length ();
     switch (type)
     {
     case RectangleType_RectangleSelection:

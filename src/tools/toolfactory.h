@@ -17,6 +17,8 @@ namespace Sawe {
 #include <typeinfo>
 #include <QScopedPointer>
 
+namespace Adapters { class Recorder; }
+
 namespace Tools
 {
     /**
@@ -28,6 +30,8 @@ namespace Tools
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
 
+        void addRecording(Adapters::Recorder* recorder);
+
         /**
          * TODO render_model should not be public. And a session could have more than one render model.
          * TODO add the concept of sessions.
@@ -35,6 +39,7 @@ namespace Tools
         RenderModel render_model;
         SelectionModel selection_model;
         PlaybackModel playback_model;
+        class RecordModel* record_model() { return _record_model.data (); }
 
         //virtual ToolMainLoop* mainloop() { return render_view(); }
         virtual RenderView* render_view() { return _render_view; }
@@ -89,9 +94,9 @@ namespace Tools
         QScopedPointer<class PlaybackView> _playback_view;
         QPointer<class PlaybackController> _playback_controller;
 
-        QScopedPointer<class BrushModel> _brush_model;
-        QScopedPointer<class BrushView> _brush_view;
-        QPointer<class BrushController> _brush_controller; // might be deleted by _render_view
+//        QScopedPointer<class BrushModel> _brush_model;
+//        QScopedPointer<class BrushView> _brush_view;
+//        QPointer<class BrushController> _brush_controller; // might be deleted by _render_view
 
         QScopedPointer<class RecordModel> _record_model;
         QScopedPointer<class RecordView> _record_view;
@@ -99,15 +104,15 @@ namespace Tools
 
         QPointer<class ToolController> _comment_controller;
 
-        QPointer<class MatlabController> _matlab_controller;
+//        QPointer<class MatlabController> _matlab_controller;
 
-        QPointer<class GraphController> _graph_controller;
+//        QPointer<class GraphController> _graph_controller;
 
         QPointer<class ToolController> _tooltip_controller;
 
         QScopedPointer<class FanTrackerModel> _fantracker_model;
         QScopedPointer<class FanTrackerView> _fantracker_view;
-        QPointer<class FanTrackerController> _fantracker_controller;
+//        QPointer<class FanTrackerController> _fantracker_controller;
 
         QPointer<class AboutDialog> _about_dialog;
 
@@ -117,11 +122,11 @@ namespace Tools
 
         QPointer<class TransformInfoForm> _transform_info_form;
 
-        QPointer<class ExportAudioDialog> _export_audio_dialog;
+//        QPointer<class ExportAudioDialog> _export_audio_dialog;
 
         QPointer<class HarmonicsInfoForm> _harmonics_info_form;
 
-        QPointer<class SelectionViewInfo> _selection_view_info;
+//        QPointer<class SelectionViewInfo> _selection_view_info;
 
         QList<QPointer<QObject> > _objects;
 

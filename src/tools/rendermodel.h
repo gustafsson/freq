@@ -2,14 +2,19 @@
 #define RENDERMODEL_H
 
 #include "tfr/freqaxis.h"
-#include "signal/target.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/renderer.h"
+#include "heightmap/tfrmapping.h"
+#include "heightmap/tfrmappings/stftblockfilter.h"
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
+#include "support/transformdescs.h"
+#include "signal/processing/chain.h"
+#include "signal/processing/targetmarker.h"
+#include "support/renderoperation.h"
 
 // gpumisc
-#include <TAni.h>
+#include "TAni.h"
 
 // boost
 #include <boost/serialization/nvp.hpp>
@@ -28,15 +33,23 @@ namespace Tfr { class Filter; }
 
 namespace Tools
 {
+    /**
+     * @brief The RenderModel class
+     *
+     * TODO call set_extent when it's changed
+     */
     class RenderModel: public ToolModel
     {
     public:
         RenderModel(Sawe::Project* p);
         ~RenderModel();
 
+        void init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt);
         void resetSettings();
 
-        std::vector<boost::shared_ptr<Heightmap::Collection> > collections;
+        Heightmap::TfrMapping::Collections collections();
+
+        void block_layout(Heightmap::BlockLayout);
 
         Tfr::FreqAxis display_scale();
         void display_scale(Tfr::FreqAxis x);
@@ -44,25 +57,29 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-        template<typename T>
-        T* getParam() {
-            foreach(Tfr::pTransformParams p, params)
-                if (dynamic_cast<T*>(p.get()))
-                    return dynamic_cast<T*>(p.get());
+        Heightmap::TfrMapping::Ptr tfr_mapping();
+        Support::TransformDescs::Ptr transform_descs();
 
-            Tfr::pTransformParams p(new T());
-            params.insert(p);
-            return dynamic_cast<T*>(p.get());
-        }
 
-        Tfr::Filter* block_filter();
+        Tfr::TransformDesc::Ptr transform_desc();
+        void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
-        Signal::pTarget renderSignalTarget;
+        void recompute_extent();
+
+        Signal::OperationDesc::Ptr renderOperationDesc();
+
+        Signal::Processing::TargetMarker::Ptr target_marker();
+        void set_filter(Signal::OperationDesc::Ptr o);
+        Signal::OperationDesc::Ptr get_filter();
+
+        Heightmap::TfrMappings::StftBlockFilterParams::Ptr get_stft_block_filter_params();
+
+        //Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
         Sawe::Project* project() { return _project; }
 
-        // TODO remove position and use renderer->camera instead
+        // TODO remove position and use renderer->render_settings.camera instead
         float _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
         float _px, _py, _pz, // camera position relative center, i.e (0, 0, -6)
             _rx, _ry, _rz; // rotation around center
@@ -76,7 +93,12 @@ namespace Tools
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
-        std::set<Tfr::pTransformParams> params;
+        Support::TransformDescs::Ptr transform_descs_;
+        Heightmap::TfrMapping::Ptr tfr_map_;
+        Signal::OperationDesc::Ptr render_operation_desc_;
+        Signal::Processing::TargetMarker::Ptr target_marker_;
+        Signal::Processing::Chain::Ptr chain_;
+        Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_block_filter_params_;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
@@ -94,21 +116,21 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(_rz)
                     & BOOST_SERIALIZATION_NVP(xscale)
                     & BOOST_SERIALIZATION_NVP(zscale)
-                    & boost::serialization::make_nvp("color_mode", renderer->color_mode)
-                    & boost::serialization::make_nvp("y_scale", renderer->y_scale);
+                    & boost::serialization::make_nvp("color_mode", renderer->render_settings.color_mode)
+                    & boost::serialization::make_nvp("y_scale", renderer->render_settings.y_scale);
 
             if (typename Archive::is_loading())
                 orthoview.reset( _rx >= 90 );
 
             if (version <= 0)
-                ar & boost::serialization::make_nvp("draw_height_lines", renderer->draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_height_lines", renderer->render_settings.draw_contour_plot);
             else
-                ar & boost::serialization::make_nvp("draw_contour_plot", renderer->draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_contour_plot", renderer->render_settings.draw_contour_plot);
 
             ar
-                    & boost::serialization::make_nvp("draw_piano", renderer->draw_piano)
-                    & boost::serialization::make_nvp("draw_hz", renderer->draw_hz)
-                    & boost::serialization::make_nvp("left_handed_axes", renderer->left_handed_axes);
+                    & boost::serialization::make_nvp("draw_piano", renderer->render_settings.draw_piano)
+                    & boost::serialization::make_nvp("draw_hz", renderer->render_settings.draw_hz)
+                    & boost::serialization::make_nvp("left_handed_axes", renderer->render_settings.left_handed_axes);
 
             if (version >= 2)
             {

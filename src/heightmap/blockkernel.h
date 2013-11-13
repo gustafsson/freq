@@ -44,7 +44,26 @@ namespace Heightmap {
     public:
         RESAMPLE_CALL float operator()( float v )
         {
-            return 0.02f * (log2f(0.0001f + v) - log2f(0.0001f));
+            // Sonic AWE until 2013-07-01
+            // return 0.02f * (log2f(0.001f + v) - log2f(0.001f));
+
+            // Define range by
+            // "1/3 = f * (log(1) - log(0.2))"
+            // this is claimed to be in use by lofar.as in the lofargram player
+            //
+            // it's unclear how this should be interpreted, one way is:
+            //     f(v) = a*log2(v) + b
+            //     f(v) < 0   |  v < 0.2
+            //     f(v) = 1/3 |  v = 1
+            // a=0.14356, b=1/3
+            //
+            // however these values are used:
+            // a=0.058918, b=0.16831
+            //
+            // which doesn't work in Sonic AWE (too dark)
+            // fiddling around to get something similar ended up as
+            float f = 0.019f * log2f(v) + 0.3333f;
+            return f<0.f ? 0.f : f;
         }
     };
 
@@ -72,6 +91,8 @@ namespace Heightmap {
                 return AmplitudeValue<AmplitudeAxis_Logarithmic>()( v );
             case AmplitudeAxis_5thRoot:
                 return AmplitudeValue<AmplitudeAxis_5thRoot>()( v );
+            case AmplitudeAxis_Real:
+                break;
             }
             return 0.f;
         }

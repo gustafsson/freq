@@ -2,9 +2,10 @@
 #define HEIGHTMAPCOLLECTION_H
 
 // Heightmap namespace
-#include "reference_hash.h"
 #include "amplitudeaxis.h"
 #include "tfr/freqaxis.h"
+#include "position.h"
+#include "blockcache.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
@@ -12,16 +13,8 @@
 
 // gpumisc
 #include "ThreadChecker.h"
-
-// boost
-#include <boost/unordered_map.hpp>
-
-// Qt
-#ifndef SAWE_NO_MUTEX
-#include <QMutex>
-#include <QWaitCondition>
-#include <QThread>
-#endif
+#include "deprecated.h"
+#include "volatileptr.h"
 
 // std
 #include <vector>
@@ -91,13 +84,14 @@ The term scaleogram is not used in the source code, in favor of spectrogram.
 
 namespace Tfr {
     class Chunk;
-    class TransformParams;
+    class TransformDesc;
 }
 
 namespace Heightmap {
 
 class Renderer;
 class Block;
+class BlockData;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -106,9 +100,9 @@ typedef boost::shared_ptr<Block> pBlock;
   Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection {
+class Collection: public VolatilePtr<Collection> {
 public:
-    Collection(Signal::pOperation target);
+    Collection(BlockLayout, VisualizationParams::ConstPtr);
     ~Collection();
 
 
@@ -116,34 +110,30 @@ public:
       Releases all GPU resources allocated by Heightmap::Collection.
       */
     void reset();
-    bool empty();
 
 
-    Signal::Intervals invalid_samples();
-    void invalidate_samples( const Signal::Intervals& );
-
-
-    /**
-      scales_per_block and samples_per_block are constants deciding how many blocks
-      are to be created.
-      */
-    unsigned    scales_per_block() const { return _scales_per_block; }
-    void        scales_per_block(unsigned v);
-    unsigned    samples_per_block() const { return _samples_per_block; }
-    void        samples_per_block(unsigned v);
+    Signal::Intervals needed_samples(Signal::UnsignedIntervalType& smallest_length);
+    Signal::Intervals recently_created();
 
 
     /**
-      getBlock increases a counter for each block that hasn't been computed yet.
-      next_frame returns that counter.
+      next_frame garbage collects blocks that have been deleted since the last call.
+      increments frame_number()
       */
-    unsigned    next_frame();
+    void     next_frame();
+
+
+    /**
+     * @brief frame_number is the current frame number. Wrapping around at frame
+     * number 1 << 32 is assumed to be not an issue.
+     */
+    unsigned frame_number() const;
 
 
     /**
       Returns a Reference for a block containing the entire heightmap.
       */
-    Reference   entireHeightmap();
+    Reference   entireHeightmap() const;
 
 
     /**
@@ -163,58 +153,45 @@ public:
       all existing blocks that intersect with the chunk interval.
 
       This method is called by working threads.
+
+      TODO don't expose OpenGL data to other threads.
       */
-    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible );
+    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible ) const;
 
 
-    /**
-      Notify the Collection what filter that is currently creating blocks.
-      */
-    void block_filter(Signal::pOperation filter) { _filter = filter; }
-    Signal::pOperation block_filter() { return _filter; }
-
-
-    /**
-      Extract the transform from the current filter.
-      */
-    const Tfr::TransformParams* transform();
-
-
-    unsigned long cacheByteSize();
-    unsigned    cacheCount();
-    void        printCacheSize();
-    void        gc();
+    unsigned long cacheByteSize() const;
+    unsigned    cacheCount() const;
+    void        printCacheSize() const;
+    BlockCache::Ptr cache() const;
     void        discardOutside(Signal::Interval I);
+    bool        failed_allocation();
 
-
-    Tfr::FreqAxis display_scale() { return _display_scale; }
-    void display_scale(Tfr::FreqAxis a);
-
-    Heightmap::AmplitudeAxis amplitude_axis() { return _amplitude_axis; }
-    void amplitude_axis(Heightmap::AmplitudeAxis a);
-
-    Signal::pOperation target;
-
-    const ThreadChecker& constructor_thread() const { return _constructor_thread; }
-
-    bool isVisible();
+    bool isVisible() const;
     void setVisible(bool v);
 
-    Renderer* renderer;
+    BlockLayout block_layout() const;
+    VisualizationParams::ConstPtr visualization_params() const;
 
 private:
-    // TODO remove friends
-    //friend class BlockFilter;
-    friend class CwtToBlock;
-    friend class StftToBlock;
+    friend class Heightmap::TfrMapping;
+
+    void length(float length);
+    void block_layout(BlockLayout block_layout);
+    void visualization_params(VisualizationParams::ConstPtr visualization_params);
+
+    BlockLayout block_layout_;
+    VisualizationParams::ConstPtr visualization_params_;
+    Signal::Intervals recently_created_;
+
+    typedef std::list<pBlock> toremove_t;
+    toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
+
+    BlockCache::Ptr cache_;
 
     bool
         _is_visible;
 
     unsigned
-        _samples_per_block,
-        _scales_per_block,
-        _unfinished_count,
         _created_count,
         _frame_counter;
 
@@ -224,67 +201,12 @@ private:
     Position
             _max_sample_size;
 
-    // free memory is updated in next_frame()
-    size_t
-            _free_memory;
-
-    Signal::pOperation _filter;
-
     /**
-      Heightmap blocks are rather agnostic to FreqAxis. But it's needed to create them.
-      */
-    Tfr::FreqAxis _display_scale;
-
-    /**
-      Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But it's needed to create them.
-      */
-    Heightmap::AmplitudeAxis _amplitude_axis;
-
-    /**
-      The cache contains as many blocks as there are space for in the GPU ram.
-      If allocation of a new block fails to be allocated
-            1) all unused blocks are freed.
-            2) if no unused blocks are found and _cache is non-empty, the entire _cache is cleared.
-            3) if _cache is empty, Sonic AWE is terminated with an OpenGL or Cuda error.
-      */
-
-    typedef boost::unordered_map<Reference, pBlock> cache_t;
-    typedef std::list<pBlock> recent_t;
-
-#ifndef SAWE_NO_MUTEX
-    QMutex _cache_mutex; /// Mutex for _cache and _recent, see getIntersectingBlocks
-#endif
-    cache_t _cache;
-    recent_t _recent; /// Ordered with the most recently accessed blocks first
-    recent_t _to_remove;
-
-    ThreadChecker _constructor_thread;
-
-
-    /**
-     * @brief findBlock searches through the cache for a block with reference 'ref'
-     * @param ref the block to search for.
-     * @return a block if it is found or pBlock() otherwise.
+     * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
      */
-    pBlock      findBlock( const Reference& ref );
+    bool failed_allocation_;
+    bool failed_allocation_prev_;
 
-
-    /**
-      Attempts to allocate a new block.
-      */
-    pBlock      attempt( const Reference& ref );
-
-
-    /**
-      Creates a new block.
-      */
-    pBlock      createBlock( const Reference& ref );
-
-
-    /**
-      Add block information from another block. Returns whether any information was merged.
-      */
-    bool        mergeBlock( pBlock outBlock, pBlock inBlock, unsigned cuda_stream );
 
 
     /**
@@ -293,37 +215,7 @@ private:
     void        poke( pBlock b );
 
 
-    /**
-     * Queue a block for removal.
-     */
     void        removeBlock( pBlock b );
-
-
-    /**
-     * @brief getAllocatedBlock returns an allocated block either by new a
-     * memory allocation or by reusing the data from an old block.
-     */
-    pBlock      getAllocatedBlock( const Reference& ref );
-
-
-    /**
-     * @brief setDummyValues fills a block with dummy values, used for testing.
-     * @param block
-     */
-    void        setDummyValues( pBlock block );
-
-
-    /**
-     * @brief createBlockFromOthers fills a block with data from other blocks.
-     * @param block
-     */
-    void        createBlockFromOthers(pBlock block);
-
-
-    /**
-      Try to create 'r' and return its invalid samples if it was created.
-      */
-    Signal::Intervals getInvalid(const Reference& r) const;
 };
 
 } // namespace Heightmap

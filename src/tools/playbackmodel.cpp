@@ -8,9 +8,9 @@
 namespace Tools
 {
     PlaybackModel::
-            PlaybackModel(Sawe::Project* project)
+            PlaybackModel(Sawe::Project* /*project*/)
                 :
-                playbackTarget(new Signal::Target(&project->layers, "Playback", false, true)),
+//                playbackTarget(new Signal::Target(&project->layers, "Playback", false, true)),
                 selection(0),
                 markers(0)
     {

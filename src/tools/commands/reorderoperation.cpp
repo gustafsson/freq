@@ -20,44 +20,44 @@ void ReorderOperation::
         execute()
 {
     oldSource = operationTail->source();
-    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, oldSource ));
+    operationTail->source()->invalidate_samples(Signal::DeprecatedOperation::affectedDiff( operation, oldSource ));
 
-    BOOST_FOREACH( Signal::Operation*o, operation->outputs())
+    BOOST_FOREACH( Signal::DeprecatedOperation*o, operation->outputs())
     {
         o->source( oldSource );
     }
 
     // TODO maybe we should just change newSource->outputs()->source for a specific target
-    BOOST_FOREACH( Signal::Operation*o, newSource->outputs())
+    BOOST_FOREACH( Signal::DeprecatedOperation*o, newSource->outputs())
     {
         o->source( operation );
     }
 
     operationTail->source( newSource );
 
-    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, newSource ));
+    operationTail->source()->invalidate_samples(Signal::DeprecatedOperation::affectedDiff( operation, newSource ));
 }
 
 
 void ReorderOperation::
         undo()
 {
-    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, newSource ));
+    operationTail->source()->invalidate_samples(Signal::DeprecatedOperation::affectedDiff( operation, newSource ));
 
-    BOOST_FOREACH( Signal::Operation*o, operation->outputs())
+    BOOST_FOREACH( Signal::DeprecatedOperation*o, operation->outputs())
     {
         o->source( newSource );
     }
 
     // TODO maybe we should just change oldSource->outputs()->source for a specific target
-    BOOST_FOREACH( Signal::Operation*o, oldSource->outputs())
+    BOOST_FOREACH( Signal::DeprecatedOperation*o, oldSource->outputs())
     {
         o->source( operation );
     }
 
     operationTail->source( oldSource );
 
-    operationTail->source()->invalidate_samples(Signal::Operation::affectedDiff( operation, oldSource ));
+    operationTail->source()->invalidate_samples(Signal::DeprecatedOperation::affectedDiff( operation, oldSource ));
 }
 
 

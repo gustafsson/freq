@@ -3,6 +3,7 @@
 
 #include "tfr/cwtfilter.h"
 #include "heightmap/reference_hash.h"
+#include "heightmap/tfrmapping.h"
 
 // boost
 #include <boost/serialization/shared_ptr.hpp>
@@ -19,7 +20,7 @@ namespace Support {
 class BrushFilter : public Tfr::CwtFilter, public boost::noncopyable
 {
 public:
-    BrushFilter();
+    BrushFilter(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
     ~BrushFilter();
 
     typedef DataStorage<float>::Ptr BrushImageDataP;
@@ -34,6 +35,15 @@ public:
     void release_extra_resources();
     BrushImageDataP getImage(Heightmap::Reference const& ref);
 
+
+protected:
+    /**
+     * @brief block_layout_ and visualization_params_ describes how brush images
+     * are mapped to the heightmap
+     */
+    const Heightmap::BlockLayout block_layout_;
+    Heightmap::VisualizationParams::ConstPtr visualization_params_;
+
 private:
     class BrushFilterSupport* resource_releaser_;
 };
@@ -42,6 +52,8 @@ private:
 class MultiplyBrush: public BrushFilter
 {
 public:
+    MultiplyBrush(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
+
     virtual Signal::Intervals affected_samples();
 
     virtual std::string name();
@@ -49,8 +61,13 @@ public:
 
 private:
     friend class boost::serialization::access;
+    MultiplyBrush():BrushFilter(Heightmap::BlockLayout(0,0, 0), Heightmap::VisualizationParams::ConstPtr())
+    { BOOST_ASSERT(false); } // required by serialization, should never be called
+
     template<class archive> void save(archive& ar, const unsigned int version) const {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
+
+        // TODO serialize tfr_mapping
 
 		size_t N = images->size();
         ar & BOOST_SERIALIZATION_NVP(N);
@@ -80,14 +97,15 @@ private:
             }
         }
     }
+
     template<class archive> void load(archive& ar, const unsigned int version) {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         unsigned N = 0;
         ar & BOOST_SERIALIZATION_NVP(N);
         for (unsigned i=0; i<N; ++i)
         {
-            Heightmap::Reference ref(0);
+            Heightmap::Reference ref;
 			serialize_ref(ar, ref);
 
             DataStorageSize sz(0);

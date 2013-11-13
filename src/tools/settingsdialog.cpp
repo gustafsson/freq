@@ -5,6 +5,7 @@
 #include "sawe/application.h"
 #include "adapters/playback.h"
 #include "adapters/microphonerecorder.h"
+#include "tools/recordmodel.h"
 
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"
@@ -115,7 +116,8 @@ void SettingsDialog::
     int inputDevice = ui->comboBoxAudioIn->itemData( i ).toInt();
     QSettings().setValue("inputdevice", inputDevice);
 
-    Adapters::MicrophoneRecorder* mr = dynamic_cast<Adapters::MicrophoneRecorder*>(project->head->head_source()->root());
+    Tools::RecordModel* record_model = project->tools().record_model();
+    Adapters::MicrophoneRecorder* mr = dynamic_cast<Adapters::MicrophoneRecorder*>(record_model->recording);
     if (mr)
         mr->changeInputDevice( inputDevice );
 }
@@ -209,7 +211,7 @@ void SettingsDialog::
     project->tools().render_view()->model->renderer->redundancy(resolution);
     project->tools().render_view()->model->renderer->setFractionSize(fraction, fraction);
 
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(project->tools().render_model.collections[0]->transform());
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(project->tools().render_model.transform_desc().get ());
     bool subtexelAggregationChanged = isCwt && (prevRedundancy == 1.f) != (resolution == 1.f);
 
 #ifndef CWT_SUBTEXEL_AGGREGATION
@@ -218,7 +220,15 @@ void SettingsDialog::
 #endif
 
     if (subtexelAggregationChanged)
-        project->head->head_source()->invalidate_samples( project->head->head_source()->getInterval() );
+    {
+        Tools::RenderModel* rendermodel = &project->tools ().render_model;
+        Signal::Processing::TargetNeeds::Ptr needs = rendermodel->target_marker()->target_needs();
+        write1(needs)->deprecateCache(Signal::Intervals::Intervals_ALL);
+        write1(needs)->updateNeeds(
+                    Signal::Intervals(),
+                    Signal::Interval::IntervalType_MIN,
+                    Signal::Interval::IntervalType_MAX);
+    }
 
     project->tools().render_view()->userinput_update();
 }

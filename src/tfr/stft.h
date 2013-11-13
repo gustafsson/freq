@@ -4,7 +4,7 @@
 #include "transform.h"
 #include "chunk.h"
 #include "fftimplementation.h"
-#include "stftparams.h"
+#include "stftdesc.h"
 #include "complexbuffer.h"
 
 // std
@@ -21,7 +21,7 @@ class StftChunk;
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
 */
-class SaweDll Fft: public Transform, public TransformParams
+class SaweDll Fft: public Transform, public TransformDesc
 {
 public:
     Fft( bool computeRedundant=false );
@@ -29,7 +29,7 @@ public:
 
 
     // Implementing Transform
-    virtual const TransformParams* transformParams() const { return this; }
+    virtual const TransformDesc* transformDesc() const { return this; }
     virtual pChunk operator()( Signal::pMonoBuffer b ) { return forward(b); }
 
     /// Fft::inverse does not normalize the result. To normalize it you have to divide each element with the length of the buffer.
@@ -37,13 +37,16 @@ public:
 
 
     // Implementing TransformParams
+    virtual TransformDesc::Ptr copy() const;
     virtual pTransform createTransform() const;
     virtual float displayedTimeResolution( float FS, float hz ) const;
     virtual FreqAxis freqAxis( float FS ) const;
     virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     virtual std::string toString() const;
-    virtual bool operator==(const TransformParams&) const;
+    virtual bool operator==(const TransformDesc&) const;
 
 
     pChunk forward( Signal::pMonoBuffer );
@@ -66,11 +69,11 @@ Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 class SaweDll Stft: public Transform
 {
 public:
-    Stft(const StftParams&s = StftParams());
+    Stft(const StftDesc&s = StftDesc());
     Stft(const Stft&);
 
-    StftParams params() const { return p; }
-    virtual const TransformParams* transformParams() const { return &p; }
+    const StftDesc& desc() const { return p; }
+    virtual const TransformDesc* transformDesc() const { return &p; }
 
     /**
       The contents of the input Signal::pBuffer is converted to complex values.
@@ -86,7 +89,7 @@ public:
     Tfr::ComplexBuffer::Ptr inverseKeepComplex( pChunk chunk );
 
 private:
-    const StftParams p;
+    const StftDesc p;
     FftImplementation::Ptr fft;
 
     Tfr::pChunk ComputeChunk(DataStorage<float>::Ptr inputbuffer);
@@ -110,20 +113,20 @@ private:
     template<typename T>
     typename DataStorage<T>::Ptr reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c );
 
-    template<StftParams::WindowType>
+    template<StftDesc::WindowType>
     void prepareWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out );
 
-    template<StftParams::WindowType, typename T>
+    template<StftDesc::WindowType, typename T>
     void reduceWindowKernel( boost::shared_ptr<DataStorage<T> > in, typename DataStorage<T>::Ptr out, const StftChunk* c );
 
-    template<StftParams::WindowType>
+    template<StftDesc::WindowType>
     float computeWindowValue( float p );
 };
 
 class StftChunk: public Chunk
 {
 public:
-    StftChunk(unsigned window_size, StftParams::WindowType window_type, unsigned increment, bool redundant);
+    StftChunk(unsigned window_size, StftDesc::WindowType window_type, unsigned increment, bool redundant);
     void setHalfs( unsigned n );
     unsigned halfs( );
     // make clear how these are related to the number of data samples in transform_data
@@ -136,13 +139,13 @@ public:
     unsigned transformSize() const;
     bool redundant() const { return _redundant; }
     unsigned window_size() const { return _window_size; }
-    StftParams::WindowType window_type() const { return _window_type; }
+    StftDesc::WindowType window_type() const { return _window_type; }
     unsigned increment() const { return _increment; }
 
     Signal::Interval getCoveredInterval() const;
 
 private:
-    StftParams::WindowType _window_type;
+    StftDesc::WindowType _window_type;
     unsigned _increment;
 
     unsigned _halfs_n;

@@ -72,8 +72,11 @@ void PlaybackMarkersView::
     itr++;
     if ( itr != model_->markers().end() )
         b = *itr;
-    else
-        b = project_->worker.length();
+    else {
+//        b = project_->worker.length();
+        Signal::OperationDesc::Extent x = read1(project_->processing_chain ())->extent(project_->default_target ());
+        b = x.interval.get_value_or (Signal::Interval()).count();
+    }
 
     glVertex3f( a, 0, -.1 );
     glVertex3f( a, y, -.1 );

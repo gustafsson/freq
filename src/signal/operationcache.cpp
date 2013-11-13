@@ -6,7 +6,7 @@ namespace Signal {
 
 OperationCache::
         OperationCache( pOperation source )
-:   Operation(source),
+:   DeprecatedOperation(source),
     _cache(source?source->num_channels ():0)
 {
     this->source(source);
@@ -79,7 +79,7 @@ pBuffer OperationCache::
 
         if (_invalid_returns & J)
         {
-            Operation::invalidate_samples( _invalid_returns & J );
+            DeprecatedOperation::invalidate_samples( _invalid_returns & J );
             _invalid_returns -= J;
         }
 
@@ -109,7 +109,7 @@ void OperationCache::
         invalidate_samples(const Intervals& I)
 {
     invalidate_cached_samples( I );
-    Operation::invalidate_samples( I );
+    DeprecatedOperation::invalidate_samples( I );
 }
 
 
@@ -168,7 +168,7 @@ void OperationCache::
         _cache = SinkSource(N);
     }
 
-    Operation::source( v );
+    DeprecatedOperation::source( v );
 }
 
 
@@ -184,27 +184,27 @@ OperationCachedSub::
 std::string OperationCachedSub::
         name()
 {
-    return (Operation::source()?Operation::source()->name():"(null)");
+    return (DeprecatedOperation::source()?DeprecatedOperation::source()->name():"(null)");
 }
 
 
 Signal::Intervals OperationCachedSub::
         affected_samples()
 {
-    return Operation::source()->affected_samples();
+    return DeprecatedOperation::source()->affected_samples();
 }
 
 
 pBuffer OperationCachedSub::readRaw( const Interval& I )
 {
-    return Operation::read(I);
+    return DeprecatedOperation::read(I);
 }
 
 
 void OperationCachedSub::
         source(pOperation v)
 {
-    pOperation o = Operation::source();
+    pOperation o = DeprecatedOperation::source();
     o->source( v );
     OperationCache::source( o );
 }
@@ -213,7 +213,7 @@ void OperationCachedSub::
 pOperation OperationCachedSub::
         source() const
 {
-    return Operation::source()->source();
+    return DeprecatedOperation::source()->source();
 }
 
 

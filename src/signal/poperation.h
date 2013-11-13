@@ -5,7 +5,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 
 namespace Signal {
-typedef boost::shared_ptr<class Operation> pOperation;
+typedef boost::shared_ptr<class DeprecatedOperation> pOperation;
 } // namespace Signal
 
 #endif // POPERATION_H

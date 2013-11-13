@@ -3,7 +3,7 @@
 #include "signal/operation-basic.h"
 #include "filters/move.h"
 #include "filters/ellipse.h"
-#include <demangle.h>
+#include "demangle.h"
 
 using namespace Signal;
 
@@ -14,13 +14,13 @@ namespace Tools {
 
 OperationSubOperations::
         OperationSubOperations(Signal::pOperation source, std::string name)
-:   Operation(pOperation()),
+:   DeprecatedOperation(pOperation()),
     source_sub_operation_( new DummyOperation(source)),
     name_(name)
 {
 //    enabled(false);
 //    source_sub_operation_->enabled(false);
-    Operation::source( source_sub_operation_ );
+    DeprecatedOperation::source( source_sub_operation_ );
 }
 
 
@@ -94,14 +94,14 @@ void OperationCrop::
     ss << "Crop [" << section.first/fs << ", " << section.last/fs << ") s";
     name_ = ss.str();
 
-    Operation::source( source_sub_operation_ );
+    DeprecatedOperation::source( source_sub_operation_ );
     // remove before section
     if (Signal::Interval::IntervalType_MIN < section.first)
-        Operation::source( pOperation( new OperationRemoveSection( Operation::source(), Signal::Interval( Signal::Interval::IntervalType_MIN, section.first ))));
+        DeprecatedOperation::source( pOperation( new OperationRemoveSection( DeprecatedOperation::source(), Signal::Interval( Signal::Interval::IntervalType_MIN, section.first ))));
 
     // remove after section
     if (section.last < Signal::Interval::IntervalType_MAX)
-        Operation::source( pOperation( new OperationRemoveSection( Operation::source(), Signal::Interval( section.last - std::max(Signal::IntervalType(0), section.first), Signal::Interval::IntervalType_MAX ))));
+        DeprecatedOperation::source( pOperation( new OperationRemoveSection( DeprecatedOperation::source(), Signal::Interval( section.last - std::max(Signal::IntervalType(0), section.first), Signal::Interval::IntervalType_MAX ))));
 }
 
 
@@ -150,7 +150,7 @@ void OperationOtherSilent::
         // silent after section
         p = pOperation( new OperationSetSilent( p, Signal::Interval(section.last, Interval::IntervalType_MAX) ));
 
-    Operation::source( p );
+    DeprecatedOperation::source( p );
 }
 
     // OperationMove  /////////////////////////////////////////////////////////////////
@@ -181,7 +181,7 @@ void OperationMove::
 
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    Operation::source( addition );
+    DeprecatedOperation::source( addition );
 }
 
 
@@ -204,7 +204,7 @@ void OperationMoveMerge::
 
     pOperation addition( new OperationSuperposition (moveToNewPos, silence ));
 
-    Operation::source( addition );
+    DeprecatedOperation::source( addition );
 }
 
 
@@ -223,12 +223,12 @@ void OperationShift::
     if ( 0 < sampleShift )
     {
         pOperation addSilence( new OperationInsertSilence( source_sub_operation_, Interval( 0, sampleShift) ));
-        Operation::source( addSilence );
+        DeprecatedOperation::source( addSilence );
     } else if (0 > sampleShift ){
         pOperation removeStart( new OperationRemoveSection( source_sub_operation_, Interval( 0, -sampleShift) ));
-        Operation::source( removeStart );
+        DeprecatedOperation::source( removeStart );
 	} else {
-        Operation::source( source_sub_operation_ );
+        DeprecatedOperation::source( source_sub_operation_ );
 	}
 }
 
@@ -327,7 +327,7 @@ void OperationOnSelection::
     pOperation mergeSelection( new OperationSuperposition( operation, outsideSelection ));
 
     // Makes reads read from 'mergeSelection'
-    Operation::source( mergeSelection );
+    DeprecatedOperation::source( mergeSelection );
 }
 
     } // namespace Support

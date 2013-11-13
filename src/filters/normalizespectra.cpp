@@ -136,7 +136,7 @@ void SlidingMedian( I inIter, I inEnd, J output, float fraction )
     int readindex = 0;
     for( int j = 0; j<N; ++j )
     {
-        int window = j*fraction + 0.5f;
+        unsigned window = std::max(0.f, j*fraction + 0.5f);
         if (window < 2) window = 2;
 
         // when window increases we can't be sure that ordered is still full
@@ -195,7 +195,7 @@ void NormalizeSpectra::
             original[i] = 0.f;
 
         vector<float> median;
-        TaskInfo("meansHz_ = %f", meansHz_);
+        //TaskInfo("meansHz_ = %f", meansHz_);
         if (meansHz_<0)
             SlidingMedian(
                         original.begin (),
@@ -208,7 +208,7 @@ void NormalizeSpectra::
                         original.end (),
                         std::insert_iterator< std::vector<float> >( median, median.begin() ),
                         2*R);
-        TaskInfo("meansHz_ = %f, median.size() = %d", meansHz_, median.size());
+        //TaskInfo("meansHz_ = %f, median.size() = %d", meansHz_, median.size());
 
 //        int s = median.size ();
 //        float* mv = &median[0];

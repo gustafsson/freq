@@ -2,8 +2,7 @@
 #define RENDERCONTROLLER_H
 
 #include "renderview.h"
-
-#include "signal/worker.h"
+#include "heightmap/chunkblockfilter.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -27,7 +26,7 @@ namespace Tools
         RenderController( QPointer<RenderView> view );
         ~RenderController();
 
-        RenderModel *model();
+        RenderModel* model();
 
     public slots:
         // GUI bindings are set up in RenderController constructor
@@ -82,7 +81,7 @@ namespace Tools
         void receiveFifthAmplitude();
 
         void transformChanged();
-        void updateTransformParams();
+        void updateTransformDesc();
 
     private slots:
         void deleteTarget();
@@ -94,10 +93,12 @@ namespace Tools
 
     private:
         void stateChanged();
-        void setCurrentFilterTransform(Tfr::pTransform);
-        Signal::PostSink* setBlockFilter(Signal::Operation* blockfilter);
-        Tfr::Filter* currentFilter();
-        Tfr::Transform* currentTransform();
+        void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
+        void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
+        void setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc);
+        void setBlockFilter(Signal::OperationDesc::Ptr adapter);
+        //Tfr::Filter* currentFilter();
+        Tfr::TransformDesc::Ptr currentTransform();
         float headSampleRate();
         float currentTransformMinHz();
         ::Ui::MainWindow* getItems();

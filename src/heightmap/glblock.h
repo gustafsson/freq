@@ -1,9 +1,11 @@
 #ifndef HEIGHTMAPVBO_H
 #define HEIGHTMAPVBO_H
 
-// gpumisc
-#include <mappedvbo.h>
+#include "blocklayout.h"
 
+// gpumisc
+#include "mappedvbo.h"
+#include "ThreadChecker.h"
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -12,14 +14,13 @@
 
 
 namespace Heightmap {
-    class Collection;
 
 GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 
 class GlBlock
 {
 public:
-    GlBlock( Collection* collection, float width, float height );
+    GlBlock( BlockLayout block_size, float width, float height );
     ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
@@ -65,7 +66,7 @@ private:
     bool create_texture( HeightMode heightMode );
     void update_texture( HeightMode heightMode );
 
-    Collection* _collection;
+    const BlockLayout block_size_;
 
     pHeightReadOnlyCpu _read_only_cpu;
     //cudaGraphicsResource* _read_only_array_resource;
@@ -75,6 +76,9 @@ private:
     pVbo _mesh;
 
     pHeight _mapped_height;
+    // Create and destroy in the same context, which
+    // is only being kept in the main thread.
+    ThreadChecker _constructor_thread;
 
     unsigned _tex_height;
     unsigned _tex_height_nearest;

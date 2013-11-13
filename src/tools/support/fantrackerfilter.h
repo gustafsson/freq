@@ -17,7 +17,7 @@ public:
 
     virtual Signal::Intervals affected_samples();
 
-    virtual Signal::Operation* affecting_source( const Signal::Interval& I );
+    virtual Signal::DeprecatedOperation* affecting_source( const Signal::Interval& I );
     virtual void source(Signal::pOperation v);
     virtual void invalidate_samples(const Signal::Intervals& I);
 

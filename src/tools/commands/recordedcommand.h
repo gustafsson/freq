@@ -5,7 +5,7 @@
 #include "signal/source.h"
 
 namespace Signal {
-    class Operation;
+    class DeprecatedOperation;
 }
 
 namespace Tools {
@@ -16,14 +16,14 @@ namespace Commands {
 class RecordedCommand : public Tools::Commands::OperationCommand
 {
 public:
-    RecordedCommand(Signal::Operation* recording, Signal::IntervalType prevLength, Tools::RenderModel* model);
+    RecordedCommand(Signal::DeprecatedOperation* recording, Signal::IntervalType prevLength, Tools::RenderModel* model);
 
     virtual std::string toString();
     virtual void execute();
     virtual void undo();
 
 private:
-    Signal::Operation* recording;
+    Signal::DeprecatedOperation* recording;
     Signal::pBuffer recordedData;
     Tools::RenderModel* model;
     bool undone;

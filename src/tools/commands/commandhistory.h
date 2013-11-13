@@ -18,20 +18,18 @@ namespace Ui {
 class CommandHistory : public QWidget
 {
     Q_OBJECT
-
 public:
+
     explicit CommandHistory(CommandInvoker* command_invoker);
     ~CommandHistory();
 
 private slots:
     void redrawHistory();
-    void checkVisibility(bool visible);
 
 private:
     Ui::CommandHistory *ui;
     CommandInvoker* command_invoker_;
     QDockWidget* dock;
-    QAction* actionCommandHistory;
 };
 
 

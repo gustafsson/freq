@@ -56,7 +56,7 @@ std::string MatlabOperation::
         name()
 {
     if (!_matlab)
-        return Operation::name();
+        return DeprecatedOperation::name();
     return _matlab->matlabFunctionFilename();
 }
 
@@ -65,7 +65,7 @@ std::string MatlabOperation::
         functionName()
 {
     if (!_matlab)
-        return Operation::name();
+        return DeprecatedOperation::name();
     return _matlab->matlabFunction();
 }
 

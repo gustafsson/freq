@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-configurations="onlycpu usecuda"
+configurations="onlycpu"
 defaulttimeout=10
 
 if [ "$1" = "--help" ]; then
@@ -117,9 +117,10 @@ else
         timestamp(){ date "+%Y-%m-%d %H:%M:%S"; }
         staticlibname(){ echo lib${1}.a; }
         dynamiclibname(){ echo lib${1}.dylib; }
-        qmakeargs="-spec macx-g++ CONFIG+=release"
-        export DYLD_LIBRARY_PATH="$(cd ../lib/sonicawe-maclib/lib; pwd):$(cd ../src; pwd):/usr/local/cuda/lib"
+        qmakeargs="-spec macx-clang CONFIG+=release"
+        export DYLD_LIBRARY_PATH="$(cd ../src; pwd):/usr/local/cuda/lib"
         no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+        outputdir="*.app/Contents/MacOS"
     else
         timestamp(){ date --rfc-3339=seconds; }
         staticlibname(){ echo lib${1}.a; }
@@ -128,11 +129,11 @@ else
         qmakeargs=
         export LD_LIBRARY_PATH="$(cd ../src; pwd):$(cd ../lib/sonicawe-ubuntulib/lib; pwd)"
         no_cores=$(cat /proc/cpuinfo | grep -c processor)
+        outputdir="."
     fi
     linkcmd="ln -s"
     makecmd="make -j$no_cores"
     makeonecmd=$makecmd
-    outputdir="."
 fi
 
 formatedtimestamp() {
@@ -143,6 +144,7 @@ rm -f *_failed.log
 
 logbasedir="${startdir}/logs/${testtimestamp}"
 echo "Saving logs in $logbasedir for {$configurations}"
+libfailed=
 
 for configname in $configurations; do
   logdir="${logbasedir}/${configname}"
@@ -184,6 +186,7 @@ for configname in $configurations; do
   if (( 0 != ret )); then
     $linkcmd ${logdir}/${build_logname}.log ${build_logname}_failed.log
     echo "X!"
+    libfailed=1
     failed="${failed}${configname}\n"
 
   else
@@ -223,6 +226,7 @@ for configname in $configurations; do
       rm -f Makefile &&
       rm -f "$outputdir/$testname" &&
       rm -f "$outputdir/$(staticlibname $testname)" &&
+      rm -f "$(staticlibname $testname)" &&
       echo qmake $qmakeargs CONFIG+=${configname} &&
       qmake $qmakeargs CONFIG+=${configname} &&
       eval echo $makeonecmd &&
@@ -291,6 +295,9 @@ echo -e $failed
 echo
 echo "Test run timestamp: $testtimestamp"
 echo "Test finished at:   $(formatedtimestamp)"
+
+# exit with the return code 125 if the library build failed, see git bisect
+[ -z "$libfailed" ] || exit 125
 
 # exit with a successfull return code if failed is empty
 [ -z "$failed" ]

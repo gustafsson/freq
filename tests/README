@@ -3,8 +3,11 @@ Debugging tests
 It's quite easy to mix libraries built for debug with those built for release. So to debug a test, make sure sonicawe, gpumisc, your test, and sonicawe-end2end/common are built with debug symbols turned on.
 
 
+Test execution environment
+--------------------------
 When running individual tests outside runtests.sh you need to make sure it can find required dynamic libraries. Either by changing the PATH in windows, LD_LIBRARY_PATH in Linux and DYLD_LIBRARY_PATH in OS X. This path can also be added to the "Run Environment" in Qt Creator or Visual C++ (remember to change the base path .../johan/dev/sonicawe above for Visual C++).
 Like so:
+
 
 os x
 ----
@@ -27,3 +30,27 @@ ubuntu
 ------
 export LD_LIBRARY_PATH="$(cd ../lib/sonicawe-ubuntulib/lib; pwd):$(cd ../src; pwd)"
 echo $LD_LIBRARY_PATH
+
+
+Creating a new test
+-------------------
+Copy a previous test, rename the files correspondingly. Remove the .user file.
+
+
+Developing tests in Qt Creator
+------------------------------
+Open sonicawe project.
+Open "test project".
+
+[The first time you open a Qt project in your build environment you need to setup the build and run configuration (this is stored in the .pro.user file which is individual and not committed)]
+[tests in the tests/integration/4-sonicawe-end2end folder rely on a common project, open that as well]
+
+Deselect to import build.
+Create build configuration: For Each Qt Version One Debug And One Release.
+Deselect shadow build.
+Deselect Embedded Linux.
+Click "Configure Project".
+Go to the Projects->"Test project"->Dependencies and add a dependncy on the sonicawe project (and to the common project if this is an end2end test).
+Select the build configuration for sonicawe to be debug testlib.
+
+Configure run environment in Qt according to the instructions above.

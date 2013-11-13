@@ -3,7 +3,7 @@ Sonic AWE source code
 |Scalograms are cool|
 \===================/
 
-The intention of this document is to explain how to fetch the source code with all the dependences, how to setup a functional development environment, how to build the source code, how to run Sonic AWE and eventually how to distribute an installer.
+The intention of this document is to explain how to fetch the source code with all the dependencies, how to setup a functional development environment, how to build the source code, how to run Sonic AWE and eventually how to distribute an installer.
 
 Setting up the development environment requires quite a few steps. Please read through this document in its entirety.
 
@@ -13,16 +13,17 @@ We're using git for revision control and to download the source code. It's stron
 
 
 
-Learning GIT
+Learning git
 ------------
 If you don't already know git, take a crash course:
 http://git-scm.com/book/ch1-3.html
 
-Highly suggested reading: when to branch, merge, or rebase:
+How to branch, merge, and rebase:
 http://nvie.com/posts/a-successful-git-branching-model/?
 http://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
+https://github.com/nvie/gitflow
 
-There are plenty of tips and tricks "on the internet", here is one page:
+Random tips and tricks:
 http://wiki.videolan.org/Git
 
 For reference:
@@ -32,10 +33,9 @@ git help 'command'
 
 
 
-Install GIT in OS X
+Install git in OS X
 -------------------
-git is included in the "Command line tools" through Xcode on the 'Download' pane in 'Preferences'. The same tools can also be installed from:
-http://developer.apple.com/
+git is included in the "Command line tools" for Xcode.
 
 Tip: you could use the following prompt to know which branch you're currently on:
 source /usr/share/git-core/git-completion.bash
@@ -43,7 +43,7 @@ PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
 PS2='\[\e[0;2m\]\t\[\e[m\]> '
 Add those three lines to your ~/.bash_profile to make the prompt stay that way.
 
-OS X 10.8 Mountain Lion specific: "git gui" and other neat git tools are not automatically added to your path. Add this line to your ~/.bash_profile:
+OS X specific: "git gui" and other neat git tools are not automatically added to your path. Add this line to your ~/.bash_profile:
 PATH=$PATH:/usr/local/git/libexec/git-core
 
 
@@ -148,22 +148,17 @@ Build environment for OS X
 --------------------------
 Make sure "Command line tools for Xcode" are installed (see "Install GIT in OS X" above).
 
-Install Nokia open source QT Libraries and QT Creator
+Install Nokia open source QT Libraries 5.1 and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
 Edit, build and debug using Qt Creator. Refer to 'Developing Sonic AWE' below for details.
 
-! Notes for OS X 10.8 Mountain Lion and Xcode 4.4
-QT libraries <= version 4.8.2 defaults to use the compiler flag -mmacosx-version-min=10.5. This is not supported by the 10.8 SDK so essentially nothing will compile. This can be solved by either reverting to Xcode 4.3 or changing -mmacosx-version-min to 10.6 in:
-$QT/mkspecs/common/g++-macx.conf
+Copy the mkspecs folders to your Qt installation and build with QMAKESPEC='macx-sonicawe-clang'. You might want to add "export QMAKESPEC='macx-sonicawe-clang'" to your ~/.bash_profile.
 
-Where $QT is typically one of:
-/usr/local/Trolltech/Qt-*
-/usr/local/Qt*
+To build with openmp (which makes Sonic AWE way faster and is required for creating distribution packages) you need to get a later version of g++/clang than Xcode provides. To build with g++ 4.9 or later, install macports, install gcc49 and use QMAKESPEC='macx-sonicawe-g++49'.
 
-To build with openmp (which makes Sonic AWE way faster and is required for creating distribution packages) you need to get a later version of g++ than Xcode provides. To build with g++ 4.7; remove "-Xarch_x86_64" from g++-macx.conf, install macports, and run:
-sudo port install gcc47
+Required libraries will be initialized during 'Build and run'.
 
 
 Build environment for Windows

@@ -10,11 +10,12 @@
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
+#include "heightmap/blocklayout.h"
 
 // gpumisc
-#include <tvector.h>
+#include "tvector.h"
 #ifdef USE_CUDA
-#include <cudaglobalstorage.h>
+#include "cudaglobalstorage.h"
 #endif
 
 // std
@@ -36,7 +37,8 @@ PeakModel::PeakAreaP PeakModel::
 
     if (!area)
     {
-        area.reset( new DataStorage<bool>(ref.samplesPerBlock(), ref.scalesPerBlock(), 1));
+        Heightmap::BlockLayout block_size = c->block_layout();
+        area.reset( new DataStorage<bool>(block_size.texels_per_row (), block_size.texels_per_column (), 1));
         EXCEPTION_ASSERT( area->numberOfBytes() == area->numberOfElements());
         memset( area->getCpuMemory(), 0, area->numberOfBytes() );
     }
@@ -81,13 +83,14 @@ bool PeakModel::
 float PeakModel::
         heightVal(Heightmap::Reference ref, unsigned x, unsigned y)
 {
-    Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return 0;
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
-    return data[x+y*ref.samplesPerBlock()];
+    Heightmap::BlockLayout block_size = c->block_layout();
+    return data[x+y*block_size.texels_per_row ()];
 }
 
 /*
@@ -104,11 +107,15 @@ float& PeakModel::
 */
 
 void PeakModel::
-        findAddPeak( Heightmap::Reference ref, Heightmap::Position pos )
+        findAddPeak( Heightmap::Collection::Ptr cptr, Heightmap::Reference ref, Heightmap::Position pos )
 {
-    Heightmap::Region r = ref.getRegion();
-    unsigned h = ref.scalesPerBlock();
-    unsigned w = ref.samplesPerBlock();
+    Heightmap::Collection::WritePtr write_ptr(cptr);
+    c = &*write_ptr;
+
+    Heightmap::BlockLayout block_size = c->block_layout();
+    Heightmap::Region r = Heightmap::RegionFactory(block_size)(ref);
+    unsigned h = block_size.texels_per_column ();
+    unsigned w = block_size.texels_per_row ();
     unsigned y0 = (pos.scale-r.a.scale)/r.scale()*(h-1) + .5f;
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
 
@@ -134,7 +141,7 @@ void PeakModel::
     // Discard image data from CPU
     foreach( PeakAreas::value_type const& v, classifictions )
     {
-        Heightmap::pBlock block = ref.collection()->getBlock( v.first );
+        Heightmap::pBlock block = c->getBlock( v.first );
         if (block)
         {
             DataStorage<float>::Ptr blockData = block->glblock->height()->data;
@@ -162,6 +169,8 @@ void PeakModel::
         p.scale = (border_nodes[i].y + .5f) * elementSize.scale;
         v[i] = p;
     }
+
+    c = 0;
 }
 
 
@@ -172,10 +181,10 @@ void PeakModel::
     if (classifictions.empty())
         return;
 
-    Heightmap::Reference ref = classifictions.begin()->first;
+    Heightmap::BlockLayout block_size = c->block_layout ();
     unsigned
-            w = ref.samplesPerBlock(),
-            h = ref.scalesPerBlock();
+            w = block_size.texels_per_row (),
+            h = block_size.texels_per_column ();
 
     BorderCoordinates start_point;
     if (!anyBorderPixel(start_point, w, h))
@@ -417,11 +426,11 @@ void PeakModel::
                              PropagationState prevState, float prevVal
                              )
 {
-    Heightmap::Region r = ref.getRegion();
+    Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ())(ref);
     if (r.b.scale > 1 || r.a.scale >= 1)
         return;
 
-    Heightmap::pBlock block = ref.collection()->getBlock( ref );
+    Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return;
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
@@ -542,15 +551,16 @@ struct Pt
 
 void PeakModel::
         loopClassify( Heightmap::Reference ref0,
-                             unsigned x0, unsigned y0
-                             )
+                      unsigned x0, unsigned y0
+                      )
 {
     std::vector<Pt> pts;
 
     pts.push_back( Pt(ref0, x0, y0, PS_Increasing, -FLT_MAX) );
 
-    unsigned w = ref0.samplesPerBlock(),
-             h = ref0.scalesPerBlock();
+    Heightmap::BlockLayout block_size = c->block_layout();
+    unsigned w = block_size.texels_per_row (),
+             h = block_size.texels_per_column ();
 
     pixel_count = 0;
 
@@ -587,7 +597,7 @@ void PeakModel::
             ref = ref.sibblingTop();
             y -= h;
 
-            Heightmap::Region r = ref.getRegion();
+            Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ())(ref);
             if (r.a.scale >= 1 || r.b.scale > 1 )
             {
                 this->classifictions.clear();
@@ -597,7 +607,7 @@ void PeakModel::
 
         if (!(ref == prevRef))
         {
-            Heightmap::pBlock block = ref.collection()->getBlock( ref );
+            Heightmap::pBlock block = c->getBlock( ref );
             if (!block)
             {
                 // Would have needed unavailable blocks to compute this,

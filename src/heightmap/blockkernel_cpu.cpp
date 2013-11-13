@@ -5,7 +5,7 @@
 #undef FREQAXIS_CALL
 #endif
 
-#include <resamplecpu.h>
+#include "resamplecpu.h"
 
 #include <complex>
 

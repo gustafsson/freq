@@ -3,6 +3,7 @@
 
 #include "writewav.h"
 #include "audiofile.h"
+#include "volatileptr.h"
 
 #include "adapters/recorder.h"
 
@@ -89,7 +90,7 @@ private:
 
         boost::shared_ptr<Audiofile> wavfile( new Audiofile(_filename) );
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -101,7 +102,7 @@ private:
     {
         boost::shared_ptr<Audiofile> wavfile;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -109,6 +110,61 @@ private:
 
         _data.put(wavfile->readFixedLength( wavfile->getInterval() ));
     }
+};
+
+
+/**
+ * @brief The MicrophoneRecorderOperation class should provide access to recorded data.
+ */
+class MicrophoneRecorderOperation: public Signal::Operation
+{
+public:
+    MicrophoneRecorderOperation( Signal::pOperation recorder_ );
+
+    virtual Signal::pBuffer process(Signal::pBuffer b);
+
+private:
+    Signal::pOperation recorder_;
+};
+
+
+/**
+ * @brief The MicrophoneRecorderDesc class should control the behaviour of a recording.
+ */
+class MicrophoneRecorderDesc: public Signal::OperationDesc
+{
+public:
+    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
+    {
+    public:
+        virtual ~IGotDataCallback() {}
+
+        virtual void markNewlyRecordedData(Signal::Interval what)=0;
+    };
+
+    MicrophoneRecorderDesc( Recorder*, IGotDataCallback::Ptr invalidator );
+
+    void startRecording();
+    void stopRecording();
+    bool isStopped();
+    bool canRecord();
+    Recorder* recorder() const;
+
+    // OperationDesc
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    virtual OperationDesc::Ptr copy() const;
+    virtual Signal::Operation::Ptr createOperation( Signal::ComputingEngine* engine ) const;
+    virtual Extent extent() const;
+
+private:
+    void setDataCallback( IGotDataCallback::Ptr invalidator );
+
+    Signal::pOperation recorder_;
+    IGotDataCallback::Ptr invalidator_;
+
+public:
+    static void test();
 };
 
 } // namespace Adapters

@@ -21,20 +21,19 @@ class Renderer;
 class BlockFilter
 {
 public:
-    BlockFilter( Collection* collection );
-    BlockFilter( std::vector<boost::shared_ptr<Collection> >* collections );
+    BlockFilter( Heightmap::TfrMapping::Ptr tfr_map );
 
     virtual bool applyFilter( Tfr::ChunkAndInverse& pchunk);
     unsigned smallestOk(const Signal::Interval& I);
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData ) = 0;
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData ) = 0;
     virtual bool createFromOthers() { return true; }
 
 protected:
-    virtual void mergeColumnMajorChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData, float normalization_factor );
-    virtual void mergeRowMajorChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData,
+    virtual void mergeColumnMajorChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData, float normalization_factor );
+    virtual void mergeRowMajorChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData,
                                      bool full_resolution, ComplexInfo complex_info, float normalization_factor, bool enable_subtexel_aggregation );
 
-    std::vector<Collection* > _collections;
+    Heightmap::TfrMapping::Ptr tfr_map_;
 };
 
 
@@ -42,17 +41,9 @@ template<typename FilterKind>
 class BlockFilterImpl: public FilterKind, public BlockFilter
 {
 public:
-    BlockFilterImpl( Collection* collection )
+    BlockFilterImpl( Heightmap::TfrMapping::Ptr tfr_map )
         :
-        BlockFilter(collection),
-        largestApplied(0)
-    {
-    }
-
-
-    BlockFilterImpl( std::vector<boost::shared_ptr<Collection> >* collections )
-        :
-        BlockFilter(collections),
+        BlockFilter(tfr_map),
         largestApplied(0)
     {
     }
@@ -65,16 +56,21 @@ public:
 
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
-    Signal::Operation* affecting_source( const Signal::Interval& I)
+    Signal::DeprecatedOperation* affecting_source( const Signal::Interval& /*I*/)
     {
+        return this;
+/*
         Signal::Intervals invalid;
-        for (unsigned i=0; i<_collections.size (); ++i)
-            invalid |= _collections[i]->invalid_samples();
+
+        TfrMap::Collections C = read1(tfr_map_)->collections();
+        for (unsigned i=0; i<C.size (); ++i)
+            invalid |= write1(C[i])->invalid_samples();
 
         if (invalid & I)
             return this;
 
         return FilterKind::source()->affecting_source( I );
+*/
     }
 
 
@@ -193,7 +189,7 @@ private:
 class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
 {
 public:
-    CwtToBlock( std::vector<boost::shared_ptr<Collection> >* collections, Renderer* renderer );
+    CwtToBlock( Heightmap::TfrMapping::Ptr tfr_map_, Renderer* renderer );
 
     /**
       Tells the "chunk-to-block" what information to extract from the complex
@@ -205,8 +201,8 @@ public:
       */
     ComplexInfo complex_info;
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
-    void mergeChunkpart( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
+    void mergeChunkpart( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
     virtual bool disregardAtZero() { return true; }
 
 private:
@@ -217,8 +213,7 @@ private:
 class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
 {
 public:
-    StftToBlock( Collection* collection );
-    StftToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
+    StftToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
     Tfr::pChunkFilter freqNormalization;
 
@@ -227,7 +222,7 @@ public:
         // TODO use a chain of commands instead to be processed by the worker thread
         Tfr::pChunkFilter f = freqNormalization;
         if (f)
-            f->applyFilter(pchunk);
+            (*f)(pchunk);
 
         if (f != freqNormalization)
             return false;
@@ -235,29 +230,30 @@ public:
         return BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
     }
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
 };
 
 
 class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 {
 public:
-    CepstrumToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
+    CepstrumToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
 };
 
 
 class DrawnWaveformToBlock: public BlockFilterImpl<Tfr::DrawnWaveformFilter>
 {
 public:
-    DrawnWaveformToBlock( std::vector<boost::shared_ptr<Collection> >* collections );
+    DrawnWaveformToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
-    virtual void mergeChunk( pBlock block, const Tfr::ChunkAndInverse& chunk, Block::pData outData );
+    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
     virtual bool createFromOthers() { return false; }
 };
+
 
 } // namespace Heightmap
 #endif // HEIGHTMAPBLOCKFILTER_H

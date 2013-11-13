@@ -9,9 +9,11 @@
 namespace Signal {
 
 typedef long long IntervalType;
+typedef unsigned long long UnsignedIntervalType;
+
 
 /**
-  Describes one discrete intervals. Always in the same sample rate as the
+  Describes one discrete interval. Always in the same sample rate as the
   signal they are referring to. So, one 'Interval' is given an including
   beginning 'first' and exclusive end 'last' in integers such that
 
@@ -39,7 +41,11 @@ public:
       It is up to the user to ensure the invariant relation first<=last.
       */
     IntervalType first, last;
-    IntervalType count() const { return valid() ? last - first : 0; }
+
+    /**
+     * count() returns the number of elements between first and last or 0 if last>first.
+     */
+    UnsignedIntervalType count() const { return valid() ? (UnsignedIntervalType)(last - first): 0u; }
 
     bool        valid       () const { return first <= last; }
     Interval    spanned     (const Interval& r) const;
@@ -47,10 +53,13 @@ public:
     Interval&   operator&=  (const Interval& r);
     bool        operator==  (const Interval& r) const;
     bool        operator!=  (const Interval& r) const;
-    operator    bool        () const { return 0 < count(); }
+    bool        contains    (const Interval& t) const;
+    bool        contains    (const IntervalType& t) const;
+    operator    bool        () const { return first < last; } // == 0 < count()
 
     std::string toString() const;
 };
+
 
 #ifdef _MSC_VER
 #pragma warning (push)
@@ -61,6 +70,7 @@ public:
 #pragma warning (disable:4251)
 #endif
 
+
 /**
   Describes a bunch of discrete intervals. Always in the same sample rate as the
   signal they are referring to. So, one 'Interval' is given an including
@@ -68,6 +78,8 @@ public:
 
      I = [first, last)
 
+  Could speed up performance by allocating a limited number of Interval on the
+  stack instead, if performance of Intervals becomes an issue.
   */
 class SaweDll Intervals: private std::list<Interval>
 {
@@ -89,21 +101,26 @@ public:
     Intervals& operator &= (const Interval&);
     Intervals  operator ^  (const Intervals& b) const { return Intervals(*this)^=b; }
     Intervals& operator ^= (const Intervals&);
-    Intervals  operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
+    // These are ambiguous due to 'operator bool' below. 'operator bool' is more commonly used.
+    //Intervals  operator >> (const IntervalType& b) const { return Intervals(*this)>>=b; }
+    //Intervals  operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
     Intervals& operator >>=(const IntervalType&);
-    Intervals  operator << (const IntervalType& b) const { return Intervals(*this)<<=b; }
     Intervals& operator <<=(const IntervalType&);
     Intervals& operator *= (const float& scale);
     Intervals  operator ~  () const { return inverse(); }
     operator   bool        () const { return !empty(); }
 
+    // contains returns true only if the entire argument is covered by this
+    bool                    contains    (const Intervals& t) const;
+    bool                    contains    (const Interval& t) const;
+    bool                    contains    (const IntervalType& t) const;
     Intervals               inverse() const;
     Interval                fetchFirstInterval() const;
-    Interval                fetchInterval( IntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
+    Interval                fetchInterval( UnsignedIntervalType preferred_size, IntervalType center = Interval::IntervalType_MIN ) const;
     Interval                spannedInterval() const;
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;
-    IntervalType            count() const;
+    UnsignedIntervalType    count() const;
     int                     numSubIntervals() const { return base::size(); }
     bool                    testSample( IntervalType const &p) const;
 
@@ -123,6 +140,9 @@ public:
 
 private:
     base::iterator firstIntersecting( const Interval& b );
+
+public:
+    static void test();
 };
 
 SaweDll std::ostream& operator<< (std::ostream& o, const Interval& I);

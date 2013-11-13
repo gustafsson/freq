@@ -10,17 +10,18 @@
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
 #include "signal/operationcache.h"
+#include "signal/oldoperationwrapper.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
-#include "tools/commands/appendoperationcommand.h"
+#include "tools/commands/appendoperationdesccommand.h"
 
 // Qt
-#include <QtGui/QFileDialog>
+#include <QFileDialog>
 #include <QVBoxLayout>
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <QSettings>
 
 // Std
@@ -31,19 +32,12 @@ using namespace std;
 namespace Sawe {
 
 Project::
-        Project( Signal::pOperation root, std::string layer_title )
-:   worker(Signal::pTarget()),
-    layers(this),
-    is_modified_(false),
+        Project( std::string project_title )
+:   is_modified_(false),
     is_sawe_project_(false),
-    project_title_(layer_title)
+    project_title_(project_title)
 {
     // class Project has two constructors. Initialize common stuff in createMainWindow instead of here.
-
-    Signal::pChain chain(new Signal::Chain(root));
-    chain->name = layer_title;
-    layers.addLayer( chain );
-    head.reset( new Signal::ChainHead(chain) );
 }
 
 
@@ -55,9 +49,7 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-#ifndef SAWE_NO_MUTEX
-    worker.stopRunning();
-#endif
+    this->processing_chain_.reset ();
 
     {
         TaskInfo ti("releasing tool resources");
@@ -74,8 +66,27 @@ Project::
 void Project::
         appendOperation(Signal::pOperation s)
 {
-    Tools::Commands::pCommand c( new Tools::Commands::AppendOperationCommand(this, s));
+    Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(s));
+    appendOperation(oodw);
+}
+
+
+void Project::
+        appendOperation(Signal::OperationDesc::Ptr s)
+{
+    Tools::Commands::pCommand c(
+                new Tools::Commands::AppendOperationDescCommand(
+                    s,
+                    this->processing_chain (),
+                    default_target())
+                );
+
     commandInvoker()->invokeCommand(c);
+
+    // TODO recompute_extent must be called again if the operation is undone.
+    tools().render_model.recompute_extent();
+
+    setModified ();
 }
 
 
@@ -113,7 +124,7 @@ Tools::ToolRepo& Project::
         toolRepo()
 {
     if (!areToolsInitialized())
-        throw std::logic_error("tools() was called before createMainWindow()");
+        EXCEPTION_ASSERTX(false, "tools() was called before createMainWindow()");
 
     return *_tools;
 }
@@ -129,7 +140,7 @@ Tools::ToolFactory& Project::
 bool Project::
         areToolsInitialized()
 {
-    return _tools;
+    return _tools.get ();
 }
 
 
@@ -149,7 +160,12 @@ pProject Project::
         {
             std::string scheme = url.scheme().toStdString();
             Signal::pOperation s( new Adapters::NetworkRecorder(url) );
-            return pProject( new Project( s, "New network recording" ));
+
+            pProject p( new Project( "New network recording" ));
+            p->createMainWindow ();
+            p->tools ().addRecording (new Adapters::NetworkRecorder(url));
+
+            return p;
         }
 
         QMessageBox::warning( 0,
@@ -166,8 +182,12 @@ pProject Project::
 #if !defined(TARGET_reader) && !defined(TARGET_hast)
         filter += " " + Adapters::CsvTimeseries::getFileFormatsQtFilter( false );
 #endif
-        filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
-        filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
+        if (Sawe::Configuration::feature("stable")) {
+            filter = "All files (" + filter + ");;";
+        } else {
+            filter = "All files (*.sonicawe *.sonicawe" + filter + ");;";
+            filter += "SONICAWE - Sonic AWE project (*.sonicawe)";
+        }
 #if !defined(TARGET_reader)
         filter += ";;" + Adapters::Audiofile::getFileFormatsQtFilter( true );
 #endif
@@ -233,8 +253,7 @@ pProject Project::
         catch (const exception& x) {
             if (!err.empty())
                 err += '\n';
-            err += "Error: " + vartype(x);
-            err += "\nDetails: " + (std::string)x.what();
+            err += boost::diagnostic_information(x);
         }
     }
 
@@ -243,13 +262,20 @@ pProject Project::
         if (!openfile_err.empty())
             err = openfile_err;
 
-        QMessageBox::warning( 0, "Can't open file", QString::fromLocal8Bit(err.c_str()) );
-        TaskInfo("======================\n"
-                 "Can't open file '%s' as project nor audio file\n"
+        QMessageBox::warning(
+                    0,
+                    "Can't open file",
+                    QString("Can't open file\n%1")
+                        .arg (filename.c_str ())
+                    );
+
+        TaskInfo(boost::format(
+                 "======================\n"
+                 "Can't open file '%s'\n"
                  "%s\n"
-                 "======================",
-                 filename.c_str(),
-                 err.c_str());
+                 "======================")
+                 % filename
+                 % err);
         return pProject();
     }
 
@@ -281,9 +307,13 @@ void Project::
 pProject Project::
         createRecording()
 {
-    int record_device = QSettings().value("inputdevice", -1).toInt();
-    Signal::pOperation s( new Adapters::MicrophoneRecorder(record_device) );
-    return pProject( new Project( s, "New recording" ));
+    int device = QSettings().value("inputdevice", -1).toInt();
+
+    pProject p( new Project( "New recording" ));
+    p->createMainWindow ();
+    p->tools ().addRecording (new Adapters::MicrophoneRecorder(device));
+
+    return p;
 }
 
 
@@ -341,8 +371,8 @@ std::string Project::
 Project::
         Project()
             :
-            worker(Signal::pTarget()),
-            layers(this),
+            //worker(Signal::pTarget()),
+            //layers(this),
             is_modified_(false),
             is_sawe_project_(true)
 {}
@@ -356,6 +386,8 @@ void Project::
 
     TaskTimer tt("Project::createMainWindow");
 
+    processing_chain_ = Signal::Processing::Chain::createDefaultChain ();
+
     command_invoker_.reset( new Tools::Commands::CommandInvoker(this) );
 
     string title = Sawe::Configuration::title_string();
@@ -365,11 +397,7 @@ void Project::
     Ui::SaweMainWindow* saweMain = 0;
     _mainWindow = saweMain = new Ui::SaweMainWindow( title.c_str(), this );
 
-    {
-        TaskTimer tt("new Tools::ToolFactory");
-        _tools.reset( new Tools::ToolFactory(this) );
-        tt.info("Created tools");
-    }
+    _tools.reset( new Tools::ToolFactory(this) );
 
     defaultGuiState = saweMain->saveSettings();
 
@@ -435,6 +463,39 @@ bool Project::
 }
 
 
+Signal::Processing::TargetMarker::Ptr Project::
+        default_target()
+{
+    return tools().render_model.target_marker();
+}
+
+
+Signal::OperationDesc::Extent Project::
+        extent()
+{
+    Signal::OperationDesc::Extent x;
+
+    if (areToolsInitialized())
+        x = read1(processing_chain_)->extent(this->default_target ());
+
+    if (!x.interval.is_initialized ())
+        x.interval = Signal::Interval();
+    if (!x.number_of_channels.is_initialized ())
+        x.number_of_channels = 0;
+    if (!x.sample_rate.is_initialized ())
+        x.sample_rate = 1;
+    return x;
+}
+
+
+float Project::
+        length()
+{
+    Signal::OperationDesc::Extent x = extent();
+    return x.interval.get ().count() / x.sample_rate.get ();
+}
+
+
 #if !defined(TARGET_reader)
 bool Project::
         saveAs()
@@ -473,6 +534,8 @@ bool Project::
 
     addRecentFile( project_filename_ );
 
+    setModified (false);
+
     return r;
 }
 #endif
@@ -482,9 +545,18 @@ bool Project::
 pProject Project::
         openAudio(std::string audio_file)
 {
-    Adapters::Audiofile*a;
-    Signal::pOperation s( a = new Adapters::Audiofile( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    return pProject( new Project( s, a->name() ));
+    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString();
+
+    boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
+    Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
+
+    pProject p( new Project(a->name() ));
+    p->createMainWindow ();
+    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
+    p->appendOperation (d);
+    p->setModified (false);
+
+    return p;
 }
 #endif
 
@@ -494,8 +566,13 @@ pProject Project::
 {
     Adapters::CsvTimeseries*a;
     Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    pProject p( new Project( s, a->name() ));
+    pProject p( new Project( a->name() ));
+    p->createMainWindow ();
+    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
+    p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
+    p->setModified (false);
+
     return p;
 }
 #endif

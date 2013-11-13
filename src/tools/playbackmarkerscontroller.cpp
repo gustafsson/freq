@@ -73,7 +73,9 @@ void PlaybackMarkersController::
     }
     else
     {
-        pos = render_view_->model->project()->worker.length();
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+        pos = 0.f;
+//        pos = render_view_->model->project()->worker.length();
     }
 
     render_view_->setPosition( Heightmap::Position( pos, render_view_->model->_qz) );
@@ -88,7 +90,7 @@ void PlaybackMarkersController::
 
     RenderView &r = *render_view_;
     bool success;
-    Heightmap::Position click = r.getPlanePos( e->posF(), &success);
+    Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)
         // Meaningless click, ignore
         return;
@@ -116,7 +118,7 @@ void PlaybackMarkersController::
         Heightmap::Position marker_pos( *itr, click.scale );
         QPointF pt = r.getWidgetPos( marker_pos, 0 );
 
-        pt -= e->posF();
+        pt -= e->localPos();
         float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
         if (distance < vicinity_)
         {
@@ -144,7 +146,7 @@ void PlaybackMarkersController::
 {
     Tools::RenderView &r = *render_view_;
     bool success;
-    Heightmap::Position click = r.getPlanePos( e->posF(), &success);
+    Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)
         return;
 
@@ -160,7 +162,7 @@ void PlaybackMarkersController::
         Heightmap::Position marker_pos( *itr, click.scale );
         QPointF pt = r.getWidgetPos( marker_pos, 0 );
 
-        pt -= e->posF();
+        pt -= e->localPos();
         float distance = std::sqrt( pt.x()*pt.x() + pt.y()*pt.y() );
         if (distance < vicinity_)
             view_->setHighlightMarker( *itr, false );

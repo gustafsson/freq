@@ -26,7 +26,7 @@ std::string MoveCameraCommand::
 void MoveCameraCommand::
         executeFirst()
 {
-    float l = model->project()->worker.source()->length();
+    float l = model->project()->length();
 
     model->_qx += dt;
     model->_qz += ds;

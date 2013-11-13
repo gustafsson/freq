@@ -93,6 +93,13 @@ Signal::pMonoBuffer DrawnWaveform::
 }
 
 
+TransformDesc::Ptr DrawnWaveform::
+        copy() const
+{
+    return TransformDesc::Ptr(new DrawnWaveform(*this));
+}
+
+
 pTransform DrawnWaveform::
         createTransform() const
 {
@@ -146,6 +153,22 @@ unsigned DrawnWaveform::
 }
 
 
+Signal::Interval DrawnWaveform::
+        requiredInterval( const Signal::Interval&, Signal::Interval*) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
+}
+
+
+Signal::Interval DrawnWaveform::
+        affectedInterval( const Signal::Interval& ) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
+}
+
+
 std::string DrawnWaveform::
         toString() const
 {
@@ -156,7 +179,7 @@ std::string DrawnWaveform::
 
 
 bool DrawnWaveform::
-        operator==(const TransformParams& b) const
+        operator==(const TransformDesc& b) const
 {
     const DrawnWaveform* p = dynamic_cast<const DrawnWaveform*>(&b);
     if (!p)

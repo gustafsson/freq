@@ -46,6 +46,14 @@ namespace Tools
         virtual void wheelEvent(QWheelEvent *);
         virtual void changeEvent(QEvent *);
 
+        struct Actions {
+            Actions(QObject* parent);
+
+            QAction *actionActivateInfoTool;
+            QAction *actionAddComment;
+            QAction *actionShowComments;
+        };
+        boost::shared_ptr<Actions> ui;
 
         // Model and View
         std::list<QPointer<TooltipView> > views_;

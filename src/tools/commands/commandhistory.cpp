@@ -9,6 +9,7 @@
 #include <boost/foreach.hpp>
 
 #include <QDockWidget>
+#include <QTimer>
 
 namespace Tools {
 namespace Commands {
@@ -24,36 +25,18 @@ CommandHistory::
 
     connect(command_invoker, SIGNAL(projectChanged(const Command*)), SLOT(redrawHistory()));
 
+    redrawHistory();
 
     ::Ui::SaweMainWindow* MainWindow = command_invoker->project()->mainWindow();
     dock = new QDockWidget(MainWindow);
     dock->setObjectName(QString::fromUtf8("dockWidgetCommandHistory"));
-    dock->setMinimumSize(QSize(42, 79));
-    dock->setMaximumSize(QSize(524287, 524287));
-    dock->resize(123, 150);
-    dock->setContextMenuPolicy(Qt::NoContextMenu);
-    dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    dock->setEnabled(true);
-    dock->setWidget(this);
+    dock->setWidget (this);
+    MainWindow->addDockWidget (Qt::RightDockWidgetArea, dock);
     dock->setWindowTitle("Command history");
 
-    actionCommandHistory = new QAction( this );
-    actionCommandHistory->setObjectName("actionCommandHistory");
-    actionCommandHistory->setText("Command history");
-    actionCommandHistory->setCheckable( true );
-    actionCommandHistory->setChecked( true );
+    MainWindow->getItems()->menu_Windows->addAction( dock->toggleViewAction () );
 
-    MainWindow->getItems()->menu_Windows->addAction( actionCommandHistory );
-
-    connect(actionCommandHistory, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
-    connect(actionCommandHistory, SIGNAL(triggered()), dock, SLOT(raise()));
-    connect(dock, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibility(bool)));
-
-    dock->setVisible( false );
-    actionCommandHistory->setChecked( false );
-
-    redrawHistory();
+    connect(dock->toggleViewAction (), SIGNAL(triggered()), dock, SLOT(raise()));
 }
 
 
@@ -80,15 +63,6 @@ void CommandHistory::
     }
 }
 
-
-void CommandHistory::
-        checkVisibility(bool visible)
-{
-    ::Ui::SaweMainWindow* MainWindow = command_invoker_->project()->mainWindow();
-    visible |= !MainWindow->tabifiedDockWidgets( dock ).empty();
-    visible |= dock->isVisibleTo( dock->parentWidget() );
-    actionCommandHistory->setChecked(visible);
-}
 
 } // namespace Commands
 } // namespace Tools

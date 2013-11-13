@@ -25,7 +25,7 @@ MonoBuffer::
     sample_rate_(fs)
 {
     EXCEPTION_ASSERT( 0 < I.count ());
-    EXCEPTION_ASSERT( 0 < sample_rate() );
+    EXCEPTION_ASSERT( 0 < fs );
 
     time_series_.reset( new TimeSeriesData(DataStorageSize( I.count ())));
 }
@@ -37,7 +37,7 @@ MonoBuffer::
     sample_rate_(fs)
 {
     EXCEPTION_ASSERT( 0 < numberOfSamples );
-    EXCEPTION_ASSERT( 0 < sample_rate() );
+    EXCEPTION_ASSERT( 0 < fs );
 
     time_series_.reset( new TimeSeriesData(DataStorageSize( numberOfSamples )));
 }
@@ -124,7 +124,9 @@ MonoBuffer& MonoBuffer::
         fromGpu = toGpu;
 #endif
 
-    if (!toCpu && !toGpu && !fromCpu && !fromGpu)
+    bool clearWithZeros = false;
+
+    if (!toCpu && !toGpu && !fromCpu && !fromGpu && clearWithZeros)
     {
         // no data was read (all 0) and no data to overwrite with 0
         return *this;
@@ -154,13 +156,23 @@ MonoBuffer& MonoBuffer::
     }
 
 #ifdef USE_CUDA
-    if (toGpu && !write)
-        write = CudaGlobalStorage::BorrowPitchedPtr<float>(
-            DataStorageSize(i.count()),
-            make_cudaPitchedPtr(
-                            CudaGlobalStorage::ReadWrite<1>( time_series_ ).device_ptr() + offs_write,
-                            i.count()*sizeof(float),
-                            i.count()*sizeof(float), 1), false);
+    if (toGpu && !write) {
+        if (clearWithZeros) {
+            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                DataStorageSize(i.count()),
+                make_cudaPitchedPtr(
+                                CudaGlobalStorage::ReadWrite<1>( time_series_ ).device_ptr() + offs_write,
+                                i.count()*sizeof(float),
+                                i.count()*sizeof(float), 1), false);
+        } else {
+            write = CudaGlobalStorage::BorrowPitchedPtr<float>(
+                DataStorageSize(i.count()),
+                make_cudaPitchedPtr(
+                                CudaGlobalStorage::WriteAll<1>( time_series_ ).device_ptr() + offs_write,
+                                i.count()*sizeof(float),
+                                i.count()*sizeof(float), 1), false);
+        }
+    }
 
 
     if (fromGpu && !read)
@@ -172,10 +184,25 @@ MonoBuffer& MonoBuffer::
                     i.count()*sizeof(float), 1), false);
 #endif
 
-    if (!write)
-        write = CpuMemoryStorage::BorrowPtr(
-            DataStorageSize(i.count()),
-            CpuMemoryStorage::ReadWrite<1>( time_series_ ).ptr() + offs_write, false);
+    if (!write) {
+        if (clearWithZeros) {
+            write = CpuMemoryStorage::BorrowPtr(
+                DataStorageSize(i.count()),
+                CpuMemoryStorage::ReadWrite<1>( time_series_ ).ptr() + offs_write, false);
+        } else {
+            write = CpuMemoryStorage::BorrowPtr(
+                DataStorageSize(i.count()),
+                CpuMemoryStorage::WriteAll<1>( time_series_ ).ptr() + offs_write, false);
+        }
+    }
+
+#ifdef _DEBUG
+    if (!clearWithZeros && !fromCpu && !fromGpu) {
+        float *p = CpuMemoryStorage::WriteAll<1>( write ).ptr();
+        for (unsigned j=0; j<i.count (); ++j)
+            p[j] = 1e100;
+    }
+#endif
 
     if (!read)
         read = CpuMemoryStorage::BorrowPtr(
@@ -229,13 +256,13 @@ bool MonoBuffer::
 Buffer::
         Buffer(Interval I,
        float sample_rate,
-       unsigned number_of_channels)
+       int number_of_channels)
 {
     EXCEPTION_ASSERT( 0 < sample_rate );
     EXCEPTION_ASSERT( 0 < number_of_channels );
 
     channels_.resize(number_of_channels);
-    for (unsigned i=0; i<number_of_channels; ++i)
+    for (int i=0; i<number_of_channels; ++i)
         channels_[i].reset(new MonoBuffer(I, sample_rate));
 }
 
@@ -244,13 +271,13 @@ Buffer::
         Buffer(UnsignedF first_sample,
        IntervalType number_of_samples,
        float sample_rate,
-       unsigned number_of_channels)
+       int number_of_channels)
 {
-    EXCEPTION_ASSERT( 0 < sample_rate );
+    EXCEPTION_ASSERT( 0 <= sample_rate );
     EXCEPTION_ASSERT( 0 < number_of_channels );
 
     channels_.resize(number_of_channels);
-    for (unsigned i=0; i<number_of_channels; ++i)
+    for (int i=0; i<number_of_channels; ++i)
         channels_[i].reset(new MonoBuffer(first_sample, number_of_samples, sample_rate));
 }
 

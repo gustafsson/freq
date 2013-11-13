@@ -1,5 +1,5 @@
 // gl
-#include <gl.h>
+#include "gl.h"
 
 #include "renderview.h"
 
@@ -21,14 +21,19 @@
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "toolfactory.h"
+#include "tools/recordmodel.h"
+#include "tools/support/heightmapprocessingpublisher.h"
+#include "tools/support/chaininfo.h"
+#include "signal/processing/workers.h"
 
 // gpumisc
-#include <computationkernel.h>
-#include <GlException.h>
-#include <glPushContext.h>
-#include <demangle.h>
-#include <glframebuffer.h>
-#include <neat_math.h>
+#include "computationkernel.h"
+#include "GlException.h"
+#include "glPushContext.h"
+#include "demangle.h"
+#include "glframebuffer.h"
+#include "neat_math.h"
+#include "gluunproject.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -42,6 +47,7 @@
 #include <QGLContext>
 #include <QGraphicsView>
 
+#include <boost/foreach.hpp>
 
 //#define TIME_PAINTGL
 #define TIME_PAINTGL if(0)
@@ -74,20 +80,18 @@ RenderView::
             model(model),
             glwidget(0),
             graphicsview(0),
-            _work_timer( new TaskTimer("Benchmarking first work")),
             _inited(false),
             _last_width(0),
             _last_height(0),
             _last_x(0),
             _last_y(0),
             _try_gc(0),
-            _target_fps(10.0f)
+            _target_fps(10.0f),
+            _last_update_size(std::numeric_limits<Signal::UnsignedIntervalType>::max())
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
     if (model->_rx>=90) { model->_rx=90; model->orthoview.reset(1); } else model->orthoview.reset(0);
-
-    computeChannelColors();
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
@@ -115,7 +119,6 @@ RenderView::
     emit destroying();
 
     _render_timer.reset();
-    _work_timer.reset();
     _renderview_fbo.reset();
 
     QGraphicsScene::clear();
@@ -180,7 +183,7 @@ void RenderView::
 void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
-    if (model->renderer->draw_cursor_marker)
+    if (model->renderer->render_settings.draw_cursor_marker)
         update();
 
     bool request_high_fps = false;
@@ -221,6 +224,8 @@ void RenderView::
 		{
             unsigned w = painter->device()->width();
             unsigned h = painter->device()->height();
+            w *= painter->device ()->devicePixelRatio();
+            h *= painter->device ()->devicePixelRatio();
             if (w != _last_width || h != _last_height)
                 userinput_update();
             _last_width = w;
@@ -239,7 +244,7 @@ void RenderView::
             emit prePaint();
         }
 
-        resizeGL(_last_width, _last_height );
+        resizeGL(_last_width, _last_height, painter->device ()->devicePixelRatio() );
 
         paintGL();
 
@@ -269,13 +274,13 @@ float RenderView::
     if (is_valid_value)
         *is_valid_value = true;
 
-    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->worker.length())
+    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->length())
         return 0;
 
     if (is_valid_value)
         *is_valid_value = false;
 
-    Heightmap::Reference myref(model->collections[0].get());
+    Heightmap::Reference myref;
     if (!ref)
     {
         ref = &myref;
@@ -286,21 +291,22 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::Region r = ref->getRegion();
+    Heightmap::RegionFactory rr(read1(model->tfr_mapping ())->block_layout ());
+    Heightmap::Region r = rr(*ref);
 
     ref->block_index[0] = pos.time / r.time();
     ref->block_index[1] = pos.scale / r.scale();
-    r = ref->getRegion();
+    r = rr(*ref);
 
-    Heightmap::pBlock block = model->collections[0]->getBlock( *ref );
+    Heightmap::pBlock block = write1(model->collections()[0])->getBlock( *ref );
+    Heightmap::ReferenceInfo ri(block->referenceInfo ());
     if (!block)
         return 0;
     if (is_valid_value)
     {
-        Signal::IntervalType s = pos.time * ref->sample_rate();
+        Signal::IntervalType s = pos.time * ri.sample_rate();
         Signal::Intervals I = Signal::Intervals(s, s+1);
-        I -= block->valid_samples;
-        I &= ref->getInterval();
+        I &= ri.getInterval ();
         if (I.empty())
         {
             *is_valid_value = true;
@@ -311,8 +317,9 @@ float RenderView::
     DataStorage<float>::Ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
-    unsigned w = ref->samplesPerBlock();
-    unsigned h = ref->scalesPerBlock();
+    Heightmap::BlockLayout block_layout = read1(model->tfr_mapping ())->block_layout();
+    unsigned w = block_layout.texels_per_row ();
+    unsigned h = block_layout.texels_per_column ();
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
     float    yf = (pos.scale-r.a.scale)/r.scale()*(h-1);
     unsigned y0 = yf + .5f;
@@ -381,11 +388,12 @@ float RenderView::
 Heightmap::Reference RenderView::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
-    memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
-    memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+    model->renderer->gl_projection.update ();
+//    memcpy( model->renderer->gl_projection.viewport_matrix (), viewport_matrix, sizeof(viewport_matrix));
+//    memcpy( model->renderer->gl_projection.modelview_matrix (), modelview_matrix, sizeof(modelview_matrix));
+//    memcpy( model->renderer->gl_projection.projection_matrix (), projection_matrix, sizeof(projection_matrix));
 
-    model->renderer->collection = model->collections[0].get();
+    model->renderer->collection = model->collections()[0];
 
     return model->renderer->findRefAtCurrentZoomLevel( p );
 }
@@ -396,7 +404,7 @@ QPointF RenderView::
 {
     GLdouble objY = 0;
     if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
-        objY = getHeightmapValue(pos) * model->renderer->y_scale * last_ysize;
+        objY = getHeightmapValue(pos) * model->renderer->render_settings.y_scale * last_ysize;
 
     GLdouble winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
@@ -407,8 +415,8 @@ QPointF RenderView::
     {
         GLint const* const& vp = viewport_matrix;
         float z0 = .1, z1=.2;
-        GLvector projectionPlane = Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
-        GLvector projectionNormal = (Heightmap::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane);
+        GLvector projectionPlane = ::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
+        GLvector projectionNormal = (::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane);
 
         GLvector p;
         p[0] = pos.time;
@@ -426,7 +434,8 @@ QPointF RenderView::
         *dist = d%projectionNormal;
     }
 
-    return QPointF( winX, _last_height-1 - winY );
+    int r = glwidget->devicePixelRatio ();
+    return QPointF( winX, _last_height-1 - winY ) /= r;
 }
 
 
@@ -446,6 +455,7 @@ Heightmap::Position RenderView::
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderView::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
+    widget_pos *= glwidget->devicePixelRatio ();
 
     QPointF pos;
     pos.setX( widget_pos.x() + _last_x );
@@ -504,12 +514,12 @@ Heightmap::Position RenderView::
         //if (e < 1e-5 )
         //    break;
 
-        y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
+        y = getHeightmapValue(p) * model->renderer->render_settings.y_scale * 4 * last_ysize;
         tt.info("(%g, %g) %g is Screen(%g, %g), s = %g", p.time, p.scale, y, r.x(), r.y(), s);
         prevs = s;
     }
 
-    y = getHeightmapValue(p) * model->renderer->y_scale * 4 * last_ysize;
+    y = getHeightmapValue(p) * model->renderer->render_settings.y_scale * 4 * last_ysize;
     TaskInfo("Screen(%g, %g) projects at Heightmap(%g, %g, %g)", widget_pos.x(), widget_pos.y(), p.time, p.scale, y);
     QPointF r = getWidgetPos( p, 0 );
     TaskInfo("Heightmap(%g, %g) projects at Screen(%g, %g)", p.time, p.scale, r.x(), r.y() );
@@ -519,6 +529,8 @@ Heightmap::Position RenderView::
 Heightmap::Position RenderView::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
+    pos *= glwidget->devicePixelRatio ();
+
     pos.setX( pos.x() + _last_x );
     pos.setY( _last_height - 1 - pos.y() + _last_y );
 
@@ -595,16 +607,18 @@ void RenderView::
     TIME_PAINTGL_DRAW TaskTimer tt2("Drawing...");
     GlException_CHECK_ERROR();
 
-    unsigned N = model->collections.size();
+    unsigned N = model->collections().size();
+    if (N != channel_colors.size ())
+        computeChannelColors ();
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
 
     // Draw the first channel without a frame buffer
-    model->renderer->camera = GLvector(model->_qx, model->_qy, model->_qz);
-    model->renderer->cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
+    model->renderer->render_settings.camera = GLvector(model->_qx, model->_qy, model->_qz);
+    model->renderer->render_settings.cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
 
     Heightmap::Position cursorPos = getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
-    model->renderer->cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+    model->renderer->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
 
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
@@ -620,10 +634,12 @@ void RenderView::
 
     unsigned i=0;
 
+    const Heightmap::TfrMapping::Collections collections = model->collections ();
+
     // draw the first without fbo
     for (; i < N; ++i)
     {
-        if (!model->collections[i]->isVisible())
+        if (!read1(collections[i])->isVisible())
             continue;
 
         drawCollection(i, yscale);
@@ -636,7 +652,7 @@ void RenderView::
 
     for (; i<N; ++i)
     {
-        if (!model->collections[i]->isVisible())
+        if (!read1(collections[i])->isVisible())
             continue;
 
         if (!hasValidatedFboSize)
@@ -701,16 +717,16 @@ void RenderView::
 
     TIME_PAINTGL_DRAW
     {
-        unsigned collections = 0;
+        unsigned collections_n = 0;
         for (i=0; i < N; ++i)
-            collections += model->collections[i]->isVisible();
+            collections_n += read1(collections[i])->isVisible();
 
         TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
-        collections,
-        model->renderer->drawn_blocks, 
-        model->renderer->drawn_blocks==1?"":"s",
+        collections_n,
+        model->renderer->render_settings.drawn_blocks,
+        model->renderer->render_settings.drawn_blocks==1?"":"s",
         model->renderer->trianglesPerBlock(),
-        collections*model->renderer->drawn_blocks*model->renderer->trianglesPerBlock(),
+        collections_n*model->renderer->render_settings.drawn_blocks*model->renderer->trianglesPerBlock(),
         current_viewport[2], current_viewport[3]);
     }
 }
@@ -719,14 +735,14 @@ void RenderView::
 void RenderView::
         drawCollection(int i, float yscale )
 {
-    model->renderer->collection = model->collections[i].get();
-    model->renderer->fixed_color = channel_colors[i];
+    model->renderer->collection = model->collections()[i];
+    model->renderer->render_settings.fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
     if (0 != model->_rx)
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     else
         glEnable( GL_DEPTH_TEST );
-    model->renderer->draw( yscale ); // 0.6 ms
+    model->renderer->draw( yscale, this->last_length ()); // 0.6 ms
     glDisable( GL_CULL_FACE );
     glEnable(GL_BLEND);
 }
@@ -743,13 +759,13 @@ void RenderView::
 
     glShadeModel(GL_SMOOTH);
 
-    tvector<4,float> a = model->renderer->clear_color;
+    tvector<4,float> a = model->renderer->render_settings.clear_color;
     glClearColor(a[0], a[1], a[2], a[3]);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glFrontFace( model->renderer->left_handed_axes ? GL_CCW : GL_CW );
+    glFrontFace( model->renderer->render_settings.left_handed_axes ? GL_CCW : GL_CW );
     glCullFace( GL_BACK );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -822,7 +838,7 @@ void RenderView::
 void RenderView::
         setPosition( Heightmap::Position pos )
 {
-    float l = model->project()->worker.length();
+    float l = model->project()->length();
     model->_qx = pos.time;
     if (model->_qx<0) model->_qx=0;
     if (model->_qx>l) model->_qx=l;
@@ -832,6 +848,20 @@ void RenderView::
     if (model->_qz>1) model->_qz=1;
 
     userinput_update();
+}
+
+
+void RenderView::
+        setLastUpdateSize( Signal::UnsignedIntervalType last_update_size )
+{
+    if (0 >= last_update_size)
+    {
+        // Ignore. Should mark somewhere that there is a non-fatal error to report.
+        TaskInfo(boost::format("Weird last_update_size=%d.\n%s:%d %s\n%s") % last_update_size % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % Backtrace::make_string());
+        return;
+    }
+
+    _last_update_size = last_update_size;
 }
 
 
@@ -848,14 +878,14 @@ Support::ToolSelector* RenderView::
 float RenderView::
         last_length()
 {
-    return model->project()->worker.length();
+    return model->project()->length();
 }
 
 
 void RenderView::
         emitTransformChanged()
 {
-    computeChannelColors();
+    channel_colors.clear ();
     emit transformChanged();
 }
 
@@ -872,7 +902,10 @@ void RenderView::
 {
     if (request_high_fps)
     {
+/*
+//Use Signal::Processing namespace
         model->project()->worker.requested_fps(30, cheat_also_high?30:-1);
+*/
     }
 
     if (post_update)
@@ -896,6 +929,8 @@ void RenderView::
 
         unsigned ms = (wait-dt)*1e3; // round down
 
+/*
+//Use Signal::Processing namespace
         // wait longer between frames if the requested framerate is low
         float reqdt = 1.f/model->project()->worker.requested_fps();
         reqdt = std::min(0.01f, .05f * reqdt);
@@ -903,7 +938,8 @@ void RenderView::
         // allow others to jump in before the next update if ms=0
         // most visible in windows message loop
         ms = std::max( 10u, std::max((unsigned)(1000*reqdt), ms));
-
+*/
+        ms = 10;
         _update_timer->start(ms);
     }
 }
@@ -912,22 +948,24 @@ void RenderView::
 void RenderView::
         initializeGL()
 {
-    //printQGLWidget(*this, "this");
-    //TaskTimer("autoBufferSwap=%d", autoBufferSwap()).suppressTiming();
     _inited = true;
 
-    TaskInfo("_renderview_fbo");
-    if (!_renderview_fbo) _renderview_fbo.reset( new GlFrameBuffer );
+    if (!_renderview_fbo)
+        _renderview_fbo.reset( new GlFrameBuffer );
 }
 
 
 void RenderView::
-        resizeGL( int width, int height )
+        resizeGL( int width, int height, int ratio )
 {
     TIME_PAINTGL_DETAILS TaskInfo("RenderView width=%d, height=%d", width, height);
     height = height?height:1;
 
     QRect rect = tool_selector->parentTool()->geometry();
+    rect.setWidth (rect.width ()*ratio);
+    rect.setHeight (rect.height ()*ratio);
+    rect.setLeft (rect.left ()*ratio);
+    rect.setTop (rect.top ()*ratio);
 
     // Might happen during the first (few) frame during startup. Before "parentTool()" knows which size it should have.
     if (width > 1 && rect.width () > width) rect.setWidth (width);
@@ -951,9 +989,7 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    if (!model->renderSignalTarget)
-        return;
-
+    model->renderer->collection = read1(model->tfr_mapping ())->collections()[0];
     model->renderer->init();
     if (!model->renderer->isInitialized())
         return;
@@ -965,35 +1001,32 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-    Signal::Worker& worker = model->project()->worker;
-    Signal::pOperation source = worker.source();
-    Signal::Operation* first_source = source ? source->root() : 0;
+    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL.............................");
 
-    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL %s (%p).............................",
-                              first_source?first_source->name().c_str():0, first_source);
-
-    unsigned N = model->collections.size();
-    unsigned long sumsize = 0;
-    unsigned cacheCount = 0;
+    Heightmap::TfrMapping::Collections collections = model->collections ();
 
     TIME_PAINTGL_DETAILS
     {
-        sumsize = model->collections[0]->cacheByteSize();
-        cacheCount = model->collections[0]->cacheCount();
+        unsigned N = collections.size();
+        unsigned long sumsize = 0;
+        unsigned cacheCount = 0;
+
+        sumsize = read1(collections[0])->cacheByteSize();
+        cacheCount = read1(collections[0])->cacheCount();
         for (unsigned i=1; i<N; ++i)
         {
-            TaskLogIfFalse( sumsize == model->collections[i]->cacheByteSize() );
-            TaskLogIfFalse( cacheCount == model->collections[i]->cacheCount() );
+            TaskLogIfFalse( sumsize == read1(collections[i])->cacheByteSize() );
+            TaskLogIfFalse( cacheCount == read1(collections[i])->cacheCount() );
         }
-    }
 
-    TIME_PAINTGL_DETAILS TaskInfo("Drawing (%s cache for %u*%u blocks) of %s (%p) %s",
-        DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
-        N, cacheCount, first_source?vartype(*first_source).c_str():0, first_source, first_source?first_source->name().c_str():0);
+        TaskInfo("Drawing (%s cache for %u*%u blocks)",
+            DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
+            N, cacheCount);
 
-    if(0) TIME_PAINTGL_DETAILS for (unsigned i=0; i<N; ++i)
-    {
-        model->collections[i]->printCacheSize();
+        if(0) foreach( const Heightmap::Collection::Ptr& c, collections )
+        {
+            read1(c)->printCacheSize();
+        }
     }
 
 
@@ -1019,7 +1052,7 @@ void RenderView::
         // use various GPU resources the application will crash, for
         // instance when another RenderView is closed and releases
         // the context.
-        Tfr::StftParams a;
+        Tfr::StftDesc a;
         a.set_approximate_chunk_size(4);
         Signal::pMonoBuffer b(new Signal::MonoBuffer(0,a.chunk_size(),1));
         (Tfr::Stft(a))(b);
@@ -1028,18 +1061,19 @@ void RenderView::
     // TODO move to rendercontroller
     bool isWorking = false;
     bool isRecording = false;
+    bool workerCrashed = false;
 
     if (0 == "stop after 31 seconds")
     {
-        float length = model->project()->worker.length();
+        float length = model->project()->length();
         static unsigned frame_counter = 0;
         TaskInfo("frame_counter = %u", ++frame_counter);
         if (length > 30) for (static bool once=true; once; once=false)
             QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
     }
 
-    Adapters::Recorder* r = dynamic_cast<Adapters::Recorder*>( first_source );
-    if(r != 0 && !(r->isStopped()))
+    Tools::RecordModel* r = model->project ()->tools ().record_model ();
+    if(r && r->recording && !r->recording->isStopped ())
     {
         isRecording = true;
     }
@@ -1060,18 +1094,41 @@ void RenderView::
     }
 
     bool onlyComputeBlocksForRenderView = false;
+    Signal::OperationDesc::Extent x;
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
+        float length=0.f;
 
         if (onlyComputeBlocksForRenderView)
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+        foreach( const Heightmap::Collection::Ptr& collection, collections )
         {
-            collection->next_frame(); // Discard needed blocks before this row
+            write1(collection)->next_frame(); // Discard needed blocks before this row
+        }
+
+        {
+            x = model->project()->extent ();
+            length = x.interval.get ().count() / x.sample_rate.get ();
+
+            Heightmap::TfrMapping::WritePtr w(model->tfr_mapping ());
+            w->length( length );
+            w->channels( x.number_of_channels.get () );
+            w->targetSampleRate( x.sample_rate.get () );
+
+            if (w->channels() != x.number_of_channels ||
+                w->targetSampleRate() != x.sample_rate)
+            {
+                w->targetSampleRate( x.sample_rate.get ());
+                w->channels( x.number_of_channels.get ());
+
+                Signal::Processing::Step::Ptr s = model->target_marker ()->step().lock();
+                if (s)
+                    write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
+            }
         }
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
-        last_ysize = model->renderer->last_ysize;
+        last_ysize = model->renderer->render_settings.last_ysize;
         glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
 
 		{
@@ -1080,153 +1137,95 @@ void RenderView::
 		}
 
         {
-            float length = model->project()->worker.length();
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
 
-            bool draw_piano = model->renderer->draw_piano;
-            bool draw_hz = model->renderer->draw_hz;
-            bool draw_t = model->renderer->draw_t;
+            bool draw_piano = model->renderer->render_settings.draw_piano;
+            bool draw_hz = model->renderer->render_settings.draw_hz;
+            bool draw_t = model->renderer->render_settings.draw_t;
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
-            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
-            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
-            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+            model->renderer->gl_projection.update ();
+//            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
+//            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
+//            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
 
             model->renderer->drawAxes( length ); // 4.7 ms
 
-            model->renderer->draw_piano = draw_piano;
-            model->renderer->draw_hz = draw_hz;
-            model->renderer->draw_t = draw_t;
+            model->renderer->render_settings.draw_piano = draw_piano;
+            model->renderer->render_settings.draw_hz = draw_hz;
+            model->renderer->render_settings.draw_t = draw_t;
         }
     }
 
 
-    {   // Find things to work on (ie playback and file output)
-		TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
+    // It should update the view in sections with the same size as blocks
+    Signal::Processing::TargetNeeds::Ptr target_needs = model->target_marker()->target_needs();
+    Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
+    wu.update(model->_qx, x, _last_update_size);
 
-        Signal::pTarget oldTarget = worker.target();
+    Support::ChainInfo ci(model->project ()->processing_chain ());
+    isWorking = ci.hasWork ();
+    workerCrashed = wu.failedAllocation () || ci.n_workers () == 0;
 
-        emit populateTodoList();
+    //Use Signal::Processing namespace
+    if (isWorking || isRecording || workerCrashed)
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed && !isRecording );
 
-        Signal::pTarget populatedTarget = worker.target();
-        if (!populatedTarget || !populatedTarget->post_sink()->isUnderfed())
-        {
-            std::vector<Signal::pTarget> targetsToTry;
-            targetsToTry.push_back( model->renderSignalTarget );
-
-            // Use the populated target (possibly set in populateTodoList) if
-            // renderSignalTarget has nothing to work on
-            if (model->renderSignalTarget != worker.target() )
-                targetsToTry.push_back( worker.target() );
-
-            foreach(Signal::pTarget t, model->project()->targets)
-                if (std::find(targetsToTry.begin(), targetsToTry.end(), t) == targetsToTry.end())
-                    targetsToTry.push_back( t );
-
-            // Search for something to work on
-            foreach(Signal::pTarget t, targetsToTry)
-            {
-                // the todo list in worker isn't updated unless Worker::target(pTarget) is called.
-                worker.target( t );
-                if (worker.todo_list())
-                    break;
-            }
-
-            if (!worker.todo_list() && worker.target() != model->renderSignalTarget)
-                worker.target( model->renderSignalTarget );
-
-            if (worker.target() == model->renderSignalTarget)
-                worker.center = model->_qx;
-        }
-        else
-        {
-            if (populatedTarget == oldTarget)
-            {
-                // make sure the todo list is updated
-                worker.target(oldTarget);
-            }
+    {
+        static bool hadwork = false;
+        if (isWorking)
+            hadwork = true;
+        if (!isWorking && hadwork) {
+            // Useful when debugging to close application or do something else after finishing first work chunk
+            emit finishedWorkSection();
         }
     }
-
-    bool workerCrashed = false;
-#ifndef SAWE_NO_MUTEX
-    workerCrashed = !worker.isRunning ();
-#endif
-
-    {   // Work
-        isWorking = worker.todo_list();
-        TIME_PAINTGL_DETAILS TaskTimer tt("Work target = %s, todo list = %s, isWorking = %d",
-                 worker.target()->name().c_str(),
-                 worker.todo_list().toString().c_str(), isWorking);
-
-        if ((isWorking || isRecording) && !workerCrashed) {
-            if (!_work_timer.get())
-                _work_timer.reset( new TaskTimer("Working"));
-
-            // project->worker can be run in one or more separate threads, but if it isn't
-            // execute the computations for one chunk
-#ifndef SAWE_NO_MUTEX
-            if (worker.isRunning ())
-                restartUpdateTimer();
-#else
-            worker.workOne(!isRecording && !worker.target()->post_sink()->isUnderfed());
-            emit postUpdate();
-#endif
-        } else {
-#ifdef SAWE_NO_MUTEX
-            // will only update interal stats and not do any work since worker.todo_list() is empty.
-            worker.workOne(true);
-#endif
-
-            static unsigned workcount = 0;
-            if (_work_timer) {
-                Signal::IntervalType wsc = worker.worked_samples.count();
-                float worked_time = wsc/worker.source()->sample_rate();
-                _work_timer->info("Finished %u chunks covering %g s (%g x realtime). Work session #%u",
-                                  worker.work_chunks,
-                                  worked_time,
-                                  worked_time/_work_timer->elapsedTime(),
-                                  workcount);
-                worker.work_chunks = 0;
-                worker.worked_samples.clear();
-                workcount++;
-                _work_timer.reset();
-
-                // Might be 0 due to race conditions
-                if (0<wsc)
-                {
-                    // Useful when debugging to close application or do something else after finishing first work chunk
-                    emit finishedWorkSection();
-                }
-            }
-        }
-    }
-
-    if (isWorking || isRecording)
-        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed );
-
-//    if (!worker.is_cheating() && !model->renderer->fullMeshResolution())
-//    {
-//        model->renderer->setFractionSize( 1, 1 );
-//        emit postUpdate();
-//    }
 
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
 
 #ifndef SAWE_NO_MUTEX
-    worker.checkForErrors();
+    //worker.checkForErrors();
+    {
+        Signal::Processing::Workers::Ptr workers = read1(model->project ()->processing_chain ())->workers();
+
+        try {
+            write1(workers)->rethrow_any_worker_exception();
+        } catch ( const std::exception& x) {
+            TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
+            switch (QMessageBox::warning( 0,
+                                           QString("Oups"),
+                                           "Oups... that didn't work as expected",
+                                           "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
+            {
+            case 0:
+                model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
+                break;
+            case 1:
+            {
+                const Signal::ComputingEngine::Ptr* ce =
+                        boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
+
+                TaskInfo(boost::format("Recreating worker %s")
+                         % (*ce?vartype(**ce):vartype(*ce)));
+                write1(workers)->addComputingEngine(*ce);
+            }
+            case 2:
+                break;
+            }
+        }
+    }
 #endif
 
     if (!onlyComputeBlocksForRenderView)
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-        foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+        foreach( const Heightmap::Collection::Ptr& collection, collections )
         {
             // Start looking for which blocks that are requested for the next frame.
-            collection->next_frame();
+            write1(collection)->next_frame();
         }
     }
 
@@ -1284,6 +1283,10 @@ void RenderView::
         {
             model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
         }
+    } catch (const LockFailed& x) {
+        TaskInfo("");
+        TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
+        TaskInfo("");
     }
 
 	{
@@ -1297,10 +1300,9 @@ void RenderView::
         clearCaches()
 {
     TaskTimer tt("RenderView::clearCaches(), %p", this);
-    foreach( const boost::shared_ptr<Heightmap::Collection>& collection, model->collections )
+    foreach( const Heightmap::Collection::Ptr& collection, model->collections() )
     {
-        Heightmap::Collection* c = collection.get();
-        c->reset(); // note, not c.reset()
+        write1(collection)->reset(); // note, not collection.reset()
     }
 
     if (model->renderer && model->renderer->isInitialized())
@@ -1338,7 +1340,7 @@ void RenderView::
     glRotated( model->effective_ry(), 0, 1, 0 );
     glRotated( model->_rz, 0, 0, 1 );
 
-    if (model->renderer->left_handed_axes)
+    if (model->renderer->render_settings.left_handed_axes)
         glScaled(-1, 1, 1);
     else
         glRotated(-90,0,1,0);
@@ -1377,7 +1379,7 @@ void RenderView::
     float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
     float limit = 5, middle=45;
-    model->renderer->draw_axis_at0 = 0;
+    model->renderer->render_settings.draw_axis_at0 = 0;
     if (model->_rx<limit)
     {
         float f = 1 - model->_rx/limit;
@@ -1395,14 +1397,14 @@ void RenderView::
         {
             if (dyx<middle || dyx2<middle)
             {
-                model->renderer->draw_hz = false;
-                model->renderer->draw_piano = false;
-                model->renderer->draw_axis_at0 = dyx<middle?1:-1;
+                model->renderer->render_settings.draw_hz = false;
+                model->renderer->render_settings.draw_piano = false;
+                model->renderer->render_settings.draw_axis_at0 = dyx<middle?1:-1;
             }
             if (dyz<middle || dyz2<middle)
             {
-                model->renderer->draw_t = false;
-                model->renderer->draw_axis_at0 = dyz2<middle?1:-1;
+                model->renderer->render_settings.draw_t = false;
+                model->renderer->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
             }
         }
     }
@@ -1412,7 +1414,7 @@ void RenderView::
 void RenderView::
         computeChannelColors()
 {
-    unsigned N = model->collections.size();
+    unsigned N = model->collections().size();
     channel_colors.resize( N );
 
     // Set colors
@@ -1438,58 +1440,3 @@ void RenderView::
 
 
 } // namespace Tools
-
-
-// todo remove
-//static void printQGLFormat(const QGLFormat& f, std::string title)
-//{
-//    TaskTimer tt("QGLFormat %s", title.c_str());
-//    tt.info("accum=%d",f.accum());
-//    tt.info("accumBufferSize=%d",f.accumBufferSize());
-//    tt.info("alpha=%d",f.alpha());
-//    tt.info("alphaBufferSize=%d",f.alphaBufferSize());
-//    tt.info("blueBufferSize=%d",f.blueBufferSize());
-//    tt.info("depth=%d",f.depth());
-//    tt.info("depthBufferSize=%d",f.depthBufferSize());
-//    tt.info("directRendering=%d",f.directRendering());
-//    tt.info("doubleBuffer=%d",f.doubleBuffer());
-//    tt.info("greenBufferSize=%d",f.greenBufferSize());
-//    tt.info("hasOverlay=%d",f.hasOverlay());
-//    tt.info("redBufferSize=%d",f.redBufferSize());
-//    tt.info("rgba=%d",f.rgba());
-//    tt.info("sampleBuffers=%d",f.sampleBuffers());
-//    tt.info("samples=%d",f.samples());
-//    tt.info("stencil=%d",f.stencil());
-//    tt.info("stencilBufferSize=%d",f.stencilBufferSize());
-//    tt.info("stereo=%d",f.stereo());
-//    tt.info("swapInterval=%d",f.swapInterval());
-//    tt.info("");
-//    tt.info("hasOpenGL=%d",f.hasOpenGL());
-//    tt.info("hasOpenGLOverlays=%d",f.hasOpenGLOverlays());
-//    QGLFormat::OpenGLVersionFlags flag = f.openGLVersionFlags();
-//    tt.info("OpenGL_Version_None=%d", QGLFormat::OpenGL_Version_None == flag);
-//    tt.info("OpenGL_Version_1_1=%d", QGLFormat::OpenGL_Version_1_1 & flag);
-//    tt.info("OpenGL_Version_1_2=%d", QGLFormat::OpenGL_Version_1_2 & flag);
-//    tt.info("OpenGL_Version_1_3=%d", QGLFormat::OpenGL_Version_1_3 & flag);
-//    tt.info("OpenGL_Version_1_4=%d", QGLFormat::OpenGL_Version_1_4 & flag);
-//    tt.info("OpenGL_Version_1_5=%d", QGLFormat::OpenGL_Version_1_5 & flag);
-//    tt.info("OpenGL_Version_2_0=%d", QGLFormat::OpenGL_Version_2_0 & flag);
-//    tt.info("OpenGL_Version_2_1=%d", QGLFormat::OpenGL_Version_2_1 & flag);
-//    tt.info("OpenGL_Version_3_0=%d", QGLFormat::OpenGL_Version_3_0 & flag);
-//    tt.info("OpenGL_ES_CommonLite_Version_1_0=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_0 & flag);
-//    tt.info("OpenGL_ES_Common_Version_1_0=%d", QGLFormat::OpenGL_ES_Common_Version_1_0 & flag);
-//    tt.info("OpenGL_ES_CommonLite_Version_1_1=%d", QGLFormat::OpenGL_ES_CommonLite_Version_1_1 & flag);
-//    tt.info("OpenGL_ES_Common_Version_1_1=%d", QGLFormat::OpenGL_ES_Common_Version_1_1 & flag);
-//    tt.info("OpenGL_ES_Version_2_0=%d", QGLFormat::OpenGL_ES_Version_2_0 & flag);
-//}
-
-
-// todo remove
-//static void printQGLWidget(const QGLWidget& w, std::string title)
-//{
-//    TaskTimer tt("QGLWidget %s", title.c_str());
-//    tt.info("doubleBuffer=%d", w.doubleBuffer());
-//    tt.info("isSharing=%d", w.isSharing());
-//    tt.info("isValid=%d", w.isValid());
-//    printQGLFormat( w.format(), "");
-//}

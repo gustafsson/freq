@@ -11,31 +11,239 @@
 
 // gpumisc
 // For debug info while serializing
-#include <demangle.h>
-#include <TaskTimer.h>
+#include "demangle.h"
+#include "TaskTimer.h"
+#include "volatileptr.h"
 
 // std
 #include <set>
 
+// QString
+#include <QString>
+
 namespace Signal {
+
+class ComputingEngine;
+
+class OperationDesc;
+
+/**
+ * @brief The Operation class should describe the interface for performing signal processing on signal data.
+ *
+ * 'process' should only be called from one thread. But use VolatilePtr anyways. The overhead is low.
+ */
+class SaweDll Operation: public VolatilePtr<Operation>
+{
+public:
+    /**
+      Virtual housekeeping.
+      */
+    virtual ~Operation() {}
+
+
+    /**
+     * @brief process computes the operation
+     * @param A buffer with data to process. The interval of the buffer will
+     * be equal to param 'I' after a call to requiredInterval. requiredInterval
+     * may be called several times for different intervals before calling
+     * process.
+     * @return processed data. Returned buffer interval must be equal to
+     * OperationDesc::requiredInterval(b->getInterval());
+     */
+    virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
+
+
+    static void test(Ptr o, OperationDesc*);
+};
+
+
+/**
+ * @brief The OperationDesc class should describe the interface for creating instances of the Operation interface.
+ *
+ * All methods have const access to make it more likely that there are none or few side-effects.
+ */
+class SaweDll OperationDesc: public VolatilePtr<OperationDesc>
+{
+public:
+    /**
+      Virtual housekeeping.
+      */
+    virtual ~OperationDesc() {}
+
+
+    /**
+     * @brief requiredInterval should figure out which input interval that is
+     * needed for a given output interval.
+     * @param I describes an interval in the output.
+     * @param expectedOutput describes which interval that will be computed
+     * when 'requiredInterval' is processed. This will overlap 'I.first'.
+     * expectedOutput may be null to be ignored.
+     * @return the interval that is required to compute a valid chunk
+     * representing interval I. If the operation can not compute a valid chunk
+     * representing the at least interval I at once the operation can request
+     * a smaller chunk for processing instead by setting 'expectedOutput'.
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
+
+
+    /**
+     * @brief affectedInterval
+     * @param I
+     * @return which interval of samples that needs to be recomputed if 'I'
+     * changes in the input.
+     */
+    virtual Interval affectedInterval( const Interval& I ) const = 0;
+
+
+    /**
+     * @brief affectedInterval
+     * @param I
+     * @return a merge of the intervals returned by affectedInterval for each interval in I
+     */
+    virtual Intervals affectedInterval( const Intervals& I ) const;
+
+
+    /**
+     * @brief copy creates a copy of 'this'.
+     * @return a copy.
+     */
+    virtual OperationDesc::Ptr copy() const = 0;
+
+
+    /**
+     * @brief createOperation instantiates an operation that uses this description.
+     * Different computing engines could be used to instantiate different types.
+     *
+     * May return an empty Operation::Ptr if an operation isn't supported by a
+     * given ComputingEngine in which case some other thread will have to
+     * populate the cache instead and call invalidate samples when they are
+     * ready. This thread will then have to wait, or do something else. It will
+     * be marked as complete without computing anything until invalidated.
+     * @return a newly created operation.
+     */
+    virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
+
+
+    /**
+     * @brief The SignalExtent struct is returned by OperationDesc::extent ()
+     */
+    struct Extent {
+        boost::optional<Interval> interval;
+        boost::optional<float> sample_rate;
+        boost::optional<int> number_of_channels;
+    };
+
+
+    /**
+     * @brief extent describes the extent of this operation. Extent::interval is allowed
+     * to change during the lifetime of an OperationDesc.
+     * @return Does not initialize anything unless this operation creates any special extent.
+     */
+    virtual Extent extent() const;
+
+
+    /**
+     * @brief recreateOperation recreates an operation in an existing instance.
+     * If the operation supports this, some caches might be reused instead of
+     * deallocated and reallocated (to reduce memory fragmentation). The
+     * default behaviour is to call createOperation with the given engine.
+     *
+     * @return the same operation if it could be reused and modified, or a new
+     * operation. The default is to not use the hint at all.
+     *
+     * TODO deprecated
+     */
+    virtual Operation::Ptr recreateOperation(Operation::Ptr hint, ComputingEngine* engine=0) const;
+
+
+    /**
+     * Returns a string representation of this operation. Mainly used for debugging.
+     */
+    virtual QString toString() const;
+
+
+    /**
+     * @brief getNumberOfSources is larger than 1 if the operation merges
+     * multiple sources.
+     *
+     * TODO deprecated
+     */
+    virtual int getNumberOfSources() const;
+
+
+    /**
+     * @brief operator == checks if two instances of OperationDesc would generate
+     * identical instances of Operation. The default behaviour is to just check
+     * the type of the argument.
+     * @param d
+     * @return
+     */
+    virtual bool operator==(const OperationDesc& d) const;
+    bool operator!=(const OperationDesc& b) const { return !(*this == b); }
+
+
+    /**
+     * @brief operator << makes OperationDesc support common printing routines
+     * using the stream operator.
+     * @param os
+     * @param d
+     * @return os
+     */
+    friend std::ostream& operator << (std::ostream& os, const OperationDesc& d);
+};
+
+
+/**
+ * @brief The OperationSourceDesc class describes a starting point of a Dag.
+ */
+class SaweDll OperationSourceDesc: public OperationDesc
+{
+public:
+    /**
+     * @brief getNumberOfSources overloads OperationDesc::getNumberOfSources
+     */
+    int getNumberOfSources() const { return 0; }
+
+
+    /**
+     * @brief getSampleRate is constant during the lifetime of OperationSourceDesc.
+     * @return the sample rate.
+     */
+    virtual float getSampleRate() const = 0;
+
+    /**
+     * @brief getNumberOfChannels is constant during the lifetime of OperationSourceDesc.
+     * @return the number of channels.
+     */
+    virtual float getNumberOfChannels() const = 0;
+
+    /**
+     * @brief getNumberOfSamples does not have to be constant during the lifetime of OperationSourceDesc
+     * @return the number of samples in this description.
+     */
+    virtual float getNumberOfSamples() const = 0;
+};
+
 
 /**
 A Signal::Operation is a Signal::Source which reads data from another 
 Signal::Source and performs some operation on that data before returning it to
 the caller.
  */
-class SaweDll Operation: public SourceBase
+class SaweDll DeprecatedOperation: public SourceBase
 {
 public:
+    //typedef boost::shared_ptr<DeprecatedOperation> Ptr;
+
     /**
       This constructor by itself creates a dummy Operation that redirects 'read'
       to its _source.
       */
-    Operation( pOperation source );
-    ~Operation();
+    DeprecatedOperation( pOperation source );
+    ~DeprecatedOperation();
 
-    Operation( const Operation& o );
-    Operation& operator=(const Operation& o);
+    DeprecatedOperation( const DeprecatedOperation& o );
+    DeprecatedOperation& operator=(const DeprecatedOperation& o);
 
     /**
      * @brief name() human readable text description of *this
@@ -85,7 +293,7 @@ public:
 
       outputs() are used by Operation::invalidate_samples.
       */
-    virtual std::set<Operation*> outputs() { return _outputs; }
+    virtual std::set<DeprecatedOperation*> outputs() { return _outputs; }
 
     /**
       'affected_samples' describes where it is possible that
@@ -144,7 +352,7 @@ public:
 
       Returns 'this' if this Operation does something.
       */
-    virtual Operation* affecting_source( const Interval& I );
+    virtual DeprecatedOperation* affecting_source( const Interval& I );
 
 
     /**
@@ -184,8 +392,8 @@ public:
 //    virtual void enabled(bool value) { _enabled = value; }
 
 
-    Operation* root();
-    virtual bool hasSource(Operation*s);
+    DeprecatedOperation* root();
+    virtual bool hasSource(DeprecatedOperation*s);
 
     /**
       If 's' has multiple outputs, find the output that leads to 'this' and
@@ -199,12 +407,12 @@ public:
     virtual std::string parentsToString();
 
 private:
-    std::set<Operation*> _outputs; /// @see Operation::parent()
+    std::set<DeprecatedOperation*> _outputs; /// @see Operation::parent()
     pOperation _source; /// @see Operation::source()
     //bool _enabled; /// @see Operation::enabled()
 
     friend class boost::serialization::access;
-    Operation() /// only used by deserialization, call Operation(pOperation) instead
+    DeprecatedOperation() /// only used by deserialization, call Operation(pOperation) instead
     {}
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
@@ -215,7 +423,7 @@ private:
 
         ar & BOOST_SERIALIZATION_NVP(_source);
 
-        Operation::source(_source);
+        DeprecatedOperation::source(_source);
     }
 };
 
@@ -225,10 +433,10 @@ private:
   It is in functionality almost equivalent to SourceBase but can be shipped
   around as pOperation.
   */
-class FinalSource: public Operation
+class FinalSource: public DeprecatedOperation
 {
 public:
-    FinalSource() : Operation(pOperation()) {}
+    FinalSource() : DeprecatedOperation(pOperation()) {}
 
     virtual pBuffer read( const Interval& I ) = 0;
     virtual float sample_rate() = 0;

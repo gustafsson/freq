@@ -1,6 +1,6 @@
 #include "signal/operation.h"
 
-#include <demangle.h>
+#include "demangle.h"
 
 #include <boost/foreach.hpp>
 
@@ -14,21 +14,87 @@
 
 namespace Signal {
 
-Operation::Operation(pOperation s )
+
+void Operation::
+        test(Ptr o, OperationDesc* desc)
+{
+    Interval I(40,70), expectedOutput;
+    Interval ri = desc->requiredInterval (I, &expectedOutput);
+    EXCEPTION_ASSERT( (Interval(I.first, I.first+1) & ri).count() > 0 );
+    pBuffer d(new Buffer(ri, 40, 7));
+    pBuffer p = write1(o)->process (d);
+    EXCEPTION_ASSERT_EQUALS( p->getInterval (), expectedOutput );
+}
+
+
+Intervals OperationDesc::
+        affectedInterval( const Intervals& I ) const
+{
+    Intervals A;
+    BOOST_FOREACH(const Interval& i, I) {
+            A |= affectedInterval(i);
+    }
+
+    return A;
+}
+
+
+OperationDesc::Extent OperationDesc::
+        extent() const
+{
+    return Extent();
+}
+
+
+Operation::Ptr OperationDesc::
+        recreateOperation(Operation::Ptr /*hint*/, ComputingEngine* engine) const
+{
+    return createOperation(engine);
+}
+
+
+QString OperationDesc::
+        toString() const
+{
+    return vartype(*this).c_str();
+}
+
+
+int OperationDesc::
+        getNumberOfSources() const
+{
+    return 1;
+}
+
+
+bool OperationDesc::
+        operator==(const OperationDesc& d) const
+{
+    &d?void():void(); // suppress unused argument warning
+    return typeid(*this) == typeid(d);
+}
+
+
+std::ostream& operator << (std::ostream& os, const OperationDesc& d) {
+    return os << d.toString().toStdString ();
+}
+
+
+DeprecatedOperation::DeprecatedOperation(pOperation s )
 {
     source( s );
 }
 
 
-Operation::
-        ~Operation()
+DeprecatedOperation::
+        ~DeprecatedOperation()
 {
     source( pOperation() );
 }
 
 
-Operation::
-        Operation( const Operation& o )
+DeprecatedOperation::
+        DeprecatedOperation( const DeprecatedOperation& o )
             :
             SourceBase( o )
 {
@@ -36,15 +102,15 @@ Operation::
 }
 
 
-Operation& Operation::
-        operator=(const Operation& o )
+DeprecatedOperation& DeprecatedOperation::
+        operator=(const DeprecatedOperation& o )
 {
-    Operation::source( o.Operation::source() );
+    DeprecatedOperation::source( o.DeprecatedOperation::source() );
     return *this;
 }
 
 
-void Operation::
+void DeprecatedOperation::
         source(pOperation v)
 {
     if (_source)
@@ -57,14 +123,14 @@ void Operation::
 }
 
 
-Intervals Operation::
+Intervals DeprecatedOperation::
         affected_samples()
 {
     return Intervals::Intervals_ALL;
 }
 
 
-Intervals Operation::
+Intervals DeprecatedOperation::
         zeroed_samples_recursive()
 {
     Intervals I = zeroed_samples();
@@ -74,21 +140,21 @@ Intervals Operation::
 }
 
 
-Intervals Operation::
+Intervals DeprecatedOperation::
         zeroed_samples()
 {
     return Intervals(number_of_samples(), Interval::IntervalType_MAX);
 }
 
 
-std::string Operation::
+std::string DeprecatedOperation::
         name()
 {
     return vartype(*this);
 }
 
 
-pBuffer Operation::
+pBuffer DeprecatedOperation::
         read( const Interval& I )
 {
     if (_source && Intervals(I) - zeroed_samples())
@@ -108,14 +174,14 @@ pBuffer Operation::
 }
 
 
-IntervalType Operation::
+IntervalType DeprecatedOperation::
         number_of_samples()
 {
     return _source ? _source->number_of_samples() : 0;
 }
 
 
-float Operation::
+float DeprecatedOperation::
         length()
 {
     float L = SourceBase::length();
@@ -124,7 +190,7 @@ float Operation::
 }
 
 
-Operation* Operation::
+DeprecatedOperation* DeprecatedOperation::
         affecting_source( const Interval& I )
 {
     if ((affected_samples() & I) || !_source)
@@ -134,13 +200,13 @@ Operation* Operation::
 }
 
 
-void Operation::
+void DeprecatedOperation::
         invalidate_samples(const Intervals& I)
 {
     if (!I)
         return;
 
-    BOOST_FOREACH( Operation* p, _outputs )
+    BOOST_FOREACH( DeprecatedOperation* p, _outputs )
     {
         EXCEPTION_ASSERT( 0 != p );
         p->invalidate_samples( p->translate_interval( I ));
@@ -148,7 +214,7 @@ void Operation::
 }
 
 
-Operation* Operation::
+DeprecatedOperation* DeprecatedOperation::
         root()
 {
     if (_source)
@@ -158,8 +224,8 @@ Operation* Operation::
 }
 
 
-bool Operation::
-        hasSource(Operation*s)
+bool DeprecatedOperation::
+        hasSource(DeprecatedOperation*s)
 {
     if (this == s)
         return true;
@@ -169,7 +235,7 @@ bool Operation::
 }
 
 
-pOperation Operation::
+pOperation DeprecatedOperation::
         findParentOfSource(pOperation start, pOperation source)
 {
     if (start->source() == source)
@@ -181,7 +247,7 @@ pOperation Operation::
 }
 
 
-Intervals Operation::
+Intervals DeprecatedOperation::
         affectedDiff(pOperation source1, pOperation source2)
 {
     Intervals new_data( 0, source1->number_of_samples() );
@@ -211,7 +277,7 @@ Intervals Operation::
 }
 
 
-std::string Operation::
+std::string DeprecatedOperation::
         toString()
 {
     std::string s = toStringSkipSource();
@@ -223,12 +289,12 @@ std::string Operation::
 }
 
 
-std::string Operation::
+std::string DeprecatedOperation::
         toStringSkipSource()
 {
     std::string s = name();
 
-    std::string n = Operation::name();
+    std::string n = DeprecatedOperation::name();
     if (s != n)
     {
         s += " (";
@@ -240,12 +306,12 @@ std::string Operation::
 }
 
 
-std::string Operation::
+std::string DeprecatedOperation::
         parentsToString()
 {
     std::string s = name();
 
-    std::string n = Operation::name();
+    std::string n = DeprecatedOperation::name();
     if (s != n)
     {
         s += " (";
@@ -259,7 +325,7 @@ std::string Operation::
         ss << " (" << _outputs.size() << " parents)";
 
     unsigned i = 1;
-    BOOST_FOREACH( Operation* p, _outputs )
+    BOOST_FOREACH( DeprecatedOperation* p, _outputs )
     {
         ss << std::endl;
         if (_outputs.size() > 1)

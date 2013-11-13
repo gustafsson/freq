@@ -17,8 +17,14 @@ namespace Signal {
     }
 
 
+    void Sink::put(pBuffer) {
+        throw std::logic_error(
+            "Neither read nor put seems to have been overridden from Sink in " + vartype(*this) + ".");
+    }
+
+
     // static
-    pBuffer Sink::put(Operation* receiver, pBuffer buffer) {
+    pBuffer Sink::put(DeprecatedOperation* receiver, pBuffer buffer) {
         pOperation s( new BufferSource(buffer));
         pOperation old = receiver->source();
         receiver->source(s);

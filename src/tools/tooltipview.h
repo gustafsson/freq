@@ -2,7 +2,6 @@
 #define TOOLTIPVIEW_H
 
 #include <QObject>
-#include "signal/worker.h"
 #include "tooltipmodel.h"
 #include "renderview.h"
 

@@ -25,6 +25,7 @@ public:
     const CommandList& commandList() const;
 
     Sawe::Project * project() const;
+
 signals:
     void projectChanged(const Command*);
 

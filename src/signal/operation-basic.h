@@ -11,7 +11,7 @@ namespace Signal {
   OperationSetSilent( start, 1, 2 );
   result: 1004567
 */
-class OperationSetSilent: public Operation {
+class OperationSetSilent: public DeprecatedOperation {
 public:
     OperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
 
@@ -27,20 +27,20 @@ private:
 
 
     friend class boost::serialization::access;
-    OperationSetSilent():Operation(pOperation()),section_(0,0) {} // only used by deserialization
+    OperationSetSilent():DeprecatedOperation(pOperation()),section_(0,0) {} // only used by deserialization
 
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
     {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
            & BOOST_SERIALIZATION_NVP(section_.first)
            & BOOST_SERIALIZATION_NVP(section_.last);
     }
 };
 
 
-class OperationRemoveSection: public Operation
+class OperationRemoveSection: public DeprecatedOperation
 {
 public:
     OperationRemoveSection( pOperation source, Interval section );
@@ -57,13 +57,13 @@ private:
     Interval section_;
 
     friend class boost::serialization::access;
-    OperationRemoveSection():Operation(pOperation()),section_(0,0) {} // only used by deserialization
+    OperationRemoveSection():DeprecatedOperation(pOperation()),section_(0,0) {} // only used by deserialization
 
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
     {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
            & BOOST_SERIALIZATION_NVP(section_.first)
            & BOOST_SERIALIZATION_NVP(section_.last);
     }
@@ -73,7 +73,7 @@ private:
 /**
   Has no effect as long as source()->number_of_samples <= section.first.
   */
-class OperationInsertSilence: public Operation
+class OperationInsertSilence: public DeprecatedOperation
 {
 public:
     OperationInsertSilence( pOperation source, Interval section );
@@ -88,7 +88,7 @@ private:
     Interval section_;
 };
 
-class OperationSuperposition: public Operation
+class OperationSuperposition: public DeprecatedOperation
 {
 public:
     OperationSuperposition( pOperation source, pOperation source2 );
@@ -114,20 +114,20 @@ private:
     std::string _name;
 
     friend class boost::serialization::access;
-    OperationSuperposition():Operation(pOperation()) {} // only used by deserialization
+    OperationSuperposition():DeprecatedOperation(pOperation()) {} // only used by deserialization
 
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation)
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
            & BOOST_SERIALIZATION_NVP(_source2);
     }
 };
 
 
-class OperationAddChannels: public Operation, public boost::noncopyable
+class OperationAddChannels: public DeprecatedOperation, public boost::noncopyable
 {
 public:
     OperationAddChannels( pOperation source, pOperation source2 );
@@ -143,7 +143,7 @@ private:
 };
 
 
-class OperationSuperpositionChannels: public Operation, public boost::noncopyable
+class OperationSuperpositionChannels: public DeprecatedOperation, public boost::noncopyable
 {
 public:
     OperationSuperpositionChannels( pOperation source );

@@ -8,10 +8,11 @@
 
 // gpumisc
 //#include <cufft.h>
-#include <throwInvalidArgument.h>
-#include <computationkernel.h>
-#include <neat_math.h>
-#include <Statistics.h>
+#include "throwInvalidArgument.h"
+#include "computationkernel.h"
+#include "neat_math.h"
+#include "Statistics.h"
+#include "unused.h"
 
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"
@@ -27,15 +28,15 @@
 #include <boost/foreach.hpp>
 
 #ifdef _MSC_VER
-    #include <msc_stdc.h>
+    #include "msc_stdc.h"
 
     #define _USE_MATH_DEFINES
     #include <math.h>
 #endif
 
 
-//#define TIME_CWT if(0)
-#define TIME_CWT
+#define TIME_CWT if(0)
+//#define TIME_CWT
 
 #define STAT_CWT if(0)
 //#define STAT_CWT
@@ -71,7 +72,8 @@ Cwt::
     _wavelet_time_suppport( wavelet_time_suppport ),
     _wavelet_def_time_suppport( wavelet_time_suppport ),
     _wavelet_scale_suppport( 6 ),
-    _jibberish_normalization( 1 )
+    _jibberish_normalization( 1 ),
+    last_fs( 0 )
 {
 #ifdef USE_CUDA
     storageCudaMemsetFix = &cudaMemsetFix;
@@ -84,6 +86,8 @@ Cwt::
 pChunk Cwt::
         operator()( Signal::pMonoBuffer buffer )
 {
+    this->last_fs = buffer->sample_rate ();
+
 #ifdef USE_CUDA
     try {
 #endif
@@ -235,9 +239,9 @@ pChunk Cwt::
                 EXCEPTION_ASSERT( 0 == extra );
 
 #ifdef _DEBUG
-        Signal::IntervalType sub_start_org = sub_start;
-        unsigned sub_std_samples_org = sub_std_samples;
-        unsigned sub_length_org = sub_length;
+        UNUSED( Signal::IntervalType sub_start_org ) = sub_start;
+        UNUSED( unsigned sub_std_samples_org ) = sub_std_samples;
+        UNUSED( unsigned sub_length_org ) = sub_length;
 #endif
 
         sub_std_samples += extra/2;
@@ -372,12 +376,22 @@ pChunk Cwt::
 #endif
 
     clearFft();
+    return wt;
+}
+
+
+TransformDesc::Ptr Cwt::
+        copy() const
+{
+    return TransformDesc::Ptr(new Cwt(*this));
 }
 
 
 pTransform Cwt::
         createTransform() const
 {
+    if (0==last_fs)
+        EXCEPTION_ASSERT_LESS(0, last_fs);
     return pTransform(new Cwt(*this));
 }
 
@@ -401,6 +415,45 @@ float Cwt::
 }
 
 
+Signal::Interval Cwt::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    const Tfr::Cwt& cwt = *this;
+
+    float fs = cwt.last_fs;
+
+    unsigned chunk_alignment = cwt.chunk_alignment( fs );
+    Signal::IntervalType firstSample = I.first;
+    firstSample = align_down(firstSample, (Signal::IntervalType) chunk_alignment);
+
+    unsigned time_support = cwt.wavelet_time_support_samples( fs );
+    firstSample -= time_support;
+    unsigned numberOfSamples = cwt.next_good_size( I.count()-1, fs );
+
+    // hack to make it work without subsampling
+    #ifdef CWT_NOBINS
+    numberOfSamples = cwt.next_good_size( 1, fs );
+    #endif
+
+    unsigned L = time_support + numberOfSamples + time_support;
+
+    if (expectedOutput)
+        *expectedOutput = I;
+
+    return Signal::Interval(firstSample, firstSample+L);
+}
+
+
+Signal::Interval Cwt::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    float fs = last_fs;
+
+    Signal::IntervalType n = wavelet_time_support_samples( fs );
+
+    return Signal::Intervals(I).enlarge( n ).spannedInterval ();
+}
+
 //Signal::Interval Cwt::
 //        validLength(Signal::pBuffer buffer)
 //{
@@ -409,7 +462,7 @@ float Cwt::
 
 
 bool Cwt::
-        operator==(const TransformParams& b) const
+        operator==(const TransformDesc& b) const
 {
     const Cwt* p = dynamic_cast<const Cwt*>(&b);
     if (!p)
@@ -423,7 +476,8 @@ bool Cwt::
             _wavelet_time_suppport == p->_wavelet_time_suppport &&
             _wavelet_def_time_suppport == p->_wavelet_def_time_suppport &&
             _wavelet_scale_suppport == p->_wavelet_scale_suppport &&
-            _jibberish_normalization == p->_jibberish_normalization;
+            _jibberish_normalization == p->_jibberish_normalization &&
+            last_fs == p->last_fs;
 }
 
 
@@ -536,7 +590,7 @@ pChunk Cwt::
 
         intermediate_wt->n_valid_samples = ft->getInterval().count() - time_support - intermediate_wt->first_valid_sample;
 
-        StftParams stft;
+        StftDesc stft;
         stft.set_exact_chunk_size(n.width);
         Stft(stft).compute( g, g, Tfr::FftDirection_Inverse );
 
@@ -786,7 +840,11 @@ void Cwt::
 void Cwt::
         scales_per_octave_internal( float value )
 {
-    if (value==_scales_per_octave) return;
+    if (value==_scales_per_octave)
+        return;
+
+    EXCEPTION_ASSERT(!isinf(value));
+    EXCEPTION_ASSERT(!isnan(value));
 
     _scales_per_octave=value;
 
@@ -858,7 +916,7 @@ float Cwt::
 unsigned Cwt::
         wavelet_time_support_samples( float fs ) const
 {
-    return wavelet_time_support_samples( fs, get_min_hz(fs) );
+    return std::max(1u, wavelet_time_support_samples( fs, get_min_hz(fs) ));
 }
 
 
@@ -1218,6 +1276,20 @@ unsigned Cwt::
         chunk_alignment(float fs) const
 {
     return chunkpart_alignment(nBins(fs));
+}
+
+
+float Cwt::
+        get_fs() const
+{
+    return last_fs;
+}
+
+
+void Cwt::
+        set_fs(float fs)
+{
+    last_fs = fs;
 }
 
 

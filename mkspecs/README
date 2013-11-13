@@ -1,0 +1,9 @@
+Copy these folders to your Qt installation at $QT/mkspecs
+
+To find where qmake expects mkspecs to be located try (in a folder with a .pro-file):
+export QMAKESPEC='!invalid'
+qmake
+
+Then specify which compiler to use with:
+export QMAKESPEC='macx-sonicawe-clang'
+export QMAKESPEC='macx-sonicawe-g++49'

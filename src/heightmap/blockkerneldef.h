@@ -424,7 +424,6 @@ public:
         if (phasediff < -M_PIf ) phasediff += 2*M_PIf;
         if (phasediff > M_PIf ) phasediff -= 2*M_PIf;
 
-        phasediff = (phasediff);
         float f = freqAxis.getFrequency( q1.y );
         f *= (q2.x - q1.x)*2*M_PIf;
         return f*v;
@@ -628,6 +627,10 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
                 enable_subtexel_aggregation);
         break;
+    case Heightmap::AmplitudeAxis_Real:
+        break;
+    default:
+        break;
     }
 }
 
@@ -739,6 +742,10 @@ void resampleStft( Tfr::ChunkData::Ptr input,
                 inputAxis, outputAxis,
                 ConverterAmplitudeAxis<Heightmap::AmplitudeAxis_5thRoot>(normalization_factor),
                 enable_subtexel_aggregation);
+        break;
+    case Heightmap::AmplitudeAxis_Real:
+        break;
+    default:
         break;
     }
 }

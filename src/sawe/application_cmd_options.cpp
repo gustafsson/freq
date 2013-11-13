@@ -13,9 +13,10 @@
 #include "adapters/csv.h"
 #include "adapters/hdf5.h"
 #include "adapters/playback.h"
+#include "signal/oldoperationwrapper.h"
 
 // gpumisc
-#include <redirectstdout.h>
+#include "redirectstdout.h"
 
 // boost
 #include <boost/foreach.hpp>
@@ -66,49 +67,65 @@ void Application::
         ::exit(3);
 
     Tools::RenderModel& render_model = p->tools().render_model;
-    Tfr::Cwt& cwt = *render_model.getParam<Tfr::Cwt>();
-    Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
+    Tools::Support::TransformDescs::WritePtr td (render_model.transform_descs ());
+    Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
+    //Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
+    Signal::OperationDesc::Extent extent = read1(p->processing_chain ())->extent(p->default_target ());
+    Signal::IntervalType number_of_samples = extent.interval.get_value_or (Signal::Interval());
+    float sample_rate = extent.sample_rate.get_value_or (1);
     unsigned samples_per_chunk_hint = Sawe::Configuration::samples_per_chunk_hint();
-    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<samples_per_chunk_hint, source->sample_rate() );
+    unsigned total_samples_per_chunk = cwt.prev_good_size( 1<<samples_per_chunk_hint, sample_rate );
 
     bool sawe_exit = false;
 
     unsigned get_csv = Sawe::Configuration::get_csv();
     if (get_csv != (unsigned)-1) {
-        if (0==source->number_of_samples()) {
+        if (0==number_of_samples) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract CSV without input file."));
             ::exit(4);
         }
 
-        Adapters::Csv csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString());
-        csv.source( source );
-        csv.read( Signal::Interval( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk ));
+        Signal::pOperation o(new Adapters::Csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
+        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
+
+        Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
+        write1(needs)->updateNeeds (I);
+        needs->sleep(-1);
+
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
 
     unsigned get_hdf = Sawe::Configuration::get_hdf();
     if (get_hdf != (unsigned)-1) {
-        if (0==source->number_of_samples()) {
+        if (0==number_of_samples) {
             Sawe::Application::display_fatal_exception(std::invalid_argument("Can't extract HDF without input file."));
             ::exit(5);
         }
 
-        Adapters::Hdf5Chunk hdf5(QString("sonicawe-%1.h5").arg(get_hdf).toStdString());
-        hdf5.source( source );
-        hdf5.read( Signal::Interval( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk ));
+        Signal::pOperation o(new Adapters::Hdf5Chunk(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
+        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
+
+        Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );
+        write1(needs)->updateNeeds (I);
+        needs->sleep(-1);
+
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
     }
 
     if (Sawe::Configuration::get_chunk_count()) {
-        TaskInfo("number of samples = %u", source->number_of_samples());
+        TaskInfo("number of samples = %u", number_of_samples);
         TaskInfo("samples per chunk = %u", total_samples_per_chunk);
-        TaskInfo("chunk count = %u", (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk);
+        TaskInfo("chunk count = %u", (number_of_samples + total_samples_per_chunk-1) / total_samples_per_chunk);
         this->rs.reset();
-        cout    << "number_of_samples = " << source->number_of_samples() << endl
+        cout    << "number_of_samples = " << number_of_samples << endl
                 << "samples_per_chunk = " << total_samples_per_chunk << endl
-                << "chunk_count = " << (source->number_of_samples() + total_samples_per_chunk-1) / total_samples_per_chunk << endl;
+                << "chunk_count = " << (number_of_samples + total_samples_per_chunk-1) / total_samples_per_chunk << endl;
         sawe_exit = true;
     }
 
@@ -128,26 +145,27 @@ void Application::
 void Application::
         apply_command_line_options( pProject p )
 {
-    Tfr::Cwt& cwt = *p->tools().render_model.getParam<Tfr::Cwt>();
-    cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
-    cwt.set_wanted_min_hz( Sawe::Configuration::min_hz() );
-    cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
-    cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
-
-#ifndef SAWE_NO_MUTEX
-    if (Sawe::Configuration::feature("worker_thread"))
-        p->worker.start();
-#endif
+    {
+        Tools::Support::TransformDescs::WritePtr td (p->tools().render_model.transform_descs ());
+        Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
+        cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
+        cwt.set_wanted_min_hz( Sawe::Configuration::min_hz() );
+        cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
+        cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
+    }
 
     Tools::ToolFactory &tools = p->tools();
 
     tools.playback_model.selection_filename  = Sawe::Configuration::selection_output_file();
 
-    BOOST_FOREACH( const boost::shared_ptr<Heightmap::Collection>& c, tools.render_model.collections )
-    {
-        c->samples_per_block( Sawe::Configuration::samples_per_block() );
-        c->scales_per_block( Sawe::Configuration::scales_per_block() );
-    }
+    Heightmap::BlockLayout newbc =
+                Heightmap::BlockLayout(
+                    Sawe::Configuration::samples_per_block(),
+                    Sawe::Configuration::scales_per_block (),
+                    read1(tools.render_model.tfr_mapping ())->targetSampleRate()
+                );
+
+    tools.render_model.block_layout ( newbc );
 
     tools.render_view()->emitTransformChanged();
 }

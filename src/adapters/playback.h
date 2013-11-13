@@ -25,6 +25,8 @@ public:
     virtual Signal::Intervals invalid_samples();
 
     void setExpectedSamples( const Signal::Interval& I );
+    void setExpectedSamples( const Signal::Interval& I, int C );
+    void invalidate_samples( const Signal::Intervals& s, int C );
     void stop();
     void reset();
     void onFinished();

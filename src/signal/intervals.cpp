@@ -12,13 +12,8 @@
 
 namespace Signal {
 
-// long unsigned
-//const IntervalType Interval::IntervalType_MIN = (IntervalType)0;
-//const IntervalType Interval::IntervalType_MAX = (IntervalType)-1;
-
-// long long
-const IntervalType Interval::IntervalType_MIN = LLONG_MIN;
-const IntervalType Interval::IntervalType_MAX = LLONG_MAX;
+const IntervalType Interval::IntervalType_MIN = std::numeric_limits<IntervalType>::min();
+const IntervalType Interval::IntervalType_MAX = std::numeric_limits<IntervalType>::max();
 
 const Interval Interval::Interval_ALL = Interval(Interval::IntervalType_MIN, Interval::IntervalType_MAX);
 const Intervals Intervals::Intervals_ALL = Intervals(Interval::Interval_ALL);
@@ -35,8 +30,7 @@ Interval::
     :
     first(first), last(last)
 {
-    if (!valid())
-        EXCEPTION_ASSERT( valid() );
+    EXCEPTION_ASSERT( valid() );
 }
 
 
@@ -68,6 +62,20 @@ bool Interval::
         operator!=(const Interval& r) const
 {
     return !(*this == r);
+}
+
+
+bool Interval::
+        contains (const Interval& t) const
+{
+    return first <= t.first && last >= t.last;
+}
+
+
+bool Interval::
+        contains (const IntervalType& t) const
+{
+    return t >= first && t < last;
 }
 
 
@@ -345,6 +353,30 @@ Intervals& Intervals::
 }
 
 
+bool Intervals::
+        contains    (const Intervals& t) const
+{
+    return (*this & t) == t;
+}
+
+
+bool Intervals::
+        contains    (const Interval& t) const
+{
+    return (*this & t) == t;
+}
+
+
+bool Intervals::
+        contains    (const IntervalType& t) const
+{
+    if (t >= Interval::IntervalType_MAX)
+        return false;
+
+    return contains(Interval(t, t+1));
+}
+
+
 Interval Intervals::
         fetchFirstInterval() const
 {
@@ -357,9 +389,11 @@ Interval Intervals::
 
 
 Interval Intervals::
-        fetchInterval( IntervalType dt, IntervalType center ) const
+        fetchInterval( UnsignedIntervalType dt, IntervalType center ) const
 {
-    if (center < dt/2)
+    EXCEPTION_ASSERT_LESS( 0, dt );
+
+    if (center < IntervalType(dt/2))
         center = 0;
     else
         center -= dt/2;
@@ -373,8 +407,8 @@ Interval Intervals::
         if ( itr->first > center )
             break;
 
-    IntervalType distance_to_next = Interval::IntervalType_MAX;
-    IntervalType distance_to_prev = Interval::IntervalType_MAX;
+    UnsignedIntervalType distance_to_next = Interval::IntervalType_MAX;
+    UnsignedIntervalType distance_to_prev = Interval::IntervalType_MAX;
 
     if (itr != end()) {
         distance_to_next = itr->first - center;
@@ -407,12 +441,12 @@ Interval Intervals::
         IntervalType start = f.first + dt*int_div_ceil;
 
         if (f.last <= start ) {
-            return Interval( f.last-dt, f.last );
+            return Interval( IntervalType(f.last-dt), f.last );
         }
 
         EXCEPTION_ASSERT(start>=f.first);
 
-        return Interval( start, std::min(start+dt, f.last) );
+        return Interval( start, std::min(IntervalType(start+dt), f.last) );
     }
 }
 
@@ -483,10 +517,10 @@ Intervals Intervals::
 }
 
 
-IntervalType Intervals::
+UnsignedIntervalType Intervals::
         count() const
 {
-    IntervalType c = 0;
+    UnsignedIntervalType c = 0;
 
     BOOST_FOREACH (const Interval& r, *this)
     {
@@ -517,16 +551,18 @@ Intervals::base::iterator Intervals::
 std::string Intervals::
         toString() const
 {
+    if (1 == size())
+        return begin()->toString();
+
     std::stringstream ss;
     ss << "{";
-    if (1<size())
-        ss << size() << "#";
 
     BOOST_FOREACH (const Interval& r, *this)
     {
-        if (1<size())
-            ss << " ";
-        ss << r.toString();
+        if (r != *begin())
+            ss << ", ";
+
+        ss << r;
     }
 
     ss << "}";
@@ -545,9 +581,30 @@ std::string Interval::
         toString() const
 {
     std::stringstream ss;
-    ss << "[" << first << ", " << last << ")";
-    if (0<first)
+
+    ss << "[";
+
+    if (first == IntervalType_MIN)
+        ss << "-";
+    else if (first == IntervalType_MAX)
+        ss << "+";
+    else
+        ss << first;
+
+    ss << ", ";
+
+    if (last == IntervalType_MIN)
+        ss << "-";
+    else if (last == IntervalType_MAX)
+        ss << "+";
+    else
+        ss << last;
+
+    ss << ")";
+
+    if (0 != first && 0 != last && first != IntervalType_MIN && last != IntervalType_MAX)
         ss << count() << "#";
+
     return ss.str();
 }
 
@@ -564,5 +621,62 @@ Intervals  operator -  (const Interval& a, const Intervals& b) { return Interval
 Intervals  operator &  (const Interval& a, const Intervals& b) { return Intervals(a)&=b; }
 Intervals  operator ^  (const Interval& a, const Intervals& b) { return Intervals(a)^=b; }
 Intervals  operator |  (const Interval& a, const Interval& b)  { return a|Intervals(b); }
+
+} // namespace Signal
+
+#include "timer.h"
+#include "exceptionassert.h"
+#include <boost/format.hpp>
+
+using namespace boost;
+
+namespace Signal {
+
+void Intervals::
+        test()
+{
+    // It should be fast
+    {
+        const int N = 1000;
+        Intervals I;
+        Timer t;
+        for (int i=0; i<N; ++i) {
+            I |= Interval(i,i+1);
+        }
+        double T = t.elapsed ()/N;
+        EXCEPTION_ASSERT_LESS(T,0.0000006);
+        EXCEPTION_ASSERT_EQUALS(I, Intervals(0,N));
+
+        I = Intervals(0,N);
+        t.restart ();
+        for (int i=0; i<N; ++i) {
+            (I & Interval(i,i+1));
+        }
+        T = t.elapsed ()/N;
+        EXCEPTION_ASSERT_LESS(T,0.000003);
+    }
+
+    // It should have neat string representations
+    {
+        IntervalType n = Interval::IntervalType_MIN;
+        IntervalType p = Interval::IntervalType_MAX;
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(0,100)), "[0, 100)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(1,100)), "[1, 100)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(-100,0)), "[-100, 0)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(-100,-1)), "[-100, -1)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(0,100)), "[0, 100)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(-100,0)), "[-100, 0)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(-100,-1)), "[-100, -1)99#" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,0)), "[-, 0)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(0,p)), "[0, +)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Interval(n,n)), "[-, -)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,n)), "{}" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Intervals(-100,-1) | Intervals(1,100))), "{[-100, -1)99#, [1, 100)99#}" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,n+1)), "[-, -9223372036854775807)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Interval(n,n+1) & Interval(n, 9223372036854773759) )), "[-, -9223372036854775807)" );
+    }
+
+}
+
 
 } // namespace Signal

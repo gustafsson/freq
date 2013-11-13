@@ -3,6 +3,7 @@
 
 #include "freqaxis.h"
 #include "signal/intervals.h"
+#include "volatileptr.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -15,7 +16,7 @@ namespace Signal
 namespace Tfr
 {
 
-class TransformParams;
+class TransformDesc;
 class Chunk;
 typedef boost::shared_ptr<Chunk> pChunk;
 
@@ -23,6 +24,8 @@ typedef boost::shared_ptr<Chunk> pChunk;
   Examples of Transform implementations:
   "cwt.h"
   "stft.h"
+
+  An instance of transform must not be shared between multiple threads.
   */
 class Transform {
 public:
@@ -33,10 +36,12 @@ public:
 
 
     /**
-     * @brief transformParams
-     * @return parameters used for this transform.
+     * @brief transformDesc
+     * @return description used for this transform. The Transform instance
+     * owns the returned instance which is not modified for the lifetime of
+     * the Transform.
      */
-    virtual const TransformParams* transformParams() const = 0;
+    virtual const TransformDesc* transformDesc() const = 0;
 
 
     /**
@@ -67,18 +72,29 @@ typedef boost::shared_ptr<Transform> pTransform;
 
 
 /**
- * @brief The TransformParams class represents parameters needed for a transform.
+ * @brief The TransformDesc class represents a description to create a transform.
  */
-class TransformParams {
+class TransformDesc {
 public:
+    typedef boost::shared_ptr<TransformDesc> Ptr;
+
+    TransformDesc() {}
+
     /**
       Virtual housekeeping.
       */
-    virtual ~TransformParams() {}
+    virtual ~TransformDesc() {}
 
 
     /**
-     * @brief createTransform instantiates a transform that uses these parameters.
+     * @brief copy creates a copy of 'this'.
+     * @return a copy.
+     */
+    virtual TransformDesc::Ptr copy() const = 0;
+
+
+    /**
+     * @brief createTransform instantiates a transform that uses the parameters in this description.
      * @return a newly created transform.
      */
     virtual pTransform createTransform() const = 0;
@@ -127,16 +143,40 @@ public:
 
 
     /**
-      Returns a string representation of this transform. Mainly used for debugging and testing.
+     * @brief requiredInterval should figure out which input interval that is
+     * needed for a given output interval.
+     * @param I describes an interval in the output.
+     * @param expectedOutput describes which interval that will be computed
+     * when 'requiredInterval' is processed. This will overlap 'I.first'.
+     * expectedOutput may be null to be ignored.
+     * @return the interval that is required to compute a valid chunk
+     * representing interval I. If the operation can not compute a valid chunk
+     * representing the at least interval I at once the operation can request
+     * a smaller chunk for processing instead by setting 'expectedOutput'.
+     */
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
+
+
+    /**
+     * @brief affectedInterval should figure out which output interval that is
+     * affected by changes in a given input interval.
+     * @param I describes an interval in the input buffer.
+     * @return returns the interval that needs to be recomputed if samples at
+     * 'I' changes.
+     */
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const = 0;
+
+    /**
+      Returns a string representation of this transform. Mainly used for debugging.
       */
     virtual std::string toString() const = 0;
 
 
-    virtual bool operator==(const TransformParams&) const = 0;
-    bool operator!=(const TransformParams& b) const { return !(*this == b); }
+    virtual bool operator==(const TransformDesc&) const = 0;
+    bool operator!=(const TransformDesc& b) const { return !(*this == b); }
 };
-
-typedef boost::shared_ptr<TransformParams> pTransformParams;
+// TODO remove pTransformDesc
+typedef TransformDesc::Ptr pTransformDesc;
 
 
 } // namespace Tfr

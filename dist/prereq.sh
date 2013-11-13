@@ -107,15 +107,26 @@ if [ "Y" == "${verifyRepos}" ]; then
 
 			if [ -z `which colorgcc` ]; then
 				# In Ubuntu we're using packages from the Ubuntu repo instead of a specific precompiled set of binaries.
-				echo "Some required and recommended libraries seem to be missing, running apt-get"
+				echo "Some required and recommended libraries seem to be missing, running apt-get install"
 				glewpkg=libglew1.6-dev
 				if [ -z "`apt-cache search $glewpkg`" ]; then
 					glewpkg=libglew1.5-dev
 				fi
+				echo "$ sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc curl"
 				sudo apt-get install libsndfile1-dev $glewpkg freeglut3-dev libboost-dev libboost-serialization-dev libqt4-dev qtcreator libhdf5-serial-dev qgit build-essential colorgcc git-gui git-doc curl
 			fi
 		elif [ "$(uname -s)" == "Darwin" ]; then
-			git submodule update --init lib/sonicawe-maclib
+			#git submodule update --init lib/sonicawe-maclib
+
+			if [ -z `which port` ]; then
+				echo "Please install macports to install required libraries"
+				false
+			fi
+			if [ ! -f "/opt/local/lib/libsndfile.dylib" ]; then
+				echo "Some required libraries seem to be missing, running port install"
+				echo "$ sudo port install portaudio libsndfile hdf5-18 boost tbb"
+				sudo port install portaudio libsndfile hdf5-18 boost tbb
+			fi
 		else
 			echo "Don't know how to build Sonic AWE for this platform: $(uname -s).";
 			false

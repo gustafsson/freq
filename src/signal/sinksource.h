@@ -7,7 +7,7 @@
 #include <vector>
 
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-#include <QMutex>
+#include <QReadWriteLock>
 #endif
 
 namespace Signal {
@@ -19,11 +19,11 @@ namespace Signal {
   buffer sais the data is. If the SinkSource already contains data for that
   location it will be overwritten.
 
-  There are two different accept strategies that sais whether put should deny
-  parts of incomming buffers or not. put accepts anything while
-  putExpectedSamples discards all data that has not previously been marked as
+  There are two different accept strategies that sais whether put() should deny
+  parts of incomming buffers or not. put() accepts anything while
+  putExpectedSamples() discards all data that has not previously been marked as
   exptected by invalidate_samples. Expected samples are given by
-  'invalid_samples()'.
+  invalid_samples().
 
   Afterwards, any data put into the SinkSource can be fetched with
   'SinkSource::read'. If the read Interval starts at a location where no data
@@ -35,6 +35,8 @@ namespace Signal {
 class SinkSource: public Sink
 {
 public:
+    typedef boost::shared_ptr<SinkSource> Ptr;
+
     /// @see SinkSource
     SinkSource( int num_channels );
     SinkSource( const SinkSource& b);
@@ -82,7 +84,7 @@ public:
         'samplesDesc().spannedInterval().count'.
       */
     virtual IntervalType number_of_samples();
-    virtual unsigned num_channels() { return _num_channels; }
+    virtual unsigned num_channels();
 
 
     /**
@@ -97,11 +99,15 @@ public:
     bool empty();
 
     /// Get what samples that are described in the containing buffer
-    Intervals samplesDesc() { return _valid_samples; }
+    /// Merely allocated memory doesn't not count in this description.
+    Intervals samplesDesc();
+
+    /// Return true if the entire interval I is up to date and can be read from this.
+    bool hasInterval(const Interval& I);
 
 private:
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
-	QMutex _cache_mutex;
+    QReadWriteLock _cache_lock;
 #endif
     std::vector<pBuffer> _cache;
 
@@ -145,7 +151,7 @@ private:
     std::vector<pBuffer>::iterator findBuffer( Signal::IntervalType sample );
 };
 
-typedef boost::shared_ptr<Sink> pSink;
+typedef SinkSource::Ptr pSinkSource;
 
 } // namespace Signal
 

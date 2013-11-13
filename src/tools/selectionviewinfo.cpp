@@ -7,9 +7,9 @@
 #include "support/computerms.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
-#include "signal/target.h"
 #include "signal/sinksource.h"
 #include "signal/operation-basic.h"
+#include "signal/oldoperationwrapper.h"
 #include "tfr/stft.h"
 
 // gpumisc
@@ -27,6 +27,8 @@ SelectionViewInfo::
     model_(model),
     ui_(new Ui::SelectionViewInfo)
 {
+    EXCEPTION_ASSERTX(false, "not implemented: target_");
+
     ui_->setupUi(this);
 
     connect(model, SIGNAL(selectionChanged()), SLOT(selectionChanged()));
@@ -69,6 +71,8 @@ void SelectionViewInfo::
 void SelectionViewInfo::
         selectionChanged()
 {
+/*
+//Use Signal::Processing namespace
     if (target_)
         project_->targets.erase( target_ );
 
@@ -92,6 +96,24 @@ void SelectionViewInfo::
     target_->post_sink()->invalidate_samples(~selection->zeroed_samples_recursive());
 
     project_->targets.insert( target_ );
+*/
+    if (target_marker_)
+        target_marker_.reset ();
+
+    if (!model_->current_selection() || !isVisibleTo(parentWidget()))
+    {
+        target_marker_.reset ();
+        return;
+    }
+
+    Signal::pOperation infoOperation(new SelectionViewInfoSink(this));
+    Signal::pOperation selection = model_->current_selection_copy();
+    Signal::OperationDesc::Ptr info_desc( new Signal::OldOperationDescWrapper(infoOperation));
+    Signal::OperationDesc::Ptr selection_desc( new Signal::OldOperationDescWrapper(selection));
+
+    Signal::Processing::Chain::WritePtr chain( project_->processing_chain () );
+    target_marker_ = chain->addTarget(info_desc, project_->default_target());
+    chain->addOperationAt(selection_desc, target_marker_);
 }
 
 
@@ -111,7 +133,7 @@ SelectionViewInfoSink::
 {
     mixchannels_.reset(new OperationSuperpositionChannels(pOperation()));
     rms_.reset(new Support::ComputeRms(mixchannels_));
-    Operation::source(rms_);
+    DeprecatedOperation::source(rms_);
 }
 
 
@@ -122,7 +144,7 @@ pBuffer SelectionViewInfoSink::
 
     if (!searchingformaximas_)
     {
-        b = Operation::read(I); // note: Operation::source() == rms_
+        b = DeprecatedOperation::read(I); // note: Operation::source() == rms_
         Support::ComputeRms* rms = dynamic_cast<Support::ComputeRms*>(rms_.get());
         Intervals all = this->getInterval() - this->zeroed_samples_recursive();
         Intervals processed = rms->rms_I;
@@ -160,13 +182,13 @@ pBuffer SelectionViewInfoSink::
         f = Intervals(f).enlarge(sample_rate()/2).spannedInterval() & getInterval();
         f.last = f.first + Tfr::Fft().lChunkSizeS( f.count() + 1, 4 );
 
-        Tfr::StftParams stft;
-        stft.setWindow(Tfr::StftParams::WindowType_Hann, 0.5);
+        Tfr::StftDesc stft;
+        stft.setWindow(Tfr::StftDesc::WindowType_Hann, 0.5);
         stft.set_approximate_chunk_size( f.count() );
         stft.compute_redundant(false);
-        EXCEPTION_ASSERT(stft.chunk_size() == f.count());
+        EXCEPTION_ASSERT(stft.chunk_size() == (int)f.count());
 
-        b = Operation::source()->readFixedLength(f);
+        b = DeprecatedOperation::source()->readFixedLength(f);
 
         // Only check the first channel
         // TODO check other channels

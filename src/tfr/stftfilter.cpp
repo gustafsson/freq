@@ -1,8 +1,8 @@
 #include "stftfilter.h"
 #include "stft.h"
 
-#include <neat_math.h>
-#include <stringprintf.h>
+#include "neat_math.h"
+#include "stringprintf.h"
 #include <memory.h>
 
 //#define TIME_StftFilter
@@ -20,8 +20,8 @@ StftFilter::
 {
     if (!t)
     {
-        Tfr::StftParams p;
-        p.setWindow(Tfr::StftParams::WindowType_Hann, 0.75f);
+        Tfr::StftDesc p;
+        p.setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
         t = pTransform(new Stft(p));
     }
 
@@ -35,7 +35,7 @@ StftFilter::
 Signal::Interval StftFilter::
         requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    const StftParams& p = ((Stft*)t.get())->params();
+    const StftDesc& p = ((Stft*)t.get())->desc();
     long averaging = p.averaging();
     long window_size = p.chunk_size();
     long window_increment = p.increment();
@@ -96,13 +96,10 @@ Signal::Interval StftFilter::
 void StftFilter::
         invalidate_samples(const Signal::Intervals& I)
 {
-    const StftParams& p = ((Stft*)transform().get())->params();
-    int window_size = p.chunk_size();
-    int increment   = p.increment();
-
     // include_time_support
-    Signal::Intervals J = I.enlarge(window_size-increment);
-    Operation::invalidate_samples( J );
+    const StftDesc& p = ((Stft*)transform().get())->desc();
+    DeprecatedOperation::invalidate_samples( p.affectedInterval (I.spannedInterval ()) );
 }
+
 
 } // namespace Signal

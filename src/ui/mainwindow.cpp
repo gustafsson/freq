@@ -19,6 +19,9 @@
 using namespace std;
 using namespace boost;
 
+//#define DEBUG_SETTINGS
+#define DEBUG_SETTINGS if(0)
+
 namespace Ui {
 
 SaweMainWindow::
@@ -79,6 +82,14 @@ void SaweMainWindow::
 #if defined(TARGET_hast)
     ui->actionOperation_details->setVisible( false );
 #endif
+    if (Sawe::Configuration::feature("stable")) {
+        ui->actionOperation_details->setVisible( false );
+        ui->actionExport_audio->setVisible (false);
+        ui->actionExport_selection->setVisible (false);
+        ui->actionSave_project->setVisible (false);
+        ui->actionSave_project_as->setVisible (false);
+    }
+
     connect(ui->actionMuchdifferent_com, SIGNAL(triggered()), SLOT(gotomuchdifferent()));
     connect(ui->actionAsk_for_help, SIGNAL(triggered()), SLOT(gotosonicaweforum()));
     connect(ui->actionFind_plugins, SIGNAL(triggered()), SLOT(findplugins()));
@@ -124,8 +135,6 @@ void SaweMainWindow::
 //    ui->topFilterWindow->raise();
 
     // todo move into toolfactory
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarPlay );
-    this->addToolBar( Qt::TopToolBarArea, ui->toolBarOperation );
     //this->addToolBar( Qt::TopToolBarArea, ui->toolBarMatlab );
 
     //new Saweui::PropertiesSelection( ui->toolPropertiesWindow );
@@ -146,7 +155,6 @@ void SaweMainWindow::
         ui->toolBarTool->addWidget( tb );
         connect( tb, SIGNAL(triggered(QAction *)), tb, SLOT(setDefaultAction(QAction *)));
     }*/
-
 
     {
         QSettings settings;
@@ -295,10 +303,15 @@ void SaweMainWindow::
 bool SaweMainWindow::
         askSaveChanges()
 {
+    return true; // close
+
     TaskInfo("Save current state of the project?");
     QMessageBox save_changes_msgbox("Save Changes", "Save current state of the project?",
                                           QMessageBox::Question, QMessageBox::Discard, QMessageBox::Cancel, QMessageBox::Save, this );
+/*
+//Use Signal::Processing namespace
     save_changes_msgbox.setDetailedText( QString::fromStdString( "Current state:\n" + project->layers.toString()) );
+*/
     save_changes_msgbox.exec();
     QAbstractButton * button = save_changes_msgbox.clickedButton();
     TaskInfo("Save changes answer: %s, %d",
@@ -493,7 +506,7 @@ void SaweMainWindow::
     QDataStream ds(&array, QIODevice::ReadOnly );
     ds >> state;
 
-    {
+    DEBUG_SETTINGS {
         TaskInfo("SaweMainWindow::readSettings - {%u actions and sliders}", state.size());
         QMapIterator<QString, QVariant> i(state);
         while (i.hasNext())
@@ -518,9 +531,6 @@ void SaweMainWindow::
 
     // Always start with the navigation tool activated
     ui->actionActivateNavigation->trigger();
-
-    // Always start stopped
-    ui->actionStopPlayBack->trigger();
 }
 
 
@@ -532,7 +542,7 @@ QByteArray SaweMainWindow::
 
     getGuiState( this, state);
 
-    {
+    DEBUG_SETTINGS {
         TaskInfo("SaweMainWindow::writeSettings - {%u actions and sliders}", state.size());
         QMapIterator<QString, QVariant> i(state);
         while (i.hasNext())

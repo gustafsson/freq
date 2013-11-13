@@ -11,7 +11,7 @@
 #include "tools/renderview.h"
 
 // gpumisc
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 // Qt
 #include <QMouseEvent>
@@ -94,7 +94,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            selectionStart = r.getPlanePos( e->posF(), &success);
+            selectionStart = r.getPlanePos( e->localPos (), &success);
 
             if (!success)
             {
@@ -133,7 +133,7 @@ namespace Tools { namespace Selections
             Tools::RenderView &r = *selection_controller_->render_view();
 
             bool success;
-            Heightmap::Position p = r.getPlanePos( e->posF(), &success);
+            Heightmap::Position p = r.getPlanePos( e->localPos (), &success);
             if (success)
             {
                 if (-FLT_MAX == selectionStart.time) // TODO test

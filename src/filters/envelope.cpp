@@ -1,6 +1,6 @@
 #include "envelope.h"
 
-#include "tfr/stftparams.h"
+#include "tfr/stftdesc.h"
 #include "tfr/stftfilter.h"
 #include "tfr/stft.h"
 #include "tfr/complexbuffer.h"
@@ -15,22 +15,22 @@ namespace Filters {
 
 Envelope::Envelope()
 {
-    StftParams params;
-    params.setWindow (StftParams::WindowType_Gaussian, 0.75);
-    params.set_approximate_chunk_size (256);
-    transform( params.createTransform () );
+    StftDesc desc;
+    desc.setWindow (StftDesc::WindowType_Gaussian, 0.75);
+    desc.set_approximate_chunk_size (256);
+    transform( desc.createTransform () );
 }
 
 
 void Envelope::
         transform( Tfr::pTransform m )
 {
-    const StftParams* params = dynamic_cast<const StftParams*>(m->transformParams ());
+    const StftDesc* desc = dynamic_cast<const StftDesc*>(m->transformDesc ());
 
     // Ensure redundant transform
-    if (!params->compute_redundant ())
+    if (!desc->compute_redundant ())
     {
-        StftParams p2(*params);
+        StftDesc p2(*desc);
         p2.compute_redundant ( true );
         m = p2.createTransform ();
     }

@@ -21,8 +21,7 @@ RecordView::
             model_(model),
             prev_limit_(0)
 {
-    float l = model->project->worker.length();
-    prev_limit_ = l;
+    prev_limit_ = model_->project->length ();
 }
 
 
@@ -38,6 +37,8 @@ void RecordView::
 {
     if (enabled)
     {
+//Use Signal::Processing namespace
+/*
 #ifndef SAWE_NO_MUTEX
         if (!model_->project->worker.isRunning())
         {
@@ -45,8 +46,10 @@ void RecordView::
             ui->actionRecord->setChecked(false);
         }
 #endif
+*/
+//        float limit = model_->project->worker.length();
 
-        float limit = model_->project->worker.length();
+        float limit = model_->project->length ();
         limit -= 1/model_->render_view->model->xscale;
         if (limit<0) limit = 0;
 
@@ -68,11 +71,9 @@ void RecordView::
                     "It looks like your recording device doesn't report any "
                     "data, so the recording has been stopped.\n"
                     "Restarting the recording might help temporarily. "
-                    "You can also try another recording device by the command "
-                    "line argument '--record-device=\"number\"'. "
-                    "Available devices are listed in 'sonicawe.log'.", "No data from recording device");
-                Ui::MainWindow* ui = model_->project->mainWindow()->getItems();
-                ui->actionRecord->setChecked(false);
+                    "You can also try another recording device in the "
+                    "settings dialog.", "No data from recording device");
+                emit gotNoData();
             }
         }
         prev_limit_ = limit;

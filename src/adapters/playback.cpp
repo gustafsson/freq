@@ -15,6 +15,8 @@ using namespace boost;
 
 namespace Adapters {
 
+bool Playback_logging = true;
+
 Playback::
         Playback( int outputDevice )
 :   _data(0),
@@ -29,8 +31,10 @@ Playback::
     static bool first = true;
     boost::shared_ptr<TaskInfo> ti;
     if (first) {
-        ti.reset (new TaskInfo(format("Creating audio Playback. Requested device: %d") % outputDevice));
-        list_devices();
+        if (Playback_logging) {
+            ti.reset (new TaskInfo(format("Creating audio Playback. Requested device: %d") % outputDevice));
+            list_devices();
+        }
 
         bool _has_output_device = false;
         for (int i=0; i < sys.deviceCount(); ++i)
@@ -50,10 +54,12 @@ Playback::
         _output_device = sys.defaultOutputDevice().index();
     } else if (outputDevice >= sys.deviceCount ()) {
         _output_device = sys.defaultOutputDevice().index();
-        TaskInfo(format("Highest valid device id is %d. Reverting to default output device") % (sys.deviceCount() - 1));
+        if (Playback_logging)
+            TaskInfo(format("Highest valid device id is %d. Reverting to default output device") % (sys.deviceCount() - 1));
     } else if ( sys.deviceByIndex(outputDevice).isInputOnlyDevice() ) {
         _output_device = sys.defaultOutputDevice().index();
-        TaskInfo(format("Requested audio device (%d) '%s' can only be used for input. Reverting to default output device")
+        if (Playback_logging)
+            TaskInfo(format("Requested audio device (%d) '%s' can only be used for input. Reverting to default output device")
                          % outputDevice % sys.deviceByIndex(outputDevice).name());
     } else {
         _output_device = outputDevice;
@@ -61,7 +67,8 @@ Playback::
 
     if(first)
     {
-        TaskInfo tt(format("Using device '%s' (%d) for audio output")
+        if (Playback_logging)
+            TaskInfo tt(format("Using device '%s' (%d) for audio output")
                            % sys.deviceByIndex(_output_device).name()
                            % _output_device);
     }
@@ -74,8 +81,6 @@ Playback::
 Playback::
         ~Playback()
 {
-    TaskTimer tt(__FUNCTION__);
-
     if (streamPlayback)
     {
         if (!streamPlayback->isStopped())
@@ -261,6 +266,14 @@ void Playback::
 
 
 void Playback::
+        setExpectedSamples(const Signal::Interval &I, int C)
+{
+    _expected = I;
+    invalidate_samples (_expected, C);
+}
+
+
+void Playback::
         stop()
 {
     if (streamPlayback)
@@ -304,6 +317,17 @@ bool Playback::
 void Playback::
         invalidate_samples( const Signal::Intervals& s )
 {
+    EXCEPTION_ASSERT(source());
+
+    int C = source()->num_channels();
+
+    invalidate_samples( s, C );
+}
+
+
+void Playback::
+        invalidate_samples( const Signal::Intervals& s, int C )
+{
     // If the CwtFilter runs out of memory and changes the number of scales per
     // octave it will invalidate all samples. Discard that and keep the samples
     // we've received for playback so far.
@@ -318,10 +342,8 @@ void Playback::
                         _playback_itr,
                         Signal::Interval::IntervalType_MAX);
 
-    EXCEPTION_ASSERT(source());
-
     if (0 == _data.num_channels())
-        _data = Signal::SinkSource( source()->num_channels() );
+        _data = Signal::SinkSource( C );
 
     _data.invalidate_samples( s & whatsLeft );
 }
@@ -367,7 +389,7 @@ void Playback::
             return;
         }
 
-        TIME_PLAYBACK TaskTimer("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
+        TIME_PLAYBACK TaskInfo("Start playing on: %s", sys.deviceByIndex(_output_device).name() );
 
         unsigned requested_number_of_channels = num_channels();
         unsigned available_channels = sys.deviceByIndex(_output_device).maxOutputChannels();
@@ -474,7 +496,7 @@ bool Playback::
     }
 
     if (nAccumulated_samples < 0.1f*_data.sample_rate() || nAccumulated_samples < 3*_first_buffer_size ) {
-        TIME_PLAYBACK TaskInfo("Underfed");
+        TIME_PLAYBACK TaskInfo("Underfed %d", nAccumulated_samples);
         return true; // Haven't received much data, wait to do a better estimate
     }
 
@@ -634,6 +656,8 @@ int Playback::
 void Playback::
     test()
 {
+    Playback_logging = false;
+
     // It should not throw any exceptions when requesting an invalid device
     {
         portaudio::AutoSystem autoSys;
@@ -686,6 +710,8 @@ void Playback::
         pb.pausePlayback (false);
         EXCEPTION_ASSERT (!pb.isStopped () && !pb.isPaused ());
     }
+
+    Playback_logging = true;
 }
 
 } // namespace Adapters

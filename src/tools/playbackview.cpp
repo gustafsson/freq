@@ -7,7 +7,7 @@
 #include "filters/ellipse.h"
 #include "tfr/cwt.h"
 
-#include <glPushContext.h>
+#include "glPushContext.h"
 
 // Qt
 #include <QTimer>
@@ -51,8 +51,9 @@ void PlaybackView::
         emit_update_view()
 {
     emit update_view(false);
-    Tfr::Cwt* cwt = _render_view->model->getParam<Tfr::Cwt>();
-    cwt->wavelet_time_support( cwt->wavelet_default_time_support() );
+    Tools::Support::TransformDescs::WritePtr td (_render_view->model->transform_descs ());
+    Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
+    cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
 }
 
 
@@ -94,6 +95,7 @@ void PlaybackView::
         update();
     }
 
+    is_stopped |= model->playback()->hasReachedEnd ();
     // Playback has recently stopped
     if (is_stopped) {
         emit playback_stopped();
@@ -167,7 +169,9 @@ bool PlaybackView::
 {
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
             model->selection->current_selection().get() );
-    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
+//Use Signal::Processing namespace
+//    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
+    if (!e)
         return false;
 
     glDepthMask(false);

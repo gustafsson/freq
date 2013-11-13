@@ -6,9 +6,14 @@
 #include "GlException.h"
 #include "gl.h"
 #include "glPushContext.h"
+#include "backtrace.h"
 
 namespace Tools {
 namespace Support {
+
+class DrawImageFailed: public virtual boost::exception, public virtual std::exception { public:
+    typedef boost::error_info<struct path_tag,std::string> path;
+};
 
 DrawImage::
 DrawImage(QString imagePath, QPointF pos )
@@ -44,18 +49,15 @@ size() const
 boost::shared_ptr<GlTexture> DrawImage::
 loadImage(std::string imagePath)
 {
-    TaskTimer tt("%s %s", __FUNCTION__, imagePath.c_str());
-
     GlException_CHECK_ERROR();
 
     QImage data(imagePath.c_str());
-    tt.info("format = %d, size = (%d,%d)", data.format(), data.width(), data.height());
+    if (data.isNull ())
+        BOOST_THROW_EXCEPTION(DrawImageFailed() << DrawImageFailed::path(imagePath) << Backtrace::make ());
+
     QImage::Format expected_ftm = QImage::Format_ARGB32;
     if (data.format() != expected_ftm)
-    {
-        tt.info("changing format to %d", expected_ftm);
         data = data.convertToFormat(expected_ftm);
-    }
 
 
     std::vector<unsigned char> swizzled(data.byteCount());

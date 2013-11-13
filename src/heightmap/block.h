@@ -1,13 +1,11 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "reference.h"
+#include "referenceinfo.h"
 
 // gpumisc
 #include "datastorage.h"
-
-// boost
-#include <boost/shared_ptr.hpp>
+#include "volatileptr.h"
 
 #ifndef SAWE_NO_MUTEX
 #include <QMutex>
@@ -17,24 +15,8 @@ namespace Heightmap {
 
     class GlBlock;
 
-    // TODO it would probably look awesome if new blocks weren't displayed
-    // instantaneously but rather faded in from 0 or from their previous value.
-    // This method could be used to slide between the images of two different
-    // signals or channels as well. This should be implemented by rendering two or
-    // more separate collections in Heightmap::Renderer. It would fetch Blocks by
-    // their 'Reference' from the different collections and use a shader to
-    // transfer results between them.
-    class Block {
+    class BlockData: public VolatilePtr<BlockData> {
     public:
-        Block( Reference ref );
-        ~Block();
-
-        // TODO move this value to a complementary class
-        unsigned frame_number_last_used;
-
-        // Zoom level for this slot, determines size of elements
-        boost::shared_ptr<GlBlock> glblock;
-
         typedef DataStorage<float>::Ptr pData;
 
         /**
@@ -45,36 +27,74 @@ namespace Heightmap {
             memory so that the block data is readily available for merging new
             blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
             are updated from cpu_copy whenever new_data_available is set to true.
-
-            For single-GPU environments, 'cpu_copy' is not used.
         */
-    #ifndef SAWE_NO_MUTEX
-        // TODO make glblock private and create some interface here instead
         pData cpu_copy;
-        bool new_data_available;
-        bool to_delete;
-        QMutex cpu_copy_mutex;
-    #endif
+    };
+
+    // FEATURE it would probably look awesome if new blocks weren't displayed
+    // instantaneously but rather faded in from 0 or from their previous value.
+    // This method could be used to slide between the images of two different
+    // signals or channels as well. This should be implemented by rendering two or
+    // more separate collections in Heightmap::Renderer. It would fetch Blocks by
+    // their 'Reference' from the different collections and use a shader to
+    // transfer results between them.
+    /**
+     * @brief The Block class should store information and data about a block.
+     */
+    class Block {
+    public:
+        Block( Reference, BlockLayout, VisualizationParams::ConstPtr);
+        ~Block();
+
+        // TODO move this value to a complementary class
+        unsigned frame_number_last_used;
+
+        // OpenGL data to render
+        boost::shared_ptr<GlBlock> glblock;
+        BlockData::WritePtr block_data() {
+            BlockData::WritePtr b(block_data_);
+            new_data_available_ = true;
+            return b;
+        }
+        // Lock if available but don't wait for it to become available
+        // Throws BlockData::LockFailed if data is not available
+        BlockData::ReadPtr block_data_const() const {
+            return BlockData::ReadPtr(block_data_, 0);
+        }
 
         /**
-          valid_samples describes the intervals of valid samples contained in this block.
-          it is relative to the start of the heightmap, not relative to this block unless this is
-          the first block in the heightmap. The samplerate is the sample rate of the full
-          resolution signal.
-          */
-        Signal::Intervals valid_samples, non_zero;
+         * @brief update_data updates glblock from block_data
+         * @return true if data was updated. false if block_data is currently
+         * in use or if glblock is already up-to-date.
+         */
+        bool update_glblock_data();
 
-        const Reference& reference() const { return ref_; }
+        // Shared state
+        const VisualizationParams::ConstPtr visualization_params() const { return visualization_params_; }
 
-        const Signal::Interval& getInterval() const { return block_interval_; }
-        const Region& getRegion() const { return region_; }
+        // POD properties
+        const BlockLayout block_layout() const { return block_layout_; }
+        Reference reference() const { return ref_; }
+        Signal::Interval getInterval() const { return block_interval_; }
+        Region getRegion() const { return region_; }
         float sample_rate() const { return sample_rate_; }
+
+        // Helper
+        ReferenceInfo referenceInfo() const { return ReferenceInfo(reference (), block_layout (), visualization_params ()); }
+
     private:
+        BlockData::Ptr block_data_;
+        bool new_data_available_;
         const Reference ref_;
+        const BlockLayout block_layout_;
+        const VisualizationParams::ConstPtr visualization_params_;
 
         const Signal::Interval block_interval_;
         const Region region_;
         const float sample_rate_;
+
+    public:
+        static void test();
     };
     typedef boost::shared_ptr<Block> pBlock;
 

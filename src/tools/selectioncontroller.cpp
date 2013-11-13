@@ -37,7 +37,7 @@ namespace Tools
                 :
                 _model(model),
                 _render_view(render_view),
-                _worker(&render_view->model->project()->worker),
+                //_worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
                 tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this)),
                 deselect_action_(0),
@@ -103,7 +103,7 @@ namespace Tools
         toolBarTool->setVisible( true );
 
         connect(_model, SIGNAL(selectionChanged()), SLOT(onSelectionChanged()));
-        connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
+        //connect(_model->project()->head.get(), SIGNAL(headChanged()), SLOT(tryHeadAsSelection()));
         connect(selectionComboBox_, SIGNAL(toggled(bool)), SLOT(selectionComboBoxToggled()));
         connect(this, SIGNAL(enabledChanged(bool)), selectionComboBox_, SLOT(setChecked(bool)));
 
@@ -132,17 +132,18 @@ namespace Tools
     {
         setLayout(new QHBoxLayout());
         layout()->setMargin(0);
+        /*
 
 #ifndef TARGET_hast
         ellipse_model_.reset( new Selections::EllipseModel(      render_view()->model));
         ellipse_view_.reset( new Selections::EllipseView(        ellipse_model_.data() ));
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 #endif
-
+*/
         rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, render_view()->model->project() ));
-        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data(), &render_view()->model->project()->worker ));
+        rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data() ));
         rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
-
+/*
 #ifndef TARGET_hast
         spline_model_.reset( new Selections::SplineModel(      render_view()->model));
         spline_view_.reset( new Selections::SplineView(        spline_model_.data(), &render_view()->model->project()->worker ));
@@ -152,7 +153,7 @@ namespace Tools
         peak_view_.reset( new Selections::PeakView(         peak_model_.data(), &render_view()->model->project()->worker ));
         peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
 #endif
-
+*/
         connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
     }
 
@@ -224,19 +225,24 @@ namespace Tools
 
             //model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
         }
+        else if (Signal::pOperation() == selection)
+        {
+            this->model ()->set_current_selection(Signal::pOperation());
+        }
     }
 
 
     void SelectionController::
             onSelectionChanged()
     {
-        setCurrentSelection( _model->current_selection() );
     }
 
-
+#if 0
     void SelectionController::
             tryHeadAsSelection()
     {
+        // SelectionController can't see the head.
+        // The SelectionChangedCommand can take care of this instead.
         Signal::pOperation t = _model->project()->head->head_source();
         if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
             t = t->source();
@@ -256,7 +262,7 @@ namespace Tools
             setThisAsCurrentTool( false );
         }
     }
-
+#endif
 
     void SelectionController::
             addComboBoxAction( QAction* action )
@@ -325,7 +331,7 @@ namespace Tools
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
-        TaskInfo("Clear selection\n%s", _worker->source()->toString().c_str());
+        TaskInfo("Clear selection\n%s", o->toStringSkipSource ().c_str());
     }
 
 
@@ -336,28 +342,27 @@ namespace Tools
             return;
 
         Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
-        o->source( _worker->source() );
-
-        Signal::Intervals I = o->affected_samples().spannedInterval();
-        I -= o->zeroed_samples();
-
-        if (0==I.count())
-            return;
-
-        // Create OperationRemoveSection to remove everything else from the stream
-        Signal::pOperation remove(new Tools::Support::OperationCrop(
-                o, I.spannedInterval() ));
-
+        //o->source( _worker->source() );
         if (0 == dynamic_cast<Tools::Support::OperationOtherSilent*>(o.get()))
         {
             _model->set_current_selection( Signal::pOperation() );
             _model->project()->appendOperation( o );
         }
-        _model->set_current_selection( Signal::pOperation() );
-        _model->project()->appendOperation( remove );
-        _model->set_current_selection( o );
 
-        TaskInfo("Crop selection\n%s", _worker->source()->toString().c_str());
+        Signal::Intervals I = o->affected_samples().spannedInterval();
+        I -= o->zeroed_samples();
+
+        if (false) if (I) {
+            // Create OperationRemoveSection to remove everything else from the stream
+            Signal::pOperation remove(new Tools::Support::OperationCrop(
+                    o, I.spannedInterval() ));
+
+            _model->set_current_selection( Signal::pOperation() );
+            _model->project()->appendOperation( remove );
+            _model->set_current_selection( o );
+        }
+
+        TaskInfo("Crop selection\n%s", o->toStringSkipSource ().c_str ());
     }
 
 

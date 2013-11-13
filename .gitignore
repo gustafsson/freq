@@ -14,7 +14,7 @@ ui_mainwindow.h
 /sonicawe-cuda
 /sonicawe-reader
 /sonicawe-reader-cuda
-*.user
+*.pro.user*
 Makefile
 Makefile.Debug
 Makefile.Release
@@ -47,3 +47,5 @@ image_works
 *.sln.cache
 *.suo
 .DS_Store
+*.autosave
+.qmake.cache

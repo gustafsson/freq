@@ -57,7 +57,12 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         keyPressEvent(QKeyEvent *e)
 {
-    TaskInfo("%s", str(format("%s\nkey 0x%x\nmodifiers 0x%x\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
+    TaskInfo(format("%s key 0x%x, modifiers 0x%x, text %s, accepted %d")
+             % __FUNCTION__
+             % e->key ()
+             % (int)e->modifiers ()
+             % e->text ().toStdString ()
+             % e->isAccepted());
 
     if (updateFocusWidget(e))
         return;
@@ -69,7 +74,12 @@ void WidgetOverlayController::
 void WidgetOverlayController::
         keyReleaseEvent(QKeyEvent *e)
 {
-    TaskInfo("%s", str(format("%s\nkey 0x%x\nmodifiers 0x%x\ntext %s\naccepted %d") % __FUNCTION__ % e->key () % (int)e->modifiers () % e->text ().toStdString () % e->isAccepted()).c_str());
+    TaskInfo(format("%s key 0x%x, modifiers 0x%x, text %s, accepted %d")
+             % __FUNCTION__
+             % e->key ()
+             % (int)e->modifiers ()
+             % e->text ().toStdString ()
+             % e->isAccepted());
 
     updateFocusWidget(e);
 

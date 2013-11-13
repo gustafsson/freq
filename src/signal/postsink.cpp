@@ -3,9 +3,9 @@
 #include "buffersource.h"
 
 // gpumisc
-#include <Statistics.h>
-#include <TaskTimer.h>
-#include <demangle.h>
+#include "Statistics.h"
+#include "TaskTimer.h"
+#include "demangle.h"
 
 // boost
 #include <boost/foreach.hpp>
@@ -197,7 +197,7 @@ pOperation PostSink::
 
 
 pOperation PostSink::
-        source()
+        source() const
 {
     return Sink::source();
 }
@@ -209,7 +209,7 @@ void PostSink::
 #ifndef SAWE_NO_MUTEX
     QMutexLocker l(&_sinks_lock);
 #endif
-    Operation::source( v );
+    DeprecatedOperation::source( v );
 
     update_source();
 }
@@ -296,6 +296,8 @@ bool PostSink::
 void PostSink::
         invalidate_samples( const Intervals& I )
 {
+    DeprecatedOperation::invalidate_samples( I );
+
     pOperation s = source();
     if (s)
     {
@@ -309,7 +311,7 @@ void PostSink::
     #endif
 
         noop = true;
-        s->Operation::invalidate_samples( I );
+        s->DeprecatedOperation::invalidate_samples( I );
         noop = false;
     }
     else

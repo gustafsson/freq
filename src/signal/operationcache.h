@@ -14,7 +14,7 @@ namespace Signal {
   Otherwise, cached result from previous reads are immediately
   returned.
   */
-class SaweDll OperationCache: public Operation
+class SaweDll OperationCache: public DeprecatedOperation
 {
 public:
     OperationCache( pOperation source );
@@ -45,7 +45,7 @@ public:
     virtual unsigned num_channels();
 
     virtual void source(pOperation v);
-    virtual pOperation source() const { return Operation::source(); }
+    virtual pOperation source() const { return DeprecatedOperation::source(); }
 
 protected:
     SinkSource _cache;
@@ -72,14 +72,14 @@ class OperationCacheLayer: public OperationCache
 public:
     OperationCacheLayer( pOperation source ):OperationCache(source){}
     virtual Signal::Intervals affected_samples() { return source()->affected_samples(); }
-    virtual pBuffer readRaw( const Interval& I ) { return Operation::read(I); }
+    virtual pBuffer readRaw( const Interval& I ) { return DeprecatedOperation::read(I); }
 
 private:
     friend class boost::serialization::access;
     OperationCacheLayer() : OperationCache(pOperation()) {}
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo("OperationCacheLayer::serialize");
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         invalidate_cached_samples(Signal::Intervals());
     }
@@ -104,7 +104,7 @@ private:
     OperationCachedSub() : OperationCache(pOperation()) {}
     template<class Archive> void serialize(Archive& ar, const unsigned int /*version*/) {
         TaskInfo("OperationCachedSub::serialize");
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         invalidate_cached_samples(Signal::Intervals());
     }

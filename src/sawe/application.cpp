@@ -8,18 +8,19 @@
 #include "configuration.h"
 
 // gpumisc
-#include <demangle.h>
-#include <computationkernel.h>
+#include "demangle.h"
+#include "computationkernel.h"
+#include "glinfo.h"
 
 // std
 #include <sstream>
 
 // qt
 #include <QTime>
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <QGLWidget>
 #include <QSettings>
-#include <QDesktopServices>
+#include <QStandardPaths>
 #include <QMouseEvent>
 #include <QHostInfo>
 
@@ -50,11 +51,24 @@ static void show_fatal_exception_cerr( const string& str )
     cerr.flush();
 }
 
-static void show_fatal_exception_qt( const string& str )
+static void show_fatal_exception_qt( const string& /*str*/ )
 {
+    int t = time(0);
+    srand(t);
+    int r = rand();
+    QString alt[] = {
+        "Darn",
+        "Oups",
+        "Not again",
+        "Uhm",
+        "Ah well"
+    };
+
+    QString a = alt[r%(sizeof(alt)/sizeof(alt[0]))];
+    QString name = QApplication::instance ()->applicationName ();
     QMessageBox::critical( 0,
-                 QString("Error, closing application"),
-				 QString::fromLocal8Bit(str.c_str()) );
+                 a,
+                 QString("%1, need to restart %2.\nThe log file may contain some cryptic details").arg (a).arg (name));
 }
 
 void Application::
@@ -67,10 +81,7 @@ void Application::
 
 static string fatal_exception_string( const exception &x )
 {
-    stringstream ss;
-    ss   << "Error: " << vartype(x) << endl
-         << "Message: " << x.what();
-    return ss.str();
+    return boost::diagnostic_information(x);
 }
 
 static string fatal_unknown_exception_string() {
@@ -164,14 +175,7 @@ void Application::
     TaskInfo("domain: %s", QHostInfo::localDomainName().toStdString().c_str());
     TaskInfo("hostname: %s", QHostInfo::localHostName().toStdString().c_str());
     TaskInfo("number of CPU cores: %d", Sawe::Configuration::cpuCores());
-    {
-        TaskInfo ti("OpenGL information");
-        TaskInfo("vendor: %s", glGetString(GL_VENDOR));
-        TaskInfo("renderer: %s", glGetString(GL_RENDERER));
-        TaskInfo("version: %s", glGetString(GL_VERSION));
-        TaskInfo("shading language: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-        TaskInfo("extensions/capabilities/caps: %s", glGetString(GL_EXTENSIONS));
-    }
+    TaskInfo("OpenGL information\n%s", glinfo::driver_info().c_str ());
 }
 
 
@@ -187,7 +191,7 @@ Application* Application::
 QString Application::
         log_directory()
 {
-    QString localAppDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+    QString localAppDir = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
     return localAppDir;
 }
 
@@ -242,7 +246,11 @@ bool Application::
                 case QEvent::KeyPress:
                 {
                     QKeyEvent* m = static_cast<QKeyEvent*>(e);
-                    TaskInfo("QEvent::KeyPress key=%d on %s %s %p", m->key(), vartype(*receiver).c_str(), receiver->objectName().toStdString().c_str(), receiver);
+                    TaskInfo(boost::format("QEvent::KeyPress key=0x%x on %s [%s %p]")
+                             % m->key()
+                             % vartype(*receiver)
+                             % receiver->objectName().toStdString()
+                             % receiver);
                     break;
                 }
                 default:
@@ -268,17 +276,6 @@ bool Application::
         }
 
         v = QApplication::notify(receiver,e);
-    //} catch (const exception &x) {
-    } catch (const invalid_argument &x) {
-        const char* what = x.what();
-        if (1 == QMessageBox::warning( 0,
-                                       QString("Couldn't complete the requested action"),
-                                       QString("Couldn't complete the requested action.\nDetails on the error follow:\n\n")+
-                                       QString::fromLocal8Bit(what),
-                                       "Ignore", "Exit program", QString::null, 0, 0 ))
-        {
-            err = fatal_exception_string(x);
-        }
     } catch (const exception &x) {
         err = fatal_exception_string(x);
     } catch (...) {
@@ -304,7 +301,7 @@ void Application::
     if (1 == _projects.size())
     {
         pProject q = *_projects.begin();
-        if (!q->isModified() && q->worker.number_of_samples() == 0)
+        if (!q->isModified () && q->extent ().interval.get ().count() == 0)
             q->mainWindow()->close();
     }
 
@@ -379,8 +376,6 @@ void Application::
 pProject Application::
         slotNew_recording()
 {
-    TaskTimer tt("New recording");
-
     pProject p = Project::createRecording();
     if (p)
         openadd_project(p);
@@ -394,6 +389,7 @@ pProject Application::
     pProject p = Project::open( project_file_or_audio_file );
     if (p)
         openadd_project(p);
+
     return p;
 }
 

@@ -2,7 +2,6 @@
 #define SPLINEVIEW_H
 
 #include <QObject>
-#include "signal/worker.h"
 
 namespace Tools { namespace Selections
 {
@@ -13,7 +12,7 @@ class SplineView: public QObject
 {
     Q_OBJECT
 public:
-    SplineView(SplineModel* model, Signal::Worker* worker);
+    SplineView(SplineModel* model);
     ~SplineView();
 
     void drawSelectionSpline();
@@ -27,7 +26,6 @@ public slots:
 private:
     friend class SplineController;
     SplineModel* model_;
-    Signal::Worker* worker_;
 };
 
 }} // namespace Tools::Selections

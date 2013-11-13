@@ -16,7 +16,7 @@
 #include "sawe/project.h"
 #include "toolfactory.h"
 
-#include <demangle.h>
+#include "demangle.h"
 
 namespace Tools
 {
@@ -324,7 +324,7 @@ void NavigationController::
     {
         bool success1, success2;
         Heightmap::Position last = r.getPlanePos( QPointF(rescaleCommand->getLastx(), rescaleCommand->getLasty()), &success1);
-        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        Heightmap::Position current = r.getPlanePos( e->localPos (), &success2);
         if (success1 && success2)
         {
             zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
@@ -338,7 +338,7 @@ void NavigationController::
         //Controlling the position with the left button.
         bool success1, success2;
         Heightmap::Position last = r.getPlanePos( QPointF(moveButton.getLastx(), moveButton.getLasty()), &success1);
-        Heightmap::Position current = r.getPlanePos( e->posF(), &success2);
+        Heightmap::Position current = r.getPlanePos( e->localPos(), &success2);
         if (success1 && success2)
         {
             moveCamera( last.time - current.time, last.scale - current.scale);
@@ -382,15 +382,15 @@ void NavigationController::
     Ui::SaweMainWindow* main = _view->model->project()->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
-    connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
-    connect(ui->toolBarOperation, SIGNAL(visibleChanged(bool)), ui->actionToggleNavigationToolBox, SLOT(setChecked(bool)));
+    //connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
+    //connect(ui->toolBarOperation, SIGNAL(visibleChanged(bool)), ui->actionToggleNavigationToolBox, SLOT(setChecked(bool)));
 
-    QList<QAction*> a = ui->toolBarOperation->actions();
-    QAction* first = 0;
-    //if (!a.empty()) first = a.first();
-    ui->toolBarOperation->insertAction(first, ui->actionActivateNavigation);
-    ui->toolBarOperation->insertAction(first, ui->actionZoom);
-    if (first) ui->toolBarOperation->insertSeparator(first);
+//    QList<QAction*> a = ui->toolBarOperation->actions();
+//    QAction* first = 0;
+//    //if (!a.empty()) first = a.first();
+//    ui->toolBarOperation->insertAction(first, ui->actionActivateNavigation);
+//    ui->toolBarOperation->insertAction(first, ui->actionZoom);
+//    if (first) ui->toolBarOperation->insertSeparator(first);
 
     connect(ui->actionActivateNavigation, SIGNAL(toggled(bool)), this, SLOT(receiveToggleNavigation(bool)));
     connect(ui->actionZoom, SIGNAL(toggled(bool)), this, SLOT(receiveToggleZoom(bool)));

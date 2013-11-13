@@ -6,7 +6,7 @@
 namespace Tools {
 namespace Support {
 
-class ComputeRms : public Signal::Operation
+class ComputeRms : public Signal::DeprecatedOperation
 {
 public:
     ComputeRms(Signal::pOperation);

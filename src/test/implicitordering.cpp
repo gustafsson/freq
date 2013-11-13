@@ -1,6 +1,7 @@
 #include "implicitordering.h"
 
 #include "exceptionassert.h"
+#include "unused.h"
 
 #include <sstream>
 #include <map>
@@ -49,6 +50,22 @@ public:
     int data3;
 };
 
+class D {
+public:
+    D() : destroyed(123), copied(123) {}
+    ~D() { destroyed = 456; }
+    D(const D&); // not implemented
+    D& operator=(const D&); // not implemented
+
+    int destroyed;
+    int copied;
+};
+
+D getD() {
+    D d;
+    return d;
+}
+
 void tsta(A*a)
 {
     lout << objectnumber(a) << " a " << a->data << endl;
@@ -66,6 +83,10 @@ void tstc(C*c)
 void ImplicitOrdering::
         test()
 {
+#ifndef __GCC__
+    {A a;}
+    lout.seekp (0);
+#endif
     {
         C* c = new C;
         A* a = c;
@@ -91,7 +112,7 @@ void ImplicitOrdering::
     }
     {
         const A& a = hej();
-        ((int)a.data);
+        UNUSED(int b) = a.data;
     }
     string expected =
             "A 2\n"
@@ -119,6 +140,11 @@ void ImplicitOrdering::
             "~A 6\n";
 
     EXCEPTION_ASSERT_EQUALS(expected, lout.str());
+
+    // Check that neither the copy constructor nor the assignment operator are called here
+    D d = getD();
+    EXCEPTION_ASSERT_EQUALS(d.copied, 123);
+    EXCEPTION_ASSERT_EQUALS(d.destroyed, 123);
 }
 
 } // namespace Test

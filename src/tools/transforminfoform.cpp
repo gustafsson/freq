@@ -16,6 +16,7 @@
 #include "filters/normalize.h"
 #include "filters/normalizespectra.h"
 #include "widgets/valueslider.h"
+#include "tools/support/chaininfo.h"
 
 #ifdef USE_CUDA
 #include <cuda_runtime.h>
@@ -66,9 +67,9 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
 
-    for (int i=0;i<Tfr::StftParams::WindowType_NumberOfWindowTypes; ++i)
+    for (int i=0;i<Tfr::StftDesc::WindowType_NumberOfWindowTypes; ++i)
     {
-        ui->windowTypeComboBox->addItem(Tfr::StftParams::windowTypeName((Tfr::StftParams::WindowType)i).c_str(), i);
+        ui->windowTypeComboBox->addItem(Tfr::StftDesc::windowTypeName((Tfr::StftDesc::WindowType)i).c_str(), i);
     }
 
     {   ui->timeNormalizationSlider->setOrientation( Qt::Horizontal );
@@ -80,13 +81,16 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->timeNormalizationSlider->setUnit ("s");
 
         connect(ui->timeNormalizationSlider, SIGNAL(valueChanged(qreal)), SLOT(timeNormalizationChanged(qreal)));
+
+        ui->timeNormalizationSlider->setVisible (false);
+        ui->normalizationLabel->setVisible (false);
     }
 
     {   ui->freqNormalizationSlider->setOrientation( Qt::Horizontal );
         ui->freqNormalizationSlider->setRange (0.0, 1500, Widgets::ValueSlider::Quadratic );
         ui->freqNormalizationSlider->setValue ( 0 );
         ui->freqNormalizationSlider->setDecimals (1);
-        ui->freqNormalizationSlider->setToolTip( "Normalization along frequency axis" );
+        ui->freqNormalizationSlider->setToolTip( "Normalization width along frequency axis in Hz" );
         ui->freqNormalizationSlider->setSliderSize ( 300 );
         ui->freqNormalizationSlider->setUnit ("Hz");
 
@@ -97,7 +101,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
         ui->freqNormalizationSliderPercent->setRange (0.0, 100.0, Widgets::ValueSlider::Linear );
         ui->freqNormalizationSliderPercent->setValue ( 0 );
         ui->freqNormalizationSliderPercent->setDecimals (1);
-        ui->freqNormalizationSliderPercent->setToolTip( "Normalization along frequency axis" );
+        ui->freqNormalizationSliderPercent->setToolTip( "Normalization width along frequency axis in fraction of octave" );
         ui->freqNormalizationSliderPercent->setSliderSize ( 300 );
         ui->freqNormalizationSliderPercent->setUnit ("%");
 
@@ -107,7 +111,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     connect(ui->minHzEdit, SIGNAL(editingFinished()), SLOT(minHzChanged()));
     connect(ui->binResolutionEdit, SIGNAL(editingFinished()), SLOT(binResolutionChanged()));
     connect(ui->windowSizeEdit, SIGNAL(editingFinished()), SLOT(windowSizeChanged()));
-    connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
+    //connect(ui->sampleRateEdit, SIGNAL(editingFinished()), SLOT(sampleRateChanged()));
     connect(ui->overlapEdit, SIGNAL(editingFinished()), SLOT(overlapChanged()));
     connect(ui->averagingEdit, SIGNAL(editingFinished()), SLOT(averagingChanged()));
     connect(ui->windowTypeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(windowTypeChanged()));
@@ -153,21 +157,23 @@ void TransformInfoForm::
     prototype->setFlags( prototype->flags() & ~Qt::ItemIsEditable);
     ui->tableWidget->setItemPrototype( prototype );
 
-    if (renderview->model->collections.empty())
+    if (renderview->model->collections().empty())
         return;
 
-    Tfr::Filter* f = renderview->model->block_filter();
-    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(!f?0:f->transform()->transformParams());
-    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(!f?0:f->transform()->transformParams());
-    const Tfr::CepstrumParams* cepstrum = dynamic_cast<const Tfr::CepstrumParams*>(!f?0:f->transform()->transformParams());
-    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(!f?0:f->transform()->transformParams());
-    if (cepstrum) stft = 0; // CepstrumParams inherits StftParams
+    Tfr::TransformDesc::Ptr f = renderview->model->transform_desc();
+    const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(f.get ());
+    const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(f.get ());
+    const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(f.get ());
+    const Tfr::DrawnWaveform* waveform = dynamic_cast<const Tfr::DrawnWaveform*>(f.get ());
+    if (cepstrum) stft = 0; // CepstrumParams inherits StftDesc
 
-    Signal::pOperation head = project->head->head_source();
-    float fs = head->sample_rate();
+    Signal::OperationDesc::Extent x = project->extent ();
+    float fs = x.sample_rate.get ();
+    float L = x.interval.get ().count() / fs;
 
-    addRow("Length", QString("%1").arg(head->lengthLongFormat().c_str()));
-    bool adjustable_sample_rate = 0 != dynamic_cast<Adapters::CsvTimeseries*>(project->head->head_source()->root());
+    addRow("Length", QString("%1").arg( Signal::SourceBase::lengthLongFormat ( L ).c_str ()));
+    //bool adjustable_sample_rate = 0 != dynamic_cast<Adapters::CsvTimeseries*>(project->head->head_source()->root());
+    bool adjustable_sample_rate = false;
     ui->sampleRateEdit->setVisible(adjustable_sample_rate);
     ui->sampleRateLabel->setVisible(adjustable_sample_rate);
     if (adjustable_sample_rate)
@@ -180,7 +186,7 @@ void TransformInfoForm::
     {
         addRow("Sample rate", QString("%1").arg(fs));
     }
-    addRow("Number of samples", QString("%1").arg(head->number_of_samples()));
+    addRow("Number of samples", QString("%1").arg(x.interval.get ().count()));
 
 #ifdef TARGET_hast
     {
@@ -209,8 +215,7 @@ void TransformInfoForm::
     if (cwt)
     {
         addRow("Type", "Gabor wavelet");
-        if (renderview->model->renderSignalTarget->post_sink()->filter())
-            addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
+
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
         addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
         addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
@@ -219,42 +224,40 @@ void TransformInfoForm::
         addRow("Bins", QString("%1").arg(cwt->nBins(fs)));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         setEditText( ui->minHzEdit, QString("%1").arg(cwt->wanted_min_hz()) );
         //setEditText( ui->maxHzEdit, QString("%1").arg(cwt->get_max_hz(fs)) );
     }
     else if (stft)
     {
         addRow("Type", "Short time fourier");
-        if (renderview->model->renderSignalTarget->post_sink()->filter())
-            addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
+
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
         addRow("Rendered height", QString("%1 px").arg(renderview->height()));
         addRow("Rendered width", QString("%1 px").arg(renderview->width()));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
         setEditText( ui->averagingEdit, QString("%1").arg(stft->averaging()) );
-        Tfr::StftParams::WindowType windowtype = stft->windowType();
+        Tfr::StftDesc::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
     else if (cepstrum)
     {
         addRow("Type", "Cepstrum");
-        if (renderview->model->renderSignalTarget->post_sink()->filter())
-            addRow("Filter", vartype(*renderview->model->renderSignalTarget->post_sink()->filter()).c_str());
+
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
 
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/cepstrum->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(cepstrum->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(cepstrum->overlap()) );
-        Tfr::StftParams::WindowType windowtype = cepstrum->windowType();
+        Tfr::StftDesc::WindowType windowtype = cepstrum->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
     }
@@ -276,64 +279,70 @@ void TransformInfoForm::
 #endif
 
     size_t cacheByteSize=0;
-    foreach( boost::shared_ptr<Heightmap::Collection> h, renderview->model->collections)
+    foreach( const Heightmap::Collection::Ptr& h, renderview->model->collections())
     {
-        cacheByteSize += h->cacheByteSize();
+        cacheByteSize += write1(h)->cacheByteSize();
     }
+
     addRow("Sonic AWE caches", DataStorageVoid::getMemorySizeText( cacheByteSize ).c_str());
 
     EXCEPTION_ASSERT(project->areToolsInitialized());
 
-    Signal::Intervals I = project->worker.todo_list();
-
-    if (I.count())
-    {
-        addRow("Invalid heightmap", QString("%1 s").arg(I.count()/fs, 0, 'f', 1));
-        timer.start();
-    }
+//    Tools::Support::ChainInfo ci(project->processing_chain ());
+//    if (ci.hasWork ())
+//    {
+//        addRow("Invalid heightmap", QString("%1 s").arg(ci.out_of_date_sum()/fs, 0, 'f', 1));
+//        timer.start();
+//    }
 }
 
 
 void TransformInfoForm::
         minHzChanged()
 {
-    float fs = project->head->head_source()->sample_rate();
+    Signal::OperationDesc::Extent x = project->extent ();
+    float fs = x.sample_rate.get ();
     float newValue = ui->minHzEdit->text().toFloat();
     if (newValue<fs/100000)
         newValue=fs/100000;
     if (newValue>fs/2)
         newValue=fs/2;
 
-    Tfr::Cwt* cwt = project->tools().render_model.getParam<Tfr::Cwt>();
-
-    if (cwt->wanted_min_hz() != newValue)
     {
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        cwt->set_wanted_min_hz(newValue);
-        renderview->emitTransformChanged();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
+
+        if (cwt.wanted_min_hz() == newValue)
+            return;
+        cwt.set_wanted_min_hz(newValue);
     }
+
+    deprecateAll ();
 }
 
 
 void TransformInfoForm::
         binResolutionChanged()
 {
-    float fs = project->head->head_source()->sample_rate();
+    float fs = project->extent().sample_rate.get ();
     float newValue = ui->binResolutionEdit->text().toFloat();
     if (newValue<0.1)
         newValue=0.1;
     if (newValue>fs/4)
         newValue=fs/4;
-
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
     Signal::IntervalType new_chunk_size = fs/newValue;
 
-    if (new_chunk_size != stft->chunk_size())
     {
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        stft->set_exact_chunk_size( new_chunk_size );
-        renderview->emitTransformChanged();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+
+        if (new_chunk_size == stft.chunk_size())
+            return;
+
+        stft.set_exact_chunk_size( new_chunk_size );
     }
+
+    deprecateAll ();
 }
 
 
@@ -341,47 +350,51 @@ void TransformInfoForm::
         windowSizeChanged()
 {
     int newValue = ui->windowSizeEdit->text().toInt();
-    Signal::IntervalType N = project->head->head_source()->number_of_samples();
+    Signal::IntervalType N = project->extent().interval.get ().count();
     if (newValue<1)
         newValue=1;
     if ((unsigned)newValue>N*2)
         newValue=N*2;
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
-
-    if (newValue != stft->chunk_size())
     {
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        stft->set_approximate_chunk_size( newValue );
-        renderview->emitTransformChanged();
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+
+        if (newValue == stft.chunk_size())
+            return;
+
+        stft.set_approximate_chunk_size( newValue );
     }
+
+    renderview->emitTransformChanged();
 }
 
 
-void TransformInfoForm::
-        sampleRateChanged()
-{
-    float newValue = ui->sampleRateEdit->text().toFloat();
-    if (newValue<0.01)
-        newValue=0.01;
-    float minHz = ui->minHzEdit->text().toFloat();
-    float orgMinHz = minHz;
-    if (minHz<newValue/100000)
-        minHz=newValue/100000;
-    if (minHz>newValue/2)
-        minHz=newValue/2;
-    if (orgMinHz != minHz)
-        project->tools().render_model.getParam<Tfr::Cwt>()->set_wanted_min_hz(minHz);
+//void TransformInfoForm::
+//        sampleRateChanged()
+//{
+//    csv_source = ...
 
-    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
-    if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
-    {
-        bs->set_sample_rate( newValue );
+//    float newValue = ui->sampleRateEdit->text().toFloat();
+//    if (newValue<0.01)
+//        newValue=0.01;
+//    float minHz = ui->minHzEdit->text().toFloat();
+//    float orgMinHz = minHz;
+//    if (minHz<newValue/100000)
+//        minHz=newValue/100000;
+//    if (minHz>newValue/2)
+//        minHz=newValue/2;
+//    if (orgMinHz != minHz)
+//        write1(renderview->model->transform_descs ())->getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
 
-        project->head->head_source()->invalidate_samples(Signal::Intervals::Intervals_ALL);
-        renderview->emitTransformChanged();
-    }
-}
+//    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
+//    if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
+//    {
+//        bs->set_sample_rate( newValue );
+
+//        // TODO invalidate samples
+//    }
+//}
 
 
 void TransformInfoForm::
@@ -389,18 +402,20 @@ void TransformInfoForm::
 {
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
-    if (stft->windowType() != windowtype)
     {
-        float overlap = stft->overlap();
-        if (stft->windowType() == Tfr::StftParams::WindowType_Rectangular && overlap == 0.f)
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+        if (stft.windowType() == windowtype)
+            return;
+
+        float overlap = stft.overlap();
+        if (stft.windowType() == Tfr::StftDesc::WindowType_Rectangular && overlap == 0.f)
             overlap = 0.5f;
 
-        stft->setWindow( (Tfr::StftParams::WindowType)windowtype, overlap );
-
-        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        renderview->emitTransformChanged();
+        stft.setWindow( (Tfr::StftDesc::WindowType)windowtype, overlap );
     }
+
+    deprecateAll();
 }
 
 
@@ -411,15 +426,17 @@ void TransformInfoForm::
 
     // Tfr::Stft::setWindow validates value range
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
-    if (stft->overlap() != newValue)
     {
-        Tfr::StftParams::WindowType windowtype = stft->windowType();
-        stft->setWindow( windowtype, newValue );
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+        if (stft.overlap() == newValue)
+            return;
 
-        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        renderview->emitTransformChanged();
+        Tfr::StftDesc::WindowType windowtype = stft.windowType();
+        stft.setWindow( windowtype, newValue );
     }
+
+    deprecateAll();
 }
 
 
@@ -428,20 +445,24 @@ void TransformInfoForm::
 {
     float newValue = ui->averagingEdit->text().toFloat();
 
-    Tfr::StftParams* stft = renderview->model->getParam<Tfr::StftParams>();
-    if (stft->averaging() != newValue)
     {
-        stft->averaging( newValue );
+        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
+        if (stft.averaging() == newValue)
+            return;
 
-        renderview->model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-        renderview->emitTransformChanged();
+        stft.averaging( newValue );
     }
+
+    deprecateAll();
 }
 
 
 void TransformInfoForm::
-        timeNormalizationChanged(qreal newValue)
+        timeNormalizationChanged(qreal /*newValue*/)
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     Signal::PostSink* ps = project->tools ().render_model.renderSignalTarget->post_sink ();
     float fs = ps->sample_rate ();
     if (0.f < newValue)
@@ -452,69 +473,65 @@ void TransformInfoForm::
     }
     else
         ps->filter( Signal::pOperation() );
+*/
 }
 
 
 void TransformInfoForm::
         freqNormalizationChanged(qreal newValue)
 {
-    Tfr::Filter* filter = project->tools ().render_model.block_filter ();
-    EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
+    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+            project->tools ().render_model.get_stft_block_filter_params ();
+    EXCEPTION_ASSERT( stft_params );
 
-    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(filter->transform()->transformParams());
-    EXCEPTION_ASSERT( stft ); // Only if transform params are based on StftParams should it reach here (i.e Stft and Cepstrum)
-
-    Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
-    EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
-
-    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
     if (0.f < newValue)
     {
         ui->freqNormalizationSliderPercent->setValue ( 0 );
-        stftblock->freqNormalization = Tfr::pChunkFilter(
+        write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(newValue));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
     {
-        stftblock->freqNormalization.reset();
+        write1(stft_params)->freq_normalization.reset();
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
     }
 
-    stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
-    renderview->emitTransformChanged ();
+    deprecateAll();
 }
 
 
 void TransformInfoForm::
         freqNormalizationPercentChanged(qreal newValue)
 {
-    Tfr::Filter* filter = project->tools ().render_model.block_filter ();
-    EXCEPTION_ASSERT( filter ); // There should always be a block filter in RenderModel
+    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+            project->tools ().render_model.get_stft_block_filter_params ();
+    EXCEPTION_ASSERT( stft_params );
 
-    const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(filter->transform()->transformParams());
-    EXCEPTION_ASSERT( stft ); // Only if transform params are based on StftParams should it reach here (i.e Stft and Cepstrum)
-
-    Heightmap::BlockFilter* blockfilter = dynamic_cast<Heightmap::BlockFilter*>( filter );
-    EXCEPTION_ASSERT( blockfilter ); // testing if this indirection works
-
-    Heightmap::StftToBlock* stftblock = dynamic_cast<Heightmap::StftToBlock*>( filter );
     if (0.f < newValue)
     {
         ui->freqNormalizationSlider->setValue ( 0 );
         TaskInfo("new stuff: %f", -newValue/100.0f);
-        stftblock->freqNormalization = Tfr::pChunkFilter(
+
+        write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(-newValue/100.0f));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
     {
-        stftblock->freqNormalization.reset();
+        write1(stft_params)->freq_normalization.reset();
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
     }
 
-    stftblock->invalidate_samples (Signal::Interval::Interval_ALL);
-    renderview->emitTransformChanged ();
+    deprecateAll();
+}
+
+
+void TransformInfoForm::
+        deprecateAll()
+{
+    write1(renderview->model->target_marker()->target_needs ())->deprecateCache( Signal::Intervals::Intervals_ALL );
+    renderview->emitTransformChanged();
 }
 
 

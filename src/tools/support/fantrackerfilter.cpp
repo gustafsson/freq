@@ -104,7 +104,7 @@ namespace Support {
         CepstrumFilter::invalidate_samples(intervals);
     }
 
-    Operation* FanTrackerFilter::affecting_source( const Interval& I )
+    DeprecatedOperation* FanTrackerFilter::affecting_source( const Interval& I )
     {
         if (~zeroed_samples_recursive() & I)
             return this;

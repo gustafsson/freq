@@ -6,14 +6,14 @@
 #include "test/unittest.h"
 
 // gpumisc
-#include <redirectstdout.h>
-#include <neat_math.h>
-#include <computationkernel.h>
-#include <ThreadChecker.h>
-#include "exceptionassert.h"
+#include "redirectstdout.h"
+#include "neat_math.h"
+#include "computationkernel.h"
+#include "ThreadChecker.h"
+#include "prettifysegfault.h"
 
 // Qt
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <qgl.h>
 #include <QDesktopServices>
 #include <QDir>
@@ -215,7 +215,7 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 
 #include "tools/support/brushpaintkernel.h" // test class Gauss
 #include "tfr/supersample.h"
-#include <Statistics.h>
+#include "Statistics.h"
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
 #include <fstream>
@@ -226,7 +226,10 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
-    ExceptionAssert::installEventHandler ();
+    // Init configuration
+    Sawe::Configuration::version();
+
+    PrettifySegfault::setup ();
 
     if (argc == 2 && 0 == strcmp(argv[1],"--test"))
         return Test::UnitTest::test ();
@@ -265,8 +268,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-
-    QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
+    //QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
     boost::shared_ptr<RedirectStdout> rs;
     std::string logpath;
@@ -274,27 +276,29 @@ int main(int argc, char *argv[])
     try {
         Sawe::Application a(argc, argv, true);
 
-        QString localAppDir = Sawe::Application::log_directory();
-        if (QDir(localAppDir).exists()==false)
-            QDir().mkpath(localAppDir);
+        if (Sawe::Configuration::feature("logfile")) {
+            QString localAppDir = Sawe::Application::log_directory();
+            if (QDir(localAppDir).exists()==false)
+                QDir().mkpath(localAppDir);
 
-        std::string logdir = (localAppDir + QDir::separator()).toLatin1().data();
-        logpath = logdir + "sonicawe.log";
-    #ifndef _MSC_VER
-        //The following line hinders the redirection from working in windows
-        cout << "Saving log file at \"" << logpath << "\"" << endl;
-    #endif
+            std::string logdir = (localAppDir + QDir::separator()).toLatin1().data();
+            logpath = logdir + "sonicawe.log";
+        #ifndef _MSC_VER
+            //The following line hinders the redirection from working in windows
+            cout << "Saving log file at \"" << logpath << "\"" << endl;
+        #endif
 
-        // Save previous log files
-        remove((logdir+"sonicawe~5.log").c_str());
-        rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
-        rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
-        rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
-        rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
-        rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
+            // Save previous log files
+            remove((logdir+"sonicawe~5.log").c_str());
+            rename((logdir+"sonicawe~4.log").c_str(), (logdir+"sonicawe~5.log").c_str());
+            rename((logdir+"sonicawe~3.log").c_str(), (logdir+"sonicawe~4.log").c_str());
+            rename((logdir+"sonicawe~2.log").c_str(), (logdir+"sonicawe~3.log").c_str());
+            rename((logdir+"sonicawe~.log").c_str(), (logdir+"sonicawe~2.log").c_str());
+            rename(logpath.c_str(), (logdir+"sonicawe~.log").c_str());
 
-        // Write all stdout and stderr to sonicawe.log instead
-        rs.reset(new RedirectStdout(logpath.c_str()));
+            // Write all stdout and stderr to sonicawe.log instead
+            rs.reset(new RedirectStdout(logpath.c_str()));
+        }
 
         TaskTimer::setLogLevelStream(TaskTimer::LogVerbose, 0);
 
@@ -357,7 +361,7 @@ int main(int argc, char *argv[])
 
             tt.info("firstSample = %u", firstSample);
             tt.info("time_support = %u", time_support);
-            Adapters::WriteWav::writeToDisk("invtest.wav", pBuffer(new Buffer(inv)), false);
+            Adapters::WriteWav::writeToDisk("invtest.wav", pBuffer(new Signal::Buffer(inv)), false);
             return 0;
         }
 

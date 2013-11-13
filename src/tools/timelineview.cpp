@@ -10,10 +10,11 @@
 #include "heightmap/renderer.h"
 
 // gpumisc
-#include <computationkernel.h>
-#include <GlException.h>
-#include <glPushContext.h>
-#include <glframebuffer.h>
+#include "computationkernel.h"
+#include "GlException.h"
+#include "glPushContext.h"
+#include "glframebuffer.h"
+#include "gluunproject.h"
 
 // boost
 #include <boost/assert.hpp>
@@ -74,9 +75,10 @@ Heightmap::Position TimelineView::
 {
     pos.setY( tool_selector->parentTool()->geometry().height() - 1 - pos.y() );
 
-    GLvector win_coord( pos.x(), pos.y(), 0.1);
+    int r = devicePixelRatio ();
+    GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
 
-    GLvector world_coord = Heightmap::gluUnProject(
+    GLvector world_coord = gluUnProject(
             win_coord,
             modelview_matrix,
             projection_matrix,
@@ -107,7 +109,8 @@ void TimelineView::
 
     EXCEPTION_ASSERT( tool_selector );
     QRect rect = tool_selector->parentTool()->geometry();
-    resizeGL( 0, 0, rect.width(), rect.height() );
+    int r = tool_selector->parentTool ()->devicePixelRatio ();
+    resizeGL( 0, 0, r*rect.width(), r*rect.height() );
     paintEventTime = boost::posix_time::microsec_clock::local_time();
     paintGL();
 }
@@ -205,7 +208,7 @@ void TimelineView::
         emit hideMe();
     }
 
-    _length = std::max( 1.f, _render_view->model->renderer->last_axes_length );
+    _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );
     if (_length < 60*10)
         _barHeight = 0;
     else
@@ -229,7 +232,7 @@ void TimelineView::
             if (_xoffs<0) _xoffs = 0;
             if (_xoffs>_length-_length/_xscale) _xoffs = _length-_length/_xscale;
 
-            if (_render_view->model->renderer->left_handed_axes)
+            if (_render_view->model->renderer->render_settings.left_handed_axes)
             {
                 glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
             }
@@ -262,7 +265,7 @@ void TimelineView::
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);
 
-            if (_render_view->model->renderer->left_handed_axes)
+            if (_render_view->model->renderer->render_settings.left_handed_axes)
             {
                 glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
             }
@@ -340,11 +343,14 @@ void TimelineView::
 {
     // Make sure that the camera focus point is within the timeline
     {
-        float t = _render_view->model->renderer->camera[0];
+        float t = _render_view->model->renderer->render_settings.camera[0];
         float new_t = -1;
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
         {
+        case 0:
+            break;
+
         case 1: // Clamp the timeline, prevent moving to much.
                 // This might be both annoying and confusing
             if (t < _xoffs) _xoffs = t;
@@ -358,7 +364,7 @@ void TimelineView::
 
             if (0<=new_t)
             {
-                float f = _render_view->model->renderer->camera[2];
+                float f = _render_view->model->renderer->render_settings.camera[2];
                 _render_view->setPosition( Heightmap::Position( new_t, f) );
             }
             break;
@@ -370,7 +376,7 @@ void TimelineView::
     glRotatef( 90, 1, 0, 0 );
     glRotatef( 180, 0, 1, 0 );
 
-    if (!_render_view->model->renderer->left_handed_axes)
+    if (!_render_view->model->renderer->render_settings.left_handed_axes)
     {
         glTranslatef(-0.5f,0,0);
         glScalef(-1,1,1);

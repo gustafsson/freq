@@ -3,6 +3,7 @@
 
 #include "signal/intervals.h"
 #include "signal/operation.h"
+#include "deprecated.h"
 
 #include <QMutex>
 
@@ -10,8 +11,8 @@ namespace Tfr {
 
 class Transform;
 typedef boost::shared_ptr<Transform> pTransform;
-class TransformParams;
-typedef boost::shared_ptr<TransformParams> pTransformParams;
+class TransformDesc;
+typedef boost::shared_ptr<TransformDesc> pTransformDesc;
 
 class Chunk;
 typedef boost::shared_ptr<Chunk> pChunk;
@@ -56,18 +57,10 @@ public:
     virtual ~ChunkFilter() {}
 
     /**
-      The default implementation of applyFilter is to call operator()( Chunk& )
-      @see computeChunk
+      Apply the filter to a computed Tfr::Chunk. Return true if it makes sense
+      to compute the inverse afterwards.
       */
-    virtual bool applyFilter( ChunkAndInverse& chunk );
-
-protected:
-    /**
-      Apply the filter to a computed Tfr::Chunk. This is the method that should
-      be implemented to create new filters. Return true if it makes sense to
-      compute the inverse afterwards.
-      */
-    virtual bool operator()( Chunk& ) = 0;
+    virtual bool operator()( ChunkAndInverse& chunk ) = 0;
 };
 typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
 
@@ -76,7 +69,7 @@ typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
   Virtual base class for filters. To create a new filter, use CwtFilter or
   StftFilter as base class and implement the method 'operator()( Chunk& )'.
   */
-class Filter: public Signal::Operation, public ChunkFilter
+class Filter: public Signal::DeprecatedOperation, public ChunkFilter
 {
 public:
     /**
@@ -98,8 +91,8 @@ public:
       @overload Operation::read(const Signal::Interval&)
       */
     virtual Signal::pBuffer read( const Signal::Interval& I );
-
-
+    virtual Signal::pBuffer process(Signal::pBuffer);
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
     /**
       Filters are applied to chunks that are computed using some transform.
       transform()/transform(pTransform) gets/sets that transform.
@@ -123,7 +116,7 @@ public:
       If _try_shortcuts is true. This method from Operation will be used to
       try to avoid computing any actual transform.
       */
-    virtual Operation* affecting_source( const Signal::Interval& I );
+    virtual DeprecatedOperation* affecting_source( const Signal::Interval& I );
 
 
     /**
@@ -141,6 +134,11 @@ public:
       */
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
 
+
+    virtual bool operator()( ChunkAndInverse& chunk );
+    virtual bool applyFilter( ChunkAndInverse& chunk );
+    virtual bool operator()( Chunk& chunk ) = 0;
+
 protected:
     Filter(Filter&);
 
@@ -148,7 +146,7 @@ protected:
      * @brief requiredInterval returns the interval that is required to compute
      * a valid chunk representing interval I.
      * @param I
-     * @param t transform() is not invariant use this instance instead.
+     * @param t transform() is not invariant, use this instance instead.
      */
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t ) = 0;
 
@@ -161,6 +159,53 @@ private:
     Tfr::pTransform _transform;
 };
 
+
+class TransformKernel: public Signal::Operation
+{
+public:
+    virtual ~TransformKernel() {}
+
+    TransformKernel(Tfr::pTransform t, pChunkFilter chunk_filter);
+
+    virtual Signal::pBuffer process(Signal::pBuffer b);
+
+    Tfr::pTransform transform();
+    pChunkFilter chunk_filter();
+
+private:
+    Tfr::pTransform transform_;
+    pChunkFilter chunk_filter_;
+};
+
+
+class FilterKernelDesc: public VolatilePtr<FilterKernelDesc>
+{
+public:
+    virtual ~FilterKernelDesc() {}
+
+    virtual pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
+};
+
+
+class FilterDesc: public Signal::OperationDesc
+{
+public:
+    FilterDesc(Tfr::pTransformDesc, FilterKernelDesc::Ptr);
+    virtual ~FilterDesc() {}
+
+    virtual OperationDesc::Ptr copy() const;
+    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    virtual Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
+    virtual Signal::Interval affectedInterval(const Signal::Interval&) const;
+    virtual QString toString() const;
+    virtual bool operator==(const Signal::OperationDesc&d) const;
+
+    Tfr::pTransformDesc transformDesc() const;
+    void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
+protected:
+    Tfr::pTransformDesc transform_desc_;
+    FilterKernelDesc::Ptr chunk_filter_;
+};
 
 } // namespace Tfr
 

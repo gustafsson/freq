@@ -5,14 +5,15 @@
 #include "cpumemorystorage.h"
 #include "exceptionassert.h"
 
-#include <throwInvalidArgument.h>
-#include <neat_math.h>
-#include <computationkernel.h>
+#include "throwInvalidArgument.h"
+#include "neat_math.h"
+#include "computationkernel.h"
+#include "unused.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #ifdef _MSC_VER
-#include <msc_stdc.h>
+#include "msc_stdc.h"
 #endif
 
 
@@ -78,7 +79,7 @@ pChunk Fft::
         Tfr::ChunkData::Ptr input( new Tfr::ChunkData( real_buffer->waveform_data()->size()));
         ::stftToComplex( real_buffer->waveform_data(), input );
 
-        chunk.reset( new StftChunk( output_n.width, StftParams::WindowType_Rectangular, output_n.width, true ) );
+        chunk.reset( new StftChunk( output_n.width, StftDesc::WindowType_Rectangular, output_n.width, true ) );
         chunk->transform_data.reset( new ChunkData( output_n ));
 
         fft->compute( input, chunk->transform_data, FftDirection_Forward );
@@ -94,7 +95,7 @@ pChunk Fft::
             real_buffer = Signal::BufferSource( real_buffer ).readFixedLength( I )->getChannel (0);
         }
 
-        chunk.reset( new StftChunk(output_n.width, StftParams::WindowType_Rectangular, output_n.width, false) );
+        chunk.reset( new StftChunk(output_n.width, StftDesc::WindowType_Rectangular, output_n.width, false) );
         output_n.width = ((StftChunk*)chunk.get())->nScales();
         chunk->transform_data.reset( new ChunkData( output_n ));
 
@@ -111,6 +112,13 @@ pChunk Fft::
     TIME_STFT ComputationSynchronize();
 
     return chunk;
+}
+
+
+TransformDesc::Ptr Fft::
+        copy() const
+{
+    return TransformDesc::Ptr(new Fft(*this));
 }
 
 
@@ -155,6 +163,22 @@ unsigned Fft::
 }
 
 
+Signal::Interval Fft::
+        requiredInterval( const Signal::Interval&, Signal::Interval* ) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
+}
+
+
+Signal::Interval Fft::
+        affectedInterval( const Signal::Interval& ) const
+{
+    EXCEPTION_ASSERTX(false, "Not implemented");
+    return Signal::Interval();
+}
+
+
 std::string Fft::
         toString() const
 {
@@ -166,7 +190,7 @@ std::string Fft::
 
 
 bool Fft::
-        operator==(const TransformParams& b) const
+        operator==(const TransformDesc& b) const
 {
     if (typeid(b)!=typeid(*this))
         return false;
@@ -235,7 +259,7 @@ std::vector<unsigned> Stft::_ok_chunk_sizes;
 
 
 Stft::
-        Stft(const StftParams& p)
+        Stft(const StftDesc& p)
     :
       p(p),
       fft( FftImplementation::newInstance () )
@@ -247,7 +271,7 @@ Stft::
         Stft(const Stft& s)
 :
     Transform(s),
-    p(s.params())
+    p(s.desc())
 {
 }
 
@@ -297,7 +321,7 @@ Tfr::pChunk Stft::
     // (note that "first_valid_sample" only makes sense if the transform is invertible, which it isn't if averaging != 1)
     chunk->first_valid_sample = ceil((alignment - increment)/increment);
     int nSamples = chunk->nSamples();
-    int last_valid_sample = floor((nSamples*increment - alignment + increment)/increment);
+    int last_valid_sample = nSamples/p.averaging();
     if ( last_valid_sample >= chunk->first_valid_sample)
         chunk->n_valid_samples = last_valid_sample - chunk->first_valid_sample;
     else
@@ -392,6 +416,8 @@ Tfr::pChunk Stft::
 Signal::pMonoBuffer Stft::
         inverse( pChunk chunk )
 {
+    STFT_ASSERT( p.enable_inverse () );
+
     STFT_ASSERT( p.averaging() == 1 );
 
     StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.get());
@@ -582,23 +608,23 @@ void Stft::
 }
 
 
-template<> float Stft::computeWindowValue<StftParams::WindowType_Hann>( float p )         { return 1.f  + cos(M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Hamming>( float p )      { return 0.54f  + 0.46f*cos(M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Tukey>( float p )        { return std::fabs(p) < 0.5 ? 2.f : 1.f + cos(M_PI*(std::fabs(p)*2.f-1.f)); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Cosine>( float p )       { return cos(M_PI*p*0.5f); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Lanczos>( float p )      { return p==0?1.f:sin(M_PI*p)/(M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Triangular>( float p )   { return 1.f - fabs(p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Gaussian>( float p )     { return exp2f(-6.492127684f*p*p); } // sigma = 1/3
-template<> float Stft::computeWindowValue<StftParams::WindowType_BarlettHann>( float p )  { return 0.62f-0.24f*fabs(p)+0.38f*cos(M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Blackman>( float p )     { return 0.42f + 0.5f*cos(M_PI*p) + 0.08f*cos(2.f*M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_Nuttail>( float p )      { return 0.355768f + 0.487396f*cos(M_PI*p) + 0.144232f*cos(2.f*M_PI*p) + 0.012604f*cos(3.f*M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_BlackmanHarris>( float p )  { return 0.35875f + 0.48829*cos(M_PI*p) + 0.14128f*cos(2.f*M_PI*p) + 0.01168f*cos(3.f*M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_BlackmanNuttail>( float p ) { return 0.3635819f + 0.4891775*cos(M_PI*p) + 0.1365995f*cos(2.f*M_PI*p) + 0.0106411f*cos(3.f*M_PI*p); }
-template<> float Stft::computeWindowValue<StftParams::WindowType_FlatTop>( float p ) { return 1.f + 1.93f*cos(M_PI*p) + 1.29f*cos(2.f*M_PI*p) + 0.388f*cos(3.f*M_PI*p) + 0.032f*cos(4.f*M_PI*p); }
-template<StftParams::WindowType> float Stft::computeWindowValue( float )                  { return 1.f; }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Hann>( float p )         { return 1.f  + cos(M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Hamming>( float p )      { return 0.54f  + 0.46f*cos(M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Tukey>( float p )        { return std::fabs(p) < 0.5 ? 2.f : 1.f + cos(M_PI*(std::fabs(p)*2.f-1.f)); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Cosine>( float p )       { return cos(M_PI*p*0.5f); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Lanczos>( float p )      { return p==0?1.f:sin(M_PI*p)/(M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Triangular>( float p )   { return 1.f - fabs(p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Gaussian>( float p )     { return exp2f(-6.492127684f*p*p); } // sigma = 1/3
+template<> float Stft::computeWindowValue<StftDesc::WindowType_BarlettHann>( float p )  { return 0.62f-0.24f*fabs(p)+0.38f*cos(M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Blackman>( float p )     { return 0.42f + 0.5f*cos(M_PI*p) + 0.08f*cos(2.f*M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_Nuttail>( float p )      { return 0.355768f + 0.487396f*cos(M_PI*p) + 0.144232f*cos(2.f*M_PI*p) + 0.012604f*cos(3.f*M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_BlackmanHarris>( float p )  { return 0.35875f + 0.48829*cos(M_PI*p) + 0.14128f*cos(2.f*M_PI*p) + 0.01168f*cos(3.f*M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_BlackmanNuttail>( float p ) { return 0.3635819f + 0.4891775*cos(M_PI*p) + 0.1365995f*cos(2.f*M_PI*p) + 0.0106411f*cos(3.f*M_PI*p); }
+template<> float Stft::computeWindowValue<StftDesc::WindowType_FlatTop>( float p ) { return 1.f + 1.93f*cos(M_PI*p) + 1.29f*cos(2.f*M_PI*p) + 0.388f*cos(3.f*M_PI*p) + 0.032f*cos(4.f*M_PI*p); }
+template<StftDesc::WindowType> float Stft::computeWindowValue( float )                  { return 1.f; }
 
 
-template<StftParams::WindowType Type>
+template<StftDesc::WindowType Type>
 void Stft::
         prepareWindowKernel( DataStorage<float>::Ptr source, DataStorage<float>::Ptr windowedData )
 {
@@ -609,7 +635,7 @@ void Stft::
     float* window = &windowfunction[0];
     float norm = 0;
     int window_size = p.chunk_size();
-    if (StftParams::applyWindowOnInverse(Type))
+    if (StftDesc::applyWindowOnInverse(Type))
     {
         for (int x=0;x<window_size; ++x)
         {
@@ -657,7 +683,7 @@ void Stft::
 }
 
 
-template<StftParams::WindowType Type, typename T>
+template<StftDesc::WindowType Type, typename T>
 void Stft::
         reduceWindowKernel( boost::shared_ptr<DataStorage<T> > windowedSignal, typename DataStorage<T>::Ptr signal, const StftChunk* c )
 {
@@ -678,7 +704,7 @@ void Stft::
 
     float norm = 0;
 
-    if (StftParams::applyWindowOnInverse(Type))
+    if (StftDesc::applyWindowOnInverse(Type))
     {
         for (int x=0;x<window_size; ++x)
         {
@@ -701,8 +727,6 @@ void Stft::
     int out0 = c->first_valid_sample*increment;
     //int out0 = p.chunk_size()/2 - increment/2 + c->first_valid_sample*increment;
     int N = signal->size().width;
-
-    TaskInfo("signal->size().width = %u", signal->size().width);
 
     STFT_ASSERT( c->n_valid_samples*increment == signal->size().width );
 
@@ -742,7 +766,7 @@ void Stft::
 DataStorage<float>::Ptr Stft::
         prepareWindow( DataStorage<float>::Ptr source )
 {
-    if (p.windowType() == StftParams::WindowType_Rectangular && p.overlap() == 0.f )
+    if (p.windowType() == StftDesc::WindowType_Rectangular && p.overlap() == 0.f )
         return source;
 
     if (source->size().width < p.chunk_size())
@@ -755,47 +779,47 @@ DataStorage<float>::Ptr Stft::
 
     switch(p.windowType())
     {
-    case StftParams::WindowType_Hann:
-        prepareWindowKernel<StftParams::WindowType_Hann>(source, windowedData);
+    case StftDesc::WindowType_Hann:
+        prepareWindowKernel<StftDesc::WindowType_Hann>(source, windowedData);
         break;
-    case StftParams::WindowType_Hamming:
-        prepareWindowKernel<StftParams::WindowType_Hamming>(source, windowedData);
+    case StftDesc::WindowType_Hamming:
+        prepareWindowKernel<StftDesc::WindowType_Hamming>(source, windowedData);
         break;
-    case StftParams::WindowType_Tukey:
-        prepareWindowKernel<StftParams::WindowType_Tukey>(source, windowedData);
+    case StftDesc::WindowType_Tukey:
+        prepareWindowKernel<StftDesc::WindowType_Tukey>(source, windowedData);
         break;
-    case StftParams::WindowType_Cosine:
-        prepareWindowKernel<StftParams::WindowType_Cosine>(source, windowedData);
+    case StftDesc::WindowType_Cosine:
+        prepareWindowKernel<StftDesc::WindowType_Cosine>(source, windowedData);
         break;
-    case StftParams::WindowType_Lanczos:
-        prepareWindowKernel<StftParams::WindowType_Lanczos>(source, windowedData);
+    case StftDesc::WindowType_Lanczos:
+        prepareWindowKernel<StftDesc::WindowType_Lanczos>(source, windowedData);
         break;
-    case StftParams::WindowType_Triangular:
-        prepareWindowKernel<StftParams::WindowType_Triangular>(source, windowedData);
+    case StftDesc::WindowType_Triangular:
+        prepareWindowKernel<StftDesc::WindowType_Triangular>(source, windowedData);
         break;
-    case StftParams::WindowType_Gaussian:
-        prepareWindowKernel<StftParams::WindowType_Gaussian>(source, windowedData);
+    case StftDesc::WindowType_Gaussian:
+        prepareWindowKernel<StftDesc::WindowType_Gaussian>(source, windowedData);
         break;
-    case StftParams::WindowType_BarlettHann:
-        prepareWindowKernel<StftParams::WindowType_BarlettHann>(source, windowedData);
+    case StftDesc::WindowType_BarlettHann:
+        prepareWindowKernel<StftDesc::WindowType_BarlettHann>(source, windowedData);
         break;
-    case StftParams::WindowType_Blackman:
-        prepareWindowKernel<StftParams::WindowType_Blackman>(source, windowedData);
+    case StftDesc::WindowType_Blackman:
+        prepareWindowKernel<StftDesc::WindowType_Blackman>(source, windowedData);
         break;
-    case StftParams::WindowType_Nuttail:
-        prepareWindowKernel<StftParams::WindowType_Nuttail>(source, windowedData);
+    case StftDesc::WindowType_Nuttail:
+        prepareWindowKernel<StftDesc::WindowType_Nuttail>(source, windowedData);
         break;
-    case StftParams::WindowType_BlackmanHarris:
-        prepareWindowKernel<StftParams::WindowType_BlackmanHarris>(source, windowedData);
+    case StftDesc::WindowType_BlackmanHarris:
+        prepareWindowKernel<StftDesc::WindowType_BlackmanHarris>(source, windowedData);
         break;
-    case StftParams::WindowType_BlackmanNuttail:
-        prepareWindowKernel<StftParams::WindowType_BlackmanNuttail>(source, windowedData);
+    case StftDesc::WindowType_BlackmanNuttail:
+        prepareWindowKernel<StftDesc::WindowType_BlackmanNuttail>(source, windowedData);
         break;
-    case StftParams::WindowType_FlatTop:
-        prepareWindowKernel<StftParams::WindowType_FlatTop>(source, windowedData);
+    case StftDesc::WindowType_FlatTop:
+        prepareWindowKernel<StftDesc::WindowType_FlatTop>(source, windowedData);
         break;
     default:
-        prepareWindowKernel<StftParams::WindowType_Rectangular>(source, windowedData);
+        prepareWindowKernel<StftDesc::WindowType_Rectangular>(source, windowedData);
         break;
     }
 
@@ -808,7 +832,7 @@ template<typename T>
 typename DataStorage<T>::Ptr Stft::
         reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c )
 {
-    if (c->window_type() == StftParams::WindowType_Rectangular && c->increment() == c->window_size() )
+    if (c->window_type() == StftDesc::WindowType_Rectangular && c->increment() == c->window_size() )
         return windowedSignal;
 
     unsigned increment = c->increment();
@@ -822,47 +846,47 @@ typename DataStorage<T>::Ptr Stft::
 
     switch(c->window_type())
     {
-    case StftParams::WindowType_Hann:
-        reduceWindowKernel<StftParams::WindowType_Hann>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Hann:
+        reduceWindowKernel<StftDesc::WindowType_Hann>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Hamming:
-        reduceWindowKernel<StftParams::WindowType_Hamming>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Hamming:
+        reduceWindowKernel<StftDesc::WindowType_Hamming>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Tukey:
-        reduceWindowKernel<StftParams::WindowType_Tukey>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Tukey:
+        reduceWindowKernel<StftDesc::WindowType_Tukey>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Cosine:
-        reduceWindowKernel<StftParams::WindowType_Cosine>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Cosine:
+        reduceWindowKernel<StftDesc::WindowType_Cosine>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Lanczos:
-        reduceWindowKernel<StftParams::WindowType_Lanczos>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Lanczos:
+        reduceWindowKernel<StftDesc::WindowType_Lanczos>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Triangular:
-        reduceWindowKernel<StftParams::WindowType_Triangular>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Triangular:
+        reduceWindowKernel<StftDesc::WindowType_Triangular>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Gaussian:
-        reduceWindowKernel<StftParams::WindowType_Gaussian>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Gaussian:
+        reduceWindowKernel<StftDesc::WindowType_Gaussian>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_BarlettHann:
-        reduceWindowKernel<StftParams::WindowType_BarlettHann>(windowedSignal, signal, c);
+    case StftDesc::WindowType_BarlettHann:
+        reduceWindowKernel<StftDesc::WindowType_BarlettHann>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Blackman:
-        reduceWindowKernel<StftParams::WindowType_Blackman>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Blackman:
+        reduceWindowKernel<StftDesc::WindowType_Blackman>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_Nuttail:
-        reduceWindowKernel<StftParams::WindowType_Nuttail>(windowedSignal, signal, c);
+    case StftDesc::WindowType_Nuttail:
+        reduceWindowKernel<StftDesc::WindowType_Nuttail>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_BlackmanHarris:
-        reduceWindowKernel<StftParams::WindowType_BlackmanHarris>(windowedSignal, signal, c);
+    case StftDesc::WindowType_BlackmanHarris:
+        reduceWindowKernel<StftDesc::WindowType_BlackmanHarris>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_BlackmanNuttail:
-        reduceWindowKernel<StftParams::WindowType_BlackmanNuttail>(windowedSignal, signal, c);
+    case StftDesc::WindowType_BlackmanNuttail:
+        reduceWindowKernel<StftDesc::WindowType_BlackmanNuttail>(windowedSignal, signal, c);
         break;
-    case StftParams::WindowType_FlatTop:
-        reduceWindowKernel<StftParams::WindowType_FlatTop>(windowedSignal, signal, c);
+    case StftDesc::WindowType_FlatTop:
+        reduceWindowKernel<StftDesc::WindowType_FlatTop>(windowedSignal, signal, c);
         break;
     default:
-        reduceWindowKernel<StftParams::WindowType_Rectangular>(windowedSignal, signal, c);
+        reduceWindowKernel<StftDesc::WindowType_Rectangular>(windowedSignal, signal, c);
         break;
     }
 
@@ -875,7 +899,7 @@ unsigned Stft::
 {
     _ok_chunk_sizes.clear();
     scoped_ptr<TaskTimer> tt;
-    Tfr::StftParams p;
+    Tfr::StftDesc p;
 #ifdef USE_CUFFT
     if(writeOutput) tt.reset( new TaskTimer("Building STFT performance statistics for %s", CudaProperties::getCudaDeviceProp().name));
 #else
@@ -893,7 +917,7 @@ unsigned Stft::
 
     time_duration fastest_time;
     unsigned fastest_size = 0;
-    unsigned ok_size = 0;
+    UNUSED(unsigned ok_size) = 0;
     Tfr::pChunk C;
     time_duration latest_time[4];
     unsigned max_base = 3;
@@ -970,7 +994,7 @@ unsigned Stft::
 
 
 StftChunk::
-        StftChunk(unsigned window_size, StftParams::WindowType window_type, unsigned increment, bool redundant)
+        StftChunk(unsigned window_size, StftDesc::WindowType window_type, unsigned increment, bool redundant)
             :
             Chunk( Order_column_major ),
             _window_type( window_type ),

@@ -9,7 +9,7 @@ echo "========================== Building ==========================="
 echo "Building ${packagename} ${versiontag}"
 
 echo "qmaketarget: $qmaketarget"
-qmake $qmaketarget -spec macx-g++ CONFIG+=release
+qmake $qmaketarget -spec macx-clang CONFIG+=release
 
 if [ "Y" == "${rebuildall}" ]; then
   make clean
@@ -22,7 +22,8 @@ rm -f src/sonicawe
 rm -f src/sonicawe-cuda
 
 typeset -i no_cores
-no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+#no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+no_cores=`sysctl -n hw.ncpu`
 no_cores=2*$no_cores
 if [ $no_cores -eq 8 ]; then
   no_cores=14;
@@ -38,7 +39,7 @@ echo "Building ${packagename} cuda ${versiontag}"
 if ( [ -e /usr/local/cuda/bin/nvcc ] || [ -e /Developer/NVIDIA/CUDA-5.0/bin/nvcc ] ) && [ "Y" == "$buildcuda" ]; then
     qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
     echo "qmaketarget: $qmaketarget"
-    qmake $qmaketarget -spec macx-g++ CONFIG+=release
+    qmake $qmaketarget -spec macx-clang CONFIG+=release
 
     if [ "Y" == "${rebuildall}" ]; then
       make clean

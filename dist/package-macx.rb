@@ -2,9 +2,10 @@
 # http://doc.qt.nokia.com/4.7-snapshot/deployment-mac.html
 ####
 
-$framework_path = "/Library/Frameworks"
 $cuda_library_path = "/usr/local/cuda/lib"
-$custom_library_path = "../lib/sonicawe-maclib/lib"
+$custom_library_path = "/opt/local/lib"
+$compiler_library_path = "/opt/local/lib/gcc49"
+$compiler_library_path = `xcode-select -p`[0..-2] + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib"
 $command_line_width = 80
 
 # Configuration
@@ -21,13 +22,6 @@ $packagename = $build_name + "_" + $version
 $zip = true
 $zip = false if(ARGV.index("--nozip"))
 
-#def qt_lib_path(name, debug = false)
-#    return "#{$framework_path}/#{name}.framework/Versions/Current/#{name}#{"_debug" if(debug)}"
-#end
-
-def qt_install_name(name)
-    return "#{name}.framework/Versions/4/#{name}"
-end
 
 def cuda_lib_path(name)
     return "#{$cuda_library_path}/lib#{name}.dylib"
@@ -37,8 +31,8 @@ def custom_lib_path(name, path = nil)
     return "#{$custom_library_path}/#{"#{path}/" if(path)}lib#{name}.dylib"
 end
 
-def gcc47_lib_path(name)
-    return "/opt/local/lib/gcc47/lib#{name}.dylib"
+def compiler_lib_path(name)
+    return "#{$compiler_library_path}/lib#{name}.dylib"
 end
 
 def run(cmd)
@@ -61,9 +55,8 @@ def package_macos(app_name, version, packagename, zip = false)
                  custom_lib_path("vorbisenc"),
                  custom_lib_path("hdf5"),
                  custom_lib_path("hdf5_hl"),
-                 gcc47_lib_path("gomp.1"),
-                 gcc47_lib_path("gcc_s.1"),
-                 gcc47_lib_path("stdc++.6")];
+                 compiler_lib_path("System.B"),
+                 compiler_lib_path("stdc++.6")];
 
     directories = ["Contents/Frameworks",
                    "Contents/MacOS",
@@ -76,8 +69,7 @@ def package_macos(app_name, version, packagename, zip = false)
 
     additionals = [[$custom_exec + "-cuda", "sonicawe-cuda"]]
 
-    resources = ["#{$framework_path}/QtGui.framework/Versions/Current/Resources/qt_menu.nib",
-                 "package-macos~/aweicon-project.icns",
+    resources = ["package-macos~/aweicon-project.icns",
                  "package-macos~/aweicon.icns"]
 
     use_bin = Array.new()
@@ -101,6 +93,9 @@ def package_macos(app_name, version, packagename, zip = false)
         use_bin.push(local_lib)
         run("cp #{library} #{local_lib}")
     end
+
+    # Make libgcc_s a symbol reference to System.B
+    run("ln -s libSystem.B.dylib #{appfolder}/Contents/Frameworks/libgcc_s.1.dylib")
 
     # Copying executables
     puts " Copying executables ".center($command_line_width, "=")
@@ -156,7 +151,8 @@ def package_macos(app_name, version, packagename, zip = false)
         newtargetid = "#{newlibpath}/#{libname}"
 
         # set id #{newtargetid} in binary #{libfile}
-        run("install_name_tool -id #{newtargetid} #{libfile}")
+        system("install_name_tool -id #{newtargetid} #{libfile}")
+        #run("install_name_tool -id #{newtargetid} #{libfile}")
 
         use_bin.each do |path|
             binary_uses_this_lib = !`otool -L #{path} | grep #{targetid}`.empty?
@@ -164,7 +160,8 @@ def package_macos(app_name, version, packagename, zip = false)
 
             puts "  in binary: #{File.basename(path)}"
             # change install name for #{libpath}/#{libname} from #{targetid} to #{newtargetid} in binary #{path}
-            run("install_name_tool -change #{targetid} #{newtargetid} #{path}")
+            system("install_name_tool -change #{targetid} #{newtargetid} #{path}")
+            #run("install_name_tool -change #{targetid} #{newtargetid} #{path}")
         end
     end
 

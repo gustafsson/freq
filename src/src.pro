@@ -3,10 +3,6 @@
 # -------------------------------------------------
 
 
-# features directory
-qtfeatures = ../qtfeatures/
-win32:qtfeatures = "..\\qtfeatures\\"
-
 ####################
 # Project settings
 
@@ -31,29 +27,13 @@ testlib {
     win32:TEMPLATE = vcapp
     win32:CONFIG -= embed_manifest_dll
     win32:CONFIG += embed_manifest_exe
+    macx:CONFIG -= app_bundle
 }
 
 CONFIG(debug, debug|release): CONFIG += console
 
-CONFIG += $${qtfeatures}buildflags
+CONFIG += c++11 buildflags
 #CONFIG += console # console output
-# QMAKE_CXXFLAGS_DEBUG can't be changed in a .prf (feature) file
-QMAKE_CXXFLAGS_DEBUG += -D_DEBUG
-
-# Macports gcc 4.7 is necessary to build for OpenMP on Mac (to use OpenMP in anything but the main thread)
-macx: system(which /opt/local/bin/g++-mp-4.7 > /dev/null): CONFIG(release, debug|release) : CONFIG += useomp
-!macx: CONFIG(release, debug|release) : CONFIG += useomp
-llvm: CONFIG += noomp
-clang: CONFIG += noomp
-noomp: CONFIG -= useomp
-
-useomp {
-    DEFINES += USE_OMP
-    win32:QMAKE_CXXFLAGS += /openmp
-    unix:QMAKE_CXXFLAGS += -fopenmp
-    unix:QMAKE_LFLAGS += -fopenmp
-    macx:LIBS += -lgomp
-}
 
 
 ####################
@@ -66,8 +46,12 @@ SOURCES += \
     adapters/*.cpp \
     filters/*.cpp \
     heightmap/*.cpp \
+    heightmap/blocks/*.cpp \
+    heightmap/render/*.cpp \
+    heightmap/tfrmappings/*.cpp \
     sawe/*.cpp \
     signal/*.cpp \
+    signal/processing/*.cpp \
     test/*.cpp \
     tfr/fft4g.c \
     tfr/*.cpp \
@@ -86,8 +70,13 @@ HEADERS += \
     adapters/*.h \
     filters/*.h \
     heightmap/*.h \
+    heightmap/blocks/*.h \
+    heightmap/render/*.h \
+    heightmap/tfrmappings/*.h \
     sawe/*.h \
     signal/*.h \
+    test/*.h \
+    signal/processing/*.h \
     test/*.h \
     tfr/*.h \
     tools/*.h \
@@ -112,20 +101,21 @@ FORMS += \
     tools/exportaudiodialog.ui \
     tools/harmonicsinfoform.ui \
     tools/matlaboperationwidget.ui \
-    tools/selections/rectangleform.ui \
     sawe/enterlicense.ui \
     tools/settingsdialog.ui \
     tools/dropnotifyform.ui \
     tools/sendfeedback.ui \
     tools/commands/commandhistory.ui \
     tools/splashscreen.ui \
+    tools/selections/rectangleform.ui \
 
 CUDA_SOURCES += \
     filters/*.cu \
     heightmap/*.cu \
     tfr/*.cu \
     tools/support/*.cu \
-    tools/selections/support/*.cu \
+
+#    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
     heightmap/heightmap.frag \
@@ -136,7 +126,7 @@ CONFIGURATION_SOURCES = \
     sawe/configuration/configuration.cpp
 
 FEATURE_SOURCES += \
-    $${qtfeatures}*.prf
+    ../features/*.prf
 
 # "Other files" for Qt Creator
 OTHER_FILES += \
@@ -154,12 +144,12 @@ OTHER_FILES_VS += \
     *.pro \
     ../README \
 
-CONFIG += $${qtfeatures}otherfilesvs
+CONFIG += otherfilesvs
 
 
 ####################
 # Build settings
-CONFIG += $${qtfeatures}sawelibs
+CONFIG += sawelibs
 #DEFINES += CUDA_MEMCHECK_TEST
 
 
@@ -172,7 +162,7 @@ testlib {
     TMPDIR = lib/$${TMPDIR}
 }
 
-CONFIG += $${qtfeatures}tmpdir
+CONFIG += tmpdir
 
 
 # #######################################################################
@@ -185,14 +175,14 @@ useopencl {
     HEADERS += \
         tfr/clfft/*.h
 
-    CONFIG += $${qtfeatures}opencl
+    CONFIG += opencl
 }
 
 
 # #######################################################################
 # CUDA
 # #######################################################################
-usecuda: CONFIG += $${qtfeatures}cuda
+usecuda: CONFIG += cuda
 
 
 # #######################################################################
@@ -212,7 +202,7 @@ configuration.dependency_type = TYPE_C
 configuration.variable_out = OBJECTS
 configuration.output = ${QMAKE_VAR_OBJECTS_DIR}${QMAKE_FILE_IN_BASE}$${first(QMAKE_EXT_OBJ)}
 CONFIGURATION_FLAGS = $$QMAKE_CXXFLAGS
-macx:CONFIGURATION_DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
+#macx:CONFIGURATION_DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
 macx:CONFIGURATION_FLAGS += $$QMAKE_CFLAGS_X86_64
 CONFIG(debug, debug|release): CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_DEBUG
 else:CONFIGURATION_FLAGS += $$QMAKE_CXXFLAGS_RELEASE

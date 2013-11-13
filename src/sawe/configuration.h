@@ -3,7 +3,7 @@
 
 #include "sawedll.h"
 
-#include <HasSingleton.h>
+#include "HasSingleton.h"
 #include <sstream>
 #include <vector>
 
@@ -127,7 +127,6 @@ private:
     bool get_chunk_count_;
     std::string selectionfile_;
     std::string soundfile_;
-    bool multithread_;
 
     std::string title_string_;
     std::string version_string_;

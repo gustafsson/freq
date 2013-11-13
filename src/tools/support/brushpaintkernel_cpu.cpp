@@ -1,6 +1,6 @@
 #ifndef USE_CUDA
 
-#include <resamplecpu.h>
+#include "resamplecpu.h"
 
 #include "brushpaintkerneldef.h"
 
@@ -17,7 +17,11 @@ void Gauss::
         for (double x=-10; x<10; x+=dx)
             s += g.gauss_value(x, y)*dx*dy;
 
-    printf("1-s=%g\n", (float)(1.f-s));
+#ifdef __GCC__
+    EXCEPTION_ASSERT_FUZZYEQUALS(1-s, 2.35354e-08, 1e-12);
+#else
+    EXCEPTION_ASSERT_FUZZYEQUALS(1-s, 2.36803e-08, 1e-12);
+#endif
 }
 
 #endif // USE_CUDA

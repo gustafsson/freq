@@ -71,7 +71,6 @@ Signal::pBuffer Recorder::
 }
 
 
-
 float Recorder::
         length()
 {

@@ -4,7 +4,7 @@
 #include "signal/operation.h"
 namespace Filters {
 
-class Normalize: public Signal::Operation
+class Normalize: public Signal::DeprecatedOperation
 {
 public:
     enum Method
@@ -28,7 +28,7 @@ private:
     template<class archive> void serialize(archive& ar, const unsigned int) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         ar & BOOST_SERIALIZATION_NVP(normalizationRadius);
     }

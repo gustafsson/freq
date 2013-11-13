@@ -10,9 +10,11 @@
 
 // Sonic AWE
 #include "heightmap/renderer.h"
+#include "heightmap/referenceinfo.h"
+#include "heightmap/collection.h"
 
 // gpumisc
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 // Qt
 #include <QMouseEvent>
@@ -93,10 +95,18 @@ namespace Tools { namespace Selections
 
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Heightmap::Position p = r.getHeightmapPos( e->posF() );
+            Heightmap::Collection::Ptr c = r.model->collections()[0];
+
+            Heightmap::Position p = r.getHeightmapPos( e->localPos () );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
-            if (ref.containsPoint(p))
-                model()->findAddPeak( ref, p );
+            if([&](){
+                Heightmap::Collection::ReadPtr rc (c);
+                Heightmap::ReferenceInfo ri(ref, rc->block_layout (), rc->visualization_params());
+                return ri.containsPoint(p);
+            }())
+            {
+                model()->findAddPeak( c, ref, p );
+            }
         }
 
         r.userinput_update();

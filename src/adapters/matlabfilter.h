@@ -13,7 +13,7 @@ public:
 
     virtual bool operator()( Tfr::Chunk& );
     virtual Signal::Intervals ZeroedSamples() const;
-    virtual Signal::Intervals affected_samples() const;
+    Signal::Intervals affected_samples();
 
     void restart();
 protected:

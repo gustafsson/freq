@@ -46,6 +46,7 @@ protected:
     virtual float time();
 };
 
-}
+
+} // namespace Adapters
 
 #endif // RECORDER_H

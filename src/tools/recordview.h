@@ -4,7 +4,6 @@
 #include "recordmodel.h"
 
 #include <QObject>
-#include "signal/worker.h"
 
 namespace Tools
 {
@@ -17,6 +16,9 @@ public:
     ~RecordView();
 
     bool enabled;
+
+signals:
+    void gotNoData();
 
 public slots:
     /// Connected in RecordController

@@ -10,18 +10,16 @@
 #include "filters/rectangle.h"
 #include "filters/normalize.h"
 #include "signal/operationcache.h"
-#include "signal/chain.h"
-#include "signal/target.h"
 #include "signal/operation-basic.h"
 
 // Serializable Sonic AWE Tools
 #include "tools/commentmodel.h"
 #include "tools/tooltipmodel.h"
-#include "tools/selections/support/splinefilter.h"
+//#include "tools/selections/support/splinefilter.h"
 #include "tools/support/operation-composite.h"
 
 // GpuMisc
-#include <demangle.h>
+#include "demangle.h"
 
 // Std
 #include <fstream>
@@ -32,7 +30,7 @@
 #include <boost/algorithm/string.hpp>
 
 // Qt
-#include <QtGui/QMessageBox>
+#include <QMessageBox>
 #include <QFileInfo>
 #include <QDir>
 
@@ -57,17 +55,14 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::Support::MultiplyBrush>();
     ar.template register_type<Filters::Ellipse>();
     ar.template register_type<Filters::Rectangle>();
-    ar.template register_type<Tools::Selections::Support::SplineFilter>();
-    ar.template register_type<Tools::Selections::Support::SplineFilter::SplineVertex>();
+//    ar.template register_type<Tools::Selections::Support::SplineFilter>();
+//    ar.template register_type<Tools::Selections::Support::SplineFilter::SplineVertex>();
     ar.template register_type<Tools::CommentModel>();
     ar.template register_type<Tools::TooltipModel>();
     ar.template register_type<Tools::ToolFactory>();
     ar.template register_type<Tools::ToolRepo>();
     ar.template register_type<Tools::RenderModel>();
     ar.template register_type<Signal::OperationCacheLayer>();
-    ar.template register_type<Signal::Layers>();
-    ar.template register_type<Signal::Chain>();
-    ar.template register_type<Signal::ChainHead>();
     ar.template register_type<Adapters::MatlabOperation>();
     ar.template register_type<Project>();
     ar.template register_type<Signal::OperationCachedSub>();
@@ -112,6 +107,8 @@ bool Project::
     _mainWindow->restoreState( mainwindowState );
 
     {
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
         int microphoneCounter = 0;
         foreach(Signal::pChain c, layers.layers())
         {
@@ -119,6 +116,7 @@ bool Project::
             if (r)
                 r->setProjectName(project_filename_, ++microphoneCounter);
         }
+*/
     }
 
     try

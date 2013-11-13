@@ -3,10 +3,10 @@
 #include "cwt.h"
 #include "neat_math.h"
 
-#include <stringprintf.h>
-#include <computationkernel.h>
+#include "stringprintf.h"
+#include "computationkernel.h"
 #include <memory.h>
-#include <demangle.h>
+#include "demangle.h"
 
 #include <boost/foreach.hpp>
 
@@ -115,7 +115,7 @@ Intervals CwtFilter::
 void CwtFilter::
         invalidate_samples(const Intervals& I)
 {
-    Operation::invalidate_samples( include_time_support(I) );
+    DeprecatedOperation::invalidate_samples( include_time_support(I) );
 }
 
 void CwtFilter::

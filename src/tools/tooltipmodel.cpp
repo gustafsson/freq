@@ -13,8 +13,8 @@
 #include "heightmap/collection.h"
 
 // gpumisc
-#include <TaskTimer.h>
-#include <neat_math.h>
+#include "TaskTimer.h"
+#include "neat_math.h"
 
 // Qt
 #include <QToolTip>
@@ -63,8 +63,10 @@ const Heightmap::Position& TooltipModel::
 
 
 void TooltipModel::
-        showToolTip( Heightmap::Position p, bool adjustScaleToLocalPeak )
+        showToolTip( Heightmap::Position /*p*/, bool /*adjustScaleToLocalPeak*/ )
 {
+    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
+/*
     EXCEPTION_ASSERT( render_view_ );
 
     switch(this->automarking)
@@ -155,15 +157,17 @@ void TooltipModel::
 
     if (dynamic_cast<Tfr::CwtFilter*>( render_view_->model->block_filter()))
     {
-        const Tfr::Cwt* c = render_view_->model->getParam<Tfr::Cwt>();
-        std_t = c->morlet_sigma_samples( FS, f ) / FS;
-        std_f = c->morlet_sigma_f( f );
+        Tools::Support::TransformDescs::WritePtr td (render_view_->model->transform_descs ());
+        Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
+        std_t = c.morlet_sigma_samples( FS, f ) / FS;
+        std_f = c.morlet_sigma_f( f );
     }
     else if (dynamic_cast<Tfr::StftFilter*>( render_view_->model->block_filter()))
     {
-        const Tfr::StftParams* f = render_view_->model->getParam<Tfr::StftParams>();
-        std_t = f->chunk_size() / FS / 2;
-        std_f = FS / f->chunk_size() / 2;
+        Tools::Support::TransformDescs::WritePtr td (render_view_->model->transform_descs ());
+        Tfr::StftDesc& f = td->getParam<Tfr::StftDesc>();
+        std_t = f.chunk_size() / FS / 2;
+        std_f = FS / f.chunk_size() / 2;
     }
 
     ss << setiosflags(ios::fixed);
@@ -233,6 +237,7 @@ void TooltipModel::
                 << "selected_tone_number = " << this->markers << ";" << endl
                 << "frequencies = fundamental_frequency * (1:3*selected_tone_number);" << endl;
     }
+*/
 }
 
 
@@ -295,17 +300,24 @@ std::string TooltipModel::
 class TooltipModel::FetchDataTransform: public TooltipModel::FetchData
 {
 public:
-    FetchDataTransform( RenderModel* m, const Tfr::StftParams* stft, float t )
+    FetchDataTransform( RenderModel* m, const Tfr::StftDesc* stft, float t )
     {
-        Signal::pOperation o = m->renderSignalTarget->source();
-        Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
+        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
+        Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
+        float sample_rate = x.sample_rate.get_value_or (1);
+
+//        Signal::pOperation o = m->renderSignalTarget->source();
+//        float sample_rate = o->sample_rate ();
+
+        Signal::IntervalType i = std::max(0.f, t) * sample_rate;
         unsigned w = stft->chunk_size();
         i = i / w * w;
         Signal::Interval I( i, i+w );
 
         // Only check the first channel
         // TODO check other channels
-        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I)->getChannel (0));
+//        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I)->getChannel (0));
+        Tfr::pChunk chunk = (*stft->createTransform())( write1(s)->readFixedLengthFromCache(I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>( chunk->transform_data->size() ));
 
@@ -322,16 +334,23 @@ public:
         fa = chunk->freqAxis;
     }
 
-    FetchDataTransform( RenderModel* m, const Tfr::CepstrumParams* cepstrum, float t )
+    FetchDataTransform( RenderModel* m, const Tfr::CepstrumDesc* cepstrum, float t )
     {
-        Signal::pOperation o = m->renderSignalTarget->source();
-        Signal::IntervalType i = std::max(0.f, t) * o->sample_rate();
+        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
+        Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
+        float sample_rate = x.sample_rate.get_value_or (1);
+
+//        Signal::pOperation o = m->renderSignalTarget->source();
+//        float sample_rate = o->sample_rate ();
+
+        Signal::IntervalType i = std::max(0.f, t) * sample_rate;
         unsigned w = cepstrum->chunk_size();
         i = i / w * w;
         Signal::Interval I( i, i+w );
         // Only check the first channel
         // TODO check other channels
-        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I)->getChannel (0));
+//        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I)->getChannel (0));
+        Tfr::pChunk chunk = (*cepstrum->createTransform())( write1(s)->readFixedLengthFromCache(I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>(chunk->transform_data->size()));
 
@@ -350,17 +369,23 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::Cwt* cwt, float t )
     {
-        Signal::pOperation o = m->renderSignalTarget->source();
-        float fs = o->sample_rate();
+        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
+        Signal::OperationDesc::Extent x = read1(m->project ()->processing_chain ())->extent(m->project ()->default_target ());
+        float fs = x.sample_rate.get_value_or (1);
+
+//        Signal::pOperation o = m->renderSignalTarget->source();
+//        float fs = o->sample_rate();
 
         Tfr::DummyCwtFilter filter;
-        filter.source(o);
+        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace"); // for DummyCwtFilter::requiredInterval
+        //filter.source(o);
         filter.transform ( cwt->createTransform ());
         Signal::IntervalType sample = std::max(0.f, t) * fs;
         const Signal::Interval I = filter.requiredInterval (Signal::Interval(sample, sample+1), filter.transform ());
         // Only check the first channel
         // TODO check other channels
-        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
+//        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
+        Tfr::pChunk chunk = (*filter.transform ())(write1(s)->readFixedLengthFromCache (I)->getChannel (0));
 
         Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
         unsigned N = 0;
@@ -437,7 +462,7 @@ class TooltipModel::FetchDataHeightmap: public TooltipModel::FetchData
 public:
     FetchDataHeightmap( RenderView* render_view )
         :
-        ref_(render_view_->model->collections[0].get()),
+        ref_(),
         render_view_(render_view)
     {
         ref_.block_index[0] = (unsigned)-1;
@@ -469,12 +494,12 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
         createFetchData( RenderView* view, float t )
 {
     boost::shared_ptr<FetchData> r;
-    const Tfr::TransformParams* transform = view->model->collections[0]->transform();
-    if (const Tfr::CepstrumParams* cepstrum = dynamic_cast<const Tfr::CepstrumParams*>(transform))
+    const Tfr::TransformDesc::Ptr transform = view->model->transform_desc();
+    if (const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(transform.get ()))
         r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
-    else if (const Tfr::StftParams* stft = dynamic_cast<const Tfr::StftParams*>(transform))
+    else if (const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(transform.get ()))
         r.reset( new FetchDataTransform( view->model, stft, t ) );
-    else if (const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(transform))
+    else if (const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(transform.get ()))
         r.reset( new FetchDataTransform( view->model, cwt, t ) );
     else
     {

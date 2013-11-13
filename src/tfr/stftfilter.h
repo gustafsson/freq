@@ -22,9 +22,8 @@ public:
 
 
     bool exclude_end_block;
-
-private:
 };
+
 
 } // namespace Tfr
 

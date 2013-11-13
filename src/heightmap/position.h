@@ -13,6 +13,11 @@ public:
 
     bool operator== (Position const&b) { return time==b.time && scale==b.scale; }
     bool operator!= (Position const&b) { return !(*this==b); }
+
+    template< class ostream_t > inline
+    friend ostream_t& operator<<(ostream_t& os, const Position& p) {
+        return os << p.time << ":" << p.scale;
+    }
 };
 
 
@@ -27,6 +32,11 @@ public:
 
     float time() const { return b.time - a.time; }
     float scale() const { return b.scale - a.scale; }
+
+    template< class ostream_t > inline
+    friend ostream_t& operator<<(ostream_t& os, const Region& r) {
+        return os << "(" << r.a.time << ":" << r.b.time << " " << r.a.scale << ":" << r.b.scale << ")";
+    }
 };
 
 } // Heightmap

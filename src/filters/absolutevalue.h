@@ -5,7 +5,7 @@
 
 namespace Filters {
 
-class AbsoluteValue : public Signal::Operation
+class AbsoluteValue : public Signal::DeprecatedOperation
 {
 public:
     AbsoluteValue();

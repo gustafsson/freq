@@ -32,7 +32,7 @@ void ZoomCameraCommand::
 {
     if (dt) if (!zoom( dt, ScaleX ))
     {
-        float L = model->project()->worker.source()->length();
+        float L = model->project()->length();
         float d = std::min( 0.5f * fabsf(dt), fabsf(model->_qx - L/2));
         model->_qx += model->_qx>L*.5f ? -d : d;
     }
@@ -50,13 +50,13 @@ void ZoomCameraCommand::
 bool ZoomCameraCommand::
         zoom(float delta, ZoomMode mode)
 {
-    float L = model->project()->worker.length();
-    float fs = model->project()->head->head_source()->sample_rate();
+    float L = model->project()->length();
+    float fs = model->project()->extent().sample_rate.get();
     float min_xscale = 4.f/std::max(L,10/fs);
     float max_xscale = 0.05f*fs;
 
 
-    const Tfr::FreqAxis& tfa = model->collections[0]->transform()->freqAxis(fs);
+    const Tfr::FreqAxis& tfa = model->transform_desc ()->freqAxis(fs);
     unsigned maxi = tfa.getFrequencyScalar(fs/2);
 
     float hza = tfa.getFrequency(0u);

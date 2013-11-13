@@ -7,7 +7,7 @@
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "sawe/reader.h"
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 #include <QNetworkAccessManager>
 #include <QDir>

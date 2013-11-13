@@ -1,5 +1,5 @@
 #include "tasktimertiming.h"
-#include "tools/support/timer.h"
+#include "timer.h"
 
 #include "TaskTimer.h"
 #include "ThreadChecker.h"
@@ -15,7 +15,7 @@ void TaskTimerTiming::
     std::stringstream dummy;
     try
     {
-        Tools::Support::Timer t;
+        Timer t;
         TaskTimer::setLogLevelStream (TaskTimer::LogSimple, &dummy);
         TaskTimer::setLogLevelStream (TaskTimer::LogVerbose, &dummy);
         TaskTimer::setLogLevelStream (TaskTimer::LogDetailed, &dummy);
@@ -44,7 +44,7 @@ void TaskTimerTiming::
         TaskTimer::setLogLevelStream (TaskTimer::LogVerbose, &std::cout);
         TaskTimer::setLogLevelStream (TaskTimer::LogDetailed, &std::cout);
         float T = t.elapsed ();
-        EXCEPTION_ASSERTX( T < 0.0005, boost::format("T was %1%") % T);
+        EXCEPTION_ASSERTX( T < 0.0006, boost::format("T was %1%") % T);
     }
     catch( ... )
     {

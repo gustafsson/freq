@@ -1,21 +1,20 @@
 #include "rectangleview.h"
 #include "rectanglemodel.h"
 
-#include "signal/worker.h"
 #include "tools/support/toolglbrush.h"
+#include "sawe/project.h"
 
-#include <TaskTimer.h>
+#include "TaskTimer.h"
 
 namespace Tools { namespace Selections
 {
 
 
-RectangleView::RectangleView(RectangleModel* model, Signal::Worker* worker)
+RectangleView::RectangleView(RectangleModel* model)
     :
     enabled(false),
     visible(false),
-    model_(model),
-    worker_(worker)
+    model_(model)
 {
 }
 
@@ -77,7 +76,7 @@ void RectangleView::
 void RectangleView::
         drawSelectionRectangle2()
 {
-    float l = worker_->length();
+    float l = model_->project ()->length();
     glDepthMask(false);
     glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
     float

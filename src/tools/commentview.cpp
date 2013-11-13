@@ -7,7 +7,7 @@
 #include "sawe/project.h"
 
 // gpumisc
-#include <demangle.h>
+#include "demangle.h"
 
 // qt
 #include <QGraphicsProxyWidget>

@@ -191,7 +191,7 @@
             4. The Tfr::Chunk is sent to the callback, there might be multiple callbacks on each queue.
 
             CwtCompleteCallback takes a CwtQueue as constructing argument and can thus access the CwtQueue mutex
-            and be more threadsafe. CwtQueue aquires the mutex when calling CwtCompleteCallback, and CwtCompleteCallback
+            and be more thread-safe. CwtQueue aquires the mutex when calling CwtCompleteCallback, and CwtCompleteCallback
             aquires the mutex upon destruction, where it also removes itself from CwtQueue.
 
        Playback and Tfr::InverseCwt
@@ -317,6 +317,8 @@ private:
     };
 
 public:
+    typedef boost::shared_ptr<Audiofile> Ptr;
+
     static std::string getFileFormatsQtFilter( bool split );
     static bool hasExpectedSuffix( const std::string& suffix );
 
@@ -329,9 +331,10 @@ public:
     std::string filename() const;
 
     virtual void invalidate_samples(const Signal::Intervals& I);
+    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
+    Signal::Interval readRawInterval( const Signal::Interval& I );
 private:
     Audiofile();
-    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     bool tryload();
 
     /// file can be a QTemporaryFile that deletes itself upon destruction
@@ -351,7 +354,7 @@ private:
     template<class archive> void serialize(archive& ar, const unsigned int version) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Operation);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         ar & make_nvp("Original_filename", _original_relative_filename);
 
@@ -418,6 +421,34 @@ private:
         }
 #endif
     }
+};
+
+
+class SaweDll AudiofileOperation: public Signal::Operation
+{
+public:
+    AudiofileOperation(Audiofile::Ptr audiofile);
+
+    virtual Signal::pBuffer process(Signal::pBuffer b);
+private:
+    Audiofile::Ptr audiofile_;
+};
+
+class SaweDll AudiofileDesc: public Signal::OperationDesc
+{
+public:
+    AudiofileDesc(boost::shared_ptr<Audiofile> audiofile);
+
+    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
+    virtual OperationDesc::Ptr copy() const;
+    virtual Extent extent() const;
+    virtual QString toString() const;
+    virtual int getNumberOfSources() const;
+    virtual bool operator==(const OperationDesc& d) const;
+private:
+    boost::shared_ptr<Audiofile> audiofile_;
 };
 
 } // namespace Adapters

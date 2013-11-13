@@ -1,8 +1,8 @@
 #include "cepstrumfilter.h"
 #include "cepstrum.h"
 
-#include <neat_math.h>
-#include <stringprintf.h>
+#include "neat_math.h"
+#include "stringprintf.h"
 #include <memory.h>
 
 #define TIME_CepstrumFilter
@@ -20,8 +20,8 @@ CepstrumFilter::
 {
     if (!t)
     {
-        CepstrumParams p;
-        p.setWindow(StftParams::WindowType_Hann, 0.75f);
+        CepstrumDesc p;
+        p.setWindow(StftDesc::WindowType_Hann, 0.75f);
         t = pTransform(new Cepstrum(p));
     }
 
@@ -35,7 +35,7 @@ CepstrumFilter::
 Signal::Interval CepstrumFilter::
         requiredInterval( const Signal::Interval& I, Tfr::pTransform t )
 {
-    const CepstrumParams& p = ((Cepstrum*)t.get())->params();
+    const CepstrumDesc& p = ((Cepstrum*)t.get())->desc();
     long averaging = p.averaging();
     long window_size = p.chunk_size();
     long window_increment = p.increment();
@@ -79,13 +79,13 @@ Signal::Interval CepstrumFilter::
 void CepstrumFilter::
         invalidate_samples(const Signal::Intervals& I)
 {
-    const CepstrumParams& p = ((Cepstrum*)transform().get())->params();
+    const CepstrumDesc& p = ((Cepstrum*)transform().get())->desc();
     int window_size = p.chunk_size();
     int increment   = p.increment();
 
     // include_time_support
     Signal::Intervals J = I.enlarge(window_size-increment);
-    Operation::invalidate_samples( J );
+    DeprecatedOperation::invalidate_samples( J );
 }
 
 
