@@ -872,9 +872,7 @@ void RenderController::
 
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");
-        if (!Sawe::Configuration::feature("stable")) {
-            cepstraScale->setText("Cepstra scale");
-        }
+        cepstraScale->setText("Cepstra scale");
 
         // for serialization
         linearScale->setObjectName("linearScale");
@@ -893,7 +891,9 @@ void RenderController::
         hz_scale->setObjectName("hz_scale");
         hz_scale->addActionItem( linearScale );
         hz_scale->addActionItem( logScale );
-        hz_scale->addActionItem( cepstraScale );
+        if (!Sawe::Configuration::feature("stable")) {
+            hz_scale->addActionItem( cepstraScale );
+        }
         hz_scale->decheckable( false );
         toolbar_render->addWidget( hz_scale );
 
