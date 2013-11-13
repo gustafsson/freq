@@ -2,6 +2,7 @@
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/stft.h"
+#include "signal/computingengine.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -52,6 +53,9 @@ MergeChunk::Ptr StftBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
     if (0 == engine)
+        return MergeChunk::Ptr( new StftBlockFilter(params_) );
+
+    if (dynamic_cast<Signal::ComputingCpu*>(engine))
         return MergeChunk::Ptr( new StftBlockFilter(params_) );
 
     return MergeChunk::Ptr();
@@ -141,7 +145,7 @@ void StftBlockFilterDesc::
 
         Signal::ComputingCpu cpu;
         mc = read1(mcd)->createMergeChunk (&cpu);
-        EXCEPTION_ASSERT( !mc );
+        EXCEPTION_ASSERT( mc );
 
         Signal::ComputingCuda cuda;
         mc = read1(mcd)->createMergeChunk (&cuda);

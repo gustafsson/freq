@@ -3,6 +3,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
+#include "signal/computingengine.h"
 
 #include <boost/foreach.hpp>
 
@@ -51,6 +52,9 @@ MergeChunk::Ptr CwtBlockFilterDesc::
         createMergeChunk(Signal::ComputingEngine* engine) const
 {
     if (0 == engine)
+        return MergeChunk::Ptr(new CwtBlockFilter(complex_info_));
+
+    if (dynamic_cast<Signal::ComputingCpu*>(engine))
         return MergeChunk::Ptr(new CwtBlockFilter(complex_info_));
 
     return MergeChunk::Ptr();
@@ -136,7 +140,7 @@ void CwtBlockFilterDesc::
 
         Signal::ComputingCpu cpu;
         mc = read1(mcd)->createMergeChunk (&cpu);
-        EXCEPTION_ASSERT( !mc );
+        EXCEPTION_ASSERT( mc );
 
         Signal::ComputingCuda cuda;
         mc = read1(mcd)->createMergeChunk (&cuda);
