@@ -10,8 +10,11 @@ ui_mainwindow.h
 *.ogg
 *.orig
 *.remote
-sonicawe
-*.user
+/sonicawe
+/sonicawe-cuda
+/sonicawe-reader
+/sonicawe-reader-cuda
+*.pro.user*
 Makefile
 Makefile.Debug
 Makefile.Release
@@ -37,4 +40,12 @@ project_header.h.cpp
 *.zip
 *.app
 *.a
-
+*setup.exe
+image_works
+*.nsi.backup
+*.dylib
+*.sln.cache
+*.suo
+.DS_Store
+*.autosave
+.qmake.cache

@@ -11,8 +11,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 --------------------------------------------------------------------------
 
 
-Sonic AWE is developed by REEP. Sonic AWE makes use of the following 
-libraries (in alphabetic order with system libraries excluded):
+Sonic AWE is developed by MuchDifferent. Sonic AWE makes use of
+the following libraries (in alphabetic order with system 
+libraries excluded):
 
  * cuda
  * freeglut

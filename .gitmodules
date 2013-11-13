@@ -1,0 +1,15 @@
+[submodule "lib/gpumisc"]
+	path = lib/gpumisc
+	url = git@bitbucket.org:MuchDifferent/sonicawe-misc.git
+[submodule "lib/sonicawe-winlib"]
+	path = lib/sonicawe-winlib
+	url = git@bitbucket.org:MuchDifferent/sonicawe-winlib.git
+[submodule "lib/sonicawe-maclib"]
+	path = lib/sonicawe-maclib
+	url = git@bitbucket.org:MuchDifferent/sonicawe-maclib.git
+[submodule "lib/sonicawe-ubuntulib"]
+	path = lib/sonicawe-ubuntulib
+	url = git@bitbucket.org:MuchDifferent/sonicawe-ubuntulib.git
+[submodule "tests/integration"]
+	path = tests/integration
+	url = git@bitbucket.org:MuchDifferent/sonicawe-integration-tests.git

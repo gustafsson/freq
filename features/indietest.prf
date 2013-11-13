@@ -1,0 +1,7 @@
+CONFIG += console
+CONFIG += sawedefault
+
+QT += testlib
+
+TEMPLATE = app
+win32:TEMPLATE = vcapp

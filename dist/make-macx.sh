@@ -3,24 +3,75 @@ set -e
 
 if [ -z "${version}" ]; then echo "Missing version, can't upload."; exit 1; fi
 
-cd ../..
+cd ..
 
 echo "========================== Building ==========================="
-echo "Building Sonic AWE ${versiontag}"
-make distclean
-qmake -spec macx-g++
-make
+echo "Building ${packagename} ${versiontag}"
+
+echo "qmaketarget: $qmaketarget"
+qmake $qmaketarget -spec macx-clang CONFIG+=release
+
+if [ "Y" == "${rebuildall}" ]; then
+  make clean
+fi
+
+touch src/sawe/configuration/configuration.cpp
+rm -f lib/gpumisc/libgpumisc.a
+rm -f {src,lib/gpumisc}/Makefile
+rm -f src/sonicawe
+rm -f src/sonicawe-cuda
+
+typeset -i no_cores
+#no_cores=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep -i "Number Of Cores" | sed "s/.*: //g"`
+no_cores=`sysctl -n hw.ncpu`
+no_cores=2*$no_cores
+if [ $no_cores -eq 8 ]; then
+  no_cores=14;
+fi
+
+make -j${no_cores}
+cp src/${packagename} src/${packagename}org
+
+
+echo "========================== Building ==========================="
+echo "Building ${packagename} cuda ${versiontag}"
+
+if ( [ -e /usr/local/cuda/bin/nvcc ] || [ -e /Developer/NVIDIA/CUDA-5.0/bin/nvcc ] ) && [ "Y" == "$buildcuda" ]; then
+    qmaketarget="${qmaketarget} CONFIG+=usecuda CONFIG+=customtarget CUSTOMTARGET=${packagename}-cuda"
+    echo "qmaketarget: $qmaketarget"
+    qmake $qmaketarget -spec macx-clang CONFIG+=release
+
+    if [ "Y" == "${rebuildall}" ]; then
+      make clean
+    fi
+
+    touch src/sawe/configuration/configuration.cpp
+    rm -f lib/gpumisc/libgpumisc.a
+    rm -f {src,lib/gpumisc}/Makefile
+
+    make -j${no_cores}
+else
+    echo "Skipping build of \'${packagename}-cuda\'.";
+fi
+
+mv src/${packagename}org src/${packagename}
 
 echo "========================== Building ==========================="
 echo "Building Sonic AWE Launcher"
-cd sonicawe/dist
-cd package-macos
-gcc -framework CoreFoundation -o launcher launcher.c
+mkdir -p tmp
+cd tmp
+rm -rf package-macos~
+cp -r ../dist/package-macos package-macos~
+cd package-macos~
+#SYSROOT="-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -m32 -arch i386"
+SYSROOT="-mmacosx-version-min=10.5"
+g++ -c $SYSROOT -o launcher.o launcher.cpp
+g++ -c $SYSROOT -o launcher-mac.o launcher-mac.cpp
+g++ -framework CoreFoundation $SYSROOT -o launcher launcher.o launcher-mac.o
 
 echo "========================== Packaging =========================="
-echo "Creating Mac OS X application: $filename"
+filename="${packagename}_${versiontag}.dmg"
+echo "Creating Mac OS X application: $filename version ${version}"
 cd ..
-ruby package-macx.rb ${versiontag}
-filename="sonicawe_${versiontag}_macos_i386.zip"
-
-passiveftp=passive
+ruby ../dist/package-macx.rb ${packagename} ${versiontag} osx ../src/${packagename}
+cd ../dist

@@ -1,0 +1,67 @@
+#ifndef REROUTECHANNELS_H
+#define REROUTECHANNELS_H
+
+#include "operation.h"
+
+#include <boost/noncopyable.hpp>
+
+#include <vector>
+
+namespace Signal {
+
+class RerouteChannels : public Signal::DeprecatedOperation, public boost::noncopyable
+{
+public:
+    typedef unsigned SourceChannel;
+    typedef unsigned OutputChannel;
+    typedef std::vector<SourceChannel> MappingScheme;
+
+    static const SourceChannel NOTHING;
+
+    RerouteChannels(pOperation source);
+
+    virtual pBuffer read( const Interval& I );
+    virtual unsigned num_channels();
+    virtual void source(pOperation v);
+    virtual pOperation source() const { return DeprecatedOperation::source(); }
+
+    /**
+      Validate bindings.
+      */
+    virtual void invalidate_samples(const Intervals& I);
+
+
+    /**
+      Creates a default mapping with no rewiring.
+      */
+    void resetMap();
+
+
+    const MappingScheme& scheme() const { return scheme_; }
+
+
+    /**
+      If output_channel is larger than num_channels(), num_channels will be
+      increased to that number.
+
+      It is an error to set source_channel bigger than source->num_channels(),
+      except for the special value of setting source_channel to NOTHING to
+      create silence.
+      */
+    void map(OutputChannel output_channel, SourceChannel source_channel);
+
+private:
+    MappingScheme scheme_;
+
+    /**
+      Set the number of output channels. If this value is larger than the
+      currently mapped output_channels those channels will get a default
+      value of no remapping, unless N is larger than source->num_channels()
+      in which case they will be clamped to the last source channel.
+      */
+    void num_channels( unsigned N );
+};
+
+} // namespace Signal
+
+#endif // REROUTECHANNELS_H

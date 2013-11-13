@@ -1,0 +1,1529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>886</width>
+    <height>526</height>
+   </rect>
+  </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::NoContextMenu</enum>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="icon-resources.qrc">
+    <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+  </property>
+  <property name="documentMode">
+   <bool>true</bool>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>true</bool>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>false</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout_3"/>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>886</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+    <widget class="QMenu" name="menuToolbars">
+     <property name="title">
+      <string>&amp;Toolbars</string>
+     </property>
+     <addaction name="actionToggleSelectionToolBox"/>
+     <addaction name="actionToggleTransformToolBox"/>
+    </widget>
+    <widget class="QMenu" name="menu_Windows">
+     <property name="title">
+      <string>&amp;Windows</string>
+     </property>
+     <addaction name="actionToggleTimelineWindow"/>
+     <addaction name="actionTransform_info"/>
+     <addaction name="actionOperation_details"/>
+    </widget>
+    <addaction name="separator"/>
+    <addaction name="action_Undo"/>
+    <addaction name="action_Redo"/>
+    <addaction name="separator"/>
+    <addaction name="menu_Windows"/>
+    <addaction name="menuToolbars"/>
+    <addaction name="separator"/>
+    <addaction name="actionToggleFullscreenNoMenus"/>
+    <addaction name="actionToggleFullscreen"/>
+    <addaction name="separator"/>
+    <addaction name="actionReset_view"/>
+    <addaction name="actionReset_layout"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menu_Recent_files">
+     <property name="title">
+      <string>&amp;Recent files</string>
+     </property>
+    </widget>
+    <addaction name="actionNew_recording"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionOpen_and_compare"/>
+    <addaction name="menu_Recent_files"/>
+    <addaction name="actionSave_project"/>
+    <addaction name="actionSave_project_as"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_audio"/>
+    <addaction name="actionExport_selection"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionReport_a_bug"/>
+    <addaction name="separator"/>
+    <addaction name="actionFind_updates"/>
+    <addaction name="separator"/>
+    <addaction name="action_Enter_product_key"/>
+    <addaction name="separator"/>
+    <addaction name="actionMuchdifferent_com"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuDevicename">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="title">
+     <string>Devicename</string>
+    </property>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuHelp"/>
+   <addaction name="menuDevicename"/>
+  </widget>
+  <widget class="QDockWidget" name="toolPropertiesWindow">
+   <property name="windowTitle">
+    <string>Operation details</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QHBoxLayout" name="horizontalLayout_2"/>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="topFilterWindow">
+   <property name="contextMenuPolicy">
+    <enum>Qt::NoContextMenu</enum>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>Top filter</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="layerWindowContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QListWidget" name="layerWidget"/>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QToolButton" name="deleteFilterButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Delete</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="historyWindow">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="contextMenuPolicy">
+    <enum>Qt::NoContextMenu</enum>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea|Qt::TopDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>History</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Placeholder</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionEllipseSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-circle-selection.png</normaloff>:/icons/icons/icon-circle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Ellipse Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Ellipse selection [S]</string>
+   </property>
+   <property name="shortcut">
+    <string>S</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleTopFilterWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Top filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the top filter window</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
+   </property>
+  </action>
+  <action name="actionToggle_piano_grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-toggle-piano.png</normaloff>:/icons/icons/icon-toggle-piano.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle piano grid</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle piano grid</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleSelectionToolBox">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the selection toolbox</string>
+   </property>
+  </action>
+  <action name="actionToggle_hz_grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-toggle-hz.png</normaloff>:/icons/icons/icon-toggle-hz.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle frequency markers</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle frequency markers</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionActionAdd_selection">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-save-selection.png</normaloff>:/icons/icons/icon-save-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>actionAdd_selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Remember the selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionActionRemove_selection">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-silence-selection.png</normaloff>:/icons/icons/icon-silence-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>actionRemove_selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Silences the selected region [Del]</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionCropSelection">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-crop.png</normaloff>:/icons/icons/icon-crop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Crop Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Crop selection [Shift+Del]</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+Del</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionMoveSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-move.png</normaloff>:/icons/icons/icon-move.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Move selection [M]</string>
+   </property>
+   <property name="shortcut">
+    <string>M</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionMoveSelectionTime">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-move-time.png</normaloff>:/icons/icons/icon-move-time.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Selection in Time</string>
+   </property>
+   <property name="toolTip">
+    <string>Move selection in Time [T]</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionMatlabFilter">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-matlabfilter.png</normaloff>:/icons/icons/icon-matlabfilter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Matlab filter</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply Matlab filter to everything, under construction</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionMatlabOperation">
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-matlaboperation.png</normaloff>:/icons/icons/icon-matlaboperation.png</iconset>
+   </property>
+   <property name="text">
+    <string>Create new Matlab/Octave operation</string>
+   </property>
+   <property name="toolTip">
+    <string>Apply Matlab/Octave operation</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+O</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleCreationToolBox">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Sound creation</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the sound creation tool box</string>
+   </property>
+   <property name="shortcut">
+    <string>E</string>
+   </property>
+  </action>
+  <action name="actionToggleTransformToolBox">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Transform settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the transform toolbox</string>
+   </property>
+  </action>
+  <action name="actionNew_recording">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;New recording</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionImport_audio">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionExport_audio">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionSave_project">
+   <property name="text">
+    <string>&amp;Save project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>&amp;Open </string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionExport_selection">
+   <property name="text">
+    <string>Export selection</string>
+   </property>
+  </action>
+  <action name="actionToggleTimelineWindow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Timeline</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle the timeline window</string>
+   </property>
+  </action>
+  <action name="actionCutoffSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-cutoff-selection.png</normaloff>:/icons/icons/icon-cutoff-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cutoff selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionPeakSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-peak-selection.png</normaloff>:/icons/icons/icon-peak-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Peak selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Peak selection</string>
+   </property>
+   <property name="shortcut">
+    <string>E</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionRectangleSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rectangle selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Rectangle selection</string>
+   </property>
+   <property name="shortcut">
+    <string>C</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionPolygonSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-quad-selection.png</normaloff>:/icons/icons/icon-quad-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Polygon selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Polygon selection</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSplineSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-spline-selection.png</normaloff>:/icons/icons/icon-spline-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Spline selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Spline selection</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAmplitudeBrush">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-amplitude-brush.png</normaloff>:/icons/icons/icon-amplitude-brush.png</iconset>
+   </property>
+   <property name="text">
+    <string>Amplitude brush</string>
+   </property>
+   <property name="toolTip">
+    <string>Amplitude brush</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAirbrush">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-airbrush.png</normaloff>:/icons/icons/icon-airbrush.png</iconset>
+   </property>
+   <property name="text">
+    <string>Airbrush</string>
+   </property>
+   <property name="toolTip">
+    <string>Airbrush</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSmoothBrush">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-smooth-brush.png</normaloff>:/icons/icons/icon-smooth-brush.png</iconset>
+   </property>
+   <property name="text">
+    <string>Smooth brush</string>
+   </property>
+   <property name="toolTip">
+    <string>Smooth brush</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionZoom">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-zoom.png</normaloff>:/icons/icons/icon-zoom.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom with the right mouse button [Z]</string>
+   </property>
+   <property name="shortcut">
+    <string>Z</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSetPlayMarker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-set-mark.png</normaloff>:/icons/icons/icon-set-mark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set playback marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Set playback markers with left mouse button, remove with right mouse button</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionJumpForward">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-next-mark.png</normaloff>:/icons/icons/icon-next-mark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to next marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Jump to next marker</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionJumpBackward">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-prev-mark.png</normaloff>:/icons/icons/icon-prev-mark.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jump to previous marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Jump to previous marker</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToolSelect">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Select previous operations</string>
+   </property>
+   <property name="toolTip">
+    <string>Select previous operations</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Gabor Wavelet transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Actually, Complex Gabor Wavelet transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Stft">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Windowed fourier transform (STFT)</string>
+   </property>
+   <property name="toolTip">
+    <string>Windowed fourier transform (STFT)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_phase">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Gabor Wavelet transform phase</string>
+   </property>
+   <property name="toolTip">
+    <string>Instantaneous phase from Gabor Wavelet transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_reassign">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Reassigned Gabor Wavelet transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Reassignment 'sharpens' by moving coefficients</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTonalizeFilter">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Tonalize transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Tonalize transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionReassignFilter">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reassign transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Reassign transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_rainbow_colors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rainbow colors</string>
+   </property>
+   <property name="toolTip">
+    <string>Rainbow colors</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_grayscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
+   </property>
+   <property name="text">
+    <string>Gray scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Gray scale</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_contour_plot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-heightlines.png</normaloff>:/icons/icons/icon-show-heightlines.png</iconset>
+   </property>
+   <property name="text">
+    <string>Contour plot</string>
+   </property>
+   <property name="toolTip">
+    <string>Contour plot</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionActivateInfoTool">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-info.png</normaloff>:/icons/icons/icon-show-info.png</iconset>
+   </property>
+   <property name="text">
+    <string>Get info</string>
+   </property>
+   <property name="toolTip">
+    <string>Drag slowly over a ridge to see information of the peak. Show continius information [J]</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_ridge">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Ridges of Gabor Wavelet transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Peaks in frequency direction on the Gabor Wavelet transform</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_Cwt_weight">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Weighted Gabor Wavelet transform</string>
+   </property>
+   <property name="toolTip">
+    <string>Sharpened Gabor Wavelet transform by a uncertainty weight</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAddComment">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-place-comment.png</normaloff>:/icons/icons/icon-place-comment.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add comment</string>
+   </property>
+   <property name="toolTip">
+    <string>Add comment [A]</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionShowComments">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-comment.png</normaloff>:/icons/icons/icon-show-comment.png</iconset>
+   </property>
+   <property name="text">
+    <string>Hide/show comments</string>
+   </property>
+   <property name="toolTip">
+    <string>Hide/show comments</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSave_project_as">
+   <property name="text">
+    <string>Save project &amp;as...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionSet_colorscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Color scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Color scale</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFrequencySelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Frequency selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Frequency selection</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTimeSelection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-rectangle-selection.png</normaloff>:/icons/icons/icon-rectangle-selection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Time selection</string>
+   </property>
+   <property name="toolTip">
+    <string>Time selection</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionResetGraphics">
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reset graphics</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset graphics</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleFullscreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/fscn-down.png</normaloff>:/icons/icons/fscn-down.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Toggle fullscreen</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle fullscreen</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>&amp;About Sonic AWE</string>
+   </property>
+  </action>
+  <action name="actionToggleFullscreenNoMenus">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/fscn-up.png</normaloff>:/icons/icons/fscn-up.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle fullscreen (&amp;no menus)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle fullscreen  (no menus)</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Return</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionToggleOrientation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle orientation (left/right handed coordinate system)</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle orientation (left/right handed coordinate system)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionTransform_info">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Transform &amp;info</string>
+   </property>
+   <property name="shortcut">
+    <string>I</string>
+   </property>
+  </action>
+  <action name="actionToggleBrushesToolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Brushes</string>
+   </property>
+  </action>
+  <action name="actionReset_layout">
+   <property name="text">
+    <string>Reset &amp;layout</string>
+   </property>
+  </action>
+  <action name="actionOperation_details">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Operation details</string>
+   </property>
+   <property name="shortcut">
+    <string>D</string>
+   </property>
+  </action>
+  <action name="actionTransform_Cepstrum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Cepstragram</string>
+   </property>
+   <property name="toolTip">
+    <string>We call it a cepstragram</string>
+   </property>
+  </action>
+  <action name="actionToggleFanTracker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/sonicawe.png</normaloff>:/icons/icons/sonicawe.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fan Tracker</string>
+   </property>
+   <property name="toolTip">
+    <string>Track the fundamental tone using Cepstrum Analysis</string>
+   </property>
+  </action>
+  <action name="action_Enter_product_key">
+   <property name="text">
+    <string>Update &amp;license key</string>
+   </property>
+   <property name="iconText">
+    <string>Update license key</string>
+   </property>
+  </action>
+  <action name="actionTransform_Waveform">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Waveform</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw the signal as a waveform</string>
+   </property>
+  </action>
+  <action name="actionOpen_and_compare">
+   <property name="text">
+    <string>Open and &amp;compare</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionMuchdifferent_com">
+   <property name="text">
+    <string>About &amp;MuchDifferent</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionReport_a_bug">
+   <property name="text">
+    <string>Report a &amp;bug</string>
+   </property>
+  </action>
+  <action name="actionAsk_for_help">
+   <property name="text">
+    <string>Ask for &amp;help</string>
+   </property>
+  </action>
+  <action name="actionReset_view">
+   <property name="text">
+    <string>Reset &amp;view</string>
+   </property>
+  </action>
+  <action name="actionFind_plugins">
+   <property name="text">
+    <string>Find &amp;plugins</string>
+   </property>
+  </action>
+  <action name="actionToggle_t_grid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-toggle-taxis.png</normaloff>:/icons/icons/icon-toggle-taxis.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle time axis markers</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle time axis markers</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFind_updates">
+   <property name="text">
+    <string>Check for &amp;updates</string>
+   </property>
+  </action>
+  <action name="actionToggle_cursor_marker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-toggle-cursor.png</normaloff>:/icons/icons/icon-toggle-cursor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Toggle time axis markers</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle time axis markers</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="action_Undo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Undo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="action_Redo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Redo</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionSet_greenred_colors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Green/red</string>
+   </property>
+   <property name="toolTip">
+    <string>Green to Red color scheme (white background)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_greenwhite_colors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Green/white</string>
+   </property>
+   <property name="toolTip">
+    <string>Green to white color scheme (black background)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_green_colors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-color.png</normaloff>:/icons/icons/icon-show-color.png</iconset>
+   </property>
+   <property name="text">
+    <string>Green</string>
+   </property>
+   <property name="toolTip">
+    <string>Green color scheme (black background)</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSet_blackgrayscale">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-show-gray.png</normaloff>:/icons/icons/icon-show-gray.png</iconset>
+   </property>
+   <property name="text">
+    <string>Inverted gray scale</string>
+   </property>
+   <property name="toolTip">
+    <string>Inverted gray scale</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionActivateNavigation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icon-resources.qrc">
+     <normaloff>:/icons/icons/icon-navigation.png</normaloff>:/icons/icons/icon-navigation.png</iconset>
+   </property>
+   <property name="text">
+    <string>Activate Navigation</string>
+   </property>
+   <property name="toolTip">
+    <string>Rotate with right mouse button [N]</string>
+   </property>
+   <property name="shortcut">
+    <string>N</string>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="icon-resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

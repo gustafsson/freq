@@ -1,0 +1,18 @@
+usecuda {
+  TMPDIR = $$TMPDIR/cuda
+} else:useopencl {
+  TMPDIR = $$TMPDIR/opencl
+} else {
+  TMPDIR = $$TMPDIR/cpu
+}
+
+TMPDIR = tmp/$$TMPDIR
+
+win32:RCC_DIR = $$TMPDIR
+MOC_DIR = $$TMPDIR
+OBJECTS_DIR = $$TMPDIR/
+UI_DIR = $$TMPDIR
+
+
+CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
+else:OBJECTS_DIR = $${OBJECTS_DIR}release/

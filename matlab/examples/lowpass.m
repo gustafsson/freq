@@ -6,20 +6,20 @@ disp(['lowpass ' sawe_getdatainfo(data)]);
 
 %% Lowpass filtering
 lowpass=0.05; % Keep 5% of the lowest frequencies
-F=fft(data.buffer);
+F=fft(data.samples);
 nsave=round(lowpass*numel(F)/2);
 F(1+nsave:end-nsave)=0;
-data.buffer=real(ifft(F));
+data.samples=real(ifft(F));
 
 
 %% Discard some data
 % the rough interpolation below needs a couple of extra samples at each end
-data.redundancy = 0.1*data.samplerate;
-data = sawe_discard(data, data.redundancy, data.redundancy-1);
+data.fs = 0.1*data.fs;
+data = sawe_discard(data, data.overlap, data.overlap-1);
 
 
 % it is ok to return an empty matrix if not enough data was given to start with
-if isempty(data.buffer)
+if isempty(data.samples)
     disp('returning empty buffer');
     return
 end
@@ -27,7 +27,7 @@ end
 
 %% Interpolate between blocks
 % try to do a rough interpolation between blocks to avoid discontinuities
-data.buffer=data.buffer-linspace(data.buffer(1), data.buffer(end), numel(data.buffer))';
+data.samples=data.samples-linspace(data.samples(1), data.samples(end), numel(data.samples))';
 
 
 %% Always discard all redundant data before returning

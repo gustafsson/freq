@@ -3,10 +3,13 @@
 !include x64.nsh
 !include WordFunc.nsh
 !include MUI2.nsh
+; get UninstallLog.nsh from http://nsis.sourceforge.net/Uninstall_only_installed_files
+!addincludedir include
 !include UninstallLog.nsh
 
 ;Defining compile time constants and necessary variables
-!define APP_NAME "Sonic AWE"
+!define APP_NAME ""
+!define EXE_NAME ""
 !define PUBLISHER "MuchDifferent"
 !define SA_VERSION ""
 !define NVID_VERSION ""
@@ -75,7 +78,7 @@ Var done
 Var StartMenuFolder
   
 ;Name of the installer
-Name "Sonic AWE"
+Name "${APP_NAME}"
 
 ;The file to write
 OutFile ${FILE_NAME}
@@ -85,20 +88,17 @@ RequestExecutionLevel admin
 
 ;defining page look&feel
 ;!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_PAGE_HEADER_TEXT "Sonic AWE Setup"
-!define MUI_WELCOMEPAGE_TITLE "Welcome to the Sonic AWE Setup"
-!define MUI_TEXT_WELCOME_INFO_TEXT "Welcome to the installation wizard for Sonic AWE. This will install Sonic AWE on your computer. Click Next to proceed"
+!define MUI_PAGE_HEADER_TEXT "${APP_NAME} Setup"
+!define MUI_WELCOMEPAGE_TITLE "Welcome to the ${APP_NAME} Setup"
+!define MUI_TEXT_WELCOME_INFO_TEXT "Welcome to the installation wizard for ${APP_NAME}. This will install ${APP_NAME} on your computer. Click Next to proceed"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "Side_Banner.bmp"
-!define MUI_ICON "awe256.ico"
+!define MUI_ICON "awe32.ico"
 
 ; The default installation directory
 InstallDir "$PROGRAMFILES\${PUBLISHER}\${APP_NAME}"
 
 ;Get installation folder from registry if available
 InstallDirRegKey ${REG_ROOT} "Software\${PUBLISHER}\${APP_NAME}" ""
-
-;Show installation details
-ShowInstDetails show
 
 ; Pages to display during the installation process
 !insertmacro MUI_PAGE_WELCOME
@@ -111,6 +111,10 @@ ShowInstDetails show
 !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${PUBLISHER}\${APP_NAME}" 
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER "${PUBLISHER}\${APP_NAME}"
+
+;Adding some branding!  
+BrandingText "by MuchDifferent" 
+!define MUI_CUSTOMFUNCTION_GUIINIT onGUIInit   
   
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
 
@@ -132,38 +136,52 @@ Section "Application Files (required)"
 	Strcpy $INSTALLATION_DONE "0"
 
 	;Retrieving user's driver version
-	${CreateDirectory} "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}"
-	DetailPrint "Launching dxdiag for NVIDIA driver compatibility check"
-	${DxDiag}
-	exec 'dxdiag /x $LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml'
-	Strcpy $done "0"
-	Strcpy $8 "0"
-	${While} $done == "0"
-		Sleep 5000	
-		IntOp $8 $8 + 1
-		IfFileExists "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml" 0 +7
-			nsisXML::Create
-			nsisXML::Load "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml"
-			nsisXML::select '/DxDiag/DisplayDevices/DisplayDevice/DriverVersion'
-			nsisXML::getText
-			Strcpy $USR_DRIVER_VERSION "$3" 
-			Strcpy $done "1"
-		${if} $8 == "30" 
-			DetailPrint "DxDiag -- Time Out"
-			Strcpy $done "1"
-		${EndIf}	
-	${Endwhile}
+;	${CreateDirectory} "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}"
+;	DetailPrint "Launching dxdiag for NVIDIA driver compatibility check"
+;	${DxDiag}
+;	exec 'dxdiag /x $LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml'
+;	Strcpy $done "0"
+;	Strcpy $8 "0"
+;	${While} $done == "0"
+;		Sleep 5000	
+;		IntOp $8 $8 + 1
+;		IfFileExists "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml" 0 +7
+;			nsisXML::Create
+;			nsisXML::Load "$LOCALAPPDATA\${PUBLISHER}\${APP_NAME}\dxdiag.xml"
+;			nsisXML::select '/DxDiag/DisplayDevices/DisplayDevice/DriverVersion'
+;			nsisXML::getText
+;			Strcpy $USR_DRIVER_VERSION "$3" 
+;			Strcpy $done "1"
+;		${if} $8 == "30" 
+;			DetailPrint "DxDiag -- Time Out"
+;			Strcpy $done "1"
+;		${EndIf}	
+;	${Endwhile}
+	
+	Strcpy $USR_DRIVER_VERSION "${NVID_VERSION}"
 	
 	;Comparing driver version
-	${if} $USR_DRIVER_VERSION == ""
-		messageBox MB_OK|MB_ICONSTOP "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
-		                 $\n$\nPlease visit www.sonicawe.com for more information \
-						 $\n$\nThe installer will now quit"
-		Strcpy $INSTALLATION_DONE "0"
-		Goto done
-	${elseif} $USR_DRIVER_VERSION != ""
-		${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
-		${if} $R0 <= 1  	
+;	${if} $USR_DRIVER_VERSION == ""
+;		messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure your hardware meets the requirements to run Sonic AWE and install the latest Nvidia drivers. \
+;		                 $\n$\nPlease visit www.MuchDifferent.com for more information \
+;						 $\n$\nThe installer will now quit"
+;		Strcpy $INSTALLATION_DONE "0"
+;		Goto done
+;	${elseif} $USR_DRIVER_VERSION != ""
+	${if} 1 == 1 
+		; TODO this comparsion doesn't work for Quadro GPUs if you're building with a Geforce GPU as the driver versions differ. But they both support CUDA 3.0.
+		;${VersionCompare} $USR_DRIVER_VERSION ${NVID_VERSION} $R0
+
+		; don't abort installation, but warn user
+;		${if} $R0 == 2
+;			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia drivers, version $USR_DRIVER_VERSION, are too old and you might encounter issues running Sonic AWE. \ 
+;			$\nChoose OK to download newer drivers now. You will have to restart the installation afterwards." IDOK downloadDrivers 
+;		${elseif} $R0 > 1
+;			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
+;		${endif}
+
+		${if} 1 == 1 
+		;$R0 <= 1
 		
 			;Write the installation path into the registry
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "Install Directory" "$INSTDIR"
@@ -173,34 +191,34 @@ Section "Application Files (required)"
 			${WriteRegStr} "${REG_ROOT}" "${REG_APP_PATH}" "UninstallString" "$INSTDIR\uninstall.exe"
 	
 			;Write the Uninstall information to the registry for add/remove program 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
-						 "DisplayName" "Sonic AWE -- Visualization based signal analysis"
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
+						 "DisplayName" "${APP_NAME} -- Visualization based signal analysis"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "UninstallString" "$\"$INSTDIR\uninstall.exe$\""
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "DisplayIcon" "$\"$INSTDIR\awe_256.ico$\""
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "InstallLocation" "$\"$INSTDIR$\""
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "DisplayVersion" "${SA_VERSION}"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "Publisher" "${PUBLISHER}"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "HelpLink" "www.sonicawe.com"
 						 
-			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "NoModify" "1"
 						 
-			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegDWORD} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "NoRepair" "1"
 						 
-			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\Sonic AWE" \
+			${WriteRegStr} "${REG_ROOT}" "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}" \
 						 "URLInfoAbout" "www.sonicawe.com"
 		  
 			;Create uninstaller
@@ -209,15 +227,6 @@ Section "Application Files (required)"
 			;Insert files here
 			
 			Strcpy $INSTALLATION_DONE "1"
-			Goto done
-		${elseif} $R0 == 2 
-			MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "Your Nvidia driver version $USR_DRIVER_VERSION is too old and you might encounter issues running Sonic AWE. \ 
-			$\nChoose cancel to abort the installation or OK to download newer drivers." IDOK downloadDrivers 
-			Strcpy $INSTALLATION_DONE "0"
-			Goto done
-		${else}
-			messageBox MB_OK|MB_ICONEXCLAMATION "Nvidia drivers could not be verified. Please make sure you have the latest drivers installed in order to run Sonic AWE"
-			Strcpy $INSTALLATION_DONE "0"
 			Goto done
 		${endif}
 	${else}
@@ -232,7 +241,7 @@ Section "Application Files (required)"
 		Strcpy $INSTALLATION_DONE "1"
 	done: 
 		${if} $INSTALLATION_DONE == "0"
-			DetailPrint "The installation did not complete"
+			DetailPrint "The installation could not complete"
 			Quit	
 		${endif}
 SectionEnd
@@ -240,7 +249,7 @@ SectionEnd
 Section "Desktop Icon"
 	${if} $INSTALLATION_DONE == "1"
 		;create desktop shortcut
-		${CreateShortCut} "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\Sonicawe.exe" "" "" ""
+		${CreateShortCut} "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}" "" "" ""
 	${endif}
 SectionEnd
 
@@ -249,7 +258,7 @@ Section "Start Menu Shortcut"
 		;create desktop shortcut
 		!insertmacro MUI_STARTMENU_WRITE_BEGIN Application
 			${CreateDirectory} "$SMPROGRAMS\$StartMenuFolder"
-			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\Sonic AWE.lnk" "$INSTDIR\Sonicawe.exe" "" "" ""
+			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}" "" "" ""
 			${CreateShortCut} "$SMPROGRAMS\$StartMenuFolder\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "" ""
 		!insertmacro MUI_STARTMENU_WRITE_END
 	${endif}
@@ -342,3 +351,11 @@ Function un.DeleteDirIfEmpty
    FindClose $R0
 FunctionEnd
 
+Function onGUIInit
+	;Aero::Apply
+	;BrandingURL::Set /NOUNLOAD "0" "0" "200" "http://www.MuchDifferent.com"
+FunctionEnd
+
+Function .onGUIEnd
+	;BrandingURL::Unload
+FunctionEnd

@@ -2,5 +2,5 @@ function [data]=amplify(data)
 
 disp(['amplify ' sawe_getdatainfo(data)]);
 
-data.buffer = data.buffer*4;
+data.samples = data.samples*4;
 
