@@ -13,6 +13,7 @@
 #include <QSysInfo>
 #include <QString>
 #include <QSettings>
+#include <QThread>
 
 #ifdef Q_OS_LINUX
 #include <QProcess>
@@ -299,7 +300,7 @@ int Configuration::
 #if defined(USE_OMP)
     return omp_get_max_threads();
 #else
-    return 1;
+    return QThread::idealThreadCount ();
 #endif
 }
 

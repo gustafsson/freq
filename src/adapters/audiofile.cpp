@@ -478,9 +478,12 @@ Signal::Interval AudiofileDesc::
 
 
 Signal::Operation::Ptr AudiofileDesc::
-        createOperation(Signal::ComputingEngine*) const
+        createOperation(Signal::ComputingEngine* engine) const
 {
-    return Signal::Operation::Ptr(new AudiofileOperation(audiofile_));
+    if (0 == engine)
+        return Signal::Operation::Ptr(new AudiofileOperation(audiofile_));
+
+    return Signal::Operation::Ptr();
 }
 
 

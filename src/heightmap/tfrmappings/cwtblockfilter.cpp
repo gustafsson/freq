@@ -51,9 +51,6 @@ CwtBlockFilterDesc::
 MergeChunk::Ptr CwtBlockFilterDesc::
         createMergeChunk(Signal::ComputingEngine* engine) const
 {
-    if (0 == engine)
-        return MergeChunk::Ptr(new CwtBlockFilter(complex_info_));
-
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
         return MergeChunk::Ptr(new CwtBlockFilter(complex_info_));
 

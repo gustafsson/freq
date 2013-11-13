@@ -52,9 +52,6 @@ StftBlockFilterDesc::
 MergeChunk::Ptr StftBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
-    if (0 == engine)
-        return MergeChunk::Ptr( new StftBlockFilter(params_) );
-
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
         return MergeChunk::Ptr( new StftBlockFilter(params_) );
 
