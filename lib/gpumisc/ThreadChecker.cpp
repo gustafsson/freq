@@ -1,5 +1,4 @@
 #include "ThreadChecker.h"
-#include "stringprintf.h"
 #include "exceptionassert.h"
 
 #include <stdexcept>
@@ -26,10 +25,10 @@ ThreadChecker::throwIfNotSame( const char *funcsig) const
     EXCEPTION_ASSERT( isSameThread() );
 
     if( ! isSameThread() )
-        throw DifferentThreadException( printfstring( "%s can only be called "
+        throw DifferentThreadException( (boost::format( "%s can only be called "
             "from the same thread as the instance was created in. First "
-            "created in thread %p, now called in thread %p.",
-            funcsig, startThread, getCurrentThread()));
+            "created in thread %p, now called in thread %p.")
+            % funcsig % startThread % getCurrentThread()).str());
 }
 
 

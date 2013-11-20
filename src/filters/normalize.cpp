@@ -2,7 +2,6 @@
 #include "normalizekernel.h"
 #include "cpumemorystorage.h"
 #include "signal/operation-basic.h"
-#include "stringprintf.h"
 
 using namespace Signal;
 
@@ -27,7 +26,7 @@ Normalize::
 std::string Normalize::
         name()
 {
-    return printfstring("Rolling normalization with radius %g s", normalizationRadius/sample_rate());
+    return (boost::format("Rolling normalization with radius %g s") % (normalizationRadius/sample_rate())).str();
 }
 
 

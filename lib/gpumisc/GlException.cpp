@@ -1,15 +1,16 @@
 #include "GlException.h"
 
-#include "stringprintf.h"
 #include "gl.h"
 #include "backtrace.h"
+
+#include <boost/format.hpp>
 
 GlException::GlException( GLenum namedGlError )
 :	runtime_error((const char*)gluErrorString( namedGlError )),
 	namedGlError(namedGlError)
 {}
 
-GlException::GlException(GLenum namedGlError, const char* const &message )
+GlException::GlException(GLenum namedGlError, const std::string &message )
 :	runtime_error(message),
 	namedGlError(namedGlError)
 {}
@@ -48,13 +49,13 @@ void GlException::check_error( GLenum errorCode, const char* functionMacro,
 		}
 
 		if (callerMessage) {
-			throw GlException(errorCode, printfstring(
-                "%s\n%sOpenGL error: %s (Code 0x%x)\nFunction  : %s\nFile      : %s (Line %i)\nBacktrace: %s",
-                callerMessage, context_error.c_str(), gluErrorString(errorCode), errorCode, functionMacro, fileMacro, lineMacro, Backtrace::make_string ().c_str ()).c_str());
+            throw GlException(errorCode, (boost::format(
+                "%s\n%sOpenGL error: %s (Code 0x%x)\nFunction  : %s\nFile      : %s (Line %i)\nBacktrace: %s")
+                % callerMessage % context_error % gluErrorString(errorCode) % errorCode % functionMacro % fileMacro % lineMacro % Backtrace::make_string ()).str());
 		} else {
-			throw GlException(errorCode, printfstring(
-                "%sOpenGL error: %s (Code 0x%x)\nFunction  : %s\nFile      : %s (Line %i)\nBacktrace: %s",
-                context_error.c_str(), gluErrorString(errorCode), errorCode, functionMacro, fileMacro, lineMacro, Backtrace::make_string ().c_str () ).c_str());
+            throw GlException(errorCode, (boost::format(
+                "%sOpenGL error: %s (Code 0x%x)\nFunction  : %s\nFile      : %s (Line %i)\nBacktrace: %s")
+                % context_error % gluErrorString(errorCode) % errorCode % functionMacro % fileMacro % lineMacro % Backtrace::make_string ()).str());
 		}
 	}
 }

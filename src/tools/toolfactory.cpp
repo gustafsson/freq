@@ -173,7 +173,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new SendFeedback( p->mainWindow() )));
 
-    if (Sawe::Configuration::skip_update_check())
+    if (!Sawe::Configuration::skip_update_check())
         _objects.push_back( QPointer<QObject>( new CheckUpdates( p->mainWindow() )));
 
     _objects.push_back( QPointer<QObject>( new UndoRedo( p )));
