@@ -1,5 +1,5 @@
 # Macports gcc 4.8 is necessary to build for OpenMP on Mac (to use OpenMP in anything but the main thread)
-macx: system(which /opt/local/bin/g++-mp-4.8 > /dev/null): CONFIG += useomp
+macx: system(echo $$QMAKE_CXX | grep g++-mp-4.8): CONFIG += useomp
 !macx: CONFIG += useomp
 
 useomp {
