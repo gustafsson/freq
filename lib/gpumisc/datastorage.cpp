@@ -2,7 +2,6 @@
 
 #include "computationkernel.h"
 #include "cpumemorystorage.h"
-#include "stringprintf.h"
 #include "TaskTimer.h"
 #include "demangle.h"
 
@@ -313,15 +312,15 @@ void DataStorageVoid::
         value = size/(float)(1<<10);
 
     } else {
-        return printfstring("%u B", size);
+        return (boost::format("%u B") % size).str();
     }
 
     if (decimals < 0)
-        format = printfstring("%%%c ", type) + format;
+        format = (boost::format("%%%c ") % type).str();
     else
-        format = printfstring("%%.%u%c ", decimals, type) + format;
+        format = (boost::format("%%.%u%c ") % decimals % type).str();
 
-    return printfstring(format.c_str (), value);
+    return (boost::format(format) % value).str();
 }
 
 

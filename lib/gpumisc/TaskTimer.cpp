@@ -1,8 +1,6 @@
 #include "TaskTimer.h"
 
-#include "stringprintf.h"
 #include "cva_list.h"
-#include "throwInvalidArgument.h"
 
 #include <iostream>
 #include <time.h>
@@ -155,8 +153,11 @@ void TaskTimer::init(LogLevel logLevel, const char* task, va_list args) {
 
     writeNextOnNewRow[this->logLevel] = true;
 
-    int r;
-    std::string s = printfstring(task, args, &r);
+    int c = vsnprintf( 0, 0, task, Cva_list(args) );
+    std::vector<char> t( c+1 );
+    vsnprintf( &t[0], c+1, task, Cva_list(args) );
+    std::string s;
+    s.append ( &t[0],&t[c] );
 
     if (strchr(s.c_str(), '\n'))
         boost::split(strs, s, boost::is_any_of("\n"), boost::algorithm::token_compress_off);
@@ -404,15 +405,15 @@ TaskTimer::~TaskTimer() {
         }
 
         if ( diff.total_nanoseconds()<1500 && diff.total_nanoseconds() != 1000) {
-            logprint(printfstring("%s %u ns.\n", finish_message.c_str(), (unsigned)diff.total_nanoseconds()).c_str());
+            logprint(str(boost::format("%s %u ns.\n") % finish_message % (unsigned)diff.total_nanoseconds()).c_str());
         } else if (diff.total_microseconds() <1500 && diff.total_microseconds() != 1000) {
-            logprint(printfstring("%s %.0f us.\n", finish_message.c_str(), (float)(diff.total_nanoseconds()/1000.0f)).c_str());
+            logprint(str(boost::format("%s %.0f us.\n") % finish_message % (float)(diff.total_nanoseconds()/1000.0f)).c_str());
         } else if (diff.total_milliseconds() <1500 && diff.total_milliseconds() != 1000) {
-            logprint(printfstring("%s %.1f ms.\n", finish_message.c_str(), (float)(diff.total_microseconds()/1000.0f)).c_str());
+            logprint(str(boost::format("%s %.1f ms.\n") % finish_message % (float)(diff.total_microseconds()/1000.0f)).c_str());
         } else if (diff.total_seconds()<90) {
-            logprint(printfstring("%s %.1f s.\n", finish_message.c_str(), (float)(diff.total_milliseconds()/1000.f)).c_str());
+            logprint(str(boost::format("%s %.1f s.\n") % finish_message % (float)(diff.total_milliseconds()/1000.f)).c_str());
         } else {
-            logprint(printfstring("%s %.1f min.\n", finish_message.c_str(), (float)(diff.total_seconds()/60.f)).c_str());
+            logprint(str(boost::format("%s %.1f min.\n") % finish_message % (float)(diff.total_seconds()/60.f)).c_str());
         }
     } else {
         if (didIdent) {
@@ -457,9 +458,6 @@ void TaskTimer::setLogLevelStream( LogLevel logLevel, std::ostream* str ) {
 #ifndef NO_TASKTIMER_MUTEX
     QMutexLocker scope(&staticLock);
 #endif
-    if (0==str) {
-        //ThrowInvalidArgument( str );
-    }
 
     switch (logLevel) {
         case LogVerbose:
@@ -469,9 +467,9 @@ void TaskTimer::setLogLevelStream( LogLevel logLevel, std::ostream* str ) {
             break;
 
         default:
-            ThrowInvalidArgumentStr(logLevel, printfstring("Muse be one "
-                "of LogVerbose {%u}, LogDetailed {%u} or LogSimple {%u}.",
-                LogVerbose, LogDetailed, LogSimple ));
+            throw std::logic_error((boost::format("Muse be one "
+                "of LogVerbose {%u}, LogDetailed {%u} or LogSimple {%u}.")
+                % LogVerbose % LogDetailed % LogSimple ).str());
     }
 }
 

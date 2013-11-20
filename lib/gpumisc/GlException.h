@@ -58,7 +58,7 @@ public:
 	@param message A textual message describing where and why this
 	    GlException was created.
 	*/
-	GlException(GLenum namedGlError, const char* const &message );
+	GlException(GLenum namedGlError, const std::string &message );
 
 	/**
 	@returns The GLenum OpenGL error code which caused this 

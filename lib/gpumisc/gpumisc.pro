@@ -41,7 +41,6 @@ SOURCES += \
     prettifysegfault.cpp \
     redirectstdout.cpp \
     signalname.cpp \
-    stringprintf.cpp \
     TaskTimer.cpp \
     ThreadChecker.cpp \
     timer.cpp \
@@ -94,7 +93,6 @@ HEADERS += \
     signalname.h \
     Statistics.h \
     StatisticsRandom.h \
-    stringprintf.h \
     TAni.h \
     TaskTimer.h \
     texturereader.cu.h \

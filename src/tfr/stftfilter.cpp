@@ -2,7 +2,6 @@
 #include "stft.h"
 
 #include "neat_math.h"
-#include "stringprintf.h"
 #include <memory.h>
 
 //#define TIME_StftFilter

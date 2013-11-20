@@ -3,7 +3,6 @@
 #include "cwt.h"
 #include "neat_math.h"
 
-#include "stringprintf.h"
 #include "computationkernel.h"
 #include <memory.h>
 #include "demangle.h"
