@@ -104,6 +104,7 @@ RenderView::
 
     connect( this, SIGNAL(postUpdate()), SLOT(restartUpdateTimer()), Qt::QueuedConnection );
     connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
+    connect( this, SIGNAL(postCheckForWorkerCrashes()), SLOT(checkForWorkerCrashes()), Qt::QueuedConnection );
 }
 
 
@@ -212,7 +213,7 @@ void RenderView::
 
     glMatrixMode(GL_MODELVIEW);
 
-    {
+    try { {
         glPushAttribContext attribs;
         glPushMatrixContext pmcp(GL_PROJECTION);
         glPushMatrixContext pmcm(GL_MODELVIEW);
@@ -249,9 +250,20 @@ void RenderView::
         paintGL();
 
         defaultStates();
+
+        }
+        GlException_CHECK_ERROR();
+    } catch (const std::exception& x) {
+        TaskInfo("");
+        TaskInfo(boost::format("std::exception\n%s") % boost::diagnostic_information(x));
+        TaskInfo("");
+    } catch (...) {
+        TaskInfo(boost::format("Not an std::exception\n%s") % boost::current_exception_diagnostic_information ());
     }
 
     painter->endNativePainting();
+
+    emit postCheckForWorkerCrashes();
 }
 
 
@@ -946,6 +958,39 @@ void RenderView::
 
 
 void RenderView::
+        checkForWorkerCrashes()
+{
+    Signal::Processing::Workers::Ptr workers = read1(model->project ()->processing_chain ())->workers();
+
+    try {
+        write1(workers)->rethrow_any_worker_exception();
+    } catch ( const std::exception& x) {
+        TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
+        switch (QMessageBox::warning( 0,
+                                       QString("Oups"),
+                                       "Oups... that didn't work as expected",
+                                       "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
+        {
+        case 0:
+            model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
+            break;
+        case 1:
+        {
+            const Signal::ComputingEngine::Ptr* ce =
+                    boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
+
+            TaskInfo(boost::format("Recreating worker %s")
+                     % (*ce?vartype(**ce):vartype(*ce)));
+            write1(workers)->addComputingEngine(*ce);
+        }
+        case 2:
+            break;
+        }
+    }
+}
+
+
+void RenderView::
         initializeGL()
 {
     _inited = true;
@@ -1186,38 +1231,6 @@ void RenderView::
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
 
-#ifndef SAWE_NO_MUTEX
-    //worker.checkForErrors();
-    {
-        Signal::Processing::Workers::Ptr workers = read1(model->project ()->processing_chain ())->workers();
-
-        try {
-            write1(workers)->rethrow_any_worker_exception();
-        } catch ( const std::exception& x) {
-            TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
-            switch (QMessageBox::warning( 0,
-                                           QString("Oups"),
-                                           "Oups... that didn't work as expected",
-                                           "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
-            {
-            case 0:
-                model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
-                break;
-            case 1:
-            {
-                const Signal::ComputingEngine::Ptr* ce =
-                        boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
-
-                TaskInfo(boost::format("Recreating worker %s")
-                         % (*ce?vartype(**ce):vartype(*ce)));
-                write1(workers)->addComputingEngine(*ce);
-            }
-            case 2:
-                break;
-            }
-        }
-    }
-#endif
 
     if (!onlyComputeBlocksForRenderView)
     {
@@ -1267,14 +1280,25 @@ void RenderView::
         else throw;
 #endif
     } catch (const GlException &x) {
-        TaskTimer tt("RenderView::paintGL CAUGHT GLEXCEPTION\n%s", x.what());
+        TaskInfo("");
+        TaskInfo(boost::format("GlException\n%s") % boost::diagnostic_information(x));
+        TaskInfo("");
+
         if (2>_try_gc) {
             Sawe::Application::global_ptr()->clearCaches();
             emit transformChanged();
             _try_gc++;
         }
         else throw;
-    } catch (const std::invalid_argument& x) {
+    } catch (const LockFailed& x) {
+        TaskInfo("");
+        TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
+        TaskInfo("");
+    } catch (const std::exception& x) {
+        TaskInfo("");
+        TaskInfo(boost::format("std::exception\n%s") % boost::diagnostic_information(x));
+        TaskInfo("");
+
         const char* what = x.what();
         if (0 == QMessageBox::warning( 0,
                                        QString("Oups"),
@@ -1283,11 +1307,8 @@ void RenderView::
         {
             model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
         }
-    } catch (const LockFailed& x) {
-        TaskInfo("");
-        TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
     }
+
 
 	{
 		TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
