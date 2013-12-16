@@ -34,6 +34,7 @@ SOURCES += \
     glframebuffer.cpp \
     glinfo.cpp \
     glprojection.cpp \
+    glPushContext.cpp \
     GlTexture.cpp \
     gluunproject.cpp \
     mappedvbovoid.cpp \
