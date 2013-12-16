@@ -49,6 +49,13 @@ bool ChunkBlockFilter::
 }
 
 
+void ChunkBlockFilter::
+        set_number_of_channels(unsigned C)
+{
+    write1(tfrmap_)->channels(C);
+}
+
+
 ChunkBlockFilterDesc::
         ChunkBlockFilterDesc(Heightmap::TfrMapping::Ptr tfrmap)
     :

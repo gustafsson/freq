@@ -112,9 +112,10 @@ void ChunkToBlock::mergeRowMajorChunk(
 namespace Heightmap {
 
 class DummyKernel: public Tfr::ChunkFilter {
-    virtual bool operator()( Tfr::ChunkAndInverse& ) {
+    bool operator()( Tfr::ChunkAndInverse& ) {
         return false;
     }
+    void set_number_of_channels (unsigned) {}
 };
 
 class DummyKernelDesc: public Tfr::FilterKernelDesc {

@@ -553,7 +553,6 @@ pProject Project::
 
     pProject p( new Project(a->name() ));
     p->createMainWindow ();
-    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
     p->appendOperation (d);
     p->setModified (false);
 
@@ -575,7 +574,6 @@ pProject Project::
     a->set_sample_rate (fs);
     pProject p( new Project( a->name() ));
     p->createMainWindow ();
-    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
     p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
     p->setModified (false);
