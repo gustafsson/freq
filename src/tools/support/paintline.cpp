@@ -1,5 +1,6 @@
 #include "paintline.h"
 #include "toolglbrush.h"
+#include "GlException.h"
 
 namespace Tools {
 namespace Support {
