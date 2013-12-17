@@ -21,10 +21,9 @@ AppendOperationDescCommand::
 void AppendOperationDescCommand::
         execute()
 {
-    Chain::WritePtr chain(chain_);
-    IInvalidator::Ptr i = chain->addOperationAt ( operation_, at_ );
+    IInvalidator::Ptr i = write1(chain_)->addOperationAt ( operation_, at_ );
 
-    i=i; // discard IInvalidator and avoid compiler warning about it
+    write1(operation_)->setInvalidator (i);
 }
 
 
