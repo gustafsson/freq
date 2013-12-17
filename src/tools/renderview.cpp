@@ -127,9 +127,9 @@ RenderView::
     if (Sawe::Application::global_ptr()->has_other_projects_than(this->model->project()))
         return;
 
-    Sawe::Application::global_ptr()->clearCaches();
-
     TaskInfo("cudaThreadExit()");
+
+    Sawe::Application::global_ptr()->clearCaches();
 
     // Because the Cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
