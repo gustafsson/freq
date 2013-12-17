@@ -28,6 +28,7 @@
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openfilecontroller.h"
 #include "tools/recordmodel.h"
+#include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
@@ -117,6 +118,7 @@ int UnitTest::
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::RecordModel);
+        RUNTEST(Tools::Support::AudiofileOpener);
         RUNTEST(Tools::Support::ChainInfo);
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
