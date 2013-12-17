@@ -26,6 +26,7 @@
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tools/commands/appendoperationdesccommand.h"
+#include "tools/openfilecontroller.h"
 #include "tools/recordmodel.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/renderoperation.h"
@@ -114,6 +115,7 @@ int UnitTest::
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
+        RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::ChainInfo);
         RUNTEST(Tools::Support::RenderOperationDesc);

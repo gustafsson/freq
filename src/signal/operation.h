@@ -83,7 +83,7 @@ public:
      * representing the at least interval I at once the operation can request
      * a smaller chunk for processing instead by setting 'expectedOutput'.
      */
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
+    virtual Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const = 0;
 
 
     /**
