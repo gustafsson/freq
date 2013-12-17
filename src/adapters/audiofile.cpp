@@ -352,8 +352,9 @@ Signal::pBuffer Audiofile::
 
     if ((invalid_samples() - I).empty())
     {
-        // Don't need this anymore
+        // Don't need this anymore so release resources. But load it again if needed.
         sndfile.reset();
+        _tried_load = false;
     }
 
     return waveform;
