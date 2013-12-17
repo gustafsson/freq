@@ -335,6 +335,11 @@ public:
     Signal::Interval readRawInterval( const Signal::Interval& I );
 private:
     Audiofile();
+
+    /**
+     * @brief tryload should try to load the audio file and make sure sample_rate and number_of_samples are set.
+     * @return true if the audio file is currently loaded.
+     */
     bool tryload();
 
     /// file can be a QTemporaryFile that deletes itself upon destruction
@@ -346,6 +351,7 @@ private:
     bool _tried_load;
     float _sample_rate;
     Signal::IntervalType _number_of_samples;
+    unsigned _number_of_channels;
 
     std::vector<char> getRawFileData(unsigned i, unsigned bytes_per_chunk);
     void appendToTempfile(std::vector<char> rawFileData, unsigned i, unsigned bytes_per_chunk);

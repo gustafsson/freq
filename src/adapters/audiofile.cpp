@@ -182,7 +182,8 @@ Audiofile::
         Signal::OperationCache(Signal::pOperation()),
         _tried_load(false),
         _sample_rate(0),
-        _number_of_samples(0)
+        _number_of_samples(0),
+        _number_of_channels(0)
 {
     _original_relative_filename = filename;
     _original_absolute_filename = QFileInfo(filename.c_str()).absoluteFilePath().toStdString();
@@ -207,7 +208,8 @@ std::string Audiofile::
 Signal::IntervalType Audiofile::
         number_of_samples()
 {
-    tryload();
+    if (0==_number_of_samples)
+        tryload();
 
     return _number_of_samples;
 }
@@ -216,17 +218,18 @@ Signal::IntervalType Audiofile::
 unsigned Audiofile::
         num_channels()
 {
-    if ( !tryload() )
-        return Signal::OperationCache::num_channels();
+    if (0==_number_of_channels)
+        tryload();
 
-    return sndfile->channels();
+    return std::max(1u, _number_of_channels);
 }
 
 
 float Audiofile::
         sample_rate()
 {
-    tryload();
+    if (0==_sample_rate)
+        tryload();
 
     return _sample_rate;;
 }
@@ -256,7 +259,8 @@ Audiofile:: // for deserialization
             file(new QTemporaryFile()),
             _tried_load(false),
             _sample_rate(0),
-            _number_of_samples(0)
+            _number_of_samples(0),
+            _number_of_channels(0)
 {
 }
 
@@ -289,6 +293,7 @@ bool Audiofile::
 
         _sample_rate = sndfile->samplerate();
         _number_of_samples = sndfile->frames();
+        _number_of_channels = sndfile->channels();
 
         invalidate_samples( getInterval() );
     }
@@ -299,15 +304,15 @@ bool Audiofile::
 
 Signal::pBuffer Audiofile::
         readRaw( const Signal::Interval& J )
-
 {
-    EXCEPTION_ASSERTX(tryload(), str(format("Loading '%s' failed (this=%p), requested %s") %
-                                        filename() % this % J.toString()));
-
     Signal::Interval I = readRawInterval(J);
 
     if (!(I & getInterval ()))
         return zeros(I);
+
+    // Need the sound file to be available to read data.
+    EXCEPTION_ASSERTX(tryload(), str(format("Loading '%s' failed (this=%p), requested %s") %
+                                        filename() % this % J.toString()));
 
     boost::shared_ptr<TaskTimer> tt;
     VERBOSE_AUDIOFILE tt.reset(new TaskTimer("Loading %s from '%s' (this=%p)",
