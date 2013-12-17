@@ -46,7 +46,20 @@ Chain::Ptr Chain::
 Chain::
         ~Chain()
 {
-    Targets::TargetNeedsCollection T = read1(targets_)->getTargets();
+    close();
+
+    // Remove all workers
+    workers_.reset ();
+
+    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
+    dag_.reset ();
+}
+
+
+bool Chain::
+        close(int timeout)
+{
+    // Targets::TargetNeedsCollection T = read1(targets_)->getTargets();
 
     // Ask workers to not start anything new
     read1(workers_)->remove_all_engines(0);
@@ -55,16 +68,12 @@ Chain::
     bedroom_->close();
 
     // Wait 1.0 s for workers to finish
-    read1(workers_)->remove_all_engines(1000);
+    bool r = read1(workers_)->remove_all_engines(timeout);
 
     // Suppress output
     write1(workers_)->clean_dead_workers();
 
-    // Remove all workers
-    workers_.reset ();
-
-    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
-    dag_.reset ();
+    return r;
 }
 
 

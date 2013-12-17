@@ -29,6 +29,15 @@ public:
     ~Chain();
 
     /**
+     * @brief close prevents any more work from being started on and asks
+     * all worker threads to close.
+     *
+     * Returns true if all threads finished within 'timeout'.
+     */
+    bool close(int timeout=1000);
+
+
+    /**
      * @brief addTarget
      * @param desc
      * @param at

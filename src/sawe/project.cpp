@@ -50,7 +50,7 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    this->processing_chain_.reset ();
+    write1(processing_chain_)->close();
 
     {
         TaskInfo ti("releasing tool resources");
