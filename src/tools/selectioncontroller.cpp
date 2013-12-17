@@ -209,7 +209,7 @@ namespace Tools
         Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
 
-        ui->actionActionAdd_selection->setEnabled( enabled_actions );
+        //ui->actionActionAdd_selection->setEnabled( enabled_actions );
         ui->actionActionRemove_selection->setEnabled( enabled_actions );
         ui->actionCropSelection->setEnabled( enabled_actions );
     }

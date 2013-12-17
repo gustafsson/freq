@@ -3,12 +3,14 @@
 #include "TaskTimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
+#include "sawe/application.h"
 
 #include <QEvent>
 #include <QTimerEvent>
 #include <QMouseEvent>
 #include <QHBoxLayout>
 #include <QGraphicsProxyWidget>
+#include <QMimeData>
 
 //#define DEBUG_EVENTS
 #define DEBUG_EVENTS if(0)
@@ -56,6 +58,8 @@ GraphicsView::
 
     scene->addItem( tool_proxy_  );
     tool_proxy_->setParent( scene );
+
+    setAcceptDrops(true);
 }
 
 
@@ -181,6 +185,47 @@ void GraphicsView::resizeEvent(QResizeEvent *event) {
         scene()->setSceneRect(QRectF(0, 0, event->size().width(), event->size().height()));
 
     layout_widget_->resize( event->size() );
+}
+
+
+void GraphicsView::
+        dragEnterEvent(QDragEnterEvent *event)
+{
+    setBackgroundRole(QPalette::Highlight);
+    if (event->mimeData ()->hasUrls())
+        event->acceptProposedAction();
+}
+
+
+void GraphicsView::
+        dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
+}
+
+
+void GraphicsView::
+        dragLeaveEvent(QDragLeaveEvent *event)
+{
+    setBackgroundRole(QPalette::NoRole);
+    event->accept();
+}
+
+
+void GraphicsView::
+        dropEvent(QDropEvent *event)
+{
+    const QMimeData *mimeData = event->mimeData();
+    if (mimeData->hasUrls()) {
+        QList<QUrl> urlList = mimeData->urls();
+        for (int i = 0; i < urlList.size() && i < 32; ++i) {
+            QString url = urlList.at(i).path();
+            Sawe::Application::global_ptr()->slotOpen_file(url.toStdString ());
+        }
+    }
+
+    setBackgroundRole(QPalette::NoRole);
+    event->acceptProposedAction();
 }
 
 

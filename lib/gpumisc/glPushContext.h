@@ -3,37 +3,22 @@
 
 #pragma once
 
-#include "GlException.h"
 #include "gl.h"
 
-class glPushMatrixContext
+#include <boost/noncopyable.hpp>
+
+class glPushMatrixContext: boost::noncopyable
 {
 public:
-    glPushMatrixContext( GLint kind )
-        :   kind( kind )
-    {
-        GlException_CHECK_ERROR();
+    glPushMatrixContext( GLint kind );
+    ~glPushMatrixContext();
 
-        glMatrixMode( kind );
-        glPushMatrix();
-
-        GlException_CHECK_ERROR();
-    }
-
-    ~glPushMatrixContext() {
-        GlException_CHECK_ERROR();
-
-        glMatrixMode( kind );
-        glPopMatrix();
-        glMatrixMode( GL_MODELVIEW );
-
-        GlException_CHECK_ERROR();
-    }
 private:
     GLint kind;
 };
 
-class glPushAttribContext {
+class glPushAttribContext: boost::noncopyable
+{
 public:
    glPushAttribContext( GLbitfield mask = GL_ALL_ATTRIB_BITS ) { glPushAttrib(mask); }
    ~glPushAttribContext() { glPopAttrib(); }

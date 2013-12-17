@@ -38,6 +38,9 @@ public slots:
     void freqNormalizationChanged(qreal);
     void freqNormalizationPercentChanged(qreal);
 
+protected slots:
+    void hidedock();
+
 private:
     Ui::TransformInfoForm *ui;
     Sawe::Project* project;

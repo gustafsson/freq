@@ -50,7 +50,7 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    this->processing_chain_.reset ();
+    write1(processing_chain_)->close();
 
     {
         TaskInfo ti("releasing tool resources");
@@ -553,7 +553,6 @@ pProject Project::
 
     pProject p( new Project(a->name() ));
     p->createMainWindow ();
-    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
     p->appendOperation (d);
     p->setModified (false);
 
@@ -575,7 +574,6 @@ pProject Project::
     a->set_sample_rate (fs);
     pProject p( new Project( a->name() ));
     p->createMainWindow ();
-    write1(p->tools ().render_model.tfr_mapping ())->channels(a->num_channels ());
     p->appendOperation (s);
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
     p->setModified (false);

@@ -38,27 +38,15 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     ui->setupUi(this);
 
     Ui::SaweMainWindow* MainWindow = project->mainWindow();
-    dock = new QDockWidget(MainWindow);
+    dock = new QDockWidget("Transform", MainWindow);
     dock->setObjectName(QString::fromUtf8("dockWidgetTransformInfoForm"));
-    dock->setMinimumSize(QSize(42, 79));
-    dock->setMaximumSize(QSize(524287, 524287));
-    dock->setContextMenuPolicy(Qt::NoContextMenu);
-    //dock->setFeatures(QDockWidget::DockWidgetFeatureMask);
-    dock->setFeatures(QDockWidget::AllDockWidgetFeatures);
-    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    dock->setEnabled(true);
     dock->setWidget(this);
-    dock->setWindowTitle("Transform info");
-    dock->hide();
 
     MainWindow->addDockWidget(Qt::RightDockWidgetArea, dock);
-    //MainWindow->tabifyDockWidget(MainWindow->getItems()->operationsWindow, dock);
 
-    connect(MainWindow->getItems()->actionTransform_info, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
-    connect(MainWindow->getItems()->actionTransform_info, SIGNAL(triggered()), dock, SLOT(raise()));
-    connect(dock, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibility(bool)));
-    MainWindow->getItems()->actionTransform_info->setChecked( false );
-    dock->setVisible(false);
+    MainWindow->getItems ()->actionTransform_info->setVisible(false);
+    MainWindow->getItems ()->menu_Windows->insertAction (0, dock->toggleViewAction ());
+    dock->toggleViewAction ()->setText ("Transform");
 
     connect(renderview, SIGNAL(transformChanged()), SLOT(transformChanged()), Qt::QueuedConnection);
     connect(renderview, SIGNAL(finishedWorkSection()), SLOT(transformChanged()), Qt::QueuedConnection);
@@ -66,6 +54,7 @@ TransformInfoForm::TransformInfoForm(Sawe::Project* project, RenderView* renderv
     timer.setSingleShot( true );
     timer.setInterval( 500 );
     connect(&timer, SIGNAL(timeout()), SLOT(transformChanged()), Qt::QueuedConnection);
+    QTimer::singleShot (0,this,SLOT(hidedock()));
 
     for (int i=0;i<Tfr::StftDesc::WindowType_NumberOfWindowTypes; ++i)
     {
@@ -524,6 +513,13 @@ void TransformInfoForm::
     }
 
     deprecateAll();
+}
+
+
+void TransformInfoForm::
+        hidedock()
+{
+    dock->close ();
 }
 
 

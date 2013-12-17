@@ -228,6 +228,8 @@ string Backtrace::
 
     free(msg);
 
+    bt += "\n";
+
     return bt;
 }
 #endif

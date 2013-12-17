@@ -2,32 +2,30 @@
 
 #include "gl.h"
 #include "backtrace.h"
+#include "TaskTimer.h"
 
 #include <boost/format.hpp>
 
-GlException::GlException( GLenum namedGlError )
-:	runtime_error((const char*)gluErrorString( namedGlError )),
-	namedGlError(namedGlError)
-{}
-
-GlException::GlException(GLenum namedGlError, const std::string &message )
-:	runtime_error(message),
-	namedGlError(namedGlError)
-{}
-
-GLenum GlException::getGlError() const {
-	return namedGlError;
-}
 
 void GlException::check_error( ) {
 	check_error( glGetError() );
 }
 
+
 void GlException::check_error( GLenum errorCode ) {
-	if (GL_NO_ERROR != errorCode) {
-		throw GlException(errorCode );
+    if (GL_NO_ERROR != errorCode) {
+        GlException x; x
+                << GlException_namedGlError(errorCode)
+                << GlException_namedGlErrorString((const char*)gluErrorString( errorCode ))
+                << Backtrace::make(2);
+
+        if (std::uncaught_exception())
+            TaskInfo(boost::format("Ignoring GlException\n%s") % boost::diagnostic_information(x));
+        else
+            BOOST_THROW_EXCEPTION (x);
 	}
 }
+
 
 void GlException::check_error( const char* functionMacro, 
 	                     const char* fileMacro, int lineMacro,
@@ -35,6 +33,7 @@ void GlException::check_error( const char* functionMacro,
 	check_error( glGetError(), functionMacro, fileMacro, 
 		              lineMacro, callerMessage );
 }
+
 
 void GlException::check_error( GLenum errorCode, const char* functionMacro, 
 		                     const char* fileMacro, int lineMacro, 
@@ -45,17 +44,23 @@ void GlException::check_error( GLenum errorCode, const char* functionMacro,
 		std::string context_error;
 		if (cleared_error == GL_INVALID_OPERATION)
 		{
-			context_error = "No OpenGL context is currently active.\n";
+            context_error = "\nNo OpenGL context is currently active";
 		}
 
-		if (callerMessage) {
-            throw GlException(errorCode, (boost::format(
-                "%s\n%sOpenGL error: %s (Code 0x%x)\nFunction  : %s\nFile      : %s (Line %i)\nBacktrace: %s")
-                % callerMessage % context_error % gluErrorString(errorCode) % errorCode % functionMacro % fileMacro % lineMacro % Backtrace::make_string ()).str());
-		} else {
-            throw GlException(errorCode, (boost::format(
-                "%sOpenGL error: %s (Code 0x%x)\nFunction  : %s\nFile      : %s (Line %i)\nBacktrace: %s")
-                % context_error % gluErrorString(errorCode) % errorCode % functionMacro % fileMacro % lineMacro % Backtrace::make_string ()).str());
-		}
-	}
+        GlException x; x
+                    << GlException_namedGlError(errorCode)
+                    << GlException_namedGlErrorString((const char*)gluErrorString( errorCode ))
+                    << GlException_message((callerMessage?callerMessage:"") + context_error)
+                    << Backtrace::make(2);
+
+        TaskInfo(boost::format("Throwing GlException\n%s") % boost::diagnostic_information(x));
+
+        if (std::uncaught_exception())
+            TaskInfo(boost::format("Ignoring GlException\n%s") % boost::diagnostic_information(x));
+        else
+            ::boost::exception_detail::throw_exception_(x,
+                                                        functionMacro,
+                                                        fileMacro,
+                                                        lineMacro);
+    }
 }

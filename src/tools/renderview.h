@@ -162,10 +162,17 @@ namespace Tools
          */
         void axisChanged();
 
+        /**
+         * @brief postCheckForWorkerCrashes pops up an error dialog if any
+         * worker has crashes recently.
+         */
+        void postCheckForWorkerCrashes();
+
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
         void restartUpdateTimer();
+        void checkForWorkerCrashes();
 
     private:
         /// Similiar to QGLWidget::initializeGL()

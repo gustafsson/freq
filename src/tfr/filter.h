@@ -61,6 +61,12 @@ public:
       to compute the inverse afterwards.
       */
     virtual bool operator()( ChunkAndInverse& chunk ) = 0;
+
+    /**
+      Set the number of channels that will get this filter applied.
+      May be ignored by the filter if it doesn't matter.
+      */
+    virtual void set_number_of_channels( unsigned ) {}
 };
 typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
 

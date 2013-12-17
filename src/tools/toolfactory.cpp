@@ -138,7 +138,8 @@ ToolFactory::
 
     _about_dialog = new AboutDialog( p );
 
-    _transform_info_form = new TransformInfoForm(p, _render_view );
+    if (Sawe::Configuration::feature("transform_info"))
+        _transform_info_form = new TransformInfoForm(p, _render_view );
 
 /*
 //Use Signal::Processing namespace

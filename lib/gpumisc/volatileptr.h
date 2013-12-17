@@ -75,7 +75,7 @@ public:
     class LockFailed: public ::LockFailed {};
 
     ~VolatilePtr () {
-        UNUSED(VolatilePtr* p) = (T*)0; // T is required to be a subtype of VolatilePtr
+        UNUSED(VolatilePtr* p) = (T*)0; // T is required to be a subtype of VolatilePtr<T>
     }
 
 

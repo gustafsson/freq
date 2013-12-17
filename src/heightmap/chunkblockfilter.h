@@ -40,6 +40,8 @@ public:
 
     bool operator()( Tfr::ChunkAndInverse& chunk );
 
+    void set_number_of_channels( unsigned C );
+
 private:
     Heightmap::TfrMapping::Ptr tfrmap_;
     MergeChunk::Ptr merge_chunk_;

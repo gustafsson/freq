@@ -5,6 +5,7 @@ See class comment #GlException.
 #pragma once
 
 #include <stdexcept>
+#include <boost/exception/all.hpp>
 
 #ifndef __GL_H__
 typedef unsigned int GLenum;
@@ -36,35 +37,15 @@ values of instance variables.
 
 @author johan.b.gustafsson@gmail.com
 */
-class GlException : public std::runtime_error {
+class GlException : virtual public boost::exception, virtual public std::exception {
 public:
-	/**
-	Creates a GlException from a named OpenGL <code>GLenum glError
-	</code>. Then, <code>gluErrorString(glError)</code> is used to 
-	get a textual description of the error.
+    // A GLenum different from GL_NO_ERROR.
+    typedef boost::error_info<struct namedGlError,GLenum> GlException_namedGlError;
+    // gluErrorString(glError) is used to get a textual description of the error.
+    typedef boost::error_info<struct namedGlErrorString,std::string> GlException_namedGlErrorString;
+    // Arbitrary additional message.
+    typedef boost::error_info<struct message,std::string> GlException_message;
 
-	@param namedGlError A GLenum different from GL_NO_ERROR.
-	*/
-	GlException( GLenum namedGlError );
-
-	/**
-	Creates a GlException from a named OpenGL <code>GLenum glError
-	</code> along with a textual message describing the error. The 
-	text may include info on where and why the error occured. The 
-	text should preferably also include the result from <code>
-	gluErrorString(GLenum)</code> in some form.
-
-	@param namedGlError A GLenum different from GL_NO_ERROR.
-	@param message A textual message describing where and why this
-	    GlException was created.
-	*/
-	GlException(GLenum namedGlError, const std::string &message );
-
-	/**
-	@returns The GLenum OpenGL error code which caused this 
-	GlException to be thrown.
-	*/
-	GLenum getGlError() const;
 
 	/**
 	Calls <code>glGetError()</code> to see if something has gone 
@@ -138,9 +119,6 @@ public:
 	static void check_error( GLenum errorCode, const char* functionMacro, 
 		                     const char* fileMacro, int lineMacro,
 							 const char* callerMessage = 0);
-
-private:
-	GLenum namedGlError;
 };
 
 /**
