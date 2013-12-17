@@ -2,6 +2,15 @@
 
 namespace Tools {
 
+
+OpenfileController* OpenfileController::
+        instance()
+{
+    static OpenfileController ofc;
+    return &ofc;
+}
+
+
 OpenfileController::OpenfileController(QObject *parent) :
     QObject(parent)
 {

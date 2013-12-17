@@ -64,9 +64,8 @@ void AudiofileOpener::
         }
         Adapters::WriteWav::writeToDisk(filename, buffer, false);
 
-        QPointer<OpenfileController::OpenfileInterface> audiofile_controller(new AudiofileOpener);
         OpenfileController openfile;
-        openfile.registerOpener (audiofile_controller);
+        openfile.registerOpener (new AudiofileOpener);
 
         Signal::OperationDesc::Ptr od;
         od = openfile.open ("blaj");

@@ -17,6 +17,7 @@ class OpenfileController : public QObject
     Q_OBJECT
 public:
     explicit OpenfileController(QObject *parent = 0);
+    static OpenfileController* instance();
 
     typedef QList<std::pair<QString,QString> > Patterns;
 
@@ -28,6 +29,7 @@ public:
         virtual Signal::OperationDesc::Ptr open(QString url) = 0;
     };
 
+    QList<QPointer<OpenfileInterface> > get_openers() { return file_openers; }
     void registerOpener(QPointer<OpenfileInterface> file_opener);
     Patterns patterns();
 
@@ -38,7 +40,6 @@ signals:
 public slots:
 
 private:
-
     QList<QPointer<OpenfileInterface> > file_openers;
 
 public:

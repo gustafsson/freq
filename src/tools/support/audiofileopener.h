@@ -9,7 +9,7 @@ namespace Support {
 /**
  * @brief The AudiofileController class should open files supported by libsndfile.
  */
-class AudiofileOpener : OpenfileController::OpenfileInterface
+class AudiofileOpener : public OpenfileController::OpenfileInterface
 {
 public:
     virtual Patterns patterns();
