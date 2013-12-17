@@ -49,7 +49,7 @@ signals:
     void onMainWindowCloseEvent( QWidget* closed );
 
 protected:
-    virtual void closeEvent(QCloseEvent *);
+    void closeEvent(QCloseEvent *);
 
     struct ActionWindowPair
     {

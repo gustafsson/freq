@@ -37,6 +37,11 @@ public:
 
     void resizeEvent(QResizeEvent *event);
 
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dragMoveEvent(QDragMoveEvent *event);
+    void dragLeaveEvent(QDragLeaveEvent *event);
+    void dropEvent(QDropEvent *event);
+
     unsigned toolWindows();
     Support::ToolSelector* toolSelector(int index, Tools::Commands::CommandInvoker* state);
 
