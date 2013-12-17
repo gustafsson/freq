@@ -32,7 +32,7 @@ namespace Signal {
   could otherwise be both much larger and much smaller than the requested
   length. Use 'Source::readFixedLength' if you need specific samples.
   */
-class SinkSource: public Sink
+class SinkSource: public SourceBase
 {
 public:
     typedef boost::shared_ptr<SinkSource> Ptr;

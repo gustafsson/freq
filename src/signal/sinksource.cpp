@@ -28,7 +28,7 @@ SinkSource::
 SinkSource::
         SinkSource( const SinkSource& b)
             :
-        Sink(b)
+        SourceBase(b)
 {
     *this = b;
 }
