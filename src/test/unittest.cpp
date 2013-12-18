@@ -3,6 +3,7 @@
 #include "test/implicitordering.h"
 #include "test/stdlibtest.h"
 #include "test/tasktimertiming.h"
+#include "test/randombuffer.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
 #include "adapters/microphonerecorder.h"
@@ -91,6 +92,7 @@ int UnitTest::
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
+        RUNTEST(Test::RandomBuffer);
         RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Buffer);
         RUNTEST(Signal::BufferSource);
