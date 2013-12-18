@@ -109,6 +109,8 @@ RESAMPLE_CALL void draw_waveform_elem(
     float maxy = 0;
     float miny = matrix_sz.height;
     float blobinv = 1.f/blob;
+    float A1 = 100.f; // 0.2f;
+    float A2 = 100.f; // 0.01f
 
     for (int i=0; i<matrix_sz.height; i++) {
         out_waveform_matrix.ref( WritePos( writePos_x, i ) ) = e<typename Writer::T>(0);
@@ -143,10 +145,10 @@ RESAMPLE_CALL void draw_waveform_elem(
     #endif
 
             WriteType& w1 = (WriteType&)out_waveform_matrix.ref( WritePos( writePos_x, y1 ) );
-            w1 += e<WriteType>(0.2f*blobinv * (1.f-py));
+            w1 += e<WriteType>(A1*blobinv * (1.f-py));
 
             WriteType& w2 = (WriteType&)out_waveform_matrix.ref( WritePos( writePos_x, y2 ) );
-            w2 += e<WriteType>(0.2f*blobinv * py);
+            w2 += e<WriteType>(A1*blobinv * py);
         }
     }
 
@@ -167,7 +169,7 @@ RESAMPLE_CALL void draw_waveform_elem(
         }
 
         for (int y=y1; y<=y2; ++y)
-            out_waveform_matrix.ref( WritePos( writePos_x, y ) ) += e<typename Writer::T>(0.01f*blobinv);
+            out_waveform_matrix.ref( WritePos( writePos_x, y ) ) += e<typename Writer::T>(A2*blobinv);
     }
 }
 
