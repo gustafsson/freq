@@ -39,6 +39,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
+#include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
 
@@ -138,6 +139,8 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
         RUNTEST(Adapters::Playback);
 
     } catch (const exception& x) {
