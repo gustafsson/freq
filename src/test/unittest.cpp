@@ -26,6 +26,7 @@
 #include "signal/oldoperationwrapper.h"
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
+#include "tfr/dummytransform.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openfilecontroller.h"
 #include "tools/openwatchedfilecontroller.h"
@@ -119,6 +120,8 @@ int UnitTest::
         RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
+        RUNTEST(Tfr::DummyTransform);
+        RUNTEST(Tfr::DummyTransformDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
