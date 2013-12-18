@@ -15,6 +15,6 @@ void drawWaveform( DataStorage<float>::Ptr in_waveform,
 
 void drawWaveform( DataStorage<float>::Ptr in_waveform,
                    DataStorage<float>::Ptr out_waveform_matrix,
-                   float blob, int readstop, float maxValue, float writeposoffs );
+                   float blob, int readstop, float maxValue, float writeposoffs, float y0 );
 
 #endif // DRAWNWAVEFORM_CU_H

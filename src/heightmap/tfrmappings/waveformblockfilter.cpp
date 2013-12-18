@@ -13,33 +13,24 @@ void WaveformBlockFilter::
             const Tfr::ChunkAndInverse& chunk,
             Heightmap::BlockData& outData )
 {
-    // tfrmap should be
-//    Tfr::FreqAxis fa = read1(tfr_map_)->display_scale();
-//    Chunk& chunk = *pchunk.chunk;
-//    if (fa.min_hz != chunk.freqAxis.min_hz || fa.axis_scale != Tfr::AxisScale_Linear)
-//    {
-//        EXCEPTION_ASSERT( fa.max_frequency_scalar == 1.f );
-//        fa.axis_scale = Tfr::AxisScale_Linear;
-//        fa.min_hz = chunk.freqAxis.min_hz;
-//        fa.f_step = -2*fa.min_hz;
-//        write1(tfr_map_)->display_scale( fa );
-//    }
-
-    // updateMaxValue(b);
-
     Signal::pMonoBuffer b = chunk.inverse;
     float blobsize = b->sample_rate() / block.sample_rate();
 
     int readstop = b->number_of_samples ();
 
-    float writeposoffs = (b->start () - block.getRegion ().a.time)*block.sample_rate ();
+    // todo should substract blobsize/2
+    Region r = block.getRegion ();
+    float writeposoffs = (b->start () - r.a.time)*block.sample_rate ();
+    float y0 = r.a.scale*2-1;
+    float yscale = r.scale ()*2;
     ::drawWaveform(
             b->waveform_data(),
             outData.cpu_copy,
             blobsize,
             readstop,
-            1.f,
-            writeposoffs);
+            yscale,
+            writeposoffs,
+            y0);
 }
 
 

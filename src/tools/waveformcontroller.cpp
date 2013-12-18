@@ -1,6 +1,6 @@
 #include "waveformcontroller.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
-#include "tfr/dummytransform.h"
+#include "tfr/waveformrepresentation.h"
 
 #include "ui_mainwindow.h"
 #include "ui/comboboxaction.h"
@@ -44,21 +44,22 @@ void WaveformController::
     ::Ui::MainWindow* ui = r->getItems();
 
 
-    r->hz_scale->setEnabled( !enabled );
+    r->waveformScale->setEnabled (enabled);
     ui->actionToggle_piano_grid->setVisible( !enabled );
     if (enabled) {
         if (ui->actionToggle_piano_grid->isChecked())
             r->hzmarker->setChecked( false );
 
-        r->linearScale->trigger();
+        r->waveformScale->trigger ();
     }
+    r->hz_scale->setEnabled( !enabled );
 
 
     // Setup the kernel that will take the transform data and create an image
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr t = write1(r->model()->transform_descs ())->getParam<Tfr::DummyTransformDesc>().copy();
+    Tfr::TransformDesc::Ptr t = write1(r->model()->transform_descs ())->getParam<Tfr::WaveformRepresentationDesc>().copy();
 
     r->setBlockFilter(mcdp, t);
 }

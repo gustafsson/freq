@@ -30,9 +30,12 @@ namespace Tools
 
         ::Ui::MainWindow*   getItems();
         void                setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc);
+        void                stateChanged();
+        void                emitAxisChanged();
 
         Ui::ComboBoxAction* transform;
         Ui::ComboBoxAction* hz_scale;
+        QAction*            waveformScale;
         QAction*            linearScale;
         Ui::ComboBoxAction* hzmarker;
 
@@ -78,6 +81,7 @@ namespace Tools
         void receiveSetTransform_Cepstrum();
 
         // ComboBoxAction hz_scale
+        void receiveWaveformScale();
         void receiveLinearScale();
         void receiveLogScale();
         void receiveCepstraScale();
@@ -99,7 +103,6 @@ namespace Tools
         void clearCaches();
 
     private:
-        void stateChanged();
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
         void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
         void setBlockFilter(Signal::OperationDesc::Ptr adapter);

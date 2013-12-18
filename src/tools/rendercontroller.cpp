@@ -136,6 +136,13 @@ void RenderController::
 
 
 void RenderController::
+        emitAxisChanged()
+{
+    view->emitAxisChanged();
+}
+
+
+void RenderController::
         receiveSetRainbowColors()
 {
     model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Rainbow;
@@ -632,6 +639,22 @@ void RenderController::
 
 
 void RenderController::
+        receiveWaveformScale()
+{
+    float maxvalue = 1;
+    float minvalue = -1;
+
+    Tfr::FreqAxis fa;
+    fa.setWaveform (minvalue, maxvalue);
+
+    model()->display_scale( fa );
+
+    view->emitAxisChanged();
+    stateChanged();
+}
+
+
+void RenderController::
         receiveLogScale()
 {
     float fs = headSampleRate();
@@ -844,29 +867,35 @@ void RenderController::
 
 
     // ComboBoxAction* hz-scale
-    {   linearScale = new QAction( toolbar_render );
+    {   waveformScale = new QAction( toolbar_render );
+        linearScale = new QAction( toolbar_render );
         logScale = new QAction( toolbar_render );
         cepstraScale = new QAction( toolbar_render );
 
+        waveformScale->setText("Waveform");
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");
         cepstraScale->setText("Cepstra scale");
 
         // for serialization
+        waveformScale->setObjectName("waveformScale");
         linearScale->setObjectName("linearScale");
         logScale->setObjectName("logScale");
         cepstraScale->setObjectName("cepstraScale");
 
+        waveformScale->setEnabled (false);
         linearScale->setCheckable( true );
         logScale->setCheckable( true );
         cepstraScale->setCheckable( true );
 
+        connect(waveformScale, SIGNAL(triggered()), SLOT(receiveWaveformScale()));
         connect(linearScale, SIGNAL(triggered()), SLOT(receiveLinearScale()));
         connect(logScale, SIGNAL(triggered()), SLOT(receiveLogScale()));
         connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
 
         hz_scale = new ComboBoxAction();
         hz_scale->setObjectName("hz_scale");
+        hz_scale->addActionItem( waveformScale );
         hz_scale->addActionItem( linearScale );
         hz_scale->addActionItem( logScale );
         if (!Sawe::Configuration::feature("stable")) {
@@ -1073,6 +1102,10 @@ void RenderController::
 {
     switch(model()->display_scale().axis_scale)
     {
+    case Tfr::AxisScale_Waveform:
+        receiveWaveformScale();
+        break;
+
     case Tfr::AxisScale_Linear:
         receiveLinearScale();
         break;

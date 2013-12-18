@@ -5,6 +5,7 @@
 
 #include "exceptionassert.h"
 #include "neat_math.h"
+#include "demangle.h"
 
 namespace Tfr {
 
@@ -25,7 +26,7 @@ pTransform DummyTransformDesc::
 float DummyTransformDesc::
         displayedTimeResolution( float FS, float /*hz*/ ) const
 {
-    return FS;
+    return .25f / FS;
 }
 
 
@@ -69,16 +70,14 @@ Signal::Interval DummyTransformDesc::
 std::string DummyTransformDesc::
         toString() const
 {
-    return "DummyTransformDesc";
+    return vartype(*this);
 }
 
 
 bool DummyTransformDesc::
         operator==(const TransformDesc& b) const
 {
-    const DummyTransformDesc*bp = dynamic_cast<const DummyTransformDesc*>(&b);
-
-    return bp != 0;
+    return typeid(*this) == typeid(b);
 }
 
 
@@ -166,7 +165,7 @@ void DummyTransform::
         EXCEPTION_ASSERT_EQUALS(c->getCoveredInterval (), b->getInterval ());
 
         double T = timer.elapsed ();
-        EXCEPTION_ASSERT_LESS(T, 4e-5);
+        EXCEPTION_ASSERT_LESS(T, 60e-6);
     }
 }
 
