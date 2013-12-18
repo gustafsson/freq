@@ -175,8 +175,6 @@ public:
     virtual bool operator==(const TransformDesc&) const = 0;
     bool operator!=(const TransformDesc& b) const { return !(*this == b); }
 };
-// TODO remove pTransformDesc
-typedef TransformDesc::Ptr pTransformDesc;
 
 
 } // namespace Tfr
