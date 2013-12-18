@@ -31,6 +31,7 @@
 #include "widgets/widgetoverlaycontroller.h"
 #include "filtercontroller.h"
 #include "printscreencontroller.h"
+#include "waveformcontroller.h"
 
 #include "selectioncontroller.h"
 //#include "brushcontroller.h"
@@ -68,7 +69,8 @@ ToolFactory::
 
     _render_view = new RenderView(&render_model);
 
-    _objects.push_back( QPointer<QObject>( new RenderController(_render_view)));
+    RenderController* render_controller;
+    _objects.push_back( QPointer<QObject>(render_controller=new RenderController(_render_view)));
 
     _timeline_view = new TimelineView(p, _render_view);
     _timeline_controller = new TimelineController(_timeline_view);
@@ -190,6 +192,8 @@ ToolFactory::
     _objects.push_back( QPointer<QObject>( new FilterController( p )));
 
     _objects.push_back( QPointer<QObject>( new PrintScreenController( p )));
+
+    _objects.push_back( QPointer<QObject>( new WaveformController (render_controller)));
 
     //
     // Insert new tools here, and delete things in the destructor in the

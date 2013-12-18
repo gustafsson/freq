@@ -22,7 +22,6 @@
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
-#include "tfr/drawnwaveform.h"
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
@@ -65,16 +64,16 @@ namespace Tools
 RenderController::
         RenderController( QPointer<RenderView> view )
             :
-            view(view),
-            toolbar_render(0),
+            transform(0),
             hz_scale(0),
             linearScale(0),
+            hzmarker(0),
+            view(view),
+            toolbar_render(0),
             logScale(0),
             cepstraScale(0),
             amplitude_scale(0),
-            hzmarker(0),
-            color(0),
-            transform(0)
+            color(0)
 {
     Support::RenderViewUpdateAdapter* rvup;
     Support::RenderOperationDesc::RenderTarget::Ptr rvu(
@@ -612,25 +611,6 @@ void RenderController::
 
 
 void RenderController::
-        receiveSetTransform_DrawnWaveform()
-{
-    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(model()->tfr_mapping ());
-
-    setBlockFilter( drawnwaveformblock );
-
-    ::Ui::MainWindow* ui = getItems();
-
-    hz_scale->setEnabled( false );
-    if (ui->actionToggle_piano_grid->isChecked())
-        hzmarker->setChecked( false );
-    ui->actionToggle_piano_grid->setVisible( false );
-
-    // blockfilter sets the proper "frequency" axis
-    linearScale->trigger();
-}
-
-
-void RenderController::
         receiveLinearScale()
 {
     float fs = headSampleRate();
@@ -838,7 +818,6 @@ void RenderController::
 //        connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
 //        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
-        connect(ui->actionTransform_Waveform, SIGNAL(triggered()), SLOT(receiveSetTransform_DrawnWaveform()));
 
         transform = new ComboBoxAction(toolbar_render);
         transform->setObjectName("ComboBoxActiontransform");
@@ -847,7 +826,6 @@ void RenderController::
 
         if (!Sawe::Configuration::feature("stable")) {
             transform->addActionItem( ui->actionTransform_Cepstrum );
-            transform->addActionItem( ui->actionTransform_Waveform );
         }
 
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );

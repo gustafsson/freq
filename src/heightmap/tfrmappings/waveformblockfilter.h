@@ -13,9 +13,6 @@ namespace TfrMappings {
  */
 class WaveformBlockFilter: public Heightmap::MergeChunk
 {
-public:
-    WaveformBlockFilter();
-
 private:
     void mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& chunk, Heightmap::BlockData& outData );
 
@@ -29,9 +26,7 @@ public:
  */
 class WaveformBlockFilterDesc: public Heightmap::MergeChunkDesc
 {
-public:
-    WaveformBlockFilterDesc();
-
+private:
     MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const;
 
 public:

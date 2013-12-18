@@ -7,12 +7,6 @@
 namespace Heightmap {
 namespace TfrMappings {
 
-WaveformBlockFilter::
-        WaveformBlockFilter()
-{
-}
-
-
 void WaveformBlockFilter::
         mergeChunk(
             const Heightmap::Block& block,
@@ -46,12 +40,6 @@ void WaveformBlockFilter::
             readstop,
             1.f,
             writeposoffs);
-}
-
-
-WaveformBlockFilterDesc::
-        WaveformBlockFilterDesc()
-{
 }
 
 
