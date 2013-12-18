@@ -5,6 +5,7 @@
 #include "source.h"
 #include "intervals.h"
 #include "poperation.h"
+#include "processing/iinvalidator.h"
 
 // boost
 #include <boost/serialization/nvp.hpp>
@@ -60,7 +61,9 @@ public:
 /**
  * @brief The OperationDesc class should describe the interface for creating instances of the Operation interface.
  *
- * All methods have const access to make it more likely that there are none or few side-effects.
+ * It should invalidate caches if the operation parameters change.
+ *
+ * All methods except one have const access to make it more likely that there are none or few side-effects.
  */
 class SaweDll OperationDesc: public VolatilePtr<OperationDesc>
 {
@@ -83,7 +86,7 @@ public:
      * representing the at least interval I at once the operation can request
      * a smaller chunk for processing instead by setting 'expectedOutput'.
      */
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const = 0;
+    virtual Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const = 0;
 
 
     /**
@@ -172,6 +175,13 @@ public:
 
 
     /**
+     * @brief setInvalidator sets an functor to be used by deprecateCache.
+     * @param invalidator
+     */
+    void setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator);
+
+
+    /**
      * @brief operator == checks if two instances of OperationDesc would generate
      * identical instances of Operation. The default behaviour is to just check
      * the type of the argument.
@@ -190,6 +200,23 @@ public:
      * @return os
      */
     friend std::ostream& operator << (std::ostream& os, const OperationDesc& d);
+
+protected:
+    /**
+     * @brief deprecateCache should be called when parameters change.
+     * @param what If what is Signal::Intervals::Intervals_ALL then Step will
+     * recreate operations for computing engines as needed.
+     */
+    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const volatile;
+
+private:
+    /**
+     * @brief invalidator_ is used by deprecateCache.
+     *
+     * Could be a list<IInvalidator::Ptr> to support adding the same OperationDesc
+     * at multiple locations in the Dag.
+     */
+    Signal::Processing::IInvalidator::Ptr invalidator_;
 };
 
 

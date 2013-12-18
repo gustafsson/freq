@@ -21,14 +21,6 @@ public:
     OperationDescWrapper(OperationDesc::Ptr wrap=OperationDesc::Ptr());
 
     /**
-     * @brief setInvalidator specifies which invalidator to use.
-     * @param invalidator is called with Signal::Intervals::Intervals_ALL whenever
-     * the wrapped operation is changed. This makes Step recreate operations for
-     * computing engines as needed.
-     */
-    void setInvalidator(Processing::IInvalidator::Ptr invalidator);
-
-    /**
      * @brief setWrappedOperationDesc makes this OperationDesc behave as a new
      * operation. Will call invalidator if it has been set.
      * @param wrap
@@ -49,7 +41,6 @@ public:
     virtual bool operator==(const OperationDesc& d) const;
 
 private:
-    Processing::IInvalidator::Ptr invalidator_;
     OperationDesc::Ptr wrap_;
 
 public:

@@ -26,7 +26,10 @@
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tools/commands/appendoperationdesccommand.h"
+#include "tools/openfilecontroller.h"
+#include "tools/openwatchedfilecontroller.h"
 #include "tools/recordmodel.h"
+#include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
@@ -114,7 +117,10 @@ int UnitTest::
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
+        RUNTEST(Tools::OpenfileController);
+        RUNTEST(Tools::OpenWatchedFileController);
         RUNTEST(Tools::RecordModel);
+        RUNTEST(Tools::Support::AudiofileOpener);
         RUNTEST(Tools::Support::ChainInfo);
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);

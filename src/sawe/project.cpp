@@ -17,6 +17,8 @@
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tools/commands/appendoperationdesccommand.h"
+#include "tools/openwatchedfilecontroller.h"
+#include "tools/support/audiofileopener.h"
 
 // Qt
 #include <QFileDialog>
@@ -213,7 +215,7 @@ pProject Project::
     {
         int availableFileTypes = 1;
     #if !defined(TARGET_reader)
-        availableFileTypes++;
+        availableFileTypes+=2;
     #endif
     #if !defined(TARGET_reader) && !defined(TARGET_hast)
         availableFileTypes++;
@@ -238,12 +240,17 @@ pProject Project::
             switch(i) {
                 case 0: p = Project::openProject( filename ); break;
     #if !defined(TARGET_reader)
-                case 1: p = Project::openAudio( filename ); break;
+                case 1: p = Project::openWatched ( filename ); break;
+                case 2: p = Project::openAudio( filename ); break;
     #endif
     #if !defined(TARGET_reader) && !defined(TARGET_hast)
-                case 2: p = Project::openCsvTimeseries( filename ); break;
+                case 3: p = Project::openCsvTimeseries( filename ); break;
     #endif
             }
+
+            if (!p)
+                continue;
+
             break; // successful loading without thrown exception
         }
         catch (const OpenFileError& x) {
@@ -542,11 +549,40 @@ bool Project::
 #endif
 
 
+pProject Project::
+        openWatched(std::string path)
+{
+    Tools::OpenfileController* ofc = Tools::OpenfileController::instance();
+    if (ofc->get_openers().empty())
+        ofc->registerOpener(new Tools::Support::AudiofileOpener);
+
+    Tools::OpenWatchedFileController* watchedopener = new Tools::OpenWatchedFileController( ofc );
+
+    Signal::OperationDesc::Ptr d = watchedopener->openWatched (path.c_str ());
+    if (!d)
+        return pProject();
+
+    return openOperation(d);
+}
+
+
+pProject Project::
+        openOperation(Signal::OperationDesc::Ptr operation)
+{
+    pProject p( new Project(read1(operation)->toString().toStdString() ));
+    p->createMainWindow ();
+    p->appendOperation (operation);
+    p->setModified (false);
+
+    return p;
+}
+
+
 #if !defined(TARGET_reader)
 pProject Project::
         openAudio(std::string audio_file)
 {
-    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString();
+    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString ();
 
     boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
     Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));

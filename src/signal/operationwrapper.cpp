@@ -25,27 +25,19 @@ OperationDescWrapper::
 
 
 void OperationDescWrapper::
-        setInvalidator(Processing::IInvalidator::Ptr invalidator)
-{
-    invalidator_ = invalidator;
-}
-
-
-void OperationDescWrapper::
         setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile
 {
-    Processing::IInvalidator::Ptr invalidator;
-
     {
         WritePtr selfp(this);
         OperationDescWrapper* self = dynamic_cast<OperationDescWrapper*>(&*selfp);
 
+        if (wrap == self->wrap_)
+            return;
+
         self->wrap_ = wrap;
-        invalidator = self->invalidator_;
     }
 
-    if (invalidator)
-        read1(invalidator)->deprecateCache(Signal::Intervals::Intervals_ALL);
+    deprecateCache();
 }
 
 

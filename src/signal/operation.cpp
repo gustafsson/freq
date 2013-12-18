@@ -67,6 +67,13 @@ int OperationDesc::
 }
 
 
+void OperationDesc::
+        setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator)
+{
+    invalidator_ = invalidator;
+}
+
+
 bool OperationDesc::
         operator==(const OperationDesc& d) const
 {
@@ -77,6 +84,16 @@ bool OperationDesc::
 
 std::ostream& operator << (std::ostream& os, const OperationDesc& d) {
     return os << d.toString().toStdString ();
+}
+
+
+void OperationDesc::
+        deprecateCache(Signal::Intervals what) const volatile
+{
+    Signal::Processing::IInvalidator::Ptr invalidator = ReadPtr(this)->invalidator_;
+
+    if (invalidator)
+        read1(invalidator)->deprecateCache(what);
 }
 
 
