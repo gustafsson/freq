@@ -105,6 +105,14 @@ pChunk DummyTransform::
     DummyChunk*p;
     pChunk c(p = new DummyChunk);
     p->original = b;
+
+    c->chunk_offset = b->sample_offset ();
+    c->first_valid_sample = 0;
+    c->n_valid_samples = b->number_of_samples ();
+    c->original_sample_rate = b->sample_rate ();
+    c->sample_rate = b->sample_rate ();
+    c->transform_data.reset (new Tfr::ChunkData(b->waveform_data ()->size ()));
+
     return c;
 }
 
@@ -120,6 +128,8 @@ Signal::pMonoBuffer DummyTransform::
 
 } // namespace Tfr
 
+#include "timer.h"
+
 namespace Tfr {
 
 void DummyTransformDesc::
@@ -131,7 +141,8 @@ void DummyTransformDesc::
         pTransform t = d.createTransform ();
         EXCEPTION_ASSERT(t);
 
-        pChunk c = (*t)(Signal::pMonoBuffer());
+        Signal::pMonoBuffer m = Test::RandomBuffer::smallBuffer()->getChannel (0);
+        pChunk c = (*t)(m);
         EXCEPTION_ASSERT(c);
     }
 }
@@ -142,6 +153,7 @@ void DummyTransform::
 {
     // It should transform a buffer into a dummy state and back.
     {
+        Timer timer;
         DummyTransform t;
 
         Signal::pBuffer b = Test::RandomBuffer::smallBuffer(std::hash<std::string>()("DummyTransform"));
@@ -150,6 +162,11 @@ void DummyTransform::
 
         Signal::pMonoBuffer b2 = t.inverse (c);
         EXCEPTION_ASSERT(b->getChannel (0) == b2);
+
+        EXCEPTION_ASSERT_EQUALS(c->getCoveredInterval (), b->getInterval ());
+
+        double T = timer.elapsed ();
+        EXCEPTION_ASSERT_LESS(T, 3e-5);
     }
 }
 
