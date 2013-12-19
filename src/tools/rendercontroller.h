@@ -26,7 +26,21 @@ namespace Tools
         RenderController( QPointer<RenderView> view );
         ~RenderController();
 
-        RenderModel* model();
+        RenderModel*        model();
+
+        ::Ui::MainWindow*   getItems();
+        void                setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc);
+        void                stateChanged();
+        void                emitAxisChanged();
+
+        Ui::ComboBoxAction* transform;
+        Ui::ComboBoxAction* hz_scale;
+        QAction*            hz_scale_action;
+        QAction*            amplitude_scale_action;
+        QAction*            tf_resolution_action;
+        QAction*            waveformScale;
+        QAction*            linearScale;
+        Ui::ComboBoxAction* hzmarker;
 
     public slots:
         // GUI bindings are set up in RenderController constructor
@@ -68,9 +82,9 @@ namespace Tools
         void receiveSetTransform_Cwt_ridge();
         void receiveSetTransform_Cwt_weight();
         void receiveSetTransform_Cepstrum();
-        void receiveSetTransform_DrawnWaveform();
 
         // ComboBoxAction hz_scale
+        void receiveWaveformScale();
         void receiveLinearScale();
         void receiveLogScale();
         void receiveCepstraScale();
@@ -92,16 +106,13 @@ namespace Tools
         void clearCaches();
 
     private:
-        void stateChanged();
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
         void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
-        void setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc);
         void setBlockFilter(Signal::OperationDesc::Ptr adapter);
         //Tfr::Filter* currentFilter();
         Tfr::TransformDesc::Ptr currentTransform();
         float headSampleRate();
         float currentTransformMinHz();
-        ::Ui::MainWindow* getItems();
 
         QPointer<RenderView> view;
 
@@ -112,15 +123,11 @@ namespace Tools
         // place in the GUI and take care of events. The objects lifetime
         // depends on the parent QObject which they are inserted into.
         QToolBar* toolbar_render;
-        Ui::ComboBoxAction* hz_scale;
-        QAction* linearScale;
         QAction* logScale;
         QAction* cepstraScale;
         Ui::ComboBoxAction* amplitude_scale;
-        Ui::ComboBoxAction* hzmarker;
         Ui::ComboBoxAction* color;
         QToolButton* channelselector;
-        Ui::ComboBoxAction* transform;
 
         Widgets::ValueSlider* yscale;
         Widgets::ValueSlider* tf_resolution;

@@ -22,7 +22,6 @@
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
-#include "tfr/drawnwaveform.h"
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
@@ -65,16 +64,19 @@ namespace Tools
 RenderController::
         RenderController( QPointer<RenderView> view )
             :
+            transform(0),
+            hz_scale(0),
+            hz_scale_action(0),
+            amplitude_scale_action(0),
+            tf_resolution_action(0),
+            linearScale(0),
+            hzmarker(0),
             view(view),
             toolbar_render(0),
-            hz_scale(0),
-            linearScale(0),
             logScale(0),
             cepstraScale(0),
             amplitude_scale(0),
-            hzmarker(0),
-            color(0),
-            transform(0)
+            color(0)
 {
     Support::RenderViewUpdateAdapter* rvup;
     Support::RenderOperationDesc::RenderTarget::Ptr rvu(
@@ -133,6 +135,13 @@ void RenderController::
     view->userinput_update();
 
     model()->project()->setModified();
+}
+
+
+void RenderController::
+        emitAxisChanged()
+{
+    view->emitAxisChanged();
 }
 
 
@@ -612,25 +621,6 @@ void RenderController::
 
 
 void RenderController::
-        receiveSetTransform_DrawnWaveform()
-{
-    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(model()->tfr_mapping ());
-
-    setBlockFilter( drawnwaveformblock );
-
-    ::Ui::MainWindow* ui = getItems();
-
-    hz_scale->setEnabled( false );
-    if (ui->actionToggle_piano_grid->isChecked())
-        hzmarker->setChecked( false );
-    ui->actionToggle_piano_grid->setVisible( false );
-
-    // blockfilter sets the proper "frequency" axis
-    linearScale->trigger();
-}
-
-
-void RenderController::
         receiveLinearScale()
 {
     float fs = headSampleRate();
@@ -643,6 +633,22 @@ void RenderController::
         fa.min_hz = currentTransformMinHz();
         fa.f_step = fs/2 - fa.min_hz;
     }
+
+    model()->display_scale( fa );
+
+    view->emitAxisChanged();
+    stateChanged();
+}
+
+
+void RenderController::
+        receiveWaveformScale()
+{
+    float maxvalue = 1;
+    float minvalue = -1;
+
+    Tfr::FreqAxis fa;
+    fa.setWaveform (minvalue, maxvalue);
 
     model()->display_scale( fa );
 
@@ -838,7 +844,6 @@ void RenderController::
 //        connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
 //        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
-        connect(ui->actionTransform_Waveform, SIGNAL(triggered()), SLOT(receiveSetTransform_DrawnWaveform()));
 
         transform = new ComboBoxAction(toolbar_render);
         transform->setObjectName("ComboBoxActiontransform");
@@ -847,7 +852,6 @@ void RenderController::
 
         if (!Sawe::Configuration::feature("stable")) {
             transform->addActionItem( ui->actionTransform_Cepstrum );
-            transform->addActionItem( ui->actionTransform_Waveform );
         }
 
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
@@ -866,36 +870,42 @@ void RenderController::
 
 
     // ComboBoxAction* hz-scale
-    {   linearScale = new QAction( toolbar_render );
+    {   waveformScale = new QAction( toolbar_render );
+        linearScale = new QAction( toolbar_render );
         logScale = new QAction( toolbar_render );
         cepstraScale = new QAction( toolbar_render );
 
+        waveformScale->setText("Waveform");
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");
         cepstraScale->setText("Cepstra scale");
 
         // for serialization
+        waveformScale->setObjectName("waveformScale");
         linearScale->setObjectName("linearScale");
         logScale->setObjectName("logScale");
         cepstraScale->setObjectName("cepstraScale");
 
+        waveformScale->setVisible (false);
         linearScale->setCheckable( true );
         logScale->setCheckable( true );
         cepstraScale->setCheckable( true );
 
+        connect(waveformScale, SIGNAL(triggered()), SLOT(receiveWaveformScale()));
         connect(linearScale, SIGNAL(triggered()), SLOT(receiveLinearScale()));
         connect(logScale, SIGNAL(triggered()), SLOT(receiveLogScale()));
         connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
 
         hz_scale = new ComboBoxAction();
         hz_scale->setObjectName("hz_scale");
+        //hz_scale->addActionItem( waveformScale );
         hz_scale->addActionItem( linearScale );
         hz_scale->addActionItem( logScale );
         if (!Sawe::Configuration::feature("stable")) {
             hz_scale->addActionItem( cepstraScale );
         }
         hz_scale->decheckable( false );
-        toolbar_render->addWidget( hz_scale );
+        hz_scale_action = toolbar_render->addWidget( hz_scale );
 
         unsigned k=0;
         foreach( QAction* a, hz_scale->actions())
@@ -933,7 +943,7 @@ void RenderController::
         amplitude_scale->addActionItem( logAmpltidue );
         amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
-        toolbar_render->addWidget( amplitude_scale );
+        amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
         unsigned k=0;
         foreach( QAction* a, amplitude_scale->actions())
@@ -980,7 +990,7 @@ void RenderController::
         tf_resolution->setToolTip ("Window size (time/frequency resolution) ");
         tf_resolution->setSliderSize ( 300 );
         tf_resolution->updateLineEditOnValueChanged (false); // RenderController does that instead
-        toolbar_render->addWidget (tf_resolution);
+        tf_resolution_action = toolbar_render->addWidget (tf_resolution);
 
         connect(tf_resolution, SIGNAL(valueChanged(qreal)), SLOT(receiveSetTimeFrequencyResolution(qreal)));
         receiveSetTimeFrequencyResolution(tf_resolution->value());
@@ -1095,6 +1105,10 @@ void RenderController::
 {
     switch(model()->display_scale().axis_scale)
     {
+    case Tfr::AxisScale_Waveform:
+        receiveWaveformScale();
+        break;
+
     case Tfr::AxisScale_Linear:
         receiveLinearScale();
         break;

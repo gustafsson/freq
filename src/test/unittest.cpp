@@ -3,6 +3,7 @@
 #include "test/implicitordering.h"
 #include "test/stdlibtest.h"
 #include "test/tasktimertiming.h"
+#include "test/randombuffer.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
 #include "adapters/microphonerecorder.h"
@@ -25,6 +26,7 @@
 #include "signal/oldoperationwrapper.h"
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
+#include "tfr/dummytransform.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openfilecontroller.h"
 #include "tools/openwatchedfilecontroller.h"
@@ -39,6 +41,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
+#include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
 
@@ -90,6 +93,7 @@ int UnitTest::
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
+        RUNTEST(Test::RandomBuffer);
         RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Buffer);
         RUNTEST(Signal::BufferSource);
@@ -116,6 +120,8 @@ int UnitTest::
         RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
+        RUNTEST(Tfr::DummyTransform);
+        RUNTEST(Tfr::DummyTransformDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
@@ -138,6 +144,8 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
         RUNTEST(Adapters::Playback);
 
     } catch (const exception& x) {
