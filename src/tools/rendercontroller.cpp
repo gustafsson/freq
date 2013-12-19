@@ -66,6 +66,9 @@ RenderController::
             :
             transform(0),
             hz_scale(0),
+            hz_scale_action(0),
+            amplitude_scale_action(0),
+            tf_resolution_action(0),
             linearScale(0),
             hzmarker(0),
             view(view),
@@ -883,7 +886,7 @@ void RenderController::
         logScale->setObjectName("logScale");
         cepstraScale->setObjectName("cepstraScale");
 
-        waveformScale->setEnabled (false);
+        waveformScale->setVisible (false);
         linearScale->setCheckable( true );
         logScale->setCheckable( true );
         cepstraScale->setCheckable( true );
@@ -895,14 +898,14 @@ void RenderController::
 
         hz_scale = new ComboBoxAction();
         hz_scale->setObjectName("hz_scale");
-        hz_scale->addActionItem( waveformScale );
+        //hz_scale->addActionItem( waveformScale );
         hz_scale->addActionItem( linearScale );
         hz_scale->addActionItem( logScale );
         if (!Sawe::Configuration::feature("stable")) {
             hz_scale->addActionItem( cepstraScale );
         }
         hz_scale->decheckable( false );
-        toolbar_render->addWidget( hz_scale );
+        hz_scale_action = toolbar_render->addWidget( hz_scale );
 
         unsigned k=0;
         foreach( QAction* a, hz_scale->actions())
@@ -940,7 +943,7 @@ void RenderController::
         amplitude_scale->addActionItem( logAmpltidue );
         amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
-        toolbar_render->addWidget( amplitude_scale );
+        amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
         unsigned k=0;
         foreach( QAction* a, amplitude_scale->actions())
@@ -987,7 +990,7 @@ void RenderController::
         tf_resolution->setToolTip ("Window size (time/frequency resolution) ");
         tf_resolution->setSliderSize ( 300 );
         tf_resolution->updateLineEditOnValueChanged (false); // RenderController does that instead
-        toolbar_render->addWidget (tf_resolution);
+        tf_resolution_action = toolbar_render->addWidget (tf_resolution);
 
         connect(tf_resolution, SIGNAL(valueChanged(qreal)), SLOT(receiveSetTimeFrequencyResolution(qreal)));
         receiveSetTimeFrequencyResolution(tf_resolution->value());

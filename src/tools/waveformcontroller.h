@@ -19,7 +19,7 @@ public:
 signals:
 
 public slots:
-    void                     receiveSetTransform_DrawnWaveform();
+    void                     receiveSetTransform_DrawnWaveform(bool);
 
 private:
     QAction*                 showWaveform;

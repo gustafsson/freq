@@ -35,6 +35,9 @@ namespace Tools
 
         Ui::ComboBoxAction* transform;
         Ui::ComboBoxAction* hz_scale;
+        QAction*            hz_scale_action;
+        QAction*            amplitude_scale_action;
+        QAction*            tf_resolution_action;
         QAction*            waveformScale;
         QAction*            linearScale;
         Ui::ComboBoxAction* hzmarker;
