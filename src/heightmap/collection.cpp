@@ -6,7 +6,6 @@
 #include "blockcacheinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
-#include "signal/operationcache.h"
 #include "reference_hash.h"
 #include "blocks/garbagecollector.h"
 #include "blocks/merger.h"

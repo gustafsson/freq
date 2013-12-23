@@ -1,3 +1,4 @@
+#if 0 // No DeprecatedOperation / OperationCache
 #include "matlaboperation.h"
 #include "hdf5.h"
 #include "recorder.h"
@@ -25,7 +26,7 @@ namespace Adapters {
 
 MatlabOperation::
         MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* s )
-:   OperationCache(source),
+:   DeprecatedOperation(source),
     _settings(0)
 {
     settings(s);
@@ -34,7 +35,7 @@ MatlabOperation::
 
 MatlabOperation::
         MatlabOperation()
-:   OperationCache(Signal::pOperation()),
+:   DeprecatedOperation(Signal::pOperation()),
     _settings(0)
 {
     settings(0);
@@ -87,7 +88,7 @@ void MatlabOperation::
     }
     else
     {
-        OperationCache::invalidate_samples( I );
+        DeprecatedOperation::invalidate_samples( I );
 
         if (plotlines && source())
             plotlines->clear( I, sample_rate() );
@@ -210,7 +211,7 @@ bool MatlabOperation::
         }
 
         if (samples_to_invalidate)
-            OperationCache::invalidate_samples( samples_to_invalidate );
+            DeprecatedOperation::invalidate_samples( samples_to_invalidate );
 
         Recorder* recorder = dynamic_cast<Recorder*>(root());
         bool isrecording = 0!=recorder;
@@ -388,7 +389,7 @@ void MatlabOperation::
     {
         _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
 
-        OperationCache::invalidate_samples( Signal::Intervals::Intervals_ALL );
+        DeprecatedOperation::invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
 
     if (plotlines)
@@ -416,3 +417,4 @@ void MatlabOperation::
 }
 
 } // namespace Adapters
+#endif // No DeprecatedOperation / OperationCache

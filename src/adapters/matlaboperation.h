@@ -2,8 +2,8 @@
 #define ADAPTERS_MATLABOPERATION_H
 
 #include "sawe/openfileerror.h"
-#include "signal/operationcache.h"
 #include "matlabfunction.h"
+#include "signal/operation.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
@@ -18,14 +18,14 @@ namespace Tools {
 namespace Adapters {
 
 
-class MatlabOperation: public Signal::OperationCache
+class MatlabOperation: public Signal::DeprecatedOperation
 {
 public:
     MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* settings );
     ~MatlabOperation();
 
     // Does only support mono, use first channel
-    //virtual unsigned num_channels() { return std::min(1u, Signal::OperationCache::num_channels()); }
+    //virtual unsigned num_channels() { return std::min(1u, Signal::DeprecatedOperation::num_channels()); }
 
     virtual std::string name();
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
@@ -94,7 +94,7 @@ private:
         settings.operation = this;
 
         this->settings(settingsp);
-        invalidate_cached_samples(Signal::Intervals());
+        invalidate_samples(Signal::Intervals());
     }
 #endif
     BOOST_SERIALIZATION_SPLIT_MEMBER()

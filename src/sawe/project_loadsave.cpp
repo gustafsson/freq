@@ -3,13 +3,12 @@
 
 // Serializable Sonic AWE classes 
 #include "adapters/audiofile.h"
-#include "adapters/matlaboperation.h"
+//#include "adapters/matlaboperation.h"
 #include "adapters/microphonerecorder.h"
 #include "tools/support/brushfilter.h"
 #include "filters/ellipse.h"
 #include "filters/rectangle.h"
 #include "filters/normalize.h"
-#include "signal/operationcache.h"
 #include "signal/operation-basic.h"
 
 // Serializable Sonic AWE Tools
@@ -62,10 +61,8 @@ void runSerialization(Archive& ar, Project*& project, QString path)
     ar.template register_type<Tools::ToolFactory>();
     ar.template register_type<Tools::ToolRepo>();
     ar.template register_type<Tools::RenderModel>();
-    ar.template register_type<Signal::OperationCacheLayer>();
-    ar.template register_type<Adapters::MatlabOperation>();
+//    ar.template register_type<Adapters::MatlabOperation>();
     ar.template register_type<Project>();
-    ar.template register_type<Signal::OperationCachedSub>();
     ar.template register_type<Signal::OperationSuperposition>();
     ar.template register_type<Signal::OperationSetSilent>();
     ar.template register_type<Signal::OperationRemoveSection>();

@@ -9,7 +9,6 @@
 #endif
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
-#include "signal/operationcache.h"
 #include "signal/oldoperationwrapper.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
@@ -91,36 +90,6 @@ void Project::
 
     setModified ();
 }
-
-
-/*
-void Project::
-        appendOperation(Signal::pOperation s)
-{
-    Tools::SelectionModel& m = tools().selection_model;
-
-    if (m.current_selection() && m.current_selection()!=s)
-    {
-        Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
-                head->head_source(),
-                Signal::pOperation( new Signal::OperationCachedSub(
-                    m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ))),
-                Signal::pOperation( new Signal::OperationCachedSub(
-                    m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ))),
-                s
-                ));
-
-        s = onselectionOnly;
-    }
-
-    this->head->appendOperation( s );
-
-    tools().render_model.renderSignalTarget->findHead( head->chain() )->head_source( head->head_source() );
-    tools().playback_model.playbackTarget->findHead( head->chain() )->head_source( head->head_source() );
-
-    setModified();
-}
-*/
 
 
 Tools::ToolRepo& Project::

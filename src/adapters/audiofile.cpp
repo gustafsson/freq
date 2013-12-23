@@ -179,7 +179,7 @@ bool Audiofile::
 Audiofile::
         Audiofile(std::string filename)
         :
-        Signal::OperationCache(Signal::pOperation()),
+        DeprecatedOperation(Signal::pOperation()),
         _tried_load(false),
         _sample_rate(0),
         _number_of_samples(0),
@@ -199,7 +199,7 @@ std::string Audiofile::
         name()
 {
     if (filename().empty())
-        return DeprecatedOperation::name();
+        return vartype(*this);
 
     return QFileInfo( filename().c_str() ).fileName().toStdString();
 }
@@ -242,20 +242,10 @@ std::string Audiofile::
 }
 
 
-void Audiofile::
-        invalidate_samples(const Signal::Intervals& I)
-{
-    if (!sndfile && _tried_load)
-        _tried_load = false;
-
-    Signal::OperationCache::invalidate_samples( I );
-}
-
-
 Audiofile:: // for deserialization
         Audiofile()
             :
-            Signal::OperationCache(Signal::pOperation()),
+            DeprecatedOperation(Signal::pOperation()),
             file(new QTemporaryFile()),
             _tried_load(false),
             _sample_rate(0),
@@ -294,8 +284,6 @@ bool Audiofile::
         _sample_rate = sndfile->samplerate();
         _number_of_samples = sndfile->frames();
         _number_of_channels = sndfile->channels();
-
-        invalidate_samples( getInterval() );
     }
 
     return true;
@@ -349,13 +337,6 @@ Signal::pBuffer Audiofile::
 
     VERBOSE_AUDIOFILE tt->info("Data size: %lu samples, %lu channels", (size_t)sndfile->frames(), (size_t)sndfile->channels() );
     VERBOSE_AUDIOFILE tt->info("Sample rate: %lu samples/second", sndfile->samplerate() );
-
-    if ((invalid_samples() - I).empty())
-    {
-        // Don't need this anymore so release resources. But load it again if needed.
-        sndfile.reset();
-        _tried_load = false;
-    }
 
     return waveform;
 }

@@ -28,8 +28,6 @@
 #include "selections/rectanglemodel.h"
 #include "selections/rectangleview.h"
 
-#include "signal/operationcache.h"
-
 namespace Tools
 {
     SelectionController::
@@ -244,8 +242,6 @@ namespace Tools
         // SelectionController can't see the head.
         // The SelectionChangedCommand can take care of this instead.
         Signal::pOperation t = _model->project()->head->head_source();
-        if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
-            t = t->source();
         if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
             t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
 
