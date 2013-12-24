@@ -4,6 +4,7 @@
 #include "tfr/stftfilter.h"
 #include "tfr/stft.h"
 #include "tfr/complexbuffer.h"
+#include "signal/computingengine.h"
 
 #include "exceptionassert.h"
 
@@ -13,34 +14,8 @@ using namespace Tfr;
 namespace Filters {
 
 
-Envelope::Envelope()
-{
-    StftDesc desc;
-    desc.setWindow (StftDesc::WindowType_Gaussian, 0.75);
-    desc.set_approximate_chunk_size (256);
-    transform( desc.createTransform () );
-}
-
-
-void Envelope::
-        transform( Tfr::pTransform m )
-{
-    const StftDesc* desc = dynamic_cast<const StftDesc*>(m->transformDesc ());
-
-    // Ensure redundant transform
-    if (!desc->compute_redundant ())
-    {
-        StftDesc p2(*desc);
-        p2.compute_redundant ( true );
-        m = p2.createTransform ();
-    }
-
-    StftFilter::transform(m);
-}
-
-
 bool Envelope::
-        applyFilter( ChunkAndInverse& chunk )
+        operator()( ChunkAndInverse& chunk )
 {
     // CPU memset
     ChunkElement* p = chunk.chunk->transform_data->getCpuMemory ();
@@ -55,7 +30,7 @@ bool Envelope::
     }
 
 
-    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(Tfr::StftFilter::transform ().get ());
+    Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(chunk.t.get ());
     Tfr::ComplexBuffer::Ptr b = stft->inverseKeepComplex (chunk.chunk);
     Tfr::ChunkElement* d = b->complex_waveform_data ()->getCpuMemory ();
     for (int i=0; i<b->number_of_samples (); ++i)
@@ -67,11 +42,87 @@ bool Envelope::
 }
 
 
-bool Envelope::
-        operator()( Tfr::Chunk& )
+Tfr::pChunkFilter EnvelopeKernelDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
 {
-    EXCEPTION_ASSERT( false );
-    return false;
+    if (engine == 0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new Envelope);
+    return Tfr::pChunkFilter();
+}
+
+
+EnvelopeDesc::
+        EnvelopeDesc()
+    :
+      FilterDesc(Tfr::pTransformDesc(), Tfr::FilterKernelDesc::Ptr(new EnvelopeKernelDesc))
+{
+    StftDesc* desc;
+    Tfr::pTransformDesc t(desc = new StftDesc);
+    desc->setWindow (StftDesc::WindowType_Gaussian, 0.75);
+    desc->set_approximate_chunk_size (256);
+    transformDesc( t );
+}
+
+
+
+void EnvelopeDesc::
+        transformDesc( Tfr::pTransformDesc m )
+{
+    const StftDesc* desc = dynamic_cast<const StftDesc*>(m.get ());
+
+    EXCEPTION_ASSERT(desc);
+
+    // Ensure redundant transform
+    if (!desc->compute_redundant ())
+    {
+        m = desc->copy ();
+        StftDesc* p2 = dynamic_cast<StftDesc*>(m.get ());
+        p2->compute_redundant ( true );
+    }
+
+    FilterDesc::transformDesc (m);
+}
+
+}
+
+
+#include "expectexception.h"
+#include "test/randombuffer.h"
+
+
+namespace Filters {
+
+void EnvelopeDesc::
+        test()
+{
+    // It should compute the envelope of a signal.
+    {
+        EnvelopeDesc ed;
+
+        Signal::Operation::Ptr o = ed.createOperation ();
+
+        Signal::Interval I(10,12);
+        Signal::Interval expected;
+        Signal::Interval i = ed.requiredInterval (I, &expected);
+        Signal::pBuffer b = Test::RandomBuffer::randomBuffer (i, 1, 1);
+        Signal::pBuffer r = write1(o)->process(b);
+
+        EXCEPTION_ASSERT_EQUALS(r->getInterval (), expected);
+
+        float* p = r->getChannel (0)->waveform_data ()->getCpuMemory ();
+        std::cout << std::endl;
+        std::cout << std::endl;
+        for (unsigned i=0; i<expected.count (); i++) {
+            std::cout << p[i] << ", ";
+        }
+    }
+
+    // It should only accept StftDesc as TransformDesc.
+    {
+        EnvelopeDesc ed;
+
+        EXPECT_EXCEPTION(ExceptionAssert,ed.transformDesc(Tfr::pTransformDesc()));
+    }
 }
 
 

@@ -35,7 +35,7 @@ void FilterController::
 void FilterController::
         addEnvelope()
 {
-    project_->appendOperation ( Signal::pOperation( new Filters::Envelope() ));
+    project_->appendOperation ( Signal::OperationDesc::Ptr(new Filters::EnvelopeDesc() ));
 }
 
 

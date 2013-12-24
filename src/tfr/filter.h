@@ -207,7 +207,7 @@ public:
     virtual bool operator==(const Signal::OperationDesc&d) const;
 
     Tfr::pTransformDesc transformDesc() const;
-    void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
+    virtual void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
 protected:
     Tfr::pTransformDesc transform_desc_;
     FilterKernelDesc::Ptr chunk_filter_;
