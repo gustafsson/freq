@@ -1,3 +1,4 @@
+#if 0
 #ifndef SELECTIONVIEWINFO_H
 #define SELECTIONVIEWINFO_H
 
@@ -63,3 +64,4 @@ private:
 
 } // namespace Tools
 #endif // SELECTIONVIEWINFO_H
+#endif

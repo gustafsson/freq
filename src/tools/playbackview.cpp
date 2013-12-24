@@ -80,9 +80,12 @@ void PlaybackView::
         return;
     }
 
+    Signal::Operation::WritePtr playbackw(model->playback());
+    Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+
     // Playback has stopped/or hasn't started
-    bool is_stopped = model->playback()->isStopped();
-    is_stopped &= model->playback()->invalid_samples().empty();
+    bool is_stopped = playback->isStopped();
+    is_stopped &= playback->invalid_samples().empty();
     if (!is_stopped)
         just_started = false;
     is_stopped &= !just_started;
@@ -90,19 +93,19 @@ void PlaybackView::
         return;
     }
 
-    bool is_paused = model->playback()->isPaused();
+    bool is_paused = playback->isPaused();
     if (!is_paused) {
         update();
     }
 
-    is_stopped |= model->playback()->hasReachedEnd ();
+    is_stopped |= playback->hasReachedEnd ();
     // Playback has recently stopped
     if (is_stopped) {
         emit playback_stopped();
         return;
     }
 
-    _playbackMarker = model->playback()->time();
+    _playbackMarker = playback->time();
     if (_playbackMarker<=0)
         _playbackMarker = -1;
 

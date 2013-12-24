@@ -2,35 +2,74 @@
 
 namespace Signal {
 
-    pBuffer Sink::read(const Interval& I) {
-        EXCEPTION_ASSERT(source());
 
-        pBuffer b = source()->read(I);
+Sink::
+    ~Sink()
+{
 
-        // Check if read returned the first sample in interval I
-        Interval i(I.first, I.first + 1);
-        EXCEPTION_ASSERT( (i & b->getInterval()) == i );
-
-        put(b);
-        //_invalid_samples -= b->getInterval();
-        return b;
-    }
+}
 
 
-    void Sink::put(pBuffer) {
-        throw std::logic_error(
-            "Neither read nor put seems to have been overridden from Sink in " + vartype(*this) + ".");
-    }
+bool Sink::
+        deleteMe()
+{
+    return false;
+}
 
 
-    // static
-    pBuffer Sink::put(DeprecatedOperation* receiver, pBuffer buffer) {
-        pOperation s( new BufferSource(buffer));
-        pOperation old = receiver->source();
-        receiver->source(s);
-        pBuffer r = receiver->read(buffer->getInterval());
-        receiver->source(old);
-        return r;
-    }
+bool Sink::
+        isUnderfed()
+{
+    return false;
+}
+
+
+SinkDesc::
+        SinkDesc(Signal::Operation::Ptr sink)
+    :
+      sink_(sink)
+{
+
+}
+
+
+Interval SinkDesc::
+        requiredInterval( const Interval& I, Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Interval SinkDesc::
+        affectedInterval( const Interval& I ) const
+{
+    return I;
+}
+
+
+OperationDesc::Ptr SinkDesc::
+        copy() const
+{
+    return OperationDesc::Ptr(new SinkDesc(sink_));
+}
+
+
+Operation::Ptr SinkDesc::
+        createOperation(ComputingEngine* engine) const
+{
+    if (0 == engine)
+        return sink_;
+
+    return Operation::Ptr();
+}
+
+
+Operation::Ptr SinkDesc::
+        sink() const
+{
+    return sink_;
+}
 
 }

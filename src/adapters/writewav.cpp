@@ -9,6 +9,7 @@
 #include "Statistics.h"
 #include "cpumemorystorage.h"
 #include "signal/transpose.h"
+#include "exceptionassert.h"
 
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -44,52 +45,6 @@ WriteWav::
 }
 
 
-Signal::pBuffer WriteWav::
-        read(const Signal::Interval& J)
-{
-    EXCEPTION_ASSERT(source());
-    EXCEPTION_ASSERT(J.count());
-
-    if (_invalid_samples.empty())
-    {
-        TaskInfo("%s", str(format(
-                "ERROR: WriteWav(%s) didn't expect any data. You need to call invalidate_samples first to prepare WriteWav. Skips reading %s")
-                 % _filename % J.toString()).c_str());
-        return zeros(J);
-    }
-
-    Signal::Interval I = J;
-
-    if (J - _invalid_samples)
-    {
-        Signal::Interval expected = (J & _invalid_samples).spannedInterval();
-        if (!expected)
-        {
-            TaskInfo("%s", str(format(
-                    "ERROR: WriteWav(%s) didn't expect %s. Invalid samples are %s")
-                               % _filename % expected.toString() % _invalid_samples.toString()).c_str());
-            return zeros(J);
-        }
-
-        I = expected;
-    }
-
-    unsigned samples_per_chunk = (4 << 20)/sizeof(float)/num_channels(); // 4 MB per chunk
-    if (I.count() > samples_per_chunk)
-        I.last = I.first + samples_per_chunk;
-
-    Signal::pBuffer b = source()->read(I);
-
-    // Check if read contains I.first
-    EXCEPTION_ASSERT(b->sample_offset().asInteger() <= I.first);
-    EXCEPTION_ASSERT(b->sample_offset().asInteger() + b->number_of_samples() > I.first);
-
-    put(b);
-
-    return b;
-}
-
-
 void WriteWav::
         put( Signal::pBuffer buffer )
 {
@@ -108,12 +63,12 @@ void WriteWav::
     if (!_sndfile)
     {
         const int format=SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-        _sndfile.reset(new SndfileHandle(_filename, SFM_WRITE, format, num_channels(), sample_rate()));
+        _sndfile.reset(new SndfileHandle(_filename, SFM_WRITE, format, buffer->number_of_channels (), buffer->sample_rate()));
 
         if (!*_sndfile)
         {
             TaskInfo("ERROR: WriteWav(%s) libsndfile couldn't create a file for %u channels and sample rate %f",
-                     _filename.c_str(), num_channels(), sample_rate());
+                     _filename.c_str(), buffer->number_of_channels (), buffer->sample_rate());
             return;
         }
     }
@@ -185,14 +140,13 @@ void WriteWav::
 void WriteWav::
         writeToDisk(std::string filename, Signal::pBuffer b, bool normalize)
 {
-    Signal::pOperation source(new Signal::BufferSource(b));
     WriteWav* w = 0;
-    Signal::pOperation writer(w = new WriteWav(filename));
-    writer->source( source );
+    Signal::Operation::Ptr writer(w = new WriteWav(filename));
+    Signal::Operation::WritePtr ww(writer);
     w->normalize( normalize );
 
-    writer->invalidate_samples(b->getInterval());
-    writer->readFixedLength(b->getInterval());
+    w->invalidate_samples(b->getInterval());
+    w->put(b);
 }
 
 
@@ -293,8 +247,9 @@ void WriteWav::
 
         sf_count_t frames = inputfile.frames();
         TaskInfo ti2("rewriting %u frames", (unsigned)frames);
-        size_t frames_per_buffer = (4 << 20)/sizeof(float)/num_channels(); // 4 MB buffer
-        std::vector<float> buffer(num_channels() * frames_per_buffer);
+        int num_channels = inputfile.channels();
+        size_t frames_per_buffer = (4 << 20)/sizeof(float)/num_channels; // 4 MB buffer
+        std::vector<float> buffer(num_channels * frames_per_buffer);
         float* p = &buffer[0];
 
         while (true)
