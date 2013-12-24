@@ -179,7 +179,6 @@ bool Audiofile::
 Audiofile::
         Audiofile(std::string filename)
         :
-        DeprecatedOperation(Signal::pOperation()),
         _tried_load(false),
         _sample_rate(0),
         _number_of_samples(0),
@@ -245,7 +244,6 @@ std::string Audiofile::
 Audiofile:: // for deserialization
         Audiofile()
             :
-            DeprecatedOperation(Signal::pOperation()),
             file(new QTemporaryFile()),
             _tried_load(false),
             _sample_rate(0),

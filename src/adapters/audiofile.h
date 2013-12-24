@@ -253,7 +253,7 @@ class SndfileHandle;
 namespace Adapters
 {
 
-class SaweDll Audiofile: public Signal::DeprecatedOperation
+class SaweDll Audiofile: public Signal::SourceBase
 {
 private:
     template<class Archive>
