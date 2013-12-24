@@ -9,7 +9,7 @@
 
 namespace Adapters {
 
-class Recorder: public Signal::FinalSource
+class Recorder: public VolatilePtr<Recorder>, public Signal::SourceBase
 {
 public:
     class IGotDataCallback: public VolatilePtr<IGotDataCallback>

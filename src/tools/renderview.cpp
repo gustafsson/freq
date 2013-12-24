@@ -1118,7 +1118,7 @@ void RenderView::
     }
 
     Tools::RecordModel* r = model->project ()->tools ().record_model ();
-    if(r && r->recording && !r->recording->isStopped ())
+    if(r && r->recording && !write1(r->recording)->isStopped ())
     {
         isRecording = true;
     }

@@ -92,7 +92,7 @@ float NetworkRecorder::
 float NetworkRecorder::
         length()
 {
-    return std::min( Signal::FinalSource::length(), time() );
+    return std::min( Signal::SourceBase::length(), time() );
 }
 
 

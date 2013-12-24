@@ -81,7 +81,7 @@ Signal::pBuffer Recorder::
 float Recorder::
         length()
 {
-    return isStopped() ? Signal::FinalSource::length() : time();
+    return isStopped() ? Signal::SourceBase::length() : time();
 }
 
 

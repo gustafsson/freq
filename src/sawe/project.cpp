@@ -131,11 +131,10 @@ pProject Project::
         if (url.isValid() && !url.scheme().isEmpty())
         {
             std::string scheme = url.scheme().toStdString();
-            Signal::pOperation s( new Adapters::NetworkRecorder(url) );
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (new Adapters::NetworkRecorder(url));
+            p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -288,7 +287,7 @@ pProject Project::
 
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();
-    p->tools ().addRecording (new Adapters::MicrophoneRecorder(device));
+    p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(device)));
 
     return p;
 }

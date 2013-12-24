@@ -360,7 +360,7 @@ int MicrophoneRecorder::
 
 
 MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Signal::pOperation recorder )
+        MicrophoneRecorderOperation( Recorder::Ptr recorder )
     :
       recorder_(recorder)
 {
@@ -370,44 +370,44 @@ MicrophoneRecorderOperation::
 Signal::pBuffer MicrophoneRecorderOperation::
         process(Signal::pBuffer b)
 {
-    return recorder_->readFixedLength (b->getInterval ());
+    return write1(recorder_)->readFixedLength (b->getInterval ());
 }
 
 
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder* recorder, Recorder::IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder::Ptr recorder, Recorder::IGotDataCallback::Ptr invalidator)
     :
       recorder_(recorder)
 {
-    this->recorder()->setDataCallback(invalidator);
+    write1(recorder_)->setDataCallback(invalidator);
 }
 
 
 void MicrophoneRecorderDesc::
         startRecording()
 {
-    recorder()->startRecording ();
+    write1(recorder_)->startRecording ();
 }
 
 
 void MicrophoneRecorderDesc::
         stopRecording()
 {
-    recorder()->stopRecording ();
+    write1(recorder_)->stopRecording ();
 }
 
 
 bool MicrophoneRecorderDesc::
         isStopped()
 {
-    return recorder()->isStopped ();
+    return write1(recorder_)->isStopped ();
 }
 
 
 bool MicrophoneRecorderDesc::
         canRecord()
 {
-    return recorder()->canRecord ();
+    return write1(recorder_)->canRecord ();
 }
 
 
@@ -446,18 +446,19 @@ Signal::Operation::Ptr MicrophoneRecorderDesc::
 MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
         extent() const
 {
+    Recorder::WritePtr rec(recorder_);
     MicrophoneRecorderDesc::Extent x;
-    x.interval = Signal::Interval(0, recorder()->number_of_samples());
-    x.number_of_channels = recorder()->num_channels ();
-    x.sample_rate = recorder()->sample_rate ();
+    x.interval = Signal::Interval(0, rec->number_of_samples());
+    x.number_of_channels = rec->num_channels ();
+    x.sample_rate = rec->sample_rate ();
     return x;
 }
 
 
-Recorder* MicrophoneRecorderDesc::
+Recorder::Ptr MicrophoneRecorderDesc::
         recorder() const
 {
-    return dynamic_cast<Recorder*>(recorder_.get ());
+    return recorder_;
 }
 
 
@@ -498,7 +499,7 @@ void MicrophoneRecorderDesc::
         int inputDevice = -1;
         Recorder::IGotDataCallback::Ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(new MicrophoneRecorder(inputDevice), callback);
+        MicrophoneRecorderDesc mrd(Recorder::Ptr(new MicrophoneRecorder(inputDevice)), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );
