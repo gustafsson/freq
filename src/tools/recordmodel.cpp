@@ -28,7 +28,7 @@ RecordModel::
 }
 
 
-class GotDataCallback: public Adapters::MicrophoneRecorderDesc::IGotDataCallback
+class GotDataCallback: public Adapters::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::Ptr i) { i_ = i; }
@@ -48,7 +48,7 @@ RecordModel* RecordModel::
                        Adapters::Recorder* recorder,
                        Sawe::Project* project, RenderView* render_view)
 {
-    Adapters::MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback());
+    Adapters::Recorder::IGotDataCallback::Ptr callback(new GotDataCallback());
 
     Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);

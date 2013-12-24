@@ -31,6 +31,13 @@ float Recorder::
 }
 
 
+void Recorder::
+        setDataCallback( IGotDataCallback::Ptr invalidator )
+{
+    _invalidator = invalidator;
+}
+
+
 Signal::IntervalType Recorder::
         actual_number_of_samples()
 {

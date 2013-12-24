@@ -134,15 +134,7 @@ private:
 class MicrophoneRecorderDesc: public Signal::OperationDesc
 {
 public:
-    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
-    {
-    public:
-        virtual ~IGotDataCallback() {}
-
-        virtual void markNewlyRecordedData(Signal::Interval what)=0;
-    };
-
-    MicrophoneRecorderDesc( Recorder*, IGotDataCallback::Ptr invalidator );
+    MicrophoneRecorderDesc( Recorder*, Recorder::IGotDataCallback::Ptr invalidator );
 
     void startRecording();
     void stopRecording();
@@ -158,10 +150,7 @@ public:
     virtual Extent extent() const;
 
 private:
-    void setDataCallback( IGotDataCallback::Ptr invalidator );
-
     Signal::pOperation recorder_;
-    IGotDataCallback::Ptr invalidator_;
 
 public:
     static void test();

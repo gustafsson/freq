@@ -352,7 +352,8 @@ int MicrophoneRecorder::
     _data.put( mb );
     lock.unlock();
 
-    _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
+    if (_invalidator)
+        write1(_invalidator)->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
 
     return paContinue;
 }
@@ -373,31 +374,12 @@ Signal::pBuffer MicrophoneRecorderOperation::
 }
 
 
-class MarshallNewlyRecordedData: public Signal::Sink {
-public:
-    MarshallNewlyRecordedData(MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator)
-        :
-          invalidator_(invalidator)
-    {}
-
-    virtual void invalidate_samples(const Signal::Intervals& I) {
-        BOOST_FOREACH(const Signal::Interval& i, I)
-            write1(invalidator_)->markNewlyRecordedData(i);
-    }
-    virtual Signal::Intervals invalid_samples() {return Signal::Intervals(); }
-
-private:
-    MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator_;
-};
-
-
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder* recorder, IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder* recorder, Recorder::IGotDataCallback::Ptr invalidator)
     :
-      recorder_(recorder),
-      invalidator_(invalidator)
+      recorder_(recorder)
 {
-    setDataCallback(invalidator);
+    this->recorder()->setDataCallback(invalidator);
 }
 
 
@@ -426,20 +408,6 @@ bool MicrophoneRecorderDesc::
         canRecord()
 {
     return recorder()->canRecord ();
-}
-
-
-void MicrophoneRecorderDesc::
-        setDataCallback( IGotDataCallback::Ptr invalidator )
-{
-    std::vector<Signal::pOperation> sinks;
-
-    if (invalidator) {
-        Signal::pOperation marshal(new MarshallNewlyRecordedData(invalidator));
-        sinks.push_back (marshal);
-    }
-
-    recorder()->getPostSink()->sinks (sinks);
 }
 
 
@@ -503,7 +471,7 @@ Recorder* MicrophoneRecorderDesc::
 
 namespace Adapters {
 
-class GotDataCallback: public MicrophoneRecorderDesc::IGotDataCallback
+class GotDataCallback: public Recorder::IGotDataCallback
 {
 public:
     Signal::Intervals marked_data() const { return marked_data_; }
@@ -528,7 +496,7 @@ void MicrophoneRecorderDesc::
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback);
+        Recorder::IGotDataCallback::Ptr callback(new GotDataCallback);
 
         MicrophoneRecorderDesc mrd(new MicrophoneRecorder(inputDevice), callback);
 

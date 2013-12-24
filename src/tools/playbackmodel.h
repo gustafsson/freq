@@ -2,7 +2,6 @@
 #define PLAYBACKMODEL_H
 
 #include "signal/operation.h"
-#include "signal/postsink.h"
 #include "signal/processing/targetmarker.h"
 
 #include <string>
