@@ -43,7 +43,7 @@ Signal::Interval DrawnWaveformFilter::
 }
 
 
-bool DrawnWaveformFilter::
+void DrawnWaveformFilter::
         applyFilter( ChunkAndInverse &chunk )
 {
     DrawnWaveform* w = dynamic_cast<DrawnWaveform*>(chunk.t.get ());
@@ -54,7 +54,6 @@ bool DrawnWaveformFilter::
     }
 
     Filter::applyFilter (chunk);
-    return false;
 }
 
 

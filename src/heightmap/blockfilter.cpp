@@ -48,7 +48,7 @@ BlockFilter::
 }
 
 
-bool BlockFilter::
+void BlockFilter::
         applyFilter( ChunkAndInverse& pchunk )
 {
     Collection::Ptr collection;
@@ -57,7 +57,7 @@ bool BlockFilter::
         Heightmap::TfrMapping::ReadPtr tfr_map(tfr_map_);
         if (pchunk.channel >= tfr_map->channels()) {
             // Just ignore
-            return false;
+            return;
         }
 
         collection = tfr_map->collections()[pchunk.channel];
@@ -91,8 +91,6 @@ bool BlockFilter::
 
 
     TIME_BLOCKFILTER ComputationSynchronize();
-
-    return false;
 }
 
 

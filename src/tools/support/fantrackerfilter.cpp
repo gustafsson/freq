@@ -17,7 +17,7 @@ namespace Support {
     }
 
 
-    bool FanTrackerFilter::operator()( Tfr::Chunk& c )
+    void FanTrackerFilter::operator()( Tfr::Chunk& c )
     {
         EXCEPTION_ASSERT( this->track.size() == num_channels() );
 
@@ -78,8 +78,6 @@ namespace Support {
                 track[pos] = point;
             }
         }
-
-        return false;
     }
 
 

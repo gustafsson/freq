@@ -5,7 +5,7 @@
 
 namespace Tfr {
 
-class DrawnWaveformFilter : public Tfr::Filter
+class DrawnWaveformFilter : public Tfr::Filter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     DrawnWaveformFilter( Signal::pOperation source=Signal::pOperation(),
@@ -18,7 +18,7 @@ public:
     Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
 
 
-    bool applyFilter( ChunkAndInverse &chunk );
+    void applyFilter( ChunkAndInverse &chunk );
 
 private:
 

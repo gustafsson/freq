@@ -26,7 +26,7 @@ MatlabFilter::
 }
 
 
-bool MatlabFilter::
+void MatlabFilter::
         operator()( Chunk& c)
 {
     TIME_MatlabFilter TaskTimer tt("MatlabFilter::operator() [%g,%g)", c.startTime(), c.endTime() );
@@ -46,7 +46,9 @@ bool MatlabFilter::
         DeprecatedOperation::invalidate_samples( _invalid_returns & J );
         _invalid_returns -= J;
 
-        return true;
+        // TODO Perform inverse
+        //return true;
+        return;
     }
 
     if (!_matlab->isWaiting())
@@ -58,7 +60,9 @@ bool MatlabFilter::
         _matlab->invoke( file );
     }
 
-    return false;
+    // TODO Don't perform inverse. Tfr::ChunkFilter::NoInverseTag
+    // Suggested: In general, compute an inverse but in this case compute a dummy inverse and return that instead.
+    //return false;
 }
 
 

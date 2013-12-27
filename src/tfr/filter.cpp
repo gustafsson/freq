@@ -94,7 +94,8 @@ Signal::pBuffer Filter::
             EXCEPTION_ASSERTX( cii & I, boost::format("cii = %s, I = %s") % cii % I);
         #endif
 
-        bool applied_filter = (*this)( ci );
+        (*this)( ci );
+        bool applied_filter = 0==dynamic_cast<ChunkFilter::NoInverseTag*>(this);
         if (applied_filter)
             ci.inverse = t->inverse (ci.chunk);
 
@@ -143,17 +144,17 @@ unsigned Filter::
 }
 
 
-bool Filter::
+void Filter::
         applyFilter( ChunkAndInverse& chunk )
 {
-    return (*this)( *chunk.chunk );
+    (*this)( *chunk.chunk );
 }
 
 
-bool Filter::
+void Filter::
         operator()( ChunkAndInverse& chunk )
 {
-    return applyFilter( chunk );
+    applyFilter( chunk );
 }
 
 
@@ -197,8 +198,6 @@ TransformKernel::
 Signal::pBuffer TransformKernel::
         process(Signal::pBuffer b)
 {
-    pTransform t = transform_;
-
     chunk_filter_->set_number_of_channels(b->number_of_channels ());
 
     pBuffer r;
@@ -206,15 +205,18 @@ Signal::pBuffer TransformKernel::
       {
         ChunkAndInverse ci;
         ci.channel = c;
-        ci.t = t;
-        ci.inverse = b->getChannel (c);
+        ci.t = transform_;
+        ci.input = b->getChannel (c);
+        ci.chunk = (*ci.t)( ci.input );
 
-        ci.chunk = (*t)( ci.inverse );
+        (*chunk_filter_)( ci );
 
-        bool compute_inverse = (*chunk_filter_)( ci );
+        bool compute_inverse = 0==dynamic_cast<ChunkFilter::NoInverseTag*>(chunk_filter_.get ());
+        EXCEPTION_ASSERT_EQUALS( compute_inverse, 0!=ci.inverse.get () );
         if (compute_inverse)
           {
-            ci.inverse = t->inverse (ci.chunk);
+            if (!ci.inverse)
+                ci.inverse = ci.t->inverse (ci.chunk);
 
             if (!r)
                 r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));

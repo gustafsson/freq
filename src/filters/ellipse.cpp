@@ -44,7 +44,7 @@ std::string Ellipse::
 }
 
 
-bool Ellipse::
+void Ellipse::
         operator()( Chunk& chunk )
 {
     TIME_FILTER TaskTimer tt("Ellipse");
@@ -59,8 +59,6 @@ bool Ellipse::
                   area, _save_inside, chunk.sample_rate );
 
     TIME_FILTER ComputationSynchronize();
-
-    return true;
 }
 
 

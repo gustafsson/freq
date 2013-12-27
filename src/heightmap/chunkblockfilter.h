@@ -38,7 +38,7 @@ class ChunkBlockFilter: public Tfr::ChunkFilter
 public:
     ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap );
 
-    bool operator()( Tfr::ChunkAndInverse& chunk );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
     void set_number_of_channels( unsigned C );
 

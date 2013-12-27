@@ -22,7 +22,7 @@ public:
     virtual void invalidate_samples(const Signal::Intervals& I);
 
 protected:
-    bool applyFilter( ChunkAndInverse& chunk );
+    void applyFilter( ChunkAndInverse& chunk );
 
 private:
     float   _previous_scales_per_octave;
@@ -30,9 +30,9 @@ private:
 };
 
 
-class DummyCwtFilter: public CwtFilter {
+class DummyCwtFilter: public CwtFilter, public ChunkFilter::NoInverseTag {
 public:
-    virtual bool operator()( Chunk& ) { return false; }
+    void operator()( Chunk& ) {}
 };
 } // namespace Tfr
 

@@ -31,7 +31,7 @@ std::string Bandpass::
 }
 
 
-bool Bandpass::
+void Bandpass::
         operator()( Tfr::Chunk& c )
 {
     TIME_BANDPASS TaskTimer tt("%s (save %sside) on %s",
@@ -83,8 +83,6 @@ bool Bandpass::
                 p[t*actualSize + s] = zero;
         }
     }
-
-    return true;
 }
 
 } // namespace Filters

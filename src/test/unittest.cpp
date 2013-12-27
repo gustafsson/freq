@@ -123,7 +123,7 @@ int UnitTest::
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);
-        //RUNTEST(Filters::EnvelopeDesc);
+        RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);

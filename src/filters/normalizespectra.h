@@ -5,13 +5,13 @@
 
 namespace Filters {
 
-class NormalizeSpectra : public Tfr::StftFilter
+class NormalizeSpectra : public Tfr::StftFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     // negative values set a fraction rather than an absolute number of Hz
     NormalizeSpectra(float meansHz=0.1f);
 
-    virtual bool operator()( Tfr::Chunk& );
+    virtual void operator()( Tfr::Chunk& );
 
 private:
     float meansHz_;

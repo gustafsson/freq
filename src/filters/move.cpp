@@ -15,7 +15,7 @@ Move::
 :   _df(df)
 {}
 
-bool Move::
+void Move::
         operator()( Chunk& chunk )
 {
     TIME_FILTER TaskTimer tt("Move");
@@ -24,8 +24,6 @@ bool Move::
 
     ::moveFilter( chunk.transform_data,
                   df, chunk.minHz(), chunk.maxHz(), chunk.sample_rate, chunk.chunk_offset.asInteger() );
-
-    return true;
 }
 
 } // namespace Filters

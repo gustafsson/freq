@@ -21,12 +21,10 @@ using namespace Tfr;
 
 namespace Filters
 {
-bool Reassign::
+void Reassign::
         operator()( Chunk& chunk )
 {
     limitedCpu( chunk );
-
-    return true;
 }
 
 
@@ -195,12 +193,10 @@ void Reassign::
 
 //////////// Tonalize
 
-bool Tonalize::
+void Tonalize::
         operator()( Chunk& chunk )
 {
     brokenGpu(chunk);
-
-    return true;
 }
 
 

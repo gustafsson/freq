@@ -57,7 +57,7 @@ public:
     virtual Signal::Intervals affected_samples();
 
     virtual std::string name();
-    virtual bool operator()( Tfr::Chunk& );
+    virtual void operator()( Tfr::Chunk& );
 
 private:
     friend class boost::serialization::access;

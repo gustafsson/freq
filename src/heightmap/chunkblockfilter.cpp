@@ -22,7 +22,7 @@ ChunkBlockFilter::
 }
 
 
-bool ChunkBlockFilter::
+void ChunkBlockFilter::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
     Heightmap::TfrMapping::Collections C = read1(tfrmap_)->collections();
@@ -44,8 +44,6 @@ bool ChunkBlockFilter::
 
         blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
     }
-
-    return false;
 }
 
 

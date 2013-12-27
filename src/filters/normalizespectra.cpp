@@ -23,13 +23,11 @@ NormalizeSpectra::NormalizeSpectra(float means)
 }
 
 
-bool NormalizeSpectra::
+void NormalizeSpectra::
         operator()( Chunk& chunk )
 {
     //removeSlidingMean( chunk );
     removeSlidingMedian( chunk );
-
-    return false;
 }
 
 

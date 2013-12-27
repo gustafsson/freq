@@ -14,7 +14,7 @@ using namespace Tfr;
 namespace Filters {
 
 
-bool Envelope::
+void Envelope::
         operator()( ChunkAndInverse& chunk )
 {
     // CPU memset
@@ -37,8 +37,6 @@ bool Envelope::
         d[i] = ChunkElement( abs(d[i]), 0 );
 
     chunk.inverse = b->get_real ();
-
-    return false; // don't compute the inverse again
 }
 
 
@@ -101,9 +99,18 @@ void EnvelopeDesc::
 
         Signal::Operation::Ptr o = ed.createOperation ();
 
+//        _window_size = 256
+//        _compute_redundant = true
+//        _averaging = 1
+//        _enable_inverse = true
+//        _overlap = 0.75
+//        _window_type = WindowType_Gaussian
+
         Signal::Interval I(10,12);
         Signal::Interval expected;
         Signal::Interval i = ed.requiredInterval (I, &expected);
+        EXCEPTION_ASSERT_EQUALS(expected, Signal::Interval(0,64));
+        EXCEPTION_ASSERT_EQUALS(i, Signal::Interval(-192,256));
         Signal::pBuffer b = Test::RandomBuffer::randomBuffer (i, 1, 1);
         Signal::pBuffer r = write1(o)->process(b);
 

@@ -17,7 +17,7 @@ namespace Filters {
 class Envelope: public Tfr::ChunkFilter
 {
 public:
-    bool operator()( Tfr::ChunkAndInverse& chunk );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 };
 
 

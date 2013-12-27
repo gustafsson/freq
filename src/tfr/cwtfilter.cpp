@@ -66,7 +66,7 @@ Interval CwtFilter::
 }
 
 
-bool CwtFilter::
+void CwtFilter::
         applyFilter( ChunkAndInverse& chunkInv )
 {
     Tfr::pChunk pchunk = chunkInv.chunk;
@@ -76,15 +76,12 @@ bool CwtFilter::
                              pchunk->getInterval().toString().c_str());
     Tfr::CwtChunk* chunks = dynamic_cast<Tfr::CwtChunk*>( pchunk.get() );
 
-    bool any = false;
     BOOST_FOREACH( const pChunk& chunk, chunks->chunks )
     {
-        any |= (*this)( *chunk );
+        (*this)( *chunk );
     }
 
     TIME_CwtFilter ComputationSynchronize();
-
-    return any;
 }
 
 

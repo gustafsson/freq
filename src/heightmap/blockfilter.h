@@ -18,12 +18,12 @@ namespace Heightmap
 class Renderer;
 
 
-class BlockFilter
+class BlockFilter: public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     BlockFilter( Heightmap::TfrMapping::Ptr tfr_map );
 
-    virtual bool applyFilter( Tfr::ChunkAndInverse& pchunk);
+    virtual void applyFilter( Tfr::ChunkAndInverse& pchunk);
     unsigned smallestOk(const Signal::Interval& I);
     virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData ) = 0;
     virtual bool createFromOthers() { return true; }
@@ -49,10 +49,7 @@ public:
     }
 
 
-    virtual bool operator()( Tfr::Chunk& )
-    {
-        return false;
-    }
+    virtual void operator()( Tfr::Chunk& ) {}
 
 
     /// @overload Signal::Operation::affecting_source(const Signal::Interval&)
@@ -81,14 +78,12 @@ public:
     Signal::Intervals zeroed_samples_recursive() { return Signal::Intervals(); }
 
 
-    bool applyFilter( Tfr::ChunkAndInverse& pchunk )
+    void applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
-        bool r = BlockFilter::applyFilter( pchunk );
+        BlockFilter::applyFilter( pchunk );
 
         Signal::Interval I = pchunk.inverse->getInterval();
         largestApplied = std::max( largestApplied, (unsigned)I.count() );
-
-        return r;
     }
 
 
@@ -217,7 +212,7 @@ public:
 
     Tfr::pChunkFilter freqNormalization;
 
-    bool applyFilter( Tfr::ChunkAndInverse& pchunk )
+    void applyFilter( Tfr::ChunkAndInverse& pchunk )
     {
         // TODO use a chain of commands instead to be processed by the worker thread
         Tfr::pChunkFilter f = freqNormalization;
@@ -225,9 +220,9 @@ public:
             (*f)(pchunk);
 
         if (f != freqNormalization)
-            return false;
+            return;
 
-        return BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
+        BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
     }
 
     virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );

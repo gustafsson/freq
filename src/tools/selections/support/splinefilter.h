@@ -15,7 +15,7 @@ public:
 
     virtual std::string name();
 
-    virtual bool operator()( Tfr::Chunk& );
+    virtual void operator()( Tfr::Chunk& );
     virtual Signal::Intervals zeroed_samples();
     virtual Signal::Intervals affected_samples();
 

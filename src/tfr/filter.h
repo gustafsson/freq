@@ -42,6 +42,12 @@ struct ChunkAndInverse
 
 
     /**
+     * The input buffer used to create 'chunk' with the transform 't'.
+     */
+    Signal::pMonoBuffer input;
+
+
+    /**
      * Which channel the monobuffer comes from.
      */
     int channel;
@@ -54,13 +60,26 @@ struct ChunkAndInverse
 class ChunkFilter
 {
 public:
+    /**
+     * @brief The ChunkFilterNoInverse class describes that the inverse shall never
+     * be computed from the transformed data in 'ChunkFilter::operator ()'.
+     *
+     * Inherit from this class as well as from ChunkFilter.
+     */
+    class NoInverseTag
+    {
+    public:
+        virtual ~NoInverseTag() {}
+    };
+
+
     virtual ~ChunkFilter() {}
 
     /**
       Apply the filter to a computed Tfr::Chunk. Return true if it makes sense
       to compute the inverse afterwards.
       */
-    virtual bool operator()( ChunkAndInverse& chunk ) = 0;
+    virtual void operator()( ChunkAndInverse& chunk ) = 0;
 
     /**
       Set the number of channels that will get this filter applied.
@@ -141,9 +160,9 @@ public:
     virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
 
 
-    virtual bool operator()( ChunkAndInverse& chunk );
-    virtual bool applyFilter( ChunkAndInverse& chunk );
-    virtual bool operator()( Chunk& chunk ) = 0;
+    virtual void operator()( ChunkAndInverse& chunk );
+    virtual void applyFilter( ChunkAndInverse& chunk );
+    virtual void operator()( Chunk& chunk ) = 0;
 
 protected:
     Filter(Filter&);

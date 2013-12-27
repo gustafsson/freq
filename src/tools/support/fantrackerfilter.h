@@ -8,12 +8,12 @@
 namespace Tools {
 namespace Support {
 
-class FanTrackerFilter : public Tfr::CepstrumFilter
+class FanTrackerFilter : public Tfr::CepstrumFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     FanTrackerFilter();
 
-    virtual bool operator()( Tfr::Chunk& );
+    virtual void operator()( Tfr::Chunk& );
 
     virtual Signal::Intervals affected_samples();
 

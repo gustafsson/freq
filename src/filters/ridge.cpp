@@ -8,7 +8,7 @@
 namespace Filters
 {
 
-bool Ridge::
+void Ridge::
         operator()( Tfr::Chunk& chunk )
 {
     Tfr::ChunkElement* p     = chunk.transform_data->getCpuMemory();
@@ -49,8 +49,6 @@ bool Ridge::
             bytes_per_row );
     memset( p + (chunk.nScales()-1)*chunk.nSamples(), 0, bytes_per_row );
     memset( p                                         , 0, bytes_per_row );
-
-    return true;
 }
 
 } // namespace Filters

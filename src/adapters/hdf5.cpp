@@ -413,7 +413,7 @@ Hdf5Buffer::Hdf5Buffer( std::string filename)
     :   _filename(filename) {}
 
 
-bool Hdf5Chunk::
+void Hdf5Chunk::
         operator()( Tfr::Chunk& c )
 {
     Tfr::Chunk* chunk;
@@ -429,8 +429,6 @@ bool Hdf5Chunk::
         chunk = &c;
 
     Hdf5Chunk::saveChunk(_filename, *chunk);
-
-    return false;
 }
 
 

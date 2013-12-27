@@ -11,7 +11,7 @@ public:
     Bandpass(float f1, float f2, bool save_inside=false);
 
     virtual std::string name();
-    virtual bool operator()( Tfr::Chunk& );
+    virtual void operator()( Tfr::Chunk& );
 
     float _f1, _f2;
     bool _save_inside;
