@@ -17,6 +17,7 @@ public:
 
     bool hasWork();
     int n_workers();
+    int dead_workers();
 
     Signal::UnsignedIntervalType out_of_date_sum();
 

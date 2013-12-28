@@ -7,7 +7,7 @@ namespace Tools {
 class DrawWorking
 {
 public:
-    static void drawWorking(int viewport_width, int viewport_height, bool crashed);
+    static void drawWorking(int viewport_width, int viewport_height, int alive, int dead);
 };
 
     } // namespace Support

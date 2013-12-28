@@ -28,6 +28,14 @@ int ChainInfo::
 }
 
 
+int ChainInfo::
+        dead_workers()
+{
+    Workers::ReadPtr workers (read1(chain_)->workers());
+    return workers->workers().size() - workers->n_workers();
+}
+
+
 Signal::UnsignedIntervalType ChainInfo::
         out_of_date_sum()
 {
@@ -55,7 +63,8 @@ void ChainInfo::
         ChainInfo c(cp);
 
         EXCEPTION_ASSERT( !c.hasWork () );
-        EXCEPTION_ASSERT( QThread::idealThreadCount () + 1 == c.n_workers () );
+        EXCEPTION_ASSERT_EQUALS( QThread::idealThreadCount () + 1, c.n_workers () );
+        EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
     }
 }
 
