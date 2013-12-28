@@ -37,6 +37,7 @@
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
+#include "tools/support/workercrashlogger.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
@@ -133,6 +134,7 @@ int UnitTest::
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
+        RUNTEST(Tools::Support::WorkerCrashLogger);
         RUNTEST(Heightmap::Block);
         RUNTEST(Heightmap::BlockCache);
         RUNTEST(Heightmap::BlockLayout);

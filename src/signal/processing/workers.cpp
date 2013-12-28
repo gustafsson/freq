@@ -18,6 +18,8 @@ Workers::
     :
       schedule_(schedule)
 {
+    qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
+    qRegisterMetaType<Signal::ComputingEngine::Ptr>("Signal::ComputingEngine::Ptr");
 }
 
 
@@ -43,6 +45,7 @@ Worker::Ptr Workers::
 
     updateWorkers();
 
+    connect(&*w, SIGNAL(finished()), SLOT(worker_quit_slot()));
     // The computation is a background process with a priority one step lower than NormalPriority
     w->start (QThread::LowPriority);
 
@@ -69,6 +72,13 @@ const Workers::Engines& Workers::
         workers() const
 {
     return workers_;
+}
+
+
+const Workers::EngineWorkerMap& Workers::
+        workers_map() const
+{
+    return workers_map_;
 }
 
 
@@ -241,6 +251,22 @@ void Workers::
             TaskInfo(boost::format("engine %1% stopped")
                      % (engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0")));
     }
+}
+
+
+void Workers::
+        worker_quit_slot()
+{
+    Signal::ComputingEngine::Ptr ce;
+    Worker* w = dynamic_cast<Worker*>(sender());
+    EXCEPTION_ASSERT(w);
+
+    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
+        if (i.second == w)
+            ce = i.first;
+    }
+
+    emit worker_quit(w->caught_exception (), ce);
 }
 
 

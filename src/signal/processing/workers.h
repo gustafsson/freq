@@ -20,11 +20,14 @@ namespace Processing {
  *
  * It should terminate all threads when it's closed.
  */
-class Workers: public VolatilePtr<Workers>
+class Workers: public QObject, public VolatilePtr<Workers>
 {
+    Q_OBJECT
 public:
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
     typedef boost::error_info<struct crashed_engine, Signal::ComputingEngine::Ptr> crashed_engine_value;
+
+    typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
 
     Workers(ISchedule::Ptr schedule);
     ~Workers();
@@ -43,6 +46,7 @@ public:
     typedef std::vector<Signal::ComputingEngine::Ptr> Engines;
     const Engines& workers() const;
     size_t n_workers() const;
+    const EngineWorkerMap& workers_map() const;
 
     /**
      * Check if any workers has died. This also cleans any dead workers.
@@ -77,12 +81,17 @@ public:
 
     static void print(const DeadEngines&);
 
+signals:
+    void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+
+private slots:
+    void worker_quit_slot();
+
 private:
     ISchedule::Ptr schedule_;
 
     Engines workers_;
 
-    typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
     EngineWorkerMap workers_map_;
 
     void updateWorkers();
