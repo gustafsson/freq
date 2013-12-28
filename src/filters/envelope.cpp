@@ -117,11 +117,19 @@ void EnvelopeDesc::
         EXCEPTION_ASSERT_EQUALS(r->getInterval (), expected);
 
         float* p = r->getChannel (0)->waveform_data ()->getCpuMemory ();
-        std::cout << std::endl;
-        std::cout << std::endl;
+        float q[] = {3.24838, 5.65101, 4.82303, 3.30121, 3.34537, 6.11119, 6.78169, 4.89376, 2.8429, 0.457352, 3.78604, 5.21941, 4.3393, 4.82896, 5.02483, 4.94016, 6.20228, 4.55212, 0.275813, 2.02912, 0.721371, 3.68215, 4.9445, 4.24451, 3.31991, 1.77942, 4.60286, 6.86935, 4.74788, 0.180684, 2.99859, 2.49172, 2.76458, 2.06447, 1.0738, 1.24119, 3.06678, 3.32671, 5.46126, 7.29366, 4.34522, 1.17638, 4.82303, 4.62953, 1.80883, 1.36018, 4.70439, 6.89125, 5.33115, 1.8484, 2.43964, 2.47957, 1.82924, 1.08836, 1.67501, 4.00404, 5.33944, 3.89576, 0.63757, 2.72817, 2.45126, 2.19431, 4.58439, 0.563696};
+
+        EXCEPTION_ASSERT_EQUALS(expected.count (), sizeof(q)/sizeof(q[0]));
+
+        double s=0;
         for (unsigned i=0; i<expected.count (); i++) {
-            std::cout << p[i] << ", ";
+            double d = p[i];
+            d -= q[i];
+            s = std::max(std::fabs(d), s);
         }
+
+        // q is rounded to 5 decimals
+        EXCEPTION_ASSERT_LESS(s, 0.5e-5);
     }
 
     // It should only accept StftDesc as TransformDesc.
