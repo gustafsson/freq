@@ -82,7 +82,7 @@ public:
     {
         BlockFilter::applyFilter( pchunk );
 
-        Signal::Interval I = pchunk.inverse->getInterval();
+        Signal::Interval I = pchunk.input->getInterval();
         largestApplied = std::max( largestApplied, (unsigned)I.count() );
     }
 

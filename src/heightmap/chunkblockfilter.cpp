@@ -132,7 +132,7 @@ void ChunkBlockFilter::
 
         Tfr::ChunkAndInverse cai;
         cai.channel = 0;
-        cai.inverse = buffer;
+        cai.input = buffer;
         cai.t = stftdesc.createTransform ();
         cai.chunk = (*cai.t)( buffer );
 

@@ -84,9 +84,9 @@ Signal::pBuffer Filter::
         ChunkAndInverse ci;
         ci.channel = c;
         ci.t = t;
-        ci.inverse = b->getChannel (c);
+        ci.input = b->getChannel (c);
 
-        ci.chunk = (*t)( ci.inverse );
+        ci.chunk = (*t)( ci.input );
 
         #ifdef _DEBUG
             Interval cii = ci.chunk->getInterval().spanned ( ci.chunk->getCoveredInterval () );

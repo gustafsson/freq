@@ -109,7 +109,7 @@ void CwtBlockFilter::
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
         cai.channel = 0;
-        cai.inverse = buffer;
+        cai.input = buffer;
         cai.t = cwtdesc.createTransform ();
         cai.chunk = (*cai.t)( buffer );
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
