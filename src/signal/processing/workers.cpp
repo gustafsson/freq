@@ -80,7 +80,7 @@ size_t Workers::
     for(EngineWorkerMap::const_iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
         QPointer<Worker> worker = i->second;
 
-        if (worker)
+        if (worker && worker->isRunning ())
             N++;
     }
 
