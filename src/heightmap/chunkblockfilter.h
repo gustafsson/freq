@@ -33,7 +33,7 @@ public:
  * @brief The ChunkBlockFilter class should use a MergeChunk to update all
  * blocks in a tfrmap that matches a given Tfr::Chunk.
  */
-class ChunkBlockFilter: public Tfr::ChunkFilter
+class ChunkBlockFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap );

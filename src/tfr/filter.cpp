@@ -212,7 +212,6 @@ Signal::pBuffer TransformKernel::
         (*chunk_filter_)( ci );
 
         bool compute_inverse = 0==dynamic_cast<ChunkFilter::NoInverseTag*>(chunk_filter_.get ());
-        EXCEPTION_ASSERT_EQUALS( compute_inverse, 0!=ci.inverse.get () );
         if (compute_inverse)
           {
             if (!ci.inverse)
@@ -225,6 +224,9 @@ Signal::pBuffer TransformKernel::
           }
         else
           {
+            // If chunk_filter_ has the NoInverseTag it shouldn't compute the inverse
+            EXCEPTION_ASSERTX( 0==ci.inverse.get (), vartype(*chunk_filter_) );
+
             r.reset ( new Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
           }
 
