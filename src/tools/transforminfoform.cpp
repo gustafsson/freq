@@ -6,7 +6,6 @@
 #include "ui_mainwindow.h"
 
 #include "heightmap/collection.h"
-#include "heightmap/blockfilter.h"
 #include "heightmap/renderer.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"

@@ -13,11 +13,11 @@
 // Sonic AWE, Setting different transforms for rendering
 #include "filters/reassign.h"
 #include "filters/ridge.h"
-#include "heightmap/blockfilter.h"
 #include "heightmap/renderer.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
+#include "heightmap/tfrmappings/cepstrumblockfilter.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
@@ -627,9 +627,13 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cepstrum()
 {
-    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->tfr_mapping ());
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CepstrumBlockFilterDesc);
 
-    setBlockFilter( cepstrumblock );
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::CepstrumDesc>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 

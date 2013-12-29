@@ -38,11 +38,11 @@
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/workercrashlogger.h"
 #include "heightmap/chunktoblock.h"
-#include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
+#include "heightmap/tfrmappings/cepstrumblockfilter.h"
 #include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
 #include "adapters/microphonerecorder.h"
@@ -138,7 +138,6 @@ int UnitTest::
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
         RUNTEST(Tools::Support::WorkerCrashLogger);
         RUNTEST(Heightmap::Block);
-        RUNTEST(Heightmap::BlockCache);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);
@@ -152,6 +151,8 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilterDesc);
         RUNTEST(Adapters::Playback);
         RUNTEST(Filters::AbsoluteValueDesc);
 
