@@ -413,7 +413,7 @@ void Workers::
             float elapsed = t.elapsed ();
             float n = (i+1)*0.00001;
             EXCEPTION_ASSERT_LESS(0.01+n, elapsed);
-            EXCEPTION_ASSERT_LESS(elapsed, 0.012+n);
+            EXCEPTION_ASSERT_LESS(elapsed, 0.013+n);
         }
     }
 }

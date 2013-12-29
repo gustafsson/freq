@@ -165,7 +165,7 @@ void WorkerCrashLogger::
             a.processEvents (); // Init new thread before telling it to quit
 
             double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 5e-3 );
+            EXCEPTION_ASSERT_LESS( T, 15e-3 );
 
             // When the thread quits. Wait for the beautifier to log everything.
         }
