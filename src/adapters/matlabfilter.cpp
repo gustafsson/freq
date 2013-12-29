@@ -2,6 +2,7 @@
 #include "hdf5.h"
 
 #include "tfr/chunk.h"
+#include "signal/computingengine.h"
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -19,6 +20,26 @@ using namespace Tfr;
 
 namespace Adapters {
 
+class ComputingMatlab: public Signal::ComputingEngine {};
+
+
+MatlabFilterKernelDesc::
+    MatlabFilterKernelDesc(std::string matlabFunction)
+    :
+      matlabFunction(matlabFunction)
+{}
+
+
+Tfr::pChunkFilter MatlabFilterKernelDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (dynamic_cast<ComputingMatlab*>(engine))
+        return Tfr::pChunkFilter(new MatlabFilter(matlabFunction));
+
+    return Tfr::pChunkFilter();
+}
+
+
 MatlabFilter::
         MatlabFilter( std::string matlabFunction )
 :   _matlab(new MatlabFunction(matlabFunction, 15, 0))
@@ -27,8 +48,9 @@ MatlabFilter::
 
 
 void MatlabFilter::
-        operator()( Chunk& c)
+        operator()( ChunkAndInverse& chunk )
 {
+    Chunk& c = *chunk.chunk.get ();
     TIME_MatlabFilter TaskTimer tt("MatlabFilter::operator() [%g,%g)", c.startTime(), c.endTime() );
 
     _invalid_returns |= c.getInterval();
@@ -43,7 +65,8 @@ void MatlabFilter::
 
         Interval J = c.getInterval();
 
-        DeprecatedOperation::invalidate_samples( _invalid_returns & J );
+        // TODO deprecateCache
+        //DeprecatedOperation::invalidate_samples( _invalid_returns & J );
         _invalid_returns -= J;
 
         // TODO Perform inverse
@@ -66,21 +89,6 @@ void MatlabFilter::
 }
 
 
-Signal::Intervals MatlabFilter::
-        ZeroedSamples( ) const
-{
-    // As far as we know, the matlab filter doesn't set anything to zero for sure
-    return Signal::Intervals();
-}
-
-Signal::Intervals MatlabFilter::
-        affected_samples( )
-{
-    // As far as we know, the matlab filter may touch anything
-    return Signal::Intervals();
-}
-
-
 void MatlabFilter::
         restart()
 {
@@ -91,5 +99,16 @@ void MatlabFilter::
     _matlab.reset( new MatlabFunction( fn, t, 0 ));
 }
 
+} // namespace Adapters
+
+namespace Adapters {
+
+void MatlabFilterKernelDesc::
+        test()
+{
+    // Can't test this as it requires an external process to be launched.
+    // Or is that ok? Backtrace executes an external process...
+    EXCEPTION_ASSERT(false);
+}
 
 } // namespace Adapters
