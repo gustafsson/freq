@@ -416,14 +416,6 @@ void RenderController::
 
 
 void RenderController::
-        setBlockFilter(Signal::DeprecatedOperation* blockfilter)
-{
-    Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
-    setBlockFilter(adapter);
-}
-
-
-void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc)
 {
     // Wire it up to a FilterDesc
@@ -1044,17 +1036,7 @@ void RenderController::
     // context is required to be created by lazy initialization when painting
     // the widget
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
-
-    {
-/*
-//Use Signal::Processing namespace
-        Signal::DeprecatedOperation* first_source = model()->project()->head->chain()->root_source().get();
-
-        view->glwidget->setObjectName( QString("glwidget %1").arg(first_source->name().c_str()));
-*/
-        view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
-    }
-
+    view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     view->glwidget->makeCurrent();
 
     view->graphicsview = new GraphicsView(view);
