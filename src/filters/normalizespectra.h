@@ -5,13 +5,13 @@
 
 namespace Filters {
 
-class NormalizeSpectra : public Tfr::StftFilter, public Tfr::ChunkFilter::NoInverseTag
+class NormalizeSpectraKernel : public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     // negative values set a fraction rather than an absolute number of Hz
-    NormalizeSpectra(float meansHz=0.1f);
+    NormalizeSpectraKernel(float meansHz=0.1f);
 
-    virtual void operator()( Tfr::Chunk& );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
 private:
     float meansHz_;
@@ -20,6 +20,13 @@ private:
     void removeSlidingMedian( Tfr::Chunk& chunk );
 
     int computeR( const Tfr::Chunk& chunk );
+};
+
+
+class NormalizeSpectra : public Tfr::StftFilterDesc
+{
+public:
+    NormalizeSpectra(float meansHz=0.1f);
 };
 
 } // namespace Filters

@@ -16,18 +16,18 @@ using namespace std;
 
 namespace Filters {
 
-NormalizeSpectra::NormalizeSpectra(float means)
+NormalizeSpectraKernel::NormalizeSpectraKernel(float means)
     :
       meansHz_(means)
 {
 }
 
 
-void NormalizeSpectra::
-        operator()( Chunk& chunk )
+void NormalizeSpectraKernel::
+        operator()( ChunkAndInverse& chunk )
 {
-    //removeSlidingMean( chunk );
-    removeSlidingMedian( chunk );
+    //removeSlidingMean( *chunk.chunk );
+    removeSlidingMedian( *chunk.chunk );
 }
 
 
@@ -44,7 +44,7 @@ void NormalizeSpectra::
 //    }
 
 
-void NormalizeSpectra::
+void NormalizeSpectraKernel::
         removeSlidingMean( Chunk& chunk )
 {
     StftChunk* stftChunk = dynamic_cast<StftChunk*>(&chunk);
@@ -165,7 +165,7 @@ void SlidingMedian( I inIter, I inEnd, J output, float fraction )
 }
 
 
-void NormalizeSpectra::
+void NormalizeSpectraKernel::
         removeSlidingMedian( Chunk& chunk )
 {
     StftChunk* stftChunk = dynamic_cast<StftChunk*>(&chunk);
@@ -223,7 +223,7 @@ void NormalizeSpectra::
 }
 
 
-int NormalizeSpectra::
+int NormalizeSpectraKernel::
         computeR( const Tfr::Chunk& chunk )
 {
     const StftChunk* stftChunk = dynamic_cast<const StftChunk*>(&chunk);
@@ -236,6 +236,12 @@ int NormalizeSpectra::
 }
 
 
+NormalizeSpectra::
+        NormalizeSpectra(float meansHz)
+    :
+      Tfr::StftFilterDesc(Tfr::pChunkFilter(new NormalizeSpectraKernel(meansHz)))
+{
+}
 
 
 } // namespace Filters
