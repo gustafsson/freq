@@ -176,26 +176,6 @@ void CwtToBlock::
 }
 
 
-/////////////////////////////// StftToBlock ///////////////////////////////
-
-StftToBlock::
-        StftToBlock( TfrMapping::Ptr tfr_map )
-            :
-            BlockFilterImpl<Tfr::StftFilter>(tfr_map)
-{
-}
-
-
-void StftToBlock::
-        mergeChunk( const Block& block, const ChunkAndInverse& chunk, BlockData& outData )
-{
-    StftChunk* stftchunk = dynamic_cast<StftChunk*>(chunk.chunk.get ());
-    EXCEPTION_ASSERT( stftchunk );
-    float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    mergeColumnMajorChunk(block, chunk, outData, normalization_factor);
-}
-
-
 ///////////////////////////// CepstrumToBlock /////////////////////////////
 
 CepstrumToBlock::

@@ -2,7 +2,6 @@
 #define HEIGHTMAPBLOCKFILTER_H
 
 #include "tfr/cwtfilter.h"
-#include "tfr/stftfilter.h"
 #include "tfr/cepstrumfilter.h"
 #include "tfr/drawnwaveformfilter.h"
 #include "heightmap/block.h"
@@ -204,29 +203,6 @@ private:
     Renderer* renderer;
 };
 
-
-class StftToBlock: public BlockFilterImpl<Tfr::StftFilter>
-{
-public:
-    StftToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
-
-    Tfr::pChunkFilter freqNormalization;
-
-    void applyFilter( Tfr::ChunkAndInverse& pchunk )
-    {
-        // TODO use a chain of commands instead to be processed by the worker thread
-        Tfr::pChunkFilter f = freqNormalization;
-        if (f)
-            (*f)(pchunk);
-
-        if (f != freqNormalization)
-            return;
-
-        BlockFilterImpl<Tfr::StftFilter>::applyFilter( pchunk );
-    }
-
-    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
-};
 
 
 class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
