@@ -102,6 +102,8 @@ int UnitTest::
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
         RUNTEST(Timer);
+        // PortAudio complains if testing Microphone in the end
+        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
         RUNTEST(Signal::Processing::Bedroom);
@@ -150,7 +152,6 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
-        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Adapters::Playback);
         RUNTEST(Filters::AbsoluteValueDesc);
 
