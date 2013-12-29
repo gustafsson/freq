@@ -497,13 +497,6 @@ QString AudiofileDesc::
 }
 
 
-int AudiofileDesc::
-        getNumberOfSources() const
-{
-    return 0;
-}
-
-
 bool AudiofileDesc::
         operator==(const OperationDesc& d) const
 {

@@ -448,7 +448,6 @@ public:
     virtual OperationDesc::Ptr copy() const;
     virtual Extent extent() const;
     virtual QString toString() const;
-    virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;
 private:
     boost::shared_ptr<Audiofile> audiofile_;

@@ -99,14 +99,6 @@ public:
 
 
     /**
-     * @brief affectedInterval
-     * @param I
-     * @return a merge of the intervals returned by affectedInterval for each interval in I
-     */
-    virtual Intervals affectedInterval( const Intervals& I ) const;
-
-
-    /**
      * @brief copy creates a copy of 'this'.
      * @return a copy.
      */
@@ -146,32 +138,9 @@ public:
 
 
     /**
-     * @brief recreateOperation recreates an operation in an existing instance.
-     * If the operation supports this, some caches might be reused instead of
-     * deallocated and reallocated (to reduce memory fragmentation). The
-     * default behaviour is to call createOperation with the given engine.
-     *
-     * @return the same operation if it could be reused and modified, or a new
-     * operation. The default is to not use the hint at all.
-     *
-     * TODO deprecated
-     */
-    virtual Operation::Ptr recreateOperation(Operation::Ptr hint, ComputingEngine* engine=0) const;
-
-
-    /**
      * Returns a string representation of this operation. Mainly used for debugging.
      */
     virtual QString toString() const;
-
-
-    /**
-     * @brief getNumberOfSources is larger than 1 if the operation merges
-     * multiple sources.
-     *
-     * TODO deprecated
-     */
-    virtual int getNumberOfSources() const;
 
 
     /**
@@ -219,37 +188,6 @@ private:
     Signal::Processing::IInvalidator::Ptr invalidator_;
 };
 
-
-/**
- * @brief The OperationSourceDesc class describes a starting point of a Dag.
- */
-class SaweDll OperationSourceDesc: public OperationDesc
-{
-public:
-    /**
-     * @brief getNumberOfSources overloads OperationDesc::getNumberOfSources
-     */
-    int getNumberOfSources() const { return 0; }
-
-
-    /**
-     * @brief getSampleRate is constant during the lifetime of OperationSourceDesc.
-     * @return the sample rate.
-     */
-    virtual float getSampleRate() const = 0;
-
-    /**
-     * @brief getNumberOfChannels is constant during the lifetime of OperationSourceDesc.
-     * @return the number of channels.
-     */
-    virtual float getNumberOfChannels() const = 0;
-
-    /**
-     * @brief getNumberOfSamples does not have to be constant during the lifetime of OperationSourceDesc
-     * @return the number of samples in this description.
-     */
-    virtual float getNumberOfSamples() const = 0;
-};
 
 
 /**

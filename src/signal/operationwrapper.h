@@ -31,13 +31,10 @@ public:
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Interval affectedInterval( const Interval& I ) const;
-    virtual Intervals affectedInterval( const Intervals& I ) const;
     virtual OperationDesc::Ptr copy() const;
     virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
     virtual Extent extent() const;
-    virtual Operation::Ptr recreateOperation(Operation::Ptr hint, ComputingEngine* engine) const;
     virtual QString toString() const;
-    virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;
 
 private:

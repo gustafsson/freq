@@ -174,28 +174,6 @@ bool BufferSource::
 }
 
 
-// OperationSourceDesc
-float BufferSource::
-        getSampleRate() const
-{
-    return buffer_->sample_rate ();
-}
-
-
-float BufferSource::
-        getNumberOfChannels() const
-{
-    return buffer_->number_of_channels ();
-}
-
-
-float BufferSource::
-        getNumberOfSamples() const
-{
-    return buffer_->number_of_samples ();
-}
-
-
 void BufferSource::
         test()
 {

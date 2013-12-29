@@ -29,10 +29,10 @@ Operation::Ptr RenderOperationDesc::
 }
 
 
-Intervals RenderOperationDesc::
-        affectedInterval( const Intervals& I ) const
+Interval RenderOperationDesc::
+        affectedInterval( const Interval& I ) const
 {
-    const Intervals& a = OperationDescWrapper::affectedInterval( I );
+    const Interval& a = OperationDescWrapper::affectedInterval( I );
 
     // This will result in a update rate that matches the invalidated intervals if possible.
     write1(render_target_)->refreshSamples( a );

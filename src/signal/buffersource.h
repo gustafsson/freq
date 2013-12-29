@@ -7,7 +7,7 @@
 namespace Signal
 {
 
-class SaweDll BufferSource: public FinalSource, public OperationSourceDesc
+class SaweDll BufferSource: public FinalSource, public OperationDesc
 {
 public:
     class BufferSourceOperation: public Operation {
@@ -42,10 +42,6 @@ public:
     virtual Extent extent() const;
     virtual bool operator==(const OperationDesc& d) const;
 
-    // OperationSourceDesc
-    virtual float getSampleRate() const;
-    virtual float getNumberOfChannels() const;
-    virtual float getNumberOfSamples() const;
 
     static void test();
 

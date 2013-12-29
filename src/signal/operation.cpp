@@ -27,18 +27,6 @@ void Operation::
 }
 
 
-Intervals OperationDesc::
-        affectedInterval( const Intervals& I ) const
-{
-    Intervals A;
-    BOOST_FOREACH(const Interval& i, I) {
-            A |= affectedInterval(i);
-    }
-
-    return A;
-}
-
-
 OperationDesc::Extent OperationDesc::
         extent() const
 {
@@ -46,24 +34,10 @@ OperationDesc::Extent OperationDesc::
 }
 
 
-Operation::Ptr OperationDesc::
-        recreateOperation(Operation::Ptr /*hint*/, ComputingEngine* engine) const
-{
-    return createOperation(engine);
-}
-
-
 QString OperationDesc::
         toString() const
 {
     return vartype(*this).c_str();
-}
-
-
-int OperationDesc::
-        getNumberOfSources() const
-{
-    return 1;
 }
 
 

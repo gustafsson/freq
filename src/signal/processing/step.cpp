@@ -50,8 +50,15 @@ Signal::Intervals Step::
         operations_.clear ();
     }
 
-    if (operation_desc_ && deprecated)
-        deprecated = read1(operation_desc_)->affectedInterval(deprecated);
+    if (operation_desc_ && deprecated) {
+        Signal::OperationDesc::ReadPtr o(operation_desc_);
+
+        Signal::Intervals A;
+        BOOST_FOREACH(const Signal::Interval& i, deprecated) {
+            A |= o->affectedInterval(i);
+        }
+        deprecated = A;
+    }
 
     DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
               % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
