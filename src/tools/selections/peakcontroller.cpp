@@ -1,3 +1,4 @@
+#if 0
 #include "peakcontroller.h"
 #include "peakmodel.h"
 
@@ -140,3 +141,4 @@ namespace Tools { namespace Selections
     }
 
 }} // namespace Tools::Selections
+#endif

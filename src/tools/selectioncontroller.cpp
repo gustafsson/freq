@@ -55,11 +55,11 @@ namespace Tools
         if (!ellipse_controller_.isNull())
             delete ellipse_controller_;
 
-        if (!peak_controller_.isNull())
-            delete peak_controller_;
+//        if (!peak_controller_.isNull())
+//            delete peak_controller_;
 
-        if (!spline_controller_.isNull())
-            delete spline_controller_;
+//        if (!spline_controller_.isNull())
+//            delete spline_controller_;
 
         if (!rectangle_controller_.isNull())
             delete rectangle_controller_;

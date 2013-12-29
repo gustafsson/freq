@@ -1,3 +1,4 @@
+#if 0
 #ifndef SPLINECONTROLLER_H
 #define SPLINECONTROLLER_H
 
@@ -48,3 +49,4 @@ private:
 }} // namespace Tools::Selections
 
 #endif // SPLINECONTROLLER_H
+#endif
