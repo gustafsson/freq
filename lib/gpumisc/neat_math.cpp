@@ -246,7 +246,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( lpo2s(2107612212), 1<<30 );
 
         double T = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T, 15e-6);
+        EXCEPTION_ASSERT_LESS (T, 25e-6);
     }
 
     {
@@ -285,7 +285,7 @@ void neat_math::
         double T2 = t.elapsed()/1000000;
         T2 += ju*1e-20;
 
-        EXCEPTION_ASSERT_LESS(T, T2*1.2);
+        EXCEPTION_ASSERT_LESS(T, T2*1.3);
         EXCEPTION_ASSERT_LESS(T2, debug_build? T*2: T*1.22);
 
         // time for float
