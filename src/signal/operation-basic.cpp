@@ -4,14 +4,76 @@
 namespace Signal {
 
     // OperationSetSilent  /////////////////////////////////////////////////////////////////
+
+OperationSetSilent::Operation::
+        Operation(const Interval &section)
+    :
+      section_(section)
+{}
+
+
+pBuffer OperationSetSilent::Operation::
+        process (pBuffer b)
+{
+    Signal::Intervals I = section_;
+    I &= b->getInterval ();
+
+    foreach (Signal::Interval i, I) {
+        pBuffer zero( new Buffer(i, b->sample_rate(), b->number_of_channels ()) );
+        *b |= *zero;
+    }
+
+    return b;
+}
+
+
 OperationSetSilent::
-        OperationSetSilent( pOperation source, const Signal::Interval& section )
+        OperationSetSilent( const Signal::Interval& section )
+    :
+      section_(section)
+{
+}
+
+
+Interval OperationSetSilent::
+        requiredInterval( const Interval& I, Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Interval OperationSetSilent::
+        affectedInterval( const Interval& I ) const
+{
+    return I;
+}
+
+
+OperationDesc::Ptr OperationSetSilent::
+        copy() const
+{
+    return OperationDesc::Ptr(new OperationSetSilent(section_));
+}
+
+
+Signal::Operation::Ptr OperationSetSilent::
+        createOperation(ComputingEngine*) const
+{
+    return Signal::Operation::Ptr(new OperationSetSilent::Operation(section_));
+}
+
+    // OperationSetSilent  /////////////////////////////////////////////////////////////////
+
+DeprecatedOperationSetSilent::
+        DeprecatedOperationSetSilent( pOperation source, const Signal::Interval& section )
 :   DeprecatedOperation( source ),
     section_( section )
 {
 }
 
-std::string OperationSetSilent::
+std::string DeprecatedOperationSetSilent::
         name()
 {
     float fs = source()?sample_rate():0.f;
@@ -23,7 +85,7 @@ std::string OperationSetSilent::
     return ss.str();
 }
 
-pBuffer OperationSetSilent::
+pBuffer DeprecatedOperationSetSilent::
         read( const Interval& I )
 {
     Interval t = I & section_;

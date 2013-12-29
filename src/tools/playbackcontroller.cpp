@@ -133,12 +133,12 @@ QAction *PlaybackController::
 }
 
 
-class NoZeros: public Signal::DeprecatedOperation
-{
-public:
-    NoZeros() : Signal::DeprecatedOperation(Signal::pOperation()) {}
-    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
-};
+//class NoZeros: public Signal::DeprecatedOperation
+//{
+//public:
+//    NoZeros() : Signal::DeprecatedOperation(Signal::pOperation()) {}
+//    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+//};
 
 
 void PlaybackController::
@@ -161,56 +161,33 @@ void PlaybackController::
     ui_items_->actionPlay->setChecked( true );
 
     // startPlayback will insert it in the system so that the source is properly set    
-    Signal::pOperation filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
+    Signal::OperationDesc::Ptr filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
     if (!filter) {
         // here we just need to create a filter that does the right thing to an arbitrary source
         // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
         // and responds with no samples to zeroed_samples().
-        filter = Signal::pOperation( new NoZeros() );
+        //filter = Signal::OperationDesc::Ptr( new NoZeros() );
     }
 
     startPlayback( filter );
 }
 
 
-class ExtentOp : public Signal::DeprecatedOperation
-{
-public:
-    ExtentOp(Signal::OperationDesc::Extent x)
-        :
-          Signal::DeprecatedOperation(Signal::pOperation()),
-          x(x)
-    {}
-
-    virtual Signal::IntervalType number_of_samples() {
-        return x.interval.get_value_or (Signal::Interval()).last;
-    }
-
-    virtual unsigned num_channels() {
-        return x.number_of_channels.get_value_or (1);
-    }
-
-    virtual float sample_rate() {
-        return x.sample_rate.get_value_or (1);
-    }
-
-private:
-    Signal::OperationDesc::Extent x;
-};
-
-
 void PlaybackController::
-        startPlayback ( Signal::pOperation filter )
+        startPlayback ( Signal::OperationDesc::Ptr filterdesc )
 {
-    if (!filter) {
-        TaskInfo("No filter, no selection");
-        stop();
-        return; // No filter, no selection...
-    }
+    Signal::Intervals zeroed_samples = Signal::Intervals();
+
+//    if (!filterdesc) {
+//        TaskInfo("No filter, no selection");
+//        stop();
+//        return; // No filter, no selection...
+//    }
 
     _view->just_started = true;
 
-    TaskInfo("Selection is of type %s", filter->toStringSkipSource ().c_str());
+    if (filterdesc)
+        TaskInfo("Selection is of type %s", read1(filterdesc)->toString().toStdString().c_str());
 
 //    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
 //    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
@@ -236,13 +213,11 @@ void PlaybackController::
 
         //Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
         Signal::OperationDesc::Extent x = write1(project_->processing_chain ())->extent(model()->target_marker);
-        Signal::pOperation extent_op(new ExtentOp(x));
-        filter->source (extent_op);
-        Signal::Intervals expected_data = ~filter->zeroed_samples() & x.interval.get_value_or (Signal::Interval());
+        Signal::Intervals expected_data = ~zeroed_samples & x.interval.get_value_or (Signal::Interval());
         TaskInfo(boost::format("expected_data = %s") % expected_data);
-        TaskInfo(boost::format("filter->zeroed_samples() = %s") % filter->zeroed_samples());
-        Signal::OperationDesc::Ptr filterdesc(new Signal::OldOperationDescWrapper(filter) );
-        write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
+        TaskInfo(boost::format("zeroed_samples = %s") % zeroed_samples);
+        if (filterdesc)
+            write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
 
         Signal::Operation::WritePtr playbackw(model()->playback());
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());

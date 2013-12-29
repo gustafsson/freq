@@ -104,7 +104,7 @@ void OldOperationWrapper::
     {
         pBuffer b(new Buffer(Interval(1,2),1,2));
         pOperation old_operation(
-                    new OperationSetSilent(Signal::pOperation(), Interval(4,5)));
+                    new DeprecatedOperationSetSilent(Signal::pOperation(), Interval(4,5)));
 
         OldOperationWrapper::LastRequiredInterval lri;
         OldOperationWrapper wrapper(old_operation, &lri);
@@ -239,7 +239,7 @@ void OldOperationDescWrapper::
         pOperation source_op( new OldOperationTrackBufferSource(buffer));
         //PRINT_BUFFER (source_op->read (Interval(0,2)), "");
         //PRINT_BUFFER (source_op->readFixedLength (Interval(0,2)), "");
-        pOperation target_op( new OperationSetSilent(Signal::pOperation(), Signal::Interval(2,3)));
+        pOperation target_op( new DeprecatedOperationSetSilent(Signal::pOperation(), Signal::Interval(2,3)));
 
         // test that the source and target works when added to a chain
         OperationDesc::Ptr source_op_wrapper(new OldOperationDescWrapper(source_op));

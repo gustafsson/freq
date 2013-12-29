@@ -11,8 +11,8 @@ using namespace std;
 
 namespace Filters {
 
-Bandpass::
-        Bandpass(float f1, float f2, bool save_inside)
+BandpassKernel::
+        BandpassKernel(float f1, float f2, bool save_inside)
             :
             _f1(f1),
             _f2(f2),
@@ -22,7 +22,7 @@ Bandpass::
 }
 
 
-std::string Bandpass::
+std::string BandpassKernel::
         name()
 {
     stringstream ss;
@@ -31,9 +31,10 @@ std::string Bandpass::
 }
 
 
-void Bandpass::
-        operator()( Tfr::Chunk& c )
+void BandpassKernel::
+        operator()( Tfr::ChunkAndInverse& chunk )
 {
+    Tfr::Chunk& c = *chunk.chunk.get ();
     TIME_BANDPASS TaskTimer tt("%s (save %sside) on %s",
                                name().c_str(),
                                _save_inside?"in":"out",
@@ -84,5 +85,35 @@ void Bandpass::
         }
     }
 }
+
+
+Bandpass::
+        Bandpass(float f1, float f2, bool save_inside)
+    :
+      StftFilterDesc(Tfr::pChunkFilter()),
+      _f1(f1),
+      _f2(f2),
+      _save_inside(save_inside)
+{
+    updateChunkFilter();
+}
+
+
+void Bandpass::
+        updateChunkFilter()
+{
+    Tfr::pChunkFilter cf(new BandpassKernel(_f1, _f2, _save_inside));
+    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::StftKernelDesc(cf));
+}
+
+
+void Bandpass::
+        test()
+{
+    // It should apply a bandpass filter between f1 and f2 to a signal.
+    EXCEPTION_ASSERT(false);
+}
+
+
 
 } // namespace Filters

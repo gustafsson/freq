@@ -106,8 +106,72 @@ void OperationCrop::
 
 
     // OperationOtherSilent  /////////////////////////////////////////////////////////////////
-OperationOtherSilent::
-        OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
+
+
+
+OperationOtherSilent::Operation::
+        Operation(const Interval &section)
+    :
+      section_(section)
+{}
+
+
+pBuffer OperationOtherSilent::Operation::
+        process (pBuffer b)
+{
+    Signal::Intervals I = b->getInterval ();
+    I -= section_;
+
+    foreach (Signal::Interval i, I) {
+        pBuffer zero( new Buffer(i, b->sample_rate(), b->number_of_channels ()) );
+        *b |= *zero;
+    }
+
+    return b;
+}
+
+
+OperationOtherSilent ::OperationOtherSilent(const Interval &section)
+    :
+      section_(section)
+{
+}
+
+
+Interval OperationOtherSilent::
+        requiredInterval( const Interval& I, Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Interval OperationOtherSilent::
+        affectedInterval( const Interval& I ) const
+{
+    return I;
+}
+
+
+OperationDesc::Ptr OperationOtherSilent::
+        copy() const
+{
+    return OperationDesc::Ptr(new OperationOtherSilent(section_));
+}
+
+
+Signal::Operation::Ptr OperationOtherSilent::
+        createOperation(ComputingEngine*) const
+{
+    return Signal::Operation::Ptr(new OperationOtherSilent::Operation(section_));
+}
+
+
+    // OperationOtherSilent  /////////////////////////////////////////////////////////////////
+
+DeprecatedOperationOtherSilent::
+        DeprecatedOperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
 :   OperationSubOperations( source, "Clear all but section" ),
     section_(section)
 {
@@ -115,8 +179,8 @@ OperationOtherSilent::
 }
 
 
-OperationOtherSilent::
-        OperationOtherSilent( float fs, const Signal::Interval& section )
+DeprecatedOperationOtherSilent::
+        DeprecatedOperationOtherSilent( float fs, const Signal::Interval& section )
 :   OperationSubOperations( pOperation(), "Clear all but section" ),
     section_(section)
 {
@@ -124,14 +188,14 @@ OperationOtherSilent::
 }
 
 
-Signal::Intervals OperationOtherSilent::
+Signal::Intervals DeprecatedOperationOtherSilent::
         zeroed_samples()
 {
     return ~Signal::Intervals(section_);
 }
 
 
-void OperationOtherSilent::
+void DeprecatedOperationOtherSilent::
         reset( const Signal::Interval& section, float fs )
 {
     if (0==fs)
@@ -145,10 +209,10 @@ void OperationOtherSilent::
     pOperation p = source_sub_operation_;
     if (0 < section.first)
         // silent before section
-        p = pOperation( new OperationSetSilent( p, Signal::Interval(0, section.first) ));
+        p = pOperation( new DeprecatedOperationSetSilent( p, Signal::Interval(0, section.first) ));
     if (section.last < Interval::IntervalType_MAX)
         // silent after section
-        p = pOperation( new OperationSetSilent( p, Signal::Interval(section.last, Interval::IntervalType_MAX) ));
+        p = pOperation( new DeprecatedOperationSetSilent( p, Signal::Interval(section.last, Interval::IntervalType_MAX) ));
 
     DeprecatedOperation::source( p );
 }
@@ -173,8 +237,8 @@ void OperationMove::
     else
         newSection <<= (newFirstSample-section.first);
 
-    pOperation silenceTarget( new OperationSetSilent(source_sub_operation_, newSection.spannedInterval() ));
-    pOperation silence( new OperationSetSilent(silenceTarget, section ));
+    pOperation silenceTarget( new DeprecatedOperationSetSilent(source_sub_operation_, newSection.spannedInterval() ));
+    pOperation silence( new DeprecatedOperationSetSilent(silenceTarget, section ));
 
     pOperation crop( new OperationCrop( source_sub_operation_, section ));
     pOperation moveToNewPos( new OperationInsertSilence( crop, Interval(0, newFirstSample)));
@@ -197,7 +261,7 @@ OperationMoveMerge::
 void OperationMoveMerge::
         reset( const Signal::Interval& section, unsigned newFirstSample )
 {
-    pOperation silence( new OperationSetSilent (source_sub_operation_, section ));
+    pOperation silence( new DeprecatedOperationSetSilent (source_sub_operation_, section ));
 
     pOperation crop( new OperationCrop( source_sub_operation_, section ));
     pOperation moveToNewPos( new OperationInsertSilence( crop, Interval(0, newFirstSample)));

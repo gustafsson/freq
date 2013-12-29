@@ -11,9 +11,58 @@ namespace Signal {
   OperationSetSilent( start, 1, 2 );
   result: 1004567
 */
-class OperationSetSilent: public DeprecatedOperation {
+class OperationSetSilent: public Signal::OperationDesc {
 public:
-    OperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
+    class Operation: public Signal::Operation {
+    public:
+        Operation( const Signal::Interval& section );
+
+        Signal::pBuffer process(Signal::pBuffer b);
+
+    private:
+        Signal::Interval section_;
+    };
+
+    OperationSetSilent( const Signal::Interval& section );
+
+    // OperationDesc
+    Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const;
+    Interval affectedInterval( const Interval& I ) const;
+    OperationDesc::Ptr copy() const;
+    Operation::Ptr createOperation(ComputingEngine* engine=0) const;
+
+    std::string name();
+
+    Signal::Intervals zeroed_samples() { return affected_samples(); }
+    Signal::Intervals affected_samples() { return section(); }
+
+    Signal::Interval section() { return section_; }
+private:
+    Signal::Interval section_;
+
+
+    friend class boost::serialization::access;
+    OperationSetSilent():section_(0,0) {} // only used by deserialization
+
+    template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_NVP(section_.first)
+           & BOOST_SERIALIZATION_NVP(section_.last);
+    }
+};
+
+
+/**
+  Example 1:
+  start:  1234567
+  OperationSetSilent( start, 1, 2 );
+  result: 1004567
+*/
+class DeprecatedOperationSetSilent: public DeprecatedOperation {
+public:
+    DeprecatedOperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
 
     virtual pBuffer read( const Interval& I );
     virtual std::string name();
@@ -27,7 +76,7 @@ private:
 
 
     friend class boost::serialization::access;
-    OperationSetSilent():DeprecatedOperation(pOperation()),section_(0,0) {} // only used by deserialization
+    DeprecatedOperationSetSilent():DeprecatedOperation(pOperation()),section_(0,0) {} // only used by deserialization
 
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
     {

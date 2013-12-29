@@ -125,10 +125,46 @@ public:
   OperationOtherSilent( start, 1, 2 );
   result: 0230000
 */
-class OperationOtherSilent: public OperationSubOperations {
+class OperationOtherSilent: public Signal::OperationDesc {
 public:
-    OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
-    OperationOtherSilent( float fs, const Signal::Interval& section );
+    class Operation: public Signal::Operation {
+    public:
+        Operation( const Signal::Interval& section );
+
+        Signal::pBuffer process(Signal::pBuffer b);
+
+    private:
+        Signal::Interval section_;
+    };
+
+    OperationOtherSilent( const Signal::Interval& section );
+
+    // OperationDesc
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+
+    Signal::Intervals zeroed_samples();
+
+    void reset( const Signal::Interval& section );
+
+    Signal::Interval section() { return section_; }
+private:
+    Signal::Interval section_;
+};
+
+
+/**
+  Example 1:
+  start:  1234567
+  OperationOtherSilent( start, 1, 2 );
+  result: 0230000
+*/
+class DeprecatedOperationOtherSilent: public OperationSubOperations {
+public:
+    DeprecatedOperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
+    DeprecatedOperationOtherSilent( float fs, const Signal::Interval& section );
 
     virtual Signal::Intervals zeroed_samples();
 

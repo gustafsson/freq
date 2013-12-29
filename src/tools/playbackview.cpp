@@ -170,7 +170,7 @@ void PlaybackView::
 bool PlaybackView::
         drawPlaybackMarkerInEllipse()
 {
-    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
+    volatile Filters::Ellipse* e = dynamic_cast<volatile Filters::Ellipse*>(
             model->selection->current_selection().get() );
 //Use Signal::Processing namespace
 //    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
