@@ -29,8 +29,6 @@ namespace Heightmap
     class Collection;
 }
 
-namespace Tfr { class Filter; }
-
 namespace Tools
 {
     /**

@@ -133,19 +133,7 @@ Interval OldOperationDescWrapper::
     if (expectedOutput)
         *expectedOutput = I;
 
-    Interval r = I;
-    pOperation s = old_operation_;
-
-    while (s) {
-        Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s.get ());
-
-        if (f)
-            r = f->requiredInterval (r);
-
-        s = s->DeprecatedOperation::source ();
-    }
-
-    return r;
+    return I;
 }
 
 
@@ -193,20 +181,7 @@ QString OldOperationDescWrapper::
 Interval OldOperationDescWrapper::
         affectedInterval( const Interval& I ) const
 {
-    Interval r = I;
-    pOperation s = old_operation_;
-
-    while (s) {
-        Tfr::Filter* f = dynamic_cast<Tfr::Filter*>(s.get ());
-
-        if (f)
-            r = f->transform ()->transformDesc()->affectedInterval( r );
-
-        // ignore that this is traversing the dag in the wrong direction
-        s = s->DeprecatedOperation::source ();
-    }
-
-    return r;
+    return I;
 }
 
 } // namespace Signal

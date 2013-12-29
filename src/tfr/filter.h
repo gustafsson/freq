@@ -1,11 +1,7 @@
 #ifndef TFRFILTER_H
 #define TFRFILTER_H
 
-#include "signal/intervals.h"
 #include "signal/operation.h"
-#include "deprecated.h"
-
-#include <QMutex>
 
 namespace Tfr {
 
@@ -88,101 +84,6 @@ public:
     virtual void set_number_of_channels( unsigned ) {}
 };
 typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
-
-
-/**
-  Virtual base class for filters. To create a new filter, use CwtFilter or
-  StftFilter as base class and implement the method 'operator()( Chunk& )'.
-  */
-class Filter: public Signal::DeprecatedOperation, public ChunkFilter
-{
-public:
-    /**
-      TODO verify/implement
-      To simplify logic within Filters they can be put inside an Operation
-      group and get their sources set explicitly.
-      */
-    Filter( Signal::pOperation source = Signal::pOperation() );
-
-
-    /**
-      Checks if the requested Signal::Interval would be affected by this filter
-      (using Signal::Operation::affected_samples()) and if so calls
-      readChunk().
-
-      @remarks If _try_shortcuts is true, readChunk() is always called,
-      regardless of Signal::Operation::affected_samples().
-
-      @overload Operation::read(const Signal::Interval&)
-      */
-    virtual Signal::pBuffer read( const Signal::Interval& I );
-    virtual Signal::pBuffer process(Signal::pBuffer);
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I );
-    /**
-      Filters are applied to chunks that are computed using some transform.
-      transform()/transform(pTransform) gets/sets that transform.
-
-      For thread safety it is important to only call transform() once during
-      a computation pass. Subsequent calls to transform() might return
-      different transforms.
-      */
-    Tfr::pTransform transform();
-
-
-    /**
-      Set the Tfr::Transform for this operation and call invalidate_samples.
-      Will throw throw std::invalid_argument if the type of 'm' is not equal to
-      the previous type of transform().
-      */
-    void transform( Tfr::pTransform m );
-
-
-    /**
-      If _try_shortcuts is true. This method from Operation will be used to
-      try to avoid computing any actual transform.
-      */
-    virtual DeprecatedOperation* affecting_source( const Signal::Interval& I );
-
-
-    /**
-      Returns the next good chunk size for the transform() (or the
-      largest if there is no good chunk size larger than
-      'current_valid_samples_per_chunk').
-      */
-    virtual unsigned next_good_size( unsigned current_valid_samples_per_chunk );
-
-
-    /**
-      Returns the previously good chunk size for transform() (or the
-      smallest if there is no good chunk size larger than
-      'current_valid_samples_per_chunk').
-      */
-    virtual unsigned prev_good_size( unsigned current_valid_samples_per_chunk );
-
-
-    virtual void operator()( ChunkAndInverse& chunk );
-    virtual void applyFilter( ChunkAndInverse& chunk );
-    virtual void operator()( Chunk& chunk ) = 0;
-
-protected:
-    Filter(Filter&);
-
-    /**
-     * @brief requiredInterval returns the interval that is required to compute
-     * a valid chunk representing interval I.
-     * @param I
-     * @param t transform() is not invariant, use this instance instead.
-     */
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t ) = 0;
-
-
-private:
-    QMutex _transform_mutex;
-    /**
-      The Tfr::Transform used for computing chunks and inverse Buffers.
-      */
-    Tfr::pTransform _transform;
-};
 
 
 class TransformKernel: public Signal::Operation

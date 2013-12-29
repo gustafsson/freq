@@ -5,24 +5,27 @@
 
 namespace Tfr {
 
-class CepstrumFilter : public Filter
+class CepstrumKernelDesc: public Tfr::FilterKernelDesc
 {
 public:
-    CepstrumFilter( Signal::pOperation source=Signal::pOperation(),
-                Tfr::pTransform transform=Tfr::pTransform() );
+    CepstrumKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
 
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
 
-    /**
-      This computes the Cepstrum chunk covering a given interval.
-      */
-    Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
-
-
-    virtual void invalidate_samples(const Signal::Intervals& I);
-
-
-    bool exclude_end_block;
+private:
+    Tfr::pChunkFilter reentrant_cpu_chunk_filter_;
 };
+
+
+class CepstrumFilterDesc : public Tfr::FilterDesc
+{
+public:
+    CepstrumFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc);
+    CepstrumFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
+
+    void transformDesc( Tfr::pTransformDesc m );
+};
+
 
 } // namespace Tfr
 
