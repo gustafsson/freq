@@ -165,7 +165,7 @@ void DummyTransform::
         EXCEPTION_ASSERT_EQUALS(c->getCoveredInterval (), b->getInterval ());
 
         double T = timer.elapsed ();
-        EXCEPTION_ASSERT_LESS(T, 60e-6);
+        EXCEPTION_ASSERT_LESS(T, 80e-6);
     }
 }
 

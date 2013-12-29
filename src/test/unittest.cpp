@@ -6,7 +6,6 @@
 #include "test/randombuffer.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
-#include "adapters/microphonerecorder.h"
 #include "signal/buffer.h"
 #include "signal/cache.h"
 #include "signal/processing/bedroom.h"
@@ -46,6 +45,8 @@
 #include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
+#include "adapters/microphonerecorder.h"
+#include "filters/absolutevalue.h"
 
 // gpumisc units
 #include "backtrace.h"
@@ -96,7 +97,6 @@ int UnitTest::
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
         RUNTEST(Test::RandomBuffer);
-        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Buffer);
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
@@ -150,7 +150,9 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
+        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Adapters::Playback);
+        RUNTEST(Filters::AbsoluteValueDesc);
 
     } catch (const exception& x) {
         TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
