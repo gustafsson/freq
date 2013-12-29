@@ -27,6 +27,7 @@
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
 #include "filters/envelope.h"
+#include "filters/normalize.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openfilecontroller.h"
 #include "tools/openwatchedfilecontroller.h"
@@ -128,6 +129,7 @@ int UnitTest::
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);
         RUNTEST(Filters::EnvelopeDesc);
+        RUNTEST(Filters::Normalize);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);

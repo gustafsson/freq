@@ -2,23 +2,32 @@
 #define NORMALIZE_H
 
 #include "signal/operation.h"
+
 namespace Filters {
 
-class Normalize: public Signal::DeprecatedOperation
+/**
+ * @brief The Normalize class should normalize the signal strength.
+ */
+class Normalize: public Signal::OperationDesc
 {
 public:
     enum Method
     {
         Method_None,
-        Method_Standard,
+        Method_InfNorm,
+        Method_2Norm,
         Method_TruncatedMean
     };
 
-    Normalize( unsigned normalizationRadius, Signal::pOperation source = Signal::pOperation() );
+    Normalize( unsigned normalizationRadius, Method method = Method_InfNorm );
 
-    virtual std::string name();
-    virtual void invalidate_samples(const Signal::Intervals& I);
-    virtual Signal::pBuffer read( const Signal::Interval& I );
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
+    QString toString() const;
+
+    unsigned radius();
 
 private:
     Normalize(); // used by deserialization
@@ -28,10 +37,11 @@ private:
     template<class archive> void serialize(archive& ar, const unsigned int) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
-
         ar & BOOST_SERIALIZATION_NVP(normalizationRadius);
     }
+
+public:
+    static void test();
 };
 
 } // namespace Filters
