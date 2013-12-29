@@ -61,8 +61,14 @@ void Workers::
         EXCEPTION_ASSERTX(false, "No such engine");
 
     // Don't try to delete a running thread.
-    if (worker->second)
+    if (worker->second && worker->second->isRunning())
+    {
         worker->second->exit_nicely_and_delete();
+    }
+    else
+    {
+        workers_map_.erase (ce);
+    }
 
     updateWorkers();
 }

@@ -54,19 +54,17 @@ void WorkerCrashLogger::
     DEBUG TaskInfo ti("WorkerCrashLogger::worker_quit");
     if (consume_exceptions_)
     {
-        check_all_previously_crashed_and_consume();
+        write1(workers_)->removeComputingEngine(ce);
     }
-    else
-    {
-        try {
-            rethrow_exception(e);
-        } catch ( const DummyException& x) {
-            DEBUG TaskInfo ti("got x");
-            boost::diagnostic_information(x);
-        } catch ( const boost::exception& x) {
-            x << Workers::crashed_engine_value(ce);
-            TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
-        }
+
+    try {
+        if (e) rethrow_exception(e);
+    } catch ( const DummyException& x) {
+        DEBUG TaskInfo ti("got x");
+        boost::diagnostic_information(x);
+    } catch ( const boost::exception& x) {
+        x << Workers::crashed_engine_value(ce);
+        TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
     }
 }
 
