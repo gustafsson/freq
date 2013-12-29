@@ -1,10 +1,10 @@
-#if 0 // No DeprecatedOperation / OperationCache
 #include "matlaboperation.h"
 #include "hdf5.h"
 #include "recorder.h"
 #include "tools/support/plotlines.h"
 
 #include "tfr/chunk.h"
+#include "neat_math.h"
 
 // gpumisc
 #include "cpumemorystorage.h"
@@ -25,9 +25,8 @@ namespace Adapters {
 
 
 MatlabOperation::
-        MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* s )
-:   DeprecatedOperation(source),
-    _settings(0)
+        MatlabOperation( MatlabFunctionSettings* s )
+:   _settings(0)
 {
     settings(s);
 }
@@ -35,8 +34,7 @@ MatlabOperation::
 
 MatlabOperation::
         MatlabOperation()
-:   DeprecatedOperation(Signal::pOperation()),
-    _settings(0)
+:   _settings(0)
 {
     settings(0);
 }
@@ -57,7 +55,7 @@ std::string MatlabOperation::
         name()
 {
     if (!_matlab)
-        return DeprecatedOperation::name();
+        return "MatlabOperation::name()";
     return _matlab->matlabFunctionFilename();
 }
 
@@ -66,34 +64,34 @@ std::string MatlabOperation::
         functionName()
 {
     if (!_matlab)
-        return DeprecatedOperation::name();
+        return "MatlabOperation::functionName()";
     return _matlab->matlabFunction();
 }
 
 
-void MatlabOperation::
-        invalidate_samples(const Intervals& I)
-{
-    // If computing in order and invalidating something that has already been
-    // computed
-    TaskInfo("MatlabOperation invalidate_samples(%s)", I.toString().c_str());
+//void MatlabOperation::
+//        invalidate_samples(const Intervals& I)
+//{
+//    // If computing in order and invalidating something that has already been
+//    // computed
+//    TaskInfo("MatlabOperation invalidate_samples(%s)", I.toString().c_str());
 
-    Intervals previously_computed = cached_samples() & ~invalid_returns();
-    bool start_over = _settings && _settings->computeInOrder() && (I & previously_computed);
+//    Intervals previously_computed = cached_samples() & ~invalid_returns();
+//    bool start_over = _settings && _settings->computeInOrder() && (I & previously_computed);
 
-    if (start_over)
-    {
-        // Start over and recompute all blocks again
-        restart();
-    }
-    else
-    {
-        DeprecatedOperation::invalidate_samples( I );
+//    if (start_over)
+//    {
+//        // Start over and recompute all blocks again
+//        restart();
+//    }
+//    else
+//    {
+//        DeprecatedOperation::invalidate_samples( I );
 
-        if (plotlines && source())
-            plotlines->clear( I, sample_rate() );
-    }
-}
+//        if (plotlines && source())
+//            plotlines->clear( I, sample_rate() );
+//    }
+//}
 
 
 bool MatlabOperation::
@@ -195,9 +193,9 @@ bool MatlabOperation::
         }
         _invalid_returns -= allequal;
 
-        Signal::Intervals samples_to_invalidate = invalid_returns() & J;
+        Signal::Intervals samples_to_invalidate = _invalid_returns & J;
         TaskInfo("invalid_returns = %s, J = %s, invalid_returns & J = %s",
-                 invalid_returns().toString().c_str(),
+                 _invalid_returns.toString().c_str(),
                  J.toString().c_str(),
                  samples_to_invalidate.toString().c_str());
 
@@ -210,18 +208,19 @@ bool MatlabOperation::
             TaskInfo("Matlab script made some changes");
         }
 
-        if (samples_to_invalidate)
-            DeprecatedOperation::invalidate_samples( samples_to_invalidate );
+//        if (samples_to_invalidate)
+//            DeprecatedOperation::invalidate_samples( samples_to_invalidate );
 
-        Recorder* recorder = dynamic_cast<Recorder*>(root());
-        bool isrecording = 0!=recorder;
+//        Recorder* recorder = dynamic_cast<Recorder*>(root());
+//        bool isrecording = 0!=recorder;
+        bool isrecording = true;
         if (isrecording)
         {
             // Leave the process running so that we can continue a recording or change the list of operations
         }
         else
         {
-            if (((invalid_samples() | invalid_returns()) - J).empty())
+            if (((_invalid_samples | _invalid_returns) - J).empty())
                 _matlab->endProcess(); // Finished with matlab
         }
 
@@ -248,7 +247,7 @@ Interval MatlabOperation::
     Signal::Interval J = I;
 
     if (_settings->chunksize() < 0)
-        J = Interval(0, number_of_samples());
+        J = Signal::Interval::Interval_ALL; // Interval(0, number_of_samples());
     else
     {
         if (_settings->computeInOrder() )
@@ -261,7 +260,7 @@ Interval MatlabOperation::
     }
 
     IntervalType support = _settings->overlap();
-    Interval signal = getInterval();
+    Interval signal = Signal::Interval::Interval_ALL; //getInterval();
     J &= signal;
     Interval K = Intervals(J).enlarge( support ).spannedInterval();
 
@@ -269,50 +268,51 @@ Interval MatlabOperation::
     if (0<_settings->chunksize() && (int)J.count() != _settings->chunksize())
         need_data_after_end = true;
 
-    if (need_data_after_end)
-    {
-        Recorder* recorder = dynamic_cast<Recorder*>(root());
-        bool isrecording = 0!=recorder;
-        if (isrecording)
-        {
-            bool need_a_specific_chunk_size = 0<_settings->chunksize();
-            if (need_a_specific_chunk_size)
-            {
-                if (recorder->isStopped() && !_settings->computeInOrder())
-                {
-                    // Ok, go on
-                }
-                else
-                {
-                    return Interval(0,0);
-                }
-            }
-            else
-            {
-                if (recorder->isStopped())
-                {
-                    // Ok, go on
-                }
-                else
-                {
-                    return Interval(0,0);
-                    // Don't use any samples after the end while recording
-                    K &= signal;
+//    if (need_data_after_end)
+//    {
+//        Recorder* recorder = dynamic_cast<Recorder*>(root());
+//        bool isrecording = 0!=recorder;
+//        if (isrecording)
+//        {
+//            bool need_a_specific_chunk_size = 0<_settings->chunksize();
+//            if (need_a_specific_chunk_size)
+//            {
+//                if (recorder->isStopped() && !_settings->computeInOrder())
+//                {
+//                    // Ok, go on
+//                }
+//                else
+//                {
+//                    return Interval(0,0);
+//                }
+//            }
+//            else
+//            {
+//                if (recorder->isStopped())
+//                {
+//                    // Ok, go on
+//                }
+//                else
+//                {
+//                    return Interval(0,0);
+//                    // Don't use any samples after the end while recording
+//                    K &= signal;
 
-                    if (Intervals(K).shrink(support).empty())
-                        return Interval(0,0);
-                }
-            }
-        }
-    }
+//                    if (Intervals(K).shrink(support).empty())
+//                        return Interval(0,0);
+//                }
+//            }
+//        }
+//    }
 
     return K;
 }
 
 
 pBuffer MatlabOperation::
-        readRaw( const Interval& I )
+        process( pBuffer src )
 {
+    const Interval& I = src->getInterval ();
     if (!_matlab)
         return pBuffer();
 
@@ -335,7 +335,7 @@ pBuffer MatlabOperation::
             {
                 TaskInfo("MatlabOperation::read(%s) process ended", I.toString().c_str() );
 
-                return source()->readFixedLength( I );
+                return src;
             }
             else
             {
@@ -353,7 +353,11 @@ pBuffer MatlabOperation::
 
             // just 'read()' might return the entire signal, which would be way to
             // slow to export in an interactive manner
-            sent_data = source()->readFixedLength( K );
+            // TODO need to rework this and separate required samples for export from importing
+            // exporting samples should be a target of its own
+            // importing samples should behave like a recording; suddenly new data might show up
+            // sent_data = source()->readFixedLength( K );
+            sent_data = src;
 
             string file = _matlab->getTempName();
 
@@ -382,14 +386,13 @@ pBuffer MatlabOperation::
 void MatlabOperation::
         restart()
 {
-    _cache.clear();
     _matlab.reset();
 
     if (_settings)
     {
         _matlab.reset( new MatlabFunction( _settings->scriptname(), 4, _settings ));
 
-        DeprecatedOperation::invalidate_samples( Signal::Intervals::Intervals_ALL );
+        //DeprecatedOperation::invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
 
     if (plotlines)
@@ -416,5 +419,104 @@ void MatlabOperation::
     }
 }
 
+
+MatlabOperationWrapper::
+        MatlabOperationWrapper( MatlabFunctionSettings* settings )
+    :
+      matlab_operation_(new MatlabOperation(settings))
+{
+
+}
+
+
+Signal::pBuffer MatlabOperationWrapper::
+        process(Signal::pBuffer b)
+{
+    Signal::pBuffer p = matlab_operation_->process(b);
+    return p;
+}
+
+
+MatlabOperationDesc::
+        MatlabOperationDesc( MatlabFunctionSettings* settings )
+    :
+      settings(settings)
+{
+
+}
+
+
+Signal::Interval MatlabOperationDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    Signal::Interval r = I;
+    Signal::IntervalType c = settings->chunksize ();
+    Signal::IntervalType o = settings->overlap ();
+
+    if (c > 0) {
+        r.first = align_down(r.first, c);
+        r.last = align_up(r.last, c);
+    }
+
+    if (expectedOutput)
+        *expectedOutput = r;
+
+    return Signal::Interval(clamped_sub(r.first, o), clamped_add(r.last, o));
+}
+
+
+Signal::Interval MatlabOperationDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    Signal::Interval r = I;
+    Signal::IntervalType c = settings->chunksize ();
+    Signal::IntervalType o = settings->overlap ();
+
+//    bool start_over = _settings && _settings->computeInOrder() && (I & previously_computed);
+//    if (start_over)
+//        return Signal::Interval::Interval_ALL;
+
+    r = Signal::Interval(clamped_sub(r.first, o), clamped_add(r.last, o));
+
+    if (c > 0) {
+        r.first = align_down(r.first, c);
+        r.last = align_up(r.last, c);
+    }
+
+    return r;
+}
+
+
+Signal::OperationDesc::Ptr MatlabOperationDesc::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new MatlabOperationDesc(settings));
+}
+
+
+Signal::Operation::Ptr MatlabOperationDesc::
+        createOperation(Signal::ComputingEngine* engine) const
+{
+    if (dynamic_cast<MatlabComputingEngine*>(engine))
+        return Signal::Operation::Ptr(new MatlabOperationWrapper(settings));
+
+    return Signal::Operation::Ptr();
+}
+
+
 } // namespace Adapters
-#endif // No DeprecatedOperation / OperationCache
+
+namespace Adapters {
+
+void MatlabOperationDesc::
+        test()
+{
+    EXCEPTION_ASSERTX(false, "not implemented");
+
+    // TODO need to rework this and separate required samples for export from importing
+    // exporting samples should be a target of its own
+    // importing samples should behave like a recording; suddenly new data might show up
+
+}
+
+} // namespace Adapters
