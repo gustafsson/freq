@@ -37,9 +37,13 @@ public:
     Worker::Ptr addComputingEngine(Signal::ComputingEngine::Ptr ce);
 
     /**
-     * Throw exception if this engine was never added or already removed. The
-     * thread can be stopped without calling removeComputingEngine. Call
-     * clean_dead_workers() to remove them from the workers() list.
+     * Prevents the worker for this ComputingEngine to get new work from the
+     * scheduler but doesn't kill the thread. Workers keeps a reference to the
+     * worker until it has finished.
+     *
+     * Does nothing if this engine was never added or already removed. An engine
+     * will be removed if its worker has finished (or crashed with an exception)
+     * and been cleaned by rethrow_any_worker_exception() or clean_dead_workers().
      */
     void removeComputingEngine(Signal::ComputingEngine::Ptr ce);
 

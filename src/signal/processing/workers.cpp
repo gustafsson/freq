@@ -57,17 +57,12 @@ void Workers::
         removeComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
     EngineWorkerMap::iterator worker = workers_map_.find (ce);
-    if (worker == workers_map_.end ())
-        EXCEPTION_ASSERTX(false, "No such engine");
-
-    // Don't try to delete a running thread.
-    if (worker->second && worker->second->isRunning())
-    {
-        worker->second->exit_nicely_and_delete();
-    }
-    else
-    {
-        workers_map_.erase (ce);
+    if (worker != workers_map_.end ()) {
+        // Don't try to delete a running thread.
+        if (worker->second && worker->second->isRunning())
+            worker->second->exit_nicely_and_delete();
+        else
+            workers_map_.erase (worker);
     }
 
     updateWorkers();

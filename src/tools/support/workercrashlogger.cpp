@@ -235,7 +235,7 @@ void WorkerCrashLogger::
             addAndWaitForStop(workers);
 
             double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 2e-3 );
+            EXCEPTION_ASSERT_LESS( T, 4e-3 );
         }
 
         // Should not have consumed any workers
