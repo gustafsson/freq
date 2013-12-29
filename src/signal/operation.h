@@ -45,11 +45,9 @@ public:
     /**
      * @brief process computes the operation
      * @param A buffer with data to process. The interval of the buffer will
-     * be equal to param 'I' after a call to requiredInterval. requiredInterval
-     * may be called several times for different intervals before calling
-     * process.
-     * @return processed data. Returned buffer interval must be equal to
-     * OperationDesc::requiredInterval(b->getInterval());
+     * be equal to a value returned by 'OperationDesc::requiredInterval(...)' param 'I'.
+     * @return processed data. Returned buffer interval must be equal to expectedOutput in:
+     * 'OperationDesc::requiredInterval(b->getInterval(), &expectedOutput)'
      */
     virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
 
@@ -178,7 +176,14 @@ protected:
      */
     void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const volatile;
 
+
 private:
+    /**
+     * @brief deprecateCache without the volatile qualifier can't be called.
+     */
+    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const;
+
+
     /**
      * @brief invalidator_ is used by deprecateCache.
      *

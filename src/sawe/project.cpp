@@ -569,13 +569,13 @@ pProject Project::
         openCsvTimeseries(std::string audio_file)
 {
     Adapters::CsvTimeseries*a;
-    Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    Signal::OperationDesc::Ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     double fs = QInputDialog::getDouble (0, "Sample rate",
                                            "Enter the sample rate for the csv data:", 1);
     if (fs<=0)
         fs = 1;
 
-    a->set_sample_rate (fs);
+    a->setSampleRate (fs);
     pProject p( new Project( a->name() ));
     p->createMainWindow ();
     p->appendOperation (s);

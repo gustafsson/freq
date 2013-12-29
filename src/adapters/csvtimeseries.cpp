@@ -57,7 +57,7 @@ std::string CsvTimeseries::
         name()
 {
     if (filename().empty())
-        return DeprecatedOperation::name();
+        return OperationDesc::toString ().toStdString ();
 
     return QFileInfo( filename().c_str() ).fileName().toStdString();
 }

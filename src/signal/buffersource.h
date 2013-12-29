@@ -7,7 +7,7 @@
 namespace Signal
 {
 
-class SaweDll BufferSource: public FinalSource, public OperationDesc
+class SaweDll BufferSource: public SourceBase, public OperationDesc
 {
 public:
     class BufferSourceOperation: public Operation {
@@ -22,31 +22,28 @@ public:
     BufferSource( pBuffer waveform = pBuffer() );
     BufferSource( pMonoBuffer waveform );
 
-    void setBuffer( pBuffer waveform );
-
-    // DeprecatedOperation
-    virtual pBuffer read( const Interval& I );
-    virtual float sample_rate();
-    void set_sample_rate( float fs );
-    virtual IntervalType number_of_samples();
-    virtual unsigned num_channels();
-    virtual Interval getInterval();
-    virtual Intervals zeroed_samples();
-
+    // SourceBase
+    pBuffer read( const Interval& I );
+    float sample_rate();
+    IntervalType number_of_samples();
+    unsigned num_channels();
 
     // OperationDesc
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
-    virtual Interval affectedInterval( const Interval& I ) const;
-    virtual OperationDesc::Ptr copy() const;
-    virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
-    virtual Extent extent() const;
-    virtual bool operator==(const OperationDesc& d) const;
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Interval affectedInterval( const Interval& I ) const;
+    OperationDesc::Ptr copy() const;
+    Operation::Ptr createOperation(ComputingEngine* engine) const;
+    Extent extent() const;
+    bool operator==(const OperationDesc& d) const;
 
-
-    static void test();
+    void setBuffer( pBuffer waveform ) volatile;
+    void setSampleRate( float fs ) volatile;
 
 private:
     pBuffer buffer_;
+
+public:
+    static void test();
 };
 
 } // namespace Signal

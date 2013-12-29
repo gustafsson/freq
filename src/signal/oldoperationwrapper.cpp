@@ -31,21 +31,40 @@ void print_buffer_stats(pBuffer b, const char* bname, const char* func, T arg, c
 
 #define PRINT_BUFFER_STATS(b, arg) print_buffer_stats(b, #b, __FUNCTION__, arg, __FILE__, __LINE__)
 
-class OldOperationTrackBufferSource: public BufferSource {
+class OldOperationTrackBufferSource: public FinalSource {
 public:
     OldOperationTrackBufferSource( pBuffer waveform )
         :
-          BufferSource(waveform)
+          buffer(waveform)
     {
         //PRINT_BUFFER_STATS (waveform,"");
     }
 
     pBuffer read( const Interval& I ) {
-        pBuffer b = BufferSource::read(I);
+        pBuffer b = buffer.read(I);
         //PRINT_BUFFER_STATS (b,"");
 
         return b;
     }
+
+    virtual Interval getInterval() {
+        return buffer.extent ().interval.get ();
+    }
+
+    float sample_rate() {
+        return buffer.extent ().sample_rate.get ();
+    }
+
+    IntervalType number_of_samples() {
+        return buffer.extent ().interval.get ().last;
+    }
+
+    unsigned num_channels() {
+        return buffer.extent ().number_of_channels.get ();
+    }
+
+private:
+    BufferSource buffer;
 };
 
 
@@ -217,7 +236,7 @@ void OldOperationDescWrapper::
         t[1] = 2;
         t[2] = 3;
         // PRINT_BUFFER (buffer, "");
-        pOperation source_op( new BufferSource(buffer));
+        pOperation source_op( new OldOperationTrackBufferSource(buffer));
         //PRINT_BUFFER (source_op->read (Interval(0,2)), "");
         //PRINT_BUFFER (source_op->readFixedLength (Interval(0,2)), "");
         pOperation target_op( new OperationSetSilent(Signal::pOperation(), Signal::Interval(2,3)));
@@ -231,7 +250,7 @@ void OldOperationDescWrapper::
         IInvalidator::Ptr step = write1(chain)->addOperationAt (source_op_wrapper, target);
 
         Signal::OperationDesc::Extent extent = read1(chain)->extent(target);
-        EXCEPTION_ASSERT_EQUALS(extent.interval, buffer->getInterval ());
+        EXCEPTION_ASSERT_EQUALS(extent.interval.get (), buffer->getInterval ());
         write1(needs)->updateNeeds(extent.interval.get ());
 
         // Should wait for workers to fininsh
