@@ -3,7 +3,6 @@
 
 #include "tfr/cwtfilter.h"
 #include "tfr/cepstrumfilter.h"
-#include "tfr/drawnwaveformfilter.h"
 #include "heightmap/block.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/collection.h"
@@ -187,18 +186,6 @@ public:
     CepstrumToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
 
     virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
-};
-
-
-class DrawnWaveformToBlock: public BlockFilterImpl<Tfr::DrawnWaveformFilter>
-{
-public:
-    DrawnWaveformToBlock( Heightmap::TfrMapping::Ptr tfr_map_ );
-
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
-
-    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
-    virtual bool createFromOthers() { return false; }
 };
 
 
