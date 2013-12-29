@@ -476,7 +476,7 @@ void TransformInfoForm::
     {
         ui->freqNormalizationSliderPercent->setValue ( 0 );
         write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
-                    new Filters::NormalizeSpectraKernel(newValue));
+                    new Filters::NormalizeSpectra(newValue));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
@@ -502,7 +502,7 @@ void TransformInfoForm::
         TaskInfo("new stuff: %f", -newValue/100.0f);
 
         write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
-                    new Filters::NormalizeSpectraKernel(-newValue/100.0f));
+                    new Filters::NormalizeSpectra(-newValue/100.0f));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
