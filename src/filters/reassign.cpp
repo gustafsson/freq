@@ -22,9 +22,9 @@ using namespace Tfr;
 namespace Filters
 {
 void Reassign::
-        operator()( Chunk& chunk )
+        operator()( ChunkAndInverse& chunk )
 {
-    limitedCpu( chunk );
+    limitedCpu( *chunk.chunk );
 }
 
 
@@ -194,9 +194,9 @@ void Reassign::
 //////////// Tonalize
 
 void Tonalize::
-        operator()( Chunk& chunk )
+        operator()( ChunkAndInverse& chunk )
 {
-    brokenGpu(chunk);
+    brokenGpu(*chunk.chunk);
 }
 
 

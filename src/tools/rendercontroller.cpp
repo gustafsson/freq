@@ -564,10 +564,17 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
 
-    setBlockFilter( cwtblock );
+    // Cwt needs fs
+    float fs = headSampleRate ();
+    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
+
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
@@ -603,10 +610,17 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
 
-    setBlockFilter( cwtblock );
+    // Cwt needs fs
+    float fs = headSampleRate ();
+    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
+
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 

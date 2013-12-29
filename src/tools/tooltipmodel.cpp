@@ -376,16 +376,20 @@ public:
 //        Signal::pOperation o = m->renderSignalTarget->source();
 //        float fs = o->sample_rate();
 
-        Tfr::DummyCwtFilter filter;
-        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace"); // for DummyCwtFilter::requiredInterval
-        //filter.source(o);
-        filter.transform ( cwt->createTransform ());
+//        Tfr::DummyCwtFilter filter;
+//        EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace"); // for DummyCwtFilter::requiredInterval
+//        //filter.source(o);
+//        filter.transform ( cwt->createTransform ());
+//        Signal::IntervalType sample = std::max(0.f, t) * fs;
+//        const Signal::Interval I = filter.requiredInterval (Signal::Interval(sample, sample+1), filter.transform ());
+//        // Only check the first channel
+//        // TODO check other channels
+////        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
+//        Tfr::pChunk chunk = (*filter.transform ())(write1(s)->readFixedLengthFromCache (I)->getChannel (0));
+
         Signal::IntervalType sample = std::max(0.f, t) * fs;
-        const Signal::Interval I = filter.requiredInterval (Signal::Interval(sample, sample+1), filter.transform ());
-        // Only check the first channel
-        // TODO check other channels
-//        Tfr::pChunk chunk = (*filter.transform ())(o->readFixedLength (I)->getChannel (0));
-        Tfr::pChunk chunk = (*filter.transform ())(write1(s)->readFixedLengthFromCache (I)->getChannel (0));
+        const Signal::Interval I = cwt->requiredInterval (Signal::Interval(sample, sample+1), 0);
+        Tfr::pChunk chunk = (*cwt->copy ()->createTransform ())(write1(s)->readFixedLengthFromCache (I)->getChannel (0));
 
         Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
         unsigned N = 0;

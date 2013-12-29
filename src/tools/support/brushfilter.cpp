@@ -122,8 +122,9 @@ std::string MultiplyBrush::
 
 
 void MultiplyBrush::
-        operator()( Tfr::Chunk& chunk )
+        operator()( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& chunk = *chunkai.chunk;
     BrushImages const& imgs = *images.get();
 
     if (imgs.empty()) {

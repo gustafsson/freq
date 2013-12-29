@@ -85,9 +85,8 @@ void Application::
             ::exit(4);
         }
 
-        Signal::pOperation o(new Adapters::Csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
-        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
-        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Signal::OperationDesc::Ptr o(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
         Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
@@ -105,9 +104,8 @@ void Application::
             ::exit(5);
         }
 
-        Signal::pOperation o(new Adapters::Hdf5Chunk(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
-        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
-        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Signal::OperationDesc::Ptr o(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
         Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );

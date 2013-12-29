@@ -16,8 +16,9 @@ Move::
 {}
 
 void Move::
-        operator()( Chunk& chunk )
+        operator()( Tfr::ChunkAndInverse& chunk )
 {
+    Tfr::Chunk& chunk = *chunkai.chunk;
     TIME_FILTER TaskTimer tt("Move");
 
     float df = _df * chunk.nScales();

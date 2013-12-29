@@ -180,30 +180,6 @@ private:
 };
 
 
-class CwtToBlock: public BlockFilterImpl<Tfr::CwtFilter>
-{
-public:
-    CwtToBlock( Heightmap::TfrMapping::Ptr tfr_map_, Renderer* renderer );
-
-    /**
-      Tells the "chunk-to-block" what information to extract from the complex
-      time-frequency-representation. Such as phase, amplitude or weighted
-      amplitude. The weighted ampltidue mode is default for the morlet
-      transform to accommodate for low frequencies being smoothed out and
-      appear low in amplitude even though they contain frequencies of high
-      amplitude.
-      */
-    ComplexInfo complex_info;
-
-    virtual void mergeChunk( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
-    void mergeChunkpart( const Block& block, const Tfr::ChunkAndInverse& chunk, BlockData& outData );
-    virtual bool disregardAtZero() { return true; }
-
-private:
-    Renderer* renderer;
-};
-
-
 
 class CepstrumToBlock: public BlockFilterImpl<Tfr::CepstrumFilter>
 {

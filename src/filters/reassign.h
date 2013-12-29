@@ -5,10 +5,10 @@
 
 namespace Filters
 {
-    class Reassign: public Tfr::CwtFilter
+    class Reassign: public Tfr::ChunkFilter
     {
     public:
-        virtual void operator()( Tfr::Chunk& chunk );
+        void operator()( Tfr::ChunkAndInverse& chunk );
 
         void limitedCpu(Tfr::Chunk& chunk );
         void naiveCpu(Tfr::Chunk& chunk );
@@ -16,12 +16,24 @@ namespace Filters
     };
 
 
-    class Tonalize: public Tfr::CwtFilter
+    class Tonalize: public Tfr::ChunkFilter
     {
     public:
-        virtual void operator()( Tfr::Chunk& );
+        void operator()( Tfr::ChunkAndInverse& chunk );
 
         void brokenGpu(Tfr::Chunk& chunk );
+    };
+
+
+    class ReassignDesc: public Tfr::CwtFilterDesc {
+    public:
+        ReassignDesc():Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Reassign)){}
+    };
+
+
+    class TonalizeDesc: public Tfr::CwtFilterDesc {
+    public:
+        TonalizeDesc():Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Tonalize)){}
     };
 
 }

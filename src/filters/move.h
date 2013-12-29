@@ -5,14 +5,20 @@
 
 namespace Filters {
 
-class Move: public Tfr::CwtFilter
+class Move: public Tfr::ChunkFilter
 {
 public:
     Move(float df);
 
-    virtual void operator()( Tfr::Chunk& );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
     float _df;
+};
+
+
+class MoveDesc: public Tfr::CwtFilterDesc {
+public:
+    MoveDesc(float df):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Move(df))){}
 };
 
 

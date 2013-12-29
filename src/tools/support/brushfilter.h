@@ -17,7 +17,7 @@ namespace Tools {
 namespace Support {
 
 
-class BrushFilter : public Tfr::CwtFilter, public boost::noncopyable
+class BrushFilter : public Tfr::ChunkFilter, public boost::noncopyable
 {
 public:
     BrushFilter(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
@@ -57,7 +57,7 @@ public:
     virtual Signal::Intervals affected_samples();
 
     virtual std::string name();
-    virtual void operator()( Tfr::Chunk& );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
 private:
     friend class boost::serialization::access;
@@ -65,8 +65,6 @@ private:
     { BOOST_ASSERT(false); } // required by serialization, should never be called
 
     template<class archive> void save(archive& ar, const unsigned int version) const {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
-
         // TODO serialize tfr_mapping
 
 		size_t N = images->size();
@@ -99,8 +97,6 @@ private:
     }
 
     template<class archive> void load(archive& ar, const unsigned int version) {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
-
         unsigned N = 0;
         ar & BOOST_SERIALIZATION_NVP(N);
         for (unsigned i=0; i<N; ++i)
@@ -152,6 +148,15 @@ private:
         ref.block_index[0] = bi1;
         ref.block_index[1] = bi2;
     }
+};
+
+
+class MultiplyBrushDesc: public Tfr::CwtFilterDesc {
+public:
+    MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp)
+        :
+          Tfr::CwtFilterDesc(Tfr::pChunkFilter(new MultiplyBrush(bl, vp)))
+    {}
 };
 
 

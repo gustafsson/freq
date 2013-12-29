@@ -26,8 +26,9 @@ string csv_number()
 
 
 void Csv::
-        operator()( Tfr::Chunk& c )
+        operator()( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& c = *chunkai.chunk;
     string filename;
     if (this->_filename.empty())
         filename = csv_number();

@@ -23,15 +23,6 @@
 //#define TIME_BLOCKFILTER
 #define TIME_BLOCKFILTER if(0)
 
-//#define TIME_CWTTOBLOCK
-#define TIME_CWTTOBLOCK if(0)
-
-//#define CWTTOBLOCK_INFO
-#define CWTTOBLOCK_INFO if(0)
-
-//#define DEBUG_CWTTOBLOCK
-#define DEBUG_CWTTOBLOCK if(0)
-
 using namespace Tfr;
 using namespace boost;
 
@@ -141,38 +132,6 @@ unsigned BlockFilter::
 
     unsigned r = ceil( 2 * FS/min_fs );
     return r;
-}
-
-
-//////////////////////////////// CwtToBlock ///////////////////////////////
-
-CwtToBlock::
-        CwtToBlock( TfrMapping::Ptr tfr_map, Renderer* renderer )
-            :
-            BlockFilterImpl<Tfr::CwtFilter>(tfr_map),
-            complex_info(ComplexInfo_Amplitude_Non_Weighted),
-            renderer(renderer)
-{
-}
-
-
-void CwtToBlock::
-        mergeChunk( const Block& block, const ChunkAndInverse& chunk, BlockData& outData )
-{
-    Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(chunk.t.get ());
-    EXCEPTION_ASSERT( cwt );
-    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
-    float normalization_factor = cwt->nScales( chunk.chunk->original_sample_rate )/cwt->sigma();
-
-    CwtChunk& chunks = *dynamic_cast<CwtChunk*>( chunk.chunk.get () );
-
-    BOOST_FOREACH( const pChunk& chunkpart, chunks.chunks )
-    {
-        ChunkAndInverse c = chunk;
-        c.chunk = chunkpart;
-        mergeRowMajorChunk( block, c, outData,
-                            full_resolution, complex_info, normalization_factor, renderer->redundancy() <= 1 );
-    }
 }
 
 

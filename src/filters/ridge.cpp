@@ -9,8 +9,9 @@ namespace Filters
 {
 
 void Ridge::
-        operator()( Tfr::Chunk& chunk )
+        operator()( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& chunk = *chunkai.chunk;
     Tfr::ChunkElement* p     = chunk.transform_data->getCpuMemory();
 
     std::vector<Tfr::ChunkElement> q[] = {
