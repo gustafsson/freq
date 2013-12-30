@@ -11,60 +11,6 @@ using namespace Signal;
 namespace Tools {
     namespace Support {
 
-    // OperationSubOperations  /////////////////////////////////////////////////////////////////
-
-OperationSubOperations::
-        OperationSubOperations(Signal::pOperation source, std::string name)
-:   DeprecatedOperation(pOperation()),
-    source_sub_operation_( new DummyOperation(source)),
-    name_(name)
-{
-//    enabled(false);
-//    source_sub_operation_->enabled(false);
-    DeprecatedOperation::source( source_sub_operation_ );
-}
-
-
-Intervals affected_samples_recursive_until(pOperation o, pOperation stop)
-{
-    Intervals r;
-    if (o)
-    {
-        r = o->affected_samples();
-        if (o!=stop)
-            r |= o->translate_interval( affected_samples_recursive_until(o->source(), stop) );
-    }
-    return r;
-}
-
-
-Intervals OperationSubOperations::
-        affected_samples()
-{
-    return affected_samples_recursive_until( subSource(), source_sub_operation_);
-}
-
-
-Intervals zeroed_samples_recursive_until(pOperation o, pOperation stop)
-{
-    Intervals r;
-    if (o)
-    {
-        r = o->zeroed_samples();
-        if (o!=stop)
-            r |= o->translate_interval( zeroed_samples_recursive_until(o->source(), stop) );
-    }
-    return r;
-}
-
-
-Signal::Intervals OperationSubOperations::
-        zeroed_samples()
-{
-    return zeroed_samples_recursive_until( subSource(), source_sub_operation_);
-}
-
-
     // OperationCrop  /////////////////////////////////////////////////////////////////
 
 OperationCrop::Extent OperationCrop::
