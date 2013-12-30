@@ -354,6 +354,7 @@ void OperationMoveSelection::
 
     // OperationFilterSelection  /////////////////////////////////////////////////////////////////
 
+#if 0 // TODO implement using branching in the Dag because this operation involves a merge of two or more different signals
 OperationOnSelection::
         OperationOnSelection( pOperation source, pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
 :   OperationSubOperations( source, "OperationOnSelection" )
@@ -390,6 +391,7 @@ void OperationOnSelection::
     // Makes reads read from 'mergeSelection'
     DeprecatedOperation::source( mergeSelection );
 }
+#endif
 
     } // namespace Support
 } // namespace Tools

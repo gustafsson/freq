@@ -271,6 +271,7 @@ public:
 };
 #endif
 
+#if 0 // TODO implement using branching in the Dag because this operation involves a merge of two or more different signals
 class OperationOnSelection: public OperationSubOperations {
 public:
     OperationOnSelection( Signal::pOperation source, Signal::pOperation insideSelection, Signal::pOperation outsideSelection, Signal::pOperation operation );
@@ -300,6 +301,7 @@ private:
            & BOOST_SERIALIZATION_NVP(operation_);
     }
 };
+#endif
 
 } // namespace Support
 } // namespace Tools
