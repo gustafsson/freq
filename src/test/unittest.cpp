@@ -4,6 +4,7 @@
 #include "test/stdlibtest.h"
 #include "test/tasktimertiming.h"
 #include "test/randombuffer.h"
+#include "test/printbuffer.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
 #include "signal/buffer.h"
@@ -98,6 +99,7 @@ int UnitTest::
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
         RUNTEST(Test::RandomBuffer);
+        RUNTEST(Test::PrintBuffer);
         RUNTEST(Signal::Buffer);
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
