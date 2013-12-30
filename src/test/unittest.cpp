@@ -22,7 +22,6 @@
 #include "signal/processing/task.h"
 #include "signal/processing/worker.h"
 #include "signal/processing/workers.h"
-#include "signal/oldoperationwrapper.h"
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
@@ -122,8 +121,6 @@ int UnitTest::
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
-        RUNTEST(Signal::OldOperationWrapper);
-        RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);

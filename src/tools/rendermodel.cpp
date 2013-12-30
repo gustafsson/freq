@@ -5,7 +5,6 @@
 #include "heightmap/renderer.h"
 
 #include "signal/operationwrapper.h"
-#include "signal/oldoperationwrapper.h"
 
 #include "tfr/filter.h"
 

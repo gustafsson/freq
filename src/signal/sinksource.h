@@ -135,9 +135,6 @@ private:
 
     int _num_channels;
 
-    virtual pOperation source() const { return pOperation(); }
-    virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
-
     void allocateCache( Signal::Interval, float fs );
     //void selfmerge( Signal::Intervals forget = Signal::Intervals() );
     void merge( pBuffer );

@@ -13,7 +13,6 @@
 #include "adapters/csv.h"
 #include "adapters/hdf5.h"
 #include "adapters/playback.h"
-#include "signal/oldoperationwrapper.h"
 
 // gpumisc
 #include "redirectstdout.h"

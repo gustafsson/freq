@@ -7,7 +7,6 @@
 #include "renderview.h"
 #include "playbackmarkersmodel.h"
 #include "support/operation-composite.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/support/toolbar.h"
 
 // Sonic AWE

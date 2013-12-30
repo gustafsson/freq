@@ -11,8 +11,6 @@ class DrawWaveform
 public:
     DrawWaveform();
 
-    void drawWaveform(Signal::pOperation waveform);
-
     void drawWaveform_chunk_directMode( Signal::pBuffer chunk);
 
 private:

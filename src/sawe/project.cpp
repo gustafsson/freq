@@ -9,7 +9,6 @@
 #endif
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
@@ -62,14 +61,6 @@ Project::
         delete _mainWindow;
 
     TaskInfo("Closed project");
-}
-
-
-void Project::
-        appendOperation(Signal::pOperation s)
-{
-    Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(s));
-    appendOperation(oodw);
 }
 
 

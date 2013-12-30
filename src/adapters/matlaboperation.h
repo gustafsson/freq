@@ -8,6 +8,7 @@
 
 // boost
 #include <boost/scoped_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/split_member.hpp>
 
 namespace Tools {

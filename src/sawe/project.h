@@ -55,7 +55,6 @@ public:
     /**
       Appends 's' to head. If there is a current selection this only applies 's' to that selection.
       */
-    void appendOperation(Signal::pOperation s);
     void appendOperation(Signal::OperationDesc::Ptr s);
 
 

@@ -1,5 +1,4 @@
 #include "renderoperation.h"
-#include "signal/oldoperationwrapper.h"
 #include "tfr/filter.h"
 
 using namespace Signal;
