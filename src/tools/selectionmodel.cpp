@@ -155,7 +155,8 @@ Signal::OperationDesc::Ptr SelectionModel::
     TEST_TYPE(Signal::OperationSetSilent);
 //    TEST_TYPE(Selections::Support::SplineFilter);
 
-    throw std::logic_error("SelectionModel::copy_selection(" + vartype(*o) + ") is not implemented");
+    EXCEPTION_ASSERTX(false, "SelectionModel::copy_selection(" + vartype(*o) + ", " + w->toString().toStdString() + ") is not implemented");
+    return Signal::OperationDesc::Ptr();
 }
 
 

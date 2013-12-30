@@ -51,6 +51,7 @@ static void show_fatal_exception_cerr( const string& str )
     cerr.flush();
 }
 
+
 static void show_fatal_exception_qt( const string& /*str*/ )
 {
     int t = time(0);
@@ -71,22 +72,16 @@ static void show_fatal_exception_qt( const string& /*str*/ )
                  QString("%1, need to restart %2.\nThe log file may contain some cryptic details").arg (a).arg (name));
 }
 
+
 void Application::
         show_fatal_exception( const string& str )
 {
     show_fatal_exception_cerr(str);
+
     if (QApplication::instance())
         show_fatal_exception_qt(str);
 }
 
-static string fatal_exception_string( const exception &x )
-{
-    return boost::diagnostic_information(x);
-}
-
-static string fatal_unknown_exception_string() {
-    return "Error: An unknown error occurred";
-}
 
 Application::
         Application(int& argc, char **argv, bool prevent_log_system_and_execute_args )
@@ -206,14 +201,14 @@ QGLWidget* Application::
 void Application::
         display_fatal_exception()
 {
-    show_fatal_exception(fatal_unknown_exception_string());
+    show_fatal_exception(boost::current_exception_diagnostic_information());
 }
 
 
 void Application::
         display_fatal_exception(const exception& x)
 {
-    show_fatal_exception(fatal_exception_string(x));
+    show_fatal_exception(boost::diagnostic_information(x));
 }
 
 
@@ -276,10 +271,22 @@ bool Application::
         }
 
         v = QApplication::notify(receiver,e);
+    } catch (const boost::exception &x) {
+        bool got_backtrace = boost::get_error_info<Backtrace::info>(x);
+        if( got_backtrace )
+        {
+            // Just log
+            show_fatal_exception_cerr (boost::diagnostic_information(x) );
+        }
+        else
+        {
+            // This was not expected, better fix this
+            err = boost::diagnostic_information(x);
+        }
     } catch (const exception &x) {
-        err = fatal_exception_string(x);
+        err = boost::diagnostic_information(x);
     } catch (...) {
-        err = fatal_unknown_exception_string();
+        err = boost::current_exception_diagnostic_information ();
     }
 
     if (!err.empty() && _fatal_error.empty())
