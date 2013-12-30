@@ -90,36 +90,6 @@ protected:
 
 
 /**
-  OperationContainer contains exactly 1 other Operation (as opposed to
-  OperationSubOperations which contains an arbitrary number of operations in
-  sequence). This is useful when you want to pass around an Operation but the
-  Operation implementation might change afterwards.
-
-  This happens for instance with selection tools. The selection filter has a
-  specific location in the Operation tree but when the user changes the
-  selection the implementation might change from a Rectangle to a
-  OperationOtherSilent and back again.
- */
-class OperationContainer: public OperationSubOperations
-{
-public:
-    OperationContainer(Signal::pOperation source, std::string name );
-
-    void setContent(Signal::pOperation content)
-    {
-        if (!content)
-            DeprecatedOperation::source( source_sub_operation_ );
-        else
-        {
-            DeprecatedOperation::source( content );
-            DeprecatedOperation::source()->source( source_sub_operation_ );
-        }
-    }
-    Signal::pOperation content() { return subSource(); }
-};
-
-
-/**
   Example 1:
   start:  1234567
   OperationOtherSilent( start, 1, 2 );

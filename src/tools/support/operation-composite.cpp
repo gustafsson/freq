@@ -65,16 +65,6 @@ Signal::Intervals OperationSubOperations::
 }
 
 
-    // OperationContainer  /////////////////////////////////////////////////////////////////
-
-OperationContainer::
-        OperationContainer(Signal::pOperation source, std::string name )
-            :
-            OperationSubOperations(source, name)
-{
-}
-
-
     // OperationCrop  /////////////////////////////////////////////////////////////////
 
 OperationCrop::Extent OperationCrop::
