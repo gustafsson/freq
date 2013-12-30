@@ -51,56 +51,6 @@ private:
     }
 };
 
-
-class OperationRemoveSection: public DeprecatedOperation
-{
-public:
-    OperationRemoveSection( pOperation source, Interval section );
-
-    virtual pBuffer read( const Interval& I );
-    virtual IntervalType number_of_samples();
-
-    virtual Intervals affected_samples();
-    virtual Intervals translate_interval(Intervals I);
-    Intervals translate_interval_inverse(Intervals I);
-
-private:
-
-    Interval section_;
-
-    friend class boost::serialization::access;
-    OperationRemoveSection():DeprecatedOperation(pOperation()),section_(0,0) {} // only used by deserialization
-
-    template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
-    {
-        using boost::serialization::make_nvp;
-
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
-           & BOOST_SERIALIZATION_NVP(section_.first)
-           & BOOST_SERIALIZATION_NVP(section_.last);
-    }
-};
-
-
-/**
-  Has no effect as long as source()->number_of_samples <= section.first.
-  */
-class OperationInsertSilence: public DeprecatedOperation
-{
-public:
-    OperationInsertSilence( pOperation source, Interval section );
-
-    virtual pBuffer read( const Interval& I );
-    virtual IntervalType number_of_samples();
-
-    virtual Intervals affected_samples();
-    virtual Intervals translate_interval(Intervals I);
-    Intervals translate_interval_inverse(Intervals I);
-private:
-    Interval section_;
-};
-
-
 } // namespace Signal
 
 #endif // SIGNALOPERATIONBASIC_H
