@@ -9,8 +9,6 @@
 #endif
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
-#include "signal/operationcache.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
@@ -67,14 +65,6 @@ Project::
 
 
 void Project::
-        appendOperation(Signal::pOperation s)
-{
-    Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(s));
-    appendOperation(oodw);
-}
-
-
-void Project::
         appendOperation(Signal::OperationDesc::Ptr s)
 {
     Tools::Commands::pCommand c(
@@ -91,36 +81,6 @@ void Project::
 
     setModified ();
 }
-
-
-/*
-void Project::
-        appendOperation(Signal::pOperation s)
-{
-    Tools::SelectionModel& m = tools().selection_model;
-
-    if (m.current_selection() && m.current_selection()!=s)
-    {
-        Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
-                head->head_source(),
-                Signal::pOperation( new Signal::OperationCachedSub(
-                    m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ))),
-                Signal::pOperation( new Signal::OperationCachedSub(
-                    m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ))),
-                s
-                ));
-
-        s = onselectionOnly;
-    }
-
-    this->head->appendOperation( s );
-
-    tools().render_model.renderSignalTarget->findHead( head->chain() )->head_source( head->head_source() );
-    tools().playback_model.playbackTarget->findHead( head->chain() )->head_source( head->head_source() );
-
-    setModified();
-}
-*/
 
 
 Tools::ToolRepo& Project::
@@ -162,11 +122,10 @@ pProject Project::
         if (url.isValid() && !url.scheme().isEmpty())
         {
             std::string scheme = url.scheme().toStdString();
-            Signal::pOperation s( new Adapters::NetworkRecorder(url) );
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (new Adapters::NetworkRecorder(url));
+            p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -319,7 +278,7 @@ pProject Project::
 
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();
-    p->tools ().addRecording (new Adapters::MicrophoneRecorder(device));
+    p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(device)));
 
     return p;
 }
@@ -601,13 +560,13 @@ pProject Project::
         openCsvTimeseries(std::string audio_file)
 {
     Adapters::CsvTimeseries*a;
-    Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    Signal::OperationDesc::Ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     double fs = QInputDialog::getDouble (0, "Sample rate",
                                            "Enter the sample rate for the csv data:", 1);
     if (fs<=0)
         fs = 1;
 
-    a->set_sample_rate (fs);
+    a->setSampleRate (fs);
     pProject p( new Project( a->name() ));
     p->createMainWindow ();
     p->appendOperation (s);

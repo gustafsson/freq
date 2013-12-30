@@ -1,14 +1,16 @@
-#include "stftblockfilter.h"
+#include "cepstrumblockfilter.h"
+
+#include "signal/computingengine.h"
+#include "tfr/cepstrum.h"
+#include "tfr/stft.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
-#include "tfr/stft.h"
-#include "signal/computingengine.h"
 
 namespace Heightmap {
 namespace TfrMappings {
 
-StftBlockFilter::
-        StftBlockFilter(StftBlockFilterParams::Ptr params)
+CepstrumBlockFilter::
+        CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr params)
     :
       params_(params)
 {
@@ -16,32 +18,29 @@ StftBlockFilter::
 }
 
 
-void StftBlockFilter::
+void CepstrumBlockFilter::
         prepareChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
-        StftBlockFilterParams::WritePtr P(params_);
-        if (P->freq_normalization)
-            (*P->freq_normalization)(chunk);
+        CepstrumBlockFilterParams::WritePtr P(params_);
     }
 }
 
 
-void StftBlockFilter::
+void CepstrumBlockFilter::
         mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
 {
-    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
-    EXCEPTION_ASSERT( stftchunk );
-    float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
+    Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
+    EXCEPTION_ASSERT( cepstrumchunk );
 
     Heightmap::ChunkToBlock chunktoblock;
-    chunktoblock.normalization_factor = normalization_factor;
+    chunktoblock.normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
     chunktoblock.mergeColumnMajorChunk (block, *pchunk.chunk, outData);
 }
 
 
-StftBlockFilterDesc::
-        StftBlockFilterDesc(StftBlockFilterParams::Ptr params)
+CepstrumBlockFilterDesc::
+        CepstrumBlockFilterDesc(CepstrumBlockFilterParams::Ptr params)
     :
       params_(params)
 {
@@ -49,11 +48,11 @@ StftBlockFilterDesc::
 }
 
 
-MergeChunk::Ptr StftBlockFilterDesc::
+MergeChunk::Ptr CepstrumBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
-        return MergeChunk::Ptr( new StftBlockFilter(params_) );
+        return MergeChunk::Ptr( new CepstrumBlockFilter(params_) );
 
     return MergeChunk::Ptr();
 }
@@ -71,15 +70,15 @@ MergeChunk::Ptr StftBlockFilterDesc::
 namespace Heightmap {
 namespace TfrMappings {
 
-void StftBlockFilter::
+void CepstrumBlockFilter::
         test()
 {
-    // It should update a block with stft transform data.
+    // It should update a block with cepstrum transform data.
     {
         Timer t;
 
-        Tfr::StftDesc stftdesc;
-        Signal::Interval data = stftdesc.requiredInterval (Signal::Interval(0,4), 0);
+        Tfr::CepstrumDesc cepstrumdesc;
+        Signal::Interval data = cepstrumdesc.requiredInterval (Signal::Interval(0,4), 0);
 
         // Create some data to plot into the block
         Signal::pMonoBuffer buffer(new Signal::MonoBuffer(data, data.count ()/4));
@@ -112,11 +111,11 @@ void StftBlockFilter::
         Tfr::ChunkAndInverse cai;
         cai.channel = 0;
         cai.input = buffer;
-        cai.t = stftdesc.createTransform ();
+        cai.t = cepstrumdesc.createTransform ();
         cai.chunk = (*cai.t)( buffer );
 
         // Do the merge
-        Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
+        Heightmap::MergeChunk::Ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr()) );
         write1(mc)->mergeChunk( block, cai, *block.block_data () );
 
         float T = t.elapsed ();
@@ -129,12 +128,12 @@ void StftBlockFilter::
 }
 
 
-void StftBlockFilterDesc::
+void CepstrumBlockFilterDesc::
         test()
 {
-    // It should instantiate StftBlockFilter for different engines.
+    // It should instantiate CepstrumBlockFilter for different engines.
     {
-        Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::Ptr()));
+        Heightmap::MergeChunkDesc::Ptr mcd(new CepstrumBlockFilterDesc(CepstrumBlockFilterParams::Ptr()));
         MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
@@ -142,7 +141,7 @@ void StftBlockFilterDesc::
         Signal::ComputingCpu cpu;
         mc = read1(mcd)->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::StftBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::CepstrumBlockFilter" );
 
         Signal::ComputingCuda cuda;
         mc = read1(mcd)->createMergeChunk (&cuda);

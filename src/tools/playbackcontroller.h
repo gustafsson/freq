@@ -1,7 +1,7 @@
 #ifndef PLAYBACKCONTROLLER_H
 #define PLAYBACKCONTROLLER_H
 
-#include "signal/poperation.h"
+#include "signal/operation.h"
 
 #include <QObject>
 
@@ -52,7 +52,7 @@ namespace Tools
         };
         boost::shared_ptr<Actions> ui_items_;
 
-        void startPlayback ( Signal::pOperation filter );
+        void startPlayback ( Signal::OperationDesc::Ptr filter );
 
         // GUI
         void setupGui( RenderView* render_view );

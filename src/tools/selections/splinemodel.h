@@ -17,7 +17,7 @@ namespace Tools { namespace Selections
         SplineModel( RenderModel* rendermodel );
         ~SplineModel();
 
-        Signal::pOperation updateFilter();
+        Signal::OperationDesc::Ptr updateFilter();
 
         std::vector<Heightmap::Position> v;
         bool drawing;

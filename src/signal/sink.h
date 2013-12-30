@@ -19,61 +19,38 @@ namespace Signal {
   to an operation, the results may be discarded. This class hopefully makes it
   a little bit more clear by providing some convenient methods as examples.
  */
-class Sink: public DeprecatedOperation
+class Sink: public Signal::Operation
 {
 public:
-    Sink(): DeprecatedOperation(pOperation()) {}
+    virtual ~Sink();
 
-
-    /// @overload Operation::read()
-    virtual pBuffer read(const Interval& I);
-
-
-    /**
-      A sink doesn't affect the buffer through 'read'.
-      */
-    virtual Signal::Intervals affected_samples() { return Signal::Intervals(); }
-
+    // Overloaded from Signal::Operation
+    Signal::pBuffer process(Signal::pBuffer b) { put(b); return b; }
 
     /**
       If this Sink has recieved all expected_samples and is finished with its
       work, the caller may remove this Sink.
       */
-    virtual bool deleteMe() { return !invalid_samples(); }
-    virtual bool isUnderfed() { return false; }
-
-
-    virtual void put(pBuffer);
-
-    /// @see invalid_samples()
-    virtual void invalidate_samples(const Intervals& I) = 0;
-
-
-    /**
-      Example on how invalid_samples() is used:
-      1. A brand new filter is inserted into the middle of the chain, it will
-         affect some samples. To indicate that a change has been made but not
-         yet processed invalid_samples is set to some equivalent non-empty
-         values.
-      2. ChainHead is notificed that something has changed and will query the
-         chain for invalid samples. It will then issue invalidate_samples on
-         all sinks connected to the ChainHead.
-      3. Different sinks might react differently to invalidate_samples(...).
-         The Heightmap::Collection for instance might only return a subset in
-         invalid_samples() if those are the only samples that have been
-         requested recently. Heightmap::Collection will return the other
-         invalidated samples from invalid_samples() at a later occassion if
-         they are requested by rendering.
-         Signal::Playback will abort the playback and just stop, returning true
-         from isFinished() and waiting to be deleted by the calling postsink
-         and possibly recreated later.
-    */
-    virtual Intervals invalid_samples() = 0;
-
-
-    static pBuffer put(DeprecatedOperation* receiver, pBuffer buffer);
+    virtual bool deleteMe();
+    virtual bool isUnderfed();
+    virtual void put(pBuffer) = 0;
 };
 
+
+class SinkDesc: public Signal::OperationDesc
+{
+public:
+    SinkDesc(Signal::Operation::Ptr sink);
+
+    Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const;
+    Interval affectedInterval( const Interval& I ) const;
+    OperationDesc::Ptr copy() const;
+    Operation::Ptr createOperation(ComputingEngine* engine) const;
+    Operation::Ptr sink() const;
+
+private:
+    Signal::Operation::Ptr sink_;
+};
 
 } // namespace Signal
 

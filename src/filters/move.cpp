@@ -15,17 +15,16 @@ Move::
 :   _df(df)
 {}
 
-bool Move::
-        operator()( Chunk& chunk )
+void Move::
+        operator()( Tfr::ChunkAndInverse& chunk )
 {
+    Tfr::Chunk& chunk = *chunkai.chunk;
     TIME_FILTER TaskTimer tt("Move");
 
     float df = _df * chunk.nScales();
 
     ::moveFilter( chunk.transform_data,
                   df, chunk.minHz(), chunk.maxHz(), chunk.sample_rate, chunk.chunk_offset.asInteger() );
-
-    return true;
 }
 
 } // namespace Filters

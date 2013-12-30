@@ -13,12 +13,11 @@
 // Sonic AWE, Setting different transforms for rendering
 #include "filters/reassign.h"
 #include "filters/ridge.h"
-#include "heightmap/blockfilter.h"
 #include "heightmap/renderer.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
-#include "signal/postsink.h"
+#include "heightmap/tfrmappings/cepstrumblockfilter.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
@@ -26,7 +25,6 @@
 #include "sawe/application.h"
 #include "signal/buffersource.h"
 #include "signal/reroutechannels.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
@@ -417,14 +415,6 @@ void RenderController::
 
 
 void RenderController::
-        setBlockFilter(Signal::DeprecatedOperation* blockfilter)
-{
-    Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
-    setBlockFilter(adapter);
-}
-
-
-void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc)
 {
     // Wire it up to a FilterDesc
@@ -565,10 +555,17 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
 
-    setBlockFilter( cwtblock );
+    // Cwt needs fs
+    float fs = headSampleRate ();
+    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
+
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
@@ -604,19 +601,30 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
 
-    setBlockFilter( cwtblock );
+    // Cwt needs fs
+    float fs = headSampleRate ();
+    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
+
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
 void RenderController::
         receiveSetTransform_Cepstrum()
 {
-    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->tfr_mapping ());
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CepstrumBlockFilterDesc);
 
-    setBlockFilter( cepstrumblock );
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::CepstrumDesc>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
@@ -1027,17 +1035,7 @@ void RenderController::
     // context is required to be created by lazy initialization when painting
     // the widget
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
-
-    {
-/*
-//Use Signal::Processing namespace
-        Signal::DeprecatedOperation* first_source = model()->project()->head->chain()->root_source().get();
-
-        view->glwidget->setObjectName( QString("glwidget %1").arg(first_source->name().c_str()));
-*/
-        view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
-    }
-
+    view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     view->glwidget->makeCurrent();
 
     view->graphicsview = new GraphicsView(view);

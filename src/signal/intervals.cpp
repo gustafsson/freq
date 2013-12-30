@@ -653,7 +653,7 @@ void Intervals::
             (I & Interval(i,i+1));
         }
         T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.000003);
+        EXCEPTION_ASSERT_LESS(T,0.000004);
     }
 
     // It should have neat string representations

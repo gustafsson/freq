@@ -20,11 +20,14 @@ namespace Processing {
  *
  * It should terminate all threads when it's closed.
  */
-class Workers: public VolatilePtr<Workers>
+class Workers: public QObject, public VolatilePtr<Workers>
 {
+    Q_OBJECT
 public:
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
     typedef boost::error_info<struct crashed_engine, Signal::ComputingEngine::Ptr> crashed_engine_value;
+
+    typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
 
     Workers(ISchedule::Ptr schedule);
     ~Workers();
@@ -34,15 +37,20 @@ public:
     Worker::Ptr addComputingEngine(Signal::ComputingEngine::Ptr ce);
 
     /**
-     * Throw exception if this engine was never added or already removed. The
-     * thread can be stopped without calling removeComputingEngine. Call
-     * clean_dead_workers() to remove them from the workers() list.
+     * Prevents the worker for this ComputingEngine to get new work from the
+     * scheduler but doesn't kill the thread. Workers keeps a reference to the
+     * worker until it has finished.
+     *
+     * Does nothing if this engine was never added or already removed. An engine
+     * will be removed if its worker has finished (or crashed with an exception)
+     * and been cleaned by rethrow_any_worker_exception() or clean_dead_workers().
      */
     void removeComputingEngine(Signal::ComputingEngine::Ptr ce);
 
     typedef std::vector<Signal::ComputingEngine::Ptr> Engines;
     const Engines& workers() const;
     size_t n_workers() const;
+    const EngineWorkerMap& workers_map() const;
 
     /**
      * Check if any workers has died. This also cleans any dead workers.
@@ -77,12 +85,17 @@ public:
 
     static void print(const DeadEngines&);
 
+signals:
+    void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+
+private slots:
+    void worker_quit_slot();
+
 private:
     ISchedule::Ptr schedule_;
 
     Engines workers_;
 
-    typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
     EngineWorkerMap workers_map_;
 
     void updateWorkers();

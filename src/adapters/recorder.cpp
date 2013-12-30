@@ -31,6 +31,13 @@ float Recorder::
 }
 
 
+void Recorder::
+        setDataCallback( IGotDataCallback::Ptr invalidator )
+{
+    _invalidator = invalidator;
+}
+
+
 Signal::IntervalType Recorder::
         actual_number_of_samples()
 {
@@ -74,7 +81,7 @@ Signal::pBuffer Recorder::
 float Recorder::
         length()
 {
-    return isStopped() ? Signal::FinalSource::length() : time();
+    return isStopped() ? Signal::SourceBase::length() : time();
 }
 
 

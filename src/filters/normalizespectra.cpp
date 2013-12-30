@@ -23,13 +23,11 @@ NormalizeSpectra::NormalizeSpectra(float means)
 }
 
 
-bool NormalizeSpectra::
-        operator()( Chunk& chunk )
+void NormalizeSpectra::
+        operator()( ChunkAndInverse& chunk )
 {
-    //removeSlidingMean( chunk );
-    removeSlidingMedian( chunk );
-
-    return false;
+    //removeSlidingMean( *chunk.chunk );
+    removeSlidingMedian( *chunk.chunk );
 }
 
 
@@ -238,6 +236,12 @@ int NormalizeSpectra::
 }
 
 
+NormalizeSpectraDesc::
+        NormalizeSpectraDesc(float meansHz)
+    :
+      Tfr::StftFilterDesc(Tfr::pChunkFilter(new NormalizeSpectra(meansHz)))
+{
+}
 
 
 } // namespace Filters

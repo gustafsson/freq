@@ -18,14 +18,17 @@ void FanTrackerView::
     if ( model_->selected_filter() )
     {
 
+    Signal::OperationDesc::ReadPtr fp(model_->filter);
+    const Support::FanTrackerFilter* f = dynamic_cast<const Support::FanTrackerFilter*>(&*fp);
     Tfr::FreqAxis const& fa = render_view_->model->display_scale();
-    float FS = model_->selected_filter()->sample_rate();
+    //float FS = model_->selected_filter()->sample_rate();
+    float FS = f->last_fs;
 
     const std::vector<tvector<4> >& colors = render_view_->channelColors();
 
-    for (unsigned C = 0; C < model_->selected_filter()->num_channels(); ++C )
+    for (unsigned C = 0; C < f->track.size (); ++C )
     {
-        Support::FanTrackerFilter::PointsT map_ = (model_->selected_filter()->track[C]);
+        Support::FanTrackerFilter::PointsT map_ = (f->track[C]);
 
         std::vector<Heightmap::Position> pts;
 

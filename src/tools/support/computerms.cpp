@@ -1,31 +1,40 @@
 #include "computerms.h"
 #include "signal/buffersource.h"
+#include "signal/computingengine.h"
+
+#include <boost/foreach.hpp>
 
 using namespace Signal;
 
 namespace Tools {
 namespace Support {
 
+RmsValue::
+        RmsValue()
+    :
+      rms_I(),
+      rms(0)
+{
+
+}
+
+
 ComputeRms::
-        ComputeRms(pOperation o)
+        ComputeRms(RmsValue::Ptr rms)
             :
-            DeprecatedOperation(o),
-            rms(0)
+            rms(rms)
 {
 
 }
 
 
 pBuffer ComputeRms::
-        read( const Interval& I )
+        process( pBuffer read_b )
 {
-    const pBuffer read_b = DeprecatedOperation::read(I);
-    Intervals missing = read_b->getInterval() - rms_I;
+    Intervals missing = read_b->getInterval() - read1(rms)->rms_I;
 
-    while (missing)
+    BOOST_FOREACH(Interval i, missing)
     {
-        Interval i = missing.fetchFirstInterval();
-        missing -= i;
         pBuffer b = BufferSource(read_b).readFixedLength( i );
         unsigned L = b->number_of_samples();
         unsigned C = b->number_of_channels ();
@@ -41,23 +50,92 @@ pBuffer ComputeRms::
 
         S/=C;
 
-        unsigned newL = rms_I.count() + L;
-        rms = sqrt(rms*rms * rms_I.count()/newL + S/newL);
+        {
+            RmsValue::WritePtr r(rms);
+            unsigned newL = r->rms_I.count() + L;
+            r->rms = sqrt(r->rms*r->rms * r->rms_I.count()/newL + S/newL);
 
-        rms_I |= b->getInterval();
+            r->rms_I |= b->getInterval();
+        }
     }
 
     return read_b;
 }
 
 
-void ComputeRms::
-        invalidate_samples(const Intervals& I)
+ComputeRmsDesc::
+        ComputeRmsDesc()
+    :
+      rms_(new RmsValue)
 {
-    rms_I.clear();
-    rms = 0;
+}
 
-    DeprecatedOperation::invalidate_samples(I);
+
+Signal::Interval ComputeRmsDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Signal::Interval ComputeRmsDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    {
+        RmsValue::WritePtr r(rms_);
+        r->rms = 0;
+        r->rms_I.clear ();
+    }
+
+    return Signal::Interval::Interval_ALL;
+}
+
+
+Signal::OperationDesc::Ptr ComputeRmsDesc::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new ComputeRmsDesc);
+}
+
+
+Signal::Operation::Ptr ComputeRmsDesc::
+        createOperation(Signal::ComputingEngine* engine) const
+{
+    if (dynamic_cast<Signal::ComputingCpu*>(engine) || 0==engine)
+        return Signal::Operation::Ptr(new ComputeRms(rms_));
+
+    return Signal::Operation::Ptr();
+}
+
+
+float ComputeRmsDesc::
+        rms()
+{
+    return read1(rms_)->rms;
+}
+
+} // namespace Support
+} // namespace Tools
+
+#include "test/randombuffer.h"
+
+namespace Tools {
+namespace Support {
+
+void ComputeRmsDesc::
+        test()
+{
+    // It should compute the root mean square value of a signal.
+    {
+        Signal::pBuffer b = Test::RandomBuffer::smallBuffer ();
+        ComputeRmsDesc crd;
+        Signal::Operation::Ptr o = crd.createOperation ();
+        write1(o)->process (b);
+
+        EXCEPTION_ASSERT_EQUALS(5.3572383f, crd.rms ());
+    }
 }
 
 } // namespace Support

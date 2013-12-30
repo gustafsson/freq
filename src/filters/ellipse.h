@@ -5,33 +5,51 @@
 
 namespace Filters {
 
-class Ellipse: public Tfr::CwtFilter
+class EllipseKernel: public Tfr::ChunkFilter
+{
+public:
+    EllipseKernel(float t1, float f1, float t2, float f2, bool save_inside=false);
+
+    void operator()( Tfr::ChunkAndInverse& c );
+
+private:
+    float _centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f;
+    bool _save_inside;
+};
+
+
+/**
+ * @brief The Ellipse class should filter out an ellipse selection from the signal.
+ */
+class Ellipse: public Tfr::CwtFilterDesc
 {
 public:
     Ellipse(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    virtual std::string name();
-    virtual bool operator()( Tfr::Chunk& );
-    virtual Signal::Intervals zeroed_samples();
-    virtual Signal::Intervals affected_samples();
-
     float _centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f;
     bool _save_inside;
+    void updateChunkFilter();
+
+    std::string name();
+    Signal::Intervals zeroed_samples(float FS);
+    Signal::Intervals affected_samples(float FS);
 
 private:
-    Ellipse() {} // for deserialization
+    Signal::Intervals outside_samples(float FS);
 
-    Signal::Intervals outside_samples();
+    Ellipse():Tfr::CwtFilterDesc(Tfr::pChunkFilter()) {} // for deserialization
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
-           & make_nvp("t1", _centre_t) & make_nvp("f1", _centre_f)
+        ar & make_nvp("t1", _centre_t) & make_nvp("f1", _centre_f)
            & make_nvp("t2", _centre_plus_radius_t) & make_nvp("f2", _centre_plus_radius_f)
            & make_nvp("save_inside", _save_inside);
     }
+
+public:
+    static void test();
 };
 
 } // namespace Filters

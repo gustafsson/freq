@@ -1,11 +1,11 @@
 #ifndef RECORDMODEL_H
 #define RECORDMODEL_H
 
-#include <signal/operation.h>
+#include "signal/operation.h"
 #include "signal/processing/chain.h"
+#include "adapters/recorder.h"
 
 namespace Sawe { class Project; }
-namespace Adapters { class Recorder; }
 
 namespace Tools
 {
@@ -27,18 +27,20 @@ public:
      * @return a new RecordModel if it could be created, or null if it failed.
      */
     static RecordModel* createRecorder( Signal::Processing::Chain::Ptr chain, Signal::Processing::TargetMarker::Ptr at,
-                                 Adapters::Recorder* recorder, Sawe::Project* project, RenderView* render_view );
+                                 Adapters::Recorder::Ptr recorder, Sawe::Project* project, RenderView* render_view );
     ~RecordModel();
 
     static bool canCreateRecordModel( Sawe::Project* project );
 
 
-    Adapters::Recorder* recording;
+    Adapters::Recorder::Ptr recording;
+    Signal::Processing::IInvalidator::Ptr invalidator;
     Sawe::Project* project;
     RenderView* render_view;
+    Signal::OperationDesc::Ptr recorderDesc() { return recorder_desc; }
 
 private:
-    RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder* recording );
+    RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::Ptr recording );
 
     Signal::OperationDesc::Ptr recorder_desc;
 

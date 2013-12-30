@@ -1,12 +1,10 @@
 #include "collection.h"
-#include "blockfilter.h"
 #include "glblock.h"
 #include "blockfactory.h"
 #include "blockquery.h"
 #include "blockcacheinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
-#include "signal/operationcache.h"
 #include "reference_hash.h"
 #include "blocks/garbagecollector.h"
 #include "blocks/merger.h"
@@ -16,6 +14,7 @@
 //#include "GlException.h"
 #include "neat_math.h"
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>

@@ -69,15 +69,6 @@ Interval OperationDescWrapper::
 }
 
 
-Intervals OperationDescWrapper::
-        affectedInterval( const Intervals& I ) const
-{
-    if (wrap_)
-        return read1(wrap_)->affectedInterval (I);
-    return I;
-}
-
-
 OperationDesc::Ptr OperationDescWrapper::
         copy() const
 {
@@ -106,14 +97,6 @@ OperationDesc::Extent OperationDescWrapper::
 }
 
 
-Operation::Ptr OperationDescWrapper::
-        recreateOperation(Operation::Ptr, ComputingEngine*) const
-{
-    EXCEPTION_ASSERTX(false, "Not implemented");
-    return Operation::Ptr();
-}
-
-
 QString OperationDescWrapper::
         toString() const
 {
@@ -121,14 +104,6 @@ QString OperationDescWrapper::
         return read1(wrap_)->toString ();
 
     return vartype(*this).c_str ();
-}
-
-
-int OperationDescWrapper::
-        getNumberOfSources() const
-{
-    EXCEPTION_ASSERTX(false, "Not implemented");
-    return 0;
 }
 
 

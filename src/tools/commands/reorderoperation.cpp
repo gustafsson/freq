@@ -1,3 +1,7 @@
+#if 0
+// Need to rewrite the entire class to match the new Signal::Processing namespace
+
+
 #include "reorderoperation.h"
 #include <boost/foreach.hpp>
 
@@ -72,3 +76,4 @@ std::string ReorderOperation::
 
 } // namespace Commands
 } // namespace Tools
+#endif

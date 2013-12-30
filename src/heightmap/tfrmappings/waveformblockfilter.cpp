@@ -13,7 +13,7 @@ void WaveformBlockFilter::
             const Tfr::ChunkAndInverse& chunk,
             Heightmap::BlockData& outData )
 {
-    Signal::pMonoBuffer b = chunk.inverse;
+    Signal::pMonoBuffer b = chunk.input;
     float blobsize = b->sample_rate() / block.sample_rate();
 
     int readstop = b->number_of_samples ();
@@ -94,7 +94,7 @@ void WaveformBlockFilter::
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
-        cai.inverse = buffer;
+        cai.input = buffer;
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new WaveformBlockFilter );

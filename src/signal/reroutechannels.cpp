@@ -1,64 +1,77 @@
 #include "reroutechannels.h"
 
+#include "signal/computingengine.h"
+
 namespace Signal {
 
 const RerouteChannels::SourceChannel RerouteChannels::NOTHING = (unsigned)-1;
 
-RerouteChannels::
-        RerouteChannels(pOperation source)
-            :
-            DeprecatedOperation(source)
+class RerouteChannelsOperation : public Signal::Operation
 {
-    resetMap();
-}
+public:
+    RerouteChannelsOperation(RerouteChannels::MappingScheme scheme)
+        :
+        scheme_(scheme)
+    {}
 
 
-pBuffer RerouteChannels::
-        read( const Interval& I )
-{
-    pBuffer b = DeprecatedOperation::read ( I );
-    pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), scheme_.size ()));
-    for (unsigned i=0; i<scheme_.size (); ++i)
-        *r->getChannel (i) |= *b->getChannel (scheme_[i]);
-    return r;
-}
-
-
-unsigned RerouteChannels::
-        num_channels()
-{
-    return scheme_.size();
-}
-
-
-void RerouteChannels::
-        source(pOperation v)
-{
-    DeprecatedOperation::source(v);
-
-    resetMap();
-}
-
-
-void RerouteChannels::
-        invalidate_samples(const Intervals& I)
-{
-    bool invalidated = false;
-    unsigned N = DeprecatedOperation::num_channels();
-    if (N != scheme_.size())
+    pBuffer process( pBuffer b )
     {
-        invalidated = true;
-        num_channels( N );
+        pBuffer r( new Buffer(b->sample_offset (), b->number_of_samples (), b->sample_rate (), scheme_.size ()));
+        for (unsigned i=0; i<scheme_.size (); ++i) {
+            if (scheme_[i] < b->number_of_channels ())
+                *r->getChannel (i) |= *b->getChannel (scheme_[i]);
+        }
+        return r;
     }
 
-    for (unsigned i=0; i<scheme_.size(); ++i)
-    {
-        if (scheme_[i] >= N && scheme_[i] != NOTHING)
-            scheme_[i] = NOTHING;
-    }
 
-    if (!invalidated)
-        DeprecatedOperation::invalidate_samples(I);
+private:
+    RerouteChannels::MappingScheme scheme_;
+};
+
+
+Signal::Interval RerouteChannels::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Signal::Interval RerouteChannels::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    return I;
+}
+
+
+Signal::OperationDesc::Ptr RerouteChannels::
+        copy() const
+{
+    RerouteChannels* c;
+    Signal::OperationDesc::Ptr o(c = new RerouteChannels);
+    c->scheme_ = this->scheme_;
+    return o;
+}
+
+
+Signal::Operation::Ptr RerouteChannels::
+        createOperation(Signal::ComputingEngine* engine) const
+{
+    if (engine == 0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Signal::Operation::Ptr(new RerouteChannelsOperation(scheme_));
+    return Signal::Operation::Ptr();
+}
+
+
+RerouteChannels::Extent RerouteChannels::
+        extent() const
+{
+    RerouteChannels::Extent x;
+    x.number_of_channels = scheme_.size ();
+    return x;
 }
 
 
@@ -66,46 +79,44 @@ void RerouteChannels::
         resetMap()
 {
     scheme_.clear();
-
-    if (DeprecatedOperation::source())
-        num_channels( DeprecatedOperation::source()->num_channels() );
 }
 
 
 void RerouteChannels::
         map(OutputChannel output_channel, SourceChannel source_channel)
 {
-    bool invalidated = false;
-    if ( output_channel >= num_channels() )
+    if ( output_channel >= scheme_.size() )
     {
-        invalidated = true;
-        num_channels( output_channel+1 );
-    }
+        unsigned M = scheme_.size();
+        unsigned N = output_channel+1;
+        scheme_.resize( N );
 
-    EXCEPTION_ASSERT( source_channel < DeprecatedOperation::source()->num_channels() || NOTHING == source_channel);
+        for (unsigned i=M; i<N; ++i)
+            scheme_[i] = NOTHING;
+    }
 
     if (scheme_[ output_channel ] == source_channel)
         return;
 
     scheme_[ output_channel ] = source_channel;
 
-    if (!invalidated)
-        invalidate_samples( Signal::Intervals::Intervals_ALL );
+    this->readWriteLock ()->unlock ();
+    ((volatile RerouteChannels*)this)->deprecateCache ();
+    this->readWriteLock ()->lockForWrite ();
 }
 
+
+} // namespace Signal
+
+
+namespace Signal {
 
 void RerouteChannels::
-        num_channels( unsigned N )
+        test()
 {
-    unsigned M = scheme_.size();
-
-    scheme_.resize( N );
-
-    for (unsigned i=M; i<N; ++i)
-        scheme_[i] = i;
-
-    if (N != M)
-        invalidate_samples( getInterval() );
+    // It should rewire input channels into various output channels.
+    {
+        EXCEPTION_ASSERTX(false, "not implemented");
+    }
 }
-
 } // namespace Signal

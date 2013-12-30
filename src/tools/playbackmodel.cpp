@@ -17,10 +17,15 @@ namespace Tools
     }
 
 
-    Adapters::Playback* PlaybackModel::
+    Signal::Operation::Ptr PlaybackModel::
             playback()
     {
-        return dynamic_cast<Adapters::Playback*>(adapter_playback.get());
+        if (!adapter_playback)
+            return 0;
+
+        Signal::OperationDesc::ReadPtr s(adapter_playback);
+        const Signal::SinkDesc* sinkdesc = dynamic_cast<const Signal::SinkDesc*>(&*s);
+        return sinkdesc->sink ();
     }
 
 } // namespace Tools

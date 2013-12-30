@@ -5,9 +5,15 @@
 
 namespace Filters
 {
-    class Ridge: public Tfr::CwtFilter
+    class Ridge: public Tfr::ChunkFilter
     {
-        virtual bool operator()( Tfr::Chunk& );
+        void operator()( Tfr::ChunkAndInverse& chunk );
+    };
+
+
+    class RidgeDesc: public Tfr::CwtFilterDesc {
+    public:
+        RidgeDesc():Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Ridge)){}
     };
 }
 #endif // FILTERS_RIDGE_H

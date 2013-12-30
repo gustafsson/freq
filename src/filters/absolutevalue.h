@@ -5,12 +5,26 @@
 
 namespace Filters {
 
-class AbsoluteValue : public Signal::DeprecatedOperation
+class AbsoluteValue : public Signal::Operation
 {
 public:
-    AbsoluteValue();
+    Signal::pBuffer process(Signal::pBuffer b);
+};
 
-    Signal::pBuffer read( const Signal::Interval& I );
+
+/**
+ * @brief The AbsoluteValueDesc class should compute the absolute value of a signal.
+ */
+class AbsoluteValueDesc : public Signal::OperationDesc
+{
+public:
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
+
+public:
+    static void test();
 };
 
 } // namespace Filters

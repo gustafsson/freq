@@ -9,7 +9,6 @@
 
 // Sonic AWE
 #include "signal/intervals.h"
-#include "signal/poperation.h"
 
 // gpumisc
 #include "ThreadChecker.h"

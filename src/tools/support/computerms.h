@@ -6,17 +6,52 @@
 namespace Tools {
 namespace Support {
 
-class ComputeRms : public Signal::DeprecatedOperation
+class RmsValue : public VolatilePtr<RmsValue>
 {
 public:
-    ComputeRms(Signal::pOperation);
-    virtual Signal::pBuffer read( const Signal::Interval& I );
-    virtual void invalidate_samples(const Signal::Intervals& I);
+    RmsValue();
 
     Signal::Intervals rms_I;
     double rms;
 };
 
+
+class ComputeRms : public Signal::Operation
+{
+public:
+    ComputeRms(RmsValue::Ptr rms);
+
+    Signal::pBuffer process( Signal::pBuffer b);
+
+private:
+    RmsValue::Ptr rms;
+};
+
+
+/**
+ * @brief The ComputeRmsDesc class should compute the root mean square value of a signal.
+ *
+ * It has to start over from the beginning if anything is changed, as indicated by a call
+ * to affectedInterval.
+ */
+class ComputeRmsDesc : public Signal::OperationDesc
+{
+public:
+    ComputeRmsDesc();
+
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+
+    float rms();
+
+private:
+    RmsValue::Ptr rms_;
+
+public:
+    static void test();
+};
 } // namespace Support
 } // namespace Tools
 

@@ -1,3 +1,4 @@
+#if 0
 #include "splinecontroller.h"
 #include "splinemodel.h"
 
@@ -176,3 +177,4 @@ namespace Tools { namespace Selections
     }
 
 }} // namespace Tools::Selections
+#endif

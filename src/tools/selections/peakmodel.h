@@ -27,7 +27,7 @@ class PeakModel
 public:
     PeakModel( RenderModel* rendermodel );
 
-    Signal::pOperation updateFilter() { return spline_model.updateFilter(); }
+    Signal::OperationDesc::Ptr updateFilter() { return spline_model.updateFilter(); }
 
     SplineModel spline_model;
 

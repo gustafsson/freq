@@ -163,8 +163,8 @@ namespace Tools
         void axisChanged();
 
         /**
-         * @brief postCheckForWorkerCrashes pops up an error dialog if any
-         * worker has crashes recently.
+         * @brief postCheckForWorkerCrashes logs if any worker has crashed
+         * recently.
          */
         void postCheckForWorkerCrashes();
 

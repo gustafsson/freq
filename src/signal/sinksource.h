@@ -32,7 +32,7 @@ namespace Signal {
   could otherwise be both much larger and much smaller than the requested
   length. Use 'Source::readFixedLength' if you need specific samples.
   */
-class SinkSource: public Sink
+class SinkSource: public SourceBase
 {
 public:
     typedef boost::shared_ptr<SinkSource> Ptr;
@@ -134,9 +134,6 @@ private:
     Intervals _valid_samples;
 
     int _num_channels;
-
-    virtual pOperation source() const { return pOperation(); }
-    virtual void source(pOperation)   { throw std::logic_error("Invalid call"); }
 
     void allocateCache( Signal::Interval, float fs );
     //void selfmerge( Signal::Intervals forget = Signal::Intervals() );

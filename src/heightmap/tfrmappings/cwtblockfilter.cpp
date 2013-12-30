@@ -64,6 +64,7 @@ MergeChunk::Ptr CwtBlockFilterDesc::
 #include "timer.h"
 #include "neat_math.h"
 #include "signal/computingengine.h"
+#include "test/randombuffer.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -76,16 +77,15 @@ void CwtBlockFilter::
         Timer t;
 
         Tfr::Cwt cwtdesc;
-        cwtdesc.set_fs (1);
-        Signal::Interval data = cwtdesc.requiredInterval (Signal::Interval(0,4), 0);
+        float fs = 1024;
+        cwtdesc.set_fs (fs);
+        Signal::Interval i(0,4);
+        Signal::Interval expected;
+        Signal::Interval data = cwtdesc.requiredInterval (i, &expected);
+        EXCEPTION_ASSERT(expected & Signal::Interval(i.first, i.first+1));
 
         // Create some data to plot into the block
-        Signal::pMonoBuffer buffer(new Signal::MonoBuffer(data, data.count ()/4));
-        float *p = buffer->waveform_data()->getCpuMemory ();
-        srand(0);
-        for (unsigned i=0; i<buffer->getInterval ().count (); ++i) {
-            p[i] = -1.f + 2.f*rand()/RAND_MAX;
-        }
+        Signal::pMonoBuffer buffer = Test::RandomBuffer::randomBuffer (data, fs, 1)->getChannel (0);
 
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
@@ -109,12 +109,13 @@ void CwtBlockFilter::
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
         cai.channel = 0;
-        cai.inverse = buffer;
+        cai.input = buffer;
         cai.t = cwtdesc.createTransform ();
         cai.chunk = (*cai.t)( buffer );
-        ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
+        EXCEPTION_ASSERT_EQUALS(cai.chunk->getCoveredInterval (), expected);
 
         // Do the merge
+        ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::Ptr mc( new CwtBlockFilter(complex_info) );
         write1(mc)->mergeChunk( block, cai, *block.block_data () );
 

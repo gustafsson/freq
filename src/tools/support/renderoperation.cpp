@@ -1,5 +1,4 @@
 #include "renderoperation.h"
-#include "signal/oldoperationwrapper.h"
 #include "tfr/filter.h"
 
 using namespace Signal;
@@ -29,10 +28,10 @@ Operation::Ptr RenderOperationDesc::
 }
 
 
-Intervals RenderOperationDesc::
-        affectedInterval( const Intervals& I ) const
+Interval RenderOperationDesc::
+        affectedInterval( const Interval& I ) const
 {
-    const Intervals& a = OperationDescWrapper::affectedInterval( I );
+    const Interval& a = OperationDescWrapper::affectedInterval( I );
 
     // This will result in a update rate that matches the invalidated intervals if possible.
     write1(render_target_)->refreshSamples( a );
@@ -53,13 +52,6 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
     if (f)
         return f->transformDesc ();
 
-    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(&*o);
-    if (w)
-    {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
-        if (f2)
-            return f2->transform ()->transformDesc ()->copy ();
-    }
     return Tfr::TransformDesc::Ptr();
 }
 
@@ -75,14 +67,6 @@ void RenderOperationDesc::
     Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
     if (f)
         return f->transformDesc (t);
-
-    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(&*o);
-    if (w)
-    {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
-        if (f2)
-            return f2->transform (t->createTransform ());
-    }
 }
 
 

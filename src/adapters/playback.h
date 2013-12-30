@@ -18,13 +18,10 @@ public:
     ~Playback();
 
     // Overloaded from Sink
-    virtual void put( Signal::pBuffer b, Signal::pOperation ) { put (b); }
     virtual bool deleteMe();
-    virtual void invalidate_samples( const Signal::Intervals& s );
     virtual unsigned num_channels();
     virtual Signal::Intervals invalid_samples();
 
-    void setExpectedSamples( const Signal::Interval& I );
     void setExpectedSamples( const Signal::Interval& I, int C );
     void invalidate_samples( const Signal::Intervals& s, int C );
     void stop();

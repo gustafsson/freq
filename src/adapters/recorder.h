@@ -4,15 +4,23 @@
 #include <QMutex>
 
 #include "signal/sinksource.h"
-#include "signal/postsink.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace Adapters {
 
-class Recorder: public Signal::FinalSource
+class Recorder: public VolatilePtr<Recorder>, public Signal::SourceBase
 {
 public:
+    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
+    {
+    public:
+        virtual ~IGotDataCallback() {}
+
+        virtual void markNewlyRecordedData(Signal::Interval what)=0;
+    };
+
+
     Recorder();
     ~Recorder();
 
@@ -22,7 +30,7 @@ public:
     virtual bool canRecord() = 0;
 
     float time_since_last_update();
-    Signal::PostSink* getPostSink() { return &_postsink; }
+    void setDataCallback( IGotDataCallback::Ptr invalidator );
     Signal::SinkSource& data() { return _data; }
 
     // virtual from Signal::FinalSource
@@ -38,7 +46,7 @@ public:
 protected:
     QMutex _data_lock;
     Signal::SinkSource _data;
-    Signal::PostSink _postsink;
+    IGotDataCallback::Ptr _invalidator;
     float _offset;
     boost::posix_time::ptime _start_recording, _last_update;
     Signal::IntervalType actual_number_of_samples();

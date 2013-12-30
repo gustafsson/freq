@@ -13,13 +13,23 @@ namespace Tools {
 namespace Support {
 
     FanTrackerFilter::FanTrackerFilter()
+        :
+          last_fs(1)
     {
     }
 
 
-    bool FanTrackerFilter::operator()( Tfr::Chunk& c )
+    void FanTrackerFilter::set_number_of_channels( unsigned C )
     {
-        EXCEPTION_ASSERT( this->track.size() == num_channels() );
+        if (track.size () != C)
+            track.resize (C);
+    }
+
+
+    void FanTrackerFilter::operator()( Tfr::ChunkAndInverse& chunk )
+    {
+        Tfr::Chunk& c = *chunk.chunk;
+        last_fs = chunk.input->sample_rate ();
 
         //find the peak, store time, freq and amp in the map called track.
 
@@ -78,48 +88,38 @@ namespace Support {
                 track[pos] = point;
             }
         }
-
-        return false;
     }
 
 
-    Signal::Intervals FanTrackerFilter::
-            affected_samples()
-    {
-        return Signal::Intervals();
-    }
+//    Signal::Intervals FanTrackerFilter::
+//            affected_samples()
+//    {
+//        return Signal::Intervals();
+//    }
 
-    void FanTrackerFilter::invalidate_samples(Signal::Intervals const & intervals)
-    {
-        for (unsigned i = 0; i < this->track.size(); i++)
-        {
-            PointsT& track = this->track[ i ];
+//    void FanTrackerFilter::invalidate_samples(Signal::Intervals const & intervals)
+//    {
+//        for (unsigned i = 0; i < this->track.size(); i++)
+//        {
+//            PointsT& track = this->track[ i ];
 
-            for (PointsT::iterator ii = track.begin(); ii != track.end();)
-            {
-                if (intervals.testSample( ii->first )) track.erase(ii++);
-                else ii++;
-            }
-        }
-        CepstrumFilter::invalidate_samples(intervals);
-    }
+//            for (PointsT::iterator ii = track.begin(); ii != track.end();)
+//            {
+//                if (intervals.testSample( ii->first )) track.erase(ii++);
+//                else ii++;
+//            }
+//        }
+//        CepstrumFilter::invalidate_samples(intervals);
+//    }
 
-    DeprecatedOperation* FanTrackerFilter::affecting_source( const Interval& I )
-    {
-        if (~zeroed_samples_recursive() & I)
-            return this;
+//    DeprecatedOperation* FanTrackerFilter::affecting_source( const Interval& I )
+//    {
+//        if (~zeroed_samples_recursive() & I)
+//            return this;
 
-        return CepstrumFilter::affecting_source(I);
-    }
+//        return CepstrumFilter::affecting_source(I);
+//    }
 
 
-    void FanTrackerFilter::
-            source(pOperation v)
-    {
-        if (v)
-            track.resize( v->num_channels() );
-
-        return CepstrumFilter::source(v);
-    }
 } // namespace Support
 } // namespace Tools

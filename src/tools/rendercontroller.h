@@ -107,7 +107,6 @@ namespace Tools
 
     private:
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
-        void setBlockFilter(Signal::DeprecatedOperation* blockfilter);
         void setBlockFilter(Signal::OperationDesc::Ptr adapter);
         //Tfr::Filter* currentFilter();
         Tfr::TransformDesc::Ptr currentTransform();

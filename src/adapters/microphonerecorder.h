@@ -90,7 +90,6 @@ private:
 
         boost::shared_ptr<Audiofile> wavfile( new Audiofile(_filename) );
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -102,7 +101,6 @@ private:
     {
         boost::shared_ptr<Audiofile> wavfile;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -119,12 +117,12 @@ private:
 class MicrophoneRecorderOperation: public Signal::Operation
 {
 public:
-    MicrophoneRecorderOperation( Signal::pOperation recorder_ );
+    MicrophoneRecorderOperation( Recorder::Ptr recorder );
 
     virtual Signal::pBuffer process(Signal::pBuffer b);
 
 private:
-    Signal::pOperation recorder_;
+    Recorder::Ptr recorder_;
 };
 
 
@@ -134,21 +132,13 @@ private:
 class MicrophoneRecorderDesc: public Signal::OperationDesc
 {
 public:
-    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
-    {
-    public:
-        virtual ~IGotDataCallback() {}
-
-        virtual void markNewlyRecordedData(Signal::Interval what)=0;
-    };
-
-    MicrophoneRecorderDesc( Recorder*, IGotDataCallback::Ptr invalidator );
+    MicrophoneRecorderDesc( Recorder::Ptr, Recorder::IGotDataCallback::Ptr invalidator );
 
     void startRecording();
     void stopRecording();
     bool isStopped();
     bool canRecord();
-    Recorder* recorder() const;
+    Recorder::Ptr recorder() const;
 
     // OperationDesc
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
@@ -158,10 +148,7 @@ public:
     virtual Extent extent() const;
 
 private:
-    void setDataCallback( IGotDataCallback::Ptr invalidator );
-
-    Signal::pOperation recorder_;
-    IGotDataCallback::Ptr invalidator_;
+    Recorder::Ptr recorder_;
 
 public:
     static void test();

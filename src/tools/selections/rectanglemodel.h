@@ -26,9 +26,9 @@ namespace Tools { namespace Selections
         RectangleModel( RenderModel* rendermodel, Sawe::Project* p );
         ~RectangleModel();
 
-        Signal::pOperation updateFilter();
-        bool tryFilter(Signal::pOperation o);
-        bool replaceFilter( Signal::pOperation filter );
+        Signal::OperationDesc::Ptr updateFilter();
+        bool tryFilter(Signal::OperationDesc::Ptr o);
+        bool replaceFilter( Signal::OperationDesc::Ptr filter );
 
         Heightmap::Position a, b;
         RectangleType type;

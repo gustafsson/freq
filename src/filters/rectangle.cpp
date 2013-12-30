@@ -21,12 +21,52 @@ using namespace Tfr;
 
 namespace Filters {
 
-Rectangle::Rectangle(float t1, float f1, float t2, float f2, bool save_inside) {
+RectangleKernel::RectangleKernel(float t1, float f1, float t2, float f2, bool save_inside) {
     _t1 = std::min(t1, t2);
     _f1 = std::min(f1, f2);
     _t2 = std::max(t1, t2);
     _f2 = std::max(f1, f2);
     _save_inside = save_inside;
+}
+
+
+void RectangleKernel::operator()( Tfr::ChunkAndInverse& c ) {
+    Chunk& chunk = *c.chunk;
+    TIME_FILTER TaskTimer tt(boost::format("Rectangle %s") % chunk.getCoveredInterval ());
+
+    Area area = {
+            (float)(_t1 * chunk.sample_rate - chunk.chunk_offset.asFloat()),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
+            (float)(_t2 * chunk.sample_rate - chunk.chunk_offset.asFloat()),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ) };
+
+    ::removeRect( chunk.transform_data,
+                  area,
+                  _save_inside);
+
+    TIME_FILTER ComputationSynchronize();
+}
+
+
+Rectangle::
+        Rectangle(float t1, float f1, float t2, float f2, bool save_inside)
+    :
+      CwtFilterDesc(Tfr::pChunkFilter()),
+      _t1(t1),
+      _f1(f1),
+      _t2(t2),
+      _f2(f2),
+      _save_inside(save_inside)
+{
+    updateChunkFilter();
+}
+
+
+void Rectangle::
+        updateChunkFilter()
+{
+    Tfr::pChunkFilter cf(new RectangleKernel(_t1, _f1, _t2, _f2, _save_inside));
+    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::CwtKernelDesc(cf));
 }
 
 
@@ -54,44 +94,23 @@ std::string Rectangle::
 }
 
 
-bool Rectangle::operator()( Chunk& chunk) {
-    TIME_FILTER TaskTimer tt(boost::format("Rectangle %s") % chunk.getCoveredInterval ());
-
-    Area area = {
-            (float)(_t1 * chunk.sample_rate - chunk.chunk_offset.asFloat()),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f1 ),
-            (float)(_t2 * chunk.sample_rate - chunk.chunk_offset.asFloat()),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _f2 ) };
-
-    ::removeRect( chunk.transform_data,
-                  area,
-                  _save_inside);
-
-    TIME_FILTER ComputationSynchronize();
-
-    return true;
+Signal::Intervals Rectangle::
+        zeroed_samples(float FS)
+{
+    return _save_inside ? outside_samples(FS) : Signal::Intervals();
 }
 
 
 Signal::Intervals Rectangle::
-        zeroed_samples()
+        affected_samples(float FS)
 {
-    return _save_inside ? outside_samples() : Signal::Intervals();
+    return (_save_inside ? Signal::Intervals() : outside_samples(FS)).inverse();
 }
 
 
 Signal::Intervals Rectangle::
-        affected_samples()
+        outside_samples(float FS)
 {
-    return (_save_inside ? Signal::Intervals() : outside_samples()).inverse();
-}
-
-
-Signal::Intervals Rectangle::
-        outside_samples()
-{
-    long double FS = sample_rate();
-
     long double
         start_time_d = std::max(0.f, _t1)*FS,
         end_time_d = std::max(0.f, _t2)*FS;
@@ -105,6 +124,14 @@ Signal::Intervals Rectangle::
         sid = Signal::Intervals(start_time, end_time);
 
     return ~sid;
+}
+
+
+void Rectangle::
+        test()
+{
+    // It should apply a bandpass and time filter between f1,t1 and f2,t2 to a signal.
+    EXCEPTION_ASSERT(false);
 }
 
 } // namespace Filters

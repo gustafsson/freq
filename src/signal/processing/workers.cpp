@@ -18,6 +18,8 @@ Workers::
     :
       schedule_(schedule)
 {
+    qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
+    qRegisterMetaType<Signal::ComputingEngine::Ptr>("Signal::ComputingEngine::Ptr");
 }
 
 
@@ -43,6 +45,7 @@ Worker::Ptr Workers::
 
     updateWorkers();
 
+    connect(&*w, SIGNAL(finished()), SLOT(worker_quit_slot()));
     // The computation is a background process with a priority one step lower than NormalPriority
     w->start (QThread::LowPriority);
 
@@ -54,12 +57,13 @@ void Workers::
         removeComputingEngine(Signal::ComputingEngine::Ptr ce)
 {
     EngineWorkerMap::iterator worker = workers_map_.find (ce);
-    if (worker == workers_map_.end ())
-        EXCEPTION_ASSERTX(false, "No such engine");
-
-    // Don't try to delete a running thread.
-    if (worker->second)
-        worker->second->exit_nicely_and_delete();
+    if (worker != workers_map_.end ()) {
+        // Don't try to delete a running thread.
+        if (worker->second && worker->second->isRunning())
+            worker->second->exit_nicely_and_delete();
+        else
+            workers_map_.erase (worker);
+    }
 
     updateWorkers();
 }
@@ -72,6 +76,13 @@ const Workers::Engines& Workers::
 }
 
 
+const Workers::EngineWorkerMap& Workers::
+        workers_map() const
+{
+    return workers_map_;
+}
+
+
 size_t Workers::
         n_workers() const
 {
@@ -80,7 +91,7 @@ size_t Workers::
     for(EngineWorkerMap::const_iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
         QPointer<Worker> worker = i->second;
 
-        if (worker)
+        if (worker && worker->isRunning ())
             N++;
     }
 
@@ -244,6 +255,22 @@ void Workers::
 }
 
 
+void Workers::
+        worker_quit_slot()
+{
+    Signal::ComputingEngine::Ptr ce;
+    Worker* w = dynamic_cast<Worker*>(sender());
+    EXCEPTION_ASSERT(w);
+
+    BOOST_FOREACH(EngineWorkerMap::value_type i, workers_map_) {
+        if (i.second == w)
+            ce = i.first;
+    }
+
+    emit worker_quit(w->caught_exception (), ce);
+}
+
+
 class GetEmptyTaskMock: public ISchedule {
 public:
     GetEmptyTaskMock() : get_task_count(0) {}
@@ -386,7 +413,7 @@ void Workers::
             float elapsed = t.elapsed ();
             float n = (i+1)*0.00001;
             EXCEPTION_ASSERT_LESS(0.01+n, elapsed);
-            EXCEPTION_ASSERT_LESS(elapsed, 0.012+n);
+            EXCEPTION_ASSERT_LESS(elapsed, 0.013+n);
         }
     }
 }

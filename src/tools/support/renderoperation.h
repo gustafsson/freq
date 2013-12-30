@@ -40,7 +40,7 @@ public:
 
     // Signal::OperationDesc
     Signal::Operation::Ptr      createOperation( Signal::ComputingEngine* engine ) const;
-    Signal::Intervals           affectedInterval( const Signal::Intervals& I ) const;
+    Signal::Interval            affectedInterval( const Signal::Interval& I ) const;
 
 
     Tfr::TransformDesc::Ptr     transform_desc() const;

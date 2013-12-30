@@ -6,7 +6,6 @@
 #include "test/randombuffer.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
-#include "adapters/microphonerecorder.h"
 #include "signal/buffer.h"
 #include "signal/cache.h"
 #include "signal/processing/bedroom.h"
@@ -23,10 +22,11 @@
 #include "signal/processing/task.h"
 #include "signal/processing/worker.h"
 #include "signal/processing/workers.h"
-#include "signal/oldoperationwrapper.h"
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
+#include "filters/envelope.h"
+#include "filters/normalize.h"
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openfilecontroller.h"
 #include "tools/openwatchedfilecontroller.h"
@@ -36,14 +36,18 @@
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
+#include "tools/support/workercrashlogger.h"
+#include "tools/support/computerms.h"
 #include "heightmap/chunktoblock.h"
-#include "heightmap/blockfilter.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
+#include "heightmap/tfrmappings/cepstrumblockfilter.h"
 #include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
+#include "adapters/microphonerecorder.h"
+#include "filters/absolutevalue.h"
 
 // gpumisc units
 #include "backtrace.h"
@@ -94,12 +98,13 @@ int UnitTest::
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
         RUNTEST(Test::RandomBuffer);
-        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Buffer);
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
         RUNTEST(Timer);
+        // PortAudio complains if testing Microphone in the end
+        RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
         RUNTEST(Signal::Processing::Bedroom);
@@ -116,12 +121,12 @@ int UnitTest::
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
-        RUNTEST(Signal::OldOperationWrapper);
-        RUNTEST(Signal::OldOperationDescWrapper);
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);
+        RUNTEST(Filters::EnvelopeDesc);
+        RUNTEST(Filters::Normalize);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
@@ -131,8 +136,9 @@ int UnitTest::
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
+        RUNTEST(Tools::Support::WorkerCrashLogger);
+        RUNTEST(Tools::Support::ComputeRmsDesc);
         RUNTEST(Heightmap::Block);
-        RUNTEST(Heightmap::BlockCache);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);
@@ -146,7 +152,10 @@ int UnitTest::
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
         RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilterDesc);
         RUNTEST(Adapters::Playback);
+        RUNTEST(Filters::AbsoluteValueDesc);
 
     } catch (const exception& x) {
         TaskInfo(boost::format("%s") % boost::diagnostic_information(x));

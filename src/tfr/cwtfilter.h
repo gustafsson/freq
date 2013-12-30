@@ -7,33 +7,27 @@
 
 namespace Tfr {
 
-class CwtFilter : public Filter
+class CwtKernelDesc: public Tfr::FilterKernelDesc
 {
 public:
-    CwtFilter( Signal::pOperation source=Signal::pOperation(),
-               Tfr::pTransform transform=Tfr::pTransform() );
+    CwtKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
 
-
-    virtual Signal::Interval requiredInterval (const Signal::Interval &I, pTransform t);
-
-    Signal::Intervals include_time_support(Signal::Intervals);
-    Signal::Intervals discard_time_support(Signal::Intervals);
-
-    virtual void invalidate_samples(const Signal::Intervals& I);
-
-protected:
-    bool applyFilter( ChunkAndInverse& chunk );
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
 
 private:
-    float   _previous_scales_per_octave;
-    void    verify_scales_per_octave();
+    Tfr::pChunkFilter reentrant_cpu_chunk_filter_;
 };
 
 
-class DummyCwtFilter: public CwtFilter {
+class CwtFilterDesc : public Tfr::FilterDesc
+{
 public:
-    virtual bool operator()( Chunk& ) { return false; }
+    CwtFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc);
+    CwtFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
+
+    void transformDesc( Tfr::pTransformDesc m );
 };
+
 } // namespace Tfr
 
 #endif // TFRCWTFILTER_H

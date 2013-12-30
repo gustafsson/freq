@@ -3,10 +3,9 @@
 
 #include "operationcommand.h"
 #include "signal/source.h"
-
-namespace Signal {
-    class DeprecatedOperation;
-}
+#include "signal/operation.h"
+#include "signal/processing/iinvalidator.h"
+#include "adapters/recorder.h"
 
 namespace Tools {
     class RenderModel;
@@ -16,16 +15,17 @@ namespace Commands {
 class RecordedCommand : public Tools::Commands::OperationCommand
 {
 public:
-    RecordedCommand(Signal::DeprecatedOperation* recording, Signal::IntervalType prevLength, Tools::RenderModel* model);
+    RecordedCommand(Adapters::Recorder::Ptr recording, Signal::IntervalType prevLength, Tools::RenderModel* model, Signal::Processing::IInvalidator::Ptr iinvalidator);
 
     virtual std::string toString();
     virtual void execute();
     virtual void undo();
 
 private:
-    Signal::DeprecatedOperation* recording;
+    Adapters::Recorder::Ptr recording;
     Signal::pBuffer recordedData;
     Tools::RenderModel* model;
+    Signal::Processing::IInvalidator::Ptr iinvalidator;
     bool undone;
     float prev_qx;
 };

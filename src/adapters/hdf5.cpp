@@ -413,9 +413,10 @@ Hdf5Buffer::Hdf5Buffer( std::string filename)
     :   _filename(filename) {}
 
 
-bool Hdf5Chunk::
-        operator()( Tfr::Chunk& c )
+void Hdf5Chunk::
+        operator()( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& c = *chunkai.chunk;
     Tfr::Chunk* chunk;
     Tfr::pChunk pchunk;
     Tfr::CwtChunkPart* cwt = dynamic_cast<Tfr::CwtChunkPart*>(&c);
@@ -429,8 +430,6 @@ bool Hdf5Chunk::
         chunk = &c;
 
     Hdf5Chunk::saveChunk(_filename, *chunk);
-
-    return false;
 }
 
 

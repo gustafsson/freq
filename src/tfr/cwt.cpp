@@ -438,7 +438,7 @@ Signal::Interval Cwt::
     unsigned L = time_support + numberOfSamples + time_support;
 
     if (expectedOutput)
-        *expectedOutput = I;
+        *expectedOutput = Signal::Interval(firstSample + time_support, firstSample+L - time_support);
 
     return Signal::Interval(firstSample, firstSample+L);
 }

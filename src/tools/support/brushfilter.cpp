@@ -121,13 +121,17 @@ std::string MultiplyBrush::
 }
 
 
-bool MultiplyBrush::
-        operator()( Tfr::Chunk& chunk )
+void MultiplyBrush::
+        operator()( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& chunk = *chunkai.chunk;
     BrushImages const& imgs = *images.get();
 
-    if (imgs.empty())
-        return false;
+    if (imgs.empty()) {
+        // Return dummy inverse
+        // return false;
+        return;
+    }
 
     float scale1 = visualization_params_->display_scale().getFrequencyScalar( chunk.minHz() );
     float scale2 = visualization_params_->display_scale().getFrequencyScalar( chunk.maxHz() );
@@ -147,8 +151,6 @@ bool MultiplyBrush::
                 imgarea,
                 v.second);
     }
-
-    return true;
 }
 
 

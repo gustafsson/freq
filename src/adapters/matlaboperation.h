@@ -2,11 +2,13 @@
 #define ADAPTERS_MATLABOPERATION_H
 
 #include "sawe/openfileerror.h"
-#include "signal/operationcache.h"
 #include "matlabfunction.h"
+#include "signal/operation.h"
+#include "signal/computingengine.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/split_member.hpp>
 
 namespace Tools {
@@ -17,19 +19,18 @@ namespace Tools {
 
 namespace Adapters {
 
-
-class MatlabOperation: public Signal::OperationCache
+class MatlabOperation
 {
 public:
-    MatlabOperation( Signal::pOperation source, MatlabFunctionSettings* settings );
+    MatlabOperation( MatlabFunctionSettings* settings );
     ~MatlabOperation();
 
     // Does only support mono, use first channel
-    //virtual unsigned num_channels() { return std::min(1u, Signal::OperationCache::num_channels()); }
+    //virtual unsigned num_channels() { return std::min(1u, Signal::DeprecatedOperation::num_channels()); }
 
-    virtual std::string name();
-    virtual Signal::pBuffer readRaw( const Signal::Interval& I );
-    virtual void invalidate_samples(const Signal::Intervals& I);
+    std::string name();
+    Signal::pBuffer process( Signal::pBuffer src );
+    void invalidate_samples(const Signal::Intervals& I);
 
     void restart();
     void settings(MatlabFunctionSettings*);
@@ -43,11 +44,16 @@ public:
     std::string functionName();
 
     boost::scoped_ptr<Tools::Support::PlotLines> plotlines;
+
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
     MatlabFunctionSettings* _settings;
     Signal::pBuffer ready_data;
     Signal::pBuffer sent_data;
+    Signal::Intervals _invalid_returns;
+    Signal::Intervals _invalid_samples;
+    Signal::Intervals invalid_returns() { return _invalid_returns; }
+    Signal::Intervals invalid_samples() { return _invalid_samples; }
 
 private:
     friend class boost::serialization::access;
@@ -62,7 +68,6 @@ private:
         settings.chunksize_ = _settings->chunksize();
         settings.arguments_ = _settings->arguments();
         settings.argument_description_ = _settings->argument_description();
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(settings.scriptname_);
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
@@ -81,7 +86,6 @@ private:
 
         DefaultMatlabFunctionSettings* settingsp = new DefaultMatlabFunctionSettings();
         DefaultMatlabFunctionSettings& settings = *settingsp;
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(settings.scriptname_);
         ar & BOOST_SERIALIZATION_NVP(settings.chunksize_);
         ar & BOOST_SERIALIZATION_NVP(settings.computeInOrder_);
@@ -94,10 +98,42 @@ private:
         settings.operation = this;
 
         this->settings(settingsp);
-        invalidate_cached_samples(Signal::Intervals());
+        invalidate_samples(Signal::Intervals());
     }
 #endif
     BOOST_SERIALIZATION_SPLIT_MEMBER()
+};
+
+
+class MatlabOperationWrapper: public Signal::Operation
+{
+public:
+    MatlabOperationWrapper( MatlabFunctionSettings* settings );
+
+    // Signal::Operation
+    Signal::pBuffer process(Signal::pBuffer b);
+
+private:
+    boost::shared_ptr<MatlabOperation> matlab_operation_;
+};
+
+class MatlabOperationDesc: public Signal::OperationDesc
+{
+public:
+    class MatlabComputingEngine: public Signal::ComputingEngine {};
+
+    MatlabOperationDesc( MatlabFunctionSettings* settings );
+
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
+
+private:
+    MatlabFunctionSettings* settings;
+
+public:
+    static void test();
 };
 
 } // namespace Adapters

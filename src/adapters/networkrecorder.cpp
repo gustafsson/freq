@@ -92,7 +92,7 @@ float NetworkRecorder::
 float NetworkRecorder::
         length()
 {
-    return std::min( Signal::FinalSource::length(), time() );
+    return std::min( Signal::SourceBase::length(), time() );
 }
 
 
@@ -133,7 +133,8 @@ int NetworkRecorder::
     lock.unlock();
 
     // notify listeners that we've got new data
-    _postsink.invalidate_samples( Signal::Interval( offset, offset + sampleCount ));
+    if (_invalidator)
+        write1(_invalidator)->markNewlyRecordedData( Signal::Interval( offset, offset + sampleCount ) );
 
     return sampleCount*sizeof(short);
 }
@@ -236,7 +237,8 @@ void NetworkRecorder::
              stateString.c_str());
 
     // notify listeners that something happened (most meaningful if state == UnconnectedState)
-    _postsink.invalidate_samples( Signal::Interval() );
+    if (_invalidator)
+        write1(_invalidator)->markNewlyRecordedData( Signal::Interval() );
 }
 
 } // namespace Adapters

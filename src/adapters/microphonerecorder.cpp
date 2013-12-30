@@ -352,14 +352,15 @@ int MicrophoneRecorder::
     _data.put( mb );
     lock.unlock();
 
-    _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
+    if (_invalidator)
+        write1(_invalidator)->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
 
     return paContinue;
 }
 
 
 MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Signal::pOperation recorder )
+        MicrophoneRecorderOperation( Recorder::Ptr recorder )
     :
       recorder_(recorder)
 {
@@ -369,77 +370,44 @@ MicrophoneRecorderOperation::
 Signal::pBuffer MicrophoneRecorderOperation::
         process(Signal::pBuffer b)
 {
-    return recorder_->readFixedLength (b->getInterval ());
+    return write1(recorder_)->readFixedLength (b->getInterval ());
 }
 
 
-class MarshallNewlyRecordedData: public Signal::Sink {
-public:
-    MarshallNewlyRecordedData(MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator)
-        :
-          invalidator_(invalidator)
-    {}
-
-    virtual void invalidate_samples(const Signal::Intervals& I) {
-        BOOST_FOREACH(const Signal::Interval& i, I)
-            write1(invalidator_)->markNewlyRecordedData(i);
-    }
-    virtual Signal::Intervals invalid_samples() {return Signal::Intervals(); }
-
-private:
-    MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator_;
-};
-
-
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder* recorder, IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder::Ptr recorder, Recorder::IGotDataCallback::Ptr invalidator)
     :
-      recorder_(recorder),
-      invalidator_(invalidator)
+      recorder_(recorder)
 {
-    setDataCallback(invalidator);
+    write1(recorder_)->setDataCallback(invalidator);
 }
 
 
 void MicrophoneRecorderDesc::
         startRecording()
 {
-    recorder()->startRecording ();
+    write1(recorder_)->startRecording ();
 }
 
 
 void MicrophoneRecorderDesc::
         stopRecording()
 {
-    recorder()->stopRecording ();
+    write1(recorder_)->stopRecording ();
 }
 
 
 bool MicrophoneRecorderDesc::
         isStopped()
 {
-    return recorder()->isStopped ();
+    return write1(recorder_)->isStopped ();
 }
 
 
 bool MicrophoneRecorderDesc::
         canRecord()
 {
-    return recorder()->canRecord ();
-}
-
-
-void MicrophoneRecorderDesc::
-        setDataCallback( IGotDataCallback::Ptr invalidator )
-{
-    std::vector<Signal::pOperation> sinks;
-
-    if (invalidator) {
-        Signal::pOperation marshal(new MarshallNewlyRecordedData(invalidator));
-        sinks.push_back (marshal);
-    }
-
-    recorder()->getPostSink()->sinks (sinks);
+    return write1(recorder_)->canRecord ();
 }
 
 
@@ -478,18 +446,19 @@ Signal::Operation::Ptr MicrophoneRecorderDesc::
 MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
         extent() const
 {
+    Recorder::WritePtr rec(recorder_);
     MicrophoneRecorderDesc::Extent x;
-    x.interval = Signal::Interval(0, recorder()->number_of_samples());
-    x.number_of_channels = recorder()->num_channels ();
-    x.sample_rate = recorder()->sample_rate ();
+    x.interval = Signal::Interval(0, rec->number_of_samples());
+    x.number_of_channels = rec->num_channels ();
+    x.sample_rate = rec->sample_rate ();
     return x;
 }
 
 
-Recorder* MicrophoneRecorderDesc::
+Recorder::Ptr MicrophoneRecorderDesc::
         recorder() const
 {
-    return dynamic_cast<Recorder*>(recorder_.get ());
+    return recorder_;
 }
 
 
@@ -503,7 +472,7 @@ Recorder* MicrophoneRecorderDesc::
 
 namespace Adapters {
 
-class GotDataCallback: public MicrophoneRecorderDesc::IGotDataCallback
+class GotDataCallback: public Recorder::IGotDataCallback
 {
 public:
     Signal::Intervals marked_data() const { return marked_data_; }
@@ -528,9 +497,9 @@ void MicrophoneRecorderDesc::
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback);
+        Recorder::IGotDataCallback::Ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(new MicrophoneRecorder(inputDevice), callback);
+        MicrophoneRecorderDesc mrd(Recorder::Ptr(new MicrophoneRecorder(inputDevice)), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );

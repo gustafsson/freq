@@ -8,18 +8,10 @@
 
 namespace Tools { namespace Selections { namespace Support {
 
-class SplineFilter: public Tfr::CwtFilter
+class SplineFilter: public Tfr::ChunkFilter
 {
 public:
-    SplineFilter(bool save_inside=true);
-
-    virtual std::string name();
-
-    virtual bool operator()( Tfr::Chunk& );
-    virtual Signal::Intervals zeroed_samples();
-    virtual Signal::Intervals affected_samples();
-
-	struct SplineVertex
+    struct SplineVertex
     {
         float t, f; // t in seconds, f in hertz (as opposed to scale in Heightmap::Position)
 
@@ -32,20 +24,34 @@ public:
         }
     };
 
+
+    SplineFilter(bool save_inside=true, std::vector<SplineVertex> v=std::vector<SplineVertex>());
+
+    virtual std::string name();
+
+    void operator()( Tfr::ChunkAndInverse& chunk );
+    virtual Signal::Intervals zeroed_samples(double FS);
+    virtual Signal::Intervals affected_samples(double FS);
+
     std::vector<SplineVertex> v;
     bool _save_inside;
 
 private:
-    Signal::Intervals outside_samples();
+    Signal::Intervals outside_samples(double FS);
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
-           & BOOST_SERIALIZATION_NVP( v )
+        ar & BOOST_SERIALIZATION_NVP( v )
            & make_nvp("save_inside", _save_inside);
     }
+};
+
+
+class SplineFilterDesc: public Tfr::CwtFilterDesc {
+public:
+    SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new SplineFilter(save_inside, v))) {}
 };
 
 }}} // namespace Tools::Selections::Support

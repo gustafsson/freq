@@ -18,13 +18,48 @@ using namespace Tfr;
 
 namespace Filters {
 
-Ellipse::Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
+EllipseKernel::
+        EllipseKernel(float t1, float f1, float t2, float f2, bool save_inside)
 {
     _centre_t = t1;
     _centre_f = f1;
     _centre_plus_radius_t = t2;
     _centre_plus_radius_f = f2;
     _save_inside = save_inside;
+}
+
+
+void EllipseKernel::
+        operator()( Tfr::ChunkAndInverse& c )
+{
+    Chunk& chunk = *c.chunk;
+    TIME_FILTER TaskTimer tt("Ellipse");
+
+    Area area = {
+            (float)(_centre_t * chunk.sample_rate - chunk.chunk_offset.asFloat()),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _centre_f ),
+            (float)(_centre_plus_radius_t * chunk.sample_rate - chunk.chunk_offset.asFloat()),
+            chunk.freqAxis.getFrequencyScalarNotClamped( _centre_plus_radius_f )};
+
+    ::removeDisc( chunk.transform_data,
+                  area, _save_inside, chunk.sample_rate );
+
+    TIME_FILTER ComputationSynchronize();
+}
+
+
+
+Ellipse::
+        Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
+    :
+      CwtFilterDesc(Tfr::pChunkFilter()),
+      _centre_t(t1),
+      _centre_f(f1),
+      _centre_plus_radius_t(t2),
+      _centre_plus_radius_f(f2),
+      _save_inside(save_inside)
+{
+    updateChunkFilter ();
 }
 
 
@@ -44,47 +79,25 @@ std::string Ellipse::
 }
 
 
-bool Ellipse::
-        operator()( Chunk& chunk )
+Signal::Intervals Ellipse::
+        zeroed_samples(float FS)
 {
-    TIME_FILTER TaskTimer tt("Ellipse");
-
-    Area area = {
-            (float)(_centre_t * chunk.sample_rate - chunk.chunk_offset.asFloat()),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _centre_f ),
-            (float)(_centre_plus_radius_t * chunk.sample_rate - chunk.chunk_offset.asFloat()),
-            chunk.freqAxis.getFrequencyScalarNotClamped( _centre_plus_radius_f )};
-
-    ::removeDisc( chunk.transform_data,
-                  area, _save_inside, chunk.sample_rate );
-
-    TIME_FILTER ComputationSynchronize();
-
-    return true;
+    return _save_inside ? outside_samples(FS) : Signal::Intervals();
 }
 
 
 Signal::Intervals Ellipse::
-        zeroed_samples()
+        affected_samples(float FS)
 {
-    return _save_inside ? outside_samples() : Signal::Intervals();
+    return (_save_inside ? Signal::Intervals() : outside_samples(FS)).inverse();
 }
 
 
 Signal::Intervals Ellipse::
-        affected_samples()
+        outside_samples(float FS)
 {
-    return (_save_inside ? Signal::Intervals() : outside_samples()).inverse();
-}
-
-
-Signal::Intervals Ellipse::
-        outside_samples()
-{
-    long double FS = sample_rate();
-
     float r = fabsf(_centre_t - _centre_plus_radius_t);
-    r += ((Tfr::Cwt*)transform().get())->wavelet_time_support_samples(FS)/FS;
+    r += ((Tfr::Cwt*)transform_desc_.get())->wavelet_time_support_samples(FS)/FS;
 
     long double
         start_time_d = std::max(0.f, _centre_t - r)*FS,
@@ -100,5 +113,22 @@ Signal::Intervals Ellipse::
 
     return ~sid;
 }
+
+
+void Ellipse::
+        updateChunkFilter()
+{
+    Tfr::pChunkFilter cf(new EllipseKernel(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
+    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::CwtKernelDesc(cf));
+}
+
+
+void Ellipse::
+        test()
+{
+    // It should filter out an ellipse selection from the signal.
+    EXCEPTION_ASSERT(false);
+}
+
 
 } // namespace Filters

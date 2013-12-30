@@ -63,9 +63,8 @@ void RecordView::
             // invalid by newly recorded data).
             model_->render_view->model->_qx = std::max(model_->render_view->model->_qx, limit);
 
-            Adapters::MicrophoneRecorder* microphonerecorder = dynamic_cast<Adapters::MicrophoneRecorder*>(model_->recording);
-            bool ismicrophonerecorder = 0!=microphonerecorder;
-            if ( ismicrophonerecorder && model_->recording->time_since_last_update() > 5 )
+            bool ismicrophonerecorder = (0 != dynamic_cast<volatile Adapters::MicrophoneRecorder*>(model_->recording.get ()));
+            if ( ismicrophonerecorder && write1(model_->recording)->time_since_last_update() > 5 )
             {
                 QErrorMessage::qtHandler()->showMessage(
                     "It looks like your recording device doesn't report any "
@@ -78,7 +77,7 @@ void RecordView::
         }
         prev_limit_ = limit;
 
-        model_->render_view->userinput_update( !model_->recording->isStopped(), true, false );
+        model_->render_view->userinput_update( !write1(model_->recording)->isStopped(), true, false );
         model_->project->setModified();
     }
 }

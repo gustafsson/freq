@@ -965,27 +965,9 @@ void RenderView::
     try {
         write1(workers)->rethrow_any_worker_exception();
     } catch ( const std::exception& x) {
+        // TODO boost::diagnostic_information takes a lot of time since the backtrace beautifier is slow
+        // Run the backtrace beautifier in a separate thread.
         TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
-        switch (QMessageBox::warning( 0,
-                                       QString("Oups"),
-                                       "Oups... that didn't work as expected",
-                                       "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
-        {
-        case 0:
-            model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
-            break;
-        case 1:
-        {
-            const Signal::ComputingEngine::Ptr* ce =
-                    boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
-
-            TaskInfo(boost::format("Recreating worker %s")
-                     % (*ce?vartype(**ce):vartype(*ce)));
-            write1(workers)->addComputingEngine(*ce);
-        }
-        case 2:
-            break;
-        }
     }
 }
 
@@ -1106,7 +1088,6 @@ void RenderView::
     // TODO move to rendercontroller
     bool isWorking = false;
     bool isRecording = false;
-    bool workerCrashed = false;
 
     if (0 == "stop after 31 seconds")
     {
@@ -1118,7 +1099,7 @@ void RenderView::
     }
 
     Tools::RecordModel* r = model->project ()->tools ().record_model ();
-    if(r && r->recording && !r->recording->isStopped ())
+    if(r && r->recording && !write1(r->recording)->isStopped ())
     {
         isRecording = true;
     }
@@ -1211,11 +1192,15 @@ void RenderView::
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
     isWorking = ci.hasWork ();
-    workerCrashed = wu.failedAllocation () || ci.n_workers () == 0;
+    int n_workers = ci.n_workers ();
+    int dead_workers = ci.dead_workers ();
+    if (wu.failedAllocation ())
+        dead_workers += n_workers;
+    // dead_workers = (wu.failedAllocation () || n_workers==0) && !isRecording
 
-    //Use Signal::Processing namespace
-    if (isWorking || isRecording || workerCrashed)
-        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed && !isRecording );
+    if (isWorking || isRecording || dead_workers) {
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], n_workers, dead_workers );
+    }
 
     {
         static bool hadwork = false;

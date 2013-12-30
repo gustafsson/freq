@@ -210,7 +210,7 @@ namespace Tools { namespace Selections
     void RectangleController::
             selectionChanged()
     {
-        Signal::pOperation o = selection_controller_->model()->current_selection();
+        Signal::OperationDesc::Ptr o = selection_controller_->model()->current_selection();
         if (o)
         {
             bool currentTool = model()->tryFilter( o );

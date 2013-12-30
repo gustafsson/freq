@@ -1,190 +1,12 @@
 #include "filter.h"
-#include "signal/buffersource.h"
 #include "tfr/chunk.h"
 #include "tfr/transform.h"
-
-#include "demangle.h"
-
-#include <boost/format.hpp>
-
-#include <QMutexLocker>
-
-//#define TIME_Filter
-#define TIME_Filter if(0)
-
-//#define TIME_FilterReturn
-#define TIME_FilterReturn if(0)
-
 
 using namespace Signal;
 using namespace boost;
 
 
 namespace Tfr {
-
-//////////// Filter
-Filter::
-        Filter( pOperation source )
-            :
-            DeprecatedOperation( source )
-{}
-
-
-Filter::
-        Filter(Filter& f)
-    :
-      DeprecatedOperation(f)
-{
-    transform(f.transform ());
-}
-
-
-Signal::pBuffer Filter::
-        read(  const Signal::Interval& I )
-{
-    TIME_Filter TaskTimer tt("%s Filter::read( %s )", vartype(*this).c_str(),
-                             I.toString().c_str());
-
-    QMutexLocker l(&_transform_mutex);
-    pTransform t = _transform;
-    l.unlock ();
-
-    Signal::Interval required = requiredInterval(I, t);
-
-    // If no samples would be non-zero, return zeros
-    if (!(required - zeroed_samples_recursive()))
-        return zeros(required);
-
-    pBuffer b = source()->readFixedLength( required );
-    if (this != affecting_source(required))
-        return b;
-
-    return process(b);
-}
-
-
-Signal::Interval Filter::
-        requiredInterval( const Signal::Interval& I )
-{
-    return requiredInterval(I, transform());
-}
-
-
-Signal::pBuffer Filter::
-        process(Signal::pBuffer b)
-{
-    pTransform t = _transform;
-#ifdef _DEBUG
-    const Interval I = b->getInterval ();
-#endif
-
-    pBuffer r;
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
-    {
-        ChunkAndInverse ci;
-        ci.channel = c;
-        ci.t = t;
-        ci.inverse = b->getChannel (c);
-
-        ci.chunk = (*t)( ci.inverse );
-
-        #ifdef _DEBUG
-            Interval cii = ci.chunk->getInterval().spanned ( ci.chunk->getCoveredInterval () );
-
-            EXCEPTION_ASSERTX( cii & I, boost::format("cii = %s, I = %s") % cii % I);
-        #endif
-
-        bool applied_filter = (*this)( ci );
-        if (applied_filter)
-            ci.inverse = t->inverse (ci.chunk);
-
-        if (!r)
-            r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
-
-        #ifdef _DEBUG
-            Interval invinterval = ci.inverse->getInterval ();
-            Interval i(I.first, I.first+1);
-            if (!( i & invinterval ) && !applied_filter)
-            {
-                Signal::Interval required2 __attribute__ ((unused)) = requiredInterval(I, t);
-                Interval cgi2 __attribute__ ((unused)) = ci.chunk->getInterval ();
-                ci.inverse = b->getChannel (c);
-                ci.chunk = (*t)( ci.inverse );
-                ci.inverse = t->inverse (ci.chunk);
-                EXCEPTION_ASSERT( i & invinterval );
-            }
-        #endif
-
-        *r->getChannel (c) |= *ci.inverse;
-    }
-
-    return r;
-}
-
-
-DeprecatedOperation* Filter::
-        affecting_source( const Interval& I )
-{
-    return DeprecatedOperation::affecting_source( I );
-}
-
-
-unsigned Filter::
-        prev_good_size( unsigned current_valid_samples_per_chunk )
-{
-    return transform()->transformDesc()->prev_good_size( current_valid_samples_per_chunk, sample_rate() );
-}
-
-
-unsigned Filter::
-        next_good_size( unsigned current_valid_samples_per_chunk )
-{
-    return transform()->transformDesc()->next_good_size( current_valid_samples_per_chunk, sample_rate() );
-}
-
-
-bool Filter::
-        applyFilter( ChunkAndInverse& chunk )
-{
-    return (*this)( *chunk.chunk );
-}
-
-
-bool Filter::
-        operator()( ChunkAndInverse& chunk )
-{
-    return applyFilter( chunk );
-}
-
-
-Tfr::pTransform Filter::
-        transform()
-{
-    QMutexLocker l(&_transform_mutex);
-    return _transform;
-}
-
-
-void Filter::
-        transform( Tfr::pTransform t )
-{
-    QMutexLocker l(&_transform_mutex);
-
-    if (_transform)
-    {
-        EXCEPTION_ASSERTX(typeid(*_transform) == typeid(*t), str(format("'transform' must be an instance of %s, was %s") % vartype(*_transform) % vartype(*t)));
-    }
-
-    if (_transform == t )
-        return;
-
-    _transform = t;
-
-    l.unlock ();
-
-    invalidate_samples( getInterval() );
-}
-
 
 TransformKernel::
         TransformKernel(Tfr::pTransform transform, pChunkFilter chunk_filter)
@@ -197,8 +19,6 @@ TransformKernel::
 Signal::pBuffer TransformKernel::
         process(Signal::pBuffer b)
 {
-    pTransform t = transform_;
-
     chunk_filter_->set_number_of_channels(b->number_of_channels ());
 
     pBuffer r;
@@ -206,15 +26,17 @@ Signal::pBuffer TransformKernel::
       {
         ChunkAndInverse ci;
         ci.channel = c;
-        ci.t = t;
-        ci.inverse = b->getChannel (c);
+        ci.t = transform_;
+        ci.input = b->getChannel (c);
+        ci.chunk = (*ci.t)( ci.input );
 
-        ci.chunk = (*t)( ci.inverse );
+        (*chunk_filter_)( ci );
 
-        bool compute_inverse = (*chunk_filter_)( ci );
+        bool compute_inverse = 0==dynamic_cast<ChunkFilter::NoInverseTag*>(chunk_filter_.get ());
         if (compute_inverse)
           {
-            ci.inverse = t->inverse (ci.chunk);
+            if (!ci.inverse)
+                ci.inverse = ci.t->inverse (ci.chunk);
 
             if (!r)
                 r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
@@ -223,6 +45,9 @@ Signal::pBuffer TransformKernel::
           }
         else
           {
+            // If chunk_filter_ has the NoInverseTag it shouldn't compute the inverse
+            EXCEPTION_ASSERTX( 0==ci.inverse.get (), vartype(*chunk_filter_) );
+
             r.reset ( new Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
           }
 

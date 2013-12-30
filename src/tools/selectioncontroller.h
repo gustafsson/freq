@@ -51,8 +51,8 @@ namespace Tools
 
         void addComboBoxAction( QAction* action );
         void setCurrentTool( QWidget* tool, bool active );
-        void setCurrentSelectionCommand( Signal::pOperation selection );
-        void setCurrentSelection( Signal::pOperation filter );
+        void setCurrentSelectionCommand( Signal::OperationDesc::Ptr selection );
+        void setCurrentSelection( Signal::OperationDesc::Ptr filter );
 
     signals:
         void enabledChanged(bool active);

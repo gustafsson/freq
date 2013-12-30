@@ -10,7 +10,7 @@ namespace Tools
 {
 
 RecordModel::
-        RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder* recording )
+        RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::Ptr recording )
     :
     recording(recording),
     project(project),
@@ -23,12 +23,15 @@ RecordModel::
 RecordModel::
         ~RecordModel()
 {
-    if (recording && !recording->isStopped())
-        recording->stopRecording();
+    if (recording) {
+        Adapters::Recorder::WritePtr w(recording);
+        if (!w->isStopped())
+            w->stopRecording();
+    }
 }
 
 
-class GotDataCallback: public Adapters::MicrophoneRecorderDesc::IGotDataCallback
+class GotDataCallback: public Adapters::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::Ptr i) { i_ = i; }
@@ -45,10 +48,10 @@ private:
 
 RecordModel* RecordModel::
         createRecorder(Signal::Processing::Chain::Ptr chain, Signal::Processing::TargetMarker::Ptr at,
-                       Adapters::Recorder* recorder,
+                       Adapters::Recorder::Ptr recorder,
                        Sawe::Project* project, RenderView* render_view)
 {
-    Adapters::MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback());
+    Adapters::Recorder::IGotDataCallback::Ptr callback(new GotDataCallback());
 
     Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);
@@ -57,6 +60,7 @@ RecordModel* RecordModel::
 
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
+    record_model->invalidator = i;
     return record_model;
 }
 
@@ -123,7 +127,7 @@ void RecordModel::
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
                     target_marker,
-                    new Adapters::MicrophoneRecorder(-1),
+                    Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(-1)),
                     p, r );
 
         EXCEPTION_ASSERT(record_model->recording);
@@ -143,7 +147,7 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());
-        record_model->recording->startRecording ();
+        write1(record_model->recording)->startRecording ();
 
         // Wait for the recorder to produce data within 1 second
         EXCEPTION_ASSERT(semaphore.tryAcquire (1, 1000));

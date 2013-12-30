@@ -26,7 +26,7 @@ SelectionModel::
 
 
 void SelectionModel::
-        set_current_selection(Signal::pOperation o)
+        set_current_selection(Signal::OperationDesc::Ptr o)
 {
     if (o!=current_selection_) {
         // Check if 'o' is supported by making a copy of it
@@ -38,9 +38,9 @@ void SelectionModel::
 
 
 void SelectionModel::
-        try_set_current_selection(Signal::pOperation o)
+        try_set_current_selection(Signal::OperationDesc::Ptr o)
 {
-    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), o->name().c_str());
+    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), read1(o)->toString().toStdString().c_str());
 
     try
     {
@@ -48,12 +48,12 @@ void SelectionModel::
     }
     catch ( const std::logic_error& )
     {
-        set_current_selection(Signal::pOperation());
+        set_current_selection(Signal::OperationDesc::Ptr());
     }
 }
 
 
-Signal::pOperation SelectionModel::
+Signal::OperationDesc::Ptr SelectionModel::
         current_selection_copy(SaveInside si)
 {
     return copy_selection( current_selection_, si );
@@ -61,69 +61,59 @@ Signal::pOperation SelectionModel::
 
 
 template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Filters::Ellipse* src, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        set_parity(Signal::OperationDesc::Ptr o, Filters::Ellipse* src, SaveInside si)
 {
-    Filters::Ellipse* dst;
-    Signal::pOperation o( dst=new Filters::Ellipse( *src ));
-
     if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
+        src->_save_inside = si == SaveInside_TRUE;
+    src->updateChunkFilter ();
     return o;
 }
 
 
 template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Filters::Rectangle* src, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        set_parity(Signal::OperationDesc::Ptr o, Filters::Rectangle* src, SaveInside si)
 {
-    Filters::Rectangle* dst;
-    Signal::pOperation o( dst=new Filters::Rectangle( *src ));
-
     if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
+        src->_save_inside = si == SaveInside_TRUE;
+    src->updateChunkFilter ();
     return o;
 }
 
 
 template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Filters::Bandpass* src, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        set_parity(Signal::OperationDesc::Ptr o, Filters::Bandpass* src, SaveInside si)
 {
-    Filters::Bandpass* dst;
-    Signal::pOperation o( dst=new Filters::Bandpass( *src ));
-
     if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
+        src->_save_inside = si == SaveInside_TRUE;
+    src->updateChunkFilter ();
     return o;
 }
 
 
 template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Tools::Support::OperationOtherSilent* src, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        set_parity(Signal::OperationDesc::Ptr o, Tools::Support::OperationOtherSilent* src, SaveInside si)
 {
     if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return Signal::pOperation( new Tools::Support::OperationOtherSilent( *src ));
+        return o;
     } else {
-        return Signal::pOperation( new Signal::OperationSetSilent(
-                Signal::pOperation(),
-                src->section() )
-        );
+        return Signal::OperationDesc::Ptr( new Signal::OperationSetSilent( src->section() ));
     }
 }
 
 
 template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Signal::OperationSetSilent* src, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        set_parity(Signal::OperationDesc::Ptr o, Signal::OperationSetSilent* src, SaveInside si)
 {
     if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return Signal::pOperation( new Signal::OperationSetSilent( *src ));
+        return o;
     } else {
-        return Signal::pOperation( new Tools::Support::OperationOtherSilent(
-                Signal::pOperation(),
-                src->affected_samples().spannedInterval() )
+        return Signal::OperationDesc::Ptr(
+                    new Tools::Support::OperationOtherSilent( src->section () )
         );
     }
 }
@@ -131,7 +121,7 @@ Signal::pOperation SelectionModel::
 
 //template<>
 //Signal::pOperation SelectionModel::
-//        copy_selection_type(Selections::Support::SplineFilter* src, SaveInside si)
+//        set_parity(Selections::Support::SplineFilter* src, SaveInside si)
 //{
 //    Selections::Support::SplineFilter* dst;
 //    Signal::pOperation o( dst=new Selections::Support::SplineFilter( *src ));
@@ -142,17 +132,21 @@ Signal::pOperation SelectionModel::
 //}
 
 
-Signal::pOperation SelectionModel::
-        copy_selection(Signal::pOperation o, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        copy_selection(Signal::OperationDesc::Ptr o, SaveInside si)
 {
     if (!o)
         return o;
 
 #define TEST_TYPE(T) \
     do { \
-        T* p = dynamic_cast<T*>( o.get() ); \
-        if (p) return copy_selection_type(p, si); \
+        T* p = dynamic_cast<T*>( &*w ); \
+        if (p) return set_parity(o, p, si); \
     } while(false)
+
+    o = read1(o)->copy();
+
+    Signal::OperationDesc::WritePtr w(o);
 
     TEST_TYPE(Filters::Ellipse);
     TEST_TYPE(Filters::Rectangle);

@@ -13,9 +13,9 @@ using namespace boost;
 namespace Signal {
 namespace Processing {
 
-Step::Step(Signal::OperationDesc::Ptr operation_desc)
+Step::Step(OperationDesc::Ptr operation_desc)
     :
-        not_started_(Signal::Intervals::Intervals_ALL),
+        not_started_(Intervals::Intervals_ALL),
         operation_desc_(operation_desc)
 {
 }
@@ -28,10 +28,10 @@ std::string Step::
 }
 
 
-Signal::Intervals Step::
+Intervals Step::
         currently_processing() const
 {
-    Signal::Intervals I;
+    Intervals I;
 
     BOOST_FOREACH(RunningTaskMap::value_type ti, running_tasks)
     {
@@ -42,16 +42,23 @@ Signal::Intervals Step::
 }
 
 
-Signal::Intervals Step::
-        deprecateCache(Signal::Intervals deprecated)
+Intervals Step::
+        deprecateCache(Intervals deprecated)
 {
-    if (deprecated == Signal::Interval::Interval_ALL) {
+    if (deprecated == Interval::Interval_ALL) {
         cache_.reset ();
         operations_.clear ();
     }
 
-    if (operation_desc_ && deprecated)
-        deprecated = read1(operation_desc_)->affectedInterval(deprecated);
+    if (operation_desc_ && deprecated) {
+        OperationDesc::ReadPtr o(operation_desc_);
+
+        Intervals A;
+        BOOST_FOREACH(const Interval& i, deprecated) {
+            A |= o->affectedInterval(i);
+        }
+        deprecated = A;
+    }
 
     DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
               % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
@@ -63,26 +70,26 @@ Signal::Intervals Step::
 }
 
 
-Signal::Intervals Step::
+Intervals Step::
         not_started() const
 {
     return not_started_;
 }
 
 
-Signal::Intervals Step::
+Intervals Step::
         out_of_date() const
 {
     return not_started_ | currently_processing();
 }
 
 
-Signal::Operation::Ptr Step::
-        operation(Signal::ComputingEngine::Ptr ce)
+Operation::Ptr Step::
+        operation(ComputingEngine::Ptr ce)
 {
     gc();
 
-    Signal::ComputingEngine::WeakPtr wp(ce);
+    ComputingEngine::WeakPtr wp(ce);
     OperationMap::iterator oi = operations_.find (wp);
 
     if (oi != operations_.end ())
@@ -90,14 +97,14 @@ Signal::Operation::Ptr Step::
         return oi->second;
     }
 
-    Signal::Operation::Ptr o = read1(operation_desc_)->createOperation (ce.get ());
+    Operation::Ptr o = read1(operation_desc_)->createOperation (ce.get ());
     operations_[wp] = o;
 
     return o;
 }
 
 
-Signal::OperationDesc::Ptr Step::
+OperationDesc::Ptr Step::
         operation_desc () const
 {
     return operation_desc_;
@@ -105,7 +112,7 @@ Signal::OperationDesc::Ptr Step::
 
 
 void Step::
-        registerTask(Task* taskid, Signal::Interval expected_output)
+        registerTask(Task* taskid, Interval expected_output)
 {
     TASKINFO TaskInfo ti(format("Step %1%. Starting %2%")
               % operation_name()
@@ -116,9 +123,9 @@ void Step::
 
 
 void Step::
-        finishTask(Task* taskid, Signal::pBuffer result)
+        finishTask(Task* taskid, pBuffer result)
 {
-    Signal::Interval result_interval;
+    Interval result_interval;
     if (result)
         result_interval = result->getInterval ();
 
@@ -128,10 +135,10 @@ void Step::
 
     if (result) {
         if (!cache_)
-            cache_.reset(new Signal::SinkSource(result->number_of_channels ()));
+            cache_.reset(new SinkSource(result->number_of_channels ()));
 
         // Result must have the same number of channels and sample rate as previous cache.
-        // Call deprecateCache(Signal::Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
+        // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
         cache_->put (result);
     }
 
@@ -141,7 +148,7 @@ void Step::
         EXCEPTION_ASSERTX( running_tasks.count (taskid)==1, "Could not find given task");
     }
 
-    Signal::Intervals expected_output = running_tasks[ taskid ];
+    Intervals expected_output = running_tasks[ taskid ];
 
     Intervals update_miss = expected_output - result_interval;
     not_started_ |= update_miss;
@@ -196,10 +203,10 @@ void Step::
 }
 
 
-Signal::pBuffer Step::
-        readFixedLengthFromCache(Signal::Interval I)
+pBuffer Step::
+        readFixedLengthFromCache(Interval I)
 {
-    return cache_ ? cache_->readFixedLength (I) : Signal::pBuffer();
+    return cache_ ? cache_->readFixedLength (I) : pBuffer();
 }
 
 
@@ -240,7 +247,7 @@ void Step::
     // It should keep a cache (for an OpertionDesc) and keep track of things to work on.
     {
         // Create an OperationDesc
-        Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
+        pBuffer b(new Buffer(Interval(60,70), 40, 7));
         for (unsigned c=0; c<b->number_of_channels (); ++c)
         {
             float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
@@ -249,14 +256,14 @@ void Step::
         }
 
         // Create a Step
-        Step s((Signal::OperationDesc::Ptr()));
+        Step s((OperationDesc::Ptr()));
 
         // It should contain information about what's out_of_date and what's currently being updated.
         s.registerTask(0, b->getInterval ());
-        EXCEPTION_ASSERT_EQUALS(s.not_started (), ~Signal::Intervals(b->getInterval ()));
-        EXCEPTION_ASSERT_EQUALS(s.out_of_date(), Signal::Intervals::Intervals_ALL);
+        EXCEPTION_ASSERT_EQUALS(s.not_started (), ~Intervals(b->getInterval ()));
+        EXCEPTION_ASSERT_EQUALS(s.out_of_date(), Intervals::Intervals_ALL);
         s.finishTask(0, b);
-        EXCEPTION_ASSERT_EQUALS(s.out_of_date(), ~Signal::Intervals(b->getInterval ()));
+        EXCEPTION_ASSERT_EQUALS(s.out_of_date(), ~Intervals(b->getInterval ()));
 
         EXCEPTION_ASSERT( *b == *s.readFixedLengthFromCache (b->getInterval ()) );
     }

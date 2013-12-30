@@ -11,19 +11,37 @@ namespace Filters {
  * The analytic representation is computed with the Hilbert transform.
  * The Hilbert transform is implented by STFT with a window of size 256.
  * This means that the envelope doesn't detect a carrier with a period larger
- * than 1024 samples. Or a frequency lower than FS/1024 (i.e 44100/256=172 Hz).
- * Note that the modulation frequency does not depend on the frequency of the
- * carrier.
+ * than 256 samples. Or a frequency lower than FS/256 (i.e 44100/256=172 Hz).
+ * Note that a lower modulation frequency is still detected.
  */
-class Envelope: public Tfr::StftFilter
+class Envelope: public Tfr::ChunkFilter
 {
 public:
-    Envelope();
+    void operator()( Tfr::ChunkAndInverse& chunk );
+};
 
-    void transform( Tfr::pTransform m );
 
-    bool applyFilter( Tfr::ChunkAndInverse& chunk );
-    virtual bool operator()( Tfr::Chunk& );
+class EnvelopeKernelDesc: public Tfr::FilterKernelDesc
+{
+public:
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
+};
+
+
+/**
+ * @brief The EnvelopeDesc class should compute the envelope of a signal.
+ *
+ * It should only accept StftDesc as TransformDesc.
+ */
+class EnvelopeDesc: public Tfr::FilterDesc
+{
+public:
+    EnvelopeDesc();
+
+    void transformDesc( Tfr::pTransformDesc m );
+
+public:
+    static void test();
 };
 
 } // namespace Filters

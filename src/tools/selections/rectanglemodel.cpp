@@ -32,16 +32,16 @@ RectangleModel::
 
 
 bool RectangleModel::
-        replaceFilter( Signal::pOperation filter )
+        replaceFilter( Signal::OperationDesc::Ptr filter )
 {
-    Signal::OperationSetSilent* oss = dynamic_cast<Signal::OperationSetSilent*>(filter.get());
+    volatile Signal::OperationSetSilent* oss = dynamic_cast<volatile Signal::OperationSetSilent*>(filter.get());
     if (oss)
         return true;
     return false;
 }
 
 
-Signal::pOperation RectangleModel::
+Signal::OperationDesc::Ptr RectangleModel::
         updateFilter()
 {
     validate();
@@ -56,7 +56,7 @@ Signal::pOperation RectangleModel::
             a_index = std::max(0.f, a.time)*FS,
             b_index = std::max(0.f, b.time)*FS;
 
-    Signal::pOperation filter;
+    Signal::OperationDesc::Ptr filter;
 
     if (a.scale>=1 || b.scale<=0)
         ;
@@ -66,7 +66,7 @@ Signal::pOperation RectangleModel::
     {
         if (a.scale==b.scale || (a.scale==0 && b.scale==1))
             filter.reset( new Tools::Support::OperationOtherSilent(
-                FS, Signal::Interval( a_index, L) ));
+                Signal::Interval( a_index, L) ));
     }
     else if (a.scale>0 || b.scale<1)
     {
@@ -79,7 +79,7 @@ Signal::pOperation RectangleModel::
     else
     {
         filter.reset( new Tools::Support::OperationOtherSilent(
-                FS, Signal::Interval( a_index, b_index) ));
+                Signal::Interval( a_index, b_index) ));
     }
 
     return filter;
@@ -87,8 +87,9 @@ Signal::pOperation RectangleModel::
 
 
 bool RectangleModel::
-        tryFilter(Signal::pOperation filter)
+        tryFilter(Signal::OperationDesc::Ptr filterp)
 {
+    Signal::OperationDesc::WritePtr filter(filterp);
     Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
     Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(filter.get());
     Tools::Support::OperationOtherSilent* oos = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());

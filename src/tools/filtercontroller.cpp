@@ -28,14 +28,14 @@ FilterController::
 void FilterController::
         addAbsolute()
 {
-    project_->appendOperation ( Signal::pOperation( new Filters::AbsoluteValue() ));
+    project_->appendOperation ( Signal::OperationDesc::Ptr(new Filters::AbsoluteValueDesc() ));
 }
 
 
 void FilterController::
         addEnvelope()
 {
-    project_->appendOperation ( Signal::pOperation( new Filters::Envelope() ));
+    project_->appendOperation ( Signal::OperationDesc::Ptr(new Filters::EnvelopeDesc() ));
 }
 
 

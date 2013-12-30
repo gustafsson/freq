@@ -25,9 +25,10 @@ string csv_number()
 }
 
 
-bool Csv::
-        operator()( Tfr::Chunk& c )
+void Csv::
+        operator()( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& c = *chunkai.chunk;
     string filename;
     if (this->_filename.empty())
         filename = csv_number();
@@ -60,8 +61,6 @@ bool Csv::
         }
         csv << ss.str() << endl;
     }
-
-    return false;
 }
 
 } // namespace Adapters

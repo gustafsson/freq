@@ -258,14 +258,6 @@ void Playback::
 
 
 void Playback::
-        setExpectedSamples(const Signal::Interval &I)
-{
-    _expected = I;
-    invalidate_samples (_expected);
-}
-
-
-void Playback::
         setExpectedSamples(const Signal::Interval &I, int C)
 {
     _expected = I;
@@ -315,28 +307,8 @@ bool Playback::
 
 
 void Playback::
-        invalidate_samples( const Signal::Intervals& s )
-{
-    EXCEPTION_ASSERT(source());
-
-    int C = source()->num_channels();
-
-    invalidate_samples( s, C );
-}
-
-
-void Playback::
         invalidate_samples( const Signal::Intervals& s, int C )
 {
-    // If the CwtFilter runs out of memory and changes the number of scales per
-    // octave it will invalidate all samples. Discard that and keep the samples
-    // we've received for playback so far.
-    bool invalidates_all = (s == getInterval());
-    bool has_been_initialized = _data.invalid_samples();
-
-    if (has_been_initialized && invalidates_all)
-        return;
-
     // Don't bother recomputing stuff we've already played
     Signal::Interval whatsLeft(
                         _playback_itr,
@@ -359,7 +331,7 @@ unsigned Playback::
 Signal::Intervals Playback::
         invalid_samples()
 {
-    return _data.invalid_samples() & getInterval() & _expected;
+    return _data.invalid_samples() & _expected;
 }
 
 
@@ -676,15 +648,8 @@ void Playback::
     {
         Playback pb(-1);
         EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
-        pb.source ( Signal::pOperation (new Signal::BufferSource (
-                            Signal::pBuffer (new Signal::Buffer(
-                                Signal::Interval (10,20),
-                                pb.sample_rate (),
-                                1
-                            ))
-                    )));
         EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
-        pb.setExpectedSamples (Signal::Interval(10,20));
+        pb.setExpectedSamples (Signal::Interval(10,20), 1);
         EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
         pb.pausePlayback (true);
         EXCEPTION_ASSERT (pb.isStopped () && !pb.isPaused ());
@@ -695,14 +660,7 @@ void Playback::
     // It should start playing when feeded with data
     {
         Playback pb(-1);
-        pb.source ( Signal::pOperation (new Signal::BufferSource (
-                            Signal::pBuffer (new Signal::Buffer(
-                                Signal::Interval (10,20),
-                                pb.sample_rate (),
-                                1
-                            ))
-                    )));
-        pb.setExpectedSamples (Signal::Interval(10,20));
+        pb.setExpectedSamples (Signal::Interval(10,20), 1);
         pb.put (Signal::pBuffer(new Signal::Buffer(Signal::Interval(10,20), pb.sample_rate (), 1)));
         EXCEPTION_ASSERT (!pb.isStopped () && !pb.isPaused ());
         pb.pausePlayback (true);

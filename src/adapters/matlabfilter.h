@@ -6,20 +6,35 @@
 
 namespace Adapters {
 
-class MatlabFilter: public Tfr::CwtFilter
+class MatlabFilterKernelDesc: public Tfr::FilterKernelDesc
+{
+public:
+    MatlabFilterKernelDesc(std::string matlabFunction);
+
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
+
+private:
+    std::string matlabFunction;
+
+public:
+    static void test();
+};
+
+
+class MatlabFilter: public Tfr::ChunkFilter
 {
 public:
     MatlabFilter( std::string matlabFunction );
 
-    virtual bool operator()( Tfr::Chunk& );
-    virtual Signal::Intervals ZeroedSamples() const;
-    Signal::Intervals affected_samples();
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
     void restart();
+
 protected:
     boost::scoped_ptr<MatlabFunction> _matlab;
     Signal::Intervals _invalid_returns;
 };
+
 
 } // namespace Adapters
 
