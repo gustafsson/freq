@@ -96,25 +96,6 @@ pBuffer OldOperationWrapper::
 }
 
 
-void OldOperationWrapper::
-        test()
-{
-    // It should use a DeprectatedOperation to compute the result of processing
-    // a step.
-    {
-        pBuffer b(new Buffer(Interval(1,2),1,2));
-        pOperation old_operation(
-                    new DeprecatedOperationSetSilent(Signal::pOperation(), Interval(4,5)));
-
-        OldOperationWrapper::LastRequiredInterval lri;
-        OldOperationWrapper wrapper(old_operation, &lri);
-        lri.last_required_interval = b->getInterval ();
-        pBuffer r = wrapper.process (b);
-        EXCEPTION_ASSERT( *r == *b );
-    }
-}
-
-
 OldOperationDescWrapper::
         OldOperationDescWrapper(pOperation old_operation)
     :
@@ -198,6 +179,39 @@ using namespace Signal::Processing;
 
 namespace Signal {
 
+
+class OldieDummy: public Signal::DeprecatedOperation
+{
+public:
+    OldieDummy():Signal::DeprecatedOperation(Signal::pOperation()) {}
+
+    pBuffer read( const Interval& I )
+    {
+        pBuffer b = Signal::DeprecatedOperation::read (I);
+        *b |= Buffer(2,1,b->sample_rate (),b->number_of_channels ());
+        return b;
+    }
+
+};
+
+void OldOperationWrapper::
+        test()
+{
+    // It should use a DeprectatedOperation to compute the result of processing
+    // a step.
+    {
+        pBuffer b(new Buffer(Interval(1,2),1,2));
+        pOperation old_operation(new OldieDummy);
+
+        OldOperationWrapper::LastRequiredInterval lri;
+        OldOperationWrapper wrapper(old_operation, &lri);
+        lri.last_required_interval = b->getInterval ();
+        pBuffer r = wrapper.process (b);
+        EXCEPTION_ASSERT( *r == *b );
+    }
+}
+
+
 void OldOperationDescWrapper::
         test ()
 {
@@ -214,7 +228,7 @@ void OldOperationDescWrapper::
         pOperation source_op( new OldOperationTrackBufferSource(buffer));
         //PRINT_BUFFER (source_op->read (Interval(0,2)), "");
         //PRINT_BUFFER (source_op->readFixedLength (Interval(0,2)), "");
-        pOperation target_op( new DeprecatedOperationSetSilent(Signal::pOperation(), Signal::Interval(2,3)));
+        pOperation target_op( new OldieDummy);
 
         // test that the source and target works when added to a chain
         OperationDesc::Ptr source_op_wrapper(new OldOperationDescWrapper(source_op));
