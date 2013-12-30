@@ -9,7 +9,10 @@
 
 namespace Signal {
 
-class RerouteChannels : public Signal::DeprecatedOperation, public boost::noncopyable
+/**
+ * @brief The RerouteChannels class should rewire input channels into various output channels.
+ */
+class RerouteChannels : public Signal::OperationDesc
 {
 public:
     typedef unsigned SourceChannel;
@@ -18,17 +21,12 @@ public:
 
     static const SourceChannel NOTHING;
 
-    RerouteChannels(pOperation source);
-
-    virtual pBuffer read( const Interval& I );
-    virtual unsigned num_channels();
-    virtual void source(pOperation v);
-    virtual pOperation source() const { return DeprecatedOperation::source(); }
-
-    /**
-      Validate bindings.
-      */
-    virtual void invalidate_samples(const Intervals& I);
+    // OperationDesc
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    Extent extent() const;
 
 
     /**
@@ -41,25 +39,19 @@ public:
 
 
     /**
-      If output_channel is larger than num_channels(), num_channels will be
-      increased to that number.
-
-      It is an error to set source_channel bigger than source->num_channels(),
-      except for the special value of setting source_channel to NOTHING to
-      create silence.
-      */
+     * @brief map
+     * @param output_channel the largest output_channel will define the number
+     * of channels returned from Operation::process()
+     * @param source_channel use NOTHING to create silence.
+     * If the source channels doesn't exist the result will be silence.
+     */
     void map(OutputChannel output_channel, SourceChannel source_channel);
 
 private:
     MappingScheme scheme_;
 
-    /**
-      Set the number of output channels. If this value is larger than the
-      currently mapped output_channels those channels will get a default
-      value of no remapping, unless N is larger than source->num_channels()
-      in which case they will be clamped to the last source channel.
-      */
-    void num_channels( unsigned N );
+public:
+    static void test();
 };
 
 } // namespace Signal
