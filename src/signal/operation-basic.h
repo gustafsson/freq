@@ -19,6 +19,8 @@ public:
 
         Signal::pBuffer process(Signal::pBuffer b);
 
+        Signal::Interval section() { return section_; }
+
     private:
         Signal::Interval section_;
     };
@@ -30,11 +32,7 @@ public:
     Interval affectedInterval( const Interval& I ) const;
     OperationDesc::Ptr copy() const;
     Operation::Ptr createOperation(ComputingEngine* engine=0) const;
-
-    std::string name();
-
-    Signal::Intervals zeroed_samples() { return affected_samples(); }
-    Signal::Intervals affected_samples() { return section(); }
+    QString toString() const;
 
     Signal::Interval section() { return section_; }
 private:
@@ -49,41 +47,6 @@ private:
         using boost::serialization::make_nvp;
 
         ar & BOOST_SERIALIZATION_NVP(section_.first)
-           & BOOST_SERIALIZATION_NVP(section_.last);
-    }
-};
-
-
-/**
-  Example 1:
-  start:  1234567
-  OperationSetSilent( start, 1, 2 );
-  result: 1004567
-*/
-class DeprecatedOperationSetSilent: public DeprecatedOperation {
-public:
-    DeprecatedOperationSetSilent( Signal::pOperation source, const Signal::Interval& section );
-
-    virtual pBuffer read( const Interval& I );
-    virtual std::string name();
-
-    virtual Signal::Intervals zeroed_samples() { return affected_samples(); }
-    virtual Signal::Intervals affected_samples() { return section(); }
-
-    virtual Signal::Interval section() { return section_; }
-private:
-    Signal::Interval section_;
-
-
-    friend class boost::serialization::access;
-    DeprecatedOperationSetSilent():DeprecatedOperation(pOperation()),section_(0,0) {} // only used by deserialization
-
-    template<class archive> void serialize(archive& ar, const unsigned int /*version*/)
-    {
-        using boost::serialization::make_nvp;
-
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation)
-           & BOOST_SERIALIZATION_NVP(section_.first)
            & BOOST_SERIALIZATION_NVP(section_.last);
     }
 };

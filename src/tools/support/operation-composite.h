@@ -152,28 +152,23 @@ public:
     Signal::Interval section() { return section_; }
 private:
     Signal::Interval section_;
-};
 
+    friend class boost::serialization::access;
+    OperationOtherSilent():section_(Signal::Interval()) {} // only used by deserialization
 
-/**
-  Example 1:
-  start:  1234567
-  OperationOtherSilent( start, 1, 2 );
-  result: 0230000
-*/
-class DeprecatedOperationOtherSilent: public OperationSubOperations {
+    template<class archive>
+    void serialize(archive& ar, const unsigned int /*version*/)
+    {
+        using boost::serialization::make_nvp;
+
+        ar & BOOST_SERIALIZATION_NVP(section_.first)
+           & BOOST_SERIALIZATION_NVP(section_.last);
+    }
+
 public:
-    DeprecatedOperationOtherSilent( Signal::pOperation source, const Signal::Interval& section );
-    DeprecatedOperationOtherSilent( float fs, const Signal::Interval& section );
-
-    virtual Signal::Intervals zeroed_samples();
-
-    void reset( const Signal::Interval& section, float fs=0 );
-
-    Signal::Interval section() { return section_; }
-private:
-    Signal::Interval section_;
+    static void test();
 };
+
 
 /**
   Example 1:
@@ -181,30 +176,30 @@ private:
   OperationCrop( start, 1, 2 );
   result: 23
 */
-class OperationCrop: public OperationSubOperations {
+class OperationCrop: public OperationOtherSilent {
 public:
-    OperationCrop( Signal::pOperation source, const Signal::Interval& section );
+    OperationCrop( const Signal::Interval& section );
 
-    void reset( const Signal::Interval& section );
+    // OperationDesc
+    Extent extent() const;
+    QString toString() const;
 
 private:
     Signal::Interval section_;
 
     friend class boost::serialization::access;
-    OperationCrop():OperationSubOperations(Signal::pOperation(),""),section_(0,0) {} // only used by deserialization
+    OperationCrop():OperationOtherSilent(Signal::Interval()) {} // only used by deserialization
 
     template<class archive>
     void serialize(archive& ar, const unsigned int /*version*/)
     {
         using boost::serialization::make_nvp;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(OperationSubOperations)
-           & BOOST_SERIALIZATION_NVP(section_.first)
-           & BOOST_SERIALIZATION_NVP(section_.last);
-
-        if (typename archive::is_loading())
-            reset(section_);
+        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(OperationOtherSilent);
     }
+
+public:
+    static void test();
 };
 
 /**
@@ -228,12 +223,14 @@ private:
   OperationMove( start, 1, 2, 0 );
   result: 1204567 ("10" + "23" = "33")
   */
+#if 0 // TODO implement using branching in the Dag because this operation involves a merge of two or more different signals
 class OperationMove: public OperationSubOperations {
 public:
     OperationMove( Signal::pOperation source, const Signal::Interval& section, unsigned newFirstSample );
 
     void reset( const Signal::Interval& section, unsigned newFirstSample );
 };
+#endif
 
 /**
   Example 1:
@@ -256,12 +253,14 @@ public:
   OperationMoveMerge( start, 1, 2, 0 );
   result: 3304567 ("10" + "23" = "33")
   */
+#if 0 // TODO implement using branching in the Dag because this operation involves a merge of two or more different signals
 class OperationMoveMerge: public OperationSubOperations {
 public:
     OperationMoveMerge( Signal::pOperation source, const Signal::Interval& section, unsigned newFirstSample );
 
     void reset( const Signal::Interval& section, unsigned newFirstSample );
 };
+#endif
 
 /**
   Example 1:
@@ -279,20 +278,28 @@ public:
   OperationShift( start, -1 );
   result: 234567
   */
-class OperationShift: public OperationSubOperations {
+class OperationShift: public Signal::OperationDesc {
 public:
-    OperationShift( Signal::pOperation source, long sampleShift );
+    OperationShift( long sampleShift );
 
-    void reset( long sampleShift );
+    // OperationDesc
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const;
+    Signal::OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+
+private:
+    long sampleShift_;
 };
 
+#ifdef USE_CUDA
 class OperationMoveSelection: public OperationSubOperations {
 public:
     OperationMoveSelection( Signal::pOperation source, Signal::pOperation selectionFilter, long sampleShift, float freqDelta );
 
     void reset( Signal::pOperation selectionFilter, long sampleShift, float freqDelta );
 };
-
+#endif
 
 class OperationOnSelection: public OperationSubOperations {
 public:
@@ -323,7 +330,6 @@ private:
            & BOOST_SERIALIZATION_NVP(operation_);
     }
 };
-
 
 } // namespace Support
 } // namespace Tools

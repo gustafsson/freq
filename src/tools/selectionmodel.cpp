@@ -112,8 +112,8 @@ Signal::OperationDesc::Ptr SelectionModel::
     if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
         return o;
     } else {
-        return Signal::OperationDesc::Ptr( new Tools::Support::OperationOtherSilent(
-                src->affected_samples().spannedInterval() )
+        return Signal::OperationDesc::Ptr(
+                    new Tools::Support::OperationOtherSilent( src->section () )
         );
     }
 }

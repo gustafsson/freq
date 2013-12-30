@@ -15,12 +15,11 @@ OperationSetSilent::Operation::
 pBuffer OperationSetSilent::Operation::
         process (pBuffer b)
 {
-    Signal::Intervals I = section_;
-    I &= b->getInterval ();
+    Signal::Interval i = section_ & b->getInterval ();
 
-    foreach (Signal::Interval i, I) {
-        pBuffer zero( new Buffer(i, b->sample_rate(), b->number_of_channels ()) );
-        *b |= *zero;
+    if (i) {
+        Buffer zero(i, b->sample_rate(), b->number_of_channels ());
+        *b |= zero;
     }
 
     return b;
@@ -64,34 +63,13 @@ Signal::Operation::Ptr OperationSetSilent::
     return Signal::Operation::Ptr(new OperationSetSilent::Operation(section_));
 }
 
-    // OperationSetSilent  /////////////////////////////////////////////////////////////////
 
-DeprecatedOperationSetSilent::
-        DeprecatedOperationSetSilent( pOperation source, const Signal::Interval& section )
-:   DeprecatedOperation( source ),
-    section_( section )
+QString OperationSetSilent::
+        toString() const
 {
-}
-
-std::string DeprecatedOperationSetSilent::
-        name()
-{
-    float fs = source()?sample_rate():0.f;
     std::stringstream ss;
-    if (fs > 0)
-        ss << "Clear section [" << section_.first/fs << ", " << section_.last/fs << ") s";
-    else
-        ss << "Clear section " << section_;
-    return ss.str();
-}
-
-pBuffer DeprecatedOperationSetSilent::
-        read( const Interval& I )
-{
-    Interval t = I & section_;
-    if ( t.first == I.first && t.count() )
-        return zeros( t );
-    return source()->readFixedLength( (I - section_).fetchFirstInterval() );
+    ss << "Clear section " << section_;
+    return QString::fromStdString (ss.str());
 }
 
 
