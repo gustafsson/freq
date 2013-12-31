@@ -23,7 +23,7 @@
 #include "settingscontroller.h"
 #include "clickableimageview.h"
 #include "dropnotifyform.h"
-#include "sendfeedback.h"
+#include "sendfeedbackdialog.h"
 #include "checkupdates.h"
 #include "undoredo.h"
 #include "commands/commandhistory.h"
@@ -174,7 +174,7 @@ ToolFactory::
 //    _objects.push_back( QPointer<QObject>( new DropNotifyForm( p->mainWindow()->centralWidget(), _render_view )));
 #endif
 
-    _objects.push_back( QPointer<QObject>( new SendFeedback( p->mainWindow() )));
+    _objects.push_back( QPointer<QObject>( new SendFeedbackDialog( p->mainWindow() )));
 
     if (!Sawe::Configuration::skip_update_check())
         _objects.push_back( QPointer<QObject>( new CheckUpdates( p->mainWindow() )));
