@@ -32,6 +32,7 @@
 #include "filtercontroller.h"
 #include "printscreencontroller.h"
 #include "waveformcontroller.h"
+#include "applicationerrorlogcontroller.h"
 
 #include "selectioncontroller.h"
 //#include "brushcontroller.h"
@@ -66,6 +67,7 @@ ToolFactory::
 {
     try
     {
+    ApplicationErrorLogController::registerMainWindow (p->mainWindow());
 
     _render_view = new RenderView(&render_model);
 

@@ -28,10 +28,6 @@
 #include "tfr/dummytransform.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
-#include "tools/commands/appendoperationdesccommand.h"
-#include "tools/openfilecontroller.h"
-#include "tools/openwatchedfilecontroller.h"
-#include "tools/recordmodel.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/renderoperation.h"
@@ -39,6 +35,11 @@
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/workercrashlogger.h"
 #include "tools/support/computerms.h"
+#include "tools/commands/appendoperationdesccommand.h"
+#include "tools/openfilecontroller.h"
+#include "tools/openwatchedfilecontroller.h"
+#include "tools/recordmodel.h"
+#include "tools/applicationerrorlogcontroller.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -129,7 +130,6 @@ int UnitTest::
         RUNTEST(Tfr::DummyTransformDesc);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);
-        RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
         RUNTEST(Tools::RecordModel);
@@ -140,6 +140,8 @@ int UnitTest::
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
         RUNTEST(Tools::Support::WorkerCrashLogger);
         RUNTEST(Tools::Support::ComputeRmsDesc);
+        RUNTEST(Tools::Commands::AppendOperationDescCommand);
+        RUNTEST(Tools::ApplicationErrorLogController);
         RUNTEST(Heightmap::Block);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);

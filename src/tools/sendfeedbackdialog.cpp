@@ -21,8 +21,10 @@ SendFeedbackDialog::
 {
     ui->setupUi(this);
 
-    ::Ui::MainWindow* mui = mainwindow->getItems();
-    connect(mui->actionReport_a_bug, SIGNAL(triggered()), SLOT(open()));
+    if (mainwindow) {
+        ::Ui::MainWindow* mui = mainwindow->getItems();
+        connect(mui->actionReport_a_bug, SIGNAL(triggered()), SLOT(open()));
+    }
 
     ui->lineEditEmail->setText( Sawe::Reader::name.c_str() );
 

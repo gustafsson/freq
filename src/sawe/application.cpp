@@ -6,6 +6,7 @@
 #include "ui/mainwindow.h"
 #include "tfr/cwt.h"
 #include "configuration.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 // gpumisc
 #include "demangle.h"
@@ -271,29 +272,8 @@ bool Application::
         }
 
         v = QApplication::notify(receiver,e);
-    } catch (const boost::exception &x) {
-        bool got_backtrace = boost::get_error_info<Backtrace::info>(x);
-        if( got_backtrace )
-        {
-            // Just log
-            show_fatal_exception_cerr (boost::diagnostic_information(x) );
-        }
-        else
-        {
-            // This was not expected, better fix this
-            err = boost::diagnostic_information(x);
-        }
-    } catch (const exception &x) {
-        err = boost::diagnostic_information(x);
     } catch (...) {
-        err = boost::current_exception_diagnostic_information ();
-    }
-
-    if (!err.empty() && _fatal_error.empty())
-    {
-        _fatal_error = err;
-        show_fatal_exception( err );
-        this->exit(2);
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception ());
     }
 
     return v;

@@ -60,7 +60,7 @@ QString SendFeedback::
 
     manager.reset( new QNetworkAccessManager(this) );
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
-            this, SLOT(finished(QNetworkReply*)));
+            this, SIGNAL(finished(QNetworkReply*)));
     postdata.send( manager.data(), targetUrl );
 
     return omittedMessage;

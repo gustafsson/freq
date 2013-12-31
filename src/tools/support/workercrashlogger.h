@@ -1,7 +1,6 @@
 #ifndef TOOLS_SUPPORT_WORKERCRASHLOGGER_H
 #define TOOLS_SUPPORT_WORKERCRASHLOGGER_H
 
-#include <QObject>
 #include <QThread>
 #include "signal/processing/workers.h"
 
