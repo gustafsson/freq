@@ -63,7 +63,7 @@ void WorkerCrashLogger::
         DEBUG TaskInfo ti("got x");
         boost::diagnostic_information(x);
     } catch ( const boost::exception& x) {
-        x << Workers::crashed_engine_value(ce);
+        x << Workers::crashed_engine(ce) << Workers::crashed_engine_typename(ce?vartype(*ce):"(null)");
         TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
     }
 }
@@ -83,11 +83,13 @@ void WorkerCrashLogger::
         // Force the slow backtrace beautifier
         boost::diagnostic_information(x);
     } catch ( const boost::exception& x) {
-        Signal::ComputingEngine::Ptr ce;
-        if( Signal::ComputingEngine::Ptr const * mi=boost::get_error_info<Workers::crashed_engine_value>(x) )
-            ce = *mi;
+        std::string crashed_engine_typename;
+        if( std::string const * mi = boost::get_error_info<Workers::crashed_engine_typename>(x) )
+            crashed_engine_typename = *mi;
 
-        TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
+        TaskInfo(boost::format("Worker '%s' crashed\n%s")
+                 % crashed_engine_typename
+                 % boost::diagnostic_information(x));
     }
 
     check_all_previously_crashed_and_consume();

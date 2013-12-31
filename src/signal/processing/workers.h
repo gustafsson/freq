@@ -25,7 +25,8 @@ class Workers: public QObject, public VolatilePtr<Workers>
     Q_OBJECT
 public:
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
-    typedef boost::error_info<struct crashed_engine, Signal::ComputingEngine::Ptr> crashed_engine_value;
+    typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::Ptr> crashed_engine;
+    typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;
 
     typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
 

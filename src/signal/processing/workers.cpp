@@ -138,7 +138,7 @@ Workers::DeadEngines Workers::
                     try {
                         rethrow_exception(e);
                     } catch (boost::exception& x) {
-                        x << crashed_engine_value(ce);
+                        x << crashed_engine(ce) << crashed_engine_typename(ce?vartype(*ce):"(null)");
                         e = boost::current_exception ();
                     }
                 }
@@ -177,7 +177,7 @@ void Workers::
                 try {
                     rethrow_exception(e);
                 } catch (boost::exception& x) {
-                    x << crashed_engine_value(ce);
+                    x << crashed_engine(ce) << crashed_engine_typename(ce?vartype(*ce):"(null)");
                     throw;
                 }
             }
@@ -368,8 +368,12 @@ void Workers::
             EXCEPTION_ASSERTX(false, "Expected exception");
         } catch (const std::exception& x) {
             const Signal::ComputingEngine::Ptr* ce =
-                    boost::get_error_info<crashed_engine_value>(x);
+                    boost::get_error_info<crashed_engine>(x);
             EXCEPTION_ASSERT(ce);
+
+            const std::string* cename =
+                    boost::get_error_info<crashed_engine_typename>(x);
+            EXCEPTION_ASSERT(cename);
         }
 
         Workers::DeadEngines dead = workers.clean_dead_workers ();
