@@ -97,7 +97,7 @@ Signal::Intervals Ellipse::
         outside_samples(float FS)
 {
     float r = fabsf(_centre_t - _centre_plus_radius_t);
-    r += ((Tfr::Cwt*)transform_desc_.get())->wavelet_time_support_samples(FS)/FS;
+    r += ((Tfr::Cwt*)transform_desc_.get())->wavelet_time_support_samples()/FS;
 
     long double
         start_time_d = std::max(0.f, _centre_t - r)*FS,

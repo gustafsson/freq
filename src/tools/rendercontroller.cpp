@@ -274,10 +274,6 @@ void RenderController::
 
     if (isCwt)
     {
-        // The Cwt TransformDesc need to know the current sample rate
-        float fs = headSampleRate ();
-        write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
-
         float scales_per_octave = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ();
         tf_resolution->setValue ( scales_per_octave );
     }
@@ -447,7 +443,6 @@ void RenderController::
         Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
         Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
         Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
-        float FS = headSampleRate();
 
         float wavelet_default_time_support = c.wavelet_default_time_support();
         float wavelet_fast_time_support = c.wavelet_time_support();
@@ -457,7 +452,7 @@ void RenderController::
         {
             tf_resolution->setRange (2, 40);
             tf_resolution->setDecimals (1);
-            c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.scales_per_octave ()));
+            c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples()/c.wavelet_time_support()/c.scales_per_octave ()));
             // transformChanged updates value accordingly
         }
 
@@ -465,7 +460,7 @@ void RenderController::
         {
             tf_resolution->setRange (1<<5, 1<<20, Widgets::ValueSlider::Logaritmic);
             tf_resolution->setDecimals (0);
-            s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+            s.set_approximate_chunk_size( c.wavelet_time_support_samples()/c.wavelet_time_support() );
             // transformChanged updates value accordingly
         }
 
@@ -528,10 +523,6 @@ void RenderController::
     // Setup the kernel that will take the transform data and create an image
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Non_Weighted));
 
-    // Cwt needs fs
-    float fs = headSampleRate ();
-    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
-
     // Get a copy of the transform to use
     Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
 
@@ -557,10 +548,6 @@ void RenderController::
 {
     // Setup the kernel that will take the transform data and create an image
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
-
-    // Cwt needs fs
-    float fs = headSampleRate ();
-    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
 
     // Get a copy of the transform to use
     Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
@@ -603,10 +590,6 @@ void RenderController::
 {
     // Setup the kernel that will take the transform data and create an image
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
-
-    // Cwt needs fs
-    float fs = headSampleRate ();
-    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
 
     // Get a copy of the transform to use
     Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
@@ -676,8 +659,8 @@ void RenderController::
         Support::TransformDescs::WritePtr td(model()->transform_descs ());
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         fa.setLogarithmic(
-                cwt.wanted_min_hz(),
-                cwt.get_max_hz(fs) );
+                cwt.get_wanted_min_hz (fs),
+                cwt.get_max_hz (fs) );
 
         if (currentTransform() && fa.min_hz < currentTransformMinHz())
         {

@@ -31,8 +31,10 @@ public:
     host ↔ device memory copy. For this purpose, a page-locked chunk of memory
     could be allocated beforehand and reserved for the Signal::pBuffer. Previous
     copies with the page-locked chunk is synchronized at beforehand.
+
+    Number of octaves = 10.107 -> min_hz = 20 Hz at fs = 44100.
     */
-    Cwt( float scales_per_octave=20, float wavelet_time_suppport=3 );
+    Cwt( float scales_per_octave=20, float wavelet_time_suppport=3, float number_of_octaves=10.107f );
 
     virtual pChunk operator()( Signal::pMonoBuffer );
     virtual Signal::pMonoBuffer inverse( pChunk );
@@ -49,12 +51,13 @@ public:
 
 
     float     get_min_hz(float fs) const;
-    float     wanted_min_hz() const;
-    void      set_wanted_min_hz(float f);
+    float     get_min_nf() const;
+    float     get_wanted_min_hz(float fs) const;
+    void      set_wanted_min_hz(float min_hz, float fs);
     /// returns the nyquist frequency
     float     get_max_hz(float sample_rate) const { return sample_rate/2.f; }
-    unsigned  nScales(float FS) const;
-    unsigned  nBins(float fs) const;
+    unsigned  nScales() const;
+    unsigned  nBins() const;
     float     scales_per_octave() const { return _scales_per_octave; }
     void      scales_per_octave( float, float fs=0 );
     float     tf_resolution() const { return _tf_resolution; }
@@ -77,7 +80,7 @@ public:
     /**
       Computes the standard deviation in time and frequency using the tf_resolution value. For a given frequency.
       */
-    float     morlet_sigma_samples( float sample_rate, float hz ) const;
+    float     morlet_sigma_samples( float nf ) const;
     float     morlet_sigma_f( float hz ) const;
 
     /**
@@ -85,40 +88,48 @@ public:
       wavelet_std_t corresponds to with a given sample rate, aligned to a multiple of 32 to provide for
       faster inverse calculations later on.
       */
-    unsigned  wavelet_time_support_samples( float sample_rate ) const;
-    unsigned  wavelet_time_support_samples( float sample_rate, float hz ) const;
+    unsigned  wavelet_time_support_samples() const;
+    unsigned  wavelet_time_support_samples( float nf ) const;
 
     /**
       The Cwt will be computed in chunks who are powers of two. Given sample rate and wavelet_std_t,
       compute a good number of valid samples per chunk.
       */
-    virtual unsigned  next_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
-    unsigned  prev_good_size_gold( unsigned current_valid_samples_per_chunk, float sample_rate );
-    virtual unsigned  prev_good_size( unsigned current_valid_samples_per_chunk, float sample_rate ) const;
+    unsigned next_good_size( unsigned current_valid_samples_per_chunk, float fs) const {
+        return next_good_size(current_valid_samples_per_chunk);
+    }
+    unsigned prev_good_size( unsigned current_valid_samples_per_chunk, float fs) const {
+        return prev_good_size(current_valid_samples_per_chunk);
+    }
+    unsigned next_good_size( unsigned current_valid_samples_per_chunk ) const;
+    unsigned prev_good_size( unsigned current_valid_samples_per_chunk ) const;
     virtual std::string toString() const;
 
-    void      largest_scales_per_octave( float fs, float scales, float last_ok = 0 );
-    bool      is_small_enough( float fs ) const;
-    size_t    required_gpu_bytes(unsigned valid_samples_per_chunk, float sample_rate) const;
+    void      largest_scales_per_octave( float scales, float last_ok = 0 );
+    bool      is_small_enough() const;
+    size_t    required_gpu_bytes(unsigned valid_samples_per_chunk) const;
 
-    unsigned        chunk_alignment(float fs) const;
-    float           get_fs() const;
-    void            set_fs(float fs);
+    unsigned        chunk_alignment() const;
+
 private:
     pChunk          computeChunkPart( pChunk ft, unsigned first_scale, unsigned n_scales );
 
     unsigned        find_bin( unsigned j ) const;
-    unsigned        time_support_bin0( float fs ) const;
+    unsigned        time_support_bin0() const;
     float           j_to_hz( float sample_rate, unsigned j ) const;
     unsigned        hz_to_j( float sample_rate, float hz ) const;
-    unsigned        required_length( unsigned current_valid_samples_per_chunk, float fs, unsigned&r ) const;
+    float           j_to_nf( unsigned j ) const;
+    unsigned        nf_to_j( float nf ) const;
+    float           hz_to_nf( float sample_rate, float hz ) const;
+    float           nf_to_hz( float sample_rate, float nf ) const;
+    unsigned        required_length( unsigned current_valid_samples_per_chunk, unsigned&r ) const;
     void            scales_per_octave_internal( float );
     unsigned        chunkpart_alignment(unsigned c) const;
 
     Signal::pMonoBuffer inverse( Tfr::CwtChunk* );
     Signal::pMonoBuffer inverse( Tfr::CwtChunkPart* );
 
-    float           _min_hz;
+    float           _number_of_octaves;
     float           _scales_per_octave;
     float           _tf_resolution;
     float           _least_meaningful_fraction_of_r;
@@ -134,13 +145,10 @@ private:
       Default value: _wavelet_time_suppport=3.
       @see wavelet_time_suppport
       */
-    float  _wavelet_time_suppport;
-    float  _wavelet_def_time_suppport;
+    float _wavelet_time_suppport;
+    float _wavelet_def_time_suppport;
     float _wavelet_scale_suppport;
     float _jibberish_normalization;
-
-    // TODO make Cwt not depend on fs at all.
-    float last_fs;
 };
 
 } // namespace Tfr
