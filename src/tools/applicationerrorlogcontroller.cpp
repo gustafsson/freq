@@ -54,8 +54,11 @@ ApplicationErrorLogController* ApplicationErrorLogController::
 void ApplicationErrorLogController::
         registerException(boost::exception_ptr e)
 {
+    if (!e)
+        return;
+
     try {
-        if (e) rethrow_exception(e);
+        rethrow_exception(e);
     } catch (const std::exception& x) {
         TaskInfo(boost::format("ApplicationErrorLogController::registerException: %s") % vartype(x));
     }
@@ -81,6 +84,7 @@ void ApplicationErrorLogController::
     QIcon icon = QCommonStyle().standardIcon(QStyle::SP_MessageBoxWarning);
     QString name = QApplication::instance ()->applicationName ();
     QToolBar* bar = new QToolBar(mainwindow);
+    bar->setObjectName ("ApplicationErrorLogControllerBar");
     mainwindow->addToolBar(Qt::TopToolBarArea, bar);
     QAction* toolbutton = bar->addAction(
                 icon,
@@ -97,15 +101,23 @@ void ApplicationErrorLogController::
 void ApplicationErrorLogController::
         log(boost::exception_ptr e)
 {
-    try {
-        if (e) rethrow_exception(e);
-    } catch ( const boost::exception& x) {
+    if (!e)
+        return;
+
+    try
+      {
+        rethrow_exception(e);
+      }
+    catch ( const boost::exception& x)
+      {
         QMutexLocker l(&mutex);
 
         TaskTimer ti(boost::format("Caught exception '%s'")
                  % vartype(x));
 
+        // This might be slow. For instance; 'to_string(Backtrace::info)' takes 1 second to execute.
         std::string str = boost::diagnostic_information(x);
+
         std::cout.flush ();
         std::cerr.flush ();
         std::cerr << std::endl << std::endl
@@ -114,12 +126,32 @@ void ApplicationErrorLogController::
              << "======================" << std::endl << std::endl;
         std::cerr.flush ();
 
+        char const* condition = 0;
+        if( char const * const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_condition>(x) )
+            condition = *mi;
+
+        std::string message;
+        if( std::string const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x) )
+            message = *mi;
+
         TaskTimer ti2("Sending feedback");
 
-        QString omittedMessage = send_feedback_->sendLogFiles ("deamon", QString::fromStdString (str), "");
+        // Place message before details
+        QString msg;
+        if (condition)
+          {
+            msg += condition;
+            msg += "\n";
+          }
+
+        if (!message.empty ())
+            msg += QString::fromStdString (message + "\n\n");
+        msg += QString::fromStdString (str);
+
+        QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
         if (!omittedMessage.isEmpty ())
             TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
-    }
+      }
 }
 
 
