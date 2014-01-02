@@ -19,11 +19,16 @@ class Task;
  *
  * The cache description should contain information about what's out_of_date
  * and what's currently being updated.
+ *
+ * A crashed signal processing step should behave as a transparent operation.
  */
 class Step: public VolatilePtr<Step>
 {
 public:
     Step(Signal::OperationDesc::Ptr operation_desc);
+
+    Signal::OperationDesc::Ptr  get_crashed() const;
+    void                        mark_as_crashed();
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
@@ -56,6 +61,7 @@ private:
     typedef std::map<Signal::ComputingEngine::WeakPtr, Signal::Operation::Ptr> OperationMap;
     typedef std::map<Task*, Signal::Interval> RunningTaskMap;
 
+    Signal::OperationDesc::Ptr  died_;
     Signal::SinkSource::Ptr     cache_;
     Signal::Intervals           not_started_;
 

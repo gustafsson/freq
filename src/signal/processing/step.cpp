@@ -1,4 +1,5 @@
 #include "step.h"
+#include "test/operationmockups.h"
 
 #include <boost/foreach.hpp>
 
@@ -13,11 +14,28 @@ using namespace boost;
 namespace Signal {
 namespace Processing {
 
+
 Step::Step(OperationDesc::Ptr operation_desc)
     :
         not_started_(Intervals::Intervals_ALL),
         operation_desc_(operation_desc)
 {
+}
+
+
+Signal::OperationDesc::Ptr Step::
+        get_crashed() const
+{
+    return died_;
+}
+
+
+void Step::
+        mark_as_crashed()
+{
+    died_ = operation_desc_;
+    operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
+    operations_.clear ();
 }
 
 
@@ -237,6 +255,7 @@ void Step::
 } // namespace Processing
 } // namespace Signal
 
+#include "signal/operation-basic.h"
 
 namespace Signal {
 namespace Processing {
@@ -244,7 +263,10 @@ namespace Processing {
 void Step::
         test()
 {
-    // It should keep a cache (for an OpertionDesc) and keep track of things to work on.
+    // It should keep a cache for a signal processing step (defined by an OpertionDesc).
+    //
+    // The cache description should contain information about what's out_of_date
+    // and what's currently being updated.
     {
         // Create an OperationDesc
         pBuffer b(new Buffer(Interval(60,70), 40, 7));
@@ -266,6 +288,19 @@ void Step::
         EXCEPTION_ASSERT_EQUALS(s.out_of_date(), ~Intervals(b->getInterval ()));
 
         EXCEPTION_ASSERT( *b == *s.readFixedLengthFromCache (b->getInterval ()) );
+    }
+
+    // A crashed signal processing step should behave as a transparent operation.
+    {
+        OperationDesc::Ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
+        Step s(silence);
+        EXCEPTION_ASSERT(!s.get_crashed ());
+        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
+        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(s.operation (Signal::ComputingEngine::Ptr()).get ()));
+        s.mark_as_crashed ();
+        EXCEPTION_ASSERT(s.get_crashed ());
+        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
+        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperation*>(s.operation (Signal::ComputingEngine::Ptr()).get ()));
     }
 }
 
