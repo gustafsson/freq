@@ -33,6 +33,7 @@
 #include "printscreencontroller.h"
 #include "waveformcontroller.h"
 #include "applicationerrorlogcontroller.h"
+#include "support/workercrashlogger.h"
 
 #include "selectioncontroller.h"
 //#include "brushcontroller.h"
@@ -196,6 +197,8 @@ ToolFactory::
     _objects.push_back( QPointer<QObject>( new PrintScreenController( p )));
 
     _objects.push_back( QPointer<QObject>( new WaveformController (render_controller)));
+
+    _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(read1(p->processing_chain ())->workers(), true)));
 
     //
     // Insert new tools here, and delete things in the destructor in the
