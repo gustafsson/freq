@@ -7,6 +7,14 @@
 
 namespace Tfr {
 
+class CwtChunkFilter: public Tfr::ChunkFilter
+{
+    void operator()( ChunkAndInverse& chunk );
+
+    virtual void subchunk( ChunkAndInverse& chunk ) = 0;
+};
+
+
 class CwtKernelDesc: public Tfr::FilterKernelDesc
 {
 public:

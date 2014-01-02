@@ -5,12 +5,12 @@
 
 namespace Filters {
 
-class RectangleKernel: public Tfr::ChunkFilter
+class RectangleKernel: public Tfr::CwtChunkFilter
 {
 public:
     RectangleKernel(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    void operator()( Tfr::ChunkAndInverse& c );
+    void subchunk( Tfr::ChunkAndInverse& c );
 
 private:
     float _t1, _f1, _t2, _f2;

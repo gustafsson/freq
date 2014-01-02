@@ -1,6 +1,7 @@
 #include "rectangle.h"
 #include "rectanglekernel.h"
 #include "tfr/chunk.h"
+#include "tfr/cwtchunk.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -30,8 +31,9 @@ RectangleKernel::RectangleKernel(float t1, float f1, float t2, float f2, bool sa
 }
 
 
-void RectangleKernel::operator()( Tfr::ChunkAndInverse& c ) {
+void RectangleKernel::subchunk( Tfr::ChunkAndInverse& c ) {
     Chunk& chunk = *c.chunk;
+
     TIME_FILTER TaskTimer tt(boost::format("Rectangle %s") % chunk.getCoveredInterval ());
 
     Area area = {

@@ -25,11 +25,26 @@ using namespace Signal;
 
 namespace Tfr {
 
+
+void CwtChunkFilter::
+        operator()( ChunkAndInverse& c )
+{
+    Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>(c.chunk.get ());
+    BOOST_FOREACH(pChunk chunk, cwtchunk->chunks) {
+        Tfr::ChunkAndInverse c2 = c;
+        c2.chunk = chunk;
+
+        subchunk(c2);
+    }
+}
+
+
 CwtKernelDesc::
         CwtKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
     :
       reentrant_cpu_chunk_filter_(reentrant_cpu_chunk_filter)
 {
+    EXCEPTION_ASSERT(dynamic_cast<CwtChunkFilter*>(reentrant_cpu_chunk_filter_.get ()));
 }
 
 
@@ -56,7 +71,11 @@ CwtFilterDesc::
 CwtFilterDesc::
         CwtFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
     :
-      FilterDesc(Tfr::pTransformDesc(), Tfr::FilterKernelDesc::Ptr(new CwtKernelDesc(reentrant_cpu_chunk_filter)))
+      FilterDesc(
+          Tfr::pTransformDesc(),
+          reentrant_cpu_chunk_filter
+            ? Tfr::FilterKernelDesc::Ptr(new CwtKernelDesc(reentrant_cpu_chunk_filter))
+            : Tfr::FilterKernelDesc::Ptr())
 {
     Cwt* desc;
     Tfr::pTransformDesc t(desc = new Cwt);
