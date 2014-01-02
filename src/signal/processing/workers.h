@@ -90,7 +90,7 @@ signals:
     void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
 
 private slots:
-    void worker_quit_slot();
+    void worker_finished();
 
 private:
     ISchedule::Ptr schedule_;

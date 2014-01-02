@@ -15,21 +15,29 @@ Worker::
       computing_eninge_(computing_eninge),
       schedule_(schedule)
 {
+    try {
+        // To make caught_exception() non-zero if the thread is terminated even
+        // though no exact information about the crash reason is stored. The
+        // log file might contain more details.
+        BOOST_THROW_EXCEPTION(TerminatedException());
+    } catch (...) {
+        exception_ = boost::current_exception ();
+    }
 }
 
 
 void Worker::
         run()
-    {
+  {
     setTerminationEnabled ();
 
     try
-        {
+      {
         int consecutive_lock_failed_count = 0;
         for (;;)
-            {
+          {
             try
-                {
+              {
                 ISchedule::Ptr schedule = schedule_.lock ();
                 if (!schedule)
                     break;
@@ -45,35 +53,38 @@ void Worker::
                 write1(task)->run(computing_eninge_);
 
                 consecutive_lock_failed_count = 0;
-                }
+              }
 
             catch (const LockFailed& x)
-                {
+              {
                 if (enable_lockfailed_print)
-                    {
+                  {
                     TaskInfo("");
                     TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
                     TaskInfo("");
-                    }
+                  }
 
                 if (consecutive_lock_failed_count < 1)
-                    {
+                  {
                     if (enable_lockfailed_print)
                         TaskInfo("Trying again %d", consecutive_lock_failed_count);
                     consecutive_lock_failed_count++;
-                    }
+                  }
                 else
                     throw;
-                }
-            }
+              }
+          }
 
-            deleteLater ();
-        }
-    catch (const std::exception&)
-        {
+        deleteLater ();
+
+        // The thread finished with normal execution without any exception.
+        exception_ = boost::exception_ptr();
+      }
+    catch (...)
+      {
         exception_ = boost::current_exception ();
-        }
-    }
+      }
+  }
 
 
 void Worker::
@@ -86,6 +97,9 @@ void Worker::
 boost::exception_ptr Worker::
         caught_exception() const
 {
+    if (isRunning ())
+        return boost::exception_ptr();
+
     return exception_;
 }
 

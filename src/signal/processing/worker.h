@@ -12,6 +12,7 @@
 namespace Signal {
 namespace Processing {
 
+
 /**
  * @brief The Worker class should run the next task as long as there is one
  *
@@ -28,6 +29,8 @@ class Worker
         : public QThread
 {
 public:
+    class TerminatedException: virtual public boost::exception, virtual public std::exception {};
+
     // This is a Qt object that can delete itself, and as such we shall not use
     // boost::shared_ptr but the Qt smart pointer QPointer which is aware of Qt
     // objects that delete themselves.

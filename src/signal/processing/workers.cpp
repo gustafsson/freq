@@ -45,7 +45,7 @@ Worker::Ptr Workers::
 
     updateWorkers();
 
-    connect(&*w, SIGNAL(finished()), SLOT(worker_quit_slot()));
+    connect(&*w, SIGNAL(finished()), SLOT(worker_finished()));
     // The computation is a background process with a priority one step lower than NormalPriority
     w->start (QThread::LowPriority);
 
@@ -256,7 +256,7 @@ void Workers::
 
 
 void Workers::
-        worker_quit_slot()
+        worker_finished()
 {
     Signal::ComputingEngine::Ptr ce;
     Worker* w = dynamic_cast<Worker*>(sender());
@@ -270,6 +270,14 @@ void Workers::
     emit worker_quit(w->caught_exception (), ce);
 }
 
+
+} // namespace Processing
+} // namespace Signal
+
+#include "expectexception.h"
+
+namespace Signal {
+namespace Processing {
 
 class GetEmptyTaskMock: public ISchedule {
 public:
@@ -411,7 +419,7 @@ void Workers::
                 bed.sleep ();
 
                 workers.terminate_workers (10);
-                workers.rethrow_any_worker_exception ();
+                EXPECT_EXCEPTION(Worker::TerminatedException, workers.rethrow_any_worker_exception ());
                 workers.clean_dead_workers ();
             }
             float elapsed = t.elapsed ();
