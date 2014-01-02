@@ -27,7 +27,16 @@ private:
 
 class CsvDesc: public Tfr::CwtFilterDesc {
 public:
-    CsvDesc(std::string filename):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Csv(filename))){}
+    CsvDesc(std::string filename)
+        :
+          Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Csv(filename))),
+          filename_(filename)
+    {}
+
+    OperationDesc::Ptr copy() const;
+
+private:
+    std::string filename_;
 };
 
 } // namespace Adapters

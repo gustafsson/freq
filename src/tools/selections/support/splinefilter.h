@@ -51,7 +51,11 @@ private:
 
 class SplineFilterDesc: public Tfr::CwtFilterDesc {
 public:
-    SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new SplineFilter(save_inside, v))) {}
+    SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v)
+        :
+          Tfr::CwtFilterDesc(Tfr::pChunkFilter(new SplineFilter(save_inside, v))) {}
+
+    OperationDesc::Ptr copy() const;
 };
 
 }}} // namespace Tools::Selections::Support

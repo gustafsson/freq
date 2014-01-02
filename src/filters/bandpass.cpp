@@ -99,6 +99,13 @@ Bandpass::
 }
 
 
+Signal::OperationDesc::Ptr Bandpass::
+        copy() const
+{
+    return OperationDesc::Ptr(new Bandpass(_f1, _f2, _save_inside));
+}
+
+
 void Bandpass::
         updateChunkFilter()
 {

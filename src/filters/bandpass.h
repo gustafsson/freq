@@ -27,6 +27,8 @@ class Bandpass: public Tfr::StftFilterDesc
 public:
     Bandpass(float f1, float f2, bool save_inside=false);
 
+    OperationDesc::Ptr copy() const;
+
     float _f1, _f2;
     bool _save_inside;
     void updateChunkFilter();

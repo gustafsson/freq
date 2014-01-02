@@ -62,6 +62,13 @@ Rectangle::
 }
 
 
+Signal::OperationDesc::Ptr Rectangle::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new Rectangle(_t1, _f1, _t2, _f2, _save_inside));
+}
+
+
 void Rectangle::
         updateChunkFilter()
 {

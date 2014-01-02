@@ -433,6 +433,21 @@ void Hdf5Chunk::
 }
 
 
+Hdf5ChunkDesc::
+        Hdf5ChunkDesc(std::string filename)
+    :
+      Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Hdf5Chunk(filename))),
+      filename_(filename)
+{}
+
+
+Signal::OperationDesc::Ptr Hdf5ChunkDesc::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new Hdf5ChunkDesc(filename_));
+}
+
+
 void Hdf5Buffer::
     put( Signal::pBuffer b)
 {

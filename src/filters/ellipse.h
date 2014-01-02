@@ -26,6 +26,8 @@ class Ellipse: public Tfr::CwtFilterDesc
 public:
     Ellipse(float t1, float f1, float t2, float f2, bool save_inside=false);
 
+    OperationDesc::Ptr copy() const;
+
     float _centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f;
     bool _save_inside;
     void updateChunkFilter();

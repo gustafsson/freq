@@ -130,4 +130,15 @@ Signal::Intervals SplineFilter::
     return ~sid;
 }
 
+
+Signal::OperationDesc::Ptr SplineFilterDesc::
+        copy() const
+{
+    FilterKernelDesc::ReadPtr fkd(chunk_filter_);
+    Tfr::pChunkFilter cf = fkd->createChunkFilter(0);
+    SplineFilter* sf = dynamic_cast<SplineFilter*>(&*cf);
+
+    return Signal::OperationDesc::Ptr(new SplineFilterDesc(sf->_save_inside, sf->v));
+}
+
 }}} // namespace Tools::Selections::Support

@@ -23,6 +23,9 @@ public:
     StftFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc);
     StftFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
 
+    // Must reimplement copy
+    virtual OperationDesc::Ptr copy() const = 0;
+
     void transformDesc( Tfr::pTransformDesc m );
 };
 

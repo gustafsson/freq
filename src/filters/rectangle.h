@@ -26,6 +26,8 @@ class Rectangle: public Tfr::CwtFilterDesc
 public:
     Rectangle(float t1, float f1, float t2, float f2, bool save_inside=false);
 
+    OperationDesc::Ptr copy() const;
+
     float _t1, _f1, _t2, _f2;
     bool _save_inside;
     void updateChunkFilter();

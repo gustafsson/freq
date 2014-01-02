@@ -63,6 +63,13 @@ Ellipse::
 }
 
 
+Signal::OperationDesc::Ptr Ellipse::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new Ellipse(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
+}
+
+
 std::string Ellipse::
         name()
 {

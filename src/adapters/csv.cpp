@@ -63,4 +63,11 @@ void Csv::
     }
 }
 
+
+Signal::OperationDesc::Ptr CsvDesc::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr( new CsvDesc(filename_));
+}
+
 } // namespace Adapters
