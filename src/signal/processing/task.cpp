@@ -43,6 +43,24 @@ Signal::Interval Task::
 void Task::
         run(Signal::ComputingEngine::Ptr ce)
 {
+    try
+      {
+        run_private(ce);
+      }
+    catch (const boost::exception& x)
+      {
+        // Append info to be used at the catch site
+        x   << crashed_step(step_)
+            << crashed_expected_output(expected_output_);
+
+        throw;
+      }
+}
+
+
+void Task::
+        run_private(Signal::ComputingEngine::Ptr ce)
+{
     Signal::OperationDesc::Ptr od;
     TIME_TASK od = read1(step_)->operation_desc ();
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
