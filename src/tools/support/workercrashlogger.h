@@ -28,6 +28,8 @@ private:
     QThread                             thread_;
     bool                                consume_exceptions_;
 
+    void log(const boost::exception& x);
+
 public:
     static void test();
 };

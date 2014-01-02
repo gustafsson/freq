@@ -3,6 +3,8 @@
 #include "TaskTimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
+#include "signal/processing/task.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 #include <QTimer>
 
@@ -51,21 +53,26 @@ WorkerCrashLogger::
 void WorkerCrashLogger::
         worker_quit(boost::exception_ptr e, Signal::ComputingEngine::Ptr ce)
 {
-    DEBUG TaskInfo ti("WorkerCrashLogger::worker_quit");
+    DEBUG TaskInfo ti(boost::format("WorkerCrashLogger::worker_quit %s") % (e?"normally":"with exception"));
     if (consume_exceptions_)
-    {
+      {
         write1(workers_)->removeComputingEngine(ce);
-    }
+      }
 
-    try {
-        if (e) rethrow_exception(e);
-    } catch ( const DummyException& x) {
-        DEBUG TaskInfo ti("got x");
-        boost::diagnostic_information(x);
-    } catch ( const boost::exception& x) {
+    try
+      {
+        if (e)
+          {
+            rethrow_exception(e);
+          }
+
+      }
+    catch ( const boost::exception& x)
+      {
         x << Workers::crashed_engine(ce) << Workers::crashed_engine_typename(ce?vartype(*ce):"(null)");
-        TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
-    }
+
+        log(x);
+      }
 }
 
 
@@ -74,25 +81,16 @@ void WorkerCrashLogger::
 {
     DEBUG TaskInfo ti("WorkerCrashLogger::check_previously_crashed_and_consume");
 
-    try {
+    while(true) try
+      {
         write1(workers_)->rethrow_any_worker_exception();
 
-        return;
-    } catch ( const DummyException& x) {
-        DEBUG TaskInfo ti("got x");
-        // Force the slow backtrace beautifier
-        boost::diagnostic_information(x);
-    } catch ( const boost::exception& x) {
-        std::string crashed_engine_typename;
-        if( std::string const * mi = boost::get_error_info<Workers::crashed_engine_typename>(x) )
-            crashed_engine_typename = *mi;
-
-        TaskInfo(boost::format("Worker '%s' crashed\n%s")
-                 % crashed_engine_typename
-                 % boost::diagnostic_information(x));
-    }
-
-    check_all_previously_crashed_and_consume();
+        break;
+      }
+    catch ( const boost::exception& x)
+      {
+        log(x);
+      }
 }
 
 
@@ -100,13 +98,77 @@ void WorkerCrashLogger::
         check_all_previously_crashed_without_consuming()
 {
     DEBUG TaskInfo ti("check_all_previously_crashed_without_consuming");
+
     Workers::EngineWorkerMap workers_map = read1(workers_)->workers_map();
-    for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i) {
+
+    for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
+      {
         QPointer<Worker> worker = i->second;
+
         if (worker && !worker->isRunning ())
+          {
             worker_quit (worker->caught_exception (), i->first);
-    }
+          }
+      }
 }
+
+
+void WorkerCrashLogger::
+        log(const boost::exception& x)
+{
+    // Fetch various info from the exception to make a prettier log
+    std::string crashed_engine_typename = "<no info>";
+    std::string operation_desc_text;
+
+    if( std::string const * mi = boost::get_error_info<Workers::crashed_engine_typename>(x) )
+      {
+        crashed_engine_typename = *mi;
+      }
+
+    if( Step::Ptr const * mi = boost::get_error_info<Task::crashed_step>(x) )
+      {
+        Signal::OperationDesc::Ptr od;
+        {
+            Step::WritePtr s(*mi);
+            od = s->get_crashed ();
+
+            if (!od)
+              {
+                od = s->operation_desc ();
+                s->mark_as_crashed ();
+              }
+        }
+
+        if (od)
+            operation_desc_text = " in " + read1(od)->toString().toStdString();
+      }
+
+    if( Signal::Interval const * mi = boost::get_error_info<Task::crashed_expected_output>(x) )
+      {
+        operation_desc_text += " ";
+        operation_desc_text += *mi;
+      }
+
+
+    // Ignore logging in UnitTest
+    if (dynamic_cast<const DummyException*>(&x))
+      {
+        // Execute to_string for all tagged info (i.e force the slow backtrace beautifier if it's included)
+        boost::diagnostic_information(x);
+        return;
+      }
+
+    TaskInfo(boost::format("Worker '%s' crashed%s")
+             % crashed_engine_typename
+             % operation_desc_text);
+
+    bool send_feedback = true;
+    if (send_feedback)
+        ApplicationErrorLogController::registerException (boost::current_exception ());
+    else
+        TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
+}
+
 
 } // namespace Support
 } // namespace Tools
