@@ -116,6 +116,7 @@ bool HeightmapProcessingPublisher::
 
 #include "signal/processing/bedroom.h"
 #include "signal/processing/task.h"
+#include "signal/processing/bedroomnotifier.h"
 
 namespace Tools {
 namespace Support {
@@ -129,7 +130,8 @@ void HeightmapProcessingPublisher::
         OperationDesc::Ptr operation_desc;
         Step::Ptr step(new Step(operation_desc));
         Bedroom::Ptr bedroom(new Bedroom);
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step, bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::Ptr target_needs(new TargetNeeds(step, notifier));
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::VisualizationParams::Ptr visualization_params(new Heightmap::VisualizationParams);

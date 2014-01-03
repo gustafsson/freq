@@ -3,7 +3,7 @@
 
 #include "dag.h"
 #include "iinvalidator.h"
-#include "bedroom.h"
+#include "inotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -16,7 +16,7 @@ namespace Processing {
 class GraphInvalidator: public IInvalidator
 {
 public:
-    GraphInvalidator(Dag::WeakPtr dag, Bedroom::WeakPtr bedroom, Step::WeakPtr step);
+    GraphInvalidator(Dag::WeakPtr dag, INotifier::WeakPtr notifier, Step::WeakPtr step);
 
     void deprecateCache(Signal::Intervals what) const;
     static void deprecateCache(const Dag& dag, Step::Ptr s, Signal::Intervals what);
@@ -24,7 +24,7 @@ public:
 private:
 
     Dag::WeakPtr dag_;
-    Bedroom::WeakPtr bedroom_;
+    INotifier::WeakPtr notifier_;
     Step::WeakPtr step_;
 
 public:

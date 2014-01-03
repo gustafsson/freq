@@ -76,6 +76,7 @@ Step::WeakPtr TargetMarker::
 } // namespace Signal
 
 #include "bedroom.h"
+#include "bedroomnotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -91,7 +92,8 @@ void TargetMarker::
         Step::Ptr step2b(new Step(Signal::OperationDesc::Ptr()));
 
         Bedroom::Ptr bedroom(new Bedroom());
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step3a, bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::Ptr target_needs(new TargetNeeds(step3a, notifier));
         Dag::Ptr dagp(new Dag());
 
         TargetMarker::Ptr tm( new TargetMarker(target_needs, dagp));

@@ -5,6 +5,7 @@
 #include "targetschedule.h"
 #include "reversegraph.h"
 #include "graphinvalidator.h"
+#include "bedroomnotifier.h"
 
 #include "timer.h"
 
@@ -22,7 +23,8 @@ Chain::Ptr Chain::
 {
     Dag::Ptr dag(new Dag);
     Bedroom::Ptr bedroom(new Bedroom);
-    Targets::Ptr targets(new Targets(bedroom));
+    BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+    Targets::Ptr targets(new Targets(notifier));
 
     IScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
     ISchedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
@@ -37,7 +39,7 @@ Chain::Ptr Chain::
         write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
     }
 
-    Chain::Ptr chain(new Chain(dag, targets, workers, bedroom));
+    Chain::Ptr chain(new Chain(dag, targets, workers, bedroom, notifier));
 
     return chain;
 }
@@ -97,7 +99,7 @@ IInvalidator::Ptr Chain::
 
     Step::WeakPtr step = insertStep(*Dag::WritePtr(dag_), desc, at);
 
-    IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
+    IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, notifier_, step));
 
     read1(graph_invalidator)->deprecateCache(Signal::Interval::Interval_ALL);
 
@@ -202,12 +204,13 @@ Targets::Ptr Chain::
 
 
 Chain::
-        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom)
+        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier)
     :
       dag_(dag),
       targets_(targets),
       workers_(workers),
-      bedroom_(bedroom)
+      bedroom_(bedroom),
+      notifier_(notifier)
 {
 }
 

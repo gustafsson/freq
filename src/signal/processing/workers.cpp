@@ -275,6 +275,7 @@ void Workers::
 } // namespace Signal
 
 #include "expectexception.h"
+#include "bedroom.h"
 
 namespace Signal {
 namespace Processing {

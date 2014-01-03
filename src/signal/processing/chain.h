@@ -7,6 +7,8 @@
 #include "dag.h"
 #include "workers.h"
 #include "iinvalidator.h"
+#include "inotifier.h"
+#include "bedroom.h"
 
 namespace Signal {
 namespace Processing {
@@ -69,8 +71,9 @@ private:
     Targets::Ptr targets_;
     Workers::Ptr workers_;
     Bedroom::Ptr bedroom_;
+    INotifier::Ptr notifier_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom);
+    Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
 
     Step::WeakPtr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
     Step::WeakPtr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
