@@ -193,7 +193,7 @@ string Backtrace::
     qint64 id = QCoreApplication::applicationPid();
     QProcess p;
     p.start (QString("atos -p %1 %2").arg (id).arg (addrs));
-    found_pretty = p.waitForFinished ();
+    found_pretty = p.waitForFinished (2000);
     found_pretty &= 0 == p.exitCode();
     bt += QString(p.readAllStandardOutput ()).trimmed ().toStdString ();
 
