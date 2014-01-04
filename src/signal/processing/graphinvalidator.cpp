@@ -51,7 +51,7 @@ void GraphInvalidator::
 
 
 #include <QThread>
-#include "workernotifier.h"
+#include "bedroomnotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -76,7 +76,7 @@ void GraphInvalidator::
         // create
         Dag::Ptr dag(new Dag);
         Bedroom::Ptr bedroom(new Bedroom);
-        INotifier::Ptr notifier(new WorkerNotifier(bedroom));
+        INotifier::Ptr notifier(new BedroomNotifier(bedroom));
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         WaitForWakeupMock sleeper(bedroom);
 
