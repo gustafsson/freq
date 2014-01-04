@@ -71,6 +71,12 @@ bool RecordModel::
     return Adapters::MicrophoneRecorder(-1).canRecord ();
 }
 
+} // namespace Tools
+
+#include <QApplication>
+
+namespace Tools
+{
 
 class TargetMock: public Signal::Operation
 {
@@ -112,6 +118,10 @@ private:
 void RecordModel::
         test()
 {
+    int argc = 0;
+    char* argv = 0;
+    QApplication a(argc,&argv);
+
     // It should describe the operation required to perform a recording.
     {
         QSemaphore semaphore;

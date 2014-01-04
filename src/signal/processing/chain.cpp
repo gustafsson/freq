@@ -28,8 +28,7 @@ Chain::Ptr Chain::
 
     IScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
     ISchedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
-    ISchedule::Ptr sleepSchedule(new SleepSchedule(bedroom, targetSchedule));
-    Workers::Ptr workers(new Workers(sleepSchedule));
+    Workers::Ptr workers(new Workers(targetSchedule, bedroom));
 
     // Add the 'single instance engine' thread.
     write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr());
@@ -266,6 +265,8 @@ Step::WeakPtr Chain::
 
 #include "test/operationmockups.h"
 
+#include <QApplication>
+
 namespace Signal {
 namespace Processing {
 
@@ -282,6 +283,10 @@ class OperationDescChainMock : public Test::TransparentOperationDesc
 void Chain::
         test()
 {
+    int argc = 0;
+    char* argv = 0;
+    QApplication a(argc,&argv);
+
     // Boost graph shall support removing and adding vertices without breaking color maps
     {
         typedef directed_graph<> my_graph;

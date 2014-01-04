@@ -3,6 +3,7 @@
 
 #include "ischedule.h"
 #include "signal/computingengine.h"
+#include "atomicvalue.h"
 
 #include <QThread>
 #include <QPointer>
@@ -12,38 +13,32 @@
 namespace Signal {
 namespace Processing {
 
-
 /**
- * @brief The Worker class should run the next task as long as there is one
+ * @brief The Worker class should run tasks as given by the scheduler.
  *
- * It should store information about a crashed task (both segfault and std::exception)
+ * It should wait to be dispatched with a wakeup signal if there are no tasks.
  *
- * It should swallow one LockFailed without aborting the thread but abort if
+ * It should store information about a crashed task (both segfault and
+ * std::exception) and stop execution.
+ *
+ * It should swallow one LockFailed without aborting the thread, but abort if
  * several consecutive LockFailed are thrown.
- *
- * Issues
- * should not subclass QThread
- * http://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
  */
-class Worker
-        : public QThread
+class Worker: public QObject
 {
+    Q_OBJECT
 public:
-    class TerminatedException: virtual public boost::exception, virtual public std::exception {};
-
-    // This is a Qt object that can delete itself, and as such we shall not use
-    // boost::shared_ptr but the Qt smart pointer QPointer which is aware of Qt
-    // objects that delete themselves.
     typedef QPointer<Worker> Ptr;
 
-    Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::WeakPtr schedule);
+    class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
-    // Delete when finished
-    virtual void run ();
+    Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::Ptr schedule);
+    ~Worker ();
 
-    // Postpones the thread exit until a task has been finished.
-    // 'scheduel_->getTask()' might be idling but this class is unaware of that
-    void exit_nicely_and_delete();
+    void abort();
+    void terminate();
+    bool wait(unsigned long time_ms = ULONG_MAX);
+    bool isRunning() const;
 
     // 'if (caught_exception())' will be true if an exception was caught.
     //
@@ -54,18 +49,33 @@ public:
     //     } catch ( std::exception& x ) {
     //         x.what();
     //         ... get_error_info<...>(x);
+    //         boost::diagnostic_information(x);
     //     }
     boost::exception_ptr caught_exception() const;
 
-private:
-    Signal::ComputingEngine::Ptr computing_eninge_;
-    ISchedule::WeakPtr schedule_;
+signals:
+    void finished(boost::exception_ptr, Signal::ComputingEngine::Ptr);
 
-    boost::exception_ptr exception_;
+public slots:
+    void wakeup();
+
+private slots:
+    void finished();
+
+private:
+    void loop_while_tasks();
+
+    Signal::ComputingEngine::Ptr            computing_engine_;
+    ISchedule::Ptr                          schedule_;
+
+    QThread*                                thread_;
+    AtomicValue<boost::exception_ptr>::Ptr  exception_;
+    boost::exception_ptr                    terminated_exception_;
 
 public:
     static void test ();
 };
+
 
 } // namespace Processing
 } // namespace Signal

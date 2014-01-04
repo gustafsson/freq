@@ -4,93 +4,95 @@
 #include "expectexception.h"
 #include "prettifysegfault.h"
 
+#define UNITTEST_STEPS if(0)
+//#define UNITTEST_STEPS
+
 namespace Signal {
 namespace Processing {
 
 bool enable_lockfailed_print = true;
 
+class QTerminatableThread : public QThread {
+public:
+    void run() {
+        setTerminationEnabled ();
+        QThread::run ();
+    }
+};
+
+
 Worker::
-        Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::WeakPtr schedule)
+        Worker (Signal::ComputingEngine::Ptr computing_engine, ISchedule::Ptr schedule)
     :
-      computing_eninge_(computing_eninge),
-      schedule_(schedule)
+      computing_engine_(computing_engine),
+      schedule_(schedule),
+      thread_(new QTerminatableThread),
+      exception_(new AtomicValue<boost::exception_ptr>)
 {
+    EXCEPTION_ASSERTX(QThread::currentThread ()->eventDispatcher (),
+                      "Worker uses a QThread with an event loop. The QEventLoop requires QApplication");
+
+    qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
+    qRegisterMetaType<Signal::ComputingEngine::Ptr>("Signal::ComputingEngine::Ptr");
+
+    // Create terminated_exception_
     try {
         // To make caught_exception() non-zero if the thread is terminated even
         // though no exact information about the crash reason is stored. The
         // log file might contain more details.
-        BOOST_THROW_EXCEPTION(TerminatedException());
+        BOOST_THROW_EXCEPTION(Worker::TerminatedException());
     } catch (...) {
-        exception_ = boost::current_exception ();
+        terminated_exception_ = boost::current_exception ();
     }
+
+    // Start the worker thread as an event based background thread
+    thread_->setParent (this);
+    thread_->start (QThread::LowPriority);
+    moveToThread (thread_);
+
+    connect (thread_, SIGNAL(finished()), SLOT(finished()));
+
+    // Initial check to see if work can begin right away
+    wakeup (); // will be dispatched to execute in thread_
+}
+
+
+Worker::
+        ~Worker ()
+{
+    abort ();
+    wait (1); // To quit the thread normally if idle (returns within 1 ms if it is ready to quit)
+    terminate ();
+    wait (100);
 }
 
 
 void Worker::
-        run()
-  {
-    setTerminationEnabled ();
-
-    try
-      {
-        int consecutive_lock_failed_count = 0;
-        for (;;)
-          {
-            try
-              {
-                ISchedule::Ptr schedule = schedule_.lock ();
-                if (!schedule)
-                    break;
-
-                Task::Ptr task = schedule->getTask(computing_eninge_);
-                if (!task)
-                    break;
-
-                // Abort if the worker was asked to stop
-                if (!schedule_.lock ())
-                    break;
-
-                write1(task)->run(computing_eninge_);
-
-                consecutive_lock_failed_count = 0;
-              }
-
-            catch (const LockFailed& x)
-              {
-                if (enable_lockfailed_print)
-                  {
-                    TaskInfo("");
-                    TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
-                    TaskInfo("");
-                  }
-
-                if (consecutive_lock_failed_count < 1)
-                  {
-                    if (enable_lockfailed_print)
-                        TaskInfo("Trying again %d", consecutive_lock_failed_count);
-                    consecutive_lock_failed_count++;
-                  }
-                else
-                    throw;
-              }
-          }
-
-        deleteLater ();
-
-        // The thread finished with normal execution without any exception.
-        exception_ = boost::exception_ptr();
-      }
-    catch (...)
-      {
-        exception_ = boost::current_exception ();
-      }
-  }
+        abort()
+{
+    thread_->requestInterruption ();
+    wakeup ();
+}
 
 
 void Worker::
-        exit_nicely_and_delete()
+        terminate()
 {
-    schedule_.reset ();
+    thread_->terminate ();
+}
+
+
+bool Worker::
+        isRunning() const
+{
+    return thread_->isRunning ();
+}
+
+
+bool Worker::
+        wait(unsigned long time)
+{
+    return thread_->wait (time);
 }
 
 
@@ -99,10 +101,101 @@ boost::exception_ptr Worker::
 {
     if (isRunning ())
         return boost::exception_ptr();
-
-    return exception_;
+    return *exception_;
 }
 
+
+void Worker::
+        wakeup()
+  {
+    if (QThread::currentThread () != this->thread ()) {
+        // Dispatch
+        QMetaObject::invokeMethod (this, "wakeup");
+        return;
+    }
+
+    try
+      {
+        // Let exception_ mark unexpected termination.
+        *exception_ = terminated_exception_;
+
+        loop_while_tasks();
+
+        // Finished normal execution without any exception.
+        *exception_ = boost::exception_ptr();
+      }
+    catch (...)
+      {
+        *exception_ = boost::current_exception ();
+        QThread::currentThread ()->requestInterruption ();
+      }
+
+    if (QThread::currentThread ()->isInterruptionRequested ())
+    {
+        QThread::currentThread ()->quit ();
+    }
+  }
+
+
+void Worker::
+        finished()
+  {
+    moveToThread (0); // important. otherwise thread_ will try to delete this, but this owns the thread -> crash.
+    emit finished(*exception_, computing_engine_);
+  }
+
+
+void Worker::
+        loop_while_tasks()
+  {
+    int consecutive_lock_failed_count = 0;
+    while (!QThread::currentThread ()->isInterruptionRequested ())
+      {
+        try
+          {
+            Task::Ptr task = schedule_->getTask(computing_engine_);
+            if (task)
+              {
+                write1(task)->run(computing_engine_);
+              }
+            else
+              {
+                // Wait for a new wakeup call
+                break;
+              }
+
+            consecutive_lock_failed_count = 0;
+          }
+        catch (const LockFailed& x)
+          {
+            if (enable_lockfailed_print)
+              {
+                TaskInfo("");
+                TaskInfo("Lock failed");
+                TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
+                TaskInfo("");
+              }
+
+            if (consecutive_lock_failed_count < 1)
+              {
+                consecutive_lock_failed_count++;
+                if (enable_lockfailed_print)
+                    TaskInfo("Starting attempt %d", consecutive_lock_failed_count+1);
+              }
+            else
+                throw;
+          }
+      }
+  }
+
+
+} // namespace Processing
+} // namespace Signal
+
+#include <QApplication>
+
+namespace Signal {
+namespace Processing {
 
 class GetTaskMock: public ISchedule {
 public:
@@ -153,7 +246,7 @@ public:
     virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile {
         GetTaskMock::getTask (engine);
 
-        // cause dead lock
+        // cause dead lock in 1 ms
         volatile DeadLockMock m;
         WritePtr(&m, 1).get() && WritePtr(&m, 1).get();
 
@@ -166,29 +259,68 @@ public:
 void Worker::
         test()
 {
-    // It should run the next task as long as there is one
-    {
-        ISchedule::Ptr gettask(new GetTaskMock());
+    int argc = 0;
+    char* argv = 0;
+    QApplication a(argc,&argv);
 
+    // It should start and stop automatically
+    {
+        UNITTEST_STEPS TaskTimer tt("It should start and stop automatically");
+
+        ISchedule::Ptr gettask(new GetTaskMock());
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
-        worker.start ();
-        bool finished = worker.wait (3); // Stop running within 3 ms, equals !worker.isRunning ()
-        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        QThread::yieldCurrentThread ();
+        EXCEPTION_ASSERT( worker.isRunning () );
+    }
+
+    // It should run tasks as given by the scheduler
+    {
+        UNITTEST_STEPS TaskTimer tt("It should run tasks as given by the scheduler");
+
+        ISchedule::Ptr gettask(new GetTaskMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        worker.wait (1);
 
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
         // Verify that tasks execute properly in Task::test.
+
+        EXCEPTION_ASSERT( worker.isRunning () );
+        worker.abort ();
+        worker.wait (1);
+        EXCEPTION_ASSERT( !worker.isRunning () );
     }
 
-    // It should store information about a crashed task (segfault)
+    // It should wait to be awaken if there are no tasks
     {
+        UNITTEST_STEPS TaskTimer tt("It should run tasks as given by the scheduler");
+
+        ISchedule::Ptr gettask(new GetTaskMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        EXCEPTION_ASSERT( !worker.wait (1) );
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+        QThread::msleep (1);
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+
+        worker.wakeup ();
+        worker.wait (1);
+        EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+    }
+
+    // It should store information about a crashed task (segfault) and stop execution.
+    if (0) {
+        UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
+
         PrettifySegfault::EnableDirectPrint (false);
 
         ISchedule::Ptr gettask(new GetTaskSegFaultMock());
-
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
-        worker.run ();
-        bool finished = worker.wait (2);
-        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        worker.wait (1);
+        worker.abort ();
+        EXCEPTION_ASSERT( worker.wait (1) );
         EXCEPTION_ASSERT( worker.caught_exception () );
 
         EXPECT_EXCEPTION(segfault_exception, rethrow_exception(worker.caught_exception ()));
@@ -196,14 +328,28 @@ void Worker::
         PrettifySegfault::EnableDirectPrint (true);
     }
 
-    // It should store information about a crashed task (C++ exception)
+    // It should store information about a crashed task (std::exception) and stop execution. (1)
     {
-        ISchedule::Ptr gettask(new GetTaskExceptionMock());
+        UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (std::exception) and stop execution (1)");
 
+        ISchedule::Ptr gettask(new GetTaskExceptionMock());
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
-        worker.run ();
-        bool finished = worker.wait (2);
-        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        QThread::yieldCurrentThread ();
+    }
+
+    // It should store information about a crashed task (std::exception) and stop execution. (2)
+    {
+        UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (std::exception) and stop execution (2)");
+
+        ISchedule::Ptr gettask(new GetTaskExceptionMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        worker.wait (1);
+        worker.abort ();
+        worker.wait (1);
+        worker.abort ();
+
         EXCEPTION_ASSERT( worker.caught_exception () );
 
         try {
@@ -215,17 +361,60 @@ void Worker::
         }
     }
 
-    // It should swallow one LockFailed without aborting the thread but abort if
-    // several consecutive LockFailed are thrown.
+    // It should not hang if it causes a deadlock (1)
     {
+        UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (1)");
+
+        enable_lockfailed_print = false;
+
+        ISchedule::Ptr gettask(new DeadLockMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        worker.wait (10);
+        worker.terminate ();
+        worker.terminate ();
+        worker.terminate ();
+        worker.terminate ();
+        worker.abort ();
+        worker.abort ();
+        worker.abort ();
+        worker.abort ();
+
+        enable_lockfailed_print = true;
+    }
+
+    // It should not hang if it causes a deadlock (2)
+    {
+        UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (2)");
+
+        enable_lockfailed_print = false;
+
+        ISchedule::Ptr gettask(new DeadLockMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        EXCEPTION_ASSERT( !worker.wait (1) );
+        worker.terminate ();
+        EXCEPTION_ASSERT( worker.wait (2) );
+        EXPECT_EXCEPTION( TerminatedException, rethrow_exception(worker.caught_exception ()) );
+
+        enable_lockfailed_print = true;
+    }
+
+
+    // It should swallow one LockFailed without aborting the thread, but abort
+    // if several consecutive LockFailed are thrown.
+    {
+        UNITTEST_STEPS TaskTimer tt("It should swallow one LockFailed without aborting the thread, but abort if several consecutive LockFailed are thrown.");
+
         enable_lockfailed_print = false;
 
         ISchedule::Ptr gettask(new DeadLockMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
-        worker.run ();
-        bool finished = worker.wait (2);
-        EXCEPTION_ASSERT_EQUALS( true, finished );
+
+        worker.wait (2);
+        worker.abort ();
+        EXCEPTION_ASSERT( worker.wait (10) );
         EXCEPTION_ASSERT( worker.caught_exception () );
 
         EXPECT_EXCEPTION(LockFailed, rethrow_exception(worker.caught_exception ()));

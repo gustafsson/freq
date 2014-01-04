@@ -53,10 +53,21 @@ Signal::UnsignedIntervalType ChainInfo::
 }
 
 
+} // namespace Support
+} // namespace Tools
+
+#include <QApplication>
+
+namespace Tools {
+namespace Support {
 
 void ChainInfo::
         test()
 {
+    int argc = 0;
+    char* argv = 0;
+    QApplication a(argc,&argv);
+
     // It should provide info about the running state of a signal processing chain
     {
         Chain::Ptr cp = Chain::createDefaultChain ();

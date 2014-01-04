@@ -4,12 +4,15 @@
 #include "worker.h"
 #include "ischedule.h"
 #include "signal/computingengine.h"
+#include "bedroom.h"
 
 #include <vector>
 #include <map>
 
 namespace Signal {
 namespace Processing {
+
+class BedroomSignalAdapter;
 
 /**
  * @brief The Schedule class should start and stop computing engines as they
@@ -30,7 +33,7 @@ public:
 
     typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
 
-    Workers(ISchedule::Ptr schedule);
+    Workers(ISchedule::Ptr schedule, Bedroom::Ptr bedroom);
     ~Workers();
 
     // Throw exception if already added.
@@ -84,16 +87,16 @@ public:
      */
     bool remove_all_engines(int timeout=0) const;
 
+    bool wait(int timeout=1000);
+
     static void print(const DeadEngines&);
 
 signals:
     void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
 
-private slots:
-    void worker_finished();
-
 private:
     ISchedule::Ptr schedule_;
+    BedroomSignalAdapter* notifier_;
 
     Engines workers_;
 
