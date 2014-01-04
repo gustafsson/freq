@@ -23,6 +23,8 @@
 
 namespace Signal {
 
+namespace Processing { class Step; }
+
 class ComputingEngine;
 
 class OperationDesc;
@@ -167,7 +169,10 @@ public:
      */
     friend std::ostream& operator << (std::ostream& os, const OperationDesc& d);
 
+
 protected:
+    friend class Signal::Processing::Step;
+
     /**
      * @brief deprecateCache should be called when parameters change.
      * @param what If what is Signal::Intervals::Intervals_ALL then Step will

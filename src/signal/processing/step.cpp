@@ -33,9 +33,15 @@ Signal::OperationDesc::Ptr Step::
 void Step::
         mark_as_crashed()
 {
+    EXCEPTION_ASSERT(!died_);
+
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
     operations_.clear ();
+
+    readWriteLock ()->unlock ();
+    died_->deprecateCache(Signal::Interval::Interval_ALL);
+    readWriteLock ()->lockForWrite ();
 }
 
 
