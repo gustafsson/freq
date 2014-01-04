@@ -6,7 +6,6 @@ namespace Processing {
 BedroomNotifier::
         BedroomNotifier(Bedroom::Ptr bedroom)
     :
-    QObject(),
     bedroom_(bedroom)
 {
 }
