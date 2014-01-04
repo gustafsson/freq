@@ -1,7 +1,5 @@
 #include "bedroomsignaladapter.h"
 
-#include <QApplication>
-
 namespace Signal {
 namespace Processing {
 
@@ -40,8 +38,6 @@ void BedroomSignalAdapter::
     Bedroom::Bed bed = bedroom_->getBed();
     while (!stop_flag_) {
         emit wakeup();
-
-        //QApplication::processEvents ();
 
         try {
             bed.sleep ();
