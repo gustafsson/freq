@@ -86,13 +86,13 @@ void ApplicationErrorLogController::
     QToolBar* bar = new QToolBar(mainwindow);
     bar->setObjectName ("ApplicationErrorLogControllerBar");
     mainwindow->addToolBar(Qt::TopToolBarArea, bar);
-    QAction* toolbutton = bar->addAction(
+    bar->addAction(
                 icon,
                 "An error has been reported by " + name + ". Click to file a bug report",
                 instance()->open_feedback_dialog_, SLOT(open()));
 
     bool visible = QSettings().value (has_unreported_error_key).toBool ();
-    toolbutton->setVisible (visible);
+    bar->setVisible (visible);
 
     instance()->toolbars_.push_back (bar);
 }
