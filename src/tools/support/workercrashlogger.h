@@ -22,6 +22,7 @@ private slots:
     void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
     void check_all_previously_crashed_and_consume();
     void check_all_previously_crashed_without_consuming();
+    void finished();
 
 private:
     Signal::Processing::Workers::Ptr    workers_;
