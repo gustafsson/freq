@@ -59,6 +59,7 @@
 #include "glprojection.h"
 #include "prettifysegfault.h"
 #include "volatileptr.h"
+#include "atomicvalue.h"
 
 // gpumisc tool
 #include "TaskTimer.h"
@@ -96,6 +97,7 @@ int UnitTest::
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
         RUNTEST(VolatilePtrTest);
+        RUNTEST(AtomicValueTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
