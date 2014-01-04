@@ -111,7 +111,6 @@ int UnitTest::
         RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
         RUNTEST(Signal::Processing::Bedroom);
-        RUNTEST(Signal::Processing::Chain);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::FirstMissAlgorithm);
         RUNTEST(Signal::Processing::GraphInvalidator);
@@ -124,6 +123,7 @@ int UnitTest::
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
+        RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);
