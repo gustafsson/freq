@@ -391,7 +391,7 @@ Interval Intervals::
 Interval Intervals::
         fetchInterval( UnsignedIntervalType dt, IntervalType center ) const
 {
-    EXCEPTION_ASSERT_LESS( 0, dt );
+    EXCEPTION_ASSERT_LESS( 0u, dt );
 
     if (center < IntervalType(dt/2))
         center = 0;

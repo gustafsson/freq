@@ -388,7 +388,7 @@ void Workers::
         Workers::DeadEngines dead = workers.clean_dead_workers ();
         Engines engines = workers.workers();
 
-        EXCEPTION_ASSERT_EQUALS(engines.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(engines.size (), 0u);
         EXCEPTION_ASSERT_EQUALS(dead.size (), (size_t)worker_count-1); // One was cleared by catching its exception above
 
         // When dead workers are cleared there should not be any exceptions thrown

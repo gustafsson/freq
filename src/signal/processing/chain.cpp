@@ -317,8 +317,8 @@ void Chain::
         write1(chain)->removeOperationsAt(target);
         write1(chain)->addOperationAt(source_desc, target);
         write1(chain)->extent(target); // will fail unless indices are reordered
-        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_edges(), 1);
-        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_vertices(), 2);
+        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_edges(), 1u);
+        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_vertices(), 2u);
         write1(chain)->removeOperationsAt(target);
 
 

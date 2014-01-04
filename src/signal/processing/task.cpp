@@ -131,8 +131,8 @@ Signal::pBuffer Task::
             EXCEPTION_ASSERT(x.sample_rate.is_initialized ());
             EXCEPTION_ASSERT(x.number_of_channels.is_initialized ());
         }
-        EXCEPTION_ASSERT_LESS(0, num_channels);
-        EXCEPTION_ASSERT_LESS(0, sample_rate);
+        EXCEPTION_ASSERT_LESS(0u, num_channels);
+        EXCEPTION_ASSERT_LESS(0u, sample_rate);
     }
 
     Signal::pBuffer input_buffer(new Signal::Buffer(required_input.spannedInterval (), sample_rate, num_channels));

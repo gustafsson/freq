@@ -237,7 +237,7 @@ void test() {
         GLvector p0(0.5,0,0);
         GLvector n(1,0,0);
         r = clipPlane( p, p0, n );
-        EXCEPTION_ASSERT_EQUALS(r.size (), 3);
+        EXCEPTION_ASSERT_EQUALS(r.size (), 3u);
         EXCEPTION_ASSERT_EQUALS(r[0], GLvector(1,0,0));
         EXCEPTION_ASSERT_EQUALS(r[1], GLvector(0.5,0,0));
         EXCEPTION_ASSERT_EQUALS(r[2], GLvector(0.5,0.5,0));
@@ -245,7 +245,7 @@ void test() {
         p0 = GLvector(0,0,0);
         n = GLvector(1,0,0);
         r = clipPlane( p, p0, n );
-        EXCEPTION_ASSERT_EQUALS(r.size (), 3);
+        EXCEPTION_ASSERT_EQUALS(r.size (), 3u);
         EXCEPTION_ASSERT_EQUALS(r[0], GLvector(1,0,0));
         EXCEPTION_ASSERT_EQUALS(r[1], GLvector(0,0,0));
         EXCEPTION_ASSERT_EQUALS(r[2], GLvector(0,1,0));
@@ -253,17 +253,17 @@ void test() {
         p0 = GLvector(1,0,0);
         n = GLvector(1,0,0);
         r = clipPlane( p, p0, n );
-        EXCEPTION_ASSERT_EQUALS(r.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(r.size (), 0u);
 
         p0 = GLvector(0,0,0);
         n = GLvector(-1,0,0);
         r = clipPlane( p, p0, n );
-        EXCEPTION_ASSERT_EQUALS(r.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(r.size (), 0u);
 
         p0 = GLvector(0.5,0,0);
         n = GLvector(-1,0,0);
         r = clipPlane( p, p0, n );
-        EXCEPTION_ASSERT_EQUALS(r.size (), 4);
+        EXCEPTION_ASSERT_EQUALS(r.size (), 4u);
         EXCEPTION_ASSERT_EQUALS(r[0], GLvector(0.5,0,0));
         EXCEPTION_ASSERT_EQUALS(r[1], GLvector(0,0,0));
         EXCEPTION_ASSERT_EQUALS(r[2], GLvector(0,1,0));
@@ -272,7 +272,7 @@ void test() {
         p0 = GLvector(2,0,0);
         n = GLvector(1,0,0);
         r = clipPlane( p, p0, n );
-        EXCEPTION_ASSERT_EQUALS(r.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(r.size (), 0u);
     }
 }
 

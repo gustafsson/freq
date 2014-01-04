@@ -236,7 +236,7 @@ void WorkerCrashLogger::
 
         // Should have consumed all workers
         Workers::DeadEngines de = write1(workers)->clean_dead_workers();
-        EXCEPTION_ASSERT_EQUALS(de.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
 
         // Should have taken a while (the backtrace beautifier is slow)
         double T = timer.elapsedAndRestart ();
@@ -268,7 +268,7 @@ void WorkerCrashLogger::
         }
 
         Workers::DeadEngines de = write1(workers)->clean_dead_workers();
-        EXCEPTION_ASSERT_EQUALS(de.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
 
         double T = timer.elapsedAndRestart ();
         EXCEPTION_ASSERT_LESS( 1e-5, T );
@@ -304,7 +304,7 @@ void WorkerCrashLogger::
 
         // Should not have consumed any workers
         Workers::DeadEngines de = write1(workers)->clean_dead_workers();
-        EXCEPTION_ASSERT_EQUALS(de.size (), 2);
+        EXCEPTION_ASSERT_EQUALS(de.size (), 2u);
 
         double T = timer.elapsedAndRestart ();
         EXCEPTION_ASSERT_LESS( 0.1e-5, T );

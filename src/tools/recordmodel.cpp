@@ -153,7 +153,7 @@ void RecordModel::
         EXCEPTION_ASSERT(semaphore.tryAcquire (1, 1000));
 
         x = read1(chain)->extent(target_marker);
-        EXCEPTION_ASSERT_LESS(400, x.interval.get_value_or (Signal::Interval()).count());
+        EXCEPTION_ASSERT_LESS(400u, x.interval.get_value_or (Signal::Interval()).count());
     }
 }
 

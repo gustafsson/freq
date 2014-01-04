@@ -5,9 +5,6 @@
 
 #include <boost/format.hpp>
 
-#include <QApplication>
-#include <QProcess>
-
 using namespace std;
 using namespace boost;
 
