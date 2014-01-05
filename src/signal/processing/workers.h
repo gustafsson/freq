@@ -22,6 +22,9 @@ class BedroomSignalAdapter;
  * for tasks to work on.
  *
  * It should terminate all threads when it's closed.
+ *
+ * It should wake up sleeping workers when any work is done to see if they can
+ * help out on what's left.
  */
 class Workers: public QObject, public VolatilePtr<Workers>
 {

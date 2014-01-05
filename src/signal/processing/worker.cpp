@@ -4,8 +4,11 @@
 #include "expectexception.h"
 #include "prettifysegfault.h"
 
-#define UNITTEST_STEPS if(0)
 //#define UNITTEST_STEPS
+#define UNITTEST_STEPS if(0)
+
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
 
 namespace Signal {
 namespace Processing {
@@ -114,6 +117,7 @@ void Worker::
         return;
     }
 
+    DEBUGINFO TaskInfo ti("Worker::wakeup");
     try
       {
         // Let exception_ mark unexpected termination.
@@ -148,15 +152,22 @@ void Worker::
 void Worker::
         loop_while_tasks()
   {
+    Task::Ptr task;
     int consecutive_lock_failed_count = 0;
     while (!QThread::currentThread ()->isInterruptionRequested ())
       {
         try
           {
-            Task::Ptr task = schedule_->getTask(computing_engine_);
+            {
+                DEBUGINFO TaskTimer tt(boost::format("Get task %s %s") % vartype(*schedule_) % (computing_engine_?vartype(*computing_engine_):"(null)") );
+                task = schedule_->getTask(computing_engine_);
+            }
+
             if (task)
               {
+                DEBUGINFO TaskTimer tt(boost::format("Running task %s") % read1(task)->expected_output());
                 write1(task)->run(computing_engine_);
+                emit oneTaskDone();
               }
             else
               {
@@ -422,6 +433,11 @@ void Worker::
         EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
 
         enable_lockfailed_print = true;
+    }
+
+    // It should announce when tasks are finished.
+    {
+
     }
 }
 

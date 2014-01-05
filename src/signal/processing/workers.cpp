@@ -51,6 +51,7 @@ Worker::Ptr Workers::
             SIGNAL(finished(boost::exception_ptr,Signal::ComputingEngine::Ptr)),
             SIGNAL(worker_quit(boost::exception_ptr,Signal::ComputingEngine::Ptr)));
     connect(notifier_, SIGNAL(wakeup()), &*w, SLOT(wakeup()));
+    connect(&*w, SIGNAL(oneTaskDone()), notifier_, SIGNAL(wakeup()));
 
     return w;
 }
@@ -453,6 +454,12 @@ void Workers::
             EXCEPTION_ASSERT_LESS(0.01+n, elapsed);
             EXCEPTION_ASSERT_LESS(elapsed, 0.04+n); // +n makes it possible to see in the test log which iteration that failed
         }
+    }
+
+    // It should wake up sleeping workers when any work is done to see if they can
+    // help out on what's left.
+    {
+
     }
 }
 

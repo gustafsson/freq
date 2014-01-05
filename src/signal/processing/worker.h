@@ -23,6 +23,8 @@ namespace Processing {
  *
  * It should swallow one LockFailed without aborting the thread, but abort if
  * several consecutive LockFailed are thrown.
+ *
+ * It should announce when tasks are finished.
  */
 class Worker: public QObject
 {
@@ -54,6 +56,7 @@ public:
     boost::exception_ptr caught_exception() const;
 
 signals:
+    void oneTaskDone();
     void finished(boost::exception_ptr, Signal::ComputingEngine::Ptr);
 
 public slots:
