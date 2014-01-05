@@ -48,12 +48,15 @@ public:
         if (!I)
             return;
 
-        DEBUGINFO TaskTimer tt(format("Missing %2% in %1%") % read1(o)->toString ().toStdString () % I);
+        DEBUGINFO TaskTimer tt(format("Missing %1% in %2% %3%")
+                               % I
+                               % (step->operation (params.engine)?"compatible":"incompatible")
+                               % read1(o)->toString ().toStdString ());
 
         Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
         Signal::Intervals required_input;
         {
-            bool must_have_entire_expected_output = false; // it's just a preferred update size, not a required update size
+            bool must_have_entire_expected_output = false; // params.preferred_size is just a preferred update size, not a required update size. Accept whatever requiredInterval sets as expected_output instead
 
             // lock OperationDesc while querying requiredInterval
             Signal::OperationDesc::ReadPtr od (o);
@@ -127,7 +130,7 @@ Task::Ptr FirstMissAlgorithm::
                 Workers::Ptr /*workers*/,
                 Signal::ComputingEngine::Ptr engine) const
 {
-    DEBUGINFO TaskTimer tt("getTask %p", engine.get ());
+    DEBUGINFO TaskTimer tt("FirstMissAlgorithm %p", engine.get ());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 

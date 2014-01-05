@@ -1,11 +1,11 @@
 #include "chain.h"
 #include "bedroom.h"
 #include "firstmissalgorithm.h"
-#include "sleepschedule.h"
 #include "targetschedule.h"
 #include "reversegraph.h"
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
+#include "workers.h"
 
 #include "timer.h"
 

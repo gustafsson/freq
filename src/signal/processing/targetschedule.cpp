@@ -37,7 +37,7 @@ Task::Ptr TargetSchedule::
 
     boost::shared_ptr<TargetNeeds::ReadPtr> target = self->prioritizedTarget();
     if (!target) {
-        DEBUGINFO TaskInfo("!target");
+        DEBUGINFO TaskInfo("No target needs anything right now");
         return Task::Ptr();
     }
 

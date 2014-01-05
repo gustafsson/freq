@@ -1,7 +1,12 @@
 #include "bedroomsignaladapter.h"
 
+#include "TaskTimer.h"
+
 namespace Signal {
 namespace Processing {
+
+//#define DEBUGINFO
+#define DEBUGINFO if(0)
 
 BedroomSignalAdapter::
         BedroomSignalAdapter(Bedroom::Ptr bedroom, QObject* parent)
@@ -24,6 +29,7 @@ BedroomSignalAdapter::
 void BedroomSignalAdapter::
         quit_and_wait ()
 {
+    DEBUGINFO TaskTimer ti("BedroomSignalAdapter quit_and_wait");
     stop_flag_ = true;
 
     bedroom_->wakeup();
@@ -37,6 +43,7 @@ void BedroomSignalAdapter::
 {
     Bedroom::Bed bed = bedroom_->getBed();
     while (!stop_flag_) {
+        DEBUGINFO TaskInfo("BedroomSignalAdapter wakeup");
         emit wakeup();
 
         try {
@@ -45,6 +52,8 @@ void BedroomSignalAdapter::
             stop_flag_ = true;
         }
     }
+
+    DEBUGINFO TaskInfo("BedroomSignalAdapter finished");
 }
 
 } // namespace Processing

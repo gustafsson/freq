@@ -5,13 +5,14 @@
 #include "targets.h"
 #include "targetmarker.h"
 #include "dag.h"
-#include "workers.h"
 #include "iinvalidator.h"
 #include "inotifier.h"
 #include "bedroom.h"
 
 namespace Signal {
 namespace Processing {
+
+class Workers;
 
 /**
  * @brief The Chain class should make the signal processing namespace easy to
@@ -61,7 +62,7 @@ public:
     void removeOperationsAt(TargetMarker::Ptr at);
     Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
 
-    Workers::Ptr workers() const;
+    boost::shared_ptr<volatile Workers> workers() const;
     Targets::Ptr targets() const;
 
     // Add jumping around with targets later.
@@ -69,11 +70,11 @@ public:
 private:
     Dag::Ptr dag_;
     Targets::Ptr targets_;
-    Workers::Ptr workers_;
+    boost::shared_ptr<volatile Workers> workers_;
     Bedroom::Ptr bedroom_;
     INotifier::Ptr notifier_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
+    Chain(Dag::Ptr, Targets::Ptr targets, boost::shared_ptr<volatile Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
 
     Step::WeakPtr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
     Step::WeakPtr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);

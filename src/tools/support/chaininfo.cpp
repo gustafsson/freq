@@ -1,4 +1,5 @@
 #include "chaininfo.h"
+#include "signal/processing/workers.h"
 
 using namespace Signal::Processing;
 

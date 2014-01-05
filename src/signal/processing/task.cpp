@@ -164,6 +164,13 @@ void Task::
     step_.reset();
 }
 
+} // namespace Processing
+} // namespace Signal
+
+#include "test/randombuffer.h"
+
+namespace Signal {
+namespace Processing {
 
 void Task::
         test()
@@ -171,13 +178,7 @@ void Task::
     // It should store results of an operation in the cache
     {
         // setup a known signal processing operation (take data from a predefined buffer)
-        pBuffer b(new Buffer(Interval(60,70), 40, 7));
-        for (unsigned c=0; c<b->number_of_channels (); ++c)
-        {
-            float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
-            for (int i=0; i<b->number_of_samples (); ++i)
-                p[i] = c + i/(float)b->number_of_samples ();
-        }
+        pBuffer b = Test::RandomBuffer::randomBuffer (Interval(60,70), 40, 7);
         Signal::OperationDesc::Ptr od(new BufferSource(b));
 
         // setup a known signal processing step
