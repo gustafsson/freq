@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "filter.h"
+#include "chunkfilter.h"
 
 namespace Tfr {
 

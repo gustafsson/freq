@@ -14,7 +14,7 @@
 #include "ui_mainwindow.h"
 #include "adapters/writewav.h"
 #include "adapters/playback.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 // gpumisc
 #include "demangle.h"

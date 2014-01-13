@@ -6,7 +6,7 @@
 
 #include "signal/operationwrapper.h"
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 #include "support/renderoperation.h"
 

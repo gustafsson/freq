@@ -106,7 +106,7 @@ void ChunkToBlock::mergeRowMajorChunk(
 
 } // namespace Heightmap
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/stftdesc.h"
 
 namespace Heightmap {

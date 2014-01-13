@@ -1,7 +1,7 @@
 #include "fantrackerfilter.h"
 
 #include "tfr/cepstrum.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/chunk.h"
 #include "tools/support/fantrackerfilter.h"
 

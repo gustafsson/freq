@@ -1,7 +1,8 @@
-#ifndef TFRFILTER_H
-#define TFRFILTER_H
+#ifndef TFR_CHUNKFILTER_H
+#define TFR_CHUNKFILTER_H
 
-#include "signal/operation.h"
+#include "signal/buffer.h"
+#include "transformoperation.h"
 
 namespace Tfr {
 
@@ -100,45 +101,15 @@ public:
     virtual ~ChunkFilterDesc() {}
 
     virtual pChunkFilter            createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
-    virtual void                    transformDesc(pTransformDesc d) { transform_desc_ = d; }
+    virtual void                    transformDesc(pTransformDesc d);
     //virtual ChunkFilterDesc::Ptr    copy() const = 0;
 
-    pTransformDesc                  transformDesc() const { return transform_desc_; }
+    pTransformDesc                  transformDesc() const;
 
 protected:
     pTransformDesc transform_desc_;
 };
 
-
-/**
- * @brief The TransformOperationDesc class should wrap all generic functionality
- * in Signal::Operation and Tfr::Transform so that ChunkFilters can explicilty do
- * only the filtering.
- */
-class TransformOperationDesc: public Signal::OperationDesc
-{
-public:
-    TransformOperationDesc(pTransformDesc, ChunkFilterDesc::Ptr);
-    ~TransformOperationDesc() {}
-
-    // OperationDesc
-    OperationDesc::Ptr copy() const;
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
-    Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
-    Signal::Interval affectedInterval(const Signal::Interval&) const;
-    QString toString() const;
-    bool operator==(const Signal::OperationDesc&d) const;
-
-    pTransformDesc transformDesc() const;
-    virtual void transformDesc(pTransformDesc d);
-
-protected:
-    ChunkFilterDesc::Ptr chunk_filter_;
-
-public:
-    static void test();
-};
-
 } // namespace Tfr
 
-#endif // TFRFILTER_H
+#endif // TFR_CHUNKFILTER_H

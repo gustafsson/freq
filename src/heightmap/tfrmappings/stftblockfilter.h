@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAP_TFRMAPPINGS_STFTBLOCKFILTER_H
 #define HEIGHTMAP_TFRMAPPINGS_STFTBLOCKFILTER_H
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "heightmap/block.h"
 #include "heightmap/chunkblockfilter.h"
 

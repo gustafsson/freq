@@ -25,7 +25,7 @@
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
-#include "tfr/filter.h"
+#include "tfr/transformoperation.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
 #include "tools/support/audiofileopener.h"

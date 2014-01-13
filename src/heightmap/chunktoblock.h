@@ -2,7 +2,7 @@
 #define HEIGHTMAP_CHUNKTOBLOCK_H
 
 #include "block.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
 

@@ -1,5 +1,5 @@
 #include "renderoperation.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 using namespace Signal;
 

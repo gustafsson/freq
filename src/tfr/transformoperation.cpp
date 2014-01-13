@@ -1,5 +1,8 @@
-#include "filter.h"
+#include "transformoperation.h"
+
+
 #include "tfr/chunk.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/transform.h"
 
 using namespace Signal;
@@ -8,10 +11,10 @@ using namespace boost;
 
 namespace Tfr {
 
-class TransformOperation: public Operation
+class TransformOperationOperation: public Operation
 {
 public:
-    TransformOperation(pTransform t, pChunkFilter chunk_filter, bool no_inverse_tag);
+    TransformOperationOperation(pTransform t, pChunkFilter chunk_filter, bool no_inverse_tag);
 
     // Operation
     pBuffer process(pBuffer b);
@@ -23,8 +26,8 @@ private:
 };
 
 
-TransformOperation::
-        TransformOperation(Tfr::pTransform transform, pChunkFilter chunk_filter, bool no_inverse_tag)
+TransformOperationOperation::
+        TransformOperationOperation(Tfr::pTransform transform, pChunkFilter chunk_filter, bool no_inverse_tag)
     :
       transform_(transform),
       chunk_filter_(chunk_filter),
@@ -32,7 +35,7 @@ TransformOperation::
 {}
 
 
-Signal::pBuffer TransformOperation::
+Signal::pBuffer TransformOperationOperation::
         process(Signal::pBuffer b)
 {
     chunk_filter_->set_number_of_channels(b->number_of_channels ());
@@ -99,7 +102,7 @@ Signal::Operation::Ptr TransformOperationDesc::
     if (!f)
         return Signal::Operation::Ptr();
 
-    return Signal::Operation::Ptr (new TransformOperation( t, f, no_inverse_tag ));
+    return Signal::Operation::Ptr (new TransformOperationOperation( t, f, no_inverse_tag ));
 }
 
 

@@ -1,7 +1,7 @@
 #ifndef TFRSTFTFILTER_H
 #define TFRSTFTFILTER_H
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 namespace Tfr {
 

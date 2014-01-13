@@ -1,7 +1,7 @@
 #ifndef CEPSTRUMFILTER_H
 #define CEPSTRUMFILTER_H
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 namespace Tfr {
 
