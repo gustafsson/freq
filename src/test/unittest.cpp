@@ -26,8 +26,10 @@
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
 #include "tfr/transformoperation.h"
+#include "filters/selection.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
+#include "filters/timeselection.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/renderoperation.h"
@@ -130,8 +132,10 @@ int UnitTest::
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);
         RUNTEST(Tfr::TransformOperationDesc);
+        RUNTEST(Filters::Selection);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);
+        RUNTEST(Filters::TimeSelection);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
         RUNTEST(Tools::RecordModel);
