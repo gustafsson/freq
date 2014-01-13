@@ -26,7 +26,7 @@ public:
      * @param wrap
      * volatile so that it can call invalidator without keeping a lock to 'this'.
      */
-    void setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile;
+    void setWrappedOperationDesc(OperationDesc::Ptr wrap);
     OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;

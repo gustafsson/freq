@@ -27,17 +27,12 @@ OperationDescWrapper::
 
 
 void OperationDescWrapper::
-        setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile
+        setWrappedOperationDesc(OperationDesc::Ptr wrap)
 {
-    {
-        WritePtr selfp(this);
-        OperationDescWrapper* self = dynamic_cast<OperationDescWrapper*>(&*selfp);
+    if (wrap == wrap_)
+        return;
 
-        if (wrap == self->wrap_)
-            return;
-
-        self->wrap_ = wrap;
-    }
+    wrap_ = wrap;
 
     deprecateCache();
 }

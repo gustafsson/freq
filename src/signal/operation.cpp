@@ -62,6 +62,24 @@ std::ostream& operator << (std::ostream& os, const OperationDesc& d) {
 
 
 void OperationDesc::
+        deprecateCache(Signal::Intervals what)
+{
+    Signal::Processing::IInvalidator::Ptr invalidator = invalidator_;
+
+    bool was_locked = !readWriteLock ()->tryLockForWrite ();
+    readWriteLock ()->unlock ();
+
+    if (invalidator)
+        read1(invalidator)->deprecateCache(what);
+
+    if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
+        BOOST_THROW_EXCEPTION(LockFailed()
+                              << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
+                              << Backtrace::make(2));
+}
+
+
+void OperationDesc::
         deprecateCache(Signal::Intervals what) const volatile
 {
     Signal::Processing::IInvalidator::Ptr invalidator = ReadPtr(this)->invalidator_;

@@ -168,17 +168,14 @@ protected:
      * @brief deprecateCache should be called when parameters change.
      * @param what If what is Signal::Intervals::Intervals_ALL then Step will
      * recreate operations for computing engines as needed.
+     *
+     * deprecateCache without 'volatile' will release the lock while calling IInvalidator.
      */
+    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL);
     void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const volatile;
 
 
 private:
-    /**
-     * @brief deprecateCache without the volatile qualifier can't be called.
-     */
-    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const;
-
-
     /**
      * @brief invalidator_ is used by deprecateCache.
      *
