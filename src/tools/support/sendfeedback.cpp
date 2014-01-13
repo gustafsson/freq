@@ -54,8 +54,8 @@ QString SendFeedback::
     QByteArray feedbackdata = postdata;
 
     unsigned N = feedbackdata.size();
-    TaskInfo ti("SendFeedback sends %s in %u files",
-             DataStorageVoid::getMemorySizeText(N).c_str(),
+    TaskInfo ti(boost::format("SendFeedback sends %s in %u files") %
+             DataStorageVoid::getMemorySizeText(N) %
              count);
 
     manager.reset( new QNetworkAccessManager(this) );

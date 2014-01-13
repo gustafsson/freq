@@ -294,31 +294,32 @@ void DataStorageVoid::
         type = 'g';
 
     float value = (float)size;
-    std::string format;
+    std::string unit;
     if (size>>40 > 4) {
-        format = "TB";
+        unit = "TB";
         value = size/(float)(((unsigned long long )1)<<40);
 
     } else if (size>>30 > 5) {
-        format = "GB";
+        unit = "GB";
         value = size/(float)(1<<30);
 
     } else if (size>>20 > 5) {
-        format = "MB";
+        unit = "MB";
         value = size/(float)(1<<20);
 
     } else if (size>>10 > 5) {
-        format = "KB";
+        unit = "KB";
         value = size/(float)(1<<10);
 
     } else {
         return (boost::format("%u B") % size).str();
     }
 
+    std::string format;
     if (decimals < 0)
-        format = (boost::format("%%%c ") % type).str();
+        format = (boost::format("%%%c %s") % type % unit).str();
     else
-        format = (boost::format("%%.%u%c ") % decimals % type).str();
+        format = (boost::format("%%.%u%c %s") % decimals % type % unit).str();
 
     return (boost::format(format) % value).str();
 }
