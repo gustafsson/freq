@@ -134,7 +134,7 @@ Signal::Intervals SplineFilter::
 Signal::OperationDesc::Ptr SplineFilterDesc::
         copy() const
 {
-    FilterKernelDesc::ReadPtr fkd(chunk_filter_);
+    ChunkFilterDesc::ReadPtr fkd(chunk_filter_);
     Tfr::pChunkFilter cf = fkd->createChunkFilter(0);
     SplineFilter* sf = dynamic_cast<SplineFilter*>(&*cf);
 

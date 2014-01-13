@@ -48,7 +48,7 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
         return Tfr::TransformDesc::Ptr();
 
     OperationDesc::WritePtr o(wo);
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
+    Tfr::TransformOperationDesc* f = dynamic_cast<Tfr::TransformOperationDesc*>(&*o);
     if (f)
         return f->transformDesc ();
 
@@ -64,7 +64,7 @@ void RenderOperationDesc::
         return;
 
     OperationDesc::WritePtr o(wo);
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
+    Tfr::TransformOperationDesc* f = dynamic_cast<Tfr::TransformOperationDesc*>(&*o);
     if (f)
         return f->transformDesc (t);
 }

@@ -31,9 +31,9 @@ Tfr::pChunkFilter CepstrumKernelDesc::
 
 
 CepstrumFilterDesc::
-        CepstrumFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc)
+        CepstrumFilterDesc(Tfr::ChunkFilterDesc::Ptr filter_kernel_desc)
     :
-      FilterDesc(Tfr::pTransformDesc(), filter_kernel_desc)
+      TransformOperationDesc(Tfr::pTransformDesc(), filter_kernel_desc)
 {
     CepstrumDesc* desc;
     Tfr::pTransformDesc t(desc = new CepstrumDesc);
@@ -45,7 +45,7 @@ CepstrumFilterDesc::
 CepstrumFilterDesc::
         CepstrumFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
     :
-      FilterDesc(Tfr::pTransformDesc(), Tfr::FilterKernelDesc::Ptr(new CepstrumKernelDesc(reentrant_cpu_chunk_filter)))
+      TransformOperationDesc(Tfr::pTransformDesc(), Tfr::ChunkFilterDesc::Ptr(new CepstrumKernelDesc(reentrant_cpu_chunk_filter)))
 {
     CepstrumDesc* desc;
     Tfr::pTransformDesc t(desc = new CepstrumDesc);
@@ -61,7 +61,7 @@ void CepstrumFilterDesc::
 
     EXCEPTION_ASSERT(desc);
 
-    FilterDesc::transformDesc (m);
+    TransformOperationDesc::transformDesc (m);
 }
 
 

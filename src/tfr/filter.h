@@ -22,7 +22,7 @@ struct ChunkAndInverse
     pTransform t;
 
     /**
-      The Tfr::Chunk as computed by readChunk(), or source()->readChunk()
+      The Chunk as computed by readChunk(), or source()->readChunk()
       if transform() == source()->transform().
       */
     pChunk chunk;
@@ -51,11 +51,15 @@ struct ChunkAndInverse
 
 
 /**
- * @brief The ChunkFilter class
+ * @brief The ChunkFilter class should implement a filter of a signal in the
+ * frequency domain created by a Transform.
  */
 class ChunkFilter
 {
 public:
+    typedef boost::shared_ptr<ChunkFilter> Ptr;
+
+
     /**
      * @brief The ChunkFilterNoInverse class describes that the inverse shall never
      * be computed from the transformed data in 'ChunkFilter::operator ()'.
@@ -72,7 +76,7 @@ public:
     virtual ~ChunkFilter() {}
 
     /**
-      Apply the filter to a computed Tfr::Chunk. Return true if it makes sense
+      Apply the filter to a computed Chunk. Return true if it makes sense
       to compute the inverse afterwards.
       */
     virtual void operator()( ChunkAndInverse& chunk ) = 0;
@@ -83,50 +87,56 @@ public:
       */
     virtual void set_number_of_channels( unsigned ) {}
 };
-typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
+typedef ChunkFilter::Ptr pChunkFilter;
 
 
-class TransformKernel: public Signal::Operation
+/**
+ * @brief The ChunkFilterDesc class should be used by TransformOperationDesc to
+ * create instances of ChunkFilter.
+ */
+class ChunkFilterDesc: public VolatilePtr<ChunkFilterDesc>
 {
 public:
-    TransformKernel(Tfr::pTransform t, pChunkFilter chunk_filter);
+    virtual ~ChunkFilterDesc() {}
 
-    // Signal::Operation
-    Signal::pBuffer process(Signal::pBuffer b);
+    virtual pChunkFilter            createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
+    virtual void                    transformDesc(pTransformDesc d) { transform_desc_ = d; }
+    //virtual ChunkFilterDesc::Ptr    copy() const = 0;
 
-private:
-    Tfr::pTransform transform_;
-    pChunkFilter chunk_filter_;
-};
+    pTransformDesc                  transformDesc() const { return transform_desc_; }
 
-
-class FilterKernelDesc: public VolatilePtr<FilterKernelDesc>
-{
-public:
-    virtual ~FilterKernelDesc() {}
-
-    virtual pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
-};
-
-
-class FilterDesc: public Signal::OperationDesc
-{
-public:
-    FilterDesc(Tfr::pTransformDesc, FilterKernelDesc::Ptr);
-    virtual ~FilterDesc() {}
-
-    virtual OperationDesc::Ptr copy() const;
-    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
-    virtual Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
-    virtual Signal::Interval affectedInterval(const Signal::Interval&) const;
-    virtual QString toString() const;
-    virtual bool operator==(const Signal::OperationDesc&d) const;
-
-    Tfr::pTransformDesc transformDesc() const;
-    virtual void transformDesc(Tfr::pTransformDesc d) { transform_desc_ = d; }
 protected:
-    Tfr::pTransformDesc transform_desc_;
-    FilterKernelDesc::Ptr chunk_filter_;
+    pTransformDesc transform_desc_;
+};
+
+
+/**
+ * @brief The TransformOperationDesc class should wrap all generic functionality
+ * in Signal::Operation and Tfr::Transform so that ChunkFilters can explicilty do
+ * only the filtering.
+ */
+class TransformOperationDesc: public Signal::OperationDesc
+{
+public:
+    TransformOperationDesc(pTransformDesc, ChunkFilterDesc::Ptr);
+    ~TransformOperationDesc() {}
+
+    // OperationDesc
+    OperationDesc::Ptr copy() const;
+    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
+    Signal::Interval affectedInterval(const Signal::Interval&) const;
+    QString toString() const;
+    bool operator==(const Signal::OperationDesc&d) const;
+
+    pTransformDesc transformDesc() const;
+    virtual void transformDesc(pTransformDesc d);
+
+protected:
+    ChunkFilterDesc::Ptr chunk_filter_;
+
+public:
+    static void test();
 };
 
 } // namespace Tfr

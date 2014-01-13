@@ -39,8 +39,8 @@ void CwtChunkFilter::
 }
 
 
-CwtKernelDesc::
-        CwtKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
+CwtChunkFilterDesc::
+        CwtChunkFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
     :
       reentrant_cpu_chunk_filter_(reentrant_cpu_chunk_filter)
 {
@@ -48,7 +48,7 @@ CwtKernelDesc::
 }
 
 
-Tfr::pChunkFilter CwtKernelDesc::
+Tfr::pChunkFilter CwtChunkFilterDesc::
         createChunkFilter(Signal::ComputingEngine* engine) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
@@ -58,9 +58,9 @@ Tfr::pChunkFilter CwtKernelDesc::
 
 
 CwtFilterDesc::
-        CwtFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc)
+        CwtFilterDesc(Tfr::ChunkFilterDesc::Ptr filter_kernel_desc)
     :
-      FilterDesc(Tfr::pTransformDesc(), filter_kernel_desc)
+      TransformOperationDesc(Tfr::pTransformDesc(), filter_kernel_desc)
 {
     Cwt* desc;
     Tfr::pTransformDesc t(desc = new Cwt);
@@ -71,11 +71,11 @@ CwtFilterDesc::
 CwtFilterDesc::
         CwtFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
     :
-      FilterDesc(
+      TransformOperationDesc(
           Tfr::pTransformDesc(),
           reentrant_cpu_chunk_filter
-            ? Tfr::FilterKernelDesc::Ptr(new CwtKernelDesc(reentrant_cpu_chunk_filter))
-            : Tfr::FilterKernelDesc::Ptr())
+            ? Tfr::ChunkFilterDesc::Ptr(new CwtChunkFilterDesc(reentrant_cpu_chunk_filter))
+            : Tfr::ChunkFilterDesc::Ptr())
 {
     Cwt* desc;
     Tfr::pTransformDesc t(desc = new Cwt);
@@ -90,7 +90,7 @@ void CwtFilterDesc::
 
     EXCEPTION_ASSERT(desc);
 
-    FilterDesc::transformDesc (m);
+    TransformOperationDesc::transformDesc (m);
 }
 
 

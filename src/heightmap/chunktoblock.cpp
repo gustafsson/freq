@@ -116,7 +116,7 @@ class DummyKernel: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTa
     void set_number_of_channels (unsigned) {}
 };
 
-class DummyKernelDesc: public Tfr::FilterKernelDesc {
+class DummyKernelDesc: public Tfr::ChunkFilterDesc {
     virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
         return Tfr::pChunkFilter(new DummyKernel);
     }
@@ -138,18 +138,15 @@ void ChunkToBlock::
 
     Tfr::StftDesc* tfr;
     Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
-    Tfr::FilterKernelDesc::Ptr fdesc( new DummyKernelDesc );
-    Signal::OperationDesc::Ptr desc(new Tfr::FilterDesc(tdesc, fdesc));
+    Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
+    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(tdesc, fdesc));
     Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
-
-    Tfr::TransformKernel* transformkernel = dynamic_cast<Tfr::TransformKernel*>( &*operation );
-    EXCEPTION_ASSERT(transformkernel);
 
     Signal::Interval expectedOutput;
     Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
     Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
-    transformkernel->process( buffer );
+    operation->process( buffer );
 
     Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
     Tfr::pChunk chunk = (*tdesc->createTransform ())( monobuffer );

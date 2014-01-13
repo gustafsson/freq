@@ -75,7 +75,7 @@ void Rectangle::
         updateChunkFilter()
 {
     Tfr::pChunkFilter cf(new RectangleKernel(_t1, _f1, _t2, _f2, _save_inside));
-    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::CwtKernelDesc(cf));
+    chunk_filter_ = Tfr::ChunkFilterDesc::Ptr(new Tfr::CwtChunkFilterDesc(cf));
 }
 
 

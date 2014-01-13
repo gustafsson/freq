@@ -104,7 +104,7 @@ Signal::Intervals Ellipse::
         outside_samples(float FS)
 {
     float r = fabsf(_centre_t - _centre_plus_radius_t);
-    r += ((Tfr::Cwt*)transform_desc_.get())->wavelet_time_support_samples()/FS;
+    r += ((Tfr::Cwt*)TransformOperationDesc::transformDesc().get())->wavelet_time_support_samples()/FS;
 
     long double
         start_time_d = std::max(0.f, _centre_t - r)*FS,
@@ -126,7 +126,7 @@ void Ellipse::
         updateChunkFilter()
 {
     Tfr::pChunkFilter cf(new EllipseKernel(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
-    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::CwtKernelDesc(cf));
+    chunk_filter_ = Tfr::ChunkFilterDesc::Ptr(new Tfr::CwtChunkFilterDesc(cf));
 }
 
 

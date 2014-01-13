@@ -15,10 +15,10 @@ class CwtChunkFilter: public Tfr::ChunkFilter
 };
 
 
-class CwtKernelDesc: public Tfr::FilterKernelDesc
+class CwtChunkFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    CwtKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
+    CwtChunkFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
 
     Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
 
@@ -27,10 +27,10 @@ private:
 };
 
 
-class CwtFilterDesc : public Tfr::FilterDesc
+class CwtFilterDesc : public Tfr::TransformOperationDesc
 {
 public:
-    CwtFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc);
+    CwtFilterDesc(Tfr::ChunkFilterDesc::Ptr filter_kernel_desc);
     CwtFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
 
     // Must reimplement copy

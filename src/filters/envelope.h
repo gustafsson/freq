@@ -21,7 +21,7 @@ public:
 };
 
 
-class EnvelopeKernelDesc: public Tfr::FilterKernelDesc
+class EnvelopeKernelDesc: public Tfr::ChunkFilterDesc
 {
 public:
     Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
@@ -33,7 +33,7 @@ public:
  *
  * It should only accept StftDesc as TransformDesc.
  */
-class EnvelopeDesc: public Tfr::FilterDesc
+class EnvelopeDesc: public Tfr::TransformOperationDesc
 {
 public:
     EnvelopeDesc();

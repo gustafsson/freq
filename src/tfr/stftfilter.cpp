@@ -31,9 +31,9 @@ Tfr::pChunkFilter StftKernelDesc::
 
 
 StftFilterDesc::
-        StftFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc)
+        StftFilterDesc(Tfr::ChunkFilterDesc::Ptr filter_kernel_desc)
     :
-      FilterDesc(Tfr::pTransformDesc(), filter_kernel_desc)
+      TransformOperationDesc(Tfr::pTransformDesc(), filter_kernel_desc)
 {
     StftDesc* desc;
     Tfr::pTransformDesc t(desc = new StftDesc);
@@ -45,7 +45,7 @@ StftFilterDesc::
 StftFilterDesc::
         StftFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter)
     :
-      FilterDesc(Tfr::pTransformDesc(), Tfr::FilterKernelDesc::Ptr(new StftKernelDesc(reentrant_cpu_chunk_filter)))
+      TransformOperationDesc(Tfr::pTransformDesc(), Tfr::ChunkFilterDesc::Ptr(new StftKernelDesc(reentrant_cpu_chunk_filter)))
 {
     StftDesc* desc;
     Tfr::pTransformDesc t(desc = new StftDesc);
@@ -61,7 +61,7 @@ void StftFilterDesc::
 
     EXCEPTION_ASSERT(desc);
 
-    FilterDesc::transformDesc (m);
+    TransformOperationDesc::transformDesc (m);
 }
 
 

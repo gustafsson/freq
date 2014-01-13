@@ -52,7 +52,7 @@ Tfr::pChunkFilter EnvelopeKernelDesc::
 EnvelopeDesc::
         EnvelopeDesc()
     :
-      FilterDesc(Tfr::pTransformDesc(), Tfr::FilterKernelDesc::Ptr(new EnvelopeKernelDesc))
+      TransformOperationDesc(Tfr::pTransformDesc(), Tfr::ChunkFilterDesc::Ptr(new EnvelopeKernelDesc))
 {
     StftDesc* desc;
     Tfr::pTransformDesc t(desc = new StftDesc);
@@ -78,7 +78,7 @@ void EnvelopeDesc::
         p2->compute_redundant ( true );
     }
 
-    FilterDesc::transformDesc (m);
+    TransformOperationDesc::transformDesc (m);
 }
 
 }

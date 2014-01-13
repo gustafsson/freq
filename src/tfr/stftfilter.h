@@ -5,7 +5,7 @@
 
 namespace Tfr {
 
-class StftKernelDesc: public Tfr::FilterKernelDesc
+class StftKernelDesc: public Tfr::ChunkFilterDesc
 {
 public:
     StftKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
@@ -17,10 +17,10 @@ private:
 };
 
 
-class StftFilterDesc : public Tfr::FilterDesc
+class StftFilterDesc : public Tfr::TransformOperationDesc
 {
 public:
-    StftFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc);
+    StftFilterDesc(Tfr::ChunkFilterDesc::Ptr filter_kernel_desc);
     StftFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
 
     // Must reimplement copy

@@ -60,7 +60,7 @@ public:
  * and correspondigly ChunkToBlock should only update those texels that have
  * full support.
  */
-class ChunkBlockFilterDesc: public Tfr::FilterKernelDesc
+class ChunkBlockFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
     ChunkBlockFilterDesc( Heightmap::TfrMapping::Ptr tfrmap );

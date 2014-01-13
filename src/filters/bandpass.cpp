@@ -110,7 +110,7 @@ void Bandpass::
         updateChunkFilter()
 {
     Tfr::pChunkFilter cf(new BandpassKernel(_f1, _f2, _save_inside));
-    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::StftKernelDesc(cf));
+    chunk_filter_ = Tfr::ChunkFilterDesc::Ptr(new Tfr::StftKernelDesc(cf));
 }
 
 

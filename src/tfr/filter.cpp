@@ -8,15 +8,31 @@ using namespace boost;
 
 namespace Tfr {
 
-TransformKernel::
-        TransformKernel(Tfr::pTransform transform, pChunkFilter chunk_filter)
+class TransformOperation: public Operation
+{
+public:
+    TransformOperation(pTransform t, pChunkFilter chunk_filter, bool no_inverse_tag);
+
+    // Operation
+    pBuffer process(pBuffer b);
+
+private:
+    pTransform transform_;
+    pChunkFilter chunk_filter_;
+    bool no_inverse_tag_;
+};
+
+
+TransformOperation::
+        TransformOperation(Tfr::pTransform transform, pChunkFilter chunk_filter, bool no_inverse_tag)
     :
       transform_(transform),
-      chunk_filter_(chunk_filter)
+      chunk_filter_(chunk_filter),
+      no_inverse_tag_(no_inverse_tag)
 {}
 
 
-Signal::pBuffer TransformKernel::
+Signal::pBuffer TransformOperation::
         process(Signal::pBuffer b)
 {
     chunk_filter_->set_number_of_channels(b->number_of_channels ());
@@ -32,8 +48,7 @@ Signal::pBuffer TransformKernel::
 
         (*chunk_filter_)( ci );
 
-        bool compute_inverse = 0==dynamic_cast<ChunkFilter::NoInverseTag*>(chunk_filter_.get ());
-        if (compute_inverse)
+        if (!no_inverse_tag_)
           {
             if (!ci.inverse)
                 ci.inverse = ci.t->inverse (ci.chunk);
@@ -46,7 +61,7 @@ Signal::pBuffer TransformKernel::
         else
           {
             // If chunk_filter_ has the NoInverseTag it shouldn't compute the inverse
-            EXCEPTION_ASSERTX( 0==ci.inverse.get (), vartype(*chunk_filter_) );
+            EXCEPTION_ASSERTX( !ci.inverse, vartype(*chunk_filter_) );
 
             r.reset ( new Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
           }
@@ -57,63 +72,64 @@ Signal::pBuffer TransformKernel::
 }
 
 
-FilterDesc::
-        FilterDesc(Tfr::pTransformDesc d, FilterKernelDesc::Ptr f)
+TransformOperationDesc::
+        TransformOperationDesc(Tfr::pTransformDesc d, ChunkFilterDesc::Ptr f)
     :
-      transform_desc_(d),
       chunk_filter_(f)
 {
-
+    write1(chunk_filter_)->transformDesc(d);
 }
 
 
-OperationDesc::Ptr FilterDesc::
+OperationDesc::Ptr TransformOperationDesc::
         copy() const
 {
-    return OperationDesc::Ptr (new FilterDesc (this->transform_desc_, chunk_filter_));
+    //ChunkFilterDesc::Ptr chunk_filter = read1(chunk_filter_)->copy();
+    return OperationDesc::Ptr (new TransformOperationDesc (transformDesc()->copy (), chunk_filter_));
 }
 
 
-Signal::Operation::Ptr FilterDesc::
+Signal::Operation::Ptr TransformOperationDesc::
         createOperation(Signal::ComputingEngine*engine) const
 {
-    Tfr::pTransform t = transform_desc_->createTransform ();
+    Tfr::pTransform t = transformDesc()->createTransform ();
     pChunkFilter f = read1(chunk_filter_)->createChunkFilter (engine);
+    bool no_inverse_tag = 0!=dynamic_cast<volatile ChunkFilter::NoInverseTag*>(f.get ());
 
     if (!f)
         return Signal::Operation::Ptr();
 
-    return Signal::Operation::Ptr (new TransformKernel( t, f ));
+    return Signal::Operation::Ptr (new TransformOperation( t, f, no_inverse_tag ));
 }
 
 
-Signal::Interval FilterDesc::
+Signal::Interval TransformOperationDesc::
         requiredInterval(const Signal::Interval& I, Signal::Interval* expectedOutput) const
 {
-    return transform_desc_->requiredInterval (I, expectedOutput);
+    return transformDesc()->requiredInterval (I, expectedOutput);
 }
 
 
-Signal::Interval FilterDesc::
+Signal::Interval TransformOperationDesc::
         affectedInterval(const Signal::Interval& I) const
 {
-    return transform_desc_->affectedInterval (I);
+    return transformDesc()->affectedInterval (I);
 }
 
 
-QString FilterDesc::
+QString TransformOperationDesc::
         toString() const
 {
-    return (vartype(*chunk_filter_) + " on " + transform_desc_->toString ()).c_str();
+    return (vartype(*chunk_filter_) + " on " + transformDesc()->toString ()).c_str();
 }
 
 
-bool FilterDesc::
+bool TransformOperationDesc::
         operator==(const Signal::OperationDesc&d) const
 {
-    if (const FilterDesc* f = dynamic_cast<const FilterDesc*>(&d))
+    if (const TransformOperationDesc* f = dynamic_cast<const TransformOperationDesc*>(&d))
     {
-        const TransformDesc& a = *transform_desc_;
+        const TransformDesc& a = *transformDesc ();
         const TransformDesc& b = *f->transformDesc ();
         return a == b;
        // return *f->transformDesc () == *transform_desc_;
@@ -122,10 +138,76 @@ bool FilterDesc::
 }
 
 
-Tfr::pTransformDesc FilterDesc::
+Tfr::pTransformDesc TransformOperationDesc::
         transformDesc() const
 {
-    return transform_desc_;
+    return read1(chunk_filter_)->transformDesc();
+}
+
+
+void TransformOperationDesc::
+        transformDesc(pTransformDesc d)
+{
+    write1(chunk_filter_)->transformDesc(d);
+}
+
+} // namespace Tfr
+
+#include "dummytransform.h"
+#include "test/randombuffer.h"
+
+namespace Tfr {
+
+class DummyChunkFilter: public ChunkFilter, public ChunkFilter::NoInverseTag
+{
+public:
+    DummyChunkFilter(int* i):i(i) {}
+
+    void operator()( ChunkAndInverse& c ) {
+        (*i)++;
+    }
+
+private:
+    int* i;
+};
+
+class DummyChunkFilterDesc: public ChunkFilterDesc
+{
+public:
+    DummyChunkFilterDesc(int* i):i(i) {}
+
+    ChunkFilter::Ptr createChunkFilter(Signal::ComputingEngine* engine) const {
+        if (0 == engine)
+            return ChunkFilter::Ptr(new DummyChunkFilter(i));
+        return ChunkFilter::Ptr();
+    }
+
+private:
+    int* i;
+};
+
+void TransformOperationDesc::
+        test()
+{
+    // It should wrap all generic functionality in Signal::Operation and Tfr::Transform
+    // so that ChunkFilters can explicilty do only the filtering.
+    {
+        int i = 0;
+        pTransformDesc t(new Tfr::DummyTransformDesc);
+        ChunkFilterDesc::Ptr cfd(new DummyChunkFilterDesc(&i));
+        TransformOperationDesc tod(t, cfd);
+
+        EXCEPTION_ASSERT_EQUALS(
+                    tod.affectedInterval (Signal::Interval(5,7)),
+                    t->affectedInterval (Signal::Interval(5,7)));
+        EXCEPTION_ASSERT_EQUALS(
+                    tod.requiredInterval (Signal::Interval(5,7), 0),
+                    t->requiredInterval (Signal::Interval(5,7),0));
+
+        Signal::Operation::Ptr o = tod.createOperation (0);
+        Signal::pBuffer b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        EXCEPTION_ASSERT_EQUALS(i, (int)b->number_of_channels ());
+    }
 }
 
 } // namespace Tfr

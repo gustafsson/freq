@@ -6,7 +6,7 @@
 
 namespace Adapters {
 
-class MatlabFilterKernelDesc: public Tfr::FilterKernelDesc
+class MatlabFilterKernelDesc: public Tfr::ChunkFilterDesc
 {
 public:
     MatlabFilterKernelDesc(std::string matlabFunction);

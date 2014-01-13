@@ -25,6 +25,7 @@
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
+#include "tfr/filter.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
 #include "tools/support/audiofileopener.h"
@@ -128,6 +129,7 @@ int UnitTest::
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);
+        RUNTEST(Tfr::TransformOperationDesc);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);
         RUNTEST(Tools::OpenfileController);
