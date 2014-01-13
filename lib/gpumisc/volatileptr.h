@@ -8,6 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/exception/all.hpp>
 
 
 class LockFailed: public virtual boost::exception, public virtual std::exception {

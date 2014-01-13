@@ -2,6 +2,8 @@
 
 #include "reversegraph.h"
 
+#include "TaskTimer.h"
+
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 

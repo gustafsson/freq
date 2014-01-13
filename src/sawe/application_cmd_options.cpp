@@ -8,6 +8,7 @@
 
 // tfr
 #include "tfr/cwt.h"
+#include "tfr/transformoperation.h"
 
 // adapters
 #include "adapters/csv.h"

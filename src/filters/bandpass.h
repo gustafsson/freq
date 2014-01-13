@@ -3,6 +3,9 @@
 
 #include "tfr/stftfilter.h"
 
+// boost
+#include <boost/serialization/nvp.hpp>
+
 namespace Filters {
 
 class BandpassKernel: public Tfr::ChunkFilter

@@ -1,7 +1,8 @@
 #include "csv.h"
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
-#include "signal/computingengine.h"
+
+#include "TaskTimer.h"
 
 #include <sstream>
 #include <fstream>

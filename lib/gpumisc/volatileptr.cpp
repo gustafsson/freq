@@ -2,7 +2,6 @@
 #include "exceptionassert.h"
 #include "expectexception.h"
 
-//#include "TaskTimer.h"
 #include "timer.h"
 
 #include <QSemaphore>
@@ -275,7 +274,6 @@ void A::
 int B::
     work_a_lot(int /*i*/) const
 {
-    //TaskTimer tt("work_a_lot(%d)", i);
     QSemaphore().tryAcquire (1, 5); // sleep 5 ms
     return 0;
 }

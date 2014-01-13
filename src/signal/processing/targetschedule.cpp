@@ -3,6 +3,7 @@
 #include <boost/foreach.hpp>
 
 #include "targetschedule.h"
+#include "TaskTimer.h"
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)

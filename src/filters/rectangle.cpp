@@ -2,10 +2,10 @@
 #include "rectanglekernel.h"
 #include "tfr/chunk.h"
 #include "tfr/cwtchunk.h"
-#include "signal/computingengine.h"
 
 // gpumisc
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // std
 #include <iomanip>

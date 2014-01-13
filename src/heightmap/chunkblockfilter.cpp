@@ -6,6 +6,7 @@
 #include "tfr/chunk.h"
 
 #include "cpumemorystorage.h"
+#include "demangle.h"
 
 #include <boost/foreach.hpp>
 

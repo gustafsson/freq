@@ -1,5 +1,6 @@
 #include "renderoperation.h"
 #include "tfr/chunkfilter.h"
+#include "tfr/transformoperation.h"
 
 using namespace Signal;
 

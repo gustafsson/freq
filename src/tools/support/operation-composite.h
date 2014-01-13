@@ -6,6 +6,8 @@
 #include "signal/operation.h"
 #include "tfr/cwtfilter.h"
 
+#include <boost/serialization/nvp.hpp>
+
 namespace Tools {
     namespace Support {
 

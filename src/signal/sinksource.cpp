@@ -1,5 +1,7 @@
 #include "sinksource.h"
 
+#include "TaskTimer.h"
+
 #ifndef SAWE_NO_SINKSOURCE_MUTEX
 #include <QMutexLocker>
 #endif

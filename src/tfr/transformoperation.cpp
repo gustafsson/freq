@@ -1,5 +1,6 @@
 #include "transformoperation.h"
 
+#include "demangle.h"
 
 #include "tfr/chunk.h"
 #include "tfr/chunkfilter.h"

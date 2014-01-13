@@ -2,6 +2,8 @@
 #include "signal/sinksource.h"
 #include "tfr/cwt.h"
 
+#include "TaskTimer.h"
+
 #include <fstream>
 #include <sstream>
 

@@ -5,6 +5,7 @@
 
 // gpumisc
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // boost
 #include <boost/foreach.hpp>

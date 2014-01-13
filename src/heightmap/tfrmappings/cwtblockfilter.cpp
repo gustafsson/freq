@@ -5,6 +5,8 @@
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"
 
+#include "demangle.h"
+
 #include <boost/foreach.hpp>
 
 namespace Heightmap {

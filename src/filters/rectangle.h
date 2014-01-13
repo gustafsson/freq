@@ -3,6 +3,9 @@
 
 #include "tfr/cwtfilter.h"
 
+// boost
+#include <boost/serialization/nvp.hpp>
+
 namespace Filters {
 
 class RectangleKernel: public Tfr::CwtChunkFilter

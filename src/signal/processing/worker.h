@@ -8,6 +8,7 @@
 #include <QThread>
 #include <QPointer>
 
+#include <boost/exception/all.hpp>
 #include <boost/exception_ptr.hpp>
 
 namespace Signal {

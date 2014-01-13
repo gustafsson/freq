@@ -6,6 +6,7 @@
 
 #include "filters/absolutevalue.h"
 #include "filters/envelope.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools {
 

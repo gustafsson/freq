@@ -1,6 +1,8 @@
 #include "step.h"
 #include "test/operationmockups.h"
 
+#include "TaskTimer.h"
+
 #include <boost/foreach.hpp>
 
 //#define DEBUGINFO

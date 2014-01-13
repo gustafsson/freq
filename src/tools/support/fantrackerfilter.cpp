@@ -5,6 +5,8 @@
 #include "tfr/chunk.h"
 #include "tools/support/fantrackerfilter.h"
 
+#include "TaskTimer.h"
+
 #include <boost/foreach.hpp>
 
 using namespace Signal;

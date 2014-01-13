@@ -2,6 +2,7 @@
 #include "support/splinefilter.h"
 #include "tools/support/operation-composite.h"
 #include "tools/rendermodel.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools { namespace Selections
 {

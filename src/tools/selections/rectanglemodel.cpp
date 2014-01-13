@@ -5,6 +5,7 @@
 #include "sawe/project.h"
 #include "tools/rendermodel.h"
 #include "signal/operation-basic.h"
+#include "tfr/transformoperation.h"
 
 #ifdef max
 #undef max

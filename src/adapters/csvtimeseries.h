@@ -5,6 +5,7 @@
 #include "sawe/reader.h"
 #include "neat_math.h" // uint64_t
 
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>

@@ -6,6 +6,7 @@
 #include "heightmap/referenceinfo.h"
 
 #include "cpumemorystorage.h"
+#include "TaskTimer.h"
 
 namespace Tools {
 namespace Support {

@@ -1,5 +1,8 @@
 #include "task.h"
 
+#include "TaskTimer.h"
+#include "demangle.h"
+
 #include <boost/foreach.hpp>
 #include <QThread>
 

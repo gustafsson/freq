@@ -4,6 +4,7 @@
 #include "tfr/stftfilter.h"
 #include "tfr/stft.h"
 #include "tfr/complexbuffer.h"
+#include "tfr/transformoperation.h"
 #include "signal/computingengine.h"
 
 #include "exceptionassert.h"

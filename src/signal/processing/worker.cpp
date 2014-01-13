@@ -1,8 +1,7 @@
 #include "worker.h"
 #include "task.h"
-#include "detectgdb.h"
-#include "expectexception.h"
-#include "prettifysegfault.h"
+#include "TaskTimer.h"
+#include "demangle.h"
 
 //#define UNITTEST_STEPS
 #define UNITTEST_STEPS if(0)
@@ -204,6 +203,9 @@ void Worker::
 } // namespace Signal
 
 #include <QApplication>
+#include "detectgdb.h"
+#include "prettifysegfault.h"
+#include "expectexception.h"
 
 namespace Signal {
 namespace Processing {

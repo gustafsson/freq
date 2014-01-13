@@ -8,6 +8,9 @@
 #include "filters/bandpass.h"
 //#include "tools/selections/support/splinefilter.h"
 
+#include "TaskTimer.h"
+#include "demangle.h"
+
 namespace Tools
 {
 

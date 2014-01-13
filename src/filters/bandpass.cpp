@@ -3,7 +3,8 @@
 
 #include "tfr/chunk.h"
 #include "tfr/stft.h"
-#include "signal/computingengine.h"
+
+#include "TaskTimer.h"
 
 #define TIME_BANDPASS
 //#define TIME_BANDPASS if(0)

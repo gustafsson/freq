@@ -1,5 +1,7 @@
 #include "operationwrapper.h"
 
+#include "demangle.h"
+
 #include <boost/foreach.hpp>
 #include <boost/weak_ptr.hpp>
 

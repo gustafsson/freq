@@ -4,6 +4,8 @@
 #include "signal/computingengine.h"
 #include "tfr/drawnwaveformkernel.h"
 
+#include "demangle.h"
+
 namespace Heightmap {
 namespace TfrMappings {
 

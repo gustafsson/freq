@@ -2,21 +2,12 @@
 #define SIGNALOPERATION_H
 
 //signal
-#include "source.h"
+#include "buffer.h"
 #include "intervals.h"
 #include "processing/iinvalidator.h"
 
-// boost
-#include <boost/serialization/nvp.hpp>
-
 // gpumisc
-// For debug info while serializing
-#include "demangle.h"
-#include "TaskTimer.h"
 #include "volatileptr.h"
-
-// std
-#include <set>
 
 // QString
 #include <QString>

@@ -2,7 +2,8 @@
 #define TFR_CHUNKFILTER_H
 
 #include "signal/buffer.h"
-#include "transformoperation.h"
+#include "volatileptr.h"
+#include "signal/computingengine.h"
 
 namespace Tfr {
 
