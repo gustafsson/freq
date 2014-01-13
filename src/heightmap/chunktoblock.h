@@ -28,6 +28,7 @@ public:
             const Tfr::Chunk&,
             BlockData& outData );
 
+public:
     static void test();
 };
 

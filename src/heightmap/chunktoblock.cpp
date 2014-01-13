@@ -143,13 +143,16 @@ void ChunkToBlock::
     Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
 
     Tfr::TransformKernel* transformkernel = dynamic_cast<Tfr::TransformKernel*>( &*operation );
+    EXCEPTION_ASSERT(transformkernel);
 
     Signal::Interval expectedOutput;
     Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
-    Tfr::pTransform t = transformkernel->transform();
-    Signal::pMonoBuffer buffer( new Signal::MonoBuffer (requiredInterval, 1));
-    Tfr::pChunk chunk = (*t)( buffer );
+    Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
+    transformkernel->process( buffer );
+
+    Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
+    Tfr::pChunk chunk = (*tdesc->createTransform ())( monobuffer );
 
     Heightmap::Reference ref;
 

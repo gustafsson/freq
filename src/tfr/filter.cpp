@@ -57,19 +57,6 @@ Signal::pBuffer TransformKernel::
 }
 
 
-Tfr::pTransform TransformKernel::
-        transform()
-{
-    return transform_;
-}
-
-
-pChunkFilter TransformKernel::
-        chunk_filter()
-{
-    return chunk_filter_;
-}
-
 FilterDesc::
         FilterDesc(Tfr::pTransformDesc d, FilterKernelDesc::Ptr f)
     :

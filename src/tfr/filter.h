@@ -89,14 +89,10 @@ typedef boost::shared_ptr<ChunkFilter> pChunkFilter;
 class TransformKernel: public Signal::Operation
 {
 public:
-    virtual ~TransformKernel() {}
-
     TransformKernel(Tfr::pTransform t, pChunkFilter chunk_filter);
 
-    virtual Signal::pBuffer process(Signal::pBuffer b);
-
-    Tfr::pTransform transform();
-    pChunkFilter chunk_filter();
+    // Signal::Operation
+    Signal::pBuffer process(Signal::pBuffer b);
 
 private:
     Tfr::pTransform transform_;
