@@ -21,16 +21,17 @@ private:
 /**
  * @brief The Ellipse class should filter out an ellipse selection from the signal.
  */
-class Ellipse: public Tfr::CwtFilterDesc
+class Ellipse: public Tfr::CwtChunkFilterDesc
 {
 public:
     Ellipse(float t1, float f1, float t2, float f2, bool save_inside=false);
 
-    OperationDesc::Ptr copy() const;
+    // ChunkFilterDesc
+    Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
+    ChunkFilterDesc::Ptr    copy() const;
 
     float _centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f;
     bool _save_inside;
-    void updateChunkFilter();
 
     std::string name();
     Signal::Intervals zeroed_samples(float FS);
@@ -39,7 +40,7 @@ public:
 private:
     Signal::Intervals outside_samples(float FS);
 
-    Ellipse():Tfr::CwtFilterDesc(Tfr::pChunkFilter()) {} // for deserialization
+    Ellipse() {} // for deserialization
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {

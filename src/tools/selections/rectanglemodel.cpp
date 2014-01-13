@@ -70,11 +70,15 @@ Signal::OperationDesc::Ptr RectangleModel::
     }
     else if (a.scale>0 || b.scale<1)
     {
+        Tfr::ChunkFilterDesc::Ptr cfd;
         if (type == RectangleType_FrequencySelection)
-            filter.reset( new Filters::Bandpass(f1, f2, true ));
+            cfd.reset( new Filters::Bandpass(f1, f2, true ));
         else
-            filter.reset( new Filters::Rectangle(
+            cfd.reset( new Filters::Rectangle(
                 a.time, f1, b.time, f2, true ));
+
+        Tfr::TransformDesc::Ptr t = read1(cfd)->transformDesc();
+        filter.reset ( new Tfr::TransformOperationDesc(t, cfd));
     }
     else
     {

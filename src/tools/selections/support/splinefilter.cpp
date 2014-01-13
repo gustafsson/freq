@@ -131,14 +131,27 @@ Signal::Intervals SplineFilter::
 }
 
 
-Signal::OperationDesc::Ptr SplineFilterDesc::
+SplineFilterDesc::
+        SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v)
+    :
+      save_inside(save_inside),
+      v(v)
+{
+
+}
+
+
+Tfr::pChunkFilter SplineFilterDesc::
+        createChunkFilter(Signal::ComputingEngine*) const
+{
+    return Tfr::pChunkFilter(new SplineFilter(save_inside, v));
+}
+
+
+Tfr::ChunkFilterDesc::Ptr SplineFilterDesc::
         copy() const
 {
-    ChunkFilterDesc::ReadPtr fkd(chunk_filter_);
-    Tfr::pChunkFilter cf = fkd->createChunkFilter(0);
-    SplineFilter* sf = dynamic_cast<SplineFilter*>(&*cf);
-
-    return Signal::OperationDesc::Ptr(new SplineFilterDesc(sf->_save_inside, sf->v));
+    return Tfr::ChunkFilterDesc::Ptr(new SplineFilterDesc(save_inside, v));
 }
 
 }}} // namespace Tools::Selections::Support

@@ -40,19 +40,8 @@ void Envelope::
 }
 
 
-Tfr::pChunkFilter EnvelopeKernelDesc::
-        createChunkFilter(Signal::ComputingEngine* engine) const
-{
-    if (engine == 0 || dynamic_cast<Signal::ComputingCpu*>(engine))
-        return Tfr::pChunkFilter(new Envelope);
-    return Tfr::pChunkFilter();
-}
-
-
 EnvelopeDesc::
         EnvelopeDesc()
-    :
-      TransformOperationDesc(Tfr::pTransformDesc(), Tfr::ChunkFilterDesc::Ptr(new EnvelopeKernelDesc))
 {
     StftDesc* desc;
     Tfr::pTransformDesc t(desc = new StftDesc);
@@ -61,6 +50,14 @@ EnvelopeDesc::
     transformDesc( t );
 }
 
+
+Tfr::pChunkFilter EnvelopeDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine == 0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new Envelope);
+    return Tfr::pChunkFilter();
+}
 
 
 void EnvelopeDesc::
@@ -78,7 +75,7 @@ void EnvelopeDesc::
         p2->compute_redundant ( true );
     }
 
-    TransformOperationDesc::transformDesc (m);
+    ChunkFilterDesc::transformDesc(m);
 }
 
 }
@@ -95,8 +92,9 @@ void EnvelopeDesc::
 {
     // It should compute the envelope of a signal.
     {
-        EnvelopeDesc ed;
-
+        ChunkFilterDesc::Ptr cfd(new EnvelopeDesc);
+        TransformDesc::Ptr t = read1(cfd)->transformDesc ();
+        Tfr::TransformOperationDesc ed(t, cfd);
         Signal::Operation::Ptr o = ed.createOperation ();
 
 //        _window_size = 256

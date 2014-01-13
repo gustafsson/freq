@@ -1,5 +1,7 @@
 #include "chunkfilter.h"
 
+#include "demangle.h"
+
 namespace Tfr {
 
 void ChunkFilterDesc::
@@ -7,12 +9,21 @@ void ChunkFilterDesc::
 {
     transform_desc_ = d;
 }
-//virtual ChunkFilterDesc::Ptr    copy() const = 0;
+
 
 pTransformDesc ChunkFilterDesc::
         transformDesc() const
 {
     return transform_desc_;
+}
+
+
+ChunkFilterDesc::Ptr ChunkFilterDesc::
+        copy() const
+{
+    EXCEPTION_ASSERTX(false, vartype(*this) + "::copy not implemented");
+
+    return ChunkFilterDesc::Ptr();
 }
 
 

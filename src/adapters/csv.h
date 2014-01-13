@@ -25,15 +25,16 @@ private:
 };
 
 
-class CsvDesc: public Tfr::CwtFilterDesc {
+class CsvDesc: public Tfr::CwtChunkFilterDesc {
 public:
     CsvDesc(std::string filename)
         :
-          Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Csv(filename))),
           filename_(filename)
     {}
 
-    OperationDesc::Ptr copy() const;
+    // ChunkFilterDesc
+    Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
+    ChunkFilterDesc::Ptr    copy() const;
 
 private:
     std::string filename_;

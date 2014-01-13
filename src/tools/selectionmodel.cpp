@@ -66,7 +66,6 @@ Signal::OperationDesc::Ptr SelectionModel::
 {
     if (si != SaveInside_UNCHANGED)
         src->_save_inside = si == SaveInside_TRUE;
-    src->updateChunkFilter ();
     return o;
 }
 
@@ -77,7 +76,6 @@ Signal::OperationDesc::Ptr SelectionModel::
 {
     if (si != SaveInside_UNCHANGED)
         src->_save_inside = si == SaveInside_TRUE;
-    src->updateChunkFilter ();
     return o;
 }
 
@@ -88,7 +86,6 @@ Signal::OperationDesc::Ptr SelectionModel::
 {
     if (si != SaveInside_UNCHANGED)
         src->_save_inside = si == SaveInside_TRUE;
-    src->updateChunkFilter ();
     return o;
 }
 

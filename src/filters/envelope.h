@@ -21,23 +21,17 @@ public:
 };
 
 
-class EnvelopeKernelDesc: public Tfr::ChunkFilterDesc
-{
-public:
-    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
-};
-
-
 /**
  * @brief The EnvelopeDesc class should compute the envelope of a signal.
  *
  * It should only accept StftDesc as TransformDesc.
  */
-class EnvelopeDesc: public Tfr::TransformOperationDesc
+class EnvelopeDesc: public Tfr::ChunkFilterDesc
 {
 public:
     EnvelopeDesc();
 
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
     void transformDesc( Tfr::pTransformDesc m );
 
 public:

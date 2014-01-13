@@ -117,7 +117,7 @@ class DummyKernel: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTa
 };
 
 class DummyKernelDesc: public Tfr::ChunkFilterDesc {
-    virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
         return Tfr::pChunkFilter(new DummyKernel);
     }
 };

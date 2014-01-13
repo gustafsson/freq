@@ -25,15 +25,21 @@ namespace Filters
     };
 
 
-    class ReassignDesc: public Tfr::CwtFilterDesc {
+    class ReassignDesc: public Tfr::CwtChunkFilterDesc {
     public:
-        ReassignDesc():Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Reassign)){}
+        Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const
+        {
+            return Tfr::pChunkFilter(new Reassign);
+        }
     };
 
 
-    class TonalizeDesc: public Tfr::CwtFilterDesc {
+    class TonalizeDesc: public Tfr::CwtChunkFilterDesc {
     public:
-        TonalizeDesc():Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Tonalize)){}
+        Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const
+        {
+            return Tfr::pChunkFilter(new Tonalize);
+        }
     };
 
 }

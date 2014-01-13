@@ -3,6 +3,7 @@
 
 #include "tfr/cwt.h"
 #include "tfr/chunk.h"
+#include "signal/computingengine.h"
 
 // gpumisc
 #include "TaskTimer.h"
@@ -52,21 +53,32 @@ void EllipseKernel::
 Ellipse::
         Ellipse(float t1, float f1, float t2, float f2, bool save_inside)
     :
-      CwtFilterDesc(Tfr::pChunkFilter()),
       _centre_t(t1),
       _centre_f(f1),
       _centre_plus_radius_t(t2),
       _centre_plus_radius_f(f2),
       _save_inside(save_inside)
 {
-    updateChunkFilter ();
 }
 
 
-Signal::OperationDesc::Ptr Ellipse::
+Tfr::pChunkFilter Ellipse::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine==0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new EllipseKernel(
+                                     _centre_t, _centre_f,
+                                     _centre_plus_radius_t, _centre_plus_radius_f,
+                                     _save_inside));
+
+    return Tfr::pChunkFilter();
+}
+
+
+ChunkFilterDesc::Ptr Ellipse::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new Ellipse(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
+    return ChunkFilterDesc::Ptr(new Ellipse(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
 }
 
 
@@ -104,7 +116,7 @@ Signal::Intervals Ellipse::
         outside_samples(float FS)
 {
     float r = fabsf(_centre_t - _centre_plus_radius_t);
-    r += ((Tfr::Cwt*)TransformOperationDesc::transformDesc().get())->wavelet_time_support_samples()/FS;
+    r += ((Tfr::Cwt*)ChunkFilterDesc::transformDesc().get())->wavelet_time_support_samples()/FS;
 
     long double
         start_time_d = std::max(0.f, _centre_t - r)*FS,
@@ -119,14 +131,6 @@ Signal::Intervals Ellipse::
         sid = Signal::Intervals(start_time, end_time);
 
     return ~sid;
-}
-
-
-void Ellipse::
-        updateChunkFilter()
-{
-    Tfr::pChunkFilter cf(new EllipseKernel(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
-    chunk_filter_ = Tfr::ChunkFilterDesc::Ptr(new Tfr::CwtChunkFilterDesc(cf));
 }
 
 

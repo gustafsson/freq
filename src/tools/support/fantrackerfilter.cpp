@@ -120,6 +120,12 @@ namespace Support {
 //        return CepstrumFilter::affecting_source(I);
 //    }
 
+Tfr::pChunkFilter FanTrackerDesc::
+        createChunkFilter(Signal::ComputingEngine*) const
+{
+    return Tfr::pChunkFilter(new FanTrackerFilter);
+}
+
 
 } // namespace Support
 } // namespace Tools

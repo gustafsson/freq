@@ -35,7 +35,10 @@ void FilterController::
 void FilterController::
         addEnvelope()
 {
-    project_->appendOperation ( Signal::OperationDesc::Ptr(new Filters::EnvelopeDesc() ));
+    Tfr::ChunkFilterDesc::Ptr cfd(new Filters::EnvelopeDesc());
+    Tfr::TransformDesc::Ptr td = read1(cfd)->transformDesc();
+    Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(td, cfd));
+    project_->appendOperation ( o );
 }
 
 

@@ -16,9 +16,16 @@ public:
 };
 
 
-class MoveDesc: public Tfr::CwtFilterDesc {
+class MoveDesc: public Tfr::CwtChunkFilterDesc {
 public:
-    MoveDesc(float df):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Move(df))){}
+    MoveDesc(float df):df(df) {}
+
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const {
+        return Tfr::pChunkFilter(new Move(df));
+    }
+
+private:
+    float df;
 };
 
 

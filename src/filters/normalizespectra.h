@@ -27,6 +27,10 @@ class NormalizeSpectraDesc : public Tfr::StftFilterDesc
 {
 public:
     NormalizeSpectraDesc(float meansHz=0.1f);
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
+
+private:
+    float meansHz;
 };
 
 } // namespace Filters

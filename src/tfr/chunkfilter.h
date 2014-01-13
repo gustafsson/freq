@@ -102,11 +102,11 @@ public:
 
     virtual pChunkFilter            createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
     virtual void                    transformDesc(pTransformDesc d);
-    //virtual ChunkFilterDesc::Ptr    copy() const = 0;
+    virtual ChunkFilterDesc::Ptr    copy() const;
 
     pTransformDesc                  transformDesc() const;
 
-protected:
+private:
     pTransformDesc transform_desc_;
 };
 

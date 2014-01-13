@@ -13,7 +13,7 @@ class TransformDesc;
  * in Signal::Operation and Tfr::Transform so that ChunkFilters can explicilty do
  * only the filtering.
  */
-class TransformOperationDesc: public Signal::OperationDesc
+class TransformOperationDesc final: public Signal::OperationDesc
 {
 public:
     TransformOperationDesc(boost::shared_ptr<TransformDesc>, boost::shared_ptr<volatile ChunkFilterDesc>);

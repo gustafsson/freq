@@ -27,14 +27,15 @@ class Bandpass: public Tfr::StftFilterDesc
 public:
     Bandpass(float f1, float f2, bool save_inside=false);
 
-    OperationDesc::Ptr copy() const;
+    // ChunkFilterDesc
+    Tfr::pChunkFilter    createChunkFilter(Signal::ComputingEngine* engine) const;
+    ChunkFilterDesc::Ptr copy() const;
 
     float _f1, _f2;
     bool _save_inside;
-    void updateChunkFilter();
 
 private:
-    Bandpass():Tfr::StftFilterDesc(Tfr::pChunkFilter()) {} // for deserialization
+    Bandpass(); // for deserialization
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {

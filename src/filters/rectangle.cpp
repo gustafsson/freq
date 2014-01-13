@@ -2,6 +2,7 @@
 #include "rectanglekernel.h"
 #include "tfr/chunk.h"
 #include "tfr/cwtchunk.h"
+#include "signal/computingengine.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -53,29 +54,29 @@ void RectangleKernel::subchunk( Tfr::ChunkAndInverse& c ) {
 Rectangle::
         Rectangle(float t1, float f1, float t2, float f2, bool save_inside)
     :
-      CwtFilterDesc(Tfr::pChunkFilter()),
       _t1(t1),
       _f1(f1),
       _t2(t2),
       _f2(f2),
       _save_inside(save_inside)
 {
-    updateChunkFilter();
 }
 
 
-Signal::OperationDesc::Ptr Rectangle::
+Tfr::pChunkFilter Rectangle::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine==0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new RectangleKernel(_t1, _f1, _t2, _f2, _save_inside));
+
+    return Tfr::pChunkFilter();
+}
+
+
+ChunkFilterDesc::Ptr Rectangle::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new Rectangle(_t1, _f1, _t2, _f2, _save_inside));
-}
-
-
-void Rectangle::
-        updateChunkFilter()
-{
-    Tfr::pChunkFilter cf(new RectangleKernel(_t1, _f1, _t2, _f2, _save_inside));
-    chunk_filter_ = Tfr::ChunkFilterDesc::Ptr(new Tfr::CwtChunkFilterDesc(cf));
+    return ChunkFilterDesc::Ptr(new Rectangle(_t1, _f1, _t2, _f2, _save_inside));
 }
 
 

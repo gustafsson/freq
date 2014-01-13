@@ -36,15 +36,16 @@ Signal::OperationDesc::Ptr EllipseModel::
         return Signal::OperationDesc::Ptr();
 
     Filters::Ellipse* e;
-    Signal::OperationDesc::Ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
+    Tfr::ChunkFilterDesc::Ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
 
     e->_centre_t = centre.time;
     e->_centre_plus_radius_t = centrePlusRadius.time;
     e->_centre_f = freqAxis().getFrequency( centre.scale );
     e->_centre_plus_radius_f = freqAxis().getFrequency( centrePlusRadius.scale );
-    e->updateChunkFilter();
 
-    return filter;
+    Tfr::TransformDesc::Ptr t = read1(filter)->transformDesc();
+    Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(e->ChunkFilterDesc::transformDesc (), filter));
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(t, filter));
 }
 
 

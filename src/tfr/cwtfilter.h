@@ -18,26 +18,11 @@ class CwtChunkFilter: public Tfr::ChunkFilter
 class CwtChunkFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    CwtChunkFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
-
-    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
-
-private:
-    Tfr::pChunkFilter reentrant_cpu_chunk_filter_;
-};
-
-
-class CwtFilterDesc : public Tfr::TransformOperationDesc
-{
-public:
-    CwtFilterDesc(Tfr::ChunkFilterDesc::Ptr filter_kernel_desc);
-    CwtFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
-
-    // Must reimplement copy
-    virtual OperationDesc::Ptr copy() const = 0;
+    CwtChunkFilterDesc();
 
     void transformDesc( Tfr::pTransformDesc m );
 };
+
 
 } // namespace Tfr
 
