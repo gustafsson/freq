@@ -1,10 +1,9 @@
 #include "rectanglemodel.h"
 #include "filters/rectangle.h"
 #include "filters/bandpass.h"
-#include "tools/support/operation-composite.h"
+#include "filters/timeselection.h"
 #include "sawe/project.h"
 #include "tools/rendermodel.h"
-#include "signal/operation-basic.h"
 #include "tfr/transformoperation.h"
 
 #ifdef max
@@ -19,6 +18,7 @@ RectangleModel::
         RectangleModel( RenderModel* rendermodel, Sawe::Project* project )
             :
             type(RectangleType_RectangleSelection),
+            select_interior(true),
             rendermodel_(rendermodel),
             project_(project)
 {
@@ -29,16 +29,6 @@ RectangleModel::
         ~RectangleModel()
 {
     TaskTimer(__FUNCTION__).suppressTiming();
-}
-
-
-bool RectangleModel::
-        replaceFilter( Signal::OperationDesc::Ptr filter )
-{
-    volatile Signal::OperationSetSilent* oss = dynamic_cast<volatile Signal::OperationSetSilent*>(filter.get());
-    if (oss)
-        return true;
-    return false;
 }
 
 
@@ -66,8 +56,8 @@ Signal::OperationDesc::Ptr RectangleModel::
     else if(a_index==b_index)
     {
         if (a.scale==b.scale || (a.scale==0 && b.scale==1))
-            filter.reset( new Tools::Support::OperationOtherSilent(
-                Signal::Interval( a_index, L) ));
+            filter.reset( new Filters::TimeSelection(
+                Signal::Interval( a_index, L), select_interior ));
     }
     else if (a.scale>0 || b.scale<1)
     {
@@ -83,8 +73,8 @@ Signal::OperationDesc::Ptr RectangleModel::
     }
     else
     {
-        filter.reset( new Tools::Support::OperationOtherSilent(
-                Signal::Interval( a_index, b_index) ));
+        filter.reset( new Filters::TimeSelection(
+                Signal::Interval( a_index, b_index), select_interior ));
     }
 
     return filter;
@@ -95,10 +85,15 @@ bool RectangleModel::
         tryFilter(Signal::OperationDesc::Ptr filterp)
 {
     Signal::OperationDesc::WritePtr filter(filterp);
-    Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(filter.get());
-    Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(filter.get());
-    Tools::Support::OperationOtherSilent* oos = dynamic_cast<Tools::Support::OperationOtherSilent*>(filter.get());
-    Signal::OperationSetSilent* oss = dynamic_cast<Signal::OperationSetSilent*>(filter.get());
+    Tfr::TransformOperationDesc* tod = dynamic_cast<Tfr::TransformOperationDesc*>(&*filter);
+    Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(tod?&*tod->chunk_filter ():0);
+    Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(tod?&*tod->chunk_filter ():0);
+    Filters::TimeSelection* ts = dynamic_cast<Filters::TimeSelection*>(&*filter);
+
+    Filters::Selection* s = dynamic_cast<Filters::Selection*>(tod?&*tod->chunk_filter ():0);
+    if (!s) s = dynamic_cast<Filters::Selection*>(&*filter);
+    if (s)  select_interior = s->isInteriorSelected();
+
     float FS = project_->extent ().sample_rate.get ();
     if (e)
     {
@@ -120,20 +115,10 @@ bool RectangleModel::
         validate();
         return true;
     }
-    else if(oos)
+    else if(ts)
     {
         type = RectangleType_TimeSelection;
-        Signal::Interval section = oos->section();
-        a.time = section.first/FS;
-        b.time = section.last/FS;
-        a.scale = 0;
-        b.scale = 1;
-        return true;
-    }
-    else if(oss)
-    {
-        type = RectangleType_TimeSelection;
-        Signal::Interval section = oss->section();
+        Signal::Interval section = ts->section();
         a.time = section.first/FS;
         b.time = section.last/FS;
         a.scale = 0;

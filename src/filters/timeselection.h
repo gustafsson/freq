@@ -14,6 +14,9 @@ class TimeSelection: public Signal::OperationDescWrapper, public Selection
 public:
     TimeSelection(Signal::Interval section, bool select_interior=true);
 
+    // Signal::OperationDesc
+    OperationDesc::Ptr copy() const override;
+
     // Selection
     bool isInteriorSelected() const override;
     void selectInterior(bool v) override;

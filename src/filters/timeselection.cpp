@@ -17,10 +17,17 @@ TimeSelection::
 }
 
 
+OperationDesc::Ptr TimeSelection::
+        copy() const
+{
+    return OperationDesc::Ptr(new TimeSelection(section_));
+}
+
+
 bool TimeSelection::
         isInteriorSelected() const
 {
-    return dynamic_cast<volatile OperationOtherSilent*>(&*this->getWrappedOperationDesc ());
+    return dynamic_cast<volatile OperationCrop*>(&*this->getWrappedOperationDesc ());
 }
 
 
@@ -29,7 +36,7 @@ void TimeSelection::
 {
     if (v)
       {
-        this->setWrappedOperationDesc (OperationDesc::Ptr(new OperationOtherSilent(section_)));
+        this->setWrappedOperationDesc (OperationDesc::Ptr(new OperationCrop(section_)));
       }
     else
       {

@@ -28,10 +28,10 @@ namespace Tools { namespace Selections
 
         Signal::OperationDesc::Ptr updateFilter();
         bool tryFilter(Signal::OperationDesc::Ptr o);
-        bool replaceFilter( Signal::OperationDesc::Ptr filter );
 
         Heightmap::Position a, b;
         RectangleType type;
+        bool select_interior;
 
         void validate();
         Tfr::FreqAxis freqAxis();
