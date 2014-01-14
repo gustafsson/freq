@@ -140,13 +140,8 @@ void WorkerCrashLogger::
         Signal::OperationDesc::Ptr od;
         {
             Step::WritePtr s(*mi);
+            s->mark_as_crashed ();
             od = s->get_crashed ();
-
-            if (!od)
-              {
-                od = s->operation_desc ();
-                s->mark_as_crashed ();
-              }
         }
 
         if (od)
@@ -155,8 +150,7 @@ void WorkerCrashLogger::
 
     if( Signal::Interval const * mi = boost::get_error_info<Task::crashed_expected_output>(x) )
       {
-        operation_desc_text += " ";
-        operation_desc_text += *mi;
+        operation_desc_text += " " + mi->toString ();
       }
 
 

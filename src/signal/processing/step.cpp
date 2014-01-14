@@ -35,15 +35,24 @@ Signal::OperationDesc::Ptr Step::
 void Step::
         mark_as_crashed()
 {
-    EXCEPTION_ASSERT(!died_);
+    if (died_)
+        return;
+
+    TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
     operations_.clear ();
 
+    bool was_locked = readWriteLock ()->tryLockForWrite ();
     readWriteLock ()->unlock ();
+
     died_->deprecateCache(Signal::Interval::Interval_ALL);
-    readWriteLock ()->lockForWrite ();
+
+    if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
+        BOOST_THROW_EXCEPTION(LockFailed()
+                              << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
+                              << Backtrace::make());
 }
 
 

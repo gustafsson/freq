@@ -75,7 +75,7 @@ void OperationDesc::
     if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
         BOOST_THROW_EXCEPTION(LockFailed()
                               << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
-                              << Backtrace::make(2));
+                              << Backtrace::make());
 }
 
 
