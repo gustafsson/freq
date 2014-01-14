@@ -1,12 +1,8 @@
 #include "selectionmodel.h"
 #include "sawe/project.h"
 
-#include "signal/operation-basic.h"
-#include "support/operation-composite.h"
-#include "filters/ellipse.h"
-#include "filters/rectangle.h"
-#include "filters/bandpass.h"
-//#include "tools/selections/support/splinefilter.h"
+#include "filters/selection.h"
+#include "tfr/transformoperation.h"
 
 #include "TaskTimer.h"
 #include "demangle.h"
@@ -63,97 +59,33 @@ Signal::OperationDesc::Ptr SelectionModel::
 }
 
 
-template<>
-Signal::OperationDesc::Ptr SelectionModel::
-        set_parity(Signal::OperationDesc::Ptr o, Filters::Ellipse* src, SaveInside si)
-{
-    if (si != SaveInside_UNCHANGED)
-        src->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
-
-
-template<>
-Signal::OperationDesc::Ptr SelectionModel::
-        set_parity(Signal::OperationDesc::Ptr o, Filters::Rectangle* src, SaveInside si)
-{
-    if (si != SaveInside_UNCHANGED)
-        src->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
-
-
-template<>
-Signal::OperationDesc::Ptr SelectionModel::
-        set_parity(Signal::OperationDesc::Ptr o, Filters::Bandpass* src, SaveInside si)
-{
-    if (si != SaveInside_UNCHANGED)
-        src->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
-
-
-template<>
-Signal::OperationDesc::Ptr SelectionModel::
-        set_parity(Signal::OperationDesc::Ptr o, Tools::Support::OperationOtherSilent* src, SaveInside si)
-{
-    if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return o;
-    } else {
-        return Signal::OperationDesc::Ptr( new Signal::OperationSetSilent( src->section() ));
-    }
-}
-
-
-template<>
-Signal::OperationDesc::Ptr SelectionModel::
-        set_parity(Signal::OperationDesc::Ptr o, Signal::OperationSetSilent* src, SaveInside si)
-{
-    if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return o;
-    } else {
-        return Signal::OperationDesc::Ptr(
-                    new Tools::Support::OperationOtherSilent( src->section () )
-        );
-    }
-}
-
-
-//template<>
-//Signal::pOperation SelectionModel::
-//        set_parity(Selections::Support::SplineFilter* src, SaveInside si)
-//{
-//    Selections::Support::SplineFilter* dst;
-//    Signal::pOperation o( dst=new Selections::Support::SplineFilter( *src ));
-
-//    if (si != SaveInside_UNCHANGED)
-//        dst->_save_inside = si == SaveInside_TRUE;
-//    return o;
-//}
-
-
 Signal::OperationDesc::Ptr SelectionModel::
         copy_selection(Signal::OperationDesc::Ptr o, SaveInside si)
 {
     if (!o)
         return o;
 
-#define TEST_TYPE(T) \
-    do { \
-        T* p = dynamic_cast<T*>( &*w ); \
-        if (p) return set_parity(o, p, si); \
-    } while(false)
-
     o = read1(o)->copy();
+    if (si == SaveInside_UNCHANGED)
+        return o;
 
     Signal::OperationDesc::WritePtr w(o);
 
-    TEST_TYPE(Filters::Ellipse);
-    TEST_TYPE(Filters::Rectangle);
-    TEST_TYPE(Filters::Bandpass);
-    TEST_TYPE(Tools::Support::OperationOtherSilent);
-    TEST_TYPE(Signal::OperationSetSilent);
-//    TEST_TYPE(Selections::Support::SplineFilter);
+    if (Filters::Selection* s = dynamic_cast<Filters::Selection*>( &*w ))
+      {
+        s->selectInterior (si == SaveInside_TRUE);
+        return o;
+      }
+
+    if (Tfr::TransformOperationDesc* t = dynamic_cast<Tfr::TransformOperationDesc*>( &*w ))
+      {
+        Tfr::ChunkFilterDesc::WritePtr cfd(t->chunk_filter());
+        if (Filters::Selection* s = dynamic_cast<Filters::Selection*>( &*cfd ))
+          {
+            s->selectInterior (si == SaveInside_TRUE);
+            return o;
+          }
+      }
 
     EXCEPTION_ASSERTX(false, "SelectionModel::copy_selection(" + vartype(*o) + ", " + w->toString().toStdString() + ") is not implemented");
     return Signal::OperationDesc::Ptr();

@@ -30,6 +30,8 @@ public:
     boost::shared_ptr<TransformDesc> transformDesc() const;
     virtual void transformDesc(boost::shared_ptr<TransformDesc> d);
 
+    boost::shared_ptr<volatile ChunkFilterDesc> chunk_filter() const;
+
 protected:
     boost::shared_ptr<volatile ChunkFilterDesc> chunk_filter_;
 

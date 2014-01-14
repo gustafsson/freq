@@ -155,6 +155,14 @@ void TransformOperationDesc::
     write1(chunk_filter_)->transformDesc(d);
 }
 
+
+boost::shared_ptr<volatile ChunkFilterDesc> TransformOperationDesc::
+        chunk_filter() const
+{
+    return chunk_filter_;
+}
+
+
 } // namespace Tfr
 
 #include "dummytransform.h"
