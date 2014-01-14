@@ -44,9 +44,9 @@ public:
 
         Step::Ptr stepp = g[u];
 
-        try {
-
         Step::WritePtr step( stepp ); // lock while studying what's needed
+
+        try {
         Signal::Intervals I = needed[u] & step->not_started ();
         Signal::OperationDesc::Ptr o = step->operation_desc();
 
@@ -124,10 +124,12 @@ public:
             x   << Step::crashed_step(stepp);
 
             try {
-                write1(stepp)->mark_as_crashed();
+                step->mark_as_crashed();
             } catch(const std::exception& y) {
                 x << unexpected_exception_info(boost::current_exception());
             }
+
+            throw;
         }
     }
 
@@ -146,7 +148,7 @@ Task::Ptr FirstMissAlgorithm::
                 Workers::Ptr /*workers*/,
                 Signal::ComputingEngine::Ptr engine) const
 {
-    DEBUGINFO TaskTimer tt("FirstMissAlgorithm %p", engine.get ());
+    DEBUGINFO TaskTimer tt(boost::format("FirstMissAlgorithm %s %p") % (engine?vartype(*engine):"Signal::ComputingEngine*") % engine.get ());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 

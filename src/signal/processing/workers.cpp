@@ -49,11 +49,17 @@ Worker::Ptr Workers::
 
     updateWorkers();
 
-    connect(&*w,
+    bool a = connect(&*w,
             SIGNAL(finished(boost::exception_ptr,Signal::ComputingEngine::Ptr)),
             SIGNAL(worker_quit(boost::exception_ptr,Signal::ComputingEngine::Ptr)));
-    connect(notifier_, SIGNAL(wakeup()), &*w, SLOT(wakeup()));
-    connect(&*w, SIGNAL(oneTaskDone()), notifier_, SIGNAL(wakeup()));
+    bool b = connect(notifier_, SIGNAL(wakeup()), &*w, SLOT(wakeup()));
+    bool c = connect(&*w, SIGNAL(oneTaskDone()), notifier_, SIGNAL(wakeup()));
+    bool d = connect((Worker*)&*w, SIGNAL(finished(boost::exception_ptr,Signal::ComputingEngine::Ptr)), notifier_, SIGNAL(wakeup()));
+
+    EXCEPTION_ASSERT(a);
+    EXCEPTION_ASSERT(b);
+    EXCEPTION_ASSERT(c);
+    EXCEPTION_ASSERT(d);
 
     return w;
 }

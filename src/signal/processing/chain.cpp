@@ -348,7 +348,7 @@ void Chain::
         write1(read1(chain)->workers())->rethrow_any_worker_exception();
 
         chain.reset ();
-        EXCEPTION_ASSERT_LESS(t.elapsed (), 0.02);
+        EXCEPTION_ASSERT_LESS(t.elapsed (), 0.03);
     }
 }
 

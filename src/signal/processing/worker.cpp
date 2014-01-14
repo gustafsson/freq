@@ -110,13 +110,14 @@ boost::exception_ptr Worker::
 void Worker::
         wakeup()
   {
-    if (QThread::currentThread () != this->thread ()) {
+    if (QThread::currentThread () != this->thread ())
+      {
         // Dispatch
         QMetaObject::invokeMethod (this, "wakeup");
         return;
-    }
+      }
 
-    DEBUGINFO TaskInfo ti("Worker::wakeup");
+    DEBUGINFO TaskInfo("Worker::wakeup");
     try
       {
         // Let exception_ mark unexpected termination.
@@ -134,15 +135,16 @@ void Worker::
       }
 
     if (QThread::currentThread ()->isInterruptionRequested ())
-    {
+      {
         QThread::currentThread ()->quit ();
-    }
+      }
   }
 
 
 void Worker::
         finished()
   {
+    DEBUGINFO TaskInfo("Worker::finished");
     moveToThread (0); // important. otherwise 'thread_' will try to delete 'this', but 'this' owns 'thread_' -> crash.
     emit finished(*exception_, computing_engine_);
   }

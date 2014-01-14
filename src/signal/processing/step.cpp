@@ -38,7 +38,7 @@ void Step::
     if (died_)
         return;
 
-    TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
+    DEBUGINFO TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
