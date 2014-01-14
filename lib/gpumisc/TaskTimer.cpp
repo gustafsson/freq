@@ -217,43 +217,16 @@ void TaskTimer::suppressTiming() {
     }
 }
 
-bool TaskTimer::flushStream() {
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
-
-    std::string str = infostream.str();
-
-    if (!str.empty())
-    {
-        infostream.rdbuf()->str( std::string() );
-        info( "%s", str.c_str() );
-        return true;
-    }
-    return false;
-}
-
 bool TaskTimer::printIndentation() {
 #ifndef NO_TASKTIMER_MUTEX
     QMutexLocker scope(&staticLock);
 #endif
+    ThreadInfo& t = T();
     TaskTimer* ltll = lastTimer[logLevel];
 
     if (ltll == this) {
-        return flushStream();
+        return false;
     } else {
-        ThreadInfo& t = T();
-        if (ltll)
-        {
-            std::string str = ltll->infostream.str();
-            if (!str.empty())
-            {
-                ltll->infostream.rdbuf()->str( std::string() );
-                info( "%s", str.c_str() );
-                return printIndentation();
-            }
-        }
-
         if (writeNextOnNewRow[logLevel])
             logprint("\n");
 
@@ -383,7 +356,6 @@ TaskTimer::~TaskTimer() {
     float d = elapsedTime();
     time_duration diff = microseconds(d*1e6);
 
-    flushStream();
     bool didIdent = printIndentation();
 
     if (didIdent) {

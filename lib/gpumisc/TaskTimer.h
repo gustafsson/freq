@@ -76,24 +76,12 @@ public:
     #if defined(__cplusplus) && !defined(__CUDACC__)
         static void setLogLevelStream( LogLevel logLevel, std::ostream* str );
         static bool isEnabled(LogLevel logLevel);
-
-        template<typename T>
-        TaskTimer& operator<<(T const& t)
-        {
-            infostream << t;
-            return *this;
-        }
-
-        std::ostream& getStream() { flushStream(); return infostream; }
-        bool flushStream();
     #endif
 
     static bool enabled();
     static void setEnabled( bool );
 
 private:
-    std::stringstream infostream;
-
     boost::posix_time::ptime startTime;
 
 #ifdef _MSC_VER

@@ -141,12 +141,9 @@ void CsvTimeseries::
     // TODO adjust default wanted min hz to sample rate of opened signal
     //Tfr::Cwt::Singleton().set_wanted_min_hz( sample_rate/1000 );
 
-    tt << "Signal length: " << lengthLongFormat();
-
-    tt.flushStream();
-
-    tt.info("Data size: %lu samples, %lu channels", number_of_samples(), num_channels() );
-    tt.info("Sample rate: %lu samples/second", this->sample_rate() );
+    TaskInfo(boost::format("Signal length: %s") % lengthLongFormat());
+    TaskInfo(boost::format("Data size: %lu samples, %lu channels") % number_of_samples() % num_channels() );
+    TaskInfo(boost::format("Sample rate: %lu samples/second") % this->sample_rate() );
 }
 
 

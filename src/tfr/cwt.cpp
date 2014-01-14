@@ -164,12 +164,8 @@ pChunk Cwt::
 
             for (unsigned j = prev_j; j<n_j; ++j)
             {
-                tt.getStream() << "j = " << j << ", "
-                               << "nf = " << j_to_nf( j ) << ", "
-                               << "bin = " << find_bin( j ) << ", "
-                               << "time_support in samples = "
-                               << wavelet_time_support_samples( j_to_nf(j) );
-                tt.flushStream();
+                TaskInfo(boost::format("j = %s, nf = %s, bin = %s, time_support in samples = %s")
+                                      % j % j_to_nf( j ) % find_bin( j ) % wavelet_time_support_samples( j_to_nf(j) ));
             }
         }
     }
@@ -289,11 +285,11 @@ pChunk Cwt::
 
         DEBUG_CWT {
             TaskTimer tt("Intervals");
-            tt.getStream() << " ft(c)=" << ft->getInterval().toString(); tt.flushStream();
-            tt.getStream() << " adjusted chunkpart=" << chunkpart->getInterval().toString(); tt.flushStream();
-            tt.getStream() << " units=[" << (chunkpart->getInterval().first >> (max_bin-c)) << ", "
-                           << (chunkpart->getInterval().last >> (max_bin-c)) << "), count="
-                           << (chunkpart->getInterval().count() >> (max_bin-c)); tt.flushStream();
+            TaskInfo(boost::format("ft(c)=%s") % ft->getInterval());
+            TaskInfo(boost::format(" adjusted chunkpart=%s") % chunkpart->getInterval());
+            TaskInfo(boost::format(" units=[%s, %s), count=%s") % (chunkpart->getInterval().first >> (max_bin-c)) %
+                           (chunkpart->getInterval().last >> (max_bin-c)) %
+                           (chunkpart->getInterval().count() >> (max_bin-c)));
         }
 
         ((CwtChunk*)wt.get())->chunks.push_back( chunkpart );
@@ -334,7 +330,7 @@ pChunk Cwt::
 
     DEBUG_CWT TaskTimer("wt->max_hz = %g, wt->min_hz = %g", wt->maxHz(), wt->minHz()).suppressTiming();
 
-    TIME_CWT STAT_CWT tt->getStream() << "Resulting interval = " << wt->getInterval().toString();
+    TIME_CWT STAT_CWT TaskInfo(boost::format("Resulting interval = %s") % wt->getInterval());
     TIME_CWT ComputationSynchronize();
     ComputationCheckError();
 
@@ -664,13 +660,12 @@ Signal::pMonoBuffer Cwt::
 Signal::pMonoBuffer Cwt::
         inverse( Tfr::CwtChunk* pchunk )
 {
-    boost::scoped_ptr<TaskTimer> tt;
-    TIME_ICWT tt.reset( new TaskTimer("Inverse CWT( chunk %s, first_valid_sample=%u, [%g, %g] s)",
+    TIME_ICWT TaskTimer tt("Inverse CWT( chunk %s, first_valid_sample=%u, [%g, %g] s)",
         pchunk->getInterval().toString().c_str(),
         pchunk->first_valid_sample,
         pchunk->startTime(),
         pchunk->endTime()
-        ) );
+        );
 
     Signal::Interval v = pchunk->getInterval();
     Signal::pMonoBuffer r( new Signal::MonoBuffer( v, pchunk->original_sample_rate ));
@@ -678,20 +673,17 @@ Signal::pMonoBuffer Cwt::
 
     BOOST_FOREACH( pChunk& part, pchunk->chunks )
     {
-        boost::scoped_ptr<TaskTimer> tt;
-        DEBUG_CWT tt.reset( new TaskTimer("ChunkPart inverse, c=%g, [%g, %g] Hz",
+        DEBUG_CWT TaskTimer tt("ChunkPart inverse, c=%g, [%g, %g] Hz",
             log2f(part->original_sample_rate/part->sample_rate),
-            part->freqAxis.min_hz, part->freqAxis.max_hz()) );
+            part->freqAxis.min_hz, part->freqAxis.max_hz());
 
         Signal::pMonoBuffer inv = inverse(part);
         Signal::pMonoBuffer super = SuperSample::supersample(inv, pchunk->original_sample_rate);
 
-        DEBUG_CWT {
-            tt->getStream()
-                    << "Upsampled inv " << inv->getInterval().toString()
-                    << " by factor " << pchunk->sample_rate/inv->sample_rate()
-                    << " to " << super->getInterval().toString(); tt->flushStream();
-        }
+        DEBUG_CWT TaskInfo(boost::format("Upsampled inv %s by factor %s to %s")
+                     % inv->getInterval()
+                     % (pchunk->sample_rate/inv->sample_rate())
+                     % super->getInterval());
 
         //TaskInfo("super->getInterval() = %s, first_valid_sample = %u",
         //         super->getInterval().toString().c_str(), part->first_valid_sample);

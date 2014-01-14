@@ -150,8 +150,10 @@ void Application::
     TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
     boost::gregorian::date today = boost::gregorian::day_clock::local_day();
     boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
-    ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
-    ti.tt().getStream() << " started on " << today << endl;
+    std::stringstream ss;
+    ss.imbue(std::locale(std::cout.getloc(), facet));
+    ss << "Started on " << today;
+    TaskInfo(boost::format("%s") % ss.str ());
 
     TaskInfo("Build timestamp for %s: %s, %s. Revision %s",
         Sawe::Configuration::uname().c_str(),
