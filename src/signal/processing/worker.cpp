@@ -207,6 +207,8 @@ void Worker::
 #include "prettifysegfault.h"
 #include "expectexception.h"
 
+#include <QTimer>
+
 namespace Signal {
 namespace Processing {
 
@@ -268,6 +270,21 @@ public:
     }
 };
 
+
+class DummyTask: public Task {
+public:
+    DummyTask() : Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval()) {}
+
+    void run(Signal::ComputingEngine::Ptr) override {
+
+    }
+};
+
+class DummySchedule: public ISchedule {
+    Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile override {
+        return Task::Ptr(new DummyTask);
+    }
+};
 
 void Worker::
         test()
@@ -439,8 +456,18 @@ void Worker::
 
     // It should announce when tasks are finished.
     {
-
-    }
+        ISchedule::Ptr gettask(new DummySchedule());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        QEventLoop e;
+        QTimer t;
+        connect (&t, SIGNAL(timeout()), &e, SLOT(quit()));
+        connect (&worker, SIGNAL(oneTaskDone()), &e, SLOT(quit()));
+        t.setSingleShot( true );
+        t.setInterval( 1 );
+        t.start();
+        e.exec ();
+        EXCEPTION_ASSERT(t.isActive());
+   }
 }
 
 

@@ -30,7 +30,7 @@ public:
 
     Signal::Interval        expected_output() const;
 
-    void run(Signal::ComputingEngine::Ptr);
+    virtual void run(Signal::ComputingEngine::Ptr);
 
 private:
     Step::Ptr               step_;
