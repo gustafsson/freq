@@ -42,7 +42,8 @@ public:
 
     void reset( const Signal::Interval& section );
 
-    Signal::Interval section() { return section_; }
+    Signal::Interval section() const { return section_; }
+
 private:
     Signal::Interval section_;
 

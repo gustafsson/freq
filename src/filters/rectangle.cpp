@@ -73,6 +73,17 @@ Tfr::pChunkFilter Rectangle::
 }
 
 
+Signal::OperationDesc::Extent Rectangle::
+        extent() const
+{
+    float fs = 44100;
+    Signal::OperationDesc::Extent x;
+    if (_save_inside)
+        x.interval = Signal::Interval(_t1*fs, _t2*fs);
+    return x;
+}
+
+
 ChunkFilterDesc::Ptr Rectangle::
         copy() const
 {

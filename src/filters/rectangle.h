@@ -30,8 +30,9 @@ public:
     Rectangle(float t1, float f1, float t2, float f2, bool save_inside=false);
 
     // ChunkFilterDesc
-    Tfr::pChunkFilter    createChunkFilter(Signal::ComputingEngine* engine) const;
-    ChunkFilterDesc::Ptr copy() const;
+    Tfr::pChunkFilter               createChunkFilter(Signal::ComputingEngine* engine) const;
+    Signal::OperationDesc::Extent   extent() const;
+    ChunkFilterDesc::Ptr            copy() const;
 
     float _t1, _f1, _t2, _f2;
     bool _save_inside;

@@ -177,16 +177,10 @@ void PlaybackController::
 {
     Signal::Intervals zeroed_samples = Signal::Intervals();
 
-//    if (!filterdesc) {
-//        TaskInfo("No filter, no selection");
-//        stop();
-//        return; // No filter, no selection...
-//    }
-
     _view->just_started = true;
 
     if (filterdesc)
-        TaskInfo("Selection is of type %s", read1(filterdesc)->toString().toStdString().c_str());
+        TaskInfo("Selection: %s", read1(filterdesc)->toString().toStdString().c_str());
 
 //    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
 //    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
@@ -201,22 +195,12 @@ void PlaybackController::
         Signal::OperationDesc::Ptr desc(model()->adapter_playback);
         model()->target_marker = write1(project_->processing_chain ())->addTarget(desc, project_->default_target ());
 
-//        std::vector<Signal::pOperation> sinks;
-//        postsink_operations->sinks( sinks ); // empty
-//        sinks.push_back( model()->adapter_playback );
-        //sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
+        if (filterdesc)
+            write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
 
-//        postsink_operations->filter( Signal::pOperation() );
-//        postsink_operations->sinks( sinks );
-//        postsink_operations->filter( filter );
-
-        //Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
         Signal::OperationDesc::Extent x = write1(project_->processing_chain ())->extent(model()->target_marker);
         Signal::Intervals expected_data = ~zeroed_samples & x.interval.get_value_or (Signal::Interval());
         TaskInfo(boost::format("expected_data = %s") % expected_data);
-        TaskInfo(boost::format("zeroed_samples = %s") % zeroed_samples);
-        if (filterdesc)
-            write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
 
         Signal::Operation::WritePtr playbackw(model()->playback());
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());

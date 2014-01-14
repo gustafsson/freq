@@ -121,6 +121,13 @@ Signal::Interval TransformOperationDesc::
 }
 
 
+TransformOperationDesc::Extent TransformOperationDesc::
+        extent() const
+{
+    return read1(chunk_filter_)->extent();
+}
+
+
 QString TransformOperationDesc::
         toString() const
 {

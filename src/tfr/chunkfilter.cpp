@@ -4,6 +4,13 @@
 
 namespace Tfr {
 
+Signal::OperationDesc::Extent ChunkFilterDesc::
+        extent() const
+{
+    return Signal::OperationDesc::Extent();
+}
+
+
 void ChunkFilterDesc::
         transformDesc(pTransformDesc d)
 {

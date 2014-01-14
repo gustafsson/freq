@@ -4,6 +4,7 @@
 #include "signal/buffer.h"
 #include "volatileptr.h"
 #include "signal/computingengine.h"
+#include "signal/operation.h"
 
 namespace Tfr {
 
@@ -101,11 +102,12 @@ class ChunkFilterDesc: public VolatilePtr<ChunkFilterDesc>
 public:
     virtual ~ChunkFilterDesc() {}
 
-    virtual pChunkFilter            createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
-    virtual void                    transformDesc(pTransformDesc d);
-    virtual ChunkFilterDesc::Ptr    copy() const;
+    virtual pChunkFilter                    createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
+    virtual Signal::OperationDesc::Extent   extent() const;
+    virtual void                            transformDesc(pTransformDesc d);
+    virtual ChunkFilterDesc::Ptr            copy() const;
 
-    pTransformDesc                  transformDesc() const;
+    pTransformDesc                          transformDesc() const;
 
 private:
     pTransformDesc transform_desc_;

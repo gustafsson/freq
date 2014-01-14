@@ -234,8 +234,9 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::Ptr o)
 {
-    volatile Signal::OperationDescWrapper* w =
-            dynamic_cast<volatile Signal::OperationDescWrapper*>(&*render_operation_desc_);
+    Signal::OperationDesc::WritePtr wo(render_operation_desc_);
+    Signal::OperationDescWrapper* w =
+            dynamic_cast<Signal::OperationDescWrapper*>(&*wo);
 
     w->setWrappedOperationDesc (o);
 }

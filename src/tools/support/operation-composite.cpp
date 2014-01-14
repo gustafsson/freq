@@ -13,11 +13,19 @@ namespace Tools {
 
     // OperationCrop  /////////////////////////////////////////////////////////////////
 
+OperationCrop::
+        OperationCrop( const Signal::Interval& section )
+    :
+      OperationOtherSilent(section)
+{
+
+}
+
 OperationCrop::Extent OperationCrop::
         extent() const
 {
     Extent x;
-    x.interval = section_;
+    x.interval = section();
     return x;
 }
 
@@ -25,7 +33,7 @@ QString OperationCrop::
         toString() const
 {
     std::stringstream ss;
-    ss << "Crop " << section_;
+    ss << "Crop " << section();
     return ss.str().c_str ();
 }
 
@@ -39,7 +47,9 @@ void OperationCrop::
       result: 23
     */
     {
-        EXCEPTION_ASSERTX(false, "not implemented");
+        Interval I(5,7);
+        OperationCrop oc(I);
+        EXCEPTION_ASSERT_EQUALS( oc.extent ().interval.get (), I );
     }
 }
 

@@ -24,6 +24,7 @@ public:
     Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
     Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
     Signal::Interval affectedInterval(const Signal::Interval&) const;
+    Extent extent() const;
     QString toString() const;
     bool operator==(const Signal::OperationDesc&d) const;
 

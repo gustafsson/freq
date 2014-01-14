@@ -32,6 +32,7 @@
 #include "filters/timeselection.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
+#include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
@@ -141,6 +142,7 @@ int UnitTest::
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::AudiofileOpener);
         RUNTEST(Tools::Support::ChainInfo);
+        RUNTEST(Tools::Support::OperationCrop);
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
