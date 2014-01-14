@@ -33,106 +33,118 @@ public:
           needed(needed),
           params(schedule_params),
           task(output_task)
-    {
-    }
+      {
+      }
 
 
     void discover_vertex(GraphVertex u, const Graph & g)
-    {
+      {
         if (*task)
             return;
 
         // Compute what the sources have available
         Intervals missing_input;
-        BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
+        BOOST_FOREACH(GraphEdge e, out_edges(u, g))
+          {
             GraphVertex v = target(e,g);
             Step::ReadPtr src( g[v] );
             missing_input |= src->out_of_date ();
-        }
+          }
 
         Interval required_input = try_create_task(u, g, missing_input);
 
         // Update sources with needed samples
-        BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
+        BOOST_FOREACH(GraphEdge e, out_edges(u, g))
+          {
             GraphVertex v = target(e,g);
             Step::ReadPtr src( g[v] );
             needed[v] |= src->not_started () & required_input;
-        }
-    }
+          }
+      }
+
 
     Signal::Interval try_create_task(GraphVertex u, const Graph & g, Signal::Intervals missing_input)
-    {
+      {
         Step::WritePtr step( g[u] ); // lock while studying what's needed
 
-        try {
-        Signal::Intervals I = needed[u] & step->not_started ();
-        Signal::OperationDesc::Ptr o = step->operation_desc();
+        try
+          {
+            Signal::Intervals I = needed[u] & step->not_started ();
+            Signal::OperationDesc::Ptr o = step->operation_desc();
 
-        // Compute what we need from sources
-        if (!I)
-            return Signal::Interval();
+            // Compute what we need from sources
+            if (!I)
+                return Signal::Interval();
 
-        DEBUGINFO TaskTimer tt(format("Missing %1% in %2% %3%")
-                               % I
-                               % (step->operation (params.engine)?"compatible":"incompatible")
-                               % read1(o)->toString ().toStdString ());
+            DEBUGINFO TaskTimer tt(format("Missing %1% in %2% %3%")
+                                   % I
+                                   % (step->operation (params.engine)?"compatible":"incompatible")
+                                   % read1(o)->toString ().toStdString ());
 
-        // params.preferred_size is just a preferred update size, not a required update size.
-        // Accept whatever requiredInterval sets as expected_output
-        Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
-        Signal::Interval expected_output;
-        Signal::Interval required_input = read1(o)->requiredInterval (wanted_output, &expected_output);;
+            // params.preferred_size is just a preferred update size, not a required update size.
+            // Accept whatever requiredInterval sets as expected_output
+            Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
+            Signal::Interval expected_output;
+            Signal::Interval required_input = read1(o)->requiredInterval (wanted_output, &expected_output);;
 
-        // check for valid 'requiredInterval' by making sure that expected_output doesn't stall needed samples in 'wanted_output'
-        EXCEPTION_ASSERTX (expected_output & Signal::Interval(wanted_output.first, wanted_output.first+1),
-                           boost::format("actual_output = %1%, x = %2%")
-                           % expected_output % wanted_output);
+            // check for valid 'requiredInterval' by making sure that expected_output doesn't stall needed samples in 'wanted_output'
+            EXCEPTION_ASSERTX (expected_output & Signal::Interval(wanted_output.first, wanted_output.first+1),
+                               boost::format("actual_output = %1%, x = %2%")
+                               % expected_output % wanted_output);
 
-        // Compare required_input to what's available in the sources
-        missing_input &= required_input;
+            // Compare required_input to what's available in the sources
+            missing_input &= required_input;
 
-        // If there are no sources
-        if (0==out_degree(u, g)) {
-            // Then this operation must specify sample rate and number of
-            // samples for this to be a valid read. Otherwise the signal is
-            // undefined.
-            Signal ::OperationDesc::Extent x = read1(o)->extent ();
-            if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ()) {
-                DEBUGINFO TaskInfo("Undefined signal. No sources and no extent");
-                missing_input = Signal::Interval::Interval_ALL; // A non-empty interval
-            }
-        }
+            // If there are no sources
+            if (0==out_degree(u, g))
+              {
+                // Then this operation must specify sample rate and number of
+                // samples for this to be a valid read. Otherwise the signal is
+                // undefined.
+                Signal ::OperationDesc::Extent x = read1(o)->extent ();
+                if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
+                  {
+                    DEBUGINFO TaskInfo("Undefined signal. No sources and no extent");
+                    missing_input = Signal::Interval::Interval_ALL; // A non-empty interval
+                  }
+              }
 
-        // If nothing is missing and this engine supports this operation
-        if (missing_input.empty () && step->operation (params.engine))
-            // Even if this engine doesn't support this operation it should
-            // still update 'needed' so that it can compute what's
-            // needed in the children.
-        {
-            // Create a task
-            std::vector<Step::Ptr> children;
-            BOOST_FOREACH(GraphEdge e, out_edges(u, g)) {
-                GraphVertex v = target(e,g);
-                children.push_back (g[v]);
-            }
+            // If nothing is missing and this engine supports this operation
+            if (missing_input.empty () && step->operation (params.engine))
+                // Even if this engine doesn't support this operation it should
+                // still update 'needed' so that it can compute what's
+                // needed in the children.
+              {
+                // Create a task
+                std::vector<Step::Ptr> children;
+                BOOST_FOREACH(GraphEdge e, out_edges(u, g))
+                  {
+                    GraphVertex v = target(e,g);
+                    children.push_back (g[v]);
+                  }
 
-            task->reset (new Task(&*step, g[u], children, expected_output));
-        }
+                task->reset (new Task(&*step, g[u], children, expected_output));
+              }
 
-        return required_input;
+            return required_input;
 
-        } catch (const boost::exception& x) {
+          }
+        catch (const boost::exception& x)
+          {
             x   << Step::crashed_step(g[u]);
 
-            try {
+            try
+              {
                 step->mark_as_crashed();
-            } catch(const std::exception& y) {
+              }
+            catch(const std::exception& y)
+              {
                 x << unexpected_exception_info(boost::current_exception());
-            }
+              }
 
             throw;
-        }
-    }
+          }
+      }
 
     NeededSamples needed;
     ScheduleParams params;
