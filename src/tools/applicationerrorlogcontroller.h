@@ -33,6 +33,7 @@ private slots:
     // 'this' is owned by a separate thread, so logging takes place separately.
     void log(boost::exception_ptr x);
     void finishedSending(QNetworkReply*);
+    void finishedOk();
 
 private:
     friend class OpenFeedbackDialog;

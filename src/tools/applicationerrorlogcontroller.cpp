@@ -20,7 +20,8 @@
 namespace Tools {
 
 QMutex mutex;
-QString has_unreported_error_key("has unreported error");
+QString has_unreported_error_key("has_unreported_error");
+QString had_previous_crash_key("had_previous_crash_key");
 
 ApplicationErrorLogController::
         ApplicationErrorLogController()
@@ -33,8 +34,32 @@ ApplicationErrorLogController::
     moveToThread (&thread_);
     thread_.start ();
 
-    connect(send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
-    connect(this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)));
+
+    connect (send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
+    connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)));
+    connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::BlockingQueuedConnection);
+
+    bool had_previous_crash = QSettings().value (had_previous_crash_key, false).toBool ();
+
+    try
+      {
+        EXCEPTION_ASSERT(!had_previous_crash);
+      }
+    catch ( const boost::exception& x)
+      {
+        QMetaObject::invokeMethod (this, "log", Qt::QueuedConnection, Q_ARG(boost::exception_ptr, boost::current_exception()));
+      }
+
+    QSettings().setValue (has_unreported_error_key, had_previous_crash);
+    QSettings().setValue (had_previous_crash_key, true); // Clear on clean exit
+}
+
+
+void ApplicationErrorLogController::
+        finishedOk()
+{
+    QSettings().remove (had_previous_crash_key);
+    QSettings().remove (has_unreported_error_key);
 }
 
 
@@ -67,8 +92,6 @@ void ApplicationErrorLogController::
     emit instance()->got_exception (e);
 
     QSettings().setValue (has_unreported_error_key, true);
-    // disable has_unreported_error_key
-    QSettings().remove (has_unreported_error_key);
 
     foreach(QPointer<QToolBar> a, instance()->toolbars_) {
         if (a) {
@@ -91,8 +114,10 @@ void ApplicationErrorLogController::
                 "An error has been reported by " + name + ". Click to file a bug report",
                 instance()->open_feedback_dialog_, SLOT(open()));
 
-    bool visible = QSettings().value (has_unreported_error_key).toBool ();
-    bar->setVisible (visible);
+    bool visible = QSettings().value (has_unreported_error_key, false).toBool ();
+
+    //Call "bar->setVisible (visible)" after finishing loading the mainwindow.
+    QMetaObject::invokeMethod (bar, "setVisible", Qt::QueuedConnection, Q_ARG(bool, visible));
 
     instance()->toolbars_.push_back (bar);
 }
