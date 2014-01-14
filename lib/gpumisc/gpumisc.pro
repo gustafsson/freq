@@ -38,6 +38,7 @@ SOURCES += \
     glPushContext.cpp \
     GlTexture.cpp \
     gluunproject.cpp \
+    log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
     prettifysegfault.cpp \
@@ -80,6 +81,7 @@ HEADERS += \
     gpumisc_global.h \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
+    log.h \
     mappedvbo.h \
     mappedvbovoid.h \
     msc_stdc.h \
