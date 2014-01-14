@@ -160,12 +160,37 @@ Signal::Intervals Rectangle::
     return ~sid;
 }
 
+} // namespace Filters
+
+#include "signal/processing/chain.h"
+#include "test/operationmockups.h"
+#include "test/randombuffer.h"
+#include "tfr/transformoperation.h"
+#include <QApplication>
+
+namespace Filters {
 
 void Rectangle::
         test()
 {
-    // It should apply a bandpass and time filter between f1,t1 and f2,t2 to a signal.
-    EXCEPTION_ASSERT(false);
+    int argc = 0;
+    char* argv = 0;
+    QApplication a(argc,&argv);
+
+    // It should apply a bandpass and time filter between f1,s1 and f2,s2 to a signal.
+    {
+        Signal::Processing::Chain::Ptr cp = Signal::Processing::Chain::createDefaultChain ();
+        Signal::OperationDesc::Ptr transparent(new Test::TransparentOperationDesc);
+        Signal::OperationDesc::Ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
+        Tfr::ChunkFilterDesc::Ptr cfd(new Rectangle(1,2,4,4,false));
+        Signal::OperationDesc::Ptr rectangledesc(new TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::Ptr at = write1(cp)->addTarget(transparent);
+        Signal::Processing::TargetNeeds::Ptr n = at->target_needs();
+        write1(cp)->addOperationAt(buffersource,at);
+        write1(cp)->addOperationAt(rectangledesc,at);
+        write1(n)->updateNeeds(Signal::Interval(0,10));
+        EXCEPTION_ASSERT( n->sleep(100) );
+    }
 }
 
 } // namespace Filters

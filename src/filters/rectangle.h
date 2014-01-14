@@ -23,7 +23,7 @@ private:
 
 
 /**
- * @brief The Rectangle class should apply a bandpass and time filter between f1,t1 and f2,t2 to a signal.
+ * @brief The Rectangle class should apply a bandpass and time filter between f1,s1 and f2,s2 to a signal.
  */
 class Rectangle: public Tfr::CwtChunkFilterDesc, public Filters::Selection
 {

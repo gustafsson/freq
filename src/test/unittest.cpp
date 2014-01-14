@@ -29,6 +29,7 @@
 #include "filters/selection.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
+#include "filters/rectangle.h"
 #include "filters/timeselection.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
@@ -136,6 +137,7 @@ int UnitTest::
         RUNTEST(Filters::Selection);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);
+        RUNTEST(Filters::Rectangle);
         RUNTEST(Filters::TimeSelection);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
