@@ -143,7 +143,7 @@ void Worker::
 void Worker::
         finished()
   {
-    moveToThread (0); // important. otherwise thread_ will try to delete this, but this owns the thread -> crash.
+    moveToThread (0); // important. otherwise 'thread_' will try to delete 'this', but 'this' owns 'thread_' -> crash.
     emit finished(*exception_, computing_engine_);
   }
 
