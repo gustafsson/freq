@@ -276,7 +276,7 @@ public:
     DummyTask() : Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval()) {}
 
     void run(Signal::ComputingEngine::Ptr) override {
-
+        // Keeps on running a lot of tasks as fast as possible
     }
 };
 
@@ -456,6 +456,8 @@ void Worker::
 
     // It should announce when tasks are finished.
     {
+        UNITTEST_STEPS TaskTimer tt("It should announce when tasks are finished.");
+
         ISchedule::Ptr gettask(new DummySchedule());
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
         QEventLoop e;
@@ -463,7 +465,7 @@ void Worker::
         connect (&t, SIGNAL(timeout()), &e, SLOT(quit()));
         connect (&worker, SIGNAL(oneTaskDone()), &e, SLOT(quit()));
         t.setSingleShot( true );
-        t.setInterval( 1 );
+        t.setInterval( 0 );
         t.start();
         e.exec ();
         EXCEPTION_ASSERT(t.isActive());

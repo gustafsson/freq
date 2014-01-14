@@ -351,9 +351,7 @@ class LockScheduleMock: public BlockScheduleMock {
 
 class BusyScheduleMock: public BlockScheduleMock {
     virtual void dont_return() volatile {
-        for(;;) {
-            usleep(0); // Allow OS scheduling to kill the thread ("for(;;);" would not)
-        }
+        for(;;) usleep(0); // Allow OS scheduling to kill the thread (just "for(;;);" would not)
     }
 };
 

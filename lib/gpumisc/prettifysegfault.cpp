@@ -92,6 +92,7 @@ void handler(int sig)
 
     fflush(stdout);
     fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (sig), sig, SignalName::desc (sig));
+    fflush(stderr);
 
     Backtrace::malloc_free_log ();
 
