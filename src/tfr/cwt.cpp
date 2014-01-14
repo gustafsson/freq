@@ -418,7 +418,12 @@ Signal::Interval Cwt::
 
     unsigned time_support = cwt.wavelet_time_support_samples();
     firstSample -= time_support;
-    unsigned numberOfSamples = cwt.next_good_size( I.count()-1 );
+    Signal::UnsignedIntervalType c = I.count ();
+    if (c > ((unsigned)-1)/8)
+        c = ((unsigned)-1)/8;
+    if (c < 2)
+        c = 2;
+    unsigned numberOfSamples = cwt.next_good_size( c-1 );
 
     // hack to make it work without subsampling
     #ifdef CWT_NOBINS
