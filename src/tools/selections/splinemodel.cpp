@@ -44,8 +44,7 @@ Signal::OperationDesc::Ptr SplineModel::
     }
 
     Tfr::CwtChunkFilterDesc::Ptr filter( new Support::SplineFilterDesc( true, ev ) );
-    Tfr::TransformDesc::Ptr t = read1(filter)->transformDesc();
-    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(t, filter));
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 

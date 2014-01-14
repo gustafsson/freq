@@ -16,7 +16,7 @@ class TransformDesc;
 class TransformOperationDesc final: public Signal::OperationDesc
 {
 public:
-    TransformOperationDesc(boost::shared_ptr<TransformDesc>, boost::shared_ptr<volatile ChunkFilterDesc>);
+    TransformOperationDesc(boost::shared_ptr<volatile ChunkFilterDesc>);
     ~TransformOperationDesc() {}
 
     // OperationDesc
@@ -29,8 +29,6 @@ public:
     bool operator==(const Signal::OperationDesc&d) const;
 
     boost::shared_ptr<TransformDesc> transformDesc() const;
-    virtual void transformDesc(boost::shared_ptr<TransformDesc> d);
-
     boost::shared_ptr<volatile ChunkFilterDesc> chunk_filter() const;
 
 protected:

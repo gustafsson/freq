@@ -44,9 +44,7 @@ Signal::OperationDesc::Ptr EllipseModel::
     e->_centre_f = freqAxis().getFrequency( centre.scale );
     e->_centre_plus_radius_f = freqAxis().getFrequency( centrePlusRadius.scale );
 
-    Tfr::TransformDesc::Ptr t = read1(filter)->transformDesc();
-    Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(e->ChunkFilterDesc::transformDesc (), filter));
-    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(t, filter));
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 

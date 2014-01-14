@@ -48,10 +48,12 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
     if (!wo)
         return Tfr::TransformDesc::Ptr();
 
-    OperationDesc::WritePtr o(wo);
-    Tfr::TransformOperationDesc* f = dynamic_cast<Tfr::TransformOperationDesc*>(&*o);
-    if (f)
-        return f->transformDesc ();
+    OperationDesc::ReadPtr o(wo);
+    const Tfr::TransformOperationDesc* f = dynamic_cast<const Tfr::TransformOperationDesc*>(&*o);
+    if (f) {
+        Tfr::ChunkFilterDesc::Ptr c = f->chunk_filter ();
+        return write1(c)->transformDesc ();
+    }
 
     return Tfr::TransformDesc::Ptr();
 }
@@ -64,10 +66,12 @@ void RenderOperationDesc::
     if (!wo)
         return;
 
-    OperationDesc::WritePtr o(wo);
-    Tfr::TransformOperationDesc* f = dynamic_cast<Tfr::TransformOperationDesc*>(&*o);
-    if (f)
-        return f->transformDesc (t);
+    OperationDesc::ReadPtr o(wo);
+    const Tfr::TransformOperationDesc* f = dynamic_cast<const Tfr::TransformOperationDesc*>(&*o);
+    if (f) {
+        Tfr::ChunkFilterDesc::Ptr c = f->chunk_filter ();
+        write1(c)->transformDesc (t);
+    }
 }
 
 

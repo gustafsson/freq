@@ -138,10 +138,9 @@ void ChunkToBlock::
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);
 
-    Tfr::StftDesc* tfr;
-    Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
     Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
-    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(tdesc, fdesc));
+    write1(fdesc)->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
+    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(fdesc));
     Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
 
     Signal::Interval expectedOutput;
@@ -151,7 +150,7 @@ void ChunkToBlock::
     operation->process( buffer );
 
     Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
-    Tfr::pChunk chunk = (*tdesc->createTransform ())( monobuffer );
+    Tfr::pChunk chunk = (*read1(fdesc)->transformDesc()->createTransform ())( monobuffer );
 
     Heightmap::Reference ref;
 

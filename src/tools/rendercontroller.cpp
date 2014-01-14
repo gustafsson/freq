@@ -419,7 +419,8 @@ void RenderController::
     Tfr::ChunkFilterDesc::Ptr kernel(cbfd
             = new Heightmap::ChunkBlockFilterDesc(model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
-    Tfr::TransformOperationDesc::Ptr desc( new Tfr::TransformOperationDesc(transform_desc, kernel));
+    write1(kernel)->transformDesc(transform_desc); // ambiguous? tfr_mapping also has a transformDesc...
+    Tfr::TransformOperationDesc::Ptr desc( new Tfr::TransformOperationDesc(kernel));
     setBlockFilter( desc );
 }
 

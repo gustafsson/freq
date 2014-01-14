@@ -94,8 +94,7 @@ void EnvelopeDesc::
     // It should compute the envelope of a signal.
     {
         ChunkFilterDesc::Ptr cfd(new EnvelopeDesc);
-        TransformDesc::Ptr t = read1(cfd)->transformDesc ();
-        Tfr::TransformOperationDesc ed(t, cfd);
+        Tfr::TransformOperationDesc ed(cfd);
         Signal::Operation::Ptr o = ed.createOperation ();
 
 //        _window_size = 256

@@ -77,11 +77,10 @@ Signal::pBuffer TransformOperationOperation::
 
 
 TransformOperationDesc::
-        TransformOperationDesc(Tfr::pTransformDesc d, ChunkFilterDesc::Ptr f)
+        TransformOperationDesc(ChunkFilterDesc::Ptr f)
     :
       chunk_filter_(f)
 {
-    write1(chunk_filter_)->transformDesc(d);
 }
 
 
@@ -89,15 +88,20 @@ OperationDesc::Ptr TransformOperationDesc::
         copy() const
 {
     //ChunkFilterDesc::Ptr chunk_filter = read1(chunk_filter_)->copy();
-    return OperationDesc::Ptr (new TransformOperationDesc (transformDesc()->copy (), chunk_filter_));
+    return OperationDesc::Ptr (new TransformOperationDesc (chunk_filter_));
 }
 
 
 Signal::Operation::Ptr TransformOperationDesc::
         createOperation(Signal::ComputingEngine*engine) const
 {
-    Tfr::pTransform t = transformDesc()->createTransform ();
-    pChunkFilter f = read1(chunk_filter_)->createChunkFilter (engine);
+    Tfr::pTransform t;
+    pChunkFilter f;
+    {
+        ChunkFilterDesc::ReadPtr c(chunk_filter_);
+        t = c->transformDesc()->createTransform ();
+        f = c->createChunkFilter (engine);
+    }
     bool no_inverse_tag = 0!=dynamic_cast<volatile ChunkFilter::NoInverseTag*>(f.get ());
 
     if (!f)
@@ -156,13 +160,6 @@ Tfr::pTransformDesc TransformOperationDesc::
 }
 
 
-void TransformOperationDesc::
-        transformDesc(pTransformDesc d)
-{
-    write1(chunk_filter_)->transformDesc(d);
-}
-
-
 boost::shared_ptr<volatile ChunkFilterDesc> TransformOperationDesc::
         chunk_filter() const
 {
@@ -212,9 +209,10 @@ void TransformOperationDesc::
     // so that ChunkFilters can explicilty do only the filtering.
     {
         int i = 0;
-        pTransformDesc t(new Tfr::DummyTransformDesc);
         ChunkFilterDesc::Ptr cfd(new DummyChunkFilterDesc(&i));
-        TransformOperationDesc tod(t, cfd);
+        write1(cfd)->transformDesc(pTransformDesc(new Tfr::DummyTransformDesc));
+        pTransformDesc t = read1(cfd)->transformDesc();
+        TransformOperationDesc tod(cfd);
 
         EXCEPTION_ASSERT_EQUALS(
                     tod.affectedInterval (Signal::Interval(5,7)),

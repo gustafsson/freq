@@ -68,8 +68,7 @@ Signal::OperationDesc::Ptr RectangleModel::
             cfd.reset( new Filters::Rectangle(
                 a.time*FS, f1, b.time*FS, f2, select_interior ));
 
-        Tfr::TransformDesc::Ptr t = read1(cfd)->transformDesc();
-        filter.reset ( new Tfr::TransformOperationDesc(t, cfd));
+        filter.reset ( new Tfr::TransformOperationDesc(cfd));
     }
     else
     {

@@ -86,8 +86,7 @@ void Application::
         }
 
         Tfr::ChunkFilterDesc::Ptr cfd(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
-        Tfr::TransformDesc::Ptr td = read1(cfd)->transformDesc();
-        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(td, cfd));
+        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
         Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
         Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
 
@@ -107,8 +106,7 @@ void Application::
         }
 
         Tfr::ChunkFilterDesc::Ptr cfd(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
-        Tfr::TransformDesc::Ptr td = read1(cfd)->transformDesc();
-        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(td, cfd));
+        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
         Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
         Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
 
