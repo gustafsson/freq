@@ -28,6 +28,7 @@ public:
 
 signals:
     void got_exception(boost::exception_ptr x);
+    void showToolbar(bool v=false);
 
 private slots:
     // 'this' is owned by a separate thread, so logging takes place separately.
@@ -36,15 +37,11 @@ private slots:
     void finishedOk();
 
 private:
-    friend class OpenFeedbackDialog;
-
     ApplicationErrorLogController();
     static ApplicationErrorLogController* instance();
 
-    std::list<QPointer<QToolBar> >      toolbars_;
     QThread                             thread_;
     Support::SendFeedback*              send_feedback_;
-    class OpenFeedbackDialog*           open_feedback_dialog_;
 
 public:
     static void test();
@@ -54,13 +51,18 @@ class OpenFeedbackDialog : public QObject
 {
     Q_OBJECT
 public:
-    OpenFeedbackDialog();
+    OpenFeedbackDialog(QWidget* parent, QToolBar* bar);
+
+signals:
+    void dialogOpened();
 
 public slots:
+    void showToolbar(bool v);
     void open();
 
 private:
-    SendFeedbackDialog*                 send_feedback_dialog_;
+    QPointer<QToolBar>  bar_;
+    SendFeedbackDialog* send_feedback_dialog_;
 };
 
 

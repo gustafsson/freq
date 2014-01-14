@@ -26,8 +26,7 @@ QString had_previous_crash_key("had_previous_crash_key");
 ApplicationErrorLogController::
         ApplicationErrorLogController()
     :
-      send_feedback_(new Support::SendFeedback(this)),
-      open_feedback_dialog_(new OpenFeedbackDialog)
+      send_feedback_(new Support::SendFeedback(this))
 {    
     qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
 
@@ -36,7 +35,7 @@ ApplicationErrorLogController::
 
 
     connect (send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
-    connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)));
+    connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)), Qt::QueuedConnection);
     connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::BlockingQueuedConnection);
 
     bool had_previous_crash = QSettings().value (had_previous_crash_key, false).toBool ();
@@ -47,7 +46,7 @@ ApplicationErrorLogController::
       }
     catch ( const boost::exception& x)
       {
-        QMetaObject::invokeMethod (this, "log", Qt::QueuedConnection, Q_ARG(boost::exception_ptr, boost::current_exception()));
+        emit got_exception (boost::current_exception());
       }
 
     QSettings().setValue (has_unreported_error_key, had_previous_crash);
@@ -90,14 +89,8 @@ void ApplicationErrorLogController::
 
     // Will be executed in instance()->thread_
     emit instance()->got_exception (e);
-
+    emit instance()->showToolbar (true);
     QSettings().setValue (has_unreported_error_key, true);
-
-    foreach(QPointer<QToolBar> a, instance()->toolbars_) {
-        if (a) {
-            a->setVisible (true);
-        }
-    }
 }
 
 
@@ -107,19 +100,23 @@ void ApplicationErrorLogController::
     QIcon icon = QCommonStyle().standardIcon(QStyle::SP_MessageBoxWarning);
     QString name = QApplication::instance ()->applicationName ();
     QToolBar* bar = new QToolBar(mainwindow);
+    OpenFeedbackDialog* open_feedback_dialog = new OpenFeedbackDialog(mainwindow, bar);
     bar->setObjectName ("ApplicationErrorLogControllerBar");
     mainwindow->addToolBar(Qt::TopToolBarArea, bar);
     bar->addAction(
                 icon,
                 "An error has been reported by " + name + ". Click to file a bug report",
-                instance()->open_feedback_dialog_, SLOT(open()));
+                open_feedback_dialog, SLOT(open()));
 
     bool visible = QSettings().value (has_unreported_error_key, false).toBool ();
 
     //Call "bar->setVisible (visible)" after finishing loading the mainwindow.
     QMetaObject::invokeMethod (bar, "setVisible", Qt::QueuedConnection, Q_ARG(bool, visible));
 
-    instance()->toolbars_.push_back (bar);
+    // Hide and show the toolbar in all dialogs from the correct thread
+    // regardless of where the showToolbar signal was emitted.
+    connect (open_feedback_dialog, SIGNAL(dialogOpened()), instance(), SIGNAL(showToolbar()));
+    connect (instance(), SIGNAL(showToolbar(bool)), open_feedback_dialog, SLOT(showToolbar(bool)));
 }
 
 
@@ -128,6 +125,8 @@ void ApplicationErrorLogController::
 {
     if (!e)
         return;
+
+    emit showToolbar (true);
 
     try
       {
@@ -200,25 +199,31 @@ void ApplicationErrorLogController::
 
 
 OpenFeedbackDialog::
-        OpenFeedbackDialog()
+        OpenFeedbackDialog(QWidget *parent, QToolBar* bar)
     :
+      QObject(parent),
+      bar_(bar),
       send_feedback_dialog_(new SendFeedbackDialog(0))
 {
+    send_feedback_dialog_->setParent (parent);
+    send_feedback_dialog_->hide ();
+}
+
+
+void OpenFeedbackDialog::
+        showToolbar (bool v)
+{
+    if (bar_)
+        bar_->setVisible(v);
 }
 
 
 void OpenFeedbackDialog::
         open()
 {
-    ApplicationErrorLogController* c = ApplicationErrorLogController::instance ();
+    emit dialogOpened();
 
-    foreach(QPointer<QToolBar> a, c->toolbars_)
-    {
-        if (a)
-            a->setVisible (false);
-    }
-
-    QTimer::singleShot (0, send_feedback_dialog_, SLOT(open()));
+    QMetaObject::invokeMethod (send_feedback_dialog_, "open");
 
     QSettings().remove (has_unreported_error_key);
 }
