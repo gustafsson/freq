@@ -44,10 +44,12 @@ void Step::
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
     operations_.clear ();
 
-    bool was_locked = readWriteLock ()->tryLockForWrite ();
+    Signal::OperationDesc::Ptr died = died_;
+    bool was_locked = !readWriteLock ()->tryLockForWrite ();
     readWriteLock ()->unlock ();
 
-    died_->deprecateCache(Signal::Interval::Interval_ALL);
+    // Don't use 'this' while unlocked.
+    died->deprecateCache(Signal::Interval::Interval_ALL);
 
     if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
         BOOST_THROW_EXCEPTION(LockFailed()

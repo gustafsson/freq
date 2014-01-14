@@ -69,6 +69,7 @@ void OperationDesc::
     bool was_locked = !readWriteLock ()->tryLockForWrite ();
     readWriteLock ()->unlock ();
 
+    // Don't use 'this' while unlocked.
     if (invalidator)
         read1(invalidator)->deprecateCache(what);
 
