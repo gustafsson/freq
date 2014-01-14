@@ -340,7 +340,7 @@ void Worker::
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
-    if (0) {
+    {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
 
         PrettifySegfault::EnableDirectPrint (false);
