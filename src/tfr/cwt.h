@@ -36,18 +36,20 @@ public:
     */
     Cwt( float scales_per_octave=20, float wavelet_time_suppport=3, float number_of_octaves=10.107f );
 
-    virtual pChunk operator()( Signal::pMonoBuffer );
-    virtual Signal::pMonoBuffer inverse( pChunk );
-    virtual const TransformDesc* transformDesc() const { return this; }
+    // Transform
+    pChunk operator()( Signal::pMonoBuffer ) override;
+    Signal::pMonoBuffer inverse( pChunk ) override;
+    const TransformDesc* transformDesc() const override { return this; }
 
-    TransformDesc::Ptr copy() const;
-    virtual pTransform createTransform() const;
-    virtual float displayedTimeResolution( float FS, float hz ) const;
-    virtual FreqAxis freqAxis( float FS ) const;
+    // TransformDesc
+    TransformDesc::Ptr copy() const override;
+    pTransform createTransform() const override;
+    float displayedTimeResolution( float FS, float hz ) const override;
+    FreqAxis freqAxis( float FS ) const override;
     //virtual Signal::Interval validLength(Signal::pBuffer buffer);
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
-    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    virtual bool operator==(const TransformDesc& b) const;
+    Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const override;
+    Signal::Interval affectedInterval( const Signal::Interval& I ) const override;
+    bool operator==(const TransformDesc& b) const override;
 
 
     float     get_min_hz(float fs) const;
