@@ -59,29 +59,16 @@ public:
                                % (step->operation (params.engine)?"compatible":"incompatible")
                                % read1(o)->toString ().toStdString ());
 
-        Signal::Interval expected_output = I.fetchInterval(params.preferred_size, params.center);
-        Signal::Intervals required_input;
-        {
-            bool must_have_entire_expected_output = false; // params.preferred_size is just a preferred update size, not a required update size. Accept whatever requiredInterval sets as expected_output instead
+        // params.preferred_size is just a preferred update size, not a required update size.
+        // Accept whatever requiredInterval sets as expected_output
+        Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
+        Signal::Interval expected_output;
+        Signal::Intervals required_input = read1(o)->requiredInterval (wanted_output, &expected_output);;
 
-            // lock OperationDesc while querying requiredInterval
-            Signal::OperationDesc::ReadPtr od (o);
-            for (Signal::Intervals x = expected_output; x;) {
-                Signal::Interval actual_output;
-                Signal::Interval e = x.fetchFirstInterval ();
-                Signal::Interval r1 = od->requiredInterval (e, &actual_output);
-                required_input |= r1;
-                EXCEPTION_ASSERTX (actual_output & Signal::Interval(e.first, e.first+1),
-                                   boost::format("actual_output = %1%, x = %2%")
-                                   % actual_output % x); // check for valid 'requiredInterval' by making sure that actual_output doesn't stall needed
-                x -= actual_output;
-
-                if (!must_have_entire_expected_output) {
-                    expected_output = actual_output;
-                    break;
-                }
-            }
-        }
+        // check for valid 'requiredInterval' by making sure that expected_output doesn't stall needed samples in 'wanted_output'
+        EXCEPTION_ASSERTX (expected_output & Signal::Interval(wanted_output.first, wanted_output.first+1),
+                           boost::format("actual_output = %1%, x = %2%")
+                           % expected_output % wanted_output);
 
         // Compute what the sources have available
         Intervals total_missing;
