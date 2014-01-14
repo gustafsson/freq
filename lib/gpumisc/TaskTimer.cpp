@@ -38,12 +38,15 @@ QMutex staticLock(QMutex::Recursive);
 #endif
 
 struct ThreadInfo {
-    int threadNumber;
+    const int threadNumber;
+    void* qthread;
     unsigned counter[3];
 
-    ThreadInfo() { throw std::logic_error(__FUNCTION__); } // not implemented
-    ThreadInfo(int threadNumber) {
-        this->threadNumber = threadNumber;
+    ThreadInfo(int threadNumber=0)
+        :
+        threadNumber(threadNumber),
+        qthread(0)
+    {
         memset(counter, 0, sizeof(counter));
     }
 };
@@ -70,7 +73,15 @@ ThreadInfo& T() {
                     std::pair<void*,ThreadInfo>(threadid,
                     ThreadInfo(thread_info_map.size ())));
 
-    return thread_info_map[threadid];
+    ThreadInfo& ti = thread_info_map[threadid];
+
+    if (ti.qthread != QThread::currentThread ()) {
+        // Thread was terminated. QThread::finished is emitted by TaskTimer shouldn't use slots.
+        memset(ti.counter, 0, sizeof(ti.counter));
+        ti.qthread = QThread::currentThread ();
+    }
+
+    return ti;
 }
 
 
