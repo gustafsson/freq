@@ -46,7 +46,7 @@ void TimeSelection::
 
 
 Interval TimeSelection::
-        section()
+        section() const
 {
     return section_;
 }

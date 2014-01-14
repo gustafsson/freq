@@ -21,7 +21,7 @@ public:
     bool isInteriorSelected() const override;
     void selectInterior(bool v) override;
 
-    Signal::Interval section();
+    Signal::Interval section() const;
 
 private:
     Signal::Interval section_;

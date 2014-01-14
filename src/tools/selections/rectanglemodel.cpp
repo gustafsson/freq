@@ -63,10 +63,10 @@ Signal::OperationDesc::Ptr RectangleModel::
     {
         Tfr::ChunkFilterDesc::Ptr cfd;
         if (type == RectangleType_FrequencySelection)
-            cfd.reset( new Filters::Bandpass(f1, f2, true ));
+            cfd.reset( new Filters::Bandpass(f1, f2, select_interior ));
         else
             cfd.reset( new Filters::Rectangle(
-                a.time, f1, b.time, f2, true ));
+                a.time*FS, f1, b.time*FS, f2, select_interior ));
 
         Tfr::TransformDesc::Ptr t = read1(cfd)->transformDesc();
         filter.reset ( new Tfr::TransformOperationDesc(t, cfd));
@@ -84,52 +84,61 @@ Signal::OperationDesc::Ptr RectangleModel::
 bool RectangleModel::
         tryFilter(Signal::OperationDesc::Ptr filterp)
 {
-    Signal::OperationDesc::WritePtr filter(filterp);
-    Tfr::TransformOperationDesc* tod = dynamic_cast<Tfr::TransformOperationDesc*>(&*filter);
-    Filters::Rectangle* e = dynamic_cast<Filters::Rectangle*>(tod?&*tod->chunk_filter ():0);
-    Filters::Bandpass* bp = dynamic_cast<Filters::Bandpass*>(tod?&*tod->chunk_filter ():0);
-    Filters::TimeSelection* ts = dynamic_cast<Filters::TimeSelection*>(&*filter);
-
-    Filters::Selection* s = dynamic_cast<Filters::Selection*>(tod?&*tod->chunk_filter ():0);
-    if (!s) s = dynamic_cast<Filters::Selection*>(&*filter);
-    if (s)  select_interior = s->isInteriorSelected();
-
     float FS = project_->extent ().sample_rate.get ();
-    if (e)
-    {
-        type = RectangleType_RectangleSelection;
-        a.time = e->_t1;
-        b.time = e->_t2;
-        a.scale = freqAxis().getFrequencyScalar( e->_f1 );
-        b.scale = freqAxis().getFrequencyScalar( e->_f2 );
-        validate();
-        return true;
-    }
-    else if(bp)
-    {
-        type = RectangleType_FrequencySelection;
-        a.time = 0;
-        b.time = FLT_MAX;
-        a.scale = freqAxis().getFrequencyScalar( bp->_f1 );
-        b.scale = freqAxis().getFrequencyScalar( bp->_f2 );
-        validate();
-        return true;
-    }
-    else if(ts)
-    {
-        type = RectangleType_TimeSelection;
-        Signal::Interval section = ts->section();
-        a.time = section.first/FS;
-        b.time = section.last/FS;
-        a.scale = 0;
-        b.scale = 1;
-        return true;
-    }
-    else
-    {
-        b.time = a.time;
-        b.scale = a.scale;
-        return false;
+
+    Signal::OperationDesc::ReadPtr filter(filterp);
+    const Tfr::TransformOperationDesc* tod = dynamic_cast<const Tfr::TransformOperationDesc*>(&*filter);
+    const Filters::Selection* s = dynamic_cast<const Filters::Selection*>(&*filter);
+    if (s) select_interior = s->isInteriorSelected();
+
+    if (tod) {
+        Tfr::ChunkFilterDesc::ReadPtr c(tod->chunk_filter ());
+        s = dynamic_cast<const Filters::Selection*>(&*c);
+        if (s) select_interior = s->isInteriorSelected();
+
+        if (const Filters::Rectangle* e = dynamic_cast<const Filters::Rectangle*>(&*c))
+        {
+            type = RectangleType_RectangleSelection;
+            a.time = e->_s1/FS;
+            b.time = e->_s2/FS;
+            a.scale = freqAxis().getFrequencyScalar( e->_f1 );
+            b.scale = freqAxis().getFrequencyScalar( e->_f2 );
+            validate();
+            return true;
+        }
+        else if (const Filters::Bandpass* bp = dynamic_cast<const Filters::Bandpass*>(&*c))
+        {
+            type = RectangleType_FrequencySelection;
+            a.time = 0;
+            b.time = FLT_MAX;
+            a.scale = freqAxis().getFrequencyScalar( bp->_f1 );
+            b.scale = freqAxis().getFrequencyScalar( bp->_f2 );
+            validate();
+            return true;
+        }
+        else
+        {
+            b.time = a.time;
+            b.scale = a.scale;
+            return false;
+        }
+    } else {
+        if (const Filters::TimeSelection* ts = dynamic_cast<const Filters::TimeSelection*>(&*filter))
+        {
+            type = RectangleType_TimeSelection;
+            Signal::Interval section = ts->section();
+            a.time = section.first/FS;
+            b.time = section.last/FS;
+            a.scale = 0;
+            b.scale = 1;
+            return true;
+        }
+        else
+        {
+            b.time = a.time;
+            b.scale = a.scale;
+            return false;
+        }
     }
 }
 

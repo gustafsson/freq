@@ -115,6 +115,20 @@ Tfr::ChunkFilterDesc::Ptr Bandpass::
 }
 
 
+bool Bandpass::
+        isInteriorSelected() const
+{
+    return _save_inside;
+}
+
+
+void Bandpass::
+        selectInterior(bool v)
+{
+    _save_inside = v;
+}
+
+
 void Bandpass::
         test()
 {
