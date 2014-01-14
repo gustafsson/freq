@@ -58,7 +58,7 @@ Signal::pBuffer TransformOperationOperation::
                 ci.inverse = ci.t->inverse (ci.chunk);
 
             if (!r)
-                r.reset ( new Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
+                r.reset ( new Signal::Buffer(ci.inverse->getInterval (), ci.inverse->sample_rate (), b->number_of_channels ()));
 
             *r->getChannel (c) |= *ci.inverse;
           }
@@ -67,7 +67,7 @@ Signal::pBuffer TransformOperationOperation::
             // If chunk_filter_ has the NoInverseTag it shouldn't compute the inverse
             EXCEPTION_ASSERTX( !ci.inverse, vartype(*chunk_filter_) );
 
-            r.reset ( new Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
+            r.reset ( new Signal::Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
           }
 
       }

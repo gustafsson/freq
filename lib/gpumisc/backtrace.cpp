@@ -263,7 +263,7 @@ void Backtrace::
         Timer t;
         Backtrace::info backtrace = Backtrace::make ();
         float T = t.elapsed ();
-        EXCEPTION_ASSERT_LESS( T, 0.00015f );
+        EXCEPTION_ASSERT_LESS( T, 0.001f );
         EXCEPTION_ASSERT_LESS( 0u, backtrace.value ().frames_.size() + backtrace.value ().pretty_print_.size() );
     }
 
