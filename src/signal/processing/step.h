@@ -25,6 +25,9 @@ class Task;
 class Step: public VolatilePtr<Step>
 {
 public:
+    // To be appended to exceptions while using Step
+    typedef boost::error_info<struct crashed_step_tag, Step::Ptr> crashed_step;
+
     Step(Signal::OperationDesc::Ptr operation_desc);
 
     Signal::OperationDesc::Ptr  get_crashed() const;

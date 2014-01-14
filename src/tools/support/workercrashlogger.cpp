@@ -135,7 +135,7 @@ void WorkerCrashLogger::
         crashed_engine_typename = *mi;
       }
 
-    if( Step::Ptr const * mi = boost::get_error_info<Task::crashed_step>(x) )
+    if( Step::Ptr const * mi = boost::get_error_info<Step::crashed_step>(x) )
       {
         Signal::OperationDesc::Ptr od;
         {

@@ -21,8 +21,7 @@ namespace Processing {
 class Task: public VolatilePtr<Task>
 {
 public:
-    // Appended to any exception thrown by run
-    typedef boost::error_info<struct crashed_step_tag, Step::Ptr> crashed_step;
+    // To be appended to exceptions while using Task
     typedef boost::error_info<struct crashed_expected_output_tag, Signal::Interval> crashed_expected_output;
 
     // input_buffer and output_buffer does not need to be allocated beforehand

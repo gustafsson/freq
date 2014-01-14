@@ -1,8 +1,8 @@
 #include "firstmissalgorithm.h"
 
 #include "reversegraph.h"
-
 #include "TaskTimer.h"
+#include "expectexception.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -42,7 +42,11 @@ public:
         if (*task)
             return;
 
-        Step::WritePtr step( g[u] ); // lock while studying what's needed
+        Step::Ptr stepp = g[u];
+
+        try {
+
+        Step::WritePtr step( stepp ); // lock while studying what's needed
         Signal::Intervals I = needed[u] & step->not_started ();
         Signal::OperationDesc::Ptr o = step->operation_desc();
 
@@ -114,6 +118,16 @@ public:
             }
 
             task->reset (new Task(&*step, g[u], children, expected_output));
+        }
+
+        } catch (const boost::exception& x) {
+            x   << Step::crashed_step(stepp);
+
+            try {
+                write1(stepp)->mark_as_crashed();
+            } catch(const std::exception& y) {
+                x << unexpected_exception_info(boost::current_exception());
+            }
         }
     }
 

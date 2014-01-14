@@ -2,6 +2,7 @@
 
 #include "TaskTimer.h"
 #include "demangle.h"
+#include "expectexception.h"
 
 #include <boost/foreach.hpp>
 #include <QThread>
@@ -53,8 +54,14 @@ void Task::
     catch (const boost::exception& x)
       {
         // Append info to be used at the catch site
-        x   << crashed_step(step_)
-            << crashed_expected_output(expected_output_);
+        x   << Step::crashed_step(step_)
+            << Task::crashed_expected_output(expected_output_);
+
+        try {
+            write1(step_)->mark_as_crashed();
+        } catch(const std::exception& y) {
+            x << unexpected_exception_info(boost::current_exception());
+        }
 
         throw;
       }
