@@ -343,8 +343,6 @@ namespace Tools
 
         _model->set_current_selection( Signal::OperationDesc::Ptr() );
         _model->project()->appendOperation( o );
-        _model->set_current_selection( o );
-        _model->all_selections.push_back( o );
 
         Signal::OperationDesc::Extent x = read1(o)->extent();
         if (x.interval.is_initialized ())
