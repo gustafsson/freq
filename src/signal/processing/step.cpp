@@ -241,7 +241,7 @@ void Step::
 
 
 pBuffer Step::
-        readFixedLengthFromCache(Interval I)
+        readFixedLengthFromCache(Interval I) const
 {
     return cache_ ? cache_->readFixedLength (I) : pBuffer();
 }

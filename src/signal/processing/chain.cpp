@@ -264,7 +264,8 @@ Step::WeakPtr Chain::
 } // namespace Signal
 
 #include "test/operationmockups.h"
-
+#include "test/randombuffer.h"
+#include "signal/buffersource.h"
 #include <QApplication>
 
 namespace Signal {
@@ -312,7 +313,7 @@ void Chain::
         Timer t;
         Chain::Ptr chain = Chain::createDefaultChain ();
         Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
-        Signal::OperationDesc::Ptr source_desc(new OperationDescChainMock);
+        Signal::OperationDesc::Ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
         TargetMarker::Ptr null;
         TargetMarker::Ptr target = write1(chain)->addTarget(target_desc, null);

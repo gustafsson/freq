@@ -275,7 +275,7 @@ public:
 
 class DummyTask: public Task {
 public:
-    DummyTask() : Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval()) {}
+    DummyTask() : Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(), Signal::Interval()) {}
 
     void run(Signal::ComputingEngine::Ptr) override {
         // Keeps on running a lot of tasks as fast as possible

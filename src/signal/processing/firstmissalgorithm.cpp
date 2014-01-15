@@ -86,6 +86,7 @@ public:
             Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
             Signal::Interval expected_output;
             Signal::Interval required_input = read1(o)->requiredInterval (wanted_output, &expected_output);;
+            EXCEPTION_ASSERTX(required_input, read1(o)->toString ().toStdString ());
 
             // check for valid 'requiredInterval' by making sure that expected_output doesn't stall needed samples in 'wanted_output'
             EXCEPTION_ASSERTX (expected_output & Signal::Interval(wanted_output.first, wanted_output.first+1),
@@ -104,7 +105,7 @@ public:
                 Signal ::OperationDesc::Extent x = read1(o)->extent ();
                 if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
                   {
-                    DEBUGINFO TaskInfo("Undefined signal. No sources and no extent");
+                    // "Undefined signal. No sources and no extent"
                     missing_input = Signal::Interval::Interval_ALL; // A non-empty interval
                   }
               }
@@ -123,7 +124,7 @@ public:
                     children.push_back (g[v]);
                   }
 
-                task->reset (new Task(&*step, g[u], children, expected_output));
+                task->reset (new Task(&*step, g[u], children, expected_output, required_input));
               }
 
             return required_input;

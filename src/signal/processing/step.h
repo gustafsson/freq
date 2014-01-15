@@ -58,7 +58,7 @@ public:
      *         that is stored in the cache for given interval. Cache misses are
      *         returned as 0 values.
      */
-    Signal::pBuffer             readFixedLengthFromCache(Signal::Interval I);
+    Signal::pBuffer             readFixedLengthFromCache(Signal::Interval I) const;
 
 private:
     typedef std::map<Signal::ComputingEngine::WeakPtr, Signal::Operation::Ptr> OperationMap;
