@@ -42,7 +42,32 @@ GlFrameBuffer::
     own_texture_(0),
     texture_(texture)
 {
+    {
+        // Verify format
+        GLint internal_format=0, type=0;
+        GlTexture::ScopeBinding t = texture->getScopeBinding ();
+
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internal_format);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &type);
+
+        EXCEPTION_ASSERT_EQUALS(internal_format, GL_RGBA8);
+        EXCEPTION_ASSERT_EQUALS(type, 0x8C17); // from requesting GL_UNSIGNED_BYTE
+    }
+
     init();
+
+    try
+    {
+        recreate(texture->getWidth (), texture->getHeight ());
+    }
+    catch(...)
+    {
+        TaskInfo("GlFrameBuffer() caught exception");
+        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
+        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+
+        throw;
+    }
 }
 
 GlFrameBuffer::
@@ -119,7 +144,7 @@ void GlFrameBuffer::
             throw std::logic_error("Can't call GlFrameBuffer when no valid viewport is active");
     }
 
-    if (width == texture_->getWidth() && height == texture_->getHeight())
+    if (width == texture_->getWidth() && height == texture_->getHeight() && rboId_ && fboId_)
         return;
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
@@ -127,7 +152,8 @@ void GlFrameBuffer::
     // if (rboId_) { glDeleteRenderbuffersEXT(1, &rboId_); rboId_ = 0; }
     // if (fboId_) { glDeleteFramebuffersEXT(1, &fboId_); fboId_ = 0; }
 
-    texture_->reset(width, height);
+    if (width != texture_->getWidth() || height != texture_->getHeight())
+        texture_->reset(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 
     GlException_CHECK_ERROR();
 

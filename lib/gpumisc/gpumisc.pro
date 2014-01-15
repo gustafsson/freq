@@ -44,6 +44,7 @@ SOURCES += \
     neat_math.cpp \
     prettifysegfault.cpp \
     redirectstdout.cpp \
+    resampletexture.cpp \
     signalname.cpp \
     TaskTimer.cpp \
     ThreadChecker.cpp \
@@ -96,6 +97,7 @@ HEADERS += \
     resample.h \
     resamplecpu.h \
     resamplehelpers.h \
+    resampletexture.h \
     resampletypes.h \
     signalname.h \
     Statistics.h \

@@ -9,6 +9,7 @@
 #include "glprojection.h"
 #include "gltextureread.h"
 #include "prettifysegfault.h"
+#include "resampletexture.h"
 #include "volatileptr.h"
 
 // sonicawe
@@ -104,6 +105,7 @@ int UnitTest::
         RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
+        RUNTEST(ResampleTexture);
         RUNTEST(VolatilePtrTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
