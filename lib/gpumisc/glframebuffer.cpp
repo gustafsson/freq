@@ -14,25 +14,11 @@ GlFrameBuffer::
         GlFrameBuffer(unsigned width, unsigned height)
             :
             fboId_(0),
-            rboId_(0)
+            rboId_(0),
+            own_texture_(new GlTexture),
+            texture_(own_texture_)
 {
-#ifndef __APPLE__ // glewInit is not needed on Mac
-    if (0==glGenRenderbuffersEXT)
-    {
-        DEBUG_INFO TaskInfo("Initializing glew");
-
-        if (0 != glewInit() )
-            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Couldn't initialize \"glew\"")));
-
-        if (!glewIsSupported( "GL_EXT_framebuffer_object" )) {
-            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Failed to get minimal extensions\n"
-                    "Sonic AWE requires:\n"
-                    "  GL_EXT_framebuffer_object\n")));
-        }
-    }
-#endif
+    init();
 
     try
     {
@@ -46,6 +32,17 @@ GlFrameBuffer::
 
         throw;
     }
+}
+
+GlFrameBuffer::
+        GlFrameBuffer(GlTexture* texture)
+    :
+    fboId_(0),
+    rboId_(0),
+    own_texture_(0),
+    texture_(texture)
+{
+    init();
 }
 
 GlFrameBuffer::
@@ -69,6 +66,9 @@ GlFrameBuffer::
 
     GLenum e2 = glGetError();
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e2);
+
+    if (own_texture_)
+        delete own_texture_;
 }
 
 GlFrameBuffer::ScopeBinding GlFrameBuffer::
@@ -119,7 +119,7 @@ void GlFrameBuffer::
             throw std::logic_error("Can't call GlFrameBuffer when no valid viewport is active");
     }
 
-    if (width == texture_.getWidth() && height == texture_.getHeight())
+    if (width == texture_->getWidth() && height == texture_->getHeight())
         return;
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
@@ -127,7 +127,7 @@ void GlFrameBuffer::
     // if (rboId_) { glDeleteRenderbuffersEXT(1, &rboId_); rboId_ = 0; }
     // if (fboId_) { glDeleteFramebuffersEXT(1, &fboId_); fboId_ = 0; }
 
-    texture_.reset(width, height);
+    texture_->reset(width, height);
 
     GlException_CHECK_ERROR();
 
@@ -149,7 +149,7 @@ void GlFrameBuffer::
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
                                   GL_COLOR_ATTACHMENT0_EXT,
                                   GL_TEXTURE_2D,
-                                  texture_.getOpenGlTextureId(),
+                                  texture_->getOpenGlTextureId(),
                                   0);
 
         glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
@@ -166,7 +166,30 @@ void GlFrameBuffer::
 
     DEBUG_INFO TaskInfo("fbo = %u", fboId_ );
     DEBUG_INFO TaskInfo("rbo = %u", fboId_ );
-    DEBUG_INFO TaskInfo("texture = %u", texture_.getOpenGlTextureId() );
+    DEBUG_INFO TaskInfo("texture = %u", texture_->getOpenGlTextureId() );
 
     GlException_CHECK_ERROR();
+}
+
+
+void GlFrameBuffer::
+        init()
+{
+#ifndef __APPLE__ // glewInit is not needed on Mac
+    if (0==glGenRenderbuffersEXT)
+    {
+        DEBUG_INFO TaskInfo("Initializing glew");
+
+        if (0 != glewInit() )
+            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
+                    "Couldn't initialize \"glew\"")));
+
+        if (!glewIsSupported( "GL_EXT_framebuffer_object" )) {
+            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
+                    "Failed to get minimal extensions\n"
+                    "Sonic AWE requires:\n"
+                    "  GL_EXT_framebuffer_object\n")));
+        }
+    }
+#endif
 }

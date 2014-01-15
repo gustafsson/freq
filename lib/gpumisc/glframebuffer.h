@@ -25,6 +25,7 @@ public:
     @throws GlException If OpenGL encountered an error.
     */
     GlFrameBuffer(unsigned width=0, unsigned height=0);
+    GlFrameBuffer(GlTexture* texture);
 
     /**
     Releases the frame buffer object.
@@ -59,7 +60,7 @@ public:
     /**
     The frame buffer can be accessed through a texture.
     */
-    GlTexture& getGlTexture() { return texture_; }
+    GlTexture& getGlTexture() { return *texture_; }
 
     /**
     Recreates the OpenGL frame buffer object and allocates memory for a
@@ -87,5 +88,8 @@ private:
     /**
       Texture to access the frame buffer.
       */
-    GlTexture texture_;
+    GlTexture* own_texture_;
+    GlTexture* texture_;
+
+    void init();
 };
