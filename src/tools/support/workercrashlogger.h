@@ -1,7 +1,6 @@
 #ifndef TOOLS_SUPPORT_WORKERCRASHLOGGER_H
 #define TOOLS_SUPPORT_WORKERCRASHLOGGER_H
 
-#include <QObject>
 #include <QThread>
 #include "signal/processing/workers.h"
 
@@ -23,11 +22,14 @@ private slots:
     void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
     void check_all_previously_crashed_and_consume();
     void check_all_previously_crashed_without_consuming();
+    void finished();
 
 private:
     Signal::Processing::Workers::Ptr    workers_;
     QThread                             thread_;
     bool                                consume_exceptions_;
+
+    void log(const boost::exception& x);
 
 public:
     static void test();

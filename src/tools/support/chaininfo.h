@@ -9,6 +9,8 @@ namespace Support {
 /**
  * @brief The ChainInfo class should provide info about the runnig state of a
  * signal processing chain.
+ *
+ * It should say that there is no work if a step has crashed.
  */
 class ChainInfo
 {

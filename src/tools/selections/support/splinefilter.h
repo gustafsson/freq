@@ -49,9 +49,17 @@ private:
 };
 
 
-class SplineFilterDesc: public Tfr::CwtFilterDesc {
+class SplineFilterDesc: public Tfr::CwtChunkFilterDesc {
 public:
-    SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new SplineFilter(save_inside, v))) {}
+    SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v);
+
+    // ChunkFilterDesc
+    Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine) const;
+    ChunkFilterDesc::Ptr    copy() const;
+
+private:
+    bool save_inside;
+    std::vector<SplineFilter::SplineVertex> v;
 };
 
 }}} // namespace Tools::Selections::Support

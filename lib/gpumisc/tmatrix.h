@@ -83,7 +83,7 @@ public:
 		return r;
 	}
     template<typename T2>
-    bool operator==( const tmatrix<rows,T2,cols> &v ) {
+    bool operator==( const tmatrix<rows,T2,cols> &v ) const {
         for(int a=0; a<cols; a++)
         for(int b=0; b<rows; b++)
             if (m[a][b] != v[a][b])
@@ -91,14 +91,14 @@ public:
         return true;
     }
     template<typename T2>
-    bool operator!=( const tmatrix<rows,T2,cols> &v ) {
+    bool operator!=( const tmatrix<rows,T2,cols> &v ) const {
         return !(*this == v);
     }
-    tmatrix inverse() {
-		tmatrix r;
+    tmatrix<cols,t,rows> transpose() {
+        tmatrix<cols,t,rows> r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
-			r[a][b] = m[b][a];
+            r[b][a] = m[a][b];
 	}
 	static tmatrix<4,t,4> rotHead( tvector<3, t> r )
 	{

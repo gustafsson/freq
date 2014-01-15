@@ -28,6 +28,8 @@
 #include "selections/rectanglemodel.h"
 #include "selections/rectangleview.h"
 
+#include "log.h"
+
 namespace Tools
 {
     SelectionController::
@@ -327,42 +329,34 @@ namespace Tools
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
-        TaskInfo("Clear selection\n%s", read1(o)->toString().toStdString().c_str());
+        Log("Clear selection\n%s") % read1(o)->toString().toStdString();
     }
 
 
     void SelectionController::
             receiveCropSelection()
     {
-        EXCEPTION_ASSERTX(false,"not implemented");
-
-/*
         if (!_model->current_selection())
             return;
 
         Signal::OperationDesc::Ptr o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
-        //o->source( _worker->source() );
-        if (0 == dynamic_cast<volatile Tools::Support::OperationOtherSilent*>(o.get()))
-        {
-            _model->set_current_selection( Signal::OperationDesc::Ptr() );
-            _model->project()->appendOperation( o );
-        }
 
-        Signal::Intervals I = o->affected_samples().spannedInterval();
-        I -= o->zeroed_samples();
+        _model->set_current_selection( Signal::OperationDesc::Ptr() );
+        _model->project()->appendOperation( o );
 
-        if (false) if (I) {
-            // Create OperationRemoveSection to remove everything else from the stream
-            Signal::OperationDesc::Ptr remove(new Tools::Support::OperationCrop(
-                    o, I.spannedInterval() ));
+        Signal::OperationDesc::Extent x = read1(o)->extent();
+        if (x.interval.is_initialized ())
+          {
+            Signal::Interval xi = x.interval.get ();
+            if (xi.first != 0)
+              {
+                Signal::OperationDesc::Ptr shift(
+                            new Support::OperationShift(-xi.first, Signal::Interval(0, xi.count ())));
+                _model->project()->appendOperation( shift );
+              }
+          }
 
-            _model->set_current_selection( Signal::OperationDesc::Ptr() );
-            _model->project()->appendOperation( remove );
-            _model->set_current_selection( o );
-        }
-
-        TaskInfo("Crop selection\n%s", o->toStringSkipSource ().c_str ());
-*/
+        Log("Crop selection\n%s") % read1(o)->toString().toStdString();
     }
 
 

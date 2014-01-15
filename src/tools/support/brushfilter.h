@@ -151,12 +151,15 @@ private:
 };
 
 
-class MultiplyBrushDesc: public Tfr::CwtFilterDesc {
+class MultiplyBrushDesc: public Tfr::CwtChunkFilterDesc {
 public:
-    MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp)
-        :
-          Tfr::CwtFilterDesc(Tfr::pChunkFilter(new MultiplyBrush(bl, vp)))
-    {}
+    MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp);
+
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const;
+
+private:
+    Heightmap::BlockLayout bl;
+    Heightmap::VisualizationParams::ConstPtr vp;
 };
 
 

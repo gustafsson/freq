@@ -104,7 +104,6 @@ RenderView::
 
     connect( this, SIGNAL(postUpdate()), SLOT(restartUpdateTimer()), Qt::QueuedConnection );
     connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
-    connect( this, SIGNAL(postCheckForWorkerCrashes()), SLOT(checkForWorkerCrashes()), Qt::QueuedConnection );
 }
 
 
@@ -262,8 +261,6 @@ void RenderView::
     }
 
     painter->endNativePainting();
-
-    emit postCheckForWorkerCrashes();
 }
 
 
@@ -958,21 +955,6 @@ void RenderView::
 
 
 void RenderView::
-        checkForWorkerCrashes()
-{
-    Signal::Processing::Workers::Ptr workers = read1(model->project ()->processing_chain ())->workers();
-
-    try {
-        write1(workers)->rethrow_any_worker_exception();
-    } catch ( const std::exception& x) {
-        // TODO boost::diagnostic_information takes a lot of time since the backtrace beautifier is slow
-        // Run the backtrace beautifier in a separate thread.
-        TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
-    }
-}
-
-
-void RenderView::
         initializeGL()
 {
     _inited = true;
@@ -1086,7 +1068,6 @@ void RenderView::
     }
 
     // TODO move to rendercontroller
-    bool isWorking = false;
     bool isRecording = false;
 
     if (0 == "stop after 31 seconds")
@@ -1191,7 +1172,7 @@ void RenderView::
     wu.update(model->_qx, x, _last_update_size);
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
-    isWorking = ci.hasWork ();
+    bool isWorking = ci.hasWork ();
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
     if (wu.failedAllocation ())

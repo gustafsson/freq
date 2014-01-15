@@ -26,8 +26,8 @@ public:
     SampleRate sample_rate() const { return sample_rate_; }
     SampleRate targetSampleRate() const { return sample_rate_; }
 
-    bool operator==(const BlockLayout& b);
-    bool operator!=(const BlockLayout& b);
+    bool operator==(const BlockLayout& b) const;
+    bool operator!=(const BlockLayout& b) const;
 
     std::string toString() const;
 

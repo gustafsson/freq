@@ -3,6 +3,8 @@
 
 #include "signal/operation.h"
 
+#include <boost/serialization/nvp.hpp>
+
 namespace Signal {
 
 /**
@@ -37,7 +39,6 @@ public:
     Signal::Interval section() { return section_; }
 private:
     Signal::Interval section_;
-
 
     friend class boost::serialization::access;
     OperationSetSilent():section_(0,0) {} // only used by deserialization

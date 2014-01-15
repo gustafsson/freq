@@ -4,12 +4,15 @@
 #include "worker.h"
 #include "ischedule.h"
 #include "signal/computingengine.h"
+#include "bedroom.h"
 
 #include <vector>
 #include <map>
 
 namespace Signal {
 namespace Processing {
+
+class BedroomSignalAdapter;
 
 /**
  * @brief The Schedule class should start and stop computing engines as they
@@ -19,17 +22,21 @@ namespace Processing {
  * for tasks to work on.
  *
  * It should terminate all threads when it's closed.
+ *
+ * It should wake up sleeping workers when any work is done to see if they can
+ * help out on what's left.
  */
 class Workers: public QObject, public VolatilePtr<Workers>
 {
     Q_OBJECT
 public:
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
-    typedef boost::error_info<struct crashed_engine, Signal::ComputingEngine::Ptr> crashed_engine_value;
+    typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::Ptr> crashed_engine;
+    typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;
 
     typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
 
-    Workers(ISchedule::Ptr schedule);
+    Workers(ISchedule::Ptr schedule, Bedroom::Ptr bedroom);
     ~Workers();
 
     // Throw exception if already added.
@@ -83,16 +90,16 @@ public:
      */
     bool remove_all_engines(int timeout=0) const;
 
+    bool wait(int timeout=1000);
+
     static void print(const DeadEngines&);
 
 signals:
     void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
 
-private slots:
-    void worker_quit_slot();
-
 private:
     ISchedule::Ptr schedule_;
+    BedroomSignalAdapter* notifier_;
 
     Engines workers_;
 

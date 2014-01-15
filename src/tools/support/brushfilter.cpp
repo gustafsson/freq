@@ -6,6 +6,7 @@
 #include "heightmap/referenceinfo.h"
 
 #include "cpumemorystorage.h"
+#include "TaskTimer.h"
 
 namespace Tools {
 namespace Support {
@@ -151,6 +152,21 @@ void MultiplyBrush::
                 imgarea,
                 v.second);
     }
+}
+
+
+MultiplyBrushDesc::
+        MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp)
+    :
+      bl(bl),
+      vp(vp)
+{}
+
+
+Tfr::pChunkFilter MultiplyBrushDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    return Tfr::pChunkFilter(new MultiplyBrush(bl, vp));
 }
 
 

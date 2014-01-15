@@ -76,6 +76,7 @@ Step::WeakPtr TargetMarker::
 } // namespace Signal
 
 #include "bedroom.h"
+#include "bedroomnotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -91,7 +92,8 @@ void TargetMarker::
         Step::Ptr step2b(new Step(Signal::OperationDesc::Ptr()));
 
         Bedroom::Ptr bedroom(new Bedroom());
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step3a, bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::Ptr target_needs(new TargetNeeds(step3a, notifier));
         Dag::Ptr dagp(new Dag());
 
         TargetMarker::Ptr tm( new TargetMarker(target_needs, dagp));
@@ -103,8 +105,8 @@ void TargetMarker::
             dag->insertStep (step1, dag->getVertex (step3a));
             dag->insertStep (step2a, dag->getVertex (step3a));
             dag->appendStep (step2b, dag->getVertex (step1));
-            EXCEPTION_ASSERT_EQUALS( g.num_edges (), 3 );
-            EXCEPTION_ASSERT_EQUALS( g.num_vertices (), 4 );
+            EXCEPTION_ASSERT_EQUALS( g.num_edges (), 3u );
+            EXCEPTION_ASSERT_EQUALS( g.num_vertices (), 4u );
         }
 
         tm.reset ();
@@ -112,13 +114,13 @@ void TargetMarker::
         {
             Dag::WritePtr dag(dagp);
             const Graph& g = dag->g ();
-            EXCEPTION_ASSERT_EQUALS( g.num_edges (), 1 );
-            EXCEPTION_ASSERT_EQUALS( g.num_vertices (), 2 );
+            EXCEPTION_ASSERT_EQUALS( g.num_edges (), 1u );
+            EXCEPTION_ASSERT_EQUALS( g.num_vertices (), 2u );
 
-            EXCEPTION_ASSERT_EQUALS( boost::out_degree(dag->getVertex (step1), g), 1 );
-            EXCEPTION_ASSERT_EQUALS( boost::in_degree(dag->getVertex (step1), g), 0 );
-            EXCEPTION_ASSERT_EQUALS( boost::out_degree(dag->getVertex (step2b), g), 0 );
-            EXCEPTION_ASSERT_EQUALS( boost::in_degree(dag->getVertex (step2b), g), 1 );
+            EXCEPTION_ASSERT_EQUALS( boost::out_degree(dag->getVertex (step1), g), 1u );
+            EXCEPTION_ASSERT_EQUALS( boost::in_degree(dag->getVertex (step1), g), 0u );
+            EXCEPTION_ASSERT_EQUALS( boost::out_degree(dag->getVertex (step2b), g), 0u );
+            EXCEPTION_ASSERT_EQUALS( boost::in_degree(dag->getVertex (step2b), g), 1u );
         }
     }
 }

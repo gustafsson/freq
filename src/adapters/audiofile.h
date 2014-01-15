@@ -3,6 +3,8 @@
 
 #include "signal/buffersource.h"
 
+#include <boost/serialization/nvp.hpp>
+
 /*
     TODO update reference manual
     input signal, 1D, can be sound, matlab vector or data-file

@@ -232,7 +232,7 @@ void Dag::
         EXCEPTION_ASSERT( dag.sourceSteps (step) == std::vector<Step::Ptr>());
         EXCEPTION_ASSERT( dag.targetSteps (step) == std::vector<Step::Ptr>());
         EXCEPTION_ASSERT( dag.getVertex (step) == NullVertex() );
-        EXCEPTION_ASSERT_EQUALS (dag.g ().num_vertices (), 1);
+        EXCEPTION_ASSERT_EQUALS (dag.g ().num_vertices (), 1u );
     }
 }
 

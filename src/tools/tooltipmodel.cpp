@@ -396,7 +396,7 @@ public:
         for (unsigned i=0; i < cwtchunk->chunks.size(); ++i)
             N += cwtchunk->chunks[i]->nScales() - (i!=0);
 
-        EXCEPTION_ASSERT( N == cwt->nScales( fs ) );
+        EXCEPTION_ASSERT( N == cwt->nScales() );
 
         abslog.reset( new DataStorage<float>(N));
 
@@ -433,7 +433,7 @@ public:
             }
         }
 
-        EXCEPTION_ASSERT( k == cwt->nScales(fs) );
+        EXCEPTION_ASSERT( k == cwt->nScales() );
 
         fa = chunk->freqAxis;
     }

@@ -36,7 +36,7 @@ public:
 
 class FanTrackerDesc: public Tfr::CepstrumFilterDesc {
 public:
-    FanTrackerDesc():Tfr::CepstrumFilterDesc(Tfr::pChunkFilter(new FanTrackerFilter)){}
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
 };
 
 } // namespace Support

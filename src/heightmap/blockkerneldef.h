@@ -4,6 +4,9 @@
 #include "resample.h"
 #include "operate.h"
 
+#ifdef FREQAXIS_CALL
+#undef FREQAXIS_CALL
+#endif
 #define FREQAXIS_CALL RESAMPLE_ANYCALL
 #include "tfr/freqaxis.h"
 

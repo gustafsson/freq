@@ -219,9 +219,6 @@ namespace Tools { namespace Selections
             {
                 view_->visible = model()->a != model()->b;
             }
-
-            if (model()->replaceFilter( o ))
-                selection_controller_->model()->set_current_selection( model()->updateFilter() );
         }
         else
             view_->visible = false;

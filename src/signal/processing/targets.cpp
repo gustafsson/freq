@@ -7,9 +7,9 @@ namespace Signal {
 namespace Processing {
 
 Targets::
-        Targets(Bedroom::WeakPtr bedroom)
+        Targets(INotifier::WeakPtr notifier)
     :
-      bedroom_(bedroom)
+      notifier_(notifier)
 {
 }
 
@@ -17,7 +17,7 @@ Targets::
 TargetNeeds::Ptr Targets::
         addTarget(Step::WeakPtr step)
 {
-    TargetNeeds::Ptr target(new TargetNeeds(step, bedroom_));
+    TargetNeeds::Ptr target(new TargetNeeds(step, notifier_));
     targets.push_back (target);
 
     // perform gc
@@ -51,7 +51,7 @@ Targets::TargetNeedsCollection Targets::
 } // namespace Processing
 } // namespace Signal
 
-
+#include "bedroomnotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -63,9 +63,10 @@ void Targets::
     {
         // setup
         Bedroom::Ptr bedroom(new Bedroom);
+        BedroomNotifier::Ptr bedroom_notifier(new BedroomNotifier(bedroom));
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
 
-        Targets::Ptr targets(new Targets(bedroom));
+        Targets::Ptr targets(new Targets(bedroom_notifier));
         TargetNeeds::Ptr updater( write1(targets)->addTarget(step) );
         EXCEPTION_ASSERT(updater);
         EXCEPTION_ASSERT(read1(updater)->step().lock() == step);

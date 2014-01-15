@@ -6,6 +6,8 @@
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 
+#include "demangle.h"
+
 namespace Heightmap {
 namespace TfrMappings {
 

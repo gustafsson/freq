@@ -1,7 +1,9 @@
 #include "chunktoblock.h"
 
 #include "blockkernel.h"
+#include "signal/operation.h"
 #include "tfr/chunk.h"
+#include "tfr/transformoperation.h"
 
 namespace Heightmap {
 
@@ -106,7 +108,7 @@ void ChunkToBlock::mergeRowMajorChunk(
 
 } // namespace Heightmap
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/stftdesc.h"
 
 namespace Heightmap {
@@ -116,8 +118,8 @@ class DummyKernel: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTa
     void set_number_of_channels (unsigned) {}
 };
 
-class DummyKernelDesc: public Tfr::FilterKernelDesc {
-    virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
+class DummyKernelDesc: public Tfr::ChunkFilterDesc {
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
         return Tfr::pChunkFilter(new DummyKernel);
     }
 };
@@ -136,20 +138,19 @@ void ChunkToBlock::
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);
 
-    Tfr::StftDesc* tfr;
-    Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
-    Tfr::FilterKernelDesc::Ptr fdesc( new DummyKernelDesc );
-    Signal::OperationDesc::Ptr desc(new Tfr::FilterDesc(tdesc, fdesc));
+    Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
+    write1(fdesc)->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
+    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(fdesc));
     Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
-
-    Tfr::TransformKernel* transformkernel = dynamic_cast<Tfr::TransformKernel*>( &*operation );
 
     Signal::Interval expectedOutput;
     Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
-    Tfr::pTransform t = transformkernel->transform();
-    Signal::pMonoBuffer buffer( new Signal::MonoBuffer (requiredInterval, 1));
-    Tfr::pChunk chunk = (*t)( buffer );
+    Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
+    operation->process( buffer );
+
+    Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
+    Tfr::pChunk chunk = (*read1(fdesc)->transformDesc()->createTransform ())( monobuffer );
 
     Heightmap::Reference ref;
 

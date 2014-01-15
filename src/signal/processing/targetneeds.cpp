@@ -3,8 +3,11 @@
 #include "bedroom.h"
 
 #include "timer.h"
+#include "TaskTimer.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <QThread>
 
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)
@@ -15,12 +18,12 @@ namespace Signal {
 namespace Processing {
 
 TargetNeeds::
-        TargetNeeds(Step::WeakPtr step, Bedroom::WeakPtr bedroom)
+        TargetNeeds(Step::WeakPtr step, INotifier::WeakPtr notifier)
     :
       step_(step),
       work_center_(Signal::Interval::IntervalType_MIN),
       preferred_update_size_(Signal::Interval::IntervalType_MAX),
-      bedroom_(bedroom)
+      notifier_(notifier)
 {
 }
 
@@ -67,9 +70,9 @@ void TargetNeeds::
     preferred_update_size_ = preferred_update_size;
 
     if (got_news) {
-        Bedroom::Ptr bedroom = bedroom_.lock ();
-        if (bedroom)
-            bedroom->wakeup();
+        INotifier::Ptr notifier = notifier_.lock ();
+        if (notifier)
+            notifier->wakeup();
     }
 }
 
@@ -86,9 +89,9 @@ void TargetNeeds::
         write1(step)->deprecateCache(invalidate);
 
     if (invalidate & needed_samples_) {
-        Bedroom::Ptr bedroom = bedroom_.lock ();
-        if (bedroom)
-            bedroom->wakeup();
+        INotifier::Ptr notifier = notifier_.lock ();
+        if (notifier)
+            notifier->wakeup();
     }
 }
 
@@ -156,18 +159,16 @@ int left(const Timer& t, int sleep_ms) {
     return left;
 }
 
+
 bool TargetNeeds::
         sleep(int sleep_ms) volatile
 {
     Timer t;
 
     Step::Ptr pstep = ReadPtr(this)->step_.lock();
-    Bedroom::Ptr bedroom = ReadPtr(this)->bedroom_.lock();
 
-    if (!pstep || !bedroom)
+    if (!pstep)
         return false;
-
-    Bedroom::Bed bed = bedroom->getBed();
 
     for (;;) {
         {
@@ -182,19 +183,19 @@ bool TargetNeeds::
                 return true;
         }
 
-        bed.sleep(left(t, sleep_ms));
-
         if (0 <= sleep_ms && 0 == left(t, sleep_ms))
             return false;
+
+        QThread::msleep (1);
     }
 }
-
 
 } // namespace Processing
 } // namespace Signal
 
 #include "dag.h"
 #include "targets.h"
+#include "bedroomnotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -207,7 +208,8 @@ void TargetNeeds::
         Bedroom::Ptr bedroom(new Bedroom);
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
 
-        TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::Ptr target_needs( new TargetNeeds(step, notifier) );
 
         Signal::Intervals initial_valid(0,60);
         write1(step)->registerTask(0, initial_valid.spannedInterval ());
@@ -226,12 +228,13 @@ void TargetNeeds::
     {
         // Note; this is more helpful to do a less noisy debugging than to increase any performance
         Bedroom::Ptr bedroom(new Bedroom);
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
         write1(step)->registerTask(0, Signal::Interval(0,10));
         write1(step)->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
 
-        TargetNeeds::Ptr target_needs( new TargetNeeds(step, bedroom) );
+        TargetNeeds::Ptr target_needs( new TargetNeeds(step, notifier) );
 
         {
             Timer t;

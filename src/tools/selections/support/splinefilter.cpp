@@ -5,6 +5,7 @@
 
 // gpumisc
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // boost
 #include <boost/foreach.hpp>
@@ -128,6 +129,30 @@ Signal::Intervals SplineFilter::
     sid = sid.enlarge( FS*0.1f );
 
     return ~sid;
+}
+
+
+SplineFilterDesc::
+        SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v)
+    :
+      save_inside(save_inside),
+      v(v)
+{
+
+}
+
+
+Tfr::pChunkFilter SplineFilterDesc::
+        createChunkFilter(Signal::ComputingEngine*) const
+{
+    return Tfr::pChunkFilter(new SplineFilter(save_inside, v));
+}
+
+
+Tfr::ChunkFilterDesc::Ptr SplineFilterDesc::
+        copy() const
+{
+    return Tfr::ChunkFilterDesc::Ptr(new SplineFilterDesc(save_inside, v));
 }
 
 }}} // namespace Tools::Selections::Support

@@ -3,6 +3,8 @@
 
 #include "signal/operation.h"
 
+#include <boost/serialization/nvp.hpp>
+
 namespace Filters {
 
 /**

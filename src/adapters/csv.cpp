@@ -2,6 +2,8 @@
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 
+#include "TaskTimer.h"
+
 #include <sstream>
 #include <fstream>
 
@@ -61,6 +63,22 @@ void Csv::
         }
         csv << ss.str() << endl;
     }
+}
+
+
+Tfr::pChunkFilter CsvDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine==0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new Csv(filename_));
+    return Tfr::pChunkFilter();
+}
+
+
+Tfr::ChunkFilterDesc::Ptr CsvDesc::
+        copy() const
+{
+    return ChunkFilterDesc::Ptr( new CsvDesc(filename_));
 }
 
 } // namespace Adapters

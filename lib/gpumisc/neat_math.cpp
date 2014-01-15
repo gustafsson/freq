@@ -72,9 +72,9 @@ void neat_math::
         Timer t;
 
         // integer division, rounded off upwards
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10,3), 4 );
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9,3), 3 );
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8,3), 3 );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10,3), 4u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9,3), 3u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8,3), 3u );
 
         double T = t.elapsed();
         EXCEPTION_ASSERT_LESS (T, gdb ? 2e-3 : 20e-6);
@@ -83,8 +83,8 @@ void neat_math::
     {
         Timer t;
         EXCEPTION_ASSERT_EQUALS( ((-10%3)+3)%3, 2 );
-        EXCEPTION_ASSERT_EQUALS( 1%3u, 1 );
-        EXCEPTION_ASSERT_EQUALS( 0%3u, 0 );
+        EXCEPTION_ASSERT_EQUALS( 1%3u, 1u );
+        EXCEPTION_ASSERT_EQUALS( 0%3u, 0u );
         EXCEPTION_ASSERT_EQUALS( -1%3, -1 );
         EXCEPTION_ASSERT_EQUALS( -2%3, -2 );
         EXCEPTION_ASSERT_EQUALS( -3%3, 0 );
@@ -234,16 +234,16 @@ void neat_math::
     {
         Timer t;
 
-        EXCEPTION_ASSERT_EQUALS( spo2g(1567), 2048 );
-        EXCEPTION_ASSERT_EQUALS( spo2g(516), 1024 );
-        EXCEPTION_ASSERT_EQUALS( spo2g(511), 512 );
-        EXCEPTION_ASSERT_EQUALS( spo2g(512), 1024 );
+        EXCEPTION_ASSERT_EQUALS( spo2g(1567), 2048u );
+        EXCEPTION_ASSERT_EQUALS( spo2g(516), 1024u );
+        EXCEPTION_ASSERT_EQUALS( spo2g(511), 512u );
+        EXCEPTION_ASSERT_EQUALS( spo2g(512), 1024u );
         EXCEPTION_ASSERT_EQUALS( spo2g(2107612212), 1u<<31 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(1567), 1024 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(516), 512 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(511), 256 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(512), 256 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(2107612212), 1<<30 );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(1567), 1024u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(516), 512u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(511), 256u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(512), 256u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(2107612212), 1u<<30 );
 
         double T = t.elapsed();
         EXCEPTION_ASSERT_LESS (T, 25e-6);
@@ -252,11 +252,11 @@ void neat_math::
     {
         Timer t;
 
-        EXCEPTION_ASSERT_EQUALS( log2(1567u), 10 );
-        EXCEPTION_ASSERT_EQUALS( log2(516u), 9 );
-        EXCEPTION_ASSERT_EQUALS( log2(511u), 8 );
-        EXCEPTION_ASSERT_EQUALS( log2(512u), 9 );
-        EXCEPTION_ASSERT_EQUALS( log2(2107612212u), 30 );
+        EXCEPTION_ASSERT_EQUALS( log2(1567u), 10u );
+        EXCEPTION_ASSERT_EQUALS( log2(516u), 9u );
+        EXCEPTION_ASSERT_EQUALS( log2(511u), 8u );
+        EXCEPTION_ASSERT_EQUALS( log2(512u), 9u );
+        EXCEPTION_ASSERT_EQUALS( log2(2107612212u), 30u );
 
         double T = t.elapsed();
         EXCEPTION_ASSERT_LESS (T, debug_build ? 10e-6 : 5e-6);
@@ -305,7 +305,7 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(1.4*T, T4);
 #else
-        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.05: 1.2), T4);
+        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.03: 1.2), T4);
 #endif
         double ghz = 1e-9/T;
         EXCEPTION_ASSERT_LESS(debug_build ? 0.1 : 0.3, ghz);

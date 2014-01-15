@@ -87,7 +87,8 @@ HEADERS += \
     tools/widgets/*.h \
     ui/*.h \
 
-PRECOMPILED_HEADER += sawe/project_header.h
+CONFIG += precompile_header
+PRECOMPILED_HEADER = sawe/project_header.h
 
 # Qt Creator crashes every now and then in Windows if form filenames are expressed with wildcards
 FORMS += \

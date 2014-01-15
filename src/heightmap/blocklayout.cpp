@@ -20,7 +20,7 @@ BlockLayout::
 
 
 bool BlockLayout::
-        operator==(const BlockLayout& b)
+        operator==(const BlockLayout& b) const
 {
     return texels_per_column_ == b.texels_per_column_ &&
            texels_per_row_ == b.texels_per_row_ &&
@@ -29,7 +29,7 @@ bool BlockLayout::
 
 
 bool BlockLayout::
-        operator!=(const BlockLayout& b)
+        operator!=(const BlockLayout& b) const
 {
     return !(*this == b);
 }

@@ -3,6 +3,8 @@
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 
+#include "signal/computingengine.h"
+
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -430,6 +432,29 @@ void Hdf5Chunk::
         chunk = &c;
 
     Hdf5Chunk::saveChunk(_filename, *chunk);
+}
+
+
+Hdf5ChunkDesc::
+        Hdf5ChunkDesc(std::string filename)
+    :
+      filename_(filename)
+{}
+
+
+Tfr::pChunkFilter Hdf5ChunkDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine==0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new Hdf5Chunk(filename_));
+   return Tfr::pChunkFilter();
+}
+
+
+Tfr::CwtChunkFilterDesc::Ptr Hdf5ChunkDesc::
+        copy() const
+{
+    return CwtChunkFilterDesc::Ptr(new Hdf5ChunkDesc(filename_));
 }
 
 

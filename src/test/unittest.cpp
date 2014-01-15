@@ -14,7 +14,6 @@
 #include "signal/processing/dag.h"
 #include "signal/processing/firstmissalgorithm.h"
 #include "signal/processing/graphinvalidator.h"
-#include "signal/processing/sleepschedule.h"
 #include "signal/processing/step.h"
 #include "signal/processing/targetmarker.h"
 #include "signal/processing/targetneeds.h"
@@ -26,19 +25,25 @@
 #include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
+#include "tfr/transformoperation.h"
+#include "filters/selection.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
-#include "tools/commands/appendoperationdesccommand.h"
-#include "tools/openfilecontroller.h"
-#include "tools/openwatchedfilecontroller.h"
-#include "tools/recordmodel.h"
+#include "filters/rectangle.h"
+#include "filters/timeselection.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/chaininfo.h"
+#include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/workercrashlogger.h"
 #include "tools/support/computerms.h"
+#include "tools/commands/appendoperationdesccommand.h"
+#include "tools/openfilecontroller.h"
+#include "tools/openwatchedfilecontroller.h"
+#include "tools/recordmodel.h"
+#include "tools/applicationerrorlogcontroller.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -58,6 +63,7 @@
 #include "glprojection.h"
 #include "prettifysegfault.h"
 #include "volatileptr.h"
+#include "atomicvalue.h"
 
 // gpumisc tool
 #include "TaskTimer.h"
@@ -95,6 +101,7 @@ int UnitTest::
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
         RUNTEST(VolatilePtrTest);
+        RUNTEST(AtomicValueTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
@@ -110,11 +117,9 @@ int UnitTest::
         RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
         RUNTEST(Signal::Processing::Bedroom);
-        RUNTEST(Signal::Processing::Chain);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::FirstMissAlgorithm);
         RUNTEST(Signal::Processing::GraphInvalidator);
-        RUNTEST(Signal::Processing::SleepSchedule);
         RUNTEST(Signal::Processing::Step);
         RUNTEST(Signal::Processing::TargetMarker);
         RUNTEST(Signal::Processing::TargetNeeds);
@@ -123,23 +128,30 @@ int UnitTest::
         RUNTEST(Signal::Processing::Task);
         RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
+        RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);
+        RUNTEST(Tfr::TransformOperationDesc);
+        RUNTEST(Filters::Selection);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);
-        RUNTEST(Tools::Commands::AppendOperationDescCommand);
+        RUNTEST(Filters::Rectangle);
+        RUNTEST(Filters::TimeSelection);
         RUNTEST(Tools::OpenfileController);
         RUNTEST(Tools::OpenWatchedFileController);
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::AudiofileOpener);
         RUNTEST(Tools::Support::ChainInfo);
+        RUNTEST(Tools::Support::OperationCrop);
         RUNTEST(Tools::Support::RenderOperationDesc);
         RUNTEST(Tools::Support::RenderViewUpdateAdapter);
         RUNTEST(Tools::Support::HeightmapProcessingPublisher);
         RUNTEST(Tools::Support::WorkerCrashLogger);
         RUNTEST(Tools::Support::ComputeRmsDesc);
+        RUNTEST(Tools::Commands::AppendOperationDescCommand);
+        RUNTEST(Tools::ApplicationErrorLogController);
         RUNTEST(Heightmap::Block);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);

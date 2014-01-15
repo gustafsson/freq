@@ -6,6 +6,8 @@
 #include "signal/operation.h"
 #include "tfr/cwtfilter.h"
 
+#include <boost/serialization/nvp.hpp>
+
 namespace Tools {
     namespace Support {
 
@@ -40,7 +42,8 @@ public:
 
     void reset( const Signal::Interval& section );
 
-    Signal::Interval section() { return section_; }
+    Signal::Interval section() const { return section_; }
+
 private:
     Signal::Interval section_;
 
@@ -171,16 +174,18 @@ public:
   */
 class OperationShift: public Signal::OperationDesc {
 public:
-    OperationShift( long sampleShift );
+    OperationShift( Signal::IntervalType sampleShift, Signal::Interval extent_interval );
 
     // OperationDesc
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const;
     Signal::OperationDesc::Ptr copy() const;
     Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    Extent extent() const;
 
 private:
-    long sampleShift_;
+    Signal::IntervalType sampleShift_;
+    Signal::Interval extent_interval_;
 };
 
 #ifdef USE_CUDA

@@ -1,9 +1,11 @@
 #include "fantrackerfilter.h"
 
 #include "tfr/cepstrum.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/chunk.h"
 #include "tools/support/fantrackerfilter.h"
+
+#include "TaskTimer.h"
 
 #include <boost/foreach.hpp>
 
@@ -119,6 +121,12 @@ namespace Support {
 
 //        return CepstrumFilter::affecting_source(I);
 //    }
+
+Tfr::pChunkFilter FanTrackerDesc::
+        createChunkFilter(Signal::ComputingEngine*) const
+{
+    return Tfr::pChunkFilter(new FanTrackerFilter);
+}
 
 
 } // namespace Support

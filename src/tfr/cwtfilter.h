@@ -3,30 +3,26 @@
 
 #pragma once
 
-#include "filter.h"
+#include "chunkfilter.h"
 
 namespace Tfr {
 
-class CwtKernelDesc: public Tfr::FilterKernelDesc
+class CwtChunkFilter: public Tfr::ChunkFilter
 {
-public:
-    CwtKernelDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
+    void operator()( ChunkAndInverse& chunk );
 
-    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine) const;
-
-private:
-    Tfr::pChunkFilter reentrant_cpu_chunk_filter_;
+    virtual void subchunk( ChunkAndInverse& chunk ) = 0;
 };
 
 
-class CwtFilterDesc : public Tfr::FilterDesc
+class CwtChunkFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    CwtFilterDesc(Tfr::FilterKernelDesc::Ptr filter_kernel_desc);
-    CwtFilterDesc(Tfr::pChunkFilter reentrant_cpu_chunk_filter);
+    CwtChunkFilterDesc();
 
     void transformDesc( Tfr::pTransformDesc m );
 };
+
 
 } // namespace Tfr
 

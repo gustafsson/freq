@@ -46,9 +46,6 @@ namespace Tools
         Signal::OperationDesc::Ptr current_selection_;
 
         static Signal::OperationDesc::Ptr copy_selection(Signal::OperationDesc::Ptr, SaveInside si = SaveInside_UNCHANGED);
-
-        template<typename T>
-        static Signal::OperationDesc::Ptr set_parity(Signal::OperationDesc::Ptr, T*p, SaveInside si);
     };
 } // namespace Tools
 

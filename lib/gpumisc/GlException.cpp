@@ -2,7 +2,7 @@
 
 #include "gl.h"
 #include "backtrace.h"
-#include "TaskTimer.h"
+#include "log.h"
 
 #include <boost/format.hpp>
 
@@ -20,7 +20,7 @@ void GlException::check_error( GLenum errorCode ) {
                 << Backtrace::make(2);
 
         if (std::uncaught_exception())
-            TaskInfo(boost::format("Ignoring GlException\n%s") % boost::diagnostic_information(x));
+            Log("Ignoring GlException\n%s") % boost::diagnostic_information(x);
         else
             BOOST_THROW_EXCEPTION (x);
 	}
@@ -53,10 +53,10 @@ void GlException::check_error( GLenum errorCode, const char* functionMacro,
                     << GlException_message((callerMessage?callerMessage:"") + context_error)
                     << Backtrace::make(2);
 
-        TaskInfo(boost::format("Throwing GlException\n%s") % boost::diagnostic_information(x));
+        Log("Throwing GlException\n%s") % boost::diagnostic_information(x);
 
         if (std::uncaught_exception())
-            TaskInfo(boost::format("Ignoring GlException\n%s") % boost::diagnostic_information(x));
+            Log("Throw cancelled due to previous uncaught_exception");
         else
             ::boost::exception_detail::throw_exception_(x,
                                                         functionMacro,

@@ -2,6 +2,7 @@
 #include "support/splinefilter.h"
 #include "tools/support/operation-composite.h"
 #include "tools/rendermodel.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools { namespace Selections
 {
@@ -42,8 +43,8 @@ Signal::OperationDesc::Ptr SplineModel::
         ev[i] = s;
     }
 
-    Signal::OperationDesc::Ptr filter( new Support::SplineFilterDesc( true, ev ) );
-    return filter;
+    Tfr::CwtChunkFilterDesc::Ptr filter( new Support::SplineFilterDesc( true, ev ) );
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 

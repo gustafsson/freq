@@ -6,6 +6,7 @@
 
 #include "filters/absolutevalue.h"
 #include "filters/envelope.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools {
 
@@ -35,7 +36,9 @@ void FilterController::
 void FilterController::
         addEnvelope()
 {
-    project_->appendOperation ( Signal::OperationDesc::Ptr(new Filters::EnvelopeDesc() ));
+    Tfr::ChunkFilterDesc::Ptr cfd(new Filters::EnvelopeDesc());
+    Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
+    project_->appendOperation ( o );
 }
 
 

@@ -2,6 +2,8 @@
 #include "heightmap/collection.h"
 #include "signal/processing/step.h"
 
+#include "TaskTimer.h"
+
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
@@ -116,6 +118,7 @@ bool HeightmapProcessingPublisher::
 
 #include "signal/processing/bedroom.h"
 #include "signal/processing/task.h"
+#include "signal/processing/bedroomnotifier.h"
 
 namespace Tools {
 namespace Support {
@@ -129,7 +132,8 @@ void HeightmapProcessingPublisher::
         OperationDesc::Ptr operation_desc;
         Step::Ptr step(new Step(operation_desc));
         Bedroom::Ptr bedroom(new Bedroom);
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step, bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::Ptr target_needs(new TargetNeeds(step, notifier));
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::VisualizationParams::Ptr visualization_params(new Heightmap::VisualizationParams);
@@ -174,7 +178,7 @@ void HeightmapProcessingPublisher::
 
         Task task(&*write1(step), step,
                   std::vector<Signal::Processing::Step::Ptr>(),
-                  Signal::Interval(0,2));
+                  Signal::Interval(0,2), Signal::Interval());
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
     }

@@ -5,10 +5,10 @@
 #include "cpumemorystorage.h"
 #include "exceptionassert.h"
 
-#include "throwInvalidArgument.h"
 #include "neat_math.h"
 #include "computationkernel.h"
 #include "unused.h"
+#include "TaskTimer.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 

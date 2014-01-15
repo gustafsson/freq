@@ -3,6 +3,8 @@
 #include "TaskTimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
+#include "signal/processing/task.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 #include <QTimer>
 
@@ -16,6 +18,7 @@ namespace Support {
 
 class DummyException: virtual public boost::exception, virtual public std::exception {};
 
+
 WorkerCrashLogger::
         WorkerCrashLogger(Workers::Ptr workers, bool consume_exceptions)
     :
@@ -23,6 +26,8 @@ WorkerCrashLogger::
       consume_exceptions_(consume_exceptions)
 {
     moveToThread (&thread_);
+    // Remove responsibility for event processing for this when the the thread finishes
+    connect(&thread_, SIGNAL(finished()), SLOT(finished()));
     thread_.start ();
 
     Workers::WritePtr ww(workers);
@@ -51,21 +56,26 @@ WorkerCrashLogger::
 void WorkerCrashLogger::
         worker_quit(boost::exception_ptr e, Signal::ComputingEngine::Ptr ce)
 {
-    DEBUG TaskInfo ti("WorkerCrashLogger::worker_quit");
+    DEBUG TaskInfo ti(boost::format("WorkerCrashLogger::worker_quit %s") % (e?"normally":"with exception"));
     if (consume_exceptions_)
-    {
+      {
         write1(workers_)->removeComputingEngine(ce);
-    }
+      }
 
-    try {
-        if (e) rethrow_exception(e);
-    } catch ( const DummyException& x) {
-        DEBUG TaskInfo ti("got x");
-        boost::diagnostic_information(x);
-    } catch ( const boost::exception& x) {
-        x << Workers::crashed_engine_value(ce);
-        TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
-    }
+    try
+      {
+        if (e)
+          {
+            rethrow_exception(e);
+          }
+
+      }
+    catch ( const boost::exception& x)
+      {
+        x << Workers::crashed_engine(ce) << Workers::crashed_engine_typename(ce?vartype(*ce):"(null)");
+
+        log(x);
+      }
 }
 
 
@@ -74,23 +84,16 @@ void WorkerCrashLogger::
 {
     DEBUG TaskInfo ti("WorkerCrashLogger::check_previously_crashed_and_consume");
 
-    try {
+    while(true) try
+      {
         write1(workers_)->rethrow_any_worker_exception();
 
-        return;
-    } catch ( const DummyException& x) {
-        DEBUG TaskInfo ti("got x");
-        // Force the slow backtrace beautifier
-        boost::diagnostic_information(x);
-    } catch ( const boost::exception& x) {
-        Signal::ComputingEngine::Ptr ce;
-        if( Signal::ComputingEngine::Ptr const * mi=boost::get_error_info<Workers::crashed_engine_value>(x) )
-            ce = *mi;
-
-        TaskInfo(boost::format("Worker '%s' crashed\n%s") % (ce?vartype(*ce):"(null)") % boost::diagnostic_information(x));
-    }
-
-    check_all_previously_crashed_and_consume();
+        break;
+      }
+    catch ( const boost::exception& x)
+      {
+        log(x);
+      }
 }
 
 
@@ -98,13 +101,78 @@ void WorkerCrashLogger::
         check_all_previously_crashed_without_consuming()
 {
     DEBUG TaskInfo ti("check_all_previously_crashed_without_consuming");
+
     Workers::EngineWorkerMap workers_map = read1(workers_)->workers_map();
-    for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i) {
-        QPointer<Worker> worker = i->second;
+
+    for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
+      {
+        Worker::Ptr worker = i->second;
+
         if (worker && !worker->isRunning ())
+          {
             worker_quit (worker->caught_exception (), i->first);
-    }
+          }
+      }
 }
+
+
+void WorkerCrashLogger::
+        finished()
+{
+    moveToThread (0);
+}
+
+
+void WorkerCrashLogger::
+        log(const boost::exception& x)
+{
+    // Fetch various info from the exception to make a prettier log
+    std::string crashed_engine_typename = "<no info>";
+    std::string operation_desc_text;
+
+    if( std::string const * mi = boost::get_error_info<Workers::crashed_engine_typename>(x) )
+      {
+        crashed_engine_typename = *mi;
+      }
+
+    if( Step::Ptr const * mi = boost::get_error_info<Step::crashed_step>(x) )
+      {
+        Signal::OperationDesc::Ptr od;
+        {
+            Step::WritePtr s(*mi);
+            s->mark_as_crashed ();
+            od = s->get_crashed ();
+        }
+
+        if (od)
+            operation_desc_text = " in " + read1(od)->toString().toStdString();
+      }
+
+    if( Signal::Interval const * mi = boost::get_error_info<Task::crashed_expected_output>(x) )
+      {
+        operation_desc_text += " " + mi->toString ();
+      }
+
+
+    // Ignore logging in UnitTest
+    if (dynamic_cast<const DummyException*>(&x))
+      {
+        // Execute to_string for all tagged info (i.e force the slow backtrace beautifier if it's included)
+        boost::diagnostic_information(x);
+        return;
+      }
+
+    TaskInfo(boost::format("Worker '%s' crashed%s")
+             % crashed_engine_typename
+             % operation_desc_text);
+
+    bool send_feedback = true;
+    if (send_feedback)
+        ApplicationErrorLogController::registerException (boost::current_exception ());
+    else
+        TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
+}
+
 
 } // namespace Support
 } // namespace Tools
@@ -153,7 +221,12 @@ void WorkerCrashLogger::
 
         //for (int consume=0; consume<2; consume++)
         ISchedule::Ptr schedule(new DummyScheduler);
-        Workers::Ptr workers(new Workers(schedule));
+        Bedroom::Ptr bedroom(new Bedroom);
+        Workers::Ptr workers(new Workers(schedule, bedroom));
+
+        {
+            WorkerCrashLogger wcl(workers);
+        }
 
         // Catch info from a previously crashed worker
         addAndWaitForStop(workers);
@@ -172,7 +245,7 @@ void WorkerCrashLogger::
 
         // Should have consumed all workers
         Workers::DeadEngines de = write1(workers)->clean_dead_workers();
-        EXCEPTION_ASSERT_EQUALS(de.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
 
         // Should have taken a while (the backtrace beautifier is slow)
         double T = timer.elapsedAndRestart ();
@@ -190,7 +263,8 @@ void WorkerCrashLogger::
         Timer timer;
 
         ISchedule::Ptr schedule(new DummyScheduler);
-        Workers::Ptr workers(new Workers(schedule));
+        Bedroom::Ptr bedroom(new Bedroom);
+        Workers::Ptr workers(new Workers(schedule, bedroom));
 
         {
             WorkerCrashLogger wcl(workers);
@@ -200,11 +274,11 @@ void WorkerCrashLogger::
             addAndWaitForStop(workers);
 
             double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 2e-3 );
+            EXCEPTION_ASSERT_LESS( T, 3e-3 );
         }
 
         Workers::DeadEngines de = write1(workers)->clean_dead_workers();
-        EXCEPTION_ASSERT_EQUALS(de.size (), 0);
+        EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
 
         double T = timer.elapsedAndRestart ();
         EXCEPTION_ASSERT_LESS( 1e-5, T );
@@ -221,7 +295,8 @@ void WorkerCrashLogger::
         Timer timer;
 
         ISchedule::Ptr schedule(new DummyScheduler);
-        Workers::Ptr workers(new Workers(schedule));
+        Bedroom::Ptr bedroom(new Bedroom);
+        Workers::Ptr workers(new Workers(schedule, bedroom));
 
         // Catch info from a previously crashed worker
         addAndWaitForStop(workers);
@@ -240,7 +315,7 @@ void WorkerCrashLogger::
 
         // Should not have consumed any workers
         Workers::DeadEngines de = write1(workers)->clean_dead_workers();
-        EXCEPTION_ASSERT_EQUALS(de.size (), 2);
+        EXCEPTION_ASSERT_EQUALS(de.size (), 2u);
 
         double T = timer.elapsedAndRestart ();
         EXCEPTION_ASSERT_LESS( 0.1e-5, T );

@@ -1,4 +1,7 @@
-#pragma once
+#ifndef PROJECT_HEADER_H
+#define PROJECT_HEADER_H
+
+#if defined __cplusplus && !defined __OBJC__
 
 #ifdef _MSC_VER
 #include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
@@ -16,24 +19,68 @@
 #include "heightmap/collection.h"
 #include "heightmap/renderer.h"
 #include "sawe/project.h"
-#include "tfr/cwtfilter.h"
-#include "tfr/stftfilter.h"
+#include "tfr/chunkfilter.h"
 #include "tools/rendercontroller.h"
 #include "ui/mainwindow.h"
 
+
 // gpumisc
 #include "TaskTimer.h"
+#include "ThreadChecker.h"
+#include "deprecated.h"
+#include "exceptionassert.h"
+#include "expectexception.h"
+#include "msc_stdc.h"
+#include "volatileptr.h"
 #ifdef USE_CUDA
 #include "cuda_vector_types_op.h"
 #endif
 
+
+// std
+#include <iostream>
+#include <list>
+#include <math.h>
+#include <ostream>
+#include <set>
+#include <stdarg.h>
+#include <string>
+#include <vector>
+
+
 // Qt
+#include <QAction>
+#include <QApplication>
+#include <QComboBox>
 #include <QDockWidget>
-#include <QWheelEvent>
 #include <QHBoxLayout>
+#include <QListWidgetItem>
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QMutex>
+#include <QPointer>
+#include <QReadWriteLock>
+#include <QString>
+#include <QToolButton>
+#include <QTreeWidgetItem>
+#include <QWaitCondition>
+#include <QWheelEvent>
+
 
 // boost
-#include <boost/archive/binary_iarchive.hpp> 
-#include <boost/archive/binary_oarchive.hpp> 
-#include <boost/serialization/base_object.hpp> 
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
+#include <boost/exception/all.hpp>
+#include <boost/format.hpp>
+#include <boost/graph/directed_graph.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/nvp.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/utility.hpp>
+#include <boost/weak_ptr.hpp>
 
+#endif // defined __cplusplus && !defined __OBJC__
+#endif // PROJECT_HEADER_H

@@ -6,6 +6,7 @@
 #include "ui/mainwindow.h"
 #include "tfr/cwt.h"
 #include "configuration.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 // gpumisc
 #include "demangle.h"
@@ -51,6 +52,7 @@ static void show_fatal_exception_cerr( const string& str )
     cerr.flush();
 }
 
+
 static void show_fatal_exception_qt( const string& /*str*/ )
 {
     int t = time(0);
@@ -71,22 +73,16 @@ static void show_fatal_exception_qt( const string& /*str*/ )
                  QString("%1, need to restart %2.\nThe log file may contain some cryptic details").arg (a).arg (name));
 }
 
+
 void Application::
         show_fatal_exception( const string& str )
 {
     show_fatal_exception_cerr(str);
+
     if (QApplication::instance())
         show_fatal_exception_qt(str);
 }
 
-static string fatal_exception_string( const exception &x )
-{
-    return boost::diagnostic_information(x);
-}
-
-static string fatal_unknown_exception_string() {
-    return "Error: An unknown error occurred";
-}
 
 Application::
         Application(int& argc, char **argv, bool prevent_log_system_and_execute_args )
@@ -154,8 +150,10 @@ void Application::
     TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
     boost::gregorian::date today = boost::gregorian::day_clock::local_day();
     boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
-    ti.tt().getStream().imbue(std::locale(std::cout.getloc(), facet));
-    ti.tt().getStream() << " started on " << today << endl;
+    std::stringstream ss;
+    ss.imbue(std::locale(std::cout.getloc(), facet));
+    ss << "Started on " << today;
+    TaskInfo(boost::format("%s") % ss.str ());
 
     TaskInfo("Build timestamp for %s: %s, %s. Revision %s",
         Sawe::Configuration::uname().c_str(),
@@ -206,14 +204,14 @@ QGLWidget* Application::
 void Application::
         display_fatal_exception()
 {
-    show_fatal_exception(fatal_unknown_exception_string());
+    show_fatal_exception(boost::current_exception_diagnostic_information());
 }
 
 
 void Application::
         display_fatal_exception(const exception& x)
 {
-    show_fatal_exception(fatal_exception_string(x));
+    show_fatal_exception(boost::diagnostic_information(x));
 }
 
 
@@ -276,17 +274,8 @@ bool Application::
         }
 
         v = QApplication::notify(receiver,e);
-    } catch (const exception &x) {
-        err = fatal_exception_string(x);
     } catch (...) {
-        err = fatal_unknown_exception_string();
-    }
-
-    if (!err.empty() && _fatal_error.empty())
-    {
-        _fatal_error = err;
-        show_fatal_exception( err );
-        this->exit(2);
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception ());
     }
 
     return v;

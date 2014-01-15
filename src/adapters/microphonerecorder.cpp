@@ -1,6 +1,9 @@
 #include "microphonerecorder.h"
 #include "playback.h"
 
+#include "TaskTimer.h"
+#include "demangle.h"
+
 #include <iostream>
 #include <memory.h>
 

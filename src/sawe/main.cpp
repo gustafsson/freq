@@ -337,9 +337,9 @@ int main(int argc, char *argv[])
             Tfr::Cwt cwt;
 
             unsigned firstSample = 44100*2;
-            unsigned chunk_alignment = cwt.chunk_alignment( file.sample_rate() );
+            unsigned chunk_alignment = cwt.chunk_alignment();
             firstSample = int_div_ceil(firstSample, chunk_alignment)*chunk_alignment;
-            unsigned time_support = cwt.wavelet_time_support_samples( file.sample_rate() );
+            unsigned time_support = cwt.wavelet_time_support_samples();
 
             pMonoBuffer data = file.readFixedLength(Interval(firstSample,firstSample+65536))->getChannel (0);
 

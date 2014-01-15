@@ -1,9 +1,10 @@
 #ifndef BACKTRACE_H
 #define BACKTRACE_H
 
-#include <boost/exception/all.hpp>
 #include <vector>
 #include <string>
+
+#include <boost/exception/all.hpp>
 
 /**
  * @brief The Backtrace class should store a backtrace of the current position in 1 ms.

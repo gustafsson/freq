@@ -205,15 +205,15 @@ void TransformInfoForm::
         addRow("Type", "Gabor wavelet");
 
         addRow("T/F resolution", QString("%1").arg(cwt->tf_resolution()));
-        addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples( fs )/fs));
-        addRow("Scales", QString("%1").arg(cwt->nScales(fs)));
+        addRow("Time support", QString("%1").arg(cwt->wavelet_time_support_samples()/fs));
+        addRow("Scales", QString("%1").arg(cwt->nScales()));
         addRow("Scales per octave", QString("%1").arg(cwt->scales_per_octave()));
         addRow("Sigma", QString("%1").arg(cwt->sigma()));
-        addRow("Bins", QString("%1").arg(cwt->nBins(fs)));
+        addRow("Bins", QString("%1").arg(cwt->nBins()));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
         addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
-        setEditText( ui->minHzEdit, QString("%1").arg(cwt->wanted_min_hz()) );
+        setEditText( ui->minHzEdit, QString("%1").arg(cwt->get_wanted_min_hz(fs)) );
         //setEditText( ui->maxHzEdit, QString("%1").arg(cwt->get_max_hz(fs)) );
     }
     else if (stft)
@@ -300,9 +300,10 @@ void TransformInfoForm::
         Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
 
-        if (cwt.wanted_min_hz() == newValue)
+        if (cwt.get_wanted_min_hz (fs) == newValue)
             return;
-        cwt.set_wanted_min_hz(newValue);
+
+        cwt.set_wanted_min_hz(newValue, fs);
     }
 
     deprecateAll ();

@@ -2,6 +2,10 @@
 #define BANDPASS_H
 
 #include "tfr/stftfilter.h"
+#include "filters/selection.h"
+
+// boost
+#include <boost/serialization/nvp.hpp>
 
 namespace Filters {
 
@@ -22,17 +26,24 @@ private:
 /**
  * @brief The Bandpass class should apply a bandpass filter between f1 and f2 to a signal.
  */
-class Bandpass: public Tfr::StftFilterDesc
+class Bandpass: public Tfr::StftFilterDesc, public Filters::Selection
 {
 public:
     Bandpass(float f1, float f2, bool save_inside=false);
 
+    // ChunkFilterDesc
+    Tfr::pChunkFilter    createChunkFilter(Signal::ComputingEngine* engine) const;
+    ChunkFilterDesc::Ptr copy() const;
+
+    // Filters::Selection
+    bool isInteriorSelected() const override;
+    void selectInterior(bool v=true) override;
+
     float _f1, _f2;
     bool _save_inside;
-    void updateChunkFilter();
 
 private:
-    Bandpass():Tfr::StftFilterDesc(Tfr::pChunkFilter()) {} // for deserialization
+    Bandpass(); // for deserialization
 
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {

@@ -2,7 +2,6 @@
 #include "exceptionassert.h"
 #include "expectexception.h"
 
-//#include "TaskTimer.h"
 #include "timer.h"
 
 #include <QSemaphore>
@@ -74,7 +73,7 @@ void VolatilePtrTest::
     // It should guarantee compile-time thread safe access to objects.
 
     EXCEPTION_ASSERT_EQUALS (sizeof (VolatilePtr<A>), sizeof (QReadWriteLock));
-    EXCEPTION_ASSERT_EQUALS (sizeof (QReadWriteLock), 8);
+    EXCEPTION_ASSERT_EQUALS (sizeof (QReadWriteLock), 8u);
 
     A::Ptr mya (new A);
 
@@ -148,9 +147,9 @@ void VolatilePtrTest::
         // twice. But this is NOT guaranteed. Another thread might change 'mya'
         // with a WritePtr between the two calls.
         //
-        // That is also how synchronized behaves in Java.
+        // That is also how methods with synchronized behave in Java.
         //
-        // In general, using read1 is a smell that you're doing it wrong.
+        // In general, using multiple read1 is a smell that you're doing it wrong.
     }
 
     {
@@ -189,12 +188,11 @@ void VolatilePtrTest::
         // Assuming you only have one producer of data (with one or multiple
         // consumers). This requires user specified assignment that ignores
         // any values of VolatilePtr.
-        A mylocal_a = *A::WritePtr (mya);
+        A mylocal_a = *A::ReadPtr (mya); // Produce a writable copy
         mylocal_a.a (5);
         *A::WritePtr (mya) = mylocal_a;
         // This will not be as easy with multiple producers as you need to
-        // manage merging afterwards, or flag that something is already being
-        // worked on before you start.
+        // manage merging afterwards.
         //
         // The easiest solution for multiple producers is the
         // version proposed at the top were the WritePtr is kept throughout the
@@ -276,7 +274,6 @@ void A::
 int B::
     work_a_lot(int /*i*/) const
 {
-    //TaskTimer tt("work_a_lot(%d)", i);
     QSemaphore().tryAcquire (1, 5); // sleep 5 ms
     return 0;
 }
@@ -362,7 +359,7 @@ void WriteWhileReadingThread::
         EXCEPTION_ASSERT_LESS(T2-T, 0.11e-6);
         EXCEPTION_ASSERT_LESS(T3-T, 0.11e-6);
 #else
-        EXCEPTION_ASSERT_LESS(T2-T, 0.13e-6);
+        EXCEPTION_ASSERT_LESS(T2-T, 0.18e-6);
         EXCEPTION_ASSERT_LESS(T3-T, 0.13e-6);
 #endif
     }

@@ -5,6 +5,8 @@
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"
 
+#include "demangle.h"
+
 #include <boost/foreach.hpp>
 
 namespace Heightmap {
@@ -23,7 +25,7 @@ void CwtBlockFilter::
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
     EXCEPTION_ASSERT( cwt );
     bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
-    float normalization_factor = cwt->nScales( pchunk.chunk->original_sample_rate )/cwt->sigma();
+    float normalization_factor = cwt->nScales()/cwt->sigma();
 
     Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( pchunk.chunk.get () );
 
@@ -78,7 +80,7 @@ void CwtBlockFilter::
 
         Tfr::Cwt cwtdesc;
         float fs = 1024;
-        cwtdesc.set_fs (fs);
+        cwtdesc.set_wanted_min_hz(20, fs);
         Signal::Interval i(0,4);
         Signal::Interval expected;
         Signal::Interval data = cwtdesc.requiredInterval (i, &expected);

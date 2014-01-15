@@ -161,9 +161,15 @@ private:
 };
 
 
-class Hdf5ChunkDesc: public Tfr::CwtFilterDesc {
+class Hdf5ChunkDesc: public Tfr::CwtChunkFilterDesc {
 public:
-    Hdf5ChunkDesc(std::string filename):Tfr::CwtFilterDesc(Tfr::pChunkFilter(new Hdf5Chunk(filename))){}
+    Hdf5ChunkDesc(std::string filename);
+
+    Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
+    CwtChunkFilterDesc::Ptr copy() const;
+
+private:
+    std::string filename_;
 };
 
 

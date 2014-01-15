@@ -1,8 +1,7 @@
-#ifndef SENDFEEDBACK_H
-#define SENDFEEDBACK_H
+#ifndef TOOLS_SENDFEEDBACKDIALOG_H
+#define TOOLS_SENDFEEDBACKDIALOG_H
 
 #include <QDialog>
-#include <QScopedPointer>
 
 class QNetworkReply;
 class QNetworkAccessManager;
@@ -17,13 +16,16 @@ namespace Ui {
     class SendFeedback;
 }
 
-class SendFeedback : public QDialog
+namespace Support {
+    class SendFeedback;
+}
+
+class SendFeedbackDialog : public QDialog
 {
     Q_OBJECT
-
 public:
-    explicit SendFeedback(::Ui::SaweMainWindow *parent);
-    ~SendFeedback();
+    explicit SendFeedbackDialog(::Ui::SaweMainWindow *parent);
+    ~SendFeedbackDialog();
 
     virtual void accept();
 
@@ -32,13 +34,10 @@ private slots:
     void replyFinished(QNetworkReply*);
 
 private:
-    void sendLogFiles(QString email, QString message, QString extraFile);
-
+    Support::SendFeedback* sendfeedback;
     Ui::SendFeedback *ui;
-    QString targetUrl;
-    QScopedPointer<QNetworkAccessManager> manager;
 };
 
 
 } // namespace Tools
-#endif // SENDFEEDBACK_H
+#endif // TOOLS_SENDFEEDBACKDIALOG_H

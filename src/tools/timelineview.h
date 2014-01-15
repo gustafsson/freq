@@ -15,6 +15,7 @@
 
 // boost
 #include <boost/scoped_ptr.hpp>
+#include <boost/date_time/posix_time/ptime.hpp>
 
 class GlFrameBuffer;
 

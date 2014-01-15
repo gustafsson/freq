@@ -448,15 +448,15 @@ void StftDesc::
         StftDesc d;
         EXCEPTION_ASSERT_EQUALS( d.displayedTimeResolution(4,1), 0.125f*d.chunk_size() / 4 );
         EXCEPTION_ASSERT_EQUALS( d.freqAxis(4), [](){ FreqAxis f; f.setLinear(4, 1024); return f; }());
-        EXCEPTION_ASSERT_EQUALS( d.next_good_size (1,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (1,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2047,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2048,4), 4096 );
-        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2049,4), 8192 ); // <-- unexpected behaviour
-        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4097,4), 4096 );
-        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4096,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4095,4), 2048 );
-        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (2049,4), 2048 );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (1,4), 2048u );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (1,4), 2048u );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2047,4), 2048u );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2048,4), 4096u );
+        EXCEPTION_ASSERT_EQUALS( d.next_good_size (2049,4), 8192u ); // <-- unexpected behaviour
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4097,4), 4096u );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4096,4), 2048u );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (4095,4), 2048u );
+        EXCEPTION_ASSERT_EQUALS( d.prev_good_size (2049,4), 2048u );
 
         EXCEPTION_ASSERT_EQUALS( d.increment(), 2048 );
         EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
@@ -597,7 +597,8 @@ void StftDesc::
         StftDesc d;
         EXCEPTION_ASSERT_EQUALS( vartype(*d.copy()), vartype(StftDesc()) );
         EXCEPTION_ASSERT( !d.toString().empty () );
-        EXCEPTION_ASSERT_EQUALS( d, *d.copy () );
+        Tfr::TransformDesc::Ptr dc = d.copy ();
+        EXCEPTION_ASSERT_EQUALS( d, *dc );
 
         TransformDesc::Ptr t = d.copy ();
         StftDesc* d2 = dynamic_cast<StftDesc*>(t.get ());

@@ -2,26 +2,19 @@
 #define SIGNALOPERATION_H
 
 //signal
-#include "source.h"
+#include "buffer.h"
 #include "intervals.h"
 #include "processing/iinvalidator.h"
 
-// boost
-#include <boost/serialization/nvp.hpp>
-
 // gpumisc
-// For debug info while serializing
-#include "demangle.h"
-#include "TaskTimer.h"
 #include "volatileptr.h"
-
-// std
-#include <set>
 
 // QString
 #include <QString>
 
 namespace Signal {
+
+namespace Processing { class Step; }
 
 class ComputingEngine;
 
@@ -167,22 +160,22 @@ public:
      */
     friend std::ostream& operator << (std::ostream& os, const OperationDesc& d);
 
+
 protected:
+    friend class Signal::Processing::Step;
+
     /**
      * @brief deprecateCache should be called when parameters change.
      * @param what If what is Signal::Intervals::Intervals_ALL then Step will
      * recreate operations for computing engines as needed.
+     *
+     * deprecateCache without 'volatile' will release the lock while calling IInvalidator.
      */
+    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL);
     void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const volatile;
 
 
 private:
-    /**
-     * @brief deprecateCache without the volatile qualifier can't be called.
-     */
-    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const;
-
-
     /**
      * @brief invalidator_ is used by deprecateCache.
      *

@@ -239,9 +239,17 @@ int NormalizeSpectra::
 NormalizeSpectraDesc::
         NormalizeSpectraDesc(float meansHz)
     :
-      Tfr::StftFilterDesc(Tfr::pChunkFilter(new NormalizeSpectra(meansHz)))
+      meansHz(meansHz)
 {
 }
+
+
+Tfr::pChunkFilter NormalizeSpectraDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    return Tfr::pChunkFilter(new NormalizeSpectra(meansHz));
+}
+
 
 
 } // namespace Filters

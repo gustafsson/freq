@@ -4,6 +4,8 @@
 #include "tfr/chunk.h"
 #include "tfr/stft.h"
 
+#include "TaskTimer.h"
+
 #define TIME_BANDPASS
 //#define TIME_BANDPASS if(0)
 
@@ -90,20 +92,40 @@ void BandpassKernel::
 Bandpass::
         Bandpass(float f1, float f2, bool save_inside)
     :
-      StftFilterDesc(Tfr::pChunkFilter()),
       _f1(f1),
       _f2(f2),
       _save_inside(save_inside)
 {
-    updateChunkFilter();
+}
+
+
+Tfr::pChunkFilter Bandpass::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine==0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new BandpassKernel(_f1, _f2, _save_inside));
+    return Tfr::pChunkFilter();
+}
+
+
+Tfr::ChunkFilterDesc::Ptr Bandpass::
+        copy() const
+{
+    return ChunkFilterDesc::Ptr(new Bandpass(_f1, _f2, _save_inside));
+}
+
+
+bool Bandpass::
+        isInteriorSelected() const
+{
+    return _save_inside;
 }
 
 
 void Bandpass::
-        updateChunkFilter()
+        selectInterior(bool v)
 {
-    Tfr::pChunkFilter cf(new BandpassKernel(_f1, _f2, _save_inside));
-    chunk_filter_ = Tfr::FilterKernelDesc::Ptr(new Tfr::StftKernelDesc(cf));
+    _save_inside = v;
 }
 
 

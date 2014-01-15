@@ -2,6 +2,7 @@
 #include "filters/ellipse.h"
 #include "tools/support/operation-composite.h"
 #include "tools/rendermodel.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools { namespace Selections
 {
@@ -36,15 +37,14 @@ Signal::OperationDesc::Ptr EllipseModel::
         return Signal::OperationDesc::Ptr();
 
     Filters::Ellipse* e;
-    Signal::OperationDesc::Ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
+    Tfr::ChunkFilterDesc::Ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
 
     e->_centre_t = centre.time;
     e->_centre_plus_radius_t = centrePlusRadius.time;
     e->_centre_f = freqAxis().getFrequency( centre.scale );
     e->_centre_plus_radius_f = freqAxis().getFrequency( centrePlusRadius.scale );
-    e->updateChunkFilter();
 
-    return filter;
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 

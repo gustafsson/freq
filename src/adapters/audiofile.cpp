@@ -329,12 +329,9 @@ Signal::pBuffer Audiofile::
     TIME_AUDIOFILE_LINE( Signal::transpose( mergedata.get(), &partialfile ) );
     waveform.reset (new Signal::Buffer(I.first, mergedata, sample_rate()));
 
-    VERBOSE_AUDIOFILE *tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
-
-    VERBOSE_AUDIOFILE tt->flushStream();
-
-    VERBOSE_AUDIOFILE tt->info("Data size: %lu samples, %lu channels", (size_t)sndfile->frames(), (size_t)sndfile->channels() );
-    VERBOSE_AUDIOFILE tt->info("Sample rate: %lu samples/second", sndfile->samplerate() );
+    VERBOSE_AUDIOFILE TaskInfo(boost::format("Read %s, total signal length %s") % I % lengthLongFormat());
+    VERBOSE_AUDIOFILE TaskInfo(boost::format("Data size: %lu samples, %lu channels") % (size_t)sndfile->frames() % (size_t)sndfile->channels() );
+    VERBOSE_AUDIOFILE TaskInfo(boost::format("Sample rate: %lu samples/second") % sndfile->samplerate() );
 
     return waveform;
 }
