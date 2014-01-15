@@ -346,6 +346,18 @@ namespace Tools
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
+        Signal::OperationDesc::Extent x = read1(o)->extent();
+        if (x.interval.is_initialized ())
+          {
+            Signal::Interval xi = x.interval.get ();
+            if (xi.first != 0)
+              {
+                Signal::OperationDesc::Ptr shift(
+                            new Support::OperationShift(-xi.first, Signal::Interval(0, xi.count ())));
+                _model->project()->appendOperation( shift );
+              }
+          }
+
         Log("Crop selection\n%s") % read1(o)->toString().toStdString();
     }
 

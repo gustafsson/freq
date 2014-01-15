@@ -194,7 +194,7 @@ void OperationMoveMerge::
 class OperationShiftOperation: public Signal::Operation
 {
 public:
-    OperationShiftOperation( long sampleShift )
+    OperationShiftOperation( Signal::IntervalType sampleShift )
         :
           sampleShift_(sampleShift)
     {
@@ -204,19 +204,20 @@ public:
 
     Signal::pBuffer process(Signal::pBuffer b)
     {
-        UnsignedF o = b->sample_offset () + sampleShift_;
+        UnsignedF o = b->sample_offset () + (long long)sampleShift_;
         b->set_sample_offset (o);
         return b;
     }
 
 private:
-    long long sampleShift_;
+    Signal::IntervalType sampleShift_;
 };
 
 OperationShift::
-        OperationShift( long sampleShift )
+        OperationShift( Signal::IntervalType sampleShift, Signal::Interval extent_interval )
     :
-      sampleShift_(sampleShift)
+      sampleShift_(sampleShift),
+      extent_interval_(extent_interval)
 {
 }
 
@@ -238,7 +239,7 @@ Signal::Interval OperationShift::
 Signal::OperationDesc::Ptr OperationShift::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new OperationShift(sampleShift_));
+    return Signal::OperationDesc::Ptr(new OperationShift(sampleShift_, extent_interval_));
 }
 
 Signal::Operation::Ptr OperationShift::
@@ -247,6 +248,14 @@ Signal::Operation::Ptr OperationShift::
     if (0==engine || dynamic_cast<Signal::ComputingCpu*>(engine))
         return Signal::Operation::Ptr(new OperationShiftOperation(sampleShift_));
     return Signal::Operation::Ptr();
+}
+
+OperationShift::Extent OperationShift::
+        extent() const
+{
+    OperationShift::Extent x;
+    x.interval = extent_interval_;
+    return x;
 }
 
 
