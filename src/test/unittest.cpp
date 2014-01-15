@@ -7,6 +7,7 @@
 #include "geometricalgebra.h"
 #include "glinfo.h"
 #include "glprojection.h"
+#include "gltextureread.h"
 #include "prettifysegfault.h"
 #include "volatileptr.h"
 
@@ -100,6 +101,7 @@ int UnitTest::
         RUNTEST(GeometricAlgebra);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
+        RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
         RUNTEST(VolatilePtrTest);

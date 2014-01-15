@@ -37,6 +37,7 @@ SOURCES += \
     glprojection.cpp \
     glPushContext.cpp \
     GlTexture.cpp \
+    gltextureread.cpp \
     gluunproject.cpp \
     log.cpp \
     mappedvbovoid.cpp \
@@ -75,6 +76,7 @@ HEADERS += \
     glprojection.h \
     glPushContext.h \
     GlTexture.h \
+    gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
     gluunproject.h \
