@@ -1,5 +1,16 @@
 #include "unittest.h"
 
+// gpumisc units
+#include "backtrace.h"
+#include "exceptionassert.h"
+#include "atomicvalue.h"
+#include "geometricalgebra.h"
+#include "glinfo.h"
+#include "glprojection.h"
+#include "prettifysegfault.h"
+#include "volatileptr.h"
+
+// sonicawe
 #include "test/implicitordering.h"
 #include "test/stdlibtest.h"
 #include "test/tasktimertiming.h"
@@ -55,16 +66,6 @@
 #include "adapters/microphonerecorder.h"
 #include "filters/absolutevalue.h"
 
-// gpumisc units
-#include "backtrace.h"
-#include "exceptionassert.h"
-#include "geometricalgebra.h"
-#include "glinfo.h"
-#include "glprojection.h"
-#include "prettifysegfault.h"
-#include "volatileptr.h"
-#include "atomicvalue.h"
-
 // gpumisc tool
 #include "TaskTimer.h"
 #include "timer.h"
@@ -95,13 +96,13 @@ int UnitTest::
 
         RUNTEST(Backtrace);
         RUNTEST(ExceptionAssert);
+        RUNTEST(AtomicValueTest);
         RUNTEST(GeometricAlgebra);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
         RUNTEST(VolatilePtrTest);
-        RUNTEST(AtomicValueTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);

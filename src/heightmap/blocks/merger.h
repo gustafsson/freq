@@ -21,6 +21,9 @@ public:
 private:
     BlockCache::ConstPtr cache_;
 
+    /**
+      Add block information from another block. Returns whether any information was merged.
+      */
     bool mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData );
 };
 
