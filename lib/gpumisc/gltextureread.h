@@ -25,7 +25,8 @@ public:
      * @param format See glGetTexImage
      * @return
      */
-    DataStorage<float>::Ptr read(int level=0, int format=GL_RGBA);
+    DataStorage<float>::Ptr readFloat(int level=0, int format=GL_RGBA);
+    DataStorage<unsigned char>::Ptr readByte(int level=0, int format=GL_RGBA);
 
 private:
     int texture;
