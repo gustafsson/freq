@@ -3,16 +3,35 @@
 #include "GlException.h"
 #include "gl.h"
 
+GlTexture::GlTexture(unsigned short width, unsigned short height)
+:	width( width ),
+    height( height ),
+    textureId( 0 ),
+    ownTextureId( 0 )
+{
+    if (width!=0)
+        reset(width, height);
+}
+
 GlTexture::GlTexture(unsigned short width, unsigned short height,
                      unsigned int pixelFormat, unsigned int internalFormat,
                      unsigned type, void* data )
 :	width( width ),
     height( height ),
-    pixelFormat( pixelFormat ),
-    textureId( 0 )
+    textureId( 0 ),
+    ownTextureId( 0 )
 {
     if (width!=0)
         reset(width, height, pixelFormat, internalFormat, type, data);
+}
+
+GlTexture::GlTexture(unsigned short width, unsigned short height, unsigned int textureId)
+    :	width( width ),
+        height( height ),
+        textureId( textureId ),
+        ownTextureId( 0 )
+{
+
 }
 
 void GlTexture::
@@ -21,7 +40,10 @@ void GlTexture::
               unsigned type, void* data)
 {
     if (0==textureId)
-        GlException_SAFE_CALL( glGenTextures(1, &textureId) );
+    {
+        GlException_SAFE_CALL( glGenTextures(1, &ownTextureId) );
+        textureId = ownTextureId;
+    }
 
 	bindTexture2D();
 
@@ -34,7 +56,6 @@ void GlTexture::
 
     this->width = width;
     this->height = height;
-    this->pixelFormat = pixelFormat;
 
 	unbindTexture2D();
 }
@@ -42,10 +63,13 @@ void GlTexture::
 GlTexture::~GlTexture() {
     // GlException_CHECK_ERROR(); // Windows generates some error prior to this call, why?
 	//GlException_SAFE_CALL( glDeleteTextures(1, &textureId) );
-	glDeleteTextures(1, &textureId); // Any GL call "seems to be" an invalid operation on Windows after/during destruction. Might be the result of something else that is broken...
-    glGetError();
 
-	textureId = 0;
+    if (ownTextureId) {
+        glDeleteTextures(1, &ownTextureId); // Any GL call "seems to be" an invalid operation on Windows after/during destruction. Might be the result of something else that is broken...
+        glGetError();
+
+        ownTextureId = 0;
+    }
 }
 
 GlTexture::ScopeBinding GlTexture::getScopeBinding() const
