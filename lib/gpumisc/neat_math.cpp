@@ -226,7 +226,7 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(debug_build ? T2*1.2 : T2*1.6, T1); // floor_log2 is at least a little faster
 #else
-        EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.5, T1); // floor_log2 is at least a little faster in release builds
+        EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.3, T1); // floor_log2 is at least a little faster in release builds
 #endif
         EXCEPTION_ASSERT_LESS(T1, T2*4); // but not more than four times as fast
     }
@@ -276,17 +276,22 @@ void neat_math::
         int j=0;
         for (int i=0; i<1000000; i++) {j+=i;}
         double T = t.elapsed()/1000000;
-        T += j*1e-20;
+        T *= 1 + j*1e-30;
 
         // time for unsigned iterator
         t.restart ();
         unsigned ju=0;
         for (unsigned i=0; i<1000000u; i++) {ju+=i;}
         double T2 = t.elapsed()/1000000;
-        T2 += ju*1e-20;
+        T2 *= 1 + ju*1e-30;
 
-        EXCEPTION_ASSERT_LESS(T, T2*1.3);
-        EXCEPTION_ASSERT_LESS(T2, debug_build? T*2: T*1.22);
+        if (debug_build) {
+            EXCEPTION_ASSERT_LESS(T, T2*1.3);
+            EXCEPTION_ASSERT_LESS(T2, T*2);
+        } else {
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(T, 1e-12);
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(T2, 1e-12);
+        }
 
         // time for float
         t.restart ();
@@ -294,12 +299,14 @@ void neat_math::
         float jf=0;
         for (float i=1; i<1000000.f; i++) {jf++;}
         double T3 = t.elapsed()/1000000;
+        T3 *= 1 + jf*1e-30;
 
         // time for float
         t.restart ();
         j=0;
         for (float i=1; i<1000000.f; i*=1.00001f) {j++;}
         double T4 = t.elapsed()/j;
+        T4 *= 1 + j*1e-30;
 
         EXCEPTION_ASSERT_LESS(debug_build? 0: T*1.1, T3);
 #ifdef __GCC__
@@ -357,8 +364,18 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS( 1.2*T2, T1 );
 #else
-        EXCEPTION_ASSERT_LESS( debug_build? 0: T1*1.2, T2 );
+        if (debug_build) {
+            EXCEPTION_ASSERT_LESS( 0, T2 );
+        } else {
+            EXCEPTION_ASSERT_LESS ( T2, T1*1.1 );
+            EXCEPTION_ASSERT_LESS ( T1, T2*1.1 );
+        }
 #endif
-        EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
+        if (debug_build) {
+            EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
+        } else {
+            EXCEPTION_ASSERT_LESS ( T2, T3*1.1 );
+            EXCEPTION_ASSERT_LESS ( T3, T2*1.1 );
+        }
     }
 }

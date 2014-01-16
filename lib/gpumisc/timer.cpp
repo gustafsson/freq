@@ -95,7 +95,7 @@ void Timer::
         double T5 = t.elapsed ();
 
         EXCEPTION_ASSERT_LESS(T1, 60e-6);
-        EXCEPTION_ASSERT_LESS(T1, T2*1.5);
+        EXCEPTION_ASSERT_LESS(T1, T2*1.6);
         EXCEPTION_ASSERT_LESS(T2, T1*1.5);
         EXCEPTION_ASSERT_LESS(T1, T3*1.8);
         EXCEPTION_ASSERT_LESS(T3, T1*1.5);
