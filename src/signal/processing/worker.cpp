@@ -342,6 +342,7 @@ void Worker::
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
+#ifdef _DEBUG
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
 
@@ -359,6 +360,7 @@ void Worker::
 
         PrettifySegfault::EnableDirectPrint (true);
     }
+#endif
 
     // It should store information about a crashed task (std::exception) and stop execution. (1)
     {
