@@ -124,16 +124,16 @@ bool Merger::
 
     INFO_COLLECTION TaskTimer tt(boost::format("%s, %s into %s") % __FUNCTION__ % ri % ro);
 
-    INFO_COLLECTION ComputationSynchronize();
+    VERBOSE_COLLECTION ComputationSynchronize();
 
     // TODO examine why blockMerge is really really slow
     {
-        INFO_COLLECTION TaskTimer tt("blockMerge");
+        VERBOSE_COLLECTION TaskTimer tt("blockMerge");
         ::blockMerge( inData.cpu_copy,
                       outData.cpu_copy,
                       ResampleArea( ri.a.time, ri.a.scale, ri.b.time, ri.b.scale ),
                       ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );
-        INFO_COLLECTION ComputationSynchronize();
+        VERBOSE_COLLECTION ComputationSynchronize();
     }
 
     //bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());

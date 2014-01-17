@@ -20,6 +20,14 @@ GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
 class GlBlock
 {
 public:
+    enum HeightMode
+    {
+        HeightMode_Flat=0,
+        HeightMode_VertexTexture=1,
+        HeightMode_VertexBuffer=2
+    };
+
+
     GlBlock( BlockLayout block_size, float width, float height );
     ~GlBlock();
 
@@ -37,13 +45,7 @@ public:
     bool has_texture();
     void delete_texture();
 
-    enum HeightMode
-    {
-        HeightMode_Flat=0,
-        HeightMode_VertexTexture=1,
-        HeightMode_VertexBuffer=2
-    };
-
+    void update_texture( HeightMode heightMode );
     void draw( unsigned vbo_size, HeightMode heightMode=HeightMode_VertexTexture );
     //void draw_directMode( );
 
@@ -64,7 +66,6 @@ private:
     void createHeightVbo();
 
     bool create_texture( HeightMode heightMode );
-    void update_texture( HeightMode heightMode );
 
     const BlockLayout block_size_;
 
