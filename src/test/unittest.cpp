@@ -57,6 +57,7 @@
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/recordmodel.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "heightmap/blocks/merger.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -158,6 +159,7 @@ int UnitTest::
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::ApplicationErrorLogController);
         RUNTEST(Heightmap::Block);
+        RUNTEST(Heightmap::Blocks::Merger);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);

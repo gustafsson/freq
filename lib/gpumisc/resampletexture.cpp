@@ -65,8 +65,12 @@ void ResampleTexture::
 }
 
 
-void compare(float* expected, size_t sizeof_expected, DataStorage<float>::Ptr data)
+/////////////////// tests ////////////////////////
+
+
+static void compare(float* expected, size_t sizeof_expected, DataStorage<float>::Ptr data)
 {
+    EXCEPTION_ASSERT(data);
     EXCEPTION_ASSERT_EQUALS(sizeof_expected, data->numberOfBytes ());
 
     float *p = data->getCpuMemory ();
