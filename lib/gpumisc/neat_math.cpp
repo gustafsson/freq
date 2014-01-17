@@ -226,9 +226,9 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(debug_build ? T2*1.2 : T2*1.6, T1); // floor_log2 is at least a little faster
 #else
-        EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.3, T1); // floor_log2 is at least a little faster in release builds
+        EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.1, T1); // floor_log2 is at least a little faster in release builds
 #endif
-        EXCEPTION_ASSERT_LESS(T1, T2*4); // but not more than four times as fast
+        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*1.8); // how much faster?
     }
 
     {
@@ -375,7 +375,7 @@ void neat_math::
             EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
         } else {
             EXCEPTION_ASSERT_LESS ( T2, T3*2 );
-            EXCEPTION_ASSERT_LESS ( T3, T2*1.5 );
+            EXCEPTION_ASSERT_LESS ( T3, T2*1.8 );
         }
     }
 }

@@ -404,14 +404,14 @@ void WriteWhileReadingThread::
             a->readWriteLock ()->tryLockForWrite ();
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 73e-9);
+        EXCEPTION_ASSERT_LESS(T, 88e-9);
         EXCEPTION_ASSERT_LESS(20e-9, T);
 
         for (int i=0; i<1000; i++) {
             a->readWriteLock ()->tryLockForWrite (0);
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 2000e-9);
+        EXCEPTION_ASSERT_LESS(T, 4000e-9);
         EXCEPTION_ASSERT_LESS(300e-9, T);
 
         for (int i=0; i<1000; i++) {
@@ -447,7 +447,7 @@ void WriteWhileReadingThread::
         }
         T = timer.elapsedAndRestart ()/1000;
         EXCEPTION_ASSERT_LESS(T, 53e-9);
-        EXCEPTION_ASSERT_LESS(33e-9, T);
+        EXCEPTION_ASSERT_LESS(32e-9, T);
     }
 
     // Is should cause a low overhead

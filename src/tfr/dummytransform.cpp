@@ -168,8 +168,11 @@ void DummyTransform::
 #ifdef _DEBUG
         EXCEPTION_ASSERT_LESS(T, i==0 ? 400e-6 : 80e-6);
 #else
-        EXCEPTION_ASSERT_LESS(i==0 ? 5e-6 : 1e-6, T);
-        EXCEPTION_ASSERT_LESS(T, i==0 ? 12e-6 : 5e-6);
+        EXCEPTION_ASSERT_LESS(i==0 ? 4e-6 : 1e-6, T);
+        EXCEPTION_ASSERT_LESS(T, i==0 ? 19e-6 : 5e-6);
+        // Needed during incremental builds. Rebuild seems to help.
+        //EXCEPTION_ASSERT_LESS(i==0 ? 250e-6 : 1e-6, T);
+        //EXCEPTION_ASSERT_LESS(T, i==0 ? 500e-6 : 5e-6);
 #endif
     }
 }
