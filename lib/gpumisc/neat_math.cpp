@@ -290,7 +290,7 @@ void neat_math::
             EXCEPTION_ASSERT_LESS(T2, T*2);
         } else {
             EXCEPTION_ASSERT_LESS_OR_EQUAL(T, 1e-12);
-            EXCEPTION_ASSERT_LESS_OR_EQUAL(T2, 1e-12);
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(T2, 3e-12);
         }
 
         // time for float
@@ -367,15 +367,15 @@ void neat_math::
         if (debug_build) {
             EXCEPTION_ASSERT_LESS( 0, T2 );
         } else {
-            EXCEPTION_ASSERT_LESS ( T2, T1*1.1 );
-            EXCEPTION_ASSERT_LESS ( T1, T2*1.1 );
+            EXCEPTION_ASSERT_LESS ( T2, T1*1.3 );
+            EXCEPTION_ASSERT_LESS ( T1, T2*2 );
         }
 #endif
         if (debug_build) {
             EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
         } else {
-            EXCEPTION_ASSERT_LESS ( T2, T3*1.1 );
-            EXCEPTION_ASSERT_LESS ( T3, T2*1.1 );
+            EXCEPTION_ASSERT_LESS ( T2, T3*2 );
+            EXCEPTION_ASSERT_LESS ( T3, T2*1.5 );
         }
     }
 }
