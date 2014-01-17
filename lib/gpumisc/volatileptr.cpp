@@ -24,6 +24,30 @@ private:
 };
 
 
+class InnerDestructor {
+public:
+    InnerDestructor(bool* inner_destructor):inner_destructor(inner_destructor) {}
+    ~InnerDestructor() { *inner_destructor = true; }
+
+private:
+    bool* inner_destructor;
+};
+
+
+class ThrowInConstructor {
+public:
+    ThrowInConstructor(bool*outer_destructor, bool*inner_destructor):inner(inner_destructor) {
+        throw 1;
+    }
+
+    ~ThrowInConstructor() { *outer_destructor = true; }
+
+private:
+    bool* outer_destructor;
+    InnerDestructor inner;
+};
+
+
 class A: public VolatilePtr<A>
 {
 public:
@@ -38,6 +62,10 @@ public:
     void    consttest () const volatile;
 
     void b() { }
+
+    QReadWriteLock* readWriteLock() const volatile {
+        return VolatilePtr::readWriteLock ();
+    }
 
 private:
 
@@ -222,6 +250,34 @@ void VolatilePtrTest::
     // locking the same object more than once at a time.
     WriteWhileReadingThread::test ();
 
+    // It should be accessible from various pointer types
+    {
+        const A::Ptr mya1(new A);
+        {A::ReadPtr r(mya1);}
+        {A::WritePtr w(mya1);}
+
+        const volatile A::Ptr mya2(new A);
+        {A::ReadPtr r(mya2);}
+        {A::WritePtr w(mya2);}
+
+        const volatile A::ConstPtr mya3(new A);
+        {A::ReadPtr r(mya3);}
+
+        A::ConstPtr mya4(new A);
+        A::ReadPtr(mya4.get ());
+
+        A::WritePtr(mya.get ());
+    }
+
+    // It should be fine to throw from the constructor as long as allocated resources
+    // are taken care of as usual in any other scope.
+    {
+        bool outer_destructor = false;
+        bool inner_destructor = false;
+        EXPECT_EXCEPTION(int, ThrowInConstructor d(&outer_destructor, &inner_destructor));
+        EXCEPTION_ASSERT(inner_destructor);
+        EXCEPTION_ASSERT(!outer_destructor);
+    }
 
     // More thoughts on design decisions
     // VolatilePtr provides two short methods read1 and write1. They are a bit
@@ -333,6 +389,65 @@ void WriteWhileReadingThread::
         float T = timer.elapsed ();
         EXCEPTION_ASSERT_LESS(40e-3, T);
         EXCEPTION_ASSERT_LESS(T, 70e-3);
+    }
+
+    // 'NoLockFailed' should be fast
+    {
+        A::Ptr a(new A());
+        A::ConstPtr consta(a);
+
+        A::WritePtr r(a);
+        Timer timer;
+        double T;
+
+        for (int i=0; i<1000; i++) {
+            a->readWriteLock ()->tryLockForWrite ();
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 70e-9);
+        EXCEPTION_ASSERT_LESS(20e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            a->readWriteLock ()->tryLockForWrite (0);
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 700e-9);
+        EXCEPTION_ASSERT_LESS(300e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            try { A::WritePtr(a,0); } catch (const LockFailed&) {}
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 13000e-9);
+        EXCEPTION_ASSERT_LESS(6000e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            EXPECT_EXCEPTION(LockFailed, A::WritePtr(a,0));
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 15000e-9);
+        EXCEPTION_ASSERT_LESS(6000e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            A::WritePtr(a,NoLockFailed());
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 56e-9);
+        EXCEPTION_ASSERT_LESS(34e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            A::ReadPtr(a,NoLockFailed());
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 50e-9);
+        EXCEPTION_ASSERT_LESS(33e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            A::ReadPtr(consta,NoLockFailed());
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 45e-9);
+        EXCEPTION_ASSERT_LESS(33e-9, T);
     }
 
     // Is should cause a low overhead
