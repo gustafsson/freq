@@ -387,9 +387,10 @@ TaskTimer::~TaskTimer() {
             logprint(" ");
         }
 
-        if ( diff.total_nanoseconds()<1500 && diff.total_nanoseconds() != 1000) {
-            logprint(str(boost::format("%s %u ns.\n") % finish_message % (unsigned)diff.total_nanoseconds()).c_str());
-        } else if (diff.total_microseconds() <1500 && diff.total_microseconds() != 1000) {
+//        if ( diff.total_nanoseconds()<1500 && diff.total_nanoseconds() != 1000) {
+//            logprint(str(boost::format("%s %u ns.\n") % finish_message % (unsigned)diff.total_nanoseconds()).c_str());
+//        } else
+        if (diff.total_microseconds() <1500 && diff.total_microseconds() != 1000) {
             logprint(str(boost::format("%s %.0f us.\n") % finish_message % (float)(diff.total_nanoseconds()/1000.0f)).c_str());
         } else if (diff.total_milliseconds() <1500 && diff.total_milliseconds() != 1000) {
             logprint(str(boost::format("%s %.1f ms.\n") % finish_message % (float)(diff.total_microseconds()/1000.0f)).c_str());
