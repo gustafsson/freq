@@ -24,7 +24,10 @@ private:
     /**
       Add block information from another block. Returns whether any information was merged.
       */
-    bool mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData );
+    bool mergeBlock( const Block& outBlock,
+                     const Block& inBlock,
+                     const BlockData::WritePtr& poutData,
+                     const BlockData::ReadPtr& pinData );
 };
 
 } // namespace Block

@@ -34,6 +34,7 @@ void Merger::
     const Reference& ref = block->reference ();
     Intervals things_to_update = block->getInterval ();
     std::vector<pBlock> gib = BlockQuery(cache_).getIntersectingBlocks ( things_to_update.spannedInterval(), false, 0 );
+    BlockData::WritePtr outdata = block->block_data ();
 
     const Region& r = block->getRegion ();
 
@@ -72,8 +73,8 @@ void Merger::
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                     things_to_update -= v;
 
-                    mergeBlock( *block,               *bl,
-                                *block->block_data(), *bl->block_data_const () );
+                    mergeBlock( *block,  *bl,
+                                outdata, bl->block_data_const () );
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -97,8 +98,14 @@ void Merger::
 
 
 bool Merger::
-        mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData )
+        mergeBlock( const Block& outBlock, const Block& inBlock, const BlockData::WritePtr& poutData, const BlockData::ReadPtr& pinData )
 {
+    if (!poutData.get () || !pinData.get ())
+        return false;
+
+    BlockData& outData = *poutData;
+    const BlockData& inData = *pinData;
+
     EXCEPTION_ASSERT( &outBlock != &inBlock );
 
     // Find out what intervals that match

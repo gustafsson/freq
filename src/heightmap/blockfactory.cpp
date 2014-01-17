@@ -44,6 +44,7 @@ pBlock BlockFactory::
                              block_layout_,
                              visualization_params_) );
             block->glblock = reuse->glblock;
+            // Sets to zero on first read
             block->block_data()->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
 
             reuse->glblock.reset();
@@ -55,14 +56,7 @@ pBlock BlockFactory::
             block = getAllocatedBlock(ref);
 
         if (!block)
-            return block;
-
-        // set to zero
-
-        // DataStorage makes sure nothing actually happens here unless
-        // cpu_copy has already been allocated (i.e if it is stolen)
-        // Each block is about 1 MB so this takes about 0.5-1 ms.
-        block->block_data()->cpu_copy->ClearContents ();
+            return pBlock();
 
         // For some filters a block could be created with valid content from existing blocks
         //BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
