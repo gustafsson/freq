@@ -250,8 +250,9 @@ void TargetNeeds::
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+            float T = t.elapsed ();
+            EXCEPTION_ASSERT_LESS(2e-3, T); // Should sleep, updateNeeds didn't affect this
+            EXCEPTION_ASSERT_LESS(T, 3e-3); // Should not sleep for too long
         }
 
         {
@@ -259,8 +260,9 @@ void TargetNeeds::
             Bedroom::Bed bed = bedroom->getBed();
             write1(target_needs)->updateNeeds(Signal::Interval(-15,4));
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
+            float T = t.elapsed ();
+            EXCEPTION_ASSERT_LESS(2e-3, T); // Should sleep, updateNeeds didn't affect this
+            EXCEPTION_ASSERT_LESS(T, 3e-3); // Should not sleep for too long
         }
 
         {
