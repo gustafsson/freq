@@ -404,14 +404,14 @@ void WriteWhileReadingThread::
             a->readWriteLock ()->tryLockForWrite ();
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 70e-9);
+        EXCEPTION_ASSERT_LESS(T, 73e-9);
         EXCEPTION_ASSERT_LESS(20e-9, T);
 
         for (int i=0; i<1000; i++) {
             a->readWriteLock ()->tryLockForWrite (0);
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 700e-9);
+        EXCEPTION_ASSERT_LESS(T, 2000e-9);
         EXCEPTION_ASSERT_LESS(300e-9, T);
 
         for (int i=0; i<1000; i++) {
@@ -433,20 +433,20 @@ void WriteWhileReadingThread::
         }
         T = timer.elapsedAndRestart ()/1000;
         EXCEPTION_ASSERT_LESS(T, 56e-9);
-        EXCEPTION_ASSERT_LESS(34e-9, T);
+        EXCEPTION_ASSERT_LESS(33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 50e-9);
+        EXCEPTION_ASSERT_LESS(T, 57e-9);
         EXCEPTION_ASSERT_LESS(33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(consta,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 45e-9);
+        EXCEPTION_ASSERT_LESS(T, 53e-9);
         EXCEPTION_ASSERT_LESS(33e-9, T);
     }
 
