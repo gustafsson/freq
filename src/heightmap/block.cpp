@@ -33,24 +33,30 @@ Block::
 }
 
 
+BlockData::WritePtr Block::
+        block_data()
+{
+    BlockData::WritePtr b(block_data_);
+    new_data_available_ = true;
+    return b;
+}
+
+
 bool Block::
         update_glblock_data()
 {
-    bool r = false;
+    // Lock if available but don't wait for it to become available
+    BlockData::WritePtr bd(block_data_, NoLockFailed());
 
-    try {
-        // Lock if available but don't wait for it to become available
-        BlockData::WritePtr bd(block_data_, 0);
+    if (bd.get () && new_data_available_) {
 
-        if (new_data_available_) {
-            *glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
-            new_data_available_ = false;
+        *glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
+        new_data_available_ = false;
 
-            r = true;
-        }
-    } catch (const BlockData::LockFailed&) {}
+        return true;
+    }
 
-    return r;
+    return false;
 }
 
 
