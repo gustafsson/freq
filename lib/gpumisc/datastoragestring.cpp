@@ -1,9 +1,7 @@
-#include "printdatastorage.h"
+#include "datastoragestring.h"
 #include "Statistics.h"
 
-namespace Test {
-
-std::string PrintDataStorage::
+std::string DataStorageString::
         printDataStorage(DataStorage<float>::Ptr data)
 {
     std::stringstream ss;
@@ -57,7 +55,7 @@ std::string PrintDataStorage::
 }
 
 
-std::string PrintDataStorage::
+std::string DataStorageString::
         printDataStorageStats(DataStorage<float>::Ptr data)
 {
     std::stringstream ss;
@@ -68,12 +66,8 @@ std::string PrintDataStorage::
     return ss.str();
 }
 
-} // namespace Test
 
-
-namespace Test {
-
-void PrintDataStorage::
+void DataStorageString::
         test()
 {
     // It should print contents of a DataStorage for debugging purposes.
@@ -83,48 +77,46 @@ void PrintDataStorage::
         {
             data = CpuMemoryStorage::BorrowPtr( DataStorageSize(2,2), srcdata, false );
 
-            std::string s = PrintDataStorage::printDataStorage (data);
+            std::string s = DataStorageString::printDataStorage (data);
             std::string expected = "[2, 2]\n[y:0] = { 1, 2 }\n[y:1] = { 3, 4 }";
             EXCEPTION_ASSERT_EQUALS(s, expected);
 
-            std::string stats = PrintDataStorage::printDataStorageStats (data);
+            std::string stats = DataStorageString::printDataStorageStats (data);
             expected = "size = [2, 2], min = 1, max = 4, mean = 2.5, std = 1.11803";
             EXCEPTION_ASSERT_EQUALS(stats, expected);
         }
 
         {
             data = CpuMemoryStorage::BorrowPtr( DataStorageSize(3), srcdata, false );
-            std::string s = PrintDataStorage::printDataStorage (data);
+            std::string s = DataStorageString::printDataStorage (data);
             std::string expected = "[3] = { 1, 2, 3 }";
             EXCEPTION_ASSERT_EQUALS(s, expected);
 
-            std::string stats = PrintDataStorage::printDataStorageStats (data);
+            std::string stats = DataStorageString::printDataStorageStats (data);
             expected = "size = [3], min = 1, max = 3, mean = 2, std = 0.816497";
             EXCEPTION_ASSERT_EQUALS(stats, expected);
         }
 
         {
             data = CpuMemoryStorage::BorrowPtr( DataStorageSize(2,1,2), srcdata, false );
-            std::string s = PrintDataStorage::printDataStorage (data);
+            std::string s = DataStorageString::printDataStorage (data);
             std::string expected = "[2, 1, 2]\n[z:0, y:0] = { 1, 2 }\n[z:1, y:0] = { 3, 4 }";
             EXCEPTION_ASSERT_EQUALS(s, expected);
 
-            std::string stats = PrintDataStorage::printDataStorageStats (data);
+            std::string stats = DataStorageString::printDataStorageStats (data);
             expected = "size = [2, 1, 2], min = 1, max = 4, mean = 2.5, std = 1.11803";
             EXCEPTION_ASSERT_EQUALS(stats, expected);
         }
 
         {
             data = CpuMemoryStorage::BorrowPtr( DataStorageSize(1,2,2), srcdata, false );
-            std::string s = PrintDataStorage::printDataStorage (data);
+            std::string s = DataStorageString::printDataStorage (data);
             std::string expected = "[1, 2, 2]\n[z:0, y:0] = { 1 }\n[z:0, y:1] = { 2 }\n[z:1, y:0] = { 3 }\n[z:1, y:1] = { 4 }";
             EXCEPTION_ASSERT_EQUALS(s, expected);
 
-            std::string stats = PrintDataStorage::printDataStorageStats (data);
+            std::string stats = DataStorageString::printDataStorageStats (data);
             expected = "size = [1, 2, 2], min = 1, max = 4, mean = 2.5, std = 1.11803";
             EXCEPTION_ASSERT_EQUALS(stats, expected);
         }
     }
 }
-
-} // namespace Test

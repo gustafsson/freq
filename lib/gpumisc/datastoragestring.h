@@ -1,15 +1,13 @@
-#ifndef TEST_PRINTDATASTORAGE_H
-#define TEST_PRINTDATASTORAGE_H
+#ifndef DATASTORAGESTRING_H
+#define DATASTORAGESTRING_H
 
 #include "datastorage.h"
-
-namespace Test {
-
+#include "log.h"
 
 /**
- * @brief The PrintDataStorage class should print contents of a DataStorage for debugging purposes.
+ * @brief The DataStorageString class should print contents of a DataStorage for debugging purposes.
  */
-class PrintDataStorage
+class DataStorageString
 {
 public:
     static std::string printDataStorage(DataStorage<float>::Ptr data);
@@ -30,7 +28,7 @@ public:
         \
         if (0 != memcmp(p, expected, sizeof_expected)) \
         { \
-            Log("%s") % (DataStorageSize)data->size (); \
+            Log("%s = %s vs %s") % (#data) % data->size () % (#expected); \
             for (size_t i=0; i<data->numberOfElements (); i++) \
                 Log("%s: %s\t%s\t%s") % i % p[i] % expected[i] % (p[i] - expected[i]); \
         \
@@ -40,16 +38,14 @@ public:
 
 #define PRINT_DATASTORAGE(data, arg) \
     do { \
-        TaskInfo ti(format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#data) % b->getInterval ()); \
-        TaskInfo(boost::format("%s"), PrintDataStorage::printDataStorage (data)); \
+        Log("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#data) \
+                    % DataStorageString::printDataStorage (data); \
     } while(false)
 
 #define PRINT_DATASTORAGE_STATS(data, arg) \
     do { \
-        TaskInfo ti(format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#data) % b->getInterval ()); \
-        TaskInfo(boost::format("%s"), PrintDataStorage::printDataStorageStats (data)); \
+        Log("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#data) \
+                    % DataStorageString::printDataStorageStats (data); \
     } while(false)
 
-} // namespace Test
-
-#endif // TEST_PRINTDATASTORAGE_H
+#endif // DATASTORAGESTRING_H

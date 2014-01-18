@@ -2,6 +2,7 @@
 
 // gpumisc units
 #include "backtrace.h"
+#include "datastoragestring.h"
 #include "exceptionassert.h"
 #include "atomicvalue.h"
 #include "geometricalgebra.h"
@@ -13,7 +14,6 @@
 #include "volatileptr.h"
 
 // sonicawe
-#include "test/printdatastorage.h"
 #include "test/implicitordering.h"
 #include "test/stdlibtest.h"
 #include "test/tasktimertiming.h"
@@ -99,6 +99,7 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(Backtrace);
+        RUNTEST(DataStorageString);
         RUNTEST(ExceptionAssert);
         RUNTEST(AtomicValueTest);
         RUNTEST(GeometricAlgebra);
@@ -109,7 +110,6 @@ int UnitTest::
         RUNTEST(PrettifySegfault);
         RUNTEST(ResampleTexture);
         RUNTEST(VolatilePtrTest);
-        RUNTEST(Test::PrintDataStorage);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);

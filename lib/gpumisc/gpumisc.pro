@@ -26,6 +26,7 @@ SOURCES += \
     cpumemorystorage.cpp \
     cpuproperties.cpp \
     datastorage.cpp \
+    datastoragestring.cpp \
     debugbuf.cpp \
     detectgdb.cpp \
     demangle.cpp \
@@ -60,6 +61,7 @@ HEADERS += \
     cpumemorystorage.h \
     datastorage.h \
     datastorageaccess.h \
+    datastoragestring.h \
     cpuproperties.h \
     cva_list.h \
     debugbuf.h \

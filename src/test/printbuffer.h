@@ -3,6 +3,7 @@
 
 #include <string>
 #include "signal/buffer.h"
+#include "TaskTimer.h"
 
 namespace Test {
 
@@ -22,14 +23,14 @@ public:
 
 #define PRINT_BUFFER(b, arg) \
     do { \
-        TaskInfo ti(format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#b) % b->getInterval ()); \
-        TaskInfo(boost::format("%s"), PrintBuffer::printBuffer (b)); \
+        TaskInfo ti(boost::format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#b) % b->getInterval ()); \
+        TaskInfo(boost::format("%s") % PrintBuffer::printBuffer (b)); \
     } while(false)
 
 #define PRINT_BUFFER_STATS(b, arg) \
     do { \
-        TaskInfo ti(format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#b) % b->getInterval ()); \
-        TaskInfo(boost::format("%s"), PrintBuffer::printBufferStats (b)); \
+        TaskInfo ti(boost::format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#b) % b->getInterval ()); \
+        TaskInfo(boost::format("%s") % PrintBuffer::printBufferStats (b)); \
     } while(false)
 
 } // namespace Test
