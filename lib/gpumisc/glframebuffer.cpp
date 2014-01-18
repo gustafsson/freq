@@ -50,8 +50,21 @@ GlFrameBuffer::
         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internal_format);
         glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &type);
 
-        EXCEPTION_ASSERT_EQUALS(internal_format, GL_RGBA8);
-        EXCEPTION_ASSERT_EQUALS(type, 0x8C17); // from requesting GL_UNSIGNED_BYTE
+        EXCEPTION_ASSERTX(internal_format, "Is the texture or OpenGL not initialized?");
+
+        switch(internal_format) {
+        case GL_RGBA8: break; // GL_RGBA with GL_UNSIGNED_BYTE
+        case 0x8814: break; // GL_RGBA with GL_FLOAT
+        default:
+            EXCEPTION_ASSERTX(false, boost::format("Invalid internal format = %s. Must be GL_RGBA") % internal_format);
+        }
+
+        switch(type) {
+        case 0x8C17: break; // from requesting GL_UNSIGNED_BYTE
+        case GL_FLOAT: break;
+        default:
+            EXCEPTION_ASSERTX(false, boost::format("Invalid type = %s. Must be GL_UNSIGNED_BYTE or GL_FLOAT") % type);
+        }
     }
 
     init();
