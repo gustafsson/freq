@@ -16,11 +16,11 @@ std::string PrintBuffer::
     ss << b->getInterval () << ", " << b->number_of_channels () << " channels" << std::endl;
 
     for (unsigned c=0; c<b->number_of_channels(); ++c) {
-        ss << "[" << c << "] = ";
+        ss << "[" << c << "] = { ";
         float *p = b->getChannel (c)->waveform_data()->getCpuMemory ();
 
         if (b->number_of_samples ())
-            ss << "{ " << p[0];
+            ss << p[0];
 
         for (unsigned j=1; j<b->number_of_samples (); ++j)
             ss << ", " << p[j];
