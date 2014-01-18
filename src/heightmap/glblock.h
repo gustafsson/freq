@@ -6,6 +6,7 @@
 // gpumisc
 #include "mappedvbo.h"
 #include "ThreadChecker.h"
+#include "GlTexture.h"
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -37,6 +38,7 @@ public:
 
     void                reset( float width, float height );
 
+    GlTexture::Ptr      glTexture();
     pHeight             height();
     pHeightReadOnlyCpu  heightReadOnlyCpu();
     //HeightReadOnlyArray heightReadOnlyArray();
