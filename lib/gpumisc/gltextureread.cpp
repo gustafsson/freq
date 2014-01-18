@@ -15,6 +15,7 @@ GlTextureRead::
     :
       texture(texture)
 {
+    EXCEPTION_ASSERT(texture);
 }
 
 

@@ -6,6 +6,7 @@
 #include "exceptionassert.h"
 #include "atomicvalue.h"
 #include "geometricalgebra.h"
+#include "glframebuffer.h"
 #include "glinfo.h"
 #include "glprojection.h"
 #include "gltextureread.h"
@@ -103,6 +104,7 @@ int UnitTest::
         RUNTEST(ExceptionAssert);
         RUNTEST(AtomicValueTest);
         RUNTEST(GeometricAlgebra);
+        RUNTEST(GlFrameBuffer);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
         RUNTEST(GlTextureRead);

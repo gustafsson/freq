@@ -4,6 +4,8 @@
 std::string DataStorageString::
         printDataStorage(DataStorage<float>::Ptr data)
 {
+    EXCEPTION_ASSERT(data);
+
     std::stringstream ss;
     DataStorageSize sz = data->size ();
     ss << sz;

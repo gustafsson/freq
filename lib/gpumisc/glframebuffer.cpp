@@ -4,6 +4,7 @@
 #include "gl.h"
 #include "exceptionassert.h"
 #include "TaskTimer.h"
+#include "backtrace.h"
 
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)
@@ -42,31 +43,6 @@ GlFrameBuffer::
     own_texture_(0),
     texture_(texture)
 {
-    {
-        // Verify format
-        GLint internal_format=0, type=0;
-        GlTexture::ScopeBinding t = texture->getScopeBinding ();
-
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internal_format);
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_RED_TYPE, &type);
-
-        EXCEPTION_ASSERTX(internal_format, "Is the texture or OpenGL not initialized?");
-
-        switch(internal_format) {
-        case GL_RGBA8: break; // GL_RGBA with GL_UNSIGNED_BYTE
-        case 0x8814: break; // GL_RGBA with GL_FLOAT
-        default:
-            EXCEPTION_ASSERTX(false, boost::format("Invalid internal format = %s. Must be GL_RGBA") % internal_format);
-        }
-
-        switch(type) {
-        case 0x8C17: break; // from requesting GL_UNSIGNED_BYTE
-        case GL_FLOAT: break;
-        default:
-            EXCEPTION_ASSERTX(false, boost::format("Invalid type = %s. Must be GL_UNSIGNED_BYTE or GL_FLOAT") % type);
-        }
-    }
-
     init();
 
     try
@@ -196,7 +172,15 @@ void GlFrameBuffer::
                                      GL_RENDERBUFFER_EXT,
                                      rboId_);
 
-        EXCEPTION_ASSERT( GL_FRAMEBUFFER_COMPLETE_EXT == glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) );
+        int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+
+        if (GL_FRAMEBUFFER_UNSUPPORTED_EXT == status)
+          {
+            BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
+                    "Got GL_FRAMEBUFFER_UNSUPPORTED_EXT. See GlFrameBuffer::test for supported formats")) << Backtrace::make ());
+          }
+
+        EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE_EXT, status );
 
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     }
@@ -221,14 +205,55 @@ void GlFrameBuffer::
 
         if (0 != glewInit() )
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Couldn't initialize \"glew\"")));
+                    "Couldn't initialize \"glew\"")) << Backtrace::make ());
 
         if (!glewIsSupported( "GL_EXT_framebuffer_object" )) {
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
                     "Failed to get minimal extensions\n"
                     "Sonic AWE requires:\n"
-                    "  GL_EXT_framebuffer_object\n")));
+                    "  GL_EXT_framebuffer_object\n")) << Backtrace::make ());
         }
     }
 #endif
+}
+
+
+//////// test //////
+
+#include "expectexception.h"
+#include <QGLWidget>
+#include <QApplication>
+
+void GlFrameBuffer::
+        test()
+{
+    int argc = 0;
+    char* argv = 0;
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
+    // It should wrapper an OpenGL frame buffer object (FBO) to manage the frame
+    // buffer in an object oriented manner
+    {
+        GlTexture sum1(4, 4, GL_RGBA, GL_RGBA, GL_FLOAT);
+        GlTexture sum2(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT);
+        GlTexture sum3(4, 4, GL_RED, GL_LUMINANCE32F_ARB, GL_FLOAT);
+        GlTexture sum4(4, 4, GL_LUMINANCE, GL_LUMINANCE, GL_FLOAT);
+        GlTexture sum5(4, 4, GL_RED, GL_LUMINANCE, GL_FLOAT);
+        GlTexture sum6(4, 4, GL_RGBA, GL_LUMINANCE32F_ARB, GL_FLOAT);
+        GlTexture sum7(4, 4, GL_RGBA, GL_LUMINANCE, GL_FLOAT);
+        GlTexture sum8(4, 4, GL_RED, GL_RGBA, GL_FLOAT);
+        GlTexture sum9(4, 4, GL_LUMINANCE, GL_RGBA, GL_FLOAT);
+
+        {GlFrameBuffer fb(&sum1);}
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum2));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum3));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum4));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum5));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum6));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum7));
+        {GlFrameBuffer fb(&sum8);}
+        {GlFrameBuffer fb(&sum9);}
+    }
 }

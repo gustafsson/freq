@@ -92,4 +92,7 @@ private:
     GlTexture* texture_;
 
     void init();
+
+public:
+    static void test();
 };
