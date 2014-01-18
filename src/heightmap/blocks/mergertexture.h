@@ -4,6 +4,8 @@
 #include "heightmap/blockcache.h"
 #include "heightmap/block.h"
 
+class ResampleTexture;
+
 namespace Heightmap {
 namespace Blocks {
 
@@ -30,10 +32,7 @@ private:
     /**
       Add block information from another block. Returns whether any information was merged.
       */
-    bool mergeBlock( Block& outBlock,
-                     const Block& inBlock,
-                     const BlockData::WritePtr& poutData,
-                     const BlockData::ReadPtr& pinData );
+    void mergeBlock( ResampleTexture& rt, const Block& inBlock );
 
 public:
     static void test();

@@ -43,6 +43,16 @@ void MergerTexture::
 
     const Region& r = block->getRegion ();
 
+    ResampleTexture::Area out(r.a.time, r.a.scale, r.b.time, r.b.scale);
+
+    GlTexture::Ptr t = block->glblock->glTexture ();
+    // Must create a new texture with GL_RGBA to paint to, can't paint to a monochromatic texture
+    // But only the first color component will be read from.
+    // GlTexture sum(t->getWidth (), t->getHeight (), GL_RGBA, GL_RGBA, GL_FLOAT);
+    GlTexture sum(t->getWidth (), t->getHeight (), GL_LUMINANCE, GL_RGBA, GL_FLOAT);
+    ResampleTexture rt(&sum, out);
+    rt(&*t, out); // Paint old contents into it
+
     int merge_levels = 10;
 
     VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), read1(cache_)->cache().size(), merge_levels);
@@ -78,8 +88,7 @@ void MergerTexture::
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                     things_to_update -= v;
 
-                    mergeBlock( *block,  *bl,
-                                outdata, bl->block_data_const () );
+                    mergeBlock( rt, *bl );
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -99,43 +108,30 @@ void MergerTexture::
 
         gib = next;
     }
+
+    if (things_to_update != block->getInterval ())
+      {
+        TaskTimer tt(boost::format("OpenGL -> CPU -> OpenGL %s") % block->getRegion ());
+
+        // Get it back to cpu memory
+        BlockData::pData d = GlTextureRead(sum.getOpenGlTextureId ()).readFloat (0,GL_RED);
+
+        EXCEPTION_ASSERT_EQUALS(d->size (), outdata->cpu_copy->size());
+        outdata->cpu_copy = d; // replace the DataStorage, don't bother copying into the previous one
+
+        *block->glblock->height()->data = *d;
+        block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
+      }
 }
 
 
-bool MergerTexture::
-        mergeBlock( Block& outBlock, const Block& inBlock, const BlockData::WritePtr& poutData, const BlockData::ReadPtr& pinData )
+void MergerTexture::
+        mergeBlock( ResampleTexture& rt, const Block& inBlock )
 {
-    if (!poutData.get ())
-        return false;
-
-    BlockData& outData = *poutData;
-    BlockData::pData d;
-
-    Region ro = outBlock.getRegion ();
     Region ri = inBlock.getRegion ();
-    ResampleTexture::Area out(ro.a.time, ro.a.scale, ro.b.time, ro.b.scale);
     ResampleTexture::Area in(ri.a.time, ri.a.scale, ri.b.time, ri.b.scale);
 
-    GlTexture::Ptr t = outBlock.glblock->glTexture ();
-    // Must create a new texture with GL_RGBA to paint to, can't paint to a monochromatic texture
-    // But only the first color component will be read from.
-    // GlTexture sum(t->getWidth (), t->getHeight (), GL_RGBA, GL_RGBA, GL_FLOAT);
-    GlTexture sum(t->getWidth (), t->getHeight (), GL_LUMINANCE, GL_RGBA, GL_FLOAT);
-    unsigned int sumId = sum.getOpenGlTextureId ();
-    ResampleTexture rt(&sum, out);
-    rt(&*t, out); // Paint old contents into it
     rt(inBlock.glblock->glTexture ().get (), in); // Paint new contents over it
-
-    // Get it back to cpu memory
-    d = GlTextureRead(sumId).readFloat (0,GL_RED);
-
-    EXCEPTION_ASSERT_EQUALS(d->size (), outData.cpu_copy->size());
-    outData.cpu_copy = d;
-
-    *outBlock.glblock->height()->data = *d;
-    outBlock.glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
-
-    return true;
 }
 
 } // namespace Blocks
