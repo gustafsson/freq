@@ -136,7 +136,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( align_up(7615252200817428560llu, 3755833054923903685llu), 11267499164771711055llu);
 
         double T_align = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T_align, gdb ? 2e-3 : 15e-6);
+        EXCEPTION_ASSERT_LESS (T_align, gdb ? 2000e-6 : 15e-6);
 
         long long l = LLONG_MIN;
         EXCEPTION_ASSERT_EQUALS( l, -l );
@@ -228,7 +228,7 @@ void neat_math::
 #else
         EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.1, T1); // floor_log2 is at least a little faster in release builds
 #endif
-        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*1.8); // how much faster?
+        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*2.5); // how much faster?
     }
 
     {
@@ -312,7 +312,7 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(1.4*T, T4);
 #else
-        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.03: 1.2), T4);
+        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.02: 1.2), T4);
 #endif
         double ghz = 1e-9/T;
         EXCEPTION_ASSERT_LESS(debug_build ? 0.1 : 0.3, ghz);

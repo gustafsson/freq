@@ -400,12 +400,17 @@ void WriteWhileReadingThread::
         Timer timer;
         double T;
 
+        bool debug = false;
+#ifdef _DEBUG
+        debug = true;
+#endif
+
         for (int i=0; i<1000; i++) {
             a->readWriteLock ()->tryLockForWrite ();
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 88e-9);
-        EXCEPTION_ASSERT_LESS(20e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 110e-9 : 88e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 20e-9 : 20e-9, T);
 
         for (int i=0; i<1000; i++) {
             a->readWriteLock ()->tryLockForWrite (0);
@@ -418,36 +423,36 @@ void WriteWhileReadingThread::
             try { A::WritePtr(a,0); } catch (const LockFailed&) {}
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 13000e-9);
-        EXCEPTION_ASSERT_LESS(6000e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 25000e-9 : 15000e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 6000e-9 : 17000e-9, T);
 
         for (int i=0; i<1000; i++) {
             EXPECT_EXCEPTION(LockFailed, A::WritePtr(a,0));
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 15000e-9);
-        EXCEPTION_ASSERT_LESS(6000e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 18000e-9 : 15000e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 10000e-9 : 6000e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::WritePtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 56e-9);
-        EXCEPTION_ASSERT_LESS(33e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 90e-9 : 56e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 57e-9);
-        EXCEPTION_ASSERT_LESS(33e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 90e-9 : 57e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(consta,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, 53e-9);
-        EXCEPTION_ASSERT_LESS(32e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 80e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
     }
 
     // Is should cause a low overhead
