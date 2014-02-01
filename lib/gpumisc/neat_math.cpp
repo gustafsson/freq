@@ -136,7 +136,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( align_up(7615252200817428560llu, 3755833054923903685llu), 11267499164771711055llu);
 
         double T_align = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T_align, gdb ? 2000e-6 : 15e-6);
+        EXCEPTION_ASSERT_LESS (T_align, gdb ? 2500e-6 : 15e-6);
 
         long long l = LLONG_MIN;
         EXCEPTION_ASSERT_EQUALS( l, -l );
@@ -198,7 +198,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( floor_log2(-2107612212123456789012.f), 70 );
 
         double T = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T, 25e-6);
+        EXCEPTION_ASSERT_LESS (T, debug_build ? gdb ? 100e-6 : 42e-6 : 30e-6);
 
         // in general floor(log2(x)) == floor_log2(x)
         uniform_real_distribution<double> unif(
@@ -358,9 +358,9 @@ void neat_math::
             }
             T3 = t.elapsed ();
         }
-        EXCEPTION_ASSERT_LESS( T1, 25e-3 );
-        EXCEPTION_ASSERT_LESS( T2, debug_build? 60e-3: 20e-3 );
-        EXCEPTION_ASSERT_LESS( T3, 10e-3 );
+        EXCEPTION_ASSERT_LESS( T1, debug_build ? gdb ? 40e-3 : 30e-3 : 25e-3 );
+        EXCEPTION_ASSERT_LESS( T2, debug_build ? 60e-3 : 20e-3 );
+        EXCEPTION_ASSERT_LESS( T3, debug_build ? 20e-3 : 10e-3 );
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS( 1.2*T2, T1 );
 #else

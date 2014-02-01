@@ -179,6 +179,7 @@ void WorkerCrashLogger::
 
 #include <QApplication>
 #include "timer.h"
+#include "detectgdb.h"
 
 namespace Signal { namespace Processing { class Task; }}
 
@@ -209,6 +210,8 @@ void addAndWaitForStop(Workers::Ptr workers)
 void WorkerCrashLogger::
         test()
 {
+    bool gdb = DetectGdb::is_running_through_gdb();
+
     // It should fetch information asynchronously of crashed workers.
     {
         DEBUG TaskInfo ti("Catch info from a previously crashed worker");
@@ -310,7 +313,7 @@ void WorkerCrashLogger::
             addAndWaitForStop(workers);
 
             double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 4e-3 );
+            EXCEPTION_ASSERT_LESS( T, gdb ? 20e-3 : 4e-3 );
         }
 
         // Should not have consumed any workers

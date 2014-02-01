@@ -650,7 +650,7 @@ void Intervals::
             I |= Interval(i,i+1);
         }
         double T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.0000006);
+        EXCEPTION_ASSERT_LESS(T,0.00000065);
         EXCEPTION_ASSERT_EQUALS(I, Intervals(0,N));
 
         I = Intervals(0,N);

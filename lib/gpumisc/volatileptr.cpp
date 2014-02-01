@@ -3,6 +3,7 @@
 #include "expectexception.h"
 
 #include "timer.h"
+#include "detectgdb.h"
 
 #include <QSemaphore>
 #include <QThread>
@@ -404,12 +405,14 @@ void WriteWhileReadingThread::
 #ifdef _DEBUG
         debug = true;
 #endif
+        bool gdb = DetectGdb::is_running_through_gdb();
+
 
         for (int i=0; i<1000; i++) {
             a->readWriteLock ()->tryLockForWrite ();
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 110e-9 : 88e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 10000e-9 : 110e-9 : 88e-9);
         EXCEPTION_ASSERT_LESS(debug ? 20e-9 : 20e-9, T);
 
         for (int i=0; i<1000; i++) {
@@ -423,35 +426,35 @@ void WriteWhileReadingThread::
             try { A::WritePtr(a,0); } catch (const LockFailed&) {}
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 25000e-9 : 15000e-9);
-        EXCEPTION_ASSERT_LESS(debug ? 6000e-9 : 17000e-9, T);
+        EXCEPTION_ASSERT_LESS(T, debug ? 40000e-9 : 15000e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 12000e-9 : 6000e-9, T);
 
         for (int i=0; i<1000; i++) {
             EXPECT_EXCEPTION(LockFailed, A::WritePtr(a,0));
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 18000e-9 : 15000e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 40000e-9 : 18000e-9 : 15000e-9);
         EXCEPTION_ASSERT_LESS(debug ? 10000e-9 : 6000e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::WritePtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 90e-9 : 56e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 90e-9 : 60e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 90e-9 : 57e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 90e-9 : 60e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(consta,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 80e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 100e-9 : 80e-9 : 60e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
     }
 
