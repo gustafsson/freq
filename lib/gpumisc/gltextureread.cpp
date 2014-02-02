@@ -3,6 +3,7 @@
 #include "GlTexture.h"
 #include "log.h"
 #include "GlException.h"
+#include "glframebuffer.h"
 
 #include <QApplication>
 #include <QGLWidget>
@@ -43,7 +44,31 @@ DataStorage<float>::Ptr GlTextureRead::
 
     DataStorage<float>::Ptr data(new DataStorage<float>(width*number_of_components, height));
 
-    GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_FLOAT,  data->getCpuMemory()) );
+
+    // Straightforward, but unstable
+    //GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_FLOAT, data->getCpuMemory()) );
+
+
+    // Read through FBO instead
+    GlTexture t(texture);
+    GlFrameBuffer fb(&t);
+
+    GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
+    unsigned pbo=0;
+    glGenBuffers (1, &pbo);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    glBufferData (GL_PIXEL_PACK_BUFFER, data->numberOfBytes (), NULL, GL_STREAM_READ);
+
+    glReadPixels (0, 0, width, height, format, GL_FLOAT, 0);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+    memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    glDeleteBuffers (1, &pbo);
+
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
@@ -77,7 +102,31 @@ DataStorage<unsigned char>::Ptr GlTextureRead::
 
     DataStorage<unsigned char>::Ptr data(new DataStorage<unsigned char>(width*number_of_components, height));
 
-    GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_UNSIGNED_BYTE, data->getCpuMemory()) );
+
+    // Straightforward, but unstable
+    //GlException_SAFE_CALL( glGetTexImage(GL_TEXTURE_2D, level, format, GL_UNSIGNED_BYTE, data->getCpuMemory()) );
+
+
+    // Read through FBO instead
+    GlTexture t(texture);
+    GlFrameBuffer fb(&t);
+
+    GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
+    unsigned pbo=0;
+    glGenBuffers (1, &pbo);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    glBufferData (GL_PIXEL_PACK_BUFFER, data->numberOfBytes (), NULL, GL_STREAM_READ);
+    glReadPixels (0, 0, width, height, format, GL_UNSIGNED_BYTE, 0);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+    memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    glDeleteBuffers (1, &pbo);
+
+
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
@@ -141,7 +190,7 @@ void GlTextureRead::
                                     77,  0,0,255, 102, 0,0,255, 128, 0,0,255, 153, 0,0,255,
                                     102, 0,0,255, 128, 0,0,255, 153, 0,0,255, 255, 0,0,255 };
 
-        GlTexture src(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT, srcdata);
+        GlTexture src(4, 4, GL_RED, GL_RGBA, GL_FLOAT, srcdata);
 
         DataStorage<float>::Ptr data = GlTextureRead(src.getOpenGlTextureId ()).readFloat (0,GL_RED);
         compare(srcdata, sizeof(srcdata), data);
