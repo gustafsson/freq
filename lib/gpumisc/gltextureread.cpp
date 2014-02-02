@@ -108,8 +108,9 @@ void compare(T* expected, size_t sizeof_expected, typename DataStorage<T>::Ptr d
 void GlTextureRead::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "GlTextureRead";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
     QGLWidget w;
     w.makeCurrent ();

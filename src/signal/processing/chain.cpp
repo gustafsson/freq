@@ -284,8 +284,9 @@ class OperationDescChainMock : public Test::TransparentOperationDesc
 void Chain::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "Chain";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // Boost graph shall support removing and adding vertices without breaking color maps

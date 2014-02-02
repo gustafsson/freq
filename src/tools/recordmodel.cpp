@@ -118,8 +118,9 @@ private:
 void RecordModel::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "RecordModel";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should describe the operation required to perform a recording.

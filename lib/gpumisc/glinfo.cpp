@@ -89,8 +89,9 @@ void glinfo::
 {
     // It should provide a human readable text string of a Qt managed open gl render context.
     {
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "glinfo";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
         QGLWidget w;
         w.makeCurrent ();

@@ -240,8 +240,9 @@ void ApplicationErrorLogController::
 {
     // It should collect information about crashes to send anonymous feedback.
     if (false) {
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "ApplicationErrorLogController";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         try {

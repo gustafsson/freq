@@ -78,8 +78,9 @@ void ResampleTexture::
 void ResampleTexture::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "ResampleTexture";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
     QGLWidget w;
     w.makeCurrent ();

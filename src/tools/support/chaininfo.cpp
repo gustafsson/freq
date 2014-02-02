@@ -97,8 +97,9 @@ class RequiredIntervalCrash: public Test::TransparentOperationDesc {
 void ChainInfo::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "ChainInfo";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should provide info about the running state of a signal processing chain

@@ -216,8 +216,9 @@ void WorkerCrashLogger::
     {
         DEBUG TaskInfo ti("Catch info from a previously crashed worker");
 
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "WorkerCrashLogger1";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         Timer timer;
@@ -259,8 +260,9 @@ void WorkerCrashLogger::
     {
         DEBUG TaskInfo ti("Catch info from a crashed worker as it happens");
 
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "WorkerCrashLogger2";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         Timer timer;
@@ -291,8 +293,9 @@ void WorkerCrashLogger::
     {
         DEBUG TaskInfo ti("Support not consuming workers");
 
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "WorkerCrashLogger3";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         Timer timer;

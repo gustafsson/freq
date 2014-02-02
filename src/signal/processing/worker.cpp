@@ -291,8 +291,9 @@ class DummySchedule: public ISchedule {
 void Worker::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "Worker";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should start and stop automatically
