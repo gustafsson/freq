@@ -134,6 +134,7 @@ pProject Project::
                      QString("Can't find file"),
                      QString("Can't find file '") + QString::fromLocal8Bit(filename.c_str()) + "'");
         filename.clear();
+        return pProject();
     }
 
     if (filename.empty()) {
