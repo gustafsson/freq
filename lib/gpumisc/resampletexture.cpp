@@ -14,12 +14,21 @@
 //#define PRINT_TEXTURES
 #define PRINT_TEXTURES if(0)
 
+//#define INFO
+#define INFO if(0)
+
 ResampleTexture::Area::
         Area(float x1, float y1, float x2, float y2)
     :
       x1(x1), y1(y1),
       x2(x2), y2(y2)
 {}
+
+
+std::ostream& operator<<(std::ostream& o, ResampleTexture::Area a)
+{
+    return o << "(x=" << a.x1 << ":" << a.x2 << " y=" << a.y1 << ":" << a.y2 << ")";
+}
 
 
 ResampleTexture::
@@ -29,15 +38,26 @@ ResampleTexture::
       dest(dest),
       destarea(destarea)
 {
+    glGenBuffers (1, &vbo); // Generate 1 buffer
+}
+
+
+ResampleTexture::
+        ~ResampleTexture()
+{
+    glDeleteBuffers (1, &vbo);
 }
 
 
 void ResampleTexture::
         clear(float r, float g, float b, float a)
 {
+    float v[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
     GlException_SAFE_CALL( glClearColor (r,g,b,a) );
     GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
     GlException_SAFE_CALL( glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ) );
+    GlException_SAFE_CALL( glClearColor (v[0],v[1],v[2],v[3]) );
 }
 
 
@@ -53,22 +73,90 @@ void ResampleTexture::
     glPushMatrixContext mc( GL_MODELVIEW );
     glLoadIdentity();
 
+    INFO Log("Painting %s onto %s") % area % destarea;
     glDisable(GL_DEPTH_TEST);
 
     {
+        struct vertex_format {
+            float x, y, u, v;
+        };
+
+        float vertices[] = {
+            area.x1, area.y1, 0, 0,
+            area.x1, area.y2, 0, 1,
+            area.x2, area.y1, 1, 0,
+            area.x2, area.y2, 1, 1,
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+        glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
+        glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+
         GlTexture::ScopeBinding texObjBinding = source->getScopeBinding();
-        glBegin(GL_TRIANGLE_STRIP);
-            glTexCoord2f(0,0); glVertex2f(area.x1,area.y1);
-            glTexCoord2f(1,0); glVertex2f(area.x2,area.y1);
-            glTexCoord2f(0,1); glVertex2f(area.x1,area.y2);
-            glTexCoord2f(1,1); glVertex2f(area.x2,area.y2);
-        glEnd();
-        // avoid glBegin/glEnd -> glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
+
     glEnable(GL_DEPTH_TEST);
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture().getOpenGlTextureId ()).readFloat (), "fbo");
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(source->getOpenGlTextureId ()).readFloat (), "fbo");
+}
+
+
+void ResampleTexture::
+        drawColoredArea(Area area, float r, float g, float b, float a)
+{
+    GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
+    GlException_SAFE_CALL( glViewport(0, 0, dest->getWidth (), dest->getHeight ()) );
+
+    glPushMatrixContext mpc( GL_PROJECTION );
+    glLoadIdentity();
+    glOrtho(destarea.x1, destarea.x2, destarea.y1, destarea.y2, -10,10);
+    glPushMatrixContext mc( GL_MODELVIEW );
+    glLoadIdentity();
+
+    INFO Log("Painting %s with color (%g, %g, %g, %g) onto %s") % area % r % g % b % a % destarea;
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_BLEND);
+
+    {
+        struct vertex_format {
+            float x, y, r, g, b, a;
+        };
+
+        float vertices[] = {
+            area.x1, area.y1, r, g, b, a,
+            area.x1, area.y2, r, g, b, a,
+            area.x2, area.y1, r, g, b, a,
+            area.x2, area.y2, r, g, b, a
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_COLOR_ARRAY);
+
+        glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
+        glColorPointer(4, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
+    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture().getOpenGlTextureId ()).readFloat (), "fbo");
 }
 
 
@@ -118,6 +206,18 @@ void ResampleTexture::
                            0, 1, 0, 0,
                            0, 0, 0, 0,
                            b, 0, 0, b};
+        float expected5[]={1, 1, 1, 1,
+                           1, 1, 1, 1,
+                           1, 1, 1, 1,
+                           1, 1, 1, 1};
+        float expected6[]={1, 1, 1, 1,
+                           1, a, 1, 1,
+                           1, b, b, 1,
+                           1, 1, 1, 1};
+        float expected7[]={1, 1, 1, 1,
+                           1, b, b, b,
+                           1, b, b, b,
+                           1, b, b, b};
 
         GlTexture dest(4, 4);
         GlTexture src(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT, srcdata);
@@ -126,9 +226,8 @@ void ResampleTexture::
 
         rt.clear ();
         rt(&src,Area(1,1,2,2));
-
-        DataStorage<float>::Ptr data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
-
+        DataStorage<float>::Ptr data;
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         rt(&src,Area(0,0,3,3));
@@ -142,6 +241,18 @@ void ResampleTexture::
         rt(&src,Area(1,1,2.5,2.5));
         data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected4, sizeof(expected4), data);
+
+        rt.clear (2,1,3,4);
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        COMPARE_DATASTORAGE(expected5, sizeof(expected5), data);
+
+        rt(&src,Area(1,1,2,2));
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        COMPARE_DATASTORAGE(expected6, sizeof(expected6), data);
+
+        rt.drawColoredArea (Area(1,1,3,3), 0.5);
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        COMPARE_DATASTORAGE(expected7, sizeof(expected7), data);
     }
 
     // It should paint a texture on top of another texture. (with GL_FLOAT)
@@ -178,17 +289,27 @@ void ResampleTexture::
                            0,  1, 0, 0,
                            0,  0, 0, 0,
                            .5, 0, 0, .5};
+        float expected5[]={2, 2, 2, 2,
+                           2, 2, 2, 2,
+                           2, 2, 2, 2,
+                           2, 2, 2, 2};
+        float expected6[]={2, 2, 2, 2,
+                           2, a, c, 2,
+                           2, b, b, 2,
+                           2, 2, 2, 2};
+        float expected7[]={2, 2, 2, 2,
+                           2, .5, .5, .5,
+                           2, .5, .5, .5,
+                           2, .5, .5, .5};
 
         GlTexture dest(4, 4, GL_RGBA, GL_RGBA, GL_FLOAT);
         GlTexture src(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT, srcdata);
-
         ResampleTexture rt(&dest,Area(0,0,3,3));
 
         rt.clear ();
         rt(&src,Area(1,1,2,2));
-
-        DataStorage<float>::Ptr data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
-
+        DataStorage<float>::Ptr data;
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         rt(&src,Area(0,0,3,3));
@@ -202,5 +323,17 @@ void ResampleTexture::
         rt(&src,Area(1,1,2.5,2.5));
         data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected4, sizeof(expected4), data);
+
+        rt.clear (2,1,3,4);
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        COMPARE_DATASTORAGE(expected5, sizeof(expected5), data);
+
+        rt(&src,Area(1,1,2,2));
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        COMPARE_DATASTORAGE(expected6, sizeof(expected6), data);
+
+        rt.drawColoredArea (Area(1,1,3,3), 0.5);
+        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        COMPARE_DATASTORAGE(expected7, sizeof(expected7), data);
     }
 }

@@ -18,12 +18,15 @@ public:
     };
 
     ResampleTexture(GlTexture* dest, Area destarea);
+    ~ResampleTexture();
 
     void clear(float r=0, float g=0, float b=0, float a=0);
     void operator ()(GlTexture* source, Area area);
+    void drawColoredArea(Area area, float r, float g=0, float b=0, float a=0);
 
 private:
     GlFrameBuffer fbo;
+    unsigned vbo;
     GlTexture* dest;
     Area destarea;
 
