@@ -53,14 +53,17 @@ void GlException::check_error( GLenum errorCode, const char* functionMacro,
                     << GlException_message((callerMessage?callerMessage:"") + context_error)
                     << Backtrace::make(2);
 
-        Log("Throwing GlException\n%s") % boost::diagnostic_information(x);
-
         if (std::uncaught_exception())
             Log("Throw cancelled due to previous uncaught_exception");
-        else
+        else try
+        {
             ::boost::exception_detail::throw_exception_(x,
                                                         functionMacro,
                                                         fileMacro,
                                                         lineMacro);
+        } catch (boost::exception& x) {
+            Log("Throwing GlException\n%s") % boost::diagnostic_information(x);
+            throw;
+        }
     }
 }
