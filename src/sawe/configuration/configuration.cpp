@@ -457,6 +457,7 @@ int Configuration::
 {
     int handled = 0;
     std::string skipfeature_;
+    std::string feature_;
 
     while (*argc > 0) {
         const char *cmd = (*argv)[0];
@@ -501,6 +502,7 @@ int Configuration::
                 commandline_message_ << endl;
             }
         }
+        else if (readarg(&cmd, feature)) features_.push_back (feature_);
 
         // TODO use _selectionfile
 
