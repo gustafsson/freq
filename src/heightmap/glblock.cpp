@@ -287,7 +287,7 @@ void GlBlock::
 GlTexture::Ptr GlBlock::
         glTexture()
 {
-    return GlTexture::Ptr(new GlTexture(block_size_.texels_per_row (), block_size_.texels_per_column (), _tex_height));
+    return GlTexture::Ptr(new GlTexture(_tex_height));
 }
 
 

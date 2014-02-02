@@ -2,6 +2,15 @@
 
 #include "GlException.h"
 #include "gl.h"
+#include "exceptionassert.h"
+
+GlTexture::GlTexture()
+:	width( 0 ),
+    height( 0 ),
+    textureId( 0 ),
+    ownTextureId( 0 )
+{
+}
 
 GlTexture::GlTexture(unsigned short width, unsigned short height)
 :	width( width ),
@@ -25,13 +34,23 @@ GlTexture::GlTexture(unsigned short width, unsigned short height,
         reset(width, height, pixelFormat, internalFormat, type, data);
 }
 
-GlTexture::GlTexture(unsigned short width, unsigned short height, unsigned int textureId)
-    :	width( width ),
-        height( height ),
+GlTexture::GlTexture(unsigned int textureId)
+    :	width( 0 ),
+        height( 0 ),
         textureId( textureId ),
         ownTextureId( 0 )
 {
-
+    int width=0, height=0;
+    glBindTexture (GL_TEXTURE_2D, textureId);
+    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width) );
+    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height) );
+    glBindTexture (GL_TEXTURE_2D, 0);
+    this->width = width;
+    this->height = height;
+    EXCEPTION_ASSERT_LESS(0, width);
+    EXCEPTION_ASSERT_LESS(0, height);
+    EXCEPTION_ASSERT_EQUALS(this->width, width);
+    EXCEPTION_ASSERT_EQUALS(this->height, height);
 }
 
 void GlTexture::

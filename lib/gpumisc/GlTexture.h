@@ -47,16 +47,15 @@ public:
 
 	@throws GlException If OpenGL encountered an error.
 	*/
-    GlTexture(unsigned short width=0, unsigned short height=0);
+    GlTexture();
+    GlTexture(unsigned short width, unsigned short height);
     GlTexture(unsigned short width, unsigned short height, unsigned int pixelFormat, unsigned int internalFormat, unsigned type, void* data = 0);
 
     /**
      * @brief GlTexture maps an existing gl texture
-     * @param width
-     * @param height
      * @param textureId
      */
-    GlTexture(unsigned short width, unsigned short height, unsigned int textureId);
+    GlTexture(unsigned int textureId);
 
     void reset(unsigned short width, unsigned short height, unsigned int pixelFormat=GL_RGBA, unsigned int internalFormat=GL_RGBA, unsigned type=GL_UNSIGNED_BYTE, void* data = 0);
 
