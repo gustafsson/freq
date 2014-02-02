@@ -184,11 +184,9 @@ void TimelineController::
     case 1:
         if (e->buttons() & Qt::LeftButton)
         {
-            view->_render_view->setPosition( current );
-
-            // Update both the timeline and the main render view (the timeline
+            // Updates both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
-            view->_render_view->userinput_update();
+            view->_render_view->setPosition( current );
         }
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
