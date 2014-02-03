@@ -52,6 +52,7 @@ namespace Heightmap {
         // OpenGL data to render
         boost::shared_ptr<GlBlock> glblock;
         BlockData::WritePtr block_data();
+        void discard_new_data_available();
 
         // Lock if available but don't wait for it to become available
         // Throws BlockData::LockFailed if data is not available

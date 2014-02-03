@@ -4,6 +4,7 @@
 
 #include "exceptionassert.h"
 #include "log.h"
+#include "TaskTimer.h"
 #include "gltextureread.h"
 #include "GlException.h"
 #include "datastoragestring.h"
@@ -32,30 +33,43 @@ std::ostream& operator<<(std::ostream& o, ResampleTexture::Area a)
 
 
 ResampleTexture::
-        ResampleTexture(GlTexture* dest, Area destarea)
+        ResampleTexture(unsigned dest)
     :
-      fbo(dest),
-      dest(dest),
-      destarea(destarea)
+      fbo(new GlFrameBuffer(dest)),
+      destarea(0,0,0,0)
 {
     glGenBuffers (1, &vbo); // Generate 1 buffer
+
+    width = fbo->getWidth ();
+    height = fbo->getHeight ();
 }
 
 
 ResampleTexture::
         ~ResampleTexture()
 {
+    GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0) );
     glDeleteBuffers (1, &vbo);
+}
+
+
+GlFrameBuffer::ScopeBinding ResampleTexture::
+        enable(Area destarea)
+{
+    this->destarea = destarea;
+
+    return fbo->getScopeBinding ();
 }
 
 
 void ResampleTexture::
         clear(float r, float g, float b, float a)
 {
+    INFO TaskTimer tt(boost::format("clearing %s with (%g %g %g %g)") % destarea % r % g % b % a);
+
     float v[4];
     glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
     GlException_SAFE_CALL( glClearColor (r,g,b,a) );
-    GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
     GlException_SAFE_CALL( glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ) );
     GlException_SAFE_CALL( glClearColor (v[0],v[1],v[2],v[3]) );
 }
@@ -64,8 +78,12 @@ void ResampleTexture::
 void ResampleTexture::
         operator ()(GlTexture* source, Area area)
 {
-    GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
-    GlException_SAFE_CALL( glViewport(0, 0, dest->getWidth (), dest->getHeight ()) );
+    glPushAttribContext pa(GL_ENABLE_BIT);
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_BLEND);
+    glDisable (GL_CULL_FACE);
+
+    GlException_SAFE_CALL( glViewport(0, 0, width, height) );
 
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
@@ -73,8 +91,8 @@ void ResampleTexture::
     glPushMatrixContext mc( GL_MODELVIEW );
     glLoadIdentity();
 
-    INFO Log("Painting %s onto %s") % area % destarea;
-    glDisable(GL_DEPTH_TEST);
+    //INFO Log("Painting %s onto %s") % area % destarea;
+    INFO TaskTimer tt(boost::format("Painting %s onto %s") % area % destarea);
 
     {
         struct vertex_format {
@@ -87,8 +105,9 @@ void ResampleTexture::
             area.x2, area.y1, 1, 0,
             area.x2, area.y2, 1, 1,
         };
+
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -104,9 +123,7 @@ void ResampleTexture::
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    glEnable(GL_DEPTH_TEST);
-
-    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture().getOpenGlTextureId ()).readFloat (), "fbo");
+    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo->getGlTexture()).readFloat (), "fbo");
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(source->getOpenGlTextureId ()).readFloat (), "fbo");
 }
 
@@ -114,8 +131,12 @@ void ResampleTexture::
 void ResampleTexture::
         drawColoredArea(Area area, float r, float g, float b, float a)
 {
-    GlFrameBuffer::ScopeBinding fboBinding = fbo.getScopeBinding();
-    GlException_SAFE_CALL( glViewport(0, 0, dest->getWidth (), dest->getHeight ()) );
+    glPushAttribContext pa(GL_ENABLE_BIT);
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_BLEND);
+    glDisable (GL_CULL_FACE);
+
+    GlException_SAFE_CALL( glViewport(0, 0, width, height) );
 
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
@@ -123,9 +144,8 @@ void ResampleTexture::
     glPushMatrixContext mc( GL_MODELVIEW );
     glLoadIdentity();
 
-    INFO Log("Painting %s with color (%g, %g, %g, %g) onto %s") % area % r % g % b % a % destarea;
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
+    //INFO Log("Painting %s with color (%g, %g, %g, %g) onto %s") % area % r % g % b % a % destarea;
+    INFO TaskTimer tt(boost::format("Painting %s with color (%g, %g, %g, %g) onto %s") % area % r % g % b % a % destarea);
 
     {
         struct vertex_format {
@@ -154,9 +174,7 @@ void ResampleTexture::
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    glEnable(GL_DEPTH_TEST);
-
-    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture().getOpenGlTextureId ()).readFloat (), "fbo");
+    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo->getGlTexture()).readFloat (), "fbo");
 }
 
 
@@ -173,6 +191,13 @@ void ResampleTexture::
     QGLWidget w;
     w.makeCurrent ();
 
+    testInContext();
+}
+
+
+void ResampleTexture::
+        testInContext()
+{
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
     {
         // There must be a current OpenGL context
@@ -221,37 +246,65 @@ void ResampleTexture::
 
         GlTexture dest(4, 4);
         GlTexture src(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT, srcdata);
+        int destid = dest.getOpenGlTextureId ();
 
-        ResampleTexture rt(&dest,Area(0,0,3,3));
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
 
-        rt.clear ();
-        rt(&src,Area(1,1,2,2));
+            rt.clear ();
+            rt(&src,Area(1,1,2,2));
+        }
         DataStorage<float>::Ptr data;
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
-        rt(&src,Area(0,0,3,3));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(0,0,3,3));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
-        rt(&src,Area(1,1,2,2));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(1,1,2,2));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
 
-        rt(&src,Area(1,1,2.5,2.5));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(1,1,2.5,2.5));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected4, sizeof(expected4), data);
 
-        rt.clear (2,1,3,4);
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt.clear (2,1,3,4);
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected5, sizeof(expected5), data);
 
-        rt(&src,Area(1,1,2,2));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(1,1,2,2));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected6, sizeof(expected6), data);
 
-        rt.drawColoredArea (Area(1,1,3,3), 0.5);
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt.drawColoredArea (Area(1,1,3,3), 0.5);
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected7, sizeof(expected7), data);
     }
 
@@ -303,37 +356,66 @@ void ResampleTexture::
                            2, .5, .5, .5};
 
         GlTexture dest(4, 4, GL_RGBA, GL_RGBA, GL_FLOAT);
+        int destid = dest.getOpenGlTextureId ();
         GlTexture src(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT, srcdata);
-        ResampleTexture rt(&dest,Area(0,0,3,3));
 
-        rt.clear ();
-        rt(&src,Area(1,1,2,2));
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+
+            rt.clear ();
+            rt(&src,Area(1,1,2,2));
+        }
         DataStorage<float>::Ptr data;
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
-        rt(&src,Area(0,0,3,3));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(0,0,3,3));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
-        rt(&src,Area(1,1,2,2));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(1,1,2,2));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
 
-        rt(&src,Area(1,1,2.5,2.5));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(1,1,2.5,2.5));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected4, sizeof(expected4), data);
 
-        rt.clear (2,1,3,4);
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt.clear (2,1,3,4);
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected5, sizeof(expected5), data);
 
-        rt(&src,Area(1,1,2,2));
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt(&src,Area(1,1,2,2));
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected6, sizeof(expected6), data);
 
-        rt.drawColoredArea (Area(1,1,3,3), 0.5);
-        data = GlTextureRead(dest.getOpenGlTextureId ()).readFloat (0, GL_RED);
+        {
+            ResampleTexture rt(destid);
+            GlFrameBuffer::ScopeBinding sb = rt.enable (Area(0,0,3,3));
+            rt.drawColoredArea (Area(1,1,3,3), 0.5);
+        }
+        data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected7, sizeof(expected7), data);
     }
 }

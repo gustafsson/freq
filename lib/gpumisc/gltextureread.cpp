@@ -50,8 +50,7 @@ DataStorage<float>::Ptr GlTextureRead::
 
 
     // Read through FBO instead
-    GlTexture t(texture);
-    GlFrameBuffer fb(&t);
+    GlFrameBuffer fb(texture);
 
     GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
     unsigned pbo=0;
@@ -108,8 +107,7 @@ DataStorage<unsigned char>::Ptr GlTextureRead::
 
 
     // Read through FBO instead
-    GlTexture t(texture);
-    GlFrameBuffer fb(&t);
+    GlFrameBuffer fb(texture);
 
     GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
     unsigned pbo=0;

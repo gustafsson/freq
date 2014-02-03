@@ -18,7 +18,8 @@ namespace Blocks {
 class MergerTexture
 {
 public:
-    MergerTexture(BlockCache::ConstPtr cache);
+    MergerTexture(BlockCache::ConstPtr cache, BlockLayout block_layout);
+    ~MergerTexture();
 
     /**
      * @brief fillBlockFromOthers fills a block with data from other blocks.
@@ -28,11 +29,13 @@ public:
 
 private:
     BlockCache::ConstPtr cache_;
+    std::shared_ptr<ResampleTexture> rt;
+    unsigned tex_, pbo_;
 
     /**
       Add block information from another block. Returns whether any information was merged.
       */
-    void mergeBlock( ResampleTexture& rt, const Block& inBlock );
+    bool mergeBlock( const Block& inBlock );
 
 public:
     static void test();

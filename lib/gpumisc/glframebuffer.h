@@ -24,8 +24,9 @@ public:
 
     @throws GlException If OpenGL encountered an error.
     */
-    GlFrameBuffer(unsigned width=0, unsigned height=0);
-    GlFrameBuffer(GlTexture* texture);
+    GlFrameBuffer();
+    GlFrameBuffer(int width, int height);
+    GlFrameBuffer(unsigned textureid);
 
     /**
     Releases the frame buffer object.
@@ -60,7 +61,7 @@ public:
     /**
     The frame buffer can be accessed through a texture.
     */
-    GlTexture& getGlTexture() { return *texture_; }
+    unsigned getGlTexture() { return textureid_; }
 
     /**
     Recreates the OpenGL frame buffer object and allocates memory for a
@@ -72,9 +73,20 @@ public:
 
     @throws GlException If OpenGL encountered an error.
       */
-    void recreate(unsigned width=0, unsigned height=0);
+    void recreate(int width=0, int height=0);
+
+    /**
+     The width of the texture being rendered onto.
+     */
+    int getWidth() { return texture_width_; }
+
+    /**
+     The height of the texture being rendered onto.
+     */
+    int getHeight() { return texture_height_; }
 
 private:
+
     /**
     OpenGL frame buffer object id for the frame buffer.
     */
@@ -89,7 +101,10 @@ private:
       Texture to access the frame buffer.
       */
     GlTexture* own_texture_;
-    GlTexture* texture_;
+    unsigned textureid_;
+    bool enable_depth_component_;
+
+    int texture_width_, texture_height_;
 
     void init();
 

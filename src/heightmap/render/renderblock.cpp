@@ -47,6 +47,8 @@ void RenderBlock::Renderer::
     Region r = block->getRegion ();
     glPushMatrixContext mc( GL_MODELVIEW );
 
+    TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
+
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
 

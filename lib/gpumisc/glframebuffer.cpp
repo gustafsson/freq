@@ -12,12 +12,39 @@
 class GlFrameBufferException: virtual public boost::exception, virtual public std::exception {};
 
 GlFrameBuffer::
-        GlFrameBuffer(unsigned width, unsigned height)
+        GlFrameBuffer()
             :
             fboId_(0),
             rboId_(0),
             own_texture_(new GlTexture),
-            texture_(own_texture_)
+            textureid_(own_texture_->getOpenGlTextureId ()),
+            enable_depth_component_(true)
+{
+    init();
+
+    try
+    {
+        recreate(0, 0);
+    }
+    catch(...)
+    {
+        TaskInfo("GlFrameBuffer() caught exception");
+        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
+        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+
+        throw;
+    }
+}
+
+
+GlFrameBuffer::
+        GlFrameBuffer(int width, int height)
+            :
+            fboId_(0),
+            rboId_(0),
+            own_texture_(new GlTexture),
+            textureid_(own_texture_->getOpenGlTextureId ()),
+            enable_depth_component_(true)
 {
     init();
 
@@ -36,18 +63,24 @@ GlFrameBuffer::
 }
 
 GlFrameBuffer::
-        GlFrameBuffer(GlTexture* texture)
+        GlFrameBuffer(unsigned textureid)
     :
     fboId_(0),
     rboId_(0),
     own_texture_(0),
-    texture_(texture)
+    textureid_(textureid),
+    enable_depth_component_(false)
 {
     init();
 
     try
     {
-        recreate(texture->getWidth (), texture->getHeight ());
+        glBindTexture (GL_TEXTURE_2D, textureid_);
+        GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texture_width_) );
+        GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texture_height_) );
+        glBindTexture (GL_TEXTURE_2D, 0);
+
+        recreate(texture_width_, texture_height_);
     }
     catch(...)
     {
@@ -114,8 +147,13 @@ void GlFrameBuffer::
 
 
 void GlFrameBuffer::
-        recreate(unsigned width, unsigned height)
+        recreate(int width, int height)
 {
+    glBindTexture (GL_TEXTURE_2D, textureid_);
+    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texture_width_) );
+    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texture_height_) );
+    glBindTexture (GL_TEXTURE_2D, 0);
+
     const char* action = "Resizing";
     if (0==width)
     {
@@ -126,14 +164,14 @@ void GlFrameBuffer::
         width = viewport[2];
         height = viewport[3];
 
-        GLint intmax;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &intmax);
+        GLint max_texture_size;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 
-        if (width>(unsigned)intmax || height>(unsigned)intmax || width == 0 || height == 0)
+        if (width>max_texture_size || height>max_texture_size || width == 0 || height == 0)
             throw std::logic_error("Can't call GlFrameBuffer when no valid viewport is active");
     }
 
-    if (width == texture_->getWidth() && height == texture_->getHeight() && rboId_ && fboId_)
+    if (width == texture_width_ && height == texture_height_ && rboId_ && fboId_)
         return;
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
@@ -141,12 +179,16 @@ void GlFrameBuffer::
     // if (rboId_) { glDeleteRenderbuffersEXT(1, &rboId_); rboId_ = 0; }
     // if (fboId_) { glDeleteFramebuffersEXT(1, &fboId_); fboId_ = 0; }
 
-    if (width != texture_->getWidth() || height != texture_->getHeight())
-        texture_->reset(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+    if (width != texture_width_ || height != texture_height_) {
+        EXCEPTION_ASSERT(own_texture_);
+        own_texture_->reset(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+        texture_width_ = width;
+        texture_height_ = height;
+    }
 
     GlException_CHECK_ERROR();
 
-    {
+    if (enable_depth_component_) {
         if (!rboId_)
             glGenRenderbuffersEXT(1, &rboId_);
 
@@ -164,13 +206,14 @@ void GlFrameBuffer::
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
                                   GL_COLOR_ATTACHMENT0_EXT,
                                   GL_TEXTURE_2D,
-                                  texture_->getOpenGlTextureId(),
+                                  textureid_,
                                   0);
 
-        glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
-                                     GL_DEPTH_ATTACHMENT_EXT,
-                                     GL_RENDERBUFFER_EXT,
-                                     rboId_);
+        if (enable_depth_component_)
+            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
+                                         GL_DEPTH_ATTACHMENT_EXT,
+                                         GL_RENDERBUFFER_EXT,
+                                         rboId_);
 
         int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 
@@ -189,7 +232,7 @@ void GlFrameBuffer::
 
     DEBUG_INFO TaskInfo("fbo = %u", fboId_ );
     DEBUG_INFO TaskInfo("rbo = %u", fboId_ );
-    DEBUG_INFO TaskInfo("texture = %u", texture_->getOpenGlTextureId() );
+    DEBUG_INFO TaskInfo("texture = %u", textureid_ );
 
     GlException_CHECK_ERROR();
 }
@@ -247,14 +290,14 @@ void GlFrameBuffer::
         GlTexture sum8(4, 4, GL_RED, GL_RGBA, GL_FLOAT);
         GlTexture sum9(4, 4, GL_LUMINANCE, GL_RGBA, GL_FLOAT);
 
-        {GlFrameBuffer fb(&sum1);}
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum2));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum3));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum4));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum5));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum6));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(&sum7));
-        {GlFrameBuffer fb(&sum8);}
-        {GlFrameBuffer fb(&sum9);}
+        {GlFrameBuffer fb(sum1.getOpenGlTextureId ());}
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum2.getOpenGlTextureId ()));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum3.getOpenGlTextureId ()));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum4.getOpenGlTextureId ()));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum5.getOpenGlTextureId ()));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum6.getOpenGlTextureId ()));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum7.getOpenGlTextureId ()));
+        {GlFrameBuffer fb(sum8.getOpenGlTextureId ());}
+        {GlFrameBuffer fb(sum9.getOpenGlTextureId ());}
     }
 }

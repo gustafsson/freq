@@ -81,6 +81,8 @@ Tfr::pChunkFilter ChunkBlockFilterDesc::
 
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Heightmap {
 
@@ -112,6 +114,13 @@ class MergeChunkDescMock : public MergeChunkDesc {
 void ChunkBlockFilter::
         test()
 {
+    std::string name = "ChunkBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should use a MergeChunk to update all blocks in a tfrmap that matches a given Tfr::Chunk.
     {
         MergeChunkMock* merge_chunk_mock;
@@ -147,6 +156,13 @@ void ChunkBlockFilter::
 void ChunkBlockFilterDesc::
         test()
 {
+    std::string name = "ChunkBlockFilterDesc";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should instantiate ChunkBlockFilters for different engines.
     {
         BlockLayout bl(4,4,4);

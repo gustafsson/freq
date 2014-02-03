@@ -196,22 +196,33 @@ void TfrMapping::
         write1(collections_[c])->visualization_params( visualization_params_ );
 }
 
+} // namespace Heightmap
+
+
+#include "tfr/stftdesc.h"
+#include <QApplication>
+#include <QGLWidget>
+
+namespace Heightmap
+{
 
 void TfrMapping::
         test()
 {
-    TfrMapping::Ptr t = testInstance();
-    write1(t)->block_layout( BlockLayout(123,456,789) );
-    EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), read1(t)->block_layout() );
+    std::string name = "TfrMapping";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
+    {
+        TfrMapping::Ptr t = testInstance();
+        write1(t)->block_layout( BlockLayout(123,456,789) );
+        EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), read1(t)->block_layout() );
+    }
 }
 
-
-} // namespace Heightmap
-
-#include "tfr/stftdesc.h"
-
-namespace Heightmap
-{
 
 TfrMapping::Ptr TfrMapping::
         testInstance()

@@ -669,10 +669,10 @@ void RenderView::
             // drawCollections is called for several different viewports each frame.
             // GlFrameBuffer will query the current viewport to determine the size
             // of the fbo for this iteration.
-            if (viewportWidth > fbo->getGlTexture().getWidth()
-                || viewportHeight > fbo->getGlTexture().getHeight()
-                || viewportWidth*2 < fbo->getGlTexture().getWidth()
-                || viewportHeight*2 < fbo->getGlTexture().getHeight())
+            if (viewportWidth > fbo->getWidth ()
+                || viewportHeight > fbo->getHeight()
+                || viewportWidth*2 < fbo->getWidth()
+                || viewportHeight*2 < fbo->getHeight())
             {
                 fbo->recreate();
             }
@@ -704,10 +704,12 @@ void RenderView::
         glDisable(GL_DEPTH_TEST);
 
         glColor4f(1,1,1,1);
-        GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
+        GlTexture t(fbo->getGlTexture());
+        GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
+
         glBegin(GL_TRIANGLE_STRIP);
-            float tx = viewportWidth/(float)fbo->getGlTexture().getWidth();
-            float ty = viewportHeight/(float)fbo->getGlTexture().getHeight();
+            float tx = viewportWidth/(float)fbo->getWidth();
+            float ty = viewportHeight/(float)fbo->getHeight();
             glTexCoord2f(0,0); glVertex2f(0,0);
             glTexCoord2f(tx,0); glVertex2f(1,0);
             glTexCoord2f(0,ty); glVertex2f(0,1);

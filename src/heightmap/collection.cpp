@@ -8,6 +8,7 @@
 #include "reference_hash.h"
 #include "blocks/garbagecollector.h"
 #include "blocks/merger.h"
+#include "blocks/mergertexture.h"
 #include "blocks/clearinterval.h"
 
 // Gpumisc
@@ -79,7 +80,7 @@ void Collection::
     BlockCache::WritePtr cache(cache_);
     const BlockCache::cache_t& C = cache->cache ();
     VERBOSE_COLLECTION {
-        TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
+        TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);
         BOOST_FOREACH (const BlockCache::cache_t::value_type& b, C)
         {
@@ -151,7 +152,7 @@ void Collection::
         {
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
-            VERBOSE_COLLECTION TaskTimer tt("Deleting texture");
+            VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
             block->glblock->delete_texture ();
         }
     }
@@ -237,13 +238,13 @@ pBlock Collection::
         getBlock( const Reference& ref )
 {
     // Look among cached blocks for this reference
-    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
-
     pBlock block = write1(cache_)->find( ref );
 
     if (!block)
     {
-        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count )
+        TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
+
+        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count || true )
         {
             pBlock reuse;
             if (0!= "Reuse old redundant blocks")
@@ -262,7 +263,7 @@ pBlock Collection::
                 block = bf.createBlock (ref, pBlock());
             }
 
-            Blocks::Merger(cache_).fillBlockFromOthers (block);
+            merger_->fillBlockFromOthers (block);
 
             write1(cache_)->insert(block);
 
@@ -384,6 +385,8 @@ void Collection::
         return;
 
     block_layout_ = v;
+
+    merger_.reset( new Blocks::MergerTexture(cache_, block_layout_) );
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);

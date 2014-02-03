@@ -12,11 +12,11 @@
 
 #include <boost/foreach.hpp>
 
-//#define VERBOSE_COLLECTION
-#define VERBOSE_COLLECTION if(0)
+#define VERBOSE_COLLECTION
+//#define VERBOSE_COLLECTION if(0)
 
-//#define INFO_COLLECTION
-#define INFO_COLLECTION if(0)
+#define INFO_COLLECTION
+//#define INFO_COLLECTION if(0)
 
 using namespace Signal;
 
@@ -24,39 +24,61 @@ namespace Heightmap {
 namespace Blocks {
 
 MergerTexture::
-        MergerTexture(BlockCache::ConstPtr cache)
+        MergerTexture(BlockCache::ConstPtr cache, BlockLayout block_layout)
     :
-      cache_(cache)
+      cache_(cache),
+      tex_(0)
 {
+    glGenTextures(1, &tex_);
+    glBindTexture(GL_TEXTURE_2D, tex_);
+
+    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                 block_layout.texels_per_row(), block_layout.texels_per_column (), 0,
+                 hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    rt.reset(new ResampleTexture(tex_));
+
+    glGenBuffers (1, &pbo_);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo_);
+    glBufferData (GL_PIXEL_PACK_BUFFER, block_layout.texels_per_block ()*sizeof(float), NULL, GL_DYNAMIC_READ);
+    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+}
+
+
+MergerTexture::
+        ~MergerTexture()
+{
+    glDeleteTextures (1, &tex_);
+    tex_ = 0;
+
+    glDeleteBuffers (1, &pbo_);
+    pbo_ = 0;
 }
 
 
 void MergerTexture::
         fillBlockFromOthers( pBlock block )
 {
-    VERBOSE_COLLECTION TaskTimer tt("Stubbing new block");
+    INFO_COLLECTION TaskTimer tt(boost::format("Stubbing new block %s") % block->getRegion ());
 
     const Reference& ref = block->reference ();
     Intervals things_to_update = block->getInterval ();
     std::vector<pBlock> gib = BlockQuery(cache_).getIntersectingBlocks ( things_to_update.spannedInterval(), false, 0 );
-    BlockData::WritePtr outdata = block->block_data ();
 
     const Region& r = block->getRegion ();
 
     ResampleTexture::Area out(r.a.time, r.a.scale, r.b.time, r.b.scale);
 
-    GlTexture::Ptr t = block->glblock->glTexture ();
-    // Must create a new texture with GL_RGBA to paint to, can't paint to a monochromatic texture
-    // But only the first color component will be read from.
-    // GlTexture sum(t->getWidth (), t->getHeight (), GL_RGBA, GL_RGBA, GL_FLOAT);
-    GlTexture sum(t->getWidth (), t->getHeight (), GL_LUMINANCE, GL_RGBA, GL_FLOAT);
-    ResampleTexture rt(&sum, out);
-    rt(&*t, out); // Paint old contents into it
+    GlFrameBuffer::ScopeBinding sb = rt->enable (out);
+    rt->clear ();
 
     int merge_levels = 10;
 
-    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), read1(cache_)->cache().size(), merge_levels);
-
+    { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), read1(cache_)->cache().size(), merge_levels);
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
         VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
@@ -86,9 +108,8 @@ void MergerTexture::
                 if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale )
                 {
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
-                    things_to_update -= v;
-
-                    mergeBlock( rt, *bl );
+                    if (mergeBlock( *bl ))
+                        things_to_update -= v;
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -108,30 +129,44 @@ void MergerTexture::
 
         gib = next;
     }
+    }
 
-    if (things_to_update != block->getInterval ())
-      {
-        TaskTimer tt(boost::format("OpenGL -> CPU -> OpenGL %s") % block->getRegion ());
+    {
+        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getRegion ());
 
-        // Get it back to cpu memory
-        BlockData::pData d = GlTextureRead(sum.getOpenGlTextureId ()).readFloat (0,GL_RED);
+        GlTexture::Ptr t = block->glblock->glTexture ();
+        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-        EXCEPTION_ASSERT_EQUALS(d->size (), outdata->cpu_copy->size());
-        outdata->cpu_copy = d; // replace the DataStorage, don't bother copying into the previous one
 
-        *block->glblock->height()->data = *d;
-        block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
-      }
+        // This is slow, and hard to do asynchronously.
+        glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo_);
+        glReadPixels (0, 0, t->getWidth (), t->getHeight (), GL_RED, GL_FLOAT, 0);
+        float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+        {
+            BlockData::WritePtr outdata(block->block_data ());
+            memcpy(outdata->cpu_copy->getCpuMemory(), src, outdata->cpu_copy->numberOfBytes ());
+        }
+        glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+        block->discard_new_data_available ();
+        glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    }
 }
 
 
-void MergerTexture::
-        mergeBlock( ResampleTexture& rt, const Block& inBlock )
+bool MergerTexture::
+        mergeBlock( const Block& inBlock )
 {
+    if (!inBlock.glblock->has_texture ())
+        return false;
+
     Region ri = inBlock.getRegion ();
     ResampleTexture::Area in(ri.a.time, ri.a.scale, ri.b.time, ri.b.scale);
 
-    rt(inBlock.glblock->glTexture ().get (), in); // Paint new contents over it
+    (*rt)(inBlock.glblock->glTexture ().get (), in); // Paint new contents over it
+
+    return true;
 }
 
 } // namespace Blocks
@@ -172,31 +207,28 @@ void MergerTexture::
 
         Reference ref;
         BlockLayout bl(4,4,4);
+        VisualizationParams::Ptr vp(new VisualizationParams);
         DataStorageSize ds(bl.texels_per_column (), bl.texels_per_row ());
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        VisualizationParams::Ptr vp(new VisualizationParams);
         pBlock block(new Block(ref,bl,vp));
-        const Region& r = block->getRegion();
-        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
-        EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
+        block->glblock.reset( new GlBlock( bl, block->getRegion().time(), block->getRegion().scale() ));
         block->block_data()->cpu_copy.reset( new DataStorage<float>(ds) );
         block->update_glblock_data ();
         block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
-        EXCEPTION_ASSERT(block->glblock->glTexture ()->getOpenGlTextureId ());
+        EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
 
-        MergerTexture(cache).fillBlockFromOthers(block);
-        EXCEPTION_ASSERT(block->glblock->glTexture ()->getOpenGlTextureId ());
+        MergerTexture(cache, bl).fillBlockFromOthers(block);
 
-        BlockData::pData data = block->block_data ()->cpu_copy;
-        block->update_glblock_data ();
-        block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
+        BlockData::pData data;
 
         float expected1[]={ 0, 0, 0, 0,
                             0, 0, 0, 0,
                             0, 0, 0, 0,
                             0, 0, 0, 0};
 
+        //data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         {
@@ -212,12 +244,10 @@ void MergerTexture::
             block->update_glblock_data ();
             block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
 
-            EXCEPTION_ASSERT(block->glblock->glTexture ()->getOpenGlTextureId ());
             write1(cache)->insert(block);
         }
 
-        EXCEPTION_ASSERT(block->glblock->glTexture ()->getOpenGlTextureId ());
-        MergerTexture(cache).fillBlockFromOthers(block);
+        MergerTexture(cache, bl).fillBlockFromOthers(block);
         clearCache(cache);
         float a = 0.875, b = 0.75,  c = 0.25,
               d = 0.5,   e = 0.375, f = 0.125;
@@ -225,6 +255,7 @@ void MergerTexture::
                               0, 0, 0, 0,
                               0, 0, 0, 0,
                               d, e, f, 0};
+        //data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
@@ -244,11 +275,12 @@ void MergerTexture::
             write1(cache)->insert(block);
         }
 
-        MergerTexture(cache).fillBlockFromOthers(block);
-        float expected3[]={   a, b,    1.5,  3.5,
+        MergerTexture(cache, bl).fillBlockFromOthers(block);
+        float expected3[]={   0, 0,    1.5,  3.5,
                               0, 0,    5.5,  7.5,
                               0, 0,    9.5,  11.5,
-                              d, e,   13.5,  7.58};
+                              0, 0,   13.5,  7.58};
+        //data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);

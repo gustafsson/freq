@@ -3,6 +3,10 @@
 
 #include "TaskTimer.h"
 
+
+//#define BLOCK_INFO
+#define BLOCK_INFO if(0)
+
 namespace Heightmap {
 
 
@@ -42,6 +46,14 @@ BlockData::WritePtr Block::
 }
 
 
+void Block::
+        discard_new_data_available()
+{
+    BlockData::WritePtr b(block_data_);
+    new_data_available_ = false;
+}
+
+
 bool Block::
         update_glblock_data()
 {
@@ -49,6 +61,7 @@ bool Block::
     BlockData::WritePtr bd(block_data_, NoLockFailed());
 
     if (bd.get () && new_data_available_) {
+        BLOCK_INFO TaskTimer tt(boost::format("Updating glblock height %s %s") % block_interval_ % region_);
 
         *glblock->height()->data = *bd->cpu_copy; // 256 KB memcpy < 100 us (256*256*4 = 256 KB, about 52 us)
         new_data_available_ = false;
