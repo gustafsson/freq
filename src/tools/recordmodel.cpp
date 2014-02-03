@@ -74,6 +74,7 @@ bool RecordModel::
 } // namespace Tools
 
 #include <QApplication>
+#include "signal/processing/workers.h"
 
 namespace Tools
 {
@@ -154,7 +155,11 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        EXCEPTION_ASSERT( needs->sleep(1000) );
+        if (!needs->sleep(1000)) {
+            Signal::Processing::Workers::WritePtr w(read1(chain)->workers());
+            Signal::Processing::Workers::print(w->clean_dead_workers());
+            EXCEPTION_ASSERT( false );
+        }
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());

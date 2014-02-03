@@ -83,7 +83,7 @@ Intervals Step::
         deprecateCache(Intervals deprecated)
 {
     if (deprecated == Interval::Interval_ALL) {
-        cache_.reset ();
+        cache_.clear ();
         operations_.clear ();
     }
 
@@ -171,12 +171,9 @@ void Step::
               % result_interval);
 
     if (result) {
-        if (!cache_)
-            cache_.reset(new SinkSource(result->number_of_channels ()));
-
         // Result must have the same number of channels and sample rate as previous cache.
         // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
-        cache_->put (result);
+        cache_.put (result);
     }
 
     int C = running_tasks.count (taskid);
@@ -243,7 +240,7 @@ void Step::
 pBuffer Step::
         readFixedLengthFromCache(Interval I) const
 {
-    return cache_ ? cache_->readFixedLength (I) : pBuffer();
+    return cache_.read (I);
 }
 
 

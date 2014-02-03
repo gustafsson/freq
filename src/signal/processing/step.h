@@ -4,7 +4,7 @@
 #include "volatileptr.h"
 #include "signal/computingengine.h"
 #include "signal/operation.h"
-#include "signal/sinksource.h"
+#include "signal/cache.h"
 
 #include <QWaitCondition>
 
@@ -65,7 +65,7 @@ private:
     typedef std::map<Task*, Signal::Interval> RunningTaskMap;
 
     Signal::OperationDesc::Ptr  died_;
-    Signal::SinkSource::Ptr     cache_;
+    Signal::Cache               cache_;
     Signal::Intervals           not_started_;
 
     RunningTaskMap              running_tasks;

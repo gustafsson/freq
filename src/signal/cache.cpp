@@ -147,14 +147,13 @@ pBuffer Cache::
 
     if (!validFetch)
     {
-        // Assume I.last > I.first and return zeros of Interval(I.first, validFetch.first).
-        validFetch.first = I.last;
+        // return zeros
+        return pBuffer(new Buffer(I, sample_rate(), num_channels ()));
     }
 
     if (validFetch.first > I.first)
     {
-        EXCEPTION_ASSERT_DBG( Interval(I.first, validFetch.first) );
-        // This buffer will be initialized to zeros when it's being read from.
+        // return zeros
         return pBuffer( new Buffer(Interval(I.first, validFetch.first), sample_rate(), num_channels()) );
     }
 
@@ -188,7 +187,7 @@ float Cache::
         sample_rate() const
 {
     if (_cache.empty())
-        return -1;
+        return 0;
 
     return _cache.front()->sample_rate();
 }
@@ -198,7 +197,7 @@ int Cache::
         num_channels() const
 {
     if (_cache.empty())
-        return -1;
+        return 0;
 
     return _cache.front()->number_of_channels();
 }
@@ -208,6 +207,20 @@ Intervals Cache::
         samplesDesc() const
 {
     return _valid_samples;
+}
+
+
+Interval Cache::
+        spannedInterval() const
+{
+    return _valid_samples.spannedInterval ();
+}
+
+
+bool Cache::
+        empty() const
+{
+    return !_valid_samples;
 }
 
 
@@ -247,6 +260,8 @@ std::vector<pBuffer>::const_iterator Cache::
 }
 
 } // namespace Signal
+
+#include "test/printbuffer.h"
 
 namespace Signal {
 
@@ -295,6 +310,20 @@ void Cache::
             EXCEPTION_ASSERT_EQUALS (p[i], b->getInterval ().contains ( j ) ? c : 0 );
         }
     }
+
+    cache.invalidate_samples (Interval(2, 16));
+    r = cache.read (Interval(0, 20));
+    pBuffer e(new Buffer(Interval(0, 20), 5.1, 7));
+    e->mergeChannelData ();
+    *e |= *b;
+    *e |= Buffer(Interval(2, 16), 5.1, 7);
+
+    if (*r != *e) {
+        PRINT_BUFFER(r,"r");
+        PRINT_BUFFER(e,"e");
+        EXCEPTION_ASSERT( *r == *e );
+    }
+
 
     try {
         cache.put (pBuffer(new Buffer(Interval(14, 25), 5.11, 7)));

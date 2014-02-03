@@ -24,13 +24,13 @@ public:
 #define PRINT_BUFFER(b, arg) \
     do { \
         TaskInfo ti(boost::format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#b) % b->getInterval ()); \
-        TaskInfo(boost::format("%s") % PrintBuffer::printBuffer (b)); \
+        TaskInfo(boost::format("%s") % Test::PrintBuffer::printBuffer (b)); \
     } while(false)
 
 #define PRINT_BUFFER_STATS(b, arg) \
     do { \
         TaskInfo ti(boost::format("%s(%s): %s(%s = %s) -> %s = %s") % __FILE__ % __LINE__ % __FUNCTION__ % (#arg) % (arg) % (#b) % b->getInterval ()); \
-        TaskInfo(boost::format("%s") % PrintBuffer::printBufferStats (b)); \
+        TaskInfo(boost::format("%s") % Test::PrintBuffer::printBufferStats (b)); \
     } while(false)
 
 } // namespace Test

@@ -18,7 +18,7 @@ RecordedCommand::
             prev_qx(-1)
 {
     Adapters::Recorder::WritePtr r(recording);
-    recordedData = r->data().readFixedLength(Signal::Interval(prevLength, r->number_of_samples()) );
+    recordedData = r->data().read(Signal::Interval(prevLength, r->number_of_samples()) );
 }
 
 
@@ -48,7 +48,7 @@ void RecordedCommand::
 void RecordedCommand::
         undo()
 {
-    write1(recording)->data().invalidate_and_forget_samples(recordedData->getInterval());
+    write1(recording)->data().invalidate_samples(recordedData->getInterval());
     prev_qx = model->_qx;
     write1(iinvalidator)->deprecateCache(recordedData->getInterval());
     if (prev_qx == model->_qx)
