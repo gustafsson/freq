@@ -35,13 +35,10 @@ std::ostream& operator<<(std::ostream& o, ResampleTexture::Area a)
 ResampleTexture::
         ResampleTexture(unsigned dest)
     :
-      fbo(new GlFrameBuffer(dest)),
+      fbo(dest),
       destarea(0,0,0,0)
 {
     glGenBuffers (1, &vbo); // Generate 1 buffer
-
-    width = fbo->getWidth ();
-    height = fbo->getHeight ();
 }
 
 
@@ -58,7 +55,7 @@ GlFrameBuffer::ScopeBinding ResampleTexture::
 {
     this->destarea = destarea;
 
-    return fbo->getScopeBinding ();
+    return fbo.getScopeBinding ();
 }
 
 
@@ -83,7 +80,7 @@ void ResampleTexture::
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
 
-    GlException_SAFE_CALL( glViewport(0, 0, width, height) );
+    GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );
 
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
@@ -123,8 +120,8 @@ void ResampleTexture::
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo->getGlTexture()).readFloat (), "fbo");
-    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(source->getOpenGlTextureId ()).readFloat (), "fbo");
+    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture()).readFloat (), "fbo");
+    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(source->getOpenGlTextureId ()).readFloat (), "source");
 }
 
 
@@ -136,7 +133,7 @@ void ResampleTexture::
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
 
-    GlException_SAFE_CALL( glViewport(0, 0, width, height) );
+    GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );
 
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
@@ -174,7 +171,7 @@ void ResampleTexture::
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo->getGlTexture()).readFloat (), "fbo");
+    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture()).readFloat (), "fbo");
 }
 
 

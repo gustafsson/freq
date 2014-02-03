@@ -1,7 +1,6 @@
 #ifndef RESAMPLETEXTURE_H
 #define RESAMPLETEXTURE_H
 
-#include "GlTexture.h"
 #include "glframebuffer.h"
 
 /**
@@ -27,10 +26,9 @@ public:
     void drawColoredArea(Area area, float r, float g=0, float b=0, float a=0);
 
 private:
-    std::shared_ptr<GlFrameBuffer> fbo;
+    GlFrameBuffer fbo;
     unsigned vbo;
     Area destarea;
-    int width, height;
 
 public:
     static void test();
