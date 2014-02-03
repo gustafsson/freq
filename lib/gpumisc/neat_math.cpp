@@ -228,7 +228,7 @@ void neat_math::
 #else
         EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.1, T1); // floor_log2 is at least a little faster in release builds
 #endif
-        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*2.5); // how much faster?
+        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*2.6); // how much faster?
     }
 
     {
@@ -312,7 +312,7 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(1.4*T, T4);
 #else
-        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.02: 1.2), T4);
+        EXCEPTION_ASSERT_LESS(T*(debug_build ? 0.9 : 1.2), T4);
 #endif
         double ghz = 1e-9/T;
         EXCEPTION_ASSERT_LESS(debug_build ? 0.1 : 0.3, ghz);

@@ -167,7 +167,7 @@ void SinkSource::
                 // assume b was a valid read (i.e that J.first is spanned by b->getInterval())
                 if ((b->getInterval() & J) != b->getInterval())
                 {
-                    // If b is smaller than or equal to J, that's ok as long as it spans J.first (which is should by contract).
+                    // If b is smaller than or equal to J, that's ok as long as it spans J.first (which it should by contract).
                     // If b is bigger than J it needs to be shrinked. Let readFixedLength do the job.
                     b = BufferSource(b).readFixedLength(J & b->getInterval());
                 }

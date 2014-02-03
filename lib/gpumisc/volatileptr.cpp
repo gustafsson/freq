@@ -454,11 +454,11 @@ void WriteWhileReadingThread::
             A::ReadPtr(consta,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 100e-9 : 80e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 80e-9 : 60e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
     }
 
-    // Is should cause a low overhead
+    // It should cause a low overhead
     {
         int N = 100000;
         boost::shared_ptr<A> a(new A());
@@ -483,7 +483,7 @@ void WriteWhileReadingThread::
         EXCEPTION_ASSERT_LESS(T3-T, 0.11e-6);
 #else
         EXCEPTION_ASSERT_LESS(T2-T, 0.18e-6);
-        EXCEPTION_ASSERT_LESS(T3-T, 0.13e-6);
+        EXCEPTION_ASSERT_LESS(T3-T, 0.14e-6);
 #endif
     }
 }

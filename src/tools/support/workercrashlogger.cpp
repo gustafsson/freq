@@ -324,8 +324,8 @@ void WorkerCrashLogger::
         EXCEPTION_ASSERT_EQUALS(de.size (), 2u);
 
         double T = timer.elapsedAndRestart ();
-        EXCEPTION_ASSERT_LESS( 0.1e-5, T );
-        EXCEPTION_ASSERT_LESS( T, 2e-4 );
+        EXCEPTION_ASSERT_LESS( 1e-6, T );
+        EXCEPTION_ASSERT_LESS( T, 300e-6 );
     }
 }
 

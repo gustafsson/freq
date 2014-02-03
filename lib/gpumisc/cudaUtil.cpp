@@ -34,7 +34,7 @@ size_t
 
 // EstimateFreeMem
 // Tries to estimate how big the biggest chunk of GPU memory that can be allocated at this moment is.
-// The returned value is should be accurate to a degree of a few megabytes.
+// The returned value should be accurate to a degree of a few megabytes.
 // Even though accuracy is set to half a megabyte cudaMalloc might fail and succeed in a apparent
 // inconsistent way due to other processes running on the graphics card.
 unsigned int
