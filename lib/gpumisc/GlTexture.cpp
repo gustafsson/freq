@@ -10,6 +10,7 @@ GlTexture::GlTexture()
     textureId( 0 ),
     ownTextureId( 0 )
 {
+    reset(0, 0);
 }
 
 GlTexture::GlTexture(unsigned short width, unsigned short height)
@@ -18,8 +19,7 @@ GlTexture::GlTexture(unsigned short width, unsigned short height)
     textureId( 0 ),
     ownTextureId( 0 )
 {
-    if (width!=0)
-        reset(width, height);
+    reset(width, height);
 }
 
 GlTexture::GlTexture(unsigned short width, unsigned short height,
@@ -30,8 +30,7 @@ GlTexture::GlTexture(unsigned short width, unsigned short height,
     textureId( 0 ),
     ownTextureId( 0 )
 {
-    if (width!=0)
-        reset(width, height, pixelFormat, internalFormat, type, data);
+    reset(width, height, pixelFormat, internalFormat, type, data);
 }
 
 GlTexture::GlTexture(unsigned int textureId)
@@ -40,6 +39,7 @@ GlTexture::GlTexture(unsigned int textureId)
         textureId( textureId ),
         ownTextureId( 0 )
 {
+    EXCEPTION_ASSERT_LESS(0u, textureId);
     int width=0, height=0;
     glBindTexture (GL_TEXTURE_2D, textureId);
     GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width) );
@@ -63,6 +63,11 @@ void GlTexture::
         GlException_SAFE_CALL( glGenTextures(1, &ownTextureId) );
         textureId = ownTextureId;
     }
+    this->width = width;
+    this->height = height;
+
+    if (0==width)
+        return;
 
 	bindTexture2D();
 
@@ -72,9 +77,6 @@ void GlTexture::
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, type, data) );
-
-    this->width = width;
-    this->height = height;
 
 	unbindTexture2D();
 }
