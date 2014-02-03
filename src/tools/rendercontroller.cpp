@@ -1075,7 +1075,7 @@ Use Signal::Processing namespace
     // context
     foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
     {
-        write1(collection)->reset();
+        write1(collection)->clear();
     }
 
 

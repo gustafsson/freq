@@ -1291,7 +1291,7 @@ void RenderView::
     TaskTimer tt("RenderView::clearCaches(), %p", this);
     foreach( const Heightmap::Collection::Ptr& collection, model->collections() )
     {
-        write1(collection)->reset(); // note, not collection.reset()
+        write1(collection)->clear();
     }
 
     if (model->renderer && model->renderer->isInitialized())

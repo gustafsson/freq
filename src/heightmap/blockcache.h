@@ -53,9 +53,9 @@ public:
     void        erase( const Reference& ref );
 
     /**
-     * @brief reset empties this cache.
+     * @brief clear empties this cache.
      */
-    void        reset();
+    void        clear();
 
     const cache_t& cache() const;
     const recent_t& recent() const;

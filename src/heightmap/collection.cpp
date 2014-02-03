@@ -70,12 +70,12 @@ Collection::
 Collection::
         ~Collection()
 {
-    reset();
+    clear();
 }
 
 
 void Collection::
-        reset()
+        clear()
 {
     BlockCache::WritePtr cache(cache_);
     const BlockCache::cache_t& C = cache->cache ();
@@ -106,7 +106,7 @@ void Collection::
     BOOST_FOREACH (const pBlock b, _to_remove)
         b->glblock.reset ();
 
-    cache->reset();
+    cache->clear();
 }
 
 
@@ -390,7 +390,7 @@ void Collection::
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
-    reset();
+    clear();
 }
 
 
@@ -401,7 +401,7 @@ void Collection::
 
     if (visualization_params_ != v)
     {
-        reset();
+        clear();
 
         visualization_params_ = v;
     }
