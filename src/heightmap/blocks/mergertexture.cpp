@@ -12,11 +12,11 @@
 
 #include <boost/foreach.hpp>
 
-#define VERBOSE_COLLECTION
-//#define VERBOSE_COLLECTION if(0)
+//#define VERBOSE_COLLECTION
+#define VERBOSE_COLLECTION if(0)
 
-#define INFO_COLLECTION
-//#define INFO_COLLECTION if(0)
+//#define INFO_COLLECTION
+#define INFO_COLLECTION if(0)
 
 using namespace Signal;
 
