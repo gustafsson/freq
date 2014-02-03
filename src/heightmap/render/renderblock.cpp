@@ -1,7 +1,7 @@
 #include "renderblock.h"
 #include "sawe/configuration.h"
 #include "heightmap/glblock.h"
-
+#include "heightmap/shaderresource.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -82,9 +82,9 @@ void RenderBlock::
 {
     // load shader
     if (render_settings->vertex_texture)
-        _shader_prog = loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
+        _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
     else
-        _shader_prog = loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
+        _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
     if (0 == _shader_prog)
         return;

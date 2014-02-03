@@ -16,8 +16,6 @@
 
 namespace Heightmap {
 
-GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
-
 class GlBlock
 {
 public:
