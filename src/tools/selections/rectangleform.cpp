@@ -53,7 +53,7 @@ void RectangleForm::
 
     updateGui();
 
-    model_->project()->tools().render_view()->userinput_update();
+    model_->project()->tools().render_view()->redraw();
 }
 
 

@@ -95,8 +95,8 @@ RenderView::
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
-    connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
-    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(userinput_update()));
+    connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(redraw()) );
+    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(redraw()));
     connect( &viewstate, SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
 
     _update_timer = new QTimer;
@@ -186,8 +186,7 @@ void RenderView::
     if (model->renderer->render_settings.draw_cursor_marker)
         update();
 
-    bool request_high_fps = false;
-    userinput_update( request_high_fps );
+    redraw();
 
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
@@ -206,7 +205,8 @@ void RenderView::
 void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
-    _last_frame.restart();
+    double T = _last_frame.elapsedAndRestart();
+    TIME_PAINTGL TaskTimer tt("%g ms", T*1e3);
 
     painter->beginNativePainting();
 
@@ -227,7 +227,7 @@ void RenderView::
             w *= painter->device ()->devicePixelRatio();
             h *= painter->device ()->devicePixelRatio();
             if (w != _last_width || h != _last_height)
-                userinput_update();
+                redraw();
             _last_width = w;
             _last_height = h;
 		}
@@ -273,6 +273,7 @@ void RenderView::
     emit paintingForeground();
 
     defaultStates();
+
     painter->endNativePainting();
 }
 
@@ -858,7 +859,7 @@ void RenderView::
     if (model->_qz<0) model->_qz=0;
     if (model->_qz>1) model->_qz=1;
 
-    userinput_update();
+    redraw();
 }
 
 
@@ -909,21 +910,16 @@ void RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
+        redraw()
 {
-    if (request_high_fps)
-    {
-/*
-//Use Signal::Processing namespace
-        model->project()->worker.requested_fps(30, cheat_also_high?30:-1);
-*/
-    }
+    emit postUpdate();
+}
 
-    if (post_update)
-        emit postUpdate();
 
-    if (request_high_fps && post_update)
-        update();
+void RenderView::
+        redraw_asap()
+{
+    update();
 }
 
 
@@ -931,7 +927,13 @@ void RenderView::
         restartUpdateTimer()
 {
     float dt = _last_frame.elapsed();
-    float wait = 1.f/_target_fps;
+    float wait = 1.f/60.f - 0.0015f; // 1.5 ms overhead
+
+    // This is not needed if vsync is in use
+    bool vsync = 0 != QGLContext::currentContext ()->format ().swapInterval ();
+    vsync = false;
+    if (vsync)
+        wait = 0;
 
     if (!_update_timer->isActive())
     {
@@ -940,17 +942,6 @@ void RenderView::
 
         unsigned ms = (wait-dt)*1e3; // round down
 
-/*
-//Use Signal::Processing namespace
-        // wait longer between frames if the requested framerate is low
-        float reqdt = 1.f/model->project()->worker.requested_fps();
-        reqdt = std::min(0.01f, .05f * reqdt);
-
-        // allow others to jump in before the next update if ms=0
-        // most visible in windows message loop
-        ms = std::max( 10u, std::max((unsigned)(1000*reqdt), ms));
-*/
-        ms = 10;
         _update_timer->start(ms);
     }
 }
@@ -1301,7 +1292,7 @@ void RenderView::
 
         model->renderer->clearCaches();
 
-        userinput_update();
+        redraw();
     }
 }
 
@@ -1320,7 +1311,7 @@ void RenderView::
         setupCamera()
 {
     if (model->orthoview != 1 && model->orthoview != 0)
-        userinput_update();
+        redraw();
 
     glLoadIdentity();
     glTranslated( model->_px, model->_py, model->_pz );

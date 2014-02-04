@@ -50,7 +50,7 @@ void PlaybackView::
 void PlaybackView::
         emit_update_view()
 {
-    emit update_view(false);
+    emit update_view();
     Tools::Support::TransformDescs::WritePtr td (_render_view->model->transform_descs ());
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
@@ -116,7 +116,7 @@ void PlaybackView::
         {
             r.model->_qx = _playbackMarker;
 
-            r.userinput_update( true, true, false );
+            r.redraw();
         }
     }
 }

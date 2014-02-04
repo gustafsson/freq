@@ -81,7 +81,7 @@ RenderController::
     Support::RenderOperationDesc::RenderTarget::Ptr rvu(
                 rvup = new Support::RenderViewUpdateAdapter);
 
-    connect(rvup, SIGNAL(userinput_update()), view, SLOT(userinput_update()));
+    connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
     connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), view, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
 
     model()->init(model()->project ()->processing_chain (), rvu);
@@ -131,7 +131,7 @@ void RenderController::
         stateChanged()
 {
     // Don't lock the UI, instead wait a moment before any change is made
-    view->userinput_update();
+    view->redraw();
 
     model()->project()->setModified();
 }

@@ -300,7 +300,7 @@ namespace Tools
         if (Qt::RightButton == e->button())
         {
             this->setCurrentSelection(Signal::OperationDesc::Ptr());
-            render_view()->userinput_update();
+            render_view()->redraw();
         }
     }
 

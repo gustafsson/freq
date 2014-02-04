@@ -64,8 +64,10 @@ void RecordController::
         prev_length_ = r->number_of_samples();
         r->startRecording();
 
-        if (!r->canRecord())
+        if (!r->canRecord()) {
+            TaskInfo("can't record :(");
             ui->actionRecord->setChecked( false );
+        }
     }
     else
     {
@@ -88,7 +90,7 @@ void RecordController::
         }
     }
 
-    view_->enabled = active;
+    view_->setEnabled( active );
 }
 
 

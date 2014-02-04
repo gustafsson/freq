@@ -102,7 +102,8 @@ namespace Tools
 
     public slots:
         void setLastUpdateSize( Signal::UnsignedIntervalType length );
-        void userinput_update( bool request_high_fps = true, bool post_update = true, bool cheat_also_high=true );
+        void redraw();
+        void redraw_asap();
 
     signals:
         /**

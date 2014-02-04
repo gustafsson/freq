@@ -64,7 +64,7 @@ void NavigationController::
         moveUp()
 {
     moveCamera(0, 0.1f/_view->model->zscale);
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -72,7 +72,7 @@ void NavigationController::
         moveDown()
 {
     moveCamera(0, -0.1f/_view->model->zscale);
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -80,7 +80,7 @@ void NavigationController::
         moveLeft()
 {
     moveCamera(-0.1f/_view->model->xscale, 0);
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -88,7 +88,7 @@ void NavigationController::
         moveRight()
 {
     moveCamera(0.1f/_view->model->xscale, 0);
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -96,7 +96,7 @@ void NavigationController::
         scaleUp()
 {
     zoom( -2, ScaleZ );
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -104,7 +104,7 @@ void NavigationController::
         scaleDown()
 {
     zoom( 2, ScaleZ );
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -112,7 +112,7 @@ void NavigationController::
         scaleLeft()
 {
     zoom( 2, ScaleX );
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -120,7 +120,7 @@ void NavigationController::
         scaleRight()
 {
     zoom( -2, ScaleX );
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -195,7 +195,7 @@ void NavigationController::
 //    if(leftButton.isDown() && rightButton.isDown())
 //        selectionButton.press( e->x(), e->y() );
 
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 void NavigationController::
@@ -211,7 +211,7 @@ void NavigationController::
         rotateButton.release();
     }
 
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -262,7 +262,7 @@ void NavigationController::
         }
     }
 
-    _view->userinput_update();
+    _view->redraw_asap();
 }
 
 
@@ -357,7 +357,7 @@ void NavigationController::
     rotateButton.update(x, y);
     scaleButton.update(x, y);
 
-    _view->userinput_update();
+    _view->redraw_asap ();
 }
 
 

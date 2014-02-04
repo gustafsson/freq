@@ -420,7 +420,7 @@ void Project::
 {
     tools().render_view()->model->resetSettings();
     Application::global_ptr()->clearCaches();
-    tools().render_view()->userinput_update( false );
+    tools().render_view()->redraw();
 }
 
 

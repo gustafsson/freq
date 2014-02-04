@@ -162,7 +162,7 @@ void TimelineController::
     view->_xoffs = p.time-(p.time-view->_xoffs)/f;
 
     // Only update the timeline, leave the main render view unaffected
-    view->userinput_update();
+    view->redraw();
 }
 
 
@@ -193,8 +193,7 @@ void TimelineController::
         {
             view->_xoffs -= current.time - prev.time;
 
-            // Only update the timeline, leave the main render view unaffected
-            view->userinput_update();
+            view->redraw();
         }
         break;
 
@@ -208,8 +207,7 @@ void TimelineController::
             float length = std::max( 1.f, model->project()->length());
             view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
-            // Only update the timeline, leave the main render view unaffected
-            view->userinput_update();
+            view->redraw();
         }
         break;
     }

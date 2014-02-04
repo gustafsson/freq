@@ -90,15 +90,12 @@ Heightmap::Position TimelineView::
 
 
 void TimelineView::
-        userinput_update()
+        redraw()
 {
-    // Never update only the timeline as renderview is responsible for invoking
-    // workOne to update textures as needed. TimelineView::update is connected
-    // to RenderView::postPaint.
-    _render_view->userinput_update();
-
-    //_project->worker.requested_fps(30);
-    //update();
+    // Never update only the timeline as renderview still is responsible for
+    // invoking HeightmapProcessingPublisher to get any work done.
+    // TimelineView::update is connected to RenderView::postPaint.
+    _render_view->redraw();
 }
 
 
@@ -176,7 +173,7 @@ void TimelineView::
 {
     resizeGL( 0, 0, width, height );
 
-    userinput_update();
+    redraw();
 }
 
 

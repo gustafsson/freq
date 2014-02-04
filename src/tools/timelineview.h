@@ -40,7 +40,7 @@ public:
 
     Heightmap::Position getSpacePos( QPointF pos, bool* success = 0 );
 
-    void userinput_update();
+    void redraw();
 
     Support::ToolSelector* tool_selector;
 

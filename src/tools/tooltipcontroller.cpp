@@ -139,7 +139,7 @@ void TooltipController::
         emitTooltipChanged()
 {
     emit tooltipChanged();
-    render_view_->userinput_update(false);
+    render_view_->redraw();
 }
 
 
@@ -235,7 +235,7 @@ void TooltipController::
     current_model()->automarking = TooltipModel::ManualMarkers;
     current_model()->showToolTip(current_model()->pos() );
     emitTooltipChanged();
-    render_view_->userinput_update();
+    render_view_->redraw();
 }
 
 
@@ -272,7 +272,7 @@ void TooltipController::
         mouseMoveEvent(&event);
 
         this->render_view_->graphicsview->setToolFocus( true );
-        this->render_view_->userinput_update( true );
+        this->render_view_->redraw();
     }
     else if (hover_info_model_)
     {

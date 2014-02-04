@@ -34,7 +34,7 @@ Interval RenderOperationDesc::
 {
     const Interval& a = OperationDescWrapper::affectedInterval( I );
 
-    // This will result in a update rate that matches the invalidated intervals if possible.
+    // This will result in an update rate that matches the invalidated intervals if possible.
     write1(render_target_)->refreshSamples( a );
 
     return a;
