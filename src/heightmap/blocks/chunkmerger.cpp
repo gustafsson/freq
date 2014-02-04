@@ -2,6 +2,7 @@
 
 #include "cpumemorystorage.h"
 #include "TaskTimer.h"
+#include "timer.h"
 
 #include <boost/foreach.hpp>
 
@@ -26,20 +27,26 @@ void ChunkMerger::
     j.merge_chunk = mergechunk;
     j.pchunk = pchunk;
     j.intersecting_blocks = intersecting_blocks;
-    WritePtr(this)->jobs.push_back (j);
+    WritePtr(this)->jobs.push (j);
 }
 
 
 void ChunkMerger::
-        processChunks() volatile
+        processChunks(float timeout) volatile
 {
-    WritePtr self(this);
+    Timer t;
+    while (timeout < 0 || t.elapsed () < timeout) {
+        Job job;
+        {
+            WritePtr self(this);
+            if (self->jobs.empty ())
+                return;
+            job = self->jobs.top ();
+            self->jobs.pop ();
+        }
 
-    BOOST_FOREACH(Job& j, self->jobs) {
-        processJob(j);
+        processJob (job);
     }
-
-    self->jobs.clear ();
 }
 
 

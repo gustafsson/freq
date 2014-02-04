@@ -5,7 +5,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/chunkfilter.h"
 
-#include <list>
+#include <stack>
 
 namespace Heightmap {
 namespace Blocks {
@@ -23,7 +23,7 @@ public:
             Tfr::ChunkAndInverse pchunk,
             std::vector<pBlock> intersecting_blocks ) volatile;
 
-    void processChunks() volatile;
+    void processChunks(float timeout) volatile;
 
 private:
     struct Job {
@@ -32,7 +32,7 @@ private:
         std::vector<pBlock> intersecting_blocks;
     };
 
-    std::list<Job> jobs;
+    std::stack<Job> jobs;
 
     static void processJob(Job& j);
 public:

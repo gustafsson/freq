@@ -146,7 +146,7 @@ void ChunkBlockFilter::
 
         {
             Heightmap::Collection::ReadPtr c(read1(tfrmap)->collections()[0]);
-            c->chunk_merger()->processChunks();
+            c->chunk_merger()->processChunks(-1);
         }
 
         EXCEPTION_ASSERT( merge_chunk_mock->called );

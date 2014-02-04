@@ -69,6 +69,7 @@ void ChunkToBlockTexture::
                 const Block& block,
                 const Tfr::Chunk& chunk )
 {
+    INFO TaskTimer tt("ChunkToBlockTexture::mergeChunk");
     GlTexture::Ptr t = block.glblock->glTexture ();
     GlFrameBuffer fbo(t->getOpenGlTextureId ());
 
