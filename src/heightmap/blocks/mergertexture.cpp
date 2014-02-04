@@ -138,9 +138,15 @@ void MergerTexture::
         glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
-
+    bool need_cpu_copy = false;
+    if (need_cpu_copy)
+    {
+        VERBOSE_COLLECTION TaskTimer tt("Updating cpu_copy");
         // This is slow, and hard to do asynchronously.
+
+        GlTexture::Ptr t = block->glblock->glTexture ();
         glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo_);
         glReadPixels (0, 0, t->getWidth (), t->getHeight (), GL_RED, GL_FLOAT, 0);
         float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
