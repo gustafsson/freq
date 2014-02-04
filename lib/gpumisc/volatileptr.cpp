@@ -448,7 +448,7 @@ void WriteWhileReadingThread::
         }
         T = timer.elapsedAndRestart ()/1000;
         EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 90e-9 : 60e-9);
-        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(consta,NoLockFailed());
