@@ -398,7 +398,6 @@ void WriteWhileReadingThread::
         A::ConstPtr consta(a);
 
         A::WritePtr r(a);
-        Timer timer;
         double T;
 
         bool debug = false;
@@ -408,6 +407,7 @@ void WriteWhileReadingThread::
         bool gdb = DetectGdb::is_running_through_gdb();
 
 
+        Timer timer;
         for (int i=0; i<1000; i++) {
             a->readWriteLock ()->tryLockForWrite ();
         }

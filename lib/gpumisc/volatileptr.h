@@ -27,7 +27,8 @@ public:
 #endif
 
 /**
- * The VolatilePtr class guarantees compile-time thread safe access to objects.
+ * The VolatilePtr class guarantees thread safe access to objects, with
+ * compile-time errors on missing locks and run-time exceptions on deadlocks.
  *
  * For examples of usage see
  * VolatilePtrTest::test ()
