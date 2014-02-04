@@ -50,14 +50,11 @@ void ChunkMerger::
 
     BOOST_FOREACH( pBlock block, j.intersecting_blocks)
     {
-        {
-            BlockData::WritePtr blockdata(block->block_data());
+        BlockData::WritePtr blockdata(block->block_data());
 
-            INFO TaskTimer tt(boost::format("chunk %s -> block %s") % j.pchunk.input->getInterval () % block->getRegion ());
-            write1(j.merge_chunk)->mergeChunk( *block, j.pchunk, *blockdata );
-            blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-        }
-        block->discard_new_data_available ();
+        INFO TaskTimer tt(boost::format("chunk %s -> block %s") % j.pchunk.input->getInterval () % block->getRegion ());
+        write1(j.merge_chunk)->mergeChunk( *block, j.pchunk, *blockdata );
+        blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
     }
 }
 

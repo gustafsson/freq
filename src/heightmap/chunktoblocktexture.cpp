@@ -148,6 +148,8 @@ void ChunkToBlockTexture::
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture()).readFloat (), "fbo");
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(source.getOpenGlTextureId ()).readFloat (), "source");
+
+    const_cast<Block*>(&block)->discard_new_data_available ();
 }
 
 
