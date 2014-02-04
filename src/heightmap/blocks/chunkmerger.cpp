@@ -19,12 +19,14 @@ ChunkMerger::
 
 
 void ChunkMerger::
-        addChunk( MergeChunk::Ptr mergechunk,
+        addChunk( MergeChunk::Ptr merge_chunk,
                   Tfr::ChunkAndInverse pchunk,
                   std::vector<pBlock> intersecting_blocks ) volatile
 {
+    write1(merge_chunk)->prepareChunk( pchunk );
+
     Job j;
-    j.merge_chunk = mergechunk;
+    j.merge_chunk = merge_chunk;
     j.pchunk = pchunk;
     j.intersecting_blocks = intersecting_blocks;
     WritePtr(this)->jobs.push (j);
@@ -53,8 +55,6 @@ void ChunkMerger::
 void ChunkMerger::
         processJob(Job& j)
 {
-    write1(j.merge_chunk)->prepareChunk( j.pchunk );
-
     BOOST_FOREACH( pBlock block, j.intersecting_blocks)
     {
         BlockData::WritePtr blockdata(block->block_data());
