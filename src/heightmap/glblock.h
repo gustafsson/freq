@@ -37,6 +37,7 @@ public:
     void                reset( float width, float height );
 
     GlTexture::Ptr      glTexture();
+    GlTexture::Ptr      glVertTexture();
     pHeight             height();
     pHeightReadOnlyCpu  heightReadOnlyCpu();
     //HeightReadOnlyArray heightReadOnlyArray();

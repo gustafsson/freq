@@ -139,11 +139,6 @@ void ChunkToBlockTexture::
     // Setup the VBO, need to know the current display scale, which is defined by the block.
     prepVbo(vp->display_scale ());
 
-    // Setup framebuffer rendering
-    GlTexture::Ptr t = block.glblock->glTexture ();
-    GlFrameBuffer fbo(t->getOpenGlTextureId ());
-    GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
-
     // Disable unwanted capabilities when resampling a texture
     glPushAttribContext pa(GL_ENABLE_BIT);
     glDisable (GL_DEPTH_TEST);
@@ -153,7 +148,7 @@ void ChunkToBlockTexture::
     // Setup matrices, while preserving the old ones
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
-    GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );
+    GlException_SAFE_CALL( glViewport(0, 0, block.block_layout ().texels_per_row (), block.block_layout ().texels_per_column ()) );
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
     Region block_region = block.getRegion ();
@@ -175,6 +170,24 @@ void ChunkToBlockTexture::
 
     // Draw from chunk texture onto block texture
     {
+        // Setup framebuffer rendering
+        GlTexture::Ptr t = block.glblock->glTexture ();
+        GlFrameBuffer fbo(t->getOpenGlTextureId ());
+        GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
+
+        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2);
+
+        PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture()).readFloat (), "fbo");
+    }
+
+    // Draw from chunk texture onto block vertex texture
+    {
+        // Setup framebuffer rendering
+        GlTexture::Ptr t = block.glblock->glVertTexture ();
+        GlFrameBuffer fbo(t->getOpenGlTextureId ());
+        GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
+
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2);
     }
@@ -190,7 +203,6 @@ void ChunkToBlockTexture::
     // Restore old matrices
     GlException_SAFE_CALL( glViewport(viewport[0], viewport[1], viewport[2], viewport[3] ) );
 
-    PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture()).readFloat (), "fbo");
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(chunk_texture_->getOpenGlTextureId ()).readFloat (), "source");
 
     const_cast<Block*>(&block)->discard_new_block_data ();

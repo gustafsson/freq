@@ -151,10 +151,18 @@ void GlBlock::
 GlTexture::Ptr GlBlock::
         glTexture()
 {
-    if (!has_texture())
-        create_texture (GlBlock::GlBlock::HeightMode_Flat);
+    create_texture (HeightMode_Flat);
 
     return GlTexture::Ptr(new GlTexture(_tex_height));
+}
+
+
+GlTexture::Ptr GlBlock::
+        glVertTexture()
+{
+    create_texture (HeightMode_VertexTexture);
+
+    return GlTexture::Ptr(new GlTexture(_tex_height_nearest));
 }
 
 
@@ -389,7 +397,7 @@ void GlBlock::
 
 
 void GlBlock::
-        draw( unsigned vbo_size, GlBlock::HeightMode withHeightMap )
+        draw( unsigned vbo_size, GlBlock::HeightMode heightMode )
 {
     if (false) if (!_height)
     {
@@ -400,9 +408,9 @@ void GlBlock::
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
-    update_texture( withHeightMap );
+    update_texture( heightMode );
 
-    switch(withHeightMap)
+    switch(heightMode)
     {
     case HeightMode_Flat:
         break;
@@ -435,7 +443,7 @@ void GlBlock::
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    switch(withHeightMap)
+    switch(heightMode)
     {
     case HeightMode_Flat:
         break;

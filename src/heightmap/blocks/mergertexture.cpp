@@ -138,6 +138,11 @@ void MergerTexture::
         glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        t = block->glblock->glVertTexture ();
+        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     bool need_cpu_copy = false;
@@ -221,7 +226,7 @@ void MergerTexture::
         block->glblock.reset( new GlBlock( bl, block->getRegion().time(), block->getRegion().scale() ));
         block->block_data()->cpu_copy.reset( new DataStorage<float>(ds) );
         block->update_glblock_data ();
-        block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
+        block->glblock->update_texture( GlBlock::HeightMode_Flat );
         EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -248,7 +253,7 @@ void MergerTexture::
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
             block->update_glblock_data ();
-            block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
+            block->glblock->update_texture( GlBlock::HeightMode_Flat );
 
             write1(cache)->insert(block);
         }
@@ -276,7 +281,7 @@ void MergerTexture::
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
             block->update_glblock_data ();
-            block->glblock->update_texture( GlBlock::GlBlock::HeightMode_Flat );
+            block->glblock->update_texture( GlBlock::HeightMode_Flat );
 
             write1(cache)->insert(block);
         }
