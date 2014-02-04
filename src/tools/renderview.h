@@ -103,7 +103,6 @@ namespace Tools
     public slots:
         void setLastUpdateSize( Signal::UnsignedIntervalType length );
         void redraw();
-        void redraw_asap();
 
     signals:
         /**

@@ -917,13 +917,6 @@ void RenderView::
 
 
 void RenderView::
-        redraw_asap()
-{
-    update();
-}
-
-
-void RenderView::
         restartUpdateTimer()
 {
     float dt = _last_frame.elapsed();
