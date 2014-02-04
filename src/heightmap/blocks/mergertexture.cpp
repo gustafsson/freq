@@ -233,8 +233,8 @@ void MergerTexture::
                             0, 0, 0, 0,
                             0, 0, 0, 0};
 
-        //data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
-        data = block->block_data ()->cpu_copy;
+        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         {
@@ -261,8 +261,8 @@ void MergerTexture::
                               0, 0, 0, 0,
                               0, 0, 0, 0,
                               d, e, f, 0};
-        //data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
-        data = block->block_data ()->cpu_copy;
+        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
         {
@@ -286,8 +286,8 @@ void MergerTexture::
                               0, 0,    5.5,  7.5,
                               0, 0,    9.5,  11.5,
                               0, 0,   13.5,  7.58};
-        //data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
-        data = block->block_data ()->cpu_copy;
+        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);
 
