@@ -79,6 +79,8 @@ void ChunkToBlockTexture::
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
 
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
     GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );
 
     glPushMatrixContext mpc( GL_PROJECTION );
@@ -145,6 +147,7 @@ void ChunkToBlockTexture::
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlException_SAFE_CALL( glViewport(viewport[0], viewport[1], viewport[2], viewport[3] ) );
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture()).readFloat (), "fbo");
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(source.getOpenGlTextureId ()).readFloat (), "source");
