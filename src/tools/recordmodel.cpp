@@ -35,14 +35,18 @@ class GotDataCallback: public Adapters::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::Ptr i) { i_ = i; }
+    void setRecordModel(RecordModel* model) { model_ = model; }
 
     virtual void markNewlyRecordedData(Signal::Interval what) {
         if (i_)
             read1(i_)->deprecateCache(what);
+        if (model_)
+            emit model_->markNewlyRecordedData(what);
     }
 
 private:
     Signal::Processing::IInvalidator::Ptr i_;
+    RecordModel* model_ = 0;
 };
 
 
@@ -56,11 +60,13 @@ RecordModel* RecordModel::
     Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);
 
-    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
-
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
     record_model->invalidator = i;
+
+    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
+    dynamic_cast<GotDataCallback*>(&*write1(callback))->setRecordModel (record_model);
+
     return record_model;
 }
 

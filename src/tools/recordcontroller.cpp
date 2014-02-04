@@ -26,11 +26,14 @@ RecordController::
                 destroyed_ ( false ),
                 prev_length_( 0 )
 {
+    qRegisterMetaType<Signal::Interval>("Signal::Interval");
+
     ui->actionRecord = actionRecord;
 
     setupGui();
 
     connect(view_, SIGNAL(gotNoData()), SLOT(receiveStop()));
+    connect(model(), SIGNAL(markNewlyRecordedData(Signal::Interval)), SLOT(redraw(Signal::Interval)));
 }
 
 
@@ -98,6 +101,13 @@ void RecordController::
         receiveStop()
 {
     ui->actionRecord->setChecked(false);
+}
+
+
+void RecordController::
+        redraw(Signal::Interval)
+{
+    model()->render_view->redraw ();
 }
 
 
