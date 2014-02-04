@@ -73,7 +73,13 @@ TimelineView::
 Heightmap::Position TimelineView::
         getSpacePos( QPointF pos, bool* success )
 {
-    pos.setY( tool_selector->parentTool()->geometry().height() - 1 - pos.y() );
+    int height;
+    if (tool_selector)
+        height = tool_selector->parentTool()->geometry().height();
+    else
+        height = this->height ();
+
+    pos.setY( height - 1 - pos.y() );
 
     int r = devicePixelRatio ();
     GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
@@ -116,6 +122,8 @@ void TimelineView::
 void TimelineView::
         layoutChanged( QBoxLayout::Direction direction )
 {
+    EXCEPTION_ASSERT( tool_selector );
+
     switch (direction)
     {
     case QBoxLayout::TopToBottom:

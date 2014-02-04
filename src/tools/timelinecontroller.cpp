@@ -8,6 +8,7 @@
 #include "ui/mainwindow.h"
 #include "timelineview.h"
 #include "renderview.h"
+#include "sawe/configuration.h"
 
 // Qt
 #include <QDockWidget>
@@ -76,9 +77,11 @@ void TimelineController::
 {
     Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
 
-    bool create_dock_window = false;
+    bool create_dock_window = Sawe::Configuration::feature("timeline_dock");
     if (create_dock_window)
     {
+        view->tool_selector = 0; // explicit
+
         dock = new QDockWidget(MainWindow);
         dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
         dock->setMinimumSize(QSize(42, 79));
@@ -146,8 +149,10 @@ void TimelineController::
         connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     }
 
-    view->tool_selector->parentTool()->setVisible(visible);
+    if (view->tool_selector)
+        view->tool_selector->parentTool()->setVisible(visible);
 }
+
 
 void TimelineController::
         wheelEvent ( QWheelEvent *e )
