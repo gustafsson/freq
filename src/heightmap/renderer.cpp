@@ -375,7 +375,7 @@ void Renderer::
 
     BlockCache::ReadPtr cache( read1(collection)->cache () );
 
-    BOOST_FOREACH(const Reference& r, R)
+    for (const Reference& r : R)
     {
         if (pBlock block = cache->probe( r )) {
             block->update_glblock_data ();
