@@ -45,11 +45,6 @@
         <file>icons/icon-toggle-taxis.png</file>
         <file>icons/icon-toggle-cursor.png</file>
     </qresource>
-    <qresource prefix="/shaders">
-        <file alias="heightmap.frag">../heightmap/heightmap.frag</file>
-        <file alias="heightmap.vert">../heightmap/heightmap.vert</file>
-        <file alias="heightmap_noshadow.vert">../heightmap/heightmap_noshadow.vert</file>
-    </qresource>
     <qresource prefix="/splash">
         <file alias="brickwall.jpg">splash/brickwall.jpg</file>
         <file alias="muchdifferent.jpg">splash/muchdifferent.jpg</file>

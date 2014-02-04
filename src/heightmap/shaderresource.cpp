@@ -87,9 +87,9 @@ GLuint ShaderResource::
 
     program = glCreateProgram();
     try {
-        if (vertFileName)
+        if (strlen(vertFileName))
             resultLog << attachShader(program, GL_VERTEX_SHADER, vertFileName);
-        if (fragFileName)
+        if (strlen(fragFileName))
             resultLog << attachShader(program, GL_FRAGMENT_SHADER, fragFileName);
 
         glLinkProgram(program);
@@ -97,8 +97,9 @@ GLuint ShaderResource::
 
         char programInfoLog[2048];
         glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
-        TaskTimer tt("Linking vertex shader %s with fragment shader %s\n%s",
-                 vertFileName, fragFileName, programInfoLog);
+        if (!linked)
+            TaskTimer tt("Failed to link vertex shader \"%s\" with fragment shader \"%s\"\n%s",
+                         vertFileName, fragFileName, programInfoLog);
 
         bool showProgramLog = !linked;
 #ifdef _DEBUG

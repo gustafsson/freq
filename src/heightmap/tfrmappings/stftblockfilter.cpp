@@ -1,8 +1,10 @@
 #include "stftblockfilter.h"
 #include "heightmap/chunktoblock.h"
+#include "heightmap/chunktoblocktexture.h"
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
+#include "heightmap/glblock.h"
 
 #include "demangle.h"
 
@@ -36,7 +38,8 @@ void StftBlockFilter::
     EXCEPTION_ASSERT( stftchunk );
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
 
-    Heightmap::ChunkToBlock chunktoblock;
+    //Heightmap::ChunkToBlock chunktoblock;
+    Heightmap::ChunkToBlockTexture chunktoblock;
     chunktoblock.normalization_factor = normalization_factor;
     chunktoblock.mergeColumnMajorChunk (block, *pchunk.chunk, outData);
 }
@@ -68,7 +71,8 @@ MergeChunk::Ptr StftBlockFilterDesc::
 #include "neat_math.h"
 #include "signal/computingengine.h"
 #include "detectgdb.h"
-
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -76,6 +80,13 @@ namespace TfrMappings {
 void StftBlockFilter::
         test()
 {
+    std::string name = "StftBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a block with stft transform data.
     {
         Timer t;
@@ -109,6 +120,8 @@ void StftBlockFilter::
         Heightmap::Block block(ref, bl, vp);
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        Region r = RegionFactory( bl )( ref );
+        block.glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -122,8 +135,13 @@ void StftBlockFilter::
         write1(mc)->mergeChunk( block, cai, *block.block_data () );
 
         float T = t.elapsed ();
+//        if (DetectGdb::is_running_through_gdb ()) {
+//            EXCEPTION_ASSERT_LESS(T, 3e-3);
+//        } else {
+//            EXCEPTION_ASSERT_LESS(T, 1e-3);
+//        }
         if (DetectGdb::is_running_through_gdb ()) {
-            EXCEPTION_ASSERT_LESS(T, 3e-3);
+            EXCEPTION_ASSERT_LESS(T, 50e-3);
         } else {
             EXCEPTION_ASSERT_LESS(T, 1e-3);
         }

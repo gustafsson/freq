@@ -41,6 +41,7 @@ CONFIG += c++11 buildflags
 
 RESOURCES += \
     ui/icon-resources.qrc \
+    heightmap/shaders.qrc \
 
 SOURCES += \
     adapters/*.cpp \
@@ -122,6 +123,8 @@ SHADER_SOURCES += \
     heightmap/heightmap.frag \
     heightmap/heightmap.vert \
     heightmap/heightmap_noshadow.vert \
+    heightmap/complex_magnitude.frag \
+    heightmap/noop.vert \
 
 CONFIGURATION_SOURCES = \
     sawe/configuration/configuration.cpp

@@ -6,7 +6,7 @@ namespace Heightmap {
 class ShaderResource
 {
 public:
-    static GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
+    static GLuint loadGLSLProgram(const char *vertFileName="", const char *fragFileName="");
 };
 
 } // namespace Heightmap

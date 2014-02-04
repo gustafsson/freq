@@ -76,6 +76,10 @@ void GlTexture::
     //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+    int gl_max_texture_size = 0;
+    glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
+    EXCEPTION_ASSERT_LESS(width, gl_max_texture_size);
+    EXCEPTION_ASSERT_LESS(height, gl_max_texture_size);
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, type, data) );
 
 	unbindTexture2D();

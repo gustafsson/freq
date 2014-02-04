@@ -95,6 +95,7 @@ void glinfo::
         QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
         QGLWidget w;
         w.makeCurrent ();
+
         string ws = glinfo::pretty_format (w);
         string fs = glinfo::pretty_format (w.format ());
         string ds = glinfo::driver_info ();

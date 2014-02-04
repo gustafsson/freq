@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/shaders">
+        <file>complex_magnitude.frag</file>
+        <file>heightmap_noshadow.vert</file>
+        <file>heightmap.frag</file>
+        <file>heightmap.vert</file>
+        <file>noop.vert</file>
+    </qresource>
+</RCC>
