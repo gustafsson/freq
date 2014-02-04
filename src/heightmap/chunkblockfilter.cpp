@@ -4,6 +4,7 @@
 #include "collection.h"
 
 #include "tfr/chunk.h"
+#include "blocks/chunkmerger.h"
 
 #include "cpumemorystorage.h"
 #include "demangle.h"
@@ -31,20 +32,13 @@ void ChunkBlockFilter::
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
     TfrMapping::pCollection collection = C[pchunk.channel];
+    Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
 
-    write1(merge_chunk_)->prepareChunk( pchunk );
-
-    BOOST_FOREACH( pBlock block, intersecting_blocks)
-    {
-        BlockData::WritePtr blockdata(block->block_data());
-
-        write1(merge_chunk_)->mergeChunk( *block, pchunk, *blockdata );
-
-        blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-    }
+    chunk_merger->addChunk( merge_chunk_, pchunk, intersecting_blocks );
+    // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 
 
@@ -147,6 +141,13 @@ void ChunkBlockFilter::
         cai.chunk = (*cai.t)( buffer );
 
         cbf(cai);
+
+        EXCEPTION_ASSERT( !merge_chunk_mock->called );
+
+        {
+            Heightmap::Collection::ReadPtr c(read1(tfrmap)->collections()[0]);
+            c->chunk_merger()->processChunks();
+        }
 
         EXCEPTION_ASSERT( merge_chunk_mock->called );
     }

@@ -90,6 +90,7 @@ namespace Heightmap {
 
 namespace Blocks {
 class MergerTexture;
+class ChunkMerger;
 }
 
 class Renderer;
@@ -174,6 +175,7 @@ public:
 
     BlockLayout block_layout() const;
     VisualizationParams::ConstPtr visualization_params() const;
+    VolatilePtr<Blocks::ChunkMerger>::Ptr chunk_merger() const;
 
 private:
     friend class Heightmap::TfrMapping;
@@ -191,6 +193,7 @@ private:
 
     BlockCache::Ptr cache_;
     std::shared_ptr<Blocks::MergerTexture> merger_;
+    VolatilePtr<Blocks::ChunkMerger>::Ptr chunk_merger_;
 
     bool
         _is_visible;

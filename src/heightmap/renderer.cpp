@@ -9,6 +9,7 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/reference_hash.h"
+#include "heightmap/blocks/chunkmerger.h"
 #include "heightmap/render/renderregion.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"
@@ -368,6 +369,8 @@ void Renderer::
         updateTextures(const Render::RenderSet::references_t& R)
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
+
+    read1(collection)->chunk_merger()->processChunks();
 
     BlockCache::ReadPtr cache( read1(collection)->cache () );
 
