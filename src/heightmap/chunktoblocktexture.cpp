@@ -129,6 +129,12 @@ ChunkToBlockTexture::
 void ChunkToBlockTexture::
         mergeChunk( const pBlock pblock )
 {
+    if (!pblock->glblock)
+      {
+        // This block was garbage collected after the list of matching blocks were created.
+        return;
+      }
+
     INFO TaskTimer tt("ChunkToBlockTexture::mergeChunk");
 
     GlException_CHECK_ERROR();
