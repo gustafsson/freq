@@ -4,6 +4,9 @@
 #include "tfr/chunkfilter.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/block.h"
+#include "heightmap/ichunktoblock.h"
+
+#include <vector>
 
 namespace Heightmap {
 
@@ -11,12 +14,16 @@ class MergeChunk : public VolatilePtr<MergeChunk> {
 public:
     virtual ~MergeChunk() {}
 
-    virtual void prepareChunk(Tfr::ChunkAndInverse&) {}
+    /**
+     * @brief filterChunk is called from a worker thread.
+     * May be empty.
+     */
+    virtual void filterChunk(Tfr::ChunkAndInverse&) {}
 
-    virtual void mergeChunk(
-            const Heightmap::Block& block,
-            const Tfr::ChunkAndInverse& chunk,
-            Heightmap::BlockData& outData ) = 0;
+    /**
+     * @brief createChunkToBlock will be called from the UI thread.
+     */
+    virtual std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
 };
 
 

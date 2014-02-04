@@ -5,8 +5,9 @@
 #include "tfr/chunkfilter.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
+#include "ichunktoblock.h"
 
-#include <boost/noncopyable.hpp>
+class GlTexture;
 
 namespace Heightmap {
 
@@ -14,10 +15,10 @@ namespace Heightmap {
  * @brief The ChunkToBlockTexture class should merge the contents of a chunk
  * directly onto the texture of a block.
  */
-class ChunkToBlockTexture: public boost::noncopyable
+class ChunkToBlockTexture: public IChunkToBlock
 {
 public:
-    ChunkToBlockTexture();
+    ChunkToBlockTexture(Tfr::pChunk chunk);
     ~ChunkToBlockTexture();
 
     ComplexInfo complex_info;
@@ -25,21 +26,18 @@ public:
     bool full_resolution;
     bool enable_subtexel_aggregation;
 
-    void mergeColumnMajorChunk(
-            const Block& block,
-            const Tfr::Chunk&,
-            BlockData& outData );
-
-    void mergeRowMajorChunk(
-            const Block& block,
-            const Tfr::Chunk&,
-            BlockData& outData );
-
-    void mergeChunk(
-            const Block& block,
-            const Tfr::Chunk& );
+    void mergeChunk(pBlock block);
 
 private:
+    void prepVbo(Tfr::FreqAxis display_scale);
+
+    std::shared_ptr<GlTexture> chunk_texture_;
+    Tfr::FreqAxis display_scale;
+    Tfr::FreqAxis chunk_scale;
+    float a_t, b_t;
+    unsigned nScales, nSamples;
+    bool transpose;
+
     unsigned vbo_;
     unsigned shader_;
     unsigned normalization_location_;

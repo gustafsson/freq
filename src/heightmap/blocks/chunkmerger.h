@@ -18,17 +18,16 @@ class ChunkMerger: public VolatilePtr<ChunkMerger>
 public:
     ChunkMerger();
 
-    void addChunk(
-            MergeChunk::Ptr mergechunk,
-            Tfr::ChunkAndInverse pchunk,
-            std::vector<pBlock> intersecting_blocks ) volatile;
+    void addChunk( MergeChunk::Ptr merge_chunk,
+                   Tfr::ChunkAndInverse chunk,
+                   std::vector<pBlock> intersecting_blocks ) volatile;
 
     void processChunks(float timeout) volatile;
 
 private:
     struct Job {
         MergeChunk::Ptr merge_chunk;
-        Tfr::ChunkAndInverse pchunk;
+        Tfr::ChunkAndInverse chunk;
         std::vector<pBlock> intersecting_blocks;
     };
 

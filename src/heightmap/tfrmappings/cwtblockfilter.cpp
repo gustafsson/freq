@@ -19,8 +19,8 @@ CwtBlockFilter::
 {}
 
 
-void CwtBlockFilter::
-        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
+        createChunkToBlock(Tfr::ChunkAndInverse& pchunk)
 {
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
     EXCEPTION_ASSERT( cwt );
@@ -29,16 +29,23 @@ void CwtBlockFilter::
 
     Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( pchunk.chunk.get () );
 
-    Heightmap::ChunkToBlock chunktoblock;
-    chunktoblock.full_resolution = full_resolution;
-    chunktoblock.complex_info = complex_info_;
-    chunktoblock.normalization_factor = normalization_factor;
-    chunktoblock.enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
+    std::vector<IChunkToBlock::Ptr> R;
 
     BOOST_FOREACH( const Tfr::pChunk& chunkpart, chunks.chunks )
-    {
-        chunktoblock.mergeRowMajorChunk (block, *chunkpart, outData);
-    }
+      {
+        Heightmap::ChunkToBlock* chunktoblock;
+        IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock);
+
+        chunktoblock->chunk = chunkpart;
+        chunktoblock->full_resolution = full_resolution;
+        chunktoblock->complex_info = complex_info_;
+        chunktoblock->normalization_factor = normalization_factor;
+        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
+
+        R.push_back (chunktoblockp);
+      }
+
+    return R;
 }
 
 
@@ -104,9 +111,9 @@ void CwtBlockFilter::
             return ref;
         }();
 
-        Heightmap::Block block(ref, bl, vp);
+        Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -119,7 +126,11 @@ void CwtBlockFilter::
         // Do the merge
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::Ptr mc( new CwtBlockFilter(complex_info) );
-        write1(mc)->mergeChunk( block, cai, *block.block_data () );
+
+        write1(mc)->filterChunk(cai);
+        std::vector<IChunkToBlock::Ptr> prep = write1(mc)->createChunkToBlock(cai);
+        for (size_t i=0; i<prep.size (); ++i)
+            prep[i]->mergeChunk (block);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

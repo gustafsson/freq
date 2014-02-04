@@ -4,13 +4,23 @@
 #include "signal/operation.h"
 #include "tfr/chunk.h"
 #include "tfr/transformoperation.h"
+#include "cpumemorystorage.h"
 
 namespace Heightmap {
 
-ChunkToBlock::
-        ChunkToBlock()
+void ChunkToBlock::
+        mergeChunk( pBlock block )
 {
+    bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
 
+    BlockData::WritePtr blockdata(block->block_data());
+
+    if (transpose)
+        mergeColumnMajorChunk (*block, *chunk, *blockdata);
+    else
+        mergeRowMajorChunk (*block, *chunk, *blockdata);
+
+    blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 }
 
 

@@ -71,6 +71,7 @@ protected:
 
 public:
 
+    typedef T element_type;
     typedef boost::shared_ptr<volatile T> Ptr;
     typedef boost::shared_ptr<const volatile T> ConstPtr;
     typedef boost::weak_ptr<volatile T> WeakPtr;

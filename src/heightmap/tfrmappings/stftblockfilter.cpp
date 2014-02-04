@@ -21,7 +21,7 @@ StftBlockFilter::
 
 
 void StftBlockFilter::
-        prepareChunk(Tfr::ChunkAndInverse& chunk)
+        filterChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
         StftBlockFilterParams::WritePtr P(params_);
@@ -31,17 +31,22 @@ void StftBlockFilter::
 }
 
 
-void StftBlockFilter::
-        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+std::vector<IChunkToBlock::Ptr> StftBlockFilter::
+        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
-    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
+    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
 
-    //Heightmap::ChunkToBlock chunktoblock;
-    Heightmap::ChunkToBlockTexture chunktoblock;
-    chunktoblock.normalization_factor = normalization_factor;
-    chunktoblock.mergeColumnMajorChunk (block, *pchunk.chunk, outData);
+    Heightmap::ChunkToBlockTexture* chunktoblock;
+    //IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlock);
+    IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlockTexture(chunk.chunk));
+
+    chunktoblock->normalization_factor = normalization_factor;
+
+    std::vector<IChunkToBlock::Ptr> R;
+    R.push_back (chunktoblockp);
+    return R;
 }
 
 
@@ -117,11 +122,11 @@ void StftBlockFilter::
             return ref;
         }();
 
-        Heightmap::Block block(ref, bl, vp);
+        Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
         Region r = RegionFactory( bl )( ref );
-        block.glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -132,7 +137,8 @@ void StftBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
-        write1(mc)->mergeChunk( block, cai, *block.block_data () );
+        write1(mc)->filterChunk(cai);
+        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
 //        if (DetectGdb::is_running_through_gdb ()) {

@@ -21,7 +21,7 @@ CepstrumBlockFilter::
 
 
 void CepstrumBlockFilter::
-        prepareChunk(Tfr::ChunkAndInverse& chunk)
+        filterChunk(Tfr::ChunkAndInverse&)
 {
     if (params_) {
         CepstrumBlockFilterParams::WritePtr P(params_);
@@ -29,15 +29,22 @@ void CepstrumBlockFilter::
 }
 
 
-void CepstrumBlockFilter::
-        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+std::vector<IChunkToBlock::Ptr> CepstrumBlockFilter::
+        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
-    Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
+    Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( cepstrumchunk );
 
-    Heightmap::ChunkToBlock chunktoblock;
-    chunktoblock.normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
-    chunktoblock.mergeColumnMajorChunk (block, *pchunk.chunk, outData);
+    Heightmap::ChunkToBlock* chunktoblock;
+    IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock);
+    //IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockTexture);
+
+    chunktoblock->normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
+    chunktoblock->chunk = chunk.chunk;
+
+    std::vector<IChunkToBlock::Ptr> R;
+    R.push_back (chunktoblockp);
+    return R;
 }
 
 
@@ -105,9 +112,9 @@ void CepstrumBlockFilter::
             return ref;
         }();
 
-        Heightmap::Block block(ref, bl, vp);
+        Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -118,7 +125,8 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr()) );
-        write1(mc)->mergeChunk( block, cai, *block.block_data () );
+        write1(mc)->filterChunk(cai);
+        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
         if (DetectGdb::is_running_through_gdb ()) {

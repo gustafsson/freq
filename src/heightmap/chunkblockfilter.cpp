@@ -30,9 +30,10 @@ void ChunkBlockFilter::
     Heightmap::TfrMapping::Collections C = read1(tfrmap_)->collections();
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
-
     TfrMapping::pCollection collection = C[pchunk.channel];
+
     Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
+    write1(merge_chunk_)->filterChunk( pchunk );
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
@@ -80,17 +81,35 @@ Tfr::pChunkFilter ChunkBlockFilterDesc::
 
 namespace Heightmap {
 
-class MergeChunkMock : public MergeChunk {
+class ChunkToBlockMock : public IChunkToBlock {
 public:
-    void mergeChunk(
-            const Heightmap::Block&,
-            const Tfr::ChunkAndInverse& chunk,
-            Heightmap::BlockData&)
-    {
-        called |= chunk.chunk->getInterval ();
+    ChunkToBlockMock(bool* called) : called(called) {}
+
+    void mergeChunk( pBlock block ) {
+        *called = true;
     }
 
-    Signal::Intervals called;
+    bool* called;
+};
+
+class MergeChunkMock : public MergeChunk {
+public:
+    MergeChunkMock() : chunk_to_block_called(false) {}
+
+    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+    {
+        calledi |= chunk.chunk->getInterval ();
+
+        std::vector<IChunkToBlock::Ptr> R;
+        IChunkToBlock::Ptr p(new ChunkToBlockMock(&chunk_to_block_called));
+        R.push_back (p);
+        return R;
+    }
+
+    bool chunk_to_block_called;
+    Signal::Intervals calledi;
+
+    bool called() { return chunk_to_block_called && calledi; }
 };
 
 
@@ -142,14 +161,14 @@ void ChunkBlockFilter::
 
         cbf(cai);
 
-        EXCEPTION_ASSERT( !merge_chunk_mock->called );
+        EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
         {
             Heightmap::Collection::ReadPtr c(read1(tfrmap)->collections()[0]);
             c->chunk_merger()->processChunks(-1);
         }
 
-        EXCEPTION_ASSERT( merge_chunk_mock->called );
+        EXCEPTION_ASSERT( merge_chunk_mock->called() );
     }
 }
 

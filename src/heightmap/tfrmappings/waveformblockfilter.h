@@ -13,8 +13,8 @@ namespace TfrMappings {
  */
 class WaveformBlockFilter: public Heightmap::MergeChunk
 {
-private:
-    void mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& chunk, Heightmap::BlockData& outData );
+public:
+    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
 public:
     static void test();

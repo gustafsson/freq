@@ -1,6 +1,5 @@
 #include "chunkmerger.h"
 
-#include "cpumemorystorage.h"
 #include "TaskTimer.h"
 #include "timer.h"
 
@@ -20,14 +19,12 @@ ChunkMerger::
 
 void ChunkMerger::
         addChunk( MergeChunk::Ptr merge_chunk,
-                  Tfr::ChunkAndInverse pchunk,
+                  Tfr::ChunkAndInverse chunk,
                   std::vector<pBlock> intersecting_blocks ) volatile
 {
-    write1(merge_chunk)->prepareChunk( pchunk );
-
     Job j;
     j.merge_chunk = merge_chunk;
-    j.pchunk = pchunk;
+    j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
     WritePtr(this)->jobs.push (j);
 }
@@ -55,14 +52,16 @@ void ChunkMerger::
 void ChunkMerger::
         processJob(Job& j)
 {
-    BOOST_FOREACH( pBlock block, j.intersecting_blocks)
-    {
-        BlockData::WritePtr blockdata(block->block_data());
+    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = write1( j.merge_chunk )->createChunkToBlock( j.chunk );
 
-        INFO TaskTimer tt(boost::format("chunk %s -> block %s") % j.pchunk.input->getInterval () % block->getRegion ());
-        write1(j.merge_chunk)->mergeChunk( *block, j.pchunk, *blockdata );
-        blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-    }
+    BOOST_FOREACH( IChunkToBlock::Ptr chunk_to_block, chunk_to_blocks)
+      {
+        BOOST_FOREACH( pBlock block, j.intersecting_blocks)
+          {
+            INFO TaskTimer tt(boost::format("block %s") % block->getRegion ());
+            chunk_to_block->mergeChunk (block);
+          }
+      }
 }
 
 } // namespace Blocks
