@@ -147,9 +147,9 @@ void MergerTexture::
         {
             BlockData::WritePtr outdata(block->block_data ());
             memcpy(outdata->cpu_copy->getCpuMemory(), src, outdata->cpu_copy->numberOfBytes ());
+            block->discard_new_block_data ();
         }
         glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-        block->discard_new_data_available ();
         glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
     }
 }

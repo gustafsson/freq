@@ -47,9 +47,8 @@ BlockData::WritePtr Block::
 
 
 void Block::
-        discard_new_data_available()
+        discard_new_block_data()
 {
-    BlockData::WritePtr b(block_data_);
     new_data_available_ = false;
 }
 

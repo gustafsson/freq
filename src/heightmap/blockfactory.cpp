@@ -109,7 +109,7 @@ pBlock BlockFactory::
         attempt->glblock.reset( new GlBlock( block_layout_, r.time(), r.scale() ));
 
         attempt->block_data()->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
-        attempt->discard_new_data_available();
+        attempt->discard_new_block_data();
 
 /*
         {
