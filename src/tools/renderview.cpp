@@ -929,9 +929,8 @@ void RenderView::
     float dt = _last_frame.elapsed();
     float wait = 1.f/60.f - 0.0015f; // 1.5 ms overhead
 
-    // This is not needed if vsync is in use
-    bool vsync = 0 != QGLContext::currentContext ()->format ().swapInterval ();
-    vsync = false;
+    // Sleeping in _update_timer is not needed if vsync is in use
+    bool vsync = 0 < QGLContext::currentContext ()->format ().swapInterval ();
     if (vsync)
         wait = 0;
 

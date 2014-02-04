@@ -90,6 +90,8 @@ Application::
     default_record_device(-1)
 {
     QGLFormat glformat;
+    bool vsync = false;
+    glformat.setSwapInterval(vsync ? 1 : 0);
     shared_glwidget_ = new QGLWidget(glformat);
     shared_glwidget_->makeCurrent();
 
