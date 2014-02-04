@@ -105,6 +105,10 @@ unix {
         QMAKE_LFLAGS += -rdynamic
         QMAKE_CXXFLAGS += -fno-omit-frame-pointer
         QMAKE_CFLAGS += -fno-omit-frame-pointer
+
+        # Debug symbols makes stack traces easier to read, it doesn't slow down exectuion speed
+        QMAKE_CFLAGS += -g
+        QMAKE_CXXFLAGS += -g
     }
 }
 
