@@ -119,16 +119,19 @@ GlFrameBuffer::
 }
 
 GlFrameBuffer::ScopeBinding GlFrameBuffer::
-        getScopeBinding() const
+        getScopeBinding()
 {
     bindFrameBuffer();
     return ScopeBinding(*this, &GlFrameBuffer::unbindFrameBuffer);
 }
 
 void GlFrameBuffer::
-        bindFrameBuffer() const
+        bindFrameBuffer()
 {
     GlException_CHECK_ERROR();
+
+    glGetIntegerv (GL_DRAW_FRAMEBUFFER_BINDING, &prev_fbo_draw_);
+    glGetIntegerv (GL_READ_FRAMEBUFFER_BINDING, &prev_fbo_read_);
 
     GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId_));
 
@@ -141,6 +144,8 @@ void GlFrameBuffer::
     GlException_CHECK_ERROR();
 
     GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0) );
+    GlException_SAFE_CALL( glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, prev_fbo_draw_));
+    GlException_SAFE_CALL( glBindFramebufferEXT(GL_READ_FRAMEBUFFER, prev_fbo_read_));
 
     GlException_CHECK_ERROR();
 }

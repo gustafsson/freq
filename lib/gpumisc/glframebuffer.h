@@ -39,13 +39,13 @@ public:
     Binds this frame buffer with glBindFramebufferEXT. Then removes the binding
     when the object goes out of scope.
     */
-    ScopeBinding getScopeBinding() const;
+    ScopeBinding getScopeBinding();
     //ScopeBinding doOffscreenRenderingInCallersScope() const { return getScopeBinding(); }
 
     /**
     Binds this frame buffer with glBindFramebufferEXT.
     */
-    void bindFrameBuffer() const;
+    void bindFrameBuffer();
 
     /**
     Removes the binding with glBindFramebufferEXT.
@@ -96,6 +96,12 @@ private:
     OpenGL render buffer to bind to the depth buffer in the frame buffer.
     */
     unsigned int rboId_;
+
+    /**
+    Used by (un)bindFrameBuffer to restore the state after binding.
+     */
+    int prev_fbo_draw_;
+    int prev_fbo_read_;
 
     /**
       Texture to access the frame buffer.
