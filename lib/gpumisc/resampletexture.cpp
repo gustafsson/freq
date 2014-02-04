@@ -45,7 +45,6 @@ ResampleTexture::
 ResampleTexture::
         ~ResampleTexture()
 {
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0) );
     glDeleteBuffers (1, &vbo);
 }
 

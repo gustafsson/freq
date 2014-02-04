@@ -36,7 +36,6 @@ ChunkToBlockTexture::
 ChunkToBlockTexture::
         ~ChunkToBlockTexture()
 {
-    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
     glDeleteBuffers (1, &vbo_);
 
     glUseProgram(0);

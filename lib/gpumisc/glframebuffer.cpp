@@ -143,7 +143,6 @@ void GlFrameBuffer::
 {
     GlException_CHECK_ERROR();
 
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0) );
     GlException_SAFE_CALL( glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, prev_fbo_draw_));
     GlException_SAFE_CALL( glBindFramebufferEXT(GL_READ_FRAMEBUFFER, prev_fbo_read_));
 
@@ -206,7 +205,7 @@ void GlFrameBuffer::
         if (!fboId_)
             glGenFramebuffersEXT(1, &fboId_);
 
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId_);
+        bindFrameBuffer ();
 
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
                                   GL_COLOR_ATTACHMENT0_EXT,
@@ -230,7 +229,7 @@ void GlFrameBuffer::
 
         EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE_EXT, status );
 
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        unbindFrameBuffer ();
     }
 
     //glFlush();
