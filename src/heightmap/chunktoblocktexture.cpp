@@ -28,6 +28,7 @@ ChunkToBlockTexture::
     glUseProgram(shader_);
     int loc = glGetUniformLocation(shader_, "mytex");
     normalization_location_ = glGetUniformLocation(shader_, "normalization");
+    amplitude_axis_location_ = glGetUniformLocation(shader_, "amplitude_axis");
     glUniform1i(loc, 0); // mytex corresponds to GL_TEXTURE0
     glUseProgram(0);
 }
@@ -89,6 +90,7 @@ void ChunkToBlockTexture::
     glPushMatrixContext mc( GL_MODELVIEW );
     glLoadIdentity();
 
+    Heightmap::AmplitudeAxis amplitude_axis = block.visualization_params ()->amplitude_axis();
     Tfr::FreqAxis display_scale = block.visualization_params ()->display_scale ();
     Region r = Region(Position(),Position());
     r.a.time = (chunk.chunk_offset/chunk.sample_rate).asFloat();
@@ -140,6 +142,7 @@ void ChunkToBlockTexture::
     GlTexture::ScopeBinding texObjBinding = source.getScopeBinding();
     glUseProgram(shader_);
     glUniform1f(normalization_location_, normalization_factor);
+    glUniform1i(amplitude_axis_location_, (int)amplitude_axis);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, Y*2);
     glUseProgram(0);
 

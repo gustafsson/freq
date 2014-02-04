@@ -43,6 +43,7 @@ private:
     unsigned vbo_;
     unsigned shader_;
     unsigned normalization_location_;
+    unsigned amplitude_axis_location_;
 
 public:
     static void test();
