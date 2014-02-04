@@ -266,6 +266,7 @@ pBlock Collection::
                 block = bf.createBlock (ref, pBlock());
             }
 
+            //Blocks::Merger(cache_).fillBlockFromOthers (block);
             merger_->fillBlockFromOthers (block);
 
             write1(cache_)->insert(block);
