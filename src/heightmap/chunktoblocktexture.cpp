@@ -42,6 +42,15 @@ ChunkToBlockTexture::
     unsigned data_width  = transpose ? nScales : nSamples,
              data_height = transpose ? nSamples : nScales;
     chunk_texture_.reset (new GlTexture( data_width, data_height, GL_RG, GL_RG, GL_FLOAT, chunk->transform_data->getCpuMemory ()));
+    {
+        GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
+        // good-looking mip-mapping, don't need anisotropic filtering because the mapping is not at an angle
+        // glblock could however make use of GL_TEXTURE_MAX_ANISOTROPY_EXT
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
+        glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+        glGenerateMipmap (GL_TEXTURE_2D);
+    }
+
 
     chunk_scale = chunk->freqAxis;
     a_t = (chunk->chunk_offset/chunk->sample_rate).asFloat();
