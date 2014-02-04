@@ -156,7 +156,7 @@ void Collection::
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
             VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
-            block->glblock->delete_texture ();
+            //block->glblock->delete_texture ();
         }
     }
 
