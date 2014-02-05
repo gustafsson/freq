@@ -24,6 +24,7 @@
 #include "tools/recordmodel.h"
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/chaininfo.h"
+#include "tools/applicationerrorlogcontroller.h"
 #include "signal/processing/workers.h"
 
 // gpumisc
@@ -1210,6 +1211,7 @@ void RenderView::
     }
 
     _try_gc = 0;
+
 #ifdef USE_CUDA
     } catch (const CudaException &x) {
         TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
@@ -1236,41 +1238,15 @@ void RenderView::
         }
         else throw;
 #endif
-    } catch (const GlException &x) {
-        TaskInfo("");
-        TaskInfo(boost::format("GlException\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-
-        if (2>_try_gc) {
-            Sawe::Application::global_ptr()->clearCaches();
-            emit transformChanged();
-            _try_gc++;
-        }
-        else throw;
-    } catch (const LockFailed& x) {
-        TaskInfo("");
-        TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-    } catch (const std::exception& x) {
-        TaskInfo("");
-        TaskInfo(boost::format("std::exception\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-
-        const char* what = x.what();
-        if (0 == QMessageBox::warning( 0,
-                                       QString("Oups"),
-                                       "Oups...\n" + QString::fromLocal8Bit(what),
-                                       "File bug report", "Ignore", QString::null, 0, 0 ))
-        {
-            model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
-        }
+    } catch (...) {
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception ());
     }
 
 
-	{
-		TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
         emit postPaint();
-	}
+    }
 }
 
 

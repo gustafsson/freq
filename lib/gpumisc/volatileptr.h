@@ -28,7 +28,8 @@ public:
 
 /**
  * The VolatilePtr class guarantees thread safe access to objects, with
- * compile-time errors on missing locks and run-time exceptions on deadlocks.
+ * compile-time on missing locks and run-time exceptions with backtraces
+ * on deadlocks.
  *
  * For examples of usage see
  * VolatilePtrTest::test ()
