@@ -105,6 +105,8 @@ void ChunkToBlockTexture::
     for (unsigned y=0; y<Y; y++)
       {
         float hz = chunk_scale.getFrequency (y * ky - oy);
+        if (hz < display_scale.min_hz)
+            hz = display_scale.min_hz/2;
         float s = display_scale.getFrequencyScalar(hz);
         vertices[i++] = a_t;
         vertices[i++] = s;
