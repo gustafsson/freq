@@ -23,6 +23,7 @@ struct vertex_format {
     float x, y, u, v;
 };
 
+
 ChunkToBlockTexture::
         ChunkToBlockTexture(Tfr::pChunk chunk)
     :
@@ -38,6 +39,7 @@ ChunkToBlockTexture::
 
     nScales = chunk->nScales ();
     nSamples = chunk->nSamples ();
+    nValidSamples = chunk->n_valid_samples;
     transpose = chunk->order == Tfr::Chunk::Order_column_major;
     unsigned data_width  = transpose ? nScales : nSamples,
              data_height = transpose ? nSamples : nScales;
@@ -50,15 +52,20 @@ ChunkToBlockTexture::
         GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
         // good-looking mip-mapping, don't need anisotropic filtering because the mapping is not at an angle
         // glblock could however make use of GL_TEXTURE_MAX_ANISOTROPY_EXT
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
-        glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-        glGenerateMipmap (GL_TEXTURE_2D);
+        //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+        //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 64 ));
+        //glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+        //glGenerateMipmap (GL_TEXTURE_2D);
     }
 
+    Signal::Interval inInterval = chunk->getCoveredInterval();
+    a_t = inInterval.first / chunk->original_sample_rate;
+    b_t = inInterval.last / chunk->original_sample_rate;
+    a_t0 = a_t;
+    b_t0 = b_t;
 
     chunk_scale = chunk->freqAxis;
-    a_t = (chunk->chunk_offset/chunk->sample_rate).asFloat();
-    b_t = a_t + nSamples/chunk->sample_rate;
 }
 
 
@@ -85,19 +92,21 @@ void ChunkToBlockTexture::
 //    chunk_region.b.scale = display_scale.getFrequencyScalar (max_hz);
 //    INFO TaskTimer tt(boost::format("Creating VBO for %s") % chunk_region);
 
+    // Build VBO contents
     std::vector<float> vertices((Y*2)*sizeof(vertex_format)/sizeof(float));
     int i=0;
+
+    // Juggle texture coordinates so that border texels are centered on the border
     float iY = 1.f/(Y-1);
-
     float dt = b_t - a_t;
-    a_t -= 0.5 * dt / nSamples;
-    b_t += 0.5 * dt / nSamples;
+    a_t -= 0.5 * dt / (nSamples-1);
+    b_t += 0.5 * dt / (nSamples-1);
+    float ky = (1.f + 1.f*iY);
+    float oy = 0.5f;
 
-    float ky = (1.f + 1.f/Y);
-    float oy = 0.5f/Y;
-
-    for (unsigned y=0; y<Y; y++) {
-        float hz = chunk_scale.getFrequency (y * ky - oy );
+    for (unsigned y=0; y<Y; y++)
+      {
+        float hz = chunk_scale.getFrequency (y * ky - oy);
         float s = display_scale.getFrequencyScalar(hz);
         vertices[i++] = a_t;
         vertices[i++] = s;
@@ -107,7 +116,7 @@ void ChunkToBlockTexture::
         vertices[i++] = s;
         vertices[i++] = transpose ? y*iY : 1;
         vertices[i++] = transpose ? 1 : y*iY;
-    }
+      }
 
     GlException_CHECK_ERROR();
 
@@ -152,10 +161,18 @@ void ChunkToBlockTexture::
 
     GlException_CHECK_ERROR();
 
+    // Juggle texture coordinates so that border texels are centered on the border
     Block& block = *pblock;
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    Region br = block.getRegion ();
+    const BlockLayout bl = block.block_layout ();
+    float dt = br.time (), ds = br.scale ();
+    br.a.time -= 0.5*dt / bl.texels_per_row ();
+    br.b.time += 0.5*dt / bl.texels_per_row ();
+    br.a.scale -= 0.5*ds / bl.texels_per_column ();
+    br.b.scale += 0.5*ds / bl.texels_per_column ();
 
     // Setup the VBO, need to know the current display scale, which is defined by the block.
+    VisualizationParams::ConstPtr vp = block.visualization_params ();
     prepVbo(vp->display_scale ());
 
     // Disable unwanted capabilities when resampling a texture
@@ -167,11 +184,10 @@ void ChunkToBlockTexture::
     // Setup matrices, while preserving the old ones
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
-    GlException_SAFE_CALL( glViewport(0, 0, block.block_layout ().texels_per_row (), block.block_layout ().texels_per_column ()) );
+    GlException_SAFE_CALL( glViewport(0, 0, bl.texels_per_row (), bl.texels_per_column ()) );
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
-    Region block_region = block.getRegion ();
-    glOrtho(block_region.a.time, block_region.b.time, block_region.a.scale, block_region.b.scale, -10,10);
+    glOrtho(br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
     glPushMatrixContext mc( GL_MODELVIEW );
     glLoadIdentity();
 

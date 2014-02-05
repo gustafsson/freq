@@ -14,6 +14,12 @@ namespace Heightmap {
 /**
  * @brief The ChunkToBlockTexture class should merge the contents of a chunk
  * directly onto the texture of a block.
+ *
+ * TODO There is plenty of potential parallelism to exploit here.
+ * 1) If multiple textures are to be created they can be uploaded asynchronously
+ *    with VBOs first, and then call mergeChunk.
+ * 2) Copying to VBO can be done from worker thread. Creating a texture from
+ *    a VBO is fast. The VBO must be created in the GUI thread.
  */
 class ChunkToBlockTexture: public IChunkToBlock
 {
@@ -34,8 +40,8 @@ private:
     std::shared_ptr<GlTexture> chunk_texture_;
     Tfr::FreqAxis display_scale;
     Tfr::FreqAxis chunk_scale;
-    float a_t, b_t;
-    unsigned nScales, nSamples;
+    float a_t, b_t, a_t0, b_t0;
+    unsigned nScales, nSamples, nValidSamples;
     bool transpose;
 
     unsigned vbo_;
