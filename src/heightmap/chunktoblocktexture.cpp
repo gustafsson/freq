@@ -29,7 +29,7 @@ ChunkToBlockTexture::
     :
       vbo_(0)
 {
-    shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/complex_magnitude.frag");
+    shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag");
     glUseProgram(shader_);
     int loc = glGetUniformLocation(shader_, "mytex");
     normalization_location_ = glGetUniformLocation(shader_, "normalization");

@@ -120,11 +120,8 @@ CUDA_SOURCES += \
 #    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
-    heightmap/heightmap.frag \
-    heightmap/heightmap.vert \
-    heightmap/heightmap_noshadow.vert \
-    heightmap/complex_magnitude.frag \
-    heightmap/noop.vert \
+    heightmap/*.frag \
+    heightmap/*.vert \
 
 CONFIGURATION_SOURCES = \
     sawe/configuration/configuration.cpp
