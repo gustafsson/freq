@@ -107,7 +107,7 @@ namespace Tools
 
     private:
         void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
-        void setBlockFilter(Signal::OperationDesc::Ptr adapter);
+        void setBlockFilter(Tfr::ChunkFilterDesc::Ptr kernel);
         //Tfr::Filter* currentFilter();
         Tfr::TransformDesc::Ptr currentTransform();
         float headSampleRate();

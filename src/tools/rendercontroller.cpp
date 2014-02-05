@@ -302,19 +302,6 @@ void RenderController::
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
-
-
-    // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
-/*
-//Use Signal::Processing namespace
-    if (dynamic_cast<const Tfr::Cwt*>(model()->transform()))
-        model()->project()->worker.min_fps( 1 );
-    else
-        model()->project()->worker.min_fps( 4 );
-
-    // clear worker assumptions of target
-    //model()->project()->worker.target(model()->renderSignalTarget);
-*/
 }
 
 
@@ -419,18 +406,24 @@ void RenderController::
     Tfr::ChunkFilterDesc::Ptr kernel(cbfd
             = new Heightmap::ChunkBlockFilterDesc(model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
-    write1(kernel)->transformDesc(transform_desc); // ambiguous? tfr_mapping also has a transformDesc...
-    Tfr::TransformOperationDesc::Ptr desc( new Tfr::TransformOperationDesc(kernel));
-    setBlockFilter( desc );
+    write1(kernel)->transformDesc(transform_desc);
+    setBlockFilter( kernel );
 }
 
 
 void RenderController::
-        setBlockFilter(Signal::OperationDesc::Ptr adapter)
+        setBlockFilter(Tfr::ChunkFilterDesc::Ptr kernel)
 {
+    Tfr::TransformOperationDesc::Ptr adapter( new Tfr::TransformOperationDesc(kernel));
+    // Ambiguity
+    // Tfr::TransformOperationDesc defines a current transformDesc
+    // VisualizationParams also defines a current transformDesc
+
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     model()->set_filter (adapter);
+
+    EXCEPTION_ASSERT( currentTransform() );
 
     stateChanged();
 
