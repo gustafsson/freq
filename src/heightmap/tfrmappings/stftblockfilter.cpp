@@ -38,11 +38,22 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     EXCEPTION_ASSERT( stftchunk );
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
 
-    Heightmap::ChunkToBlockTexture* chunktoblock;
-    //IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlock);
-    IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlockTexture(chunk.chunk));
-
-    chunktoblock->normalization_factor = normalization_factor;
+    int gl_max_texture_size = 0;
+    glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
+    IChunkToBlock::Ptr chunktoblockp;
+    if (chunk.chunk->nScales () > (unsigned)gl_max_texture_size)
+      {
+        Heightmap::ChunkToBlock* chunktoblock;
+        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlock);
+        chunktoblock->normalization_factor = normalization_factor;
+        chunktoblock->chunk = chunk.chunk;
+      }
+    else
+      {
+        Heightmap::ChunkToBlockTexture* chunktoblock;
+        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlockTexture(chunk.chunk));
+        chunktoblock->normalization_factor = normalization_factor;
+      }
 
     std::vector<IChunkToBlock::Ptr> R;
     R.push_back (chunktoblockp);
