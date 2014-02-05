@@ -6,11 +6,25 @@
 #include "tfr/transformoperation.h"
 #include "cpumemorystorage.h"
 
+#define INFO
+//#define INFO if(0)
+
 namespace Heightmap {
+
+ChunkToBlock::
+        ChunkToBlock(Tfr::pChunk chunk)
+    :
+      chunk(chunk)
+{
+    INFO TaskInfo(boost::format("ChunkToBlock. Chunk %s with nSamples=%u, nScales=%u")
+                      % chunk->getCoveredInterval() % chunk->nSamples () % chunk->nScales ());
+}
 
 void ChunkToBlock::
         mergeChunk( pBlock block )
 {
+    INFO TaskTimer tt(boost::format("ChunkToBlock::mergeChunk %s") % block->getRegion ());
+
     bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
 
     BlockData::WritePtr blockdata(block->block_data());
@@ -137,11 +151,6 @@ class DummyKernelDesc: public Tfr::ChunkFilterDesc {
 void ChunkToBlock::
         test()
 {
-    ChunkToBlock ctb;
-    ctb.complex_info = ComplexInfo_Amplitude_Non_Weighted;
-    ctb.enable_subtexel_aggregation = false;
-    ctb.full_resolution = false;
-    ctb.normalization_factor = 1;
     BlockLayout bl(1<<8,1<<8,100);
     VisualizationParams::Ptr vp(new VisualizationParams);
     Tfr::FreqAxis ds; ds.setLinear (1);
@@ -167,6 +176,12 @@ void ChunkToBlock::
     pBlock block( new Block (ref, bl, vp));
     BlockData blockdata;
     blockdata.cpu_copy.reset( new DataStorage<float>(32,32) );
+
+    ChunkToBlock ctb(chunk);
+    ctb.complex_info = ComplexInfo_Amplitude_Non_Weighted;
+    ctb.enable_subtexel_aggregation = false;
+    ctb.full_resolution = false;
+    ctb.normalization_factor = 1;
 
     ctb.mergeColumnMajorChunk(
             *block,

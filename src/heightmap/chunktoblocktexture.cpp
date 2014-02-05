@@ -46,7 +46,7 @@ ChunkToBlockTexture::
     Tfr::ChunkElement *p = chunk->transform_data->getCpuMemory ();
     // Assume 'p' is real valued. The caller needs to fix this first.
     Signal::Interval inInterval = chunk->getCoveredInterval();
-    INFO TaskTimer tt(boost::format("Creating texture for chunk %s with nSamples=%u, nScales=%u")
+    INFO TaskTimer tt(boost::format("ChunkToBlockTexture. Creating texture for chunk %s with nSamples=%u, nScales=%u")
                       % inInterval % nSamples % nScales);
     chunk_texture_.reset (new GlTexture( data_width, data_height, GL_RG, GL_RED, GL_FLOAT, p));
     {

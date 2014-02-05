@@ -44,9 +44,8 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     if (chunk.chunk->nScales () > (unsigned)gl_max_texture_size)
       {
         Heightmap::ChunkToBlock* chunktoblock;
-        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlock);
+        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
         chunktoblock->normalization_factor = normalization_factor;
-        chunktoblock->chunk = chunk.chunk;
       }
     else
       {

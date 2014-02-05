@@ -12,7 +12,8 @@ namespace Heightmap {
 class ChunkToBlock: public IChunkToBlock
 {
 public:
-    Tfr::pChunk chunk;
+    ChunkToBlock(Tfr::pChunk chunk);
+
     ComplexInfo complex_info;
     float normalization_factor;
     bool full_resolution;
@@ -21,6 +22,8 @@ public:
     void mergeChunk( pBlock block );
 
 private:
+    Tfr::pChunk chunk;
+
     void mergeColumnMajorChunk(
             const Block& block,
             const Tfr::Chunk&,

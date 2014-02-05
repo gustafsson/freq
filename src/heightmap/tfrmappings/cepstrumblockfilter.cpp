@@ -36,11 +36,10 @@ std::vector<IChunkToBlock::Ptr> CepstrumBlockFilter::
     EXCEPTION_ASSERT( cepstrumchunk );
 
     Heightmap::ChunkToBlock* chunktoblock;
-    IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock);
+    IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
     //IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockTexture);
 
     chunktoblock->normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
-    chunktoblock->chunk = chunk.chunk;
 
     std::vector<IChunkToBlock::Ptr> R;
     R.push_back (chunktoblockp);

@@ -34,9 +34,8 @@ std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
     BOOST_FOREACH( const Tfr::pChunk& chunkpart, chunks.chunks )
       {
         Heightmap::ChunkToBlock* chunktoblock;
-        IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock);
+        IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunkpart));
 
-        chunktoblock->chunk = chunkpart;
         chunktoblock->full_resolution = full_resolution;
         chunktoblock->complex_info = complex_info_;
         chunktoblock->normalization_factor = normalization_factor;
