@@ -183,6 +183,7 @@ public:
         const T* operator-> () const { return t_; }
         const T& operator* () const { return *t_; }
         const T* get () const { return t_; }
+        Ptr getPtr () const { return p_; }
 
     private:
         // This constructor is not implemented as it's an error to pass a
@@ -269,6 +270,7 @@ public:
         T* operator-> () const { return t_; }
         T& operator* () const { return *t_; }
         T* get () const { return t_; }
+        Ptr getPtr () const { return p_; }
 
     private:
         // See ReadPtr(const T*)

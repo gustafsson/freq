@@ -36,7 +36,7 @@ public:
 
     /**
      * @brief process computes the operation
-     * @param A buffer with data to process. The interval of the buffer will
+     * @param A buffer with data to process. The interval of the buffer must
      * be equal to a value returned by 'OperationDesc::requiredInterval(...)' param 'I'.
      * @return processed data. Returned buffer interval must be equal to expectedOutput in:
      * 'OperationDesc::requiredInterval(b->getInterval(), &expectedOutput)'

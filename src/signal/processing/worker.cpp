@@ -167,7 +167,7 @@ void Worker::
             if (task)
               {
                 DEBUGINFO TaskTimer tt(boost::format("Running task %s") % read1(task)->expected_output());
-                write1(task)->run(computing_engine_);
+                write1(task)->run();
                 emit oneTaskDone();
               }
             else
@@ -275,9 +275,16 @@ public:
 
 class DummyTask: public Task {
 public:
-    DummyTask() : Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(), Signal::Interval()) {}
+    DummyTask()
+        : Task(
+              Step::WritePtr(Step::Ptr(new Step(Signal::OperationDesc::Ptr()))),
+              std::vector<Step::Ptr>(),
+              Signal::Operation::Ptr(),
+              Signal::Interval(),
+              Signal::Interval())
+    {}
 
-    void run(Signal::ComputingEngine::Ptr) override {
+    void run() override {
         // Keeps on running a lot of tasks as fast as possible
     }
 };

@@ -44,7 +44,6 @@ public:
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
-    Signal::Operation::Ptr      operation(Signal::ComputingEngine::Ptr);
     Signal::OperationDesc::Ptr  operation_desc() const;
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
@@ -61,7 +60,6 @@ public:
     Signal::pBuffer             readFixedLengthFromCache(Signal::Interval I) const;
 
 private:
-    typedef std::map<Signal::ComputingEngine::WeakPtr, Signal::Operation::Ptr> OperationMap;
     typedef std::map<Task*, Signal::Interval> RunningTaskMap;
 
     Signal::OperationDesc::Ptr  died_;
@@ -71,13 +69,11 @@ private:
     RunningTaskMap              running_tasks;
 
     Signal::OperationDesc::Ptr  operation_desc_;
-    OperationMap                operations_;
 
     QWaitCondition              wait_for_tasks_;
 
     std::string                 operation_name();
     Signal::Intervals           currently_processing() const; // from running_tasks
-    void                        gc();
 
 public:
     static void test();

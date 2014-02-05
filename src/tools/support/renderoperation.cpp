@@ -141,11 +141,12 @@ void RenderOperationDesc::
         RenderTarget::Ptr rtp(target = new RenderOperationDescMockTarget());
 
         Signal::OperationDesc::Ptr ro(rod = new RenderOperationDesc(operation, rtp));
+        Signal::Operation::Ptr o = write1(ro)->createOperation(0);
 
         // Operations are processed through a Processing::Step
         Processing::Step step(ro);
         step.deprecateCache (Interval(4,9));
-        write1(step.operation(ComputingEngine::Ptr()))->process (pBuffer());
+        write1(o)->process (pBuffer());
 
         EXCEPTION_ASSERT_EQUALS( Interval(4,9), target->I );
         EXCEPTION_ASSERT_EQUALS( 1, target->processed_count );

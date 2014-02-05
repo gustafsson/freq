@@ -25,20 +25,21 @@ public:
     typedef boost::error_info<struct crashed_expected_output_tag, Signal::Interval> crashed_expected_output;
 
     // input_buffer and output_buffer does not need to be allocated beforehand
-    Task (Step* writeable_step, Step::Ptr step, std::vector<Step::Ptr> children, Signal::Interval expected_output, Signal::Interval required_input);
+    Task (const Step::WritePtr& step, std::vector<Step::Ptr> children, Signal::Operation::Ptr operation, Signal::Interval expected_output, Signal::Interval required_input);
     ~Task();
 
     Signal::Interval        expected_output() const;
 
-    virtual void run(Signal::ComputingEngine::Ptr);
+    virtual void run();
 
 private:
     Step::Ptr               step_;
     std::vector<Step::Ptr>  children_;
+    Signal::Operation::Ptr  operation_;
     Signal::Interval        expected_output_;
     Signal::Interval        required_input_;
 
-    void                    run_private(Signal::ComputingEngine::Ptr);
+    void                    run_private();
     Signal::pBuffer         get_input() const;
     void                    finish(Signal::pBuffer);
     void                    cancel();

@@ -42,7 +42,6 @@ void Step::
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
-    operations_.clear ();
 
     Signal::OperationDesc::Ptr died = died_;
     bool was_locked = !readWriteLock ()->tryLockForWrite ();
@@ -84,7 +83,6 @@ Intervals Step::
 {
     if (deprecated == Interval::Interval_ALL) {
         cache_.clear ();
-        operations_.clear ();
     }
 
     if (operation_desc_ && deprecated) {
@@ -118,26 +116,6 @@ Intervals Step::
         out_of_date() const
 {
     return not_started_ | currently_processing();
-}
-
-
-Operation::Ptr Step::
-        operation(ComputingEngine::Ptr ce)
-{
-    gc();
-
-    ComputingEngine::WeakPtr wp(ce);
-    OperationMap::iterator oi = operations_.find (wp);
-
-    if (oi != operations_.end ())
-    {
-        return oi->second;
-    }
-
-    Operation::Ptr o = read1(operation_desc_)->createOperation (ce.get ());
-    operations_[wp] = o;
-
-    return o;
 }
 
 
@@ -226,13 +204,10 @@ void Step::
         sleepWhileTasks(int sleep_ms)
 {
     // The caller keeps a lock that is released while waiting
-    gc();
-
     while (!running_tasks.empty ()) {
         DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
         if (!wait_for_tasks_.wait (readWriteLock(), sleep_ms < 0 ? ULONG_MAX : sleep_ms))
             return;
-        gc();
     }
 }
 
@@ -242,31 +217,6 @@ pBuffer Step::
 {
     return cache_.read (I);
 }
-
-
-template<typename T>
-void weakmap_gc(T& m) {
-    for (typename T::iterator i = m.begin (); i != m.end (); )
-    {
-        if (i->first.lock()) {
-            i++;
-        } else {
-            m.erase (i);
-            i = m.begin ();
-        }
-    }
-}
-
-void Step::
-        gc()
-{
-    // Garbage collection, remove operation mappings whose ComputingEngine has been removed.
-    weakmap_gc(operations_);
-
-    //weakmap_gc(running_tasks);
-    //wait_for_tasks_.wakeAll ();
-}
-
 
 } // namespace Processing
 } // namespace Signal
@@ -311,12 +261,16 @@ void Step::
         OperationDesc::Ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
         Step s(silence);
         EXCEPTION_ASSERT(!s.get_crashed ());
+        EXCEPTION_ASSERT(s.operation_desc ());
+        EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
         EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
-        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(s.operation (Signal::ComputingEngine::Ptr()).get ()));
+        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
         s.mark_as_crashed ();
         EXCEPTION_ASSERT(s.get_crashed ());
+        EXCEPTION_ASSERT(s.operation_desc ());
+        EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
         EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
-        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperation*>(s.operation (Signal::ComputingEngine::Ptr()).get ()));
+        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
     }
 }
 
