@@ -371,7 +371,8 @@ void Renderer::
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
 
     Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
-    chunk_merger->processChunks(10e-3);
+    // chunk_merger->processChunks(10e-3);
+    chunk_merger->processChunks(-1);
 
     BlockCache::ReadPtr cache( read1(collection)->cache () );
 

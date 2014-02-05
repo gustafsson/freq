@@ -923,19 +923,22 @@ void RenderView::
     float wait = 1.f/60.f - 0.0015f; // 1.5 ms overhead
 
     // Sleeping in _update_timer is not needed if vsync is in use
-    bool vsync = 0 < QGLContext::currentContext ()->format ().swapInterval ();
-    if (vsync)
-        wait = 0;
+    if (const QGLContext* context = QGLContext::currentContext ())
+      {
+        bool vsync = 0 < context->format ().swapInterval ();
+        if (vsync)
+            wait = 0;
+      }
 
     if (!_update_timer->isActive())
-    {
+      {
         if (wait < dt)
             wait = dt;
 
         unsigned ms = (wait-dt)*1e3; // round down
 
         _update_timer->start(ms);
-    }
+      }
 }
 
 
