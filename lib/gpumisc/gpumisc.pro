@@ -30,6 +30,7 @@ SOURCES += \
     debugbuf.cpp \
     detectgdb.cpp \
     demangle.cpp \
+    factor.cpp \
     exceptionassert.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
@@ -70,6 +71,7 @@ HEADERS += \
     demangle.h \
     detectgdb.h \
     deprecated.h \
+    factor.h \
     exceptionassert.h \
     expectexception.h \
     gl.h \

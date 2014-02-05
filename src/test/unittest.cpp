@@ -5,6 +5,7 @@
 #include "datastoragestring.h"
 #include "exceptionassert.h"
 #include "atomicvalue.h"
+#include "factor.h"
 #include "geometricalgebra.h"
 #include "glframebuffer.h"
 #include "glinfo.h"
@@ -104,6 +105,7 @@ int UnitTest::
         RUNTEST(DataStorageString);
         RUNTEST(ExceptionAssert);
         RUNTEST(AtomicValueTest);
+        RUNTEST(Factor);
         RUNTEST(GeometricAlgebra);
         RUNTEST(GlFrameBuffer);
         RUNTEST(glinfo);
