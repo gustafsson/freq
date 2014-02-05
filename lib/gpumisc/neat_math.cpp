@@ -4,6 +4,7 @@
 #include "detectgdb.h"
 
 #include <random>
+#include <thread>
 
 using namespace std;
 
@@ -185,6 +186,9 @@ void neat_math::
     }
 
     {
+        std::chrono::microseconds dura( 0 );
+        std::this_thread::sleep_for( dura );
+
         Timer t;
 
         EXCEPTION_ASSERT_EQUALS( floor_log2(1567.f), 10 );
