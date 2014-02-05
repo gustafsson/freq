@@ -63,6 +63,7 @@ Renderer::Renderer()
      takes too long.
      */
     _redundancy(1.0f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
+    _need_more_frames(false),
     _frustum_clip( &gl_projection, &render_settings.left_handed_axes ),
     _render_block( &render_settings ),
     _mesh_fraction_width(1),
@@ -98,6 +99,15 @@ bool Renderer::
         isInitialized()
 {
     return Initialized == _initialized;
+}
+
+
+bool Renderer::
+        needMoreFrames()
+{
+    bool r = _need_more_frames;
+    _need_more_frames = false;
+    return r;
 }
 
 
@@ -371,8 +381,8 @@ void Renderer::
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
 
     Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
-    // chunk_merger->processChunks(10e-3);
-    chunk_merger->processChunks(-1);
+    _need_more_frames |= !chunk_merger->processChunks(10e-3);
+    //chunk_merger->processChunks(-1);
 
     BlockCache::ReadPtr cache( read1(collection)->cache () );
 

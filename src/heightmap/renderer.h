@@ -48,6 +48,7 @@ public:
     unsigned trianglesPerBlock();
     void setSize( unsigned w, unsigned h );
     bool isInitialized();
+    bool needMoreFrames();
     void init();
 
     float redundancy();
@@ -66,6 +67,7 @@ private:
     InitializedLevel _initialized;
     bool _draw_flat;
     float _redundancy;
+    bool _need_more_frames;
     Render::FrustumClip _frustum_clip;
     std::vector<GLvector> clippedFrustum;
     Render::RenderBlock _render_block;

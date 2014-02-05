@@ -30,7 +30,7 @@ void ChunkMerger::
 }
 
 
-void ChunkMerger::
+bool ChunkMerger::
         processChunks(float timeout) volatile
 {
     Timer t;
@@ -39,13 +39,14 @@ void ChunkMerger::
         {
             WritePtr self(this);
             if (self->jobs.empty ())
-                return;
+                return true;
             job = self->jobs.top ();
             self->jobs.pop ();
         }
 
         processJob (job);
     }
+    return false;
 }
 
 

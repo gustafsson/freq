@@ -22,7 +22,12 @@ public:
                    Tfr::ChunkAndInverse chunk,
                    std::vector<pBlock> intersecting_blocks ) volatile;
 
-    void processChunks(float timeout) volatile;
+    /**
+     * @brief processChunks
+     * @param timeout
+     * @return true if finished within timeout.
+     */
+    bool processChunks(float timeout) volatile;
 
 private:
     struct Job {

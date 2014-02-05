@@ -727,6 +727,9 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
+    if (model->renderer->needMoreFrames())
+        redraw (); // won't redraw right away, but enqueue an update
+
     TIME_PAINTGL_DRAW
     {
         unsigned collections_n = 0;
