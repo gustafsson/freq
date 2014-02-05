@@ -261,7 +261,7 @@ void PlaybackController::
 void PlaybackController::
         stop()
 {
-    TaskInfo("PlaybackController::receiveStop()");
+    //TaskInfo("PlaybackController::receiveStop()");
 
     Signal::Operation::Ptr p = model()->playback();
     if (p) {
