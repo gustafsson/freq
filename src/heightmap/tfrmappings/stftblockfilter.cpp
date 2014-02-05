@@ -1,6 +1,7 @@
 #include "stftblockfilter.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunktoblocktexture.h"
+#include "heightmap/chunktoblockdegeneratetexture.h"
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
@@ -41,6 +42,7 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
     IChunkToBlock::Ptr chunktoblockp;
+    gl_max_texture_size = INT_MAX;
     if (chunk.chunk->nScales () > (unsigned)gl_max_texture_size ||
         chunk.chunk->nSamples () > (unsigned)gl_max_texture_size)
       {
@@ -56,8 +58,8 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
         for (int i = 0; i<n; ++i)
             p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
 
-        Heightmap::ChunkToBlockTexture* chunktoblock;
-        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlockTexture(chunk.chunk));
+        Heightmap::ChunkToBlockDegenerateTexture* chunktoblock;
+        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
         chunktoblock->normalization_factor = normalization_factor;
       }
 

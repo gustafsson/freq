@@ -4,6 +4,7 @@
         <file>heightmap.frag</file>
         <file>heightmap.vert</file>
         <file>noop.vert</file>
+        <file>chunktoblock_degenerate.frag</file>
         <file>chunktoblock.frag</file>
     </qresource>
 </RCC>
