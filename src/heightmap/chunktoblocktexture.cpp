@@ -45,6 +45,9 @@ ChunkToBlockTexture::
              data_height = transpose ? nSamples : nScales;
     Tfr::ChunkElement *p = chunk->transform_data->getCpuMemory ();
     // Assume 'p' is real valued. The caller needs to fix this first.
+    Signal::Interval inInterval = chunk->getCoveredInterval();
+    INFO TaskTimer tt(boost::format("Creating texture for chunk %s with nSamples=%u, nScales=%u")
+                      % inInterval % nSamples % nScales);
     chunk_texture_.reset (new GlTexture( data_width, data_height, GL_RG, GL_RED, GL_FLOAT, p));
     {
         GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
@@ -57,7 +60,6 @@ ChunkToBlockTexture::
         //glGenerateMipmap (GL_TEXTURE_2D);
     }
 
-    Signal::Interval inInterval = chunk->getCoveredInterval();
     a_t = inInterval.first / chunk->original_sample_rate;
     b_t = inInterval.last / chunk->original_sample_rate;
     a_t0 = a_t;
@@ -157,13 +159,14 @@ void ChunkToBlockTexture::
         return;
       }
 
-    INFO TaskTimer tt("ChunkToBlockTexture::mergeChunk");
+    Block& block = *pblock;
+    Region br = block.getRegion ();
+
+    INFO TaskTimer tt(boost::format("ChunkToBlockTexture::mergeChunk %s") % br);
 
     GlException_CHECK_ERROR();
 
     // Juggle texture coordinates so that border texels are centered on the border
-    Block& block = *pblock;
-    Region br = block.getRegion ();
     const BlockLayout bl = block.block_layout ();
     float dt = br.time (), ds = br.scale ();
     br.a.time -= 0.5*dt / bl.texels_per_row ();

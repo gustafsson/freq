@@ -36,6 +36,7 @@ bool ChunkMerger::
     Timer t;
     while (timeout < 0 || t.elapsed () < timeout) {
         Job job;
+
         {
             WritePtr self(this);
             if (self->jobs.empty ())
