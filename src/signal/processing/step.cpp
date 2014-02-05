@@ -2,6 +2,7 @@
 #include "test/operationmockups.h"
 
 #include "TaskTimer.h"
+#include "log.h"
 
 #include <boost/foreach.hpp>
 
@@ -154,10 +155,10 @@ void Step::
         cache_.put (result);
     }
 
-    int C = running_tasks.count (taskid);
-    if (C!=1) {
-        TaskInfo("C = %d, taskid = %x", C, taskid);
-        EXCEPTION_ASSERTX( running_tasks.count (taskid)==1, "Could not find given task");
+    int matched_task = running_tasks.count (taskid);
+    if (1 != matched_task) {
+        Log("C = %d, taskid = %x on %s") % matched_task % taskid % operation_name ();
+        EXCEPTION_ASSERT_EQUALS( 1, matched_task );
     }
 
     Intervals expected_output = running_tasks[ taskid ];
@@ -165,11 +166,7 @@ void Step::
     Intervals update_miss = expected_output - result_interval;
     not_started_ |= update_miss;
 
-    if (!expected_output) {
-        TaskInfo(format("The task was not recognized. %1% on %2%")
-                 % result_interval
-                 % operation_name());
-    } else if (!result_interval) {
+    if (!result) {
         TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
                  % update_miss
                  % operation_name());
