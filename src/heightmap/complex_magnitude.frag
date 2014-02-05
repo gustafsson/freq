@@ -6,8 +6,8 @@ uniform int amplitude_axis;
 
 void main()
 {
-    vec2 t = texture2D(mytex, gl_TexCoord[0].st).rg;
-    float v = length(t)*normalization;
+    float v = sqrt(texture2D(mytex, gl_TexCoord[0].st).r);
+    v *= normalization;
 
     if (0==amplitude_axis)
         v *= 25.0;

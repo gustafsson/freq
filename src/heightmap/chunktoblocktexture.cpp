@@ -41,7 +41,11 @@ ChunkToBlockTexture::
     transpose = chunk->order == Tfr::Chunk::Order_column_major;
     unsigned data_width  = transpose ? nScales : nSamples,
              data_height = transpose ? nSamples : nScales;
-    chunk_texture_.reset (new GlTexture( data_width, data_height, GL_RG, GL_RG, GL_FLOAT, chunk->transform_data->getCpuMemory ()));
+    Tfr::ChunkElement *p = chunk->transform_data->getCpuMemory ();
+    int n = chunk->transform_data->numberOfElements ();
+    for (int i = 0; i<n; ++i)
+        p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
+    chunk_texture_.reset (new GlTexture( data_width, data_height, GL_RG, GL_RED, GL_FLOAT, p));
     {
         GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
         // good-looking mip-mapping, don't need anisotropic filtering because the mapping is not at an angle
