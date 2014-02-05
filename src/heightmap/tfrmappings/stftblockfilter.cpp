@@ -41,7 +41,8 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
     IChunkToBlock::Ptr chunktoblockp;
-    if (chunk.chunk->nScales () > (unsigned)gl_max_texture_size)
+    if (chunk.chunk->nScales () > (unsigned)gl_max_texture_size ||
+        chunk.chunk->nSamples () > (unsigned)gl_max_texture_size)
       {
         Heightmap::ChunkToBlock* chunktoblock;
         chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
