@@ -5,7 +5,7 @@
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/chunkfilter.h"
 
-#include <stack>
+#include <queue>
 
 namespace Heightmap {
 namespace Blocks {
@@ -36,7 +36,7 @@ private:
         std::vector<pBlock> intersecting_blocks;
     };
 
-    std::stack<Job> jobs;
+    std::queue<Job> jobs;
 
     static void processJob(Job& j);
 public:

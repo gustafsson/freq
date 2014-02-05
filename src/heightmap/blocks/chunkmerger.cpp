@@ -41,7 +41,7 @@ bool ChunkMerger::
             WritePtr self(this);
             if (self->jobs.empty ())
                 return true;
-            job = self->jobs.top ();
+            job = self->jobs.front ();
             self->jobs.pop ();
         }
 
