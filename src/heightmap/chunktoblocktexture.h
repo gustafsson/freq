@@ -16,6 +16,7 @@ namespace Heightmap {
  * directly onto the texture of a block.
  *
  * TODO There is plenty of potential parallelism to exploit here.
+ * 0) Measure what takes the most time.
  * 1) If multiple textures are to be created they can be uploaded asynchronously
  *    with VBOs first, and then call mergeChunk.
  * 2) Copying to VBO can be done from worker thread. Creating a texture from

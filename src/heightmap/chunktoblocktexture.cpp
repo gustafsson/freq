@@ -44,9 +44,7 @@ ChunkToBlockTexture::
     unsigned data_width  = transpose ? nScales : nSamples,
              data_height = transpose ? nSamples : nScales;
     Tfr::ChunkElement *p = chunk->transform_data->getCpuMemory ();
-    int n = chunk->transform_data->numberOfElements ();
-    for (int i = 0; i<n; ++i)
-        p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
+    // Assume 'p' is real valued. The caller needs to fix this first.
     chunk_texture_.reset (new GlTexture( data_width, data_height, GL_RG, GL_RED, GL_FLOAT, p));
     {
         GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();

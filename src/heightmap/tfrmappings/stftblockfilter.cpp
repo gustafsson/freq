@@ -50,6 +50,12 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
       }
     else
       {
+        // Compute the norm of the chunk prior to resampling and interpolating
+        Tfr::ChunkElement *p = chunk.chunk->transform_data->getCpuMemory ();
+        int n = chunk.chunk->transform_data->numberOfElements ();
+        for (int i = 0; i<n; ++i)
+            p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
+
         Heightmap::ChunkToBlockTexture* chunktoblock;
         chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlockTexture(chunk.chunk));
         chunktoblock->normalization_factor = normalization_factor;
