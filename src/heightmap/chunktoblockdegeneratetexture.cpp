@@ -54,8 +54,6 @@ ChunkToBlockDegenerateTexture::
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, p));
 
         //GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
-        // good-looking mip-mapping, don't need anisotropic filtering because the mapping is not at an angle
-        // glblock could however make use of GL_TEXTURE_MAX_ANISOTROPY_EXT
         //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
         //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 64 ));
         //glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST);
@@ -96,11 +94,10 @@ ChunkToBlockDegenerateTexture::
 
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, 0));
 
+        // Can't use mip-mapping nor ANISOTROPY_EXT filtering in degenerate texture.
         GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
         GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
         GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
-        // Would benefit from doing these texture transfers in another thread.
-        // Would have to first copy into a VBO and then into a texture.
         glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height-1, GL_RG, GL_FLOAT, p);
         glTexSubImage2D (GL_TEXTURE_2D, 0, 0, tex_height-1, last_row_length, 1, GL_RG, GL_FLOAT, &p[tex_width*(tex_height-1)]);
       }

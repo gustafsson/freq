@@ -42,9 +42,7 @@ private:
         std::vector<pBlock> intersecting_blocks;
     };
 
-    struct Jobs: public VolatilePtr<Jobs> {
-        std::queue<Job> jobs;
-    };
+    class Jobs: public VolatilePtr<Jobs>, public std::queue<Job> {};
 
 
     Jobs::Ptr   jobs;

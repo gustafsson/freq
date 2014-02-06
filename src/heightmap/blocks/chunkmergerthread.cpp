@@ -2,6 +2,7 @@
 
 #include "TaskTimer.h"
 #include "timer.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 #include <QGLWidget>
 
@@ -25,21 +26,25 @@ ChunkMergerThread::
 ChunkMergerThread::
         ~ChunkMergerThread()
 {
+    bool was_idle = isEmpty ();
     clear ();
     requestInterruption ();
     semaphore.release (1);
-    QThread::wait ();
+    if (!was_idle)
+      {
+        TaskTimer ti("~ChunkMergerThread");
+        QThread::wait ();
+      }
 }
 
 
 void ChunkMergerThread::
         clear()
 {
-    Jobs::WritePtr jobsp(this->jobs);
-    std::queue<Job>& jobs = jobsp->jobs;
+    Jobs::WritePtr jobs(this->jobs);
 
-    while (!jobs.empty ())
-        jobs.pop ();
+    while (!jobs->empty ())
+        jobs->pop ();
 }
 
 
@@ -48,11 +53,15 @@ void ChunkMergerThread::
                   Tfr::ChunkAndInverse chunk,
                   std::vector<pBlock> intersecting_blocks )
 {
+    EXCEPTION_ASSERT( merge_chunk );
+    EXCEPTION_ASSERT( chunk.chunk );
+    EXCEPTION_ASSERT( intersecting_blocks.size () );
+
     Job j;
     j.merge_chunk = merge_chunk;
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
-    write1(jobs)->jobs.push (j);
+    write1(jobs)->push (j);
     semaphore.release (1);
 }
 
@@ -96,28 +105,46 @@ bool ChunkMergerThread::
 bool ChunkMergerThread::
         isEmpty() const
 {
-    return read1(jobs)->jobs.empty();
+    return read1(jobs)->empty();
 }
 
 
 void ChunkMergerThread::
         run()
 {
-    QGLWidget w(0, shared_gl_context);
-    w.makeCurrent ();
-
-    while (!isInterruptionRequested ())
+    try
       {
-        while (!isEmpty ())
+        QGLWidget w(0, shared_gl_context);
+        w.makeCurrent ();
+
+        while (!isInterruptionRequested ())
           {
-            Job job = read1(jobs)->jobs.front ();
+            while (true)
+              {
+                Job job;
+                  {
+                    Jobs::ReadPtr jobsr(jobs);
+                    if (jobsr->empty ())
+                        break;
+                    job = jobsr->front ();
+                  }
 
-            processJob (job);
+                processJob (job);
 
-            write1(jobs)->jobs.pop ();
+                  {
+                    Jobs::WritePtr jobsw(jobs);
+                    // Both 'clear' and 'addChunk' may have been called in between
+                    if (!jobsw->empty() && job.chunk.chunk == jobsw->front().chunk.chunk)
+                        jobsw->pop ();
+                  }
+              }
+
+            semaphore.acquire ();
           }
-
-        semaphore.acquire ();
+      }
+    catch (...)
+      {
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception());
       }
 }
 
