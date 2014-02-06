@@ -189,7 +189,7 @@ private:
     QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openWatched(std::string project_file);
-    static boost::shared_ptr<Project> openOperation(Signal::OperationDesc::Ptr operation);
+    static boost::shared_ptr<Project> openOperation(Signal::OperationDesc::Ptr operation, std::string name="");
     static boost::shared_ptr<Project> openProject(std::string project_file);
 #if !defined(TARGET_reader)
     static boost::shared_ptr<Project> openAudio(std::string audio_file);

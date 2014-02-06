@@ -11,6 +11,11 @@ TfrMapping::
       visualization_params_(new VisualizationParams),
       length_( 0 )
 {
+    TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
+                block_layout_.targetSampleRate (),
+                block_layout_.texels_per_row(),
+                block_layout_.texels_per_column ());
+
     this->channels (channels);
 }
 
@@ -18,6 +23,12 @@ TfrMapping::
 TfrMapping::
         ~TfrMapping()
 {
+    TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
+                block_layout_.targetSampleRate (),
+                block_layout_.texels_per_row(),
+                block_layout_.texels_per_column (),
+                channels ());
+
     collections_.clear();
 }
 
@@ -34,6 +45,11 @@ void TfrMapping::
 {
     if (bl == block_layout_)
         return;
+
+    TaskInfo ti("Target sample rate: %g. %d x %d blocks",
+                bl.targetSampleRate (),
+                bl.texels_per_row(),
+                bl.texels_per_column ());
 
     block_layout_ = bl;
 

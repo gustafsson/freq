@@ -63,6 +63,7 @@ namespace Tools
         void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
         void recompute_extent();
+        void set_extent(Signal::OperationDesc::Extent extent);
 
         Signal::OperationDesc::Ptr renderOperationDesc();
 

@@ -527,10 +527,14 @@ pProject Project::
 
 
 pProject Project::
-        openOperation(Signal::OperationDesc::Ptr operation)
+        openOperation(Signal::OperationDesc::Ptr operation, std::string name)
 {
-    pProject p( new Project(read1(operation)->toString().toStdString() ));
+    if (name.empty ())
+        name = read1(operation)->toString().toStdString();
+
+    pProject p( new Project(name) );
     p->createMainWindow ();
+    p->tools ().render_model.set_extent (read1(operation)->extent());
     p->appendOperation (operation);
     p->setModified (false);
 
@@ -547,12 +551,7 @@ pProject Project::
     boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
     Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
 
-    pProject p( new Project(a->name() ));
-    p->createMainWindow ();
-    p->appendOperation (d);
-    p->setModified (false);
-
-    return p;
+    return openOperation(d, a->name());
 }
 #endif
 
@@ -568,12 +567,8 @@ pProject Project::
         fs = 1;
 
     a->setSampleRate (fs);
-    pProject p( new Project( a->name() ));
-    p->createMainWindow ();
-    p->appendOperation (s);
+    pProject p = openOperation(s, a->name());
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
-    p->setModified (false);
-
     return p;
 }
 #endif
