@@ -55,6 +55,15 @@ ApplicationErrorLogController::
 }
 
 
+ApplicationErrorLogController::
+        ~ApplicationErrorLogController()
+{
+    TaskInfo ti("~ApplicationErrorLogController");
+    thread_.quit ();
+    thread_.wait ();
+}
+
+
 void ApplicationErrorLogController::
         finishedOk()
 {

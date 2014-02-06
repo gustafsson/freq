@@ -65,7 +65,8 @@ Worker::
     abort ();
     wait (1); // To quit the thread normally if idle (returns within 1 ms if it is ready to quit)
     terminate ();
-    wait (100);
+    if (!wait (100))
+        TaskInfo("Worker didn't respond to quitting");
 }
 
 

@@ -2,7 +2,6 @@
 #include "signal/operationwrapper.h"
 
 #include <QFileSystemWatcher>
-#include <QThread>
 
 namespace Tools {
 

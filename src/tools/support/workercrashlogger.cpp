@@ -48,6 +48,7 @@ WorkerCrashLogger::
 WorkerCrashLogger::
         ~WorkerCrashLogger()
 {
+    TaskInfo ti("~WorkerCrashLogger");
     thread_.quit ();
     thread_.wait ();
 }
