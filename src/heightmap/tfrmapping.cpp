@@ -169,13 +169,16 @@ void TfrMapping::
         return;
 
     collections_.clear ();
-    collections_.resize(v);
 
-    for (pCollection& c : collections_)
+    Collections new_collections(v);
+
+    for (pCollection& c : new_collections)
     {
         c.reset( new Heightmap::Collection(block_layout_, visualization_params_));
         write1(c)->length( length_ );
     }
+
+    collections_ = new_collections;
 }
 
 
