@@ -72,11 +72,13 @@ bool ChunkMergerThread::
     WritePtr selfp(this);
     ChunkMergerThread* self = dynamic_cast<ChunkMergerThread*>(&*selfp);
 
-    if (0 <= timeout) {
+    if (0 <= timeout)
+      {
         // return immediately
         return self->isEmpty ();
-    }
+      }
 
+    TaskTimer tt("ChunkMergerThread::processChunks. Waiting to finish");
     // Requested wait until done
     return self->wait(timeout);
 }
@@ -94,9 +96,9 @@ bool ChunkMergerThread::
     for (has_data = isEmpty ();
          has_data && T.elapsed () < timeout && isRunning ();
          has_data = isEmpty ())
-    {
+      {
         QSemaphore().tryAcquire (1, 5); // Sleep 5 ms
-    }
+      }
 
     return !has_data;
 }

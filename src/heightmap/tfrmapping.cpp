@@ -171,10 +171,10 @@ void TfrMapping::
     collections_.clear ();
     collections_.resize(v);
 
-    for (int c=0; c<v; ++c)
+    for (pCollection& c : collections_)
     {
-        collections_[c].reset( new Heightmap::Collection(block_layout_, visualization_params_));
-        write1(collections_[c])->length( length_ );
+        c.reset( new Heightmap::Collection(block_layout_, visualization_params_));
+        write1(c)->length( length_ );
     }
 }
 
@@ -189,11 +189,11 @@ TfrMapping::Collections TfrMapping::
 void TfrMapping::
         updateCollections()
 {
-    for (unsigned c=0; c<collections_.size(); ++c)
-        write1(collections_[c])->block_layout( block_layout_ );
+    for (pCollection c : collections_)
+        write1(c)->block_layout( block_layout_ );
 
-    for (unsigned c=0; c<collections_.size(); ++c)
-        write1(collections_[c])->visualization_params( visualization_params_ );
+    for (pCollection c : collections_)
+        write1(c)->visualization_params( visualization_params_ );
 }
 
 } // namespace Heightmap

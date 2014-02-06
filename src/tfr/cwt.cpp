@@ -1019,7 +1019,7 @@ unsigned Cwt::
 
     if (free < required)
     {
-        TaskInfo("next_good_size: current_valid_samples_per_chunk = %u (L=%u, r=%u) requires %s. Free: %s",
+        DEBUG_CWT TaskInfo("next_good_size: current_valid_samples_per_chunk = %u (L=%u, r=%u) requires %s. Free: %s",
                  current_valid_samples_per_chunk, L, r,
                  DataStorageVoid::getMemorySizeText( required ).c_str(),
                  DataStorageVoid::getMemorySizeText( free ).c_str() );
