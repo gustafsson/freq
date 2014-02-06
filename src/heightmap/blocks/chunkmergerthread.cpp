@@ -30,11 +30,14 @@ ChunkMergerThread::
     clear ();
     requestInterruption ();
     semaphore.release (1);
+
     if (!was_idle)
       {
         TaskTimer ti("~ChunkMergerThread");
         QThread::wait ();
       }
+
+    QThread::wait ();
 }
 
 
