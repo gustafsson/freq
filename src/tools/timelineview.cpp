@@ -114,7 +114,6 @@ void TimelineView::
     QRect rect = tool_selector->parentTool()->geometry();
     int r = tool_selector->parentTool ()->devicePixelRatio ();
     resizeGL( 0, 0, r*rect.width(), r*rect.height() );
-    paintEventTime = boost::posix_time::microsec_clock::local_time();
     paintGL();
 }
 
@@ -205,13 +204,6 @@ void TimelineView::
         paintGL()
 {
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
-
-    boost::posix_time::time_duration diff = boost::posix_time::microsec_clock::local_time() - paintEventTime;
-    if (diff.total_milliseconds() > 50)
-    {
-        QErrorMessage::qtHandler()->showMessage("Seems like the timeline doesn't work properly on your computer, so it has been removed. Otherwise the program should behave correctly. If you want to help out you can send an error report from the Help menu.");
-        emit hideMe();
-    }
 
     _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );
     if (_length < 60*10)
@@ -338,7 +330,6 @@ void TimelineView::
 void TimelineView::
         paintEvent ( QPaintEvent * event )
 {
-    paintEventTime = boost::posix_time::microsec_clock::local_time();
     QGLWidget::paintEvent ( event );
 }
 

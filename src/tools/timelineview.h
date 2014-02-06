@@ -80,7 +80,6 @@ private:
     Sawe::Project* _project;
     RenderView* _render_view;
     int _except_count;
-    boost::posix_time::ptime paintEventTime;
 
     double modelview_matrix[16], projection_matrix[16];
     int viewport_matrix[4];
