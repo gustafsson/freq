@@ -46,7 +46,8 @@ bool ChunkMerger::
         Job job;
 
         {
-            WritePtr self(this);
+            WritePtr selfp(this);
+            ChunkMerger* self = dynamic_cast<ChunkMerger*>(selfp.get ());
             if (self->jobs.empty ())
                 return true;
             job = self->jobs.front ();

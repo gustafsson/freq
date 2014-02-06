@@ -4,7 +4,7 @@
 #include "collection.h"
 
 #include "tfr/chunk.h"
-#include "blocks/chunkmerger.h"
+#include "blocks/ichunkmerger.h"
 
 #include "cpumemorystorage.h"
 #include "demangle.h"
@@ -16,8 +16,9 @@ using namespace boost;
 namespace Heightmap {
 
 ChunkBlockFilter::
-        ChunkBlockFilter(MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap)
+        ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap, MergeChunk::Ptr merge_chunk )
     :
+      chunk_merger_(chunk_merger),
       tfrmap_(tfrmap),
       merge_chunk_(merge_chunk)
 {
@@ -32,13 +33,12 @@ void ChunkBlockFilter::
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
     TfrMapping::pCollection collection = C[pchunk.channel];
 
-    Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
     write1(merge_chunk_)->filterChunk( pchunk );
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
 
-    write1(chunk_merger)->addChunk( merge_chunk_, pchunk, intersecting_blocks );
+    write1(chunk_merger_)->addChunk( merge_chunk_, pchunk, intersecting_blocks );
     // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 
@@ -51,8 +51,9 @@ void ChunkBlockFilter::
 
 
 ChunkBlockFilterDesc::
-        ChunkBlockFilterDesc(Heightmap::TfrMapping::Ptr tfrmap)
+        ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap )
     :
+      chunk_merger_(chunk_merger),
       tfrmap_(tfrmap)
 {
 
@@ -69,13 +70,14 @@ Tfr::pChunkFilter ChunkBlockFilterDesc::
     if (!merge_chunk)
         return Tfr::pChunkFilter();
 
-    return Tfr::pChunkFilter( new ChunkBlockFilter(merge_chunk, tfrmap_));
+    return Tfr::pChunkFilter( new ChunkBlockFilter(chunk_merger_, tfrmap_, merge_chunk));
 }
 
 } // namespace Heightmap
 
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
+#include "blocks/chunkmerger.h"
 #include <QApplication>
 #include <QGLWidget>
 
@@ -141,7 +143,8 @@ void ChunkBlockFilter::
         BlockLayout bl(4, 4, SampleRate(4));
         Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
         write1(tfrmap)->length( 1 );
-        ChunkBlockFilter cbf( merge_chunk, tfrmap );
+        Blocks::IChunkMerger::Ptr chunk_merger(new Blocks::ChunkMerger);
+        ChunkBlockFilter cbf( chunk_merger, tfrmap, merge_chunk );
 
         Tfr::StftDesc stftdesc;
         stftdesc.enable_inverse (false);
@@ -163,10 +166,7 @@ void ChunkBlockFilter::
 
         EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
-        {
-            Heightmap::Collection::ReadPtr c(read1(tfrmap)->collections()[0]);
-            c->chunk_merger()->processChunks(-1);
-        }
+        chunk_merger->processChunks(-1);
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
     }
@@ -188,7 +188,8 @@ void ChunkBlockFilterDesc::
         BlockLayout bl(4,4,4);
         Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
 
-        ChunkBlockFilterDesc cbfd( tfrmap );
+        Blocks::IChunkMerger::Ptr chunk_merger(new Blocks::ChunkMerger);
+        ChunkBlockFilterDesc cbfd( chunk_merger, tfrmap );
 
         Tfr::pChunkFilter cf = cbfd.createChunkFilter (0);
         EXCEPTION_ASSERT( !cf );

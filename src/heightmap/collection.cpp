@@ -56,7 +56,6 @@ Collection::
     visualization_params_(),
     cache_( new BlockCache ),
     merger_(),
-    chunk_merger_(new Blocks::ChunkMerger()),
     _is_visible( true ),
     _created_count(0),
     _frame_counter(0),
@@ -365,13 +364,6 @@ VisualizationParams::ConstPtr Collection::
         visualization_params() const
 {
     return visualization_params_;
-}
-
-
-VolatilePtr<Blocks::ChunkMerger>::Ptr Collection::
-        chunk_merger() const
-{
-    return chunk_merger_;
 }
 
 

@@ -729,9 +729,6 @@ void RenderView::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    if (model->renderer->needMoreFrames())
-        redraw (); // won't redraw right away, but enqueue an update
-
     TIME_PAINTGL_DRAW
     {
         unsigned collections_n = 0;
@@ -874,17 +871,10 @@ void RenderView::
     // _last_update_size must be non-zero to be divisable
     _last_update_size = std::max(1llu, last_update_size);
 
-    // Abort any pending chunkmerges
     if ((Signal::UnsignedIntervalType)Signal::Interval::IntervalType_MAX < _last_update_size)
       {
         // Oddly enough
         // '_last_update_size' is close but not equal to 'Signal::Interval::Interval_ALL.count ()'
-
-        for( Heightmap::Collection::Ptr collection : model->collections () )
-          {
-            Heightmap::Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
-            write1(chunk_merger)->clear();
-          }
       }
 }
 
@@ -1087,6 +1077,13 @@ void RenderView::
         isRecording = true;
     }
 
+    bool chunk_merger_has_work = !model->chunk_merger->processChunks(10e-3);
+    //model->chunk_merger->processChunks(-1);
+
+    if (chunk_merger_has_work)
+        redraw (); // won't redraw right away, but enqueue an update
+
+
     // Set up camera position
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
@@ -1175,7 +1172,7 @@ void RenderView::
     wu.update(model->_qx, x, _last_update_size);
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
-    bool isWorking = ci.hasWork () || model->renderer->needMoreFrames ();
+    bool isWorking = ci.hasWork () || chunk_merger_has_work;
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
     if (wu.failedAllocation ())

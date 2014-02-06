@@ -1,40 +1,11 @@
 #ifndef HEIGHTMAP_CHUNKBLOCKFILTER_H
 #define HEIGHTMAP_CHUNKBLOCKFILTER_H
 
-#include "tfr/chunkfilter.h"
 #include "heightmap/tfrmapping.h"
-#include "heightmap/block.h"
-#include "heightmap/ichunktoblock.h"
-
-#include <vector>
+#include "mergechunk.h"
+#include "blocks/ichunkmerger.h"
 
 namespace Heightmap {
-
-class MergeChunk : public VolatilePtr<MergeChunk> {
-public:
-    virtual ~MergeChunk() {}
-
-    /**
-     * @brief filterChunk is called from a worker thread.
-     * May be empty.
-     */
-    virtual void filterChunk(Tfr::ChunkAndInverse&) {}
-
-    /**
-     * @brief createChunkToBlock will be called from the UI thread.
-     */
-    virtual std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
-};
-
-
-class MergeChunkDesc : public VolatilePtr<MergeChunkDesc>
-{
-public:
-    virtual ~MergeChunkDesc() {}
-
-    virtual MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
-};
-
 
 /**
  * @brief The ChunkBlockFilter class should use a MergeChunk to update all
@@ -43,13 +14,14 @@ public:
 class ChunkBlockFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
-    ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap );
+    ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap, MergeChunk::Ptr merge_chunk );
 
     void operator()( Tfr::ChunkAndInverse& chunk );
 
     void set_number_of_channels( unsigned C );
 
 private:
+    Blocks::IChunkMerger::Ptr chunk_merger_;
     Heightmap::TfrMapping::Ptr tfrmap_;
     MergeChunk::Ptr merge_chunk_;
 
@@ -70,7 +42,7 @@ public:
 class ChunkBlockFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    ChunkBlockFilterDesc( Heightmap::TfrMapping::Ptr tfrmap );
+    ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap );
 
     /**
      * @brief createChunkFilter creates a ChunkFilter.
@@ -84,8 +56,9 @@ public:
     void setMergeChunkDesc( MergeChunkDesc::Ptr mcdp ) { merge_chunk_desc_ = mcdp; }
 
 private:
-    MergeChunkDesc::Ptr merge_chunk_desc_;
+    Blocks::IChunkMerger::Ptr chunk_merger_;
     Heightmap::TfrMapping::Ptr tfrmap_;
+    MergeChunkDesc::Ptr merge_chunk_desc_;
 
 public:
     static void test();

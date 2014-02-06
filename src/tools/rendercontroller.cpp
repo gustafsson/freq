@@ -15,6 +15,7 @@
 #include "filters/ridge.h"
 #include "heightmap/renderer.h"
 #include "heightmap/chunkblockfilter.h"
+#include "heightmap/blocks/chunkmerger.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -302,6 +303,8 @@ void RenderController::
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
+
+    write1(model()->chunk_merger)->clear();
 }
 
 
@@ -403,8 +406,9 @@ void RenderController::
 {
     // Wire it up to a FilterDesc
     Heightmap::ChunkBlockFilterDesc* cbfd;
+    write1(model()->chunk_merger)->clear();
     Tfr::ChunkFilterDesc::Ptr kernel(cbfd
-            = new Heightmap::ChunkBlockFilterDesc(model()->tfr_mapping ()));
+            = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     write1(kernel)->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -1020,6 +1024,8 @@ void RenderController::
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
+
+    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);

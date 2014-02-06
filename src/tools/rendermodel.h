@@ -72,6 +72,8 @@ namespace Tools
 
         Heightmap::TfrMappings::StftBlockFilterParams::Ptr get_stft_block_filter_params();
 
+        Heightmap::Blocks::IChunkMerger::Ptr chunk_merger;
+
         //Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
 
