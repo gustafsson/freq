@@ -133,7 +133,7 @@ void ChunkToBlockDegenerateTexture::
         vertices[i++] = s;
         vertices[i++] = transpose ? y*iY : 0;
         vertices[i++] = transpose ? 0 : y*iY;
-        vertices[i++] = 0;
+        vertices[i++] = 0; // could use these for info about how much to subsample at this location
         vertices[i++] = 0;
         vertices[i++] = b_t;
         vertices[i++] = s;
