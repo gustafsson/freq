@@ -37,6 +37,7 @@ public:
     void				openadd_project( pProject p );
     int					default_record_device;
     bool                has_other_projects_than( Project* p4 );
+    std::set<boost::weak_ptr<Sawe::Project>> projects();
 
     void execute_command_line_options();
 

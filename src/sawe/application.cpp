@@ -317,6 +317,17 @@ bool Application::
     return false;
 }
 
+std::set<boost::weak_ptr<Sawe::Project>> Application::
+        projects()
+{
+    std::set<boost::weak_ptr<Sawe::Project>> P;
+
+    for (pProject p : _projects)
+        P.insert (p);
+
+    return P;
+}
+
 void Application::
         clearCaches()
 {
