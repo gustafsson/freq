@@ -83,12 +83,22 @@ MergeChunk::Ptr CwtBlockFilterDesc::
 #include "signal/computingengine.h"
 #include "test/randombuffer.h"
 
+#include <QApplication>
+#include <QGLWidget>
+
 namespace Heightmap {
 namespace TfrMappings {
 
 void CwtBlockFilter::
         test()
 {
+    std::string name = "CwtBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a block with cwt transform data.
     {
         Timer t;
