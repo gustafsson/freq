@@ -167,7 +167,7 @@ void Step::
     not_started_ |= update_miss;
 
     if (!result) {
-        TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
+        TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
                  % update_miss
                  % operation_name());
     } else {
