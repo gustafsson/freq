@@ -37,34 +37,28 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
 {
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
-    float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
 
-    int gl_max_texture_size = 0;
-    glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
-    IChunkToBlock::Ptr chunktoblockp;
-    gl_max_texture_size = INT_MAX;
-    if (chunk.chunk->nScales () > (unsigned)gl_max_texture_size ||
-        chunk.chunk->nSamples () > (unsigned)gl_max_texture_size)
-      {
-        Heightmap::ChunkToBlock* chunktoblock;
-        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
-        chunktoblock->normalization_factor = normalization_factor;
-      }
-    else
-      {
-        // Compute the norm of the chunk prior to resampling and interpolating
-        Tfr::ChunkElement *p = chunk.chunk->transform_data->getCpuMemory ();
-        int n = chunk.chunk->transform_data->numberOfElements ();
-        for (int i = 0; i<n; ++i)
-            p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
+    // Compute the norm of the chunk prior to resampling and interpolating
+    Tfr::ChunkElement *p = chunk.chunk->transform_data->getCpuMemory ();
+    int n = chunk.chunk->transform_data->numberOfElements ();
+    for (int i = 0; i<n; ++i)
+        p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
 
-        Heightmap::ChunkToBlockDegenerateTexture* chunktoblock;
-        chunktoblockp.reset(chunktoblock = new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
-        chunktoblock->normalization_factor = normalization_factor;
-      }
+    IChunkToBlock::Ptr chunktoblock;
 
+    try {
+        chunktoblock.reset(new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
+    } catch (const ExceptionAssert& x) {
+        try {
+            chunktoblock.reset(new Heightmap::ChunkToBlock(chunk.chunk));
+        } catch(...) {
+            throw x;
+        }
+    }
+
+    chunktoblock->normalization_factor = 1.f/sqrtf(stftchunk->window_size());
     std::vector<IChunkToBlock::Ptr> R;
-    R.push_back (chunktoblockp);
+    R.push_back (chunktoblock);
     return R;
 }
 

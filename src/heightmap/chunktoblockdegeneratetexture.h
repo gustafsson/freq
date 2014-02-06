@@ -22,7 +22,6 @@ public:
     ~ChunkToBlockDegenerateTexture();
 
     ComplexInfo complex_info;
-    float normalization_factor;
     bool full_resolution;
     bool enable_subtexel_aggregation;
 

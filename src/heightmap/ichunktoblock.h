@@ -16,6 +16,8 @@ public:
     IChunkToBlock& operator=(const IChunkToBlock&) = delete;
     ~IChunkToBlock() {}
 
+    float normalization_factor;
+
     virtual void mergeChunk( pBlock block ) = 0;
 };
 
