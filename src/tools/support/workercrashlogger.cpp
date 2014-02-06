@@ -287,7 +287,7 @@ void WorkerCrashLogger::
 
         double T = timer.elapsedAndRestart ();
         EXCEPTION_ASSERT_LESS( 1e-5, T );
-        EXCEPTION_ASSERT_LESS( T, 1e-4 );
+        EXCEPTION_ASSERT_LESS( T, 2e-4 );
     }
 
     {
