@@ -17,11 +17,14 @@ void main()
     // But that's only guaranteed in GLSL 1.30 and above.
     float i = uv.x + uv.y*data_size.x;
 
-    // Compute normalized texture coordinates in degenerate texture
+    // Compute degenerate texel coorner
     i /= tex_size.x;
     uv.y = floor(i);
-    uv.x = i - uv.y;
-    uv.y /= (tex_size.y-1.0);
+    uv.x = (i - uv.y)*tex_size.x;
+
+    // Compute normalized texture coordinates in degenerate texture
+    uv.x /= (tex_size.x - 1.0);
+    uv.y /= (tex_size.y - 1.0);
 
     float v = texture2D(mytex, uv).r;
 
