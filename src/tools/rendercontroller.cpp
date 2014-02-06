@@ -16,6 +16,7 @@
 #include "heightmap/renderer.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/blocks/chunkmerger.h"
+#include "heightmap/blocks/chunkmergerthread.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -1025,7 +1026,8 @@ void RenderController::
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
-    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
+    //model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
+    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMergerThread(view->glwidget));
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);

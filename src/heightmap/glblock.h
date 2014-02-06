@@ -43,14 +43,14 @@ public:
     //HeightReadOnlyArray heightReadOnlyArray();
     DataStorageSize     heightSize() const;
 
-    bool has_texture();
+    bool has_texture() const;
     void delete_texture();
 
     void update_texture( HeightMode heightMode );
     void draw( unsigned vbo_size, HeightMode heightMode=HeightMode_VertexTexture );
     //void draw_directMode( );
 
-    unsigned allocated_bytes_per_element();
+    unsigned allocated_bytes_per_element() const;
 
 private:
     /**

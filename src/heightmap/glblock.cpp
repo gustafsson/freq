@@ -184,7 +184,7 @@ GlBlock::pHeight GlBlock::
 
 
 bool GlBlock::
-        has_texture()
+        has_texture() const
 {
     if (_tex_height_nearest)
         EXCEPTION_ASSERT(_tex_height);
@@ -547,7 +547,7 @@ void GlBlock::
 
 
 unsigned GlBlock::
-        allocated_bytes_per_element()
+        allocated_bytes_per_element() const
 {
     unsigned s = 0;
     if (_height) s += sizeof(float); // OpenGL VBO
