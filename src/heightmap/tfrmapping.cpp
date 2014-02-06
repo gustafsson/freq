@@ -92,6 +92,8 @@ void TfrMapping::
     if (v == block_layout_.targetSampleRate ())
         return;
 
+    TaskInfo ti("Target sample rate: %g", v);
+
     block_layout_ = BlockLayout(
                 block_layout_.texels_per_row (),
                 block_layout_.texels_per_column (),
@@ -167,6 +169,8 @@ void TfrMapping::
 
     if (v == channels())
         return;
+
+    TaskInfo ti("Number of channels: %d", v);
 
     collections_.clear ();
 
