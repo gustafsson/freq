@@ -225,7 +225,8 @@ ChunkToBlockDegenerateTexture::
 void ChunkToBlockDegenerateTexture::
         mergeChunk( const pBlock pblock )
 {
-    if (!pblock->glblock)
+    boost::shared_ptr<GlBlock> glblock = pblock->glblock;
+    if (!glblock)
       {
         // This block was garbage collected after the list of matching blocks were created.
         return;
@@ -281,7 +282,7 @@ void ChunkToBlockDegenerateTexture::
     // Draw from chunk texture onto block texture
     {
         // Setup framebuffer rendering
-        GlTexture::Ptr t = block.glblock->glTexture ();
+        GlTexture::Ptr t = glblock->glTexture ();
         GlFrameBuffer fbo(t->getOpenGlTextureId ());
         GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
 
@@ -292,7 +293,7 @@ void ChunkToBlockDegenerateTexture::
     // Draw from chunk texture onto block vertex texture
     {
         // Setup framebuffer rendering
-        GlTexture::Ptr t = block.glblock->glVertTexture ();
+        GlTexture::Ptr t = glblock->glVertTexture ();
         GlFrameBuffer fbo(t->getOpenGlTextureId ());
         GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
 
