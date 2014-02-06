@@ -1,5 +1,6 @@
 #include "cwtblockfilter.h"
 #include "heightmap/chunktoblock.h"
+#include "heightmap/chunktoblockdegeneratetexture.h"
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
@@ -24,22 +25,30 @@ std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
 {
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
     EXCEPTION_ASSERT( cwt );
-    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
+//    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
     float normalization_factor = cwt->nScales()/cwt->sigma();
 
     Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( pchunk.chunk.get () );
 
     std::vector<IChunkToBlock::Ptr> R;
 
-    BOOST_FOREACH( const Tfr::pChunk& chunkpart, chunks.chunks )
+    for ( const Tfr::pChunk& chunkpart : chunks.chunks )
       {
-        Heightmap::ChunkToBlock* chunktoblock;
-        IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunkpart));
+//        Heightmap::ChunkToBlock* chunktoblock;
+//        IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunkpart));
+//        chunktoblock->full_resolution = full_resolution;
+//        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
+//        chunktoblock->complex_info = complex_info_;
 
-        chunktoblock->full_resolution = full_resolution;
-        chunktoblock->complex_info = complex_info_;
-        chunktoblock->normalization_factor = normalization_factor;
-        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
+        // Compute the norm of the chunk prior to resampling and interpolating
+        Tfr::ChunkElement *p = chunkpart->transform_data->getCpuMemory ();
+        int n = chunkpart->transform_data->numberOfElements ();
+        for (int i = 0; i<n; ++i)
+            p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
+
+        IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockDegenerateTexture(chunkpart));
+        chunktoblockp->normalization_factor = normalization_factor;
+        EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
 
         R.push_back (chunktoblockp);
       }

@@ -50,6 +50,7 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
         chunktoblock.reset(new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
     } catch (const ExceptionAssert& x) {
         try {
+            TaskTimer tt("ChunkToBlockDegenerateTexture failed. Trying CPU fallback");
             chunktoblock.reset(new Heightmap::ChunkToBlock(chunk.chunk));
         } catch(...) {
             throw x;

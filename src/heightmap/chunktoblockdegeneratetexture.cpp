@@ -99,17 +99,26 @@ ChunkToBlockDegenerateTexture::
         GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
         GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
         GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
+        // Would benefit from doing these texture transfers in another thread.
+        // Would have to first copy into a VBO and then into a texture.
         glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height-1, GL_RG, GL_FLOAT, p);
         glTexSubImage2D (GL_TEXTURE_2D, 0, 0, tex_height-1, last_row_length, 1, GL_RG, GL_FLOAT, &p[tex_width*(tex_height-1)]);
       }
 
 
-
-
     a_t = inInterval.first / chunk->original_sample_rate;
     b_t = inInterval.last / chunk->original_sample_rate;
-    a_t0 = a_t;
-    b_t0 = b_t;
+
+    if (transpose)
+      {
+        u0 = 0;
+        u1 = 1;
+      }
+    else
+      {
+        u0 = chunk->first_valid_sample / (float)nSamples;
+        u1 = (chunk->first_valid_sample+chunk->n_valid_samples) / (float)nSamples;
+      }
 
     chunk_scale = chunk->freqAxis;
 
@@ -135,6 +144,8 @@ void ChunkToBlockDegenerateTexture::
 
     float a_t = this->a_t;
     float b_t = this->b_t;
+    float u0 = this->u0;
+    float u1 = this->u1;
     unsigned Y = nScales;
     bool transpose = this->transpose;
     const Tfr::FreqAxis& chunk_scale = this->chunk_scale;
@@ -169,14 +180,14 @@ void ChunkToBlockDegenerateTexture::
         float s = display_scale.getFrequencyScalar(hz);
         vertices[i++] = a_t;
         vertices[i++] = s;
-        vertices[i++] = transpose ? y*iY : 0;
-        vertices[i++] = transpose ? 0 : y*iY;
+        vertices[i++] = transpose ? y*iY : u0;
+        vertices[i++] = transpose ? u0 : y*iY;
         vertices[i++] = 0; // could use these for info about how much to subsample at this location
         vertices[i++] = 0;
         vertices[i++] = b_t;
         vertices[i++] = s;
-        vertices[i++] = transpose ? y*iY : 1;
-        vertices[i++] = transpose ? 1 : y*iY;
+        vertices[i++] = transpose ? y*iY : u1;
+        vertices[i++] = transpose ? u1 : y*iY;
         vertices[i++] = 0;
         vertices[i++] = 0;
       }

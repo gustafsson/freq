@@ -21,10 +21,6 @@ public:
     ChunkToBlockDegenerateTexture(Tfr::pChunk chunk);
     ~ChunkToBlockDegenerateTexture();
 
-    ComplexInfo complex_info;
-    bool full_resolution;
-    bool enable_subtexel_aggregation;
-
     void mergeChunk(pBlock block);
 
 private:
@@ -33,7 +29,7 @@ private:
     std::shared_ptr<GlTexture> chunk_texture_;
     Tfr::FreqAxis display_scale;
     Tfr::FreqAxis chunk_scale;
-    float a_t, b_t, a_t0, b_t0;
+    float a_t, b_t, u0, u1;
     unsigned nScales, nSamples, nValidSamples;
     bool transpose;
 
