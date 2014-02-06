@@ -44,7 +44,11 @@ ChunkToBlockTexture::
     unsigned data_width  = transpose ? nScales : nSamples,
              data_height = transpose ? nSamples : nScales;
     Tfr::ChunkElement *p = chunk->transform_data->getCpuMemory ();
-    // Assume 'p' is real valued. The caller needs to fix this first.
+    // Compute the norm of the chunk prior to resampling and interpolating
+    int n = chunk->transform_data->numberOfElements ();
+    for (int i = 0; i<n; ++i)
+        p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
+
     Signal::Interval inInterval = chunk->getCoveredInterval();
     INFO TaskTimer tt(boost::format("ChunkToBlockTexture. Creating texture for chunk %s with nSamples=%u, nScales=%u")
                       % inInterval % nSamples % nScales);
