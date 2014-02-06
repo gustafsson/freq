@@ -285,17 +285,13 @@ void ChunkToBlockDegenerateTexture::
 
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2);
-    }
 
-    // Draw from chunk texture onto block vertex texture
-    {
-        // Setup framebuffer rendering
-        GlTexture::Ptr t = glblock->glVertTexture ();
-        GlFrameBuffer fbo(t->getOpenGlTextureId ());
-        GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
+        // Copy to vertex texture
+        t = glblock->glVertTexture ();
+        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2);
     }
 
     // Finish with shader
