@@ -38,12 +38,6 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
 
-    // Compute the norm of the chunk prior to resampling and interpolating
-    Tfr::ChunkElement *p = chunk.chunk->transform_data->getCpuMemory ();
-    int n = chunk.chunk->transform_data->numberOfElements ();
-    for (int i = 0; i<n; ++i)
-        p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
-
     IChunkToBlock::Ptr chunktoblock;
 
     try {

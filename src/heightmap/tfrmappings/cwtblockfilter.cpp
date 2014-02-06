@@ -40,12 +40,6 @@ std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
 //        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
 //        chunktoblock->complex_info = complex_info_;
 
-        // Compute the norm of the chunk prior to resampling and interpolating
-        Tfr::ChunkElement *p = chunkpart->transform_data->getCpuMemory ();
-        int n = chunkpart->transform_data->numberOfElements ();
-        for (int i = 0; i<n; ++i)
-            p[i] = Tfr::ChunkElement( norm(p[i]), 0.f );
-
         IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockDegenerateTexture(chunkpart));
         chunktoblockp->normalization_factor = normalization_factor;
         EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
