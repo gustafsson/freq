@@ -8,32 +8,40 @@ uniform vec2 tex_size;
 
 void main()
 {
-    vec2 uv = gl_TexCoord[0].st;
     // Translate to data texel corner
-    uv = floor(uv * data_size);
+    vec2 uv = floor(gl_TexCoord[0].st * data_size);
+    vec2 f = gl_TexCoord[0].st * data_size - uv;
+    vec4 u = vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0);
+    vec4 v = vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0);
 
     // Compute index of data texel
     // With IEEE-754 single floats 'i' is an exact integer up to 16 million.
     // But that's only guaranteed in GLSL 1.30 and above.
-    float i = uv.x + uv.y*data_size.x;
+    vec4 i = u + v*data_size.x;
 
     // Compute degenerate texel coorner
-    i /= tex_size.x;
-    uv.y = floor(i);
-    uv.x = (i - uv.y)*tex_size.x;
+    v = floor(i/tex_size.x);
+    u = mod(i,tex_size.x);
 
     // Compute normalized texture coordinates in degenerate texture
-    uv.x /= (tex_size.x - 1.0);
-    uv.y /= (tex_size.y - 1.0);
+    u /= (tex_size.x - 1.0);
+    v /= (tex_size.y - 1.0);
 
-    float v = texture2D(mytex, uv).r;
+    vec4 r = vec4(
+                texture2D(mytex, vec2(u.s, v.s)).r,
+                texture2D(mytex, vec2(u.t, v.t)).r,
+                texture2D(mytex, vec2(u.p, v.p)).r,
+                texture2D(mytex, vec2(u.q, v.q)).r );
+
+    r.xy = mix(r.xz, r.yw, f.x);
+    float a = mix(r.x, r.y, f.y);
 
     if (0==amplitude_axis)
-        v = normalization*25.0*sqrt(v);
+        a = normalization*25.0*sqrt(a);
     if (1==amplitude_axis) {
-        v = 0.5*0.019 * log2(v*normalization*normalization) + 0.3333;
-        v = v < 0.0 ? 0.0 : v;
+        a = 0.5*0.019 * log2(a*normalization*normalization) + 0.3333;
+        a = a < 0.0 ? 0.0 : a;
     }
 
-    gl_FragColor = vec4(v, 0, 0, 1);
+    gl_FragColor = vec4(a, 0, 0, 1);
 }
