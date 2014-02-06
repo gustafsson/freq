@@ -14,7 +14,7 @@ namespace Heightmap {
 class ChunkBlockFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
-    ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap, MergeChunk::Ptr merge_chunk );
+    ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap, MergeChunk::Ptr merge_chunk );
 
     void operator()( Tfr::ChunkAndInverse& chunk );
 
@@ -22,7 +22,7 @@ public:
 
 private:
     Blocks::IChunkMerger::Ptr chunk_merger_;
-    Heightmap::TfrMapping::Ptr tfrmap_;
+    Heightmap::TfrMapping::ConstPtr tfrmap_;
     MergeChunk::Ptr merge_chunk_;
 
 public:
@@ -42,7 +42,7 @@ public:
 class ChunkBlockFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap );
+    ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap );
 
     /**
      * @brief createChunkFilter creates a ChunkFilter.
@@ -57,7 +57,7 @@ public:
 
 private:
     Blocks::IChunkMerger::Ptr chunk_merger_;
-    Heightmap::TfrMapping::Ptr tfrmap_;
+    Heightmap::TfrMapping::ConstPtr tfrmap_;
     MergeChunkDesc::Ptr merge_chunk_desc_;
 
 public:

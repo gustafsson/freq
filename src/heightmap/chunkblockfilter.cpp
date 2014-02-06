@@ -16,7 +16,7 @@ using namespace boost;
 namespace Heightmap {
 
 ChunkBlockFilter::
-        ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap, MergeChunk::Ptr merge_chunk )
+        ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap, MergeChunk::Ptr merge_chunk )
     :
       chunk_merger_(chunk_merger),
       tfrmap_(tfrmap),
@@ -46,12 +46,12 @@ void ChunkBlockFilter::
 void ChunkBlockFilter::
         set_number_of_channels(unsigned C)
 {
-    write1(tfrmap_)->channels(C);
+    EXCEPTION_ASSERT_EQUALS((int)C, read1(tfrmap_)->channels());
 }
 
 
 ChunkBlockFilterDesc::
-        ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::Ptr tfrmap )
+        ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap )
     :
       chunk_merger_(chunk_merger),
       tfrmap_(tfrmap)
