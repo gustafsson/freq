@@ -931,6 +931,9 @@ void RenderView::
 void RenderView::
         restartUpdateTimer()
 {
+    if (_update_timer->isActive())
+        return;
+
     float dt = _last_frame.elapsed();
     float wait = 1.f/60.f - 0.0015f; // 1.5 ms overhead
 
@@ -942,15 +945,14 @@ void RenderView::
             wait = 0;
       }
 
-    if (!_update_timer->isActive())
-      {
-        if (wait < dt)
-            wait = dt;
+    if (wait < dt)
+        wait = dt;
 
-        unsigned ms = (wait-dt)*1e3; // round down
+    unsigned ms = (wait-dt)*1e3; // round down
+    if (ms < 3) // but don't stall
+        ms = 3;
 
-        _update_timer->start(ms);
-      }
+    _update_timer->start(ms);
 }
 
 
@@ -1173,7 +1175,7 @@ void RenderView::
     wu.update(model->_qx, x, _last_update_size);
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
-    bool isWorking = ci.hasWork ();
+    bool isWorking = ci.hasWork () || model->renderer->needMoreFrames ();
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
     if (wu.failedAllocation ())

@@ -10,6 +10,8 @@
 #include "resampletexture.h"
 #include "datastoragestring.h"
 
+#include <QGLContext>
+
 #include <boost/foreach.hpp>
 
 //#define VERBOSE_COLLECTION
@@ -29,6 +31,8 @@ MergerTexture::
       cache_(cache),
       tex_(0)
 {
+    EXCEPTION_ASSERT(QGLContext::currentContext ());
+
     glGenTextures(1, &tex_);
     glBindTexture(GL_TEXTURE_2D, tex_);
 
