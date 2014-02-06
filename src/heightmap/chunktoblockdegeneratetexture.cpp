@@ -39,33 +39,72 @@ ChunkToBlockDegenerateTexture::
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture. Creating texture for chunk %s with nSamples=%u, nScales=%u")
                       % inInterval % nSamples % nScales);
 
-    int n = data_width*data_height;
     int tex_height = 1;
     int tex_width = 1;
-    auto F = Factor::factor (n);
-    for (Factor::vector::reverse_iterator i = F.rbegin (); i != F.rend (); ++i)
-    {
-        unsigned f = *i;
-        if (tex_height*f < tex_width*f)
-            tex_height *= f;
-        else
-            tex_width *= f;
-    }
+    int gl_max_texture_size = 0;
+    glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
+    bool test_degenerate_shader = true;
+    if (!test_degenerate_shader && data_width < gl_max_texture_size && data_height < gl_max_texture_size)
+      {
+        // No need for degenerate
+        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag");
+        tex_width = data_width;
+        tex_height = data_height;
 
-    TaskInfo("tex_height = %d, tex_width = %d", tex_height, tex_width);
+        chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, p));
 
-    chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, p));
-    {
-        GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
+        //GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
         // good-looking mip-mapping, don't need anisotropic filtering because the mapping is not at an angle
         // glblock could however make use of GL_TEXTURE_MAX_ANISOTROPY_EXT
         //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
         //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 64 ));
         //glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST);
         //glGenerateMipmap (GL_TEXTURE_2D);
-    }
+      }
+    else if (0)
+      {
+        // Hope that it can be factored...
+        int n = data_width*data_height;
+        auto F = Factor::factor (n);
+        for (Factor::vector::reverse_iterator i = F.rbegin (); i != F.rend (); ++i)
+          {
+            unsigned f = *i;
+            if (tex_height*f < tex_width*f)
+                tex_height *= f;
+            else
+                tex_width *= f;
+          }
+
+        chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, p));
+
+        GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
+      }
+    else
+      {
+        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degenerate.frag");
+
+        // Leave last row not filled
+        int n = data_width*data_height;
+        tex_width = spo2g(sqrtf(n) - 1);
+        tex_height = int_div_ceil (n, tex_width);
+        int overhead = tex_width*tex_height - n;
+        int last_row_length = tex_width - overhead;
+        EXCEPTION_ASSERT_LESS(last_row_length, tex_width+1);
+        EXCEPTION_ASSERT_EQUALS((unsigned)n, chunk->transform_data->numberOfElements ());
+
+        chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, 0));
+
+        GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
+        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
+        glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height-1, GL_RG, GL_FLOAT, p);
+        glTexSubImage2D (GL_TEXTURE_2D, 0, 0, tex_height-1, last_row_length, 1, GL_RG, GL_FLOAT, &p[tex_width*(tex_height-1)]);
+      }
+
+
+
 
     a_t = inInterval.first / chunk->original_sample_rate;
     b_t = inInterval.last / chunk->original_sample_rate;
@@ -74,7 +113,6 @@ ChunkToBlockDegenerateTexture::
 
     chunk_scale = chunk->freqAxis;
 
-    shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degenerate.frag");
     glUseProgram(shader_);
     int mytex = glGetUniformLocation(shader_, "mytex");
     int data_size_loc = glGetUniformLocation(shader_, "data_size");
