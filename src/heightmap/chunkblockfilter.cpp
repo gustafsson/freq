@@ -38,7 +38,7 @@ void ChunkBlockFilter::
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
 
-    chunk_merger->addChunk( merge_chunk_, pchunk, intersecting_blocks );
+    write1(chunk_merger)->addChunk( merge_chunk_, pchunk, intersecting_blocks );
     // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 

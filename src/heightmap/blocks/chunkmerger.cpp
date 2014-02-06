@@ -18,15 +18,23 @@ ChunkMerger::
 
 
 void ChunkMerger::
+        clear()
+{
+    while (!jobs.empty ())
+        jobs.pop ();
+}
+
+
+void ChunkMerger::
         addChunk( MergeChunk::Ptr merge_chunk,
                   Tfr::ChunkAndInverse chunk,
-                  std::vector<pBlock> intersecting_blocks ) volatile
+                  std::vector<pBlock> intersecting_blocks )
 {
     Job j;
     j.merge_chunk = merge_chunk;
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
-    WritePtr(this)->jobs.push (j);
+    jobs.push (j);
 }
 
 

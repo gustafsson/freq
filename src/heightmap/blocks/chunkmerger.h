@@ -18,9 +18,10 @@ class ChunkMerger: public VolatilePtr<ChunkMerger>
 public:
     ChunkMerger();
 
+    void clear();
     void addChunk( MergeChunk::Ptr merge_chunk,
                    Tfr::ChunkAndInverse chunk,
-                   std::vector<pBlock> intersecting_blocks ) volatile;
+                   std::vector<pBlock> intersecting_blocks );
 
     /**
      * @brief processChunks

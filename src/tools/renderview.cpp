@@ -12,6 +12,7 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/collection.h"
+#include "heightmap/blocks/chunkmerger.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "sawe/configuration.h"
@@ -870,14 +871,21 @@ void RenderView::
 void RenderView::
         setLastUpdateSize( Signal::UnsignedIntervalType last_update_size )
 {
-    if (0 >= last_update_size)
-    {
-        // Ignore. Should mark somewhere that there is a non-fatal error to report.
-        TaskInfo(boost::format("Weird last_update_size=%d.\n%s:%d %s\n%s") % last_update_size % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % Backtrace::make_string());
-        return;
-    }
+    // _last_update_size must be non-zero to be divisable
+    _last_update_size = std::max(1llu, last_update_size);
 
-    _last_update_size = last_update_size;
+    // Abort any pending chunkmerges
+    if ((Signal::UnsignedIntervalType)Signal::Interval::IntervalType_MAX < _last_update_size)
+      {
+        // Oddly enough
+        // '_last_update_size' is close but not equal to 'Signal::Interval::Interval_ALL.count ()'
+
+        for( Heightmap::Collection::Ptr collection : model->collections () )
+          {
+            Heightmap::Blocks::ChunkMerger::Ptr chunk_merger = read1(collection)->chunk_merger();
+            write1(chunk_merger)->clear();
+          }
+      }
 }
 
 
@@ -1104,6 +1112,7 @@ void RenderView::
             write1(collection)->next_frame(); // Discard needed blocks before this row
         }
 
+        Signal::Processing::Step::Ptr step_with_new_extent;
         {
             x = model->project()->extent ();
             length = x.interval.get ().count() / x.sample_rate.get ();
@@ -1119,11 +1128,11 @@ void RenderView::
                 w->targetSampleRate( x.sample_rate.get ());
                 w->channels( x.number_of_channels.get ());
 
-                Signal::Processing::Step::Ptr s = model->target_marker ()->step().lock();
-                if (s)
-                    write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
+                step_with_new_extent = model->target_marker ()->step().lock();
             }
         }
+        if (step_with_new_extent)
+            write1(step_with_new_extent)->deprecateCache(Signal::Interval::Interval_ALL);
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
