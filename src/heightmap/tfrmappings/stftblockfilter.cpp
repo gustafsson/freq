@@ -25,9 +25,9 @@ void StftBlockFilter::
         filterChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
-        StftBlockFilterParams::WritePtr P(params_);
-        if (P->freq_normalization)
-            (*P->freq_normalization)(chunk);
+        Tfr::pChunkFilter freq_normalization = read1(params_)->freq_normalization;
+        if (freq_normalization)
+            (*freq_normalization)(chunk);
     }
 }
 
