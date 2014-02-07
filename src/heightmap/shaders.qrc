@@ -6,5 +6,6 @@
         <file>noop.vert</file>
         <file>chunktoblock_degenerate.frag</file>
         <file>chunktoblock.frag</file>
+        <file>chunktoblock_degeneratesubsample.frag</file>
     </qresource>
 </RCC>

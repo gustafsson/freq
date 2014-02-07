@@ -24,7 +24,7 @@ public:
     void mergeChunk(pBlock block);
 
 private:
-    void prepVbo(Tfr::FreqAxis display_scale);
+    void prepVbo(Tfr::FreqAxis display_scale, BlockLayout bl);
 
     std::shared_ptr<GlTexture> chunk_texture_;
     Tfr::FreqAxis display_scale;

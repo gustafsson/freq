@@ -85,7 +85,8 @@ ChunkToBlockDegenerateTexture::
       }
     else
       {
-        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degenerate.frag");
+//        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degenerate.frag");
+        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degeneratesubsample.frag");
 
         // Leave last row not filled
         int n = data_width*data_height;
@@ -112,8 +113,10 @@ ChunkToBlockDegenerateTexture::
 
     if (transpose)
       {
-        u0 = 0;
-        u1 = 1;
+//        u0 = 0.5f / nSamples;
+//        u1 = (nSamples-1.5f) / nSamples;
+        u0 = 0.f / nSamples;
+        u1 = (nSamples-1.0f) / nSamples;
       }
     else
       {
@@ -137,16 +140,16 @@ ChunkToBlockDegenerateTexture::
 
 
 void ChunkToBlockDegenerateTexture::
-        prepVbo(Tfr::FreqAxis display_scale)
+        prepVbo(Tfr::FreqAxis display_scale, BlockLayout bl)
 {
     if (this->display_scale == display_scale)
         return;
     this->display_scale = display_scale;
 
-    float a_t = this->a_t;
-    float b_t = this->b_t;
-    float u0 = this->u0;
-    float u1 = this->u1;
+    float a_t = this->a_t; // The first sample should be centered on a_t
+    float b_t = this->b_t; // The last sample should be centered on b_t
+    float u0 = this->u0; // Normalized index for sample at a_t (not the texture coord to use right away)
+    float u1 = this->u1; // Normalized index for sample at b_t (not the texture coord to use right away)
     unsigned Y = nScales;
     bool transpose = this->transpose;
     const Tfr::FreqAxis& chunk_scale = this->chunk_scale;
@@ -166,31 +169,42 @@ void ChunkToBlockDegenerateTexture::
     int i=0;
 
     // Juggle texture coordinates so that border texels are centered on the border
-    float iY = 1.f/(Y-1);
-    float dt = b_t - a_t;
-    a_t -= 0.5 * dt / (nSamples-1);
-    b_t += 0.5 * dt / (nSamples-1);
-    float ky = (1.f + 1.f*iY);
-    float oy = 0.5f;
+    float iY = 1.f / Y;
+//    float dt = b_t - a_t;
+//    a_t -= 0.5 * dt / (nSamples-1);
+//    b_t += 0.5 * dt / (nSamples-1);
+//    float ky = 1.f + 1.f/(Y-1.f);
+//    float oy = 0.5f;
+
+    float du = 0.5f * (u1 - u0) / nSamples;
+    float ds = 0.25f / bl.texels_per_column ();
 
     for (unsigned y=0; y<Y; y++)
       {
-        float hz = chunk_scale.getFrequency (y * ky - oy);
+//        float hz = chunk_scale.getFrequency (y * ky - oy);
+        float hz = chunk_scale.getFrequency (y);
         if (hz < display_scale.min_hz)
             hz = display_scale.min_hz/2;
         float s = display_scale.getFrequencyScalar(hz);
+        float hz1 = display_scale.getFrequency(s - ds);
+        float hz2 = display_scale.getFrequency(s + ds);
+        float y1 = chunk_scale.getFrequencyScalar (hz1);
+        float y2 = chunk_scale.getFrequencyScalar (hz2);
+        float dv = 0.5*(y2 - y1) / nScales;
+        float v = (y + 0.0)*iY;
+//        TaskInfo("y=%d, hz=%g, hz1=%g, hz2=%g, y1=%g, y2=%g, dv=%g", y, hz, hz1, hz2, y1, y2, dv);
         vertices[i++] = a_t;
         vertices[i++] = s;
-        vertices[i++] = transpose ? y*iY : u0;
-        vertices[i++] = transpose ? u0 : y*iY;
-        vertices[i++] = 0; // could use these for info about how much to subsample at this location
-        vertices[i++] = 0;
+        vertices[i++] = transpose ? v : u0; // Normalized index
+        vertices[i++] = transpose ? u0 : v;
+        vertices[i++] = transpose ? dv : du;
+        vertices[i++] = transpose ? du : dv;
         vertices[i++] = b_t;
         vertices[i++] = s;
-        vertices[i++] = transpose ? y*iY : u1;
-        vertices[i++] = transpose ? u1 : y*iY;
-        vertices[i++] = 0;
-        vertices[i++] = 0;
+        vertices[i++] = transpose ? v : u1;
+        vertices[i++] = transpose ? u1 : v;
+        vertices[i++] = transpose ? dv : du;
+        vertices[i++] = transpose ? du : dv;
       }
 
     GlException_CHECK_ERROR();
@@ -250,7 +264,7 @@ void ChunkToBlockDegenerateTexture::
 
     // Setup the VBO, need to know the current display scale, which is defined by the block.
     VisualizationParams::ConstPtr vp = block.visualization_params ();
-    prepVbo(vp->display_scale ());
+    prepVbo(vp->display_scale (), bl);
 
     // Disable unwanted capabilities when resampling a texture
     glPushAttribContext pa(GL_ENABLE_BIT);
