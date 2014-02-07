@@ -95,7 +95,7 @@ public:
         Measured in steps of increment*averaging. Start at sample number 15.
 
         first_valid_sample = 3
-        when compting the inverse, window number 3 is the first window with full support
+        when computing the inverse, window number 3 is the first window with full support
         (note that "first_valid_sample" only makes sense if the transform is invertible)
 
         valid samples = 3

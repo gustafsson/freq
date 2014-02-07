@@ -88,6 +88,10 @@ namespace Tfr {
 
 namespace Heightmap {
 
+namespace Blocks {
+class MergerTexture;
+}
+
 class Renderer;
 class Block;
 class BlockData;
@@ -108,7 +112,7 @@ public:
     /**
       Releases all GPU resources allocated by Heightmap::Collection.
       */
-    void reset();
+    void clear();
 
 
     Signal::Intervals needed_samples(Signal::UnsignedIntervalType& smallest_length);
@@ -186,6 +190,7 @@ private:
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
 
     BlockCache::Ptr cache_;
+    std::shared_ptr<Blocks::MergerTexture> merger_;
 
     bool
         _is_visible;

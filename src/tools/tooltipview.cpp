@@ -103,7 +103,7 @@ void TooltipView::
 void TooltipView::
         seppuku()
 {
-    render_view_->userinput_update();
+    render_view_->redraw();
     delete this;
 }
 
@@ -146,7 +146,7 @@ void TooltipView::
             else if(html != prev_html)
                 TaskInfo("Changed tooltip\n%s", html.c_str());
 
-            render_view_->userinput_update( false );
+            render_view_->redraw();
 
             emit tooltipChanged();
         }

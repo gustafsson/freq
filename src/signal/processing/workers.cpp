@@ -365,8 +365,9 @@ class BusyScheduleMock: public BlockScheduleMock {
 void Workers::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "Workers";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
 
     // It should start and stop computing engines as they are added and removed

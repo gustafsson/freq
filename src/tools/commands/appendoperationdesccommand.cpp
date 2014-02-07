@@ -67,8 +67,9 @@ class SourceMock : public Test::TransparentOperationDesc
 void AppendOperationDescCommand::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "AppendOperationDescCommand";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should add a new operation to the signal processing chain at the given targets current position

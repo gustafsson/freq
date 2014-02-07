@@ -151,7 +151,7 @@ void DummyTransform::
         test ()
 {
     // It should transform a buffer into a dummy state and back.
-    {
+    for (int i=0; i<2; i++) {
         Timer timer;
         DummyTransform t;
 
@@ -165,7 +165,12 @@ void DummyTransform::
         EXCEPTION_ASSERT_EQUALS(c->getCoveredInterval (), b->getInterval ());
 
         double T = timer.elapsed ();
-        EXCEPTION_ASSERT_LESS(T, 80e-6);
+#ifdef _DEBUG
+        EXCEPTION_ASSERT_LESS(T, i==0 ? 400e-6 : 80e-6);
+#else
+        EXCEPTION_ASSERT_LESS(i==0 ? 4e-6 : 1e-6, T);
+        EXCEPTION_ASSERT_LESS(T, i==0 ? 500e-6 : 9e-6);
+#endif
     }
 }
 

@@ -25,7 +25,7 @@ namespace Tools
         void update();
 
     signals:
-        void update_view(bool);
+        void update_view();
         void playback_stopped();
 
     public slots:

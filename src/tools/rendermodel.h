@@ -63,6 +63,7 @@ namespace Tools
         void set_transform_desc(Tfr::TransformDesc::Ptr t);
 
         void recompute_extent();
+        void set_extent(Signal::OperationDesc::Extent extent);
 
         Signal::OperationDesc::Ptr renderOperationDesc();
 
@@ -71,6 +72,8 @@ namespace Tools
         Signal::OperationDesc::Ptr get_filter();
 
         Heightmap::TfrMappings::StftBlockFilterParams::Ptr get_stft_block_filter_params();
+
+        Heightmap::Blocks::IChunkMerger::Ptr chunk_merger;
 
         //Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;

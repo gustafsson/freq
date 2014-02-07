@@ -1,5 +1,21 @@
 #include "unittest.h"
 
+// gpumisc units
+#include "backtrace.h"
+#include "datastoragestring.h"
+#include "exceptionassert.h"
+#include "atomicvalue.h"
+#include "factor.h"
+#include "geometricalgebra.h"
+#include "glframebuffer.h"
+#include "glinfo.h"
+#include "glprojection.h"
+#include "gltextureread.h"
+#include "prettifysegfault.h"
+#include "resampletexture.h"
+#include "volatileptr.h"
+
+// sonicawe
 #include "test/implicitordering.h"
 #include "test/stdlibtest.h"
 #include "test/tasktimertiming.h"
@@ -44,6 +60,8 @@
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/recordmodel.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "heightmap/blocks/merger.h"
+#include "heightmap/blocks/mergertexture.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -54,16 +72,6 @@
 #include "adapters/playback.h"
 #include "adapters/microphonerecorder.h"
 #include "filters/absolutevalue.h"
-
-// gpumisc units
-#include "backtrace.h"
-#include "exceptionassert.h"
-#include "geometricalgebra.h"
-#include "glinfo.h"
-#include "glprojection.h"
-#include "prettifysegfault.h"
-#include "volatileptr.h"
-#include "atomicvalue.h"
 
 // gpumisc tool
 #include "TaskTimer.h"
@@ -94,14 +102,19 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(Backtrace);
+        RUNTEST(DataStorageString);
         RUNTEST(ExceptionAssert);
+        RUNTEST(AtomicValueTest);
+        RUNTEST(Factor);
         RUNTEST(GeometricAlgebra);
+        RUNTEST(GlFrameBuffer);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
+        RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
         RUNTEST(PrettifySegfault);
+        RUNTEST(ResampleTexture);
         RUNTEST(VolatilePtrTest);
-        RUNTEST(AtomicValueTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
@@ -153,6 +166,8 @@ int UnitTest::
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::ApplicationErrorLogController);
         RUNTEST(Heightmap::Block);
+        RUNTEST(Heightmap::Blocks::Merger);
+        RUNTEST(Heightmap::Blocks::MergerTexture);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);

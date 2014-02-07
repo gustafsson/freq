@@ -106,7 +106,7 @@ namespace Tools { namespace Selections
 
             model()->validate();
             rectangleForm_->updateGui();
-            selection_controller_->render_view()->userinput_update();
+            selection_controller_->render_view()->redraw();
         }
         else
             e->ignore();
@@ -121,7 +121,7 @@ namespace Tools { namespace Selections
             selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 
@@ -149,7 +149,7 @@ namespace Tools { namespace Selections
             rectangleForm_->updateGui();
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 

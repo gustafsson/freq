@@ -65,7 +65,8 @@ Worker::
     abort ();
     wait (1); // To quit the thread normally if idle (returns within 1 ms if it is ready to quit)
     terminate ();
-    wait (100);
+    if (!wait (100))
+        TaskInfo("Worker didn't respond to quitting");
 }
 
 
@@ -167,7 +168,7 @@ void Worker::
             if (task)
               {
                 DEBUGINFO TaskTimer tt(boost::format("Running task %s") % read1(task)->expected_output());
-                write1(task)->run(computing_engine_);
+                write1(task)->run();
                 emit oneTaskDone();
               }
             else
@@ -275,9 +276,16 @@ public:
 
 class DummyTask: public Task {
 public:
-    DummyTask() : Task(0, Step::Ptr(), std::vector<Step::Ptr>(), Signal::Interval(), Signal::Interval()) {}
+    DummyTask()
+        : Task(
+              Step::WritePtr(Step::Ptr(new Step(Signal::OperationDesc::Ptr()))),
+              std::vector<Step::Ptr>(),
+              Signal::Operation::Ptr(),
+              Signal::Interval(),
+              Signal::Interval())
+    {}
 
-    void run(Signal::ComputingEngine::Ptr) override {
+    void run() override {
         // Keeps on running a lot of tasks as fast as possible
     }
 };
@@ -291,8 +299,9 @@ class DummySchedule: public ISchedule {
 void Worker::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "Worker";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should start and stop automatically
@@ -342,6 +351,7 @@ void Worker::
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
+#ifdef _DEBUG
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
 
@@ -359,6 +369,7 @@ void Worker::
 
         PrettifySegfault::EnableDirectPrint (true);
     }
+#endif
 
     // It should store information about a crashed task (std::exception) and stop execution. (1)
     {

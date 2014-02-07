@@ -5,6 +5,8 @@
 #include "signal/processing/chain.h"
 #include "adapters/recorder.h"
 
+#include <QObject>
+
 namespace Sawe { class Project; }
 
 namespace Tools
@@ -18,8 +20,9 @@ class RenderView;
  * Note that it's up to each renderview to update the stuff that it needs.
  * RecordModel doesn't concern itself with the framerate of RenderView.
  */
-class RecordModel
+class RecordModel: public QObject
 {
+    Q_OBJECT
 public:
     /**
      * @brief createRecorder returns a new MicrophoneRecorder operation
@@ -37,7 +40,11 @@ public:
     Signal::Processing::IInvalidator::Ptr invalidator;
     Sawe::Project* project;
     RenderView* render_view;
+
     Signal::OperationDesc::Ptr recorderDesc() { return recorder_desc; }
+
+signals:
+    void markNewlyRecordedData(Signal::Interval what);
 
 private:
     RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::Ptr recording );

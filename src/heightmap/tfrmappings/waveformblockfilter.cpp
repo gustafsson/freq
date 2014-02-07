@@ -9,30 +9,43 @@
 namespace Heightmap {
 namespace TfrMappings {
 
-void WaveformBlockFilter::
-        mergeChunk(
-            const Heightmap::Block& block,
-            const Tfr::ChunkAndInverse& chunk,
-            Heightmap::BlockData& outData )
+class WaveformChunkToBlock: public IChunkToBlock
 {
-    Signal::pMonoBuffer b = chunk.input;
-    float blobsize = b->sample_rate() / block.sample_rate();
+public:
+    WaveformChunkToBlock(Signal::pMonoBuffer b) : b(b) {}
 
-    int readstop = b->number_of_samples ();
+    void mergeChunk( pBlock block ) {
+        float blobsize = b->sample_rate() / block->sample_rate();
 
-    // todo should substract blobsize/2
-    Region r = block.getRegion ();
-    float writeposoffs = (b->start () - r.a.time)*block.sample_rate ();
-    float y0 = r.a.scale*2-1;
-    float yscale = r.scale ()*2;
-    ::drawWaveform(
-            b->waveform_data(),
-            outData.cpu_copy,
-            blobsize,
-            readstop,
-            yscale,
-            writeposoffs,
-            y0);
+        int readstop = b->number_of_samples ();
+
+        // todo should substract blobsize/2
+        Region r = block->getRegion ();
+        float writeposoffs = (b->start () - r.a.time)*block->sample_rate ();
+        float y0 = r.a.scale*2-1;
+        float yscale = r.scale ()*2;
+        ::drawWaveform(
+                b->waveform_data(),
+                block->block_data ()->cpu_copy,
+                blobsize,
+                readstop,
+                yscale,
+                writeposoffs,
+                y0);
+    }
+
+private:
+    Signal::pMonoBuffer b;
+};
+
+
+std::vector<IChunkToBlock::Ptr> WaveformBlockFilter::
+        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+{
+    IChunkToBlock::Ptr ctb(new WaveformChunkToBlock(chunk.input));
+    std::vector<IChunkToBlock::Ptr> R;
+    R.push_back (ctb);
+    return R;
 }
 
 
@@ -90,9 +103,9 @@ void WaveformBlockFilter::
             return ref;
         }();
 
-        Heightmap::Block block(ref, bl, vp);
+        Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -100,7 +113,8 @@ void WaveformBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new WaveformBlockFilter );
-        write1(mc)->mergeChunk( block, cai, *block.block_data () );
+        write1(mc)->filterChunk(cai);
+        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

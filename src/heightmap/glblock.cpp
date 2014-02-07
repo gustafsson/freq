@@ -2,9 +2,6 @@
 
 #include "glblock.h"
 
-// sonicawe
-#include "sawe/nonblockingmessagebox.h"
-
 // gpumisc
 #include "vbo.h"
 #include "demangle.h"
@@ -16,12 +13,6 @@
 // std
 #include <stdio.h>
 
-// Qt
-#include <QResource>
-
-
-//#define TIME_COMPILESHADER
-#define TIME_COMPILESHADER if(0)
 
 //#define TIME_GLBLOCK
 #define TIME_GLBLOCK if(0)
@@ -31,136 +22,6 @@ using namespace std;
 
 
 namespace Heightmap {
-
-// Helpers based on Cuda SDK sample, ocean FFT
-// TODO check license terms of the Cuda SDK
-
-// Attach shader to a program
-string attachShader(GLuint prg, GLenum type, const char *name)
-{
-    stringstream result;
-
-    TIME_COMPILESHADER TaskTimer tt("Compiling shader %s", name);
-    try {
-        GLuint shader;
-        FILE * fp=0;
-        int size, compiled;
-        char * src;
-
-        shader = glCreateShader(type);
-
-        QResource qr(name);
-        if (!qr.isValid())
-            throw ios::failure(string("Couldn't find shader resource ") + name);
-        if ( 0 == qr.size())
-            throw ios::failure(string("Shader resource empty ") + name);
-
-        size = qr.size();
-        src = (char*)qr.data();
-        glShaderSource(shader, 1, (const char**)&src, (const GLint*)&size);
-        glCompileShader(shader);
-        glGetShaderiv(shader, GL_COMPILE_STATUS, (GLint*)&compiled);
-
-        if (fp) free(src);
-
-        char shaderInfoLog[2048];
-        glGetShaderInfoLog(shader, sizeof(shaderInfoLog), 0, shaderInfoLog);
-
-        bool showShaderLog = !compiled;
-#ifdef _DEBUG
-        QString qshaderInfoLog(shaderInfoLog);
-        showShaderLog |= 0 != qshaderInfoLog.contains("fail", Qt::CaseInsensitive);
-        showShaderLog |= 0 != qshaderInfoLog.contains("warning", Qt::CaseInsensitive);
-        showShaderLog |= strlen(shaderInfoLog)>0;
-#endif
-
-        if (showShaderLog)
-        {
-            result << "Failed to compile shader '" << name << "'"  << endl
-                   << shaderInfoLog << endl;
-        }
-
-        if (compiled)
-        {
-            glAttachShader(prg, shader);
-        }
-
-        glDeleteShader(shader);
-
-    } catch (const exception &x) {
-        TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
-        throw;
-    }
-
-    return result.str();
-}
-
-// Create shader program from vertex shader and fragment shader files
-GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName)
-{
-    GLint linked;
-    GLuint program;
-    stringstream resultLog;
-
-    program = glCreateProgram();
-    try {
-        resultLog << attachShader(program, GL_VERTEX_SHADER, vertFileName);
-        resultLog << attachShader(program, GL_FRAGMENT_SHADER, fragFileName);
-
-        glLinkProgram(program);
-        glGetProgramiv(program, GL_LINK_STATUS, &linked);
-
-        char programInfoLog[2048];
-        glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
-        TaskTimer tt("Linking vertex shader %s with fragment shader %s\n%s",
-                 vertFileName, fragFileName, programInfoLog);
-
-        bool showProgramLog = !linked;
-#ifdef _DEBUG
-        QString qprogramInfoLog(programInfoLog);
-        showProgramLog |= 0 != qprogramInfoLog.contains("fail", Qt::CaseInsensitive);
-        showProgramLog |= 0 != qprogramInfoLog.contains("warning", Qt::CaseInsensitive);
-        showProgramLog |= strlen(programInfoLog)>0;
-#endif
-
-        if (showProgramLog)
-        {
-            stringstream log;
-            log     << "Failed to link fragment shader (" << fragFileName << ") "
-                    << "with vertex shader (" << vertFileName << ")" << endl
-                    << programInfoLog << endl
-                    << resultLog.str();
-
-            TaskInfo("Couldn't properly setup graphics\n%s", log.str().c_str());
-
-            Sawe::NonblockingMessageBox::show(
-                    QMessageBox::Critical,
-                    "Couldn't properly setup graphics",
-                    "Sonic AWE couldn't properly setup required graphics. "
-                    "Please file this as a bug report to help us fix this. "
-                    "See more info in 'Help->Report a bug'",
-
-                    log.str().c_str() );
-        }
-
-        glUseProgram(program);
-
-        GLenum glError = glGetError();
-        if (GL_NO_ERROR != glError)
-        {
-            TaskInfo("glUseProgram failed %s", gluErrorString(glError));
-            program = 0;
-        }
-
-        glUseProgram( 0 );
-
-    } catch (...) {
-        glDeleteProgram(program);
-        throw;
-    }
-    return program;
-}
-
 
 GlBlock::
 GlBlock( BlockLayout block_size, float width, float height )
@@ -284,6 +145,24 @@ void GlBlock::
 }
 
 
+GlTexture::Ptr GlBlock::
+        glTexture()
+{
+    create_texture (HeightMode_Flat);
+
+    return GlTexture::Ptr(new GlTexture(_tex_height));
+}
+
+
+GlTexture::Ptr GlBlock::
+        glVertTexture()
+{
+    create_texture (HeightMode_VertexTexture);
+
+    return GlTexture::Ptr(new GlTexture(_tex_height_nearest));
+}
+
+
 GlBlock::pHeight GlBlock::
         height()
 {
@@ -302,7 +181,7 @@ GlBlock::pHeight GlBlock::
 
 
 bool GlBlock::
-        has_texture()
+        has_texture() const
 {
     if (_tex_height_nearest)
         EXCEPTION_ASSERT(_tex_height);
@@ -349,7 +228,11 @@ bool GlBlock::
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 
-        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+        // Not compatible with GlFrameBuffer
+        //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+
+        // Compatible with GlFrameBuffer
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -364,7 +247,11 @@ bool GlBlock::
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 
-        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+        // Not compatible with GlFrameBuffer
+        //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+
+        // Compatible with GlFrameBuffer
+        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -387,11 +274,11 @@ bool GlBlock::
 void GlBlock::
         update_texture( GlBlock::HeightMode heightMode )
 {
-    bool got_new_height_data = 0==_tex_height || (bool)_mapped_height;
-    bool got_new_vertex_data = create_texture( heightMode );
+    create_texture( heightMode );
 
-    got_new_vertex_data |= got_new_height_data && HeightMode_Flat != heightMode;
-    if (!got_new_height_data && !got_new_vertex_data)
+    bool got_new_height_data = /*0==_tex_height ||*/ (bool)_mapped_height;
+
+    if (!got_new_height_data)
         return;
 
     int w = block_size_.texels_per_row ();
@@ -417,7 +304,7 @@ void GlBlock::
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     }
 
-    if (got_new_vertex_data && HeightMode_VertexTexture == heightMode)
+    if (got_new_height_data && HeightMode_VertexTexture == heightMode)
     {
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, *_height );
         glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
@@ -429,7 +316,7 @@ void GlBlock::
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, 0);
     }
 
-    if (got_new_vertex_data && HeightMode_VertexBuffer == heightMode)
+    if (got_new_height_data && HeightMode_VertexBuffer == heightMode)
     {
         glBindBuffer (_height->vbo_type(), *_height);
         float *cpu_height = (float *) glMapBuffer (_height->vbo_type(), GL_READ_ONLY);
@@ -507,9 +394,9 @@ void GlBlock::
 
 
 void GlBlock::
-        draw( unsigned vbo_size, GlBlock::HeightMode withHeightMap )
+        draw( unsigned vbo_size, GlBlock::HeightMode heightMode )
 {
-    if (!_height)
+    if (false) if (!_height)
     {
         TIME_GLBLOCK TaskInfo("Skipping rendering of block without data");
         return;
@@ -518,9 +405,9 @@ void GlBlock::
     TIME_GLBLOCK ComputationCheckError();
     TIME_GLBLOCK GlException_CHECK_ERROR();
 
-    update_texture( withHeightMap );
+    update_texture( heightMode );
 
-    switch(withHeightMap)
+    switch(heightMode)
     {
     case HeightMode_Flat:
         break;
@@ -553,7 +440,7 @@ void GlBlock::
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    switch(withHeightMap)
+    switch(heightMode)
     {
     case HeightMode_Flat:
         break;
@@ -657,7 +544,7 @@ void GlBlock::
 
 
 unsigned GlBlock::
-        allocated_bytes_per_element()
+        allocated_bytes_per_element() const
 {
     unsigned s = 0;
     if (_height) s += sizeof(float); // OpenGL VBO

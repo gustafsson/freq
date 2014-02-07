@@ -79,7 +79,8 @@ Signal::pBuffer TransformOperationOperation::
 TransformOperationDesc::
         TransformOperationDesc(ChunkFilterDesc::Ptr f)
     :
-      chunk_filter_(f)
+      chunk_filter_(f),
+      transformDesc_(read1(f)->transformDesc()->copy())
 {
 }
 
@@ -95,11 +96,11 @@ OperationDesc::Ptr TransformOperationDesc::
 Signal::Operation::Ptr TransformOperationDesc::
         createOperation(Signal::ComputingEngine*engine) const
 {
-    Tfr::pTransform t;
+    Tfr::pTransform t = transformDesc_->createTransform ();
     pChunkFilter f;
     {
-        ChunkFilterDesc::ReadPtr c(chunk_filter_);
-        t = c->transformDesc()->createTransform ();
+        ChunkFilterDesc::WritePtr c(chunk_filter_);
+        c->transformDesc (transformDesc_);
         f = c->createChunkFilter (engine);
     }
     bool no_inverse_tag = 0!=dynamic_cast<volatile ChunkFilter::NoInverseTag*>(f.get ());
@@ -114,14 +115,17 @@ Signal::Operation::Ptr TransformOperationDesc::
 Signal::Interval TransformOperationDesc::
         requiredInterval(const Signal::Interval& I, Signal::Interval* expectedOutput) const
 {
-    return transformDesc()->requiredInterval (I, expectedOutput);
+    Signal::Interval J = transformDesc_->requiredInterval (I, expectedOutput);
+//    TaskInfo ti(boost::format("In %s") % this->toString ().toStdString ());
+//    TaskInfo(boost::format("requiredInterval (%s, %s) -> %s") % I % (expectedOutput?*expectedOutput:Signal::Interval()) % J);
+    return J;
 }
 
 
 Signal::Interval TransformOperationDesc::
         affectedInterval(const Signal::Interval& I) const
 {
-    return transformDesc()->affectedInterval (I);
+    return transformDesc_->affectedInterval (I);
 }
 
 
@@ -135,7 +139,7 @@ TransformOperationDesc::Extent TransformOperationDesc::
 QString TransformOperationDesc::
         toString() const
 {
-    return (vartype(*chunk_filter_) + " on " + transformDesc()->toString ()).c_str();
+    return (vartype(*chunk_filter_) + " on " + transformDesc_->toString ()).c_str();
 }
 
 
@@ -144,8 +148,8 @@ bool TransformOperationDesc::
 {
     if (const TransformOperationDesc* f = dynamic_cast<const TransformOperationDesc*>(&d))
     {
-        const TransformDesc& a = *transformDesc ();
-        const TransformDesc& b = *f->transformDesc ();
+        const TransformDesc& a = *transformDesc_;
+        const TransformDesc& b = *f->transformDesc_;
         return a == b;
        // return *f->transformDesc () == *transform_desc_;
     }
@@ -156,7 +160,15 @@ bool TransformOperationDesc::
 Tfr::pTransformDesc TransformOperationDesc::
         transformDesc() const
 {
-    return read1(chunk_filter_)->transformDesc();
+    return transformDesc_->copy();
+}
+
+
+void TransformOperationDesc::
+        transformDesc(boost::shared_ptr<TransformDesc> td)
+{
+    transformDesc_ = td->copy ();
+    write1(chunk_filter_)->transformDesc (td->copy ());
 }
 
 

@@ -15,6 +15,8 @@
 #include "filters/ridge.h"
 #include "heightmap/renderer.h"
 #include "heightmap/chunkblockfilter.h"
+#include "heightmap/blocks/chunkmerger.h"
+#include "heightmap/blocks/chunkmergerthread.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -81,7 +83,7 @@ RenderController::
     Support::RenderOperationDesc::RenderTarget::Ptr rvu(
                 rvup = new Support::RenderViewUpdateAdapter);
 
-    connect(rvup, SIGNAL(userinput_update()), view, SLOT(userinput_update()));
+    connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
     connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), view, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
 
     model()->init(model()->project ()->processing_chain (), rvu);
@@ -131,7 +133,7 @@ void RenderController::
         stateChanged()
 {
     // Don't lock the UI, instead wait a moment before any change is made
-    view->userinput_update();
+    view->redraw();
 
     model()->project()->setModified();
 }
@@ -303,18 +305,7 @@ void RenderController::
     ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
 
-
-    // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
-/*
-//Use Signal::Processing namespace
-    if (dynamic_cast<const Tfr::Cwt*>(model()->transform()))
-        model()->project()->worker.min_fps( 1 );
-    else
-        model()->project()->worker.min_fps( 4 );
-
-    // clear worker assumptions of target
-    //model()->project()->worker.target(model()->renderSignalTarget);
-*/
+    write1(model()->chunk_merger)->clear();
 }
 
 
@@ -416,21 +407,28 @@ void RenderController::
 {
     // Wire it up to a FilterDesc
     Heightmap::ChunkBlockFilterDesc* cbfd;
+    write1(model()->chunk_merger)->clear();
     Tfr::ChunkFilterDesc::Ptr kernel(cbfd
-            = new Heightmap::ChunkBlockFilterDesc(model()->tfr_mapping ()));
+            = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
-    write1(kernel)->transformDesc(transform_desc); // ambiguous? tfr_mapping also has a transformDesc...
-    Tfr::TransformOperationDesc::Ptr desc( new Tfr::TransformOperationDesc(kernel));
-    setBlockFilter( desc );
+    write1(kernel)->transformDesc(transform_desc);
+    setBlockFilter( kernel );
 }
 
 
 void RenderController::
-        setBlockFilter(Signal::OperationDesc::Ptr adapter)
+        setBlockFilter(Tfr::ChunkFilterDesc::Ptr kernel)
 {
+    Tfr::TransformOperationDesc::Ptr adapter( new Tfr::TransformOperationDesc(kernel));
+    // Ambiguity
+    // Tfr::TransformOperationDesc defines a current transformDesc
+    // VisualizationParams also defines a current transformDesc
+
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     model()->set_filter (adapter);
+
+    EXCEPTION_ASSERT( currentTransform() );
 
     stateChanged();
 
@@ -1028,6 +1026,9 @@ void RenderController::
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
+    //model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
+    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMergerThread(view->glwidget));
+
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
     main->centralWidget()->setFocus ();
@@ -1049,37 +1050,17 @@ void RenderController::
 void RenderController::
         deleteTarget()
 {
+    model()->chunk_merger.reset ();
+    model()->renderer.reset();
     clearCaches();
-
-/*
-Use Signal::Processing namespace
-    model()->renderSignalTarget.reset();
-*/
 }
 
 
 void RenderController::
         clearCaches()
 {
-    // Stop worker from producing any more heightmaps by disconnecting
-    // the collection callback from worker.
-/*
-Use Signal::Processing namespace
-    if (model()->renderSignalTarget == model()->project()->worker.target())
-        model()->project()->worker.target(Signal::pTarget());
-*/
-
-    // Assuming calling thread is the GUI thread.
-
-    // Clear all cached blocks and release cuda memory befure destroying cuda
-    // context
     foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
-    {
-        write1(collection)->reset();
-    }
-
-
-    // TODO clear stuff from FftImplementations somewhere not here
+        write1(collection)->clear();
 }
 
 

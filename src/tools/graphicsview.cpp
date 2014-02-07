@@ -179,6 +179,13 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 }
 
 
+void GraphicsView::
+        drawForeground(QPainter *painter, const QRectF &rect)
+{
+    QGraphicsView::drawForeground( painter, rect );
+}
+
+
 void GraphicsView::resizeEvent(QResizeEvent *event) {
     //float h = event->size().height();
     if (scene())

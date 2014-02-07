@@ -457,6 +457,7 @@ int Configuration::
 {
     int handled = 0;
     std::string skipfeature_;
+    std::string feature_;
 
     while (*argc > 0) {
         const char *cmd = (*argv)[0];
@@ -501,6 +502,7 @@ int Configuration::
                 commandline_message_ << endl;
             }
         }
+        else if (readarg(&cmd, feature)) features_.push_back (feature_);
 
         // TODO use _selectionfile
 
@@ -704,6 +706,7 @@ void Configuration::
     features_.push_back("overlay_navigation");
     features_.push_back("compute_device_info_in_menu");
     features_.push_back("transform_info");
+    features_.push_back("timeline_dock");
     if (!DetectGdb::is_running_through_gdb() && !DetectGdb::was_started_through_gdb ())
         features_.push_back("logfile");
 }

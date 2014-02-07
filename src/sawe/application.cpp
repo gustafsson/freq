@@ -90,6 +90,8 @@ Application::
     default_record_device(-1)
 {
     QGLFormat glformat;
+    bool vsync = false;
+    glformat.setSwapInterval(vsync ? 1 : 0);
     shared_glwidget_ = new QGLWidget(glformat);
     shared_glwidget_->makeCurrent();
 
@@ -264,7 +266,7 @@ bool Application::
                     foreach (pProject p, _projects)
                     {
                         if (receiver == p->mainWindow())
-                            p->tools().render_view()->userinput_update( true, false );
+                            p->tools().render_view()->redraw();
                     }
                     break;
 
@@ -313,6 +315,17 @@ bool Application::
             return true;
     }
     return false;
+}
+
+std::set<boost::weak_ptr<Sawe::Project>> Application::
+        projects()
+{
+    std::set<boost::weak_ptr<Sawe::Project>> P;
+
+    for (pProject p : _projects)
+        P.insert (p);
+
+    return P;
 }
 
 void Application::

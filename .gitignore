@@ -31,7 +31,7 @@ release
 *.ncb
 *.dll
 *.dsp
-qrc_icon-resources.cpp
+qrc_*.cpp
 md5sums
 *.gz
 *.so*

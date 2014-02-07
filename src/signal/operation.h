@@ -36,7 +36,7 @@ public:
 
     /**
      * @brief process computes the operation
-     * @param A buffer with data to process. The interval of the buffer will
+     * @param A buffer with data to process. The interval of the buffer must
      * be equal to a value returned by 'OperationDesc::requiredInterval(...)' param 'I'.
      * @return processed data. Returned buffer interval must be equal to expectedOutput in:
      * 'OperationDesc::requiredInterval(b->getInterval(), &expectedOutput)'
@@ -100,10 +100,17 @@ public:
      * Different computing engines could be used to instantiate different types.
      *
      * May return an empty Operation::Ptr if an operation isn't supported by a
-     * given ComputingEngine in which case some other thread will have to
-     * populate the cache instead and call invalidate samples when they are
-     * ready. This thread will then have to wait, or do something else. It will
-     * be marked as complete without computing anything until invalidated.
+     * given ComputingEngine.
+     *
+     * Note that 'requiredInterval' must be called within the same lock of 'this'
+     * to guarantee that the created operation maches the Intervals given by
+     * 'requiredInterval'. Any changes of to 'this' may create new intervals.
+     * Therefore 'createOperation' should be called for each new call to
+     * process to take any new settings into account.
+     *
+     * Changes to 'this' after 'createOperation' should not change the state
+     * of the 'Operation'. But any results obtained therefrom are obsolete.
+     *
      * @return a newly created operation.
      */
     virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;

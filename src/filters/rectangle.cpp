@@ -173,8 +173,9 @@ namespace Filters {
 void Rectangle::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "Rectangle";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should apply a bandpass and time filter between f1,s1 and f2,s2 to a signal.

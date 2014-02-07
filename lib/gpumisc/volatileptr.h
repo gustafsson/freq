@@ -11,6 +11,7 @@
 #include <boost/exception/all.hpp>
 
 
+class NoLockFailed {};
 class LockFailed: public virtual boost::exception, public virtual std::exception {
 public:
     typedef boost::error_info<struct timeout, int> timeout_value;
@@ -26,7 +27,9 @@ public:
 #endif
 
 /**
- * The VolatilePtr class guarantees compile-time thread safe access to objects.
+ * The VolatilePtr class guarantees thread safe access to objects, with
+ * compile-time on missing locks and run-time exceptions with backtraces
+ * on deadlocks.
  *
  * For examples of usage see
  * VolatilePtrTest::test ()
@@ -69,9 +72,11 @@ protected:
 
 public:
 
+    typedef T element_type;
     typedef boost::shared_ptr<volatile T> Ptr;
     typedef boost::shared_ptr<const volatile T> ConstPtr;
     typedef boost::weak_ptr<volatile T> WeakPtr;
+    typedef boost::weak_ptr<const volatile T> WeakConstPtr;
 
     class LockFailed: public ::LockFailed {};
 
@@ -103,11 +108,9 @@ public:
         // An attempt to lock again for reading may be blocked if another
         // thread has attempted a write lock in between.
     public:
-
         explicit ReadPtr (const Ptr& p, int timeout_ms=VolatilePtr_lock_timeout_ms)
-            :   l_ ((*const_cast<const Ptr*> (&p))->readWriteLock()),
+            :   l_ (p->readWriteLock()),
                 p_ (p),
-                // accessor operators return this non-volatile instance
                 t_ (const_cast<const T*> (p.get ()))
         {
             lock(timeout_ms);
@@ -116,7 +119,6 @@ public:
         explicit ReadPtr (const volatile Ptr& p, int timeout_ms=VolatilePtr_lock_timeout_ms)
             :   l_ ((*const_cast<const Ptr*> (&p))->readWriteLock()),
                 p_ (*const_cast<const Ptr*> (&p)),
-                // accessor operators return this non-volatile instance
                 t_ (const_cast<const T*> (const_cast<const Ptr*> (&p)->get ()))
         {
             lock(timeout_ms);
@@ -125,7 +127,6 @@ public:
         explicit ReadPtr (const volatile ConstPtr& p, int timeout_ms=VolatilePtr_lock_timeout_ms)
             :   l_ ((*const_cast<const ConstPtr*> (&p))->readWriteLock()),
                 p_ (*const_cast<const ConstPtr*> (&p)),
-                // accessor operators return this non-volatile instance
                 t_ (const_cast<const T*> (const_cast<const ConstPtr*> (&p)->get ()))
         {
             lock(timeout_ms);
@@ -138,18 +139,53 @@ public:
             lock(timeout_ms);
         }
 
+        /**
+         * @brief ReadPtr with NoLockFailed obtains the lock if it is readily available.
+         * If the lock was not obtained it doesn't throw any exception, but the accessors
+         * returns a null pointer. This function is 1000 times faster than setting
+         * timeout_ms=0 and discarding any LockFailed; i.e.
+         *
+         * ReadPtr w(p,NoLockFailed()); if(w) { ... }
+         * // Takes about 20 ns.
+         *
+         * try {ReadPtr w(p,0); ... } catch(const LockFailed&) {}
+         * // Takes about 1 us.
+         *
+         * @param p
+         */
+        explicit ReadPtr (const volatile Ptr& p, NoLockFailed)
+            :   l_ ((*const_cast<const Ptr*> (&p))->readWriteLock()),
+                p_ (*const_cast<const Ptr*> (&p)),
+                t_ (const_cast<const T*> (const_cast<const Ptr*> (&p)->get ()))
+        {
+            if (!l_->tryLockForWrite ())
+                t_ = 0;
+        }
+
+        explicit ReadPtr (const volatile ConstPtr& p, NoLockFailed)
+            :   l_ ((*const_cast<const ConstPtr*> (&p))->readWriteLock()),
+                p_ (*const_cast<const ConstPtr*> (&p)),
+                t_ (const_cast<const T*> (const_cast<const ConstPtr*> (&p)->get ()))
+        {
+            if (!l_->tryLockForWrite ())
+                t_ = 0;
+        }
+
         // The copy constructor is not implemented anywhere and ReadPtr is not
         // copyable. But if a there is a public copy constructor the compiler
         // can perform return value optimization in read1 and write1.
         ReadPtr(const ReadPtr&);
 
         ~ReadPtr() {
-            l_->unlock ();
+            // The destructor isn't called if the constructor throws.
+            if (t_)
+                l_->unlock ();
         }
 
         const T* operator-> () const { return t_; }
         const T& operator* () const { return *t_; }
         const T* get () const { return t_; }
+        Ptr getPtr () const { return p_; }
 
     private:
         // This constructor is not implemented as it's an error to pass a
@@ -184,9 +220,9 @@ public:
     class WritePtr : boost::noncopyable {
     public:
         explicit WritePtr (const Ptr& p, int timeout_ms=VolatilePtr_lock_timeout_ms)
-            :   l_ ((*const_cast<const Ptr*> (&p))->readWriteLock()),
-                p_ (*const_cast<const Ptr*> (&p)),
-                t_ (const_cast<T*> (const_cast<const Ptr*> (&p)->get ()))
+            :   l_ (p->readWriteLock()),
+                p_ (p),
+                t_ (const_cast<T*> (p.get ()))
         {
             lock(timeout_ms);
         }
@@ -206,16 +242,37 @@ public:
             lock(timeout_ms);
         }
 
+        // See ReadPtr(const volatile ReadPtr&, NoLockFailed)
+        explicit WritePtr (const Ptr& p, NoLockFailed)
+            :   l_ (p->readWriteLock()),
+                p_ (p),
+                t_ (const_cast<T*> (p.get ()))
+        {
+            if (!l_->tryLockForWrite ())
+                t_ = 0;
+        }
+
+        explicit WritePtr (const volatile Ptr& p, NoLockFailed)
+            :   l_ ((*const_cast<const Ptr*> (&p))->readWriteLock()),
+                p_ (*const_cast<const Ptr*> (&p)),
+                t_ (const_cast<T*> (const_cast<const Ptr*> (&p)->get ()))
+        {
+            if (!l_->tryLockForWrite ())
+                t_ = 0;
+        }
+
         // See ReadPtr(const ReadPtr&)
         WritePtr(const WritePtr&);
 
         ~WritePtr() {
-            l_->unlock ();
+            if (t_)
+                l_->unlock ();
         }
 
         T* operator-> () const { return t_; }
         T& operator* () const { return *t_; }
         T* get () const { return t_; }
+        Ptr getPtr () const { return p_; }
 
     private:
         // See ReadPtr(const T*)

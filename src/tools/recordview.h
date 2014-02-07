@@ -15,7 +15,7 @@ public:
     RecordView(RecordModel* model);
     ~RecordView();
 
-    bool enabled;
+    void setEnabled(bool v);
 
 signals:
     void gotNoData();
@@ -26,6 +26,7 @@ public slots:
 
 private:
     friend class RecordController;
+    bool enabled_;
     RecordModel* model_;
     double prev_limit_;
 };

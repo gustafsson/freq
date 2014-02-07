@@ -181,7 +181,7 @@ void CommentController::
     comment_->model()->screen_pos[0] = window_coordinates.x();
     comment_->model()->screen_pos[1] = window_coordinates.y();
 
-    view_->userinput_update();
+    view_->redraw();
 
     e->setAccepted(true);
     QWidget::mouseMoveEvent(e);

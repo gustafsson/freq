@@ -8,6 +8,7 @@
 #include "workers.h"
 
 #include "timer.h"
+#include "TaskTimer.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -48,18 +49,16 @@ Chain::
         ~Chain()
 {
     close();
-
-    // Remove all workers
-    workers_.reset ();
-
-    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
-    dag_.reset ();
 }
 
 
 bool Chain::
         close(int timeout)
 {
+    if (!workers_)
+        return true;
+
+    TaskTimer tt("Chain::close(%d)", timeout);
     // Targets::TargetNeedsCollection T = read1(targets_)->getTargets();
 
     // Ask workers to not start anything new
@@ -73,6 +72,16 @@ bool Chain::
 
     // Suppress output
     write1(workers_)->clean_dead_workers();
+
+    // Remove all workers
+    workers_.reset ();
+
+    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
+    dag_.reset ();
+
+    targets_.reset ();
+    bedroom_.reset ();
+    notifier_.reset ();
 
     return r;
 }
@@ -284,8 +293,9 @@ class OperationDescChainMock : public Test::TransparentOperationDesc
 void Chain::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "Chain";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // Boost graph shall support removing and adding vertices without breaking color maps

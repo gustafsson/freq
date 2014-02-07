@@ -1,5 +1,6 @@
 #include "cwtblockfilter.h"
 #include "heightmap/chunktoblock.h"
+#include "heightmap/chunktoblockdegeneratetexture.h"
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
@@ -19,26 +20,34 @@ CwtBlockFilter::
 {}
 
 
-void CwtBlockFilter::
-        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
+        createChunkToBlock(Tfr::ChunkAndInverse& pchunk)
 {
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
     EXCEPTION_ASSERT( cwt );
-    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
+//    bool full_resolution = cwt->wavelet_time_support() >= cwt->wavelet_default_time_support();
     float normalization_factor = cwt->nScales()/cwt->sigma();
 
     Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( pchunk.chunk.get () );
 
-    Heightmap::ChunkToBlock chunktoblock;
-    chunktoblock.full_resolution = full_resolution;
-    chunktoblock.complex_info = complex_info_;
-    chunktoblock.normalization_factor = normalization_factor;
-    chunktoblock.enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
+    std::vector<IChunkToBlock::Ptr> R;
 
-    BOOST_FOREACH( const Tfr::pChunk& chunkpart, chunks.chunks )
-    {
-        chunktoblock.mergeRowMajorChunk (block, *chunkpart, outData);
-    }
+    for ( const Tfr::pChunk& chunkpart : chunks.chunks )
+      {
+//        Heightmap::ChunkToBlock* chunktoblock;
+//        IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunkpart));
+//        chunktoblock->full_resolution = full_resolution;
+//        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
+//        chunktoblock->complex_info = complex_info_;
+
+        IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockDegenerateTexture(chunkpart));
+        chunktoblockp->normalization_factor = normalization_factor;
+        EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
+
+        R.push_back (chunktoblockp);
+      }
+
+    return R;
 }
 
 
@@ -68,12 +77,22 @@ MergeChunk::Ptr CwtBlockFilterDesc::
 #include "signal/computingengine.h"
 #include "test/randombuffer.h"
 
+#include <QApplication>
+#include <QGLWidget>
+
 namespace Heightmap {
 namespace TfrMappings {
 
 void CwtBlockFilter::
         test()
 {
+    std::string name = "CwtBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a block with cwt transform data.
     {
         Timer t;
@@ -104,9 +123,9 @@ void CwtBlockFilter::
             return ref;
         }();
 
-        Heightmap::Block block(ref, bl, vp);
+        Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -119,7 +138,11 @@ void CwtBlockFilter::
         // Do the merge
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::Ptr mc( new CwtBlockFilter(complex_info) );
-        write1(mc)->mergeChunk( block, cai, *block.block_data () );
+
+        write1(mc)->filterChunk(cai);
+        std::vector<IChunkToBlock::Ptr> prep = write1(mc)->createChunkToBlock(cai);
+        for (size_t i=0; i<prep.size (); ++i)
+            prep[i]->mergeChunk (block);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

@@ -34,7 +34,7 @@ void RenderViewUpdateAdapter::
 {
     UPDATEINFO TaskInfo(format("processedData %s -> %s") % input % output);
 
-    emit userinput_update ();
+    emit redraw ();
 }
 
 } // namespace Support
@@ -45,9 +45,9 @@ namespace Tools {
 namespace Support {
 
 void RenderViewUpdateAdapterMock::
-        userinput_update()
+        redraw()
 {
-    userinput_update_count++;
+    redraw_count++;
 }
 
 
@@ -69,19 +69,19 @@ void RenderViewUpdateAdapter::
         RenderViewUpdateAdapterMock mock;
 
         connect(a, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), &mock, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
-        connect(a, SIGNAL(userinput_update()), &mock, SLOT(userinput_update()));
+        connect(a, SIGNAL(redraw()), &mock, SLOT(redraw()));
 
-        EXCEPTION_ASSERT_EQUALS(mock.userinput_update_count, 0);
+        EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 0);
 
         write1(rt)->refreshSamples(Signal::Intervals(1,2));
 
-        EXCEPTION_ASSERT_EQUALS(mock.userinput_update_count, 0);
+        EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);
 
         write1(rt)->processedData(Signal::Interval(1,2), Signal::Interval(3,4));
 
-        EXCEPTION_ASSERT_EQUALS(mock.userinput_update_count, 1);
+        EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 1);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);
     }
 

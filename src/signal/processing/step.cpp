@@ -2,6 +2,7 @@
 #include "test/operationmockups.h"
 
 #include "TaskTimer.h"
+#include "log.h"
 
 #include <boost/foreach.hpp>
 
@@ -42,7 +43,6 @@ void Step::
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
-    operations_.clear ();
 
     Signal::OperationDesc::Ptr died = died_;
     bool was_locked = !readWriteLock ()->tryLockForWrite ();
@@ -83,8 +83,7 @@ Intervals Step::
         deprecateCache(Intervals deprecated)
 {
     if (deprecated == Interval::Interval_ALL) {
-        cache_.reset ();
-        operations_.clear ();
+        cache_.clear ();
     }
 
     if (operation_desc_ && deprecated) {
@@ -121,26 +120,6 @@ Intervals Step::
 }
 
 
-Operation::Ptr Step::
-        operation(ComputingEngine::Ptr ce)
-{
-    gc();
-
-    ComputingEngine::WeakPtr wp(ce);
-    OperationMap::iterator oi = operations_.find (wp);
-
-    if (oi != operations_.end ())
-    {
-        return oi->second;
-    }
-
-    Operation::Ptr o = read1(operation_desc_)->createOperation (ce.get ());
-    operations_[wp] = o;
-
-    return o;
-}
-
-
 OperationDesc::Ptr Step::
         operation_desc () const
 {
@@ -171,18 +150,15 @@ void Step::
               % result_interval);
 
     if (result) {
-        if (!cache_)
-            cache_.reset(new SinkSource(result->number_of_channels ()));
-
         // Result must have the same number of channels and sample rate as previous cache.
         // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
-        cache_->put (result);
+        cache_.put (result);
     }
 
-    int C = running_tasks.count (taskid);
-    if (C!=1) {
-        TaskInfo("C = %d, taskid = %x", C, taskid);
-        EXCEPTION_ASSERTX( running_tasks.count (taskid)==1, "Could not find given task");
+    int matched_task = running_tasks.count (taskid);
+    if (1 != matched_task) {
+        Log("C = %d, taskid = %x on %s") % matched_task % taskid % operation_name ();
+        EXCEPTION_ASSERT_EQUALS( 1, matched_task );
     }
 
     Intervals expected_output = running_tasks[ taskid ];
@@ -190,12 +166,8 @@ void Step::
     Intervals update_miss = expected_output - result_interval;
     not_started_ |= update_miss;
 
-    if (!expected_output) {
-        TaskInfo(format("The task was not recognized. %1% on %2%")
-                 % result_interval
-                 % operation_name());
-    } else if (!result_interval) {
-        TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
+    if (!result) {
+        TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
                  % update_miss
                  % operation_name());
     } else {
@@ -229,13 +201,10 @@ void Step::
         sleepWhileTasks(int sleep_ms)
 {
     // The caller keeps a lock that is released while waiting
-    gc();
-
     while (!running_tasks.empty ()) {
         DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
         if (!wait_for_tasks_.wait (readWriteLock(), sleep_ms < 0 ? ULONG_MAX : sleep_ms))
             return;
-        gc();
     }
 }
 
@@ -243,33 +212,8 @@ void Step::
 pBuffer Step::
         readFixedLengthFromCache(Interval I) const
 {
-    return cache_ ? cache_->readFixedLength (I) : pBuffer();
+    return cache_.read (I);
 }
-
-
-template<typename T>
-void weakmap_gc(T& m) {
-    for (typename T::iterator i = m.begin (); i != m.end (); )
-    {
-        if (i->first.lock()) {
-            i++;
-        } else {
-            m.erase (i);
-            i = m.begin ();
-        }
-    }
-}
-
-void Step::
-        gc()
-{
-    // Garbage collection, remove operation mappings whose ComputingEngine has been removed.
-    weakmap_gc(operations_);
-
-    //weakmap_gc(running_tasks);
-    //wait_for_tasks_.wakeAll ();
-}
-
 
 } // namespace Processing
 } // namespace Signal
@@ -314,12 +258,16 @@ void Step::
         OperationDesc::Ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
         Step s(silence);
         EXCEPTION_ASSERT(!s.get_crashed ());
+        EXCEPTION_ASSERT(s.operation_desc ());
+        EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
         EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
-        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(s.operation (Signal::ComputingEngine::Ptr()).get ()));
+        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
         s.mark_as_crashed ();
         EXCEPTION_ASSERT(s.get_crashed ());
+        EXCEPTION_ASSERT(s.operation_desc ());
+        EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
         EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
-        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperation*>(s.operation (Signal::ComputingEngine::Ptr()).get ()));
+        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
     }
 }
 

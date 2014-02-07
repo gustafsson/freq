@@ -3,6 +3,7 @@
 #include "expectexception.h"
 
 #include "timer.h"
+#include "detectgdb.h"
 
 #include <QSemaphore>
 #include <QThread>
@@ -24,6 +25,30 @@ private:
 };
 
 
+class InnerDestructor {
+public:
+    InnerDestructor(bool* inner_destructor):inner_destructor(inner_destructor) {}
+    ~InnerDestructor() { *inner_destructor = true; }
+
+private:
+    bool* inner_destructor;
+};
+
+
+class ThrowInConstructor {
+public:
+    ThrowInConstructor(bool*outer_destructor, bool*inner_destructor):inner(inner_destructor) {
+        throw 1;
+    }
+
+    ~ThrowInConstructor() { *outer_destructor = true; }
+
+private:
+    bool* outer_destructor;
+    InnerDestructor inner;
+};
+
+
 class A: public VolatilePtr<A>
 {
 public:
@@ -38,6 +63,10 @@ public:
     void    consttest () const volatile;
 
     void b() { }
+
+    QReadWriteLock* readWriteLock() const volatile {
+        return VolatilePtr::readWriteLock ();
+    }
 
 private:
 
@@ -222,6 +251,34 @@ void VolatilePtrTest::
     // locking the same object more than once at a time.
     WriteWhileReadingThread::test ();
 
+    // It should be accessible from various pointer types
+    {
+        const A::Ptr mya1(new A);
+        {A::ReadPtr r(mya1);}
+        {A::WritePtr w(mya1);}
+
+        const volatile A::Ptr mya2(new A);
+        {A::ReadPtr r(mya2);}
+        {A::WritePtr w(mya2);}
+
+        const volatile A::ConstPtr mya3(new A);
+        {A::ReadPtr r(mya3);}
+
+        A::ConstPtr mya4(new A);
+        A::ReadPtr(mya4.get ());
+
+        A::WritePtr(mya.get ());
+    }
+
+    // It should be fine to throw from the constructor as long as allocated resources
+    // are taken care of as usual in any other scope.
+    {
+        bool outer_destructor = false;
+        bool inner_destructor = false;
+        EXPECT_EXCEPTION(int, ThrowInConstructor d(&outer_destructor, &inner_destructor));
+        EXCEPTION_ASSERT(inner_destructor);
+        EXCEPTION_ASSERT(!outer_destructor);
+    }
 
     // More thoughts on design decisions
     // VolatilePtr provides two short methods read1 and write1. They are a bit
@@ -335,7 +392,73 @@ void WriteWhileReadingThread::
         EXCEPTION_ASSERT_LESS(T, 70e-3);
     }
 
-    // Is should cause a low overhead
+    // 'NoLockFailed' should be fast
+    {
+        A::Ptr a(new A());
+        A::ConstPtr consta(a);
+
+        A::WritePtr r(a);
+        double T;
+
+        bool debug = false;
+#ifdef _DEBUG
+        debug = true;
+#endif
+        bool gdb = DetectGdb::is_running_through_gdb();
+
+
+        Timer timer;
+        for (int i=0; i<1000; i++) {
+            a->readWriteLock ()->tryLockForWrite ();
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 10000e-9 : 110e-9 : 88e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 20e-9 : 20e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            a->readWriteLock ()->tryLockForWrite (0);
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, 4000e-9);
+        EXCEPTION_ASSERT_LESS(300e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            try { A::WritePtr(a,0); } catch (const LockFailed&) {}
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, debug ? 40000e-9 : 15000e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 12000e-9 : 6000e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            EXPECT_EXCEPTION(LockFailed, A::WritePtr(a,0));
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 40000e-9 : 18000e-9 : 15000e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 10000e-9 : 6000e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            A::WritePtr(a,NoLockFailed());
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 90e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            A::ReadPtr(a,NoLockFailed());
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 90e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
+
+        for (int i=0; i<1000; i++) {
+            A::ReadPtr(consta,NoLockFailed());
+        }
+        T = timer.elapsedAndRestart ()/1000;
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 80e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
+    }
+
+    // It should cause a low overhead
     {
         int N = 100000;
         boost::shared_ptr<A> a(new A());
@@ -360,7 +483,7 @@ void WriteWhileReadingThread::
         EXCEPTION_ASSERT_LESS(T3-T, 0.11e-6);
 #else
         EXCEPTION_ASSERT_LESS(T2-T, 0.18e-6);
-        EXCEPTION_ASSERT_LESS(T3-T, 0.13e-6);
+        EXCEPTION_ASSERT_LESS(T3-T, 0.14e-6);
 #endif
     }
 }

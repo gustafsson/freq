@@ -28,11 +28,13 @@ public:
     QString toString() const;
     bool operator==(const Signal::OperationDesc&d) const;
 
-    boost::shared_ptr<TransformDesc> transformDesc() const;
+    boost::shared_ptr<TransformDesc>            transformDesc() const;
+    void                                        transformDesc(boost::shared_ptr<TransformDesc>);
     boost::shared_ptr<volatile ChunkFilterDesc> chunk_filter() const;
 
 protected:
     boost::shared_ptr<volatile ChunkFilterDesc> chunk_filter_;
+    boost::shared_ptr<TransformDesc> transformDesc_;
 
 public:
     static void test();

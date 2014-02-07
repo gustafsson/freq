@@ -1,7 +1,7 @@
 #ifndef ADAPTERS_PLAYBACK_H
 #define ADAPTERS_PLAYBACK_H
 
-#include "signal/sinksource.h"
+#include "signal/cache.h"
 
 #include <vector>
 #include <time.h>
@@ -57,7 +57,7 @@ public:
     static void test();
 
 private:
-    Signal::SinkSource _data;
+    Signal::Cache _data;
     Signal::Interval _expected;
     boost::posix_time::ptime
             _first_timestamp,
@@ -80,6 +80,7 @@ private:
 
     Signal::IntervalType _playback_itr;
     int _output_device;
+    unsigned _output_channels;
     bool _is_interleaved;
 };
 

@@ -87,7 +87,7 @@ void PlaybackController::
 
     // Make RenderView keep on rendering (with interactive framerate) as long
     // as the playback marker moves
-    connect(_view, SIGNAL(update_view(bool)), render_view, SLOT(userinput_update(bool)));
+    connect(_view, SIGNAL(update_view()), render_view, SLOT(redraw()));
     connect(_view, SIGNAL(playback_stopped()), SLOT(stop()), Qt::QueuedConnection);
 
     // If playback is active, draw the playback marker in PlaybackView whenever
@@ -261,7 +261,7 @@ void PlaybackController::
 void PlaybackController::
         stop()
 {
-    TaskInfo("PlaybackController::receiveStop()");
+    //TaskInfo("PlaybackController::receiveStop()");
 
     Signal::Operation::Ptr p = model()->playback();
     if (p) {

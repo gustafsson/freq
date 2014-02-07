@@ -7,6 +7,7 @@
 #include "demangle.h"
 #include "exceptionassert.h"
 #include "expectexception.h"
+#include "log.h"
 
 #include <QMutexLocker>
 #include <QStyle>
@@ -21,7 +22,7 @@ namespace Tools {
 
 QMutex mutex;
 QString has_unreported_error_key("has_unreported_error");
-QString had_previous_crash_key("had_previous_crash_key");
+QString currently_running_key("currently_running");
 
 ApplicationErrorLogController::
         ApplicationErrorLogController()
@@ -38,7 +39,7 @@ ApplicationErrorLogController::
     connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)), Qt::QueuedConnection);
     connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::BlockingQueuedConnection);
 
-    bool had_previous_crash = QSettings().value (had_previous_crash_key, false).toBool ();
+    bool had_previous_crash = QSettings().value (currently_running_key, false).toBool ();
 
     try
       {
@@ -50,14 +51,23 @@ ApplicationErrorLogController::
       }
 
     QSettings().setValue (has_unreported_error_key, had_previous_crash);
-    QSettings().setValue (had_previous_crash_key, true); // Clear on clean exit
+    QSettings().setValue (currently_running_key, true); // Clear on clean exit
+}
+
+
+ApplicationErrorLogController::
+        ~ApplicationErrorLogController()
+{
+    TaskInfo ti("~ApplicationErrorLogController");
+    thread_.quit ();
+    thread_.wait ();
 }
 
 
 void ApplicationErrorLogController::
         finishedOk()
 {
-    QSettings().remove (had_previous_crash_key);
+    QSettings().remove (currently_running_key);
     QSettings().remove (has_unreported_error_key);
 }
 
@@ -67,11 +77,11 @@ ApplicationErrorLogController* ApplicationErrorLogController::
 {
     QMutexLocker l(&mutex);
 
-    static ApplicationErrorLogController* p = 0;
+    static std::shared_ptr<ApplicationErrorLogController> p;
     if (!p)
-        p = new ApplicationErrorLogController();
+        p.reset (new ApplicationErrorLogController());
 
-    return p;
+    return p.get ();
 }
 
 
@@ -81,16 +91,51 @@ void ApplicationErrorLogController::
     if (!e)
         return;
 
-    try {
-        rethrow_exception(e);
-    } catch (const std::exception& x) {
-        TaskInfo(boost::format("ApplicationErrorLogController::registerException: %s") % vartype(x));
-    }
+    static bool has_registered_an_exception_already = false;
+    bool log_exception_details =
+            !has_registered_an_exception_already ||
+            !QSettings().value (has_unreported_error_key, false).toBool ();
 
-    // Will be executed in instance()->thread_
-    emit instance()->got_exception (e);
-    emit instance()->showToolbar (true);
-    QSettings().setValue (has_unreported_error_key, true);
+    if (log_exception_details)
+        has_registered_an_exception_already = true;
+
+    try
+      {
+        rethrow_exception(e);
+      }
+    catch (const ExceptionAssert& x)
+      {
+        char const* const* condition = boost::get_error_info<ExceptionAssert::ExceptionAssert_condition>(x);
+        std::string const* message = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
+        std::string msg;
+        if (!message)
+            msg = "(null)";
+        if (message && *message != "error")
+            msg = ". " + *message;
+
+        Log("!!! failed assert( %s )%s%s")
+                % (condition?*condition:"(null)")
+                % msg
+                % (log_exception_details?"":". Ignored due to previous errors");
+      }
+    catch (const std::exception& x)
+      {
+        // rethrow_exception will always inherit from std::exception.
+
+        Log("!!! %s \"%s\"%s")
+                % vartype(x)
+                % x.what ()
+                % (log_exception_details?"":". Ignored due to previous errors");
+      }
+
+    if (log_exception_details)
+      {
+        has_registered_an_exception_already = true;
+        // Will be executed in instance()->thread_
+        emit instance()->got_exception (e);
+        emit instance()->showToolbar (true);
+        QSettings().setValue (has_unreported_error_key, true);
+      }
 }
 
 
@@ -240,8 +285,9 @@ void ApplicationErrorLogController::
 {
     // It should collect information about crashes to send anonymous feedback.
     if (false) {
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "ApplicationErrorLogController";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         try {

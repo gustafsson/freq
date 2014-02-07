@@ -48,6 +48,7 @@ WorkerCrashLogger::
 WorkerCrashLogger::
         ~WorkerCrashLogger()
 {
+    TaskInfo ti("~WorkerCrashLogger");
     thread_.quit ();
     thread_.wait ();
 }
@@ -179,6 +180,7 @@ void WorkerCrashLogger::
 
 #include <QApplication>
 #include "timer.h"
+#include "detectgdb.h"
 
 namespace Signal { namespace Processing { class Task; }}
 
@@ -209,12 +211,15 @@ void addAndWaitForStop(Workers::Ptr workers)
 void WorkerCrashLogger::
         test()
 {
+    bool gdb = DetectGdb::is_running_through_gdb();
+
     // It should fetch information asynchronously of crashed workers.
     {
         DEBUG TaskInfo ti("Catch info from a previously crashed worker");
 
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "WorkerCrashLogger1";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         Timer timer;
@@ -256,8 +261,9 @@ void WorkerCrashLogger::
     {
         DEBUG TaskInfo ti("Catch info from a crashed worker as it happens");
 
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "WorkerCrashLogger2";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         Timer timer;
@@ -282,14 +288,15 @@ void WorkerCrashLogger::
 
         double T = timer.elapsedAndRestart ();
         EXCEPTION_ASSERT_LESS( 1e-5, T );
-        EXCEPTION_ASSERT_LESS( T, 1e-4 );
+        EXCEPTION_ASSERT_LESS( T, 2e-4 );
     }
 
     {
         DEBUG TaskInfo ti("Support not consuming workers");
 
-        int argc = 0;
-        char* argv = 0;
+        std::string name = "WorkerCrashLogger3";
+        int argc = 1;
+        char * argv = &name[0];
         QApplication a(argc,&argv);
 
         Timer timer;
@@ -310,7 +317,7 @@ void WorkerCrashLogger::
             addAndWaitForStop(workers);
 
             double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 4e-3 );
+            EXCEPTION_ASSERT_LESS( T, gdb ? 20e-3 : 4e-3 );
         }
 
         // Should not have consumed any workers
@@ -318,8 +325,8 @@ void WorkerCrashLogger::
         EXCEPTION_ASSERT_EQUALS(de.size (), 2u);
 
         double T = timer.elapsedAndRestart ();
-        EXCEPTION_ASSERT_LESS( 0.1e-5, T );
-        EXCEPTION_ASSERT_LESS( T, 2e-4 );
+        EXCEPTION_ASSERT_LESS( 1e-6, T );
+        EXCEPTION_ASSERT_LESS( T, 300e-6 );
     }
 }
 

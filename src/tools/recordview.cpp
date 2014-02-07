@@ -17,7 +17,7 @@ namespace Tools
 RecordView::
         RecordView(RecordModel* model)
             :
-            enabled(false),
+            enabled_(false),
             model_(model),
             prev_limit_(0)
 {
@@ -33,9 +33,16 @@ RecordView::
 
 
 void RecordView::
+        setEnabled(bool v)
+{
+    enabled_ = v;
+}
+
+
+void RecordView::
         prePaint()
 {
-    if (enabled)
+    if (enabled_)
     {
 //Use Signal::Processing namespace
 /*
@@ -77,10 +84,8 @@ void RecordView::
         }
         prev_limit_ = limit;
 
-        model_->render_view->userinput_update( !write1(model_->recording)->isStopped(), true, false );
         model_->project->setModified();
     }
 }
-
 
 } // namespace Tools

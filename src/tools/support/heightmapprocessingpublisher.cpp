@@ -119,6 +119,8 @@ bool HeightmapProcessingPublisher::
 #include "signal/processing/bedroom.h"
 #include "signal/processing/task.h"
 #include "signal/processing/bedroomnotifier.h"
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Tools {
 namespace Support {
@@ -126,6 +128,13 @@ namespace Support {
 void HeightmapProcessingPublisher::
         test()
 {
+    std::string name = "HeightmapProcessingPublisher";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a processing target depending on which things that are
     // missing in a heightmap block cache
     {
@@ -176,8 +185,9 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
-        Task task(&*write1(step), step,
+        Task task(write1(step),
                   std::vector<Signal::Processing::Step::Ptr>(),
+                  Operation::Ptr(),
                   Signal::Interval(0,2), Signal::Interval());
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());

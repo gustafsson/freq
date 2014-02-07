@@ -9,6 +9,7 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/reference_hash.h"
+#include "heightmap/blocks/chunkmerger.h"
 #include "heightmap/render/renderregion.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"
@@ -37,6 +38,9 @@
 
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
+
+//#define TIME_RENDERER_DETAILS
+#define TIME_RENDERER_DETAILS if(0)
 
 using namespace std;
 
@@ -294,6 +298,7 @@ void Renderer::
     {
         Render::RenderSet::references_t R = getRenderSet(L);
         createMissingBlocks(R);
+        updateTextures(R);
         drawBlocks(R);
     }
     else
@@ -349,6 +354,8 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
+    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::createMissingBlocks");
+
     Collection::WritePtr collectionp(collection);
 
     BOOST_FOREACH(const Reference& r, R) {
@@ -359,8 +366,34 @@ void Renderer::
 
 
 void Renderer::
+        updateTextures(const Render::RenderSet::references_t& R)
+{
+    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
+
+    BlockCache::ReadPtr cache( read1(collection)->cache () );
+
+    for (const Reference& r : R)
+    {
+        if (pBlock block = cache->probe( r )) {
+            block->update_glblock_data ();
+            block->glblock->update_texture (
+                        render_settings.draw_flat
+                        ?
+                            GlBlock::HeightMode_Flat
+                          : render_settings.vertex_texture
+                            ?
+                                GlBlock::HeightMode_VertexTexture
+                              : GlBlock::HeightMode_VertexBuffer );
+        }
+    }
+}
+
+
+void Renderer::
         drawBlocks(const Render::RenderSet::references_t& R)
 {
+    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawBlocks");
+
     Render::RenderSet::references_t failed;
 
     {
@@ -399,6 +432,11 @@ void Renderer::
 void Renderer::
         drawReferences(const Render::RenderSet::references_t& R)
 {
+    if (R.empty ())
+        return;
+
+    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawReferences");
+
     BlockLayout bl = read1(collection)->block_layout ();
     RegionFactory region(bl);
 
@@ -411,6 +449,8 @@ void Renderer::
 void Renderer::
         drawAxes( float T )
 {
+    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawAxes");
+
     Tfr::FreqAxis display_scale = read1(collection)->visualization_params ()->display_scale();
 
     Render::RenderAxes ra(
@@ -427,6 +467,8 @@ void Renderer::
 void Renderer::
         drawFrustum()
 {
+    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawFrustum");
+
     Render::RenderFrustum(render_settings, clippedFrustum).drawFrustum();
 }
 

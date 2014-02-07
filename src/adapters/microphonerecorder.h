@@ -35,6 +35,7 @@ public:
 
     virtual std::string name();
     virtual float sample_rate();
+    virtual unsigned num_channels();
 
 private:
     MicrophoneRecorder()
@@ -49,6 +50,7 @@ private:
 
     int input_device_;
     float _sample_rate;
+    unsigned _num_channels;
     bool _is_interleaved;
     bool _has_input_device;
     std::vector<float> _rolling_mean;
@@ -84,7 +86,7 @@ private:
         if (0==N) // workaround for the special case of saving an empty recording.
             N = 1;
 
-        Signal::pBuffer b = readFixedLength( Signal::Interval(0, N) );
+        Signal::pBuffer b = read( Signal::Interval(0, N) );
 
         WriteWav::writeToDisk(_filename, b, false);
 

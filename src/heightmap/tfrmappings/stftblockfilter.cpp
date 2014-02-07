@@ -1,8 +1,11 @@
 #include "stftblockfilter.h"
 #include "heightmap/chunktoblock.h"
+#include "heightmap/chunktoblocktexture.h"
+#include "heightmap/chunktoblockdegeneratetexture.h"
 #include "heightmap/chunkblockfilter.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
+#include "heightmap/glblock.h"
 
 #include "demangle.h"
 
@@ -19,26 +22,39 @@ StftBlockFilter::
 
 
 void StftBlockFilter::
-        prepareChunk(Tfr::ChunkAndInverse& chunk)
+        filterChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
-        StftBlockFilterParams::WritePtr P(params_);
-        if (P->freq_normalization)
-            (*P->freq_normalization)(chunk);
+        Tfr::pChunkFilter freq_normalization = read1(params_)->freq_normalization;
+        if (freq_normalization)
+            (*freq_normalization)(chunk);
     }
 }
 
 
-void StftBlockFilter::
-        mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& pchunk, Heightmap::BlockData& outData )
+std::vector<IChunkToBlock::Ptr> StftBlockFilter::
+        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
-    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(pchunk.chunk.get ());
+    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
-    float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
 
-    Heightmap::ChunkToBlock chunktoblock;
-    chunktoblock.normalization_factor = normalization_factor;
-    chunktoblock.mergeColumnMajorChunk (block, *pchunk.chunk, outData);
+    IChunkToBlock::Ptr chunktoblock;
+
+    try {
+        chunktoblock.reset(new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
+    } catch (const ExceptionAssert& x) {
+        try {
+            TaskTimer tt("ChunkToBlockDegenerateTexture failed. Trying CPU fallback");
+            chunktoblock.reset(new Heightmap::ChunkToBlock(chunk.chunk));
+        } catch(...) {
+            throw x;
+        }
+    }
+
+    chunktoblock->normalization_factor = 1.f/sqrtf(stftchunk->window_size());
+    std::vector<IChunkToBlock::Ptr> R;
+    R.push_back (chunktoblock);
+    return R;
 }
 
 
@@ -68,7 +84,8 @@ MergeChunk::Ptr StftBlockFilterDesc::
 #include "neat_math.h"
 #include "signal/computingengine.h"
 #include "detectgdb.h"
-
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -76,6 +93,13 @@ namespace TfrMappings {
 void StftBlockFilter::
         test()
 {
+    std::string name = "StftBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a block with stft transform data.
     {
         Timer t;
@@ -106,9 +130,11 @@ void StftBlockFilter::
             return ref;
         }();
 
-        Heightmap::Block block(ref, bl, vp);
+        Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block.block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        Region r = RegionFactory( bl )( ref );
+        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -119,11 +145,17 @@ void StftBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
-        write1(mc)->mergeChunk( block, cai, *block.block_data () );
+        write1(mc)->filterChunk(cai);
+        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
+//        if (DetectGdb::is_running_through_gdb ()) {
+//            EXCEPTION_ASSERT_LESS(T, 3e-3);
+//        } else {
+//            EXCEPTION_ASSERT_LESS(T, 1e-3);
+//        }
         if (DetectGdb::is_running_through_gdb ()) {
-            EXCEPTION_ASSERT_LESS(T, 3e-3);
+            EXCEPTION_ASSERT_LESS(T, 50e-3);
         } else {
             EXCEPTION_ASSERT_LESS(T, 1e-3);
         }

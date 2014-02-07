@@ -50,11 +50,25 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    write1(processing_chain_)->close();
+    // Straight opposite order of construction is not possible
+    // because various tools have added stuff into the chain.
+    //
+    // Instead attempt unnesting of dependencies.
 
     {
-        TaskInfo ti("releasing tool resources");
+        TaskInfo ti("Releasing tool resources");
         _tools.reset();
+    }
+
+    {
+        TaskInfo ti("Releasing command invoker");
+        command_invoker_.reset ();
+    }
+
+    {
+        TaskInfo ti("Releasing signal processing chain");
+        write1(processing_chain_)->close();
+        processing_chain_.reset ();
     }
 
     if (_mainWindow)
@@ -134,6 +148,7 @@ pProject Project::
                      QString("Can't find file"),
                      QString("Can't find file '") + QString::fromLocal8Bit(filename.c_str()) + "'");
         filename.clear();
+        return pProject();
     }
 
     if (filename.empty()) {
@@ -419,7 +434,7 @@ void Project::
 {
     tools().render_view()->model->resetSettings();
     Application::global_ptr()->clearCaches();
-    tools().render_view()->userinput_update( false );
+    tools().render_view()->redraw();
 }
 
 
@@ -526,10 +541,14 @@ pProject Project::
 
 
 pProject Project::
-        openOperation(Signal::OperationDesc::Ptr operation)
+        openOperation(Signal::OperationDesc::Ptr operation, std::string name)
 {
-    pProject p( new Project(read1(operation)->toString().toStdString() ));
+    if (name.empty ())
+        name = read1(operation)->toString().toStdString();
+
+    pProject p( new Project(name) );
     p->createMainWindow ();
+    p->tools ().render_model.set_extent (read1(operation)->extent());
     p->appendOperation (operation);
     p->setModified (false);
 
@@ -546,12 +565,7 @@ pProject Project::
     boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
     Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
 
-    pProject p( new Project(a->name() ));
-    p->createMainWindow ();
-    p->appendOperation (d);
-    p->setModified (false);
-
-    return p;
+    return openOperation(d, a->name());
 }
 #endif
 
@@ -567,12 +581,8 @@ pProject Project::
         fs = 1;
 
     a->setSampleRate (fs);
-    pProject p( new Project( a->name() ));
-    p->createMainWindow ();
-    p->appendOperation (s);
+    pProject p = openOperation(s, a->name());
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
-    p->setModified (false);
-
     return p;
 }
 #endif

@@ -82,6 +82,13 @@ std::string NetworkRecorder::
 }
 
 
+unsigned NetworkRecorder::
+        num_channels ()
+{
+    return 1;
+}
+
+
 float NetworkRecorder::
         sample_rate()
 {
@@ -92,7 +99,7 @@ float NetworkRecorder::
 float NetworkRecorder::
         length()
 {
-    return std::min( Signal::SourceBase::length(), time() );
+    return std::min( Recorder::length(), time() );
 }
 
 

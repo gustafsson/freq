@@ -26,9 +26,11 @@ SOURCES += \
     cpumemorystorage.cpp \
     cpuproperties.cpp \
     datastorage.cpp \
+    datastoragestring.cpp \
     debugbuf.cpp \
     detectgdb.cpp \
     demangle.cpp \
+    factor.cpp \
     exceptionassert.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
@@ -37,12 +39,14 @@ SOURCES += \
     glprojection.cpp \
     glPushContext.cpp \
     GlTexture.cpp \
+    gltextureread.cpp \
     gluunproject.cpp \
     log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
     prettifysegfault.cpp \
     redirectstdout.cpp \
+    resampletexture.cpp \
     signalname.cpp \
     TaskTimer.cpp \
     ThreadChecker.cpp \
@@ -58,6 +62,7 @@ HEADERS += \
     cpumemorystorage.h \
     datastorage.h \
     datastorageaccess.h \
+    datastoragestring.h \
     cpuproperties.h \
     cva_list.h \
     debugbuf.h \
@@ -66,6 +71,7 @@ HEADERS += \
     demangle.h \
     detectgdb.h \
     deprecated.h \
+    factor.h \
     exceptionassert.h \
     expectexception.h \
     gl.h \
@@ -75,6 +81,7 @@ HEADERS += \
     glprojection.h \
     glPushContext.h \
     GlTexture.h \
+    gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
     gluunproject.h \
@@ -94,6 +101,7 @@ HEADERS += \
     resample.h \
     resamplecpu.h \
     resamplehelpers.h \
+    resampletexture.h \
     resampletypes.h \
     signalname.h \
     Statistics.h \

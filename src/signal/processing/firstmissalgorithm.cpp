@@ -70,25 +70,31 @@ public:
         try
           {
             Signal::Intervals I = needed[u] & step->not_started ();
-            Signal::OperationDesc::Ptr o = step->operation_desc();
 
             // Compute what we need from sources
             if (!I)
+              {
+                // Need to do nothing more here
                 return Signal::Interval();
+              }
 
-            DEBUGINFO TaskTimer tt(format("Missing %1% in %2% %3%")
+            Signal::OperationDesc::Ptr op = step->operation_desc();
+            Signal::OperationDesc::WritePtr o(op);
+
+            DEBUGINFO TaskTimer tt(format("Missing %1% in %2% for %3%")
                                    % I
-                                   % (step->operation (params.engine)?"compatible":"incompatible")
-                                   % read1(o)->toString ().toStdString ());
+                                   % o->toString ().toStdString ()
+                                   % (params.engine?vartype(*params.engine.get ()):""));
 
             // params.preferred_size is just a preferred update size, not a required update size.
             // Accept whatever requiredInterval sets as expected_output
             Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
             Signal::Interval expected_output;
-            Signal::Interval required_input = read1(o)->requiredInterval (wanted_output, &expected_output);;
-            EXCEPTION_ASSERTX(required_input, read1(o)->toString ().toStdString ());
+            Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);;
+            EXCEPTION_ASSERTX(required_input, o->toString ().toStdString ());
 
-            // check for valid 'requiredInterval' by making sure that expected_output doesn't stall needed samples in 'wanted_output'
+            // check for valid 'requiredInterval' by making sure that expected_output overlaps I.
+            // Otherwise no work for that interval will be necessary.
             EXCEPTION_ASSERTX (expected_output & Signal::Interval(wanted_output.first, wanted_output.first+1),
                                boost::format("actual_output = %1%, x = %2%")
                                % expected_output % wanted_output);
@@ -102,33 +108,38 @@ public:
                 // Then this operation must specify sample rate and number of
                 // samples for this to be a valid read. Otherwise the signal is
                 // undefined.
-                Signal ::OperationDesc::Extent x = read1(o)->extent ();
+                Signal ::OperationDesc::Extent x = o->extent ();
                 if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
                   {
                     // "Undefined signal. No sources and no extent"
-                    missing_input = Signal::Interval::Interval_ALL; // A non-empty interval
+                    missing_input = Signal::Interval::Interval_ALL;
                   }
               }
 
             // If nothing is missing and this engine supports this operation
-            if (missing_input.empty () && step->operation (params.engine))
-                // Even if this engine doesn't support this operation it should
-                // still update 'needed' so that it can compute what's
-                // needed in the children.
+            if (missing_input.empty ())
               {
-                // Create a task
-                std::vector<Step::Ptr> children;
-                BOOST_FOREACH(GraphEdge e, out_edges(u, g))
-                  {
-                    GraphVertex v = target(e,g);
-                    children.push_back (g[v]);
-                  }
+                Signal::Operation::Ptr operation = o->createOperation (params.engine.get ());
 
-                task->reset (new Task(&*step, g[u], children, expected_output, required_input));
+                if (operation)
+                  {
+                    // Create a task
+                    std::vector<Step::Ptr> children;
+
+                    BOOST_FOREACH(GraphEdge e, out_edges(u, g))
+                      {
+                        GraphVertex v = target(e,g);
+                        children.push_back (g[v]);
+                      }
+
+                    task->reset (new Task(step, children, operation, expected_output, required_input));
+                  }
               }
 
+            // Even if this engine doesn't support this operation it should
+            // still update 'needed' so that it can compute what's
+            // needed in the children, who might support this engine.
             return required_input;
-
           }
         catch (const boost::exception& x)
           {
@@ -201,8 +212,9 @@ void FirstMissAlgorithm::
 
         // Schedule a task
         FirstMissAlgorithm schedule;
-        Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25);
-        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25);
+        Signal::ComputingEngine::Ptr c(new Signal::ComputingCpu);
+        Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::Ptr(), c);
+        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::Ptr(), c);
 
 
         // Verify output
@@ -215,8 +227,8 @@ void FirstMissAlgorithm::
         EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), read1(step)->not_started());
 
         // Verify that the output objects can be used
-        write1(t1)->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
-        write1(t2)->run(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+        write1(t1)->run();
+        write1(t2)->run();
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,30));
     }

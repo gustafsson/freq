@@ -231,7 +231,7 @@ void SettingsDialog::
                     Signal::Interval::IntervalType_MAX);
     }
 
-    project->tools().render_view()->userinput_update();
+    project->tools().render_view()->redraw();
 }
 
 

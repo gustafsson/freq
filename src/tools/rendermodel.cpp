@@ -56,6 +56,7 @@ RenderModel::
         ~RenderModel()
 {
     TaskInfo ti(__FUNCTION__);
+    chunk_merger.reset ();
     renderer.reset();
     tfr_map_.reset ();
 }
@@ -216,7 +217,13 @@ void RenderModel::
         recompute_extent()
 {
     Signal::OperationDesc::Extent extent = read1(chain_)->extent(target_marker_);
+    set_extent(extent);
+}
 
+
+void RenderModel::
+        set_extent(Signal::OperationDesc::Extent extent)
+{
     Heightmap::TfrMapping::WritePtr w(tfr_map_);
     w->targetSampleRate( extent.sample_rate.get_value_or (1) );
     w->length( extent.interval.get_value_or (Signal::Interval()).count() / w->targetSampleRate() );

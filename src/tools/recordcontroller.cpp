@@ -26,11 +26,14 @@ RecordController::
                 destroyed_ ( false ),
                 prev_length_( 0 )
 {
+    qRegisterMetaType<Signal::Interval>("Signal::Interval");
+
     ui->actionRecord = actionRecord;
 
     setupGui();
 
     connect(view_, SIGNAL(gotNoData()), SLOT(receiveStop()));
+    connect(model(), SIGNAL(markNewlyRecordedData(Signal::Interval)), SLOT(redraw(Signal::Interval)));
 }
 
 
@@ -64,8 +67,10 @@ void RecordController::
         prev_length_ = r->number_of_samples();
         r->startRecording();
 
-        if (!r->canRecord())
+        if (!r->canRecord()) {
+            TaskInfo("can't record :(");
             ui->actionRecord->setChecked( false );
+        }
     }
     else
     {
@@ -88,7 +93,7 @@ void RecordController::
         }
     }
 
-    view_->enabled = active;
+    view_->setEnabled( active );
 }
 
 
@@ -96,6 +101,13 @@ void RecordController::
         receiveStop()
 {
     ui->actionRecord->setChecked(false);
+}
+
+
+void RecordController::
+        redraw(Signal::Interval)
+{
+    model()->render_view->redraw ();
 }
 
 

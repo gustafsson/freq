@@ -20,9 +20,8 @@ class CepstrumBlockFilter: public Heightmap::MergeChunk
 public:
     CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr params);
 
-    void prepareChunk(Tfr::ChunkAndInverse& chunk);
-
-    void mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& chunk, Heightmap::BlockData& outData );
+    void filterChunk(Tfr::ChunkAndInverse&);
+    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
 private:
     CepstrumBlockFilterParams::Ptr params_;

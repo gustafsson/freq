@@ -19,9 +19,16 @@ namespace Processing {
  *
  * Issues
  * ------
- * Has not tested how it copes with workers that doesn't support all steps.
- * If the engine does not support the selected step the task will silently
- * ignore it.
+ * Has not thoroughly tested how it copes with workers that doesn't support all
+ * steps. If the engine does not support the selected step the task will
+ * silently ignore it.
+ *
+ * The idea is that if an OperationDesc doesn't support a ComputingEngine this
+ * thread will then have to wait, or do something else. Some other thread will
+ * have to populate the cache instead.
+ *
+ * If an OperationDesc doesn't support any of the current ComputingEngines no
+ * work will get done.
  *
  * Todo
  * ----

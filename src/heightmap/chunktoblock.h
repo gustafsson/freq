@@ -5,18 +5,24 @@
 #include "tfr/chunkfilter.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
+#include "ichunktoblock.h"
 
 namespace Heightmap {
 
-class ChunkToBlock
+class ChunkToBlock: public IChunkToBlock
 {
 public:
-    ChunkToBlock();
+    ChunkToBlock(Tfr::pChunk chunk);
 
     ComplexInfo complex_info;
     float normalization_factor;
     bool full_resolution;
     bool enable_subtexel_aggregation;
+
+    void mergeChunk( pBlock block );
+
+private:
+    Tfr::pChunk chunk;
 
     void mergeColumnMajorChunk(
             const Block& block,

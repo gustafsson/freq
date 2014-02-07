@@ -35,14 +35,18 @@ class GotDataCallback: public Adapters::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::Ptr i) { i_ = i; }
+    void setRecordModel(RecordModel* model) { model_ = model; }
 
     virtual void markNewlyRecordedData(Signal::Interval what) {
         if (i_)
             read1(i_)->deprecateCache(what);
+        if (model_)
+            emit model_->markNewlyRecordedData(what);
     }
 
 private:
     Signal::Processing::IInvalidator::Ptr i_;
+    RecordModel* model_ = 0;
 };
 
 
@@ -56,11 +60,13 @@ RecordModel* RecordModel::
     Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);
 
-    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
-
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
     record_model->invalidator = i;
+
+    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
+    dynamic_cast<GotDataCallback*>(&*write1(callback))->setRecordModel (record_model);
+
     return record_model;
 }
 
@@ -74,6 +80,7 @@ bool RecordModel::
 } // namespace Tools
 
 #include <QApplication>
+#include "signal/processing/workers.h"
 
 namespace Tools
 {
@@ -118,8 +125,9 @@ private:
 void RecordModel::
         test()
 {
-    int argc = 0;
-    char* argv = 0;
+    std::string name = "RecordModel";
+    int argc = 1;
+    char * argv = &name[0];
     QApplication a(argc,&argv);
 
     // It should describe the operation required to perform a recording.
@@ -153,7 +161,11 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        EXCEPTION_ASSERT( needs->sleep(1000) );
+        if (!needs->sleep(1000)) {
+            Signal::Processing::Workers::WritePtr w(read1(chain)->workers());
+            Signal::Processing::Workers::print(w->clean_dead_workers());
+            EXCEPTION_ASSERT( false );
+        }
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());
