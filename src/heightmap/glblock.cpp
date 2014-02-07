@@ -2,9 +2,6 @@
 
 #include "glblock.h"
 
-// sonicawe
-#include "sawe/nonblockingmessagebox.h"
-
 // gpumisc
 #include "vbo.h"
 #include "demangle.h"

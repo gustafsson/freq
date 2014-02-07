@@ -1,6 +1,7 @@
 #include "shaderresource.h"
-#include "sawe/nonblockingmessagebox.h"
 #include "GlException.h"
+
+#include "exceptionassert.h"
 
 // Qt
 #include <QResource>
@@ -31,10 +32,8 @@ string attachShader(GLuint prg, GLenum type, const char *name)
         shader = glCreateShader(type);
 
         QResource qr(name);
-        if (!qr.isValid())
-            throw ios::failure(string("Couldn't find shader resource ") + name);
-        if ( 0 == qr.size())
-            throw ios::failure(string("Shader resource empty ") + name);
+        EXCEPTION_ASSERTX( qr.isValid(), string("Couldn't find shader resource ") + name);
+        EXCEPTION_ASSERTX( 0 != qr.size(), string("Shader resource empty ") + name);
 
         size = qr.size();
         src = (char*)qr.data();
@@ -119,14 +118,7 @@ GLuint ShaderResource::
 
             TaskInfo("Couldn't properly setup graphics\n%s", log.str().c_str());
 
-            Sawe::NonblockingMessageBox::show(
-                    QMessageBox::Critical,
-                    "Couldn't properly setup graphics",
-                    "Sonic AWE couldn't properly setup required graphics. "
-                    "Please file this as a bug report to help us fix this. "
-                    "See more info in 'Help->Report a bug'",
-
-                    log.str().c_str() );
+            EXCEPTION_ASSERTX(false, log.str ());
         }
 
         glUseProgram(program);
