@@ -47,8 +47,7 @@ ChunkToBlockDegenerateTexture::
     int tex_width = 1;
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
-    bool test_degenerate_shader = true;
-    if (!test_degenerate_shader && data_width < gl_max_texture_size && data_height < gl_max_texture_size)
+    if (data_width < gl_max_texture_size && data_height < gl_max_texture_size)
       {
         // No need for degenerate
         shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag");
