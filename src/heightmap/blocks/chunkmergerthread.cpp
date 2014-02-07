@@ -26,6 +26,8 @@ ChunkMergerThread::
 ChunkMergerThread::
         ~ChunkMergerThread()
 {
+    TaskInfo ti("~ChunkMergerThread");
+
     bool was_idle = isEmpty ();
     clear ();
     requestInterruption ();
@@ -33,7 +35,7 @@ ChunkMergerThread::
 
     if (!was_idle)
       {
-        TaskTimer ti("~ChunkMergerThread");
+        TaskTimer ti("Waiting");
         QThread::wait ();
       }
 

@@ -50,11 +50,25 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    write1(processing_chain_)->close();
+    // Straight opposite order of construction is not possible
+    // because various tools have added stuff into the chain.
+    //
+    // Instead attempt unnesting of dependencies.
 
     {
-        TaskInfo ti("releasing tool resources");
+        TaskInfo ti("Releasing tool resources");
         _tools.reset();
+    }
+
+    {
+        TaskInfo ti("Releasing command invoker");
+        command_invoker_.reset ();
+    }
+
+    {
+        TaskInfo ti("Releasing signal processing chain");
+        write1(processing_chain_)->close();
+        processing_chain_.reset ();
     }
 
     if (_mainWindow)

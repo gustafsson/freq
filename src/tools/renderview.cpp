@@ -130,7 +130,7 @@ RenderView::
 
     TaskInfo("cudaThreadExit()");
 
-    Sawe::Application::global_ptr()->clearCaches();
+//    Sawe::Application::global_ptr()->clearCaches();
 
     // Because the Cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
@@ -145,7 +145,7 @@ RenderView::
     // Also, see Application::clearCaches() which doesn't call cudaThreadExit
     // unless there is a current context (which is the case when clearCaches is
     // called above in this method).
-    glwidget->makeCurrent();
+//    glwidget->makeCurrent();
 
 #ifdef USE_CUDA
     EXCEPTION_ASSERT( QGLContext::currentContext() );

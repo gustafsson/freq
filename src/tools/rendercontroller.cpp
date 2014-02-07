@@ -1050,37 +1050,17 @@ void RenderController::
 void RenderController::
         deleteTarget()
 {
+    model()->chunk_merger.reset ();
+    model()->renderer.reset();
     clearCaches();
-
-/*
-Use Signal::Processing namespace
-    model()->renderSignalTarget.reset();
-*/
 }
 
 
 void RenderController::
         clearCaches()
 {
-    // Stop worker from producing any more heightmaps by disconnecting
-    // the collection callback from worker.
-/*
-Use Signal::Processing namespace
-    if (model()->renderSignalTarget == model()->project()->worker.target())
-        model()->project()->worker.target(Signal::pTarget());
-*/
-
-    // Assuming calling thread is the GUI thread.
-
-    // Clear all cached blocks and release cuda memory befure destroying cuda
-    // context
     foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
-    {
         write1(collection)->clear();
-    }
-
-
-    // TODO clear stuff from FftImplementations somewhere not here
 }
 
 
