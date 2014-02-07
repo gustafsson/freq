@@ -8,37 +8,76 @@ uniform vec2 tex_size;
 
 void main()
 {
-    // Translate normalized index to data index (integers)
-    vec2 uv1 = floor((gl_TexCoord[0].st - gl_TexCoord[0].pq) * data_size);
-    vec2 uv2 = floor((gl_TexCoord[0].st + gl_TexCoord[0].pq) * data_size);
-    // Compute neighbouring indices as well, and their distance
-    vec2 f = (gl_TexCoord[0].st - gl_TexCoord[0].pq) * data_size - uv1;
     float a = 0.0;
-    vec2 uv;
-    for (uv.x=floor(uv1.x); uv.x<=ceil(uv2.x); ++uv.x) {
-        for (uv.y=floor(uv1.y); uv.y<=ceil(uv2.y); ++uv.y)
+
+    float xstep = gl_TexCoord[0].p;
+    if (xstep < 0.5 / data_size.x)
+    {
+        // Translate normalized index to data index (integers)
+        vec2 uv = floor(gl_TexCoord[0].st * data_size);
+        // Compute neighbouring indices as well, and their distance
+        vec2 f = gl_TexCoord[0].st * data_size - uv;
+        vec4 u = vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0);
+        vec4 v = vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0);
+
+        // Compute linear index common for data and degenerate texture
+        // With IEEE-754 single floats 'i' is an exact integer up to 16 million.
+        // But that's only guaranteed in GLSL 1.30 and above.
+        vec4 i = u + v*data_size.x;
+
+        // Compute degenerate texel index (integers)
+        v = floor(i / tex_size.x);
+        u = mod(i, tex_size.x);
+
+        // Compute texture position that will make a nearest lookup
+        // find the right texel in degenerate texture
+        u = (u + 0.5) / tex_size.x;
+        v = (v + 0.5) / tex_size.y;
+
+        vec4 r = vec4(
+                    texture2D(mytex, vec2(u.s, v.s)).r,
+                    texture2D(mytex, vec2(u.t, v.t)).r,
+                    texture2D(mytex, vec2(u.p, v.p)).r,
+                    texture2D(mytex, vec2(u.q, v.q)).r );
+
+        r.xy = mix(r.xz, r.yw, f.x);
+        a = mix(r.x, r.y, f.y);
+    }
+    else
+    {
+        // Translate normalized index to data index (integers)
+        vec2 xrange = (gl_TexCoord[0].xx + gl_TexCoord[0].p*vec2(-1.0,1.0)) * data_size.x;
+        xrange = min(floor(xrange + 0.0), data_size.x-1.0);
+        float iy = floor(gl_TexCoord[0].y * data_size.y);
+        float fy = gl_TexCoord[0].y * data_size.y - iy;
+        vec2 y = vec2(iy, iy + 1.0);
+
+        // Assume the primary resolution has the highest resolution and only implement max along that.
+        // Interpolate the other.
+
+        vec2 av = vec2(0.0, 0.0);
+        for (float x=xrange.x; x<xrange.y; ++x)
         {
             // Compute linear index common for data and degenerate texture
             // With IEEE-754 single floats 'i' is an exact integer up to 16 million.
             // But that's only guaranteed in GLSL 1.30 and above.
-            float i = uv.x + uv.y*data_size.x;
+            vec2 i = x + y*data_size.x;
 
             // Compute degenerate texel index (integers)
-            float v = floor(i / tex_size.x);
-            float u = mod(i, tex_size.x);
+            vec2 v = floor(i / tex_size.x);
+            vec2 u = mod(i, tex_size.x);
 
             // Compute texture position that will make a nearest lookup
             // find the right texel in degenerate texture
             u = (u + 0.5) / tex_size.x;
             v = (v + 0.5) / tex_size.y;
 
-            // Linear interpolation on edge
-//            float f1 = max(0, uv1 - uv);
-//            float f2 = max(0, uv - uv2);
-            float f = texture2D(mytex, vec2(u, v)).r;
-//            a = max(a, (1.0-f1)*(1.0-f2)*f);
-            a = max(a, f);
+            vec2 t = vec2(texture2D(mytex, vec2(u.x, v.x)).r,
+                          texture2D(mytex, vec2(u.y, v.y)).r);
+            av = max(av, t);
         }
+
+        a = mix(av.x, av.y, fy);
     }
 
     if (0==amplitude_axis)
@@ -50,3 +89,5 @@ void main()
 
     gl_FragColor = vec4(a, 0.0, 0.0, 1.0);
 }
+
+
