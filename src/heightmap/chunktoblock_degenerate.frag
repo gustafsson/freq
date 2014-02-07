@@ -8,24 +8,26 @@ uniform vec2 tex_size;
 
 void main()
 {
-    // Translate to data texel corner
+    // Translate normalized index to data index (integers)
     vec2 uv = floor(gl_TexCoord[0].st * data_size);
+    // Compute neighbouring indices as well, and their distance
     vec2 f = gl_TexCoord[0].st * data_size - uv;
     vec4 u = vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0);
     vec4 v = vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0);
 
-    // Compute index of data texel
+    // Compute linear index common for data and degenerate texture
     // With IEEE-754 single floats 'i' is an exact integer up to 16 million.
     // But that's only guaranteed in GLSL 1.30 and above.
     vec4 i = u + v*data_size.x;
 
-    // Compute degenerate texel coorner
-    v = floor(i/tex_size.x);
-    u = mod(i,tex_size.x);
+    // Compute degenerate texel index (integers)
+    v = floor(i / tex_size.x);
+    u = mod(i, tex_size.x);
 
-    // Compute normalized texture coordinates in degenerate texture
-    u /= (tex_size.x - 1.0);
-    v /= (tex_size.y - 1.0);
+    // Compute texture position that will make a nearest lookup
+    // find the right texel in degenerate texture
+    u = (u + 0.5) / tex_size.x;
+    v = (v + 0.5) / tex_size.y;
 
     vec4 r = vec4(
                 texture2D(mytex, vec2(u.s, v.s)).r,
