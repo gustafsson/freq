@@ -56,6 +56,7 @@ RenderModel::
         ~RenderModel()
 {
     TaskInfo ti(__FUNCTION__);
+    chunk_merger.reset ();
     renderer.reset();
     tfr_map_.reset ();
 }

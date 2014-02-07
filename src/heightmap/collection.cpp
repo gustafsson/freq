@@ -72,6 +72,7 @@ Collection::
 Collection::
         ~Collection()
 {
+    TaskInfo ti("~Collection");
     clear();
 }
 
@@ -99,14 +100,21 @@ void Collection::
     BOOST_FOREACH (const BlockCache::cache_t::value_type& v, C)
     {
         pBlock b = v.second;
+        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
         b->glblock.reset ();
     }
 
     BOOST_FOREACH (const pBlock b, cache->recent())
+    {
+        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
         b->glblock.reset ();
+    }
 
     BOOST_FOREACH (const pBlock b, _to_remove)
+    {
+        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
         b->glblock.reset ();
+    }
 
     cache->clear();
 }
