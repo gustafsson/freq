@@ -165,6 +165,9 @@ void ChunkMergerThread::
       {
         for (pBlock block : j.intersecting_blocks)
           {
+            if (!block->frame_number_last_used)
+                continue;
+
             INFO TaskTimer tt(boost::format("block %s") % block->getRegion ());
             chunk_to_block->mergeChunk (block);
           }

@@ -160,9 +160,15 @@ void Collection::
         }
         else if (block->glblock->has_texture ())
         {
+            unsigned framediff = _frame_counter - block->frame_number_last_used;
+            if (framediff < 2) {
+                // This can be verified easily without knowing the acutal frame number
+                block->frame_number_last_used = 0;
+            }
+
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
-            VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
+//            VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
             //block->glblock->delete_texture ();
         }
     }
