@@ -17,8 +17,8 @@ void main()
         vec2 uv = floor(gl_TexCoord[0].st * data_size);
         // Compute neighbouring indices as well, and their distance
         vec2 f = gl_TexCoord[0].st * data_size - uv;
-        vec4 u = vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0);
-        vec4 v = vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0);
+        vec4 u = min(vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0), data_size.x);
+        vec4 v = min(vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0), data_size.y);
 
         // Compute linear index common for data and degenerate texture
         // With IEEE-754 single floats 'i' is an exact integer up to 16 million.
@@ -47,10 +47,10 @@ void main()
     {
         // Translate normalized index to data index (integers)
         vec2 xrange = (gl_TexCoord[0].xx + gl_TexCoord[0].p*vec2(-1.0,1.0)) * data_size.x;
-        xrange = min(floor(xrange + 0.0), data_size.x-1.0);
+        xrange = clamp(floor(xrange), 0.0, data_size.x);
         float iy = floor(gl_TexCoord[0].y * data_size.y);
         float fy = gl_TexCoord[0].y * data_size.y - iy;
-        vec2 y = vec2(iy, iy + 1.0);
+        vec2 y = clamp(vec2(iy, iy + 1.0), 0.0, data_size.y-1.0);
 
         // Assume the primary resolution has the highest resolution and only implement max along that.
         // Interpolate the other.
