@@ -124,6 +124,8 @@ void ChunkMergerThread::
 
         while (!isInterruptionRequested ())
           {
+            while (semaphore.tryAcquire ()) {}
+
             while (true)
               {
                 Job job;
