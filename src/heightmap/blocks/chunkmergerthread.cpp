@@ -149,6 +149,9 @@ void ChunkMergerThread::
                   }
               }
 
+            // Make sure any texture upload is complete
+            glFinish ();
+
             semaphore.acquire ();
           }
       }
