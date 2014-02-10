@@ -129,14 +129,24 @@ void ChunkMergerThread::
               {
                 Job job;
                   {
-                    Jobs::WritePtr jobsw(jobs);
-                    if (jobsw->empty ())
+                    Jobs::WritePtr jobsr(jobs);
+                    if (jobsr->empty ())
                         break;
-                    job = jobsw->front ();
-                    jobsw->pop ();
+                    job = jobsr->front ();
                   }
 
                 processJob (job);
+
+                  {
+                    // Want processChunks(-1) and self->isEmpty () to return false until
+                    // the job has finished processing.
+
+                    Jobs::WritePtr jobsw(jobs);
+                    // Both 'clear' and 'addChunk' may have been called in between, so only
+                    // pop the queue if the first job is still the same.
+                    if (!jobsw->empty() && job.chunk.chunk == jobsw->front().chunk.chunk)
+                        jobsw->pop ();
+                  }
               }
 
             semaphore.acquire ();
