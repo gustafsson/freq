@@ -39,6 +39,9 @@ public:
      */
     bool wait(float timeout);
 
+private slots:
+    void threadFinished();
+
 private:
     struct Job {
         MergeChunk::Ptr merge_chunk;

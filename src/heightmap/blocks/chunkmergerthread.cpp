@@ -18,6 +18,9 @@ ChunkMergerThread::
       jobs(new Jobs),
       shared_gl_context(shared_gl_context)
 {
+    // Check for clean exit
+    connect(this, SIGNAL(finished()), SLOT(threadFinished()));
+
     // Start the worker thread as a background thread
     start (LowPriority);
 }
@@ -46,6 +49,8 @@ ChunkMergerThread::
 void ChunkMergerThread::
         clear()
 {
+    INFO TaskTimer ti("ChunkMergerThread::clear");
+
     Jobs::WritePtr jobs(this->jobs);
 
     while (!jobs->empty ())
@@ -66,7 +71,10 @@ void ChunkMergerThread::
     j.merge_chunk = merge_chunk;
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
-    write1(jobs)->push (j);
+
+    Jobs::WritePtr jobsw(jobs);
+    if (!isInterruptionRequested ())
+        jobsw->push (j);
 
     semaphore.release (1);
 }
@@ -104,6 +112,20 @@ bool ChunkMergerThread::
       }
 
     return empty;
+}
+
+
+void ChunkMergerThread::
+        threadFinished()
+{
+    TaskInfo("ChunkMergerThread::threadFinished");
+
+    try {
+        EXCEPTION_ASSERTX(isInterruptionRequested (), "Thread quit unexpectedly");
+        EXCEPTION_ASSERTX(isEmpty(), "Thread quit with jobs left");
+    } catch (...) {
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception());
+    }
 }
 
 
@@ -147,11 +169,17 @@ void ChunkMergerThread::
                     // pop the queue if the first job is still the same.
                     if (!jobsw->empty() && job.chunk.chunk == jobsw->front().chunk.chunk)
                         jobsw->pop ();
+
+                    // Release OpenGL resources before releasing the memory held by chunk
+                    job.merge_chunk.reset ();
                   }
               }
 
             // Make sure any texture upload is complete
-            glFinish ();
+            {
+                INFO TaskTimer tt("glFinish");
+                glFinish ();
+            }
 
             semaphore.acquire ();
           }
