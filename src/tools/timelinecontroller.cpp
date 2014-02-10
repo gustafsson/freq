@@ -78,6 +78,10 @@ void TimelineController::
     Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
 
     bool create_dock_window = Sawe::Configuration::feature("timeline_dock");
+
+    if (bool dock_window_doesnt_work = true)
+        create_dock_window &= !dock_window_doesnt_work;
+
     if (create_dock_window)
     {
         view->tool_selector = 0; // explicit
