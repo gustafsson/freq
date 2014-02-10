@@ -90,22 +90,20 @@ bool ChunkMergerThread::
 
 
 bool ChunkMergerThread::
-        wait(float timeout) const
+        wait(float timeout)
 {
     Timer T;
-    bool has_data;
 
     if (timeout < 0)
         timeout = FLT_MAX;
 
-    for (has_data = isEmpty ();
-         has_data && T.elapsed () < timeout && isRunning ();
-         has_data = isEmpty ())
+    bool empty;
+    while (!(empty = isEmpty ()) && T.elapsed () < timeout && isRunning ())
       {
-        QSemaphore().tryAcquire (1, 5); // Sleep 5 ms
+        QThread::wait (5); // Sleep 5 ms
       }
 
-    return !has_data;
+    return empty;
 }
 
 

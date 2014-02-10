@@ -33,7 +33,11 @@ public:
     bool processChunks(float timeout) volatile;
 
     bool isEmpty() const;
-    bool wait(float timeout) const;
+    /**
+     * @brief wait waits until the list of chunks to process is empty.
+     * @return true if the wait was aborted because the list was empty.
+     */
+    bool wait(float timeout);
 
 private:
     struct Job {
