@@ -27,6 +27,7 @@ public:
     void mergeChunk(pBlock block);
 
 private:
+    void prepTexture(float*p);
     void prepVbo(Tfr::FreqAxis display_scale, BlockLayout bl);
 
     std::shared_ptr<GlTexture> chunk_texture_;
@@ -34,9 +35,11 @@ private:
     Tfr::FreqAxis chunk_scale;
     float a_t, b_t, u0, u1;
     unsigned nScales, nSamples, nValidSamples;
+    int tex_height, tex_width, data_width, data_height, gl_max_texture_size;
     bool transpose;
 
     unsigned vbo_;
+    unsigned chunk_pbo_;
     unsigned shader_;
     unsigned normalization_location_;
     unsigned amplitude_axis_location_;
