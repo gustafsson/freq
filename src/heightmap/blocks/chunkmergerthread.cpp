@@ -67,6 +67,7 @@ void ChunkMergerThread::
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
     write1(jobs)->push (j);
+
     semaphore.release (1);
 }
 

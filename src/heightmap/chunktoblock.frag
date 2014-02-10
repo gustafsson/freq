@@ -16,5 +16,6 @@ void main()
         v = v < 0.0 ? 0.0 : v;
     }
 
+//    v = 3.0 / -log2(normalization);
     gl_FragColor = vec4(v, 0, 0, 1);
 }

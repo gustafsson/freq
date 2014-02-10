@@ -7,5 +7,7 @@
         <file>chunktoblock_degenerate.frag</file>
         <file>chunktoblock.frag</file>
         <file>chunktoblock_degeneratesubsample.frag</file>
+        <file>chunktoblock_maxheight.frag</file>
+        <file>chunktoblock_maxwidth.frag</file>
     </qresource>
 </RCC>

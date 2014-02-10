@@ -27,12 +27,14 @@ ChunkToBlockDegenerateTexture::
     :
       vbo_(0)
 {
+    int tex_height, tex_width, data_width, data_height;
+
     nScales = chunk->nScales ();
     nSamples = chunk->nSamples ();
     nValidSamples = chunk->n_valid_samples;
     transpose = chunk->order == Tfr::Chunk::Order_column_major;
-    int data_width  = transpose ? nScales : nSamples,
-        data_height = transpose ? nSamples : nScales;
+    data_width  = transpose ? nScales : nSamples;
+    data_height = transpose ? nSamples : nScales;
     Tfr::ChunkElement *p = chunk->transform_data->getCpuMemory ();
     // Compute the norm of the chunk prior to resampling and interpolating
     int n = chunk->transform_data->numberOfElements ();
@@ -43,67 +45,77 @@ ChunkToBlockDegenerateTexture::
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture. Creating texture for chunk %s with nSamples=%u, nScales=%u")
                       % inInterval % nSamples % nScales);
 
-    int tex_height = 1;
-    int tex_width = 1;
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
-    if (data_width < gl_max_texture_size && data_height < gl_max_texture_size)
+    gl_max_texture_size--; // This seems to be the largest allowed texture in practice...
+    if (data_width <= gl_max_texture_size && data_height <= gl_max_texture_size)
       {
-        // No need for degenerate
+        // No need for degenerate (could still use degeneracy to make the width
+        // (and height) a power of 2 if it would help performance)
         shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag");
         tex_width = data_width;
         tex_height = data_height;
 
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, p));
-
-        //GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
-        //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
-        //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 64 ));
-        //glHint (GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-        //glGenerateMipmap (GL_TEXTURE_2D);
-      }
-    else if (0)
-      {
-        // Hope that it can be factored...
-        int n = data_width*data_height;
-        auto F = Factor::factor (n);
-        for (Factor::vector::reverse_iterator i = F.rbegin (); i != F.rend (); ++i)
-          {
-            unsigned f = *i;
-            if (tex_height*f < tex_width*f)
-                tex_height *= f;
-            else
-                tex_width *= f;
-          }
-
-        chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, p));
-
-        GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
       }
     else
       {
-//        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degenerate.frag");
-        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_degeneratesubsample.frag");
-
-        // Leave last row not filled
         int n = data_width*data_height;
-        tex_width = spo2g(sqrtf(n) - 1);
-        tex_height = int_div_ceil (n, tex_width);
-        int overhead = tex_width*tex_height - n;
-        int last_row_length = tex_width - overhead;
-        EXCEPTION_ASSERT_LESS(last_row_length, tex_width+1);
         EXCEPTION_ASSERT_EQUALS((unsigned)n, chunk->transform_data->numberOfElements ());
 
-        chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, 0));
+        if (data_width > gl_max_texture_size)
+          {
+            // Degeneracy. Make the size a multiple of data_height.
+            shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxwidth.frag");
 
-        // Can't use mip-mapping nor ANISOTROPY_EXT filtering in degenerate texture.
-        GlTexture::ScopeBinding sb = chunk_texture_->getScopeBinding ();
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) );
-        GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) );
-        glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, tex_width, tex_height-1, GL_RG, GL_FLOAT, p);
-        glTexSubImage2D (GL_TEXTURE_2D, 0, 0, tex_height-1, last_row_length, 1, GL_RG, GL_FLOAT, &p[tex_width*(tex_height-1)]);
+            tex_width = gl_max_texture_size;
+            int s = int_div_ceil (data_width, tex_width);
+            tex_height = data_height * s;
+
+            // Out of open gl memory if this happens...
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_height, gl_max_texture_size);
+
+            chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, 0));
+
+            GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+            for (int i=0; i<s; ++i)
+              {
+                for (int h=0; h<data_height; ++h)
+                  {
+                    int w = std::min(tex_width, data_width - tex_width*i);
+                    int y = h + i*data_height;
+                    Tfr::ChunkElement* q = &p[h*data_width + i*tex_width];
+                    glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, w, 1, GL_RG, GL_FLOAT, q);
+                  }
+              }
+
+            GlException_CHECK_ERROR();
+          }
+        else
+          {
+            shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxheight.frag");
+
+            tex_height = gl_max_texture_size;
+            int s = int_div_ceil (data_height, tex_height);
+            tex_width = data_width * s;
+
+            // Out of open gl memory if this happens...
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_width, gl_max_texture_size);
+
+            chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RG, GL_RED, GL_FLOAT, 0));
+
+            GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+            for (int i=0; i<s; ++i)
+              {
+                int h = std::min(tex_height, data_height - tex_height*i);
+                int w = data_width;
+                int x = i*data_width;
+                Tfr::ChunkElement* q = &p[data_width*i*tex_height];
+                glTexSubImage2D (GL_TEXTURE_2D, 0, x, 0, w, h, GL_RG, GL_FLOAT, q);
+              }
+
+            GlException_CHECK_ERROR();
+          }
       }
 
 
@@ -125,16 +137,22 @@ ChunkToBlockDegenerateTexture::
 
     chunk_scale = chunk->freqAxis;
 
-    glUseProgram(shader_);
+    GlException_SAFE_CALL( glUseProgram(shader_) );
     int mytex = glGetUniformLocation(shader_, "mytex");
+    GlException_CHECK_ERROR();
     int data_size_loc = glGetUniformLocation(shader_, "data_size");
+    GlException_CHECK_ERROR();
     int tex_size_loc = glGetUniformLocation(shader_, "tex_size");
+    GlException_CHECK_ERROR();
     normalization_location_ = glGetUniformLocation(shader_, "normalization");
+    GlException_CHECK_ERROR();
     amplitude_axis_location_ = glGetUniformLocation(shader_, "amplitude_axis");
-    glUniform1i(mytex, 0); // mytex corresponds to GL_TEXTURE0
-    glUniform2f(data_size_loc, data_width, data_height);
-    glUniform2f(tex_size_loc, tex_width, tex_height);
-    glUseProgram(0);
+    GlException_SAFE_CALL( glUniform1i(mytex, 0) ); // mytex corresponds to GL_TEXTURE0
+    if ( 0 <= data_size_loc)
+        GlException_SAFE_CALL( glUniform2f(data_size_loc, data_width, data_height) );
+    if ( 0 <= tex_size_loc)
+        GlException_SAFE_CALL( glUniform2f(tex_size_loc, tex_width, tex_height) );
+    GlException_SAFE_CALL( glUseProgram(0) );
 }
 
 
@@ -206,22 +224,18 @@ void ChunkToBlockDegenerateTexture::
         vertices[i++] = transpose ? du : dv;
       }
 
-    GlException_CHECK_ERROR();
-
     if (vbo_)
       {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-        glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(float)*vertices.size (), &vertices[0]);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        GlException_CHECK_ERROR();
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo_) );
+        GlException_SAFE_CALL( glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(float)*vertices.size (), &vertices[0]) );
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
       }
     else
       {
-        glGenBuffers (1, &vbo_); // Generate 1 buffer
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size (), &vertices[0], GL_STREAM_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        GlException_CHECK_ERROR();
+        GlException_SAFE_CALL( glGenBuffers (1, &vbo_) ); // Generate 1 buffer
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo_) );
+        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size (), &vertices[0], GL_STREAM_DRAW) );
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
       }
 }
 
@@ -301,7 +315,7 @@ void ChunkToBlockDegenerateTexture::
         GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
 
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2);
+        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
 
         // Copy to vertex texture
         t = glblock->glVertTexture ();
