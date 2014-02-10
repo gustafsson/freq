@@ -63,7 +63,8 @@ namespace Tools
         void setPosition( Heightmap::Position pos );
 
         float last_ysize;
-        Tools::Commands::ViewState viewstate;
+        // Owned by commandInvoker
+        QPointer<Tools::Commands::ViewState> viewstate;
 
         //QTransform projectionTransform;
         //QTransform modelviewTransform;

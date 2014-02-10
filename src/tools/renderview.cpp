@@ -78,7 +78,7 @@ RenderView::
         RenderView(RenderModel* model)
             :
             last_ysize(1),
-            viewstate(model->project()->commandInvoker()),
+            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
             graphicsview(0),
@@ -99,7 +99,7 @@ RenderView::
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(redraw()) );
     connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(redraw()));
-    connect( &viewstate, SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
+    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
 
     _update_timer = new QTimer;
     _update_timer->setSingleShot( true );

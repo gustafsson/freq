@@ -29,8 +29,8 @@ ChunkMergerThread::
     TaskInfo ti("~ChunkMergerThread");
 
     bool was_idle = isEmpty ();
-    clear ();
     requestInterruption ();
+    clear ();
     semaphore.release (1);
 
     if (!was_idle)
@@ -83,7 +83,6 @@ bool ChunkMergerThread::
         return self->isEmpty ();
       }
 
-    TaskTimer tt("ChunkMergerThread::processChunks. Waiting to finish");
     // Requested wait until done
     return self->wait(timeout);
 }
@@ -130,20 +129,14 @@ void ChunkMergerThread::
               {
                 Job job;
                   {
-                    Jobs::ReadPtr jobsr(jobs);
-                    if (jobsr->empty ())
+                    Jobs::WritePtr jobsw(jobs);
+                    if (jobsw->empty ())
                         break;
-                    job = jobsr->front ();
+                    job = jobsw->front ();
+                    jobsw->pop ();
                   }
 
                 processJob (job);
-
-                  {
-                    Jobs::WritePtr jobsw(jobs);
-                    // Both 'clear' and 'addChunk' may have been called in between
-                    if (!jobsw->empty() && job.chunk.chunk == jobsw->front().chunk.chunk)
-                        jobsw->pop ();
-                  }
               }
 
             semaphore.acquire ();

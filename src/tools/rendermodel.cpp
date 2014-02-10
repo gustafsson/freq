@@ -56,8 +56,22 @@ RenderModel::
         ~RenderModel()
 {
     TaskInfo ti(__FUNCTION__);
+    target_marker_.reset ();
+    render_operation_desc_.reset ();
+
+    // Need to make sure that this thread really quits here, before the block cache is deleted.
+    if (!chunk_merger)
+        TaskInfo("!!! Lost chunk_merger");
+    if (chunk_merger && !chunk_merger.unique ())
+        TaskInfo("!!! chunk_merger not unique");
     chunk_merger.reset ();
+
     renderer.reset();
+
+    if (!tfr_map_)
+        TaskInfo("!!! Lost tfr_map");
+    if (tfr_map_ && !tfr_map_.unique ())
+        TaskInfo("!!! tfr_map not unique");
     tfr_map_.reset ();
 }
 

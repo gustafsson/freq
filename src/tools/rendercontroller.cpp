@@ -304,8 +304,6 @@ void RenderController::
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
-
-    write1(model()->chunk_merger)->clear();
 }
 
 
@@ -374,7 +372,10 @@ void RenderController::
         EXCEPTION_ASSERT (newuseroptions);
 
         if (*newuseroptions != *useroptions)
+          {
+            write1(model()->chunk_merger)->clear();
             tfr_map->transform_desc( newuseroptions );
+          }
     }
 
     if (*t != *newuseroptions)
@@ -407,7 +408,6 @@ void RenderController::
 {
     // Wire it up to a FilterDesc
     Heightmap::ChunkBlockFilterDesc* cbfd;
-    write1(model()->chunk_merger)->clear();
     Tfr::ChunkFilterDesc::Ptr kernel(cbfd
             = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
@@ -1050,17 +1050,18 @@ void RenderController::
 void RenderController::
         deleteTarget()
 {
-    model()->chunk_merger.reset ();
-    model()->renderer.reset();
-    clearCaches();
+//    model()->chunk_merger.reset ();
+//    model()->renderer.reset();
+//    clearCaches();
 }
 
 
 void RenderController::
         clearCaches()
 {
-    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
-        write1(collection)->clear();
+    // Canät do this, chunk_merger might have glblock instances
+//    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
+//        write1(collection)->clear();
 }
 
 

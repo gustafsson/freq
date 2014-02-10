@@ -54,10 +54,9 @@ Project::
     // because various tools have added stuff into the chain.
     //
     // Instead attempt unnesting of dependencies.
-
     {
-        TaskInfo ti("Releasing tool resources");
-        _tools.reset();
+        TaskInfo ti("Closing signal processing chain");
+        write1(processing_chain_)->close();
     }
 
     {
@@ -66,8 +65,12 @@ Project::
     }
 
     {
+        TaskInfo ti("Releasing tool resources");
+        _tools.reset();
+    }
+
+    {
         TaskInfo ti("Releasing signal processing chain");
-        write1(processing_chain_)->close();
         processing_chain_.reset ();
     }
 
