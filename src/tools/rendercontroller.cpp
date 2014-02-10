@@ -467,6 +467,7 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
+    write1(model()->chunk_merger)->clear();
     write1(model()->tfr_mapping ())->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();

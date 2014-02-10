@@ -162,6 +162,8 @@ Tfr::FreqAxis RenderModel::
 void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
+    if (x != display_scale ())
+        if (chunk_merger) write1(chunk_merger)->clear();
     write1(tfr_map_)->display_scale( x );
 }
 
@@ -176,6 +178,8 @@ Heightmap::AmplitudeAxis RenderModel::
 void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
+    if (x != amplitude_axis ())
+        if (chunk_merger) write1(chunk_merger)->clear();
     write1(tfr_map_)->amplitude_axis( x );
 }
 

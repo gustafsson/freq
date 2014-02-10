@@ -44,6 +44,7 @@ public:
                 min_hz == b.min_hz &&
                 f_step == b.f_step;
     }
+    bool operator!=(const FreqAxis& b) const { return !(*this == b); }
 
 
     /**
