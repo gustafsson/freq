@@ -18,7 +18,7 @@
 namespace Heightmap {
 
 struct vertex_format {
-    float x, y, u, v, s, t;
+    float x, y, u, v;
 };
 
 
@@ -69,7 +69,7 @@ ChunkToBlockDegenerateTexture::
             shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxwidth.frag");
 
             tex_width = gl_max_texture_size;
-            int s = int_div_ceil (data_width, tex_width);
+            int s = int_div_ceil (data_width, (tex_width-1));
             tex_height = data_height * s;
 
             // Out of open gl memory if this happens...
@@ -82,9 +82,9 @@ ChunkToBlockDegenerateTexture::
               {
                 for (int h=0; h<data_height; ++h)
                   {
-                    int w = std::min(tex_width, data_width - tex_width*i);
+                    int w = std::min(tex_width, data_width - (tex_width-1)*i);
                     int y = h + i*data_height;
-                    Tfr::ChunkElement* q = &p[h*data_width + i*tex_width];
+                    Tfr::ChunkElement* q = &p[h*data_width + i*(tex_width-1)];
                     glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, w, 1, GL_RG, GL_FLOAT, q);
                   }
               }
@@ -96,7 +96,7 @@ ChunkToBlockDegenerateTexture::
             shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxheight.frag");
 
             tex_height = gl_max_texture_size;
-            int s = int_div_ceil (data_height, tex_height);
+            int s = int_div_ceil (data_height, (tex_height-1));
             tex_width = data_width * s;
 
             // Out of open gl memory if this happens...
@@ -107,10 +107,10 @@ ChunkToBlockDegenerateTexture::
             GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
             for (int i=0; i<s; ++i)
               {
-                int h = std::min(tex_height, data_height - tex_height*i);
+                int h = std::min(tex_height, data_height - (tex_height-1)*i);
                 int w = data_width;
                 int x = i*data_width;
-                Tfr::ChunkElement* q = &p[data_width*i*tex_height];
+                Tfr::ChunkElement* q = &p[data_width*i*(tex_height-1)];
                 glTexSubImage2D (GL_TEXTURE_2D, 0, x, 0, w, h, GL_RG, GL_FLOAT, q);
               }
 
@@ -124,10 +124,8 @@ ChunkToBlockDegenerateTexture::
 
     if (transpose)
       {
-//        u0 = 0.5f / nSamples;
-//        u1 = (nSamples-1.5f) / nSamples;
-        u0 = 0.f / nSamples;
-        u1 = (nSamples-1.0f) / nSamples;
+         u0 = 0.f / nSamples; // The sample at a_t
+         u1 = (nSamples-1.0f) / nSamples; // The sample at b_t
       }
     else
       {
@@ -193,9 +191,6 @@ void ChunkToBlockDegenerateTexture::
 //    float ky = 1.f + 1.f/(Y-1.f);
 //    float oy = 0.5f;
 
-    float du = 0.5f * (u1 - u0) / nSamples; // xstep
-    float ds = 0.25f / bl.texels_per_column ();
-
     for (unsigned y=0; y<Y; y++)
       {
 //        float hz = chunk_scale.getFrequency (y * ky - oy);
@@ -203,25 +198,16 @@ void ChunkToBlockDegenerateTexture::
         if (hz < display_scale.min_hz)
             hz = display_scale.min_hz/2;
         float s = display_scale.getFrequencyScalar(hz);
-        float hz1 = display_scale.getFrequency(s - ds);
-        float hz2 = display_scale.getFrequency(s + ds);
-        float y1 = chunk_scale.getFrequencyScalar (hz1);
-        float y2 = chunk_scale.getFrequencyScalar (hz2);
-        float dv = 0.5*(y2 - y1) / nScales;
         float v = (y + 0.0)*iY;
-//        TaskInfo("y=%d, hz=%g, hz1=%g, hz2=%g, y1=%g, y2=%g, dv=%g", y, hz, hz1, hz2, y1, y2, dv);
+
         vertices[i++] = a_t;
         vertices[i++] = s;
         vertices[i++] = transpose ? v : u0; // Normalized index
         vertices[i++] = transpose ? u0 : v;
-        vertices[i++] = transpose ? dv : du;
-        vertices[i++] = transpose ? du : dv;
         vertices[i++] = b_t;
         vertices[i++] = s;
         vertices[i++] = transpose ? v : u1;
         vertices[i++] = transpose ? u1 : v;
-        vertices[i++] = transpose ? dv : du;
-        vertices[i++] = transpose ? du : dv;
       }
 
     if (vbo_)
@@ -298,7 +284,7 @@ void ChunkToBlockDegenerateTexture::
     // Setup drawing with VBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
-    glTexCoordPointer(4, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 

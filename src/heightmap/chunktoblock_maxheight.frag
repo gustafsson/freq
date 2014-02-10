@@ -8,37 +8,39 @@ uniform vec2 tex_size;
 
 void main()
 {
-    // Translate normalized index to data index (integers)
-    vec2 uv = floor(gl_TexCoord[0].st * data_size);
-    // Compute neighbouring indices as well, and their distance
-    vec2 f = gl_TexCoord[0].st * data_size - uv;
-    vec4 u = vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0);
-    vec4 v = vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0);
+    float a = 0.0;
+    // Only step.x is used. Assuming dFdx(t)==0 and dFdy(s)==0.
+    vec2 step = 0.5*abs(vec2(dFdx(gl_TexCoord[0].s), dFdy(gl_TexCoord[0].t)));
+    vec2 uvd = gl_TexCoord[0].st * data_size;
 
-    // Compute degenerate texel index (integers)
-    u = u + floor( v/tex_size.y )*data_size.x;
-    v = mod( v, tex_size.y );
+    if (step.x < 0.5)
+        step.x = 0.0;
 
-    // Compute texture position that will make a nearest lookup
-    // find the right texel in degenerate texture
-    u = (u + 0.5) / tex_size.x;
-    v = (v + 0.5) / tex_size.y;
+    // fetch an integer number of samples centered around uv.x
+    // multiples of 0.5 are represented exactly for small floats
+    step.x = 0.5*floor(2.0*step.x+0.5);
+    for (float x=-step.x; x<=step.x; ++x)
+    {
+        vec2 uv = vec2(uvd.x + x, uvd.y);
 
-    vec4 r = vec4(
-                texture2D(mytex, vec2(u.s, v.s)).r,
-                texture2D(mytex, vec2(u.t, v.t)).r,
-                texture2D(mytex, vec2(u.p, v.p)).r,
-                texture2D(mytex, vec2(u.q, v.q)).r );
+        // Compute degenerate texel index (float)
+        uv.x = uv.x + floor( uv.y/(tex_size.y-1.0) )*data_size.x;
+        uv.y = mod( uv.y, tex_size.y-1.0 );
 
-    r.xy = mix(r.xz, r.yw, f.x);
-    float a = mix(r.x, r.y, f.y);
+        // Compute texture position that will make a linear lookup
+        // interpolate the right texels
+        uv = (uv + 0.5) / tex_size;
+
+        float r = texture2D(mytex, vec2(uv.x, uv.y)).r;
+        a = max(a, r);
+    }
 
     if (0==amplitude_axis)
         a = normalization*25.0*sqrt(a);
     if (1==amplitude_axis) {
-        a = 0.5*0.019 * log2(a*normalization*normalization) + 0.3333;
-        a = a < 0.0 ? 0.0 : a;
+        a = 0.5 * 0.019 * log2(a*normalization*normalization) + 0.3333;
+        a = max(0.0, a);
     }
 
-    gl_FragColor = vec4(a, 0.0, 0.0, 1.0);
+    gl_FragColor = vec4(a, 0, 0, 1);
 }

@@ -14,6 +14,9 @@ namespace Heightmap {
 /**
  * @brief The ChunkToBlockDegenerateTexture class should merge the contents of
  * a chunk directly onto the texture of a block.
+ *
+ * TODO: Optimizing OpenGL Texture Transfers
+ * http://on-demand.gputechconf.com/gtc/2012/presentations/S0356-GTC2012-Texture-Transfers.pdf
  */
 class ChunkToBlockDegenerateTexture: public IChunkToBlock
 {
