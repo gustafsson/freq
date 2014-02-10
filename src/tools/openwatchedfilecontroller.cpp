@@ -34,6 +34,8 @@ OpenfileWatcher::
 void OpenfileWatcher::
         fileChanged ( const QString & path)
 {
+    TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
+
     Signal::OperationDesc::Ptr file = openfilecontroller_->open(path);
 
     setWrappedOperationDesc (file);

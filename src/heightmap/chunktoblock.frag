@@ -9,16 +9,16 @@ uniform vec2 tex_size;
 void main()
 {
     float a = 0.0;
-    vec2 step = 0.5*abs(vec2(dFdx(gl_TexCoord[0].s), dFdy(gl_TexCoord[0].t)));
+    float stepx = fwidth(gl_TexCoord[0].s)*data_size.x;
     vec2 uvd = gl_TexCoord[0].st * data_size;
 
-    if (step.x < 0.5)
-        step.x = 0.0;
+    if (stepx < 1.0)
+        stepx = 1.0;
 
     // fetch an integer number of samples centered around uv.x
     // multiples of 0.5 are represented exactly for small floats
-    step.x = 0.5*floor(2.0*step.x+0.5);
-    for (float x=-step.x; x<=step.x; ++x)
+    stepx = 0.5*floor(stepx-0.5);
+    for (float x=-stepx; x<=stepx; ++x)
     {
         vec2 uv = vec2(uvd.x + x, uvd.y);
 
@@ -37,5 +37,6 @@ void main()
         a = max(0.0, a);
     }
 
+    //a = fwidth(gl_TexCoord[0].s);
     gl_FragColor = vec4(a, 0, 0, 1);
 }
