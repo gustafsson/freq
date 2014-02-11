@@ -31,7 +31,7 @@
 
 using namespace boost::posix_time;
 
-const int thread_column_width = 8;
+const int thread_column_width = 4;
 
 #ifndef NO_TASKTIMER_MUTEX
 QMutex staticLock(QMutex::Recursive);
