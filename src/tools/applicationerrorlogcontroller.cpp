@@ -23,6 +23,8 @@ namespace Tools {
 QMutex mutex;
 QString has_unreported_error_key("has_unreported_error");
 QString currently_running_key("currently_running");
+std::shared_ptr<ApplicationErrorLogController> application_error_log_controller_instance;
+
 
 ApplicationErrorLogController::
         ApplicationErrorLogController()
@@ -69,6 +71,7 @@ void ApplicationErrorLogController::
 {
     QSettings().remove (currently_running_key);
     QSettings().remove (has_unreported_error_key);
+    application_error_log_controller_instance.reset ();
 }
 
 
@@ -77,11 +80,10 @@ ApplicationErrorLogController* ApplicationErrorLogController::
 {
     QMutexLocker l(&mutex);
 
-    static std::shared_ptr<ApplicationErrorLogController> p;
-    if (!p)
-        p.reset (new ApplicationErrorLogController());
+    if (!application_error_log_controller_instance)
+        application_error_log_controller_instance.reset (new ApplicationErrorLogController());
 
-    return p.get ();
+    return application_error_log_controller_instance.get ();
 }
 
 
