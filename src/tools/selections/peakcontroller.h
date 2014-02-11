@@ -1,3 +1,4 @@
+#if 0
 #ifndef PEAKCONTROLLER_H
 #define PEAKCONTROLLER_H
 
@@ -45,3 +46,4 @@ private:
 }} // namespace Tools::Selections
 
 #endif // PEAKCONTROLLER_H
+#endif

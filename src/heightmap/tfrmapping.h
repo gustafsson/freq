@@ -3,7 +3,6 @@
 
 #include "blocklayout.h"
 #include "volatileptr.h"
-#include "signal/poperation.h"
 #include "visualizationparams.h"
 
 #include <vector>

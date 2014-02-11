@@ -292,4 +292,16 @@ private:
 
 typedef DataAccessSize<3> DataStorageSize;
 
+
+template<typename C>
+inline std::basic_ostream<C>& operator<<(std::basic_ostream<C>& s, const DataStorageSize& v) {
+    if (v.depth > 1)
+        s << "[" << v.width << ", " << v.height << ", " << v.depth << "]";
+    else if (v.height > 1)
+        s << "[" << v.width << ", " << v.height << "]";
+    else
+        s << "[" << v.width << "]";
+    return s;
+}
+
 #endif // DATASTORAGEACCESS_H

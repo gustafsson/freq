@@ -11,13 +11,12 @@ namespace Sawe {
 #include "playbackmodel.h"
 #include "renderview.h"
 #include "sawe/toolmodel.h"
+#include "adapters/recorder.h"
 
 #include <boost/serialization/version.hpp>
 
 #include <typeinfo>
 #include <QScopedPointer>
-
-namespace Adapters { class Recorder; }
 
 namespace Tools
 {
@@ -30,7 +29,7 @@ namespace Tools
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
 
-        void addRecording(Adapters::Recorder* recorder);
+        void addRecording(Adapters::Recorder::Ptr recorder);
 
         /**
          * TODO render_model should not be public. And a session could have more than one render model.

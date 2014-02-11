@@ -26,4 +26,27 @@ void drawWaveform(
             draw_waveform_with_lines_elem( writePos_x, in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs );
     }
 }
+
+
+void drawWaveform(
+        DataStorage<float>::Ptr in_waveformp,
+        DataStorage<float>::Ptr out_waveform_matrixp,
+        float blob, int readstop, float maxValue, float writeposoffs, float y0 )
+{
+    CpuMemoryReadOnly<float, 1> in_waveform = CpuMemoryStorage::ReadOnly<1>( in_waveformp );
+    CpuMemoryReadWrite<float, 2> out_waveform_matrix = CpuMemoryStorage::ReadWrite<2>( out_waveform_matrixp );
+
+    int w = out_waveform_matrixp->size().width;
+    if (blob > 1)
+    {
+        for(int writePos_x=0; writePos_x<w; ++writePos_x)
+            draw_waveform_elem( writePos_x, in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs, y0 );
+    }
+    else
+    {
+        for(int writePos_x=0; writePos_x<w; ++writePos_x)
+            draw_waveform_with_lines_elem( writePos_x, in_waveform, out_waveform_matrix, blob, readstop, 1.f/maxValue, writeposoffs, y0 );
+    }
+}
+
 #endif // USE_CUDA

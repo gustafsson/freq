@@ -50,7 +50,7 @@ void PlaybackView::
 void PlaybackView::
         emit_update_view()
 {
-    emit update_view(false);
+    emit update_view();
     Tools::Support::TransformDescs::WritePtr td (_render_view->model->transform_descs ());
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
@@ -80,9 +80,12 @@ void PlaybackView::
         return;
     }
 
+    Signal::Operation::WritePtr playbackw(model->playback());
+    Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+
     // Playback has stopped/or hasn't started
-    bool is_stopped = model->playback()->isStopped();
-    is_stopped &= model->playback()->invalid_samples().empty();
+    bool is_stopped = playback->isStopped();
+    is_stopped &= playback->invalid_samples().empty();
     if (!is_stopped)
         just_started = false;
     is_stopped &= !just_started;
@@ -90,19 +93,19 @@ void PlaybackView::
         return;
     }
 
-    bool is_paused = model->playback()->isPaused();
+    bool is_paused = playback->isPaused();
     if (!is_paused) {
         update();
     }
 
-    is_stopped |= model->playback()->hasReachedEnd ();
+    is_stopped |= playback->hasReachedEnd ();
     // Playback has recently stopped
     if (is_stopped) {
         emit playback_stopped();
         return;
     }
 
-    _playbackMarker = model->playback()->time();
+    _playbackMarker = playback->time();
     if (_playbackMarker<=0)
         _playbackMarker = -1;
 
@@ -113,7 +116,7 @@ void PlaybackView::
         {
             r.model->_qx = _playbackMarker;
 
-            r.userinput_update( true, true, false );
+            r.redraw();
         }
     }
 }
@@ -167,7 +170,7 @@ void PlaybackView::
 bool PlaybackView::
         drawPlaybackMarkerInEllipse()
 {
-    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(
+    volatile Filters::Ellipse* e = dynamic_cast<volatile Filters::Ellipse*>(
             model->selection->current_selection().get() );
 //Use Signal::Processing namespace
 //    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())

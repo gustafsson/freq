@@ -13,21 +13,21 @@
 // Sonic AWE, Setting different transforms for rendering
 #include "filters/reassign.h"
 #include "filters/ridge.h"
-#include "heightmap/blockfilter.h"
 #include "heightmap/renderer.h"
 #include "heightmap/chunkblockfilter.h"
+#include "heightmap/blocks/chunkmerger.h"
+#include "heightmap/blocks/chunkmergerthread.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
-#include "signal/postsink.h"
+#include "heightmap/tfrmappings/cepstrumblockfilter.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
-#include "tfr/drawnwaveform.h"
+#include "tfr/transformoperation.h"
 #include "graphicsview.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
 #include "signal/reroutechannels.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
@@ -65,22 +65,25 @@ namespace Tools
 RenderController::
         RenderController( QPointer<RenderView> view )
             :
+            transform(0),
+            hz_scale(0),
+            hz_scale_action(0),
+            amplitude_scale_action(0),
+            tf_resolution_action(0),
+            linearScale(0),
+            hzmarker(0),
             view(view),
             toolbar_render(0),
-            hz_scale(0),
-            linearScale(0),
             logScale(0),
             cepstraScale(0),
             amplitude_scale(0),
-            hzmarker(0),
-            color(0),
-            transform(0)
+            color(0)
 {
     Support::RenderViewUpdateAdapter* rvup;
     Support::RenderOperationDesc::RenderTarget::Ptr rvu(
                 rvup = new Support::RenderViewUpdateAdapter);
 
-    connect(rvup, SIGNAL(userinput_update()), view, SLOT(userinput_update()));
+    connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
     connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), view, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
 
     model()->init(model()->project ()->processing_chain (), rvu);
@@ -130,9 +133,16 @@ void RenderController::
         stateChanged()
 {
     // Don't lock the UI, instead wait a moment before any change is made
-    view->userinput_update();
+    view->redraw();
 
     model()->project()->setModified();
+}
+
+
+void RenderController::
+        emitAxisChanged()
+{
+    view->emitAxisChanged();
 }
 
 
@@ -267,10 +277,6 @@ void RenderController::
 
     if (isCwt)
     {
-        // The Cwt TransformDesc need to know the current sample rate
-        float fs = headSampleRate ();
-        write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
-
         float scales_per_octave = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ();
         tf_resolution->setValue ( scales_per_octave );
     }
@@ -298,19 +304,6 @@ void RenderController::
     }
     ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
-
-
-    // Only CWT benefits a lot from larger chunks, keep a lower min-framerate than otherwise
-/*
-//Use Signal::Processing namespace
-    if (dynamic_cast<const Tfr::Cwt*>(model()->transform()))
-        model()->project()->worker.min_fps( 1 );
-    else
-        model()->project()->worker.min_fps( 4 );
-
-    // clear worker assumptions of target
-    //model()->project()->worker.target(model()->renderSignalTarget);
-*/
 }
 
 
@@ -379,7 +372,10 @@ void RenderController::
         EXCEPTION_ASSERT (newuseroptions);
 
         if (*newuseroptions != *useroptions)
+          {
+            write1(model()->chunk_merger)->clear();
             tfr_map->transform_desc( newuseroptions );
+          }
     }
 
     if (*t != *newuseroptions)
@@ -408,32 +404,31 @@ void RenderController::
 
 
 void RenderController::
-        setBlockFilter(Signal::DeprecatedOperation* blockfilter)
-{
-    Signal::OperationDesc::Ptr adapter(new Signal::OldOperationDescWrapper(Signal::pOperation (blockfilter)));
-    setBlockFilter(adapter);
-}
-
-
-void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc)
 {
     // Wire it up to a FilterDesc
     Heightmap::ChunkBlockFilterDesc* cbfd;
-    Tfr::FilterKernelDesc::Ptr kernel(cbfd
-            = new Heightmap::ChunkBlockFilterDesc(model()->tfr_mapping ()));
+    Tfr::ChunkFilterDesc::Ptr kernel(cbfd
+            = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
-    Tfr::FilterDesc::Ptr desc( new Tfr::FilterDesc(transform_desc, kernel));
-    setBlockFilter( desc );
+    write1(kernel)->transformDesc(transform_desc);
+    setBlockFilter( kernel );
 }
 
 
 void RenderController::
-        setBlockFilter(Signal::OperationDesc::Ptr adapter)
+        setBlockFilter(Tfr::ChunkFilterDesc::Ptr kernel)
 {
+    Tfr::TransformOperationDesc::Ptr adapter( new Tfr::TransformOperationDesc(kernel));
+    // Ambiguity
+    // Tfr::TransformOperationDesc defines a current transformDesc
+    // VisualizationParams also defines a current transformDesc
+
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     model()->set_filter (adapter);
+
+    EXCEPTION_ASSERT( currentTransform() );
 
     stateChanged();
 
@@ -448,7 +443,6 @@ void RenderController::
         Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
         Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
         Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
-        float FS = headSampleRate();
 
         float wavelet_default_time_support = c.wavelet_default_time_support();
         float wavelet_fast_time_support = c.wavelet_time_support();
@@ -458,7 +452,7 @@ void RenderController::
         {
             tf_resolution->setRange (2, 40);
             tf_resolution->setDecimals (1);
-            c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples(FS)/c.wavelet_time_support()/c.scales_per_octave ()));
+            c.scales_per_octave (s.chunk_size ()/(c.wavelet_time_support_samples()/c.wavelet_time_support()/c.scales_per_octave ()));
             // transformChanged updates value accordingly
         }
 
@@ -466,13 +460,14 @@ void RenderController::
         {
             tf_resolution->setRange (1<<5, 1<<20, Widgets::ValueSlider::Logaritmic);
             tf_resolution->setDecimals (0);
-            s.set_approximate_chunk_size( c.wavelet_time_support_samples(FS)/c.wavelet_time_support() );
+            s.set_approximate_chunk_size( c.wavelet_time_support_samples()/c.wavelet_time_support() );
             // transformChanged updates value accordingly
         }
 
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
+    write1(model()->chunk_merger)->clear();
     write1(model()->tfr_mapping ())->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
@@ -529,10 +524,6 @@ void RenderController::
     // Setup the kernel that will take the transform data and create an image
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Non_Weighted));
 
-    // Cwt needs fs
-    float fs = headSampleRate ();
-    write1(model()->transform_descs ())->getParam<Tfr::Cwt>().set_fs(fs);
-
     // Get a copy of the transform to use
     Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
 
@@ -556,10 +547,13 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_phase()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Phase;
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
 
-    setBlockFilter( cwtblock );
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
@@ -595,38 +589,26 @@ void RenderController::
 void RenderController::
         receiveSetTransform_Cwt_weight()
 {
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_mapping (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
 
-    setBlockFilter( cwtblock );
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
 void RenderController::
         receiveSetTransform_Cepstrum()
 {
-    Heightmap::CepstrumToBlock* cepstrumblock = new Heightmap::CepstrumToBlock(model()->tfr_mapping ());
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CepstrumBlockFilterDesc);
 
-    setBlockFilter( cepstrumblock );
-}
+    // Get a copy of the transform to use
+    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::CepstrumDesc>().copy();
 
-
-void RenderController::
-        receiveSetTransform_DrawnWaveform()
-{
-    Heightmap::DrawnWaveformToBlock* drawnwaveformblock = new Heightmap::DrawnWaveformToBlock(model()->tfr_mapping ());
-
-    setBlockFilter( drawnwaveformblock );
-
-    ::Ui::MainWindow* ui = getItems();
-
-    hz_scale->setEnabled( false );
-    if (ui->actionToggle_piano_grid->isChecked())
-        hzmarker->setChecked( false );
-    ui->actionToggle_piano_grid->setVisible( false );
-
-    // blockfilter sets the proper "frequency" axis
-    linearScale->trigger();
+    setBlockFilter(mcdp, transform_desc);
 }
 
 
@@ -652,6 +634,22 @@ void RenderController::
 
 
 void RenderController::
+        receiveWaveformScale()
+{
+    float maxvalue = 1;
+    float minvalue = -1;
+
+    Tfr::FreqAxis fa;
+    fa.setWaveform (minvalue, maxvalue);
+
+    model()->display_scale( fa );
+
+    view->emitAxisChanged();
+    stateChanged();
+}
+
+
+void RenderController::
         receiveLogScale()
 {
     float fs = headSampleRate();
@@ -662,8 +660,8 @@ void RenderController::
         Support::TransformDescs::WritePtr td(model()->transform_descs ());
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         fa.setLogarithmic(
-                cwt.wanted_min_hz(),
-                cwt.get_max_hz(fs) );
+                cwt.get_wanted_min_hz (fs),
+                cwt.get_max_hz (fs) );
 
         if (currentTransform() && fa.min_hz < currentTransformMinHz())
         {
@@ -838,7 +836,6 @@ void RenderController::
 //        connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
 //        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
-        connect(ui->actionTransform_Waveform, SIGNAL(triggered()), SLOT(receiveSetTransform_DrawnWaveform()));
 
         transform = new ComboBoxAction(toolbar_render);
         transform->setObjectName("ComboBoxActiontransform");
@@ -847,7 +844,6 @@ void RenderController::
 
         if (!Sawe::Configuration::feature("stable")) {
             transform->addActionItem( ui->actionTransform_Cepstrum );
-            transform->addActionItem( ui->actionTransform_Waveform );
         }
 
 //        transform->addActionItem( ui->actionTransform_Cwt_phase );
@@ -866,36 +862,42 @@ void RenderController::
 
 
     // ComboBoxAction* hz-scale
-    {   linearScale = new QAction( toolbar_render );
+    {   waveformScale = new QAction( toolbar_render );
+        linearScale = new QAction( toolbar_render );
         logScale = new QAction( toolbar_render );
         cepstraScale = new QAction( toolbar_render );
 
+        waveformScale->setText("Waveform");
         linearScale->setText("Linear scale");
         logScale->setText("Logarithmic scale");
         cepstraScale->setText("Cepstra scale");
 
         // for serialization
+        waveformScale->setObjectName("waveformScale");
         linearScale->setObjectName("linearScale");
         logScale->setObjectName("logScale");
         cepstraScale->setObjectName("cepstraScale");
 
+        waveformScale->setVisible (false);
         linearScale->setCheckable( true );
         logScale->setCheckable( true );
         cepstraScale->setCheckable( true );
 
+        connect(waveformScale, SIGNAL(triggered()), SLOT(receiveWaveformScale()));
         connect(linearScale, SIGNAL(triggered()), SLOT(receiveLinearScale()));
         connect(logScale, SIGNAL(triggered()), SLOT(receiveLogScale()));
         connect(cepstraScale, SIGNAL(triggered()), SLOT(receiveCepstraScale()));
 
         hz_scale = new ComboBoxAction();
         hz_scale->setObjectName("hz_scale");
+        //hz_scale->addActionItem( waveformScale );
         hz_scale->addActionItem( linearScale );
         hz_scale->addActionItem( logScale );
         if (!Sawe::Configuration::feature("stable")) {
             hz_scale->addActionItem( cepstraScale );
         }
         hz_scale->decheckable( false );
-        toolbar_render->addWidget( hz_scale );
+        hz_scale_action = toolbar_render->addWidget( hz_scale );
 
         unsigned k=0;
         foreach( QAction* a, hz_scale->actions())
@@ -933,7 +935,7 @@ void RenderController::
         amplitude_scale->addActionItem( logAmpltidue );
         amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
-        toolbar_render->addWidget( amplitude_scale );
+        amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
         unsigned k=0;
         foreach( QAction* a, amplitude_scale->actions())
@@ -980,7 +982,7 @@ void RenderController::
         tf_resolution->setToolTip ("Window size (time/frequency resolution) ");
         tf_resolution->setSliderSize ( 300 );
         tf_resolution->updateLineEditOnValueChanged (false); // RenderController does that instead
-        toolbar_render->addWidget (tf_resolution);
+        tf_resolution_action = toolbar_render->addWidget (tf_resolution);
 
         connect(tf_resolution, SIGNAL(valueChanged(qreal)), SLOT(receiveSetTimeFrequencyResolution(qreal)));
         receiveSetTimeFrequencyResolution(tf_resolution->value());
@@ -1017,23 +1019,16 @@ void RenderController::
     // context is required to be created by lazy initialization when painting
     // the widget
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
-
-    {
-/*
-//Use Signal::Processing namespace
-        Signal::DeprecatedOperation* first_source = model()->project()->head->chain()->root_source().get();
-
-        view->glwidget->setObjectName( QString("glwidget %1").arg(first_source->name().c_str()));
-*/
-        view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
-    }
-
+    view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     view->glwidget->makeCurrent();
 
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
+
+    //model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
+    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMergerThread(view->glwidget));
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
@@ -1056,37 +1051,18 @@ void RenderController::
 void RenderController::
         deleteTarget()
 {
-    clearCaches();
-
-/*
-Use Signal::Processing namespace
-    model()->renderSignalTarget.reset();
-*/
+//    model()->chunk_merger.reset ();
+//    model()->renderer.reset();
+//    clearCaches();
 }
 
 
 void RenderController::
         clearCaches()
 {
-    // Stop worker from producing any more heightmaps by disconnecting
-    // the collection callback from worker.
-/*
-Use Signal::Processing namespace
-    if (model()->renderSignalTarget == model()->project()->worker.target())
-        model()->project()->worker.target(Signal::pTarget());
-*/
-
-    // Assuming calling thread is the GUI thread.
-
-    // Clear all cached blocks and release cuda memory befure destroying cuda
-    // context
-    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
-    {
-        write1(collection)->reset();
-    }
-
-
-    // TODO clear stuff from FftImplementations somewhere not here
+    // Canät do this, chunk_merger might have glblock instances
+//    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
+//        write1(collection)->clear();
 }
 
 
@@ -1095,6 +1071,10 @@ void RenderController::
 {
     switch(model()->display_scale().axis_scale)
     {
+    case Tfr::AxisScale_Waveform:
+        receiveWaveformScale();
+        break;
+
     case Tfr::AxisScale_Linear:
         receiveLinearScale();
         break;

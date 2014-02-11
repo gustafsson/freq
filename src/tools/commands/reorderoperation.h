@@ -1,3 +1,7 @@
+#if 0
+// Need to rewrite the entire class to match the new Signal::Processing namespace
+
+
 #ifndef REORDEROPERATION_H
 #define REORDEROPERATION_H
 
@@ -29,3 +33,4 @@ private:
 } // namespace Tools
 
 #endif // REORDEROPERATION_H
+#endif

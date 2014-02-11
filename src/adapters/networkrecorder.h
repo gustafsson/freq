@@ -34,6 +34,7 @@ public:
     virtual bool canRecord();
 
     virtual std::string name();
+    virtual unsigned num_channels ();
     virtual float sample_rate();
     virtual float length();
 

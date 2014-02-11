@@ -5,15 +5,9 @@ using namespace Signal;
 namespace Filters {
 
 
-AbsoluteValue::AbsoluteValue()
-    :   DeprecatedOperation(pOperation())
-{}
-
-
 pBuffer AbsoluteValue::
-        read( const Interval& I )
+        process( pBuffer b )
 {
-    pBuffer b = source()->read (I);
     int N = b->number_of_samples ();
     for (int i=0; i<(int)b->number_of_channels (); ++i)
     {
@@ -27,6 +21,57 @@ pBuffer AbsoluteValue::
     }
 
     return b;
+}
+
+
+Signal::Interval AbsoluteValueDesc::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
+{
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Signal::Interval AbsoluteValueDesc::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    return I;
+}
+
+
+Signal::OperationDesc::Ptr AbsoluteValueDesc::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new AbsoluteValueDesc());
+}
+
+
+Signal::Operation::Ptr AbsoluteValueDesc::
+        createOperation(Signal::ComputingEngine* ) const
+{
+    return Signal::Operation::Ptr(new AbsoluteValue);
+}
+
+} // namespace Filters
+
+#include "test/randombuffer.h"
+
+namespace Filters {
+
+void AbsoluteValueDesc::
+        test()
+{
+    // It should compute the absolute value of a signal.
+    {
+        AbsoluteValueDesc avd;
+        Signal::Operation::Ptr o = avd.createOperation (0);
+        Signal::pBuffer b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        float b1[] = {3, 7, 8, 5, 3};
+        float b2[] = {1, 9, 3, 6, 2};
+        EXCEPTION_ASSERT(0 == memcmp(b1, b->getChannel (0)->waveform_data ()->getCpuMemory (), sizeof(b1)));
+        EXCEPTION_ASSERT(0 == memcmp(b2, b->getChannel (1)->waveform_data ()->getCpuMemory (), sizeof(b2)));
+    }
 }
 
 } // namespace Filters

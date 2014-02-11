@@ -4,7 +4,7 @@
 #include "volatileptr.h"
 #include "signal/computingengine.h"
 #include "signal/operation.h"
-#include "signal/sinksource.h"
+#include "signal/cache.h"
 
 #include <QWaitCondition>
 
@@ -19,11 +19,19 @@ class Task;
  *
  * The cache description should contain information about what's out_of_date
  * and what's currently being updated.
+ *
+ * A crashed signal processing step should behave as a transparent operation.
  */
 class Step: public VolatilePtr<Step>
 {
 public:
+    // To be appended to exceptions while using Step
+    typedef boost::error_info<struct crashed_step_tag, Step::Ptr> crashed_step;
+
     Step(Signal::OperationDesc::Ptr operation_desc);
+
+    Signal::OperationDesc::Ptr  get_crashed() const;
+    void                        mark_as_crashed();
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
@@ -36,7 +44,6 @@ public:
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
-    Signal::Operation::Ptr      operation(Signal::ComputingEngine::Ptr);
     Signal::OperationDesc::Ptr  operation_desc() const;
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
@@ -50,25 +57,23 @@ public:
      *         that is stored in the cache for given interval. Cache misses are
      *         returned as 0 values.
      */
-    Signal::pBuffer             readFixedLengthFromCache(Signal::Interval I);
+    Signal::pBuffer             readFixedLengthFromCache(Signal::Interval I) const;
 
 private:
-    typedef std::map<Signal::ComputingEngine::WeakPtr, Signal::Operation::Ptr> OperationMap;
     typedef std::map<Task*, Signal::Interval> RunningTaskMap;
 
-    Signal::SinkSource::Ptr     cache_;
+    Signal::OperationDesc::Ptr  died_;
+    Signal::Cache               cache_;
     Signal::Intervals           not_started_;
 
     RunningTaskMap              running_tasks;
 
     Signal::OperationDesc::Ptr  operation_desc_;
-    OperationMap                operations_;
 
     QWaitCondition              wait_for_tasks_;
 
     std::string                 operation_name();
     Signal::Intervals           currently_processing() const; // from running_tasks
-    void                        gc();
 
 public:
     static void test();

@@ -1,3 +1,4 @@
+#if 0
 #include "selectionviewinfo.h"
 #include "ui_selectionviewinfo.h"
 
@@ -7,7 +8,6 @@
 #include "support/computerms.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
-#include "signal/sinksource.h"
 #include "signal/operation-basic.h"
 #include "signal/oldoperationwrapper.h"
 #include "tfr/stft.h"
@@ -266,3 +266,4 @@ Intervals SelectionViewInfoSink::
 }
 
 } // namespace Tools
+#endif

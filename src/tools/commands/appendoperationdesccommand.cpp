@@ -21,10 +21,9 @@ AppendOperationDescCommand::
 void AppendOperationDescCommand::
         execute()
 {
-    Chain::WritePtr chain(chain_);
-    IInvalidator::Ptr i = chain->addOperationAt ( operation_, at_ );
+    IInvalidator::Ptr i = write1(chain_)->addOperationAt ( operation_, at_ );
 
-    i=i; // discard IInvalidator and avoid compiler warning about it
+    write1(operation_)->setInvalidator (i);
 }
 
 
@@ -48,6 +47,7 @@ std::string AppendOperationDescCommand::
 
 // Unit test
 #include "test/operationmockups.h"
+#include <QApplication>
 
 namespace Tools {
 namespace Commands {
@@ -67,6 +67,11 @@ class SourceMock : public Test::TransparentOperationDesc
 void AppendOperationDescCommand::
         test()
 {
+    std::string name = "AppendOperationDescCommand";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+
     // It should add a new operation to the signal processing chain at the given targets current position
     {
         Chain::Ptr chain = Chain::createDefaultChain ();

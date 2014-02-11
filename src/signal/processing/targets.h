@@ -3,7 +3,7 @@
 
 #include "step.h"
 #include "targetneeds.h"
-#include "bedroom.h"
+#include "inotifier.h"
 #include "dag.h"
 
 namespace Signal {
@@ -20,7 +20,7 @@ class Targets: public VolatilePtr<Targets>
 public:
     typedef std::vector<TargetNeeds::Ptr> TargetNeedsCollection;
 
-    Targets(Bedroom::WeakPtr bedroom);
+    Targets(INotifier::WeakPtr notifier);
 
     /**
      * @brief insert adds a new target to this collection of Targets.
@@ -38,7 +38,7 @@ public:
     TargetNeedsCollection         getTargets() const;
 
 private:
-    Bedroom::WeakPtr bedroom_;
+    INotifier::WeakPtr notifier_;
 
     std::vector<TargetNeeds::WeakPtr> targets;
 

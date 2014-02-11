@@ -7,7 +7,7 @@ namespace Adapters {
 
 Recorder::Recorder()
     :
-    _data(0),
+    _data(),
     _offset(0)
 {
 
@@ -31,11 +31,18 @@ float Recorder::
 }
 
 
+void Recorder::
+        setDataCallback( IGotDataCallback::Ptr invalidator )
+{
+    _invalidator = invalidator;
+}
+
+
 Signal::IntervalType Recorder::
         actual_number_of_samples()
 {
     QMutexLocker lock(&_data_lock);
-    Signal::IntervalType N = _data.number_of_samples();
+    Signal::IntervalType N = _data.spannedInterval().count();
     return N;
 }
 
@@ -51,22 +58,14 @@ Signal::IntervalType Recorder::
         return time() * sample_rate();*/
 }
 
-unsigned Recorder::
-        num_channels()
-{
-    QMutexLocker lock(&_data_lock);
-    if (Sawe::Configuration::mono())
-        return _data.num_channels()?1:0;
-    else
-        return _data.num_channels();
-}
-
 
 Signal::pBuffer Recorder::
         read( const Signal::Interval& I )
 {
     QMutexLocker lock(&_data_lock);
-    // TODO why? return _data[channel].readFixedLength( I );
+    if (_data.empty())
+        return Signal::pBuffer(new Signal::Buffer(I, sample_rate(), num_channels ()));
+
     return _data.read( I );
 }
 
@@ -74,7 +73,7 @@ Signal::pBuffer Recorder::
 float Recorder::
         length()
 {
-    return isStopped() ? Signal::FinalSource::length() : time();
+    return isStopped() ? number_of_samples()/sample_rate() : time();
 }
 
 

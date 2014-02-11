@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAP_TFRMAPPINGS_CWTBLOCKFILTER_H
 #define HEIGHTMAP_TFRMAPPINGS_CWTBLOCKFILTER_H
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "heightmap/block.h"
 #include "heightmap/chunkblockfilter.h"
 
@@ -16,9 +16,9 @@ class CwtBlockFilter: public Heightmap::MergeChunk
 public:
     CwtBlockFilter(ComplexInfo complex_info);
 
-private:
-    void mergeChunk( const Heightmap::Block& block, const Tfr::ChunkAndInverse& chunk, Heightmap::BlockData& outData );
+    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
+private:
     ComplexInfo complex_info_;
 
 public:

@@ -10,10 +10,32 @@
 #endif
 #include <math.h> // cos, sin, M_PI
 #include <algorithm> // std::min, std::max
-#include <stdlib.h> //  error C2381: 'exit' : redefinition; __declspec(noreturn) differs
 
 namespace Tools {
     namespace Support {
+
+// DrawWorking should have a mouse over info that lets the user file a bug report.
+//    switch (QMessageBox::warning( 0,
+//                                   QString("Oups"),
+//                                   "Oups... that didn't work as expected",
+//                                   "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
+//    {
+//    case 0:
+//        model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
+//        break;
+//    case 1:
+//    {
+//        const Signal::ComputingEngine::Ptr* ce =
+//                boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
+
+//        TaskInfo(boost::format("Recreating worker %s")
+//                 % (*ce?vartype(**ce):vartype(*ce)));
+//        write1(workers)->addComputingEngine(*ce);
+//    }
+//    case 2:
+//        break;
+//    }
+
 
 static void
         drawCircleSector(float x, float y, float radius, float start, float end)
@@ -82,7 +104,7 @@ static void
 
 
 void DrawWorking::
-        drawWorking(int viewport_width, int viewport_height, bool crashed)
+        drawWorking(int viewport_width, int viewport_height, int alive, int dead)
 {
     static float computing_rotation = 0.0;
 
@@ -102,26 +124,27 @@ void DrawWorking::
 
     glDepthFunc(GL_LESS);
 
-    glEnable(GL_BLEND);
-
-    glColor4f(1, 1, 1, 0.3);
-    if (crashed)
-        glColor4f(1, 0, 0, 0.3);
+    glEnable(GL_BLEND); // which glBlendFunc is assumed here?
 
     {
         glPushMatrixContext mc(GL_MODELVIEW);
 
-        glRotatef(computing_rotation, 0, 0, 1);
-        drawRectRing(5, 0.10, 0.145);
-        glRotatef(-2*computing_rotation, 0, 0, 1);
-        drawRectRing(7, 0.15, 0.2);
-        if (!crashed)
+        if (dead) {
+            glColor4f(1, 0, 0, 0.9);
+            //glRotatef(computing_rotation, 0, 0, 1);
+            drawRectRing(dead, 0.15, 0.2);
+        }
+        if (alive) {
+            glColor4f(1, 1, 1, 0.3);
+            glRotatef(computing_rotation, 0, 0, 1);
+            drawRectRing(alive, 0.10, 0.145);
             computing_rotation += 5;
+        }
     }
 
-    glColor4f(0.3, 0.3, 0.3, 0.3);
+    glColor4f(0.5, 0.5, 0.5, 0.4);
     drawRoundRect(0.5, 0.5, 0.5);
-    glColor4f(1, 1, 1, 0.3);
+    glColor4f(1, 1, 1, 0.5);
     drawRoundRect(0.55, 0.55, 0.55);
 
     glDepthFunc(GL_LEQUAL);

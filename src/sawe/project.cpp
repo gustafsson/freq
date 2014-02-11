@@ -9,14 +9,14 @@
 #endif
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
-#include "signal/operationcache.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/toolfactory.h"
 #include "tools/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tools/commands/appendoperationdesccommand.h"
+#include "tools/openwatchedfilecontroller.h"
+#include "tools/support/audiofileopener.h"
 
 // Qt
 #include <QFileDialog>
@@ -50,25 +50,34 @@ Project::
     TaskInfo("project_title = %s", project_title().c_str());
     TaskInfo("project_filename = %s", project_filename().c_str());
 
-    write1(processing_chain_)->close();
+    // Straight opposite order of construction is not possible
+    // because various tools have added stuff into the chain.
+    //
+    // Instead attempt unnesting of dependencies.
+    {
+        TaskInfo ti("Closing signal processing chain");
+        write1(processing_chain_)->close();
+    }
 
     {
-        TaskInfo ti("releasing tool resources");
+        TaskInfo ti("Releasing command invoker");
+        command_invoker_.reset ();
+    }
+
+    {
+        TaskInfo ti("Releasing tool resources");
         _tools.reset();
+    }
+
+    {
+        TaskInfo ti("Releasing signal processing chain");
+        processing_chain_.reset ();
     }
 
     if (_mainWindow)
         delete _mainWindow;
 
     TaskInfo("Closed project");
-}
-
-
-void Project::
-        appendOperation(Signal::pOperation s)
-{
-    Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(s));
-    appendOperation(oodw);
 }
 
 
@@ -89,36 +98,6 @@ void Project::
 
     setModified ();
 }
-
-
-/*
-void Project::
-        appendOperation(Signal::pOperation s)
-{
-    Tools::SelectionModel& m = tools().selection_model;
-
-    if (m.current_selection() && m.current_selection()!=s)
-    {
-        Signal::pOperation onselectionOnly(new Tools::Support::OperationOnSelection(
-                head->head_source(),
-                Signal::pOperation( new Signal::OperationCachedSub(
-                    m.current_selection_copy( Tools::SelectionModel::SaveInside_TRUE ))),
-                Signal::pOperation( new Signal::OperationCachedSub(
-                    m.current_selection_copy( Tools::SelectionModel::SaveInside_FALSE ))),
-                s
-                ));
-
-        s = onselectionOnly;
-    }
-
-    this->head->appendOperation( s );
-
-    tools().render_model.renderSignalTarget->findHead( head->chain() )->head_source( head->head_source() );
-    tools().playback_model.playbackTarget->findHead( head->chain() )->head_source( head->head_source() );
-
-    setModified();
-}
-*/
 
 
 Tools::ToolRepo& Project::
@@ -160,11 +139,10 @@ pProject Project::
         if (url.isValid() && !url.scheme().isEmpty())
         {
             std::string scheme = url.scheme().toStdString();
-            Signal::pOperation s( new Adapters::NetworkRecorder(url) );
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (new Adapters::NetworkRecorder(url));
+            p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -173,6 +151,7 @@ pProject Project::
                      QString("Can't find file"),
                      QString("Can't find file '") + QString::fromLocal8Bit(filename.c_str()) + "'");
         filename.clear();
+        return pProject();
     }
 
     if (filename.empty()) {
@@ -213,7 +192,7 @@ pProject Project::
     {
         int availableFileTypes = 1;
     #if !defined(TARGET_reader)
-        availableFileTypes++;
+        availableFileTypes+=2;
     #endif
     #if !defined(TARGET_reader) && !defined(TARGET_hast)
         availableFileTypes++;
@@ -238,12 +217,17 @@ pProject Project::
             switch(i) {
                 case 0: p = Project::openProject( filename ); break;
     #if !defined(TARGET_reader)
-                case 1: p = Project::openAudio( filename ); break;
+                case 1: p = Project::openWatched ( filename ); break;
+                case 2: p = Project::openAudio( filename ); break;
     #endif
     #if !defined(TARGET_reader) && !defined(TARGET_hast)
-                case 2: p = Project::openCsvTimeseries( filename ); break;
+                case 3: p = Project::openCsvTimeseries( filename ); break;
     #endif
             }
+
+            if (!p)
+                continue;
+
             break; // successful loading without thrown exception
         }
         catch (const OpenFileError& x) {
@@ -310,9 +294,17 @@ pProject Project::
 {
     int device = QSettings().value("inputdevice", -1).toInt();
 
+    Adapters::Recorder::Ptr recorder(new Adapters::MicrophoneRecorder(device));
+
+    Signal::OperationDesc::Extent x;
+    x.interval = Signal::Interval();
+    x.number_of_channels = write1(recorder)->num_channels();
+    x.sample_rate = write1(recorder)->sample_rate();
+
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();
-    p->tools ().addRecording (new Adapters::MicrophoneRecorder(device));
+    p->tools ().render_model.set_extent (x);
+    p->tools ().addRecording (recorder);
 
     return p;
 }
@@ -453,7 +445,7 @@ void Project::
 {
     tools().render_view()->model->resetSettings();
     Application::global_ptr()->clearCaches();
-    tools().render_view()->userinput_update( false );
+    tools().render_view()->redraw();
 }
 
 
@@ -542,21 +534,49 @@ bool Project::
 #endif
 
 
+pProject Project::
+        openWatched(std::string path)
+{
+    Tools::OpenfileController* ofc = Tools::OpenfileController::instance();
+    if (ofc->get_openers().empty())
+        ofc->registerOpener(new Tools::Support::AudiofileOpener);
+
+    Tools::OpenWatchedFileController* watchedopener = new Tools::OpenWatchedFileController( ofc );
+
+    Signal::OperationDesc::Ptr d = watchedopener->openWatched (path.c_str ());
+    if (!d)
+        return pProject();
+
+    return openOperation(d);
+}
+
+
+pProject Project::
+        openOperation(Signal::OperationDesc::Ptr operation, std::string name)
+{
+    if (name.empty ())
+        name = read1(operation)->toString().toStdString();
+
+    pProject p( new Project(name) );
+    p->createMainWindow ();
+    p->tools ().render_model.set_extent (read1(operation)->extent());
+    p->appendOperation (operation);
+    p->setModified (false);
+
+    return p;
+}
+
+
 #if !defined(TARGET_reader)
 pProject Project::
         openAudio(std::string audio_file)
 {
-    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString();
+    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString ();
 
     boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
     Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
 
-    pProject p( new Project(a->name() ));
-    p->createMainWindow ();
-    p->appendOperation (d);
-    p->setModified (false);
-
-    return p;
+    return openOperation(d, a->name());
 }
 #endif
 
@@ -565,19 +585,15 @@ pProject Project::
         openCsvTimeseries(std::string audio_file)
 {
     Adapters::CsvTimeseries*a;
-    Signal::pOperation s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    Signal::OperationDesc::Ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     double fs = QInputDialog::getDouble (0, "Sample rate",
                                            "Enter the sample rate for the csv data:", 1);
     if (fs<=0)
         fs = 1;
 
-    a->set_sample_rate (fs);
-    pProject p( new Project( a->name() ));
-    p->createMainWindow ();
-    p->appendOperation (s);
+    a->setSampleRate (fs);
+    pProject p = openOperation(s, a->name());
     p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
-    p->setModified (false);
-
     return p;
 }
 #endif

@@ -5,6 +5,7 @@
 #include "sawe/reader.h"
 #include "neat_math.h" // uint64_t
 
+#include <boost/serialization/nvp.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/identity.hpp>
@@ -47,7 +48,7 @@ public:
 
     CsvTimeseries(std::string filename);
 
-    virtual std::string name();
+    std::string name();
     std::string filename() const { return _original_relative_filename; }
 
 private:
@@ -63,8 +64,6 @@ private:
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int /*version*/) {
         using boost::serialization::make_nvp;
-
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         ar & make_nvp("Original_filename", _original_relative_filename);
 

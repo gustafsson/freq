@@ -117,7 +117,8 @@ void SettingsDialog::
     QSettings().setValue("inputdevice", inputDevice);
 
     Tools::RecordModel* record_model = project->tools().record_model();
-    Adapters::MicrophoneRecorder* mr = dynamic_cast<Adapters::MicrophoneRecorder*>(record_model->recording);
+    Adapters::Recorder::WritePtr rec(record_model->recording);
+    Adapters::MicrophoneRecorder* mr = dynamic_cast<Adapters::MicrophoneRecorder*>(&*rec);
     if (mr)
         mr->changeInputDevice( inputDevice );
 }
@@ -230,7 +231,7 @@ void SettingsDialog::
                     Signal::Interval::IntervalType_MAX);
     }
 
-    project->tools().render_view()->userinput_update();
+    project->tools().render_view()->redraw();
 }
 
 

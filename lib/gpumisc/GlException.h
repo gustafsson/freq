@@ -79,7 +79,7 @@ public:
 	textual description of the error. #GlException_CHECK_ERROR()
 	calls this method with the intented macros as arguments.
 	
-	@param functionMacro Should be __FUNCTION__, the name of the 
+    @param functionMacro Should be BOOST_CURRENT_FUNCTION, the name of the
 	function which called this method.
 	@param fileMacro Should be __FILE__, the name of the file which
 	contains the call to this method.
@@ -100,7 +100,7 @@ public:
 	<code>gluErrorString(GLenum)</code> is used to get a
 	textual description of the error.
 	
-	@param functionMacro Should be __FUNCTION__, the name of the 
+    @param functionMacro Should be BOOST_CURRENT_FUNCTION, the name of the
 	function which called this method.
 	@param fileMacro Should be __FILE__, the name of the file which
 	contains the call to this method.
@@ -124,18 +124,18 @@ public:
 /**
 GlException_CHECK_ERROR() uses <code>check_error(const char* 
 fileMacro, int lineMacro)</code> and fills the arguments with 
-__FUNCTION__, __FILE__ and __LINE__.
+BOOST_CURRENT_FUNCTION, __FILE__ and __LINE__.
 
 @see GlException#check_error(const char*, const char*, int)
 */
 #define GlException_CHECK_ERROR() \
-	GlException::check_error(__FUNCTION__, __FILE__, __LINE__)
+    GlException::check_error(BOOST_CURRENT_FUNCTION, __FILE__, __LINE__)
 
 /**
 As #GlException_CHECK_ERROR with a caller defined message.
 */
 #define GlException_CHECK_ERROR_MSG( message ) \
-	GlException::check_error(__FUNCTION__, __FILE__, __LINE__, (message) )
+    GlException::check_error(BOOST_CURRENT_FUNCTION, __FILE__, __LINE__, (message) )
 
 /**
 GlException_SAFE_CALL() performs a GlException_CHECK_ERROR after

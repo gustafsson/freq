@@ -4,8 +4,10 @@
 #include "collection.h"
 
 #include "tfr/chunk.h"
+#include "blocks/ichunkmerger.h"
 
 #include "cpumemorystorage.h"
+#include "demangle.h"
 
 #include <boost/foreach.hpp>
 
@@ -14,51 +16,44 @@ using namespace boost;
 namespace Heightmap {
 
 ChunkBlockFilter::
-        ChunkBlockFilter(MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap)
+        ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap, MergeChunk::Ptr merge_chunk )
     :
+      chunk_merger_(chunk_merger),
       tfrmap_(tfrmap),
       merge_chunk_(merge_chunk)
 {
 }
 
 
-bool ChunkBlockFilter::
+void ChunkBlockFilter::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
     Heightmap::TfrMapping::Collections C = read1(tfrmap_)->collections();
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
-
     TfrMapping::pCollection collection = C[pchunk.channel];
+
+    write1(merge_chunk_)->filterChunk( pchunk );
 
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
 
-    write1(merge_chunk_)->prepareChunk( pchunk );
-
-    BOOST_FOREACH( pBlock block, intersecting_blocks)
-    {
-        BlockData::WritePtr blockdata(block->block_data());
-
-        write1(merge_chunk_)->mergeChunk( *block, pchunk, *blockdata );
-
-        blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
-    }
-
-    return false;
+    write1(chunk_merger_)->addChunk( merge_chunk_, pchunk, intersecting_blocks );
+    // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 
 
 void ChunkBlockFilter::
         set_number_of_channels(unsigned C)
 {
-    write1(tfrmap_)->channels(C);
+    EXCEPTION_ASSERT_EQUALS((int)C, read1(tfrmap_)->channels());
 }
 
 
 ChunkBlockFilterDesc::
-        ChunkBlockFilterDesc(Heightmap::TfrMapping::Ptr tfrmap)
+        ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap )
     :
+      chunk_merger_(chunk_merger),
       tfrmap_(tfrmap)
 {
 
@@ -75,27 +70,48 @@ Tfr::pChunkFilter ChunkBlockFilterDesc::
     if (!merge_chunk)
         return Tfr::pChunkFilter();
 
-    return Tfr::pChunkFilter( new ChunkBlockFilter(merge_chunk, tfrmap_));
+    return Tfr::pChunkFilter( new ChunkBlockFilter(chunk_merger_, tfrmap_, merge_chunk));
 }
 
 } // namespace Heightmap
 
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
+#include "blocks/chunkmerger.h"
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Heightmap {
 
-class MergeChunkMock : public MergeChunk {
+class ChunkToBlockMock : public IChunkToBlock {
 public:
-    void mergeChunk(
-            const Heightmap::Block&,
-            const Tfr::ChunkAndInverse& chunk,
-            Heightmap::BlockData&)
-    {
-        called |= chunk.chunk->getInterval ();
+    ChunkToBlockMock(bool* called) : called(called) {}
+
+    void mergeChunk( pBlock block ) {
+        *called = true;
     }
 
-    Signal::Intervals called;
+    bool* called;
+};
+
+class MergeChunkMock : public MergeChunk {
+public:
+    MergeChunkMock() : chunk_to_block_called(false) {}
+
+    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+    {
+        calledi |= chunk.chunk->getInterval ();
+
+        std::vector<IChunkToBlock::Ptr> R;
+        IChunkToBlock::Ptr p(new ChunkToBlockMock(&chunk_to_block_called));
+        R.push_back (p);
+        return R;
+    }
+
+    bool chunk_to_block_called;
+    Signal::Intervals calledi;
+
+    bool called() { return chunk_to_block_called && calledi; }
 };
 
 
@@ -113,6 +129,13 @@ class MergeChunkDescMock : public MergeChunkDesc {
 void ChunkBlockFilter::
         test()
 {
+    std::string name = "ChunkBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should use a MergeChunk to update all blocks in a tfrmap that matches a given Tfr::Chunk.
     {
         MergeChunkMock* merge_chunk_mock;
@@ -120,7 +143,8 @@ void ChunkBlockFilter::
         BlockLayout bl(4, 4, SampleRate(4));
         Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
         write1(tfrmap)->length( 1 );
-        ChunkBlockFilter cbf( merge_chunk, tfrmap );
+        Blocks::IChunkMerger::Ptr chunk_merger(new Blocks::ChunkMerger);
+        ChunkBlockFilter cbf( chunk_merger, tfrmap, merge_chunk );
 
         Tfr::StftDesc stftdesc;
         stftdesc.enable_inverse (false);
@@ -134,13 +158,17 @@ void ChunkBlockFilter::
 
         Tfr::ChunkAndInverse cai;
         cai.channel = 0;
-        cai.inverse = buffer;
+        cai.input = buffer;
         cai.t = stftdesc.createTransform ();
         cai.chunk = (*cai.t)( buffer );
 
         cbf(cai);
 
-        EXCEPTION_ASSERT( merge_chunk_mock->called );
+        EXCEPTION_ASSERT( !merge_chunk_mock->called() );
+
+        chunk_merger->processChunks(-1);
+
+        EXCEPTION_ASSERT( merge_chunk_mock->called() );
     }
 }
 
@@ -148,12 +176,20 @@ void ChunkBlockFilter::
 void ChunkBlockFilterDesc::
         test()
 {
+    std::string name = "ChunkBlockFilterDesc";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should instantiate ChunkBlockFilters for different engines.
     {
         BlockLayout bl(4,4,4);
         Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
 
-        ChunkBlockFilterDesc cbfd( tfrmap );
+        Blocks::IChunkMerger::Ptr chunk_merger(new Blocks::ChunkMerger);
+        ChunkBlockFilterDesc cbfd( chunk_merger, tfrmap );
 
         Tfr::pChunkFilter cf = cbfd.createChunkFilter (0);
         EXCEPTION_ASSERT( !cf );

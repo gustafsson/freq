@@ -179,7 +179,6 @@ bool Audiofile::
 Audiofile::
         Audiofile(std::string filename)
         :
-        Signal::OperationCache(Signal::pOperation()),
         _tried_load(false),
         _sample_rate(0),
         _number_of_samples(0),
@@ -199,7 +198,7 @@ std::string Audiofile::
         name()
 {
     if (filename().empty())
-        return DeprecatedOperation::name();
+        return vartype(*this);
 
     return QFileInfo( filename().c_str() ).fileName().toStdString();
 }
@@ -242,20 +241,9 @@ std::string Audiofile::
 }
 
 
-void Audiofile::
-        invalidate_samples(const Signal::Intervals& I)
-{
-    if (!sndfile && _tried_load)
-        _tried_load = false;
-
-    Signal::OperationCache::invalidate_samples( I );
-}
-
-
 Audiofile:: // for deserialization
         Audiofile()
             :
-            Signal::OperationCache(Signal::pOperation()),
             file(new QTemporaryFile()),
             _tried_load(false),
             _sample_rate(0),
@@ -294,8 +282,6 @@ bool Audiofile::
         _sample_rate = sndfile->samplerate();
         _number_of_samples = sndfile->frames();
         _number_of_channels = sndfile->channels();
-
-        invalidate_samples( getInterval() );
     }
 
     return true;
@@ -343,19 +329,9 @@ Signal::pBuffer Audiofile::
     TIME_AUDIOFILE_LINE( Signal::transpose( mergedata.get(), &partialfile ) );
     waveform.reset (new Signal::Buffer(I.first, mergedata, sample_rate()));
 
-    VERBOSE_AUDIOFILE *tt << "Read " << I.toString() << ", total signal length " << lengthLongFormat();
-
-    VERBOSE_AUDIOFILE tt->flushStream();
-
-    VERBOSE_AUDIOFILE tt->info("Data size: %lu samples, %lu channels", (size_t)sndfile->frames(), (size_t)sndfile->channels() );
-    VERBOSE_AUDIOFILE tt->info("Sample rate: %lu samples/second", sndfile->samplerate() );
-
-    if ((invalid_samples() - I).empty())
-    {
-        // Don't need this anymore so release resources. But load it again if needed.
-        sndfile.reset();
-        _tried_load = false;
-    }
+    VERBOSE_AUDIOFILE TaskInfo(boost::format("Read %s, total signal length %s") % I % lengthLongFormat());
+    VERBOSE_AUDIOFILE TaskInfo(boost::format("Data size: %lu samples, %lu channels") % (size_t)sndfile->frames() % (size_t)sndfile->channels() );
+    VERBOSE_AUDIOFILE TaskInfo(boost::format("Sample rate: %lu samples/second") % sndfile->samplerate() );
 
     return waveform;
 }
@@ -515,13 +491,6 @@ QString AudiofileDesc::
         toString() const
 {
     return audiofile_->filename ().c_str ();
-}
-
-
-int AudiofileDesc::
-        getNumberOfSources() const
-{
-    return 0;
 }
 
 

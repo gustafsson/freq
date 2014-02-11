@@ -210,7 +210,7 @@ void CommentView::
     }
 
     update();
-    view->userinput_update();
+    view->redraw();
 }
 
 
@@ -273,7 +273,7 @@ void CommentView::
         emit gotFocus(); // setFocusPolicy, focusInEvent doesn't work because the CommentView recieves focus to easily
 
         update();
-        view->userinput_update();
+        view->redraw();
     }
 }
 
@@ -426,7 +426,7 @@ void CommentView::
 
     update();
     proxy->update();
-    view->userinput_update();
+    view->redraw();
 }
 
 
@@ -551,7 +551,7 @@ void CommentView::
         containerWidget->move(0,0);
         proxy->scene()->update();
         update();
-        view->userinput_update();
+        view->redraw();
     }
 
     double z;

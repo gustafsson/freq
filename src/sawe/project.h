@@ -55,7 +55,6 @@ public:
     /**
       Appends 's' to head. If there is a current selection this only applies 's' to that selection.
       */
-    void appendOperation(Signal::pOperation s);
     void appendOperation(Signal::OperationDesc::Ptr s);
 
 
@@ -73,11 +72,6 @@ public:
       */
     bool areToolsInitialized();
 
-    /**
-
-      */
-    //void userinput_update( bool request_high_fps = true );
-    //void target(Signal::pTarget target, bool request_high_fps = true, Signal::IntervalType center = 0 );
 
     static void addRecentFile(std::string filename);
 
@@ -194,6 +188,8 @@ private:
     // MainWindow owns all other widgets together with the ToolRepo
     QPointer<QMainWindow> _mainWindow;
 
+    static boost::shared_ptr<Project> openWatched(std::string project_file);
+    static boost::shared_ptr<Project> openOperation(Signal::OperationDesc::Ptr operation, std::string name="");
     static boost::shared_ptr<Project> openProject(std::string project_file);
 #if !defined(TARGET_reader)
     static boost::shared_ptr<Project> openAudio(std::string audio_file);

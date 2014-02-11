@@ -4,156 +4,136 @@
 #include "filters/move.h"
 #include "filters/ellipse.h"
 #include "demangle.h"
+#include "signal/computingengine.h"
 
 using namespace Signal;
 
 namespace Tools {
     namespace Support {
 
-    // OperationSubOperations  /////////////////////////////////////////////////////////////////
-
-OperationSubOperations::
-        OperationSubOperations(Signal::pOperation source, std::string name)
-:   DeprecatedOperation(pOperation()),
-    source_sub_operation_( new DummyOperation(source)),
-    name_(name)
-{
-//    enabled(false);
-//    source_sub_operation_->enabled(false);
-    DeprecatedOperation::source( source_sub_operation_ );
-}
-
-
-Intervals affected_samples_recursive_until(pOperation o, pOperation stop)
-{
-    Intervals r;
-    if (o)
-    {
-        r = o->affected_samples();
-        if (o!=stop)
-            r |= o->translate_interval( affected_samples_recursive_until(o->source(), stop) );
-    }
-    return r;
-}
-
-
-Intervals OperationSubOperations::
-        affected_samples()
-{
-    return affected_samples_recursive_until( subSource(), source_sub_operation_);
-}
-
-
-Intervals zeroed_samples_recursive_until(pOperation o, pOperation stop)
-{
-    Intervals r;
-    if (o)
-    {
-        r = o->zeroed_samples();
-        if (o!=stop)
-            r |= o->translate_interval( zeroed_samples_recursive_until(o->source(), stop) );
-    }
-    return r;
-}
-
-
-Signal::Intervals OperationSubOperations::
-        zeroed_samples()
-{
-    return zeroed_samples_recursive_until( subSource(), source_sub_operation_);
-}
-
-
-    // OperationContainer  /////////////////////////////////////////////////////////////////
-
-OperationContainer::
-        OperationContainer(Signal::pOperation source, std::string name )
-            :
-            OperationSubOperations(source, name)
-{
-}
-
-
     // OperationCrop  /////////////////////////////////////////////////////////////////
 
 OperationCrop::
-        OperationCrop( pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source, "Crop" ),
-    section_(section)
+        OperationCrop( const Signal::Interval& section )
+    :
+      OperationOtherSilent(section)
 {
-    reset(section);
+
+}
+
+OperationCrop::Extent OperationCrop::
+        extent() const
+{
+    Extent x;
+    x.interval = section();
+    return x;
+}
+
+QString OperationCrop::
+        toString() const
+{
+    std::stringstream ss;
+    ss << "Crop " << section();
+    return ss.str().c_str ();
 }
 
 void OperationCrop::
-        reset( const Signal::Interval& section )
+        test()
 {
-    section_ = section;
-
-    std::stringstream ss;
-    float fs = sample_rate();
-    ss << "Crop [" << section.first/fs << ", " << section.last/fs << ") s";
-    name_ = ss.str();
-
-    DeprecatedOperation::source( source_sub_operation_ );
-    // remove before section
-    if (Signal::Interval::IntervalType_MIN < section.first)
-        DeprecatedOperation::source( pOperation( new OperationRemoveSection( DeprecatedOperation::source(), Signal::Interval( Signal::Interval::IntervalType_MIN, section.first ))));
-
-    // remove after section
-    if (section.last < Signal::Interval::IntervalType_MAX)
-        DeprecatedOperation::source( pOperation( new OperationRemoveSection( DeprecatedOperation::source(), Signal::Interval( section.last - std::max(Signal::IntervalType(0), section.first), Signal::Interval::IntervalType_MAX ))));
+    /**
+      Example 1:
+      start:  1234567
+      OperationCrop( start, 1, 2 );
+      result: 23
+    */
+    {
+        Interval I(5,7);
+        OperationCrop oc(I);
+        EXCEPTION_ASSERT_EQUALS( oc.extent ().interval.get (), I );
+    }
 }
-
 
     // OperationOtherSilent  /////////////////////////////////////////////////////////////////
-OperationOtherSilent::
-        OperationOtherSilent( Signal::pOperation source, const Signal::Interval& section )
-:   OperationSubOperations( source, "Clear all but section" ),
-    section_(section)
+
+
+
+OperationOtherSilent::Operation::
+        Operation(const Interval &section)
+    :
+      section_(section)
+{}
+
+
+pBuffer OperationOtherSilent::Operation::
+        process (pBuffer b)
 {
-    reset(section);
+    Signal::Intervals I = b->getInterval ();
+    I -= section_;
+
+    foreach (Signal::Interval i, I) {
+        Buffer zero(i, b->sample_rate(), b->number_of_channels ());
+        *b |= zero;
+    }
+
+    return b;
 }
 
 
-OperationOtherSilent::
-        OperationOtherSilent( float fs, const Signal::Interval& section )
-:   OperationSubOperations( pOperation(), "Clear all but section" ),
-    section_(section)
+OperationOtherSilent ::OperationOtherSilent(const Interval &section)
+    :
+      section_(section)
 {
-    reset(section, fs);
 }
 
 
-Signal::Intervals OperationOtherSilent::
-        zeroed_samples()
+Interval OperationOtherSilent::
+        requiredInterval( const Interval& I, Interval* expectedOutput ) const
 {
-    return ~Signal::Intervals(section_);
+    if (expectedOutput)
+        *expectedOutput = I;
+    return I;
+}
+
+
+Interval OperationOtherSilent::
+        affectedInterval( const Interval& I ) const
+{
+    return I;
+}
+
+
+OperationDesc::Ptr OperationOtherSilent::
+        copy() const
+{
+    return OperationDesc::Ptr(new OperationOtherSilent(section_));
+}
+
+
+Signal::Operation::Ptr OperationOtherSilent::
+        createOperation(ComputingEngine* engine) const
+{
+    if (0==engine || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Signal::Operation::Ptr(new OperationOtherSilent::Operation(section_));
+    return Signal::Operation::Ptr();
 }
 
 
 void OperationOtherSilent::
-        reset( const Signal::Interval& section, float fs )
+        test()
 {
-    if (0==fs)
-        fs = sample_rate();
-
-    std::stringstream ss;
-    ss << "Clear all but [" << section.first/fs << ", " << section.last/fs << ") s";
-    name_ = ss.str();
-
-    section_ = section;
-    pOperation p = source_sub_operation_;
-    if (0 < section.first)
-        // silent before section
-        p = pOperation( new OperationSetSilent( p, Signal::Interval(0, section.first) ));
-    if (section.last < Interval::IntervalType_MAX)
-        // silent after section
-        p = pOperation( new OperationSetSilent( p, Signal::Interval(section.last, Interval::IntervalType_MAX) ));
-
-    DeprecatedOperation::source( p );
+    /**
+      Example 1:
+      start:  1234567
+      OperationOtherSilent( start, 1, 2 );
+      result: 0230000
+    */
+    {
+        EXCEPTION_ASSERTX(false, "not implemented");
+    }
 }
 
     // OperationMove  /////////////////////////////////////////////////////////////////
+#if 0 // TODO implement using branching in the Dag
 
 OperationMove::
         OperationMove( pOperation source, const Signal::Interval& section, unsigned newFirstSample )
@@ -183,9 +163,10 @@ void OperationMove::
 
     DeprecatedOperation::source( addition );
 }
-
+#endif
 
     // OperationMoveMerge  /////////////////////////////////////////////////////////////////
+#if 0 // TODO implement using branching in the Dag
 
 OperationMoveMerge::
         OperationMoveMerge( pOperation source, const Signal::Interval& section, unsigned newFirstSample )
@@ -207,29 +188,74 @@ void OperationMoveMerge::
     DeprecatedOperation::source( addition );
 }
 
-
+#endif
     // OperationShift  /////////////////////////////////////////////////////////////////
 
-OperationShift::
-        OperationShift( pOperation source, long sampleShift )
-:   OperationSubOperations( source, "Shift" )
+class OperationShiftOperation: public Signal::Operation
 {
-    reset(sampleShift);
+public:
+    OperationShiftOperation( Signal::IntervalType sampleShift )
+        :
+          sampleShift_(sampleShift)
+    {
+
+    }
+
+
+    Signal::pBuffer process(Signal::pBuffer b)
+    {
+        UnsignedF o = b->sample_offset () + (long long)sampleShift_;
+        b->set_sample_offset (o);
+        return b;
+    }
+
+private:
+    Signal::IntervalType sampleShift_;
+};
+
+OperationShift::
+        OperationShift( Signal::IntervalType sampleShift, Signal::Interval extent_interval )
+    :
+      sampleShift_(sampleShift),
+      extent_interval_(extent_interval)
+{
 }
 
-void OperationShift::
-        reset( long sampleShift )
+Signal::Interval OperationShift::
+        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
-    if ( 0 < sampleShift )
-    {
-        pOperation addSilence( new OperationInsertSilence( source_sub_operation_, Interval( 0, sampleShift) ));
-        DeprecatedOperation::source( addSilence );
-    } else if (0 > sampleShift ){
-        pOperation removeStart( new OperationRemoveSection( source_sub_operation_, Interval( 0, -sampleShift) ));
-        DeprecatedOperation::source( removeStart );
-	} else {
-        DeprecatedOperation::source( source_sub_operation_ );
-	}
+    if (expectedOutput)
+        *expectedOutput = I;
+
+    return (Signal::Intervals(I) >>= sampleShift_).spannedInterval ();
+}
+
+Signal::Interval OperationShift::
+        affectedInterval( const Signal::Interval& I ) const
+{
+    return (Signal::Intervals(I) <<= sampleShift_).spannedInterval ();
+}
+
+Signal::OperationDesc::Ptr OperationShift::
+        copy() const
+{
+    return Signal::OperationDesc::Ptr(new OperationShift(sampleShift_, extent_interval_));
+}
+
+Signal::Operation::Ptr OperationShift::
+        createOperation(Signal::ComputingEngine* engine) const
+{
+    if (0==engine || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Signal::Operation::Ptr(new OperationShiftOperation(sampleShift_));
+    return Signal::Operation::Ptr();
+}
+
+OperationShift::Extent OperationShift::
+        extent() const
+{
+    OperationShift::Extent x;
+    x.interval = extent_interval_;
+    return x;
 }
 
 
@@ -293,6 +319,7 @@ void OperationMoveSelection::
 
     // OperationFilterSelection  /////////////////////////////////////////////////////////////////
 
+#if 0 // TODO implement using branching in the Dag because this operation involves a merge of two or more different signals
 OperationOnSelection::
         OperationOnSelection( pOperation source, pOperation insideSelection, pOperation outsideSelection, Signal::pOperation operation )
 :   OperationSubOperations( source, "OperationOnSelection" )
@@ -329,6 +356,7 @@ void OperationOnSelection::
     // Makes reads read from 'mergeSelection'
     DeprecatedOperation::source( mergeSelection );
 }
+#endif
 
     } // namespace Support
 } // namespace Tools

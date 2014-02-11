@@ -10,7 +10,7 @@ namespace Tools
 {
 
 RecordModel::
-        RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder* recording )
+        RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::Ptr recording )
     :
     recording(recording),
     project(project),
@@ -23,40 +23,50 @@ RecordModel::
 RecordModel::
         ~RecordModel()
 {
-    if (recording && !recording->isStopped())
-        recording->stopRecording();
+    if (recording) {
+        Adapters::Recorder::WritePtr w(recording);
+        if (!w->isStopped())
+            w->stopRecording();
+    }
 }
 
 
-class GotDataCallback: public Adapters::MicrophoneRecorderDesc::IGotDataCallback
+class GotDataCallback: public Adapters::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::Ptr i) { i_ = i; }
+    void setRecordModel(RecordModel* model) { model_ = model; }
 
     virtual void markNewlyRecordedData(Signal::Interval what) {
         if (i_)
             read1(i_)->deprecateCache(what);
+        if (model_)
+            emit model_->markNewlyRecordedData(what);
     }
 
 private:
     Signal::Processing::IInvalidator::Ptr i_;
+    RecordModel* model_ = 0;
 };
 
 
 RecordModel* RecordModel::
         createRecorder(Signal::Processing::Chain::Ptr chain, Signal::Processing::TargetMarker::Ptr at,
-                       Adapters::Recorder* recorder,
+                       Adapters::Recorder::Ptr recorder,
                        Sawe::Project* project, RenderView* render_view)
 {
-    Adapters::MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback());
+    Adapters::Recorder::IGotDataCallback::Ptr callback(new GotDataCallback());
 
     Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);
 
-    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
-
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
+    record_model->invalidator = i;
+
+    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
+    dynamic_cast<GotDataCallback*>(&*write1(callback))->setRecordModel (record_model);
+
     return record_model;
 }
 
@@ -67,6 +77,13 @@ bool RecordModel::
     return Adapters::MicrophoneRecorder(-1).canRecord ();
 }
 
+} // namespace Tools
+
+#include <QApplication>
+#include "signal/processing/workers.h"
+
+namespace Tools
+{
 
 class TargetMock: public Signal::Operation
 {
@@ -108,6 +125,11 @@ private:
 void RecordModel::
         test()
 {
+    std::string name = "RecordModel";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+
     // It should describe the operation required to perform a recording.
     {
         QSemaphore semaphore;
@@ -123,7 +145,7 @@ void RecordModel::
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
                     target_marker,
-                    new Adapters::MicrophoneRecorder(-1),
+                    Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(-1)),
                     p, r );
 
         EXCEPTION_ASSERT(record_model->recording);
@@ -139,17 +161,21 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        EXCEPTION_ASSERT( needs->sleep(1000) );
+        if (!needs->sleep(1000)) {
+            Signal::Processing::Workers::WritePtr w(read1(chain)->workers());
+            Signal::Processing::Workers::print(w->clean_dead_workers());
+            EXCEPTION_ASSERT( false );
+        }
         EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());
-        record_model->recording->startRecording ();
+        write1(record_model->recording)->startRecording ();
 
         // Wait for the recorder to produce data within 1 second
         EXCEPTION_ASSERT(semaphore.tryAcquire (1, 1000));
 
         x = read1(chain)->extent(target_marker);
-        EXCEPTION_ASSERT_LESS(400, x.interval.get_value_or (Signal::Interval()).count());
+        EXCEPTION_ASSERT_LESS(400u, x.interval.get_value_or (Signal::Interval()).count());
     }
 }
 

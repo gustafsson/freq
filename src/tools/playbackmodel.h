@@ -2,8 +2,8 @@
 #define PLAYBACKMODEL_H
 
 #include "signal/operation.h"
-#include "signal/postsink.h"
 #include "signal/processing/targetmarker.h"
+#include "signal/sink.h"
 
 #include <string>
 
@@ -29,9 +29,9 @@ namespace Tools
         SelectionModel* selection;
         PlaybackMarkersModel* markers;
 
-        Signal::pOperation adapter_playback;
+        Signal::OperationDesc::Ptr adapter_playback;
 
-        Adapters::Playback* playback();
+        Signal::Operation::Ptr playback();
     };
 } // namespace Tools
 #endif // PLAYBACKMODEL_H

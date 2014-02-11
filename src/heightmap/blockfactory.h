@@ -29,12 +29,6 @@ private:
 
 
     /**
-      Add block information from another block. Returns whether any information was merged.
-      */
-    bool        mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData );
-
-
-    /**
      * @brief getAllocatedBlock returns an allocated block either by new a
      * memory allocation or by reusing the data from an old block.
      */

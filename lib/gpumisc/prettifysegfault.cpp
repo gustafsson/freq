@@ -10,7 +10,7 @@
 bool is_doing_signal_handling = false;
 bool has_caught_any_signal_value = false;
 bool enable_signal_print = true;
-
+bool nested_signal_handling = false;
 
 void handler(int sig);
 void printSignalInfo(int sig);
@@ -28,14 +28,20 @@ void seghandle_userspace() {
   // asm { int 3; }
   // *(int*) NULL = 0;
 
-    printSignalInfo(SIGSEGV);
+    if (!nested_signal_handling)
+        printSignalInfo(SIGSEGV);
 }
 
 
 void seghandle(int, __siginfo*, void* unused)
-{
+{    
+  nested_signal_handling = is_doing_signal_handling;
   has_caught_any_signal_value = true;
   is_doing_signal_handling = true;
+
+  fflush(stdout);
+  fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (SIGSEGV), SIGSEGV, SignalName::desc (SIGSEGV));
+  fflush(stderr);
 
   ucontext_t* uc = (ucontext_t*) unused;
   // No. I refuse to use triple-pointers.
@@ -81,6 +87,7 @@ void setup_sigsegv()
 
 void handler(int sig)
 {
+    nested_signal_handling = is_doing_signal_handling;
     has_caught_any_signal_value = true;
     is_doing_signal_handling = true;
 
@@ -92,10 +99,12 @@ void handler(int sig)
 
     fflush(stdout);
     fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (sig), sig, SignalName::desc (sig));
+    fflush(stderr);
 
     Backtrace::malloc_free_log ();
 
-    printSignalInfo(sig);
+    if (!nested_signal_handling)
+        printSignalInfo(sig);
 
     // This will not be reached if an exception is thrown
     is_doing_signal_handling = false;

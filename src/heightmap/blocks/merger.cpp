@@ -34,6 +34,7 @@ void Merger::
     const Reference& ref = block->reference ();
     Intervals things_to_update = block->getInterval ();
     std::vector<pBlock> gib = BlockQuery(cache_).getIntersectingBlocks ( things_to_update.spannedInterval(), false, 0 );
+    BlockData::WritePtr outdata = block->block_data ();
 
     const Region& r = block->getRegion ();
 
@@ -72,8 +73,8 @@ void Merger::
                     // 'bl' covers all scales in 'block' (not necessarily all time samples though)
                     things_to_update -= v;
 
-                    mergeBlock( *block,               *bl,
-                                *block->block_data(), *bl->block_data_const () );
+                    mergeBlock( *block,  *bl,
+                                outdata, bl->block_data_const () );
                 }
                 else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
                 {
@@ -97,8 +98,14 @@ void Merger::
 
 
 bool Merger::
-        mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData )
+        mergeBlock( const Block& outBlock, const Block& inBlock, const BlockData::WritePtr& poutData, const BlockData::ReadPtr& pinData )
 {
+    if (!poutData.get () || !pinData.get ())
+        return false;
+
+    BlockData& outData = *poutData;
+    const BlockData& inData = *pinData;
+
     EXCEPTION_ASSERT( &outBlock != &inBlock );
 
     // Find out what intervals that match
@@ -117,16 +124,16 @@ bool Merger::
 
     INFO_COLLECTION TaskTimer tt(boost::format("%s, %s into %s") % __FUNCTION__ % ri % ro);
 
-    INFO_COLLECTION ComputationSynchronize();
+    VERBOSE_COLLECTION ComputationSynchronize();
 
     // TODO examine why blockMerge is really really slow
     {
-        INFO_COLLECTION TaskTimer tt("blockMerge");
+        VERBOSE_COLLECTION TaskTimer tt("blockMerge");
         ::blockMerge( inData.cpu_copy,
                       outData.cpu_copy,
                       ResampleArea( ri.a.time, ri.a.scale, ri.b.time, ri.b.scale ),
                       ResampleArea( ro.a.time, ro.a.scale, ro.b.time, ro.b.scale ) );
-        INFO_COLLECTION ComputationSynchronize();
+        VERBOSE_COLLECTION ComputationSynchronize();
     }
 
     //bool isCwt = dynamic_cast<const Tfr::Cwt*>(transform());
@@ -160,3 +167,121 @@ bool Merger::
 
 } // namespace Block
 } // namespace Heightmap
+
+
+#include "log.h"
+#include "heightmap/glblock.h"
+#include "cpumemorystorage.h"
+
+namespace Heightmap {
+namespace Blocks {
+
+
+
+// Same as in the test for ResampleTexture
+static void compare(float* expected, size_t sizeof_expected, DataStorage<float>::Ptr data)
+{
+    EXCEPTION_ASSERT(data);
+    EXCEPTION_ASSERT_EQUALS(sizeof_expected, data->numberOfBytes ());
+
+    float *p = data->getCpuMemory ();
+
+    if (0 != memcmp(p, expected, sizeof_expected))
+    {
+
+        Log("%s") % (DataStorageSize)data->size ();
+        for (size_t i=0; i<data->numberOfElements (); i++)
+            Log("%s: %s\t%s\t%s") % i % p[i] % expected[i] % (p[i] - expected[i]);
+
+        EXCEPTION_ASSERT_EQUALS(0, memcmp(p, expected, sizeof_expected));
+    }
+}
+
+
+static void clearCache(BlockCache::Ptr cache) {
+    while(!read1(cache)->cache().empty()) {
+        pBlock b = read1(cache)->cache().begin()->second;
+        b->glblock.reset();
+        write1(cache)->erase(b->reference ());
+    }
+}
+
+
+void Merger::
+        test()
+{
+    // It should merge contents from other blocks to stub the contents of a new block.
+    {
+        BlockCache::Ptr cache(new BlockCache);
+
+        Reference ref;
+        BlockLayout bl(4,4,4);
+        DataStorageSize ds(bl.texels_per_column (), bl.texels_per_row ());
+
+        // VisualizationParams has only things that have nothing to do with MergerTexture.
+        VisualizationParams::Ptr vp(new VisualizationParams);
+        pBlock block(new Block(ref,bl,vp));
+        const Region& r = block->getRegion();
+        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+        EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
+        block->block_data()->cpu_copy.reset( new DataStorage<float>(ds) );
+
+        Merger(cache).fillBlockFromOthers(block);
+        BlockData::pData data = block->block_data ()->cpu_copy;
+
+        float expected1[]={ 0, 0, 0, 0,
+                             0, 0, 0, 0,
+                             0, 0, 0, 0,
+                             0, 0, 0, 0};
+
+        compare(expected1, sizeof(expected1), data);
+
+        {
+            float* srcdata=new float[16]{ 1, 0, 0, .5,
+                                          0, 0, 0, 0,
+                                          0, 0, 0, 0,
+                                         .5, 0, 0, .5};
+
+            pBlock block(new Block(ref.parentHorizontal (),bl,vp));
+            const Region& r = block->getRegion();
+            block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+            block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
+            write1(cache)->insert(block);
+        }
+
+        Merger(cache).fillBlockFromOthers(block);
+        clearCache(cache);
+        float expected2[]={   1, 0.5,  0, 0,
+                              0, 0,    0, 0,
+                              0, 0,    0, 0,
+                             .5, 0.25, 0, 0};
+        compare(expected2, sizeof(expected2), data);
+
+        {
+            float* srcdata=new float[16]{ 1, 2, 3, 4,
+                                          5, 6, 7, 8,
+                                          9, 10, 11, 12,
+                                          13, 14, 15, 16};
+
+            pBlock block(new Block(ref.right (),bl,vp));
+            const Region& r = block->getRegion();
+            block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+            block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
+            write1(cache)->insert(block);
+        }
+
+        Merger(cache).fillBlockFromOthers(block);
+        float expected3[]={   1, 0.5,  2,  4,
+                              0, 0,    6,  8,
+                              0, 0,    10,  12,
+                             .5, 0.25, 14, 16};
+        compare(expected3, sizeof(expected3), data);
+        clearCache(cache);
+
+        block->glblock.reset ();
+    }
+}
+
+} // namespace Blocks
+} // namespace Heightmap
+

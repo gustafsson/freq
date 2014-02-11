@@ -15,18 +15,16 @@ public:
 
     // Overloaded from Sink
     virtual void put( Signal::pBuffer );
-    virtual void invalidate_samples( const Signal::Intervals& s );
-    virtual Signal::Intervals invalid_samples();
     virtual bool deleteMe();
+
+    void invalidate_samples( const Signal::Intervals& s );
+    Signal::Intervals invalid_samples();
 
     void reset();
     bool normalize() { return _normalize; }
     void normalize(bool v);
 
     static void writeToDisk(std::string filename, Signal::pBuffer b, bool normalize = true);
-
-    /// @overload Operation::read()
-    virtual Signal::pBuffer read(const Signal::Interval& I);
 
 private:
     std::string _filename;

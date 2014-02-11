@@ -16,7 +16,7 @@ class CommandInvoker: public QObject
     Q_OBJECT
 public:
     CommandInvoker(Sawe::Project * project);
-    virtual ~CommandInvoker();
+    ~CommandInvoker();
 
     void invokeCommand(pCommand cmd);
     void redo();

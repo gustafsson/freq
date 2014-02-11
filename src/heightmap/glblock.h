@@ -6,6 +6,7 @@
 // gpumisc
 #include "mappedvbo.h"
 #include "ThreadChecker.h"
+#include "GlTexture.h"
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -15,11 +16,17 @@
 
 namespace Heightmap {
 
-GLuint loadGLSLProgram(const char *vertFileName, const char *fragFileName);
-
 class GlBlock
 {
 public:
+    enum HeightMode
+    {
+        HeightMode_Flat=0,
+        HeightMode_VertexTexture=1,
+        HeightMode_VertexBuffer=2
+    };
+
+
     GlBlock( BlockLayout block_size, float width, float height );
     ~GlBlock();
 
@@ -29,25 +36,21 @@ public:
 
     void                reset( float width, float height );
 
+    GlTexture::Ptr      glTexture();
+    GlTexture::Ptr      glVertTexture();
     pHeight             height();
     pHeightReadOnlyCpu  heightReadOnlyCpu();
     //HeightReadOnlyArray heightReadOnlyArray();
     DataStorageSize     heightSize() const;
 
-    bool has_texture();
+    bool has_texture() const;
     void delete_texture();
 
-    enum HeightMode
-    {
-        HeightMode_Flat=0,
-        HeightMode_VertexTexture=1,
-        HeightMode_VertexBuffer=2
-    };
-
+    void update_texture( HeightMode heightMode );
     void draw( unsigned vbo_size, HeightMode heightMode=HeightMode_VertexTexture );
     //void draw_directMode( );
 
-    unsigned allocated_bytes_per_element();
+    unsigned allocated_bytes_per_element() const;
 
 private:
     /**
@@ -64,7 +67,6 @@ private:
     void createHeightVbo();
 
     bool create_texture( HeightMode heightMode );
-    void update_texture( HeightMode heightMode );
 
     const BlockLayout block_size_;
 

@@ -13,15 +13,31 @@ namespace Adapters {
   exists. The file is saved with the csv-format comma separated values, but values are
   actually separated by spaces. One row of the csv-file corresponds to one row of the chunk.
 */
-class Csv: public Tfr::CwtFilter
+class Csv: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
     Csv(std::string filename="") : _filename(filename) {}
 
-    virtual bool operator()( Tfr::Chunk& );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
 private:
     std::string _filename;
+};
+
+
+class CsvDesc: public Tfr::CwtChunkFilterDesc {
+public:
+    CsvDesc(std::string filename)
+        :
+          filename_(filename)
+    {}
+
+    // ChunkFilterDesc
+    Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
+    ChunkFilterDesc::Ptr    copy() const;
+
+private:
+    std::string filename_;
 };
 
 } // namespace Adapters

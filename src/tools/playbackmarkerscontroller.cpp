@@ -37,7 +37,7 @@ void PlaybackMarkersController::
     else
         disconnect(render_view_, SIGNAL(painting()), view_, SLOT(draw()));
 
-    render_view_->userinput_update();
+    render_view_->redraw();
 }
 
 
@@ -53,7 +53,7 @@ void PlaybackMarkersController::
     }
 
     render_view_->setPosition( Heightmap::Position( *itr, render_view_->model->_qz) );
-    render_view_->userinput_update();
+    render_view_->redraw();
 }
 
 
@@ -79,7 +79,7 @@ void PlaybackMarkersController::
     }
 
     render_view_->setPosition( Heightmap::Position( pos, render_view_->model->_qz) );
-    render_view_->userinput_update();
+    render_view_->redraw();
 }
 
 
@@ -137,7 +137,7 @@ void PlaybackMarkersController::
         }
     }
 
-    render_view_->userinput_update();
+    render_view_->redraw();
 }
 
 
@@ -170,7 +170,7 @@ void PlaybackMarkersController::
             view_->setHighlightMarker( click.time, true );
     }
 
-    render_view_->userinput_update();
+    render_view_->redraw();
 }
 
 

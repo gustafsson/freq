@@ -8,12 +8,12 @@
 
 // tfr
 #include "tfr/cwt.h"
+#include "tfr/transformoperation.h"
 
 // adapters
 #include "adapters/csv.h"
 #include "adapters/hdf5.h"
 #include "adapters/playback.h"
-#include "signal/oldoperationwrapper.h"
 
 // gpumisc
 #include "redirectstdout.h"
@@ -85,9 +85,9 @@ void Application::
             ::exit(4);
         }
 
-        Signal::pOperation o(new Adapters::Csv(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
-        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
-        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Tfr::ChunkFilterDesc::Ptr cfd(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
+        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
         Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
@@ -105,9 +105,9 @@ void Application::
             ::exit(5);
         }
 
-        Signal::pOperation o(new Adapters::Hdf5Chunk(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
-        Signal::OperationDesc::Ptr oodw(new Signal::OldOperationDescWrapper(o));
-        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(oodw, p->default_target ());
+        Tfr::ChunkFilterDesc::Ptr cfd(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
+        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
         Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );
@@ -149,7 +149,7 @@ void Application::
         Tools::Support::TransformDescs::WritePtr td (p->tools().render_model.transform_descs ());
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
-        cwt.set_wanted_min_hz( Sawe::Configuration::min_hz() );
+        cwt.set_wanted_min_hz( Sawe::Configuration::min_hz(), p->extent ().sample_rate.get () );
         cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
         cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
     }

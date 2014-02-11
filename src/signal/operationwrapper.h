@@ -21,35 +21,23 @@ public:
     OperationDescWrapper(OperationDesc::Ptr wrap=OperationDesc::Ptr());
 
     /**
-     * @brief setInvalidator specifies which invalidator to use.
-     * @param invalidator is called with Signal::Intervals::Intervals_ALL whenever
-     * the wrapped operation is changed. This makes Step recreate operations for
-     * computing engines as needed.
-     */
-    void setInvalidator(Processing::IInvalidator::Ptr invalidator);
-
-    /**
      * @brief setWrappedOperationDesc makes this OperationDesc behave as a new
      * operation. Will call invalidator if it has been set.
      * @param wrap
      * volatile so that it can call invalidator without keeping a lock to 'this'.
      */
-    void setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile;
+    void setWrappedOperationDesc(OperationDesc::Ptr wrap);
     OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Interval affectedInterval( const Interval& I ) const;
-    virtual Intervals affectedInterval( const Intervals& I ) const;
     virtual OperationDesc::Ptr copy() const;
     virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
     virtual Extent extent() const;
-    virtual Operation::Ptr recreateOperation(Operation::Ptr hint, ComputingEngine* engine) const;
     virtual QString toString() const;
-    virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;
 
 private:
-    Processing::IInvalidator::Ptr invalidator_;
     OperationDesc::Ptr wrap_;
 
 public:

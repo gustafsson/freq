@@ -8,9 +8,10 @@
 namespace Filters
 {
 
-bool Ridge::
-        operator()( Tfr::Chunk& chunk )
+void Ridge::
+        subchunk( Tfr::ChunkAndInverse& chunkai )
 {
+    Tfr::Chunk& chunk = *chunkai.chunk;
     Tfr::ChunkElement* p     = chunk.transform_data->getCpuMemory();
 
     std::vector<Tfr::ChunkElement> q[] = {
@@ -49,8 +50,20 @@ bool Ridge::
             bytes_per_row );
     memset( p + (chunk.nScales()-1)*chunk.nSamples(), 0, bytes_per_row );
     memset( p                                         , 0, bytes_per_row );
+}
 
-    return true;
+
+Tfr::pChunkFilter RidgeDesc::
+        createChunkFilter(Signal::ComputingEngine*) const
+{
+    return Tfr::pChunkFilter(new Ridge);
+}
+
+
+Tfr::ChunkFilterDesc::Ptr RidgeDesc::
+        copy() const
+{
+    return Tfr::ChunkFilterDesc::Ptr(new RidgeDesc);
 }
 
 } // namespace Filters

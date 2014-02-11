@@ -28,7 +28,7 @@
 #include "selections/rectanglemodel.h"
 #include "selections/rectangleview.h"
 
-#include "signal/operationcache.h"
+#include "log.h"
 
 namespace Tools
 {
@@ -57,11 +57,11 @@ namespace Tools
         if (!ellipse_controller_.isNull())
             delete ellipse_controller_;
 
-        if (!peak_controller_.isNull())
-            delete peak_controller_;
+//        if (!peak_controller_.isNull())
+//            delete peak_controller_;
 
-        if (!spline_controller_.isNull())
-            delete spline_controller_;
+//        if (!spline_controller_.isNull())
+//            delete spline_controller_;
 
         if (!rectangle_controller_.isNull())
             delete rectangle_controller_;
@@ -113,7 +113,7 @@ namespace Tools
         addAction(deselect_action_);
 
 
-        setCurrentSelection(Signal::pOperation());
+        setCurrentSelection(Signal::OperationDesc::Ptr());
 
         toolfactory();
 
@@ -180,7 +180,7 @@ namespace Tools
     void SelectionController::
             deselect()
     {
-        setCurrentSelection(Signal::pOperation());
+        setCurrentSelection(Signal::OperationDesc::Ptr());
     }
 
 
@@ -200,7 +200,7 @@ namespace Tools
 
 
     void SelectionController::
-            setCurrentSelectionCommand( Signal::pOperation selection )
+            setCurrentSelectionCommand( Signal::OperationDesc::Ptr selection )
     {
         _model->set_current_selection( selection );
 
@@ -216,7 +216,7 @@ namespace Tools
 
 
     void SelectionController::
-            setCurrentSelection( Signal::pOperation selection )
+            setCurrentSelection( Signal::OperationDesc::Ptr selection )
     {
         if (_model->current_selection() != selection)
         {
@@ -225,9 +225,9 @@ namespace Tools
 
             //model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
         }
-        else if (Signal::pOperation() == selection)
+        else if (Signal::OperationDesc::Ptr() == selection)
         {
-            this->model ()->set_current_selection(Signal::pOperation());
+            this->model ()->set_current_selection(Signal::OperationDesc::Ptr());
         }
     }
 
@@ -243,16 +243,14 @@ namespace Tools
     {
         // SelectionController can't see the head.
         // The SelectionChangedCommand can take care of this instead.
-        Signal::pOperation t = _model->project()->head->head_source();
-        if (dynamic_cast<Signal::OperationCacheLayer*>(t.get()))
-            t = t->source();
+        Signal::OperationDesc::Ptr t = _model->project()->head->head_source();
         if (dynamic_cast<Tools::Support::OperationOnSelection*>(t.get()))
             t = dynamic_cast<Tools::Support::OperationOnSelection*>(t.get())->selection();
 
         if (t && t == _model->current_selection())
         {
             // To reset the same selection again, first clear the current selection
-            _model->set_current_selection( Signal::pOperation() );
+            _model->set_current_selection( Signal::OperationDesc::Ptr() );
         }
 
         _model->try_set_current_selection( t );
@@ -276,7 +274,7 @@ namespace Tools
             setThisAsCurrentTool( bool active )
     {
         if (!active)
-            setCurrentSelection( Signal::pOperation() );
+            setCurrentSelection( Signal::OperationDesc::Ptr() );
 
         if (active)
             _render_view->toolSelector()->setCurrentToolCommand( this );
@@ -301,8 +299,8 @@ namespace Tools
     {
         if (Qt::RightButton == e->button())
         {
-            this->setCurrentSelection(Signal::pOperation());
-            render_view()->userinput_update();
+            this->setCurrentSelection(Signal::OperationDesc::Ptr());
+            render_view()->redraw();
         }
     }
 
@@ -324,14 +322,14 @@ namespace Tools
         if (!_model->current_selection())
             return;
 
-        Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
+        Signal::OperationDesc::Ptr o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
 
-        _model->set_current_selection( Signal::pOperation() );
+        _model->set_current_selection( Signal::OperationDesc::Ptr() );
         _model->project()->appendOperation( o );
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
-        TaskInfo("Clear selection\n%s", o->toStringSkipSource ().c_str());
+        Log("Clear selection\n%s") % read1(o)->toString().toStdString();
     }
 
 
@@ -341,28 +339,24 @@ namespace Tools
         if (!_model->current_selection())
             return;
 
-        Signal::pOperation o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
-        //o->source( _worker->source() );
-        if (0 == dynamic_cast<Tools::Support::OperationOtherSilent*>(o.get()))
-        {
-            _model->set_current_selection( Signal::pOperation() );
-            _model->project()->appendOperation( o );
-        }
+        Signal::OperationDesc::Ptr o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
 
-        Signal::Intervals I = o->affected_samples().spannedInterval();
-        I -= o->zeroed_samples();
+        _model->set_current_selection( Signal::OperationDesc::Ptr() );
+        _model->project()->appendOperation( o );
 
-        if (false) if (I) {
-            // Create OperationRemoveSection to remove everything else from the stream
-            Signal::pOperation remove(new Tools::Support::OperationCrop(
-                    o, I.spannedInterval() ));
+        Signal::OperationDesc::Extent x = read1(o)->extent();
+        if (x.interval.is_initialized ())
+          {
+            Signal::Interval xi = x.interval.get ();
+            if (xi.first != 0)
+              {
+                Signal::OperationDesc::Ptr shift(
+                            new Support::OperationShift(-xi.first, Signal::Interval(0, xi.count ())));
+                _model->project()->appendOperation( shift );
+              }
+          }
 
-            _model->set_current_selection( Signal::pOperation() );
-            _model->project()->appendOperation( remove );
-            _model->set_current_selection( o );
-        }
-
-        TaskInfo("Crop selection\n%s", o->toStringSkipSource ().c_str ());
+        Log("Crop selection\n%s") % read1(o)->toString().toStdString();
     }
 
 
@@ -378,13 +372,13 @@ namespace Tools
             sourceSelection[1] = selection[1];
 
         } else { // Button released
-            Signal::pOperation filter(new Filters::Ellipse(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, true ));
+            Signal::OperationDesc::Ptr filter(new Filters::Ellipse(sourceSelection[0].x, sourceSelection[0].z, sourceSelection[1].x, sourceSelection[1].z, true ));
 
             float FS = _worker->source()->sample_rate();
             int delta = (int)(FS * (selection[0].x - sourceSelection[0].x));
 
-            Signal::pOperation moveSelection( new Support::OperationMoveSelection(
-                    Signal::pOperation(),
+            Signal::OperationDesc::Ptr moveSelection( new Support::OperationMoveSelection(
+                    Signal::OperationDesc::Ptr(),
                     filter,
                     delta,
                     sourceSelection[0].z - selection[0].z));
@@ -419,7 +413,7 @@ namespace Tools
                 return;
             unsigned oldStart = FS * std::max( 0.f, sourceSelection[0].x );
             unsigned newStart = FS * std::max( 0.f, selection[0].x );
-            Signal::pOperation moveSelection(new Support::OperationMove( Signal::pOperation(),
+            Signal::OperationDesc::Ptr moveSelection(new Support::OperationMove( Signal::OperationDesc::Ptr(),
                                                         oldStart,
                                                         L,
                                                         newStart));
@@ -472,8 +466,8 @@ namespace Tools
             e2->_save_inside = true;
             e2->enabled( true );
 
-            Signal::pOperation selectionfilter( e2 );
-            selectionfilter->source( Signal::pOperation() );
+            Signal::OperationDesc::Ptr selectionfilter( e2 );
+            selectionfilter->source( Signal::OperationDesc::Ptr() );
 
             _model->getPostSink()->filter( selectionfilter );
         }
@@ -492,7 +486,7 @@ namespace Tools
     {
         TaskTimer tt("Removing filter: %d", index);
 
-        Signal::pOperation next = _model->all_filters[index];
+        Signal::OperationDesc::Ptr next = _model->all_filters[index];
 
         if (_worker->source() == next )
         {
@@ -500,7 +494,7 @@ namespace Tools
             return;
         }
 
-        Signal::pOperation prev = _worker->source();
+        Signal::OperationDesc::Ptr prev = _worker->source();
         while ( prev->source() != next )
         {
             prev = prev->source();

@@ -41,6 +41,7 @@ CONFIG += c++11 buildflags
 
 RESOURCES += \
     ui/icon-resources.qrc \
+    heightmap/shaders.qrc \
 
 SOURCES += \
     adapters/*.cpp \
@@ -87,7 +88,8 @@ HEADERS += \
     tools/widgets/*.h \
     ui/*.h \
 
-PRECOMPILED_HEADER += sawe/project_header.h
+CONFIG += precompile_header
+PRECOMPILED_HEADER = sawe/project_header.h
 
 # Qt Creator crashes every now and then in Windows if form filenames are expressed with wildcards
 FORMS += \
@@ -118,9 +120,8 @@ CUDA_SOURCES += \
 #    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
-    heightmap/heightmap.frag \
-    heightmap/heightmap.vert \
-    heightmap/heightmap_noshadow.vert \
+    heightmap/*.frag \
+    heightmap/*.vert \
 
 CONFIGURATION_SOURCES = \
     sawe/configuration/configuration.cpp

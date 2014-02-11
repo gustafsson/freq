@@ -5,6 +5,7 @@
 
 // gpumisc
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // boost
 #include <boost/foreach.hpp>
@@ -19,8 +20,11 @@ using namespace Tfr;
 
 namespace Tools { namespace Selections { namespace Support {
 
-SplineFilter::SplineFilter(bool save_inside) {
-    _save_inside = save_inside;
+SplineFilter::SplineFilter(bool save_inside, std::vector<SplineVertex> v)
+    :
+      v(v),
+      _save_inside( save_inside )
+{
 }
 
 
@@ -35,8 +39,9 @@ std::string SplineFilter::
 }
 
 
-bool SplineFilter::operator()( Chunk& chunk)
+void SplineFilter::operator()( ChunkAndInverse& chunkai )
 {
+    Chunk& chunk = *chunkai.chunk;
     TIME_SPLINEFILTER TaskTimer tt("SplineFilter chunk area (%g %g : %g %g)",
         chunk.startTime(), chunk.minHz(), chunk.endTime(), chunk.maxHz());
 
@@ -82,26 +87,27 @@ bool SplineFilter::operator()( Chunk& chunk)
 
     TIME_SPLINEFILTER ComputationSynchronize();
 
-    return 0<j;
+    // TODO return dummy inverse
+    // return 0<j;
 }
 
 
 Signal::Intervals SplineFilter::
-        zeroed_samples()
+        zeroed_samples(double FS)
 {
-    return _save_inside ? outside_samples() : Signal::Intervals();
+    return _save_inside ? outside_samples(FS) : Signal::Intervals();
 }
 
 
 Signal::Intervals SplineFilter::
-        affected_samples()
+        affected_samples(double FS)
 {
-    return (_save_inside ? Signal::Intervals() : outside_samples()).inverse();
+    return (_save_inside ? Signal::Intervals() : outside_samples(FS)).inverse();
 }
 
 
 Signal::Intervals SplineFilter::
-        outside_samples()
+        outside_samples(double FS)
 {
     if (v.size() < 2)
         return Signal::Intervals::Intervals_ALL;
@@ -116,14 +122,37 @@ Signal::Intervals SplineFilter::
         end_time = std::max(end_time, p.t);
     }
 
-    double FS = sample_rate();
     Signal::Intervals sid;
     Signal::Interval sidint(std::max(0.f, start_time)*FS, std::max(0.f, end_time)*FS);
     if (sidint.count())
         sid = sidint;
-    sid = sid.enlarge( sample_rate()*0.1f );
+    sid = sid.enlarge( FS*0.1f );
 
     return ~sid;
+}
+
+
+SplineFilterDesc::
+        SplineFilterDesc(bool save_inside, std::vector<SplineFilter::SplineVertex> v)
+    :
+      save_inside(save_inside),
+      v(v)
+{
+
+}
+
+
+Tfr::pChunkFilter SplineFilterDesc::
+        createChunkFilter(Signal::ComputingEngine*) const
+{
+    return Tfr::pChunkFilter(new SplineFilter(save_inside, v));
+}
+
+
+Tfr::ChunkFilterDesc::Ptr SplineFilterDesc::
+        copy() const
+{
+    return Tfr::ChunkFilterDesc::Ptr(new SplineFilterDesc(save_inside, v));
 }
 
 }}} // namespace Tools::Selections::Support

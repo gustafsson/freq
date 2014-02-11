@@ -35,7 +35,7 @@ public:
 
     template< class ostream_t > inline
     friend ostream_t& operator<<(ostream_t& os, const Region& r) {
-        return os << "(" << r.a.time << ":" << r.b.time << " " << r.a.scale << ":" << r.b.scale << ")";
+        return os << "(t=" << r.a.time << ":" << r.b.time << " s=" << r.a.scale << ":" << r.b.scale << ")";
     }
 };
 

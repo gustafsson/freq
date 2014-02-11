@@ -7,13 +7,16 @@
 namespace Heightmap {
 namespace Blocks {
 
+/**
+ * @brief The Merger class should merge contents from other blocks to stub the contents of a new block.
+ */
 class Merger
 {
 public:
     Merger(BlockCache::ConstPtr cache);
 
     /**
-     * @brief createBlockFromOthers fills a block with data from other blocks.
+     * @brief fillBlockFromOthers fills a block with data from other blocks.
      * @param block
      */
     void fillBlockFromOthers( pBlock block );
@@ -21,10 +24,19 @@ public:
 private:
     BlockCache::ConstPtr cache_;
 
-    bool mergeBlock( Block& outBlock, const Block& inBlock, BlockData& outData, const BlockData& inData );
+    /**
+      Add block information from another block. Returns whether any information was merged.
+      */
+    bool mergeBlock( const Block& outBlock,
+                     const Block& inBlock,
+                     const BlockData::WritePtr& poutData,
+                     const BlockData::ReadPtr& pinData );
+
+public:
+    static void test();
 };
 
-} // namespace Block
+} // namespace Blocks
 } // namespace Heightmap
 
 #endif // HEIGHTMAP_BLOCK_MERGER_H

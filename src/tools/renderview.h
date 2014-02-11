@@ -63,7 +63,8 @@ namespace Tools
         void setPosition( Heightmap::Position pos );
 
         float last_ysize;
-        Tools::Commands::ViewState viewstate;
+        // Owned by commandInvoker
+        QPointer<Tools::Commands::ViewState> viewstate;
 
         //QTransform projectionTransform;
         //QTransform modelviewTransform;
@@ -102,7 +103,7 @@ namespace Tools
 
     public slots:
         void setLastUpdateSize( Signal::UnsignedIntervalType length );
-        void userinput_update( bool request_high_fps = true, bool post_update = true, bool cheat_also_high=true );
+        void redraw();
 
     signals:
         /**
@@ -162,17 +163,10 @@ namespace Tools
          */
         void axisChanged();
 
-        /**
-         * @brief postCheckForWorkerCrashes pops up an error dialog if any
-         * worker has crashes recently.
-         */
-        void postCheckForWorkerCrashes();
-
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
         void restartUpdateTimer();
-        void checkForWorkerCrashes();
 
     private:
         /// Similiar to QGLWidget::initializeGL()

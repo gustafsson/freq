@@ -193,7 +193,7 @@ string Backtrace::
     qint64 id = QCoreApplication::applicationPid();
     QProcess p;
     p.start (QString("atos -p %1 %2").arg (id).arg (addrs));
-    found_pretty = p.waitForFinished ();
+    found_pretty = p.waitForFinished (2000);
     found_pretty &= 0 == p.exitCode();
     bt += QString(p.readAllStandardOutput ()).trimmed ().toStdString ();
 
@@ -263,8 +263,8 @@ void Backtrace::
         Timer t;
         Backtrace::info backtrace = Backtrace::make ();
         float T = t.elapsed ();
-        EXCEPTION_ASSERT_LESS( T, 0.00015f );
-        EXCEPTION_ASSERT_LESS( 0, backtrace.value ().frames_.size() + backtrace.value ().pretty_print_.size() );
+        EXCEPTION_ASSERT_LESS( T, 0.001f );
+        EXCEPTION_ASSERT_LESS( 0u, backtrace.value ().frames_.size() + backtrace.value ().pretty_print_.size() );
     }
 
     // It should work as error info to boost::exception

@@ -1,21 +1,22 @@
 #include "collection.h"
-#include "blockfilter.h"
 #include "glblock.h"
 #include "blockfactory.h"
 #include "blockquery.h"
 #include "blockcacheinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
-#include "signal/operationcache.h"
 #include "reference_hash.h"
 #include "blocks/garbagecollector.h"
 #include "blocks/merger.h"
+#include "blocks/mergertexture.h"
 #include "blocks/clearinterval.h"
+#include "blocks/chunkmerger.h"
 
 // Gpumisc
 //#include "GlException.h"
 #include "neat_math.h"
 #include "computationkernel.h"
+#include "TaskTimer.h"
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -52,8 +53,9 @@ namespace Heightmap {
 Collection::
         Collection( BlockLayout block_layout, VisualizationParams::ConstPtr visualization_params)
 :   block_layout_( 2, 2, FLT_MAX ),
-    visualization_params_( new VisualizationParams ),
+    visualization_params_(),
     cache_( new BlockCache ),
+    merger_(),
     _is_visible( true ),
     _created_count(0),
     _frame_counter(0),
@@ -70,17 +72,18 @@ Collection::
 Collection::
         ~Collection()
 {
-    reset();
+    TaskInfo ti("~Collection");
+    clear();
 }
 
 
 void Collection::
-        reset()
+        clear()
 {
     BlockCache::WritePtr cache(cache_);
     const BlockCache::cache_t& C = cache->cache ();
     VERBOSE_COLLECTION {
-        TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( cacheByteSize() ).c_str() );
+        TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);
         BOOST_FOREACH (const BlockCache::cache_t::value_type& b, C)
         {
@@ -97,16 +100,23 @@ void Collection::
     BOOST_FOREACH (const BlockCache::cache_t::value_type& v, C)
     {
         pBlock b = v.second;
+        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
         b->glblock.reset ();
     }
 
     BOOST_FOREACH (const pBlock b, cache->recent())
+    {
+        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
         b->glblock.reset ();
+    }
 
     BOOST_FOREACH (const pBlock b, _to_remove)
+    {
+        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
         b->glblock.reset ();
+    }
 
-    cache->reset();
+    cache->clear();
 }
 
 
@@ -150,10 +160,16 @@ void Collection::
         }
         else if (block->glblock->has_texture ())
         {
+            unsigned framediff = _frame_counter - block->frame_number_last_used;
+            if (framediff < 2) {
+                // This can be verified easily without knowing the acutal frame number
+                block->frame_number_last_used = 0;
+            }
+
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
-            VERBOSE_COLLECTION TaskTimer tt("Deleting texture");
-            block->glblock->delete_texture ();
+//            VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
+            //block->glblock->delete_texture ();
         }
     }
 
@@ -238,13 +254,13 @@ pBlock Collection::
         getBlock( const Reference& ref )
 {
     // Look among cached blocks for this reference
-    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
-
     pBlock block = write1(cache_)->find( ref );
 
     if (!block)
     {
-        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count )
+        TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
+
+        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count || true )
         {
             pBlock reuse;
             if (0!= "Reuse old redundant blocks")
@@ -263,7 +279,8 @@ pBlock Collection::
                 block = bf.createBlock (ref, pBlock());
             }
 
-            Blocks::Merger(cache_).fillBlockFromOthers (block);
+            //Blocks::Merger(cache_).fillBlockFromOthers (block);
+            merger_->fillBlockFromOthers (block);
 
             write1(cache_)->insert(block);
 
@@ -386,9 +403,11 @@ void Collection::
 
     block_layout_ = v;
 
+    merger_.reset( new Blocks::MergerTexture(cache_, block_layout_) );
+
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
-    reset();
+    clear();
 }
 
 
@@ -399,7 +418,7 @@ void Collection::
 
     if (visualization_params_ != v)
     {
-        reset();
+        clear();
 
         visualization_params_ = v;
     }

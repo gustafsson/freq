@@ -1,5 +1,9 @@
 #include "microphonerecorder.h"
 #include "playback.h"
+#include "sawe/configuration.h"
+
+#include "TaskTimer.h"
+#include "demangle.h"
 
 #include <iostream>
 #include <memory.h>
@@ -28,7 +32,7 @@ MicrophoneRecorder::
 
     ss << "recording_" << s << ".wav";
 
-    init(); // fetch _sample_rate
+    init(); // fetch _sample_rate and _num_channels
     stopRecording(); // delete _stream_record
 }
 
@@ -38,10 +42,9 @@ void MicrophoneRecorder::
 {
     try
     {
-        // To avoid division with zero and compute the actual length as 0 when
-        // dividing the number of samples with sample rate.
         _offset = 0;
         _sample_rate = 1;
+        _num_channels = 0;
 
         TIME_MICROPHONERECORDER TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
         portaudio::System &sys = portaudio::System::instance();
@@ -76,24 +79,25 @@ void MicrophoneRecorder::
         portaudio::Device& device = sys.deviceByIndex(input_device_);
         _sample_rate = device.defaultSampleRate();
 
-        unsigned channel_count = device.maxInputChannels();
-        if (channel_count>2)
-            channel_count = 2;
+        _num_channels = device.maxInputChannels();
+        if (_num_channels > 2)
+            _num_channels = 2;
+
+        if (Sawe::Configuration::mono()) {
+            if (_num_channels > 1)
+                _num_channels = 1;
+        }
 
         TIME_MICROPHONERECORDER TaskInfo(boost::format("Opening recording input stream on '%s' with %d"
                        " channels, %g samples/second"
                        " and input latency %g s")
                                          % device.name()
-                                         % channel_count
-                                         % device.defaultSampleRate()
+                                         % _num_channels
+                                         % _sample_rate
                                          % device.defaultHighInputLatency());
 
-        QMutexLocker lock(&_data_lock);
-        if (_rolling_mean.empty ())
-            _data = Signal::SinkSource(channel_count);
-
-        _rolling_mean.resize(channel_count);
-        for (unsigned i=0; i<channel_count; ++i)
+        _rolling_mean.resize(_num_channels);
+        for (unsigned i=0; i<_num_channels; ++i)
             _rolling_mean[i] = 0;
 
         for (int interleaved=0; interleaved<2; ++interleaved)
@@ -102,7 +106,7 @@ void MicrophoneRecorder::
 
             portaudio::DirectionSpecificStreamParameters inParamsRecord(
                     device,
-                    channel_count, // channels
+                    _num_channels, // channels
                     portaudio::FLOAT32,
                     interleaved, // interleaved
         //#ifdef __APPLE__ // TODO document why
@@ -154,9 +158,9 @@ MicrophoneRecorder::~MicrophoneRecorder()
     stopRecording();
 
     QMutexLocker lock(&_data_lock);
-    if (0<_data.length()) {
+    if (0<_data.spannedInterval ().count ()) {
         TIME_MICROPHONERECORDER TaskTimer tt("Releasing %s recorded data in %u channels",
-                     _data.lengthLongFormat().c_str(),
+                     Signal::SourceBase::lengthLongFormat ( _data.spannedInterval ().count ()/_data.sample_rate ()).c_str(),
                      _data.num_channels());
         _data.clear();
     }
@@ -289,6 +293,13 @@ float MicrophoneRecorder::
 }
 
 
+unsigned MicrophoneRecorder::
+        num_channels()
+{
+    return _num_channels;
+}
+
+
 int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
                  void * /*outputBuffer*/,
@@ -301,10 +312,9 @@ int MicrophoneRecorder::
     Signal::IntervalType offset = actual_number_of_samples();
     QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
-    unsigned num_channels = _data.num_channels();
 
-    Signal::pBuffer mb( new Signal::Buffer(0, framesPerBuffer, sample_rate(), num_channels ) );
-    for (unsigned i=0; i<num_channels; ++i)
+    Signal::pBuffer mb( new Signal::Buffer(0, framesPerBuffer, sample_rate(), _num_channels ) );
+    for (unsigned i=0; i<_num_channels; ++i)
     {
         Signal::pMonoBuffer b = mb->getChannel (i);
         float* p = b->waveform_data()->getCpuMemory();
@@ -352,14 +362,15 @@ int MicrophoneRecorder::
     _data.put( mb );
     lock.unlock();
 
-    _postsink.invalidate_samples( Signal::Interval( offset, offset + framesPerBuffer ));
+    if (_invalidator)
+        write1(_invalidator)->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
 
     return paContinue;
 }
 
 
 MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Signal::pOperation recorder )
+        MicrophoneRecorderOperation( Recorder::Ptr recorder )
     :
       recorder_(recorder)
 {
@@ -369,77 +380,44 @@ MicrophoneRecorderOperation::
 Signal::pBuffer MicrophoneRecorderOperation::
         process(Signal::pBuffer b)
 {
-    return recorder_->readFixedLength (b->getInterval ());
+    return write1(recorder_)->read (b->getInterval ());
 }
 
 
-class MarshallNewlyRecordedData: public Signal::Sink {
-public:
-    MarshallNewlyRecordedData(MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator)
-        :
-          invalidator_(invalidator)
-    {}
-
-    virtual void invalidate_samples(const Signal::Intervals& I) {
-        BOOST_FOREACH(const Signal::Interval& i, I)
-            write1(invalidator_)->markNewlyRecordedData(i);
-    }
-    virtual Signal::Intervals invalid_samples() {return Signal::Intervals(); }
-
-private:
-    MicrophoneRecorderDesc::IGotDataCallback::Ptr invalidator_;
-};
-
-
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder* recorder, IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder::Ptr recorder, Recorder::IGotDataCallback::Ptr invalidator)
     :
-      recorder_(recorder),
-      invalidator_(invalidator)
+      recorder_(recorder)
 {
-    setDataCallback(invalidator);
+    write1(recorder_)->setDataCallback(invalidator);
 }
 
 
 void MicrophoneRecorderDesc::
         startRecording()
 {
-    recorder()->startRecording ();
+    write1(recorder_)->startRecording ();
 }
 
 
 void MicrophoneRecorderDesc::
         stopRecording()
 {
-    recorder()->stopRecording ();
+    write1(recorder_)->stopRecording ();
 }
 
 
 bool MicrophoneRecorderDesc::
         isStopped()
 {
-    return recorder()->isStopped ();
+    return write1(recorder_)->isStopped ();
 }
 
 
 bool MicrophoneRecorderDesc::
         canRecord()
 {
-    return recorder()->canRecord ();
-}
-
-
-void MicrophoneRecorderDesc::
-        setDataCallback( IGotDataCallback::Ptr invalidator )
-{
-    std::vector<Signal::pOperation> sinks;
-
-    if (invalidator) {
-        Signal::pOperation marshal(new MarshallNewlyRecordedData(invalidator));
-        sinks.push_back (marshal);
-    }
-
-    recorder()->getPostSink()->sinks (sinks);
+    return write1(recorder_)->canRecord ();
 }
 
 
@@ -478,18 +456,19 @@ Signal::Operation::Ptr MicrophoneRecorderDesc::
 MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
         extent() const
 {
+    Recorder::WritePtr rec(recorder_);
     MicrophoneRecorderDesc::Extent x;
-    x.interval = Signal::Interval(0, recorder()->number_of_samples());
-    x.number_of_channels = recorder()->num_channels ();
-    x.sample_rate = recorder()->sample_rate ();
+    x.interval = Signal::Interval(0, rec->number_of_samples());
+    x.number_of_channels = rec->num_channels ();
+    x.sample_rate = rec->sample_rate ();
     return x;
 }
 
 
-Recorder* MicrophoneRecorderDesc::
+Recorder::Ptr MicrophoneRecorderDesc::
         recorder() const
 {
-    return dynamic_cast<Recorder*>(recorder_.get ());
+    return recorder_;
 }
 
 
@@ -503,7 +482,7 @@ Recorder* MicrophoneRecorderDesc::
 
 namespace Adapters {
 
-class GotDataCallback: public MicrophoneRecorderDesc::IGotDataCallback
+class GotDataCallback: public Recorder::IGotDataCallback
 {
 public:
     Signal::Intervals marked_data() const { return marked_data_; }
@@ -528,9 +507,9 @@ void MicrophoneRecorderDesc::
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        MicrophoneRecorderDesc::IGotDataCallback::Ptr callback(new GotDataCallback);
+        Recorder::IGotDataCallback::Ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(new MicrophoneRecorder(inputDevice), callback);
+        MicrophoneRecorderDesc mrd(Recorder::Ptr(new MicrophoneRecorder(inputDevice)), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );

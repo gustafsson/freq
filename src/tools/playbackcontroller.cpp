@@ -7,7 +7,6 @@
 #include "renderview.h"
 #include "playbackmarkersmodel.h"
 #include "support/operation-composite.h"
-#include "signal/oldoperationwrapper.h"
 #include "tools/support/toolbar.h"
 
 // Sonic AWE
@@ -15,7 +14,7 @@
 #include "ui_mainwindow.h"
 #include "adapters/writewav.h"
 #include "adapters/playback.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 // gpumisc
 #include "demangle.h"
@@ -88,8 +87,8 @@ void PlaybackController::
 
     // Make RenderView keep on rendering (with interactive framerate) as long
     // as the playback marker moves
-    connect(_view, SIGNAL(update_view(bool)), render_view, SLOT(userinput_update(bool)));
-    connect(_view, SIGNAL(playback_stopped()), SLOT(stop()));
+    connect(_view, SIGNAL(update_view()), render_view, SLOT(redraw()));
+    connect(_view, SIGNAL(playback_stopped()), SLOT(stop()), Qt::QueuedConnection);
 
     // If playback is active, draw the playback marker in PlaybackView whenever
     // RenderView paints.
@@ -133,12 +132,12 @@ QAction *PlaybackController::
 }
 
 
-class NoZeros: public Signal::DeprecatedOperation
-{
-public:
-    NoZeros() : Signal::DeprecatedOperation(Signal::pOperation()) {}
-    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
-};
+//class NoZeros: public Signal::DeprecatedOperation
+//{
+//public:
+//    NoZeros() : Signal::DeprecatedOperation(Signal::pOperation()) {}
+//    Signal::Intervals zeroed_samples() { return Signal::Intervals(); }
+//};
 
 
 void PlaybackController::
@@ -161,56 +160,27 @@ void PlaybackController::
     ui_items_->actionPlay->setChecked( true );
 
     // startPlayback will insert it in the system so that the source is properly set    
-    Signal::pOperation filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
+    Signal::OperationDesc::Ptr filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
     if (!filter) {
         // here we just need to create a filter that does the right thing to an arbitrary source
         // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
         // and responds with no samples to zeroed_samples().
-        filter = Signal::pOperation( new NoZeros() );
+        //filter = Signal::OperationDesc::Ptr( new NoZeros() );
     }
 
     startPlayback( filter );
 }
 
 
-class ExtentOp : public Signal::DeprecatedOperation
-{
-public:
-    ExtentOp(Signal::OperationDesc::Extent x)
-        :
-          Signal::DeprecatedOperation(Signal::pOperation()),
-          x(x)
-    {}
-
-    virtual Signal::IntervalType number_of_samples() {
-        return x.interval.get_value_or (Signal::Interval()).last;
-    }
-
-    virtual unsigned num_channels() {
-        return x.number_of_channels.get_value_or (1);
-    }
-
-    virtual float sample_rate() {
-        return x.sample_rate.get_value_or (1);
-    }
-
-private:
-    Signal::OperationDesc::Extent x;
-};
-
-
 void PlaybackController::
-        startPlayback ( Signal::pOperation filter )
+        startPlayback ( Signal::OperationDesc::Ptr filterdesc )
 {
-    if (!filter) {
-        TaskInfo("No filter, no selection");
-        stop();
-        return; // No filter, no selection...
-    }
+    Signal::Intervals zeroed_samples = Signal::Intervals();
 
     _view->just_started = true;
 
-    TaskInfo("Selection is of type %s", filter->toStringSkipSource ().c_str());
+    if (filterdesc)
+        TaskInfo("Selection: %s", read1(filterdesc)->toString().toStdString().c_str());
 
 //    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
 //    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
@@ -219,31 +189,23 @@ void PlaybackController::
         int playback_device = QSettings().value("outputdevice", -1).toInt();
 
         model()->adapter_playback.reset();
-        model()->adapter_playback.reset( new Adapters::Playback( playback_device ));
+        Signal::Sink::Ptr playbacksink(new Adapters::Playback( playback_device ));
+        model()->adapter_playback.reset(new Signal::SinkDesc(playbacksink));
 
-        Signal::OperationDesc::Ptr desc(new Signal::OldOperationDescWrapper(model()->adapter_playback) );
+        Signal::OperationDesc::Ptr desc(model()->adapter_playback);
         model()->target_marker = write1(project_->processing_chain ())->addTarget(desc, project_->default_target ());
 
-//        std::vector<Signal::pOperation> sinks;
-//        postsink_operations->sinks( sinks ); // empty
-//        sinks.push_back( model()->adapter_playback );
-        //sinks.push_back( Signal::pOperation( new Adapters::WriteWav( _view->model->selection_filename )) );
+        if (filterdesc)
+            write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
 
-//        postsink_operations->filter( Signal::pOperation() );
-//        postsink_operations->sinks( sinks );
-//        postsink_operations->filter( filter );
-
-        //Signal::Intervals expected_data = ~filter->zeroed_samples_recursive();
         Signal::OperationDesc::Extent x = write1(project_->processing_chain ())->extent(model()->target_marker);
-        Signal::pOperation extent_op(new ExtentOp(x));
-        filter->source (extent_op);
-        Signal::Intervals expected_data = ~filter->zeroed_samples() & x.interval.get_value_or (Signal::Interval());
+        Signal::Intervals expected_data = ~zeroed_samples & x.interval.get_value_or (Signal::Interval());
         TaskInfo(boost::format("expected_data = %s") % expected_data);
-        TaskInfo(boost::format("filter->zeroed_samples() = %s") % filter->zeroed_samples());
-        Signal::OperationDesc::Ptr filterdesc(new Signal::OldOperationDescWrapper(filter) );
-        write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
 
-        model()->playback ()->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
+        Signal::Operation::WritePtr playbackw(model()->playback());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        playback->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
+
         write1(model()->target_marker->target_needs ())->updateNeeds(
                     expected_data,
                     Signal::Interval::IntervalType_MIN,
@@ -255,7 +217,9 @@ void PlaybackController::
     }
     else
     {
-        model()->playback()->restart_playback();
+        Signal::Operation::WritePtr playbackw(model()->playback());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        playback->restart_playback();
     }
 
     _view->update();
@@ -265,8 +229,11 @@ void PlaybackController::
 void PlaybackController::
         pause( bool active )
 {
-    if (model()->playback())
-        model()->playback()->pausePlayback( active );
+    if (model()->playback()) {
+        Signal::Operation::WritePtr playbackw(model()->playback());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        playback->pausePlayback( active );
+    }
 
     _view->update();
 }
@@ -294,10 +261,14 @@ void PlaybackController::
 void PlaybackController::
         stop()
 {
-    TaskInfo("PlaybackController::receiveStop()");
+    //TaskInfo("PlaybackController::receiveStop()");
 
-    if (model()->playback())
-        model()->playback()->stop();
+    Signal::Operation::Ptr p = model()->playback();
+    if (p) {
+        Signal::Operation::WritePtr playbackw(p);
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        playback->stop();
+    }
 
     model()->target_marker.reset();
     model()->adapter_playback.reset();

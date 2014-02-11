@@ -4,6 +4,7 @@
 #include "detectgdb.h"
 
 #include <random>
+#include <thread>
 
 using namespace std;
 
@@ -72,9 +73,9 @@ void neat_math::
         Timer t;
 
         // integer division, rounded off upwards
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10,3), 4 );
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9,3), 3 );
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8,3), 3 );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10,3), 4u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9,3), 3u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8,3), 3u );
 
         double T = t.elapsed();
         EXCEPTION_ASSERT_LESS (T, gdb ? 2e-3 : 20e-6);
@@ -83,8 +84,8 @@ void neat_math::
     {
         Timer t;
         EXCEPTION_ASSERT_EQUALS( ((-10%3)+3)%3, 2 );
-        EXCEPTION_ASSERT_EQUALS( 1%3u, 1 );
-        EXCEPTION_ASSERT_EQUALS( 0%3u, 0 );
+        EXCEPTION_ASSERT_EQUALS( 1%3u, 1u );
+        EXCEPTION_ASSERT_EQUALS( 0%3u, 0u );
         EXCEPTION_ASSERT_EQUALS( -1%3, -1 );
         EXCEPTION_ASSERT_EQUALS( -2%3, -2 );
         EXCEPTION_ASSERT_EQUALS( -3%3, 0 );
@@ -136,7 +137,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( align_up(7615252200817428560llu, 3755833054923903685llu), 11267499164771711055llu);
 
         double T_align = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T_align, gdb ? 2e-3 : 15e-6);
+        EXCEPTION_ASSERT_LESS (T_align, gdb ? 2500e-6 : 15e-6);
 
         long long l = LLONG_MIN;
         EXCEPTION_ASSERT_EQUALS( l, -l );
@@ -185,6 +186,9 @@ void neat_math::
     }
 
     {
+        std::chrono::microseconds dura( 0 );
+        std::this_thread::sleep_for( dura );
+
         Timer t;
 
         EXCEPTION_ASSERT_EQUALS( floor_log2(1567.f), 10 );
@@ -198,7 +202,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( floor_log2(-2107612212123456789012.f), 70 );
 
         double T = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T, 25e-6);
+        EXCEPTION_ASSERT_LESS (T, debug_build ? gdb ? 100e-6 : 42e-6 : 30e-6);
 
         // in general floor(log2(x)) == floor_log2(x)
         uniform_real_distribution<double> unif(
@@ -226,37 +230,37 @@ void neat_math::
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(debug_build ? T2*1.2 : T2*1.6, T1); // floor_log2 is at least a little faster
 #else
-        EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.5, T1); // floor_log2 is at least a little faster in release builds
+        EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.05, T1); // floor_log2 is at least a little faster in release builds
 #endif
-        EXCEPTION_ASSERT_LESS(T1, T2*4); // but not more than four times as fast
+        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*2.6); // how much faster?
     }
 
     {
         Timer t;
 
-        EXCEPTION_ASSERT_EQUALS( spo2g(1567), 2048 );
-        EXCEPTION_ASSERT_EQUALS( spo2g(516), 1024 );
-        EXCEPTION_ASSERT_EQUALS( spo2g(511), 512 );
-        EXCEPTION_ASSERT_EQUALS( spo2g(512), 1024 );
+        EXCEPTION_ASSERT_EQUALS( spo2g(1567), 2048u );
+        EXCEPTION_ASSERT_EQUALS( spo2g(516), 1024u );
+        EXCEPTION_ASSERT_EQUALS( spo2g(511), 512u );
+        EXCEPTION_ASSERT_EQUALS( spo2g(512), 1024u );
         EXCEPTION_ASSERT_EQUALS( spo2g(2107612212), 1u<<31 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(1567), 1024 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(516), 512 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(511), 256 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(512), 256 );
-        EXCEPTION_ASSERT_EQUALS( lpo2s(2107612212), 1<<30 );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(1567), 1024u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(516), 512u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(511), 256u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(512), 256u );
+        EXCEPTION_ASSERT_EQUALS( lpo2s(2107612212), 1u<<30 );
 
         double T = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T, 15e-6);
+        EXCEPTION_ASSERT_LESS (T, 25e-6);
     }
 
     {
         Timer t;
 
-        EXCEPTION_ASSERT_EQUALS( log2(1567u), 10 );
-        EXCEPTION_ASSERT_EQUALS( log2(516u), 9 );
-        EXCEPTION_ASSERT_EQUALS( log2(511u), 8 );
-        EXCEPTION_ASSERT_EQUALS( log2(512u), 9 );
-        EXCEPTION_ASSERT_EQUALS( log2(2107612212u), 30 );
+        EXCEPTION_ASSERT_EQUALS( log2(1567u), 10u );
+        EXCEPTION_ASSERT_EQUALS( log2(516u), 9u );
+        EXCEPTION_ASSERT_EQUALS( log2(511u), 8u );
+        EXCEPTION_ASSERT_EQUALS( log2(512u), 9u );
+        EXCEPTION_ASSERT_EQUALS( log2(2107612212u), 30u );
 
         double T = t.elapsed();
         EXCEPTION_ASSERT_LESS (T, debug_build ? 10e-6 : 5e-6);
@@ -276,17 +280,22 @@ void neat_math::
         int j=0;
         for (int i=0; i<1000000; i++) {j+=i;}
         double T = t.elapsed()/1000000;
-        T += j*1e-20;
+        T *= 1 + j*1e-30;
 
         // time for unsigned iterator
         t.restart ();
         unsigned ju=0;
         for (unsigned i=0; i<1000000u; i++) {ju+=i;}
         double T2 = t.elapsed()/1000000;
-        T2 += ju*1e-20;
+        T2 *= 1 + ju*1e-30;
 
-        EXCEPTION_ASSERT_LESS(T, T2*1.2);
-        EXCEPTION_ASSERT_LESS(T2, debug_build? T*2: T*1.22);
+        if (debug_build) {
+            EXCEPTION_ASSERT_LESS(T, T2*1.3);
+            EXCEPTION_ASSERT_LESS(T2, T*2);
+        } else {
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(T, 1e-12);
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(T2, 3e-12);
+        }
 
         // time for float
         t.restart ();
@@ -294,18 +303,20 @@ void neat_math::
         float jf=0;
         for (float i=1; i<1000000.f; i++) {jf++;}
         double T3 = t.elapsed()/1000000;
+        T3 *= 1 + jf*1e-30;
 
         // time for float
         t.restart ();
         j=0;
         for (float i=1; i<1000000.f; i*=1.00001f) {j++;}
         double T4 = t.elapsed()/j;
+        T4 *= 1 + j*1e-30;
 
         EXCEPTION_ASSERT_LESS(debug_build? 0: T*1.1, T3);
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS(1.4*T, T4);
 #else
-        EXCEPTION_ASSERT_LESS(T*(debug_build? 1.05: 1.2), T4);
+        EXCEPTION_ASSERT_LESS(T*(debug_build ? 0.9 : 1.2), T4);
 #endif
         double ghz = 1e-9/T;
         EXCEPTION_ASSERT_LESS(debug_build ? 0.1 : 0.3, ghz);
@@ -351,14 +362,24 @@ void neat_math::
             }
             T3 = t.elapsed ();
         }
-        EXCEPTION_ASSERT_LESS( T1, 25e-3 );
-        EXCEPTION_ASSERT_LESS( T2, debug_build? 60e-3: 20e-3 );
-        EXCEPTION_ASSERT_LESS( T3, 10e-3 );
+        EXCEPTION_ASSERT_LESS( T1, debug_build ? gdb ? 40e-3 : 30e-3 : 25e-3 );
+        EXCEPTION_ASSERT_LESS( T2, debug_build ? 60e-3 : 20e-3 );
+        EXCEPTION_ASSERT_LESS( T3, debug_build ? 20e-3 : 10e-3 );
 #ifdef __GCC__
         EXCEPTION_ASSERT_LESS( 1.2*T2, T1 );
 #else
-        EXCEPTION_ASSERT_LESS( debug_build? 0: T1*1.2, T2 );
+        if (debug_build) {
+            EXCEPTION_ASSERT_LESS( 0, T2 );
+        } else {
+            EXCEPTION_ASSERT_LESS ( T2, T1*1.3 );
+            EXCEPTION_ASSERT_LESS ( T1, T2*2 );
+        }
 #endif
-        EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
+        if (debug_build) {
+            EXCEPTION_ASSERT_LESS( 1.5*T3, T2 );
+        } else {
+            EXCEPTION_ASSERT_LESS ( T2, T3*2 );
+            EXCEPTION_ASSERT_LESS ( T3, T2*1.8 );
+        }
     }
 }

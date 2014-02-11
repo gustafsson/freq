@@ -45,11 +45,11 @@ BufferSource::
 
 
 void BufferSource::
-        setBuffer( pBuffer buffer )
+        setBuffer( pBuffer buffer ) volatile
 {
-    buffer_ = buffer;
+    ((BufferSource*)&*WritePtr(this))->buffer_ = buffer;
 
-    invalidate_samples (Intervals::Intervals_ALL);
+    deprecateCache (Intervals::Intervals_ALL);
 }
 
 
@@ -75,11 +75,11 @@ float BufferSource::
 
 
 void BufferSource::
-        set_sample_rate( float fs )
+        setSampleRate( float fs ) volatile
 {
-    buffer_->set_sample_rate ( fs );
+    ((BufferSource*)&*WritePtr(this))->buffer_->set_sample_rate ( fs );
 
-    invalidate_samples( Signal::Interval::Interval_ALL );
+    deprecateCache ( Signal::Interval::Interval_ALL );
 }
 
 
@@ -100,20 +100,6 @@ unsigned BufferSource::
         return 1;
     else
         return buffer_->number_of_channels ();
-}
-
-
-Interval BufferSource::
-        getInterval()
-{
-    return buffer_->getInterval ();
-}
-
-
-Intervals BufferSource::
-        zeroed_samples()
-{
-    return ~Intervals(buffer_->getInterval ());
 }
 
 
@@ -171,28 +157,6 @@ bool BufferSource::
     if (*b->buffer_ == *buffer_)
         return true;
     return false;
-}
-
-
-// OperationSourceDesc
-float BufferSource::
-        getSampleRate() const
-{
-    return buffer_->sample_rate ();
-}
-
-
-float BufferSource::
-        getNumberOfChannels() const
-{
-    return buffer_->number_of_channels ();
-}
-
-
-float BufferSource::
-        getNumberOfSamples() const
-{
-    return buffer_->number_of_samples ();
 }
 
 

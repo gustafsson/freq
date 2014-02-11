@@ -3,6 +3,8 @@
 
 #include "signal/buffersource.h"
 
+#include <boost/serialization/nvp.hpp>
+
 /*
     TODO update reference manual
     input signal, 1D, can be sound, matlab vector or data-file
@@ -230,7 +232,6 @@
    available cpu memory.
 */
 
-#include "signal/operationcache.h"
 #include "sawe/reader.h"
 #include "neat_math.h" // uint64_t
 
@@ -254,7 +255,7 @@ class SndfileHandle;
 namespace Adapters
 {
 
-class SaweDll Audiofile: public Signal::OperationCache
+class SaweDll Audiofile: public Signal::SourceBase
 {
 private:
     template<class Archive>
@@ -330,7 +331,7 @@ public:
     virtual float sample_rate();
     std::string filename() const;
 
-    virtual void invalidate_samples(const Signal::Intervals& I);
+    virtual Signal::pBuffer read( const Signal::Interval& I ) { return readRaw(I); }
     virtual Signal::pBuffer readRaw( const Signal::Interval& I );
     Signal::Interval readRawInterval( const Signal::Interval& I );
 private:
@@ -359,8 +360,6 @@ private:
     friend class boost::serialization::access;
     template<class archive> void serialize(archive& ar, const unsigned int version) {
         using boost::serialization::make_nvp;
-
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
 
         ar & make_nvp("Original_filename", _original_relative_filename);
 
@@ -402,7 +401,7 @@ private:
         }
 
         uint64_t X = 0;
-        Signal::Interval i = getInterval();
+        Signal::Interval i(0, number_of_samples());
         if (version >= 2)
             i.last = std::min(i.last, (Signal::IntervalType)(1<<20));
 
@@ -451,7 +450,6 @@ public:
     virtual OperationDesc::Ptr copy() const;
     virtual Extent extent() const;
     virtual QString toString() const;
-    virtual int getNumberOfSources() const;
     virtual bool operator==(const OperationDesc& d) const;
 private:
     boost::shared_ptr<Audiofile> audiofile_;

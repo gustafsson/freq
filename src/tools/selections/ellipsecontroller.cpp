@@ -82,7 +82,7 @@ namespace Tools { namespace Selections
             }
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 
@@ -94,7 +94,7 @@ namespace Tools { namespace Selections
             selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 
@@ -127,7 +127,7 @@ namespace Tools { namespace Selections
             }
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 
@@ -161,7 +161,7 @@ namespace Tools { namespace Selections
     void EllipseController::
             selectionChanged()
     {
-        Signal::pOperation o = selection_controller_->model()->current_selection();
+        Signal::OperationDesc::Ptr o = selection_controller_->model()->current_selection();
         model()->tryFilter( o );
     }
 

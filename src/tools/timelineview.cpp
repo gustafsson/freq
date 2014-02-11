@@ -73,7 +73,13 @@ TimelineView::
 Heightmap::Position TimelineView::
         getSpacePos( QPointF pos, bool* success )
 {
-    pos.setY( tool_selector->parentTool()->geometry().height() - 1 - pos.y() );
+    int height;
+    if (tool_selector)
+        height = tool_selector->parentTool()->geometry().height();
+    else
+        height = this->height ();
+
+    pos.setY( height - 1 - pos.y() );
 
     int r = devicePixelRatio ();
     GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
@@ -90,15 +96,12 @@ Heightmap::Position TimelineView::
 
 
 void TimelineView::
-        userinput_update()
+        redraw()
 {
-    // Never update only the timeline as renderview is responsible for invoking
-    // workOne to update textures as needed. TimelineView::update is connected
-    // to RenderView::postPaint.
-    _render_view->userinput_update();
-
-    //_project->worker.requested_fps(30);
-    //update();
+    // Never update only the timeline as renderview still is responsible for
+    // invoking HeightmapProcessingPublisher to get any work done.
+    // TimelineView::update is connected to RenderView::postPaint.
+    _render_view->redraw();
 }
 
 
@@ -111,7 +114,6 @@ void TimelineView::
     QRect rect = tool_selector->parentTool()->geometry();
     int r = tool_selector->parentTool ()->devicePixelRatio ();
     resizeGL( 0, 0, r*rect.width(), r*rect.height() );
-    paintEventTime = boost::posix_time::microsec_clock::local_time();
     paintGL();
 }
 
@@ -119,6 +121,8 @@ void TimelineView::
 void TimelineView::
         layoutChanged( QBoxLayout::Direction direction )
 {
+    EXCEPTION_ASSERT( tool_selector );
+
     switch (direction)
     {
     case QBoxLayout::TopToBottom:
@@ -176,7 +180,7 @@ void TimelineView::
 {
     resizeGL( 0, 0, width, height );
 
-    userinput_update();
+    redraw();
 }
 
 
@@ -200,13 +204,6 @@ void TimelineView::
         paintGL()
 {
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
-
-    boost::posix_time::time_duration diff = boost::posix_time::microsec_clock::local_time() - paintEventTime;
-    if (diff.total_milliseconds() > 50)
-    {
-        QErrorMessage::qtHandler()->showMessage("Seems like the timeline doesn't work properly on your computer, so it has been removed. Otherwise the program should behave correctly. If you want to help out you can send an error report from the Help menu.");
-        emit hideMe();
-    }
 
     _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );
     if (_length < 60*10)
@@ -333,7 +330,6 @@ void TimelineView::
 void TimelineView::
         paintEvent ( QPaintEvent * event )
 {
-    paintEventTime = boost::posix_time::microsec_clock::local_time();
     QGLWidget::paintEvent ( event );
 }
 

@@ -26,11 +26,14 @@ RecordController::
                 destroyed_ ( false ),
                 prev_length_( 0 )
 {
+    qRegisterMetaType<Signal::Interval>("Signal::Interval");
+
     ui->actionRecord = actionRecord;
 
     setupGui();
 
     connect(view_, SIGNAL(gotNoData()), SLOT(receiveStop()));
+    connect(model(), SIGNAL(markNewlyRecordedData(Signal::Interval)), SLOT(redraw(Signal::Interval)));
 }
 
 
@@ -56,28 +59,18 @@ void RecordController::
 void RecordController::
         receiveRecord(bool active)
 {
-    Adapters::Recorder* r = model()->recording;
+    boost::shared_ptr<Adapters::Recorder::WritePtr> rs(new Adapters::Recorder::WritePtr(model()->recording));
+    Adapters::Recorder* r = &**rs;
+
     if (active)
     {
-/*
-//If the recording is stopped because of an error, the button in the user interface should notice somehow ...
-        Support::SinkSignalProxy* proxy;
-        Signal::pOperation proxy_operation( proxy = new Support::SinkSignalProxy() );
-
-        std::vector<Signal::pOperation> record_sinks;
-        record_sinks.push_back( proxy_operation );
-        r->getPostSink()->sinks( record_sinks );
-
-        connect(proxy,
-                SIGNAL(recievedInvalidSamples( Signal::Intervals )),
-                SLOT(recievedInvalidSamples( Signal::Intervals )),
-                Qt::QueuedConnection );
-*/
         prev_length_ = r->number_of_samples();
         r->startRecording();
 
-        if (!r->canRecord())
+        if (!r->canRecord()) {
+            TaskInfo("can't record :(");
             ui->actionRecord->setChecked( false );
+        }
     }
     else
     {
@@ -85,16 +78,22 @@ void RecordController::
         {
             r->stopRecording();
 
-            if (model()->recording->number_of_samples() > prev_length_)
+            if (r->number_of_samples() > prev_length_)
             {
+                rs.reset ();
+                r = 0;
 // TODO this command really should be invoked when the recording is started.
-                Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand( model()->recording, prev_length_, model()->render_view->model ));
+                Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand(
+                                                   model()->recording,
+                                                   prev_length_,
+                                                   model()->render_view->model,
+                                                   model()->invalidator ));
                 model()->project->commandInvoker()->invokeCommand(  cmd );
             }
         }
     }
 
-    view_->enabled = active;
+    view_->setEnabled( active );
 }
 
 
@@ -106,15 +105,9 @@ void RecordController::
 
 
 void RecordController::
-        recievedInvalidSamples( Signal::Intervals I )
+        redraw(Signal::Interval)
 {
-    if ( destroyed_ )
-        return;
-
-    model()->recording->invalidate_samples( I );
-
-    if (model()->recording->isStopped())
-        receiveStop();
+    model()->render_view->redraw ();
 }
 
 
@@ -127,11 +120,10 @@ void RecordController::
     connect(model()->render_view, SIGNAL(destroying()), SLOT(destroying()));
     connect(model()->render_view, SIGNAL(prePaint()), view_, SLOT(prePaint()));
 
-    Adapters::Recorder* r = model()->recording;
-    if (r)
+    if (model()->recording)
     {
         ui->actionRecord->setVisible (true);
-        if (r->canRecord())
+        if (write1(model()->recording) -> canRecord())
             ui->actionRecord->setEnabled( true );
         else
             ui->actionRecord->setToolTip("Can't record, no record devices found");

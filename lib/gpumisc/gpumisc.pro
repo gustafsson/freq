@@ -21,13 +21,16 @@ QT += opengl
 DEFINES += GPUMISC_LIBRARY
 
 SOURCES += \
+    atomicvalue.cpp \
     backtrace.cpp \
     cpumemorystorage.cpp \
     cpuproperties.cpp \
     datastorage.cpp \
+    datastoragestring.cpp \
     debugbuf.cpp \
     detectgdb.cpp \
     demangle.cpp \
+    factor.cpp \
     exceptionassert.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
@@ -36,11 +39,14 @@ SOURCES += \
     glprojection.cpp \
     glPushContext.cpp \
     GlTexture.cpp \
+    gltextureread.cpp \
     gluunproject.cpp \
+    log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
     prettifysegfault.cpp \
     redirectstdout.cpp \
+    resampletexture.cpp \
     signalname.cpp \
     TaskTimer.cpp \
     ThreadChecker.cpp \
@@ -49,12 +55,14 @@ SOURCES += \
     volatileptr.cpp \
 
 HEADERS += \
+    atomicvalue.h \
     backtrace.h \
     computationkernel.h \
     cpumemoryaccess.h \
     cpumemorystorage.h \
     datastorage.h \
     datastorageaccess.h \
+    datastoragestring.h \
     cpuproperties.h \
     cva_list.h \
     debugbuf.h \
@@ -63,6 +71,7 @@ HEADERS += \
     demangle.h \
     detectgdb.h \
     deprecated.h \
+    factor.h \
     exceptionassert.h \
     expectexception.h \
     gl.h \
@@ -72,12 +81,14 @@ HEADERS += \
     glprojection.h \
     glPushContext.h \
     GlTexture.h \
+    gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
     gluunproject.h \
     gpumisc_global.h \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
+    log.h \
     mappedvbo.h \
     mappedvbovoid.h \
     msc_stdc.h \
@@ -90,6 +101,7 @@ HEADERS += \
     resample.h \
     resamplecpu.h \
     resamplehelpers.h \
+    resampletexture.h \
     resampletypes.h \
     signalname.h \
     Statistics.h \

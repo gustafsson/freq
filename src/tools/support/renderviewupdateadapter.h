@@ -30,7 +30,7 @@ public:
     void processedData(const Signal::Interval& input, const Signal::Interval& output);
 
 signals:
-    void userinput_update();
+    void redraw();
     void setLastUpdateSize( Signal::UnsignedIntervalType length );
 
 public:
@@ -41,11 +41,11 @@ public:
 class RenderViewUpdateAdapterMock: public QObject {
     Q_OBJECT
 public:
-    int userinput_update_count = 0;
+    int redraw_count = 0;
     int setLastUpdateSize_count = 0;
 
 public slots:
-    void userinput_update();
+    void redraw();
     void setLastUpdateSize( Signal::UnsignedIntervalType );
 };
 

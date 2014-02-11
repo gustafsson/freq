@@ -8,6 +8,7 @@
 #include "ui/mainwindow.h"
 #include "timelineview.h"
 #include "renderview.h"
+#include "sawe/configuration.h"
 
 // Qt
 #include <QDockWidget>
@@ -76,9 +77,15 @@ void TimelineController::
 {
     Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
 
-    bool create_dock_window = false;
+    bool create_dock_window = Sawe::Configuration::feature("timeline_dock");
+
+    if (bool dock_window_doesnt_work = true)
+        create_dock_window &= !dock_window_doesnt_work;
+
     if (create_dock_window)
     {
+        view->tool_selector = 0; // explicit
+
         dock = new QDockWidget(MainWindow);
         dock->setObjectName(QString::fromUtf8("dockWidgetTimeline"));
         dock->setMinimumSize(QSize(42, 79));
@@ -146,8 +153,10 @@ void TimelineController::
         connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     }
 
-    view->tool_selector->parentTool()->setVisible(visible);
+    if (view->tool_selector)
+        view->tool_selector->parentTool()->setVisible(visible);
 }
+
 
 void TimelineController::
         wheelEvent ( QWheelEvent *e )
@@ -162,7 +171,7 @@ void TimelineController::
     view->_xoffs = p.time-(p.time-view->_xoffs)/f;
 
     // Only update the timeline, leave the main render view unaffected
-    view->userinput_update();
+    view->redraw();
 }
 
 
@@ -184,19 +193,16 @@ void TimelineController::
     case 1:
         if (e->buttons() & Qt::LeftButton)
         {
-            view->_render_view->setPosition( current );
-
-            // Update both the timeline and the main render view (the timeline
+            // Updates both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
-            view->_render_view->userinput_update();
+            view->_render_view->setPosition( current );
         }
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
         {
             view->_xoffs -= current.time - prev.time;
 
-            // Only update the timeline, leave the main render view unaffected
-            view->userinput_update();
+            view->redraw();
         }
         break;
 
@@ -210,8 +216,7 @@ void TimelineController::
             float length = std::max( 1.f, model->project()->length());
             view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
-            // Only update the timeline, leave the main render view unaffected
-            view->userinput_update();
+            view->redraw();
         }
         break;
     }

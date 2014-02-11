@@ -3,6 +3,7 @@
 #include <boost/foreach.hpp>
 
 #include "targetschedule.h"
+#include "TaskTimer.h"
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
@@ -37,7 +38,7 @@ Task::Ptr TargetSchedule::
 
     boost::shared_ptr<TargetNeeds::ReadPtr> target = self->prioritizedTarget();
     if (!target) {
-        DEBUGINFO TaskInfo("!target");
+        DEBUGINFO TaskInfo("No target needs anything right now");
         return Task::Ptr();
     }
 
@@ -92,6 +93,13 @@ boost::shared_ptr<TargetNeeds::ReadPtr> TargetSchedule::
     return target;
 }
 
+} // namespace Processing
+} // namespace Signal
+
+#include "bedroomnotifier.h"
+
+namespace Signal {
+namespace Processing {
 
 class GetDagTaskAlgorithmMockup: public IScheduleAlgorithm
 {
@@ -105,7 +113,11 @@ public:
             Workers::Ptr,
             Signal::ComputingEngine::Ptr) const
     {
-        return Task::Ptr(new Task(0, Step::Ptr(), std::vector<Step::Ptr>(), needed.spannedInterval ()));
+        return Task::Ptr(new Task(Step::WritePtr(Step::Ptr(new Step(Signal::OperationDesc::Ptr()))),
+                                  std::vector<Step::Ptr>(),
+                                  Signal::Operation::Ptr(),
+                                  needed.spannedInterval (),
+                                  Signal::Interval()));
     }
 };
 
@@ -120,7 +132,8 @@ void TargetSchedule::
         write1(dag)->appendStep(step);
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Bedroom::Ptr bedroom(new Bedroom);
-        Targets::Ptr targets(new Targets(bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        Targets::Ptr targets(new Targets(notifier));
         Signal::ComputingEngine::Ptr engine;
 
         TargetSchedule targetschedule(dag, algorithm, targets);
@@ -143,7 +156,9 @@ void TargetSchedule::
 
     // It should provide tasks to keep a Dag up-to-date with respect to all targets
     {
-        Targets::Ptr targets(new Targets(Bedroom::Ptr(new Bedroom)));
+        Bedroom::Ptr bedroom(new Bedroom);
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        Targets::Ptr targets(new Targets(notifier));
     }
 
     // It should work on less prioritized tasks if the high prio tasks are done
@@ -155,7 +170,8 @@ void TargetSchedule::
         write1(dag)->appendStep(step2); // same dag object, but not connected
         IScheduleAlgorithm::Ptr algorithm(new GetDagTaskAlgorithmMockup);
         Bedroom::Ptr bedroom(new Bedroom);
-        Targets::Ptr targets(new Targets(bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        Targets::Ptr targets(new Targets(notifier));
         Signal::ComputingEngine::Ptr engine;
 
         TargetNeeds::Ptr targetneeds ( write1(targets)->addTarget(step) );

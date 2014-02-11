@@ -1,5 +1,7 @@
 #include "operationwrapper.h"
 
+#include "demangle.h"
+
 #include <boost/foreach.hpp>
 #include <boost/weak_ptr.hpp>
 
@@ -25,27 +27,14 @@ OperationDescWrapper::
 
 
 void OperationDescWrapper::
-        setInvalidator(Processing::IInvalidator::Ptr invalidator)
+        setWrappedOperationDesc(OperationDesc::Ptr wrap)
 {
-    invalidator_ = invalidator;
-}
+    if (wrap == wrap_)
+        return;
 
+    wrap_ = wrap;
 
-void OperationDescWrapper::
-        setWrappedOperationDesc(OperationDesc::Ptr wrap) volatile
-{
-    Processing::IInvalidator::Ptr invalidator;
-
-    {
-        WritePtr selfp(this);
-        OperationDescWrapper* self = dynamic_cast<OperationDescWrapper*>(&*selfp);
-
-        self->wrap_ = wrap;
-        invalidator = self->invalidator_;
-    }
-
-    if (invalidator)
-        read1(invalidator)->deprecateCache(Signal::Intervals::Intervals_ALL);
+    deprecateCache();
 }
 
 
@@ -70,15 +59,6 @@ Signal::Interval OperationDescWrapper::
 
 Interval OperationDescWrapper::
         affectedInterval( const Interval& I ) const
-{
-    if (wrap_)
-        return read1(wrap_)->affectedInterval (I);
-    return I;
-}
-
-
-Intervals OperationDescWrapper::
-        affectedInterval( const Intervals& I ) const
 {
     if (wrap_)
         return read1(wrap_)->affectedInterval (I);
@@ -114,14 +94,6 @@ OperationDesc::Extent OperationDescWrapper::
 }
 
 
-Operation::Ptr OperationDescWrapper::
-        recreateOperation(Operation::Ptr, ComputingEngine*) const
-{
-    EXCEPTION_ASSERTX(false, "Not implemented");
-    return Operation::Ptr();
-}
-
-
 QString OperationDescWrapper::
         toString() const
 {
@@ -129,14 +101,6 @@ QString OperationDescWrapper::
         return read1(wrap_)->toString ();
 
     return vartype(*this).c_str ();
-}
-
-
-int OperationDescWrapper::
-        getNumberOfSources() const
-{
-    EXCEPTION_ASSERTX(false, "Not implemented");
-    return 0;
 }
 
 

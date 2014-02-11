@@ -56,12 +56,18 @@ public:
     /// Get what samples that are described in the containing buffer
     /// Merely allocated memory doesn't not count in this description.
     Intervals samplesDesc() const;
+    Interval spannedInterval() const;
+    bool empty() const;
 
     void invalidate_samples(const Intervals& I);
 
     /// Return true if the entire interval I is up to date and can be read from this.
     bool hasInterval(const Interval& I);
 
+    /**
+     * @brief num_channels is defined as 0 if _cache is empty.
+     * @return
+     */
     int num_channels() const;
 
 private:
@@ -75,7 +81,6 @@ private:
     Intervals _valid_samples;
 
     void allocateCache( Signal::Interval, float fs, int num_channels );
-    void merge( pBuffer );
 
     /**
      * @brief findBuffer finds the buffer containing 'sample'.

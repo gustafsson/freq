@@ -8,11 +8,21 @@
 #include <math.h>
 #endif
 
+
+template<typename T>
+T e(float v);
+
+template <>
+float e<float>(float v) { return v; }
+
 #ifdef __CUDACC__
-#define MakeWriteType make_float2
+template <>
+float2 e<float2>(float v) { return make_float2(v,0); }
 #else
-#define MakeWriteType typename Writer::T
+template <>
+std::complex<float> e<std::complex<float> >(float v) { return std::complex<float>(v,0); }
 #endif
+
 
 /**
  Plot the waveform on the matrix.
@@ -64,13 +74,14 @@ RESAMPLE_CALL void draw_waveform_pts_elem(
 
         writePos = WritePos( writePos_x, y1 );
         WriteType& w1 = (WriteType&)out_waveform_matrix.ref( writePos );
-        w1 += MakeWriteType(0.8f*blobinv * (1.f-py), 0);
+        w1 += e<WriteType>(0.8f*blobinv * (1.f-py));
 
         writePos = WritePos( writePos_x, y2 );
         WriteType& w2 = (WriteType&)out_waveform_matrix.ref( writePos );
-        w2 += MakeWriteType(0.8f*blobinv * py, 0);
+        w2 += e<WriteType>(0.8f*blobinv * py);
     }
 }
+
 
 /**
  Plot the waveform on the matrix.
@@ -79,37 +90,45 @@ RESAMPLE_CALL void draw_waveform_pts_elem(
  */
 template<typename Reader, typename Writer>
 RESAMPLE_CALL void draw_waveform_elem(
-        int writePos_xu,
+        int writePos_x,
         Reader in_waveform,
-        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs )
+        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs, float y0=0 )
 {
+    float A1 = 100.f; // 0.2f;
+    float A2 = 10.f; // 0.01f
+
     typedef typename Writer::Position WritePos;
     typedef typename Writer::Size WriteSize;
     WriteSize matrix_sz = out_waveform_matrix.numberOfElements();
 
-    float writePos_x = writePos_xu + writeposoffs;
-    int readPos1 = writePos_x * blob;
-    int readPos2 = (writePos_x + 1) * blob;
+    int readPos1 = (writePos_x + writeposoffs) * blob;
+    int readPos2 = (writePos_x + writeposoffs + 1) * blob;
 
-    if( writePos_x >= matrix_sz.width || readPos1 >= readstop )
+    if (writePos_x < 0 || readPos1 < 0)
+        return;
+    if (writePos_x >= matrix_sz.width || readPos2 >= readstop)
         return;
 
     float maxy = 0;
     float miny = matrix_sz.height;
     float blobinv = 1.f/blob;
 
+    for (int i=0; i<matrix_sz.height; i++) {
+        out_waveform_matrix.ref( WritePos( writePos_x, i ) ) = e<typename Writer::T>(0);
+    }
+
     for (int read_x = readPos1; read_x <= readPos2 && read_x < readstop; ++read_x)
     {
         float v = in_waveform.read( read_x );
 
+        v -= y0;
         v *= scaling;
-        v = fmax(-1.f, fmin(1.f, v));
 
-        float y = (v+1.f)*.5f*(matrix_sz.height-1.f);
+        float y = v*(matrix_sz.height-1.f);
         if (y>maxy) maxy = y;
         if (y<miny) miny = y;
 
-        if (0.f <= y && y <= matrix_sz.height)
+        if (0.f <= y && y < matrix_sz.height)
         {
             int y1 = (int)y;
             int y2 = y1+1;
@@ -127,10 +146,10 @@ RESAMPLE_CALL void draw_waveform_elem(
     #endif
 
             WriteType& w1 = (WriteType&)out_waveform_matrix.ref( WritePos( writePos_x, y1 ) );
-            w1 += MakeWriteType(0.2f*blobinv * (1.f-py), 0);
+            w1 += e<WriteType>(A1*blobinv * (1.f-py));
 
             WriteType& w2 = (WriteType&)out_waveform_matrix.ref( WritePos( writePos_x, y2 ) );
-            w2 += MakeWriteType(0.2f*blobinv * py, 0);
+            w2 += e<WriteType>(A1*blobinv * py);
         }
     }
 
@@ -151,7 +170,7 @@ RESAMPLE_CALL void draw_waveform_elem(
         }
 
         for (int y=y1; y<=y2; ++y)
-            out_waveform_matrix.ref( WritePos( writePos_x, y ) ) += MakeWriteType(0.01f*blobinv, 0);
+            out_waveform_matrix.ref( WritePos( writePos_x, y ) ) += e<typename Writer::T>(A2);
     }
 }
 
@@ -160,8 +179,10 @@ template<typename Reader, typename Writer>
 RESAMPLE_CALL void draw_waveform_with_lines_elem(
         int writePos_xu,
         Reader in_waveform,
-        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs )
+        Writer out_waveform_matrix, float blob, int readstop, float scaling, float writeposoffs, float y0=0 )
 {
+    float A = 10.f; // 0.02f
+
     typedef typename Writer::Position WritePos;
     typedef typename Writer::Size WriteSize;
     WriteSize matrix_sz = out_waveform_matrix.numberOfElements();
@@ -182,12 +203,12 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     float v2 = in_waveform.read( readPos+1 );
     float w1 = v1*(1-px1) + v2*px1;
     float w2 = v1*(1-px2) + v2*px2;
+    w1 -= y0;
+    w2 -= y0;
     w1 *= scaling;
     w2 *= scaling;
-    w1 = fmax(-1.f, fmin(1.f, w1));
-    w2 = fmax(-1.f, fmin(1.f, w2));
-    float fy1 = (w1+1.f)*.5f*(matrix_sz.height-1.f);
-    float fy2 = (w2+1.f)*.5f*(matrix_sz.height-1.f);
+    float fy1 = w1*(matrix_sz.height-1.f);
+    float fy2 = w2*(matrix_sz.height-1.f);
 
     float y_per_x = (fy2-fy1)/(px2-px1);
     float dy = (px2_0-px1_0)*y_per_x;
@@ -230,7 +251,7 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     {
         float py = y;
         py = fmax(0.f, 1.f - fabsf(my - y)*invdy);
-        out_waveform_matrix.ref( WritePos( writePos_x, y ) ) = MakeWriteType(0.02f*py, 0);
+        out_waveform_matrix.ref( WritePos( writePos_x, y ) ) = e<typename Writer::T>(A*py);
     }
 }
 

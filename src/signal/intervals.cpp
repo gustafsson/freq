@@ -221,6 +221,9 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator >>= (const IntervalType& b)
 {
+    if (b < 0)
+        return *this <<= -b;
+
     for (base::iterator itr = base::begin(); itr!=base::end();) {
         Interval& i = *itr;
 	
@@ -242,6 +245,9 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator <<= (const IntervalType& b)
 {
+    if (b < 0)
+        return *this >>= -b;
+
     for (base::iterator itr = base::begin(); itr!=base::end();) {
         Interval& i = *itr;
 	
@@ -391,7 +397,7 @@ Interval Intervals::
 Interval Intervals::
         fetchInterval( UnsignedIntervalType dt, IntervalType center ) const
 {
-    EXCEPTION_ASSERT_LESS( 0, dt );
+    EXCEPTION_ASSERT_LESS( 0u, dt );
 
     if (center < IntervalType(dt/2))
         center = 0;
@@ -644,7 +650,7 @@ void Intervals::
             I |= Interval(i,i+1);
         }
         double T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.0000006);
+        EXCEPTION_ASSERT_LESS(T,0.00000065);
         EXCEPTION_ASSERT_EQUALS(I, Intervals(0,N));
 
         I = Intervals(0,N);
@@ -653,7 +659,7 @@ void Intervals::
             (I & Interval(i,i+1));
         }
         T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.000003);
+        EXCEPTION_ASSERT_LESS(T,0.000004);
     }
 
     // It should have neat string representations
@@ -674,6 +680,7 @@ void Intervals::
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Intervals(-100,-1) | Intervals(1,100))), "{[-100, -1)99#, [1, 100)99#}" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % Intervals(n,n+1)), "[-, -9223372036854775807)" );
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Interval(n,n+1) & Interval(n, 9223372036854773759) )), "[-, -9223372036854775807)" );
+        EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Intervals(86325,91136) >>= -265303)), "[351628, 356439)4811#" );
     }
 
 }

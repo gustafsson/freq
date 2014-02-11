@@ -1,12 +1,11 @@
 #include "selectionmodel.h"
 #include "sawe/project.h"
 
-#include "signal/operation-basic.h"
-#include "support/operation-composite.h"
-#include "filters/ellipse.h"
-#include "filters/rectangle.h"
-#include "filters/bandpass.h"
-//#include "tools/selections/support/splinefilter.h"
+#include "filters/selection.h"
+#include "tfr/transformoperation.h"
+
+#include "TaskTimer.h"
+#include "demangle.h"
 
 namespace Tools
 {
@@ -26,7 +25,7 @@ SelectionModel::
 
 
 void SelectionModel::
-        set_current_selection(Signal::pOperation o)
+        set_current_selection(Signal::OperationDesc::Ptr o)
 {
     if (o!=current_selection_) {
         // Check if 'o' is supported by making a copy of it
@@ -38,9 +37,9 @@ void SelectionModel::
 
 
 void SelectionModel::
-        try_set_current_selection(Signal::pOperation o)
+        try_set_current_selection(Signal::OperationDesc::Ptr o)
 {
-    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), o->name().c_str());
+    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), read1(o)->toString().toStdString().c_str());
 
     try
     {
@@ -48,120 +47,48 @@ void SelectionModel::
     }
     catch ( const std::logic_error& )
     {
-        set_current_selection(Signal::pOperation());
+        set_current_selection(Signal::OperationDesc::Ptr());
     }
 }
 
 
-Signal::pOperation SelectionModel::
+Signal::OperationDesc::Ptr SelectionModel::
         current_selection_copy(SaveInside si)
 {
     return copy_selection( current_selection_, si );
 }
 
 
-template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Filters::Ellipse* src, SaveInside si)
-{
-    Filters::Ellipse* dst;
-    Signal::pOperation o( dst=new Filters::Ellipse( *src ));
-
-    if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
-
-
-template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Filters::Rectangle* src, SaveInside si)
-{
-    Filters::Rectangle* dst;
-    Signal::pOperation o( dst=new Filters::Rectangle( *src ));
-
-    if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
-
-
-template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Filters::Bandpass* src, SaveInside si)
-{
-    Filters::Bandpass* dst;
-    Signal::pOperation o( dst=new Filters::Bandpass( *src ));
-
-    if (si != SaveInside_UNCHANGED)
-        dst->_save_inside = si == SaveInside_TRUE;
-    return o;
-}
-
-
-template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Tools::Support::OperationOtherSilent* src, SaveInside si)
-{
-    if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return Signal::pOperation( new Tools::Support::OperationOtherSilent( *src ));
-    } else {
-        return Signal::pOperation( new Signal::OperationSetSilent(
-                Signal::pOperation(),
-                src->section() )
-        );
-    }
-}
-
-
-template<>
-Signal::pOperation SelectionModel::
-        copy_selection_type(Signal::OperationSetSilent* src, SaveInside si)
-{
-    if (si == SaveInside_UNCHANGED || si == SaveInside_TRUE) {
-        return Signal::pOperation( new Signal::OperationSetSilent( *src ));
-    } else {
-        return Signal::pOperation( new Tools::Support::OperationOtherSilent(
-                Signal::pOperation(),
-                src->affected_samples().spannedInterval() )
-        );
-    }
-}
-
-
-//template<>
-//Signal::pOperation SelectionModel::
-//        copy_selection_type(Selections::Support::SplineFilter* src, SaveInside si)
-//{
-//    Selections::Support::SplineFilter* dst;
-//    Signal::pOperation o( dst=new Selections::Support::SplineFilter( *src ));
-
-//    if (si != SaveInside_UNCHANGED)
-//        dst->_save_inside = si == SaveInside_TRUE;
-//    return o;
-//}
-
-
-Signal::pOperation SelectionModel::
-        copy_selection(Signal::pOperation o, SaveInside si)
+Signal::OperationDesc::Ptr SelectionModel::
+        copy_selection(Signal::OperationDesc::Ptr o, SaveInside si)
 {
     if (!o)
         return o;
 
-#define TEST_TYPE(T) \
-    do { \
-        T* p = dynamic_cast<T*>( o.get() ); \
-        if (p) return copy_selection_type(p, si); \
-    } while(false)
+    o = read1(o)->copy();
+    if (si == SaveInside_UNCHANGED)
+        return o;
 
-    TEST_TYPE(Filters::Ellipse);
-    TEST_TYPE(Filters::Rectangle);
-    TEST_TYPE(Filters::Bandpass);
-    TEST_TYPE(Tools::Support::OperationOtherSilent);
-    TEST_TYPE(Signal::OperationSetSilent);
-//    TEST_TYPE(Selections::Support::SplineFilter);
+    Signal::OperationDesc::WritePtr w(o);
 
-    throw std::logic_error("SelectionModel::copy_selection(" + vartype(*o) + ") is not implemented");
+    if (Filters::Selection* s = dynamic_cast<Filters::Selection*>( &*w ))
+      {
+        s->selectInterior (si == SaveInside_TRUE);
+        return o;
+      }
+
+    if (Tfr::TransformOperationDesc* t = dynamic_cast<Tfr::TransformOperationDesc*>( &*w ))
+      {
+        Tfr::ChunkFilterDesc::WritePtr cfd(t->chunk_filter());
+        if (Filters::Selection* s = dynamic_cast<Filters::Selection*>( &*cfd ))
+          {
+            s->selectInterior (si == SaveInside_TRUE);
+            return o;
+          }
+      }
+
+    EXCEPTION_ASSERTX(false, "SelectionModel::copy_selection(" + vartype(*o) + ", " + w->toString().toStdString() + ") is not implemented");
+    return Signal::OperationDesc::Ptr();
 }
 
 

@@ -7,10 +7,10 @@ namespace Signal {
 namespace Processing {
 
 GraphInvalidator::
-        GraphInvalidator(Dag::WeakPtr dag, Bedroom::WeakPtr bedroom, Step::WeakPtr step)
+        GraphInvalidator(Dag::WeakPtr dag, INotifier::WeakPtr notifier, Step::WeakPtr step)
     :
       dag_(dag),
-      bedroom_(bedroom),
+      notifier_(notifier),
       step_(step)
 {
 }
@@ -24,15 +24,15 @@ void GraphInvalidator::
         return;
 
     Dag::ReadPtr dag(dagp);
-    Bedroom::Ptr bedroom = bedroom_.lock ();
+    INotifier::Ptr notifier = notifier_.lock ();
     Step::Ptr step = step_.lock ();
 
-    if (!bedroom || !step)
+    if (!notifier || !step)
         return;
 
     GraphInvalidator::deprecateCache(*dag, step, what);
 
-    bedroom->wakeup ();
+    notifier->wakeup();
 }
 
 
@@ -51,6 +51,7 @@ void GraphInvalidator::
 
 
 #include <QThread>
+#include "bedroomnotifier.h"
 
 namespace Signal {
 namespace Processing {
@@ -75,6 +76,7 @@ void GraphInvalidator::
         // create
         Dag::Ptr dag(new Dag);
         Bedroom::Ptr bedroom(new Bedroom);
+        INotifier::Ptr notifier(new BedroomNotifier(bedroom));
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
         WaitForWakeupMock sleeper(bedroom);
 
@@ -90,7 +92,7 @@ void GraphInvalidator::
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 1);
 
         // test
-        GraphInvalidator graphInvalidator(dag, bedroom, step);
+        GraphInvalidator graphInvalidator(dag, notifier, step);
         Signal::Intervals deprected(40,50);
         graphInvalidator.deprecateCache (deprected);
 

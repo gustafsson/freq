@@ -4,6 +4,8 @@
 #include "tfr/chunk.h"
 #include "tfr/stft.h"
 
+#include "TaskTimer.h"
+
 #define TIME_BANDPASS
 //#define TIME_BANDPASS if(0)
 
@@ -11,8 +13,8 @@ using namespace std;
 
 namespace Filters {
 
-Bandpass::
-        Bandpass(float f1, float f2, bool save_inside)
+BandpassKernel::
+        BandpassKernel(float f1, float f2, bool save_inside)
             :
             _f1(f1),
             _f2(f2),
@@ -22,7 +24,7 @@ Bandpass::
 }
 
 
-std::string Bandpass::
+std::string BandpassKernel::
         name()
 {
     stringstream ss;
@@ -31,9 +33,10 @@ std::string Bandpass::
 }
 
 
-bool Bandpass::
-        operator()( Tfr::Chunk& c )
+void BandpassKernel::
+        operator()( Tfr::ChunkAndInverse& chunk )
 {
+    Tfr::Chunk& c = *chunk.chunk.get ();
     TIME_BANDPASS TaskTimer tt("%s (save %sside) on %s",
                                name().c_str(),
                                _save_inside?"in":"out",
@@ -83,8 +86,56 @@ bool Bandpass::
                 p[t*actualSize + s] = zero;
         }
     }
-
-    return true;
 }
+
+
+Bandpass::
+        Bandpass(float f1, float f2, bool save_inside)
+    :
+      _f1(f1),
+      _f2(f2),
+      _save_inside(save_inside)
+{
+}
+
+
+Tfr::pChunkFilter Bandpass::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    if (engine==0 || dynamic_cast<Signal::ComputingCpu*>(engine))
+        return Tfr::pChunkFilter(new BandpassKernel(_f1, _f2, _save_inside));
+    return Tfr::pChunkFilter();
+}
+
+
+Tfr::ChunkFilterDesc::Ptr Bandpass::
+        copy() const
+{
+    return ChunkFilterDesc::Ptr(new Bandpass(_f1, _f2, _save_inside));
+}
+
+
+bool Bandpass::
+        isInteriorSelected() const
+{
+    return _save_inside;
+}
+
+
+void Bandpass::
+        selectInterior(bool v)
+{
+    _save_inside = v;
+}
+
+
+void Bandpass::
+        test()
+{
+    // It should apply a bandpass filter between f1 and f2 to a signal.
+    EXCEPTION_ASSERT(false);
+}
+
+
 
 } // namespace Filters

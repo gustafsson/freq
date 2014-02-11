@@ -1,14 +1,40 @@
 #include "chunktoblock.h"
 
 #include "blockkernel.h"
+#include "signal/operation.h"
 #include "tfr/chunk.h"
+#include "tfr/transformoperation.h"
+#include "cpumemorystorage.h"
+
+#define INFO
+//#define INFO if(0)
 
 namespace Heightmap {
 
 ChunkToBlock::
-        ChunkToBlock()
+        ChunkToBlock(Tfr::pChunk chunk)
+    :
+      chunk(chunk)
 {
+    INFO TaskInfo(boost::format("ChunkToBlock. Chunk %s with nSamples=%u, nScales=%u")
+                      % chunk->getCoveredInterval() % chunk->nSamples () % chunk->nScales ());
+}
 
+void ChunkToBlock::
+        mergeChunk( pBlock block )
+{
+    INFO TaskTimer tt(boost::format("ChunkToBlock::mergeChunk %s") % block->getRegion ());
+
+    bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
+
+    BlockData::WritePtr blockdata(block->block_data());
+
+    if (transpose)
+        mergeColumnMajorChunk (*block, *chunk, *blockdata);
+    else
+        mergeRowMajorChunk (*block, *chunk, *blockdata);
+
+    blockdata->cpu_copy->OnlyKeepOneStorage<CpuMemoryStorage>();
 }
 
 
@@ -106,20 +132,18 @@ void ChunkToBlock::mergeRowMajorChunk(
 
 } // namespace Heightmap
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 #include "tfr/stftdesc.h"
 
 namespace Heightmap {
 
-class DummyKernel: public Tfr::ChunkFilter {
-    bool operator()( Tfr::ChunkAndInverse& ) {
-        return false;
-    }
+class DummyKernel: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag {
+    void operator()( Tfr::ChunkAndInverse& ) {}
     void set_number_of_channels (unsigned) {}
 };
 
-class DummyKernelDesc: public Tfr::FilterKernelDesc {
-    virtual Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
+class DummyKernelDesc: public Tfr::ChunkFilterDesc {
+    Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* =0) const {
         return Tfr::pChunkFilter(new DummyKernel);
     }
 };
@@ -127,37 +151,37 @@ class DummyKernelDesc: public Tfr::FilterKernelDesc {
 void ChunkToBlock::
         test()
 {
-    ChunkToBlock ctb;
-    ctb.complex_info = ComplexInfo_Amplitude_Non_Weighted;
-    ctb.enable_subtexel_aggregation = false;
-    ctb.full_resolution = false;
-    ctb.normalization_factor = 1;
     BlockLayout bl(1<<8,1<<8,100);
     VisualizationParams::Ptr vp(new VisualizationParams);
     Tfr::FreqAxis ds; ds.setLinear (1);
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);
 
-    Tfr::StftDesc* tfr;
-    Tfr::pTransformDesc tdesc( tfr = new Tfr::StftDesc() );
-    Tfr::FilterKernelDesc::Ptr fdesc( new DummyKernelDesc );
-    Signal::OperationDesc::Ptr desc(new Tfr::FilterDesc(tdesc, fdesc));
+    Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
+    write1(fdesc)->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
+    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(fdesc));
     Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
-
-    Tfr::TransformKernel* transformkernel = dynamic_cast<Tfr::TransformKernel*>( &*operation );
 
     Signal::Interval expectedOutput;
     Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
-    Tfr::pTransform t = transformkernel->transform();
-    Signal::pMonoBuffer buffer( new Signal::MonoBuffer (requiredInterval, 1));
-    Tfr::pChunk chunk = (*t)( buffer );
+    Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
+    operation->process( buffer );
+
+    Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
+    Tfr::pChunk chunk = (*read1(fdesc)->transformDesc()->createTransform ())( monobuffer );
 
     Heightmap::Reference ref;
 
     pBlock block( new Block (ref, bl, vp));
     BlockData blockdata;
     blockdata.cpu_copy.reset( new DataStorage<float>(32,32) );
+
+    ChunkToBlock ctb(chunk);
+    ctb.complex_info = ComplexInfo_Amplitude_Non_Weighted;
+    ctb.enable_subtexel_aggregation = false;
+    ctb.full_resolution = false;
+    ctb.normalization_factor = 1;
 
     ctb.mergeColumnMajorChunk(
             *block,

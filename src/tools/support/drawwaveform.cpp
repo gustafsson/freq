@@ -2,6 +2,7 @@
 
 // gpumisc
 #include "gl.h"
+#include "TaskTimer.h"
 
 // Boost
 #include <boost/foreach.hpp>
@@ -14,28 +15,6 @@ DrawWaveform::
             :
             _enqueueGcDisplayList( false )
 {
-}
-
-
-void DrawWaveform::
-        drawWaveform(Signal::pOperation /*waveform*/)
-{
-    //static pWaveform_chunk chunk = waveform->getChunk( 0, waveform->number_of_samples(), 0, Waveform_chunk::Only_Real );
-    // TODO draw waveform
-    /*Signal::pBuffer chunk = waveform.get()->getChunkBehind();
-    draw_glList<Signal::Buffer>( chunk, DrawWaveform::drawWaveform_chunk_directMode, chunk->modified );
-    if (chunk->modified) {
-        chunk->was_modified = true;
-        drawWaveform_chunk_directMode( chunk );
-        update();
-        chunk->modified=false;
-    } else if(chunk->was_modified) {
-        draw_glList<Waveform_chunk>( chunk, DrawWaveform::drawWaveform_chunk_directMode, true );
-        chunk->was_modified = false;
-    } else {
-        draw_glList<Waveform_chunk>( chunk, DrawWaveform::drawWaveform_chunk_directMode, false );
-    }
-    */
 }
 
 

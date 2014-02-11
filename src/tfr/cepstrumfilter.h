@@ -1,28 +1,19 @@
 #ifndef CEPSTRUMFILTER_H
 #define CEPSTRUMFILTER_H
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 namespace Tfr {
 
-class CepstrumFilter : public Filter
+
+class CepstrumFilterDesc : public Tfr::ChunkFilterDesc
 {
 public:
-    CepstrumFilter( Signal::pOperation source=Signal::pOperation(),
-                Tfr::pTransform transform=Tfr::pTransform() );
+    CepstrumFilterDesc();
 
-
-    /**
-      This computes the Cepstrum chunk covering a given interval.
-      */
-    Signal::Interval requiredInterval( const Signal::Interval& I, Tfr::pTransform t );
-
-
-    virtual void invalidate_samples(const Signal::Intervals& I);
-
-
-    bool exclude_end_block;
+    void transformDesc( Tfr::pTransformDesc m );
 };
+
 
 } // namespace Tfr
 

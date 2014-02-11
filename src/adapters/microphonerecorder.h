@@ -35,6 +35,7 @@ public:
 
     virtual std::string name();
     virtual float sample_rate();
+    virtual unsigned num_channels();
 
 private:
     MicrophoneRecorder()
@@ -49,6 +50,7 @@ private:
 
     int input_device_;
     float _sample_rate;
+    unsigned _num_channels;
     bool _is_interleaved;
     bool _has_input_device;
     std::vector<float> _rolling_mean;
@@ -84,13 +86,12 @@ private:
         if (0==N) // workaround for the special case of saving an empty recording.
             N = 1;
 
-        Signal::pBuffer b = readFixedLength( Signal::Interval(0, N) );
+        Signal::pBuffer b = read( Signal::Interval(0, N) );
 
         WriteWav::writeToDisk(_filename, b, false);
 
         boost::shared_ptr<Audiofile> wavfile( new Audiofile(_filename) );
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -102,7 +103,6 @@ private:
     {
         boost::shared_ptr<Audiofile> wavfile;
 
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(DeprecatedOperation);
         ar & BOOST_SERIALIZATION_NVP(wavfile);
         ar & BOOST_SERIALIZATION_NVP(input_device_);
 
@@ -119,12 +119,12 @@ private:
 class MicrophoneRecorderOperation: public Signal::Operation
 {
 public:
-    MicrophoneRecorderOperation( Signal::pOperation recorder_ );
+    MicrophoneRecorderOperation( Recorder::Ptr recorder );
 
     virtual Signal::pBuffer process(Signal::pBuffer b);
 
 private:
-    Signal::pOperation recorder_;
+    Recorder::Ptr recorder_;
 };
 
 
@@ -134,21 +134,13 @@ private:
 class MicrophoneRecorderDesc: public Signal::OperationDesc
 {
 public:
-    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
-    {
-    public:
-        virtual ~IGotDataCallback() {}
-
-        virtual void markNewlyRecordedData(Signal::Interval what)=0;
-    };
-
-    MicrophoneRecorderDesc( Recorder*, IGotDataCallback::Ptr invalidator );
+    MicrophoneRecorderDesc( Recorder::Ptr, Recorder::IGotDataCallback::Ptr invalidator );
 
     void startRecording();
     void stopRecording();
     bool isStopped();
     bool canRecord();
-    Recorder* recorder() const;
+    Recorder::Ptr recorder() const;
 
     // OperationDesc
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
@@ -158,10 +150,7 @@ public:
     virtual Extent extent() const;
 
 private:
-    void setDataCallback( IGotDataCallback::Ptr invalidator );
-
-    Signal::pOperation recorder_;
-    IGotDataCallback::Ptr invalidator_;
+    Recorder::Ptr recorder_;
 
 public:
     static void test();

@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/shaders">
+        <file>heightmap_noshadow.vert</file>
+        <file>heightmap.frag</file>
+        <file>heightmap.vert</file>
+        <file>noop.vert</file>
+        <file>chunktoblock_degenerate.frag</file>
+        <file>chunktoblock.frag</file>
+        <file>chunktoblock_degeneratesubsample.frag</file>
+        <file>chunktoblock_maxheight.frag</file>
+        <file>chunktoblock_maxwidth.frag</file>
+    </qresource>
+</RCC>

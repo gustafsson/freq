@@ -2,6 +2,7 @@
 #include "filters/ellipse.h"
 #include "tools/support/operation-composite.h"
 #include "tools/rendermodel.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools { namespace Selections
 {
@@ -29,29 +30,29 @@ EllipseModel::
 }
 
 
-Signal::pOperation EllipseModel::
+Signal::OperationDesc::Ptr EllipseModel::
         updateFilter()
 {
     if (centre.time == centrePlusRadius.time || centre.scale == centrePlusRadius.scale)
-        return Signal::pOperation();
+        return Signal::OperationDesc::Ptr();
 
-    Signal::pOperation filter( new Filters::Ellipse( 0,0,0,0, true ) );
-
-    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());
+    Filters::Ellipse* e;
+    Tfr::ChunkFilterDesc::Ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
 
     e->_centre_t = centre.time;
     e->_centre_plus_radius_t = centrePlusRadius.time;
     e->_centre_f = freqAxis().getFrequency( centre.scale );
     e->_centre_plus_radius_f = freqAxis().getFrequency( centrePlusRadius.scale );
 
-    return filter;
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 
 void EllipseModel::
-        tryFilter(Signal::pOperation filter)
+        tryFilter(Signal::OperationDesc::Ptr filterp)
 {
-    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>(filter.get());
+    Signal::OperationDesc::ReadPtr filter(filterp);
+    const Filters::Ellipse* e = dynamic_cast<const Filters::Ellipse*>(filter.get());
     if (!e)
     {
         centrePlusRadius.time = centre.time;

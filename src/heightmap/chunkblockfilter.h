@@ -1,49 +1,28 @@
 #ifndef HEIGHTMAP_CHUNKBLOCKFILTER_H
 #define HEIGHTMAP_CHUNKBLOCKFILTER_H
 
-#include "tfr/filter.h"
 #include "heightmap/tfrmapping.h"
-#include "heightmap/block.h"
+#include "mergechunk.h"
+#include "blocks/ichunkmerger.h"
 
 namespace Heightmap {
-
-class MergeChunk : public VolatilePtr<MergeChunk> {
-public:
-    virtual ~MergeChunk() {}
-
-    virtual void prepareChunk(Tfr::ChunkAndInverse&) {}
-
-    virtual void mergeChunk(
-            const Heightmap::Block& block,
-            const Tfr::ChunkAndInverse& chunk,
-            Heightmap::BlockData& outData ) = 0;
-};
-
-
-class MergeChunkDesc : public VolatilePtr<MergeChunkDesc>
-{
-public:
-    virtual ~MergeChunkDesc() {}
-
-    virtual MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
-};
-
 
 /**
  * @brief The ChunkBlockFilter class should use a MergeChunk to update all
  * blocks in a tfrmap that matches a given Tfr::Chunk.
  */
-class ChunkBlockFilter: public Tfr::ChunkFilter
+class ChunkBlockFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
-    ChunkBlockFilter( MergeChunk::Ptr merge_chunk, Heightmap::TfrMapping::Ptr tfrmap );
+    ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap, MergeChunk::Ptr merge_chunk );
 
-    bool operator()( Tfr::ChunkAndInverse& chunk );
+    void operator()( Tfr::ChunkAndInverse& chunk );
 
     void set_number_of_channels( unsigned C );
 
 private:
-    Heightmap::TfrMapping::Ptr tfrmap_;
+    Blocks::IChunkMerger::Ptr chunk_merger_;
+    Heightmap::TfrMapping::ConstPtr tfrmap_;
     MergeChunk::Ptr merge_chunk_;
 
 public:
@@ -60,10 +39,10 @@ public:
  * and correspondigly ChunkToBlock should only update those texels that have
  * full support.
  */
-class ChunkBlockFilterDesc: public Tfr::FilterKernelDesc
+class ChunkBlockFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    ChunkBlockFilterDesc( Heightmap::TfrMapping::Ptr tfrmap );
+    ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap );
 
     /**
      * @brief createChunkFilter creates a ChunkFilter.
@@ -77,8 +56,9 @@ public:
     void setMergeChunkDesc( MergeChunkDesc::Ptr mcdp ) { merge_chunk_desc_ = mcdp; }
 
 private:
+    Blocks::IChunkMerger::Ptr chunk_merger_;
+    Heightmap::TfrMapping::ConstPtr tfrmap_;
     MergeChunkDesc::Ptr merge_chunk_desc_;
-    Heightmap::TfrMapping::Ptr tfrmap_;
 
 public:
     static void test();

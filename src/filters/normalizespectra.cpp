@@ -23,13 +23,11 @@ NormalizeSpectra::NormalizeSpectra(float means)
 }
 
 
-bool NormalizeSpectra::
-        operator()( Chunk& chunk )
+void NormalizeSpectra::
+        operator()( ChunkAndInverse& chunk )
 {
-    //removeSlidingMean( chunk );
-    removeSlidingMedian( chunk );
-
-    return false;
+    //removeSlidingMean( *chunk.chunk );
+    removeSlidingMedian( *chunk.chunk );
 }
 
 
@@ -237,6 +235,20 @@ int NormalizeSpectra::
     return R;
 }
 
+
+NormalizeSpectraDesc::
+        NormalizeSpectraDesc(float meansHz)
+    :
+      meansHz(meansHz)
+{
+}
+
+
+Tfr::pChunkFilter NormalizeSpectraDesc::
+        createChunkFilter(Signal::ComputingEngine* engine) const
+{
+    return Tfr::pChunkFilter(new NormalizeSpectra(meansHz));
+}
 
 
 

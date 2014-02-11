@@ -3,37 +3,27 @@
 
 #pragma once
 
-#include "filter.h"
+#include "chunkfilter.h"
 
 namespace Tfr {
 
-class CwtFilter : public Filter
+class CwtChunkFilter: public Tfr::ChunkFilter
+{
+    void operator()( ChunkAndInverse& chunk );
+
+    virtual void subchunk( ChunkAndInverse& chunk ) = 0;
+};
+
+
+class CwtChunkFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    CwtFilter( Signal::pOperation source=Signal::pOperation(),
-               Tfr::pTransform transform=Tfr::pTransform() );
+    CwtChunkFilterDesc();
 
-
-    virtual Signal::Interval requiredInterval (const Signal::Interval &I, pTransform t);
-
-    Signal::Intervals include_time_support(Signal::Intervals);
-    Signal::Intervals discard_time_support(Signal::Intervals);
-
-    virtual void invalidate_samples(const Signal::Intervals& I);
-
-protected:
-    bool applyFilter( ChunkAndInverse& chunk );
-
-private:
-    float   _previous_scales_per_octave;
-    void    verify_scales_per_octave();
+    void transformDesc( Tfr::pTransformDesc m );
 };
 
 
-class DummyCwtFilter: public CwtFilter {
-public:
-    virtual bool operator()( Chunk& ) { return false; }
-};
 } // namespace Tfr
 
 #endif // TFRCWTFILTER_H

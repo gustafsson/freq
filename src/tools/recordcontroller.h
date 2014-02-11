@@ -25,7 +25,7 @@ namespace Tools
         void destroying();
         void receiveRecord(bool);
         void receiveStop();
-        void recievedInvalidSamples( Signal::Intervals I );
+        void redraw(Signal::Interval);
 
     private:
         // Model

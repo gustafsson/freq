@@ -5,9 +5,8 @@
 #include "heightmap/renderer.h"
 
 #include "signal/operationwrapper.h"
-#include "signal/oldoperationwrapper.h"
 
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
 
 #include "support/renderoperation.h"
 
@@ -57,7 +56,22 @@ RenderModel::
         ~RenderModel()
 {
     TaskInfo ti(__FUNCTION__);
+    target_marker_.reset ();
+    render_operation_desc_.reset ();
+
+    // Need to make sure that this thread really quits here, before the block cache is deleted.
+    if (!chunk_merger)
+        TaskInfo("!!! Lost chunk_merger");
+    if (chunk_merger && !chunk_merger.unique ())
+        TaskInfo("!!! chunk_merger not unique");
+    chunk_merger.reset ();
+
     renderer.reset();
+
+    if (!tfr_map_)
+        TaskInfo("!!! Lost tfr_map");
+    if (tfr_map_ && !tfr_map_.unique ())
+        TaskInfo("!!! tfr_map not unique");
     tfr_map_.reset ();
 }
 
@@ -148,6 +162,8 @@ Tfr::FreqAxis RenderModel::
 void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
+    if (x != display_scale ())
+        if (chunk_merger) write1(chunk_merger)->clear();
     write1(tfr_map_)->display_scale( x );
 }
 
@@ -162,6 +178,8 @@ Heightmap::AmplitudeAxis RenderModel::
 void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
+    if (x != amplitude_axis ())
+        if (chunk_merger) write1(chunk_merger)->clear();
     write1(tfr_map_)->amplitude_axis( x );
 }
 
@@ -217,7 +235,13 @@ void RenderModel::
         recompute_extent()
 {
     Signal::OperationDesc::Extent extent = read1(chain_)->extent(target_marker_);
+    set_extent(extent);
+}
 
+
+void RenderModel::
+        set_extent(Signal::OperationDesc::Extent extent)
+{
     Heightmap::TfrMapping::WritePtr w(tfr_map_);
     w->targetSampleRate( extent.sample_rate.get_value_or (1) );
     w->length( extent.interval.get_value_or (Signal::Interval()).count() / w->targetSampleRate() );
@@ -235,8 +259,9 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::Ptr o)
 {
-    volatile Signal::OperationDescWrapper* w =
-            dynamic_cast<volatile Signal::OperationDescWrapper*>(&*render_operation_desc_);
+    Signal::OperationDesc::WritePtr wo(render_operation_desc_);
+    Signal::OperationDescWrapper* w =
+            dynamic_cast<Signal::OperationDescWrapper*>(&*wo);
 
     w->setWrappedOperationDesc (o);
 }

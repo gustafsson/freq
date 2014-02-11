@@ -2,6 +2,7 @@
 #include "support/splinefilter.h"
 #include "tools/support/operation-composite.h"
 #include "tools/rendermodel.h"
+#include "tfr/transformoperation.h"
 
 namespace Tools { namespace Selections
 {
@@ -21,29 +22,29 @@ SplineModel::
 }
 
 
-Signal::pOperation SplineModel::
+Signal::OperationDesc::Ptr SplineModel::
         updateFilter()
 {
     if (v.size() < 3)
     {
         v.clear();
-        return Signal::pOperation();
+        return Signal::OperationDesc::Ptr();
     }
 
-    Support::SplineFilter* e;
-    Signal::pOperation filter( e = new Support::SplineFilter( true ) );
+    std::vector<Support::SplineFilter::SplineVertex> ev;
 
-    e->v.resize( v.size() );
+    ev.resize( v.size() );
 
     for (unsigned i=0; i<v.size(); ++i)
     {
         Support::SplineFilter::SplineVertex s;
         s.t = v[i].time;
         s.f = freqAxis().getFrequency( v[i].scale );
-        e->v[i] = s;
+        ev[i] = s;
     }
 
-    return filter;
+    Tfr::CwtChunkFilterDesc::Ptr filter( new Support::SplineFilterDesc( true, ev ) );
+    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 

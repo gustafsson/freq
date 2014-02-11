@@ -3,6 +3,7 @@
 
 #include "signal/intervals.h"
 #include "volatileptr.h"
+#include "inotifier.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 
@@ -18,7 +19,7 @@ class Bedroom;
 class TargetNeeds: public VolatilePtr<TargetNeeds>
 {
 public:
-    TargetNeeds(boost::weak_ptr<volatile Step> step_, boost::weak_ptr<volatile Bedroom> bedroom);
+    TargetNeeds(boost::weak_ptr<volatile Step> step_, INotifier::WeakPtr notifier);
     ~TargetNeeds();
 
     /**
@@ -70,7 +71,7 @@ private:
     Signal::IntervalType preferred_update_size_;
     Signal::Intervals needed_samples_;
 
-    boost::weak_ptr<volatile Bedroom> bedroom_;
+    INotifier::WeakPtr notifier_;
 
 public:
     static void test();

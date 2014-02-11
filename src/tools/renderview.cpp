@@ -12,6 +12,7 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/collection.h"
+#include "heightmap/blocks/chunkmerger.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "sawe/configuration.h"
@@ -24,6 +25,7 @@
 #include "tools/recordmodel.h"
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/chaininfo.h"
+#include "tools/applicationerrorlogcontroller.h"
 #include "signal/processing/workers.h"
 
 // gpumisc
@@ -76,7 +78,7 @@ RenderView::
         RenderView(RenderModel* model)
             :
             last_ysize(1),
-            viewstate(model->project()->commandInvoker()),
+            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
             graphicsview(0),
@@ -95,16 +97,15 @@ RenderView::
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
-    connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(userinput_update()) );
-    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(userinput_update()));
-    connect( &viewstate, SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
+    connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(redraw()) );
+    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(redraw()));
+    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
 
     _update_timer = new QTimer;
     _update_timer->setSingleShot( true );
 
     connect( this, SIGNAL(postUpdate()), SLOT(restartUpdateTimer()), Qt::QueuedConnection );
     connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
-    connect( this, SIGNAL(postCheckForWorkerCrashes()), SLOT(checkForWorkerCrashes()), Qt::QueuedConnection );
 }
 
 
@@ -129,7 +130,7 @@ RenderView::
 
     TaskInfo("cudaThreadExit()");
 
-    Sawe::Application::global_ptr()->clearCaches();
+//    Sawe::Application::global_ptr()->clearCaches();
 
     // Because the Cuda context was created with cudaGLSetGLDevice it is bound
     // to OpenGL. If we don't have an OpenGL context anymore the Cuda context
@@ -144,7 +145,7 @@ RenderView::
     // Also, see Application::clearCaches() which doesn't call cudaThreadExit
     // unless there is a current context (which is the case when clearCaches is
     // called above in this method).
-    glwidget->makeCurrent();
+//    glwidget->makeCurrent();
 
 #ifdef USE_CUDA
     EXCEPTION_ASSERT( QGLContext::currentContext() );
@@ -187,8 +188,7 @@ void RenderView::
     if (model->renderer->render_settings.draw_cursor_marker)
         update();
 
-    bool request_high_fps = false;
-    userinput_update( request_high_fps );
+    redraw();
 
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
@@ -207,7 +207,8 @@ void RenderView::
 void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
-    _last_frame.restart();
+    double T = _last_frame.elapsedAndRestart();
+    TIME_PAINTGL TaskTimer tt("%g ms", T*1e3);
 
     painter->beginNativePainting();
 
@@ -228,7 +229,7 @@ void RenderView::
             w *= painter->device ()->devicePixelRatio();
             h *= painter->device ()->devicePixelRatio();
             if (w != _last_width || h != _last_height)
-                userinput_update();
+                redraw();
             _last_width = w;
             _last_height = h;
 		}
@@ -262,8 +263,6 @@ void RenderView::
     }
 
     painter->endNativePainting();
-
-    emit postCheckForWorkerCrashes();
 }
 
 
@@ -276,6 +275,7 @@ void RenderView::
     emit paintingForeground();
 
     defaultStates();
+
     painter->endNativePainting();
 }
 
@@ -672,10 +672,10 @@ void RenderView::
             // drawCollections is called for several different viewports each frame.
             // GlFrameBuffer will query the current viewport to determine the size
             // of the fbo for this iteration.
-            if (viewportWidth > fbo->getGlTexture().getWidth()
-                || viewportHeight > fbo->getGlTexture().getHeight()
-                || viewportWidth*2 < fbo->getGlTexture().getWidth()
-                || viewportHeight*2 < fbo->getGlTexture().getHeight())
+            if (viewportWidth > fbo->getWidth ()
+                || viewportHeight > fbo->getHeight()
+                || viewportWidth*2 < fbo->getWidth()
+                || viewportHeight*2 < fbo->getHeight())
             {
                 fbo->recreate();
             }
@@ -707,10 +707,12 @@ void RenderView::
         glDisable(GL_DEPTH_TEST);
 
         glColor4f(1,1,1,1);
-        GlTexture::ScopeBinding texObjBinding = fbo->getGlTexture().getScopeBinding();
+        GlTexture t(fbo->getGlTexture());
+        GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
+
         glBegin(GL_TRIANGLE_STRIP);
-            float tx = viewportWidth/(float)fbo->getGlTexture().getWidth();
-            float ty = viewportHeight/(float)fbo->getGlTexture().getHeight();
+            float tx = viewportWidth/(float)fbo->getWidth();
+            float ty = viewportHeight/(float)fbo->getHeight();
             glTexCoord2f(0,0); glVertex2f(0,0);
             glTexCoord2f(tx,0); glVertex2f(1,0);
             glTexCoord2f(0,ty); glVertex2f(0,1);
@@ -859,21 +861,21 @@ void RenderView::
     if (model->_qz<0) model->_qz=0;
     if (model->_qz>1) model->_qz=1;
 
-    userinput_update();
+    redraw();
 }
 
 
 void RenderView::
         setLastUpdateSize( Signal::UnsignedIntervalType last_update_size )
 {
-    if (0 >= last_update_size)
-    {
-        // Ignore. Should mark somewhere that there is a non-fatal error to report.
-        TaskInfo(boost::format("Weird last_update_size=%d.\n%s:%d %s\n%s") % last_update_size % __FILE__ % __LINE__ % BOOST_CURRENT_FUNCTION % Backtrace::make_string());
-        return;
-    }
+    // _last_update_size must be non-zero to be divisable
+    _last_update_size = std::max(1llu, last_update_size);
 
-    _last_update_size = last_update_size;
+    if ((Signal::UnsignedIntervalType)Signal::Interval::IntervalType_MAX < _last_update_size)
+      {
+        // Oddly enough
+        // '_last_update_size' is close but not equal to 'Signal::Interval::Interval_ALL.count ()'
+      }
 }
 
 
@@ -910,83 +912,37 @@ void RenderView::
 
 
 void RenderView::
-        userinput_update( bool request_high_fps, bool post_update, bool cheat_also_high )
+        redraw()
 {
-    if (request_high_fps)
-    {
-/*
-//Use Signal::Processing namespace
-        model->project()->worker.requested_fps(30, cheat_also_high?30:-1);
-*/
-    }
-
-    if (post_update)
-        emit postUpdate();
-
-    if (request_high_fps && post_update)
-        update();
+    emit postUpdate();
 }
 
 
 void RenderView::
         restartUpdateTimer()
 {
+    if (_update_timer->isActive())
+        return;
+
     float dt = _last_frame.elapsed();
-    float wait = 1.f/_target_fps;
+    float wait = 1.f/60.f - 0.0015f; // 1.5 ms overhead
 
-    if (!_update_timer->isActive())
-    {
-        if (wait < dt)
-            wait = dt;
+    // Sleeping in _update_timer is not needed if vsync is in use
+    if (const QGLContext* context = QGLContext::currentContext ())
+      {
+        bool vsync = 0 < context->format ().swapInterval ();
+        if (vsync)
+            wait = 0;
+      }
 
-        unsigned ms = (wait-dt)*1e3; // round down
+    if (wait < dt)
+        wait = dt;
 
-/*
-//Use Signal::Processing namespace
-        // wait longer between frames if the requested framerate is low
-        float reqdt = 1.f/model->project()->worker.requested_fps();
-        reqdt = std::min(0.01f, .05f * reqdt);
+    unsigned ms = (wait-dt)*1e3; // round down
+    if (ms < 3) // but don't stall
+        ms = 3;
 
-        // allow others to jump in before the next update if ms=0
-        // most visible in windows message loop
-        ms = std::max( 10u, std::max((unsigned)(1000*reqdt), ms));
-*/
-        ms = 10;
-        _update_timer->start(ms);
-    }
-}
-
-
-void RenderView::
-        checkForWorkerCrashes()
-{
-    Signal::Processing::Workers::Ptr workers = read1(model->project ()->processing_chain ())->workers();
-
-    try {
-        write1(workers)->rethrow_any_worker_exception();
-    } catch ( const std::exception& x) {
-        TaskInfo(boost::format("Worker crashed\n%s") % boost::diagnostic_information(x));
-        switch (QMessageBox::warning( 0,
-                                       QString("Oups"),
-                                       "Oups... that didn't work as expected",
-                                       "File bug report", "Try again", "Stop doing signal processing", 0, 0 ))
-        {
-        case 0:
-            model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
-            break;
-        case 1:
-        {
-            const Signal::ComputingEngine::Ptr* ce =
-                    boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
-
-            TaskInfo(boost::format("Recreating worker %s")
-                     % (*ce?vartype(**ce):vartype(*ce)));
-            write1(workers)->addComputingEngine(*ce);
-        }
-        case 2:
-            break;
-        }
-    }
+    _update_timer->start(ms);
 }
 
 
@@ -1104,9 +1060,7 @@ void RenderView::
     }
 
     // TODO move to rendercontroller
-    bool isWorking = false;
     bool isRecording = false;
-    bool workerCrashed = false;
 
     if (0 == "stop after 31 seconds")
     {
@@ -1118,10 +1072,17 @@ void RenderView::
     }
 
     Tools::RecordModel* r = model->project ()->tools ().record_model ();
-    if(r && r->recording && !r->recording->isStopped ())
+    if(r && r->recording && !write1(r->recording)->isStopped ())
     {
         isRecording = true;
     }
+
+    bool chunk_merger_has_work = !model->chunk_merger->processChunks(10e-3);
+    //model->chunk_merger->processChunks(-1);
+
+    if (chunk_merger_has_work)
+        redraw (); // won't redraw right away, but enqueue an update
+
 
     // Set up camera position
     {
@@ -1150,6 +1111,7 @@ void RenderView::
             write1(collection)->next_frame(); // Discard needed blocks before this row
         }
 
+        Signal::Processing::Step::Ptr step_with_new_extent;
         {
             x = model->project()->extent ();
             length = x.interval.get ().count() / x.sample_rate.get ();
@@ -1165,11 +1127,11 @@ void RenderView::
                 w->targetSampleRate( x.sample_rate.get ());
                 w->channels( x.number_of_channels.get ());
 
-                Signal::Processing::Step::Ptr s = model->target_marker ()->step().lock();
-                if (s)
-                    write1(s)->deprecateCache(Signal::Interval::Interval_ALL);
+                step_with_new_extent = model->target_marker ()->step().lock();
             }
         }
+        if (step_with_new_extent)
+            write1(step_with_new_extent)->deprecateCache(Signal::Interval::Interval_ALL);
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
@@ -1210,12 +1172,16 @@ void RenderView::
     wu.update(model->_qx, x, _last_update_size);
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
-    isWorking = ci.hasWork ();
-    workerCrashed = wu.failedAllocation () || ci.n_workers () == 0;
+    bool isWorking = ci.hasWork () || chunk_merger_has_work;
+    int n_workers = ci.n_workers ();
+    int dead_workers = ci.dead_workers ();
+    if (wu.failedAllocation ())
+        dead_workers += n_workers;
+    // dead_workers = (wu.failedAllocation () || n_workers==0) && !isRecording
 
-    //Use Signal::Processing namespace
-    if (isWorking || isRecording || workerCrashed)
-        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], workerCrashed && !isRecording );
+    if (isWorking || isRecording || dead_workers) {
+        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], n_workers, dead_workers );
+    }
 
     {
         static bool hadwork = false;
@@ -1253,6 +1219,7 @@ void RenderView::
     }
 
     _try_gc = 0;
+
 #ifdef USE_CUDA
     } catch (const CudaException &x) {
         TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
@@ -1279,41 +1246,15 @@ void RenderView::
         }
         else throw;
 #endif
-    } catch (const GlException &x) {
-        TaskInfo("");
-        TaskInfo(boost::format("GlException\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-
-        if (2>_try_gc) {
-            Sawe::Application::global_ptr()->clearCaches();
-            emit transformChanged();
-            _try_gc++;
-        }
-        else throw;
-    } catch (const LockFailed& x) {
-        TaskInfo("");
-        TaskInfo(boost::format("Lock failed\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-    } catch (const std::exception& x) {
-        TaskInfo("");
-        TaskInfo(boost::format("std::exception\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-
-        const char* what = x.what();
-        if (0 == QMessageBox::warning( 0,
-                                       QString("Oups"),
-                                       "Oups...\n" + QString::fromLocal8Bit(what),
-                                       "File bug report", "Ignore", QString::null, 0, 0 ))
-        {
-            model->project ()->mainWindow ()->getItems ()->actionReport_a_bug->trigger ();
-        }
+    } catch (...) {
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception ());
     }
 
 
-	{
-		TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
         emit postPaint();
-	}
+    }
 }
 
 
@@ -1323,7 +1264,7 @@ void RenderView::
     TaskTimer tt("RenderView::clearCaches(), %p", this);
     foreach( const Heightmap::Collection::Ptr& collection, model->collections() )
     {
-        write1(collection)->reset(); // note, not collection.reset()
+        write1(collection)->clear();
     }
 
     if (model->renderer && model->renderer->isInitialized())
@@ -1333,7 +1274,7 @@ void RenderView::
 
         model->renderer->clearCaches();
 
-        userinput_update();
+        redraw();
     }
 }
 
@@ -1352,7 +1293,7 @@ void RenderView::
         setupCamera()
 {
     if (model->orthoview != 1 && model->orthoview != 0)
-        userinput_update();
+        redraw();
 
     glLoadIdentity();
     glTranslated( model->_px, model->_py, model->_pz );

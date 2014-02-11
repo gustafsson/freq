@@ -5,9 +5,16 @@
 
 namespace Filters
 {
-    class Ridge: public Tfr::CwtFilter
+    class Ridge: public Tfr::CwtChunkFilter
     {
-        virtual bool operator()( Tfr::Chunk& );
+        void subchunk( Tfr::ChunkAndInverse& chunk );
+    };
+
+
+    class RidgeDesc: public Tfr::CwtChunkFilterDesc {
+    public:
+        Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine) const;
+        ChunkFilterDesc::Ptr    copy() const;
     };
 }
 #endif // FILTERS_RIDGE_H

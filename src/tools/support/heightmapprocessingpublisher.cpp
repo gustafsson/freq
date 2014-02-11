@@ -2,6 +2,8 @@
 #include "heightmap/collection.h"
 #include "signal/processing/step.h"
 
+#include "TaskTimer.h"
+
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
@@ -31,7 +33,10 @@ void HeightmapProcessingPublisher::
     Intervals things_to_add;
     Intervals needed_samples;
     IntervalType center = t_center * x.sample_rate.get ();
-    UnsignedIntervalType update_size = Interval::IntervalType_MAX;
+
+    // It should update the view in sections equal in size to the smallest
+    // visible block if the view isn't currently being invalidated.
+    UnsignedIntervalType update_size = preferred_update_size;
 
     foreach( const Heightmap::Collection::Ptr &c, collections_ ) {
         Heightmap::Collection::WritePtr wc(c);
@@ -44,9 +49,6 @@ void HeightmapProcessingPublisher::
         needed_samples &= x.interval.get ();
     else
         needed_samples = needed_samples.fetchInterval (1, center);
-
-    if (preferred_update_size < update_size)
-        update_size = preferred_update_size;
 
     TIME_PAINTGL_DETAILS TaskInfo(boost::format(
             "RenderView needed_samples = %s, "
@@ -63,17 +65,6 @@ void HeightmapProcessingPublisher::
                 update_size,
                 0
             );
-
-    // It should update the view in sections equal in size to the smallest
-    // visible block if the view isn't currently being invalidated.
-    if (preferred_update_size < std::numeric_limits<UnsignedIntervalType>::max() / 5 * 4)
-    {
-        if (preferred_update_size == preferred_update_size * 5 / 4)
-            preferred_update_size++;
-        preferred_update_size = preferred_update_size * 5 / 4;
-    } else {
-        preferred_update_size = std::numeric_limits<UnsignedIntervalType>::max();
-    }
 
     failed_allocation_ = false;
     foreach( const Heightmap::Collection::Ptr &c, collections_ )
@@ -116,6 +107,9 @@ bool HeightmapProcessingPublisher::
 
 #include "signal/processing/bedroom.h"
 #include "signal/processing/task.h"
+#include "signal/processing/bedroomnotifier.h"
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Tools {
 namespace Support {
@@ -123,13 +117,21 @@ namespace Support {
 void HeightmapProcessingPublisher::
         test()
 {
+    std::string name = "HeightmapProcessingPublisher";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a processing target depending on which things that are
     // missing in a heightmap block cache
     {
         OperationDesc::Ptr operation_desc;
         Step::Ptr step(new Step(operation_desc));
         Bedroom::Ptr bedroom(new Bedroom);
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step, bedroom));
+        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::Ptr target_needs(new TargetNeeds(step, notifier));
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::VisualizationParams::Ptr visualization_params(new Heightmap::VisualizationParams);
@@ -172,9 +174,10 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
-        Task task(&*write1(step), step,
+        Task task(write1(step),
                   std::vector<Signal::Processing::Step::Ptr>(),
-                  Signal::Interval(0,2));
+                  Operation::Ptr(),
+                  Signal::Interval(0,2), Signal::Interval());
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
     }

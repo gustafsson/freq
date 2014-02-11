@@ -1,6 +1,6 @@
 #include "renderoperation.h"
-#include "signal/oldoperationwrapper.h"
-#include "tfr/filter.h"
+#include "tfr/chunkfilter.h"
+#include "tfr/transformoperation.h"
 
 using namespace Signal;
 
@@ -29,12 +29,12 @@ Operation::Ptr RenderOperationDesc::
 }
 
 
-Intervals RenderOperationDesc::
-        affectedInterval( const Intervals& I ) const
+Interval RenderOperationDesc::
+        affectedInterval( const Interval& I ) const
 {
-    const Intervals& a = OperationDescWrapper::affectedInterval( I );
+    const Interval& a = OperationDescWrapper::affectedInterval( I );
 
-    // This will result in a update rate that matches the invalidated intervals if possible.
+    // This will result in an update rate that matches the invalidated intervals if possible.
     write1(render_target_)->refreshSamples( a );
 
     return a;
@@ -48,18 +48,11 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
     if (!wo)
         return Tfr::TransformDesc::Ptr();
 
-    OperationDesc::WritePtr o(wo);
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
+    OperationDesc::ReadPtr o(wo);
+    const Tfr::TransformOperationDesc* f = dynamic_cast<const Tfr::TransformOperationDesc*>(&*o);
     if (f)
         return f->transformDesc ();
 
-    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(&*o);
-    if (w)
-    {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
-        if (f2)
-            return f2->transform ()->transformDesc ()->copy ();
-    }
     return Tfr::TransformDesc::Ptr();
 }
 
@@ -72,17 +65,9 @@ void RenderOperationDesc::
         return;
 
     OperationDesc::WritePtr o(wo);
-    Tfr::FilterDesc* f = dynamic_cast<Tfr::FilterDesc*>(&*o);
+    Tfr::TransformOperationDesc* f = dynamic_cast<Tfr::TransformOperationDesc*>(&*o);
     if (f)
-        return f->transformDesc (t);
-
-    OldOperationDescWrapper* w = dynamic_cast<OldOperationDescWrapper*>(&*o);
-    if (w)
-    {
-        Tfr::Filter* f2 = dynamic_cast<Tfr::Filter*>(w->old_operation ().get ());
-        if (f2)
-            return f2->transform (t->createTransform ());
-    }
+        f->transformDesc (t);
 }
 
 
@@ -156,11 +141,12 @@ void RenderOperationDesc::
         RenderTarget::Ptr rtp(target = new RenderOperationDescMockTarget());
 
         Signal::OperationDesc::Ptr ro(rod = new RenderOperationDesc(operation, rtp));
+        Signal::Operation::Ptr o = write1(ro)->createOperation(0);
 
         // Operations are processed through a Processing::Step
         Processing::Step step(ro);
         step.deprecateCache (Interval(4,9));
-        write1(step.operation(ComputingEngine::Ptr()))->process (pBuffer());
+        write1(o)->process (pBuffer());
 
         EXCEPTION_ASSERT_EQUALS( Interval(4,9), target->I );
         EXCEPTION_ASSERT_EQUALS( 1, target->processed_count );

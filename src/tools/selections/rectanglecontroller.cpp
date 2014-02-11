@@ -106,7 +106,7 @@ namespace Tools { namespace Selections
 
             model()->validate();
             rectangleForm_->updateGui();
-            selection_controller_->render_view()->userinput_update();
+            selection_controller_->render_view()->redraw();
         }
         else
             e->ignore();
@@ -121,7 +121,7 @@ namespace Tools { namespace Selections
             selection_controller_->setCurrentSelection( model()->updateFilter() );
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 
@@ -149,7 +149,7 @@ namespace Tools { namespace Selections
             rectangleForm_->updateGui();
         }
 
-        selection_controller_->render_view()->userinput_update();
+        selection_controller_->render_view()->redraw();
     }
 
 
@@ -210,7 +210,7 @@ namespace Tools { namespace Selections
     void RectangleController::
             selectionChanged()
     {
-        Signal::pOperation o = selection_controller_->model()->current_selection();
+        Signal::OperationDesc::Ptr o = selection_controller_->model()->current_selection();
         if (o)
         {
             bool currentTool = model()->tryFilter( o );
@@ -219,9 +219,6 @@ namespace Tools { namespace Selections
             {
                 view_->visible = model()->a != model()->b;
             }
-
-            if (model()->replaceFilter( o ))
-                selection_controller_->model()->set_current_selection( model()->updateFilter() );
         }
         else
             view_->visible = false;

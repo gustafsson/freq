@@ -7,6 +7,9 @@
 #include "TaskTimer.h"
 #include "neat_math.h"
 
+#define DEBUG if(0)
+// #define DEBUG
+
 using namespace Signal;
 namespace Tfr {
 
@@ -22,7 +25,7 @@ Cepstrum::
 pChunk Cepstrum::
         operator()( pMonoBuffer b )
 {
-    TaskTimer tt("Cepstrum");
+    DEBUG TaskTimer tt("Cepstrum");
     CepstrumDesc p2 = p;
     p2.compute_redundant ( true );
     pTransform t = p2.StftDesc::createTransform ();
@@ -33,7 +36,7 @@ pChunk Cepstrum::
     ((Stft*)t.get())->compute( cepstra->transform_data, cepstra->transform_data, FftDirection_Forward );
     cepstra->freqAxis = p.freqAxis( cepstra->original_sample_rate );
 
-    TaskInfo("Cepstrum debug. Was %s , returned %s ",
+    DEBUG TaskInfo("Cepstrum debug. Was %s , returned %s ",
         b->getInterval().toString().c_str(),
         cepstra->getInterval().toString().c_str());
 

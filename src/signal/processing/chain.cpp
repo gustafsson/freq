@@ -1,12 +1,14 @@
 #include "chain.h"
 #include "bedroom.h"
 #include "firstmissalgorithm.h"
-#include "sleepschedule.h"
 #include "targetschedule.h"
 #include "reversegraph.h"
 #include "graphinvalidator.h"
+#include "bedroomnotifier.h"
+#include "workers.h"
 
 #include "timer.h"
+#include "TaskTimer.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -22,12 +24,12 @@ Chain::Ptr Chain::
 {
     Dag::Ptr dag(new Dag);
     Bedroom::Ptr bedroom(new Bedroom);
-    Targets::Ptr targets(new Targets(bedroom));
+    BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
+    Targets::Ptr targets(new Targets(notifier));
 
     IScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
     ISchedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
-    ISchedule::Ptr sleepSchedule(new SleepSchedule(bedroom, targetSchedule));
-    Workers::Ptr workers(new Workers(sleepSchedule));
+    Workers::Ptr workers(new Workers(targetSchedule, bedroom));
 
     // Add the 'single instance engine' thread.
     write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr());
@@ -37,7 +39,7 @@ Chain::Ptr Chain::
         write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
     }
 
-    Chain::Ptr chain(new Chain(dag, targets, workers, bedroom));
+    Chain::Ptr chain(new Chain(dag, targets, workers, bedroom, notifier));
 
     return chain;
 }
@@ -47,18 +49,16 @@ Chain::
         ~Chain()
 {
     close();
-
-    // Remove all workers
-    workers_.reset ();
-
-    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
-    dag_.reset ();
 }
 
 
 bool Chain::
         close(int timeout)
 {
+    if (!workers_)
+        return true;
+
+    TaskTimer tt("Chain::close(%d)", timeout);
     // Targets::TargetNeedsCollection T = read1(targets_)->getTargets();
 
     // Ask workers to not start anything new
@@ -72,6 +72,16 @@ bool Chain::
 
     // Suppress output
     write1(workers_)->clean_dead_workers();
+
+    // Remove all workers
+    workers_.reset ();
+
+    // Remove all edges, all vertices and their properties (i.e Step::Ptr)
+    dag_.reset ();
+
+    targets_.reset ();
+    bedroom_.reset ();
+    notifier_.reset ();
 
     return r;
 }
@@ -97,7 +107,7 @@ IInvalidator::Ptr Chain::
 
     Step::WeakPtr step = insertStep(*Dag::WritePtr(dag_), desc, at);
 
-    IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, bedroom_, step));
+    IInvalidator::Ptr graph_invalidator( new GraphInvalidator(dag_, notifier_, step));
 
     read1(graph_invalidator)->deprecateCache(Signal::Interval::Interval_ALL);
 
@@ -202,12 +212,13 @@ Targets::Ptr Chain::
 
 
 Chain::
-        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom)
+        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier)
     :
       dag_(dag),
       targets_(targets),
       workers_(workers),
-      bedroom_(bedroom)
+      bedroom_(bedroom),
+      notifier_(notifier)
 {
 }
 
@@ -262,6 +273,9 @@ Step::WeakPtr Chain::
 } // namespace Signal
 
 #include "test/operationmockups.h"
+#include "test/randombuffer.h"
+#include "signal/buffersource.h"
+#include <QApplication>
 
 namespace Signal {
 namespace Processing {
@@ -279,6 +293,11 @@ class OperationDescChainMock : public Test::TransparentOperationDesc
 void Chain::
         test()
 {
+    std::string name = "Chain";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+
     // Boost graph shall support removing and adding vertices without breaking color maps
     {
         typedef directed_graph<> my_graph;
@@ -304,7 +323,7 @@ void Chain::
         Timer t;
         Chain::Ptr chain = Chain::createDefaultChain ();
         Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
-        Signal::OperationDesc::Ptr source_desc(new OperationDescChainMock);
+        Signal::OperationDesc::Ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
         TargetMarker::Ptr null;
         TargetMarker::Ptr target = write1(chain)->addTarget(target_desc, null);
@@ -314,8 +333,8 @@ void Chain::
         write1(chain)->removeOperationsAt(target);
         write1(chain)->addOperationAt(source_desc, target);
         write1(chain)->extent(target); // will fail unless indices are reordered
-        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_edges(), 1);
-        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_vertices(), 2);
+        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_edges(), 1u);
+        EXCEPTION_ASSERT_EQUALS (read1(chain->dag_)->g().num_vertices(), 2u);
         write1(chain)->removeOperationsAt(target);
 
 
@@ -340,7 +359,7 @@ void Chain::
         write1(read1(chain)->workers())->rethrow_any_worker_exception();
 
         chain.reset ();
-        EXCEPTION_ASSERT_LESS(t.elapsed (), 0.02);
+        EXCEPTION_ASSERT_LESS(t.elapsed (), 0.03);
     }
 }
 

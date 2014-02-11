@@ -63,7 +63,7 @@ void BlockCache::
 
 
 void BlockCache::
-        reset()
+        clear()
 {
     cache_.clear();
     recent_.clear();

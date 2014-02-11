@@ -12,6 +12,7 @@
 namespace Tfr {
 
 enum AxisScale {
+    AxisScale_Waveform,
     AxisScale_Linear,
     AxisScale_Logarithmic,
     AxisScale_Quefrency,
@@ -42,6 +43,24 @@ public:
                 max_frequency_scalar == b.max_frequency_scalar &&
                 min_hz == b.min_hz &&
                 f_step == b.f_step;
+    }
+    bool operator!=(const FreqAxis& b) const { return !(*this == b); }
+
+
+    /**
+      Let max_frequency_scalar keep its default value 1 to create a normalized FreqAxis.
+      */
+    void setWaveform() {
+        setWaveform (-1,1);
+    }
+
+    void setWaveform(float minvalue, float maxvalue, float max_frequency_scalar=1)
+    {
+        this->axis_scale = AxisScale_Waveform;
+
+        this->max_frequency_scalar = max_frequency_scalar;
+        this->min_hz = minvalue;
+        this->f_step = (1/max_frequency_scalar) * (maxvalue - minvalue);
     }
 
 
@@ -127,6 +146,7 @@ public:
     {
         switch (axis_scale)
         {
+        case AxisScale_Waveform:
         case AxisScale_Linear:
             return min_hz + fi*f_step;
 
@@ -180,6 +200,7 @@ public:
 
         switch(axis_scale)
         {
+        case AxisScale_Waveform:
         case AxisScale_Linear:
             fi = (hz - min_hz)/f_step;
             break;
