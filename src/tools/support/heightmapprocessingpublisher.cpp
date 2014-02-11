@@ -33,7 +33,10 @@ void HeightmapProcessingPublisher::
     Intervals things_to_add;
     Intervals needed_samples;
     IntervalType center = t_center * x.sample_rate.get ();
-    UnsignedIntervalType update_size = Interval::IntervalType_MAX;
+
+    // It should update the view in sections equal in size to the smallest
+    // visible block if the view isn't currently being invalidated.
+    UnsignedIntervalType update_size = preferred_update_size;
 
     foreach( const Heightmap::Collection::Ptr &c, collections_ ) {
         Heightmap::Collection::WritePtr wc(c);
@@ -46,9 +49,6 @@ void HeightmapProcessingPublisher::
         needed_samples &= x.interval.get ();
     else
         needed_samples = needed_samples.fetchInterval (1, center);
-
-    if (preferred_update_size < update_size)
-        update_size = preferred_update_size;
 
     TIME_PAINTGL_DETAILS TaskInfo(boost::format(
             "RenderView needed_samples = %s, "
@@ -65,17 +65,6 @@ void HeightmapProcessingPublisher::
                 update_size,
                 0
             );
-
-    // It should update the view in sections equal in size to the smallest
-    // visible block if the view isn't currently being invalidated.
-    if (preferred_update_size < std::numeric_limits<UnsignedIntervalType>::max() / 5 * 4)
-    {
-        if (preferred_update_size == preferred_update_size * 5 / 4)
-            preferred_update_size++;
-        preferred_update_size = preferred_update_size * 5 / 4;
-    } else {
-        preferred_update_size = std::numeric_limits<UnsignedIntervalType>::max();
-    }
 
     failed_allocation_ = false;
     foreach( const Heightmap::Collection::Ptr &c, collections_ )
