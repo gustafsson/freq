@@ -294,9 +294,17 @@ pProject Project::
 {
     int device = QSettings().value("inputdevice", -1).toInt();
 
+    Adapters::Recorder::Ptr recorder(new Adapters::MicrophoneRecorder(device));
+
+    Signal::OperationDesc::Extent x;
+    x.interval = Signal::Interval();
+    x.number_of_channels = write1(recorder)->num_channels();
+    x.sample_rate = write1(recorder)->sample_rate();
+
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();
-    p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(device)));
+    p->tools ().render_model.set_extent (x);
+    p->tools ().addRecording (recorder);
 
     return p;
 }
