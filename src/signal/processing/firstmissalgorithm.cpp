@@ -86,12 +86,18 @@ public:
                                    % o->toString ().toStdString ()
                                    % (params.engine?vartype(*params.engine.get ()):""));
 
+
             // params.preferred_size is just a preferred update size, not a required update size.
             // Accept whatever requiredInterval sets as expected_output
             Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
             Signal::Interval expected_output;
             Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);;
             EXCEPTION_ASSERTX(required_input, o->toString ().toStdString ());
+
+            DEBUGINFO TaskInfo(boost::format("params.preferred_size = %d, params.center = %d, wanted_output = %s")
+                     % params.preferred_size % params.center % wanted_output);
+            DEBUGINFO TaskInfo(boost::format("expected_output = %s, required_input = %s")
+                     % expected_output % required_input);
 
             // check for valid 'requiredInterval' by making sure that expected_output overlaps I.
             // Otherwise no work for that interval will be necessary.

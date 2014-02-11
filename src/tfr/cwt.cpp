@@ -1258,7 +1258,8 @@ size_t Cwt::
     if (alt>sum)
         sum = alt;
 
-    return sum < (size_t)-1 ? sum : (size_t)-1;
+    DEBUG_CWT TaskInfo(boost::format("%s") % DataStorageVoid::getMemorySizeText(sum));
+    return sum;
 }
 
 
