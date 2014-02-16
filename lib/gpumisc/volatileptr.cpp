@@ -64,7 +64,7 @@ public:
 
     void b() { }
 
-    QReadWriteLock* readWriteLock() const volatile {
+    boost::shared_mutex* readWriteLock() const volatile {
         return VolatilePtr::readWriteLock ();
     }
 
@@ -95,14 +95,14 @@ public:
     static void test();
 };
 
-
 void VolatilePtrTest::
         test ()
 {
     // It should guarantee compile-time thread safe access to objects.
 
-    EXCEPTION_ASSERT_EQUALS (sizeof (VolatilePtr<A>), sizeof (QReadWriteLock));
-    EXCEPTION_ASSERT_EQUALS (sizeof (QReadWriteLock), 8u);
+    EXCEPTION_ASSERT_EQUALS (sizeof (VolatilePtr<A>), sizeof (boost::shared_mutex));
+//    EXCEPTION_ASSERT_EQUALS (sizeof (QReadWriteLock), 8u);
+    EXCEPTION_ASSERT_EQUALS (sizeof (boost::shared_mutex), 408u);
 
     A::Ptr mya (new A);
 
@@ -409,14 +409,14 @@ void WriteWhileReadingThread::
 
         Timer timer;
         for (int i=0; i<1000; i++) {
-            a->readWriteLock ()->tryLockForWrite ();
+            a->readWriteLock ()->try_lock ();
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 10000e-9 : 110e-9 : 88e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 10000e-9 : 110e-9 : 104e-9);
         EXCEPTION_ASSERT_LESS(debug ? 20e-9 : 20e-9, T);
 
         for (int i=0; i<1000; i++) {
-            a->readWriteLock ()->tryLockForWrite (0);
+            a->readWriteLock ()->try_lock_for(boost::chrono::milliseconds(0));
         }
         T = timer.elapsedAndRestart ()/1000;
         EXCEPTION_ASSERT_LESS(T, 4000e-9);
@@ -440,21 +440,21 @@ void WriteWhileReadingThread::
             A::WritePtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 90e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 90e-9 : 75e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 90e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 90e-9 : 66e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(consta,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 80e-9 : 60e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 80e-9 : 68e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
     }
 
@@ -482,8 +482,10 @@ void WriteWhileReadingThread::
         EXCEPTION_ASSERT_LESS(T2-T, 0.11e-6);
         EXCEPTION_ASSERT_LESS(T3-T, 0.11e-6);
 #else
-        EXCEPTION_ASSERT_LESS(T2-T, 0.18e-6);
-        EXCEPTION_ASSERT_LESS(T3-T, 0.14e-6);
+//        EXCEPTION_ASSERT_LESS(T2-T, 0.18e-6);
+//        EXCEPTION_ASSERT_LESS(T3-T, 0.14e-6);
+        EXCEPTION_ASSERT_LESS(T2-T, 0.29e-6);
+        EXCEPTION_ASSERT_LESS(T3-T, 0.32e-6);
 #endif
     }
 }

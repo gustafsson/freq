@@ -5,8 +5,6 @@
 
 #include <set>
 
-#include <QWaitCondition>
-
 namespace Signal {
 namespace Processing {
 
@@ -34,14 +32,14 @@ public:
     public:
         Data();
 
-        QWaitCondition work;
+        boost::condition_variable_any work;
 
         std::set<Bed*> beds;
         Counter sleepers;
         Counter skip_sleep_marker;
         bool is_closed;
 
-        QReadWriteLock* readWriteLock() const volatile;
+        VolatilePtr<Data>::shared_mutex* readWriteLock() const volatile;
     };
 
 

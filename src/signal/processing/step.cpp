@@ -45,13 +45,13 @@ void Step::
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
 
     Signal::OperationDesc::Ptr died = died_;
-    bool was_locked = !readWriteLock ()->tryLockForWrite ();
+    bool was_locked = !readWriteLock ()->try_lock ();
     readWriteLock ()->unlock ();
 
     // Don't use 'this' while unlocked.
     died->deprecateCache(Signal::Interval::Interval_ALL);
 
-    if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
+    if (was_locked && !readWriteLock ()->try_lock_for(boost::chrono::milliseconds(VolatilePtr_lock_timeout_ms)))
         BOOST_THROW_EXCEPTION(LockFailed()
                               << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
                               << Backtrace::make());
@@ -193,18 +193,29 @@ void Step::
     }
 
     running_tasks.erase ( taskid );
-    wait_for_tasks_.wakeAll ();
+    wait_for_tasks_.notify_all ();
 }
 
 
 void Step::
         sleepWhileTasks(int sleep_ms)
 {
+    DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
+
     // The caller keeps a lock that is released while waiting
-    while (!running_tasks.empty ()) {
-        DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
-        if (!wait_for_tasks_.wait (readWriteLock(), sleep_ms < 0 ? ULONG_MAX : sleep_ms))
-            return;
+    // Wait in a while-loop to cope with spurious wakeups
+    if (sleep_ms < 0)
+    {
+        while (!running_tasks.empty ())
+            wait_for_tasks_.wait(*readWriteLock());
+    }
+    else
+    {
+        boost::chrono::milliseconds ms(sleep_ms);
+
+        while (!running_tasks.empty ())
+            if (boost::cv_status::timeout == wait_for_tasks_.wait_for (*readWriteLock(), ms))
+                return;
     }
 }
 

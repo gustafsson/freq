@@ -20,7 +20,7 @@ Bedroom::Data::
 }
 
 
-QReadWriteLock* Bedroom::Data::
+VolatilePtr<Bedroom::Data>::shared_mutex* Bedroom::Data::
         readWriteLock() const volatile
 {
     return VolatilePtr<Data>::readWriteLock();
@@ -61,12 +61,16 @@ bool Bedroom::Bed::
 
     bool r = true;
 
-    if (!skip_sleep_) {
-        // Increment usage count
-        Counter b = data->sleepers;
+    // Increment usage count
+    Counter b = data->sleepers;
 
-        r = data->work.wait (data_->readWriteLock(), ms_timeout);
-    }
+    // Wait in a while-loop to cope with spurious wakeups
+    if (ULONG_MAX == ms_timeout)
+        while (!skip_sleep_)
+            data->work.wait ( *data_->readWriteLock() );
+    else
+        while (r && !skip_sleep_)
+            r = boost::cv_status::no_timeout == data->work.wait_for (*data_->readWriteLock(), boost::chrono::milliseconds(ms_timeout));
 
     skip_sleep_.reset();
 
@@ -92,7 +96,7 @@ void Bedroom::
         b->skip_sleep_ = data->skip_sleep_marker;
     }
 
-    data->work.wakeAll ();
+    data->work.notify_all ();
 }
 
 
@@ -142,7 +146,6 @@ public:
         do {
             bed.sleep ();
             --snooze_;
-            usleep(60);
         } while(snooze_ > 0);
     }
 
@@ -151,6 +154,26 @@ public:
 private:
     Bedroom::Ptr bedroom_;
     int snooze_;
+};
+
+
+class SleepingBeautyMock: public QThread {
+public:
+    SleepingBeautyMock(Bedroom::Ptr bedroom, int sleep_ms) : bedroom_(bedroom), sleep_ms_(sleep_ms) {}
+
+    void run() {
+        Bedroom::Bed bed = bedroom_->getBed();
+
+        while (!bed.sleep (sleep_ms_))
+            ++sleep_count_;
+    }
+
+    int sleep_count() { return sleep_count_; }
+
+private:
+    Bedroom::Ptr bedroom_;
+    int sleep_ms_;
+    int sleep_count_ = 0;
 };
 
 
@@ -168,8 +191,8 @@ void Bedroom::
         sleepyface2.start ();
 
         for (int i=snoozes; i>=0; i--) {
-            EXCEPTION_ASSERT_EQUALS(sleepyface1.wait (2), i>0?false:true);
-            EXCEPTION_ASSERT_EQUALS(sleepyface2.wait (2), i>0?false:true);
+            EXCEPTION_ASSERT_EQUALS(sleepyface1.wait (1), i>0?false:true);
+            EXCEPTION_ASSERT_EQUALS(sleepyface2.wait (1), i>0?false:true);
 
             // sleepyface1 and sleepyface2 shoule be sleeping now
             EXCEPTION_ASSERT_EQUALS(bedroom->sleepers(), i>0?2:0);
@@ -179,6 +202,7 @@ void Bedroom::
                               (boost::format("sleepyface1=%d, sleepyface2=%d, i=%d")
                               % sleepyface1.snooze () % sleepyface2.snooze () % i));
 
+            // should wake up both
             bedroom->wakeup();
         }
 
@@ -204,6 +228,21 @@ void Bedroom::
         EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3);
         EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ());
         EXCEPTION_ASSERT(!woken_up_by_wakeup_call); // timeout
+    }
+
+    // It should just sleep until the given timeout has elapsed
+    {
+        Bedroom::Ptr bedroom(new Bedroom);
+        SleepingBeautyMock sbm(bedroom, 2);
+
+        sbm.start ();
+        TaskTimer tt("sbm.start");
+        EXCEPTION_ASSERT( !sbm.wait (7) );
+        bedroom->wakeup();
+        EXCEPTION_ASSERT( sbm.wait (2) );
+
+        EXCEPTION_ASSERT(sbm.isFinished ());
+        EXCEPTION_ASSERT_EQUALS( sbm.sleep_count (), 3 );
     }
 }
 

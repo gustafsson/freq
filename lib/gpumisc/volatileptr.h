@@ -4,7 +4,7 @@
 #include "backtrace.h"
 #include "unused.h"
 
-#include <QReadWriteLock>
+#include <boost/thread/shared_mutex.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -62,11 +62,6 @@ protected:
 
     // Need to be instantiated as a subclass.
     VolatilePtr ()
-        :
-          // NonRecursive is default, but emphasis here that it is wanted
-          // because recursive locking could be a sign of an unnecessarily
-          // convoluted algorithm.
-          lock_ (QReadWriteLock::NonRecursive)
     {}
 
 
@@ -77,6 +72,7 @@ public:
     typedef boost::shared_ptr<const volatile T> ConstPtr;
     typedef boost::weak_ptr<volatile T> WeakPtr;
     typedef boost::weak_ptr<const volatile T> WeakConstPtr;
+    typedef boost::shared_mutex shared_mutex;
 
     class LockFailed: public ::LockFailed {};
 
@@ -158,7 +154,7 @@ public:
                 p_ (*const_cast<const Ptr*> (&p)),
                 t_ (const_cast<const T*> (const_cast<const Ptr*> (&p)->get ()))
         {
-            if (!l_->tryLockForWrite ())
+            if (!l_->try_lock_shared ())
                 t_ = 0;
         }
 
@@ -167,7 +163,7 @@ public:
                 p_ (*const_cast<const ConstPtr*> (&p)),
                 t_ (const_cast<const T*> (const_cast<const ConstPtr*> (&p)->get ()))
         {
-            if (!l_->tryLockForWrite ())
+            if (!l_->try_lock_shared ())
                 t_ = 0;
         }
 
@@ -179,13 +175,13 @@ public:
         ~ReadPtr() {
             // The destructor isn't called if the constructor throws.
             if (t_)
-                l_->unlock ();
+                l_->unlock_shared ();
         }
 
         const T* operator-> () const { return t_; }
         const T& operator* () const { return *t_; }
         const T* get () const { return t_; }
-        Ptr getPtr () const { return p_; }
+        ConstPtr getPtr () const { return p_; }
 
     private:
         // This constructor is not implemented as it's an error to pass a
@@ -195,13 +191,15 @@ public:
         ReadPtr(const T*);
 
         void lock(int timeout_ms) {
-            if (!l_->tryLockForRead (timeout_ms))
+            if (timeout_ms < 0)
+                l_->lock_shared ();
+            else if (!l_->try_lock_shared_for (boost::chrono::milliseconds(timeout_ms)))
                 BOOST_THROW_EXCEPTION(LockFailed()
                                       << typename LockFailed::timeout_value(timeout_ms)
                                       << Backtrace::make (2));
         }
 
-        QReadWriteLock* l_;
+        shared_mutex* l_;
         const ConstPtr p_;
         const T* t_;
     };
@@ -248,7 +246,7 @@ public:
                 p_ (p),
                 t_ (const_cast<T*> (p.get ()))
         {
-            if (!l_->tryLockForWrite ())
+            if (!l_->try_lock ())
                 t_ = 0;
         }
 
@@ -257,7 +255,7 @@ public:
                 p_ (*const_cast<const Ptr*> (&p)),
                 t_ (const_cast<T*> (const_cast<const Ptr*> (&p)->get ()))
         {
-            if (!l_->tryLockForWrite ())
+            if (!l_->try_lock ())
                 t_ = 0;
         }
 
@@ -279,13 +277,15 @@ public:
         WritePtr (T* p);
 
         void lock(int timeout_ms) {
-            if (!l_->tryLockForWrite (timeout_ms))
+            if (timeout_ms < 0)
+                l_->lock ();
+            else if (!l_->try_lock_for (boost::chrono::milliseconds(timeout_ms)))
                 BOOST_THROW_EXCEPTION(LockFailed()
                                       << typename LockFailed::timeout_value(timeout_ms)
                                       << Backtrace::make(2));
         }
 
-        QReadWriteLock* l_;
+        shared_mutex* l_;
         const Ptr p_;
         T* t_;
     };
@@ -299,12 +299,12 @@ public:
 protected:
     /**
      * @brief readWriteLock
-     * ok to cast away volatile to access a QReadWriteLock (it's kind of the
-     * point of QReadWriteLock that it can be accessed from multiple threads
+     * ok to cast away volatile to access a shared_mutex (it's kind of the
+     * point of shared_mutex that it can be accessed from multiple threads
      * simultaneously)
-     * @return the QReadWriteLock* object for this instance.
+     * @return the shared_mutex* object for this instance.
      */
-    QReadWriteLock* readWriteLock() const volatile { return const_cast<QReadWriteLock*>(&lock_); }
+    shared_mutex* readWriteLock() const volatile { return const_cast<shared_mutex*>(&lock_); }
 
 
 private:
@@ -314,7 +314,7 @@ private:
      * For examples of usage see
      * void VolatilePtrTest::test ();
      */
-    QReadWriteLock lock_;
+    mutable shared_mutex lock_;
 };
 
 

@@ -66,14 +66,14 @@ void OperationDesc::
 {
     Signal::Processing::IInvalidator::Ptr invalidator = invalidator_;
 
-    bool was_locked = !readWriteLock ()->tryLockForWrite ();
+    bool was_locked = !readWriteLock ()->try_lock ();
     readWriteLock ()->unlock ();
 
     // Don't use 'this' while unlocked.
     if (invalidator)
         read1(invalidator)->deprecateCache(what);
 
-    if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
+    if (was_locked && !readWriteLock ()->try_lock_for (boost::chrono::milliseconds(VolatilePtr_lock_timeout_ms)))
         BOOST_THROW_EXCEPTION(LockFailed()
                               << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
                               << Backtrace::make());

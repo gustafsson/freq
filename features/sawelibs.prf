@@ -16,7 +16,10 @@ LIBS += \
     -lGLEW \
     -lGLU \
     -lGL \
+    -lboost_chrono \
     -lboost_serialization \
+    -lboost_system \
+    -lboost_thread \
     -lglut \
     -L$$SAWEROOT/lib/sonicawe-ubuntulib/lib \
     -lportaudiocpp -lportaudio \
@@ -34,7 +37,10 @@ LIBS += -lsndfile \
     -framework OpenGL \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
+    -lboost_chrono-mt \
     -lboost_serialization-mt \
+    -lboost_system-mt \
+    -lboost_thread-mt \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc \
     -L/opt/local/lib
 }

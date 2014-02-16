@@ -349,8 +349,8 @@ class SleepScheduleMock: public BlockScheduleMock {
 class LockScheduleMock: public BlockScheduleMock {
     virtual void dont_return() volatile {
         LockScheduleMock m;
-        m.ISchedule::readWriteLock ()->lockForWrite (); // ok
-        m.ISchedule::readWriteLock ()->lockForWrite (); // lock
+        m.ISchedule::readWriteLock ()->lock (); // ok
+        m.ISchedule::readWriteLock ()->lock (); // lock
     }
 };
 

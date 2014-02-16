@@ -70,7 +70,7 @@ private:
 
     Signal::OperationDesc::Ptr  operation_desc_;
 
-    QWaitCondition              wait_for_tasks_;
+    boost::condition_variable_any wait_for_tasks_;
 
     std::string                 operation_name();
     Signal::Intervals           currently_processing() const; // from running_tasks

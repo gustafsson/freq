@@ -146,8 +146,10 @@ void ChainInfo::
         EXCEPTION_ASSERT( !c.hasWork () );
         write1(n)->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
-        EXCEPTION_ASSERT( n->sleep (10) );
+        EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
+        EXCEPTION_ASSERT( n->sleep (12) );
         EXCEPTION_ASSERT( !c.hasWork () );
+        QThread::msleep (1);
         EXCEPTION_ASSERT_EQUALS( 1, c.dead_workers () );
     }
 

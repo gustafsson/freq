@@ -102,7 +102,7 @@ void RerouteChannels::
 
     this->readWriteLock ()->unlock ();
     ((volatile RerouteChannels*)this)->deprecateCache ();
-    this->readWriteLock ()->lockForWrite ();
+    this->readWriteLock ()->lock ();
 }
 
 
