@@ -12,6 +12,8 @@
  * It should work as error info to boost::exception
  *
  * It should translate to a pretty backtrace when asked for a string representation.
+ *
+ * Include debug info '-g' for this to work.
  */
 class Backtrace
     {

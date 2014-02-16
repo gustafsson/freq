@@ -3,7 +3,14 @@
 #include "demangle.h"
 #include "timer.h"
 
-#ifdef __APPLE__
+#define HAS_QT
+
+#if defined(__APPLE__) && defined(HAS_QT)
+#define BACKTRACE_USE_ATOS_AND_QT
+#endif
+
+#ifdef BACKTRACE_USE_ATOS_AND_QT
+// Could use boost::process instead
 #include <QString>
 #include <QProcess>
 #include <QCoreApplication>
@@ -181,7 +188,7 @@ string Backtrace::
     string bt = str(format("backtrace (%d frames)\n") % (frames_.size ()));
     bool found_pretty = false;
 
-#ifdef __APPLE__
+#ifdef BACKTRACE_USE_ATOS_AND_QT
     QString addrs;
     for (unsigned i=0; i < frames_.size(); ++i)
     {
@@ -192,11 +199,10 @@ string Backtrace::
 
     qint64 id = QCoreApplication::applicationPid();
     QProcess p;
-    p.start (QString("atos -p %1 %2").arg (id).arg (addrs));
+    p.start (QString("xcrun atos -p %1 %2").arg (id).arg (addrs));
     found_pretty = p.waitForFinished (2000);
     found_pretty &= 0 == p.exitCode();
     bt += QString(p.readAllStandardOutput ()).trimmed ().toStdString ();
-
 #endif
 
     if (!found_pretty)
@@ -205,7 +211,7 @@ string Backtrace::
         string s = msg[i];
         try
         {
-#ifdef __APPLE__
+#ifdef BACKTRACE_USE_ATOS_AND_QT
             //string first = s.substr (4, 59-4);
             size_t n = s.find_first_of (' ', 60);
             string name = s.substr (59, n-59);
