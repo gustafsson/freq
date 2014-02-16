@@ -8,12 +8,8 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/algorithm/string.hpp>
-
-#ifndef NO_TASKTIMER_MUTEX // TODO use GPUMISC_NO_THREAD
-#include <QMutex>
-#include <QMutexLocker>
-#include <QThread>
-#endif
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/thread.hpp>
 
 #ifndef _MSC_VER
 #define MICROSEC_TIMESTAMPS
@@ -29,23 +25,22 @@
 #define TIMESTAMPS
 //#define TIMESTAMPS if(0)
 
+using namespace boost;
 using namespace boost::posix_time;
+typedef unique_lock<recursive_mutex> TaskTimerLock;
 
+
+bool DISABLE_TASKTIMER = false;
 const int thread_column_width = 4;
-
-#ifndef NO_TASKTIMER_MUTEX
-QMutex staticLock(QMutex::Recursive);
-#endif
+recursive_mutex staticLock;
 
 struct ThreadInfo {
     const int threadNumber;
-    void* qthread;
     unsigned counter[3];
 
     ThreadInfo(int threadNumber=0)
         :
-        threadNumber(threadNumber),
-        qthread(0)
+        threadNumber(threadNumber)
     {
         memset(counter, 0, sizeof(counter));
     }
@@ -60,42 +55,28 @@ std::ostream* logLevelStream[] = {
 };
 
 
-std::map<void*,ThreadInfo> thread_info_map;
+std::map<thread::id,ThreadInfo> thread_info_map;
 
 ThreadInfo& T() {
-    void* threadid = 0;
-#ifndef NO_TASKTIMER_MUTEX
-    threadid = QThread::currentThreadId ();
-#endif
+    // Assume lock is acquired.
+    thread::id threadid = this_thread::get_id ();
 
     if (!thread_info_map.count (threadid))
         thread_info_map.insert (
-                    std::pair<void*,ThreadInfo>(threadid,
+                    std::pair<thread::id, ThreadInfo>(threadid,
                     ThreadInfo(thread_info_map.size ())));
 
-    ThreadInfo& ti = thread_info_map[threadid];
-
-    if (ti.qthread != QThread::currentThread ()) {
-        // Thread was terminated. QThread::finished is emitted by TaskTimer shouldn't use slots.
-        memset(ti.counter, 0, sizeof(ti.counter));
-        ti.qthread = QThread::currentThread ();
-    }
-
-    return ti;
+    return thread_info_map[threadid];
 }
 
 
-bool DISABLE_TASKTIMER = false;
+void TaskTimer::
+        this_thread_quit()
+{
+    TaskTimerLock scope(staticLock);
+    thread_info_map.erase (this_thread::get_id ());
+}
 
-/*TaskTimer& TaskTimer::getCurrentTimer() {
-#ifndef NO_TASKTIMER_MUTEX
-        QMutexLocker scope(&staticLock);
-#endif
-    if (0==TaskTimer::lastTimer[ logLevel ]) {
-      throw std::logic_error("No previous timer present at " + (std::string) __LOCATION__);
-    }
-    return *lastTimer[ logLevel ];
-}*/
 
 TaskTimer::TaskTimer() {
     init( LogSimple, "Unlabeled task", 0 );
@@ -119,7 +100,7 @@ TaskTimer::TaskTimer(bool, LogLevel logLevel, const char* f, va_list args) {
     init( logLevel, f, args );
 }
 
-TaskTimer::TaskTimer(const boost::format& fmt)
+TaskTimer::TaskTimer(const format& fmt)
 {
     initEllipsis (LogSimple, "%s", fmt.str ().c_str ());
 }
@@ -133,9 +114,7 @@ void TaskTimer::init(LogLevel logLevel, const char* task, va_list args) {
     if (DISABLE_TASKTIMER)
         return;
 
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
+    TaskTimerLock scope(staticLock);
 
     this->numPartlyDone = 0;
     this->upperLevel = 0;
@@ -171,7 +150,7 @@ void TaskTimer::init(LogLevel logLevel, const char* task, va_list args) {
     s.append ( &t[0],&t[c] );
 
     if (strchr(s.c_str(), '\n'))
-        boost::split(strs, s, boost::is_any_of("\n"), boost::algorithm::token_compress_off);
+        split(strs, s, is_any_of("\n"), algorithm::token_compress_off);
 
     if (!strs.empty())
     {   if (strs.back().size() == 0 && strs.size()>1)
@@ -220,18 +199,14 @@ void TaskTimer::suppressTiming() {
     if (DISABLE_TASKTIMER)
         return;
 
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
+    TaskTimerLock scope(staticLock);
     for( TaskTimer* p = this; 0 != p; p = p->upperLevel ) {
         p->suppressTimingInfo = true;
     }
 }
 
 bool TaskTimer::printIndentation() {
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
+    TaskTimerLock scope(staticLock);
     ThreadInfo& t = T();
     TaskTimer* ltll = lastTimer[logLevel];
 
@@ -304,9 +279,7 @@ void TaskTimer::partlyDone() {
     if (DISABLE_TASKTIMER)
         return;
 
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
+    TaskTimerLock scope(staticLock);
     ThreadInfo& t = T();
 
     ++t.counter[logLevel];
@@ -360,9 +333,7 @@ TaskTimer::~TaskTimer() {
     if (DISABLE_TASKTIMER)
         return;
 
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
+    TaskTimerLock scope(staticLock);
 
     float d = elapsedTime();
     time_duration diff = microseconds(d*1e6);
@@ -388,16 +359,16 @@ TaskTimer::~TaskTimer() {
         }
 
 //        if ( diff.total_nanoseconds()<1500 && diff.total_nanoseconds() != 1000) {
-//            logprint(str(boost::format("%s %u ns.\n") % finish_message % (unsigned)diff.total_nanoseconds()).c_str());
+//            logprint(str(format("%s %u ns.\n") % finish_message % (unsigned)diff.total_nanoseconds()).c_str());
 //        } else
         if (diff.total_microseconds() <1500 && diff.total_microseconds() != 1000) {
-            logprint(str(boost::format("%s %.0f us.\n") % finish_message % (float)(diff.total_nanoseconds()/1000.0f)).c_str());
+            logprint(str(format("%s %.0f us.\n") % finish_message % (float)(diff.total_nanoseconds()/1000.0f)).c_str());
         } else if (diff.total_milliseconds() <1500 && diff.total_milliseconds() != 1000) {
-            logprint(str(boost::format("%s %.1f ms.\n") % finish_message % (float)(diff.total_microseconds()/1000.0f)).c_str());
+            logprint(str(format("%s %.1f ms.\n") % finish_message % (float)(diff.total_microseconds()/1000.0f)).c_str());
         } else if (diff.total_seconds()<90) {
-            logprint(str(boost::format("%s %.1f s.\n") % finish_message % (float)(diff.total_milliseconds()/1000.f)).c_str());
+            logprint(str(format("%s %.1f s.\n") % finish_message % (float)(diff.total_milliseconds()/1000.f)).c_str());
         } else {
-            logprint(str(boost::format("%s %.1f min.\n") % finish_message % (float)(diff.total_seconds()/60.f)).c_str());
+            logprint(str(format("%s %.1f min.\n") % finish_message % (float)(diff.total_seconds()/60.f)).c_str());
         }
     } else {
         if (didIdent) {
@@ -439,9 +410,7 @@ TaskTimer::~TaskTimer() {
 }
 
 void TaskTimer::setLogLevelStream( LogLevel logLevel, std::ostream* str ) {
-#ifndef NO_TASKTIMER_MUTEX
-    QMutexLocker scope(&staticLock);
-#endif
+    TaskTimerLock scope(staticLock);
 
     switch (logLevel) {
         case LogVerbose:
@@ -451,7 +420,7 @@ void TaskTimer::setLogLevelStream( LogLevel logLevel, std::ostream* str ) {
             break;
 
         default:
-            throw std::logic_error((boost::format("Muse be one "
+            throw std::logic_error((format("Muse be one "
                 "of LogVerbose {%u}, LogDetailed {%u} or LogSimple {%u}.")
                 % LogVerbose % LogDetailed % LogSimple ).str());
     }
@@ -485,7 +454,7 @@ TaskInfo::
 }
 
 TaskInfo::
-        TaskInfo(const boost::format& fmt)
+        TaskInfo(const format& fmt)
 {
     tt_ = new TaskTimer(fmt);
     tt_->suppressTiming ();

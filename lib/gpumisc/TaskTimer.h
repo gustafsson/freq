@@ -68,6 +68,8 @@ public:
     TaskTimer();
     ~TaskTimer();
 
+    static void this_thread_quit();
+
     void info(const char* taskInfo, ...);
     void partlyDone();
     void suppressTiming();

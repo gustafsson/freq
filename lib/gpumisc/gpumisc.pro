@@ -9,13 +9,11 @@ TARGET = gpumisc
 TEMPLATE = lib
 win32:TEMPLATE = vclib
 win32:CONFIG += debug_and_release
-#QT = core # gpumisc uses QMutex from Qt library in TaskTimer
 
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 QT += opengl
 
-#DEFINES += NO_TASKTIMER_MUTEX
 #DEFINES += THREADCHECKER_NO_CHECK
 #DEFINES += CUDA_MEMCHECK_TEST
 DEFINES += GPUMISC_LIBRARY
