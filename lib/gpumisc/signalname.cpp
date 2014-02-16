@@ -1,5 +1,6 @@
 #include "signalname.h"
-#include "signal.h"
+
+#include <signal.h>
 
 const char* SignalName::
         name(int signal)
