@@ -3,7 +3,7 @@
 #include "support/sendfeedback.h"
 #include "sendfeedbackdialog.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
 #include "expectexception.h"

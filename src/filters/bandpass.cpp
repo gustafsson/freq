@@ -4,7 +4,7 @@
 #include "tfr/chunk.h"
 #include "tfr/stft.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #define TIME_BANDPASS
 //#define TIME_BANDPASS if(0)

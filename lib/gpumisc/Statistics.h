@@ -1,6 +1,6 @@
 #include "datastorage.h"
 #include "cpumemorystorage.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include <boost/scoped_ptr.hpp>
 #include "throwInvalidArgument.h"
 #include <stdio.h>

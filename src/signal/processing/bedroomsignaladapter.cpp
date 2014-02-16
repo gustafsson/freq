@@ -1,6 +1,6 @@
 #include "bedroomsignaladapter.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 namespace Signal {
 namespace Processing {

@@ -74,7 +74,7 @@
 #include "filters/absolutevalue.h"
 
 // gpumisc tool
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "timer.h"
 
 #include <stdio.h>

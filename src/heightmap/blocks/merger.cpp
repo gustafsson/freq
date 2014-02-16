@@ -2,7 +2,7 @@
 #include "../blockquery.h"
 #include "../blockkernel.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 #include <boost/foreach.hpp>

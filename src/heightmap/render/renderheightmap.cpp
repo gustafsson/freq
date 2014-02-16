@@ -1,5 +1,5 @@
 #include "renderheightmap.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "renderinfo.h"
 #include "heightmap/reference_hash.h"
 #include "unused.h"

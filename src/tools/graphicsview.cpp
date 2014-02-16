@@ -1,6 +1,6 @@
 #include "graphicsview.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
 #include "sawe/application.h"

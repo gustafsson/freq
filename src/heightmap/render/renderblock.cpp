@@ -7,7 +7,7 @@
 #include "computationkernel.h"
 #include "GlException.h"
 #include "gl.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "glPushContext.h"
 #include "unused.h"
 

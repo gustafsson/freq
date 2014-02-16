@@ -4,7 +4,7 @@
 #include "filters/selection.h"
 #include "tfr/transformoperation.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 
 namespace Tools

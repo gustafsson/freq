@@ -1,7 +1,7 @@
 #include "tasktimertiming.h"
 #include "timer.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "ThreadChecker.h"
 #include "exceptionassert.h"
 

@@ -23,7 +23,7 @@
 #include "GlException.h"
 #include "computationkernel.h"
 #include "glPushContext.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "GlTexture.h"
 
 // boost

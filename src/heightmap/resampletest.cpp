@@ -3,7 +3,7 @@
 #include "resampletest.cu.h"
 #include "cudaglobalstorage.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "CudaException.h"
 

@@ -2,7 +2,7 @@
 
 #include "gl.h" // cuda_gl_interop.h includes gl.h which expects windows.h to
                 // be included on windows
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 #ifdef USE_CUDA

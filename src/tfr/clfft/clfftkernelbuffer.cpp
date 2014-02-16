@@ -1,6 +1,6 @@
 #include "clfftkernelbuffer.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 
 CLFFTKernelBuffer::CLFFTKernelBuffer()

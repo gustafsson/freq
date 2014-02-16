@@ -4,7 +4,7 @@
 
 #include "cpumemorystorage.h"
 #include "complexbuffer.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 

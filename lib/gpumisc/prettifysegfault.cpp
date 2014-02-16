@@ -2,7 +2,7 @@
 #include "backtrace.h"
 #include "signalname.h"
 #include "expectexception.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "exceptionassert.h"
 
 #include <signal.h>

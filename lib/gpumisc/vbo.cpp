@@ -1,6 +1,6 @@
 #include "gl.h"
 #include "vbo.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "datastorage.h" // getMemorySizeText
 
 #ifdef USE_CUDA

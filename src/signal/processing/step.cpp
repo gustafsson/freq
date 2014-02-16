@@ -1,7 +1,7 @@
 #include "step.h"
 #include "test/operationmockups.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "log.h"
 
 #include <boost/foreach.hpp>

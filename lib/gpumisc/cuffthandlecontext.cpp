@@ -1,6 +1,6 @@
 #include "cuffthandlecontext.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "CudaException.h"
 
 CufftHandleContext::

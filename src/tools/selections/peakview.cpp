@@ -2,7 +2,7 @@
 #include "peakmodel.h"
 
 #include "gl.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "glPushContext.h"
 
 namespace Tools { namespace Selections

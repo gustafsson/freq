@@ -6,7 +6,7 @@
 #include "signal/computingengine.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 // std

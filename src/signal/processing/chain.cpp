@@ -8,7 +8,7 @@
 #include "workers.h"
 
 #include "timer.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>

@@ -3,7 +3,7 @@
 #include "bedroom.h"
 
 #include "timer.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 

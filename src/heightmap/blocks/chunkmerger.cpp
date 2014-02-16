@@ -1,6 +1,6 @@
 #include "chunkmerger.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "timer.h"
 
 #include <boost/foreach.hpp>

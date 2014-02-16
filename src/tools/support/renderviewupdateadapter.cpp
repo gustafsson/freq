@@ -1,6 +1,6 @@
 #include "renderviewupdateadapter.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 //#define UPDATEINFO
 #define UPDATEINFO if(0)

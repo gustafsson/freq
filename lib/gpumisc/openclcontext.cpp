@@ -1,5 +1,5 @@
 #include "openclcontext.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include <stdexcept>
 #include <QMutex>
 

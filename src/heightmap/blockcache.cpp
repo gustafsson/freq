@@ -1,7 +1,7 @@
 #include "blockcache.h"
 #include "reference_hash.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <boost/foreach.hpp>
 

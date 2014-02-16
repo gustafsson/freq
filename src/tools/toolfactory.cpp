@@ -51,7 +51,7 @@
 #include "ui/mainwindow.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // Qt
 #include <QHBoxLayout>

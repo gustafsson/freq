@@ -5,7 +5,7 @@
 #include "tfr/chunk.h"
 #include "tools/support/fantrackerfilter.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <boost/foreach.hpp>
 

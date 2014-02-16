@@ -2,7 +2,7 @@
 
 #include <QImage>
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "GlException.h"
 #include "gl.h"
 #include "glPushContext.h"

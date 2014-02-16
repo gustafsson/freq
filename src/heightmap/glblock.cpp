@@ -8,7 +8,7 @@
 #include "GlException.h"
 #include "cpumemorystorage.h"
 #include "computationkernel.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // std
 #include <stdio.h>

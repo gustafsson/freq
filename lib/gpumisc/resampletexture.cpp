@@ -4,7 +4,7 @@
 
 #include "exceptionassert.h"
 #include "log.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "gltextureread.h"
 #include "GlException.h"
 #include "datastoragestring.h"

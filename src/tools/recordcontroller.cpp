@@ -12,7 +12,7 @@
 #include "heightmap/collection.h"
 #include "tools/commands/recordedcommand.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "Statistics.h"
 

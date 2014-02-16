@@ -13,7 +13,7 @@
 #include "heightmap/collection.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "neat_math.h"
 
 // Qt

@@ -1,7 +1,7 @@
 #include "firstmissalgorithm.h"
 
 #include "reversegraph.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "expectexception.h"
 
 #include <boost/foreach.hpp>

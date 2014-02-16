@@ -1,6 +1,6 @@
 #include "exceptionassert.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "expectexception.h"
 
 #include <boost/format.hpp>

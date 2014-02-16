@@ -1,6 +1,6 @@
 #include "workercrashlogger.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
 #include "signal/processing/task.h"

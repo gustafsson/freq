@@ -2,7 +2,7 @@
 
 #include <string.h> //memcpy
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "cpumemorystorage.h"
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"

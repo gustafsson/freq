@@ -4,7 +4,7 @@
 #include "heightmap/glblock.h"
 #include "heightmap/visualizationparams.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES

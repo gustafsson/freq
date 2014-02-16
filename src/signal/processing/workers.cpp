@@ -7,7 +7,7 @@
 #include "timer.h"
 #include "bedroomsignaladapter.h"
 #include "demangle.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 //#define TIME_TERMINATE
 #define TIME_TERMINATE if(0)

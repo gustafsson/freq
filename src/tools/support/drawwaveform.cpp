@@ -2,7 +2,7 @@
 
 // gpumisc
 #include "gl.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // Boost
 #include <boost/foreach.hpp>

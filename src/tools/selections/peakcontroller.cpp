@@ -15,7 +15,7 @@
 #include "heightmap/collection.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // Qt
 #include <QMouseEvent>

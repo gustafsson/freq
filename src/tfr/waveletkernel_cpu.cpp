@@ -3,7 +3,7 @@
 
 #include "waveletkerneldef.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #define SQRTLOG2E        1.201122409f
 #define PI               3.141592654f

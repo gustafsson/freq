@@ -46,7 +46,7 @@ SOURCES += \
     redirectstdout.cpp \
     resampletexture.cpp \
     signalname.cpp \
-    TaskTimer.cpp \
+    tasktimer.cpp \
     ThreadChecker.cpp \
     timer.cpp \
     vbo.cpp \
@@ -105,7 +105,7 @@ HEADERS += \
     Statistics.h \
     StatisticsRandom.h \
     TAni.h \
-    TaskTimer.h \
+    tasktimer.h \
     texturereader.cu.h \
     ThreadChecker.h \
     throwInvalidArgument.h \

@@ -62,7 +62,7 @@ Signal::UnsignedIntervalType ChainInfo::
 
 #include "test/operationmockups.h"
 #include "test/randombuffer.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "log.h"
 #include "signal/buffersource.h"
 #include <QApplication>

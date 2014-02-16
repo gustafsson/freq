@@ -25,7 +25,7 @@
 
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "ThreadChecker.h"
 #include "deprecated.h"
 #include "exceptionassert.h"

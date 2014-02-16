@@ -4,7 +4,7 @@
 
 #include "signal/buffer.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "neat_math.h"
 
 #define DEBUG if(0)

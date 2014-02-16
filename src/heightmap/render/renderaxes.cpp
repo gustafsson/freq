@@ -3,7 +3,7 @@
 #include "tfr/freqaxis.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "glPushContext.h"
 
 // glut
