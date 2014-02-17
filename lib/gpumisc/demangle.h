@@ -4,6 +4,10 @@
 #include <string>
 #include <typeinfo>
 
+/**
+ * Demangle should perform a system specific demangling of compiled C++ names.
+ */
+
 std::string demangle(const std::type_info& i);
 std::string demangle(const char* d);
 

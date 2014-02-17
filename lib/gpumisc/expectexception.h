@@ -4,6 +4,10 @@
 #include "backtrace.h"
 #include "demangle.h"
 
+/**
+ * The EXPECT_EXCEPTION macro should ensure that an expression throws an exception of a given type.
+ */
+
 class exptected_exception: virtual public boost::exception, virtual public std::exception {};
 class unexptected_exception: virtual public boost::exception, virtual public std::exception {};
 typedef boost::error_info<struct unexpected_exception_tag,boost::exception_ptr> unexpected_exception_info;

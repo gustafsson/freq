@@ -9,48 +9,72 @@
 #include <boost/format.hpp>
 
 /**
-TaskTimer is a convenient timing tool used to measure how long time
-it takes to execute a code block. This is illustrated by this
-example:
+TaskTimer should log how long time it takes to execute a scope while
+distinguishing nested scopes and different threads.
 
-<p><code>
+
+A canonical example
+-------------------
 {
     TaskTimer tt("Doing this slow thing");
     doSlowThing();
 }
 
-</code><p>
-or
+Example output:
 
-<p><code>
-TIME_TASK( doSlowThing() );
+12:49:36.241581   Doing this slow thing... done in 100 ms.
 
-</code><p>
-in which the latter expands to the first using the macro TIME_TASK.
-When this is run the following will be seen on cout:
+Where "12:49:36.241581" is the time when creating TaskTimer and
+"done in 100 ms." will be sent to cout when doSlowThing has
+returned, and 'TaskTimer tt' is going out of scope.
 
-<p><code>
-Doing this slow thing... done in 100 ms.
 
-</code><p>
-Where "done in 100 ms." will be sent to cout when doSlowThing has
-returned, and TaskTimer tt is going out of scope.
+Nested and formatted logging
+----------------------------
+{
+    int N = 2;
+    TaskTimer tt("Doing these %d slow things", N);
+    for (int i=0; i<N; ++i) {
+        TaskTimer tt(boost::format("Thing %d") % i);
+        doSlowThing();
+    }
+}
 
-<p>
-Anoother example:
+Example output:
+12:49:36.200000   Doing these 2 slow things
+12:49:36.200000   - Thing 0... done in 100 ms.
+12:49:36.300000   - Thing 1... done in 100 ms.
+12:49:36.400000   done in 200 ms.
 
-<p><code>
+
+Running the previous example in two threads
+-------------------------------------------
+Example output:
+12:49:36.200000   Doing these 2 slow things
+12:49:36.200000   - Thing 0... done in 100 ms.
+12:49:36.250000 1     Doing these 2 slow things
+12:49:36.250000 1     - Thing 0... done in 100 ms.
+12:49:36.300000   - Thing 1... done in 100 ms.
+12:49:36.350000 1     - Thing 1... done in 100 ms.
+12:49:36.400000   done in 200 ms.
+12:49:36.450000 1     done in 200 ms.
+
+
+Showing progress
+----------------
 {
     TaskTimer tt("Doing this slow thing");
     initialize();
-    for (int i=0; i<9; i++) {
+    for (int i=0; i<9; ++i) {
         tt.partlyDone();
         doSlowThing();
     }
 }
 
-</code><p>
 Where tt.partlyDone() will output an extra dot "." for each call.
+
+
+Use TaskInfo to omit "done in 100 ms."
 */
 class TaskTimer: private boost::noncopyable {
 public:

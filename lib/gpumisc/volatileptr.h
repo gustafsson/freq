@@ -27,14 +27,14 @@ public:
 #endif
 
 /**
- * The VolatilePtr class guarantees thread safe access to objects, with
- * compile-time on missing locks and run-time exceptions with backtraces
+ * The VolatilePtr class guarantees thread-safe access to objects, with
+ * compile-time errors on missing locks and run-time exceptions with backtraces
  * on deadlocks.
  *
  * For examples of usage see
  * VolatilePtrTest::test ()
  *
- * To use VolatilePtr to manage thread safe access to some previously
+ * To use VolatilePtr to manage thread-safe access to some previously
  * un-protected data you first need to create a new class representing the
  * state which needs to be managed. If this is just a single existing class
  * you can either 1) change the existing class to make it inherit
@@ -45,13 +45,14 @@ public:
  * (just like only const methods are accessible from a const object). Using the
  * volatile classifier blocks access to use any "regular" (non-volatile) methods.
  *
- * The helper classes ReadPtr and WritePtr uses RAII for thread safe access to
- * a non-volatile reference to the object.
+ * The helper classes ReadPtr and WritePtr uses RAII for thread-safe and
+ * exception-safe access to a non-volatile reference to the object.
  *
- * The examples listed might make more sense than this description;
+ * Some examples might make more sense than this description;
  * see VolatilePtrTest::test ()
  *
- * The time overhead of locking an available object is less than 1e-7 s.
+ * The time overhead of locking an available object was about 3e-7 s on the
+ * machine this was developed.
  *
  * Author: johan.gustafsson@muchdifferent.com
  */
@@ -84,7 +85,7 @@ public:
     /**
      * For examples of usage see void VolatilePtrTest::test ().
      *
-     * The purpose of ReadPtr is to provide thread safe access to an a const
+     * The purpose of ReadPtr is to provide thread-safe access to an a const
      * object for a thread during the lifetime of the ReadPtr. This access
      * may be shared by multiple threads that simultaneously use their own
      * ReadPtr to access the same object.

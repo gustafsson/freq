@@ -1,6 +1,9 @@
 #ifndef SIGNALNAME_H
 #define SIGNALNAME_H
 
+/**
+ * @brief The SignalName class should translate a system signal to a short and long string representation.
+ */
 class SignalName
 {
 public:

@@ -1,6 +1,12 @@
 #ifndef DETECTGDB_H
 #define DETECTGDB_H
 
+/**
+ * @brief The DetectGdb class should detect whether the current process was
+ * started through, or is running through, gdb.
+ *
+ * It might work with lldb or other debuggers as well.
+ */
 class DetectGdb
 {
 public:

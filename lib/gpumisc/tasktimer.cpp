@@ -57,7 +57,7 @@ std::ostream* logLevelStream[] = {
 
 std::map<thread::id,ThreadInfo> thread_info_map;
 
-ThreadInfo& T() {
+static ThreadInfo& T() {
     // Assume lock is acquired.
     thread::id threadid = this_thread::get_id ();
 
@@ -397,7 +397,7 @@ TaskTimer::~TaskTimer() {
     --t.counter[logLevel];
 
     if (didIdent && 0==t.counter[logLevel]) {
-                logprint("\n");
+        logprint("\n");
     }
 
     lastTimer[logLevel] = 0;

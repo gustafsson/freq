@@ -40,7 +40,8 @@ void seghandle(int, __siginfo*, void* unused)
   is_doing_signal_handling = true;
 
   fflush(stdout);
-  fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (SIGSEGV), SIGSEGV, SignalName::desc (SIGSEGV));
+  if (enable_signal_print)
+    fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (SIGSEGV), SIGSEGV, SignalName::desc (SIGSEGV));
   fflush(stderr);
 
   ucontext_t* uc = (ucontext_t*) unused;
@@ -345,7 +346,7 @@ void throw_catcheable_segfault_exception()
 
 void throw_catcheable_segfault_exception2()
 {
-    TaskInfo("throw_catcheable_segfault_exception2");
+    TaskInfo("throw_catcheable_segfault_exception 2");
     *(int*) NULL = 0;
 }
 
