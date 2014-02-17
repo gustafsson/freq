@@ -3,17 +3,9 @@
 #include "demangle.h"
 #include "timer.h"
 
-#define HAS_QT
-
-#if defined(__APPLE__) && defined(HAS_QT)
-#define BACKTRACE_USE_ATOS_AND_QT
-#endif
-
-#ifdef BACKTRACE_USE_ATOS_AND_QT
-// Could use boost::process instead
-#include <QString>
-#include <QProcess>
-#include <QCoreApplication>
+#ifdef __APPLE__
+#include <iostream>
+#include <stdio.h>
 #endif
 
 #ifndef _MSC_VER
@@ -29,6 +21,23 @@ using namespace std;
 void *bt_array[256];
 size_t array_size;
 void printSignalInfo(int sig);
+
+#ifdef __APPLE__
+string exec_get_output(string cmd) {
+    FILE* pipe = popen(cmd.c_str (), "r");
+    if (!pipe)
+        return "";
+
+    char buffer[128];
+    string result = "";
+    while(!feof(pipe)) {
+        if(fgets(buffer, 128, pipe) != NULL)
+            result += buffer;
+    }
+    pclose(pipe);
+    return result;
+}
+#endif
 
 void Backtrace::
         malloc_free_log()
@@ -188,21 +197,20 @@ string Backtrace::
     string bt = str(format("backtrace (%d frames)\n") % (frames_.size ()));
     bool found_pretty = false;
 
-#ifdef BACKTRACE_USE_ATOS_AND_QT
-    QString addrs;
+#ifdef __APPLE__
+    string addrs;
     for (unsigned i=0; i < frames_.size(); ++i)
     {
-        QString s = msg[i];
-        QString addr = s.mid (40, 18);
+        string s = msg[i];
+        string addr = s.substr (40, 18);
         addrs += addr + " ";
     }
 
-    qint64 id = QCoreApplication::applicationPid();
-    QProcess p;
-    p.start (QString("xcrun atos -p %1 %2").arg (id).arg (addrs));
-    found_pretty = p.waitForFinished (2000);
-    found_pretty &= 0 == p.exitCode();
-    bt += QString(p.readAllStandardOutput ()).trimmed ().toStdString ();
+    int id = getpid();
+    string cmd = str(format("xcrun atos -p %1% %2%") % id % addrs);
+    string op = exec_get_output(cmd);
+    found_pretty = !op.empty();
+    bt += op;
 #endif
 
     if (!found_pretty)
@@ -211,7 +219,7 @@ string Backtrace::
         string s = msg[i];
         try
         {
-#ifdef BACKTRACE_USE_ATOS_AND_QT
+#ifdef __APPLE__
             //string first = s.substr (4, 59-4);
             size_t n = s.find_first_of (' ', 60);
             string name = s.substr (59, n-59);
@@ -261,6 +269,12 @@ Backtrace::
 }
 
 
+static void throwfunction()
+{
+    BOOST_THROW_EXCEPTION(unknown_exception() << Backtrace::make ());
+}
+
+
 void Backtrace::
         test()
 {
@@ -284,10 +298,22 @@ void Backtrace::
     // It should translate to a pretty backtrace when asked for a string representation
     {
         try {
-            BOOST_THROW_EXCEPTION(unknown_exception() << Backtrace::make ());
+            throwfunction();
         } catch (const std::exception& x) {
             string s = diagnostic_information(x);
+            EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
+            EXCEPTION_ASSERTX( s.find ("backtrace.cpp(274)") != string::npos, s );
             EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
+            EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
+
+            // If atos is available
+            EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:274)") != string::npos, s );
+#ifdef _DEBUG
+            // The call to throwfunction will be removed by optimization
+            EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:301)") != string::npos, s );
+#else
+            EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:301)") == string::npos, s );
+#endif
         }
     }
 }
