@@ -263,7 +263,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( log2(2107612212u), 30u );
 
         double T = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T, debug_build ? 10e-6 : 5e-6);
+        EXCEPTION_ASSERT_LESS (T, debug_build ? 10e-6 : 9e-6);
 
         // in general log2(x) == floor_log2(x) if x is uint32_t
         srand(0);
@@ -293,7 +293,7 @@ void neat_math::
             EXCEPTION_ASSERT_LESS(T, T2*1.3);
             EXCEPTION_ASSERT_LESS(T2, T*2);
         } else {
-            EXCEPTION_ASSERT_LESS_OR_EQUAL(T, 1e-12);
+            EXCEPTION_ASSERT_LESS_OR_EQUAL(T, 2e-12);
             EXCEPTION_ASSERT_LESS_OR_EQUAL(T2, 3e-12);
         }
 
