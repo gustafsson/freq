@@ -11,9 +11,10 @@ bool is_doing_signal_handling = false;
 bool has_caught_any_signal_value = false;
 bool enable_signal_print = true;
 bool nested_signal_handling = false;
+int last_caught_signal = 0;
 
 void handler(int sig);
-void printSignalInfo(int sig);
+void printSignalInfo(int sig, bool);
 
 void seghandle_userspace() {
   // note: because we set up a proper stackframe,
@@ -29,19 +30,20 @@ void seghandle_userspace() {
   // *(int*) NULL = 0;
 
     if (!nested_signal_handling)
-        printSignalInfo(SIGSEGV);
+        printSignalInfo(last_caught_signal, false);
 }
 
 
-void seghandle(int, __siginfo*, void* unused)
+void seghandle(int sig, __siginfo*, void* unused)
 {    
   nested_signal_handling = is_doing_signal_handling;
   has_caught_any_signal_value = true;
   is_doing_signal_handling = true;
+  last_caught_signal = sig;
 
   fflush(stdout);
   if (enable_signal_print)
-    fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (SIGSEGV), SIGSEGV, SignalName::desc (SIGSEGV));
+    fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (sig), sig, SignalName::desc (sig));
   fflush(stderr);
 
   ucontext_t* uc = (ucontext_t*) unused;
@@ -75,13 +77,13 @@ void seghandle(int, __siginfo*, void* unused)
 }
 
 
-void setup_sigsegv()
+void setup_signal_survivor(int sig)
 {
   struct sigaction sa;
   sa.sa_flags = SA_SIGINFO;
   sigemptyset (&sa.sa_mask);
   sa.__sigaction_u.__sa_sigaction = &seghandle;
-  bool sigsegv_handler = sigaction(SIGSEGV, &sa, NULL) != -1;
+  bool sigsegv_handler = sigaction(sig, &sa, NULL) != -1;
   EXCEPTION_ASSERTX(sigsegv_handler, "failed to setup SIGSEGV handler");
 }
 
@@ -91,6 +93,7 @@ void handler(int sig)
     nested_signal_handling = is_doing_signal_handling;
     has_caught_any_signal_value = true;
     is_doing_signal_handling = true;
+    last_caught_signal = sig;
 
     // The intention is that handler(sig) should cause very few stack and heap
     // allocations. And 'printSignalInfo' should prints prettier info but with
@@ -99,20 +102,22 @@ void handler(int sig)
     // http://feepingcreature.github.io/handling.html does not work, see note 4.
 
     fflush(stdout);
-    fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (sig), sig, SignalName::desc (sig));
+    if (enable_signal_print)
+        fprintf(stderr, "\nError: signal %s(%d) %s\n", SignalName::name (sig), sig, SignalName::desc (sig));
     fflush(stderr);
 
-    Backtrace::malloc_free_log ();
+    if (enable_signal_print)
+        Backtrace::malloc_free_log ();
 
     if (!nested_signal_handling)
-        printSignalInfo(sig);
+        printSignalInfo(sig, true);
 
     // This will not be reached if an exception is thrown
     is_doing_signal_handling = false;
 }
 
 
-void printSignalInfo(int sig)
+void printSignalInfo(int sig, bool noaction)
 {
     // Lots of memory allocations here. Not neat, but more helpful.
 
@@ -136,29 +141,36 @@ void printSignalInfo(int sig)
     case SIGABRT:
         TaskInfo("Got SIGABRT");
         fflush(stdout);
-        exit(1);
+        if (!noaction)
+            exit(1);
+        return;
 
+    case SIGILL:
     case SIGSEGV:
         if (enable_signal_print)
-            TaskInfo("Throwing segfault_exception");
+            TaskInfo("Throwing segfault_sigill_exception");
         fflush(stdout);
 
-        BOOST_THROW_EXCEPTION(segfault_exception()
+        if (!noaction)
+            BOOST_THROW_EXCEPTION(segfault_sigill_exception()
                               << signal_exception::signal(sig)
                               << signal_exception::signalname(SignalName::name (sig))
                               << signal_exception::signaldesc(SignalName::desc (sig))
                               << Backtrace::make (2));
+        return;
 
     default:
         if (enable_signal_print)
             TaskInfo("Throwing signal_exception");
         fflush(stdout);
 
-        BOOST_THROW_EXCEPTION(signal_exception()
+        if (!noaction)
+            BOOST_THROW_EXCEPTION(signal_exception()
                               << signal_exception::signal(sig)
                               << signal_exception::signalname(SignalName::name (sig))
                               << signal_exception::signaldesc(SignalName::desc (sig))
                               << Backtrace::make (2));
+        return;
     }
 }
 
@@ -302,8 +314,9 @@ void PrettifySegfault::
         {
         case SIGCHLD:
             break;
+        case SIGILL:
         case SIGSEGV:
-            setup_sigsegv();
+            setup_signal_survivor(i);
             break;
         default:
             if (0!=strcmp(SignalName::name (i),"UNKNOWN"))
@@ -332,56 +345,124 @@ void PrettifySegfault::
 }
 
 
+#include "detectgdb.h"
+
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnull-dereference"
 #pragma clang diagnostic ignored "-Wself-assign"
 
 
-void throw_catcheable_segfault_exception()
+void throw_catchable_segfault_exception()
 {
     *(int*) NULL = 0;
     throw std::exception();
 }
 
 
-void throw_catcheable_segfault_exception2()
+void throw_catchable_segfault_exception2()
 {
-    TaskInfo("throw_catcheable_segfault_exception 2");
+    std::vector<std::vector<int> >(); // create and destroy a complex type in the same scope
+    int a[100];
+    a[0] = a[1] + 10;
+
+    *(int*) NULL = 0;
+
+    printf("never reached %d\n", a[0]);
+}
+
+
+void throw_catchable_segfault_exception3()
+{
     *(int*) NULL = 0;
 }
 
 
-void throw_uncatcheable_segfault_exception()
-{
-    *(int*) NULL = 0;
-}
-
-
-void throw_uncatcheable_segfault_exception2()
+void throw_catchable_segfault_exception4()
 {
     int a=0;
     a=a;
     *(int*) NULL = 0;
 }
+
+
+class breaks_RAII_assumptions {
+public:
+    breaks_RAII_assumptions() {
+        constructor_was_called = true;
+    }
+    ~breaks_RAII_assumptions() {
+        destructor_was_called = true;
+    }
+
+    static bool constructor_was_called;
+    static bool destructor_was_called;
+};
+
+bool breaks_RAII_assumptions::constructor_was_called = false;
+bool breaks_RAII_assumptions::destructor_was_called = false;
+
+void throw_catchable_segfault_exception5()
+{
+    breaks_RAII_assumptions tst;
+    std::vector<std::vector<int> > leaking_memory(10); // the destructor will never be called
+    *(int*) NULL = 0;
+}
+
+
+
 #pragma clang diagnostic pop
 
 
-#include "detectgdb.h"
+void throw_catchable_segfault_exception_noinline();
+void throw_catchable_segfault_exception2_noinline();
+void throw_catchable_segfault_exception3_noinline();
+void throw_catchable_segfault_exception4_noinline();
+void throw_catchable_segfault_exception5_noinline();
 
 
 void PrettifySegfault::
         test()
 {
     // Skip test if running through gdb
-    if (DetectGdb::is_running_through_gdb ())
+    if (DetectGdb::was_started_through_gdb ()) {
+        TaskInfo("Running as child process, skipping PrettifySegfault test");
         return;
+    }
 
-    // It should attempt to capture any null-pointer exception in the program
-    // and throw a controlled C++ exception instead from that location instead.
+    // It should attempt to capture any null-pointer exception (SIGSEGV and
+    // SIGILL) in the program, log a backtrace, and then throw a regular C++
+    // exception from the location causing the signal.
     {
         enable_signal_print = false;
-        EXPECT_EXCEPTION(segfault_exception, throw_catcheable_segfault_exception());
-        EXPECT_EXCEPTION(segfault_exception, throw_catcheable_segfault_exception2());
+
+        // In order for the EXPECT_EXCEPTION macro to catch the exception the call
+        // must not be inlined as the function causing the signal will first return and
+        // then throw the exception.
+#ifdef _DEBUG
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception2());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception3());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception4());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception5());
+#else
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception_noinline());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception2_noinline());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception3_noinline());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception4_noinline());
+        EXPECT_EXCEPTION(segfault_sigill_exception, throw_catchable_segfault_exception5_noinline());
+#endif
+
         enable_signal_print = true;
+    }
+
+    // It returns immediately from the signalling function without unwinding
+    // the scope and thus break the RAII assumption that a destructor will
+    // always be called.
+    {
+        EXCEPTION_ASSERT(breaks_RAII_assumptions::constructor_was_called);
+        EXCEPTION_ASSERT(!breaks_RAII_assumptions::destructor_was_called);
+        breaks_RAII_assumptions(); // This calls the destructor
+        EXCEPTION_ASSERT(breaks_RAII_assumptions::destructor_was_called);
     }
 }

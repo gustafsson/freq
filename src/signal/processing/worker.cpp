@@ -232,7 +232,7 @@ class GetTaskSegFaultMock: public ISchedule {
 public:
     virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) volatile {
         if (DetectGdb::was_started_through_gdb ())
-            BOOST_THROW_EXCEPTION(segfault_exception());
+            BOOST_THROW_EXCEPTION(segfault_sigill_exception());
 
         // Causing deliberate segfault to test that the worker handles it correctly
         // The test verifies that it works to instantiate a TaskInfo works
@@ -365,7 +365,7 @@ void Worker::
         EXCEPTION_ASSERT( worker.wait (1) );
         EXCEPTION_ASSERT( worker.caught_exception () );
 
-        EXPECT_EXCEPTION(segfault_exception, rethrow_exception(worker.caught_exception ()));
+        EXPECT_EXCEPTION(segfault_sigill_exception, rethrow_exception(worker.caught_exception ()));
 
         PrettifySegfault::EnableDirectPrint (true);
     }

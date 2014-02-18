@@ -10,12 +10,13 @@ typedef boost::error_info<struct errinfo_format_tag, boost::format> errinfo_form
 
 
 /**
- * @brief The ExceptionAssert class stores details about an assertion that failed.
+ * @brief The ExceptionAssert class should store details about an assertion
+ * that failed.
  *
  * Use like so
  *
  * try {
- *     EXCEPTION_ASSERT( 1 == 2 );
+ *     EXCEPTION_ASSERT_EQUALS( 1, 2 );
  * } catch (const exception& x) {
  *     string what = boost::diagnostic_information(x);
  * }

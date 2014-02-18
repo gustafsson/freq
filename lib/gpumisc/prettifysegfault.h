@@ -5,8 +5,8 @@
 
 /**
  * @brief The PrettifySegfault class should attempt to capture any null-pointer
- * exception in the program and throw a controlled C++ exception instead from
- * that location instead.
+ * exception (SIGSEGV and SIGILL) in the program, log a backtrace, and then
+ * throw a regular C++ exception from the function causing the signal.
  *
  *     When you attempt to recover from segfaults,
  *     you are playing with fire.
@@ -16,15 +16,26 @@
  *     will still crash the process, but there should at least be
  *     some info in the log.
  *
- * Throwing from within a signal handler is undefined behavior. There is a
- * proposed solution to unwind from null-pointer exceptions at:
+ * Throwing from within a signal handler is undefined behavior. This
+ * implementation is based on a hack to rewrite the function stack. Please
+ * refer to 'feepingcreature' for the full explanation at
  * http://feepingcreature.github.io/handling.html
- * Looks neat, however it only works in special cases. See note number 4.
- * PrettifySegfault::test lists some different scenarios. The setup method
- * uses different handlers for sigsegv and other signals.
  *
- * While at it, PrettifySegfault may attempt to log and throw exceptions for
- * other types of signals as well if they are detected.
+ * !!!
+ * However, this doesn't always work. See note number 4 at the url above. And
+ * it returns immediately from the signalling function without unwinding
+ * the scope and thus break the RAII assumption that a destructor will
+ * always be called. I.e leaking resources and potentially leaving the
+ * process in an unconsistent state (and this is in addition to any harm that
+ * happened before the original SIGSEGV/SIGILL was detected).
+ * !!!
+ * So don't rely on this class, it's not a safety net, it merely serves to
+ * quickly indicate the location of a severe error when it occurs.
+ * !!!
+ *
+ * While at it, PrettifySegfault::setup() sets up logging of all other signal
+ * types as well if they are detected, but without taking any further action.
+ * (except SIGCHLD which is ignored)
  */
 class PrettifySegfault
 {
@@ -68,6 +79,6 @@ public:
     typedef boost::error_info<struct signalname, const char*> signalname;
     typedef boost::error_info<struct signaldesc, const char*> signaldesc;
 };
-class segfault_exception: public signal_exception {};
+class segfault_sigill_exception: public signal_exception {};
 
 #endif // PRETTIFYSEGFAULT_H
