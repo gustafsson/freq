@@ -1,7 +1,6 @@
 #ifndef VOLATILELOCK_H
 #define VOLATILELOCK_H
 
-#include "backtrace.h"
 #include "unused.h"
 
 #include <boost/thread/shared_mutex.hpp>
@@ -9,6 +8,16 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/exception/all.hpp>
+
+
+#ifndef VOLATILEPTR_THROW_EXCEPTION
+  #ifdef VOLATILEPTR_NO_BACKTRACE
+    #define VOLATILEPTR_THROW_EXCEPTION(x) BOOST_THROW_EXCEPTION(x)
+  #else
+    #include "backtrace.h"
+    #define VOLATILEPTR_THROW_EXCEPTION(x) BOOST_THROW_EXCEPTION(x << Backtrace::make (2))
+  #endif
+#endif
 
 
 class NoLockFailed {};
@@ -27,7 +36,7 @@ public:
 #endif
 
 /**
- * The VolatilePtr class guarantees thread-safe access to objects, with
+ * The VolatilePtr class should guarantee thread-safe access to objects, with
  * compile-time errors on missing locks and run-time exceptions with backtraces
  * on deadlocks.
  *
@@ -195,9 +204,8 @@ public:
             if (timeout_ms < 0)
                 l_->lock_shared ();
             else if (!l_->try_lock_shared_for (boost::chrono::milliseconds(timeout_ms)))
-                BOOST_THROW_EXCEPTION(LockFailed()
-                                      << typename LockFailed::timeout_value(timeout_ms)
-                                      << Backtrace::make (2));
+                VOLATILEPTR_THROW_EXCEPTION(LockFailed()
+                                      << typename LockFailed::timeout_value(timeout_ms));
         }
 
         shared_mutex* l_;
@@ -281,9 +289,8 @@ public:
             if (timeout_ms < 0)
                 l_->lock ();
             else if (!l_->try_lock_for (boost::chrono::milliseconds(timeout_ms)))
-                BOOST_THROW_EXCEPTION(LockFailed()
-                                      << typename LockFailed::timeout_value(timeout_ms)
-                                      << Backtrace::make(2));
+                VOLATILEPTR_THROW_EXCEPTION(LockFailed()
+                                      << typename LockFailed::timeout_value(timeout_ms));
         }
 
         shared_mutex* l_;
