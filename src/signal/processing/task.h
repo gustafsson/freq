@@ -26,7 +26,7 @@ public:
 
     // input_buffer and output_buffer does not need to be allocated beforehand
     Task (const Step::WritePtr& step, std::vector<Step::Ptr> children, Signal::Operation::Ptr operation, Signal::Interval expected_output, Signal::Interval required_input);
-    ~Task();
+    virtual ~Task();
 
     Signal::Interval        expected_output() const;
 
