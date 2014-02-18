@@ -18,6 +18,8 @@
 using namespace boost;
 using namespace std;
 
+typedef error_info<struct failed_condition,const char*> failed_condition_type;
+
 void *bt_array[256];
 size_t array_size;
 void printSignalInfo(int sig);
@@ -278,7 +280,7 @@ static void throwfunction()
 void Backtrace::
         test()
 {
-    // It should store a backtrace of the current position in 1 ms.
+    // It should store a backtrace of the call stack in 1 ms.
     {
         Timer t;
         Backtrace::info backtrace = Backtrace::make ();
@@ -297,25 +299,32 @@ void Backtrace::
 
     // It should translate to a pretty backtrace when asked for a string representation
     {
-        try {
+        do try {
             throwfunction();
-        } catch (const std::exception& x) {
+        } catch (const boost::exception& x) {
             string s = diagnostic_information(x);
-            EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
-            EXCEPTION_ASSERTX( s.find ("backtrace.cpp(274)") != string::npos, s );
-            EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
-            EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
 
-            // If atos is available
-            EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:274)") != string::npos, s );
-#ifdef _DEBUG
-            // The call to throwfunction will be removed by optimization
-            EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:301)") != string::npos, s );
-#else
-            EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:301)") == string::npos, s );
-#endif
-        }
+            try {
+                EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(276)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("start") != string::npos, s );
+                // If atos is available
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:276)") != string::npos, s );
+    #ifdef _DEBUG
+                // The call to throwfunction will be removed by optimization
+                EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:303)") != string::npos, s );
+    #else
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:303)") == string::npos, s );
+    #endif
+                break;
+            } catch (const ExceptionAssert& e) {
+                char const* const* condition = get_error_info<ExceptionAssert::ExceptionAssert_condition>(e);
+
+                x << failed_condition_type(*condition);
+            }
+            throw;
+        } while (false);
     }
 }
-
-

@@ -1,7 +1,7 @@
 #ifndef ATOMICVALUE_H
 #define ATOMICVALUE_H
 
-#include <volatileptr.h>
+#include "volatileptr.h"
 
 /**
  * The AtomicValue class should provide thread-safe access to a value.

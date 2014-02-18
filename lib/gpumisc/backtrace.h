@@ -7,7 +7,7 @@
 #include <boost/exception/all.hpp>
 
 /**
- * @brief The Backtrace class should store a backtrace of the current position in 1 ms.
+ * @brief The Backtrace class should store a backtrace of the call stack in 1 ms.
  *
  * It should work as error info to boost::exception
  *
