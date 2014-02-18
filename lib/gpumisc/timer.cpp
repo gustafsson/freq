@@ -103,7 +103,7 @@ void Timer::
         EXCEPTION_ASSERT_LESS(T3, T1*30); // what just happened?
         EXCEPTION_ASSERT_LESS(T3, T4*1.2);
         EXCEPTION_ASSERT_LESS(T1, T5*1.8);
-        EXCEPTION_ASSERT_LESS(T5, T1*1.7);
+        EXCEPTION_ASSERT_LESS(T5, T1*1.8);
         EXCEPTION_ASSERT_EQUALS(std::numeric_limits<double>::infinity(),f);
     }
 }

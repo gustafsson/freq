@@ -412,7 +412,7 @@ void WriteWhileReadingThread::
             a->readWriteLock ()->try_lock ();
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 10000e-9 : 210e-9 : 250e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 10000e-9 : 210e-9 : 300e-9);
         EXCEPTION_ASSERT_LESS(debug ? 20e-9 : 20e-9, T);
 
         for (int i=0; i<1000; i++) {
@@ -426,7 +426,7 @@ void WriteWhileReadingThread::
             try { A::WritePtr(a,0); } catch (const LockFailed&) {}
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? 40000e-9 : 25000e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? 40000e-9 : 30000e-9);
         EXCEPTION_ASSERT_LESS(debug ? 12000e-9 : 6000e-9, T);
 
         for (int i=0; i<1000; i++) {
@@ -440,21 +440,21 @@ void WriteWhileReadingThread::
             A::WritePtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 270e-9 : 220e-9 : 180e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 270e-9 : 220e-9 : 210e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 33e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(a,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 170e-9 : 190e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 250e-9 : 170e-9 : 190e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
 
         for (int i=0; i<1000; i++) {
             A::ReadPtr(consta,NoLockFailed());
         }
         T = timer.elapsedAndRestart ()/1000;
-        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 150e-9 : 260e-9 : 190e-9);
+        EXCEPTION_ASSERT_LESS(T, debug ? gdb ? 200e-9 : 260e-9 : 190e-9);
         EXCEPTION_ASSERT_LESS(debug ? 50e-9 : 32e-9, T);
     }
 
@@ -489,8 +489,8 @@ void WriteWhileReadingThread::
 #else
 //        EXCEPTION_ASSERT_LESS(T2-T, 0.18e-6);
 //        EXCEPTION_ASSERT_LESS(T3-T, 0.14e-6);
-        EXCEPTION_ASSERT_LESS(T2-T, debug ? 0.5e-6 : 0.29e-6);
-        EXCEPTION_ASSERT_LESS(T3-T, debug ? 0.7e-6 : 0.32e-6);
+        EXCEPTION_ASSERT_LESS(T2-T, debug ? 0.7e-6 : 0.8e-6);
+        EXCEPTION_ASSERT_LESS(T3-T, debug ? 0.7e-6 : 0.9e-6);
 #endif
     }
 }

@@ -9,7 +9,7 @@
 #include <boost/format.hpp>
 
 /**
-TaskTimer should log how long time it takes to execute a scope while
+The TaskTimer class should log how long time it takes to execute a scope while
 distinguishing nested scopes and different threads.
 
 
