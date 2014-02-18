@@ -5,6 +5,7 @@ QT += network
 
 INCLUDEPATH += \
     $$SAWEROOT/lib/gpumisc \
+    $$SAWEROOT/lib/backtrace \
     $$SAWEROOT/src \
 
 unix:!macx {

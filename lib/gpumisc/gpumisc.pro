@@ -12,6 +12,8 @@ win32:CONFIG += debug_and_release
 
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
+INCLUDEPATH += ../backtrace
+
 QT += opengl
 
 #DEFINES += THREADCHECKER_NO_CHECK
@@ -20,16 +22,12 @@ DEFINES += GPUMISC_LIBRARY
 
 SOURCES += \
     atomicvalue.cpp \
-    backtrace.cpp \
     cpumemorystorage.cpp \
     cpuproperties.cpp \
     datastorage.cpp \
     datastoragestring.cpp \
     debugbuf.cpp \
-    detectgdb.cpp \
-    demangle.cpp \
     factor.cpp \
-    exceptionassert.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
     glframebuffer.cpp \
@@ -42,19 +40,14 @@ SOURCES += \
     log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
-    prettifysegfault.cpp \
     redirectstdout.cpp \
     resampletexture.cpp \
-    signalname.cpp \
-    tasktimer.cpp \
     ThreadChecker.cpp \
-    timer.cpp \
     vbo.cpp \
-    volatileptr.cpp \
+    ../backtrace/*.cpp \
 
 HEADERS += \
     atomicvalue.h \
-    backtrace.h \
     computationkernel.h \
     cpumemoryaccess.h \
     cpumemorystorage.h \
@@ -62,16 +55,11 @@ HEADERS += \
     datastorageaccess.h \
     datastoragestring.h \
     cpuproperties.h \
-    cva_list.h \
     debugbuf.h \
     debugmacros.h \
     debugstreams.h \
-    demangle.h \
-    detectgdb.h \
     deprecated.h \
     factor.h \
-    exceptionassert.h \
-    expectexception.h \
     gl.h \
     GlException.h \
     glframebuffer.h \
@@ -92,7 +80,6 @@ HEADERS += \
     msc_stdc.h \
     neat_math.h \
     operate.h \
-    prettifysegfault.h \
     redirectstdout.h \
     redirectStream.h \
     releaseaftercontext.h \
@@ -101,23 +88,19 @@ HEADERS += \
     resamplehelpers.h \
     resampletexture.h \
     resampletypes.h \
-    signalname.h \
     Statistics.h \
     StatisticsRandom.h \
     TAni.h \
-    tasktimer.h \
     texturereader.cu.h \
     ThreadChecker.h \
     throwInvalidArgument.h \
-    timer.h \
     tmatrix.h \
     tmatrixstring.h \
     tvector.h \
     tvectorstring.h \
     unsignedf.h \
-    unused.h \
     vbo.h \
-    volatileptr.h \
+    ../backtrace/*.h \
 
 win32 {
     SOURCES += StackWalker.cpp
