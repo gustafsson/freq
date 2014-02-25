@@ -102,11 +102,6 @@ HEADERS += \
     vbo.h \
     ../backtrace/*.h \
 
-win32 {
-    SOURCES += StackWalker.cpp
-    HEADERS += StackWalker.h
-}
-
 useopencl {
 DEFINES += USE_OPENCL
 
