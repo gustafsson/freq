@@ -151,17 +151,6 @@ public:
     pBlock      getBlock( const Reference& ref );
 
 
-    /**
-      Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
-      all existing blocks that intersect with the chunk interval.
-
-      This method is called by working threads.
-
-      TODO don't expose OpenGL data to other threads.
-      */
-    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible ) const;
-
-
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;

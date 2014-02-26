@@ -2,6 +2,7 @@
 
 #include "chunktoblock.h"
 #include "collection.h"
+#include "blockquery.h"
 
 #include "tfr/chunk.h"
 #include "blocks/ichunkmerger.h"
@@ -31,12 +32,12 @@ void ChunkBlockFilter::
     Heightmap::TfrMapping::Collections C = read1(tfrmap_)->collections();
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
-    TfrMapping::pCollection collection = C[pchunk.channel];
 
     write1(merge_chunk_)->filterChunk( pchunk );
 
+    BlockCache::Ptr cache = read1(C[pchunk.channel])->cache();
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
-    std::vector<pBlock> intersecting_blocks = write1(collection)->getIntersectingBlocks( chunk_interval, false );
+    std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 
     write1(chunk_merger_)->addChunk( merge_chunk_, pchunk, intersecting_blocks );
     // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();

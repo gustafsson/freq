@@ -298,13 +298,6 @@ pBlock Collection::
 }
 
 
-std::vector<pBlock> Collection::
-        getIntersectingBlocks( const Intervals& I, bool only_visible ) const
-{
-    return BlockQuery(cache_).getIntersectingBlocks(I, only_visible, _frame_counter);
-}
-
-
 unsigned long Collection::
         cacheByteSize() const
 {
