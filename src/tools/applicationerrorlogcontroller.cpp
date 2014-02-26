@@ -39,7 +39,7 @@ ApplicationErrorLogController::
 
     connect (send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
     connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)), Qt::QueuedConnection);
-    connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::BlockingQueuedConnection);
+    connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::DirectConnection);
 
     bool had_previous_crash = QSettings().value (currently_running_key, false).toBool ();
 
