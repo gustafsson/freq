@@ -202,8 +202,13 @@ public:
 
         ~ReadPtr() {
             // The destructor isn't called if the constructor throws.
+            unlock ();
+        }
+
+        void unlock () {
             if (t_)
                 l_->unlock_shared ();
+            t_ = 0;
         }
 
         const T* operator-> () const { return t_; }
@@ -312,8 +317,13 @@ public:
         WritePtr& operator=(WritePtr const&) = delete;
 
         ~WritePtr() {
+            unlock();
+        }
+
+        void unlock () {
             if (t_)
                 l_->unlock ();
+            t_ = 0;
         }
 
         T* operator-> () const { return t_; }
