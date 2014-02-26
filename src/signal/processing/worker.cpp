@@ -12,8 +12,6 @@
 namespace Signal {
 namespace Processing {
 
-bool enable_lockfailed_print = true;
-
 class QTerminatableThread : public QThread {
 public:
     void run() {
@@ -119,6 +117,7 @@ void Worker::
       }
 
     DEBUGINFO TaskInfo("Worker::wakeup");
+
     try
       {
         // Let exception_ mark unexpected termination.
@@ -154,49 +153,25 @@ void Worker::
 void Worker::
         loop_while_tasks()
   {
-    Task::Ptr task;
-    int consecutive_lock_failed_count = 0;
     while (!QThread::currentThread ()->isInterruptionRequested ())
       {
-        try
+        Task::Ptr task;
+
+        {
+            DEBUGINFO TaskTimer tt(boost::format("Get task %s %s") % vartype(*schedule_) % (computing_engine_?vartype(*computing_engine_):"(null)") );
+            task = schedule_->getTask(computing_engine_);
+        }
+
+        if (task)
           {
-            {
-                DEBUGINFO TaskTimer tt(boost::format("Get task %s %s") % vartype(*schedule_) % (computing_engine_?vartype(*computing_engine_):"(null)") );
-                task = schedule_->getTask(computing_engine_);
-            }
-
-            if (task)
-              {
-                DEBUGINFO TaskTimer tt(boost::format("Running task %s") % read1(task)->expected_output());
-                write1(task)->run();
-                emit oneTaskDone();
-              }
-            else
-              {
-                // Wait for a new wakeup call
-                break;
-              }
-
-            consecutive_lock_failed_count = 0;
+            DEBUGINFO TaskTimer tt(boost::format("Running task %s") % read1(task)->expected_output());
+            write1(task)->run();
+            emit oneTaskDone();
           }
-        catch (const LockFailed& x)
+        else
           {
-            if (enable_lockfailed_print)
-              {
-                TaskInfo("");
-                TaskInfo("Lock failed");
-                TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
-                TaskInfo("");
-              }
-
-            if (consecutive_lock_failed_count < 1)
-              {
-                consecutive_lock_failed_count++;
-                if (enable_lockfailed_print)
-                    TaskInfo("Starting attempt %d", consecutive_lock_failed_count+1);
-              }
-            else
-                throw;
+            // Wait for a new wakeup call
+            break;
           }
       }
   }
@@ -259,14 +234,29 @@ public:
 };
 
 
-class DeadLockMock: public GetTaskMock {
+class ImmediateDeadLockMock: public GetTaskMock {
 public:
     virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile {
         GetTaskMock::getTask (engine);
 
         // cause dead lock in 1 ms
-        volatile DeadLockMock m;
+        volatile ImmediateDeadLockMock m;
         WritePtr(&m, 1).get() && WritePtr(&m, 1).get();
+
+        // unreachable code
+        return Task::Ptr();
+    }
+};
+
+
+class DeadLockMock: public GetTaskMock {
+public:
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile {
+        GetTaskMock::getTask (engine);
+
+        // cause dead lock, but wait a few seconds (at least 2*2 * 1000 ms)
+        volatile DeadLockMock m;
+        WritePtr(&m, 1000).get() && WritePtr(&m, 1000).get();
 
         // unreachable code
         return Task::Ptr();
@@ -404,54 +394,11 @@ void Worker::
         }
     }
 
-    // It should not hang if it causes a deadlock (1)
+    // It should store information about a crashed task (LockFailed) and stop execution.
     {
-        UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (1)");
+        UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (LockFailed) and stop execution.");
 
-        enable_lockfailed_print = false;
-
-        ISchedule::Ptr gettask(new DeadLockMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
-
-        worker.wait (10);
-        worker.terminate ();
-        worker.terminate ();
-        worker.terminate ();
-        worker.terminate ();
-        worker.abort ();
-        worker.abort ();
-        worker.abort ();
-        worker.abort ();
-
-        enable_lockfailed_print = true;
-    }
-
-    // It should not hang if it causes a deadlock (2)
-    {
-        UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (2)");
-
-        enable_lockfailed_print = false;
-
-        ISchedule::Ptr gettask(new DeadLockMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
-
-        EXCEPTION_ASSERT( !worker.wait (1) );
-        worker.terminate ();
-        EXCEPTION_ASSERT( worker.wait (2) );
-        EXPECT_EXCEPTION( TerminatedException, rethrow_exception(worker.caught_exception ()) );
-
-        enable_lockfailed_print = true;
-    }
-
-
-    // It should swallow one LockFailed without aborting the thread, but abort
-    // if several consecutive LockFailed are thrown.
-    {
-        UNITTEST_STEPS TaskTimer tt("It should swallow one LockFailed without aborting the thread, but abort if several consecutive LockFailed are thrown.");
-
-        enable_lockfailed_print = false;
-
-        ISchedule::Ptr gettask(new DeadLockMock());
+        ISchedule::Ptr gettask(new ImmediateDeadLockMock());
 
         Worker worker(Signal::ComputingEngine::Ptr(), gettask);
 
@@ -462,9 +409,39 @@ void Worker::
 
         EXPECT_EXCEPTION(LockFailed, rethrow_exception(worker.caught_exception ()));
 
-        EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*write1(gettask))->get_task_count );
+    }
 
-        enable_lockfailed_print = true;
+    // It should not hang if it causes a deadlock (1)
+    {
+        UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (1)");
+
+        ISchedule::Ptr gettask(new DeadLockMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        EXCEPTION_ASSERT( worker.isRunning () );
+        worker.terminate ();
+        worker.terminate ();
+        worker.terminate ();
+        worker.terminate ();
+        worker.abort ();
+        worker.abort ();
+        worker.abort ();
+        worker.abort ();
+        EXCEPTION_ASSERT( worker.wait (1) );
+    }
+
+    // It should not hang if it causes a deadlock (2)
+    {
+        UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (2)");
+
+        ISchedule::Ptr gettask(new DeadLockMock());
+        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+
+        EXCEPTION_ASSERT( !worker.wait (1) );
+        worker.terminate ();
+        EXCEPTION_ASSERT( worker.wait (2) ); // Finish within 2 ms after terminate
+        EXPECT_EXCEPTION( TerminatedException, rethrow_exception(worker.caught_exception ()) );
     }
 
     // It should announce when tasks are finished.

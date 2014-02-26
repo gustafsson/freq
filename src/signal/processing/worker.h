@@ -20,10 +20,10 @@ namespace Processing {
  * It should wait to be dispatched with a wakeup signal if there are no tasks.
  *
  * It should store information about a crashed task (both segfault and
- * std::exception) and stop execution.
+ * std::exception as well as LockFailed) and stop execution.
  *
- * It should swallow one LockFailed without aborting the thread, but abort if
- * several consecutive LockFailed are thrown.
+ * It should not hang if it causes a deadlock.
+ * In the sense that Worker.terminate () still works;
  *
  * It should announce when tasks are finished.
  */
