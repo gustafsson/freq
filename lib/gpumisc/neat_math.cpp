@@ -232,7 +232,7 @@ void neat_math::
 #else
         EXCEPTION_ASSERT_LESS(debug_build ? T2*0 : T2*1.05, T1); // floor_log2 is at least a little faster in release builds
 #endif
-        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*2.6); // how much faster?
+        EXCEPTION_ASSERT_LESS(T1, debug_build ? T2*4 : T2*2.8); // how much faster?
     }
 
     {

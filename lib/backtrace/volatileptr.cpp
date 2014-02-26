@@ -543,7 +543,7 @@ void WriteWhileReadingThread::
         EXCEPTION_ASSERT_LESS(T3-T, 110e-9);
 #else
         EXCEPTION_ASSERT_LESS(T2-T, debug ? 440e-9 : 250e-9);
-        EXCEPTION_ASSERT_LESS(T3-T, debug ? 440e-9 : 220e-9);
+        EXCEPTION_ASSERT_LESS(T3-T, debug ? 440e-9 : 250e-9);
 #endif
     }
 }
