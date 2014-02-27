@@ -60,7 +60,7 @@ void SendFeedbackDialog::
             ui->textEditMessage->toPlainText(),
             ui->lineEditAttachFile->text() );
 
-    if (omittedMessage.isEmpty()) {
+    if (!omittedMessage.isEmpty()) {
         QMessageBox::information(
                     dynamic_cast<QWidget*>(parent()),
                     "Some files were to large",

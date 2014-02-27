@@ -163,7 +163,8 @@ void WorkerCrashLogger::
         return;
       }
 
-    TaskInfo(boost::format("Worker '%s' crashed%s")
+    TaskInfo(boost::format("1 of %d workers crashed: '%s'%s")
+             % read1(workers_)->n_workers()
              % crashed_engine_typename
              % operation_desc_text);
 

@@ -191,10 +191,10 @@ void ApplicationErrorLogController::
 
         std::cout.flush ();
         std::cerr.flush ();
-        std::cerr << std::endl << std::endl
-             << "======================" << std::endl
-             << str << std::endl
-             << "======================" << std::endl << std::endl;
+        std::cerr
+             << ("\n\n======================\n"
+                + str
+                + "\n======================\n\n");
         std::cerr.flush ();
 
         char const* condition = 0;
