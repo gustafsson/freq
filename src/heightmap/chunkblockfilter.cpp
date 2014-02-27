@@ -153,8 +153,9 @@ void ChunkBlockFilter::
         Signal::pMonoBuffer buffer(new Signal::MonoBuffer(data, data.count ()));
 
         {
-            Heightmap::Collection::WritePtr c(read1(tfrmap)->collections()[0]);
-            c->getBlock (c->entireHeightmap ());
+            Heightmap::Collection::ReadPtr c(read1(tfrmap)->collections()[0]);
+            Reference entireHeightmap = c->entireHeightmap();
+            c->getBlock (entireHeightmap);
         }
 
         Tfr::ChunkAndInverse cai;

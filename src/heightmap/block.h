@@ -55,7 +55,6 @@ namespace Heightmap {
         void discard_new_block_data();
 
         // Lock if available but don't wait for it to become available
-        // Throws BlockData::LockFailed if data is not available
         BlockData::ReadPtr block_data_const() const {
             return BlockData::ReadPtr(block_data_, NoLockFailed());
         }

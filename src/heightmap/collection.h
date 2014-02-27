@@ -88,13 +88,10 @@ namespace Tfr {
 
 namespace Heightmap {
 
-namespace Blocks {
-class MergerTexture;
-}
-
 class Renderer;
 class Block;
 class BlockData;
+class BlockInstaller;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -139,16 +136,7 @@ public:
     Reference   entireHeightmap() const;
 
 
-    /**
-      Get a heightmap block. If the referenced block doesn't exist it is created.
-
-      This method is used by Heightmap::Renderer to get the heightmap data of
-      blocks that has been decided for rendering.
-
-      Might return 0 if collections decides that it doesn't want to allocate
-      another block.
-      */
-    pBlock      getBlock( const Reference& ref );
+    pBlock      getBlock( const Reference& ref ) const;
 
 
     unsigned long cacheByteSize() const;
@@ -173,19 +161,17 @@ private:
 
     BlockLayout block_layout_;
     VisualizationParams::ConstPtr visualization_params_;
-    Signal::Intervals recently_created_;
 
     typedef std::list<pBlock> toremove_t;
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
 
     BlockCache::Ptr cache_;
-    std::shared_ptr<Blocks::MergerTexture> merger_;
+    boost::shared_ptr<volatile BlockInstaller> block_installer_;
 
     bool
         _is_visible;
 
     unsigned
-        _created_count,
         _frame_counter;
 
     float
@@ -193,14 +179,6 @@ private:
 
     Position
             _max_sample_size;
-
-    /**
-     * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
-     */
-    bool failed_allocation_;
-    bool failed_allocation_prev_;
-
-
 
     /**
       Update 'b':S last_frame_used so that it wont yet be freed.

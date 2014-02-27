@@ -62,6 +62,7 @@
 #include "tools/applicationerrorlogcontroller.h"
 #include "heightmap/blocks/merger.h"
 #include "heightmap/blocks/mergertexture.h"
+#include "heightmap/blockinstaller.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -168,6 +169,7 @@ int UnitTest::
         RUNTEST(Heightmap::Block);
         RUNTEST(Heightmap::Blocks::Merger);
         RUNTEST(Heightmap::Blocks::MergerTexture);
+        RUNTEST(Heightmap::BlockInstaller);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);

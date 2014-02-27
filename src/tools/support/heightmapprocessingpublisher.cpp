@@ -157,7 +157,7 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         Heightmap::Reference entireHeightmap = read1(collection)->entireHeightmap();
-        write1(collection)->getBlock(entireHeightmap);
+        read1(collection)->getBlock(entireHeightmap);
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -166,7 +166,7 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         unsigned frame_number = read1(collection)->frame_number();
-        write1(collection)->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
+        read1(collection)->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
