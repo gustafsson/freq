@@ -356,11 +356,25 @@ void Renderer::
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::createMissingBlocks");
 
-    Collection::WritePtr collectionp(collection);
 
-    BOOST_FOREACH(const Reference& r, R) {
-        // Create blocks
-        collectionp->getBlock (r);
+    Render::RenderSet::references_t missing;
+
+    {
+        BlockCache::ReadPtr cache( read1(collection)->cache () );
+        BOOST_FOREACH(const Reference& r, R) {
+            if (!cache->probe(r))
+                missing.insert (r);
+        }
+    }
+
+    if (!missing.empty ())
+    {
+        Collection::ReadPtr collectionp(collection);
+
+        BOOST_FOREACH(const Reference& r, missing) {
+            // Create blocks
+            collectionp->getBlock (r);
+        }
     }
 }
 
@@ -414,11 +428,7 @@ void Renderer::
             }
             else
             {
-                // getBlock would try to find something else if the requested block
-                // wasn't readily available.
-
-                // If getBlock fails, we're most likely out of memory. Indicate this
-                // silently by not drawing the surface but only a wireframe.
+                // Indicate unavailable blocks by not drawing the surface but only a wireframe.
                 failed.insert(r);
             }
         }
