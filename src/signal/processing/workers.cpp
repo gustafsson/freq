@@ -312,7 +312,7 @@ public:
         //GetEmptyTaskMock* self = const_cast<GetEmptyTaskMock*>(this);
         //__sync_fetch_and_add (&self->get_task_count, 1);
 
-        // could also use boost::detail::atomic_count get_task_count
+        // could also use 'boost::detail::atomic_count get_task_count;'
         self->get_task_count++;
         if (self->get_task_count%2)
             throw std::logic_error("test crash");
@@ -379,7 +379,7 @@ void Workers::
         workers.rethrow_any_worker_exception(); // Should do nothing
 
         Timer t;
-        int worker_count = 40; // Multiplying by 10 multiplies the elapsed time by a factor of 100.
+        int worker_count = 40; // Number of threads to start. Multiplying by 10 multiplies the elapsed time by a factor of 100.
         std::list<Worker::Ptr> workerlist;
         Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr());
         workerlist.push_back (w);
@@ -394,6 +394,7 @@ void Workers::
         maxwait = std::max(maxwait, t.elapsed ());
 
         int get_task_count = ((const GetEmptyTaskMock*)&*read1(schedule))->get_task_count;
+        EXCEPTION_ASSERT_EQUALS(workerlist.size (), (size_t)worker_count);
         EXCEPTION_ASSERT_EQUALS(get_task_count, worker_count);
 
         // It should forward exceptions from workers

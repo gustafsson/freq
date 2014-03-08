@@ -6,8 +6,6 @@
 #include "signal/operation.h"
 #include "signal/cache.h"
 
-#include <QWaitCondition>
-
 namespace Signal {
 namespace Processing {
 

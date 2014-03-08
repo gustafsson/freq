@@ -33,7 +33,10 @@ TransformOperationOperation::
       transform_(transform),
       chunk_filter_(chunk_filter),
       no_inverse_tag_(no_inverse_tag)
-{}
+{
+    // TODO Operation is never shared between threads
+    this->setTimeOuts (-1, -1);
+}
 
 
 Signal::pBuffer TransformOperationOperation::

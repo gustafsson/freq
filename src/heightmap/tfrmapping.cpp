@@ -2,6 +2,9 @@
 #include "exceptionassert.h"
 #include "collection.h"
 
+//#define LOGINFO
+#define LOGINFO if(0)
+
 namespace Heightmap {
 
 TfrMapping::
@@ -11,7 +14,7 @@ TfrMapping::
       visualization_params_(new VisualizationParams),
       length_( 0 )
 {
-    TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
+    LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column ());
@@ -23,7 +26,7 @@ TfrMapping::
 TfrMapping::
         ~TfrMapping()
 {
-    TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
+    LOGINFO TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column (),
@@ -46,7 +49,7 @@ void TfrMapping::
     if (bl == block_layout_)
         return;
 
-    TaskInfo ti("Target sample rate: %g. %d x %d blocks",
+    LOGINFO TaskInfo ti("Target sample rate: %g. %d x %d blocks",
                 bl.targetSampleRate (),
                 bl.texels_per_row(),
                 bl.texels_per_column ());
@@ -108,7 +111,7 @@ void TfrMapping::
     if (v == block_layout_.targetSampleRate ())
         return;
 
-    TaskInfo ti("Target sample rate: %g", v);
+    LOGINFO TaskInfo ti("Target sample rate: %g", v);
 
     block_layout_ = BlockLayout(
                 block_layout_.texels_per_row (),
@@ -186,7 +189,7 @@ void TfrMapping::
     if (v == channels())
         return;
 
-    TaskInfo ti("Number of channels: %d", v);
+    LOGINFO TaskInfo ti("Number of channels: %d", v);
 
     collections_.clear ();
 

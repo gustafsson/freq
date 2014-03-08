@@ -27,6 +27,9 @@ Task::
       required_input_(required_input)
 {
     step->registerTask (this, expected_output);
+
+    // TODO Task is never shared between threads
+    this->setTimeOuts (-1, -1);
 }
 
 

@@ -13,6 +13,7 @@ namespace Processing {
 Bedroom::Data::
     Data()
     :
+        VolatilePtr(-1,-1),
         sleepers(new Counter::element_type),
         skip_sleep_marker(new Counter::element_type),
         is_closed(false)

@@ -72,9 +72,10 @@ double Timer::elapsedAndRestart()
 void Timer::
         test()
 {
-    // It should measure time with a high accuracy
+    // It should measure duration with a high accuracy
     // (at least 0.1-millisecond resolution)
     {
+        // This test doesn't test the accuracy, only the stability
         Timer t;
         double f = 1.00000000001;
         for (int i=0;i<10000;i++)
@@ -95,15 +96,31 @@ void Timer::
         double T5 = t.elapsed ();
 
         EXCEPTION_ASSERT_LESS(T1, 60e-6);
-        EXCEPTION_ASSERT_LESS(T1, T2*1.7);
+        EXCEPTION_ASSERT_LESS(T1, T2*1.8);
         EXCEPTION_ASSERT_LESS(T2, T1*1.7);
         EXCEPTION_ASSERT_LESS(T1, T3*1.8);
-        //EXCEPTION_ASSERT_LESS(T3, T1*1.9);
-        //EXCEPTION_ASSERT_LESS(T3*1.4, T4);
-        EXCEPTION_ASSERT_LESS(T3, T1*30); // what just happened?
-        EXCEPTION_ASSERT_LESS(T3, T4*1.2);
+        EXCEPTION_ASSERT_LESS(T3, T1*1.9);
+        EXCEPTION_ASSERT_LESS(T3*1.4, T4);
         EXCEPTION_ASSERT_LESS(T1, T5*1.8);
         EXCEPTION_ASSERT_LESS(T5, T1*1.8);
         EXCEPTION_ASSERT_EQUALS(std::numeric_limits<double>::infinity(),f);
+    }
+
+    // It should have an overhead less than 0.8 microseconds when inactive in a
+    // 'release' build (inacive in the sense that an instance is created but no
+    // method is called).
+    {
+        Timer t;
+        for (int i=0;i<100000;i++) {
+            Timer t0;
+            t.elapsed ();
+        }
+        double T0 = t.elapsedAndRestart ()/100000;
+
+        bool debug = false;
+#ifdef _DEBUG
+        debug = true;
+#endif
+        EXCEPTION_ASSERT_LESS(T0, debug ? 3e-6 : 0.8e-6);
     }
 }

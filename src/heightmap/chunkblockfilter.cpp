@@ -34,9 +34,9 @@ void ChunkBlockFilter::
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
     // this write1 failed once, but that shouldn't be possible as merge_chunk_ only ever exists in one worker thread!
-    //write1(merge_chunk_)->filterChunk( pchunk );
+    write1(merge_chunk_)->filterChunk( pchunk );
     // Leaving this here in an attempt to reproduce the failed lock
-    MergeChunk::WritePtr(merge_chunk_, 0)->filterChunk( pchunk );
+    //MergeChunk::WritePtr(merge_chunk_, 0)->filterChunk( pchunk );
 
     BlockCache::Ptr cache = read1(C[pchunk.channel])->cache();
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();

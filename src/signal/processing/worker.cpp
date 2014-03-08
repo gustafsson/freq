@@ -236,12 +236,16 @@ public:
 
 class ImmediateDeadLockMock: public GetTaskMock {
 public:
+    ImmediateDeadLockMock() {
+        this->setTimeOuts (1, -1);
+    }
+
     virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile {
         GetTaskMock::getTask (engine);
 
         // cause dead lock in 1 ms
         volatile ImmediateDeadLockMock m;
-        WritePtr(&m, 1).get() && WritePtr(&m, 1).get();
+        WritePtr(&m).get() && WritePtr(&m).get();
 
         // unreachable code
         return Task::Ptr();
@@ -251,12 +255,16 @@ public:
 
 class DeadLockMock: public GetTaskMock {
 public:
+    DeadLockMock() {
+        this->setTimeOuts (1000,-1);
+    }
+
     virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile {
         GetTaskMock::getTask (engine);
 
         // cause dead lock, but wait a few seconds (at least 2*2 * 1000 ms)
         volatile DeadLockMock m;
-        WritePtr(&m, 1000).get() && WritePtr(&m, 1000).get();
+        WritePtr(&m).get() && WritePtr(&m).get();
 
         // unreachable code
         return Task::Ptr();
