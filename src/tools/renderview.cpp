@@ -1078,7 +1078,7 @@ void RenderView::
         isRecording = true;
     }
 
-    bool chunk_merger_has_work = !model->chunk_merger->processChunks(10e-3);
+    bool chunk_merger_has_work = !model->chunk_merger->processChunks(0);
     //model->chunk_merger->processChunks(-1);
 
     if (chunk_merger_has_work)
