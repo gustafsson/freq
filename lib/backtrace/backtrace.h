@@ -7,7 +7,8 @@
 #include <boost/exception/all.hpp>
 
 /**
- * @brief The Backtrace class should store a backtrace of the call stack in 1 ms.
+ * @brief The Backtrace class should store a backtrace of the call stack in 1 ms,
+ * except for windows where it should takes 30 ms but include a backtrace from all threads.
  *
  * It should work as error info to boost::exception
  *

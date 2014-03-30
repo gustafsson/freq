@@ -2,20 +2,17 @@
 #include "tasktimer.h"
 #include "backtrace.h"
 
-using namespace boost;
-using namespace boost::posix_time;
 using namespace std;
-
 
 VerifyExecutionTime::report VerifyExecutionTime::default_report_func_;
 
 void VerifyExecutionTime::
-        default_report(float expected_time_, float execution_time, const std::string& label)
+        default_report(float expected_time, float execution_time, const std::string& label)
 {
-    string expected = TaskTimer::timeToString( microseconds(expected_time_ * 1e6) );
-    string elapsed = TaskTimer::timeToString( microseconds(execution_time * 1e6) );
+    string expected = TaskTimer::timeToString( expected_time );
+    string elapsed = TaskTimer::timeToString( execution_time );
 
-    TaskInfo(format("!!! VerifyExecutionTime: Took %s > %s %s")
+    TaskInfo(boost::format("!!! VerifyExecutionTime: Took %s > %s %s")
              % elapsed % expected % label);
 }
 
@@ -27,7 +24,7 @@ void VerifyExecutionTime::
 }
 
 
-VerifyExecutionTime::Ptr VerifyExecutionTime::
+VerifyExecutionTime::ptr VerifyExecutionTime::
         start( float expected_time, report report_func )
 {
     if (!report_func)
@@ -41,7 +38,7 @@ VerifyExecutionTime::Ptr VerifyExecutionTime::
         report_func = [](float expected_time, float execution_time){ default_report(expected_time, execution_time, Backtrace::make_string ()); };
     }
 
-    return Ptr(new VerifyExecutionTime( expected_time, report_func ));
+    return ptr(new VerifyExecutionTime( expected_time, report_func ));
 }
 
 
@@ -73,23 +70,29 @@ VerifyExecutionTime::
 // VerifyExecutionTime::test
 
 #include "exceptionassert.h"
-#include <boost/thread.hpp>
+//#include <boost/thread.hpp>
+#include <thread>
 
 void VerifyExecutionTime::
         test()
 {
     // It should warn if it takes longer than specified to execute a scope.
     {
-        bool did_report = false;
+        float expected_time=0.004, execution_time=0;
 
         {
-            VerifyExecutionTime::Ptr x = VerifyExecutionTime::start (0.002, [&did_report](float,float){did_report = true;});
-            this_thread::sleep_for (boost::chrono::milliseconds(1));
+            VerifyExecutionTime::ptr x = VerifyExecutionTime::start (expected_time, [&](float, float v){
+                execution_time = v;
+            });
+            this_thread::sleep_for (chrono::milliseconds(1));
         }
-        EXCEPTION_ASSERT(!did_report);
+
+        EXCEPTION_ASSERT_LESS(execution_time, expected_time);
+
+        bool did_report = false;
         {
-            VerifyExecutionTime::Ptr x = VerifyExecutionTime::start (0.001, [&did_report](float,float){did_report = true;});
-            this_thread::sleep_for (boost::chrono::milliseconds(1));
+            VerifyExecutionTime::ptr x = VerifyExecutionTime::start (0.001, [&did_report](float,float){did_report = true;});
+            this_thread::sleep_for (chrono::milliseconds(1));
 
             EXCEPTION_ASSERT(!did_report);
         }
@@ -106,8 +109,8 @@ void VerifyExecutionTime::
         bool did_report = false;
 
         try {
-            VerifyExecutionTime::Ptr x = VerifyExecutionTime::start (0.001, [&did_report](float,float){did_report = true;});
-            this_thread::sleep_for (boost::chrono::milliseconds(2));
+            VerifyExecutionTime::ptr x = VerifyExecutionTime::start (0.001, [&did_report](float,float){did_report = true;});
+            this_thread::sleep_for (chrono::milliseconds(2));
             throw 0;
         } catch (int) {}
 
@@ -132,7 +135,7 @@ void VerifyExecutionTime::
         EXCEPTION_ASSERT_LESS( T, debug ? 2e-6 : 0.8e-6 );
 
         for (int i=0; i<N; ++i) {
-            VerifyExecutionTime::Ptr a = VerifyExecutionTime::start (0.1);
+            VerifyExecutionTime::ptr a = VerifyExecutionTime::start (0.1);
         }
         T = t.elapsed () / N;
 

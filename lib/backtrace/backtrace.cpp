@@ -11,6 +11,7 @@
 #ifndef _MSC_VER
 #include <execinfo.h>
 #else
+#include <boost/thread/mutex.hpp>
 #include "StackWalker.h"
 #include "TlHelp32.h"
 #endif
@@ -27,8 +28,9 @@ void printSignalInfo(int sig);
 #ifdef __APPLE__
 string exec_get_output(string cmd) {
     FILE* pipe = popen(cmd.c_str (), "r");
-    if (!pipe)
+    if (!pipe) {
         return "";
+    }
 
     char buffer[128];
     string result = "";
@@ -67,14 +69,16 @@ void Backtrace::
 
 #if defined(_WIN32)
 
-class StackWalkerString: private StackWalker
+class StackWalkerStringHelper: private StackWalker
 {
 public:
-    string getStackTrace(HANDLE hThread = GetCurrentThread())
+    string getStackTrace(int skipframes, HANDLE hThread) // = GetCurrentThread())
     {
         fflush(stdout);
         if (!str_.empty())
             str_ += "\n\n";
+        str_.clear();
+        skipframes_ = skipframes;
         ShowCallstack(hThread);
         return str_;
     }
@@ -84,13 +88,17 @@ public:
 private:
     virtual void OnOutput(LPCSTR szText)
     {
-        TaskInfo("%s", szText);
-        StackWalker::OnOutput(szText);
+        //fputs(szText, stderr);
+
+        //StackWalker::OnOutput(szText);
     }
 
     virtual void OnCallStackOutput(LPCSTR szText)
     {
-        str_ += szText;
+        if (0 < skipframes_)
+            --skipframes_;
+        else
+            str_ += szText;
     }
 
     virtual void OnDbgHelpErr(LPCSTR szFuncName, DWORD gle, DWORD64 addr)
@@ -104,18 +112,35 @@ private:
     }
 
     string str_;
+    int skipframes_;
 };
 
 
-string prettyBackTrace(int /*skipFrames*/)
+class StackWalkerString {
+public:
+    static string getStackTrace(int skipframes, HANDLE hThread = GetCurrentThread())
+    {
+        static StackWalkerStringHelper swsi;
+        static boost::mutex mymutex;
+
+        unique_lock<mutex> l(mymutex);
+
+        return swsi.getStackTrace(skipframes, hThread);
+    }
+};
+
+
+string prettyBackTrace(int skipframes)
 {
     // http://stackoverflow.com/questions/590160/how-to-log-stack-frames-with-windows-x64
     // http://www.codeproject.com/Articles/11132/Walking-the-callstack
     // http://msdn.microsoft.com/en-us/library/windows/desktop/ms684335%28v=vs.85%29.aspx
     // http://stackoverflow.com/questions/9965784/how-to-obtain-list-of-thread-handles-from-a-win32-process
-    StackWalkerString stw;
 
-    stw.getStackTrace();
+    stringstream str;
+    str << StackWalkerString::getStackTrace(skipframes+1);
+
+    // Get the backtrace of all other threads in this process as well
 
     DWORD currentProcessId = GetCurrentProcessId();
     DWORD currentThreadId = GetCurrentThreadId();
@@ -130,7 +155,7 @@ string prettyBackTrace(int /*skipFrames*/)
                             if (currentProcessId == te.th32OwnerProcessID && currentThreadId != te.th32ThreadID)
                     {
                         HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, TRUE, te.th32ThreadID);
-                        stw.getStackTrace(hThread);
+                        str << "Thread " << te.th32ThreadID << " is at: " << endl << StackWalkerString::getStackTrace(0, hThread);
                         CloseHandle(hThread);
                         fflush(stdout);
                     }
@@ -140,22 +165,23 @@ string prettyBackTrace(int /*skipFrames*/)
         }
         CloseHandle(h);
     }
-    return stw.str();
+
+    return str.str();
 }
 
 
 Backtrace::info Backtrace::
-        make(int /*skipFrames*/)
+        make(int skipFrames)
 {
     Backtrace b;
-    b.pretty_print_ = prettyBackTrace();
+    b.pretty_print_ = prettyBackTrace(skipFrames+2);
     return Backtrace::info(b);
 }
 
 string Backtrace::
         to_string() const
 {
-    return b.pretty_print_;
+    return pretty_print_;
 }
 
 #else
@@ -209,7 +235,12 @@ string Backtrace::
     }
 
     int id = getpid();
-    string cmd = str(format("xcrun atos -p %1% %2%") % id % addrs);
+
+    // 'atos' should be invoked through 'xcrun atos', but that crashes every
+    // now and then, and takes much more time to execute.
+    //string cmd = str(format("xcrun atos -p %1% %2%") % id % addrs);
+    string cmd = str(format("atos -d -p %1% %2%") % id % addrs);
+
     string op = exec_get_output(cmd);
     found_pretty = !op.empty();
     bt += op;
@@ -275,17 +306,30 @@ static void throwfunction()
 {
     BOOST_THROW_EXCEPTION(unknown_exception() << Backtrace::make ());
 }
-
+#include "tasktimer.h"
 
 void Backtrace::
         test()
 {
-    // It should store a backtrace of the call stack in 1 ms.
+    // It should store a backtrace of the call stack in 1 ms,
+    // except for windows where it should takes 30 ms but
+    // include a backtrace from all threads.
     {
+#ifdef _MSC_VER
+        {
+            // Warmpup, load modules
+            Backtrace::info backtrace = Backtrace::make ();
+        }
+#endif
+
         Timer t;
         Backtrace::info backtrace = Backtrace::make ();
-        float T = t.elapsed ();
+        double T = t.elapsed ();
+#ifdef _MSC_VER
+        EXCEPTION_ASSERT_LESS( T, 0.030f );
+#else
         EXCEPTION_ASSERT_LESS( T, 0.001f );
+#endif
         EXCEPTION_ASSERT_LESS( 0u, backtrace.value ().frames_.size() + backtrace.value ().pretty_print_.size() );
     }
 
@@ -305,19 +349,31 @@ void Backtrace::
             string s = diagnostic_information(x);
 
             try {
+#ifdef _MSC_VER
+                EXCEPTION_ASSERTX( s.find ("throwfunction") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(307)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("Backtrace::test") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp (307): throwfunction") != string::npos, s );
+                if(4==sizeof(void*) && !debug) // WoW64 w/ optimization behaves differently
+                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (347): Backtrace::test") != string::npos, s );
+                else
+                    EXCEPTION_ASSERTX( s.find ("backtrace.cpp (345): Backtrace::test") != string::npos, s );
+#else
                 EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(276)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(307)") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("start") != string::npos, s );
-                // If atos is available
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:276)") != string::npos, s );
+
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:307)") != string::npos, s );
     #ifdef _DEBUG
                 // The call to throwfunction will be removed by optimization
                 EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:303)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:347)") != string::npos, s );
     #else
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:303)") == string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:347)") == string::npos, s );
     #endif
+#endif
                 break;
             } catch (const ExceptionAssert& e) {
                 char const* const* condition = get_error_info<ExceptionAssert::ExceptionAssert_condition>(e);

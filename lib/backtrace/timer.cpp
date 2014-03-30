@@ -1,16 +1,17 @@
 #include "timer.h"
-#include "exceptionassert.h"
-#include <limits>
+#include "trace_perf.h"
 
 #ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
 
-using namespace boost::posix_time;
+using namespace std::chrono;
 
-Timer::Timer()
+Timer::Timer(bool start)
 {
-    restart();
+    if (start)
+        restart();
 }
 
 
@@ -21,7 +22,7 @@ void Timer::restart()
     QueryPerformanceCounter(&li);
     start_ = li.QuadPart;
 #else
-    start_ = microsec_clock::local_time();
+    start_ = high_resolution_clock::now ();
 #endif
 }
 
@@ -39,8 +40,8 @@ double Timer::elapsed() const
     QueryPerformanceCounter(&li);
     return double(li.QuadPart-start_)/PCfreq;
 #else
-    time_duration diff = microsec_clock::local_time() - start_;
-    return diff.total_microseconds() * 1e-6;
+    duration<double> diff = high_resolution_clock::now () - start_;
+    return diff.count();
 #endif
 }
 
@@ -61,10 +62,10 @@ double Timer::elapsedAndRestart()
     start_ = now;
     return diff;
 #else
-    boost::posix_time::ptime now = microsec_clock::local_time();
-    time_duration diff = now - start_;
+    high_resolution_clock::time_point now = high_resolution_clock::now ();
+    duration<double> diff = now - start_;
     start_ = now;
-    return diff.total_microseconds() * 1e-6;
+    return diff.count ();
 #endif
 }
 
@@ -73,54 +74,28 @@ void Timer::
         test()
 {
     // It should measure duration with a high accuracy
-    // (at least 0.1-millisecond resolution)
     {
-        // This test doesn't test the accuracy, only the stability
-        Timer t;
-        double f = 1.00000000001;
-        for (int i=0;i<10000;i++)
-            f*=f;
-        double T1 = t.elapsedAndRestart ();
-        for (int i=0;i<10000;i++)
-            f*=f;
-        double T2 = t.elapsedAndRestart ();
-        for (int i=0;i<10000;i++)
-            f*=f;
-        double T3 = t.elapsed ();
-        for (int i=0;i<10000;i++)
-            f*=f;
-        double T4 = t.elapsed ();
-        t.restart ();
-        for (int i=0;i<10000;i++)
-            f*=f;
-        double T5 = t.elapsed ();
+        TRACE_PERF("it should measure short intervals as short");
 
-        EXCEPTION_ASSERT_LESS(T1, 60e-6);
-        EXCEPTION_ASSERT_LESS(T1, T2*1.8);
-        EXCEPTION_ASSERT_LESS(T2, T1*1.7);
-        EXCEPTION_ASSERT_LESS(T1, T3*1.8);
-        EXCEPTION_ASSERT_LESS(T3, T1*1.9);
-        EXCEPTION_ASSERT_LESS(T3*1.4, T4);
-        EXCEPTION_ASSERT_LESS(T1, T5*1.8);
-        EXCEPTION_ASSERT_LESS(T5, T1*1.8);
-        EXCEPTION_ASSERT_EQUALS(std::numeric_limits<double>::infinity(),f);
+        trace_perf_.reset ("it should have a low overhead");
+
+        {Timer t;t.elapsed ();}
     }
 
-    // It should have an overhead less than 0.8 microseconds when inactive in a
-    // 'release' build (inacive in the sense that an instance is created but no
-    // method is called).
+    // It should have an overhead less than 1 microsecond
     {
-        Timer t;
-        for (int i=0;i<100000;i++) {
-            Timer t0;
-            t.elapsed ();
-        }
-        double T0 = t.elapsedAndRestart ()/100000;
+        TRACE_PERF("it should have a low overhead 10000");
 
-        bool debug = false;
-#ifdef _DEBUG
-        debug = true;
-#endif
-        EXCEPTION_ASSERT_LESS(T0, debug ? 3e-6 : 0.8e-6);
+        for (int i=0;i<10000;i++) {
+            Timer t0;
+            t0.elapsed ();
+        }
+
+        trace_perf_.reset ("it should produce stable measures 10000");
+
+        for (int i=0;i<10000;i++) {
+            Timer t0;
+            t0.elapsed ();
+        }
     }
 }

@@ -3,10 +3,12 @@
 #include "backtrace.h"
 #include "exceptionassert.h"
 #include "prettifysegfault.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "tasktimer.h"
 #include "timer.h"
 #include "verifyexecutiontime.h"
+#include "demangle.h"
+#include "barrier.h"
 
 #include <stdio.h>
 #include <exception>
@@ -36,15 +38,24 @@ int UnitTest::
         RUNTEST(ExceptionAssert);
         RUNTEST(PrettifySegfault);
         RUNTEST(Timer);
-        RUNTEST(VolatilePtrTest);
+        RUNTEST(shared_state_test);
         RUNTEST(VerifyExecutionTime);
+        RUNTEST(spinning_barrier);
+        RUNTEST(locking_barrier);
+
     } catch (const exception& x) {
-        TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
-        printf("\n FAILED in %s::test()\n\n", lastname.c_str ());
+        fprintf(stderr, "%s",
+                str(boost::format("%s\n"
+                                  "%s\n"
+                                  " FAILED in %s::test()\n\n")
+                    % vartype(x) % boost::diagnostic_information(x) % lastname ).c_str());
         return 1;
     } catch (...) {
-        TaskInfo(boost::format("Not an std::exception\n%s") % boost::current_exception_diagnostic_information ());
-        printf("\n FAILED in %s::test()\n\n", lastname.c_str ());
+        fprintf(stderr, "%s",
+                str(boost::format("Not an std::exception\n"
+                                  "%s\n"
+                                  " FAILED in %s::test()\n\n")
+                    % boost::current_exception_diagnostic_information () % lastname ).c_str());
         return 1;
     }
 
