@@ -33,28 +33,18 @@ Signal::OperationDesc::Ptr Step::
 }
 
 
-void Step::
-        mark_as_crashed()
+Signal::Processing::IInvalidator::Ptr Step::
+        mark_as_crashed_and_get_invalidator()
 {
     if (died_)
-        return;
+        return Signal::Processing::IInvalidator::Ptr();
 
     DEBUGINFO TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
 
-    Signal::OperationDesc::Ptr died = died_;
-    bool was_locked = !readWriteLock ()->try_lock ();
-    readWriteLock ()->unlock ();
-
-    // Don't use 'this' while unlocked.
-    died->deprecateCache(Signal::Interval::Interval_ALL);
-
-    if (was_locked && !readWriteLock ()->try_lock_for(boost::chrono::milliseconds(VolatilePtr_lock_timeout_ms)))
-        BOOST_THROW_EXCEPTION(LockFailed()
-                              << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
-                              << Backtrace::make());
+    return read1(died_)->getInvalidator ();
 }
 
 
@@ -198,7 +188,7 @@ void Step::
 
 
 void Step::
-        sleepWhileTasks(int sleep_ms)
+        sleepWhileTasks(Step::Ptr step, int sleep_ms)
 {
     DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
 
@@ -207,14 +197,14 @@ void Step::
     if (sleep_ms < 0)
     {
         while (!running_tasks.empty ())
-            wait_for_tasks_.wait(*readWriteLock());
+            wait_for_tasks_.wait(step.readWriteLock ());
     }
     else
     {
         boost::chrono::milliseconds ms(sleep_ms);
 
         while (!running_tasks.empty ())
-            if (boost::cv_status::timeout == wait_for_tasks_.wait_for (*readWriteLock(), ms))
+            if (boost::cv_status::timeout == wait_for_tasks_.wait_for (step.readWriteLock(), ms))
                 return;
     }
 }
@@ -273,7 +263,8 @@ void Step::
         EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
         EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
         EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
-        s.mark_as_crashed ();
+        Signal::Processing::IInvalidator::Ptr i = s.mark_as_crashed ();
+        i->deprecateCache (Signal::Intervals::Intervals_ALL);
         EXCEPTION_ASSERT(s.get_crashed ());
         EXCEPTION_ASSERT(s.operation_desc ());
         EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));

@@ -8,8 +8,10 @@
 
 namespace Heightmap {
 
-class MergeChunk : public VolatilePtr<MergeChunk> {
+class MergeChunk {
 public:
+    typedef VolatilePtr<MergeChunk> Ptr;
+
     virtual ~MergeChunk() {}
 
     /**
@@ -25,9 +27,11 @@ public:
 };
 
 
-class MergeChunkDesc : public VolatilePtr<MergeChunkDesc>
+class MergeChunkDesc
 {
 public:
+    typedef VolatilePtr<MergeChunkDesc> Ptr;
+
     virtual ~MergeChunkDesc() {}
 
     virtual MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;

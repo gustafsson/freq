@@ -12,9 +12,13 @@ namespace Processing {
  *
  * It should be accessed from multiple threads. So use VolatilePtr.
  */
-class IInvalidator: public VolatilePtr<IInvalidator>
+class IInvalidator
 {
 public:
+    typedef VolatilePtr<IInvalidator> Ptr;
+    typedef Ptr::WritePtr WritePtr;
+    typedef Ptr::ReadPtr ReadPtr;
+
     virtual ~IInvalidator() {}
 
     virtual void deprecateCache(Signal::Intervals what) const=0;

@@ -100,8 +100,11 @@ typedef boost::shared_ptr<Block> pBlock;
   Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection: public VolatilePtr<Collection> {
+class Collection {
 public:
+    typedef VolatilePtr<Collection> Ptr;
+    typedef Ptr::ReadPtr ReadPtr;
+
     Collection(BlockLayout, VisualizationParams::ConstPtr);
     ~Collection();
 
@@ -166,7 +169,7 @@ private:
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
 
     BlockCache::Ptr cache_;
-    boost::shared_ptr<volatile BlockInstaller> block_installer_;
+    VolatilePtr<BlockInstaller> block_installer_;
 
     bool
         _is_visible;

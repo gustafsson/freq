@@ -97,9 +97,11 @@ typedef ChunkFilter::Ptr pChunkFilter;
  * @brief The ChunkFilterDesc class should be used by TransformOperationDesc to
  * create instances of ChunkFilter.
  */
-class ChunkFilterDesc: public VolatilePtr<ChunkFilterDesc>
+class ChunkFilterDesc
 {
 public:
+    typedef VolatilePtr<ChunkFilterDesc> Ptr;
+
     virtual ~ChunkFilterDesc() {}
 
     virtual pChunkFilter                    createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;

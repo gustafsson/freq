@@ -138,7 +138,7 @@ public:
                         children.push_back (g[v]);
                       }
 
-                    task->reset (new Task(step, children, operation, expected_output, required_input));
+                    *task = Task::Ptr(new Task(step, children, operation, expected_output, required_input));
                   }
               }
 
@@ -153,7 +153,9 @@ public:
 
             try
               {
-                step->mark_as_crashed();
+                Signal::Processing::IInvalidator::Ptr i = step->mark_as_crashed_and_get_invalidator();
+                step.unlock ();
+                if (i) read1(i)->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
             catch(const std::exception& y)
               {

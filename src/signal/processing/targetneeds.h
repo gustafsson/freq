@@ -16,10 +16,14 @@ class Bedroom;
 /**
  * @brief The TargetNeeds class should describe what needs to be computed for a target.
  */
-class TargetNeeds: public VolatilePtr<TargetNeeds>
+class TargetNeeds
 {
 public:
-    TargetNeeds(boost::weak_ptr<volatile Step> step_, INotifier::WeakPtr notifier);
+    typedef VolatilePtr<TargetNeeds> Ptr;
+    typedef Ptr::ReadPtr ReadPtr;
+    typedef Ptr::WeakPtr WeakPtr;
+
+    TargetNeeds(VolatilePtr<Step>::WeakPtr step_, INotifier::WeakPtr notifier);
     ~TargetNeeds();
 
     /**
@@ -50,7 +54,7 @@ public:
      */
     void deprecateCache(Signal::Intervals invalidate);
 
-    boost::weak_ptr<volatile Step> step() const;
+    VolatilePtr<Step>::WeakPtr step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
     Signal::IntervalType preferred_update_size() const;
@@ -62,10 +66,10 @@ public:
      * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
      * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */
-    bool sleep(int sleep_ms) volatile;
+    static bool sleep(TargetNeeds::Ptr targetneeds, int sleep_ms);
 
 private:
-    const boost::weak_ptr<volatile Step> step_;
+    VolatilePtr<Step>::WeakPtr step_;
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;
     Signal::IntervalType preferred_update_size_;

@@ -20,16 +20,21 @@ class Task;
  *
  * A crashed signal processing step should behave as a transparent operation.
  */
-class Step: public VolatilePtr<Step>
+class Step
 {
 public:
+    typedef VolatilePtr<Step> Ptr;
+    typedef Ptr::WeakPtr WeakPtr;
+    typedef Ptr::ReadPtr ReadPtr;
+    typedef Ptr::WritePtr WritePtr;
+
     // To be appended to exceptions while using Step
     typedef boost::error_info<struct crashed_step_tag, Step::Ptr> crashed_step;
 
     Step(Signal::OperationDesc::Ptr operation_desc);
 
     Signal::OperationDesc::Ptr  get_crashed() const;
-    void                        mark_as_crashed();
+    Signal::Processing::IInvalidator::Ptr mark_as_crashed_and_get_invalidator();
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
@@ -46,7 +51,7 @@ public:
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
     void                        finishTask(Task* taskid, Signal::pBuffer result);
-    void                        sleepWhileTasks(int sleep_ms);
+    static void                 sleepWhileTasks(Step::Ptr step, int sleep_ms);
 
     /**
      * @brief readFixedLengthFromCache should read a buffer from the cache.

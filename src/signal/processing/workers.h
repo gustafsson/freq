@@ -26,10 +26,12 @@ class BedroomSignalAdapter;
  * It should wake up sleeping workers when any work is done to see if they can
  * help out on what's left.
  */
-class Workers: public QObject, public VolatilePtr<Workers>
+class Workers: public QObject
 {
     Q_OBJECT
 public:
+    typedef VolatilePtr<Workers> Ptr;
+
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
     typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::Ptr> crashed_engine;
     typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;

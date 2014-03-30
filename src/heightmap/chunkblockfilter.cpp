@@ -123,7 +123,7 @@ class MergeChunkDescMock : public MergeChunkDesc {
     MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const {
         MergeChunk::Ptr r;
         if (0 == engine) {
-            r.reset (new MergeChunkMock());
+            r = MergeChunk::Ptr(new MergeChunkMock());
         }
         return r;
     }
@@ -171,7 +171,7 @@ void ChunkBlockFilter::
 
         EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
-        chunk_merger->processChunks(-1);
+        write1(chunk_merger)->processChunks(-1);
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
     }

@@ -8,9 +8,11 @@
 namespace Heightmap {
 namespace Blocks {
 
-class IChunkMerger: public VolatilePtr<IChunkMerger>
+class IChunkMerger
 {
 public:
+    typedef VolatilePtr<IChunkMerger> Ptr;
+
     virtual ~IChunkMerger() {}
 
     virtual void clear() = 0;
@@ -23,7 +25,7 @@ public:
      * @param timeout
      * @return true if finished within timeout.
      */
-    virtual bool processChunks(float timeout) volatile = 0;
+    virtual bool processChunks(float timeout) = 0;
 };
 
 } // namespace Blocks

@@ -15,9 +15,11 @@ class Task;
  *
  * Shall return null if no plausible task was found.
  */
-class ISchedule: public VolatilePtr<ISchedule>
+class ISchedule
 {
 public:
+    typedef VolatilePtr<ISchedule> Ptr;
+
     virtual ~ISchedule() {}
 
     /**
@@ -27,7 +29,7 @@ public:
      *
      * @return
      */
-    virtual boost::shared_ptr<volatile Task> getTask(Signal::ComputingEngine::Ptr engine) volatile=0;
+    virtual VolatilePtr<Task> getTask(Signal::ComputingEngine::Ptr engine) volatile=0;
 };
 
 } // namespace Processing

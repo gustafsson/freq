@@ -24,9 +24,11 @@ class Workers;
  * It should provide means to deprecate caches when the an added operation
  * changes (such as settings or contained data).
  */
-class Chain: public VolatilePtr<Chain>
+class Chain
 {
 public:
+    typedef VolatilePtr<Chain> Ptr;
+
     static Chain::Ptr createDefaultChain();
 
     ~Chain();
@@ -62,7 +64,7 @@ public:
     void removeOperationsAt(TargetMarker::Ptr at);
     Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
 
-    boost::shared_ptr<volatile Workers> workers() const;
+    VolatilePtr<Workers> workers() const;
     Targets::Ptr targets() const;
 
     // Add jumping around with targets later.
@@ -70,11 +72,11 @@ public:
 private:
     Dag::Ptr dag_;
     Targets::Ptr targets_;
-    boost::shared_ptr<volatile Workers> workers_;
+    VolatilePtr<Workers> workers_;
     Bedroom::Ptr bedroom_;
     INotifier::Ptr notifier_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, boost::shared_ptr<volatile Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
+    Chain(Dag::Ptr, Targets::Ptr targets, VolatilePtr<Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
 
     Step::WeakPtr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
     Step::WeakPtr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);

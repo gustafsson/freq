@@ -39,23 +39,24 @@ void ChunkMerger::
 
 
 bool ChunkMerger::
-        processChunks(float timeout) volatile
+        processChunks(float timeout)
 {
     Timer t;
-    while (timeout < 0 || t.elapsed () < timeout) {
+
+    do
+    {
         Job job;
 
         {
-            WritePtr selfp(this);
-            ChunkMerger* self = dynamic_cast<ChunkMerger*>(selfp.get ());
-            if (self->jobs.empty ())
+            if (jobs.empty ())
                 return true;
-            job = self->jobs.front ();
-            self->jobs.pop ();
+            job = jobs.front ();
+            jobs.pop ();
         }
 
         processJob (job);
-    }
+    } while (timeout < 0 || t.elapsed () < timeout);
+
     return false;
 }
 

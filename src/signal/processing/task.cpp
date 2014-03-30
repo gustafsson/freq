@@ -27,9 +27,6 @@ Task::
       required_input_(required_input)
 {
     step->registerTask (this, expected_output);
-
-    // TODO Task is never shared between threads
-    this->setTimeOuts (-1, -1);
 }
 
 
@@ -61,7 +58,8 @@ void Task::
             << Task::crashed_expected_output(expected_output_);
 
         try {
-            write1(step_)->mark_as_crashed();
+            Signal::Processing::IInvalidator::Ptr i = write1(step_)->mark_as_crashed_and_get_invalidator();
+            read1(i)->deprecateCache (Signal::Intervals::Intervals_ALL);
         } catch(const std::exception& y) {
             x << unexpected_exception_info(boost::current_exception());
         }

@@ -59,7 +59,7 @@ TargetMarker::
 }
 
 
-boost::shared_ptr<volatile TargetNeeds> TargetMarker::
+VolatilePtr<TargetNeeds> TargetMarker::
         target_needs() const
 {
     return target_needs_;

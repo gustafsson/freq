@@ -11,8 +11,11 @@ namespace Heightmap {
 class Collection;
 typedef int ChannelCount;
 
-class TfrMapping: public VolatilePtr<TfrMapping> {
+class TfrMapping {
 public:
+    typedef VolatilePtr<TfrMapping> Ptr;
+    typedef VolatilePtr<const TfrMapping> ConstPtr;
+
     TfrMapping(BlockLayout, ChannelCount channels);
     ~TfrMapping();
 
@@ -36,7 +39,7 @@ public:
     int channels() const;
     void channels(int value);
 
-    typedef VolatilePtr<Heightmap::Collection>::Ptr pCollection;
+    typedef VolatilePtr<Heightmap::Collection> pCollection;
     typedef std::vector<pCollection> Collections;
     Collections collections() const;
 

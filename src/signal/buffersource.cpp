@@ -45,11 +45,9 @@ BufferSource::
 
 
 void BufferSource::
-        setBuffer( pBuffer buffer ) volatile
+        setBuffer( pBuffer buffer )
 {
-    ((BufferSource*)&*WritePtr(this))->buffer_ = buffer;
-
-    deprecateCache (Intervals::Intervals_ALL);
+    this->buffer_ = buffer;
 }
 
 
@@ -75,11 +73,9 @@ float BufferSource::
 
 
 void BufferSource::
-        setSampleRate( float fs ) volatile
+        setSampleRate( float fs )
 {
-    ((BufferSource*)&*WritePtr(this))->buffer_->set_sample_rate ( fs );
-
-    deprecateCache ( Signal::Interval::Interval_ALL );
+    this->buffer_->set_sample_rate ( fs );
 }
 
 

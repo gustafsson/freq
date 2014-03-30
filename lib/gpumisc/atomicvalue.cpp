@@ -6,13 +6,13 @@ void AtomicValueTest::
 {
     // It should provide thread-safe access to a value.
     {
-        AtomicValue<int>::Ptr i(new AtomicValue<int>(5));
+        AtomicValue<int> i(5);
 
-        EXCEPTION_ASSERT_EQUALS(*i, 5);
+        EXCEPTION_ASSERT_EQUALS(i, 5);
 
-        *i = 10;
+        i = 10;
 
-        EXCEPTION_ASSERT_EQUALS(*i, 10);
+        EXCEPTION_ASSERT_EQUALS(i, 10);
     }
 }
 

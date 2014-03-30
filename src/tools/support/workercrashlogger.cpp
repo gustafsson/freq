@@ -146,7 +146,12 @@ void WorkerCrashLogger::
         }
 
         if (od)
-            operation_desc_text = " in " + read1(od)->toString().toStdString();
+        {
+            Signal::OperationDesc::ReadPtr o(od);
+            Signal::Processing::IInvalidator::Ptr i = o->getInvalidator();
+            read1(i)->deprecateCache (Signal::Intervals::Intervals_ALL);
+            operation_desc_text = " in " + o->toString().toStdString();
+        }
       }
 
     if( Signal::Interval const * mi = boost::get_error_info<Task::crashed_expected_output>(x) )

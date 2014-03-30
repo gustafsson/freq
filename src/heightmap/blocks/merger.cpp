@@ -90,7 +90,7 @@ void Merger::
             {
                 next.push_back ( bl );
             }
-        } catch (const BlockData::LockFailed&) {}
+        } catch (const BlockData::Ptr::LockFailed&) {}
 
         gib = next;
     }

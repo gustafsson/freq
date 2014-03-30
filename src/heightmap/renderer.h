@@ -28,7 +28,7 @@ class Renderer
 public:
     Renderer();
 
-    VolatilePtr<Collection>::Ptr    collection;
+    VolatilePtr<Collection>         collection;
     RenderSettings                  render_settings;
     glProjection                    gl_projection;
 

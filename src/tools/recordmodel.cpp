@@ -145,7 +145,7 @@ void RecordModel::
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
                     target_marker,
-                    Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(-1)),
+                    Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(-1), 500, 250),
                     p, r );
 
         EXCEPTION_ASSERT(record_model->recording);

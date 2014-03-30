@@ -360,6 +360,8 @@ void Renderer::
     Render::RenderSet::references_t missing;
 
     {
+        BlockCache::Ptr block_cache = read1(collection)->cache ();
+        BlockCache::ReadPtr cache2( block_cache );
         BlockCache::ReadPtr cache( read1(collection)->cache () );
         BOOST_FOREACH(const Reference& r, R) {
             if (!cache->probe(r))

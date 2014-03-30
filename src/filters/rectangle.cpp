@@ -190,7 +190,7 @@ void Rectangle::
         write1(cp)->addOperationAt(buffersource,at);
         write1(cp)->addOperationAt(rectangledesc,at);
         write1(n)->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( n->sleep(100) );
+        EXCEPTION_ASSERT( n->sleep(n, 100) );
     }
 }
 

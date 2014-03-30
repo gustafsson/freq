@@ -36,11 +36,11 @@ void TimeSelection::
 {
     if (v)
       {
-        this->setWrappedOperationDesc (OperationDesc::Ptr(new OperationCrop(section_)));
+        this->setWrappedOperationDesc2 (OperationDesc::Ptr(new OperationCrop(section_)));
       }
     else
       {
-        this->setWrappedOperationDesc (OperationDesc::Ptr(new OperationSetSilent(section_)));
+        this->setWrappedOperationDesc2 (OperationDesc::Ptr(new OperationSetSilent(section_)));
       }
 }
 

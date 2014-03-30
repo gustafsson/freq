@@ -23,7 +23,7 @@ public:
     void addChunk( MergeChunk::Ptr merge_chunk,
                    Tfr::ChunkAndInverse chunk,
                    std::vector<pBlock> intersecting_blocks );
-    bool processChunks(float timeout) volatile;
+    bool processChunks(float timeout);
 
 private:
     struct Job {

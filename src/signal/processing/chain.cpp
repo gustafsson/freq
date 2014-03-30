@@ -74,12 +74,12 @@ bool Chain::
     write1(workers_)->clean_dead_workers();
 
     // Remove all workers
-    workers_.reset ();
+    workers_ = VolatilePtr<Workers> ();
 
     // Remove all edges, all vertices and their properties (i.e Step::Ptr)
-    dag_.reset ();
+    dag_ = Dag::Ptr ();
 
-    targets_.reset ();
+    targets_ = Targets::Ptr ();
     bedroom_.reset ();
     notifier_.reset ();
 
@@ -358,7 +358,7 @@ void Chain::
         usleep(4000);
         write1(read1(chain)->workers())->rethrow_any_worker_exception();
 
-        chain.reset ();
+        chain = Chain::Ptr ();
         EXCEPTION_ASSERT_LESS(t.elapsed (), 0.03);
     }
 }

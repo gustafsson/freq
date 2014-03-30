@@ -13,18 +13,10 @@ namespace Processing {
 Bedroom::Data::
     Data()
     :
-        VolatilePtr(-1,-1),
         sleepers(new Counter::element_type),
         skip_sleep_marker(new Counter::element_type),
         is_closed(false)
 {
-}
-
-
-VolatilePtr<Bedroom::Data>::shared_mutex* Bedroom::Data::
-        readWriteLock() const volatile
-{
-    return VolatilePtr<Data>::readWriteLock();
 }
 
 
@@ -54,7 +46,7 @@ void Bedroom::Bed::
 bool Bedroom::Bed::
         sleep(unsigned long ms_timeout)
 {
-    Data::WritePtr data(data_);
+    Data::Ptr::WritePtr data(data_);
 
     if (data->is_closed) {
         BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
@@ -68,10 +60,10 @@ bool Bedroom::Bed::
     // Wait in a while-loop to cope with spurious wakeups
     if (ULONG_MAX == ms_timeout)
         while (!skip_sleep_)
-            data->work.wait ( *data_->readWriteLock() );
+            data->work.wait ( *data_.readWriteLock() );
     else
         while (r && !skip_sleep_)
-            r = boost::cv_status::no_timeout == data->work.wait_for (*data_->readWriteLock(), boost::chrono::milliseconds(ms_timeout));
+            r = boost::cv_status::no_timeout == data->work.wait_for (*data_.readWriteLock(), boost::chrono::milliseconds(ms_timeout));
 
     skip_sleep_.reset();
 
@@ -88,9 +80,9 @@ Bedroom::
 
 
 void Bedroom::
-        wakeup() volatile
+        wakeup()
 {
-    Data::WritePtr data(WritePtr(this)->data_);
+    Data::WritePtr data(data_);
     // no one is going into sleep as long as data_ is locked
 
     BOOST_FOREACH(Bed* b, data->beds) {
@@ -102,10 +94,10 @@ void Bedroom::
 
 
 void Bedroom::
-        close() volatile
+        close()
 {
     {
-        Data::WritePtr data(WritePtr(this)->data_);
+        Data::WritePtr data(data_);
         data->is_closed = true;
     }
 
@@ -114,17 +106,17 @@ void Bedroom::
 
 
 Bedroom::Bed Bedroom::
-        getBed() volatile
+        getBed()
 {
-    return Bed(ReadPtr(this)->data_);
+    return Bed(data_);
 }
 
 
 int Bedroom::
-        sleepers() volatile
+        sleepers()
 {
     // Remove 1 to compensate for the instance used by 'this'
-    Data::ReadPtr data(ReadPtr(this)->data_);
+    Data::WritePtr data(data_);
     return data->sleepers.use_count() - 1;
 }
 

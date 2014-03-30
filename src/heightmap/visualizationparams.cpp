@@ -7,11 +7,13 @@ namespace Heightmap {
 VisualizationParams::
         VisualizationParams()
     :
-      amplitude_axis_(AmplitudeAxis_5thRoot)
+      details_(new details)
 {
     // by default there is no transform_desc, and nothing will be drawn
 
     // display_scale is also left to its default value
+
+    details::WritePtr(details_)->amplitude_axis_ = AmplitudeAxis_5thRoot;
 }
 
 
@@ -39,42 +41,48 @@ bool VisualizationParams::
 Tfr::TransformDesc::Ptr VisualizationParams::
         transform_desc() const volatile
 {
-    return ReadPtr(this)->transform_desc_;
+    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
+    return details::ReadPtr(self->details_)->transform_desc_;
 }
 
 
 void VisualizationParams::
         transform_desc(Tfr::TransformDesc::Ptr v) volatile
 {
-    WritePtr(this)->transform_desc_ = v;
+    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
+    details::WritePtr(self->details_)->transform_desc_ = v;
 }
 
 
 Tfr::FreqAxis VisualizationParams::
         display_scale() const volatile
 {
-    return ReadPtr(this)->display_scale_;
+    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
+    return details::ReadPtr(self->details_)->display_scale_;
 }
 
 
 void VisualizationParams::
         display_scale(Tfr::FreqAxis v) volatile
 {
-    WritePtr(this)->display_scale_ = v;
+    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
+    details::WritePtr(self->details_)->display_scale_ = v;
 }
 
 
 AmplitudeAxis VisualizationParams::
         amplitude_axis() const volatile
 {
-    return ReadPtr(this)->amplitude_axis_;
+    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
+    return details::ReadPtr(self->details_)->amplitude_axis_;
 }
 
 
 void VisualizationParams::
         amplitude_axis(AmplitudeAxis v) volatile
 {
-    WritePtr(this)->amplitude_axis_ = v;
+    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
+    details::WritePtr(self->details_)->amplitude_axis_ = v;
 }
 
 

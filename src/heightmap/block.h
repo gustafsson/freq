@@ -15,8 +15,12 @@ namespace Heightmap {
 
     class GlBlock;
 
-    class BlockData: public VolatilePtr<BlockData> {
+    class BlockData {
     public:
+        typedef VolatilePtr<BlockData> Ptr;
+        typedef Ptr::WritePtr WritePtr;
+        typedef Ptr::ReadPtr ReadPtr;
+
         typedef DataStorage<float>::Ptr pData;
 
         /**

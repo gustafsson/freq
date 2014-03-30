@@ -9,9 +9,12 @@
 namespace Tools {
 namespace Support {
 
-class TransformDescs: public VolatilePtr<TransformDescs>
+class TransformDescs
 {
 public:
+    typedef VolatilePtr<TransformDescs> Ptr;
+    typedef Ptr::WritePtr WritePtr;
+
     /**
      * @brief getParam always returns an instance.
      * @return an instance of type T.

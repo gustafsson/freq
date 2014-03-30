@@ -25,9 +25,12 @@ class OperationDesc;
  *
  * 'process' should only be called from one thread. But use VolatilePtr anyways. The overhead is low.
  */
-class SaweDll Operation: public VolatilePtr<Operation>
+class SaweDll Operation
 {
 public:
+    typedef VolatilePtr<Operation> Ptr;
+    typedef Ptr::WritePtr WritePtr;
+
     /**
       Virtual housekeeping.
       */
@@ -55,9 +58,13 @@ public:
  *
  * All methods except one have const access to make it more likely that there are none or few side-effects.
  */
-class SaweDll OperationDesc: public VolatilePtr<OperationDesc>
+class SaweDll OperationDesc
 {
 public:
+    typedef VolatilePtr<OperationDesc> Ptr;
+    typedef Ptr::ReadPtr ReadPtr;
+    typedef Ptr::WritePtr WritePtr;
+
     /**
       Virtual housekeeping.
       */
@@ -143,8 +150,12 @@ public:
     /**
      * @brief setInvalidator sets an functor to be used by deprecateCache.
      * @param invalidator
+     *
+     * Could be a list<IInvalidator::Ptr> to support adding the same OperationDesc
+     * at multiple locations in the Dag.
      */
     void setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator);
+    Signal::Processing::IInvalidator::Ptr getInvalidator() const;
 
 
     /**
@@ -169,7 +180,7 @@ public:
 
 
 protected:
-    friend class Signal::Processing::Step;
+//    friend class Signal::Processing::Step;
 
     /**
      * @brief deprecateCache should be called when parameters change.
@@ -177,9 +188,11 @@ protected:
      * recreate operations for computing engines as needed.
      *
      * deprecateCache without 'volatile' will release the lock while calling IInvalidator.
+     *
+     * Signal::Intervals::Intervals_ALL
      */
-    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL);
-    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const volatile;
+//    void deprecateCache(Signal::Intervals what, boost::shared_mutex* lock);
+//    void deprecateCache(Signal::Intervals what) const volatile;
 
 
 private:

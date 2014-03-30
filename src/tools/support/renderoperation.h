@@ -16,9 +16,11 @@ namespace Support {
 class RenderOperationDesc : public Signal::OperationDescWrapper
 {
 public:
-    class RenderTarget : public VolatilePtr<RenderTarget>
+    class RenderTarget
     {
     public:
+        typedef VolatilePtr<RenderTarget> Ptr;
+
         virtual ~RenderTarget() {}
 
         /**

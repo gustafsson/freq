@@ -22,11 +22,9 @@ public:
 
     /**
      * @brief setWrappedOperationDesc makes this OperationDesc behave as a new
-     * operation. Will call invalidator if it has been set.
-     * @param wrap
-     * volatile so that it can call invalidator without keeping a lock to 'this'.
+     * operation.
      */
-    void setWrappedOperationDesc(OperationDesc::Ptr wrap);
+    void setWrappedOperationDesc2(OperationDesc::Ptr wrap);
     OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;

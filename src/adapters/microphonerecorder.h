@@ -112,6 +112,19 @@ private:
     }
 };
 
+}
+
+
+template<>
+class VolatilePtrTypeTraits<Adapters::MicrophoneRecorder> {
+public:
+    int timeout_ms() { return 500; }
+    int verify_execution_time_ms() { return 250; }
+    VerifyExecutionTime::report report_func() { return 0; }
+};
+
+
+namespace Adapters {
 
 /**
  * @brief The MicrophoneRecorderOperation class should provide access to recorded data.

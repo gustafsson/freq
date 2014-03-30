@@ -99,10 +99,6 @@ void RerouteChannels::
         return;
 
     scheme_[ output_channel ] = source_channel;
-
-    this->readWriteLock ()->unlock ();
-    ((volatile RerouteChannels*)this)->deprecateCache ();
-    this->readWriteLock ()->lock ();
 }
 
 

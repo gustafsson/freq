@@ -15,9 +15,11 @@ namespace Processing {
  *
  * Multiple targets can be added for the same Step.
  */
-class Targets: public VolatilePtr<Targets>
+class Targets
 {
 public:
+    typedef VolatilePtr<Targets> Ptr;
+
     typedef std::vector<TargetNeeds::Ptr> TargetNeedsCollection;
 
     Targets(INotifier::WeakPtr notifier);

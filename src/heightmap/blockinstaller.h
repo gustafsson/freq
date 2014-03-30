@@ -16,9 +16,11 @@ class MergerTexture;
  * @brief The BlockInstaller class should create new blocks and install them
  * in a cache.
  */
-class BlockInstaller: public VolatilePtr<BlockInstaller>
+class BlockInstaller
 {
 public:
+    typedef VolatilePtr<BlockInstaller> Ptr;
+
     BlockInstaller(BlockLayout bl, VisualizationParams::ConstPtr vp, BlockCache::Ptr cache);
     BlockInstaller(BlockInstaller const&) = delete;
     BlockInstaller& operator=(BlockInstaller const&) = delete;

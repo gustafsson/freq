@@ -8,8 +8,10 @@
 namespace Heightmap {
 namespace TfrMappings {
 
-class CepstrumBlockFilterParams: public VolatilePtr<CepstrumBlockFilterParams> {
+class CepstrumBlockFilterParams {
 public:
+    typedef VolatilePtr<CepstrumBlockFilterParams> Ptr;
+    typedef Ptr::WritePtr WritePtr;
 };
 
 /**

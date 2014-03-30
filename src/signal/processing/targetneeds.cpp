@@ -161,11 +161,11 @@ int left(const Timer& t, int sleep_ms) {
 
 
 bool TargetNeeds::
-        sleep(int sleep_ms) volatile
+        sleep(TargetNeeds::Ptr self, int sleep_ms)
 {
     Timer t;
 
-    Step::Ptr pstep = ReadPtr(this)->step_.lock();
+    Step::Ptr pstep = ReadPtr(self)->step_.lock();
 
     if (!pstep)
         return false;
@@ -174,12 +174,12 @@ bool TargetNeeds::
         {
             Step::WritePtr step(pstep);
 
-            if (!(ReadPtr(this)->needed_samples_ & step->out_of_date ()))
+            if (!(ReadPtr(self)->needed_samples_ & step->out_of_date ()))
                 return true;
 
             step->sleepWhileTasks (left(t, sleep_ms));
 
-            if (!(ReadPtr(this)->needed_samples_ & step->out_of_date ()))
+            if (!(ReadPtr(self)->needed_samples_ & step->out_of_date ()))
                 return true;
         }
 

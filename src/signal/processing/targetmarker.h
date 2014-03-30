@@ -22,15 +22,15 @@ class TargetMarker
 public:
     typedef boost::shared_ptr<TargetMarker> Ptr;
 
-    TargetMarker(boost::shared_ptr<volatile TargetNeeds> target_needs, boost::shared_ptr<volatile Dag> dag);
+    TargetMarker(VolatilePtr<TargetNeeds> target_needs, VolatilePtr<Dag> dag);
     ~TargetMarker();
 
-    boost::shared_ptr<volatile TargetNeeds> target_needs() const;
-    boost::weak_ptr<volatile Step> step() const;
+    VolatilePtr<TargetNeeds> target_needs() const;
+    VolatilePtr<Step>::WeakPtr step() const;
 
 private:
-    boost::shared_ptr<volatile TargetNeeds> target_needs_;
-    boost::shared_ptr<volatile Dag> dag_;
+    VolatilePtr<TargetNeeds> target_needs_;
+    VolatilePtr<Dag> dag_;
 
 public:
     static void test();

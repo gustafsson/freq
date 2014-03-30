@@ -51,7 +51,7 @@ void ChunkMergerThread::
 {
     INFO TaskTimer ti("ChunkMergerThread::clear");
 
-    Jobs::WritePtr jobs(this->jobs);
+    VolatilePtr<Jobs>::WritePtr jobs(this->jobs);
 
     while (!jobs->empty ())
         jobs->pop ();
@@ -72,7 +72,7 @@ void ChunkMergerThread::
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
 
-    Jobs::WritePtr jobsw(jobs);
+    VolatilePtr<Jobs>::WritePtr jobsw(jobs);
     if (!isInterruptionRequested ())
         jobsw->push (j);
 
@@ -81,19 +81,16 @@ void ChunkMergerThread::
 
 
 bool ChunkMergerThread::
-        processChunks(float timeout) volatile
+        processChunks(float timeout)
 {
-    WritePtr selfp(this);
-    ChunkMergerThread* self = dynamic_cast<ChunkMergerThread*>(&*selfp);
-
     if (0 <= timeout)
       {
         // return immediately
-        return self->isEmpty ();
+        return isEmpty ();
       }
 
     // Requested wait until done
-    return self->wait(timeout);
+    return wait(timeout);
 }
 
 
@@ -152,7 +149,7 @@ void ChunkMergerThread::
               {
                 Job job;
                   {
-                    Jobs::WritePtr jobsr(jobs);
+                    VolatilePtr<Jobs>::WritePtr jobsr(jobs);
                     if (jobsr->empty ())
                         break;
                     job = jobsr->front ();
@@ -164,14 +161,14 @@ void ChunkMergerThread::
                     // Want processChunks(-1) and self->isEmpty () to return false until
                     // the job has finished processing.
 
-                    Jobs::WritePtr jobsw(jobs);
+                    VolatilePtr<Jobs>::WritePtr jobsw(jobs);
                     // Both 'clear' and 'addChunk' may have been called in between, so only
                     // pop the queue if the first job is still the same.
                     if (!jobsw->empty() && job.chunk.chunk == jobsw->front().chunk.chunk)
                         jobsw->pop ();
 
                     // Release OpenGL resources before releasing the memory held by chunk
-                    job.merge_chunk.reset ();
+                    job.merge_chunk = MergeChunk::Ptr ();
                   }
               }
 

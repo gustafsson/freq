@@ -73,7 +73,7 @@ private:
     ISchedule::Ptr                          schedule_;
 
     QThread*                                thread_;
-    AtomicValue<boost::exception_ptr>::Ptr  exception_;
+    AtomicValue<boost::exception_ptr>       exception_;
     boost::exception_ptr                    terminated_exception_;
 
 public:

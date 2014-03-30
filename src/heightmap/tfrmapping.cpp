@@ -197,7 +197,7 @@ void TfrMapping::
 
     for (pCollection& c : new_collections)
     {
-        c.reset( new Heightmap::Collection(block_layout_, visualization_params_));
+        c = Heightmap::Collection::Ptr( new Heightmap::Collection(block_layout_, visualization_params_));
         write1(c)->length( length_ );
     }
 

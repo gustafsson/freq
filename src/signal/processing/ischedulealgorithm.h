@@ -9,9 +9,11 @@
 namespace Signal {
 namespace Processing {
 
-class IScheduleAlgorithm: public VolatilePtr<IScheduleAlgorithm>
+class IScheduleAlgorithm
 {
 public:
+    typedef VolatilePtr<IScheduleAlgorithm> Ptr;
+
     virtual ~IScheduleAlgorithm() {}
 
     virtual Task::Ptr getTask(

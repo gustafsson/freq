@@ -20,28 +20,17 @@ class BedroomClosed: public virtual boost::exception, public virtual std::except
  *
  * See Bedroom::test for usage example.
  */
-class Bedroom: public VolatilePtr<Bedroom>
+class Bedroom
 {
-public:
-    class Bed;
-
+private:
+    friend class Bed;
+    class Data;
     class Void {};
     typedef boost::shared_ptr<Void> Counter;
 
-    class Data: public VolatilePtr<Data> {
-    public:
-        Data();
-
-        boost::condition_variable_any work;
-
-        std::set<Bed*> beds;
-        Counter sleepers;
-        Counter skip_sleep_marker;
-        bool is_closed;
-
-        VolatilePtr<Data>::shared_mutex* readWriteLock() const volatile;
-    };
-
+public:
+    typedef std::shared_ptr<Bedroom> Ptr;
+    typedef std::weak_ptr<Bedroom> WeakPtr;
 
     class Bed {
     public:
@@ -63,8 +52,8 @@ public:
     private:
         friend class Bedroom;
 
-        Bed(Data::Ptr data);
-        Data::Ptr data_;
+        Bed(VolatilePtr<Data> data);
+        VolatilePtr<Data> data_;
         Counter skip_sleep_;
     };
 
@@ -72,14 +61,35 @@ public:
     Bedroom();
 
     // Wake up sleepers
-    void wakeup() volatile;
-    void close() volatile;
+    void wakeup();
+    void close();
 
-    Bed getBed() volatile;
+    Bed getBed();
 
-    int sleepers() volatile;
+    int sleepers();
 
 private:
+    class Data {
+    public:
+        typedef VolatilePtr<Data> Ptr;
+        typedef Ptr::WritePtr WritePtr;
+
+        struct VolatilePtrTypeTraits {
+            int timeout_ms() { return -1; }
+            int verify_execution_time_ms() { return -1; }
+            VerifyExecutionTime::report report_func() { return 0; }
+        };
+
+        Data();
+
+        boost::condition_variable_any work;
+
+        std::set<Bed*> beds;
+        Counter sleepers;
+        Counter skip_sleep_marker;
+        bool is_closed;
+    };
+
     Data::Ptr data_;
 
 public:
@@ -88,5 +98,13 @@ public:
 
 } // namespace Processing
 } // namespace Signal
+
+template<>
+class VolatilePtrTypeTraits<Signal::Processing::Bedroom::Data> {
+public:
+    int timeout_ms() { return -1; }
+    int verify_execution_time_ms() { return -1; }
+    VerifyExecutionTime::report report_func() { return 0; }
+};
 
 #endif // SIGNAL_PROCESSING_BEDROOM_H

@@ -21,9 +21,14 @@ GraphVertex NullVertex();
  *
  * It should treat Step's that aren't a part of the Dag as lonely islands.
  */
-class Dag: public VolatilePtr<Dag>
+class Dag
 {
 public:
+    typedef VolatilePtr<Dag> Ptr;
+    typedef Ptr::ReadPtr ReadPtr;
+    typedef Ptr::WritePtr WritePtr;
+    typedef Ptr::WeakPtr WeakPtr;
+
     Dag();
 
     const Graph& g() const { return g_; }

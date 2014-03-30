@@ -14,9 +14,14 @@ namespace Heightmap {
 /**
  * @brief The BlockCache class should store allocated blocks readily available
  */
-class BlockCache: public VolatilePtr<BlockCache>
+class BlockCache
 {
 public:
+    typedef VolatilePtr<BlockCache> Ptr;
+    typedef VolatilePtr<const BlockCache> ConstPtr;
+    typedef Ptr::WritePtr WritePtr;
+    typedef Ptr::ReadPtr ReadPtr;
+
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 

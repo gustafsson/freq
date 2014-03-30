@@ -9,8 +9,10 @@ namespace Heightmap {
 namespace TfrMappings {
 
 
-class StftBlockFilterParams: public VolatilePtr<StftBlockFilterParams> {
+class StftBlockFilterParams {
 public:
+    typedef VolatilePtr<StftBlockFilterParams> Ptr;
+
     Tfr::pChunkFilter freq_normalization;
 };
 

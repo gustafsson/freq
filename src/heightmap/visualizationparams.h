@@ -17,10 +17,10 @@ namespace Heightmap {
  * VolatilePtr is private to guarantee that the transient locks created
  * internally are the only locks on VisualizationParams.
  */
-class VisualizationParams: private VolatilePtr<VisualizationParams> {
+class VisualizationParams {
 public:
-    typedef boost::shared_ptr<volatile VisualizationParams> Ptr;
-    typedef boost::shared_ptr<const volatile VisualizationParams> ConstPtr;
+    typedef VolatilePtr<VisualizationParams> Ptr;
+    typedef VolatilePtr<const VisualizationParams> ConstPtr;
 
     VisualizationParams();
 
@@ -51,9 +51,17 @@ public:
 private:
     friend class VolatilePtr<VisualizationParams>;
 
-    Tfr::TransformDesc::Ptr transform_desc_;
-    Tfr::FreqAxis display_scale_;
-    AmplitudeAxis amplitude_axis_;
+    struct details {
+        typedef VolatilePtr<details> Ptr;
+        typedef Ptr::ReadPtr ReadPtr;
+        typedef Ptr::WritePtr WritePtr;
+
+        Tfr::TransformDesc::Ptr transform_desc_;
+        Tfr::FreqAxis display_scale_;
+        AmplitudeAxis amplitude_axis_;
+    };
+
+    VolatilePtr<details> details_;
 
 public:
     static void test();

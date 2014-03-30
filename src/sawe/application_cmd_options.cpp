@@ -92,7 +92,7 @@ void Application::
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
         write1(needs)->updateNeeds (I);
-        needs->sleep(-1);
+        needs->sleep(needs, -1);
 
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
@@ -112,7 +112,7 @@ void Application::
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );
         write1(needs)->updateNeeds (I);
-        needs->sleep(-1);
+        needs->sleep(needs, -1);
 
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;

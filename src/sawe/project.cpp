@@ -71,7 +71,7 @@ Project::
 
     {
         TaskInfo ti("Releasing signal processing chain");
-        processing_chain_.reset ();
+        processing_chain_ = Signal::Processing::Chain::Ptr();
     }
 
     if (_mainWindow)

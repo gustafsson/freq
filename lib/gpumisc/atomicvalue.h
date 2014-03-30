@@ -9,22 +9,19 @@
  * Type T must be copyable and have a default constructor.
  */
 template<typename T>
-class AtomicValue: public VolatilePtr<AtomicValue<T> >
+class AtomicValue
 {
 public:
-    AtomicValue(const T& value = T()) : value(value) {}
+    AtomicValue(const T& value = T()) : value_(new T(value)) {}
 
-    void operator=(const T& value) volatile { WritePtr(this)->value = value; }
-    operator T() const volatile { return ReadPtr(this)->value; }
+    void operator=(const T& value) { *WritePtr(value_) = value; }
+    operator T() const { return *ReadPtr(value_); }
 
 private:
-    typedef typename VolatilePtr<AtomicValue<T> >::WritePtr WritePtr;
-    typedef typename VolatilePtr<AtomicValue<T> >::ReadPtr ReadPtr;
+    typedef typename VolatilePtr<T>::WritePtr WritePtr;
+    typedef typename VolatilePtr<T>::ReadPtr ReadPtr;
 
-    void operator=(T x); // Use the volatile accessor
-    operator T() const;  // Use the volatile accessor
-
-    T value;
+    VolatilePtr<T> value_;
 };
 
 

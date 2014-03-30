@@ -9,12 +9,17 @@
 
 namespace Adapters {
 
-class Recorder: public VolatilePtr<Recorder>
+class Recorder
 {
 public:
-    class IGotDataCallback: public VolatilePtr<IGotDataCallback>
+    typedef VolatilePtr<Recorder> Ptr;
+    typedef Ptr::WritePtr WritePtr;
+
+    class IGotDataCallback
     {
     public:
+        typedef VolatilePtr<IGotDataCallback> Ptr;
+
         virtual ~IGotDataCallback() {}
 
         virtual void markNewlyRecordedData(Signal::Interval what)=0;

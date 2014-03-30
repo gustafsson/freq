@@ -27,7 +27,7 @@ Worker::
       computing_engine_(computing_engine),
       schedule_(schedule),
       thread_(new QTerminatableThread),
-      exception_(new AtomicValue<boost::exception_ptr>)
+      exception_()
 {
     EXCEPTION_ASSERTX(QThread::currentThread ()->eventDispatcher (),
                       "Worker uses a QThread with an event loop. The QEventLoop requires QApplication");
@@ -102,7 +102,7 @@ boost::exception_ptr Worker::
 {
     if (isRunning ())
         return boost::exception_ptr();
-    return *exception_;
+    return exception_;
 }
 
 
@@ -121,16 +121,16 @@ void Worker::
     try
       {
         // Let exception_ mark unexpected termination.
-        *exception_ = terminated_exception_;
+        exception_ = terminated_exception_;
 
         loop_while_tasks();
 
         // Finished normal execution without any exception.
-        *exception_ = boost::exception_ptr();
+        exception_ = boost::exception_ptr();
       }
     catch (...)
       {
-        *exception_ = boost::current_exception ();
+        exception_ = boost::current_exception ();
         QThread::currentThread ()->requestInterruption ();
       }
 
@@ -146,7 +146,7 @@ void Worker::
   {
     DEBUGINFO TaskInfo("Worker::finished");
     moveToThread (0); // important. otherwise 'thread_' will try to delete 'this', but 'this' owns 'thread_' -> crash.
-    emit finished(*exception_, computing_engine_);
+    emit finished(exception_, computing_engine_);
   }
 
 

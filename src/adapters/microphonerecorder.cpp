@@ -34,8 +34,6 @@ MicrophoneRecorder::
 
     init(); // fetch _sample_rate and _num_channels
     stopRecording(); // delete _stream_record
-
-    this->setTimeOuts (500, 250);
 }
 
 

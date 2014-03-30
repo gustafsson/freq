@@ -36,8 +36,8 @@ public:
     Extent extent() const;
     bool operator==(const OperationDesc& d) const;
 
-    void setBuffer( pBuffer waveform ) volatile;
-    void setSampleRate( float fs ) volatile;
+    void setBuffer( pBuffer waveform );
+    void setSampleRate( float fs );
 
 private:
     pBuffer buffer_;

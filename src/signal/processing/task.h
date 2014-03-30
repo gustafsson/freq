@@ -18,9 +18,17 @@ namespace Processing {
  * If the Task fails, the section of the cache that was supposed to be filled
  * by this Task should be invalidated.
  */
-class Task: public VolatilePtr<Task>
+class Task
 {
 public:
+    // TODO A task isn't shared between threads
+    typedef VolatilePtr<Task> Ptr;
+    struct VolatilePtrTypeTraits {
+        int timeout_ms() { return -1; }
+        int verify_execution_time_ms() { return -1; }
+        VerifyExecutionTime::report report_func() { return 0; }
+    };
+
     // To be appended to exceptions while using Task
     typedef boost::error_info<struct crashed_expected_output_tag, Signal::Interval> crashed_expected_output;
 
