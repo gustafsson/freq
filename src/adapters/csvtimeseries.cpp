@@ -102,7 +102,7 @@ void CsvTimeseries::
                 ifs >> p[channel][bufferCount];
                 int n = ifs.get();
 
-                if (n == ',' || n == ';' || n == ':' || n == '\t')
+                if (n == ',' || n == ';' || n == ':' || n == '\t' || n == ' ')
                     continue;
                 if (n == '\n')
                     break;
