@@ -42,59 +42,60 @@ Somewhere else
 ````
 
 #### shared_state example ####
-_The shared\_state<T> class is a smart pointer that should guarantee thread-safe access to objects of type T._
+_The shared\_state<T> class is a smart pointer that guarantees thread-safe access to objects of type T._
 
 Make an instance of an object thread-safe by storing it in a shared\_state smart pointer.
 
 ````cpp
-    class A {
+    shared_state<MyType> a {new MyType};
+    a->foo ();
+
+    shared_state<const MyType> ac {a};
+    ac->bar ();
+````
+
+The call to foo() will have mutually exclusive write access and the call to bar() will have shared read-only const access. Given
+
+````cpp
+    class MyType {
     public:
       void foo();
       void bar() const;
     };
 ````
 
-Then use the object like so:
+To keep the lock over multiple method calls, do:
 
 ````cpp
-    // Read and write access
+    shared_state<MyType> a {new MyType};
+
     {
       auto w = a.write();
       w->foo();
       w->bar();
     }
 
-    // Read-only access
     {
       auto r = a.read();
+      r->bar();
       r->bar();
     }
 ````
 
-.read() and .write() creates thread-safe critical sections for shared read-only access when using .read() and for mutually exclusive read-and-write access using .write(). They both throw exceptions on lock timeout, embed a backtrace in an exception object like this:
+.read() and .write() are implicitly called by the -> operator on shared_state and create thread-safe critical sections. For shared read-only access when using .read() and for mutually exclusive read-and-write access using .write(). They both throw exceptions on lock timeout, embed a backtrace in an exception object like this:
 
 ````cpp
-template<class T>
-class lock_failed_boost
-  : public shared_state<T>::lock_failed
-  , public virtual boost::exception
-{};
+#include "shared_state_traits_backtrace.h"
 
-
-template<>
-struct shared_state_traits<A>
-    : shared_state_traits_default
-{
-  template<class T>
-  void timeout_failed () {
-    this_thread::sleep_for (chrono::duration<double>{timeout()});
-
-    BOOST_THROW_EXCEPTION(lock_failed_boost<T>{} << Backtrace::make ());
-  }
+class MyType {
+public:
+    typedef shared_state_traits_backtrace shared_state_traits;
+    ...
 };
 
+
 ... {
-  shared_state<A> a(new A);
+  shared_state<MyType> a(new MyType);
   ...
   try {
     auto w = a.write();
@@ -106,7 +107,7 @@ struct shared_state_traits<A>
 ... }
 ````
 
-See shared\_state.pdf or shared\_state.h for details.
+See shared\_state.pdf and shared\_state.h for details.
 
 #### ExceptionAssert example ####
 _The ExceptionAssert class should store details about an assertion that failed._

@@ -9,6 +9,7 @@
 #include "verifyexecutiontime.h"
 #include "demangle.h"
 #include "barrier.h"
+#include "shared_state_traits_backtrace.h"
 
 #include <stdio.h>
 #include <exception>
@@ -28,7 +29,7 @@ string lastname;
     } while(false)
 
 int UnitTest::
-        test()
+        test(bool rethrow_exceptions)
 {
     try {
         Timer(); // Init performance counting
@@ -42,20 +43,31 @@ int UnitTest::
         RUNTEST(VerifyExecutionTime);
         RUNTEST(spinning_barrier);
         RUNTEST(locking_barrier);
+        RUNTEST(shared_state_traits_backtrace);
 
     } catch (const exception& x) {
+        if (rethrow_exceptions)
+            throw;
+
+        fflush(stdout);
         fprintf(stderr, "%s",
                 str(boost::format("%s\n"
                                   "%s\n"
                                   " FAILED in %s::test()\n\n")
                     % vartype(x) % boost::diagnostic_information(x) % lastname ).c_str());
+        fflush(stderr);
         return 1;
     } catch (...) {
+        if (rethrow_exceptions)
+            throw;
+
+        fflush(stdout);
         fprintf(stderr, "%s",
                 str(boost::format("Not an std::exception\n"
                                   "%s\n"
                                   " FAILED in %s::test()\n\n")
                     % boost::current_exception_diagnostic_information () % lastname ).c_str());
+        fflush(stderr);
         return 1;
     }
 

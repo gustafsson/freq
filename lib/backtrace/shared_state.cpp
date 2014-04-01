@@ -7,13 +7,11 @@
 #include "exceptionassert.h"
 #include "expectexception.h"
 #include "trace_perf.h"
-#include "backtrace.h"
-#include "verifyexecutiontime.h"
-#include "tasktimer.h"
-#include "barrier.h"
+#include "shared_state_traits_backtrace.h"
 
 #include <thread>
 #include <future>
+#include <condition_variable>
 
 // scroll down to void shared_state_test::test () to see more examples
 
@@ -44,7 +42,11 @@ private:
 
 class ThrowInConstructor {
 public:
-    ThrowInConstructor(bool*outer_destructor, bool*inner_destructor):inner(inner_destructor) {
+    ThrowInConstructor(bool*outer_destructor, bool*inner_destructor)
+        :
+          outer_destructor(outer_destructor),
+          inner(inner_destructor)
+    {
         throw 1;
     }
 
@@ -136,36 +138,6 @@ struct shared_state_traits<with_timeout_0>: shared_state_traits_default {
 };
 
 
-class with_timeout_2_with_boost_exception {};
-
-
-template<class T>
-class lock_failed_boost
-        : public shared_state<T>::lock_failed
-        , public virtual boost::exception
-{};
-
-
-template<>
-struct shared_state_traits<with_timeout_2_with_boost_exception>: shared_state_traits_default {
-    double timeout() { return 0.002; }
-
-    template<class T>
-    void timeout_failed () {
-        /*
-        When a timeout occurs on a lock, this makes an attempt to detect
-        deadlocks. The thread with the timeout is blocked long enough (same
-        timeout as in the failed lock attempt) for any other thread that is
-        deadlocking with this thread to also fail its lock attempt.
-        */
-        this_thread::sleep_for (chrono::duration<double>{timeout()});
-
-        BOOST_THROW_EXCEPTION(lock_failed_boost<T>()
-                              << Backtrace::make ());
-    }
-};
-
-
 class with_timeout_1_and_verify_1 {};
 
 template<>
@@ -192,6 +164,34 @@ private:
   chrono::high_resolution_clock::time_point start;
 };
 
+
+class base {
+public:
+    struct shared_state_traits: shared_state_traits_default {
+        base* b;
+
+        void was_locked () {
+            EXCEPTION_ASSERT_EQUALS(++b->step, 1);
+        }
+        void was_unlocked () {
+            ++b->step;
+        }
+    };
+
+    virtual ~base() {}
+
+    int step = 0;
+};
+
+
+class derivative: public base {
+public:
+    void method() {
+        EXCEPTION_ASSERT_EQUALS(++step, 2);
+    }
+};
+
+
 struct WriteWhileReadingThread
 {
     static void test();
@@ -215,6 +215,7 @@ void shared_state_test::
 
     // Lock for a single call
     mya.write()->method (5);
+    mya->method (5);
 
     {
         // Lock for read access
@@ -234,16 +235,23 @@ void shared_state_test::
     mya.read ()->const_method ();
 
     // Create a reference to a const instance
-    A::const_ptr consta (mya);
+    shared_state<const A> consta {mya};
 
     // Can get read-only access from a const_ptr.
     consta.read ()->const_method ();
+    consta->const_method (); // <- read lock
+    mya->const_method ();    // <- write lock
 
     // Can get unprotected access without locks
-    mya.unprotected ()->method (1);
+    mya.raw ()->method (1);
 
     // Can not get write access to a const pointer.
     // consta.write (); // error
+
+    // Can get a locked pointer
+    mya.get ()->method (1);
+    consta.get ()->const_method ();
+    (*mya.write ()).method (1);
 
     // Conditional critical section, don't wait if the lock is not available
     if (auto w = mya.try_write ())
@@ -430,6 +438,39 @@ void shared_state_test::
         }
 #endif
     }
+
+    // It should keep the lock for the duration of a statement
+    shared_state<base> b(new derivative);
+    b.traits ()->b = b.raw ();
+    dynamic_cast<derivative*>(b.write ().get ())->method ();
+    EXCEPTION_ASSERT_EQUALS(b.raw ()->step, 3);
+
+    condition_variable_any cond;
+    future<void> f = async(launch::async, [&](){
+        // Make sure readTwice starts before this function
+        auto w = mya.write ();
+        w->method (1);
+        // wait unlocks w before waiting
+        cond.wait(w);
+        // w is locked again when wait return
+        w->method (2);
+    });
+
+    while (future_status::timeout == f.wait_for(std::chrono::milliseconds(1)))
+    {
+        mya.write ()->method (3);
+        cond.notify_one ();
+    }
+
+    auto rlock = mya.read ();
+    auto rlock2 = std::move(rlock); // Move lock
+    rlock2.swap (rlock); // Swap lock
+    rlock.unlock ();
+
+    auto wlock = mya.write ();
+    auto wlock2 = std::move(wlock); // Move lock
+    wlock2.swap (wlock); // Swap lock
+    wlock.unlock ();
 }
 
 
@@ -510,39 +551,6 @@ void WriteWhileReadingThread::
 #endif
     }
 
-#ifndef SHARED_STATE_NO_TIMEOUT
-    // It should be extensible enough to let clients efficiently add features like
-    //  - backtraces on failed locks
-    {
-        typedef shared_state<with_timeout_2_with_boost_exception> ptr;
-        ptr a{new with_timeout_2_with_boost_exception};
-        ptr b{new with_timeout_2_with_boost_exception};
-
-        spinning_barrier barrier(2);
-
-        std::function<void(ptr,ptr)> m = [&barrier](ptr p1, ptr p2) {
-            try {
-                auto w1 = p1.write ();
-                barrier.wait ();
-                auto w2 = p2.write ();
-
-                // never reached
-                EXCEPTION_ASSERT(false);
-            } catch (lock_failed& x) {
-                // cheeck that a backtrace was embedded into the lock_failed exception
-                const Backtrace* backtrace = boost::get_error_info<Backtrace::info>(x);
-                EXCEPTION_ASSERT(backtrace);
-            }
-        };
-
-        // Lock a and b in opposite order in f1 and f2
-        future<void> f1 = async(launch::async, [&](){ m (b, a); });
-        future<void> f2 = async(launch::async, [&](){ m (a, b); });
-
-        f1.get ();
-        f2.get ();
-    }
-#endif
 
     // It should be extensible enough to let clients efficiently add features like
     //  - run-time warnings on locks that are kept long enough to make it likely
@@ -578,7 +586,7 @@ void WriteWhileReadingThread::
     // it should handle lock contention efficiently
     // 'Mv' decides how long a lock should be kept
     std::vector<int> Mv{100, 1000};
-    for (int l=0; l<Mv.size (); l++)
+    for (unsigned l=0; l<Mv.size (); l++)
     {
         int M = Mv[l];
         int N = 200;
@@ -586,7 +594,7 @@ void WriteWhileReadingThread::
         // 'W' decides how often a worker should do a write instead of a read
         std::vector<int> W{1, 10, 100, 1000};
 
-        for (int k=0; k<W.size (); k++)
+        for (unsigned k=0; k<W.size (); k++)
         {
             int w = W[k];
             TRACE_PERF ((boost::format("shared_state should handle lock contention efficiently N=%d, M=%d, w=%d") % N % M % w).str());
@@ -595,7 +603,7 @@ void WriteWhileReadingThread::
 
             shared_state<C> c {new C};
 
-            for (int i=0; i<workers.size (); i++)
+            for (unsigned i=0; i<workers.size (); i++)
                 workers[i] = async(launch::async, [&c,N,M,w](){
                     for(int j=1; j<=N; j++)
                         if (j%w)
@@ -604,7 +612,7 @@ void WriteWhileReadingThread::
                             c.write ()->somework (M);
                 });
 
-            for (int i=0; i<workers.size (); i++)
+            for (unsigned i=0; i<workers.size (); i++)
                 workers[i].get ();
         }
 
@@ -615,13 +623,13 @@ void WriteWhileReadingThread::
 
             shared_ptr<C> c {new C};
 
-            for (int i=0; i<workers.size (); i++)
+            for (unsigned i=0; i<workers.size (); i++)
                 workers[i] = async(launch::async, [&c,N,M](){
                     for(int j=1; j<=N; j++)
                         c->somework (M);
                 });
 
-            for (int i=0; i<workers.size (); i++)
+            for (unsigned i=0; i<workers.size (); i++)
                 workers[i].get ();
         }
 
@@ -633,13 +641,13 @@ void WriteWhileReadingThread::
             // C2 doesn't have shared read-only access, so a read and a write lock are equivalent.
             shared_state<C2> c2 {new C2};
 
-            for (int i=0; i<workers.size (); i++)
+            for (unsigned i=0; i<workers.size (); i++)
                 workers[i] = async(launch::async, [&c2,N,M](){
                     for(int j=1; j<=N; j++)
                         c2.write ()->somework (M);
                 });
 
-            for (int i=0; i<workers.size (); i++)
+            for (unsigned i=0; i<workers.size (); i++)
                 workers[i].get ();
         }
     }
