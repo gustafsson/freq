@@ -3,6 +3,7 @@
 #include "tasktimer.h"
 #include "timer.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "tfr/chunk.h"
 
 #include <QGLWidget>
 
@@ -63,9 +64,15 @@ void ChunkMergerThread::
                   Tfr::ChunkAndInverse chunk,
                   std::vector<pBlock> intersecting_blocks )
 {
+    if (intersecting_blocks.empty ())
+    {
+        TaskInfo(boost::format("Discarding chunk since there are no longer any intersecting_blocks with %s")
+                 % chunk.chunk->getCoveredInterval());
+        return;
+    }
+
     EXCEPTION_ASSERT( merge_chunk );
     EXCEPTION_ASSERT( chunk.chunk );
-    EXCEPTION_ASSERT( intersecting_blocks.size () );
 
     Job j;
     j.merge_chunk = merge_chunk;
