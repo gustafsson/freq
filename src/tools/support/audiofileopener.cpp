@@ -20,7 +20,7 @@ OpenfileController::Patterns AudiofileOpener::
 
 
 Signal::OperationDesc::ptr AudiofileOpener::
-        open(QString url)
+        reopen(QString url, Signal::OperationDesc::ptr)
 {
     boost::shared_ptr<Audiofile> audiofile;
     try {

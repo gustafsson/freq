@@ -245,6 +245,10 @@ MonoBuffer& MonoBuffer::
 bool MonoBuffer::
         operator==(MonoBuffer const& b) const
 {
+    if (b.sample_rate_ != sample_rate_)
+        return false;
+    if (b.sample_offset_ != sample_offset_)
+        return false;
     if (b.waveform_data ()->size () != waveform_data ()->size ())
         return false;
     float *p = waveform_data ()->getCpuMemory ();

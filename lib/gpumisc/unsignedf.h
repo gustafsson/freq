@@ -112,6 +112,9 @@ public:
     IntegerFloat  operator/ (LongerFloatType const& b) const { return asFloat()/b; }
     IntegerFloat& operator/=(LongerFloatType const& b)       { return *this = *this / b; }
 
+    bool operator==(IntegerFloat const& b) const { return int_part == b.int_part && fractional_part == b.fractional_part; }
+    bool operator!=(IntegerFloat const& b) const { return !(*this == b); }
+
 private:
     void evenOut()
     {

@@ -17,6 +17,7 @@
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/support/audiofileopener.h"
+#include "tools/support/csvfileopener.h"
 
 // Qt
 #include <QFileDialog>
@@ -190,45 +191,20 @@ pProject Project::
         err = "File '" + filename + "' does not exist";
     else
     {
-        int availableFileTypes = 1;
-    #if !defined(TARGET_reader)
-        availableFileTypes+=2;
-    #endif
-    #if !defined(TARGET_reader) && !defined(TARGET_hast)
-        availableFileTypes++;
-    #endif
-
-        string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
-        int expected = -1;
-        if (suffix == "sonicawe") expected = 0;
-#if !defined(TARGET_reader)
-        if (Adapters::Audiofile::hasExpectedSuffix(suffix)) expected = 1;
-#endif
-#if !defined(TARGET_reader) && !defined(TARGET_hast)
-        if (Adapters::CsvTimeseries::hasExpectedSuffix(suffix)) expected = 2;
-#endif
-
-        int i = 0;
-        if (expected >= 0)
-            i = expected, availableFileTypes=expected+1;
-
-        for (; i<availableFileTypes; i++) try
+        for (int i=0; i<2; i++) try
         {
             switch(i) {
                 case 0: p = Project::openProject( filename ); break;
     #if !defined(TARGET_reader)
                 case 1: p = Project::openWatched ( filename ); break;
-                case 2: p = Project::openAudio( filename ); break;
-    #endif
-    #if !defined(TARGET_reader) && !defined(TARGET_hast)
-                case 3: p = Project::openCsvTimeseries( filename ); break;
     #endif
             }
 
-            if (!p)
-                continue;
-
-            break; // successful loading without thrown exception
+            if (p)
+            {
+                // successful loading without thrown exception
+                break;
+            }
         }
         catch (const OpenFileError& x) {
             if (!openfile_err.empty())
@@ -538,8 +514,10 @@ pProject Project::
         openWatched(std::string path)
 {
     Tools::OpenfileController* ofc = Tools::OpenfileController::instance();
-    if (ofc->get_openers().empty())
+    if (ofc->get_openers().empty()) {
         ofc->registerOpener(new Tools::Support::AudiofileOpener);
+        ofc->registerOpener(new Tools::Support::CsvfileOpener);
+    }
 
     Tools::OpenWatchedFileController* watchedopener = new Tools::OpenWatchedFileController( ofc );
 

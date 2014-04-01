@@ -36,7 +36,7 @@ void OpenfileWatcher::
 {
     TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
 
-    Signal::OperationDesc::ptr file = openfilecontroller_->open(path);
+    Signal::OperationDesc::ptr file = openfilecontroller_->reopen(path, getWrappedOperationDesc ());
 
     setWrappedOperationDesc (file);
 }
@@ -91,7 +91,7 @@ class DummyFileWatchedOpener : public OpenfileController::OpenfileInterface {
 public:
     Patterns patterns() { return Patterns(); }
 
-    Signal::OperationDesc::ptr open(QString url) {
+    Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr) {
         QFile file(url);
         if (!file.exists ())
             return Signal::OperationDesc::ptr();

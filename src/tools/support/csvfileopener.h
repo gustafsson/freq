@@ -1,5 +1,5 @@
-#ifndef TOOLS_AUDIOFILECONTROLLER_H
-#define TOOLS_AUDIOFILECONTROLLER_H
+#ifndef TOOLS_SUPPORT_CSVFILEOPENER_H
+#define TOOLS_SUPPORT_CSVFILEOPENER_H
 
 #include "tools/openfilecontroller.h"
 
@@ -7,9 +7,9 @@ namespace Tools {
 namespace Support {
 
 /**
- * @brief The AudiofileController class should open files supported by libsndfile.
+ * @brief The CsvfileOpener class should open files supported by Adapters::CsvTimeseries.
  */
-class AudiofileOpener : public OpenfileController::OpenfileInterface
+class CsvfileOpener : public OpenfileController::OpenfileInterface
 {
 public:
     virtual Patterns patterns();
@@ -24,4 +24,4 @@ public:
 } // namespace Support
 } // namespace Tools
 
-#endif // TOOLS_AUDIOFILECONTROLLER_H
+#endif // TOOLS_SUPPORT_CSVFILEOPENER_H

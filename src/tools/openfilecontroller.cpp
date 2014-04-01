@@ -40,12 +40,15 @@ QList<std::pair<QString,QString> > OpenfileController::
 
 
 Signal::OperationDesc::ptr OpenfileController::
-        open(QString url)
+        reopen(QString url, Signal::OperationDesc::ptr prev)
 {
     Signal::OperationDesc::ptr o;
 
+    // TODO match url against patterns and try matching patterns first
+    // string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
+
     foreach(QPointer<OpenfileInterface> file_opener, file_openers) {
-        if ((o = file_opener->open (url)))
+        if ((o = file_opener->reopen (url, prev)))
             return o;
     }
 
@@ -86,7 +89,7 @@ public:
         return R;
     }
 
-    Signal::OperationDesc::ptr open(QString url) {
+    Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr) {
         if (url == which)
             return Signal::OperationDesc::ptr(new DummyFileOperationDesc(which));
         return Signal::OperationDesc::ptr();

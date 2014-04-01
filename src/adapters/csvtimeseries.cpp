@@ -65,6 +65,13 @@ std::string CsvTimeseries::
 }
 
 
+QString CsvTimeseries::
+        toString() const
+{
+    return QString::fromStdString (filename());
+}
+
+
 void CsvTimeseries::
         load(std::string filename )
 {
@@ -79,7 +86,7 @@ void CsvTimeseries::
 
     SinkSource ssc(0);
     int chunk = 1 << 18;
-    std::vector<Signal::pMonoBuffer> chunkBuffers;
+    Signal::pBuffer chunkBuffers;
     std::vector<float*> p;
 
     for (int bufferCount, channel, line=0; ifs.good();)
@@ -88,49 +95,58 @@ void CsvTimeseries::
         {
             for (channel=0; ; ++channel)
             {
-                if (line==0)
+                if (channel >= (int)ssc.num_channels ())
                 {
                     ssc = SinkSource( channel + 1 );
-                    chunkBuffers.resize( channel + 1 );
+                    Signal::pBuffer nb(new Signal::Buffer(Signal::Interval(0, chunk), sample_rate, channel+1));
+                    for (int i=0;i<channel; i++)
+                        *nb->getChannel (i) |= *chunkBuffers->getChannel (i);
+
+                    chunkBuffers = nb;
+
                     p.resize( channel + 1 );
-                    chunkBuffers.back() = pMonoBuffer( new MonoBuffer(0, chunk, sample_rate ) );
-                    p.back() = chunkBuffers.back()->waveform_data()->getCpuMemory();
+                    p.back() = chunkBuffers->getChannel (channel)->waveform_data()->getCpuMemory();
                 }
-                else if (channel >= (int)ssc.num_channels())
-                    throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
 
                 ifs >> p[channel][bufferCount];
-                int n = ifs.get();
 
-                if (n == ',' || n == ';' || n == ':' || n == '\t' || n == ' ')
-                    continue;
+                // Eat whitespace
+                while (ifs.peek () == ' ')
+                    ifs.get ();
+
+                int n = ifs.get ();
+                if (n == ',' || n == ';' || n == ':' || n == '\t')
+                    n = ifs.get (); // Eat delimiter if any
+
                 if (n == '\n')
-                    break;
-                if (n == '\r' && ifs.peek() == '\n')
+                    break; // Continue on new row
+                if (n == '\r')
                 {
-                    ifs.get();
-                    break;
+                    if (ifs.peek() == '\n')
+                        ifs.get();
+                    break; // Continue on new row
                 }
                 if (!ifs.good())
-                    break;
+                    break; // Couldn't read further
 
-                throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
+                ifs.putback (n);
+
+                // Continue to read same row
             }
 
-            if (ifs.good() && channel + 1 != (int)ssc.num_channels())
-                throw std::ios_base::failure(QString("CsvTimeseries - Unexpected format in '%1' on line %2").arg(filename.c_str()).arg(line).toStdString());
-
-            if (!ifs.good())
+            // Couldn't read further
+            if (!ifs.good()) {
+                // Did read something on last row?
+                if (channel>0) {
+                    bufferCount++;
+                    line++;
+                }
                 break;
+            }
         }
 
-        if (0 < bufferCount) for (channel=0; channel < (int)ssc.num_channels(); ++channel)
-        {
-            pMonoBuffer mb( new MonoBuffer((double)(line - bufferCount), chunkBuffers[channel]->waveform_data(), sample_rate));
-            pBuffer b( new Buffer(mb));
-            ssc.put( BufferSource( b ).readFixedLength( Interval( line - bufferCount, line )) );
-        }
-
+        if (0 < bufferCount)
+            ssc.put (BufferSource(chunkBuffers).readFixedLength (Interval(line-bufferCount,line)));
     }
 
     if (ssc.empty())

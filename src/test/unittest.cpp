@@ -47,6 +47,7 @@
 #include "filters/rectangle.h"
 #include "filters/timeselection.h"
 #include "tools/support/audiofileopener.h"
+#include "tools/support/csvfileopener.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
@@ -152,6 +153,7 @@ int UnitTest::
         RUNTEST(Tools::OpenWatchedFileController);
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::AudiofileOpener);
+        RUNTEST(Tools::Support::CsvfileOpener);
         RUNTEST(Tools::Support::ChainInfo);
         RUNTEST(Tools::Support::OperationCrop);
         RUNTEST(Tools::Support::RenderOperationDesc);
