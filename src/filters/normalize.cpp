@@ -132,7 +132,7 @@ void Normalize::
         Signal::pBuffer b2 = Signal::BufferSource(b).readFixedLength (r);
 
         Signal::Operation::Ptr o = n.createOperation (0);
-        Signal::pBuffer b3 = write1(o)->process(b2);
+        Signal::pBuffer b3 = o.write ()->process(b2);
         EXCEPTION_ASSERT_EQUALS(expectedOutput, b3->getInterval ());
 
         for (unsigned c=0; c<b->number_of_channels (); c++)

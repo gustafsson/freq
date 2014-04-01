@@ -56,7 +56,7 @@ Project::
     // Instead attempt unnesting of dependencies.
     {
         TaskInfo ti("Closing signal processing chain");
-        write1(processing_chain_)->close();
+        processing_chain_.write ()->close();
     }
 
     {
@@ -298,8 +298,8 @@ pProject Project::
 
     Signal::OperationDesc::Extent x;
     x.interval = Signal::Interval();
-    x.number_of_channels = write1(recorder)->num_channels();
-    x.sample_rate = write1(recorder)->sample_rate();
+    x.number_of_channels = recorder.write ()->num_channels();
+    x.sample_rate = recorder.write ()->sample_rate();
 
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();
@@ -469,7 +469,7 @@ Signal::OperationDesc::Extent Project::
     Signal::OperationDesc::Extent x;
 
     if (areToolsInitialized())
-        x = read1(processing_chain_)->extent(this->default_target ());
+        x = processing_chain_.read ()->extent(this->default_target ());
 
     if (!x.interval.is_initialized ())
         x.interval = Signal::Interval();
@@ -555,11 +555,11 @@ pProject Project::
         openOperation(Signal::OperationDesc::Ptr operation, std::string name)
 {
     if (name.empty ())
-        name = read1(operation)->toString().toStdString();
+        name = operation.read ()->toString().toStdString();
 
     pProject p( new Project(name) );
     p->createMainWindow ();
-    p->tools ().render_model.set_extent (read1(operation)->extent());
+    p->tools ().render_model.set_extent (operation.read ()->extent());
     p->appendOperation (operation);
     p->setModified (false);
 

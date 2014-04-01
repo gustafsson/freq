@@ -1,10 +1,12 @@
 #ifndef HEIGHTMAP_VISUALIZATIONPARAMS_H
 #define HEIGHTMAP_VISUALIZATIONPARAMS_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "tfr/transform.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
+
+#include <memory>
 
 namespace Heightmap {
 
@@ -19,49 +21,43 @@ namespace Heightmap {
  */
 class VisualizationParams {
 public:
-    typedef VolatilePtr<VisualizationParams> Ptr;
-    typedef VolatilePtr<const VisualizationParams> ConstPtr;
+    typedef std::shared_ptr<VisualizationParams> Ptr;
+    typedef std::shared_ptr<const VisualizationParams> ConstPtr;
 
     VisualizationParams();
 
-    bool operator==(const volatile VisualizationParams& b) const volatile;
-    bool operator!=(const volatile VisualizationParams& b) const volatile;
+    bool operator==(const VisualizationParams& b) const;
+    bool operator!=(const VisualizationParams& b) const;
 
     /**
      * Not that this is the transform that should be used. Blocks computed by
      * an old transform desc might still exist as they are being processed.
      */
-    Tfr::TransformDesc::Ptr transform_desc() const volatile;
-    void transform_desc(Tfr::TransformDesc::Ptr) volatile;
+    Tfr::TransformDesc::Ptr transform_desc() const;
+    void transform_desc(Tfr::TransformDesc::Ptr);
 
     /**
      * Heightmap blocks are rather agnostic to FreqAxis. But it's needed to
      * create them.
      */
-    Tfr::FreqAxis display_scale() const volatile;
-    void display_scale(Tfr::FreqAxis) volatile;
+    Tfr::FreqAxis display_scale() const;
+    void display_scale(Tfr::FreqAxis);
 
     /**
      * Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But
      * it's needed to create them.
      */
-    AmplitudeAxis amplitude_axis() const volatile;
-    void amplitude_axis(AmplitudeAxis) volatile;
+    AmplitudeAxis amplitude_axis() const;
+    void amplitude_axis(AmplitudeAxis);
 
 private:
-    friend class VolatilePtr<VisualizationParams>;
-
     struct details {
-        typedef VolatilePtr<details> Ptr;
-        typedef Ptr::ReadPtr ReadPtr;
-        typedef Ptr::WritePtr WritePtr;
-
         Tfr::TransformDesc::Ptr transform_desc_;
         Tfr::FreqAxis display_scale_;
         AmplitudeAxis amplitude_axis_;
     };
 
-    VolatilePtr<details> details_;
+    shared_state<details> details_;
 
 public:
     static void test();

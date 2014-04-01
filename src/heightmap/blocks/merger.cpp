@@ -34,13 +34,13 @@ void Merger::
     const Reference& ref = block->reference ();
     Intervals things_to_update = block->getInterval ();
     std::vector<pBlock> gib = BlockQuery(cache_).getIntersectingBlocks ( things_to_update.spannedInterval(), false, 0 );
-    BlockData::WritePtr outdata = block->block_data ();
+    auto outdata = block->block_data ();
 
     const Region& r = block->getRegion ();
 
     int merge_levels = 10;
 
-    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), read1(cache_)->cache().size(), merge_levels);
+    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_.read ()->cache().size(), merge_levels);
 
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
@@ -90,7 +90,7 @@ void Merger::
             {
                 next.push_back ( bl );
             }
-        } catch (const BlockData::Ptr::LockFailed&) {}
+        } catch (const shared_state<BlockData>::lock_failed&) {}
 
         gib = next;
     }
@@ -98,7 +98,10 @@ void Merger::
 
 
 bool Merger::
-        mergeBlock( const Block& outBlock, const Block& inBlock, const BlockData::WritePtr& poutData, const BlockData::ReadPtr& pinData )
+        mergeBlock( const Block& outBlock,
+                    const Block& inBlock,
+                    const shared_state<BlockData>::write_ptr& poutData,
+                    const shared_state<BlockData>::read_ptr& pinData )
 {
     if (!poutData.get () || !pinData.get ())
         return false;
@@ -199,10 +202,10 @@ static void compare(float* expected, size_t sizeof_expected, DataStorage<float>:
 
 
 static void clearCache(BlockCache::Ptr cache) {
-    while(!read1(cache)->cache().empty()) {
-        pBlock b = read1(cache)->cache().begin()->second;
+    while(!cache.read ()->cache().empty()) {
+        pBlock b = cache.read ()->cache().begin()->second;
         b->glblock.reset();
-        write1(cache)->erase(b->reference ());
+        cache.write ()->erase(b->reference ());
     }
 }
 
@@ -246,7 +249,7 @@ void Merger::
             const Region& r = block->getRegion();
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            write1(cache)->insert(block);
+            cache.write ()->insert(block);
         }
 
         Merger(cache).fillBlockFromOthers(block);
@@ -267,7 +270,7 @@ void Merger::
             const Region& r = block->getRegion();
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            write1(cache)->insert(block);
+            cache.write ()->insert(block);
         }
 
         Merger(cache).fillBlockFromOthers(block);

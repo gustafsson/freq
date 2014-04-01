@@ -198,7 +198,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new WaveformController (render_controller)));
 
-    _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(read1(p->processing_chain ())->workers(), true)));
+    _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(p->processing_chain ().read ()->workers(), true)));
 
     //
     // Insert new tools here, and delete things in the destructor in the

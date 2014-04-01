@@ -116,16 +116,16 @@ void OpenfileController::
 
         o = openfile.open("file1");
         EXCEPTION_ASSERT(o);
-        EXCEPTION_ASSERT(dynamic_cast<volatile DummyFileOperationDesc*>(o.get ()));
-        EXCEPTION_ASSERT_EQUALS(read1(o)->toString().toStdString(), "file1");
+        EXCEPTION_ASSERT(dynamic_cast<DummyFileOperationDesc*>(o.raw ()));
+        EXCEPTION_ASSERT_EQUALS(o.read ()->toString().toStdString(), "file1");
 
         o = openfile.open("file0");
         EXCEPTION_ASSERT(!o);
 
         o = openfile.open("file2");
         EXCEPTION_ASSERT(o);
-        EXCEPTION_ASSERT(dynamic_cast<volatile DummyFileOperationDesc*>(o.get ()));
-        EXCEPTION_ASSERT_EQUALS(read1(o)->toString().toStdString(), "file2");
+        EXCEPTION_ASSERT(dynamic_cast<DummyFileOperationDesc*>(o.raw ()));
+        EXCEPTION_ASSERT_EQUALS(o.read ()->toString().toStdString(), "file2");
     }
 }
 

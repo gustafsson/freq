@@ -4,7 +4,7 @@
 #include "signal/operationwrapper.h"
 #include "tfr/transform.h"
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 namespace Tools {
 namespace Support {
@@ -19,7 +19,7 @@ public:
     class RenderTarget
     {
     public:
-        typedef VolatilePtr<RenderTarget> Ptr;
+        typedef shared_state<RenderTarget> Ptr;
 
         virtual ~RenderTarget() {}
 

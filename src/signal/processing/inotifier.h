@@ -9,7 +9,7 @@ namespace Processing {
 class INotifier
 {
 public:
-    typedef boost::weak_ptr<INotifier> WeakPtr;
+    typedef boost::weak_ptr<INotifier> weak_ptr;
     typedef boost::shared_ptr<INotifier> Ptr;
 
     virtual ~INotifier() {}

@@ -73,14 +73,14 @@ void AudiofileOpener::
 
         od = openfile.open (filename.c_str ());
         EXCEPTION_ASSERT(od);
-        EXCEPTION_ASSERT(dynamic_cast<volatile AudiofileDesc*>(od.get()));
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), filename);
+        EXCEPTION_ASSERT(dynamic_cast<AudiofileDesc*>(od.raw ()));
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), filename);
 
         {
-            Signal::Operation::Ptr o = read1(od)->createOperation(0);
+            Signal::Operation::Ptr o = od.read ()->createOperation(0);
             EXCEPTION_ASSERT(o);
-            Signal::Operation::WritePtr op(o);
-            Signal::OperationDesc::Extent x = read1(od)->extent();
+            auto op = o.write ();
+            Signal::OperationDesc::Extent x = od.read ()->extent();
             Signal::pBuffer b(new Signal::Buffer(0, x.interval.get().count(), x.sample_rate.get(), x.number_of_channels.get()));
             Signal::pBuffer b2 = op->process(b);
 

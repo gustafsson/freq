@@ -39,7 +39,7 @@ void SelectionModel::
 void SelectionModel::
         try_set_current_selection(Signal::OperationDesc::Ptr o)
 {
-    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), read1(o)->toString().toStdString().c_str());
+    TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), o.read ()->toString().toStdString().c_str());
 
     try
     {
@@ -65,11 +65,11 @@ Signal::OperationDesc::Ptr SelectionModel::
     if (!o)
         return o;
 
-    o = read1(o)->copy();
+    o = o.read ()->copy();
     if (si == SaveInside_UNCHANGED)
         return o;
 
-    Signal::OperationDesc::WritePtr w(o);
+    auto w = o.write ();
 
     if (Filters::Selection* s = dynamic_cast<Filters::Selection*>( &*w ))
       {
@@ -79,7 +79,7 @@ Signal::OperationDesc::Ptr SelectionModel::
 
     if (Tfr::TransformOperationDesc* t = dynamic_cast<Tfr::TransformOperationDesc*>( &*w ))
       {
-        Tfr::ChunkFilterDesc::WritePtr cfd(t->chunk_filter());
+        auto cfd = t->chunk_filter();
         if (Filters::Selection* s = dynamic_cast<Filters::Selection*>( &*cfd ))
           {
             s->selectInterior (si == SaveInside_TRUE);
@@ -87,7 +87,7 @@ Signal::OperationDesc::Ptr SelectionModel::
           }
       }
 
-    EXCEPTION_ASSERTX(false, "SelectionModel::copy_selection(" + vartype(*o) + ", " + w->toString().toStdString() + ") is not implemented");
+    EXCEPTION_ASSERTX(false, "SelectionModel::copy_selection(" + vartype(*o.raw ()) + ", " + w->toString().toStdString() + ") is not implemented");
     return Signal::OperationDesc::Ptr();
 }
 

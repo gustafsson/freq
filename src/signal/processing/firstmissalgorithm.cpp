@@ -47,8 +47,7 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            Step::ReadPtr src( g[v] );
-            missing_input |= src->out_of_date ();
+            missing_input |= g[v].read ()->out_of_date ();
           }
 
         Interval required_input = try_create_task(u, g, missing_input);
@@ -57,15 +56,14 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            Step::ReadPtr src( g[v] );
-            needed[v] |= src->not_started () & required_input;
+            needed[v] |= g[v].read ()->not_started () & required_input;
           }
       }
 
 
     Signal::Interval try_create_task(GraphVertex u, const Graph & g, Signal::Intervals missing_input)
       {
-        Step::WritePtr step( g[u] ); // lock while studying what's needed
+        auto step = g[u].write (); // lock while studying what's needed
 
         try
           {
@@ -79,7 +77,7 @@ public:
               }
 
             Signal::OperationDesc::Ptr op = step->operation_desc();
-            Signal::OperationDesc::WritePtr o(op);
+            auto o = op.write ();
 
             DEBUGINFO TaskTimer tt(format("Missing %1% in %2% for %3%")
                                    % I
@@ -126,6 +124,7 @@ public:
             if (missing_input.empty ())
               {
                 Signal::Operation::Ptr operation = o->createOperation (params.engine.get ());
+                o.unlock ();
 
                 if (operation)
                   {
@@ -138,7 +137,7 @@ public:
                         children.push_back (g[v]);
                       }
 
-                    *task = Task::Ptr(new Task(step, children, operation, expected_output, required_input));
+                    *task = Task::Ptr(new Task(step, g[u], children, operation, expected_output, required_input));
                   }
               }
 
@@ -155,7 +154,7 @@ public:
               {
                 Signal::Processing::IInvalidator::Ptr i = step->mark_as_crashed_and_get_invalidator();
                 step.unlock ();
-                if (i) read1(i)->deprecateCache (Signal::Intervals::Intervals_ALL);
+                if (i) i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
             catch(const std::exception& y)
               {
@@ -228,17 +227,17 @@ void FirstMissAlgorithm::
         // Verify output
         EXCEPTION_ASSERT(t1);
         EXCEPTION_ASSERT(t2);
-        EXCEPTION_ASSERT_EQUALS(read1(t1)->expected_output(), Interval(20,30));
-        EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(10, 20));
+        EXCEPTION_ASSERT_EQUALS(t1.read ()->expected_output(), Interval(20,30));
+        EXCEPTION_ASSERT_EQUALS(t2.read ()->expected_output(), Interval(10, 20));
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), Signal::Intervals::Intervals_ALL);
-        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), read1(step)->not_started());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), Signal::Intervals::Intervals_ALL);
+        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), step.read ()->not_started());
 
         // Verify that the output objects can be used
-        write1(t1)->run();
-        write1(t2)->run();
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,30));
+        t1.write ()->run();
+        t2.write ()->run();
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), step.read ()->not_started());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals(10,30));
     }
 
     // It should let missing_in_target override out_of_date in the given vertex

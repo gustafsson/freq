@@ -11,7 +11,7 @@ namespace TfrMappings {
 
 class StftBlockFilterParams {
 public:
-    typedef VolatilePtr<StftBlockFilterParams> Ptr;
+    typedef shared_state<StftBlockFilterParams> Ptr;
 
     Tfr::pChunkFilter freq_normalization;
 };

@@ -4,6 +4,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "throwInvalidArgument.h"
 #include <stdio.h>
+#include <math.h>
 //#include <Volume Rendering API/VoxelData.h>
 
 /**

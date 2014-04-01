@@ -13,7 +13,7 @@
 // gpumisc
 #include "ThreadChecker.h"
 #include "deprecated.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 // std
 #include <vector>
@@ -102,8 +102,7 @@ typedef boost::shared_ptr<Block> pBlock;
   */
 class Collection {
 public:
-    typedef VolatilePtr<Collection> Ptr;
-    typedef Ptr::ReadPtr ReadPtr;
+    typedef shared_state<Collection> Ptr;
 
     Collection(BlockLayout, VisualizationParams::ConstPtr);
     ~Collection();
@@ -169,7 +168,7 @@ private:
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
 
     BlockCache::Ptr cache_;
-    VolatilePtr<BlockInstaller> block_installer_;
+    shared_state<BlockInstaller> block_installer_;
 
     bool
         _is_visible;

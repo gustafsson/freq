@@ -19,7 +19,7 @@ public:
     ~WorkerCrashLogger();
 
 private slots:
-    void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+    void worker_quit(std::exception_ptr, Signal::ComputingEngine::Ptr);
     void check_all_previously_crashed_and_consume();
     void check_all_previously_crashed_without_consuming();
     void finished();

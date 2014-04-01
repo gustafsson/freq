@@ -14,13 +14,14 @@ namespace Signal {
 namespace Processing {
 
 Task::
-        Task(const Step::WritePtr& step,
+        Task(const shared_state<Step>::write_ptr& step,
+             Step::Ptr stepp,
              std::vector<Step::Ptr> children,
              Signal::Operation::Ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
-      step_(step.getPtr()),
+      step_(stepp),
       children_(children),
       operation_(operation),
       expected_output_(expected_output),
@@ -58,8 +59,9 @@ void Task::
             << Task::crashed_expected_output(expected_output_);
 
         try {
-            Signal::Processing::IInvalidator::Ptr i = write1(step_)->mark_as_crashed_and_get_invalidator();
-            read1(i)->deprecateCache (Signal::Intervals::Intervals_ALL);
+            Signal::Processing::IInvalidator::Ptr i = step_.write ()->mark_as_crashed_and_get_invalidator();
+            EXCEPTION_ASSERT(i);
+            i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
         } catch(const std::exception& y) {
             x << unexpected_exception_info(boost::current_exception());
         }
@@ -73,9 +75,9 @@ void Task::
         run_private()
 {
     Signal::OperationDesc::Ptr od;
-    TIME_TASK od = read1(step_)->operation_desc ();
+    TIME_TASK od = step_.read ()->operation_desc ();
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
-                           % read1(od)->toString ().toStdString ());
+                           % od.read ()->toString ().toStdString ());
 
     Signal::Operation::Ptr o = this->operation_;
 
@@ -89,7 +91,7 @@ void Task::
 
     {
         TIME_TASK TaskTimer tt(boost::format("process %s") % input_buffer->getInterval ());
-        output_buffer = write1(o)->process (input_buffer);
+        output_buffer = o.write ()->process (input_buffer);
         finish(output_buffer);
     }
 }
@@ -98,19 +100,19 @@ void Task::
 Signal::pBuffer Task::
         get_input() const
 {
-    Signal::OperationDesc::Ptr operation_desc = read1(step_)->operation_desc ();
+    Signal::OperationDesc::Ptr operation_desc = step_.read ()->operation_desc ();
 
     // Sum all sources
     std::vector<Signal::pBuffer> buffers;
     buffers.reserve (children_.size ());
 
-    Signal::OperationDesc::Extent x = read1(operation_desc)->extent ();
+    Signal::OperationDesc::Extent x = operation_desc.read ()->extent ();
 
     unsigned num_channels = x.number_of_channels.get_value_or (0);
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = read1(children_[i])->readFixedLengthFromCache(required_input_);
+        Signal::pBuffer b = children_[i].read ()->readFixedLengthFromCache(required_input_);
         if (b) {
             num_channels = std::max(num_channels, b->number_of_channels ());
             sample_rate = std::max(sample_rate, b->sample_rate ());
@@ -147,7 +149,7 @@ void Task::
         finish(Signal::pBuffer b)
 {
     if (step_)
-        write1(step_)->finishTask(this, b);
+        step_.write ()->finishTask(this, b);
     step_.reset();
 }
 
@@ -156,7 +158,7 @@ void Task::
         cancel()
 {
     if (step_)
-        write1(step_)->finishTask(this, Signal::pBuffer());
+        step_.write ()->finishTask(this, Signal::pBuffer());
     step_.reset();
 }
 
@@ -185,17 +187,17 @@ void Task::
         Signal::Operation::Ptr o;
         {
             Signal::ComputingEngine::Ptr c(new Signal::ComputingCpu);
-            Signal::OperationDesc::ReadPtr r(od);
+            auto r = od.read ();
             required_input = r->requiredInterval(expected_output, 0);
             o = r->createOperation (c.get ());
         }
 
         // perform a signal processing task
-        Task t(write1(step), children, o, expected_output, required_input);
+        Task t(step.write (), step, children, o, expected_output, required_input);
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
-        Signal::pBuffer r = write1(step)->readFixedLengthFromCache(to_read);
+        Signal::pBuffer r = step.write ()->readFixedLengthFromCache(to_read);
         EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
         EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
 

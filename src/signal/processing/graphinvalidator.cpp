@@ -7,7 +7,7 @@ namespace Signal {
 namespace Processing {
 
 GraphInvalidator::
-        GraphInvalidator(Dag::WeakPtr dag, INotifier::WeakPtr notifier, Step::WeakPtr step)
+        GraphInvalidator(Dag::Ptr::weak_ptr dag, INotifier::weak_ptr notifier, Step::Ptr::weak_ptr step)
     :
       dag_(dag),
       notifier_(notifier),
@@ -23,7 +23,7 @@ void GraphInvalidator::
     if (!dagp)
         return;
 
-    Dag::ReadPtr dag(dagp);
+    auto dag = dagp.read ();
     INotifier::Ptr notifier = notifier_.lock ();
     Step::Ptr step = step_.lock ();
 
@@ -39,7 +39,7 @@ void GraphInvalidator::
 void GraphInvalidator::
         deprecateCache(const Dag& dag, Step::Ptr step, Signal::Intervals what)
 {
-    what = write1(step)->deprecateCache(what);
+    what = step.write ()->deprecateCache(what);
 
     BOOST_FOREACH(Step::Ptr ts, dag.targetSteps(step)) {
         deprecateCache(dag, ts, what);
@@ -82,10 +82,10 @@ void GraphInvalidator::
 
         // wire up
         sleeper.start ();
-        write1(dag)->appendStep(step);
+        dag.write ()->appendStep(step);
         Signal::Intervals initial_valid(-20,60);
-        write1(step)->registerTask(0, initial_valid.spannedInterval ());
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), ~initial_valid);
+        step.write ()->registerTask(0, initial_valid.spannedInterval ());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid);
         EXCEPTION_ASSERT(sleeper.isRunning ());
 
         EXCEPTION_ASSERT_EQUALS(sleeper.wait (1), false);
@@ -96,7 +96,7 @@ void GraphInvalidator::
         Signal::Intervals deprected(40,50);
         graphInvalidator.deprecateCache (deprected);
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), ~initial_valid | deprected);
+        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid | deprected);
         sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());

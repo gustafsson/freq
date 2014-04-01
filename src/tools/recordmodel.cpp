@@ -24,7 +24,7 @@ RecordModel::
         ~RecordModel()
 {
     if (recording) {
-        Adapters::Recorder::WritePtr w(recording);
+        auto w = recording.write ();
         if (!w->isStopped())
             w->stopRecording();
     }
@@ -39,7 +39,7 @@ public:
 
     virtual void markNewlyRecordedData(Signal::Interval what) {
         if (i_)
-            read1(i_)->deprecateCache(what);
+            i_.read ()->deprecateCache(what);
         if (model_)
             emit model_->markNewlyRecordedData(what);
     }
@@ -58,14 +58,14 @@ RecordModel* RecordModel::
     Adapters::Recorder::IGotDataCallback::Ptr callback(new GotDataCallback());
 
     Signal::OperationDesc::Ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
-    Signal::Processing::IInvalidator::Ptr i = write1(chain)->addOperationAt(desc, at);
+    Signal::Processing::IInvalidator::Ptr i = chain.write ()->addOperationAt(desc, at);
 
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
     record_model->invalidator = i;
 
-    dynamic_cast<GotDataCallback*>(&*write1(callback))->setInvalidator (i);
-    dynamic_cast<GotDataCallback*>(&*write1(callback))->setRecordModel (record_model);
+    dynamic_cast<GotDataCallback*>(&*callback.write ())->setInvalidator (i);
+    dynamic_cast<GotDataCallback*>(&*callback.write ())->setRecordModel (record_model);
 
     return record_model;
 }
@@ -139,42 +139,42 @@ void RecordModel::
         Tools::RenderView* r = (Tools::RenderView*)2;
 
 
-        Signal::Processing::TargetMarker::Ptr target_marker = write1(chain)->addTarget(target_desc);
+        Signal::Processing::TargetMarker::Ptr target_marker = chain.write ()->addTarget(target_desc);
         Signal::Processing::Step::Ptr step = target_marker->step().lock();
 
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
                     target_marker,
-                    Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(-1), 500, 250),
+                    Adapters::Recorder::Ptr(new Adapters::MicrophoneRecorder(-1)),
                     p, r );
 
         EXCEPTION_ASSERT(record_model->recording);
         EXCEPTION_ASSERT_EQUALS(record_model->project, p);
         EXCEPTION_ASSERT_EQUALS(record_model->render_view, r);
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals());
 
         Signal::Processing::TargetNeeds::Ptr needs = target_marker->target_needs();
-        write1(needs)->updateNeeds(Signal::Intervals(10,20));
+        needs.write ()->updateNeeds(Signal::Intervals(10,20));
 
-        Signal::OperationDesc::Extent x = read1(chain)->extent(target_marker);
+        Signal::OperationDesc::Extent x = chain.read ()->extent(target_marker);
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        if (!needs->sleep(1000)) {
-            Signal::Processing::Workers::WritePtr w(read1(chain)->workers());
+        if (!Signal::Processing::TargetNeeds::sleep(needs, 1000)) {
+            auto w = chain.read ()->workers().write();
             Signal::Processing::Workers::print(w->clean_dead_workers());
             EXCEPTION_ASSERT( false );
         }
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,20));
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());
-        write1(record_model->recording)->startRecording ();
+        record_model->recording.write ()->startRecording ();
 
         // Wait for the recorder to produce data within 1 second
         EXCEPTION_ASSERT(semaphore.tryAcquire (1, 1000));
 
-        x = read1(chain)->extent(target_marker);
+        x = chain.read ()->extent(target_marker);
         EXCEPTION_ASSERT_LESS(400u, x.interval.get_value_or (Signal::Interval()).count());
     }
 }

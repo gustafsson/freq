@@ -51,7 +51,7 @@ private:
 
     class Jobs: public std::queue<Job> {};
 
-    VolatilePtr<Jobs> jobs;
+    shared_state<Jobs> jobs;
     QSemaphore  semaphore;
     QGLWidget*  shared_gl_context;
 

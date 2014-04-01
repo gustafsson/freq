@@ -2,7 +2,7 @@
 #define TFR_CHUNKFILTER_H
 
 #include "signal/buffer.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "signal/computingengine.h"
 #include "signal/operation.h"
 
@@ -100,7 +100,7 @@ typedef ChunkFilter::Ptr pChunkFilter;
 class ChunkFilterDesc
 {
 public:
-    typedef VolatilePtr<ChunkFilterDesc> Ptr;
+    typedef shared_state<ChunkFilterDesc> Ptr;
 
     virtual ~ChunkFilterDesc() {}
 

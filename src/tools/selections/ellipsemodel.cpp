@@ -51,7 +51,7 @@ Signal::OperationDesc::Ptr EllipseModel::
 void EllipseModel::
         tryFilter(Signal::OperationDesc::Ptr filterp)
 {
-    Signal::OperationDesc::ReadPtr filter(filterp);
+    auto filter = filterp.read ();
     const Filters::Ellipse* e = dynamic_cast<const Filters::Ellipse*>(filter.get());
     if (!e)
     {

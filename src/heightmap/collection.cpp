@@ -60,7 +60,7 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskInfo ti("~Collection");
+    INFO_COLLECTION TaskInfo ti("~Collection");
     clear();
 }
 
@@ -68,7 +68,7 @@ Collection::
 void Collection::
         clear()
 {
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
     const BlockCache::cache_t& C = cache->cache ();
     VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
@@ -111,12 +111,12 @@ void Collection::
 void Collection::
         next_frame()
 {
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
 
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")
             % __FUNCTION__ % cache->recent().size());
 
-    write1(block_installer_)->next_frame();
+    block_installer_.write ()->next_frame();
 
     RegionFactory rr(block_layout_);
 
@@ -241,28 +241,28 @@ Reference Collection::
 pBlock Collection::
         getBlock( const Reference& ref ) const
 {
-    return write1(block_installer_)->getBlock(ref, _frame_counter);
+    return block_installer_.write ()->getBlock(ref, _frame_counter);
 }
 
 
 unsigned long Collection::
         cacheByteSize() const
 {
-    return BlockCacheInfo::cacheByteSize (read1(cache_)->cache());
+    return BlockCacheInfo::cacheByteSize (cache_.read ()->cache());
 }
 
 
 unsigned Collection::
         cacheCount() const
 {
-    return read1(cache_)->cache().size();
+    return cache_.read ()->cache().size();
 }
 
 
 void Collection::
         printCacheSize() const
 {
-    BlockCacheInfo::printCacheSize(read1(cache_)->cache());
+    BlockCacheInfo::printCacheSize(cache_.read ()->cache());
 }
 
 
@@ -286,7 +286,7 @@ void Collection::
 bool Collection::
         failed_allocation()
 {
-    return write1(block_installer_)->failed_allocation();
+    return block_installer_.write ()->failed_allocation();
 }
 
 
@@ -340,7 +340,7 @@ void Collection::
 
     block_layout_ = v;
 
-    write1(block_installer_)->block_layout(v);
+    block_installer_.write ()->block_layout(v);
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
@@ -360,7 +360,7 @@ void Collection::
         visualization_params_ = v;
     }
 
-    write1(block_installer_)->set_recently_created_all();
+    block_installer_.write ()->set_recently_created_all();
 }
 
 
@@ -372,7 +372,7 @@ Intervals Collection::
     if (!_is_visible)
         return r;
 
-    BOOST_FOREACH ( const BlockCache::recent_t::value_type& a, read1(cache_)->recent() )
+    BOOST_FOREACH ( const BlockCache::recent_t::value_type& a, cache_.read ()->recent() )
     {
         Block& b = *a;
         unsigned framediff = _frame_counter - b.frame_number_last_used;
@@ -394,14 +394,14 @@ Intervals Collection::
 Signal::Intervals Collection::
         recently_created()
 {
-    return write1(block_installer_)->recently_created();
+    return block_installer_.write ()->recently_created();
 }
 
 
 void Collection::
         removeBlock (pBlock b)
 {
-    write1(cache_)->erase(b->reference());
+    cache_.write ()->erase(b->reference());
     _to_remove.push_back( b );
     b->glblock.reset ();
 }

@@ -25,7 +25,7 @@ void StftBlockFilter::
         filterChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
-        Tfr::pChunkFilter freq_normalization = read1(params_)->freq_normalization;
+        Tfr::pChunkFilter freq_normalization = params_.read ()->freq_normalization;
         if (freq_normalization)
             (*freq_normalization)(chunk);
     }
@@ -145,8 +145,8 @@ void StftBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
-        write1(mc)->filterChunk(cai);
-        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
+        mc.write ()->filterChunk(cai);
+        mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
 //        if (DetectGdb::is_running_through_gdb ()) {
@@ -169,21 +169,21 @@ void StftBlockFilterDesc::
     // It should instantiate StftBlockFilter for different engines.
     {
         Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::Ptr()));
-        MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
+        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingCpu cpu;
-        mc = read1(mcd)->createMergeChunk (&cpu);
+        mc = mcd.read ()->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::StftBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc.get ()), "Heightmap::TfrMappings::StftBlockFilter" );
 
         Signal::ComputingCuda cuda;
-        mc = read1(mcd)->createMergeChunk (&cuda);
+        mc = mcd.read ()->createMergeChunk (&cuda);
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingOpenCL opencl;
-        mc = read1(mcd)->createMergeChunk (&opencl);
+        mc = mcd.read ()->createMergeChunk (&opencl);
         EXCEPTION_ASSERT( !mc );
     }
 }

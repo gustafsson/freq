@@ -3,7 +3,8 @@
 
 #include "writewav.h"
 #include "audiofile.h"
-#include "volatileptr.h"
+#include "shared_state.h"
+#include "verifyexecutiontime.h"
 
 #include "adapters/recorder.h"
 
@@ -25,17 +26,17 @@ public:
     MicrophoneRecorder(int inputDevice/*=-1*/);
     ~MicrophoneRecorder();
 
-    virtual void startRecording();
-    virtual void stopRecording();
-    virtual bool isStopped();
-    virtual bool canRecord();
+    virtual void startRecording() override;
+    virtual void stopRecording() override;
+    virtual bool isStopped() const override;
+    virtual bool canRecord() override;
 
     void changeInputDevice( int inputDevice );
     void setProjectName(std::string, int);
 
-    virtual std::string name();
-    virtual float sample_rate();
-    virtual unsigned num_channels();
+    virtual std::string name() override;
+    virtual float sample_rate() const override;
+    virtual unsigned num_channels() const override;
 
 private:
     MicrophoneRecorder()
@@ -113,15 +114,6 @@ private:
 };
 
 }
-
-
-template<>
-class VolatilePtrTypeTraits<Adapters::MicrophoneRecorder> {
-public:
-    int timeout_ms() { return 500; }
-    int verify_execution_time_ms() { return 250; }
-    VerifyExecutionTime::report report_func() { return 0; }
-};
 
 
 namespace Adapters {

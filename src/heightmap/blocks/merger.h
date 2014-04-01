@@ -29,8 +29,8 @@ private:
       */
     bool mergeBlock( const Block& outBlock,
                      const Block& inBlock,
-                     const BlockData::WritePtr& poutData,
-                     const BlockData::ReadPtr& pinData );
+                     const shared_state<BlockData>::write_ptr& poutData,
+                     const shared_state<BlockData>::read_ptr& pinData );
 
 public:
     static void test();

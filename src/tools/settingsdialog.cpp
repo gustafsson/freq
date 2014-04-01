@@ -117,7 +117,7 @@ void SettingsDialog::
     QSettings().setValue("inputdevice", inputDevice);
 
     Tools::RecordModel* record_model = project->tools().record_model();
-    Adapters::Recorder::WritePtr rec(record_model->recording);
+    auto rec = record_model->recording.write ();
     Adapters::MicrophoneRecorder* mr = dynamic_cast<Adapters::MicrophoneRecorder*>(&*rec);
     if (mr)
         mr->changeInputDevice( inputDevice );
@@ -224,8 +224,8 @@ void SettingsDialog::
     {
         Tools::RenderModel* rendermodel = &project->tools ().render_model;
         Signal::Processing::TargetNeeds::Ptr needs = rendermodel->target_marker()->target_needs();
-        write1(needs)->deprecateCache(Signal::Intervals::Intervals_ALL);
-        write1(needs)->updateNeeds(
+        needs.write ()->deprecateCache(Signal::Intervals::Intervals_ALL);
+        needs.write ()->updateNeeds(
                     Signal::Intervals(),
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX);

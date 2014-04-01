@@ -130,15 +130,15 @@ void OpenWatchedFileController::
         EXCEPTION_ASSERT(od);
 
         application.processEvents ();
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), "foobar");
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
 
         file.open (QIODevice::WriteOnly);
         file.write ("baz");
         file.close ();
 
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), "foobar");
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
         application.processEvents ();
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), "baz");
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "baz");
 
         file.remove ();
     }

@@ -21,18 +21,18 @@ Bedroom::Data::
 
 
 Bedroom::Bed::
-        Bed(Data::Ptr data)
+        Bed(shared_state<Data> data)
     :
       data_(data)
 {
-    write1(data_)->beds.insert(this);
+    data_.write ()->beds.insert(this);
 }
 
 
 Bedroom::Bed::
         ~Bed()
 {
-    write1(data_)->beds.erase(this);
+    data_.write ()->beds.erase(this);
 }
 
 
@@ -46,7 +46,7 @@ void Bedroom::Bed::
 bool Bedroom::Bed::
         sleep(unsigned long ms_timeout)
 {
-    Data::Ptr::WritePtr data(data_);
+    auto data = data_.write ();
 
     if (data->is_closed) {
         BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
@@ -60,10 +60,10 @@ bool Bedroom::Bed::
     // Wait in a while-loop to cope with spurious wakeups
     if (ULONG_MAX == ms_timeout)
         while (!skip_sleep_)
-            data->work.wait ( *data_.readWriteLock() );
+            data->work.wait ( data_.readWriteLock() );
     else
         while (r && !skip_sleep_)
-            r = boost::cv_status::no_timeout == data->work.wait_for (*data_.readWriteLock(), boost::chrono::milliseconds(ms_timeout));
+            r = std::cv_status::no_timeout == data->work.wait_for (data_.readWriteLock(), std::chrono::milliseconds(ms_timeout));
 
     skip_sleep_.reset();
 
@@ -82,7 +82,7 @@ Bedroom::
 void Bedroom::
         wakeup()
 {
-    Data::WritePtr data(data_);
+    auto data = data_.write ();
     // no one is going into sleep as long as data_ is locked
 
     BOOST_FOREACH(Bed* b, data->beds) {
@@ -96,10 +96,7 @@ void Bedroom::
 void Bedroom::
         close()
 {
-    {
-        Data::WritePtr data(data_);
-        data->is_closed = true;
-    }
+    data_->is_closed = true;
 
     wakeup();
 }
@@ -116,8 +113,7 @@ int Bedroom::
         sleepers()
 {
     // Remove 1 to compensate for the instance used by 'this'
-    Data::WritePtr data(data_);
-    return data->sleepers.use_count() - 1;
+    return data_->sleepers.use_count() - 1;
 }
 
 
@@ -229,7 +225,6 @@ void Bedroom::
         SleepingBeautyMock sbm(bedroom, 2);
 
         sbm.start ();
-        TaskTimer tt("sbm.start");
         EXCEPTION_ASSERT( !sbm.wait (7) );
         bedroom->wakeup();
         EXCEPTION_ASSERT( sbm.wait (2) );

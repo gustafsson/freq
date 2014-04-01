@@ -7,7 +7,7 @@ namespace Signal {
 namespace Processing {
 
 Targets::
-        Targets(INotifier::WeakPtr notifier)
+        Targets(INotifier::weak_ptr notifier)
     :
       notifier_(notifier)
 {
@@ -15,7 +15,7 @@ Targets::
 
 
 TargetNeeds::Ptr Targets::
-        addTarget(Step::WeakPtr step)
+        addTarget(Step::Ptr::weak_ptr step)
 {
     TargetNeeds::Ptr target(new TargetNeeds(step, notifier_));
     targets.push_back (target);
@@ -38,7 +38,7 @@ Targets::TargetNeedsCollection Targets::
     TargetNeedsCollection C;
     C.reserve (targets.size ());
 
-    BOOST_FOREACH(const TargetNeeds::WeakPtr& i, targets) {
+    BOOST_FOREACH(const TargetNeeds::Ptr::weak_ptr& i, targets) {
         TargetNeeds::Ptr t = i.lock ();
         if (t)
             C.push_back (t);
@@ -67,9 +67,9 @@ void Targets::
         Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
 
         Targets::Ptr targets(new Targets(bedroom_notifier));
-        TargetNeeds::Ptr updater( write1(targets)->addTarget(step) );
+        TargetNeeds::Ptr updater( targets.write ()->addTarget(step) );
         EXCEPTION_ASSERT(updater);
-        EXCEPTION_ASSERT(read1(updater)->step().lock() == step);
+        EXCEPTION_ASSERT(updater.read ()->step().lock() == step);
     }
 }
 

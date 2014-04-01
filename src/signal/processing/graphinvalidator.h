@@ -16,16 +16,16 @@ namespace Processing {
 class GraphInvalidator: public IInvalidator
 {
 public:
-    GraphInvalidator(Dag::WeakPtr dag, INotifier::WeakPtr notifier, Step::WeakPtr step);
+    GraphInvalidator(Dag::Ptr::weak_ptr dag, INotifier::weak_ptr notifier, Step::Ptr::weak_ptr step);
 
     void deprecateCache(Signal::Intervals what) const;
     static void deprecateCache(const Dag& dag, Step::Ptr s, Signal::Intervals what);
 
 private:
 
-    Dag::WeakPtr dag_;
-    INotifier::WeakPtr notifier_;
-    Step::WeakPtr step_;
+    Dag::Ptr::weak_ptr dag_;
+    INotifier::weak_ptr notifier_;
+    Step::Ptr::weak_ptr step_;
 
 public:
     static void test();

@@ -166,6 +166,8 @@ Signal::Intervals Rectangle::
 #include "test/operationmockups.h"
 #include "test/randombuffer.h"
 #include "tfr/transformoperation.h"
+#include "tasktimer.h"
+
 #include <QApplication>
 
 namespace Filters {
@@ -185,12 +187,12 @@ void Rectangle::
         Signal::OperationDesc::Ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
         Tfr::ChunkFilterDesc::Ptr cfd(new Rectangle(1,2,4,4,false));
         Signal::OperationDesc::Ptr rectangledesc(new TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::Ptr at = write1(cp)->addTarget(transparent);
+        Signal::Processing::TargetMarker::Ptr at = cp.write ()->addTarget(transparent);
         Signal::Processing::TargetNeeds::Ptr n = at->target_needs();
-        write1(cp)->addOperationAt(buffersource,at);
-        write1(cp)->addOperationAt(rectangledesc,at);
-        write1(n)->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( n->sleep(n, 100) );
+        cp.write ()->addOperationAt(buffersource,at);
+        cp.write ()->addOperationAt(rectangledesc,at);
+        n.write ()->updateNeeds(Signal::Interval(0,10));
+        EXCEPTION_ASSERT( Signal::Processing::TargetNeeds::sleep (n,100) );
     }
 }
 

@@ -8,8 +8,7 @@ namespace Signal {
 class ComputingEngine
 {
 public:
-    typedef boost::shared_ptr<ComputingEngine> Ptr;
-    typedef boost::weak_ptr<ComputingEngine> WeakPtr;
+    typedef std::shared_ptr<ComputingEngine> Ptr;
 
     virtual ~ComputingEngine();
 };

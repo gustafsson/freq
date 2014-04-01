@@ -30,7 +30,7 @@ class Workers: public QObject
 {
     Q_OBJECT
 public:
-    typedef VolatilePtr<Workers> Ptr;
+    typedef shared_state<Workers> Ptr;
 
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
     typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::Ptr> crashed_engine;
@@ -66,7 +66,7 @@ public:
      * It is only valid to call this method from the same thread as they were
      * added.
      */
-    typedef std::map<Signal::ComputingEngine::Ptr, boost::exception_ptr > DeadEngines;
+    typedef std::map<Signal::ComputingEngine::Ptr, std::exception_ptr > DeadEngines;
     DeadEngines clean_dead_workers();
     void rethrow_any_worker_exception();
 
@@ -97,7 +97,7 @@ public:
     static void print(const DeadEngines&);
 
 signals:
-    void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+    void worker_quit(std::exception_ptr, Signal::ComputingEngine::Ptr);
 
 private:
     ISchedule::Ptr schedule_;

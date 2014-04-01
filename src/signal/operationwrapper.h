@@ -24,7 +24,7 @@ public:
      * @brief setWrappedOperationDesc makes this OperationDesc behave as a new
      * operation.
      */
-    void setWrappedOperationDesc2(OperationDesc::Ptr wrap);
+    void setWrappedOperationDesc(OperationDesc::Ptr wrap);
     OperationDesc::Ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;

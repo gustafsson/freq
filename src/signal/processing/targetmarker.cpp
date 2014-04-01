@@ -41,12 +41,12 @@ std::set<Step::Ptr> single_paths(GraphVertex v, const Graph& g) {
 TargetMarker::
         ~TargetMarker()
 {
-    Step::Ptr step = read1(target_needs_)->step().lock();
+    Step::Ptr step = target_needs_.read ()->step().lock();
     if (!step)
         return;
 
     // Remove all steps than can only be reached from this target.
-    Dag::WritePtr dag(dag_);
+    auto dag = dag_.write ();
     GraphVertex start = dag->getVertex (step);
     if (!start)
         return;
@@ -59,17 +59,17 @@ TargetMarker::
 }
 
 
-VolatilePtr<TargetNeeds> TargetMarker::
+shared_state<TargetNeeds> TargetMarker::
         target_needs() const
 {
     return target_needs_;
 }
 
 
-Step::WeakPtr TargetMarker::
+Step::Ptr::weak_ptr TargetMarker::
         step() const
 {
-    return read1(target_needs_)->step();
+    return target_needs_.read ()->step();
 }
 
 } // namespace Processing
@@ -99,7 +99,7 @@ void TargetMarker::
         TargetMarker::Ptr tm( new TargetMarker(target_needs, dagp));
 
         {
-            Dag::WritePtr dag(dagp);
+            auto dag = dagp.write ();
             const Graph& g = dag->g ();
             dag->insertStep (step3a);
             dag->insertStep (step1, dag->getVertex (step3a));
@@ -112,7 +112,7 @@ void TargetMarker::
         tm.reset ();
 
         {
-            Dag::WritePtr dag(dagp);
+            auto dag = dagp.write ();
             const Graph& g = dag->g ();
             EXCEPTION_ASSERT_EQUALS( g.num_edges (), 1u );
             EXCEPTION_ASSERT_EQUALS( g.num_vertices (), 2u );

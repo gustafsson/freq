@@ -19,8 +19,6 @@ class MergerTexture;
 class BlockInstaller
 {
 public:
-    typedef VolatilePtr<BlockInstaller> Ptr;
-
     BlockInstaller(BlockLayout bl, VisualizationParams::ConstPtr vp, BlockCache::Ptr cache);
     BlockInstaller(BlockInstaller const&) = delete;
     BlockInstaller& operator=(BlockInstaller const&) = delete;

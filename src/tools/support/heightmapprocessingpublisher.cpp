@@ -39,7 +39,7 @@ void HeightmapProcessingPublisher::
     UnsignedIntervalType update_size = preferred_update_size;
 
     foreach( const Heightmap::Collection::Ptr &c, collections_ ) {
-        Heightmap::Collection::WritePtr wc(c);
+        auto wc = c.write ();
         //invalid_samples |= wc->invalid_samples();
         things_to_add |= wc->recently_created();
         needed_samples |= wc->needed_samples(update_size);
@@ -58,8 +58,8 @@ void HeightmapProcessingPublisher::
             % center
             % update_size);
 
-    write1(target_needs_)->deprecateCache(things_to_add);
-    write1(target_needs_)->updateNeeds(
+    target_needs_.write ()->deprecateCache(things_to_add);
+    target_needs_.write ()->updateNeeds(
                 needed_samples,
                 center,
                 update_size,
@@ -69,16 +69,16 @@ void HeightmapProcessingPublisher::
     failed_allocation_ = false;
     foreach( const Heightmap::Collection::Ptr &c, collections_ )
     {
-        failed_allocation_ |= write1(c)->failed_allocation ();
+        failed_allocation_ |= c.write ()->failed_allocation ();
     }
 
     TIME_PAINTGL_DETAILS {
-        Step::Ptr step = read1(target_needs_)->step().lock();
-        Signal::Intervals not_started = read1(target_needs_)->not_started();
+        Step::Ptr step = target_needs_.read ()->step().lock();
+        Signal::Intervals not_started = target_needs_.read ()->not_started();
 
         if (step)
         {
-            Step::ReadPtr stepp(step);
+            auto stepp = step.read ();
             TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
                              % stepp->out_of_date()
                              % stepp->not_started()
@@ -91,8 +91,7 @@ void HeightmapProcessingPublisher::
 bool HeightmapProcessingPublisher::
         isHeightmapDone() const
 {
-    TargetNeeds::ReadPtr target_needs(target_needs_);
-    return !target_needs->out_of_date();
+    return !target_needs_.read ()->out_of_date();
 }
 
 
@@ -156,8 +155,8 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        Heightmap::Reference entireHeightmap = read1(collection)->entireHeightmap();
-        read1(collection)->getBlock(entireHeightmap);
+        Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
+        collection.read ()->getBlock(entireHeightmap);
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -165,8 +164,8 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        unsigned frame_number = read1(collection)->frame_number();
-        read1(collection)->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
+        unsigned frame_number = collection.read ()->frame_number();
+        collection.read ()->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -174,7 +173,8 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
-        Task task(write1(step),
+        Task task(step.write (),
+                  Step::Ptr (),
                   std::vector<Signal::Processing::Step::Ptr>(),
                   Operation::Ptr(),
                   Signal::Interval(0,2), Signal::Interval());

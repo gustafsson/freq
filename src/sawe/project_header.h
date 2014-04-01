@@ -31,7 +31,7 @@
 #include "exceptionassert.h"
 #include "expectexception.h"
 #include "msc_stdc.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #ifdef USE_CUDA
 #include "cuda_vector_types_op.h"
 #endif

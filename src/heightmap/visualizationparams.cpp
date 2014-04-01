@@ -13,12 +13,12 @@ VisualizationParams::
 
     // display_scale is also left to its default value
 
-    details::WritePtr(details_)->amplitude_axis_ = AmplitudeAxis_5thRoot;
+    details_->amplitude_axis_ = AmplitudeAxis_5thRoot;
 }
 
 
 bool VisualizationParams::
-        operator==(const volatile VisualizationParams& b) const volatile
+        operator==(const VisualizationParams& b) const
 {
     if (&b == this)
         return true;
@@ -32,57 +32,51 @@ bool VisualizationParams::
 
 
 bool VisualizationParams::
-        operator!=(const volatile VisualizationParams& b) const volatile
+        operator!=(const VisualizationParams& b) const
 {
     return !(*this == b);
 }
 
 
 Tfr::TransformDesc::Ptr VisualizationParams::
-        transform_desc() const volatile
+        transform_desc() const
 {
-    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
-    return details::ReadPtr(self->details_)->transform_desc_;
+    return details_->transform_desc_;
 }
 
 
 void VisualizationParams::
-        transform_desc(Tfr::TransformDesc::Ptr v) volatile
+        transform_desc(Tfr::TransformDesc::Ptr v)
 {
-    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
-    details::WritePtr(self->details_)->transform_desc_ = v;
+    details_->transform_desc_ = v;
 }
 
 
 Tfr::FreqAxis VisualizationParams::
-        display_scale() const volatile
+        display_scale() const
 {
-    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
-    return details::ReadPtr(self->details_)->display_scale_;
+    return details_->display_scale_;
 }
 
 
 void VisualizationParams::
-        display_scale(Tfr::FreqAxis v) volatile
+        display_scale(Tfr::FreqAxis v)
 {
-    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
-    details::WritePtr(self->details_)->display_scale_ = v;
+    details_->display_scale_ = v;
 }
 
 
 AmplitudeAxis VisualizationParams::
-        amplitude_axis() const volatile
+        amplitude_axis() const
 {
-    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
-    return details::ReadPtr(self->details_)->amplitude_axis_;
+    return details_->amplitude_axis_;
 }
 
 
 void VisualizationParams::
-        amplitude_axis(AmplitudeAxis v) volatile
+        amplitude_axis(AmplitudeAxis v)
 {
-    const VisualizationParams* self = const_cast<const VisualizationParams*>(this);
-    details::WritePtr(self->details_)->amplitude_axis_ = v;
+    details_->amplitude_axis_ = v;
 }
 
 

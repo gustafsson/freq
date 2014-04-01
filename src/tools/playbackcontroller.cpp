@@ -180,7 +180,7 @@ void PlaybackController::
     _view->just_started = true;
 
     if (filterdesc)
-        TaskInfo("Selection: %s", read1(filterdesc)->toString().toStdString().c_str());
+        TaskInfo("Selection: %s", filterdesc.read ()->toString().toStdString().c_str());
 
 //    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
 //    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
@@ -193,20 +193,20 @@ void PlaybackController::
         model()->adapter_playback.reset(new Signal::SinkDesc(playbacksink));
 
         Signal::OperationDesc::Ptr desc(model()->adapter_playback);
-        model()->target_marker = write1(project_->processing_chain ())->addTarget(desc, project_->default_target ());
+        model()->target_marker = project_->processing_chain ().write ()->addTarget(desc, project_->default_target ());
 
         if (filterdesc)
-            write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
+            project_->processing_chain ().write ()->addOperationAt(filterdesc, model()->target_marker);
 
-        Signal::OperationDesc::Extent x = write1(project_->processing_chain ())->extent(model()->target_marker);
+        Signal::OperationDesc::Extent x = project_->processing_chain ().write ()->extent(model()->target_marker);
         Signal::Intervals expected_data = ~zeroed_samples & x.interval.get_value_or (Signal::Interval());
         TaskInfo(boost::format("expected_data = %s") % expected_data);
 
-        Signal::Operation::WritePtr playbackw(model()->playback());
+        auto playbackw = model()->playback().write ();
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
         playback->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
 
-        write1(model()->target_marker->target_needs ())->updateNeeds(
+        model()->target_marker->target_needs ().write ()->updateNeeds(
                     expected_data,
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX,
@@ -217,7 +217,7 @@ void PlaybackController::
     }
     else
     {
-        Signal::Operation::WritePtr playbackw(model()->playback());
+        auto playbackw = model()->playback().write ();
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
         playback->restart_playback();
     }
@@ -230,7 +230,7 @@ void PlaybackController::
         pause( bool active )
 {
     if (model()->playback()) {
-        Signal::Operation::WritePtr playbackw(model()->playback());
+        auto playbackw = model()->playback().write ();
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
         playback->pausePlayback( active );
     }
@@ -265,7 +265,7 @@ void PlaybackController::
 
     Signal::Operation::Ptr p = model()->playback();
     if (p) {
-        Signal::Operation::WritePtr playbackw(p);
+        auto playbackw = p.write ();
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
         playback->stop();
     }

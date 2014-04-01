@@ -17,7 +17,7 @@ ClearInterval::
 std::list<pBlock> ClearInterval::
         discardOutside(Signal::Interval& I)
 {
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
 
     std::list<pBlock> discarded;
 
@@ -44,7 +44,7 @@ std::list<pBlock> ClearInterval::
                 Region ir = block->getRegion ();
                 float t = I.last / block->block_layout ().targetSampleRate() - ir.a.time;
 
-                BlockData::WritePtr bd(block->block_data());
+                auto bd = block->block_data();
 
                 ::blockClearPart( bd->cpu_copy,
                               ceil(t * block->sample_rate ()) );

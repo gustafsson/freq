@@ -64,7 +64,7 @@ bool ChunkMerger::
 void ChunkMerger::
         processJob(Job& j)
 {
-    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = write1( j.merge_chunk )->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
 
     BOOST_FOREACH( IChunkToBlock::Ptr chunk_to_block, chunk_to_blocks)
       {

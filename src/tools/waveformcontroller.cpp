@@ -62,7 +62,7 @@ void WaveformController::
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr t = write1(r->model()->transform_descs ())->getParam<Tfr::WaveformRepresentationDesc>().copy();
+    Tfr::TransformDesc::Ptr t = r->model()->transform_descs ().write ()->getParam<Tfr::WaveformRepresentationDesc>().copy();
 
     r->setBlockFilter(mcdp, t);
 }

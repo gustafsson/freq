@@ -3,7 +3,6 @@
 
 #include "ischedule.h"
 #include "signal/computingengine.h"
-#include "atomicvalue.h"
 
 #include <QThread>
 #include <QPointer>
@@ -54,11 +53,11 @@ public:
     //         ... get_error_info<...>(x);
     //         boost::diagnostic_information(x);
     //     }
-    boost::exception_ptr caught_exception() const;
+    std::exception_ptr caught_exception() const;
 
 signals:
     void oneTaskDone();
-    void finished(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+    void finished(std::exception_ptr, Signal::ComputingEngine::Ptr);
 
 public slots:
     void wakeup();
@@ -73,8 +72,8 @@ private:
     ISchedule::Ptr                          schedule_;
 
     QThread*                                thread_;
-    AtomicValue<boost::exception_ptr>       exception_;
-    boost::exception_ptr                    terminated_exception_;
+    shared_state<std::exception_ptr>        exception_;
+    std::exception_ptr                      terminated_exception_;
 
 public:
     static void test ();

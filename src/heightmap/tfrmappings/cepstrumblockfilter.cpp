@@ -23,9 +23,9 @@ CepstrumBlockFilter::
 void CepstrumBlockFilter::
         filterChunk(Tfr::ChunkAndInverse&)
 {
-    if (params_) {
-        CepstrumBlockFilterParams::WritePtr P(params_);
-    }
+//    if (params_) {
+//        params_.write ();
+//    }
 }
 
 
@@ -124,8 +124,8 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr()) );
-        write1(mc)->filterChunk(cai);
-        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
+        mc.write ()->filterChunk(cai);
+        mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
         if (DetectGdb::is_running_through_gdb ()) {
@@ -143,21 +143,21 @@ void CepstrumBlockFilterDesc::
     // It should instantiate CepstrumBlockFilter for different engines.
     {
         Heightmap::MergeChunkDesc::Ptr mcd(new CepstrumBlockFilterDesc(CepstrumBlockFilterParams::Ptr()));
-        MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
+        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingCpu cpu;
-        mc = read1(mcd)->createMergeChunk (&cpu);
+        mc = mcd.read ()->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::CepstrumBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc.get ()), "Heightmap::TfrMappings::CepstrumBlockFilter" );
 
         Signal::ComputingCuda cuda;
-        mc = read1(mcd)->createMergeChunk (&cuda);
+        mc = mcd.read ()->createMergeChunk (&cuda);
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingOpenCL opencl;
-        mc = read1(mcd)->createMergeChunk (&opencl);
+        mc = mcd.read ()->createMergeChunk (&opencl);
         EXCEPTION_ASSERT( !mc );
     }
 }

@@ -85,13 +85,13 @@ bool RectangleModel::
 {
     float FS = project_->extent ().sample_rate.get ();
 
-    Signal::OperationDesc::ReadPtr filter(filterp);
+    auto filter = filterp.read ();
     const Tfr::TransformOperationDesc* tod = dynamic_cast<const Tfr::TransformOperationDesc*>(&*filter);
     const Filters::Selection* s = dynamic_cast<const Filters::Selection*>(&*filter);
     if (s) select_interior = s->isInteriorSelected();
 
     if (tod) {
-        Tfr::ChunkFilterDesc::ReadPtr c(tod->chunk_filter ());
+        auto c = tod->chunk_filter ();
         s = dynamic_cast<const Filters::Selection*>(&*c);
         if (s) select_interior = s->isInteriorSelected();
 

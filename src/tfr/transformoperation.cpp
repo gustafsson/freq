@@ -34,8 +34,6 @@ TransformOperationOperation::
       chunk_filter_(chunk_filter),
       no_inverse_tag_(no_inverse_tag)
 {
-    // TODO Operation is never shared between threads
-    this->setTimeOuts (-1, -1);
 }
 
 
@@ -83,7 +81,7 @@ TransformOperationDesc::
         TransformOperationDesc(ChunkFilterDesc::Ptr f)
     :
       chunk_filter_(f),
-      transformDesc_(read1(f)->transformDesc()->copy())
+      transformDesc_(f.read ()->transformDesc()->copy())
 {
 }
 
@@ -91,7 +89,7 @@ TransformOperationDesc::
 OperationDesc::Ptr TransformOperationDesc::
         copy() const
 {
-    //ChunkFilterDesc::Ptr chunk_filter = read1(chunk_filter_)->copy();
+    //ChunkFilterDesc::Ptr chunk_filter = chunk_filter_.read ()->copy();
     return OperationDesc::Ptr (new TransformOperationDesc (chunk_filter_));
 }
 
@@ -102,7 +100,7 @@ Signal::Operation::Ptr TransformOperationDesc::
     Tfr::pTransform t = transformDesc_->createTransform ();
     pChunkFilter f;
     {
-        ChunkFilterDesc::WritePtr c(chunk_filter_);
+        auto c = chunk_filter_.write ();
         c->transformDesc (transformDesc_);
         f = c->createChunkFilter (engine);
     }
@@ -135,14 +133,14 @@ Signal::Interval TransformOperationDesc::
 TransformOperationDesc::Extent TransformOperationDesc::
         extent() const
 {
-    return read1(chunk_filter_)->extent();
+    return chunk_filter_.read ()->extent();
 }
 
 
 QString TransformOperationDesc::
         toString() const
 {
-    return (vartype(*chunk_filter_) + " on " + transformDesc_->toString ()).c_str();
+    return (vartype(*chunk_filter_.get ()) + " on " + transformDesc_->toString ()).c_str();
 }
 
 
@@ -171,16 +169,22 @@ void TransformOperationDesc::
         transformDesc(boost::shared_ptr<TransformDesc> td)
 {
     transformDesc_ = td->copy ();
-    write1(chunk_filter_)->transformDesc (td->copy ());
+    chunk_filter_.write ()->transformDesc (td->copy ());
 }
 
 
-boost::shared_ptr<volatile ChunkFilterDesc> TransformOperationDesc::
+shared_state<ChunkFilterDesc>::read_ptr TransformOperationDesc::
         chunk_filter() const
 {
-    return chunk_filter_;
+    return chunk_filter_.read ();
 }
 
+
+shared_state<ChunkFilterDesc>::write_ptr TransformOperationDesc::
+        chunk_filter()
+{
+    return chunk_filter_.write ();
+}
 
 } // namespace Tfr
 
@@ -225,8 +229,8 @@ void TransformOperationDesc::
     {
         int i = 0;
         ChunkFilterDesc::Ptr cfd(new DummyChunkFilterDesc(&i));
-        write1(cfd)->transformDesc(pTransformDesc(new Tfr::DummyTransformDesc));
-        pTransformDesc t = read1(cfd)->transformDesc();
+        cfd.write ()->transformDesc(pTransformDesc(new Tfr::DummyTransformDesc));
+        pTransformDesc t = cfd.read ()->transformDesc();
         TransformOperationDesc tod(cfd);
 
         EXCEPTION_ASSERT_EQUALS(
@@ -237,7 +241,7 @@ void TransformOperationDesc::
                     t->requiredInterval (Signal::Interval(5,7),0));
 
         Signal::Operation::Ptr o = tod.createOperation (0);
-        Signal::pBuffer b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        Signal::pBuffer b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT_EQUALS(i, (int)b->number_of_channels ());
     }
 }

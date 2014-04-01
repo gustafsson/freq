@@ -27,7 +27,7 @@ OperationDesc::Ptr TimeSelection::
 bool TimeSelection::
         isInteriorSelected() const
 {
-    return dynamic_cast<volatile OperationCrop*>(&*this->getWrappedOperationDesc ());
+    return dynamic_cast<OperationCrop*>(getWrappedOperationDesc ().raw ());
 }
 
 
@@ -36,11 +36,11 @@ void TimeSelection::
 {
     if (v)
       {
-        this->setWrappedOperationDesc2 (OperationDesc::Ptr(new OperationCrop(section_)));
+        this->setWrappedOperationDesc (OperationDesc::Ptr(new OperationCrop(section_)));
       }
     else
       {
-        this->setWrappedOperationDesc2 (OperationDesc::Ptr(new OperationSetSilent(section_)));
+        this->setWrappedOperationDesc (OperationDesc::Ptr(new OperationSetSilent(section_)));
       }
 }
 
@@ -76,15 +76,15 @@ void TimeSelection::
         pBuffer b;
 
         Operation::Ptr o = ts.createOperation (0);
-        b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT(*gold_interior == *b);
 
         ts.selectInterior (false);
-        b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT(*gold_interior == *b);
 
         o = ts.createOperation (0);
-        b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT(*gold_exterior == *b);
     }
 }

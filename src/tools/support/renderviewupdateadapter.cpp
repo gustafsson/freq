@@ -74,12 +74,12 @@ void RenderViewUpdateAdapter::
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 0);
 
-        write1(rt)->refreshSamples(Signal::Intervals(1,2));
+        rt.write ()->refreshSamples(Signal::Intervals(1,2));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);
 
-        write1(rt)->processedData(Signal::Interval(1,2), Signal::Interval(3,4));
+        rt.write ()->processedData(Signal::Interval(1,2), Signal::Interval(3,4));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 1);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);

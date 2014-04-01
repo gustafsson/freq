@@ -113,8 +113,8 @@ void WaveformBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::Ptr mc( new WaveformBlockFilter );
-        write1(mc)->filterChunk(cai);
-        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
+        mc.write ()->filterChunk(cai);
+        mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow
@@ -128,21 +128,21 @@ void WaveformBlockFilterDesc::
     // It should instantiate CwtBlockFilter for different engines.
     {
         Heightmap::MergeChunkDesc::Ptr mcd(new WaveformBlockFilterDesc);
-        MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
+        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingCpu cpu;
-        mc = read1(mcd)->createMergeChunk (&cpu);
+        mc = mcd.read ()->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::WaveformBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc.get ()), "Heightmap::TfrMappings::WaveformBlockFilter" );
 
         Signal::ComputingCuda cuda;
-        mc = read1(mcd)->createMergeChunk (&cuda);
+        mc = mcd.read ()->createMergeChunk (&cuda);
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingOpenCL opencl;
-        mc = read1(mcd)->createMergeChunk (&opencl);
+        mc = mcd.read ()->createMergeChunk (&opencl);
         EXCEPTION_ASSERT( !mc );
     }
 }

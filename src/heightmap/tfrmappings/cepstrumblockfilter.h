@@ -10,8 +10,7 @@ namespace TfrMappings {
 
 class CepstrumBlockFilterParams {
 public:
-    typedef VolatilePtr<CepstrumBlockFilterParams> Ptr;
-    typedef Ptr::WritePtr WritePtr;
+    typedef shared_state<CepstrumBlockFilterParams> Ptr;
 };
 
 /**

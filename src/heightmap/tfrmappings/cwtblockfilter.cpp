@@ -139,8 +139,8 @@ void CwtBlockFilter::
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::Ptr mc( new CwtBlockFilter(complex_info) );
 
-        write1(mc)->filterChunk(cai);
-        std::vector<IChunkToBlock::Ptr> prep = write1(mc)->createChunkToBlock(cai);
+        mc.write ()->filterChunk(cai);
+        std::vector<IChunkToBlock::Ptr> prep = mc.write ()->createChunkToBlock(cai);
         for (size_t i=0; i<prep.size (); ++i)
             prep[i]->mergeChunk (block);
 
@@ -156,21 +156,21 @@ void CwtBlockFilterDesc::
     {
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunkDesc::Ptr mcd(new CwtBlockFilterDesc(complex_info));
-        MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
+        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingCpu cpu;
-        mc = read1(mcd)->createMergeChunk (&cpu);
+        mc = mcd.read ()->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::CwtBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc.get ()), "Heightmap::TfrMappings::CwtBlockFilter" );
 
         Signal::ComputingCuda cuda;
-        mc = read1(mcd)->createMergeChunk (&cuda);
+        mc = mcd.read ()->createMergeChunk (&cuda);
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingOpenCL opencl;
-        mc = read1(mcd)->createMergeChunk (&opencl);
+        mc = mcd.read ()->createMergeChunk (&opencl);
         EXCEPTION_ASSERT( !mc );
     }
 }

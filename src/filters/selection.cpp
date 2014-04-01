@@ -40,7 +40,7 @@ void Selection::
     // interior or the exterior part.
     {
         Signal::OperationDesc::Ptr o( new DummySelectionOperaitonTest );
-        Signal::OperationDesc::WritePtr wo(o);
+        auto wo = o.write ();
         Selection* s = dynamic_cast<Selection*>(&*wo);
 
         EXCEPTION_ASSERT(!s->isExteriorSelected ());

@@ -1,7 +1,7 @@
 #ifndef TOOLS_SUPPORT_TRANSFORMDESCS_H
 #define TOOLS_SUPPORT_TRANSFORMDESCS_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "tfr/transform.h"
 
 #include <set>
@@ -12,8 +12,7 @@ namespace Support {
 class TransformDescs
 {
 public:
-    typedef VolatilePtr<TransformDescs> Ptr;
-    typedef Ptr::WritePtr WritePtr;
+    typedef shared_state<TransformDescs> Ptr;
 
     /**
      * @brief getParam always returns an instance.

@@ -2,7 +2,7 @@
 #define HEIGHTMAP_TFRMAPPING_H
 
 #include "blocklayout.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "visualizationparams.h"
 
 #include <vector>
@@ -13,8 +13,8 @@ typedef int ChannelCount;
 
 class TfrMapping {
 public:
-    typedef VolatilePtr<TfrMapping> Ptr;
-    typedef VolatilePtr<const TfrMapping> ConstPtr;
+    typedef shared_state<TfrMapping> Ptr;
+    typedef shared_state<const TfrMapping> ConstPtr;
 
     TfrMapping(BlockLayout, ChannelCount channels);
     ~TfrMapping();
@@ -39,7 +39,7 @@ public:
     int channels() const;
     void channels(int value);
 
-    typedef VolatilePtr<Heightmap::Collection> pCollection;
+    typedef shared_state<Heightmap::Collection> pCollection;
     typedef std::vector<pCollection> Collections;
     Collections collections() const;
 

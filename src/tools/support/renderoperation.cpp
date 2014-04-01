@@ -35,7 +35,7 @@ Interval RenderOperationDesc::
     const Interval& a = OperationDescWrapper::affectedInterval( I );
 
     // This will result in an update rate that matches the invalidated intervals if possible.
-    write1(render_target_)->refreshSamples( a );
+    render_target_.write ()->refreshSamples( a );
 
     return a;
 }
@@ -48,7 +48,7 @@ Tfr::TransformDesc::Ptr RenderOperationDesc::
     if (!wo)
         return Tfr::TransformDesc::Ptr();
 
-    OperationDesc::ReadPtr o(wo);
+    auto o = wo.read ();
     const Tfr::TransformOperationDesc* f = dynamic_cast<const Tfr::TransformOperationDesc*>(&*o);
     if (f)
         return f->transformDesc ();
@@ -64,7 +64,7 @@ void RenderOperationDesc::
     if (!wo)
         return;
 
-    OperationDesc::WritePtr o(wo);
+    auto o = wo.write ();
     Tfr::TransformOperationDesc* f = dynamic_cast<Tfr::TransformOperationDesc*>(&*o);
     if (f)
         f->transformDesc (t);
@@ -87,11 +87,11 @@ pBuffer RenderOperationDesc::Operation::
 {
     Signal::Interval input = b?b->getInterval ():Signal::Interval();
 
-    b = write1(wrapped_)->process (b);
+    b = wrapped_.write ()->process (b);
 
     Signal::Interval output = b?b->getInterval ():Signal::Interval();
 
-    write1(render_target_)->processedData (input, output);
+    render_target_.write ()->processedData (input, output);
 
     return b;
 }
@@ -141,12 +141,12 @@ void RenderOperationDesc::
         RenderTarget::Ptr rtp(target = new RenderOperationDescMockTarget());
 
         Signal::OperationDesc::Ptr ro(rod = new RenderOperationDesc(operation, rtp));
-        Signal::Operation::Ptr o = write1(ro)->createOperation(0);
+        Signal::Operation::Ptr o = ro.write ()->createOperation(0);
 
         // Operations are processed through a Processing::Step
         Processing::Step step(ro);
         step.deprecateCache (Interval(4,9));
-        write1(o)->process (pBuffer());
+        o.write ()->process (pBuffer());
 
         EXCEPTION_ASSERT_EQUALS( Interval(4,9), target->I );
         EXCEPTION_ASSERT_EQUALS( 1, target->processed_count );

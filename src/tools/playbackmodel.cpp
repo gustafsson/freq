@@ -21,9 +21,9 @@ namespace Tools
             playback()
     {
         if (!adapter_playback)
-            return 0;
+            return Signal::Operation::Ptr();
 
-        Signal::OperationDesc::ReadPtr s(adapter_playback);
+        auto s = adapter_playback.read ();
         const Signal::SinkDesc* sinkdesc = dynamic_cast<const Signal::SinkDesc*>(&*s);
         return sinkdesc->sink ();
     }

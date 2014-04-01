@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_CHAIN_H
 #define SIGNAL_PROCESSING_CHAIN_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "targets.h"
 #include "targetmarker.h"
 #include "dag.h"
@@ -27,7 +27,7 @@ class Workers;
 class Chain
 {
 public:
-    typedef VolatilePtr<Chain> Ptr;
+    typedef shared_state<Chain> Ptr;
 
     static Chain::Ptr createDefaultChain();
 
@@ -58,13 +58,13 @@ public:
      *
      * Call IInvalidator::deprecateCache to update the chain with the samples that
      * were affected by this definition. A generic call would be
-     * 'read1(invalidator)->deprecateCache(chain->extent(at));'
+     * 'invalidator.read ()->deprecateCache(chain->extent(at));'
      */
     IInvalidator::Ptr addOperationAt(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
     void removeOperationsAt(TargetMarker::Ptr at);
     Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
 
-    VolatilePtr<Workers> workers() const;
+    shared_state<Workers> workers() const;
     Targets::Ptr targets() const;
 
     // Add jumping around with targets later.
@@ -72,14 +72,14 @@ public:
 private:
     Dag::Ptr dag_;
     Targets::Ptr targets_;
-    VolatilePtr<Workers> workers_;
+    shared_state<Workers> workers_;
     Bedroom::Ptr bedroom_;
     INotifier::Ptr notifier_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, VolatilePtr<Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
+    Chain(Dag::Ptr, Targets::Ptr targets, shared_state<Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
 
-    Step::WeakPtr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    Step::WeakPtr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::Ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::Ptr::weak_ptr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
 
 public:
     static void test();

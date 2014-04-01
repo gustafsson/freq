@@ -30,7 +30,7 @@ namespace Tools {
 
 //        TaskInfo(boost::format("Recreating worker %s")
 //                 % (*ce?vartype(**ce):vartype(*ce)));
-//        write1(workers)->addComputingEngine(*ce);
+//        workers.write ()->addComputingEngine(*ce);
 //    }
 //    case 2:
 //        break;

@@ -16,7 +16,7 @@ class TransformDesc;
 class TransformOperationDesc final: public Signal::OperationDesc
 {
 public:
-    TransformOperationDesc(VolatilePtr<ChunkFilterDesc>);
+    TransformOperationDesc(shared_state<ChunkFilterDesc>);
     ~TransformOperationDesc() {}
 
     // OperationDesc
@@ -30,10 +30,11 @@ public:
 
     boost::shared_ptr<TransformDesc>            transformDesc() const;
     void                                        transformDesc(boost::shared_ptr<TransformDesc>);
-    boost::shared_ptr<volatile ChunkFilterDesc> chunk_filter() const;
+    shared_state<ChunkFilterDesc>::write_ptr    chunk_filter();
+    shared_state<ChunkFilterDesc>::read_ptr     chunk_filter() const;
 
 protected:
-    VolatilePtr<ChunkFilterDesc> chunk_filter_;
+    shared_state<ChunkFilterDesc> chunk_filter_;
     boost::shared_ptr<TransformDesc> transformDesc_;
 
 public:

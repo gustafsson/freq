@@ -27,7 +27,7 @@ void ChunkToBlock::
 
     bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
 
-    BlockData::WritePtr blockdata(block->block_data());
+    auto blockdata = block->block_data ();
 
     if (transpose)
         mergeColumnMajorChunk (*block, *chunk, *blockdata);
@@ -158,18 +158,18 @@ void ChunkToBlock::
     vp->amplitude_axis(AmplitudeAxis_Linear);
 
     Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
-    write1(fdesc)->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
+    fdesc.write ()->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
     Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(fdesc));
-    Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
+    auto operation = desc.read ()->createOperation (0).write ();
 
     Signal::Interval expectedOutput;
-    Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);
+    Signal::Interval requiredInterval = desc.read ()->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
     Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
     operation->process( buffer );
 
     Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
-    Tfr::pChunk chunk = (*read1(fdesc)->transformDesc()->createTransform ())( monobuffer );
+    Tfr::pChunk chunk = (*fdesc.read ()->transformDesc()->createTransform ())( monobuffer );
 
     Heightmap::Reference ref;
 

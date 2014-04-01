@@ -9,7 +9,7 @@
 #include "splinemodel.h"
 
 // gpumisc
-#include "volatileptr.h"
+#include "shared_state.h"
 
 namespace Heightmap { class Collection; }
 
@@ -31,7 +31,7 @@ public:
 
     SplineModel spline_model;
 
-    void findAddPeak( VolatilePtr<Heightmap::Collection>::Ptr c, Heightmap::Reference ref, Heightmap::Position pos );
+    void findAddPeak( shared_state<Heightmap::Collection> c, Heightmap::Reference ref, Heightmap::Position pos );
 
 private:
     struct BorderCoordinates

@@ -16,7 +16,7 @@ public:
     // Requires workers and/or current worker
     TargetSchedule(Dag::Ptr g, IScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets);
 
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile;
+    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) const;
 
 private:
     Targets::Ptr targets;
@@ -24,7 +24,7 @@ private:
     Dag::Ptr g;
     IScheduleAlgorithm::Ptr algorithm;
 
-    boost::shared_ptr<TargetNeeds::ReadPtr> prioritizedTarget() const;
+    TargetNeeds::Ptr::read_ptr prioritizedTarget() const;
 
 public:
     static void test();

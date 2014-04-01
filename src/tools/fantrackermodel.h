@@ -10,7 +10,7 @@ class FanTrackerModel
 {
 public:
     FanTrackerModel(RenderModel*);
-    volatile Support::FanTrackerFilter* selected_filter();
+    static const Support::FanTrackerFilter* selected_filter(Signal::OperationDesc::Ptr::read_ptr& w);
     Signal::OperationDesc::Ptr filter;
 
 private:

@@ -36,7 +36,7 @@ void ChangeSelectionCommand::
 std::string ChangeSelectionCommand::
         toString()
 {
-    return s ? read1(s)->toString().toStdString() : "No selection";
+    return s ? s.read ()->toString().toStdString() : "No selection";
 }
 
 

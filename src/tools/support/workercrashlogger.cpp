@@ -30,11 +30,11 @@ WorkerCrashLogger::
     connect(&thread_, SIGNAL(finished()), SLOT(finished()));
     thread_.start ();
 
-    Workers::WritePtr ww(workers);
+    auto ww = workers.write ();
     // Log any future worker crashes
     connect(&*ww,
-            SIGNAL(worker_quit(boost::exception_ptr,Signal::ComputingEngine::Ptr)),
-            SLOT(worker_quit(boost::exception_ptr,Signal::ComputingEngine::Ptr)));
+            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)),
+            SLOT(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)));
 
     // Log previous worker crashes. As the new thread owns this, 'check' will
     // be executed in the new thread.
@@ -55,12 +55,12 @@ WorkerCrashLogger::
 
 
 void WorkerCrashLogger::
-        worker_quit(boost::exception_ptr e, Signal::ComputingEngine::Ptr ce)
+        worker_quit(std::exception_ptr e, Signal::ComputingEngine::Ptr ce)
 {
     DEBUG TaskInfo ti(boost::format("WorkerCrashLogger::worker_quit %s") % (e?"normally":"with exception"));
     if (consume_exceptions_)
       {
-        write1(workers_)->removeComputingEngine(ce);
+        workers_.write ()->removeComputingEngine(ce);
       }
 
     try
@@ -87,7 +87,7 @@ void WorkerCrashLogger::
 
     while(true) try
       {
-        write1(workers_)->rethrow_any_worker_exception();
+        workers_.write ()->rethrow_any_worker_exception();
 
         break;
       }
@@ -103,7 +103,7 @@ void WorkerCrashLogger::
 {
     DEBUG TaskInfo ti("check_all_previously_crashed_without_consuming");
 
-    Workers::EngineWorkerMap workers_map = read1(workers_)->workers_map();
+    Workers::EngineWorkerMap workers_map = workers_.read ()->workers_map();
 
     for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
       {
@@ -140,16 +140,16 @@ void WorkerCrashLogger::
       {
         Signal::OperationDesc::Ptr od;
         {
-            Step::WritePtr s(*mi);
-            s->mark_as_crashed ();
+            auto s = mi->write ();
+            s->mark_as_crashed_and_get_invalidator ();
             od = s->get_crashed ();
         }
 
         if (od)
         {
-            Signal::OperationDesc::ReadPtr o(od);
+            auto o = od.read ();
             Signal::Processing::IInvalidator::Ptr i = o->getInvalidator();
-            read1(i)->deprecateCache (Signal::Intervals::Intervals_ALL);
+            i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
             operation_desc_text = " in " + o->toString().toStdString();
         }
       }
@@ -169,7 +169,7 @@ void WorkerCrashLogger::
       }
 
     TaskInfo(boost::format("1 of %d workers crashed: '%s'%s")
-             % read1(workers_)->n_workers()
+             % workers_.read ()->n_workers()
              % crashed_engine_typename
              % operation_desc_text);
 
@@ -195,7 +195,7 @@ namespace Support {
 
 class DummyScheduler: public ISchedule
 {
-    boost::shared_ptr<volatile Task> getTask(Signal::ComputingEngine::Ptr) volatile
+    Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override
     {
         // Throw exception
         BOOST_THROW_EXCEPTION(DummyException());
@@ -206,10 +206,10 @@ class DummyScheduler: public ISchedule
 void addAndWaitForStop(Workers::Ptr workers)
 {
     QEventLoop e;
-    QObject::connect(&*write1(workers),
-            SIGNAL(worker_quit(boost::exception_ptr,Signal::ComputingEngine::Ptr)),
+    QObject::connect(&*workers.write (),
+            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)),
             &e, SLOT(quit()));
-    write1(workers)->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+    workers.write ()->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
     e.exec ();
 }
 
@@ -255,7 +255,7 @@ void WorkerCrashLogger::
         }
 
         // Should have consumed all workers
-        Workers::DeadEngines de = write1(workers)->clean_dead_workers();
+        Workers::DeadEngines de = workers.write ()->clean_dead_workers();
         EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
 
         // Should have taken a while (the backtrace beautifier is slow)
@@ -289,7 +289,7 @@ void WorkerCrashLogger::
             EXCEPTION_ASSERT_LESS( T, 3e-3 );
         }
 
-        Workers::DeadEngines de = write1(workers)->clean_dead_workers();
+        Workers::DeadEngines de = workers.write ()->clean_dead_workers();
         EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
 
         double T = timer.elapsedAndRestart ();
@@ -327,7 +327,7 @@ void WorkerCrashLogger::
         }
 
         // Should not have consumed any workers
-        Workers::DeadEngines de = write1(workers)->clean_dead_workers();
+        Workers::DeadEngines de = workers.write ()->clean_dead_workers();
         EXCEPTION_ASSERT_EQUALS(de.size (), 2u);
 
         double T = timer.elapsedAndRestart ();

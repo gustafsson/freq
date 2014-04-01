@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAP_BLOCKS_ICHUNKMERGER_H
 #define HEIGHTMAP_BLOCKS_ICHUNKMERGER_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "heightmap/mergechunk.h"
 #include "tfr/chunkfilter.h"
 
@@ -11,7 +11,7 @@ namespace Blocks {
 class IChunkMerger
 {
 public:
-    typedef VolatilePtr<IChunkMerger> Ptr;
+    typedef shared_state<IChunkMerger> Ptr;
 
     virtual ~IChunkMerger() {}
 

@@ -1,10 +1,12 @@
 #ifndef SIGNAL_PROCESSING_STEP_H
 #define SIGNAL_PROCESSING_STEP_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "signal/computingengine.h"
 #include "signal/operation.h"
 #include "signal/cache.h"
+
+#include <condition_variable>
 
 namespace Signal {
 namespace Processing {
@@ -23,10 +25,7 @@ class Task;
 class Step
 {
 public:
-    typedef VolatilePtr<Step> Ptr;
-    typedef Ptr::WeakPtr WeakPtr;
-    typedef Ptr::ReadPtr ReadPtr;
-    typedef Ptr::WritePtr WritePtr;
+    typedef shared_state<Step> Ptr;
 
     // To be appended to exceptions while using Step
     typedef boost::error_info<struct crashed_step_tag, Step::Ptr> crashed_step;
@@ -51,7 +50,7 @@ public:
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
     void                        finishTask(Task* taskid, Signal::pBuffer result);
-    static void                 sleepWhileTasks(Step::Ptr step, int sleep_ms);
+    static void                 sleepWhileTasks(Step::Ptr::read_ptr& step, int sleep_ms);
 
     /**
      * @brief readFixedLengthFromCache should read a buffer from the cache.
@@ -73,7 +72,7 @@ private:
 
     Signal::OperationDesc::Ptr  operation_desc_;
 
-    boost::condition_variable_any wait_for_tasks_;
+    mutable std::condition_variable_any wait_for_tasks_;
 
     std::string                 operation_name();
     Signal::Intervals           currently_processing() const; // from running_tasks

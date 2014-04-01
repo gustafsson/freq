@@ -51,7 +51,7 @@ void ChunkMergerThread::
 {
     INFO TaskTimer ti("ChunkMergerThread::clear");
 
-    VolatilePtr<Jobs>::WritePtr jobs(this->jobs);
+    auto jobs = this->jobs.write ();
 
     while (!jobs->empty ())
         jobs->pop ();
@@ -72,7 +72,7 @@ void ChunkMergerThread::
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
 
-    VolatilePtr<Jobs>::WritePtr jobsw(jobs);
+    auto jobsw = jobs.write ();
     if (!isInterruptionRequested ())
         jobsw->push (j);
 
@@ -129,7 +129,7 @@ void ChunkMergerThread::
 bool ChunkMergerThread::
         isEmpty() const
 {
-    return read1(jobs)->empty();
+    return jobs.read ()->empty();
 }
 
 
@@ -149,7 +149,7 @@ void ChunkMergerThread::
               {
                 Job job;
                   {
-                    VolatilePtr<Jobs>::WritePtr jobsr(jobs);
+                    auto jobsr = jobs.write ();
                     if (jobsr->empty ())
                         break;
                     job = jobsr->front ();
@@ -161,7 +161,7 @@ void ChunkMergerThread::
                     // Want processChunks(-1) and self->isEmpty () to return false until
                     // the job has finished processing.
 
-                    VolatilePtr<Jobs>::WritePtr jobsw(jobs);
+                    auto jobsw = jobs.write ();
                     // Both 'clear' and 'addChunk' may have been called in between, so only
                     // pop the queue if the first job is still the same.
                     if (!jobsw->empty() && job.chunk.chunk == jobsw->front().chunk.chunk)
@@ -191,7 +191,7 @@ void ChunkMergerThread::
 void ChunkMergerThread::
         processJob(Job& j)
 {
-    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = write1( j.merge_chunk )->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
 
     for (IChunkToBlock::Ptr chunk_to_block : chunk_to_blocks)
       {

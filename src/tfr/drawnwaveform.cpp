@@ -130,7 +130,7 @@ FreqAxis DrawnWaveform::
 }
 
 
-static const unsigned DrawnWaveform_step_constant = 1024;
+//static const unsigned DrawnWaveform_step_constant = 1024;
 
 
 unsigned DrawnWaveform::

@@ -204,7 +204,7 @@ namespace Tools
     {
         _model->set_current_selection( selection );
 
-        bool enabled_actions = 0 != selection.get();
+        bool enabled_actions = (bool)selection;
 
         Ui::SaweMainWindow* main = _model->project()->mainWindow();
         Ui::MainWindow* ui = main->getItems();
@@ -329,7 +329,7 @@ namespace Tools
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
 
-        Log("Clear selection\n%s") % read1(o)->toString().toStdString();
+        Log("Clear selection\n%s") % o.read ()->toString().toStdString();
     }
 
 
@@ -344,7 +344,7 @@ namespace Tools
         _model->set_current_selection( Signal::OperationDesc::Ptr() );
         _model->project()->appendOperation( o );
 
-        Signal::OperationDesc::Extent x = read1(o)->extent();
+        Signal::OperationDesc::Extent x = o.read ()->extent();
         if (x.interval.is_initialized ())
           {
             Signal::Interval xi = x.interval.get ();
@@ -356,7 +356,7 @@ namespace Tools
               }
           }
 
-        Log("Crop selection\n%s") % read1(o)->toString().toStdString();
+        Log("Crop selection\n%s") % o.read ()->toString().toStdString();
     }
 
 

@@ -10,7 +10,7 @@ namespace Heightmap {
 
 class MergeChunk {
 public:
-    typedef VolatilePtr<MergeChunk> Ptr;
+    typedef shared_state<MergeChunk> Ptr;
 
     virtual ~MergeChunk() {}
 
@@ -30,7 +30,7 @@ public:
 class MergeChunkDesc
 {
 public:
-    typedef VolatilePtr<MergeChunkDesc> Ptr;
+    typedef shared_state<MergeChunkDesc> Ptr;
 
     virtual ~MergeChunkDesc() {}
 

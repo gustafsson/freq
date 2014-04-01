@@ -3,7 +3,7 @@
 
 #include "freqaxis.h"
 #include "signal/intervals.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include <boost/shared_ptr.hpp>
 

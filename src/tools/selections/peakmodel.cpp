@@ -109,7 +109,7 @@ float& PeakModel::
 void PeakModel::
         findAddPeak( Heightmap::Collection::Ptr cptr, Heightmap::Reference ref, Heightmap::Position pos )
 {
-    Heightmap::Collection::WritePtr write_ptr(cptr);
+    auto write_ptr = cptr.write ();
     c = &*write_ptr;
 
     Heightmap::BlockLayout block_size = c->block_layout();

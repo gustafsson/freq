@@ -15,7 +15,7 @@ public:
     void wakeup() const;
 
 private:
-    Bedroom::WeakPtr bedroom_;
+    Bedroom::weak_ptr bedroom_;
 };
 
 } // namespace Processing

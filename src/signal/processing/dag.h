@@ -3,7 +3,7 @@
 
 #include "step.h"
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include <boost/graph/directed_graph.hpp>
 
@@ -24,10 +24,7 @@ GraphVertex NullVertex();
 class Dag
 {
 public:
-    typedef VolatilePtr<Dag> Ptr;
-    typedef Ptr::ReadPtr ReadPtr;
-    typedef Ptr::WritePtr WritePtr;
-    typedef Ptr::WeakPtr WeakPtr;
+    typedef shared_state<Dag> Ptr;
 
     Dag();
 

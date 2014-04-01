@@ -9,18 +9,8 @@ using namespace Signal;
 namespace Tools {
 namespace Support {
 
-RmsValue::
-        RmsValue()
-    :
-      rms_I(),
-      rms(0)
-{
-
-}
-
-
 ComputeRms::
-        ComputeRms(RmsValue::Ptr rms)
+        ComputeRms(shared_state<RmsValue> rms)
             :
             rms(rms)
 {
@@ -31,7 +21,7 @@ ComputeRms::
 pBuffer ComputeRms::
         process( pBuffer read_b )
 {
-    Intervals missing = read_b->getInterval() - read1(rms)->rms_I;
+    Intervals missing = read_b->getInterval() - rms.read ()->rms_I;
 
     BOOST_FOREACH(Interval i, missing)
     {
@@ -51,7 +41,7 @@ pBuffer ComputeRms::
         S/=C;
 
         {
-            RmsValue::WritePtr r(rms);
+            auto r = rms.write ();
             unsigned newL = r->rms_I.count() + L;
             r->rms = sqrt(r->rms*r->rms * r->rms_I.count()/newL + S/newL);
 
@@ -84,7 +74,7 @@ Signal::Interval ComputeRmsDesc::
         affectedInterval( const Signal::Interval& I ) const
 {
     {
-        RmsValue::WritePtr r(rms_);
+        auto r = rms_.write ();
         r->rms = 0;
         r->rms_I.clear ();
     }
@@ -113,7 +103,7 @@ Signal::Operation::Ptr ComputeRmsDesc::
 float ComputeRmsDesc::
         rms()
 {
-    return read1(rms_)->rms;
+    return rms_.read ()->rms;
 }
 
 } // namespace Support
@@ -132,7 +122,7 @@ void ComputeRmsDesc::
         Signal::pBuffer b = Test::RandomBuffer::smallBuffer ();
         ComputeRmsDesc crd;
         Signal::Operation::Ptr o = crd.createOperation ();
-        write1(o)->process (b);
+        o.write ()->process (b);
 
         EXCEPTION_ASSERT_EQUALS(5.3572383f, crd.rms ());
     }

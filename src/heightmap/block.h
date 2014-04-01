@@ -5,7 +5,7 @@
 
 // gpumisc
 #include "datastorage.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #ifndef SAWE_NO_MUTEX
 #include <QMutex>
@@ -17,10 +17,6 @@ namespace Heightmap {
 
     class BlockData {
     public:
-        typedef VolatilePtr<BlockData> Ptr;
-        typedef Ptr::WritePtr WritePtr;
-        typedef Ptr::ReadPtr ReadPtr;
-
         typedef DataStorage<float>::Ptr pData;
 
         /**
@@ -55,12 +51,12 @@ namespace Heightmap {
 
         // OpenGL data to render
         boost::shared_ptr<GlBlock> glblock;
-        BlockData::WritePtr block_data();
+        shared_state<BlockData>::write_ptr block_data();
         void discard_new_block_data();
 
         // Lock if available but don't wait for it to become available
-        BlockData::ReadPtr block_data_const() const {
-            return BlockData::ReadPtr(block_data_, NoLockFailed());
+        shared_state<BlockData>::read_ptr block_data_const() const {
+            return block_data_.try_read();
         }
 
         /**
@@ -84,7 +80,7 @@ namespace Heightmap {
         ReferenceInfo referenceInfo() const { return ReferenceInfo(reference (), block_layout (), visualization_params ()); }
 
     private:
-        BlockData::Ptr block_data_;
+        shared_state<BlockData> block_data_;
         bool new_data_available_;
         const Reference ref_;
         const BlockLayout block_layout_;

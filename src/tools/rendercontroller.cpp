@@ -113,8 +113,8 @@ RenderController::
 //        logScale->trigger();
 //#endif
 
-        write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
-        write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().enable_inverse(false);
+        model()->transform_descs ()->getParam<Tfr::StftDesc>().setWindow(Tfr::StftDesc::WindowType_Hann, 0.75f);
+        model()->transform_descs ()->getParam<Tfr::StftDesc>().enable_inverse(false);
 
         ui->actionToggleTransformToolBox->setChecked( true );
     }
@@ -277,12 +277,12 @@ void RenderController::
 
     if (isCwt)
     {
-        float scales_per_octave = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ();
+        float scales_per_octave = model()->transform_descs ()->getParam<Tfr::Cwt>().scales_per_octave ();
         tf_resolution->setValue ( scales_per_octave );
     }
     else
     {
-        int chunk_size = write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().chunk_size ();
+        int chunk_size = model()->transform_descs ()->getParam<Tfr::StftDesc>().chunk_size ();
         tf_resolution->setValue ( chunk_size );
     }
 
@@ -325,9 +325,9 @@ void RenderController::
 {
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
     if (isCwt)
-        write1(model()->transform_descs ())->getParam<Tfr::Cwt>().scales_per_octave ( value );
+        model()->transform_descs ()->getParam<Tfr::Cwt>().scales_per_octave ( value );
     else
-        write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().set_approximate_chunk_size( value );
+        model()->transform_descs ()->getParam<Tfr::StftDesc>().set_approximate_chunk_size( value );
 
     stateChanged();
 
@@ -357,7 +357,7 @@ void RenderController::
         return;
 
     {
-        Heightmap::TfrMapping::WritePtr tfr_map(model()->tfr_mapping ());
+        auto tfr_map = model()->tfr_mapping ().write ();
 
         // If the transform currently in use differs from the transform settings
         // that should be used, change the transform.
@@ -368,12 +368,12 @@ void RenderController::
         // tfr_map
         EXCEPTION_ASSERT (useroptions);
 
-        newuseroptions = read1(model()->transform_descs ())->cloneType(typeid(*useroptions));
+        newuseroptions = model()->transform_descs ().read ()->cloneType(typeid(*useroptions));
         EXCEPTION_ASSERT (newuseroptions);
 
         if (*newuseroptions != *useroptions)
           {
-            write1(model()->chunk_merger)->clear();
+            model()->chunk_merger.write ()->clear();
             tfr_map->transform_desc( newuseroptions );
           }
     }
@@ -387,7 +387,7 @@ void RenderController::
         setCurrentFilterTransform( Tfr::TransformDesc::Ptr t )
 {
     {
-        Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
+        auto td = model()->transform_descs ().write ();
         Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
         Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
 
@@ -411,7 +411,7 @@ void RenderController::
     Tfr::ChunkFilterDesc::Ptr kernel(cbfd
             = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
-    write1(kernel)->transformDesc(transform_desc);
+    kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
 }
 
@@ -440,7 +440,7 @@ void RenderController::
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     if (isCwt || wasCwt) {
-        Tools::Support::TransformDescs::WritePtr td(model()->transform_descs ());
+        auto td = model()->transform_descs ().write ();
         Tfr::StftDesc& s = td->getParam<Tfr::StftDesc>();
         Tfr::Cwt& c = td->getParam<Tfr::Cwt>();
 
@@ -467,8 +467,8 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    write1(model()->chunk_merger)->clear();
-    write1(model()->tfr_mapping ())->transform_desc( currentTransform()->copy() );
+    model()->chunk_merger.write ()->clear();
+    model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
     //return ps;
@@ -525,7 +525,7 @@ void RenderController::
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Non_Weighted));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ().write ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -538,7 +538,7 @@ void RenderController::
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::StftBlockFilterDesc(model()->get_stft_block_filter_params ()));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::StftDesc>().copy();
+    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ().write ()->getParam<Tfr::StftDesc>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -551,7 +551,7 @@ void RenderController::
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -593,7 +593,7 @@ void RenderController::
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::Cwt>().copy();
+    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -606,7 +606,7 @@ void RenderController::
     Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CepstrumBlockFilterDesc);
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = write1(model()->transform_descs ())->getParam<Tfr::CepstrumDesc>().copy();
+    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ()->getParam<Tfr::CepstrumDesc>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -657,7 +657,7 @@ void RenderController::
     Tfr::FreqAxis fa;
 
     {
-        Support::TransformDescs::WritePtr td(model()->transform_descs ());
+        auto td = model()->transform_descs ().write ();
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         fa.setLogarithmic(
                 cwt.get_wanted_min_hz (fs),
@@ -685,7 +685,7 @@ void RenderController::
     float fs = headSampleRate();
 
     Tfr::FreqAxis fa;
-    fa.setQuefrencyNormalized( fs, write1(model()->transform_descs ())->getParam<Tfr::CepstrumDesc>().chunk_size() );
+    fa.setQuefrencyNormalized( fs, model()->transform_descs ()->getParam<Tfr::CepstrumDesc>().chunk_size() );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
     {
@@ -1062,7 +1062,7 @@ void RenderController::
 {
     // Canät do this, chunk_merger might have glblock instances
 //    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
-//        write1(collection)->clear();
+//        collection.write ()->clear();
 }
 
 
@@ -1146,7 +1146,7 @@ void RenderController::
     unsigned N = channels->source()->num_channels();
 */
     unsigned  N = model()->project ()->extent().number_of_channels.get_value_or (0);
-    if (read1(model()->tfr_mapping ())->channels() != (int)N)
+    if (model()->tfr_mapping ().read ()->channels() != (int)N)
         model()->recompute_extent ();
     for (unsigned i=0; i<N; ++i)
     {
@@ -1182,9 +1182,9 @@ void RenderController::
     {
         unsigned c = o->data().toUInt();
         //channels->map(c, o->isChecked() ? c : Signal::RerouteChannels::NOTHING );
-        if (read1(model()->collections()[c])->isVisible() != o->isChecked())
+        if (model()->collections()[c].read ()->isVisible() != o->isChecked())
         {
-            write1(model()->collections()[c])->setVisible( o->isChecked() );
+            model()->collections()[c].write ()->setVisible( o->isChecked() );
             stateChanged();
         }
     }

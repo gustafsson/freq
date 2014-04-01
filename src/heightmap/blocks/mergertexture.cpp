@@ -82,7 +82,7 @@ void MergerTexture::
 
     int merge_levels = 10;
 
-    { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), read1(cache_)->cache().size(), merge_levels);
+    { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_.read ()->cache().size(), merge_levels);
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
         VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
@@ -129,7 +129,7 @@ void MergerTexture::
             {
                 next.push_back ( bl );
             }
-        } catch (const BlockData::Ptr::LockFailed&) {}
+        } catch (const shared_state<BlockData>::lock_failed&) {}
 
         gib = next;
     }
@@ -160,7 +160,7 @@ void MergerTexture::
         glReadPixels (0, 0, t->getWidth (), t->getHeight (), GL_RED, GL_FLOAT, 0);
         float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
         {
-            BlockData::WritePtr outdata(block->block_data ());
+            auto outdata = block->block_data ();
             memcpy(outdata->cpu_copy->getCpuMemory(), src, outdata->cpu_copy->numberOfBytes ());
             block->discard_new_block_data ();
         }
@@ -198,10 +198,10 @@ namespace Heightmap {
 namespace Blocks {
 
 static void clearCache(BlockCache::Ptr cache) {
-    while(!read1(cache)->cache().empty()) {
-        pBlock b = read1(cache)->cache().begin()->second;
+    while(!cache.read ()->cache().empty()) {
+        pBlock b = cache.read ()->cache().begin()->second;
         b->glblock.reset();
-        write1(cache)->erase(b->reference ());
+        cache.write ()->erase(b->reference ());
     }
 }
 
@@ -259,7 +259,7 @@ void MergerTexture::
             block->update_glblock_data ();
             block->glblock->update_texture( GlBlock::HeightMode_Flat );
 
-            write1(cache)->insert(block);
+            cache.write ()->insert(block);
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -287,7 +287,7 @@ void MergerTexture::
             block->update_glblock_data ();
             block->glblock->update_texture( GlBlock::HeightMode_Flat );
 
-            write1(cache)->insert(block);
+            cache.write ()->insert(block);
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
