@@ -5,23 +5,35 @@
 
 namespace Tools {
 
-
-class OpenfileWatcher: public FileChangedBase, public Signal::OperationDescWrapper
+class OpenfileWatcher: public FileChangedBase
 {
 public:
     OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path);
 
+    void setWrapper(shared_state<Signal::OperationDesc>::weak_ptr wrapper);
+    void setWrappedOperationDesc(Signal::OperationDesc::ptr);
+    Signal::OperationDesc::ptr getWrappedOperationDesc();
+
 private:
     void fileChanged (const QString & path);
 
+    shared_state<Signal::OperationDesc>::weak_ptr wrapper_;
+    Signal::OperationDesc::ptr last_loaded_operation_;
     QPointer<OpenfileController> openfilecontroller_;
     QFileSystemWatcher watcher_;
+    shared_state<Signal::OperationDesc>::weak_ptr operation_;
 };
+
+
+class OpenfileWatcherOperationDesc: public Signal::OperationDescWrapper {
+public:
+    QSharedPointer<OpenfileWatcher> openfile_watcher;
+};
+
 
 OpenfileWatcher::
         OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path)
     :
-      OperationDescWrapper(Signal::OperationDesc::ptr()),
       openfilecontroller_(openfilecontroller)
 {
     watcher_.addPath (path);
@@ -32,13 +44,54 @@ OpenfileWatcher::
 
 
 void OpenfileWatcher::
+        setWrapper(shared_state<Signal::OperationDesc>::weak_ptr wrapper)
+{
+    wrapper_ = wrapper;
+
+    setWrappedOperationDesc (last_loaded_operation_);
+}
+
+
+void OpenfileWatcher::
+        setWrappedOperationDesc(Signal::OperationDesc::ptr o)
+{
+    if (Signal::OperationDesc::ptr wrapper = wrapper_.lock ())
+    {
+        auto w = wrapper.write ();
+        Signal::OperationDescWrapper* odw = dynamic_cast<Signal::OperationDescWrapper*>(w.get ());
+        if (odw) {
+            odw->setWrappedOperationDesc (o);
+            w.unlock ();
+
+            Signal::Processing::IInvalidator::ptr i = wrapper.raw ()->getInvalidator ();
+            if (i)
+                i->deprecateCache (Signal::Interval::Interval_ALL);
+        }
+    }
+}
+
+
+Signal::OperationDesc::ptr OpenfileWatcher::
+        getWrappedOperationDesc()
+{
+    return last_loaded_operation_;
+}
+
+
+void OpenfileWatcher::
         fileChanged ( const QString & path)
 {
     TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
 
-    Signal::OperationDesc::ptr file = openfilecontroller_->reopen(path, getWrappedOperationDesc ());
+    Signal::OperationDesc::ptr newop = openfilecontroller_->reopen(path, last_loaded_operation_);
+    if (!newop) {
+        TaskInfo("Could not open file, ignoring reload");
+        return;
+    }
 
-    setWrappedOperationDesc (file);
+    last_loaded_operation_ = newop;
+
+    setWrappedOperationDesc (last_loaded_operation_);
 }
 
 
@@ -54,13 +107,19 @@ OpenWatchedFileController::
 Signal::OperationDesc::ptr OpenWatchedFileController::
         openWatched(QString url)
 {
-    OpenfileWatcher* w;
-    Signal::OperationDesc::ptr o(w = new OpenfileWatcher(openfilecontroller_, url));
+    QSharedPointer<OpenfileWatcher> w {new OpenfileWatcher(openfilecontroller_, url)};
 
     // The file must exist to begin with
     if (w->getWrappedOperationDesc ())
-        return o;
+    {
+        OpenfileWatcherOperationDesc* d;
+        Signal::OperationDesc::ptr o {d = new OpenfileWatcherOperationDesc};
 
+        d->openfile_watcher = w; // ownership
+        w->setWrapper (o);       // to lock while calling setWrappedOperationDesc
+
+        return o;
+    }
     // Failed to open url
     return Signal::OperationDesc::ptr();
 }

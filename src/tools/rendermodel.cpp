@@ -264,6 +264,12 @@ void RenderModel::
             dynamic_cast<Signal::OperationDescWrapper*>(&*wo);
 
     w->setWrappedOperationDesc (o);
+    wo.unlock ();
+
+    Signal::Processing::IInvalidator::ptr i =
+            render_operation_desc_.raw ()->getInvalidator ();
+    if (i)
+        i->deprecateCache(Signal::Interval::Interval_ALL);
 }
 
 
