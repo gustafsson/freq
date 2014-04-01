@@ -20,7 +20,7 @@ typedef std::map<GraphVertex, Signal::Intervals> NeededSamples;
 
 
 struct ScheduleParams {
-    Signal::ComputingEngine::Ptr engine;
+    Signal::ComputingEngine::ptr engine;
     Signal::IntervalType preferred_size;
     Signal::IntervalType center;
 };
@@ -28,7 +28,7 @@ struct ScheduleParams {
 
 class find_missing_samples: public default_bfs_visitor {
 public:
-    find_missing_samples(NeededSamples needed, Task::Ptr* output_task, ScheduleParams schedule_params)
+    find_missing_samples(NeededSamples needed, Task::ptr* output_task, ScheduleParams schedule_params)
         :
           needed(needed),
           params(schedule_params),
@@ -76,7 +76,7 @@ public:
                 return Signal::Interval();
               }
 
-            Signal::OperationDesc::Ptr op = step->operation_desc();
+            Signal::OperationDesc::ptr op = step->operation_desc();
             auto o = op.write ();
 
             DEBUGINFO TaskTimer tt(format("Missing %1% in %2% for %3%")
@@ -123,13 +123,13 @@ public:
             // If nothing is missing and this engine supports this operation
             if (missing_input.empty ())
               {
-                Signal::Operation::Ptr operation = o->createOperation (params.engine.get ());
+                Signal::Operation::ptr operation = o->createOperation (params.engine.get ());
                 o.unlock ();
 
                 if (operation)
                   {
                     // Create a task
-                    std::vector<Step::Ptr> children;
+                    std::vector<Step::ptr> children;
 
                     BOOST_FOREACH(GraphEdge e, out_edges(u, g))
                       {
@@ -137,7 +137,7 @@ public:
                         children.push_back (g[v]);
                       }
 
-                    *task = Task::Ptr(new Task(step, g[u], children, operation, expected_output, required_input));
+                    *task = Task::ptr(new Task(step, g[u], children, operation, expected_output, required_input));
                   }
               }
 
@@ -152,7 +152,7 @@ public:
 
             try
               {
-                Signal::Processing::IInvalidator::Ptr i = step->mark_as_crashed_and_get_invalidator();
+                Signal::Processing::IInvalidator::ptr i = step->mark_as_crashed_and_get_invalidator();
                 step.unlock ();
                 if (i) i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
@@ -167,18 +167,18 @@ public:
 
     NeededSamples needed;
     ScheduleParams params;
-    Task::Ptr* task;
+    Task::ptr* task;
 };
 
 
-Task::Ptr FirstMissAlgorithm::
+Task::ptr FirstMissAlgorithm::
         getTask(const Graph& straight_g,
                 GraphVertex straight_target,
                 Signal::Intervals needed,
                 Signal::IntervalType center,
                 Signal::IntervalType preferred_size,
-                Workers::Ptr /*workers*/,
-                Signal::ComputingEngine::Ptr engine) const
+                Workers::ptr /*workers*/,
+                Signal::ComputingEngine::ptr engine) const
 {
     DEBUGINFO TaskTimer tt(boost::format("FirstMissAlgorithm %s %p") % (engine?vartype(*engine):"Signal::ComputingEngine*") % engine.get ());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
@@ -190,7 +190,7 @@ Task::Ptr FirstMissAlgorithm::
     needed_samples[target] = needed;
 
 
-    Task::Ptr task;
+    Task::ptr task;
     find_missing_samples vis(needed_samples, &task, schedule_params);
 
     breadth_first_search(g, target, visitor(vis));
@@ -209,8 +209,8 @@ void FirstMissAlgorithm::
     {
         // Create an OperationDesc and a Step
         Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
-        Signal::OperationDesc::Ptr od(new BufferSource(b));
-        Step::Ptr step(new Step(od));
+        Signal::OperationDesc::ptr od(new BufferSource(b));
+        Step::ptr step(new Step(od));
 
         // Create a graph with only one vertex
         Graph g;
@@ -219,9 +219,9 @@ void FirstMissAlgorithm::
 
         // Schedule a task
         FirstMissAlgorithm schedule;
-        Signal::ComputingEngine::Ptr c(new Signal::ComputingCpu);
-        Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::Ptr(), c);
-        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::Ptr(), c);
+        Signal::ComputingEngine::ptr c(new Signal::ComputingCpu);
+        Task::ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
+        Task::ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
 
 
         // Verify output

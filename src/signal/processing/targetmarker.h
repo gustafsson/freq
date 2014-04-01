@@ -20,7 +20,7 @@ class TargetNeeds;
 class TargetMarker
 {
 public:
-    typedef boost::shared_ptr<TargetMarker> Ptr;
+    typedef boost::shared_ptr<TargetMarker> ptr;
 
     TargetMarker(shared_state<TargetNeeds> target_needs, shared_state<Dag> dag);
     ~TargetMarker();

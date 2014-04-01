@@ -12,18 +12,18 @@ namespace Processing {
 class IScheduleAlgorithm
 {
 public:
-    typedef shared_state<IScheduleAlgorithm> Ptr;
+    typedef shared_state<IScheduleAlgorithm> ptr;
 
     virtual ~IScheduleAlgorithm() {}
 
-    virtual Task::Ptr getTask(
+    virtual Task::ptr getTask(
             const Graph& g,
             GraphVertex target,
             Signal::Intervals needed, //=Intervals::Intervals_ALL,
             Signal::IntervalType center, //=Interval::IntervalType_MIN,
             Signal::IntervalType preferred_size, //=Interval::IntervalType_MAX,
-            Workers::Ptr workers, //=Workers::Ptr(),
-            Signal::ComputingEngine::Ptr worker) const = 0;
+            Workers::ptr workers, //=Workers::Ptr(),
+            Signal::ComputingEngine::ptr worker) const = 0;
 };
 
 } // namespace Processing

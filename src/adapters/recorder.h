@@ -13,7 +13,7 @@ namespace Adapters {
 class Recorder
 {
 public:
-    typedef shared_state<Recorder> Ptr;
+    typedef shared_state<Recorder> ptr;
 
     struct shared_state_traits: shared_state_traits_default {
         double timeout() { return 0.500; }
@@ -35,7 +35,7 @@ public:
     class IGotDataCallback
     {
     public:
-        typedef shared_state<IGotDataCallback> Ptr;
+        typedef shared_state<IGotDataCallback> ptr;
 
         virtual ~IGotDataCallback() {}
 
@@ -52,7 +52,7 @@ public:
     virtual bool canRecord() = 0;
 
     float time_since_last_update();
-    void setDataCallback( IGotDataCallback::Ptr invalidator );
+    void setDataCallback( IGotDataCallback::ptr invalidator );
     Signal::Cache& data() { return _data; }
 
     // virtual from Signal::SourceBase
@@ -68,7 +68,7 @@ public:
 protected:
     mutable QMutex _data_lock;
     Signal::Cache _data; // TODO use shared_state<Signal::Cache>
-    IGotDataCallback::Ptr _invalidator;
+    IGotDataCallback::ptr _invalidator;
     float _offset;
     boost::posix_time::ptime _start_recording, _last_update;
     Signal::IntervalType actual_number_of_samples() const;

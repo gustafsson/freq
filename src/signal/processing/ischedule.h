@@ -18,7 +18,7 @@ class Task;
 class ISchedule
 {
 public:
-    typedef shared_state<ISchedule> Ptr;
+    typedef shared_state<ISchedule> ptr;
 
     virtual ~ISchedule() {}
 
@@ -29,7 +29,7 @@ public:
      *
      * @return
      */
-    virtual shared_state<Task> getTask(Signal::ComputingEngine::Ptr engine) const = 0;
+    virtual shared_state<Task> getTask(Signal::ComputingEngine::ptr engine) const = 0;
 };
 
 } // namespace Processing

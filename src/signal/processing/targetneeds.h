@@ -20,8 +20,8 @@ class Bedroom;
 class TargetNeeds
 {
 public:
-    typedef shared_state<TargetNeeds> Ptr;
-    typedef shared_state<const TargetNeeds> ConstPtr;
+    typedef shared_state<TargetNeeds> ptr;
+    typedef shared_state<const TargetNeeds> const_ptr;
     typedef shared_state_traits_backtrace shared_state_traits;
 
     TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
@@ -67,7 +67,7 @@ public:
      * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
      * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */
-    static bool sleep(TargetNeeds::ConstPtr targetneeds, int sleep_ms);
+    static bool sleep(TargetNeeds::const_ptr targetneeds, int sleep_ms);
 
 private:
     shared_state<Step>::weak_ptr step_;

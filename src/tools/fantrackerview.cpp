@@ -14,7 +14,7 @@ namespace Tools {
 void FanTrackerView::
         draw()
 {
-    Signal::OperationDesc::Ptr::read_ptr fp = model_->filter.read ();
+    Signal::OperationDesc::ptr::read_ptr fp = model_->filter.read ();
     const Support::FanTrackerFilter* f = model_->selected_filter(fp);
 
     if (f)

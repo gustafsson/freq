@@ -93,10 +93,10 @@ Signal::pMonoBuffer DrawnWaveform::
 }
 
 
-TransformDesc::Ptr DrawnWaveform::
+TransformDesc::ptr DrawnWaveform::
         copy() const
 {
-    return TransformDesc::Ptr(new DrawnWaveform(*this));
+    return TransformDesc::ptr(new DrawnWaveform(*this));
 }
 
 

@@ -6,7 +6,7 @@
 namespace Tools {
 namespace Commands {
 
-ChangeSelectionCommand::ChangeSelectionCommand(Tools::SelectionController*p, Signal::OperationDesc::Ptr s)
+ChangeSelectionCommand::ChangeSelectionCommand(Tools::SelectionController*p, Signal::OperationDesc::ptr s)
     :
     s(s),
     p(p)

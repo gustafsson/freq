@@ -124,12 +124,12 @@ namespace Adapters {
 class MicrophoneRecorderOperation: public Signal::Operation
 {
 public:
-    MicrophoneRecorderOperation( Recorder::Ptr recorder );
+    MicrophoneRecorderOperation( Recorder::ptr recorder );
 
     virtual Signal::pBuffer process(Signal::pBuffer b);
 
 private:
-    Recorder::Ptr recorder_;
+    Recorder::ptr recorder_;
 };
 
 
@@ -139,23 +139,23 @@ private:
 class MicrophoneRecorderDesc: public Signal::OperationDesc
 {
 public:
-    MicrophoneRecorderDesc( Recorder::Ptr, Recorder::IGotDataCallback::Ptr invalidator );
+    MicrophoneRecorderDesc( Recorder::ptr, Recorder::IGotDataCallback::ptr invalidator );
 
     void startRecording();
     void stopRecording();
     bool isStopped();
     bool canRecord();
-    Recorder::Ptr recorder() const;
+    Recorder::ptr recorder() const;
 
     // OperationDesc
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    virtual OperationDesc::Ptr copy() const;
-    virtual Signal::Operation::Ptr createOperation( Signal::ComputingEngine* engine ) const;
+    virtual OperationDesc::ptr copy() const;
+    virtual Signal::Operation::ptr createOperation( Signal::ComputingEngine* engine ) const;
     virtual Extent extent() const;
 
 private:
-    Recorder::Ptr recorder_;
+    Recorder::ptr recorder_;
 
 public:
     static void test();

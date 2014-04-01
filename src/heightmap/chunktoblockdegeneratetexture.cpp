@@ -337,7 +337,7 @@ void ChunkToBlockDegenerateTexture::
     br.b.scale += 0.5*ds / bl.texels_per_column ();
 
     // Setup the VBO, need to know the current display scale, which is defined by the block.
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    VisualizationParams::const_ptr vp = block.visualization_params ();
     prepVbo(vp->display_scale (), bl);
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::mergeChunk %s") % br);
@@ -373,7 +373,7 @@ void ChunkToBlockDegenerateTexture::
     // Draw from chunk texture onto block texture
     {
         // Setup framebuffer rendering
-        GlTexture::Ptr t = glblock->glTexture ();
+        GlTexture::ptr t = glblock->glTexture ();
         GlFrameBuffer fbo(t->getOpenGlTextureId ());
         GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
 

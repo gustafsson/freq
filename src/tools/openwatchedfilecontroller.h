@@ -16,7 +16,7 @@ class OpenWatchedFileController : public QObject
 public:
     explicit OpenWatchedFileController(QPointer<OpenfileController> openfilecontroller);
 
-    Signal::OperationDesc::Ptr openWatched(QString url);
+    Signal::OperationDesc::ptr openWatched(QString url);
 
 signals:
 

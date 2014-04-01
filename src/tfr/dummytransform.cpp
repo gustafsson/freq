@@ -9,10 +9,10 @@
 
 namespace Tfr {
 
-TransformDesc::Ptr DummyTransformDesc::
+TransformDesc::ptr DummyTransformDesc::
         copy() const
 {
-    return TransformDesc::Ptr(new DummyTransformDesc);
+    return TransformDesc::ptr(new DummyTransformDesc);
 }
 
 

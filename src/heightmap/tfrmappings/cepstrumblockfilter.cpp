@@ -12,7 +12,7 @@ namespace Heightmap {
 namespace TfrMappings {
 
 CepstrumBlockFilter::
-        CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr params)
+        CepstrumBlockFilter(CepstrumBlockFilterParams::ptr params)
     :
       params_(params)
 {
@@ -29,26 +29,26 @@ void CepstrumBlockFilter::
 }
 
 
-std::vector<IChunkToBlock::Ptr> CepstrumBlockFilter::
+std::vector<IChunkToBlock::ptr> CepstrumBlockFilter::
         createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( cepstrumchunk );
 
     Heightmap::ChunkToBlock* chunktoblock;
-    IChunkToBlock::Ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
+    IChunkToBlock::ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
     //IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockTexture);
 
     chunktoblock->normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
 
-    std::vector<IChunkToBlock::Ptr> R;
+    std::vector<IChunkToBlock::ptr> R;
     R.push_back (chunktoblockp);
     return R;
 }
 
 
 CepstrumBlockFilterDesc::
-        CepstrumBlockFilterDesc(CepstrumBlockFilterParams::Ptr params)
+        CepstrumBlockFilterDesc(CepstrumBlockFilterParams::ptr params)
     :
       params_(params)
 {
@@ -56,13 +56,13 @@ CepstrumBlockFilterDesc::
 }
 
 
-MergeChunk::Ptr CepstrumBlockFilterDesc::
+MergeChunk::ptr CepstrumBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
-        return MergeChunk::Ptr( new CepstrumBlockFilter(params_) );
+        return MergeChunk::ptr( new CepstrumBlockFilter(params_) );
 
-    return MergeChunk::Ptr();
+    return MergeChunk::ptr();
 }
 
 } // namespace TfrMappings
@@ -98,7 +98,7 @@ void CepstrumBlockFilter::
 
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -123,7 +123,7 @@ void CepstrumBlockFilter::
         cai.chunk = (*cai.t)( buffer );
 
         // Do the merge
-        Heightmap::MergeChunk::Ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr()) );
+        Heightmap::MergeChunk::ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::ptr()) );
         mc.write ()->filterChunk(cai);
         mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
 
@@ -142,8 +142,8 @@ void CepstrumBlockFilterDesc::
 {
     // It should instantiate CepstrumBlockFilter for different engines.
     {
-        Heightmap::MergeChunkDesc::Ptr mcd(new CepstrumBlockFilterDesc(CepstrumBlockFilterParams::Ptr()));
-        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
+        Heightmap::MergeChunkDesc::ptr mcd(new CepstrumBlockFilterDesc(CepstrumBlockFilterParams::ptr()));
+        MergeChunk::ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 

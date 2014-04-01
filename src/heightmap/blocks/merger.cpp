@@ -19,7 +19,7 @@ namespace Heightmap {
 namespace Blocks {
 
 Merger::
-        Merger(BlockCache::ConstPtr cache)
+        Merger(BlockCache::const_ptr cache)
     :
       cache_(cache)
 {
@@ -182,7 +182,7 @@ namespace Blocks {
 
 
 // Same as in the test for ResampleTexture
-static void compare(float* expected, size_t sizeof_expected, DataStorage<float>::Ptr data)
+static void compare(float* expected, size_t sizeof_expected, DataStorage<float>::ptr data)
 {
     EXCEPTION_ASSERT(data);
     EXCEPTION_ASSERT_EQUALS(sizeof_expected, data->numberOfBytes ());
@@ -201,7 +201,7 @@ static void compare(float* expected, size_t sizeof_expected, DataStorage<float>:
 }
 
 
-static void clearCache(BlockCache::Ptr cache) {
+static void clearCache(BlockCache::ptr cache) {
     while(!cache.read ()->cache().empty()) {
         pBlock b = cache.read ()->cache().begin()->second;
         b->glblock.reset();
@@ -215,14 +215,14 @@ void Merger::
 {
     // It should merge contents from other blocks to stub the contents of a new block.
     {
-        BlockCache::Ptr cache(new BlockCache);
+        BlockCache::ptr cache(new BlockCache);
 
         Reference ref;
         BlockLayout bl(4,4,4);
         DataStorageSize ds(bl.texels_per_column (), bl.texels_per_row ());
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         pBlock block(new Block(ref,bl,vp));
         const Region& r = block->getRegion();
         block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));

@@ -32,7 +32,7 @@ public:
 class RenderInfo: public RenderInfoI
 {
 public:
-    RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::ConstPtr vp, FrustumClip* frustum_clip, float redundancy);
+    RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, FrustumClip* frustum_clip, float redundancy);
 
     RenderInfoI::LevelOfDetal   testLod( Reference ref ) const;
     Region                      region(Reference ref) const;
@@ -40,7 +40,7 @@ public:
 private:
     glProjection* gl_projection;
     BlockLayout bl;
-    VisualizationParams::ConstPtr vp;
+    VisualizationParams::const_ptr vp;
     FrustumClip* frustum_clip;
     float redundancy;
 

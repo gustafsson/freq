@@ -29,15 +29,15 @@ FilterController::
 void FilterController::
         addAbsolute()
 {
-    project_->appendOperation ( Signal::OperationDesc::Ptr(new Filters::AbsoluteValueDesc() ));
+    project_->appendOperation ( Signal::OperationDesc::ptr(new Filters::AbsoluteValueDesc() ));
 }
 
 
 void FilterController::
         addEnvelope()
 {
-    Tfr::ChunkFilterDesc::Ptr cfd(new Filters::EnvelopeDesc());
-    Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
+    Tfr::ChunkFilterDesc::ptr cfd(new Filters::EnvelopeDesc());
+    Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
     project_->appendOperation ( o );
 }
 

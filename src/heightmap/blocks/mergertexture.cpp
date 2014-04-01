@@ -26,7 +26,7 @@ namespace Heightmap {
 namespace Blocks {
 
 MergerTexture::
-        MergerTexture(BlockCache::ConstPtr cache, BlockLayout block_layout)
+        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout)
     :
       cache_(cache),
       tex_(0)
@@ -138,7 +138,7 @@ void MergerTexture::
     {
         VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getRegion ());
 
-        GlTexture::Ptr t = block->glblock->glTexture ();
+        GlTexture::ptr t = block->glblock->glTexture ();
         glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -155,7 +155,7 @@ void MergerTexture::
         VERBOSE_COLLECTION TaskTimer tt("Updating cpu_copy");
         // This is slow, and hard to do asynchronously.
 
-        GlTexture::Ptr t = block->glblock->glTexture ();
+        GlTexture::ptr t = block->glblock->glTexture ();
         glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo_);
         glReadPixels (0, 0, t->getWidth (), t->getHeight (), GL_RED, GL_FLOAT, 0);
         float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
@@ -197,7 +197,7 @@ bool MergerTexture::
 namespace Heightmap {
 namespace Blocks {
 
-static void clearCache(BlockCache::Ptr cache) {
+static void clearCache(BlockCache::ptr cache) {
     while(!cache.read ()->cache().empty()) {
         pBlock b = cache.read ()->cache().begin()->second;
         b->glblock.reset();
@@ -218,11 +218,11 @@ void MergerTexture::
 
     // It should merge contents from other blocks to stub the contents of a new block.
     {
-        BlockCache::Ptr cache(new BlockCache);
+        BlockCache::ptr cache(new BlockCache);
 
         Reference ref;
         BlockLayout bl(4,4,4);
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         DataStorageSize ds(bl.texels_per_column (), bl.texels_per_row ());
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.

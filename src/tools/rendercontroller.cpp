@@ -80,7 +80,7 @@ RenderController::
             color(0)
 {
     Support::RenderViewUpdateAdapter* rvup;
-    Support::RenderOperationDesc::RenderTarget::Ptr rvu(
+    Support::RenderOperationDesc::RenderTarget::ptr rvu(
                 rvup = new Support::RenderViewUpdateAdapter);
 
     connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
@@ -350,8 +350,8 @@ void RenderController::tfresolutionDecrease()
 void RenderController::
         updateTransformDesc()
 {
-    Tfr::TransformDesc::Ptr t = currentTransform();
-    Tfr::TransformDesc::Ptr newuseroptions;
+    Tfr::TransformDesc::ptr t = currentTransform();
+    Tfr::TransformDesc::ptr newuseroptions;
 
     if (!t)
         return;
@@ -361,7 +361,7 @@ void RenderController::
 
         // If the transform currently in use differs from the transform settings
         // that should be used, change the transform.
-        Tfr::TransformDesc::Ptr useroptions = tfr_map->transform_desc();
+        Tfr::TransformDesc::ptr useroptions = tfr_map->transform_desc();
 
         // If there is a transform but no tfr_map transform_desc it means that
         // there is a bug (or at least some continued refactoring todo). Update
@@ -384,7 +384,7 @@ void RenderController::
 
 
 void RenderController::
-        setCurrentFilterTransform( Tfr::TransformDesc::Ptr t )
+        setCurrentFilterTransform( Tfr::TransformDesc::ptr t )
 {
     {
         auto td = model()->transform_descs ().write ();
@@ -404,11 +404,11 @@ void RenderController::
 
 
 void RenderController::
-        setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc)
+        setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc)
 {
     // Wire it up to a FilterDesc
     Heightmap::ChunkBlockFilterDesc* cbfd;
-    Tfr::ChunkFilterDesc::Ptr kernel(cbfd
+    Tfr::ChunkFilterDesc::ptr kernel(cbfd
             = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
@@ -417,9 +417,9 @@ void RenderController::
 
 
 void RenderController::
-        setBlockFilter(Tfr::ChunkFilterDesc::Ptr kernel)
+        setBlockFilter(Tfr::ChunkFilterDesc::ptr kernel)
 {
-    Tfr::TransformOperationDesc::Ptr adapter( new Tfr::TransformOperationDesc(kernel));
+    Tfr::TransformOperationDesc::ptr adapter( new Tfr::TransformOperationDesc(kernel));
     // Ambiguity
     // Tfr::TransformOperationDesc defines a current transformDesc
     // VisualizationParams also defines a current transformDesc
@@ -475,7 +475,7 @@ void RenderController::
 }
 
 
-Tfr::TransformDesc::Ptr RenderController::
+Tfr::TransformDesc::ptr RenderController::
         currentTransform()
 {
     return model()->transform_desc ();
@@ -498,7 +498,7 @@ float RenderController::
 float RenderController::
         currentTransformMinHz()
 {
-    Tfr::TransformDesc::Ptr t = currentTransform();
+    Tfr::TransformDesc::ptr t = currentTransform();
     EXCEPTION_ASSERT(t);
     return t->freqAxis(headSampleRate()).min_hz;
 }
@@ -522,10 +522,10 @@ void RenderController::
     setBlockFilter( cwtblock );
 */
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Non_Weighted));
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Non_Weighted));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ().write ()->getParam<Tfr::Cwt>().copy();
+    Tfr::TransformDesc::ptr transform_desc = model()->transform_descs ().write ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -535,10 +535,10 @@ void RenderController::
         receiveSetTransform_Stft()
 {
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::StftBlockFilterDesc(model()->get_stft_block_filter_params ()));
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::StftBlockFilterDesc(model()->get_stft_block_filter_params ()));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ().write ()->getParam<Tfr::StftDesc>().copy();
+    Tfr::TransformDesc::ptr transform_desc = model()->transform_descs ().write ()->getParam<Tfr::StftDesc>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -548,10 +548,10 @@ void RenderController::
         receiveSetTransform_Cwt_phase()
 {
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Phase));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
+    Tfr::TransformDesc::ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -590,10 +590,10 @@ void RenderController::
         receiveSetTransform_Cwt_weight()
 {
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::CwtBlockFilterDesc(Heightmap::ComplexInfo_Amplitude_Weighted));
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
+    Tfr::TransformDesc::ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }
@@ -603,10 +603,10 @@ void RenderController::
         receiveSetTransform_Cepstrum()
 {
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::CepstrumBlockFilterDesc);
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::CepstrumBlockFilterDesc);
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr transform_desc = model()->transform_descs ()->getParam<Tfr::CepstrumDesc>().copy();
+    Tfr::TransformDesc::ptr transform_desc = model()->transform_descs ()->getParam<Tfr::CepstrumDesc>().copy();
 
     setBlockFilter(mcdp, transform_desc);
 }

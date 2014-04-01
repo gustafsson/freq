@@ -20,7 +20,7 @@ private:
 };
 
 
-void addGauss( ResampleArea imageArea, DataStorage<float>::Ptr imagep, Gauss g )
+void addGauss( ResampleArea imageArea, DataStorage<float>::ptr imagep, Gauss g )
 {
     AddGaussOperator gauss(g);
 
@@ -71,7 +71,7 @@ private:
 };
 
 
-void multiplyGauss( ResampleArea imageArea, DataStorage<float>::Ptr imagep, Gauss g, Heightmap::AmplitudeAxis amplitudeAxis )
+void multiplyGauss( ResampleArea imageArea, DataStorage<float>::ptr imagep, Gauss g, Heightmap::AmplitudeAxis amplitudeAxis )
 {
     switch (amplitudeAxis)
     {

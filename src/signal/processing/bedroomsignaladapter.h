@@ -16,7 +16,7 @@ class BedroomSignalAdapter : public QThread
 {
     Q_OBJECT
 public:
-    explicit BedroomSignalAdapter(Bedroom::Ptr bedroom, QObject* parent);
+    explicit BedroomSignalAdapter(Bedroom::ptr bedroom, QObject* parent);
     ~BedroomSignalAdapter();
 
     /**
@@ -32,7 +32,7 @@ private:
     // QThread
     void run ();
 
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
     bool stop_flag_;
 };
 

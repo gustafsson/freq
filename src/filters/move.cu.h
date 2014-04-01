@@ -3,7 +3,7 @@
 
 #include "tfr/chunkdata.h"
 
-void        moveFilter( Tfr::ChunkData::Ptr chunk,
+void        moveFilter( Tfr::ChunkData::ptr chunk,
                         float df,
                         float min_hz,
                         float max_hz,

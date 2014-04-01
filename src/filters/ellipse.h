@@ -31,7 +31,7 @@ public:
 
     // ChunkFilterDesc
     Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
-    ChunkFilterDesc::Ptr    copy() const;
+    ChunkFilterDesc::ptr    copy() const;
 
     float _centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f;
     bool _save_inside;

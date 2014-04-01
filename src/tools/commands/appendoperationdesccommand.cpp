@@ -7,9 +7,9 @@ namespace Tools {
 namespace Commands {
 
 AppendOperationDescCommand::
-        AppendOperationDescCommand(OperationDesc::Ptr o,
-                                   Chain::Ptr c,
-                                   TargetMarker::Ptr a)
+        AppendOperationDescCommand(OperationDesc::ptr o,
+                                   Chain::ptr c,
+                                   TargetMarker::ptr a)
     :
       operation_(o),
       chain_(c),
@@ -21,7 +21,7 @@ AppendOperationDescCommand::
 void AppendOperationDescCommand::
         execute()
 {
-    IInvalidator::Ptr i = chain_.write ()->addOperationAt ( operation_, at_ );
+    IInvalidator::ptr i = chain_.write ()->addOperationAt ( operation_, at_ );
 
     operation_.write ()->setInvalidator (i);
 }
@@ -74,11 +74,11 @@ void AppendOperationDescCommand::
 
     // It should add a new operation to the signal processing chain at the given targets current position
     {
-        Chain::Ptr chain = Chain::createDefaultChain ();
-        OperationDesc::Ptr target_desc(new Test::TransparentOperationDesc);
-        OperationDesc::Ptr operation_desc(new Test::TransparentOperationDesc);
-        OperationDesc::Ptr source_desc(new SourceMock);
-        TargetMarker::Ptr target = chain.write ()->addTarget(target_desc);
+        Chain::ptr chain = Chain::createDefaultChain ();
+        OperationDesc::ptr target_desc(new Test::TransparentOperationDesc);
+        OperationDesc::ptr operation_desc(new Test::TransparentOperationDesc);
+        OperationDesc::ptr source_desc(new SourceMock);
+        TargetMarker::ptr target = chain.write ()->addTarget(target_desc);
 
 
         AppendOperationDescCommand aodc1(source_desc, chain, target);

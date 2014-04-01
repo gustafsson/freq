@@ -7,7 +7,7 @@ namespace Signal {
 namespace Processing {
 
 GraphInvalidator::
-        GraphInvalidator(Dag::Ptr::weak_ptr dag, INotifier::weak_ptr notifier, Step::Ptr::weak_ptr step)
+        GraphInvalidator(Dag::ptr::weak_ptr dag, INotifier::weak_ptr notifier, Step::ptr::weak_ptr step)
     :
       dag_(dag),
       notifier_(notifier),
@@ -19,13 +19,13 @@ GraphInvalidator::
 void GraphInvalidator::
         deprecateCache(Signal::Intervals what) const
 {
-    Dag::Ptr dagp = dag_.lock ();
+    Dag::ptr dagp = dag_.lock ();
     if (!dagp)
         return;
 
     auto dag = dagp.read ();
-    INotifier::Ptr notifier = notifier_.lock ();
-    Step::Ptr step = step_.lock ();
+    INotifier::ptr notifier = notifier_.lock ();
+    Step::ptr step = step_.lock ();
 
     if (!notifier || !step)
         return;
@@ -37,11 +37,11 @@ void GraphInvalidator::
 
 
 void GraphInvalidator::
-        deprecateCache(const Dag& dag, Step::Ptr step, Signal::Intervals what)
+        deprecateCache(const Dag& dag, Step::ptr step, Signal::Intervals what)
 {
     what = step.write ()->deprecateCache(what);
 
-    BOOST_FOREACH(Step::Ptr ts, dag.targetSteps(step)) {
+    BOOST_FOREACH(Step::ptr ts, dag.targetSteps(step)) {
         deprecateCache(dag, ts, what);
     }
 }
@@ -58,14 +58,14 @@ namespace Processing {
 
 class WaitForWakeupMock: public QThread {
 public:
-    WaitForWakeupMock(Bedroom::Ptr bedroom) : bedroom_(bedroom) {}
+    WaitForWakeupMock(Bedroom::ptr bedroom) : bedroom_(bedroom) {}
 
     void run() {
         bedroom_->getBed().sleep();
     }
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
 };
 
 void GraphInvalidator::
@@ -74,10 +74,10 @@ void GraphInvalidator::
     // It should invalidate caches and wakeup workers
     {
         // create
-        Dag::Ptr dag(new Dag);
-        Bedroom::Ptr bedroom(new Bedroom);
-        INotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Dag::ptr dag(new Dag);
+        Bedroom::ptr bedroom(new Bedroom);
+        INotifier::ptr notifier(new BedroomNotifier(bedroom));
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         WaitForWakeupMock sleeper(bedroom);
 
         // wire up

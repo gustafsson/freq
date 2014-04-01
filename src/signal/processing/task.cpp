@@ -15,9 +15,9 @@ namespace Processing {
 
 Task::
         Task(const shared_state<Step>::write_ptr& step,
-             Step::Ptr stepp,
-             std::vector<Step::Ptr> children,
-             Signal::Operation::Ptr operation,
+             Step::ptr stepp,
+             std::vector<Step::ptr> children,
+             Signal::Operation::ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
@@ -59,7 +59,7 @@ void Task::
             << Task::crashed_expected_output(expected_output_);
 
         try {
-            Signal::Processing::IInvalidator::Ptr i = step_.write ()->mark_as_crashed_and_get_invalidator();
+            Signal::Processing::IInvalidator::ptr i = step_.write ()->mark_as_crashed_and_get_invalidator();
             EXCEPTION_ASSERT(i);
             i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
         } catch(const std::exception& y) {
@@ -74,12 +74,12 @@ void Task::
 void Task::
         run_private()
 {
-    Signal::OperationDesc::Ptr od;
+    Signal::OperationDesc::ptr od;
     TIME_TASK od = step_.read ()->operation_desc ();
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
                            % od.read ()->toString ().toStdString ());
 
-    Signal::Operation::Ptr o = this->operation_;
+    Signal::Operation::ptr o = this->operation_;
 
     Signal::pBuffer input_buffer, output_buffer;
 
@@ -100,7 +100,7 @@ void Task::
 Signal::pBuffer Task::
         get_input() const
 {
-    Signal::OperationDesc::Ptr operation_desc = step_.read ()->operation_desc ();
+    Signal::OperationDesc::ptr operation_desc = step_.read ()->operation_desc ();
 
     // Sum all sources
     std::vector<Signal::pBuffer> buffers;
@@ -177,16 +177,16 @@ void Task::
     {
         // setup a known signal processing operation (take data from a predefined buffer)
         pBuffer b = Test::RandomBuffer::randomBuffer (Interval(60,70), 40, 7);
-        Signal::OperationDesc::Ptr od(new BufferSource(b));
+        Signal::OperationDesc::ptr od(new BufferSource(b));
 
         // setup a known signal processing step
-        Step::Ptr step (new Step(od));
-        std::vector<Step::Ptr> children; // empty
+        Step::ptr step (new Step(od));
+        std::vector<Step::ptr> children; // empty
         Signal::Interval expected_output(-10,80);
         Signal::Interval required_input;
-        Signal::Operation::Ptr o;
+        Signal::Operation::ptr o;
         {
-            Signal::ComputingEngine::Ptr c(new Signal::ComputingCpu);
+            Signal::ComputingEngine::ptr c(new Signal::ComputingCpu);
             auto r = od.read ();
             required_input = r->requiredInterval(expected_output, 0);
             o = r->createOperation (c.get ());

@@ -28,7 +28,7 @@ private:
     typedef boost::shared_ptr<Void> Counter;
 
 public:
-    typedef std::shared_ptr<Bedroom> Ptr;
+    typedef std::shared_ptr<Bedroom> ptr;
     typedef std::weak_ptr<Bedroom> weak_ptr;
     class Data;
 

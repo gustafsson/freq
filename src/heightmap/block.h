@@ -17,7 +17,7 @@ namespace Heightmap {
 
     class BlockData {
     public:
-        typedef DataStorage<float>::Ptr pData;
+        typedef DataStorage<float>::ptr pData;
 
         /**
             TODO test this in a multi gpu environment
@@ -43,7 +43,7 @@ namespace Heightmap {
      */
     class Block {
     public:
-        Block( Reference, BlockLayout, VisualizationParams::ConstPtr);
+        Block( Reference, BlockLayout, VisualizationParams::const_ptr);
         ~Block();
 
         // TODO move this value to a complementary class
@@ -67,7 +67,7 @@ namespace Heightmap {
         bool update_glblock_data();
 
         // Shared state
-        const VisualizationParams::ConstPtr visualization_params() const { return visualization_params_; }
+        const VisualizationParams::const_ptr visualization_params() const { return visualization_params_; }
 
         // POD properties
         const BlockLayout block_layout() const { return block_layout_; }
@@ -84,7 +84,7 @@ namespace Heightmap {
         bool new_data_available_;
         const Reference ref_;
         const BlockLayout block_layout_;
-        const VisualizationParams::ConstPtr visualization_params_;
+        const VisualizationParams::const_ptr visualization_params_;
 
         const Signal::Interval block_interval_;
         const Region region_;

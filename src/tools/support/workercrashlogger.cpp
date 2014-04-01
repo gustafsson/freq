@@ -20,7 +20,7 @@ class DummyException: virtual public boost::exception, virtual public std::excep
 
 
 WorkerCrashLogger::
-        WorkerCrashLogger(Workers::Ptr workers, bool consume_exceptions)
+        WorkerCrashLogger(Workers::ptr workers, bool consume_exceptions)
     :
       workers_(workers),
       consume_exceptions_(consume_exceptions)
@@ -33,8 +33,8 @@ WorkerCrashLogger::
     auto ww = workers.write ();
     // Log any future worker crashes
     connect(&*ww,
-            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)),
-            SLOT(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)));
+            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
+            SLOT(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
 
     // Log previous worker crashes. As the new thread owns this, 'check' will
     // be executed in the new thread.
@@ -55,7 +55,7 @@ WorkerCrashLogger::
 
 
 void WorkerCrashLogger::
-        worker_quit(std::exception_ptr e, Signal::ComputingEngine::Ptr ce)
+        worker_quit(std::exception_ptr e, Signal::ComputingEngine::ptr ce)
 {
     DEBUG TaskInfo ti(boost::format("WorkerCrashLogger::worker_quit %s") % (e?"normally":"with exception"));
     if (consume_exceptions_)
@@ -107,7 +107,7 @@ void WorkerCrashLogger::
 
     for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
       {
-        Worker::Ptr worker = i->second;
+        Worker::ptr worker = i->second;
 
         if (worker && !worker->isRunning ())
           {
@@ -136,9 +136,9 @@ void WorkerCrashLogger::
         crashed_engine_typename = *mi;
       }
 
-    if( Step::Ptr const * mi = boost::get_error_info<Step::crashed_step>(x) )
+    if( Step::ptr const * mi = boost::get_error_info<Step::crashed_step>(x) )
       {
-        Signal::OperationDesc::Ptr od;
+        Signal::OperationDesc::ptr od;
         {
             auto s = mi->write ();
             s->mark_as_crashed_and_get_invalidator ();
@@ -148,7 +148,7 @@ void WorkerCrashLogger::
         if (od)
         {
             auto o = od.read ();
-            Signal::Processing::IInvalidator::Ptr i = o->getInvalidator();
+            Signal::Processing::IInvalidator::ptr i = o->getInvalidator();
             i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
             operation_desc_text = " in " + o->toString().toStdString();
         }
@@ -195,7 +195,7 @@ namespace Support {
 
 class DummyScheduler: public ISchedule
 {
-    Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override
+    Task::ptr getTask(Signal::ComputingEngine::ptr) const override
     {
         // Throw exception
         BOOST_THROW_EXCEPTION(DummyException());
@@ -203,13 +203,13 @@ class DummyScheduler: public ISchedule
 };
 
 
-void addAndWaitForStop(Workers::Ptr workers)
+void addAndWaitForStop(Workers::ptr workers)
 {
     QEventLoop e;
     QObject::connect(&*workers.write (),
-            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)),
+            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             &e, SLOT(quit()));
-    workers.write ()->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     e.exec ();
 }
 
@@ -231,9 +231,9 @@ void WorkerCrashLogger::
         Timer timer;
 
         //for (int consume=0; consume<2; consume++)
-        ISchedule::Ptr schedule(new DummyScheduler);
-        Bedroom::Ptr bedroom(new Bedroom);
-        Workers::Ptr workers(new Workers(schedule, bedroom));
+        ISchedule::ptr schedule(new DummyScheduler);
+        Bedroom::ptr bedroom(new Bedroom);
+        Workers::ptr workers(new Workers(schedule, bedroom));
 
         {
             WorkerCrashLogger wcl(workers);
@@ -274,9 +274,9 @@ void WorkerCrashLogger::
 
         Timer timer;
 
-        ISchedule::Ptr schedule(new DummyScheduler);
-        Bedroom::Ptr bedroom(new Bedroom);
-        Workers::Ptr workers(new Workers(schedule, bedroom));
+        ISchedule::ptr schedule(new DummyScheduler);
+        Bedroom::ptr bedroom(new Bedroom);
+        Workers::ptr workers(new Workers(schedule, bedroom));
 
         {
             WorkerCrashLogger wcl(workers);
@@ -307,9 +307,9 @@ void WorkerCrashLogger::
 
         Timer timer;
 
-        ISchedule::Ptr schedule(new DummyScheduler);
-        Bedroom::Ptr bedroom(new Bedroom);
-        Workers::Ptr workers(new Workers(schedule, bedroom));
+        ISchedule::ptr schedule(new DummyScheduler);
+        Bedroom::ptr bedroom(new Bedroom);
+        Workers::ptr workers(new Workers(schedule, bedroom));
 
         // Catch info from a previously crashed worker
         addAndWaitForStop(workers);

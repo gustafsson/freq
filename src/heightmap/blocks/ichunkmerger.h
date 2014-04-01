@@ -11,12 +11,12 @@ namespace Blocks {
 class IChunkMerger
 {
 public:
-    typedef shared_state<IChunkMerger> Ptr;
+    typedef shared_state<IChunkMerger> ptr;
 
     virtual ~IChunkMerger() {}
 
     virtual void clear() = 0;
-    virtual void addChunk( MergeChunk::Ptr merge_chunk,
+    virtual void addChunk( MergeChunk::ptr merge_chunk,
                    Tfr::ChunkAndInverse chunk,
                    std::vector<pBlock> intersecting_blocks ) = 0;
 

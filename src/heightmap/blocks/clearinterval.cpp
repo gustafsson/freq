@@ -7,7 +7,7 @@ namespace Heightmap {
 namespace Blocks {
 
 ClearInterval::
-        ClearInterval(BlockCache::Ptr cache)
+        ClearInterval(BlockCache::ptr cache)
     :
       cache_(cache)
 {

@@ -8,7 +8,7 @@ FanTrackerModel::FanTrackerModel(RenderModel* render_model)
 }
 
 const Support::FanTrackerFilter* FanTrackerModel::
-        selected_filter(Signal::OperationDesc::Ptr::read_ptr& w)
+        selected_filter(Signal::OperationDesc::ptr::read_ptr& w)
 {
     return dynamic_cast<const Support::FanTrackerFilter*>( &*w );
 }

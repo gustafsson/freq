@@ -13,7 +13,7 @@ namespace Support {
 
 
 BrushFilter::
-        BrushFilter(Heightmap::BlockLayout block_layout, Heightmap::VisualizationParams::ConstPtr visualization_params)
+        BrushFilter(Heightmap::BlockLayout block_layout, Heightmap::VisualizationParams::const_ptr visualization_params)
     :
       block_layout_(block_layout),
       visualization_params_(visualization_params)
@@ -82,7 +82,7 @@ void BrushFilter::
 
 
 MultiplyBrush::
-        MultiplyBrush(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp)
+        MultiplyBrush(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::const_ptr vp)
     :
       BrushFilter(bl, vp)
 {
@@ -156,7 +156,7 @@ void MultiplyBrush::
 
 
 MultiplyBrushDesc::
-        MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp)
+        MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::const_ptr vp)
     :
       bl(bl),
       vp(vp)

@@ -20,7 +20,7 @@ CwtBlockFilter::
 {}
 
 
-std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
+std::vector<IChunkToBlock::ptr> CwtBlockFilter::
         createChunkToBlock(Tfr::ChunkAndInverse& pchunk)
 {
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
@@ -30,7 +30,7 @@ std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
 
     Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( pchunk.chunk.get () );
 
-    std::vector<IChunkToBlock::Ptr> R;
+    std::vector<IChunkToBlock::ptr> R;
 
     for ( const Tfr::pChunk& chunkpart : chunks.chunks )
       {
@@ -40,7 +40,7 @@ std::vector<IChunkToBlock::Ptr> CwtBlockFilter::
 //        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
 //        chunktoblock->complex_info = complex_info_;
 
-        IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockDegenerateTexture(chunkpart));
+        IChunkToBlock::ptr chunktoblockp(new Heightmap::ChunkToBlockDegenerateTexture(chunkpart));
         chunktoblockp->normalization_factor = normalization_factor;
         EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
 
@@ -59,13 +59,13 @@ CwtBlockFilterDesc::
 }
 
 
-MergeChunk::Ptr CwtBlockFilterDesc::
+MergeChunk::ptr CwtBlockFilterDesc::
         createMergeChunk(Signal::ComputingEngine* engine) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
-        return MergeChunk::Ptr(new CwtBlockFilter(complex_info_));
+        return MergeChunk::ptr(new CwtBlockFilter(complex_info_));
 
-    return MergeChunk::Ptr();
+    return MergeChunk::ptr();
 }
 
 } // namespace TfrMappings
@@ -110,7 +110,7 @@ void CwtBlockFilter::
 
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -137,10 +137,10 @@ void CwtBlockFilter::
 
         // Do the merge
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
-        Heightmap::MergeChunk::Ptr mc( new CwtBlockFilter(complex_info) );
+        Heightmap::MergeChunk::ptr mc( new CwtBlockFilter(complex_info) );
 
         mc.write ()->filterChunk(cai);
-        std::vector<IChunkToBlock::Ptr> prep = mc.write ()->createChunkToBlock(cai);
+        std::vector<IChunkToBlock::ptr> prep = mc.write ()->createChunkToBlock(cai);
         for (size_t i=0; i<prep.size (); ++i)
             prep[i]->mergeChunk (block);
 
@@ -155,8 +155,8 @@ void CwtBlockFilterDesc::
     // It should instantiate CwtBlockFilter for different engines.
     {
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
-        Heightmap::MergeChunkDesc::Ptr mcd(new CwtBlockFilterDesc(complex_info));
-        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
+        Heightmap::MergeChunkDesc::ptr mcd(new CwtBlockFilterDesc(complex_info));
+        MergeChunk::ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 

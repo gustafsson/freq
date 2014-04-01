@@ -59,7 +59,7 @@ void ChunkMergerThread::
 
 
 void ChunkMergerThread::
-        addChunk( MergeChunk::Ptr merge_chunk,
+        addChunk( MergeChunk::ptr merge_chunk,
                   Tfr::ChunkAndInverse chunk,
                   std::vector<pBlock> intersecting_blocks )
 {
@@ -168,7 +168,7 @@ void ChunkMergerThread::
                         jobsw->pop ();
 
                     // Release OpenGL resources before releasing the memory held by chunk
-                    job.merge_chunk = MergeChunk::Ptr ();
+                    job.merge_chunk = MergeChunk::ptr ();
                   }
               }
 
@@ -191,9 +191,9 @@ void ChunkMergerThread::
 void ChunkMergerThread::
         processJob(Job& j)
 {
-    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
 
-    for (IChunkToBlock::Ptr chunk_to_block : chunk_to_blocks)
+    for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
       {
         for (pBlock block : j.intersecting_blocks)
           {

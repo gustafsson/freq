@@ -31,7 +31,7 @@ class OperationDesc;
 class SaweDll Operation
 {
 public:
-    typedef shared_state<Operation> Ptr;
+    typedef shared_state<Operation> ptr;
 
     /**
       Virtual housekeeping.
@@ -49,7 +49,7 @@ public:
     virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
 
 
-    static void test(Ptr o, OperationDesc*);
+    static void test(ptr o, OperationDesc*);
 };
 
 
@@ -63,7 +63,7 @@ public:
 class SaweDll OperationDesc
 {
 public:
-    typedef shared_state<OperationDesc> Ptr;
+    typedef shared_state<OperationDesc> ptr;
     typedef shared_state_traits_backtrace shared_state_traits;
 
     /**
@@ -100,7 +100,7 @@ public:
      * @brief copy creates a copy of 'this'.
      * @return a copy.
      */
-    virtual OperationDesc::Ptr copy() const = 0;
+    virtual OperationDesc::ptr copy() const = 0;
 
 
     /**
@@ -121,7 +121,7 @@ public:
      *
      * @return a newly created operation.
      */
-    virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
+    virtual Operation::ptr createOperation(ComputingEngine* engine=0) const = 0;
 
 
     /**
@@ -155,8 +155,8 @@ public:
      * Could be a list<IInvalidator::Ptr> to support adding the same OperationDesc
      * at multiple locations in the Dag.
      */
-    void setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator);
-    Signal::Processing::IInvalidator::Ptr getInvalidator() const;
+    void setInvalidator(Signal::Processing::IInvalidator::ptr invalidator);
+    Signal::Processing::IInvalidator::ptr getInvalidator() const;
 
 
     /**
@@ -187,7 +187,7 @@ private:
      * Could be a list<IInvalidator::Ptr> to support adding the same OperationDesc
      * at multiple locations in the Dag.
      */
-    Signal::Processing::IInvalidator::Ptr invalidator_;
+    Signal::Processing::IInvalidator::ptr invalidator_;
 };
 
 } // namespace Signal

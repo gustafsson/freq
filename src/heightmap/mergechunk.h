@@ -10,7 +10,7 @@ namespace Heightmap {
 
 class MergeChunk {
 public:
-    typedef shared_state<MergeChunk> Ptr;
+    typedef shared_state<MergeChunk> ptr;
 
     virtual ~MergeChunk() {}
 
@@ -23,18 +23,18 @@ public:
     /**
      * @brief createChunkToBlock will be called from the UI thread.
      */
-    virtual std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
+    virtual std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
 };
 
 
 class MergeChunkDesc
 {
 public:
-    typedef shared_state<MergeChunkDesc> Ptr;
+    typedef shared_state<MergeChunkDesc> ptr;
 
     virtual ~MergeChunkDesc() {}
 
-    virtual MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
+    virtual MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
 };
 
 } // namespace Heightmap

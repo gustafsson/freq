@@ -27,9 +27,9 @@ class Workers;
 class Chain
 {
 public:
-    typedef shared_state<Chain> Ptr;
+    typedef shared_state<Chain> ptr;
 
-    static Chain::Ptr createDefaultChain();
+    static Chain::ptr createDefaultChain();
 
     ~Chain();
 
@@ -48,7 +48,7 @@ public:
      * @param at
      * @return A marker to keep track of the target. The Target is removed from the Dag when TargetMarker is deleted.
      */
-    TargetMarker::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at=TargetMarker::Ptr());
+    TargetMarker::ptr addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at=TargetMarker::ptr());
 
     /**
      * @brief addOperation
@@ -60,26 +60,26 @@ public:
      * were affected by this definition. A generic call would be
      * 'invalidator.read ()->deprecateCache(chain->extent(at));'
      */
-    IInvalidator::Ptr addOperationAt(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    void removeOperationsAt(TargetMarker::Ptr at);
-    Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
+    IInvalidator::ptr addOperationAt(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    void removeOperationsAt(TargetMarker::ptr at);
+    Signal::OperationDesc::Extent extent(TargetMarker::ptr at) const;
 
     shared_state<Workers> workers() const;
-    Targets::Ptr targets() const;
+    Targets::ptr targets() const;
 
     // Add jumping around with targets later.
 
 private:
-    Dag::Ptr dag_;
-    Targets::Ptr targets_;
+    Dag::ptr dag_;
+    Targets::ptr targets_;
     shared_state<Workers> workers_;
-    Bedroom::Ptr bedroom_;
-    INotifier::Ptr notifier_;
+    Bedroom::ptr bedroom_;
+    INotifier::ptr notifier_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, shared_state<Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
+    Chain(Dag::ptr, Targets::ptr targets, shared_state<Workers> workers, Bedroom::ptr bedroom, INotifier::ptr notifier);
 
-    Step::Ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    Step::Ptr::weak_ptr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    Step::ptr::weak_ptr insertStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
 
 public:
     static void test();

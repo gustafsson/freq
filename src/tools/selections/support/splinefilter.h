@@ -55,7 +55,7 @@ public:
 
     // ChunkFilterDesc
     Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine) const;
-    ChunkFilterDesc::Ptr    copy() const;
+    ChunkFilterDesc::ptr    copy() const;
 
 private:
     bool save_inside;

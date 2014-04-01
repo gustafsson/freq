@@ -29,27 +29,27 @@ public:
      * description that can be added to a signal processing chain.
      * @return a new RecordModel if it could be created, or null if it failed.
      */
-    static RecordModel* createRecorder( Signal::Processing::Chain::Ptr chain, Signal::Processing::TargetMarker::Ptr at,
-                                 Adapters::Recorder::Ptr recorder, Sawe::Project* project, RenderView* render_view );
+    static RecordModel* createRecorder( Signal::Processing::Chain::ptr chain, Signal::Processing::TargetMarker::ptr at,
+                                 Adapters::Recorder::ptr recorder, Sawe::Project* project, RenderView* render_view );
     ~RecordModel();
 
     static bool canCreateRecordModel( Sawe::Project* project );
 
 
-    Adapters::Recorder::Ptr recording;
-    Signal::Processing::IInvalidator::Ptr invalidator;
+    Adapters::Recorder::ptr recording;
+    Signal::Processing::IInvalidator::ptr invalidator;
     Sawe::Project* project;
     RenderView* render_view;
 
-    Signal::OperationDesc::Ptr recorderDesc() { return recorder_desc; }
+    Signal::OperationDesc::ptr recorderDesc() { return recorder_desc; }
 
 signals:
     void markNewlyRecordedData(Signal::Interval what);
 
 private:
-    RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::Ptr recording );
+    RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::ptr recording );
 
-    Signal::OperationDesc::Ptr recorder_desc;
+    Signal::OperationDesc::ptr recorder_desc;
 
 public:
     static void test();

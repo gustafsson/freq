@@ -20,7 +20,7 @@ GlTextureRead::
 }
 
 
-DataStorage<float>::Ptr GlTextureRead::
+DataStorage<float>::ptr GlTextureRead::
         readFloat(int level, int format)
 {
     // assumes GL_PIXEL_PACK_BUFFER_BINDING is 0
@@ -42,7 +42,7 @@ DataStorage<float>::Ptr GlTextureRead::
     default: EXCEPTION_ASSERTX(false, "Unsupported format"); break;
     }
 
-    DataStorage<float>::Ptr data(new DataStorage<float>(width*number_of_components, height));
+    DataStorage<float>::ptr data(new DataStorage<float>(width*number_of_components, height));
 
 
     // Straightforward, but unstable
@@ -77,7 +77,7 @@ DataStorage<float>::Ptr GlTextureRead::
 }
 
 
-DataStorage<unsigned char>::Ptr GlTextureRead::
+DataStorage<unsigned char>::ptr GlTextureRead::
         readByte(int level, int format)
 {
     // assumes GL_PIXEL_PACK_BUFFER_BINDING is 0
@@ -99,7 +99,7 @@ DataStorage<unsigned char>::Ptr GlTextureRead::
     default: EXCEPTION_ASSERTX(false, "Unsupported format"); break;
     }
 
-    DataStorage<unsigned char>::Ptr data(new DataStorage<unsigned char>(width*number_of_components, height));
+    DataStorage<unsigned char>::ptr data(new DataStorage<unsigned char>(width*number_of_components, height));
 
 
     // Straightforward, but unstable
@@ -135,7 +135,7 @@ DataStorage<unsigned char>::Ptr GlTextureRead::
 
 
 template<typename T>
-void compare(T* expected, size_t sizeof_expected, typename DataStorage<T>::Ptr data)
+void compare(T* expected, size_t sizeof_expected, typename DataStorage<T>::ptr data)
 {
     EXCEPTION_ASSERT_EQUALS(sizeof_expected, data->numberOfBytes ());
 
@@ -190,10 +190,10 @@ void GlTextureRead::
 
         GlTexture src(4, 4, GL_RED, GL_RGBA, GL_FLOAT, srcdata);
 
-        DataStorage<float>::Ptr data = GlTextureRead(src.getOpenGlTextureId ()).readFloat (0,GL_RED);
+        DataStorage<float>::ptr data = GlTextureRead(src.getOpenGlTextureId ()).readFloat (0,GL_RED);
         compare(srcdata, sizeof(srcdata), data);
 
-        DataStorage<unsigned char>::Ptr databyte = GlTextureRead(src.getOpenGlTextureId ()).readByte (0,GL_RED);
+        DataStorage<unsigned char>::ptr databyte = GlTextureRead(src.getOpenGlTextureId ()).readByte (0,GL_RED);
         compare(bytes, sizeof(bytes), databyte);
 
         databyte = GlTextureRead(src.getOpenGlTextureId ()).readByte ();

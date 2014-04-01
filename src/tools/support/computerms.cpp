@@ -83,20 +83,20 @@ Signal::Interval ComputeRmsDesc::
 }
 
 
-Signal::OperationDesc::Ptr ComputeRmsDesc::
+Signal::OperationDesc::ptr ComputeRmsDesc::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new ComputeRmsDesc);
+    return Signal::OperationDesc::ptr(new ComputeRmsDesc);
 }
 
 
-Signal::Operation::Ptr ComputeRmsDesc::
+Signal::Operation::ptr ComputeRmsDesc::
         createOperation(Signal::ComputingEngine* engine) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine) || 0==engine)
-        return Signal::Operation::Ptr(new ComputeRms(rms_));
+        return Signal::Operation::ptr(new ComputeRms(rms_));
 
-    return Signal::Operation::Ptr();
+    return Signal::Operation::ptr();
 }
 
 
@@ -121,7 +121,7 @@ void ComputeRmsDesc::
     {
         Signal::pBuffer b = Test::RandomBuffer::smallBuffer ();
         ComputeRmsDesc crd;
-        Signal::Operation::Ptr o = crd.createOperation ();
+        Signal::Operation::ptr o = crd.createOperation ();
         o.write ()->process (b);
 
         EXCEPTION_ASSERT_EQUALS(5.3572383f, crd.rms ());

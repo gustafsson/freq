@@ -65,7 +65,7 @@ void RenderViewUpdateAdapter::
     // interface to Qt signals/slots that match RenderView.
     {
         RenderViewUpdateAdapter* a;
-        RenderTarget::Ptr rt(a = new RenderViewUpdateAdapter);
+        RenderTarget::ptr rt(a = new RenderViewUpdateAdapter);
         RenderViewUpdateAdapterMock mock;
 
         connect(a, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), &mock, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));

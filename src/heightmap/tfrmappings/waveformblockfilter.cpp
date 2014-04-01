@@ -39,23 +39,23 @@ private:
 };
 
 
-std::vector<IChunkToBlock::Ptr> WaveformBlockFilter::
+std::vector<IChunkToBlock::ptr> WaveformBlockFilter::
         createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
-    IChunkToBlock::Ptr ctb(new WaveformChunkToBlock(chunk.input));
-    std::vector<IChunkToBlock::Ptr> R;
+    IChunkToBlock::ptr ctb(new WaveformChunkToBlock(chunk.input));
+    std::vector<IChunkToBlock::ptr> R;
     R.push_back (ctb);
     return R;
 }
 
 
-MergeChunk::Ptr WaveformBlockFilterDesc::
+MergeChunk::ptr WaveformBlockFilterDesc::
         createMergeChunk(Signal::ComputingEngine* engine) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
-        return MergeChunk::Ptr(new WaveformBlockFilter);
+        return MergeChunk::ptr(new WaveformBlockFilter);
 
-    return MergeChunk::Ptr();
+    return MergeChunk::ptr();
 }
 
 } // namespace TfrMappings
@@ -90,7 +90,7 @@ void WaveformBlockFilter::
 
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -112,7 +112,7 @@ void WaveformBlockFilter::
         cai.input = buffer;
 
         // Do the merge
-        Heightmap::MergeChunk::Ptr mc( new WaveformBlockFilter );
+        Heightmap::MergeChunk::ptr mc( new WaveformBlockFilter );
         mc.write ()->filterChunk(cai);
         mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
 
@@ -127,8 +127,8 @@ void WaveformBlockFilterDesc::
 {
     // It should instantiate CwtBlockFilter for different engines.
     {
-        Heightmap::MergeChunkDesc::Ptr mcd(new WaveformBlockFilterDesc);
-        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
+        Heightmap::MergeChunkDesc::ptr mcd(new WaveformBlockFilterDesc);
+        MergeChunk::ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 

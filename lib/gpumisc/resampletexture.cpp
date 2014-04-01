@@ -255,7 +255,7 @@ void ResampleTexture::
             rt.clear ();
             rt(&src,Area(1,1,2,2));
         }
-        DataStorage<float>::Ptr data;
+        DataStorage<float>::ptr data;
         data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
@@ -366,7 +366,7 @@ void ResampleTexture::
             rt.clear ();
             rt(&src,Area(1,1,2,2));
         }
-        DataStorage<float>::Ptr data;
+        DataStorage<float>::ptr data;
         data = GlTextureRead(destid).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 

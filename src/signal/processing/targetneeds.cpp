@@ -16,7 +16,7 @@ namespace Signal {
 namespace Processing {
 
 TargetNeeds::
-        TargetNeeds(Step::Ptr::weak_ptr step, INotifier::weak_ptr notifier)
+        TargetNeeds(Step::ptr::weak_ptr step, INotifier::weak_ptr notifier)
     :
       step_(step),
       work_center_(Signal::Interval::IntervalType_MIN),
@@ -44,7 +44,7 @@ void TargetNeeds::
 {
     EXCEPTION_ASSERT_LESS( 0, preferred_update_size_ );
     Signal::Intervals not_started;
-    if (Step::Ptr step = step_.lock ()) {
+    if (Step::ptr step = step_.lock ()) {
         not_started = step.read ()->not_started ();
     }
 
@@ -68,7 +68,7 @@ void TargetNeeds::
     preferred_update_size_ = preferred_update_size;
 
     if (got_news) {
-        INotifier::Ptr notifier = notifier_.lock ();
+        INotifier::ptr notifier = notifier_.lock ();
         if (notifier)
             notifier->wakeup();
     }
@@ -83,18 +83,18 @@ void TargetNeeds::
 
     DEBUG_INFO TaskInfo(boost::format("invalidate = %s") % invalidate);
 
-    if (Step::Ptr step = step_.lock ())
+    if (Step::ptr step = step_.lock ())
         step.write ()->deprecateCache(invalidate);
 
     if (invalidate & needed_samples_) {
-        INotifier::Ptr notifier = notifier_.lock ();
+        INotifier::ptr notifier = notifier_.lock ();
         if (notifier)
             notifier->wakeup();
     }
 }
 
 
-Step::Ptr::weak_ptr TargetNeeds::
+Step::ptr::weak_ptr TargetNeeds::
         step() const
 {
     return step_;
@@ -126,7 +126,7 @@ Signal::Intervals TargetNeeds::
         not_started() const
 {
     Signal::Intervals not_started;
-    Step::Ptr step = step_.lock ();
+    Step::ptr step = step_.lock ();
     if (step)
         not_started = step.read ()->not_started();
 
@@ -138,7 +138,7 @@ Signal::Intervals TargetNeeds::
         out_of_date() const
 {
     Signal::Intervals out_of_date;
-    Step::Ptr step = step_.lock ();
+    Step::ptr step = step_.lock ();
     if (step)
         out_of_date = step.read ()->out_of_date();
 
@@ -159,11 +159,11 @@ int left(const Timer& t, int sleep_ms) {
 
 
 bool TargetNeeds::
-        sleep(TargetNeeds::ConstPtr self, int sleep_ms)
+        sleep(TargetNeeds::const_ptr self, int sleep_ms)
 {
     Timer t;
 
-    Step::Ptr pstep = self.raw ()->step_.lock();
+    Step::ptr pstep = self.raw ()->step_.lock();
 
     if (!pstep)
         return false;
@@ -204,11 +204,11 @@ void TargetNeeds::
 {
     // It should describe what needs to be computed for a target.
     {
-        Bedroom::Ptr bedroom(new Bedroom);
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Bedroom::ptr bedroom(new Bedroom);
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
 
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        TargetNeeds::Ptr target_needs( new TargetNeeds(step, notifier) );
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         Signal::Intervals initial_valid(0,60);
         step.write ()->registerTask(0, initial_valid.spannedInterval ());
@@ -226,14 +226,14 @@ void TargetNeeds::
     // It should not wakeup the bedroom if nothing has changed
     {
         // Note; this is more helpful to do a less noisy debugging than to increase any performance
-        Bedroom::Ptr bedroom(new Bedroom);
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Bedroom::ptr bedroom(new Bedroom);
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
         step.write ()->registerTask(0, Signal::Interval(0,10));
         step.write ()->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
 
-        TargetNeeds::Ptr target_needs( new TargetNeeds(step, notifier) );
+        TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         {
             Timer t;

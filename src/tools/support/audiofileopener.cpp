@@ -19,7 +19,7 @@ OpenfileController::Patterns AudiofileOpener::
 }
 
 
-Signal::OperationDesc::Ptr AudiofileOpener::
+Signal::OperationDesc::ptr AudiofileOpener::
         open(QString url)
 {
     boost::shared_ptr<Audiofile> audiofile;
@@ -28,9 +28,9 @@ Signal::OperationDesc::Ptr AudiofileOpener::
     } catch (const std::exception&) {}
 
     if (!audiofile)
-        return Signal::OperationDesc::Ptr();
+        return Signal::OperationDesc::ptr();
 
-    return Signal::OperationDesc::Ptr(new AudiofileDesc(audiofile));
+    return Signal::OperationDesc::ptr(new AudiofileDesc(audiofile));
 }
 
 } // namespace Support
@@ -67,7 +67,7 @@ void AudiofileOpener::
         OpenfileController openfile;
         openfile.registerOpener (new AudiofileOpener);
 
-        Signal::OperationDesc::Ptr od;
+        Signal::OperationDesc::ptr od;
         od = openfile.open ("blaj");
         EXCEPTION_ASSERT(!od);
 
@@ -77,7 +77,7 @@ void AudiofileOpener::
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), filename);
 
         {
-            Signal::Operation::Ptr o = od.read ()->createOperation(0);
+            Signal::Operation::ptr o = od.read ()->createOperation(0);
             EXCEPTION_ASSERT(o);
             auto op = o.write ();
             Signal::OperationDesc::Extent x = od.read ()->extent();

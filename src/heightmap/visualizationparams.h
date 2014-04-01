@@ -21,8 +21,8 @@ namespace Heightmap {
  */
 class VisualizationParams {
 public:
-    typedef std::shared_ptr<VisualizationParams> Ptr;
-    typedef std::shared_ptr<const VisualizationParams> ConstPtr;
+    typedef std::shared_ptr<VisualizationParams> ptr;
+    typedef std::shared_ptr<const VisualizationParams> const_ptr;
 
     VisualizationParams();
 
@@ -33,8 +33,8 @@ public:
      * Not that this is the transform that should be used. Blocks computed by
      * an old transform desc might still exist as they are being processed.
      */
-    Tfr::TransformDesc::Ptr transform_desc() const;
-    void transform_desc(Tfr::TransformDesc::Ptr);
+    Tfr::TransformDesc::ptr transform_desc() const;
+    void transform_desc(Tfr::TransformDesc::ptr);
 
     /**
      * Heightmap blocks are rather agnostic to FreqAxis. But it's needed to
@@ -52,7 +52,7 @@ public:
 
 private:
     struct details {
-        Tfr::TransformDesc::Ptr transform_desc_;
+        Tfr::TransformDesc::ptr transform_desc_;
         Tfr::FreqAxis display_scale_;
         AmplitudeAxis amplitude_axis_;
     };

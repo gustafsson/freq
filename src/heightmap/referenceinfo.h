@@ -34,7 +34,7 @@ public:
         BoundsCheck_All = 15
     };
 
-    ReferenceInfo(const Reference&, const BlockLayout&, const VisualizationParams::ConstPtr&);
+    ReferenceInfo(const Reference&, const BlockLayout&, const VisualizationParams::const_ptr&);
 
     Region region() const;
     long double sample_rate() const;
@@ -67,7 +67,7 @@ private:
     float displayedTimeResolution(float ahz) const;
 
     const BlockLayout block_layout_;
-    const VisualizationParams::ConstPtr visualization_params_;
+    const VisualizationParams::const_ptr visualization_params_;
     const Reference& reference_;
     const Region r;
 };

@@ -22,7 +22,7 @@ class Task
 {
 public:
     // TODO A task isn't shared between threads
-    typedef shared_state<Task> Ptr;
+    typedef shared_state<Task> ptr;
     struct shared_state_traits: shared_state_traits_default {
         double timeout() { return -1; }
     };
@@ -32,9 +32,9 @@ public:
 
     // input_buffer and output_buffer does not need to be allocated beforehand
     Task (const shared_state<Step>::write_ptr& step,
-          Step::Ptr stepp,
-          std::vector<Step::Ptr> children,
-          Signal::Operation::Ptr operation,
+          Step::ptr stepp,
+          std::vector<Step::ptr> children,
+          Signal::Operation::ptr operation,
           Signal::Interval expected_output,
           Signal::Interval required_input);
     virtual ~Task();
@@ -44,9 +44,9 @@ public:
     virtual void run();
 
 private:
-    Step::Ptr               step_;
-    std::vector<Step::Ptr>  children_;
-    Signal::Operation::Ptr  operation_;
+    Step::ptr               step_;
+    std::vector<Step::ptr>  children_;
+    Signal::Operation::ptr  operation_;
     Signal::Interval        expected_output_;
     Signal::Interval        required_input_;
 

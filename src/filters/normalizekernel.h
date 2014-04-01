@@ -3,7 +3,7 @@
 
 #include "datastorage.h"
 
-void normalizedata( DataStorage<float>::Ptr data, int radius );
-void normalizeTruncatedMean( DataStorage<float>::Ptr data, int radius, float truncation = 1.f );
+void normalizedata( DataStorage<float>::ptr data, int radius );
+void normalizeTruncatedMean( DataStorage<float>::ptr data, int radius, float truncation = 1.f );
 
 #endif // NORMALIZEKERNEL_H

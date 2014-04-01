@@ -19,27 +19,27 @@ namespace Signal {
 namespace Processing {
 
 
-Chain::Ptr Chain::
+Chain::ptr Chain::
         createDefaultChain()
 {
-    Dag::Ptr dag(new Dag);
-    Bedroom::Ptr bedroom(new Bedroom);
-    BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-    Targets::Ptr targets(new Targets(notifier));
+    Dag::ptr dag(new Dag);
+    Bedroom::ptr bedroom(new Bedroom);
+    BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+    Targets::ptr targets(new Targets(notifier));
 
-    IScheduleAlgorithm::Ptr algorithm(new FirstMissAlgorithm());
-    ISchedule::Ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
-    Workers::Ptr workers(new Workers(targetSchedule, bedroom));
+    IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
+    ISchedule::ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
+    Workers::ptr workers(new Workers(targetSchedule, bedroom));
 
     // Add the 'single instance engine' thread.
-    workers.write ()->addComputingEngine(Signal::ComputingEngine::Ptr());
+    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
 
     // Add worker threads to occupy all kernels
     for (int i=0; i<QThread::idealThreadCount (); i++) {
-        workers.write ()->addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+        workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     }
 
-    Chain::Ptr chain(new Chain(dag, targets, workers, bedroom, notifier));
+    Chain::ptr chain(new Chain(dag, targets, workers, bedroom, notifier));
 
     return chain;
 }
@@ -77,9 +77,9 @@ bool Chain::
     workers_ = shared_state<Workers> ();
 
     // Remove all edges, all vertices and their properties (i.e Step::Ptr)
-    dag_ = Dag::Ptr ();
+    dag_ = Dag::ptr ();
 
-    targets_ = Targets::Ptr ();
+    targets_ = Targets::ptr ();
     bedroom_.reset ();
     notifier_.reset ();
 
@@ -87,27 +87,27 @@ bool Chain::
 }
 
 
-TargetMarker::Ptr Chain::
-        addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+TargetMarker::ptr Chain::
+        addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
 {
-    Step::Ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at);
+    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at);
 
-    TargetNeeds::Ptr target_needs = targets_.write ()->addTarget(step);
+    TargetNeeds::ptr target_needs = targets_.write ()->addTarget(step);
 
-    TargetMarker::Ptr marker(new TargetMarker {target_needs, dag_});
+    TargetMarker::ptr marker(new TargetMarker {target_needs, dag_});
 
     return marker;
 }
 
 
-IInvalidator::Ptr Chain::
-        addOperationAt(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+IInvalidator::ptr Chain::
+        addOperationAt(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
 {
     EXCEPTION_ASSERT (at);
 
-    Step::Ptr::weak_ptr step = insertStep(*dag_.get (), desc, at);
+    Step::ptr::weak_ptr step = insertStep(*dag_.get (), desc, at);
 
-    IInvalidator::Ptr graph_invalidator( new GraphInvalidator {dag_, notifier_, step});
+    IInvalidator::ptr graph_invalidator( new GraphInvalidator {dag_, notifier_, step});
 
     desc.write ()->setInvalidator( graph_invalidator );
 
@@ -118,11 +118,11 @@ IInvalidator::Ptr Chain::
 
 
 void Chain::
-        removeOperationsAt(TargetMarker::Ptr at)
+        removeOperationsAt(TargetMarker::ptr at)
 {
     EXCEPTION_ASSERT (at);
 
-    Step::Ptr step = at->step().lock();
+    Step::ptr step = at->step().lock();
     if (!step)
         return;
 
@@ -134,13 +134,13 @@ void Chain::
 
     const Graph& g = dag->g ();
 
-    std::vector<Step::Ptr> steps_to_remove;
+    std::vector<Step::ptr> steps_to_remove;
     BOOST_FOREACH(GraphEdge e, in_edges(v, g)) {
-        Step::Ptr s = g[source(e, g)];
+        Step::ptr s = g[source(e, g)];
         steps_to_remove.push_back (s);
     }
 
-    BOOST_FOREACH(Step::Ptr s, steps_to_remove) {
+    BOOST_FOREACH(Step::ptr s, steps_to_remove) {
         GraphInvalidator::deprecateCache (*dag, s, Signal::Interval::Interval_ALL);
         dag->removeStep (s);
     }
@@ -159,7 +159,7 @@ public:
 
     void discover_vertex(GraphVertex u, const Graph & g)
     {
-        Step::Ptr step( g[u] ); // lock while studying what's needed
+        Step::ptr step( g[u] ); // lock while studying what's needed
         Signal::OperationDesc::Extent x = step->operation_desc()->extent ();
 
         // TODO This doesn't really work with merged paths
@@ -180,11 +180,11 @@ public:
 
 
 Signal::OperationDesc::Extent Chain::
-        extent(TargetMarker::Ptr at) const
+        extent(TargetMarker::ptr at) const
 {
     Signal::OperationDesc::Extent E;
 
-    Step::Ptr step = at->step().lock();
+    Step::ptr step = at->step().lock();
     if (!step)
         return E;
 
@@ -198,14 +198,14 @@ Signal::OperationDesc::Extent Chain::
 }
 
 
-Workers::Ptr Chain::
+Workers::ptr Chain::
         workers() const
 {
     return workers_;
 }
 
 
-Targets::Ptr Chain::
+Targets::ptr Chain::
         targets() const
 {
     return targets_;
@@ -213,7 +213,7 @@ Targets::Ptr Chain::
 
 
 Chain::
-        Chain(Dag::Ptr dag, Targets::Ptr targets, Workers::Ptr workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier)
+        Chain(Dag::ptr dag, Targets::ptr targets, Workers::ptr workers, Bedroom::ptr bedroom, INotifier::ptr notifier)
     :
       dag_(dag),
       targets_(targets),
@@ -224,17 +224,17 @@ Chain::
 }
 
 
-Step::Ptr::weak_ptr Chain::
-        createBranchStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+Step::ptr::weak_ptr Chain::
+        createBranchStep(Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
 {
     GraphVertex vertex = NullVertex ();
     if (at) {
-        Step::Ptr target_step = at->step().lock();
+        Step::ptr target_step = at->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
         vertex = dag.getVertex (target_step);
         if (!vertex)
-            return Step::Ptr::weak_ptr();
+            return Step::ptr::weak_ptr();
 
         BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag.g ())) {
             // Pick one of the sources on random and append to that one
@@ -243,27 +243,27 @@ Step::Ptr::weak_ptr Chain::
         }
     }
 
-    Step::Ptr step(new Step(desc));
+    Step::ptr step(new Step(desc));
     dag.appendStep (step, vertex);
 
     return step;
 }
 
 
-Step::Ptr::weak_ptr Chain::
-        insertStep(Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at)
+Step::ptr::weak_ptr Chain::
+        insertStep(Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
 {
     GraphVertex vertex = NullVertex ();
     if (at) {
-        Step::Ptr target_step = at->step().lock();
+        Step::ptr target_step = at->step().lock();
         EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
         vertex = dag.getVertex (target_step);
         if (!vertex)
-            return Step::Ptr::weak_ptr();
+            return Step::ptr::weak_ptr();
     }
 
-    Step::Ptr step(new Step(desc));
+    Step::ptr step(new Step(desc));
     dag.insertStep (step, vertex);
 
     return step;
@@ -322,12 +322,12 @@ void Chain::
     // and simple interface.
     {
         Timer t;
-        Chain::Ptr chain = Chain::createDefaultChain ();
-        Signal::OperationDesc::Ptr target_desc(new OperationDescChainMock);
-        Signal::OperationDesc::Ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
+        Chain::ptr chain = Chain::createDefaultChain ();
+        Signal::OperationDesc::ptr target_desc(new OperationDescChainMock);
+        Signal::OperationDesc::ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
-        TargetMarker::Ptr null;
-        TargetMarker::Ptr target = chain.write ()->addTarget(target_desc, null);
+        TargetMarker::ptr null;
+        TargetMarker::ptr target = chain.write ()->addTarget(target_desc, null);
 
         // Should be able to add and remove an operation multiple times
         chain.write ()->addOperationAt(source_desc, target);
@@ -340,11 +340,11 @@ void Chain::
 
 
         // Should create an invalidator when adding an operation
-        IInvalidator::Ptr invalidator = chain.write ()->addOperationAt(source_desc, target);
+        IInvalidator::ptr invalidator = chain.write ()->addOperationAt(source_desc, target);
 
         EXCEPTION_ASSERT_EQUALS (chain.read ()->extent(target).interval, Signal::Interval(3,5));
 
-        TargetNeeds::Ptr needs = target->target_needs();
+        TargetNeeds::ptr needs = target->target_needs();
         needs.write ()->updateNeeds(Signal::Interval(4,6));
         usleep(4000);
         //target->sleep();
@@ -359,7 +359,7 @@ void Chain::
         usleep(4000);
         chain.read ()->workers()->rethrow_any_worker_exception();
 
-        chain = Chain::Ptr ();
+        chain = Chain::ptr ();
         EXCEPTION_ASSERT_LESS(t.elapsed (), 0.03);
     }
 }

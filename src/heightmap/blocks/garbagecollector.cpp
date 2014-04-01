@@ -16,7 +16,7 @@ namespace Heightmap {
 namespace Blocks {
 
 GarbageCollector::
-        GarbageCollector(BlockCache::Ptr cache)
+        GarbageCollector(BlockCache::ptr cache)
     :
       cache_(cache)
 {

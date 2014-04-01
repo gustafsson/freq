@@ -42,7 +42,7 @@ namespace Tools
         RenderModel(Sawe::Project* p);
         ~RenderModel();
 
-        void init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt);
+        void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt);
         void resetSettings();
 
         Heightmap::TfrMapping::Collections collections();
@@ -55,25 +55,25 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-        Heightmap::TfrMapping::Ptr tfr_mapping();
-        Support::TransformDescs::Ptr transform_descs();
+        Heightmap::TfrMapping::ptr tfr_mapping();
+        Support::TransformDescs::ptr transform_descs();
 
 
-        Tfr::TransformDesc::Ptr transform_desc();
-        void set_transform_desc(Tfr::TransformDesc::Ptr t);
+        Tfr::TransformDesc::ptr transform_desc();
+        void set_transform_desc(Tfr::TransformDesc::ptr t);
 
         void recompute_extent();
         void set_extent(Signal::OperationDesc::Extent extent);
 
-        Signal::OperationDesc::Ptr renderOperationDesc();
+        Signal::OperationDesc::ptr renderOperationDesc();
 
-        Signal::Processing::TargetMarker::Ptr target_marker();
-        void set_filter(Signal::OperationDesc::Ptr o);
-        Signal::OperationDesc::Ptr get_filter();
+        Signal::Processing::TargetMarker::ptr target_marker();
+        void set_filter(Signal::OperationDesc::ptr o);
+        Signal::OperationDesc::ptr get_filter();
 
-        Heightmap::TfrMappings::StftBlockFilterParams::Ptr get_stft_block_filter_params();
+        Heightmap::TfrMappings::StftBlockFilterParams::ptr get_stft_block_filter_params();
 
-        Heightmap::Blocks::IChunkMerger::Ptr chunk_merger;
+        Heightmap::Blocks::IChunkMerger::ptr chunk_merger;
 
         //Signal::pTarget renderSignalTarget;
         boost::shared_ptr<Heightmap::Renderer> renderer;
@@ -94,12 +94,12 @@ namespace Tools
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
         Sawe::Project* _project; // project should probably be a member of RenderController instead
-        Support::TransformDescs::Ptr transform_descs_;
-        Heightmap::TfrMapping::Ptr tfr_map_;
-        Signal::OperationDesc::Ptr render_operation_desc_;
-        Signal::Processing::TargetMarker::Ptr target_marker_;
-        Signal::Processing::Chain::Ptr chain_;
-        Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_block_filter_params_;
+        Support::TransformDescs::ptr transform_descs_;
+        Heightmap::TfrMapping::ptr tfr_map_;
+        Signal::OperationDesc::ptr render_operation_desc_;
+        Signal::Processing::TargetMarker::ptr target_marker_;
+        Signal::Processing::Chain::ptr chain_;
+        Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_block_filter_params_;
 
         friend class boost::serialization::access;
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called

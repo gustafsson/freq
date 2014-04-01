@@ -302,7 +302,7 @@ class TooltipModel::FetchDataTransform: public TooltipModel::FetchData
 public:
     FetchDataTransform( RenderModel* m, const Tfr::StftDesc* stft, float t )
     {
-        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
+        Signal::Processing::Step::ptr s = m->project ()->default_target ()->step().lock();
         Signal::OperationDesc::Extent x = m->project ()->processing_chain ().read ()->extent(m->project ()->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
@@ -336,7 +336,7 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::CepstrumDesc* cepstrum, float t )
     {
-        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
+        Signal::Processing::Step::ptr s = m->project ()->default_target ()->step().lock();
         Signal::OperationDesc::Extent x = m->project ()->processing_chain ().read ()->extent(m->project ()->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
@@ -369,7 +369,7 @@ public:
 
     FetchDataTransform( RenderModel* m, const Tfr::Cwt* cwt, float t )
     {
-        Signal::Processing::Step::Ptr s = m->project ()->default_target ()->step().lock();
+        Signal::Processing::Step::ptr s = m->project ()->default_target ()->step().lock();
         Signal::OperationDesc::Extent x = m->project ()->processing_chain ().read ()->extent(m->project ()->default_target ());
         float fs = x.sample_rate.get_value_or (1);
 
@@ -457,7 +457,7 @@ public:
 
 private:
     Tfr::FreqAxis fa;
-    DataStorage<float>::Ptr abslog;
+    DataStorage<float>::ptr abslog;
 };
 
 
@@ -498,7 +498,7 @@ boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
         createFetchData( RenderView* view, float t )
 {
     boost::shared_ptr<FetchData> r;
-    const Tfr::TransformDesc::Ptr transform = view->model->transform_desc();
+    const Tfr::TransformDesc::ptr transform = view->model->transform_desc();
     if (const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(transform.get ()))
         r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
     else if (const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(transform.get ()))

@@ -78,7 +78,7 @@ Signal::pBuffer TransformOperationOperation::
 
 
 TransformOperationDesc::
-        TransformOperationDesc(ChunkFilterDesc::Ptr f)
+        TransformOperationDesc(ChunkFilterDesc::ptr f)
     :
       chunk_filter_(f),
       transformDesc_(f.read ()->transformDesc()->copy())
@@ -86,15 +86,15 @@ TransformOperationDesc::
 }
 
 
-OperationDesc::Ptr TransformOperationDesc::
+OperationDesc::ptr TransformOperationDesc::
         copy() const
 {
     //ChunkFilterDesc::Ptr chunk_filter = chunk_filter_.read ()->copy();
-    return OperationDesc::Ptr (new TransformOperationDesc (chunk_filter_));
+    return OperationDesc::ptr (new TransformOperationDesc (chunk_filter_));
 }
 
 
-Signal::Operation::Ptr TransformOperationDesc::
+Signal::Operation::ptr TransformOperationDesc::
         createOperation(Signal::ComputingEngine*engine) const
 {
     Tfr::pTransform t = transformDesc_->createTransform ();
@@ -107,9 +107,9 @@ Signal::Operation::Ptr TransformOperationDesc::
     bool no_inverse_tag = 0!=dynamic_cast<volatile ChunkFilter::NoInverseTag*>(f.get ());
 
     if (!f)
-        return Signal::Operation::Ptr();
+        return Signal::Operation::ptr();
 
-    return Signal::Operation::Ptr (new TransformOperationOperation( t, f, no_inverse_tag ));
+    return Signal::Operation::ptr (new TransformOperationOperation( t, f, no_inverse_tag ));
 }
 
 
@@ -211,10 +211,10 @@ class DummyChunkFilterDesc: public ChunkFilterDesc
 public:
     DummyChunkFilterDesc(int* i):i(i) {}
 
-    ChunkFilter::Ptr createChunkFilter(Signal::ComputingEngine* engine) const {
+    ChunkFilter::ptr createChunkFilter(Signal::ComputingEngine* engine) const {
         if (0 == engine)
-            return ChunkFilter::Ptr(new DummyChunkFilter(i));
-        return ChunkFilter::Ptr();
+            return ChunkFilter::ptr(new DummyChunkFilter(i));
+        return ChunkFilter::ptr();
     }
 
 private:
@@ -228,7 +228,7 @@ void TransformOperationDesc::
     // so that ChunkFilters can explicilty do only the filtering.
     {
         int i = 0;
-        ChunkFilterDesc::Ptr cfd(new DummyChunkFilterDesc(&i));
+        ChunkFilterDesc::ptr cfd(new DummyChunkFilterDesc(&i));
         cfd.write ()->transformDesc(pTransformDesc(new Tfr::DummyTransformDesc));
         pTransformDesc t = cfd.read ()->transformDesc();
         TransformOperationDesc tod(cfd);
@@ -240,7 +240,7 @@ void TransformOperationDesc::
                     tod.requiredInterval (Signal::Interval(5,7), 0),
                     t->requiredInterval (Signal::Interval(5,7),0));
 
-        Signal::Operation::Ptr o = tod.createOperation (0);
+        Signal::Operation::ptr o = tod.createOperation (0);
         Signal::pBuffer b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT_EQUALS(i, (int)b->number_of_channels ());
     }

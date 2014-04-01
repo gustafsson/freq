@@ -6,10 +6,10 @@ namespace Tools {
 namespace Commands {
 
 RecordedCommand::
-        RecordedCommand(Adapters::Recorder::Ptr recording,
+        RecordedCommand(Adapters::Recorder::ptr recording,
                         Signal::IntervalType prevLength,
                         Tools::RenderModel* model,
-                        Signal::Processing::IInvalidator::Ptr iinvalidator)
+                        Signal::Processing::IInvalidator::ptr iinvalidator)
             :
             recording(recording),
             model(model),

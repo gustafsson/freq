@@ -284,7 +284,7 @@ template<typename T=char>
 class DataStorage: public DataStorageVoid
 {
 public:
-    typedef boost::shared_ptr<DataStorage<T> > Ptr;
+    typedef boost::shared_ptr<DataStorage<T> > ptr;
 
     DataStorage(DataAccessPosition_t size_x)
         :DataStorageVoid(DataStorageSize(size_x), sizeof(T))

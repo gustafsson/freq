@@ -310,7 +310,7 @@ float RenderView::
     ref->block_index[1] = pos.scale / r.scale();
     r = rr(*ref);
 
-    Heightmap::Collection::Ptr collection = model->collections()[0];
+    Heightmap::Collection::ptr collection = model->collections()[0];
     Heightmap::pBlock block = collection.read ()->getBlock( *ref );
     Heightmap::ReferenceInfo ri(block->referenceInfo ());
     if (!block)
@@ -327,7 +327,7 @@ float RenderView::
             return 0;
     }
 
-    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+    DataStorage<float>::ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
     Heightmap::BlockLayout block_layout = model->tfr_mapping ().read ()->block_layout();
@@ -1025,7 +1025,7 @@ void RenderView::
             DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
             N, cacheCount);
 
-        if(0) foreach( const Heightmap::Collection::Ptr& c, collections )
+        if(0) foreach( const Heightmap::Collection::ptr& c, collections )
         {
             c.read ()->printCacheSize();
         }
@@ -1107,12 +1107,12 @@ void RenderView::
         float length=0.f;
 
         if (onlyComputeBlocksForRenderView)
-        foreach( const Heightmap::Collection::Ptr& collection, collections )
+        foreach( const Heightmap::Collection::ptr& collection, collections )
         {
             collection.write ()->next_frame(); // Discard needed blocks before this row
         }
 
-        Signal::Processing::Step::Ptr step_with_new_extent;
+        Signal::Processing::Step::ptr step_with_new_extent;
         {
             x = model->project()->extent ();
             length = x.interval.get ().count() / x.sample_rate.get ();
@@ -1168,7 +1168,7 @@ void RenderView::
 
 
     // It should update the view in sections with the same size as blocks
-    Signal::Processing::TargetNeeds::Ptr target_needs = model->target_marker()->target_needs();
+    Signal::Processing::TargetNeeds::ptr target_needs = model->target_marker()->target_needs();
     Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
     wu.update(model->_qx, x, _last_update_size);
 
@@ -1202,7 +1202,7 @@ void RenderView::
     if (!onlyComputeBlocksForRenderView)
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-        foreach( const Heightmap::Collection::Ptr& collection, collections )
+        foreach( const Heightmap::Collection::ptr& collection, collections )
         {
             // Start looking for which blocks that are requested for the next frame.
             collection.write ()->next_frame();
@@ -1263,7 +1263,7 @@ void RenderView::
         clearCaches()
 {
     TaskTimer tt("RenderView::clearCaches(), %p", this);
-    foreach( const Heightmap::Collection::Ptr& collection, model->collections() )
+    foreach( const Heightmap::Collection::ptr& collection, model->collections() )
     {
         collection.write ()->clear();
     }

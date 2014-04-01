@@ -83,10 +83,10 @@ Signal::OperationDesc::Extent Rectangle::
 }
 
 
-ChunkFilterDesc::Ptr Rectangle::
+ChunkFilterDesc::ptr Rectangle::
         copy() const
 {
-    return ChunkFilterDesc::Ptr(new Rectangle(_s1, _f1, _s2, _f2, _save_inside));
+    return ChunkFilterDesc::ptr(new Rectangle(_s1, _f1, _s2, _f2, _save_inside));
 }
 
 
@@ -182,13 +182,13 @@ void Rectangle::
 
     // It should apply a bandpass and time filter between f1,s1 and f2,s2 to a signal.
     {
-        Signal::Processing::Chain::Ptr cp = Signal::Processing::Chain::createDefaultChain ();
-        Signal::OperationDesc::Ptr transparent(new Test::TransparentOperationDesc);
-        Signal::OperationDesc::Ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
-        Tfr::ChunkFilterDesc::Ptr cfd(new Rectangle(1,2,4,4,false));
-        Signal::OperationDesc::Ptr rectangledesc(new TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::Ptr at = cp.write ()->addTarget(transparent);
-        Signal::Processing::TargetNeeds::Ptr n = at->target_needs();
+        Signal::Processing::Chain::ptr cp = Signal::Processing::Chain::createDefaultChain ();
+        Signal::OperationDesc::ptr transparent(new Test::TransparentOperationDesc);
+        Signal::OperationDesc::ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
+        Tfr::ChunkFilterDesc::ptr cfd(new Rectangle(1,2,4,4,false));
+        Signal::OperationDesc::ptr rectangledesc(new TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::ptr at = cp.write ()->addTarget(transparent);
+        Signal::Processing::TargetNeeds::ptr n = at->target_needs();
         cp.write ()->addOperationAt(buffersource,at);
         cp.write ()->addOperationAt(rectangledesc,at);
         n.write ()->updateNeeds(Signal::Interval(0,10));

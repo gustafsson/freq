@@ -22,7 +22,7 @@ public:
 
 
 Worker::
-        Worker (Signal::ComputingEngine::Ptr computing_engine, ISchedule::Ptr schedule)
+        Worker (Signal::ComputingEngine::ptr computing_engine, ISchedule::ptr schedule)
     :
       computing_engine_(computing_engine),
       schedule_(schedule),
@@ -33,7 +33,7 @@ Worker::
                       "Worker uses a QThread with an event loop. The QEventLoop requires QApplication");
 
     qRegisterMetaType<std::exception_ptr>("std::exception_ptr");
-    qRegisterMetaType<Signal::ComputingEngine::Ptr>("Signal::ComputingEngine::Ptr");
+    qRegisterMetaType<Signal::ComputingEngine::ptr>("Signal::ComputingEngine::ptr");
 
     // Create terminated_exception_
     try {
@@ -155,7 +155,7 @@ void Worker::
   {
     while (!QThread::currentThread ()->isInterruptionRequested ())
       {
-        Task::Ptr task;
+        Task::ptr task;
 
         {
             DEBUGINFO TaskTimer tt(boost::format("Get task %s %s") % vartype(*schedule_.get ()) % (computing_engine_?vartype(*computing_engine_):"(null)") );
@@ -198,16 +198,16 @@ public:
 
     mutable std::atomic<int> get_task_count;
 
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
         get_task_count++;
-        return Task::Ptr();
+        return Task::ptr();
     }
 };
 
 
 class GetTaskSegFaultMock: public ISchedule {
 public:
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
         if (DetectGdb::was_started_through_gdb ())
             BOOST_THROW_EXCEPTION(segfault_sigill_exception());
 
@@ -220,18 +220,18 @@ public:
 #pragma clang diagnostic pop
 
         // unreachable code
-        return Task::Ptr();
+        return Task::ptr();
     }
 };
 
 
 class GetTaskExceptionMock: public ISchedule {
 public:
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
         EXCEPTION_ASSERTX(false, "testing that worker catches exceptions from a scheduler");
 
         // unreachable code
-        return Task::Ptr();
+        return Task::ptr();
     }
 };
 
@@ -242,7 +242,7 @@ public:
         double timeout() { return 0.001; }
     };
 
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const override {
         GetTaskMock::getTask (engine);
 
         // cause dead lock in 1 ms
@@ -250,7 +250,7 @@ public:
         m.write () && m.write ();
 
         // unreachable code
-        return Task::Ptr();
+        return Task::ptr();
     }
 };
 
@@ -261,7 +261,7 @@ public:
         double timeout() { return 1; }
     };
 
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const override {
         GetTaskMock::getTask (engine);
 
         // cause dead lock, but wait a few seconds (at least 2*2 * 1000 ms)
@@ -269,7 +269,7 @@ public:
         m.write () && m.write ();
 
         // unreachable code
-        return Task::Ptr();
+        return Task::ptr();
     }
 };
 
@@ -278,10 +278,10 @@ class DummyTask: public Task {
 public:
     DummyTask()
         : Task(
-              Step::Ptr(new Step(Signal::OperationDesc::Ptr())).write(),
-              Step::Ptr(),
-              std::vector<Step::Ptr>(),
-              Signal::Operation::Ptr(),
+              Step::ptr(new Step(Signal::OperationDesc::ptr())).write(),
+              Step::ptr(),
+              std::vector<Step::ptr>(),
+              Signal::Operation::ptr(),
               Signal::Interval(),
               Signal::Interval())
     {}
@@ -292,8 +292,8 @@ public:
 };
 
 class DummySchedule: public ISchedule {
-    Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) const override {
-        return Task::Ptr(new DummyTask);
+    Task::ptr getTask(Signal::ComputingEngine::ptr engine) const override {
+        return Task::ptr(new DummyTask);
     }
 };
 
@@ -309,8 +309,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should start and stop automatically");
 
-        ISchedule::Ptr gettask(new GetTaskMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new GetTaskMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         QThread::yieldCurrentThread ();
         EXCEPTION_ASSERT( worker.isRunning () );
@@ -320,8 +320,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should run tasks as given by the scheduler");
 
-        ISchedule::Ptr gettask(new GetTaskMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new GetTaskMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (1);
 
@@ -338,8 +338,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should run tasks as given by the scheduler");
 
-        ISchedule::Ptr gettask(new GetTaskMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new GetTaskMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( !worker.wait (1) );
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask.write ())->get_task_count );
@@ -358,8 +358,8 @@ void Worker::
 
         PrettifySegfault::EnableDirectPrint (false);
 
-        ISchedule::Ptr gettask(new GetTaskSegFaultMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new GetTaskSegFaultMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (1);
         worker.abort ();
@@ -376,8 +376,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (std::exception) and stop execution (1)");
 
-        ISchedule::Ptr gettask(new GetTaskExceptionMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new GetTaskExceptionMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         QThread::yieldCurrentThread ();
     }
@@ -386,8 +386,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (std::exception) and stop execution (2)");
 
-        ISchedule::Ptr gettask(new GetTaskExceptionMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new GetTaskExceptionMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (1);
         worker.abort ();
@@ -409,9 +409,9 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (LockFailed) and stop execution.");
 
-        ISchedule::Ptr gettask(new ImmediateDeadLockMock());
+        ISchedule::ptr gettask(new ImmediateDeadLockMock());
 
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (2);
         worker.abort ();
@@ -426,8 +426,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (1)");
 
-        ISchedule::Ptr gettask(new DeadLockMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new DeadLockMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( worker.isRunning () );
         worker.terminate ();
@@ -445,8 +445,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (2)");
 
-        ISchedule::Ptr gettask(new DeadLockMock());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new DeadLockMock());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( !worker.wait (1) );
         worker.terminate ();
@@ -458,8 +458,8 @@ void Worker::
     {
         UNITTEST_STEPS TaskTimer tt("It should announce when tasks are finished.");
 
-        ISchedule::Ptr gettask(new DummySchedule());
-        Worker worker(Signal::ComputingEngine::Ptr(), gettask);
+        ISchedule::ptr gettask(new DummySchedule());
+        Worker worker(Signal::ComputingEngine::ptr(), gettask);
         QEventLoop e;
         QTimer t;
         connect (&t, SIGNAL(timeout()), &e, SLOT(quit()));

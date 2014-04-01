@@ -17,7 +17,7 @@ using namespace Signal;
 namespace Heightmap {
 
 BlockFactory::
-        BlockFactory(BlockLayout bl, VisualizationParams::ConstPtr vp)
+        BlockFactory(BlockLayout bl, VisualizationParams::const_ptr vp)
     :
       block_layout_(bl),
       visualization_params_(vp),

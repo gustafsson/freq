@@ -71,7 +71,7 @@ Project::
 
     {
         TaskInfo ti("Releasing signal processing chain");
-        processing_chain_ = Signal::Processing::Chain::Ptr();
+        processing_chain_ = Signal::Processing::Chain::ptr();
     }
 
     if (_mainWindow)
@@ -82,7 +82,7 @@ Project::
 
 
 void Project::
-        appendOperation(Signal::OperationDesc::Ptr s)
+        appendOperation(Signal::OperationDesc::ptr s)
 {
     Tools::Commands::pCommand c(
                 new Tools::Commands::AppendOperationDescCommand(
@@ -142,7 +142,7 @@ pProject Project::
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::NetworkRecorder(url)));
+            p->tools ().addRecording (Adapters::Recorder::ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -294,7 +294,7 @@ pProject Project::
 {
     int device = QSettings().value("inputdevice", -1).toInt();
 
-    Adapters::Recorder::Ptr recorder(new Adapters::MicrophoneRecorder(device));
+    Adapters::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
 
     Signal::OperationDesc::Extent x;
     x.interval = Signal::Interval();
@@ -456,7 +456,7 @@ bool Project::
 }
 
 
-Signal::Processing::TargetMarker::Ptr Project::
+Signal::Processing::TargetMarker::ptr Project::
         default_target()
 {
     return tools().render_model.target_marker();
@@ -543,7 +543,7 @@ pProject Project::
 
     Tools::OpenWatchedFileController* watchedopener = new Tools::OpenWatchedFileController( ofc );
 
-    Signal::OperationDesc::Ptr d = watchedopener->openWatched (path.c_str ());
+    Signal::OperationDesc::ptr d = watchedopener->openWatched (path.c_str ());
     if (!d)
         return pProject();
 
@@ -552,7 +552,7 @@ pProject Project::
 
 
 pProject Project::
-        openOperation(Signal::OperationDesc::Ptr operation, std::string name)
+        openOperation(Signal::OperationDesc::ptr operation, std::string name)
 {
     if (name.empty ())
         name = operation.read ()->toString().toStdString();
@@ -574,7 +574,7 @@ pProject Project::
     std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString ();
 
     boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
-    Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
+    Signal::OperationDesc::ptr d(new Adapters::AudiofileDesc(a));
 
     return openOperation(d, a->name());
 }
@@ -585,7 +585,7 @@ pProject Project::
         openCsvTimeseries(std::string audio_file)
 {
     Adapters::CsvTimeseries*a;
-    Signal::OperationDesc::Ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    Signal::OperationDesc::ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     double fs = QInputDialog::getDouble (0, "Sample rate",
                                            "Enter the sample rate for the csv data:", 1);
     if (fs<=0)

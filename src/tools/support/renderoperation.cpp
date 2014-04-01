@@ -9,7 +9,7 @@ namespace Support {
 
 
 RenderOperationDesc::
-        RenderOperationDesc(OperationDesc::Ptr embed, RenderTarget::Ptr render_target)
+        RenderOperationDesc(OperationDesc::ptr embed, RenderTarget::ptr render_target)
     :
       OperationDescWrapper(embed),
       render_target_(render_target)
@@ -17,15 +17,15 @@ RenderOperationDesc::
 }
 
 
-Operation::Ptr RenderOperationDesc::
+Operation::ptr RenderOperationDesc::
         createOperation(ComputingEngine* engine=0) const
 {
-    Operation::Ptr wrap = OperationDescWrapper::createOperation (engine);
+    Operation::ptr wrap = OperationDescWrapper::createOperation (engine);
 
     if (!wrap)
-        return Operation::Ptr();
+        return Operation::ptr();
 
-    return Operation::Ptr(new Operation(wrap, render_target_));
+    return Operation::ptr(new Operation(wrap, render_target_));
 }
 
 
@@ -41,26 +41,26 @@ Interval RenderOperationDesc::
 }
 
 
-Tfr::TransformDesc::Ptr RenderOperationDesc::
+Tfr::TransformDesc::ptr RenderOperationDesc::
         transform_desc() const
 {
-    Signal::OperationDesc::Ptr wo = getWrappedOperationDesc();
+    Signal::OperationDesc::ptr wo = getWrappedOperationDesc();
     if (!wo)
-        return Tfr::TransformDesc::Ptr();
+        return Tfr::TransformDesc::ptr();
 
     auto o = wo.read ();
     const Tfr::TransformOperationDesc* f = dynamic_cast<const Tfr::TransformOperationDesc*>(&*o);
     if (f)
         return f->transformDesc ();
 
-    return Tfr::TransformDesc::Ptr();
+    return Tfr::TransformDesc::ptr();
 }
 
 
 void RenderOperationDesc::
-        transform_desc(Tfr::TransformDesc::Ptr t)
+        transform_desc(Tfr::TransformDesc::ptr t)
 {
-    Signal::OperationDesc::Ptr wo = getWrappedOperationDesc();
+    Signal::OperationDesc::ptr wo = getWrappedOperationDesc();
     if (!wo)
         return;
 
@@ -72,7 +72,7 @@ void RenderOperationDesc::
 
 
 RenderOperationDesc::Operation::
-        Operation(Operation::Ptr wrapped, RenderTarget::Ptr render_target)
+        Operation(Operation::ptr wrapped, RenderTarget::ptr render_target)
     :
       wrapped_(wrapped),
       render_target_(render_target)
@@ -137,11 +137,11 @@ void RenderOperationDesc::
         RenderOperationDesc* rod;
         RenderOperationDescMockTarget* target;
 
-        OperationDesc::Ptr operation( new Test::TransparentOperationDesc() );
-        RenderTarget::Ptr rtp(target = new RenderOperationDescMockTarget());
+        OperationDesc::ptr operation( new Test::TransparentOperationDesc() );
+        RenderTarget::ptr rtp(target = new RenderOperationDescMockTarget());
 
-        Signal::OperationDesc::Ptr ro(rod = new RenderOperationDesc(operation, rtp));
-        Signal::Operation::Ptr o = ro.write ()->createOperation(0);
+        Signal::OperationDesc::ptr ro(rod = new RenderOperationDesc(operation, rtp));
+        Signal::Operation::ptr o = ro.write ()->createOperation(0);
 
         // Operations are processed through a Processing::Step
         Processing::Step step(ro);

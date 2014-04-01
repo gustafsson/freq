@@ -8,7 +8,7 @@ namespace Signal {
 class ComputingEngine
 {
 public:
-    typedef std::shared_ptr<ComputingEngine> Ptr;
+    typedef std::shared_ptr<ComputingEngine> ptr;
 
     virtual ~ComputingEngine();
 };

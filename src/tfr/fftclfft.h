@@ -6,13 +6,13 @@
 namespace Tfr {
     class FftClFft: public FftImplementation {
     public:
-        void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
-        void computeR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output );
-        void computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output );
+        void compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction );
+        void computeR2C( DataStorage<float>::ptr input, Tfr::ChunkData::ptr output );
+        void computeC2R( Tfr::ChunkData::ptr input, DataStorage<float>::ptr output );
 
-        void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction );
-        void compute( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize n );
-        void inverse( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n );
+        void compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, DataStorageSize n, FftDirection direction );
+        void compute( DataStorage<float>::ptr inputbuffer, Tfr::ChunkData::ptr transform_data, DataStorageSize n );
+        void inverse( Tfr::ChunkData::ptr inputdata, DataStorage<float>::ptr outputdata, DataStorageSize n );
     };
 }
 

@@ -179,7 +179,7 @@ void ChunkToBlockTexture::
     br.b.scale += 0.5*ds / bl.texels_per_column ();
 
     // Setup the VBO, need to know the current display scale, which is defined by the block.
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    VisualizationParams::const_ptr vp = block.visualization_params ();
     prepVbo(vp->display_scale ());
 
     // Disable unwanted capabilities when resampling a texture
@@ -213,7 +213,7 @@ void ChunkToBlockTexture::
     // Draw from chunk texture onto block texture
     {
         // Setup framebuffer rendering
-        GlTexture::Ptr t = block.glblock->glTexture ();
+        GlTexture::ptr t = block.glblock->glTexture ();
         GlFrameBuffer fbo(t->getOpenGlTextureId ());
         GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
 
@@ -226,7 +226,7 @@ void ChunkToBlockTexture::
     // Draw from chunk texture onto block vertex texture
     {
         // Setup framebuffer rendering
-        GlTexture::Ptr t = block.glblock->glVertTexture ();
+        GlTexture::ptr t = block.glblock->glVertTexture ();
         GlFrameBuffer fbo(t->getOpenGlTextureId ());
         GlFrameBuffer::ScopeBinding sb = fbo.getScopeBinding ();
 

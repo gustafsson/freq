@@ -42,7 +42,7 @@ namespace Heightmap {
 
 
 Collection::
-        Collection( BlockLayout block_layout, VisualizationParams::ConstPtr visualization_params)
+        Collection( BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
 :   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_(),
     cache_( new BlockCache ),
@@ -266,7 +266,7 @@ void Collection::
 }
 
 
-BlockCache::Ptr Collection::
+BlockCache::ptr Collection::
         cache() const
 {
     return cache_;
@@ -311,7 +311,7 @@ BlockLayout Collection::
 }
 
 
-VisualizationParams::ConstPtr Collection::
+VisualizationParams::const_ptr Collection::
         visualization_params() const
 {
     return visualization_params_;
@@ -349,7 +349,7 @@ void Collection::
 
 
 void Collection::
-        visualization_params(VisualizationParams::ConstPtr v)
+        visualization_params(VisualizationParams::const_ptr v)
 {
     EXCEPTION_ASSERT( v );
 

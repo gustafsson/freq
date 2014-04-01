@@ -14,7 +14,7 @@ namespace Heightmap {
 class BlockFactory
 {
 public:
-    BlockFactory(BlockLayout, VisualizationParams::ConstPtr);
+    BlockFactory(BlockLayout, VisualizationParams::const_ptr);
 
     /**
       Creates a new block.
@@ -43,7 +43,7 @@ private:
 
 
     BlockLayout block_layout_;
-    VisualizationParams::ConstPtr visualization_params_;
+    VisualizationParams::const_ptr visualization_params_;
     size_t _free_memory;
 
 public:

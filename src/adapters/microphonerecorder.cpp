@@ -370,7 +370,7 @@ int MicrophoneRecorder::
 
 
 MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Recorder::Ptr recorder )
+        MicrophoneRecorderOperation( Recorder::ptr recorder )
     :
       recorder_(recorder)
 {
@@ -385,7 +385,7 @@ Signal::pBuffer MicrophoneRecorderOperation::
 
 
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder::Ptr recorder, Recorder::IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder::ptr recorder, Recorder::IGotDataCallback::ptr invalidator)
     :
       recorder_(recorder)
 {
@@ -437,18 +437,18 @@ Signal::Interval MicrophoneRecorderDesc::
 }
 
 
-Signal::OperationDesc::Ptr MicrophoneRecorderDesc::
+Signal::OperationDesc::ptr MicrophoneRecorderDesc::
         copy() const
 {
     EXCEPTION_ASSERTX(false, "Can't make a copy of microphone recording");
-    return Signal::OperationDesc::Ptr();
+    return Signal::OperationDesc::ptr();
 }
 
 
-Signal::Operation::Ptr MicrophoneRecorderDesc::
+Signal::Operation::ptr MicrophoneRecorderDesc::
         createOperation(Signal::ComputingEngine*) const
 {
-    Signal::Operation::Ptr r(new MicrophoneRecorderOperation(recorder_));
+    Signal::Operation::ptr r(new MicrophoneRecorderOperation(recorder_));
     return r;
 }
 
@@ -465,7 +465,7 @@ MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
 }
 
 
-Recorder::Ptr MicrophoneRecorderDesc::
+Recorder::ptr MicrophoneRecorderDesc::
         recorder() const
 {
     return recorder_;
@@ -507,9 +507,9 @@ void MicrophoneRecorderDesc::
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        Recorder::IGotDataCallback::Ptr callback(new GotDataCallback);
+        Recorder::IGotDataCallback::ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(Recorder::Ptr(new MicrophoneRecorder(inputDevice)), callback);
+        MicrophoneRecorderDesc mrd(Recorder::ptr(new MicrophoneRecorder(inputDevice)), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );

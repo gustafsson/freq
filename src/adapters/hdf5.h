@@ -166,7 +166,7 @@ public:
     Hdf5ChunkDesc(std::string filename);
 
     Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
-    CwtChunkFilterDesc::Ptr copy() const;
+    CwtChunkFilterDesc::ptr copy() const;
 
 private:
     std::string filename_;

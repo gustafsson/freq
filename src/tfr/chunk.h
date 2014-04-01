@@ -49,7 +49,7 @@ public:
       'offset' can be used to give coordinates that takes order into account
       for computing the offset into the array.
     */
-    ChunkData::Ptr transform_data;
+    ChunkData::ptr transform_data;
 
 
     Signal::IntervalType offset(Signal::IntervalType sample, int f_index);

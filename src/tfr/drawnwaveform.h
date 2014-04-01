@@ -19,7 +19,7 @@ public:
 
 
 
-    virtual TransformDesc::Ptr copy() const;
+    virtual TransformDesc::ptr copy() const;
 
     virtual pTransform createTransform() const;
 

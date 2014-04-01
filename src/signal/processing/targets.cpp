@@ -14,17 +14,17 @@ Targets::
 }
 
 
-TargetNeeds::Ptr Targets::
-        addTarget(Step::Ptr::weak_ptr step)
+TargetNeeds::ptr Targets::
+        addTarget(Step::ptr::weak_ptr step)
 {
-    TargetNeeds::Ptr target(new TargetNeeds(step, notifier_));
+    TargetNeeds::ptr target(new TargetNeeds(step, notifier_));
     targets.push_back (target);
 
     // perform gc
     Targets::TargetNeedsCollection T = getTargets();
     targets.clear ();
     targets.reserve (T.size ());
-    BOOST_FOREACH(const TargetNeeds::Ptr& i, T) {
+    BOOST_FOREACH(const TargetNeeds::ptr& i, T) {
         targets.push_back (i);
     }
 
@@ -38,8 +38,8 @@ Targets::TargetNeedsCollection Targets::
     TargetNeedsCollection C;
     C.reserve (targets.size ());
 
-    BOOST_FOREACH(const TargetNeeds::Ptr::weak_ptr& i, targets) {
-        TargetNeeds::Ptr t = i.lock ();
+    BOOST_FOREACH(const TargetNeeds::ptr::weak_ptr& i, targets) {
+        TargetNeeds::ptr t = i.lock ();
         if (t)
             C.push_back (t);
     }
@@ -62,12 +62,12 @@ void Targets::
     // It should keep track of targets and let callers update what each target needs afterwards
     {
         // setup
-        Bedroom::Ptr bedroom(new Bedroom);
-        BedroomNotifier::Ptr bedroom_notifier(new BedroomNotifier(bedroom));
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Bedroom::ptr bedroom(new Bedroom);
+        BedroomNotifier::ptr bedroom_notifier(new BedroomNotifier(bedroom));
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
 
-        Targets::Ptr targets(new Targets(bedroom_notifier));
-        TargetNeeds::Ptr updater( targets.write ()->addTarget(step) );
+        Targets::ptr targets(new Targets(bedroom_notifier));
+        TargetNeeds::ptr updater( targets.write ()->addTarget(step) );
         EXCEPTION_ASSERT(updater);
         EXCEPTION_ASSERT(updater.read ()->step().lock() == step);
     }

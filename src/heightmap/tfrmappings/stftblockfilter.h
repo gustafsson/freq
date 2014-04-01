@@ -11,7 +11,7 @@ namespace TfrMappings {
 
 class StftBlockFilterParams {
 public:
-    typedef shared_state<StftBlockFilterParams> Ptr;
+    typedef shared_state<StftBlockFilterParams> ptr;
 
     Tfr::pChunkFilter freq_normalization;
 };
@@ -22,13 +22,13 @@ public:
 class StftBlockFilter: public Heightmap::MergeChunk
 {
 public:
-    StftBlockFilter(StftBlockFilterParams::Ptr params);
+    StftBlockFilter(StftBlockFilterParams::ptr params);
 
     void filterChunk(Tfr::ChunkAndInverse&);
-    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
+    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
 private:
-    StftBlockFilterParams::Ptr params_;
+    StftBlockFilterParams::ptr params_;
 
 public:
     static void test();
@@ -41,12 +41,12 @@ public:
 class StftBlockFilterDesc: public Heightmap::MergeChunkDesc
 {
 public:
-    StftBlockFilterDesc(StftBlockFilterParams::Ptr params);
+    StftBlockFilterDesc(StftBlockFilterParams::ptr params);
 
-    MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const;
+    MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine) const;
 
 private:
-    StftBlockFilterParams::Ptr params_;
+    StftBlockFilterParams::ptr params_;
 
 public:
     static void test();

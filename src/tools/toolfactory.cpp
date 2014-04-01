@@ -271,7 +271,7 @@ ToolFactory::
 
 
 void ToolFactory::
-        addRecording (Adapters::Recorder::Ptr recorder)
+        addRecording (Adapters::Recorder::ptr recorder)
 {
     Sawe::Project*p = render_model.project ();
 

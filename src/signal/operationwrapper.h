@@ -18,25 +18,25 @@ namespace Signal {
  */
 class OperationDescWrapper: public OperationDesc {
 public:
-    OperationDescWrapper(OperationDesc::Ptr wrap=OperationDesc::Ptr());
+    OperationDescWrapper(OperationDesc::ptr wrap=OperationDesc::ptr());
 
     /**
      * @brief setWrappedOperationDesc makes this OperationDesc behave as a new
      * operation.
      */
-    void setWrappedOperationDesc(OperationDesc::Ptr wrap);
-    OperationDesc::Ptr getWrappedOperationDesc() const;
+    void setWrappedOperationDesc(OperationDesc::ptr wrap);
+    OperationDesc::ptr getWrappedOperationDesc() const;
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Interval affectedInterval( const Interval& I ) const;
-    virtual OperationDesc::Ptr copy() const;
-    virtual Operation::Ptr createOperation(ComputingEngine* engine) const;
+    virtual OperationDesc::ptr copy() const;
+    virtual Operation::ptr createOperation(ComputingEngine* engine) const;
     virtual Extent extent() const;
     virtual QString toString() const;
     virtual bool operator==(const OperationDesc& d) const;
 
 private:
-    OperationDesc::Ptr wrap_;
+    OperationDesc::ptr wrap_;
 
 public:
     static void test();

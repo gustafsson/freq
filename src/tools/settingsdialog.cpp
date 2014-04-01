@@ -223,7 +223,7 @@ void SettingsDialog::
     if (subtexelAggregationChanged)
     {
         Tools::RenderModel* rendermodel = &project->tools ().render_model;
-        Signal::Processing::TargetNeeds::Ptr needs = rendermodel->target_marker()->target_needs();
+        Signal::Processing::TargetNeeds::ptr needs = rendermodel->target_marker()->target_needs();
         needs.write ()->deprecateCache(Signal::Intervals::Intervals_ALL);
         needs.write ()->updateNeeds(
                     Signal::Intervals(),

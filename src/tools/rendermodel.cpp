@@ -17,14 +17,14 @@ namespace Tools
 
 class TargetInvalidator: public Signal::Processing::IInvalidator {
 public:
-    TargetInvalidator(Signal::Processing::TargetNeeds::Ptr needs):needs_(needs) {}
+    TargetInvalidator(Signal::Processing::TargetNeeds::ptr needs):needs_(needs) {}
 
     virtual void deprecateCache(Signal::Intervals what) const {
         needs_.write ()->deprecateCache(what);
     }
 
 private:
-    Signal::Processing::TargetNeeds::Ptr needs_;
+    Signal::Processing::TargetNeeds::ptr needs_;
 };
 
 RenderModel::
@@ -77,13 +77,13 @@ RenderModel::
 
 
 void RenderModel::
-        init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt)
+        init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt)
 {
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
-    render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::Ptr(), rt));
+    render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::ptr(), rt));
     target_marker_ = chain.write ()->addTarget(render_operation_desc_);
-    rod->setInvalidator(Signal::Processing::IInvalidator::Ptr(
+    rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
 
@@ -184,21 +184,21 @@ void RenderModel::
 }
 
 
-Heightmap::TfrMapping::Ptr RenderModel::
+Heightmap::TfrMapping::ptr RenderModel::
         tfr_mapping()
 {
     return tfr_map_;
 }
 
 
-Support::TransformDescs::Ptr RenderModel::
+Support::TransformDescs::ptr RenderModel::
         transform_descs()
 {
     return transform_descs_;
 }
 
 
-Tfr::TransformDesc::Ptr RenderModel::
+Tfr::TransformDesc::ptr RenderModel::
         transform_desc()
 {
     auto o = render_operation_desc_.read ();
@@ -206,12 +206,12 @@ Tfr::TransformDesc::Ptr RenderModel::
 
     return rod
             ? rod->transform_desc ()
-            : Tfr::TransformDesc::Ptr();
+            : Tfr::TransformDesc::ptr();
 }
 
 
 void RenderModel::
-        set_transform_desc(Tfr::TransformDesc::Ptr t)
+        set_transform_desc(Tfr::TransformDesc::ptr t)
 {
     {
         auto o = render_operation_desc_.write ();
@@ -249,7 +249,7 @@ void RenderModel::
 }
 
 
-Signal::Processing::TargetMarker::Ptr RenderModel::
+Signal::Processing::TargetMarker::ptr RenderModel::
         target_marker()
 {
     return target_marker_;
@@ -257,7 +257,7 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 
 
 void RenderModel::
-        set_filter(Signal::OperationDesc::Ptr o)
+        set_filter(Signal::OperationDesc::ptr o)
 {
     auto wo = render_operation_desc_.write ();
     Signal::OperationDescWrapper* w =
@@ -267,7 +267,7 @@ void RenderModel::
 }
 
 
-Signal::OperationDesc::Ptr RenderModel::
+Signal::OperationDesc::ptr RenderModel::
         get_filter()
 {
     auto ow = render_operation_desc_.read ();
@@ -276,7 +276,7 @@ Signal::OperationDesc::Ptr RenderModel::
 }
 
 
-Heightmap::TfrMappings::StftBlockFilterParams::Ptr RenderModel::
+Heightmap::TfrMappings::StftBlockFilterParams::ptr RenderModel::
         get_stft_block_filter_params()
 {
     return stft_block_filter_params_;

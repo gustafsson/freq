@@ -25,7 +25,7 @@ SelectionModel::
 
 
 void SelectionModel::
-        set_current_selection(Signal::OperationDesc::Ptr o)
+        set_current_selection(Signal::OperationDesc::ptr o)
 {
     if (o!=current_selection_) {
         // Check if 'o' is supported by making a copy of it
@@ -37,7 +37,7 @@ void SelectionModel::
 
 
 void SelectionModel::
-        try_set_current_selection(Signal::OperationDesc::Ptr o)
+        try_set_current_selection(Signal::OperationDesc::ptr o)
 {
     TaskInfo ti("Trying to set %s \"%s\" as current selection", vartype(*o.get()).c_str(), o.read ()->toString().toStdString().c_str());
 
@@ -47,20 +47,20 @@ void SelectionModel::
     }
     catch ( const std::logic_error& )
     {
-        set_current_selection(Signal::OperationDesc::Ptr());
+        set_current_selection(Signal::OperationDesc::ptr());
     }
 }
 
 
-Signal::OperationDesc::Ptr SelectionModel::
+Signal::OperationDesc::ptr SelectionModel::
         current_selection_copy(SaveInside si)
 {
     return copy_selection( current_selection_, si );
 }
 
 
-Signal::OperationDesc::Ptr SelectionModel::
-        copy_selection(Signal::OperationDesc::Ptr o, SaveInside si)
+Signal::OperationDesc::ptr SelectionModel::
+        copy_selection(Signal::OperationDesc::ptr o, SaveInside si)
 {
     if (!o)
         return o;
@@ -88,7 +88,7 @@ Signal::OperationDesc::Ptr SelectionModel::
       }
 
     EXCEPTION_ASSERTX(false, "SelectionModel::copy_selection(" + vartype(*o.raw ()) + ", " + w->toString().toStdString() + ") is not implemented");
-    return Signal::OperationDesc::Ptr();
+    return Signal::OperationDesc::ptr();
 }
 
 

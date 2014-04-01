@@ -27,7 +27,7 @@ class PeakModel
 public:
     PeakModel( RenderModel* rendermodel );
 
-    Signal::OperationDesc::Ptr updateFilter() { return spline_model.updateFilter(); }
+    Signal::OperationDesc::ptr updateFilter() { return spline_model.updateFilter(); }
 
     SplineModel spline_model;
 
@@ -40,7 +40,7 @@ private:
         unsigned x, y;
     };
 
-    typedef DataStorage<bool>::Ptr PeakAreaP;
+    typedef DataStorage<bool>::ptr PeakAreaP;
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
 
     PeakAreas classifictions;

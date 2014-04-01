@@ -21,7 +21,7 @@ private:
 OpenfileWatcher::
         OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path)
     :
-      OperationDescWrapper(Signal::OperationDesc::Ptr()),
+      OperationDescWrapper(Signal::OperationDesc::ptr()),
       openfilecontroller_(openfilecontroller)
 {
     watcher_.addPath (path);
@@ -36,7 +36,7 @@ void OpenfileWatcher::
 {
     TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
 
-    Signal::OperationDesc::Ptr file = openfilecontroller_->open(path);
+    Signal::OperationDesc::ptr file = openfilecontroller_->open(path);
 
     setWrappedOperationDesc (file);
 }
@@ -51,18 +51,18 @@ OpenWatchedFileController::
 }
 
 
-Signal::OperationDesc::Ptr OpenWatchedFileController::
+Signal::OperationDesc::ptr OpenWatchedFileController::
         openWatched(QString url)
 {
     OpenfileWatcher* w;
-    Signal::OperationDesc::Ptr o(w = new OpenfileWatcher(openfilecontroller_, url));
+    Signal::OperationDesc::ptr o(w = new OpenfileWatcher(openfilecontroller_, url));
 
     // The file must exist to begin with
     if (w->getWrappedOperationDesc ())
         return o;
 
     // Failed to open url
-    return Signal::OperationDesc::Ptr();
+    return Signal::OperationDesc::ptr();
 }
 
 } // namespace Tools
@@ -79,8 +79,8 @@ public:
     DummyFileWatchedOperationDesc(QString which):which(which) {}
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* ) const { return I; }
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const { return I; }
-    virtual OperationDesc::Ptr copy() const { return OperationDesc::Ptr(); }
-    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const { return Signal::Operation::Ptr(); }
+    virtual OperationDesc::ptr copy() const { return OperationDesc::ptr(); }
+    virtual Signal::Operation::ptr createOperation(Signal::ComputingEngine*) const { return Signal::Operation::ptr(); }
     virtual QString toString() const { return which; }
 
 private:
@@ -91,14 +91,14 @@ class DummyFileWatchedOpener : public OpenfileController::OpenfileInterface {
 public:
     Patterns patterns() { return Patterns(); }
 
-    Signal::OperationDesc::Ptr open(QString url) {
+    Signal::OperationDesc::ptr open(QString url) {
         QFile file(url);
         if (!file.exists ())
-            return Signal::OperationDesc::Ptr();
+            return Signal::OperationDesc::ptr();
 
         file.open (QIODevice::ReadOnly);
         QString str(file.readAll ());
-        return Signal::OperationDesc::Ptr(new DummyFileWatchedOperationDesc(str));
+        return Signal::OperationDesc::ptr(new DummyFileWatchedOperationDesc(str));
     }
 };
 
@@ -125,7 +125,7 @@ void OpenWatchedFileController::
         ofc->registerOpener (ofi);
 
         OpenWatchedFileController owfc(ofc);
-        Signal::OperationDesc::Ptr od = owfc.openWatched (filename);
+        Signal::OperationDesc::ptr od = owfc.openWatched (filename);
 
         EXCEPTION_ASSERT(od);
 

@@ -17,7 +17,7 @@
 namespace Signal {
 
 typedef DataStorage<float> TimeSeriesData;
-typedef TimeSeriesData::Ptr pTimeSeriesData;
+typedef TimeSeriesData::ptr pTimeSeriesData;
 
 class SaweDll MonoBuffer : public boost::noncopyable {
 public:

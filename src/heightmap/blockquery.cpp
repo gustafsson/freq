@@ -11,7 +11,7 @@ using namespace Signal;
 namespace Heightmap {
 
 BlockQuery::
-        BlockQuery(BlockCache::ConstPtr cache)
+        BlockQuery(BlockCache::const_ptr cache)
     :
       cache_(cache)
 {

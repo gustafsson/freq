@@ -21,7 +21,7 @@ public:
     }
 
 
-    typename DataStorage<T>::Ptr data;
+    typename DataStorage<T>::ptr data;
 };
 
 #endif // MAPPEDVBO_H

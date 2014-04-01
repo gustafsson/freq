@@ -92,7 +92,7 @@ void BlockCache::
         Reference r1;
         Reference r2 = r1.right ();
         BlockLayout bl(2,2,1);
-        VisualizationParams::Ptr vp;
+        VisualizationParams::ptr vp;
         pBlock b1(new Block(r1, bl, vp));
         pBlock b2(new Block(r2, bl, vp));
 

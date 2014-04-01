@@ -38,7 +38,7 @@ bool VisualizationParams::
 }
 
 
-Tfr::TransformDesc::Ptr VisualizationParams::
+Tfr::TransformDesc::ptr VisualizationParams::
         transform_desc() const
 {
     return details_->transform_desc_;
@@ -46,7 +46,7 @@ Tfr::TransformDesc::Ptr VisualizationParams::
 
 
 void VisualizationParams::
-        transform_desc(Tfr::TransformDesc::Ptr v)
+        transform_desc(Tfr::TransformDesc::ptr v)
 {
     details_->transform_desc_ = v;
 }
@@ -89,14 +89,14 @@ void VisualizationParams::
         // This class has requirements on how other classes should use it.
 
         Tfr::FreqAxis f; f.setLinear (1);
-        VisualizationParams::Ptr v(new VisualizationParams);
-        v->transform_desc(Tfr::TransformDesc::Ptr());
+        VisualizationParams::ptr v(new VisualizationParams);
+        v->transform_desc(Tfr::TransformDesc::ptr());
         v->amplitude_axis(AmplitudeAxis_Linear);
 
         EXCEPTION_ASSERT(*v == *v);
 
-        VisualizationParams::Ptr v2(new VisualizationParams);
-        v2->transform_desc(Tfr::TransformDesc::Ptr());
+        VisualizationParams::ptr v2(new VisualizationParams);
+        v2->transform_desc(Tfr::TransformDesc::ptr());
         v2->amplitude_axis(AmplitudeAxis_Linear);
 
         // FreqAxis compares not equal to an uninitialized instance

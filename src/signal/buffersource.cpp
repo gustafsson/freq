@@ -116,17 +116,17 @@ Interval BufferSource::
 }
 
 
-OperationDesc::Ptr BufferSource::
+OperationDesc::ptr BufferSource::
         copy() const
 {
-    return OperationDesc::Ptr(new BufferSource(buffer_));
+    return OperationDesc::ptr(new BufferSource(buffer_));
 }
 
 
-Operation::Ptr BufferSource::
+Operation::ptr BufferSource::
         createOperation(ComputingEngine*) const
 {
-    return Operation::Ptr(new BufferSourceOperation(buffer_));
+    return Operation::ptr(new BufferSourceOperation(buffer_));
 }
 
 
@@ -167,7 +167,7 @@ void BufferSource::
             p[i] = c + i/(float)b->number_of_samples ();
     }
     BufferSource s(b);
-    Operation::Ptr o = s.createOperation (0);
+    Operation::ptr o = s.createOperation (0);
     Operation::test (o, &s);
 
     pBuffer r(new Buffer(Interval(60,70), 40, 7));

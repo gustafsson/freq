@@ -86,7 +86,7 @@ float PeakModel::
     Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return 0;
-    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+    DataStorage<float>::ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
     Heightmap::BlockLayout block_size = c->block_layout();
@@ -107,7 +107,7 @@ float& PeakModel::
 */
 
 void PeakModel::
-        findAddPeak( Heightmap::Collection::Ptr cptr, Heightmap::Reference ref, Heightmap::Position pos )
+        findAddPeak( Heightmap::Collection::ptr cptr, Heightmap::Reference ref, Heightmap::Position pos )
 {
     auto write_ptr = cptr.write ();
     c = &*write_ptr;
@@ -433,7 +433,7 @@ void PeakModel::
     Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return;
-    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+    DataStorage<float>::ptr blockData = block->glblock->height()->data;
     float* data = blockData->getCpuMemory();
 
     PeakAreaP area = getPeakArea(ref);
@@ -616,7 +616,7 @@ void PeakModel::
                 return;
             }
 
-            DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+            DataStorage<float>::ptr blockData = block->glblock->height()->data;
             data = blockData->getCpuMemory();
 
             PeakAreaP area = getPeakArea(ref);

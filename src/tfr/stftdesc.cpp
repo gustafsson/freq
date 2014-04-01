@@ -20,10 +20,10 @@ StftDesc::
 }
 
 
-TransformDesc::Ptr StftDesc::
+TransformDesc::ptr StftDesc::
         copy() const
 {
-    return TransformDesc::Ptr(new StftDesc(*this));
+    return TransformDesc::ptr(new StftDesc(*this));
 }
 
 
@@ -597,10 +597,10 @@ void StftDesc::
         StftDesc d;
         EXCEPTION_ASSERT_EQUALS( vartype(*d.copy()), vartype(StftDesc()) );
         EXCEPTION_ASSERT( !d.toString().empty () );
-        Tfr::TransformDesc::Ptr dc = d.copy ();
+        Tfr::TransformDesc::ptr dc = d.copy ();
         EXCEPTION_ASSERT_EQUALS( d, *dc );
 
-        TransformDesc::Ptr t = d.copy ();
+        TransformDesc::ptr t = d.copy ();
         StftDesc* d2 = dynamic_cast<StftDesc*>(t.get ());
         EXCEPTION_ASSERT_EQUALS( d.chunk_size(), 2048 );
         d.set_approximate_chunk_size(7);

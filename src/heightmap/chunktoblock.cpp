@@ -44,7 +44,7 @@ void ChunkToBlock::mergeColumnMajorChunk(
         BlockData& outData )
 {
     Region r = block.getRegion();
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    VisualizationParams::const_ptr vp = block.visualization_params ();
 
     Signal::Interval inInterval = chunk.getCoveredInterval();
 
@@ -82,7 +82,7 @@ void ChunkToBlock::mergeRowMajorChunk(
         BlockData& outData )
 {
     Region r = block.getRegion();
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    VisualizationParams::const_ptr vp = block.visualization_params ();
 
     Signal::Interval inInterval = chunk.getCoveredInterval();
 
@@ -152,14 +152,14 @@ void ChunkToBlock::
         test()
 {
     BlockLayout bl(1<<8,1<<8,100);
-    VisualizationParams::Ptr vp(new VisualizationParams);
+    VisualizationParams::ptr vp(new VisualizationParams);
     Tfr::FreqAxis ds; ds.setLinear (1);
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);
 
-    Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
+    Tfr::ChunkFilterDesc::ptr fdesc( new DummyKernelDesc );
     fdesc.write ()->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
-    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(fdesc));
+    Signal::OperationDesc::ptr desc(new Tfr::TransformOperationDesc(fdesc));
     auto operation = desc.read ()->createOperation (0).write ();
 
     Signal::Interval expectedOutput;

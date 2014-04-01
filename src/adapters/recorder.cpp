@@ -32,7 +32,7 @@ float Recorder::
 
 
 void Recorder::
-        setDataCallback( IGotDataCallback::Ptr invalidator )
+        setDataCallback( IGotDataCallback::ptr invalidator )
 {
     _invalidator = invalidator;
 }

@@ -2,7 +2,7 @@
 #include "resamplecpu.h"
 #include "rectanglekerneldef.h"
 
-void removeRect( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside )
+void removeRect( Tfr::ChunkData::ptr waveletp, Area area, bool save_inside )
 {
     Tfr::ChunkElement* wavelet = CpuMemoryStorage::ReadWrite<2>( waveletp ).ptr();
     DataStorageSize size = waveletp->size();

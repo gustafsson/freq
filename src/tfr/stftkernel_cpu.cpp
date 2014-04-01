@@ -25,13 +25,13 @@ void stftNormalizeInverse(
 }
 
 
-template void stftNormalizeInverse(DataStorage<float>::Ptr, unsigned);
-template void stftNormalizeInverse(DataStorage<Tfr::ChunkElement>::Ptr, unsigned);
+template void stftNormalizeInverse(DataStorage<float>::ptr, unsigned);
+template void stftNormalizeInverse(DataStorage<Tfr::ChunkElement>::ptr, unsigned);
 
 
 void stftNormalizeInverse(
-        Tfr::ChunkData::Ptr inwave,
-        DataStorage<float>::Ptr outwave,
+        Tfr::ChunkData::ptr inwave,
+        DataStorage<float>::ptr outwave,
         unsigned length )
 {
     CpuMemoryReadOnly<Tfr::ChunkElement, 2> in_wt = CpuMemoryStorage::ReadOnly<2>( inwave );
@@ -53,8 +53,8 @@ void stftNormalizeInverse(
 
 
 void stftToComplex(
-        DataStorage<float>::Ptr inwave,
-        Tfr::ChunkData::Ptr outwave )
+        DataStorage<float>::ptr inwave,
+        Tfr::ChunkData::ptr outwave )
 {
     CpuMemoryReadOnly<float, 2> in_wt = CpuMemoryStorage::ReadOnly<2>( inwave );
     CpuMemoryWriteOnly<Tfr::ChunkElement, 2> out_wt = CpuMemoryStorage::WriteAll<2>( outwave );
@@ -75,7 +75,7 @@ void stftToComplex(
 
 
 void cepstrumPrepareCepstra(
-        Tfr::ChunkData::Ptr chunk,
+        Tfr::ChunkData::ptr chunk,
         float normalization )
 {
     CpuMemoryReadWrite<Tfr::ChunkElement, 2> cepstra = CpuMemoryStorage::ReadWrite<2>( chunk );
@@ -93,8 +93,8 @@ void cepstrumPrepareCepstra(
 
 
 void stftAverage(
-        Tfr::ChunkData::Ptr input,
-        Tfr::ChunkData::Ptr output,
+        Tfr::ChunkData::ptr input,
+        Tfr::ChunkData::ptr output,
         unsigned scales )
 {
     int width = scales;

@@ -13,7 +13,7 @@ namespace Heightmap {
 namespace TfrMappings {
 
 StftBlockFilter::
-        StftBlockFilter(StftBlockFilterParams::Ptr params)
+        StftBlockFilter(StftBlockFilterParams::ptr params)
     :
       params_(params)
 {
@@ -32,13 +32,13 @@ void StftBlockFilter::
 }
 
 
-std::vector<IChunkToBlock::Ptr> StftBlockFilter::
+std::vector<IChunkToBlock::ptr> StftBlockFilter::
         createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
 
-    IChunkToBlock::Ptr chunktoblock;
+    IChunkToBlock::ptr chunktoblock;
 
     try {
         chunktoblock.reset(new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
@@ -52,14 +52,14 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     }
 
     chunktoblock->normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    std::vector<IChunkToBlock::Ptr> R;
+    std::vector<IChunkToBlock::ptr> R;
     R.push_back (chunktoblock);
     return R;
 }
 
 
 StftBlockFilterDesc::
-        StftBlockFilterDesc(StftBlockFilterParams::Ptr params)
+        StftBlockFilterDesc(StftBlockFilterParams::ptr params)
     :
       params_(params)
 {
@@ -67,13 +67,13 @@ StftBlockFilterDesc::
 }
 
 
-MergeChunk::Ptr StftBlockFilterDesc::
+MergeChunk::ptr StftBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
-        return MergeChunk::Ptr( new StftBlockFilter(params_) );
+        return MergeChunk::ptr( new StftBlockFilter(params_) );
 
-    return MergeChunk::Ptr();
+    return MergeChunk::ptr();
 }
 
 } // namespace TfrMappings
@@ -117,7 +117,7 @@ void StftBlockFilter::
 
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -144,7 +144,7 @@ void StftBlockFilter::
         cai.chunk = (*cai.t)( buffer );
 
         // Do the merge
-        Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
+        Heightmap::MergeChunk::ptr mc( new StftBlockFilter(StftBlockFilterParams::ptr()) );
         mc.write ()->filterChunk(cai);
         mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
 
@@ -168,8 +168,8 @@ void StftBlockFilterDesc::
 {
     // It should instantiate StftBlockFilter for different engines.
     {
-        Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::Ptr()));
-        MergeChunk::Ptr mc = mcd.read ()->createMergeChunk (0);
+        Heightmap::MergeChunkDesc::ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::ptr()));
+        MergeChunk::ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 

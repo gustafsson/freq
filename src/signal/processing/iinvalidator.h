@@ -15,7 +15,7 @@ namespace Processing {
 class IInvalidator
 {
 public:
-    typedef shared_state<IInvalidator> Ptr;
+    typedef shared_state<IInvalidator> ptr;
 
     virtual ~IInvalidator() {}
 

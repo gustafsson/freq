@@ -148,7 +148,7 @@ void TransformInfoForm::
     if (renderview->model->collections().empty())
         return;
 
-    Tfr::TransformDesc::Ptr f = renderview->model->transform_desc();
+    Tfr::TransformDesc::ptr f = renderview->model->transform_desc();
     const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(f.get ());
     const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(f.get ());
     const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(f.get ());
@@ -267,7 +267,7 @@ void TransformInfoForm::
 #endif
 
     size_t cacheByteSize=0;
-    foreach( const Heightmap::Collection::Ptr& h, renderview->model->collections())
+    foreach( const Heightmap::Collection::ptr& h, renderview->model->collections())
     {
         cacheByteSize += h.write ()->cacheByteSize();
     }
@@ -469,7 +469,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         freqNormalizationChanged(qreal newValue)
 {
-    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+    Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_params =
             project->tools ().render_model.get_stft_block_filter_params ();
     EXCEPTION_ASSERT( stft_params );
 
@@ -493,7 +493,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         freqNormalizationPercentChanged(qreal newValue)
 {
-    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+    Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_params =
             project->tools ().render_model.get_stft_block_filter_params ();
     EXCEPTION_ASSERT( stft_params );
 

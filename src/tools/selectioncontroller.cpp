@@ -113,7 +113,7 @@ namespace Tools
         addAction(deselect_action_);
 
 
-        setCurrentSelection(Signal::OperationDesc::Ptr());
+        setCurrentSelection(Signal::OperationDesc::ptr());
 
         toolfactory();
 
@@ -180,7 +180,7 @@ namespace Tools
     void SelectionController::
             deselect()
     {
-        setCurrentSelection(Signal::OperationDesc::Ptr());
+        setCurrentSelection(Signal::OperationDesc::ptr());
     }
 
 
@@ -200,7 +200,7 @@ namespace Tools
 
 
     void SelectionController::
-            setCurrentSelectionCommand( Signal::OperationDesc::Ptr selection )
+            setCurrentSelectionCommand( Signal::OperationDesc::ptr selection )
     {
         _model->set_current_selection( selection );
 
@@ -216,7 +216,7 @@ namespace Tools
 
 
     void SelectionController::
-            setCurrentSelection( Signal::OperationDesc::Ptr selection )
+            setCurrentSelection( Signal::OperationDesc::ptr selection )
     {
         if (_model->current_selection() != selection)
         {
@@ -225,9 +225,9 @@ namespace Tools
 
             //model()->project()->mainWindow()->getItems()->actionPlaySelection->trigger();
         }
-        else if (Signal::OperationDesc::Ptr() == selection)
+        else if (Signal::OperationDesc::ptr() == selection)
         {
-            this->model ()->set_current_selection(Signal::OperationDesc::Ptr());
+            this->model ()->set_current_selection(Signal::OperationDesc::ptr());
         }
     }
 
@@ -274,7 +274,7 @@ namespace Tools
             setThisAsCurrentTool( bool active )
     {
         if (!active)
-            setCurrentSelection( Signal::OperationDesc::Ptr() );
+            setCurrentSelection( Signal::OperationDesc::ptr() );
 
         if (active)
             _render_view->toolSelector()->setCurrentToolCommand( this );
@@ -299,7 +299,7 @@ namespace Tools
     {
         if (Qt::RightButton == e->button())
         {
-            this->setCurrentSelection(Signal::OperationDesc::Ptr());
+            this->setCurrentSelection(Signal::OperationDesc::ptr());
             render_view()->redraw();
         }
     }
@@ -322,9 +322,9 @@ namespace Tools
         if (!_model->current_selection())
             return;
 
-        Signal::OperationDesc::Ptr o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
+        Signal::OperationDesc::ptr o = _model->current_selection_copy( SelectionModel::SaveInside_FALSE );
 
-        _model->set_current_selection( Signal::OperationDesc::Ptr() );
+        _model->set_current_selection( Signal::OperationDesc::ptr() );
         _model->project()->appendOperation( o );
         _model->set_current_selection( o );
         _model->all_selections.push_back( o );
@@ -339,9 +339,9 @@ namespace Tools
         if (!_model->current_selection())
             return;
 
-        Signal::OperationDesc::Ptr o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
+        Signal::OperationDesc::ptr o = _model->current_selection_copy( SelectionModel::SaveInside_TRUE );
 
-        _model->set_current_selection( Signal::OperationDesc::Ptr() );
+        _model->set_current_selection( Signal::OperationDesc::ptr() );
         _model->project()->appendOperation( o );
 
         Signal::OperationDesc::Extent x = o.read ()->extent();
@@ -350,7 +350,7 @@ namespace Tools
             Signal::Interval xi = x.interval.get ();
             if (xi.first != 0)
               {
-                Signal::OperationDesc::Ptr shift(
+                Signal::OperationDesc::ptr shift(
                             new Support::OperationShift(-xi.first, Signal::Interval(0, xi.count ())));
                 _model->project()->appendOperation( shift );
               }

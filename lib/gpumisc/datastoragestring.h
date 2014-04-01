@@ -10,8 +10,8 @@
 class DataStorageString
 {
 public:
-    static std::string printDataStorage(DataStorage<float>::Ptr data);
-    static std::string printDataStorageStats(DataStorage<float>::Ptr data);
+    static std::string printDataStorage(DataStorage<float>::ptr data);
+    static std::string printDataStorageStats(DataStorage<float>::ptr data);
 
 public:
     static void test();

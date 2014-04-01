@@ -128,7 +128,7 @@ namespace Processing {
 
 class SleepyFaceMock: public QThread {
 public:
-    SleepyFaceMock(Bedroom::Ptr bedroom, int snooze) : bedroom_(bedroom), snooze_(snooze) {}
+    SleepyFaceMock(Bedroom::ptr bedroom, int snooze) : bedroom_(bedroom), snooze_(snooze) {}
 
     void run() {
         Bedroom::Bed bed = bedroom_->getBed();
@@ -141,14 +141,14 @@ public:
     int snooze() { return snooze_; }
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
     int snooze_;
 };
 
 
 class SleepingBeautyMock: public QThread {
 public:
-    SleepingBeautyMock(Bedroom::Ptr bedroom, int sleep_ms) : bedroom_(bedroom), sleep_ms_(sleep_ms) {}
+    SleepingBeautyMock(Bedroom::ptr bedroom, int sleep_ms) : bedroom_(bedroom), sleep_ms_(sleep_ms) {}
 
     void run() {
         Bedroom::Bed bed = bedroom_->getBed();
@@ -160,7 +160,7 @@ public:
     int sleep_count() { return sleep_count_; }
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
     int sleep_ms_;
     int sleep_count_ = 0;
 };
@@ -171,7 +171,7 @@ void Bedroom::
 {
     // It should allow different threads to sleep on this object until another thread calls wakeup()
     for (int j=0;j<2; j++) {
-        Bedroom::Ptr bedroom(new Bedroom);
+        Bedroom::ptr bedroom(new Bedroom);
         int snoozes = 10;
         SleepyFaceMock sleepyface1(bedroom, snoozes);
         SleepyFaceMock sleepyface2(bedroom, snoozes);
@@ -221,7 +221,7 @@ void Bedroom::
 
     // It should just sleep until the given timeout has elapsed
     {
-        Bedroom::Ptr bedroom(new Bedroom);
+        Bedroom::ptr bedroom(new Bedroom);
         SleepingBeautyMock sbm(bedroom, 2);
 
         sbm.start ();

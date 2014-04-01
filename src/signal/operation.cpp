@@ -16,7 +16,7 @@ namespace Signal {
 
 
 void Operation::
-        test(Ptr o, OperationDesc* desc)
+        test(ptr o, OperationDesc* desc)
 {
     Interval I(40,70), expectedOutput;
     Interval ri = desc->requiredInterval (I, &expectedOutput);
@@ -42,13 +42,13 @@ QString OperationDesc::
 
 
 void OperationDesc::
-        setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator)
+        setInvalidator(Signal::Processing::IInvalidator::ptr invalidator)
 {
     invalidator_ = invalidator;
 }
 
 
-Signal::Processing::IInvalidator::Ptr OperationDesc::
+Signal::Processing::IInvalidator::ptr OperationDesc::
         getInvalidator() const
 {
     return invalidator_;

@@ -39,7 +39,7 @@ private:
 
 
 BlockInstaller::
-        BlockInstaller(BlockLayout bl, VisualizationParams::ConstPtr vp, BlockCache::Ptr c)
+        BlockInstaller(BlockLayout bl, VisualizationParams::const_ptr vp, BlockCache::ptr c)
     :
       block_layout_(bl),
       visualization_params_(vp),
@@ -170,8 +170,8 @@ void BlockInstaller::
     // It should create new blocks and install them in a cache.
     {
         BlockLayout bl(4,4,4);
-        VisualizationParams::ConstPtr vp(new VisualizationParams);
-        BlockCache::Ptr cache(new BlockCache);
+        VisualizationParams::const_ptr vp(new VisualizationParams);
+        BlockCache::ptr cache(new BlockCache);
 
         BlockInstaller block_installer(bl, vp, cache);
 

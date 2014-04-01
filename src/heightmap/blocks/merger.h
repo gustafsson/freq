@@ -13,7 +13,7 @@ namespace Blocks {
 class Merger
 {
 public:
-    Merger(BlockCache::ConstPtr cache);
+    Merger(BlockCache::const_ptr cache);
 
     /**
      * @brief fillBlockFromOthers fills a block with data from other blocks.
@@ -22,7 +22,7 @@ public:
     void fillBlockFromOthers( pBlock block );
 
 private:
-    BlockCache::ConstPtr cache_;
+    BlockCache::const_ptr cache_;
 
     /**
       Add block information from another block. Returns whether any information was merged.

@@ -18,9 +18,9 @@ namespace Processing {
 class Targets
 {
 public:
-    typedef shared_state<Targets> Ptr;
+    typedef shared_state<Targets> ptr;
 
-    typedef std::vector<TargetNeeds::Ptr> TargetNeedsCollection;
+    typedef std::vector<TargetNeeds::ptr> TargetNeedsCollection;
 
     Targets(INotifier::weak_ptr notifier);
 
@@ -36,13 +36,13 @@ public:
      *
      * Ownership is of TargetNeeds is given to the caller.
      */
-    TargetNeeds::Ptr              addTarget(Step::Ptr::weak_ptr step);
+    TargetNeeds::ptr              addTarget(Step::ptr::weak_ptr step);
     TargetNeedsCollection         getTargets() const;
 
 private:
     INotifier::weak_ptr notifier_;
 
-    std::vector<TargetNeeds::Ptr::weak_ptr> targets;
+    std::vector<TargetNeeds::ptr::weak_ptr> targets;
 
 public:
     static void test();

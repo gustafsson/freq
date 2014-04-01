@@ -8,7 +8,7 @@ namespace Signal {
 namespace Processing {
 
 TargetMarker::
-        TargetMarker(TargetNeeds::Ptr target_needs, Dag::Ptr dag)
+        TargetMarker(TargetNeeds::ptr target_needs, Dag::ptr dag)
     :
       target_needs_(target_needs),
       dag_(dag)
@@ -18,8 +18,8 @@ TargetMarker::
 }
 
 
-std::set<Step::Ptr> single_paths(GraphVertex v, const Graph& g) {
-    std::set<Step::Ptr> S;
+std::set<Step::ptr> single_paths(GraphVertex v, const Graph& g) {
+    std::set<Step::ptr> S;
 
     UNUSED(int od) = boost::out_degree(v, g);
     UNUSED(int id) = boost::in_degree(v, g);
@@ -30,7 +30,7 @@ std::set<Step::Ptr> single_paths(GraphVertex v, const Graph& g) {
     S.insert (g[v]);
 
     BOOST_FOREACH(GraphEdge e, boost::in_edges(v, g)) {
-        std::set<Step::Ptr> s = single_paths(boost::source(e,g), g);
+        std::set<Step::ptr> s = single_paths(boost::source(e,g), g);
         S.insert (s.begin (), s.end ());
     }
 
@@ -41,7 +41,7 @@ std::set<Step::Ptr> single_paths(GraphVertex v, const Graph& g) {
 TargetMarker::
         ~TargetMarker()
 {
-    Step::Ptr step = target_needs_.read ()->step().lock();
+    Step::ptr step = target_needs_.read ()->step().lock();
     if (!step)
         return;
 
@@ -51,9 +51,9 @@ TargetMarker::
     if (!start)
         return;
 
-    std::set<Step::Ptr> steps_to_remove = single_paths(start, dag->g ());
+    std::set<Step::ptr> steps_to_remove = single_paths(start, dag->g ());
 
-    BOOST_FOREACH( Step::Ptr s, steps_to_remove ) {
+    BOOST_FOREACH( Step::ptr s, steps_to_remove ) {
         dag->removeStep (s);
     }
 }
@@ -66,7 +66,7 @@ shared_state<TargetNeeds> TargetMarker::
 }
 
 
-Step::Ptr::weak_ptr TargetMarker::
+Step::ptr::weak_ptr TargetMarker::
         step() const
 {
     return target_needs_.read ()->step();
@@ -86,17 +86,17 @@ void TargetMarker::
 {
     // It should mark the position of a target in the dag and remove it's vertices when the marker is deleted.
     {
-        Step::Ptr step1(new Step(Signal::OperationDesc::Ptr()));
-        Step::Ptr step2a(new Step(Signal::OperationDesc::Ptr()));
-        Step::Ptr step3a(new Step(Signal::OperationDesc::Ptr()));
-        Step::Ptr step2b(new Step(Signal::OperationDesc::Ptr()));
+        Step::ptr step1(new Step(Signal::OperationDesc::ptr()));
+        Step::ptr step2a(new Step(Signal::OperationDesc::ptr()));
+        Step::ptr step3a(new Step(Signal::OperationDesc::ptr()));
+        Step::ptr step2b(new Step(Signal::OperationDesc::ptr()));
 
-        Bedroom::Ptr bedroom(new Bedroom());
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step3a, notifier));
-        Dag::Ptr dagp(new Dag());
+        Bedroom::ptr bedroom(new Bedroom());
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::ptr target_needs(new TargetNeeds(step3a, notifier));
+        Dag::ptr dagp(new Dag());
 
-        TargetMarker::Ptr tm( new TargetMarker(target_needs, dagp));
+        TargetMarker::ptr tm( new TargetMarker(target_needs, dagp));
 
         {
             auto dag = dagp.write ();

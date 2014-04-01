@@ -30,11 +30,11 @@ class Worker: public QObject
 {
     Q_OBJECT
 public:
-    typedef QPointer<Worker> Ptr;
+    typedef QPointer<Worker> ptr;
 
     class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
-    Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::Ptr schedule);
+    Worker (Signal::ComputingEngine::ptr computing_eninge, ISchedule::ptr schedule);
     ~Worker ();
 
     void abort();
@@ -57,7 +57,7 @@ public:
 
 signals:
     void oneTaskDone();
-    void finished(std::exception_ptr, Signal::ComputingEngine::Ptr);
+    void finished(std::exception_ptr, Signal::ComputingEngine::ptr);
 
 public slots:
     void wakeup();
@@ -68,8 +68,8 @@ private slots:
 private:
     void loop_while_tasks();
 
-    Signal::ComputingEngine::Ptr            computing_engine_;
-    ISchedule::Ptr                          schedule_;
+    Signal::ComputingEngine::ptr            computing_engine_;
+    ISchedule::ptr                          schedule_;
 
     QThread*                                thread_;
     shared_state<std::exception_ptr>        exception_;

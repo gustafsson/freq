@@ -35,7 +35,7 @@ construction and destruction and keeping track of texture id).
 */
 class GlTexture: public boost::noncopyable {
 public:
-    typedef boost::shared_ptr<GlTexture> Ptr;
+    typedef boost::shared_ptr<GlTexture> ptr;
 
 	/**
 	Creates a new OpenGL texture and allocates memory for a given

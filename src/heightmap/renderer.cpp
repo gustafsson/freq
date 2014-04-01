@@ -266,7 +266,7 @@ Reference Renderer::
 {
     Reference entireHeightmap = collection.read ()->entireHeightmap();
     BlockLayout bl = collection.read ()->block_layout();
-    VisualizationParams::ConstPtr vp = collection.read ()->visualization_params();
+    VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
     Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
     Reference r = Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
     return r;
@@ -343,7 +343,7 @@ Render::RenderSet::references_t Renderer::
 {
     BlockLayout bl                   = collection.read ()->block_layout ();
     Reference ref                    = collection.read ()->entireHeightmap();
-    VisualizationParams::ConstPtr vp = collection.read ()->visualization_params ();
+    VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
     Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 

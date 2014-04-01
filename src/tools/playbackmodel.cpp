@@ -17,11 +17,11 @@ namespace Tools
     }
 
 
-    Signal::Operation::Ptr PlaybackModel::
+    Signal::Operation::ptr PlaybackModel::
             playback()
     {
         if (!adapter_playback)
-            return Signal::Operation::Ptr();
+            return Signal::Operation::ptr();
 
         auto s = adapter_playback.read ();
         const Signal::SinkDesc* sinkdesc = dynamic_cast<const Signal::SinkDesc*>(&*s);

@@ -20,7 +20,7 @@ namespace Processing {
 
 
 Workers::
-        Workers(ISchedule::Ptr schedule, Bedroom::Ptr bedroom)
+        Workers(ISchedule::ptr schedule, Bedroom::ptr bedroom)
     :
       schedule_(schedule),
       notifier_(new BedroomSignalAdapter(bedroom, this))
@@ -57,22 +57,22 @@ Workers::
 }
 
 
-Worker::Ptr Workers::
-        addComputingEngine(Signal::ComputingEngine::Ptr ce)
+Worker::ptr Workers::
+        addComputingEngine(Signal::ComputingEngine::ptr ce)
 {
     if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
-    Worker::Ptr w(new Worker(ce, schedule_));
+    Worker::ptr w(new Worker(ce, schedule_));
     workers_map_[ce] = w;
 
     updateWorkers();
     bool a = connect(&*w,
-            SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::Ptr)),
-            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::Ptr)));
+            SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)),
+            SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
     bool b = connect(notifier_, SIGNAL(wakeup()), &*w, SLOT(wakeup()));
     bool c = connect(&*w, SIGNAL(oneTaskDone()), notifier_, SIGNAL(wakeup()));
-    bool d = connect((Worker*)&*w, SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::Ptr)), notifier_, SIGNAL(wakeup()));
+    bool d = connect((Worker*)&*w, SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)), notifier_, SIGNAL(wakeup()));
 
     EXCEPTION_ASSERT(a);
     EXCEPTION_ASSERT(b);
@@ -84,7 +84,7 @@ Worker::Ptr Workers::
 
 
 void Workers::
-        removeComputingEngine(Signal::ComputingEngine::Ptr ce)
+        removeComputingEngine(Signal::ComputingEngine::ptr ce)
 {
     EngineWorkerMap::iterator worker = workers_map_.find (ce);
     if (worker != workers_map_.end ())
@@ -124,7 +124,7 @@ size_t Workers::
     size_t N = 0;
 
     for(EngineWorkerMap::const_iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::Ptr worker = i->second;
+        Worker::ptr worker = i->second;
 
         if (worker && worker->isRunning ())
             N++;
@@ -153,11 +153,11 @@ Workers::DeadEngines Workers::
     DeadEngines dead;
 
     for (EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::Ptr worker = i->second;
+        Worker::ptr worker = i->second;
 
         if (!worker) {
             // The worker has been deleted
-            Signal::ComputingEngine::Ptr ce = i->first;
+            Signal::ComputingEngine::ptr ce = i->first;
             dead[ce] = std::exception_ptr();
 
         } else {
@@ -167,7 +167,7 @@ Workers::DeadEngines Workers::
             // !worker check about and the usage of worker below:
             if (!worker->isRunning ()) {
                 // The worker has stopped but has not yet been deleted
-                Signal::ComputingEngine::Ptr ce = i->first;
+                Signal::ComputingEngine::ptr ce = i->first;
                 std::exception_ptr e = worker->caught_exception ();
                 if (e) {
                     // Append engine typename info
@@ -205,12 +205,12 @@ void Workers::
         rethrow_any_worker_exception()
 {
     for (EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::Ptr worker = i->second;
+        Worker::ptr worker = i->second;
 
         if (worker) {
             std::exception_ptr e = worker->caught_exception ();
             if (e) {
-                Signal::ComputingEngine::Ptr ce = i->first;
+                Signal::ComputingEngine::ptr ce = i->first;
 
                 worker->deleteLater ();
                 workers_map_.erase (i);
@@ -304,7 +304,7 @@ void Workers::
     TaskInfo ti("Dead engines");
 
     BOOST_FOREACH(Workers::DeadEngines::value_type e, engines) {
-        Signal::ComputingEngine::Ptr engine = e.first;
+        Signal::ComputingEngine::ptr engine = e.first;
         std::exception_ptr x = e.second;
         std::string enginename = engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0");
 
@@ -348,7 +348,7 @@ public:
 
     mutable std::atomic<int> get_task_count;
 
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
         //__sync_fetch_and_add (&self->get_task_count, 1);
 
         // could also use 'boost::detail::atomic_count get_task_count;'
@@ -356,14 +356,14 @@ public:
         if (v%2)
             throw std::logic_error("test crash");
         else
-            return Task::Ptr();
+            return Task::ptr();
     }
 };
 
 
 class BlockScheduleMock: public ISchedule {
 protected:
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr) const override {
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
         bedroom.wakeup ();
 
         // This should block the thread and be aborted by QThread::terminate
@@ -371,7 +371,7 @@ protected:
 
         EXCEPTION_ASSERT( false );
 
-        return Task::Ptr();
+        return Task::ptr();
     }
 
     virtual void dont_return() const = 0;
@@ -418,23 +418,23 @@ void Workers::
         // It should start and stop computing engines as they are added and removed
         double maxwait = 0;
         for (int j=0;j<100; j++){
-            ISchedule::Ptr schedule(new GetEmptyTaskMock);
-            Bedroom::Ptr bedroom(new Bedroom);
+            ISchedule::ptr schedule(new GetEmptyTaskMock);
+            Bedroom::ptr bedroom(new Bedroom);
             Workers workers(schedule, bedroom);
             workers.rethrow_any_worker_exception(); // Should do nothing
 
             Timer t;
             int worker_count = 40; // Number of threads to start. Multiplying by 10 multiplies the elapsed time by a factor of 100.
-            std::list<Worker::Ptr> workerlist;
-            Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr());
+            std::list<Worker::ptr> workerlist;
+            Worker::ptr w = workers.addComputingEngine(Signal::ComputingEngine::ptr());
             workerlist.push_back (w);
             for (int i=1; i<worker_count; ++i) {
-                Worker::Ptr w = workers.addComputingEngine(Signal::ComputingEngine::Ptr(new Signal::ComputingCpu));
+                Worker::ptr w = workers.addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
                 workerlist.push_back (w);
             }
 
             // Wait until they're done
-            BOOST_FOREACH (Worker::Ptr& w, workerlist) { w->abort (); w->wait (); }
+            BOOST_FOREACH (Worker::ptr& w, workerlist) { w->abort (); w->wait (); }
             maxwait = std::max(maxwait, t.elapsed ());
 
             int get_task_count = ((const GetEmptyTaskMock*)schedule.raw ())->get_task_count;
@@ -446,7 +446,7 @@ void Workers::
                 workers.rethrow_any_worker_exception();
                 EXCEPTION_ASSERTX(false, "Expected exception");
             } catch (const std::exception& x) {
-                const Signal::ComputingEngine::Ptr* ce =
+                const Signal::ComputingEngine::ptr* ce =
                         boost::get_error_info<crashed_engine>(x);
                 EXCEPTION_ASSERT(ce);
 
@@ -471,23 +471,23 @@ void Workers::
     {
         UNITTEST_STEPS TaskInfo("It should terminate all threads when it's closed");
 
-        ISchedule::Ptr schedule[] = {
-            ISchedule::Ptr(new SleepScheduleMock),
-            ISchedule::Ptr(new LockScheduleMock),
-            ISchedule::Ptr(new BusyScheduleMock)
+        ISchedule::ptr schedule[] = {
+            ISchedule::ptr(new SleepScheduleMock),
+            ISchedule::ptr(new LockScheduleMock),
+            ISchedule::ptr(new BusyScheduleMock)
         };
 
         for (unsigned i=0; i<sizeof(schedule)/sizeof(schedule[0]); i++) {
             Timer t;
             {
-                ISchedule::Ptr s = schedule[i];
+                ISchedule::ptr s = schedule[i];
                 //TaskInfo ti(boost::format("%s") % vartype(*s));
-                Bedroom::Ptr bedroom(new Bedroom);
+                Bedroom::ptr bedroom(new Bedroom);
 
                 Workers workers(s, bedroom);
                 Bedroom::Bed bed = dynamic_cast<BlockScheduleMock*>(s.raw ())->bedroom.getBed();
 
-                workers.addComputingEngine(Signal::ComputingEngine::Ptr());
+                workers.addComputingEngine(Signal::ComputingEngine::ptr());
 
                 // Wait until the schedule has been called (Bedroom supports
                 // that the wakeup in schedule is called even before this sleep call

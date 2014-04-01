@@ -17,7 +17,7 @@ using namespace boost;
 namespace Heightmap {
 
 ChunkBlockFilter::
-        ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap, MergeChunk::Ptr merge_chunk )
+        ChunkBlockFilter( Blocks::IChunkMerger::ptr chunk_merger, Heightmap::TfrMapping::const_ptr tfrmap, MergeChunk::ptr merge_chunk )
     :
       chunk_merger_(chunk_merger),
       tfrmap_(tfrmap),
@@ -36,7 +36,7 @@ void ChunkBlockFilter::
     // this write1 failed once, but that shouldn't be possible as merge_chunk_ only ever exists in one worker thread!
     merge_chunk_->filterChunk( pchunk );
 
-    BlockCache::Ptr cache = C[pchunk.channel].read ()->cache();
+    BlockCache::ptr cache = C[pchunk.channel].read ()->cache();
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 
@@ -53,7 +53,7 @@ void ChunkBlockFilter::
 
 
 ChunkBlockFilterDesc::
-        ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap )
+        ChunkBlockFilterDesc( Blocks::IChunkMerger::ptr chunk_merger, Heightmap::TfrMapping::const_ptr tfrmap )
     :
       chunk_merger_(chunk_merger),
       tfrmap_(tfrmap)
@@ -65,7 +65,7 @@ ChunkBlockFilterDesc::
 Tfr::pChunkFilter ChunkBlockFilterDesc::
         createChunkFilter(Signal::ComputingEngine* engine) const
 {
-    MergeChunk::Ptr merge_chunk;
+    MergeChunk::ptr merge_chunk;
     if (merge_chunk_desc_)
         merge_chunk = merge_chunk_desc_.read ()->createMergeChunk(engine);
 
@@ -100,12 +100,12 @@ class MergeChunkMock : public MergeChunk {
 public:
     MergeChunkMock() : chunk_to_block_called(false) {}
 
-    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse& chunk)
     {
         calledi |= chunk.chunk->getInterval ();
 
-        std::vector<IChunkToBlock::Ptr> R;
-        IChunkToBlock::Ptr p(new ChunkToBlockMock(&chunk_to_block_called));
+        std::vector<IChunkToBlock::ptr> R;
+        IChunkToBlock::ptr p(new ChunkToBlockMock(&chunk_to_block_called));
         R.push_back (p);
         return R;
     }
@@ -118,10 +118,10 @@ public:
 
 
 class MergeChunkDescMock : public MergeChunkDesc {
-    MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const {
-        MergeChunk::Ptr r;
+    MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine) const {
+        MergeChunk::ptr r;
         if (0 == engine) {
-            r = MergeChunk::Ptr(new MergeChunkMock());
+            r = MergeChunk::ptr(new MergeChunkMock());
         }
         return r;
     }
@@ -141,11 +141,11 @@ void ChunkBlockFilter::
     // It should use a MergeChunk to update all blocks in a tfrmap that matches a given Tfr::Chunk.
     {
         MergeChunkMock* merge_chunk_mock;
-        MergeChunk::Ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
+        MergeChunk::ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
         BlockLayout bl(4, 4, SampleRate(4));
-        Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
+        Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
         tfrmap.write ()->length( 1 );
-        Blocks::IChunkMerger::Ptr chunk_merger(new Blocks::ChunkMerger);
+        Blocks::IChunkMerger::ptr chunk_merger(new Blocks::ChunkMerger);
         ChunkBlockFilter cbf( chunk_merger, tfrmap, merge_chunk );
 
         Tfr::StftDesc stftdesc;
@@ -189,15 +189,15 @@ void ChunkBlockFilterDesc::
     // It should instantiate ChunkBlockFilters for different engines.
     {
         BlockLayout bl(4,4,4);
-        Heightmap::TfrMapping::Ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
+        Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
 
-        Blocks::IChunkMerger::Ptr chunk_merger(new Blocks::ChunkMerger);
+        Blocks::IChunkMerger::ptr chunk_merger(new Blocks::ChunkMerger);
         ChunkBlockFilterDesc cbfd( chunk_merger, tfrmap );
 
         Tfr::pChunkFilter cf = cbfd.createChunkFilter (0);
         EXCEPTION_ASSERT( !cf );
 
-        cbfd.setMergeChunkDesc (MergeChunkDesc::Ptr( new MergeChunkDescMock ));
+        cbfd.setMergeChunkDesc (MergeChunkDesc::ptr( new MergeChunkDescMock ));
         cf = cbfd.createChunkFilter (0);
         EXCEPTION_ASSERT( cf );
         EXCEPTION_ASSERT_EQUALS( vartype(*cf), "Heightmap::ChunkBlockFilter" );

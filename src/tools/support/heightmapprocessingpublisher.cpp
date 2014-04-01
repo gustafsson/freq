@@ -14,7 +14,7 @@ namespace Tools {
 namespace Support {
 
 HeightmapProcessingPublisher::
-        HeightmapProcessingPublisher(TargetNeeds::Ptr target_needs,
+        HeightmapProcessingPublisher(TargetNeeds::ptr target_needs,
                       Heightmap::TfrMapping::Collections collections)
     :
       target_needs_(target_needs),
@@ -38,7 +38,7 @@ void HeightmapProcessingPublisher::
     // visible block if the view isn't currently being invalidated.
     UnsignedIntervalType update_size = preferred_update_size;
 
-    foreach( const Heightmap::Collection::Ptr &c, collections_ ) {
+    foreach( const Heightmap::Collection::ptr &c, collections_ ) {
         auto wc = c.write ();
         //invalid_samples |= wc->invalid_samples();
         things_to_add |= wc->recently_created();
@@ -67,13 +67,13 @@ void HeightmapProcessingPublisher::
             );
 
     failed_allocation_ = false;
-    foreach( const Heightmap::Collection::Ptr &c, collections_ )
+    foreach( const Heightmap::Collection::ptr &c, collections_ )
     {
         failed_allocation_ |= c.write ()->failed_allocation ();
     }
 
     TIME_PAINTGL_DETAILS {
-        Step::Ptr step = target_needs_.read ()->step().lock();
+        Step::ptr step = target_needs_.read ()->step().lock();
         Signal::Intervals not_started = target_needs_.read ()->not_started();
 
         if (step)
@@ -126,15 +126,15 @@ void HeightmapProcessingPublisher::
     // It should update a processing target depending on which things that are
     // missing in a heightmap block cache
     {
-        OperationDesc::Ptr operation_desc;
-        Step::Ptr step(new Step(operation_desc));
-        Bedroom::Ptr bedroom(new Bedroom);
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step, notifier));
+        OperationDesc::ptr operation_desc;
+        Step::ptr step(new Step(operation_desc));
+        Bedroom::ptr bedroom(new Bedroom);
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::ptr target_needs(new TargetNeeds(step, notifier));
 
         Heightmap::BlockLayout block_layout(10,10,1);
-        Heightmap::VisualizationParams::Ptr visualization_params(new Heightmap::VisualizationParams);
-        Heightmap::Collection::Ptr collection(new Heightmap::Collection(
+        Heightmap::VisualizationParams::ptr visualization_params(new Heightmap::VisualizationParams);
+        Heightmap::Collection::ptr collection(new Heightmap::Collection(
                                                    block_layout, visualization_params));
 
         Heightmap::TfrMapping::Collections collections;
@@ -174,9 +174,9 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
         Task task(step.write (),
-                  Step::Ptr (),
-                  std::vector<Signal::Processing::Step::Ptr>(),
-                  Operation::Ptr(),
+                  Step::ptr (),
+                  std::vector<Signal::Processing::Step::ptr>(),
+                  Operation::ptr(),
                   Signal::Interval(0,2), Signal::Interval());
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());

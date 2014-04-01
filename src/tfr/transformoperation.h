@@ -20,8 +20,8 @@ public:
     ~TransformOperationDesc() {}
 
     // OperationDesc
-    OperationDesc::Ptr copy() const;
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    OperationDesc::ptr copy() const;
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine=0) const;
     Signal::Interval requiredInterval(const Signal::Interval&, Signal::Interval*) const;
     Signal::Interval affectedInterval(const Signal::Interval&) const;
     Extent extent() const;

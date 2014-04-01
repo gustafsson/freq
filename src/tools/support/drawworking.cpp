@@ -25,7 +25,7 @@ namespace Tools {
 //        break;
 //    case 1:
 //    {
-//        const Signal::ComputingEngine::Ptr* ce =
+//        const Signal::ComputingEngine::ptr* ce =
 //                boost::get_error_info<Signal::Processing::Workers::crashed_engine_value>(x);
 
 //        TaskInfo(boost::format("Recreating worker %s")

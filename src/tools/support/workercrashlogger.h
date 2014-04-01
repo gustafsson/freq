@@ -15,17 +15,17 @@ class WorkerCrashLogger : public QObject
 {
     Q_OBJECT
 public:
-    explicit WorkerCrashLogger(Signal::Processing::Workers::Ptr workers, bool consume_exceptions=true);
+    explicit WorkerCrashLogger(Signal::Processing::Workers::ptr workers, bool consume_exceptions=true);
     ~WorkerCrashLogger();
 
 private slots:
-    void worker_quit(std::exception_ptr, Signal::ComputingEngine::Ptr);
+    void worker_quit(std::exception_ptr, Signal::ComputingEngine::ptr);
     void check_all_previously_crashed_and_consume();
     void check_all_previously_crashed_without_consuming();
     void finished();
 
 private:
-    Signal::Processing::Workers::Ptr    workers_;
+    Signal::Processing::Workers::ptr    workers_;
     QThread                             thread_;
     bool                                consume_exceptions_;
 

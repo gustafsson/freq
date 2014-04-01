@@ -17,8 +17,8 @@ namespace Heightmap {
 class BlockCache
 {
 public:
-    typedef shared_state<BlockCache> Ptr;
-    typedef shared_state<const BlockCache> ConstPtr;
+    typedef shared_state<BlockCache> ptr;
+    typedef shared_state<const BlockCache> const_ptr;
 
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;

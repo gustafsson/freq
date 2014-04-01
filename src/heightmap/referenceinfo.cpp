@@ -32,7 +32,7 @@ Region RegionFactory::
 
 
 ReferenceInfo::
-        ReferenceInfo(const Reference& reference, const BlockLayout& block_layout, const VisualizationParams::ConstPtr& visualization_params)
+        ReferenceInfo(const Reference& reference, const BlockLayout& block_layout, const VisualizationParams::const_ptr& visualization_params)
     :
       block_layout_(block_layout),
       visualization_params_(visualization_params),
