@@ -149,7 +149,7 @@ void Application::
         auto td = p->tools().render_model.transform_descs ().write ();
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
-        cwt.set_wanted_min_hz( Sawe::Configuration::min_hz(), p->extent ().sample_rate.get () );
+        cwt.set_wanted_min_hz( p->extent ().sample_rate.get ()/1000, p->extent ().sample_rate.get () );
         cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
         cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
     }

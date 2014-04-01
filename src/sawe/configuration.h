@@ -87,7 +87,6 @@ public:
     static float scales_per_octave();
     static float wavelet_time_support();
     static float wavelet_scale_support();
-    static float min_hz();
 
     static unsigned samples_per_block();
     static unsigned scales_per_block();
@@ -118,7 +117,6 @@ private:
     float scales_per_octave_;
     float wavelet_time_support_;
     float wavelet_scale_support_;
-    float min_hz_;
     unsigned samples_per_chunk_hint_;
     unsigned samples_per_block_;
     unsigned scales_per_block_;
