@@ -75,7 +75,7 @@ void Task::
         run_private()
 {
     Signal::OperationDesc::ptr od;
-    TIME_TASK od = step_.read ()->operation_desc ();
+    TIME_TASK od = step_.raw ()->operation_desc ();
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
                            % od.read ()->toString ().toStdString ());
 
@@ -100,7 +100,7 @@ void Task::
 Signal::pBuffer Task::
         get_input() const
 {
-    Signal::OperationDesc::ptr operation_desc = step_.read ()->operation_desc ();
+    Signal::OperationDesc::ptr operation_desc = step_.raw ()->operation_desc ();
 
     // Sum all sources
     std::vector<Signal::pBuffer> buffers;

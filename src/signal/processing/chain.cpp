@@ -159,8 +159,9 @@ public:
 
     void discover_vertex(GraphVertex u, const Graph & g)
     {
-        Step::ptr step( g[u] ); // lock while studying what's needed
-        Signal::OperationDesc::Extent x = step->operation_desc()->extent ();
+        Step::ptr step( g[u] );
+        Signal::OperationDesc::ptr o = step.raw ()->operation_desc();
+        Signal::OperationDesc::Extent x = o.read ()->extent ();
 
         // TODO This doesn't really work with merged paths
         // But it could be extended to support that by merging the extents of merged paths.

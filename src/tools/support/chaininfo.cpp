@@ -20,7 +20,7 @@ ChainInfo::
 bool ChainInfo::
         hasWork()
 {
-    return 0 < out_of_date_sum();
+    return 0 < out_of_date_sum ();
 }
 
 

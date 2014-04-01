@@ -26,6 +26,7 @@ class Step
 {
 public:
     typedef shared_state<Step> ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
 
     // To be appended to exceptions while using Step
     typedef boost::error_info<struct crashed_step_tag, Step::ptr> crashed_step;
@@ -46,7 +47,7 @@ public:
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
-    Signal::OperationDesc::ptr  operation_desc() const;
+    Signal::OperationDesc::ptr  operation_desc() const; // Safe to call without lock
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
     void                        finishTask(Task* taskid, Signal::pBuffer result);
