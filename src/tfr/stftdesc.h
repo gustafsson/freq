@@ -37,7 +37,7 @@ public:
     StftDesc();
 
     // overloaded from TransformDesc
-    TransformDesc::Ptr copy() const;
+    TransformDesc::ptr copy() const;
     pTransform createTransform() const;
     float displayedTimeResolution( float FS, float hz ) const;
     FreqAxis freqAxis( float FS ) const;

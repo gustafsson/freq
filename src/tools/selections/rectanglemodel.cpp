@@ -32,7 +32,7 @@ RectangleModel::
 }
 
 
-Signal::OperationDesc::Ptr RectangleModel::
+Signal::OperationDesc::ptr RectangleModel::
         updateFilter()
 {
     validate();
@@ -47,7 +47,7 @@ Signal::OperationDesc::Ptr RectangleModel::
             a_index = std::max(0.f, a.time)*FS,
             b_index = std::max(0.f, b.time)*FS;
 
-    Signal::OperationDesc::Ptr filter;
+    Signal::OperationDesc::ptr filter;
 
     if (a.scale>=1 || b.scale<=0)
         ;
@@ -61,7 +61,7 @@ Signal::OperationDesc::Ptr RectangleModel::
     }
     else if (a.scale>0 || b.scale<1)
     {
-        Tfr::ChunkFilterDesc::Ptr cfd;
+        Tfr::ChunkFilterDesc::ptr cfd;
         if (type == RectangleType_FrequencySelection)
             cfd.reset( new Filters::Bandpass(f1, f2, select_interior ));
         else
@@ -81,17 +81,17 @@ Signal::OperationDesc::Ptr RectangleModel::
 
 
 bool RectangleModel::
-        tryFilter(Signal::OperationDesc::Ptr filterp)
+        tryFilter(Signal::OperationDesc::ptr filterp)
 {
     float FS = project_->extent ().sample_rate.get ();
 
-    Signal::OperationDesc::ReadPtr filter(filterp);
+    auto filter = filterp.read ();
     const Tfr::TransformOperationDesc* tod = dynamic_cast<const Tfr::TransformOperationDesc*>(&*filter);
     const Filters::Selection* s = dynamic_cast<const Filters::Selection*>(&*filter);
     if (s) select_interior = s->isInteriorSelected();
 
     if (tod) {
-        Tfr::ChunkFilterDesc::ReadPtr c(tod->chunk_filter ());
+        auto c = tod->chunk_filter ();
         s = dynamic_cast<const Filters::Selection*>(&*c);
         if (s) select_interior = s->isInteriorSelected();
 

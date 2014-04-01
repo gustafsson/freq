@@ -2,7 +2,8 @@
 #define RECORDER_H
 
 #include "cache.h"
-#include "volatileptr.h"
+#include "shared_state.h"
+#include "verifyexecutiontime.h"
 #include <QMutex>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -12,13 +13,29 @@ namespace Adapters {
 class Recorder
 {
 public:
-    typedef VolatilePtr<Recorder> Ptr;
-    typedef Ptr::WritePtr WritePtr;
+    typedef shared_state<Recorder> ptr;
+
+    struct shared_state_traits: shared_state_traits_default {
+        double timeout() { return 0.500; }
+
+        void was_locked() {
+            verify_ = VerifyExecutionTime::start(0.250);
+        }
+
+        void was_unlocked() {
+            verify_.reset();
+        }
+
+    private:
+        int verify_execution_time_ms() { return 250; }
+        VerifyExecutionTime::ptr verify_;
+    };
+
 
     class IGotDataCallback
     {
     public:
-        typedef VolatilePtr<IGotDataCallback> Ptr;
+        typedef shared_state<IGotDataCallback> ptr;
 
         virtual ~IGotDataCallback() {}
 
@@ -31,32 +48,32 @@ public:
 
     virtual void startRecording() = 0;
     virtual void stopRecording() = 0;
-    virtual bool isStopped() = 0;
+    virtual bool isStopped() const = 0;
     virtual bool canRecord() = 0;
 
     float time_since_last_update();
-    void setDataCallback( IGotDataCallback::Ptr invalidator );
+    void setDataCallback( IGotDataCallback::ptr invalidator );
     Signal::Cache& data() { return _data; }
 
     // virtual from Signal::SourceBase
-    // virtual std::string name() = 0;
-    virtual float sample_rate() = 0;
-    virtual unsigned num_channels() = 0;
+    virtual std::string name() = 0;
+    virtual float sample_rate() const = 0;
+    virtual unsigned num_channels() const = 0;
 
     // overloaded from Signal::FinalSource
     virtual Signal::pBuffer read( const Signal::Interval& I );
-    virtual Signal::IntervalType number_of_samples();
-    virtual float length();
+    virtual Signal::IntervalType number_of_samples() const;
+    virtual float length() const;
 
 protected:
-    QMutex _data_lock;
-    Signal::Cache _data;
-    IGotDataCallback::Ptr _invalidator;
+    mutable QMutex _data_lock;
+    Signal::Cache _data; // TODO use shared_state<Signal::Cache>
+    IGotDataCallback::ptr _invalidator;
     float _offset;
     boost::posix_time::ptime _start_recording, _last_update;
-    Signal::IntervalType actual_number_of_samples();
+    Signal::IntervalType actual_number_of_samples() const;
 
-    virtual float time();
+    virtual float time() const;
 };
 
 

@@ -22,13 +22,13 @@ SplineModel::
 }
 
 
-Signal::OperationDesc::Ptr SplineModel::
+Signal::OperationDesc::ptr SplineModel::
         updateFilter()
 {
     if (v.size() < 3)
     {
         v.clear();
-        return Signal::OperationDesc::Ptr();
+        return Signal::OperationDesc::ptr();
     }
 
     std::vector<Support::SplineFilter::SplineVertex> ev;
@@ -43,8 +43,8 @@ Signal::OperationDesc::Ptr SplineModel::
         ev[i] = s;
     }
 
-    Tfr::CwtChunkFilterDesc::Ptr filter( new Support::SplineFilterDesc( true, ev ) );
-    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
+    Tfr::CwtChunkFilterDesc::ptr filter( new Support::SplineFilterDesc( true, ev ) );
+    return Signal::OperationDesc::ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 

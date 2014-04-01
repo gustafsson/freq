@@ -16,8 +16,8 @@ class TransparentOperationDesc: public Signal::OperationDesc {
 public:
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
-    virtual OperationDesc::Ptr copy() const;
+    virtual Signal::Operation::ptr createOperation(Signal::ComputingEngine*) const;
+    virtual OperationDesc::ptr copy() const;
 };
 
 

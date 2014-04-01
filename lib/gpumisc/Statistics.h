@@ -4,6 +4,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "throwInvalidArgument.h"
 #include <stdio.h>
+#include <math.h>
 //#include <Volume Rendering API/VoxelData.h>
 
 /**
@@ -14,7 +15,7 @@ some of the methods to be executed on the Gpu.
 template<typename data_t>
 class Statistics {
 public:
-    Statistics(typename DataStorage<data_t>::Ptr data, bool isSegmented = false, bool silent = false)
+    Statistics(typename DataStorage<data_t>::ptr data, bool isSegmented = false, bool silent = false)
 	:	data(data)
 	{
 		if(0==data)
@@ -93,7 +94,7 @@ public:
 			std == b.std;
 	}
 protected:
-    typedef typename DataStorage<data_t>::Ptr DataType;
+    typedef typename DataStorage<data_t>::ptr DataType;
     DataType data;
 
 private:

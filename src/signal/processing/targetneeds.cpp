@@ -7,8 +7,6 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <QThread>
-
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)
 
@@ -18,7 +16,7 @@ namespace Signal {
 namespace Processing {
 
 TargetNeeds::
-        TargetNeeds(Step::WeakPtr step, INotifier::WeakPtr notifier)
+        TargetNeeds(Step::ptr::weak_ptr step, INotifier::weak_ptr notifier)
     :
       step_(step),
       work_center_(Signal::Interval::IntervalType_MIN),
@@ -46,8 +44,8 @@ void TargetNeeds::
 {
     EXCEPTION_ASSERT_LESS( 0, preferred_update_size_ );
     Signal::Intervals not_started;
-    if (Step::Ptr step = step_.lock ()) {
-        not_started = read1(step)->not_started ();
+    if (Step::ptr step = step_.lock ()) {
+        not_started = step.read ()->not_started ();
     }
 
     // got news if something new and deprecated is needed
@@ -70,7 +68,7 @@ void TargetNeeds::
     preferred_update_size_ = preferred_update_size;
 
     if (got_news) {
-        INotifier::Ptr notifier = notifier_.lock ();
+        INotifier::ptr notifier = notifier_.lock ();
         if (notifier)
             notifier->wakeup();
     }
@@ -85,18 +83,18 @@ void TargetNeeds::
 
     DEBUG_INFO TaskInfo(boost::format("invalidate = %s") % invalidate);
 
-    if (Step::Ptr step = step_.lock ())
-        write1(step)->deprecateCache(invalidate);
+    if (Step::ptr step = step_.lock ())
+        step.write ()->deprecateCache(invalidate);
 
     if (invalidate & needed_samples_) {
-        INotifier::Ptr notifier = notifier_.lock ();
+        INotifier::ptr notifier = notifier_.lock ();
         if (notifier)
             notifier->wakeup();
     }
 }
 
 
-Step::WeakPtr TargetNeeds::
+Step::ptr::weak_ptr TargetNeeds::
         step() const
 {
     return step_;
@@ -128,9 +126,9 @@ Signal::Intervals TargetNeeds::
         not_started() const
 {
     Signal::Intervals not_started;
-    Step::Ptr step = step_.lock ();
+    Step::ptr step = step_.lock ();
     if (step)
-        not_started = read1(step)->not_started();
+        not_started = step.read ()->not_started();
 
     return needed_samples_ & not_started;
 }
@@ -140,9 +138,9 @@ Signal::Intervals TargetNeeds::
         out_of_date() const
 {
     Signal::Intervals out_of_date;
-    Step::Ptr step = step_.lock ();
+    Step::ptr step = step_.lock ();
     if (step)
-        out_of_date = read1(step)->out_of_date();
+        out_of_date = step.read ()->out_of_date();
 
     return needed_samples_ & out_of_date;
 }
@@ -161,32 +159,33 @@ int left(const Timer& t, int sleep_ms) {
 
 
 bool TargetNeeds::
-        sleep(TargetNeeds::Ptr self, int sleep_ms)
+        sleep(TargetNeeds::const_ptr self, int sleep_ms)
 {
     Timer t;
 
-    Step::Ptr pstep = ReadPtr(self)->step_.lock();
+    Step::ptr pstep = self.raw ()->step_.lock();
 
     if (!pstep)
         return false;
 
-    for (;;) {
-        {
-            Step::WritePtr step(pstep);
+    for (;;)
+    {
+        auto step = pstep.read ();
 
-            if (!(ReadPtr(self)->needed_samples_ & step->out_of_date ()))
-                return true;
+        if (!(self->needed_samples_ & step->out_of_date ()))
+            return true;
 
-            step->sleepWhileTasks (left(t, sleep_ms));
+        Step::sleepWhileTasks (step, left(t, sleep_ms));
 
-            if (!(ReadPtr(self)->needed_samples_ & step->out_of_date ()))
-                return true;
-        }
+        if (!(self->needed_samples_ & step->out_of_date ()))
+            return true;
+
+        step.unlock ();
 
         if (0 <= sleep_ms && 0 == left(t, sleep_ms))
             return false;
 
-        QThread::msleep (1);
+        std::this_thread::sleep_for (std::chrono::milliseconds(1));
     }
 }
 
@@ -205,47 +204,47 @@ void TargetNeeds::
 {
     // It should describe what needs to be computed for a target.
     {
-        Bedroom::Ptr bedroom(new Bedroom);
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Bedroom::ptr bedroom(new Bedroom);
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
 
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        TargetNeeds::Ptr target_needs( new TargetNeeds(step, notifier) );
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         Signal::Intervals initial_valid(0,60);
-        write1(step)->registerTask(0, initial_valid.spannedInterval ());
+        step.write ()->registerTask(0, initial_valid.spannedInterval ());
 
-        EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
-        EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
-        EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval() );
-        write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
-        EXCEPTION_ASSERT_EQUALS( read1(step)->out_of_date(), Signal::Interval::Interval_ALL );
-        EXCEPTION_ASSERT_EQUALS( read1(step)->not_started(), ~initial_valid );
-        EXCEPTION_ASSERT_EQUALS( read1(target_needs)->out_of_date(), Signal::Interval(-15,5) );
-        EXCEPTION_ASSERT_EQUALS( read1(target_needs)->not_started(), Signal::Interval(-15,0) );
+        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Signal::Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
+        EXCEPTION_ASSERT_EQUALS( target_needs.read ()->out_of_date(), Signal::Interval() );
+        target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
+        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Signal::Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
+        EXCEPTION_ASSERT_EQUALS( target_needs.read ()->out_of_date(), Signal::Interval(-15,5) );
+        EXCEPTION_ASSERT_EQUALS( target_needs.read ()->not_started(), Signal::Interval(-15,0) );
     }
 
     // It should not wakeup the bedroom if nothing has changed
     {
         // Note; this is more helpful to do a less noisy debugging than to increase any performance
-        Bedroom::Ptr bedroom(new Bedroom);
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Bedroom::ptr bedroom(new Bedroom);
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
-        write1(step)->registerTask(0, Signal::Interval(0,10));
-        write1(step)->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
+        step.write ()->registerTask(0, Signal::Interval(0,10));
+        step.write ()->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
 
-        TargetNeeds::Ptr target_needs( new TargetNeeds(step, notifier) );
+        TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something deprecated
         }
 
         {
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,5));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
@@ -258,7 +257,7 @@ void TargetNeeds::
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,4));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,4));
             bed.sleep (2);
             float T = t.elapsed ();
             EXCEPTION_ASSERT_LESS(2e-3, T); // Should sleep, updateNeeds didn't affect this
@@ -268,7 +267,7 @@ void TargetNeeds::
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,6));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,6));
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
             EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
@@ -277,8 +276,8 @@ void TargetNeeds::
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->deprecateCache(Signal::Intervals(6,7));
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,6),
+            target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,6),
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
@@ -289,7 +288,7 @@ void TargetNeeds::
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,7));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,7));
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
         }
@@ -297,8 +296,8 @@ void TargetNeeds::
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->deprecateCache(Signal::Intervals(6,7));
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,7),
+            target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,7),
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
@@ -308,8 +307,8 @@ void TargetNeeds::
         {
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            write1(target_needs)->deprecateCache(Signal::Intervals(5,7));
-            write1(target_needs)->updateNeeds(Signal::Interval(-15,7),
+            target_needs.write ()->deprecateCache(Signal::Intervals(5,7));
+            target_needs.write ()->updateNeeds(Signal::Interval(-15,7),
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
             bed.sleep (2);

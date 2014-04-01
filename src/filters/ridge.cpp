@@ -60,10 +60,10 @@ Tfr::pChunkFilter RidgeDesc::
 }
 
 
-Tfr::ChunkFilterDesc::Ptr RidgeDesc::
+Tfr::ChunkFilterDesc::ptr RidgeDesc::
         copy() const
 {
-    return Tfr::ChunkFilterDesc::Ptr(new RidgeDesc);
+    return Tfr::ChunkFilterDesc::ptr(new RidgeDesc);
 }
 
 } // namespace Filters

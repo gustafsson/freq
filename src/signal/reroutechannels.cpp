@@ -47,22 +47,22 @@ Signal::Interval RerouteChannels::
 }
 
 
-Signal::OperationDesc::Ptr RerouteChannels::
+Signal::OperationDesc::ptr RerouteChannels::
         copy() const
 {
     RerouteChannels* c;
-    Signal::OperationDesc::Ptr o(c = new RerouteChannels);
+    Signal::OperationDesc::ptr o(c = new RerouteChannels);
     c->scheme_ = this->scheme_;
     return o;
 }
 
 
-Signal::Operation::Ptr RerouteChannels::
+Signal::Operation::ptr RerouteChannels::
         createOperation(Signal::ComputingEngine* engine) const
 {
     if (engine == 0 || dynamic_cast<Signal::ComputingCpu*>(engine))
-        return Signal::Operation::Ptr(new RerouteChannelsOperation(scheme_));
-    return Signal::Operation::Ptr();
+        return Signal::Operation::ptr(new RerouteChannelsOperation(scheme_));
+    return Signal::Operation::ptr();
 }
 
 

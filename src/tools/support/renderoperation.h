@@ -4,7 +4,7 @@
 #include "signal/operationwrapper.h"
 #include "tfr/transform.h"
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 namespace Tools {
 namespace Support {
@@ -19,7 +19,7 @@ public:
     class RenderTarget
     {
     public:
-        typedef VolatilePtr<RenderTarget> Ptr;
+        typedef shared_state<RenderTarget> ptr;
 
         virtual ~RenderTarget() {}
 
@@ -38,30 +38,30 @@ public:
     };
 
 
-    RenderOperationDesc(Signal::OperationDesc::Ptr embed, RenderTarget::Ptr render_target);
+    RenderOperationDesc(Signal::OperationDesc::ptr embed, RenderTarget::ptr render_target);
 
     // Signal::OperationDesc
-    Signal::Operation::Ptr      createOperation( Signal::ComputingEngine* engine ) const;
+    Signal::Operation::ptr      createOperation( Signal::ComputingEngine* engine ) const;
     Signal::Interval            affectedInterval( const Signal::Interval& I ) const;
 
 
-    Tfr::TransformDesc::Ptr     transform_desc() const;
-    void                        transform_desc(Tfr::TransformDesc::Ptr);
+    Tfr::TransformDesc::ptr     transform_desc() const;
+    void                        transform_desc(Tfr::TransformDesc::ptr);
 
 private:
     class Operation : public Signal::Operation
     {
     public:
-        Operation(Signal::Operation::Ptr wrapped, RenderTarget::Ptr render_target);
+        Operation(Signal::Operation::ptr wrapped, RenderTarget::ptr render_target);
 
         Signal::pBuffer process(Signal::pBuffer b);
 
     private:
-        Operation::Ptr wrapped_;
-        RenderTarget::Ptr render_target_;
+        Operation::ptr wrapped_;
+        RenderTarget::ptr render_target_;
     };
 
-    RenderTarget::Ptr render_target_;
+    RenderTarget::ptr render_target_;
 
 public:
     static void test();

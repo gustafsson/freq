@@ -30,20 +30,20 @@ class Workers: public QObject
 {
     Q_OBJECT
 public:
-    typedef VolatilePtr<Workers> Ptr;
+    typedef shared_state<Workers> ptr;
 
     // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
-    typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::Ptr> crashed_engine;
+    typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::ptr> crashed_engine;
     typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;
 
-    typedef std::map<Signal::ComputingEngine::Ptr, Worker::Ptr> EngineWorkerMap;
+    typedef std::map<Signal::ComputingEngine::ptr, Worker::ptr> EngineWorkerMap;
 
-    Workers(ISchedule::Ptr schedule, Bedroom::Ptr bedroom);
+    Workers(ISchedule::ptr schedule, Bedroom::ptr bedroom);
     ~Workers();
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.
-    Worker::Ptr addComputingEngine(Signal::ComputingEngine::Ptr ce);
+    Worker::ptr addComputingEngine(Signal::ComputingEngine::ptr ce);
 
     /**
      * Prevents the worker for this ComputingEngine to get new work from the
@@ -54,9 +54,9 @@ public:
      * will be removed if its worker has finished (or crashed with an exception)
      * and been cleaned by rethrow_any_worker_exception() or clean_dead_workers().
      */
-    void removeComputingEngine(Signal::ComputingEngine::Ptr ce);
+    void removeComputingEngine(Signal::ComputingEngine::ptr ce);
 
-    typedef std::vector<Signal::ComputingEngine::Ptr> Engines;
+    typedef std::vector<Signal::ComputingEngine::ptr> Engines;
     const Engines& workers() const;
     size_t n_workers() const;
     const EngineWorkerMap& workers_map() const;
@@ -66,7 +66,7 @@ public:
      * It is only valid to call this method from the same thread as they were
      * added.
      */
-    typedef std::map<Signal::ComputingEngine::Ptr, boost::exception_ptr > DeadEngines;
+    typedef std::map<Signal::ComputingEngine::ptr, std::exception_ptr > DeadEngines;
     DeadEngines clean_dead_workers();
     void rethrow_any_worker_exception();
 
@@ -97,10 +97,10 @@ public:
     static void print(const DeadEngines&);
 
 signals:
-    void worker_quit(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+    void worker_quit(std::exception_ptr, Signal::ComputingEngine::ptr);
 
 private:
-    ISchedule::Ptr schedule_;
+    ISchedule::ptr schedule_;
     BedroomSignalAdapter* notifier_;
 
     Engines workers_;

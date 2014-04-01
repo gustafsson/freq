@@ -37,7 +37,7 @@ public:
 
 
     // Implementing TransformParams
-    virtual TransformDesc::Ptr copy() const;
+    virtual TransformDesc::ptr copy() const;
     virtual pTransform createTransform() const;
     virtual float displayedTimeResolution( float FS, float hz ) const;
     virtual FreqAxis freqAxis( float FS ) const;
@@ -57,7 +57,7 @@ public:
 
 private:
     bool _compute_redundant;
-    FftImplementation::Ptr fft;
+    FftImplementation::ptr fft;
 };
 
 
@@ -82,22 +82,22 @@ public:
     /// Stft::inverse does normalize the result (to the contrary of Fft::inverse)
     virtual Signal::pMonoBuffer inverse( pChunk );
 
-    void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction );
+    void compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction );
 
     static unsigned build_performance_statistics(bool writeOutput = false, float size_of_test_signal_in_seconds = 10);
 
-    Tfr::ComplexBuffer::Ptr inverseKeepComplex( pChunk chunk );
+    Tfr::ComplexBuffer::ptr inverseKeepComplex( pChunk chunk );
 
 private:
     const StftDesc p;
-    FftImplementation::Ptr fft;
+    FftImplementation::ptr fft;
 
-    Tfr::pChunk ComputeChunk(DataStorage<float>::Ptr inputbuffer);
+    Tfr::pChunk ComputeChunk(DataStorage<float>::ptr inputbuffer);
 
     /**
       @see compute_redundant()
       */
-    Tfr::pChunk ChunkWithRedundant(DataStorage<float>::Ptr inputbuffer);
+    Tfr::pChunk ChunkWithRedundant(DataStorage<float>::ptr inputbuffer);
     virtual Signal::pMonoBuffer inverseWithRedundant( pChunk );
 
 
@@ -109,15 +109,15 @@ private:
       Will not pad the data with zeros and thus all input data will only be used if it fits
       the overlap function exactly on the sample.
       */
-    DataStorage<float>::Ptr prepareWindow( DataStorage<float>::Ptr );
+    DataStorage<float>::ptr prepareWindow( DataStorage<float>::ptr );
     template<typename T>
-    typename DataStorage<T>::Ptr reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c );
+    typename DataStorage<T>::ptr reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c );
 
     template<StftDesc::WindowType>
-    void prepareWindowKernel( DataStorage<float>::Ptr in, DataStorage<float>::Ptr out );
+    void prepareWindowKernel( DataStorage<float>::ptr in, DataStorage<float>::ptr out );
 
     template<StftDesc::WindowType, typename T>
-    void reduceWindowKernel( boost::shared_ptr<DataStorage<T> > in, typename DataStorage<T>::Ptr out, const StftChunk* c );
+    void reduceWindowKernel( boost::shared_ptr<DataStorage<T> > in, typename DataStorage<T>::ptr out, const StftChunk* c );
 
     template<StftDesc::WindowType>
     float computeWindowValue( float p );

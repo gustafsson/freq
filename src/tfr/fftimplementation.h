@@ -13,9 +13,9 @@ namespace Tfr {
 
     class FftImplementation {
     public:
-        typedef boost::shared_ptr<FftImplementation> Ptr;
+        typedef boost::shared_ptr<FftImplementation> ptr;
         // An implementation can optimize itself based on which type of fft that is requested for
-        static Ptr newInstance();
+        static ptr newInstance();
         virtual ~FftImplementation() {}
 
         /**
@@ -33,11 +33,11 @@ namespace Tfr {
          * @param direction Whether to do a forward och inverse(backward)
          * fourier transform.
          */
-        virtual void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction ) = 0;
+        virtual void compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction ) = 0;
         /// @see compute( Tfr::ChunkData::Ptr, Tfr::ChunkData::Ptr, FftDirection )
-        virtual void computeR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output ) = 0;
+        virtual void computeR2C( DataStorage<float>::ptr input, Tfr::ChunkData::ptr output ) = 0;
         /// @see compute( Tfr::ChunkData::Ptr, Tfr::ChunkData::Ptr, FftDirection )
-        virtual void computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output ) = 0;
+        virtual void computeC2R( Tfr::ChunkData::ptr input, DataStorage<float>::ptr output ) = 0;
 
         /**
          * @brief compute Computes multiple fast fourier transforms of input
@@ -54,11 +54,11 @@ namespace Tfr {
          *
          * @param direction Whether to do a forward och inverse(backward) fourier transform.
          */
-        virtual void compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n, FftDirection direction ) = 0;
+        virtual void compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, DataStorageSize n, FftDirection direction ) = 0;
         /// @see compute( Tfr::ChunkData::Ptr, Tfr::ChunkData::Ptr, DataStorageSize, FftDirection )
-        virtual void compute( DataStorage<float>::Ptr inputbuffer, Tfr::ChunkData::Ptr transform_data, DataStorageSize n ) = 0;
+        virtual void compute( DataStorage<float>::ptr inputbuffer, Tfr::ChunkData::ptr transform_data, DataStorageSize n ) = 0;
         /// @see compute( Tfr::ChunkData::Ptr, Tfr::ChunkData::Ptr, DataStorageSize, FftDirection )
-        virtual void inverse( Tfr::ChunkData::Ptr inputdata, DataStorage<float>::Ptr outputdata, DataStorageSize n ) = 0;
+        virtual void inverse( Tfr::ChunkData::ptr inputdata, DataStorage<float>::ptr outputdata, DataStorageSize n ) = 0;
 
         /**
           Returns the smallest ok chunk size strictly greater than x that also is

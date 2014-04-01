@@ -16,13 +16,13 @@ namespace Signal {
 
 
 void Operation::
-        test(Ptr o, OperationDesc* desc)
+        test(ptr o, OperationDesc* desc)
 {
     Interval I(40,70), expectedOutput;
     Interval ri = desc->requiredInterval (I, &expectedOutput);
     EXCEPTION_ASSERT( (Interval(I.first, I.first+1) & ri).count() > 0 );
     pBuffer d(new Buffer(ri, 40, 7));
-    pBuffer p = write1(o)->process (d);
+    pBuffer p = o.write ()->process (d);
     EXCEPTION_ASSERT_EQUALS( p->getInterval (), expectedOutput );
 }
 
@@ -42,13 +42,13 @@ QString OperationDesc::
 
 
 void OperationDesc::
-        setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator)
+        setInvalidator(Signal::Processing::IInvalidator::ptr invalidator)
 {
     invalidator_ = invalidator;
 }
 
 
-Signal::Processing::IInvalidator::Ptr OperationDesc::
+Signal::Processing::IInvalidator::ptr OperationDesc::
         getInvalidator() const
 {
     return invalidator_;
@@ -66,34 +66,5 @@ bool OperationDesc::
 std::ostream& operator << (std::ostream& os, const OperationDesc& d) {
     return os << d.toString().toStdString ();
 }
-
-
-//void OperationDesc::
-//        deprecateCache(Signal::Intervals what, boost::shared_mutex* lock)
-//{
-//    Signal::Processing::IInvalidator::Ptr invalidator = invalidator_;
-
-//    bool was_locked = !lock->try_lock ();
-//    lock->unlock ();
-
-//    // Don't use 'this' while unlocked.
-//    if (invalidator)
-//        read1(invalidator)->deprecateCache(what);
-
-//    if (was_locked && !lock->try_lock_for (boost::chrono::milliseconds(VolatilePtr_lock_timeout_ms)))
-//        BOOST_THROW_EXCEPTION(LockFailed()
-//                              << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
-//                              << Backtrace::make());
-//}
-
-
-//void OperationDesc::
-//        deprecateCache(Signal::Intervals what) const volatile
-//{
-//    Signal::Processing::IInvalidator::Ptr invalidator = const_cast<const OperationDesc*>(this)->invalidator_;
-
-//    if (invalidator)
-//        read1(invalidator)->deprecateCache(what);
-//}
 
 } // namespace Signal

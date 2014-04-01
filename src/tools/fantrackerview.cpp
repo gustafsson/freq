@@ -14,12 +14,11 @@ namespace Tools {
 void FanTrackerView::
         draw()
 {
+    Signal::OperationDesc::ptr::read_ptr fp = model_->filter.read ();
+    const Support::FanTrackerFilter* f = model_->selected_filter(fp);
 
-    if ( model_->selected_filter() )
+    if (f)
     {
-
-    Signal::OperationDesc::ReadPtr fp(model_->filter);
-    const Support::FanTrackerFilter* f = dynamic_cast<const Support::FanTrackerFilter*>(&*fp);
     Tfr::FreqAxis const& fa = render_view_->model->display_scale();
     //float FS = model_->selected_filter()->sample_rate();
     float FS = f->last_fs;

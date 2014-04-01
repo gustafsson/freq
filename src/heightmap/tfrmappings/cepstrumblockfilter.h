@@ -10,8 +10,7 @@ namespace TfrMappings {
 
 class CepstrumBlockFilterParams {
 public:
-    typedef VolatilePtr<CepstrumBlockFilterParams> Ptr;
-    typedef Ptr::WritePtr WritePtr;
+    typedef shared_state<CepstrumBlockFilterParams> ptr;
 };
 
 /**
@@ -20,13 +19,13 @@ public:
 class CepstrumBlockFilter: public Heightmap::MergeChunk
 {
 public:
-    CepstrumBlockFilter(CepstrumBlockFilterParams::Ptr params);
+    CepstrumBlockFilter(CepstrumBlockFilterParams::ptr params);
 
     void filterChunk(Tfr::ChunkAndInverse&);
-    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
+    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
 private:
-    CepstrumBlockFilterParams::Ptr params_;
+    CepstrumBlockFilterParams::ptr params_;
 
 public:
     static void test();
@@ -39,12 +38,12 @@ public:
 class CepstrumBlockFilterDesc: public Heightmap::MergeChunkDesc
 {
 public:
-    CepstrumBlockFilterDesc(CepstrumBlockFilterParams::Ptr params = CepstrumBlockFilterParams::Ptr());
+    CepstrumBlockFilterDesc(CepstrumBlockFilterParams::ptr params = CepstrumBlockFilterParams::ptr());
 
-    MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const;
+    MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine) const;
 
 private:
-    CepstrumBlockFilterParams::Ptr params_;
+    CepstrumBlockFilterParams::ptr params_;
 
 public:
     static void test();

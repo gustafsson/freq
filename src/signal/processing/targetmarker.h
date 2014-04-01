@@ -20,17 +20,17 @@ class TargetNeeds;
 class TargetMarker
 {
 public:
-    typedef boost::shared_ptr<TargetMarker> Ptr;
+    typedef boost::shared_ptr<TargetMarker> ptr;
 
-    TargetMarker(VolatilePtr<TargetNeeds> target_needs, VolatilePtr<Dag> dag);
+    TargetMarker(shared_state<TargetNeeds> target_needs, shared_state<Dag> dag);
     ~TargetMarker();
 
-    VolatilePtr<TargetNeeds> target_needs() const;
-    VolatilePtr<Step>::WeakPtr step() const;
+    shared_state<TargetNeeds> target_needs() const;
+    shared_state<Step>::weak_ptr step() const;
 
 private:
-    VolatilePtr<TargetNeeds> target_needs_;
-    VolatilePtr<Dag> dag_;
+    shared_state<TargetNeeds> target_needs_;
+    shared_state<Dag> dag_;
 
 public:
     static void test();

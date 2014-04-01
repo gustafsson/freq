@@ -101,7 +101,7 @@ namespace Tools { namespace Selections
             Heightmap::Position p = r.getHeightmapPos( e->localPos () );
             Heightmap::Reference ref = r.findRefAtCurrentZoomLevel( p );
             if([&](){
-                Heightmap::Collection::ReadPtr rc (c);
+                auto rc = c.read ();
                 Heightmap::ReferenceInfo ri(ref, rc->block_layout (), rc->visualization_params());
                 return ri.containsPoint(p);
             }())

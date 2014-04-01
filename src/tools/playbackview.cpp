@@ -51,7 +51,7 @@ void PlaybackView::
         emit_update_view()
 {
     emit update_view();
-    Tools::Support::TransformDescs::WritePtr td (_render_view->model->transform_descs ());
+    auto td = _render_view->model->transform_descs ().write ();
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     cwt.wavelet_time_support( cwt.wavelet_default_time_support() );
 }
@@ -80,7 +80,7 @@ void PlaybackView::
         return;
     }
 
-    Signal::Operation::WritePtr playbackw(model->playback());
+    auto playbackw = model->playback().write ();
     Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
 
     // Playback has stopped/or hasn't started
@@ -170,8 +170,8 @@ void PlaybackView::
 bool PlaybackView::
         drawPlaybackMarkerInEllipse()
 {
-    volatile Filters::Ellipse* e = dynamic_cast<volatile Filters::Ellipse*>(
-            model->selection->current_selection().get() );
+    auto w = model->selection->current_selection().write ();
+    Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>( w.get() );
 //Use Signal::Processing namespace
 //    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
     if (!e)

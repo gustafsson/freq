@@ -374,10 +374,10 @@ pChunk Cwt::
 }
 
 
-TransformDesc::Ptr Cwt::
+TransformDesc::ptr Cwt::
         copy() const
 {
-    return TransformDesc::Ptr(new Cwt(*this));
+    return TransformDesc::ptr(new Cwt(*this));
 }
 
 
@@ -560,7 +560,7 @@ pChunk Cwt::
     {
         // Compute the inverse fourier transform to get the filter banks back
         // in time space
-        ChunkData::Ptr g = intermediate_wt->transform_data;
+        ChunkData::ptr g = intermediate_wt->transform_data;
         DataStorageSize n = g->size();
         TIME_CWTPART TaskTimer tt("inverse stft(%u, %u)", n.width, n.height);
 
@@ -736,17 +736,17 @@ Signal::pMonoBuffer Cwt::
 }
 
 
-Tfr::FftImplementation::Ptr Cwt::
+Tfr::FftImplementation::ptr Cwt::
         fft() const
 {
     return fft_instances.find (0)->second;
 }
 
 
-Tfr::FftImplementation::Ptr Cwt::
+Tfr::FftImplementation::ptr Cwt::
         fft(int width)
 {
-    Tfr::FftImplementation::Ptr& i = fft_instances[width];
+    Tfr::FftImplementation::ptr& i = fft_instances[width];
     i = Tfr::FftImplementation::newInstance ();
     fft_usage.insert (width);
     return i;
@@ -756,7 +756,7 @@ Tfr::FftImplementation::Ptr Cwt::
 void Cwt::
         clearFft()
 {
-    typedef map<int, Tfr::FftImplementation::Ptr> fmap;
+    typedef map<int, Tfr::FftImplementation::ptr> fmap;
 
     for (fmap::iterator i = fft_instances.begin (); i!=fft_instances.end (); ++i)
     {

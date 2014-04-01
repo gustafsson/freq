@@ -2,10 +2,10 @@
 
 namespace Tfr {
 
-TransformDesc::Ptr WaveformRepresentationDesc::
+TransformDesc::ptr WaveformRepresentationDesc::
         copy() const
 {
-    return TransformDesc::Ptr(new WaveformRepresentationDesc);
+    return TransformDesc::ptr(new WaveformRepresentationDesc);
 }
 
 

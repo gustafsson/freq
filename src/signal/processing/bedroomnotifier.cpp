@@ -4,7 +4,7 @@ namespace Signal {
 namespace Processing {
 
 BedroomNotifier::
-        BedroomNotifier(Bedroom::Ptr bedroom)
+        BedroomNotifier(Bedroom::ptr bedroom)
     :
     bedroom_(bedroom)
 {
@@ -14,7 +14,7 @@ BedroomNotifier::
 void BedroomNotifier::
         wakeup() const
 {
-    Bedroom::Ptr bedroom = bedroom_.lock();
+    Bedroom::ptr bedroom = bedroom_.lock();
     if (bedroom)
         bedroom->wakeup();
 }

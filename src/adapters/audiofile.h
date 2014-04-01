@@ -318,7 +318,7 @@ private:
     };
 
 public:
-    typedef boost::shared_ptr<Audiofile> Ptr;
+    typedef boost::shared_ptr<Audiofile> ptr;
 
     static std::string getFileFormatsQtFilter( bool split );
     static bool hasExpectedSuffix( const std::string& suffix );
@@ -432,11 +432,11 @@ private:
 class SaweDll AudiofileOperation: public Signal::Operation
 {
 public:
-    AudiofileOperation(Audiofile::Ptr audiofile);
+    AudiofileOperation(Audiofile::ptr audiofile);
 
     virtual Signal::pBuffer process(Signal::pBuffer b);
 private:
-    Audiofile::Ptr audiofile_;
+    Audiofile::ptr audiofile_;
 };
 
 class SaweDll AudiofileDesc: public Signal::OperationDesc
@@ -446,8 +446,8 @@ public:
 
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const;
-    virtual OperationDesc::Ptr copy() const;
+    virtual Signal::Operation::ptr createOperation(Signal::ComputingEngine*) const;
+    virtual OperationDesc::ptr copy() const;
     virtual Extent extent() const;
     virtual QString toString() const;
     virtual bool operator==(const OperationDesc& d) const;

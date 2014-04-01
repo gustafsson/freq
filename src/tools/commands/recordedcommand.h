@@ -15,17 +15,17 @@ namespace Commands {
 class RecordedCommand : public Tools::Commands::OperationCommand
 {
 public:
-    RecordedCommand(Adapters::Recorder::Ptr recording, Signal::IntervalType prevLength, Tools::RenderModel* model, Signal::Processing::IInvalidator::Ptr iinvalidator);
+    RecordedCommand(Adapters::Recorder::ptr recording, Signal::IntervalType prevLength, Tools::RenderModel* model, Signal::Processing::IInvalidator::ptr iinvalidator);
 
     virtual std::string toString();
     virtual void execute();
     virtual void undo();
 
 private:
-    Adapters::Recorder::Ptr recording;
+    Adapters::Recorder::ptr recording;
     Signal::pBuffer recordedData;
     Tools::RenderModel* model;
-    Signal::Processing::IInvalidator::Ptr iinvalidator;
+    Signal::Processing::IInvalidator::ptr iinvalidator;
     bool undone;
     float prev_qx;
 };

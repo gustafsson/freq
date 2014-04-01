@@ -19,9 +19,7 @@ class MergerTexture;
 class BlockInstaller
 {
 public:
-    typedef VolatilePtr<BlockInstaller> Ptr;
-
-    BlockInstaller(BlockLayout bl, VisualizationParams::ConstPtr vp, BlockCache::Ptr cache);
+    BlockInstaller(BlockLayout bl, VisualizationParams::const_ptr vp, BlockCache::ptr cache);
     BlockInstaller(BlockInstaller const&) = delete;
     BlockInstaller& operator=(BlockInstaller const&) = delete;
 
@@ -46,8 +44,8 @@ public:
 
 private:
     BlockLayout block_layout_;
-    VisualizationParams::ConstPtr visualization_params_;
-    BlockCache::Ptr cache_;
+    VisualizationParams::const_ptr visualization_params_;
+    BlockCache::ptr cache_;
 
     std::shared_ptr<Blocks::MergerTexture> merger_;
     Signal::Intervals recently_created_;

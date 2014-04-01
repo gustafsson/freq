@@ -3,14 +3,14 @@
 
 #include "step.h"
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include <boost/graph/directed_graph.hpp>
 
 namespace Signal {
 namespace Processing {
 
-typedef boost::directed_graph<Signal::Processing::Step::Ptr, boost::vecS> Graph;
+typedef boost::directed_graph<Signal::Processing::Step::ptr, boost::vecS> Graph;
 typedef boost::graph_traits<Graph>::vertex_descriptor GraphVertex;
 typedef boost::graph_traits<Graph>::edge_descriptor GraphEdge;
 GraphVertex NullVertex();
@@ -24,10 +24,7 @@ GraphVertex NullVertex();
 class Dag
 {
 public:
-    typedef VolatilePtr<Dag> Ptr;
-    typedef Ptr::ReadPtr ReadPtr;
-    typedef Ptr::WritePtr WritePtr;
-    typedef Ptr::WeakPtr WeakPtr;
+    typedef shared_state<Dag> ptr;
 
     Dag();
 
@@ -43,18 +40,18 @@ public:
      * Note that NullVertex converts to false in a boolean expression.
      * Note that most graph functions will crash if you give them a NullVertex.
      */
-    GraphVertex getVertex(Step::Ptr s) const;
+    GraphVertex getVertex(Step::ptr s) const;
 
-    GraphVertex appendStep(Step::Ptr step, GraphVertex gv=NullVertex ());
-    GraphVertex insertStep(Step::Ptr step, GraphVertex gv=NullVertex ());
-    void removeStep(Step::Ptr step);
-    std::vector<Step::Ptr> sourceSteps(Step::Ptr step) const;
-    std::vector<Step::Ptr> targetSteps(Step::Ptr step) const;
+    GraphVertex appendStep(Step::ptr step, GraphVertex gv=NullVertex ());
+    GraphVertex insertStep(Step::ptr step, GraphVertex gv=NullVertex ());
+    void removeStep(Step::ptr step);
+    std::vector<Step::ptr> sourceSteps(Step::ptr step) const;
+    std::vector<Step::ptr> targetSteps(Step::ptr step) const;
 
 private:
     Graph g_;
 
-    typedef std::map<Step::Ptr, GraphVertex> StepVertexMap;
+    typedef std::map<Step::ptr, GraphVertex> StepVertexMap;
     StepVertexMap map;
 
 public:

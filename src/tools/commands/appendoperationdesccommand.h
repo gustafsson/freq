@@ -17,18 +17,18 @@ class AppendOperationDescCommand : public Tools::Commands::OperationCommand
 {
 public:
     AppendOperationDescCommand(
-            Signal::OperationDesc::Ptr o,
-            Signal::Processing::Chain::Ptr c,
-            Signal::Processing::TargetMarker::Ptr at);
+            Signal::OperationDesc::ptr o,
+            Signal::Processing::Chain::ptr c,
+            Signal::Processing::TargetMarker::ptr at);
 
     virtual void execute();
     virtual void undo();
     virtual std::string toString();
 
 private:
-    Signal::OperationDesc::Ptr operation_;
-    Signal::Processing::Chain::Ptr chain_;
-    Signal::Processing::TargetMarker::Ptr at_;
+    Signal::OperationDesc::ptr operation_;
+    Signal::Processing::Chain::ptr chain_;
+    Signal::Processing::TargetMarker::ptr at_;
 
 public:
     static void test();

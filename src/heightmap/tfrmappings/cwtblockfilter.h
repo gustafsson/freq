@@ -16,7 +16,7 @@ class CwtBlockFilter: public Heightmap::MergeChunk
 public:
     CwtBlockFilter(ComplexInfo complex_info);
 
-    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
+    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
 private:
     ComplexInfo complex_info_;
@@ -34,7 +34,7 @@ class CwtBlockFilterDesc: public Heightmap::MergeChunkDesc
 public:
     CwtBlockFilterDesc(ComplexInfo complex_info);
 
-    MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const;
+    MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine) const;
 
 private:
     ComplexInfo complex_info_;

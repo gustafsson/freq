@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_TASK_H
 #define SIGNAL_PROCESSING_TASK_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include "signal/intervals.h"
 #include "signal/buffer.h"
@@ -22,18 +22,21 @@ class Task
 {
 public:
     // TODO A task isn't shared between threads
-    typedef VolatilePtr<Task> Ptr;
-    struct VolatilePtrTypeTraits {
-        int timeout_ms() { return -1; }
-        int verify_execution_time_ms() { return -1; }
-        VerifyExecutionTime::report report_func() { return 0; }
+    typedef shared_state<Task> ptr;
+    struct shared_state_traits: shared_state_traits_default {
+        double timeout() { return -1; }
     };
 
     // To be appended to exceptions while using Task
     typedef boost::error_info<struct crashed_expected_output_tag, Signal::Interval> crashed_expected_output;
 
     // input_buffer and output_buffer does not need to be allocated beforehand
-    Task (const Step::WritePtr& step, std::vector<Step::Ptr> children, Signal::Operation::Ptr operation, Signal::Interval expected_output, Signal::Interval required_input);
+    Task (const shared_state<Step>::write_ptr& step,
+          Step::ptr stepp,
+          std::vector<Step::ptr> children,
+          Signal::Operation::ptr operation,
+          Signal::Interval expected_output,
+          Signal::Interval required_input);
     virtual ~Task();
 
     Signal::Interval        expected_output() const;
@@ -41,9 +44,9 @@ public:
     virtual void run();
 
 private:
-    Step::Ptr               step_;
-    std::vector<Step::Ptr>  children_;
-    Signal::Operation::Ptr  operation_;
+    Step::ptr               step_;
+    std::vector<Step::ptr>  children_;
+    Signal::Operation::ptr  operation_;
     Signal::Interval        expected_output_;
     Signal::Interval        required_input_;
 

@@ -24,8 +24,8 @@ public:
 
 
 
-void multiply( ResampleArea cwtArea, Tfr::ChunkData::Ptr cwt,
-               ResampleArea imageArea, DataStorage<float>::Ptr image )
+void multiply( ResampleArea cwtArea, Tfr::ChunkData::ptr cwt,
+               ResampleArea imageArea, DataStorage<float>::ptr image )
 {
     resample2d_plain<NoConverter<float>, MultiplyOperator>(
             image,

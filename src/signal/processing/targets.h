@@ -18,11 +18,11 @@ namespace Processing {
 class Targets
 {
 public:
-    typedef VolatilePtr<Targets> Ptr;
+    typedef shared_state<Targets> ptr;
 
-    typedef std::vector<TargetNeeds::Ptr> TargetNeedsCollection;
+    typedef std::vector<TargetNeeds::ptr> TargetNeedsCollection;
 
-    Targets(INotifier::WeakPtr notifier);
+    Targets(INotifier::weak_ptr notifier);
 
     /**
      * @brief insert adds a new target to this collection of Targets.
@@ -36,13 +36,13 @@ public:
      *
      * Ownership is of TargetNeeds is given to the caller.
      */
-    TargetNeeds::Ptr              addTarget(Step::WeakPtr step);
+    TargetNeeds::ptr              addTarget(Step::ptr::weak_ptr step);
     TargetNeedsCollection         getTargets() const;
 
 private:
-    INotifier::WeakPtr notifier_;
+    INotifier::weak_ptr notifier_;
 
-    std::vector<TargetNeeds::WeakPtr> targets;
+    std::vector<TargetNeeds::ptr::weak_ptr> targets;
 
 public:
     static void test();

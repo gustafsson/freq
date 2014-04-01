@@ -108,10 +108,10 @@ Tfr::pChunkFilter Bandpass::
 }
 
 
-Tfr::ChunkFilterDesc::Ptr Bandpass::
+Tfr::ChunkFilterDesc::ptr Bandpass::
         copy() const
 {
-    return ChunkFilterDesc::Ptr(new Bandpass(_f1, _f2, _save_inside));
+    return ChunkFilterDesc::ptr(new Bandpass(_f1, _f2, _save_inside));
 }
 
 

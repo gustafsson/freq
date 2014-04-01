@@ -4,13 +4,15 @@
 #include "tfr/chunkfilter.h"
 #include "signal/computingengine.h"
 #include "heightmap/ichunktoblock.h"
+#include "shared_state_traits_backtrace.h"
 #include <vector>
 
 namespace Heightmap {
 
 class MergeChunk {
 public:
-    typedef VolatilePtr<MergeChunk> Ptr;
+    typedef shared_state<MergeChunk> ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
 
     virtual ~MergeChunk() {}
 
@@ -23,18 +25,18 @@ public:
     /**
      * @brief createChunkToBlock will be called from the UI thread.
      */
-    virtual std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
+    virtual std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
 };
 
 
 class MergeChunkDesc
 {
 public:
-    typedef VolatilePtr<MergeChunkDesc> Ptr;
+    typedef shared_state<MergeChunkDesc> ptr;
 
     virtual ~MergeChunkDesc() {}
 
-    virtual MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
+    virtual MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine=0) const = 0;
 };
 
 } // namespace Heightmap

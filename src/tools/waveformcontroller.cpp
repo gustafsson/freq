@@ -59,10 +59,10 @@ void WaveformController::
     }
 
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::Ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
 
     // Get a copy of the transform to use
-    Tfr::TransformDesc::Ptr t = write1(r->model()->transform_descs ())->getParam<Tfr::WaveformRepresentationDesc>().copy();
+    Tfr::TransformDesc::ptr t = r->model()->transform_descs ().write ()->getParam<Tfr::WaveformRepresentationDesc>().copy();
 
     r->setBlockFilter(mcdp, t);
 }

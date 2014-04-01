@@ -25,7 +25,7 @@ Dag::
 
 
 GraphVertex Dag::
-        getVertex(Step::Ptr s) const
+        getVertex(Step::ptr s) const
 {
     StepVertexMap::const_iterator i = map.find (s);
 
@@ -37,7 +37,7 @@ GraphVertex Dag::
 
 
 GraphVertex Dag::
-        appendStep(Step::Ptr step, GraphVertex v)
+        appendStep(Step::ptr step, GraphVertex v)
 {
     EXCEPTION_ASSERT (step);
     StepVertexMap::const_iterator i = map.find (step);
@@ -56,7 +56,7 @@ GraphVertex Dag::
 
 
 GraphVertex Dag::
-        insertStep(Step::Ptr step, GraphVertex v)
+        insertStep(Step::ptr step, GraphVertex v)
 {
     EXCEPTION_ASSERT (step);
     StepVertexMap::const_iterator i = map.find (step);
@@ -88,7 +88,7 @@ GraphVertex Dag::
 
 
 void Dag::
-        removeStep(Step::Ptr step)
+        removeStep(Step::ptr step)
 {
     EXCEPTION_ASSERT (step);
 
@@ -139,10 +139,10 @@ void Dag::
 }
 
 
-std::vector<Step::Ptr> Dag::
-        sourceSteps(Step::Ptr step) const
+std::vector<Step::ptr> Dag::
+        sourceSteps(Step::ptr step) const
 {
-    std::vector<Step::Ptr> steps;
+    std::vector<Step::ptr> steps;
 
     GraphVertex v = getVertex(step);
     if (!v)
@@ -157,10 +157,10 @@ std::vector<Step::Ptr> Dag::
 }
 
 
-std::vector<Step::Ptr> Dag::
-        targetSteps(Step::Ptr step) const
+std::vector<Step::ptr> Dag::
+        targetSteps(Step::ptr step) const
 {
-    std::vector<Step::Ptr> steps;
+    std::vector<Step::ptr> steps;
 
     GraphVertex v = getVertex(step);
     if (!v)
@@ -168,8 +168,8 @@ std::vector<Step::Ptr> Dag::
 
     BOOST_FOREACH(GraphEdge e, out_edges(v, g_)) {
         GraphVertex u = boost::target(e,g_);
-        Step::Ptr s = g_[u];
-        //int nc = write1(s)->num_channels ();
+        Step::ptr s = g_[u];
+        //int nc = s.write ()->num_channels ();
         steps.push_back (s);
     }
 
@@ -184,53 +184,53 @@ void Dag::
     {
         Dag dag;
 
-        Step::Ptr step1(new Step(Signal::OperationDesc::Ptr()));
-        Step::Ptr step2(new Step(Signal::OperationDesc::Ptr()));
-        Step::Ptr step3(new Step(Signal::OperationDesc::Ptr()));
+        Step::ptr step1(new Step(Signal::OperationDesc::ptr()));
+        Step::ptr step2(new Step(Signal::OperationDesc::ptr()));
+        Step::ptr step3(new Step(Signal::OperationDesc::ptr()));
 
         dag.insertStep (step2);
         dag.insertStep (step1, dag.getVertex (step2));
         dag.appendStep (step3, dag.getVertex (step2));
 
-        EXCEPTION_ASSERT(dag.sourceSteps (step1) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::Ptr>(1, step2));
-        EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::Ptr>(1, step1));
-        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, step3));
-        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step2));
-        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.sourceSteps (step1) == std::vector<Step::ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::ptr>(1, step2));
+        EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::ptr>(1, step1));
+        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::ptr>(1, step3));
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::ptr>(1, step2));
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::ptr>());
 
         dag.removeStep (step2);
 
-        EXCEPTION_ASSERT(dag.sourceSteps (step1) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::Ptr>(1, step3));
-        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step1));
-        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.sourceSteps (step1) == std::vector<Step::ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step1) == std::vector<Step::ptr>(1, step3));
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::ptr>(1, step1));
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::ptr>());
 
         dag.removeStep (step1);
 
-        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::ptr>());
 
         dag.insertStep (step2, dag.getVertex (step3));
 
-        EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::Ptr>(1, step3));
-        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::Ptr>(1, step2));
-        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT(dag.sourceSteps (step2) == std::vector<Step::ptr>());
+        EXCEPTION_ASSERT(dag.targetSteps (step2) == std::vector<Step::ptr>(1, step3));
+        EXCEPTION_ASSERT(dag.sourceSteps (step3) == std::vector<Step::ptr>(1, step2));
+        EXCEPTION_ASSERT(dag.targetSteps (step3) == std::vector<Step::ptr>());
     }
 
     // It should treat Step's that aren't a part of the Dag as lonely islands.
     {
         Dag dag;
 
-        Step::Ptr step1(new Step(Signal::OperationDesc::Ptr()));
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Step::ptr step1(new Step(Signal::OperationDesc::ptr()));
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
 
         dag.appendStep (step1);
 
         dag.removeStep (step);
-        EXCEPTION_ASSERT( dag.sourceSteps (step) == std::vector<Step::Ptr>());
-        EXCEPTION_ASSERT( dag.targetSteps (step) == std::vector<Step::Ptr>());
+        EXCEPTION_ASSERT( dag.sourceSteps (step) == std::vector<Step::ptr>());
+        EXCEPTION_ASSERT( dag.targetSteps (step) == std::vector<Step::ptr>());
         EXCEPTION_ASSERT( dag.getVertex (step) == NullVertex() );
         EXCEPTION_ASSERT_EQUALS (dag.g ().num_vertices (), 1u );
     }

@@ -9,7 +9,7 @@ namespace Processing {
 #define DEBUGINFO if(0)
 
 BedroomSignalAdapter::
-        BedroomSignalAdapter(Bedroom::Ptr bedroom, QObject* parent)
+        BedroomSignalAdapter(Bedroom::ptr bedroom, QObject* parent)
     :
     QThread(parent),
     bedroom_(bedroom),

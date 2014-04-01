@@ -3,5 +3,5 @@
 #include "tfr/chunkdata.h"
 
 void applyspline(
-        Tfr::ChunkData::Ptr data,
-        DataStorage<Tfr::ChunkElement>::Ptr spline, bool save_inside, float fs );
+        Tfr::ChunkData::ptr data,
+        DataStorage<Tfr::ChunkElement>::ptr spline, bool save_inside, float fs );

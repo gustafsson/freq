@@ -32,8 +32,8 @@ public:
     // OperationDesc
     Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const;
     Interval affectedInterval( const Interval& I ) const;
-    OperationDesc::Ptr copy() const;
-    Operation::Ptr createOperation(ComputingEngine* engine=0) const;
+    OperationDesc::ptr copy() const;
+    Operation::ptr createOperation(ComputingEngine* engine=0) const;
     QString toString() const;
 
     Signal::Interval section() { return section_; }

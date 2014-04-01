@@ -28,22 +28,22 @@ public:
     NetworkRecorder(QUrl url, float samplerate=32768 );
     ~NetworkRecorder();
 
-    virtual void startRecording();
-    virtual void stopRecording();
-    virtual bool isStopped();
-    virtual bool canRecord();
+    virtual void startRecording() override;
+    virtual void stopRecording() override;
+    virtual bool isStopped() const override;
+    virtual bool canRecord() override;
 
-    virtual std::string name();
-    virtual unsigned num_channels ();
-    virtual float sample_rate();
-    virtual float length();
+    virtual std::string name() override;
+    virtual unsigned num_channels () const override;
+    virtual float sample_rate() const override;
+    virtual float length() const override;
 
 private:
     QUrl url;
     QTcpSocket tcpSocket;
     float samplerate;
 
-    virtual float time();
+    virtual float time() const override;
     int receivedData(const void*data, int byteCount);
 
 private slots:

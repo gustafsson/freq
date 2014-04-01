@@ -8,7 +8,7 @@ namespace Tfr {
 class WaveformRepresentationDesc: public DummyTransformDesc
 {
 public:
-    TransformDesc::Ptr copy() const;
+    TransformDesc::ptr copy() const;
     pTransform createTransform() const;
     float displayedTimeResolution( float FS, float hz ) const;
     FreqAxis freqAxis( float FS ) const;

@@ -22,16 +22,16 @@ namespace Tools
 
 //Use Signal::Processing namespace
 //        Signal::pTarget playbackTarget;
-        Signal::Processing::TargetMarker::Ptr target_marker;
+        Signal::Processing::TargetMarker::ptr target_marker;
 
         std::string selection_filename;
 
         SelectionModel* selection;
         PlaybackMarkersModel* markers;
 
-        Signal::OperationDesc::Ptr adapter_playback;
+        Signal::OperationDesc::ptr adapter_playback;
 
-        Signal::Operation::Ptr playback();
+        Signal::Operation::ptr playback();
     };
 } // namespace Tools
 #endif // PLAYBACKMODEL_H

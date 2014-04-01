@@ -20,10 +20,10 @@ namespace Support {
 class BrushFilter : public Tfr::ChunkFilter, public boost::noncopyable
 {
 public:
-    BrushFilter(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
+    BrushFilter(Heightmap::BlockLayout, Heightmap::VisualizationParams::const_ptr);
     ~BrushFilter();
 
-    typedef DataStorage<float>::Ptr BrushImageDataP;
+    typedef DataStorage<float>::ptr BrushImageDataP;
     typedef boost::unordered_map<Heightmap::Reference, BrushImageDataP> BrushImages;
     typedef boost::shared_ptr<BrushImages> BrushImagesP;
 
@@ -42,7 +42,7 @@ protected:
      * are mapped to the heightmap
      */
     const Heightmap::BlockLayout block_layout_;
-    Heightmap::VisualizationParams::ConstPtr visualization_params_;
+    Heightmap::VisualizationParams::const_ptr visualization_params_;
 
 private:
     class BrushFilterSupport* resource_releaser_;
@@ -52,7 +52,7 @@ private:
 class MultiplyBrush: public BrushFilter
 {
 public:
-    MultiplyBrush(Heightmap::BlockLayout, Heightmap::VisualizationParams::ConstPtr);
+    MultiplyBrush(Heightmap::BlockLayout, Heightmap::VisualizationParams::const_ptr);
 
     virtual Signal::Intervals affected_samples();
 
@@ -61,7 +61,7 @@ public:
 
 private:
     friend class boost::serialization::access;
-    MultiplyBrush():BrushFilter(Heightmap::BlockLayout(0,0, 0), Heightmap::VisualizationParams::ConstPtr())
+    MultiplyBrush():BrushFilter(Heightmap::BlockLayout(0,0, 0), Heightmap::VisualizationParams::const_ptr())
     { BOOST_ASSERT(false); } // required by serialization, should never be called
 
     template<class archive> void save(archive& ar, const unsigned int version) const {
@@ -153,13 +153,13 @@ private:
 
 class MultiplyBrushDesc: public Tfr::CwtChunkFilterDesc {
 public:
-    MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::ConstPtr vp);
+    MultiplyBrushDesc(Heightmap::BlockLayout bl, Heightmap::VisualizationParams::const_ptr vp);
 
     Tfr::pChunkFilter createChunkFilter(Signal::ComputingEngine* engine=0) const;
 
 private:
     Heightmap::BlockLayout bl;
-    Heightmap::VisualizationParams::ConstPtr vp;
+    Heightmap::VisualizationParams::const_ptr vp;
 };
 
 

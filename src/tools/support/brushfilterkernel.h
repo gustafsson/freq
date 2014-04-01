@@ -3,5 +3,5 @@
 #include "tfr/chunkdata.h"
 #include "resampletypes.h"
 
-void multiply( ResampleArea cwtArea, Tfr::ChunkData::Ptr cwt,
-               ResampleArea imageArea, DataStorage<float>::Ptr image );
+void multiply( ResampleArea cwtArea, Tfr::ChunkData::ptr cwt,
+               ResampleArea imageArea, DataStorage<float>::ptr image );

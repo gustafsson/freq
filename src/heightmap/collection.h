@@ -13,7 +13,7 @@
 // gpumisc
 #include "ThreadChecker.h"
 #include "deprecated.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 // std
 #include <vector>
@@ -102,10 +102,9 @@ typedef boost::shared_ptr<Block> pBlock;
   */
 class Collection {
 public:
-    typedef VolatilePtr<Collection> Ptr;
-    typedef Ptr::ReadPtr ReadPtr;
+    typedef shared_state<Collection> ptr;
 
-    Collection(BlockLayout, VisualizationParams::ConstPtr);
+    Collection(BlockLayout, VisualizationParams::const_ptr);
     ~Collection();
 
 
@@ -145,7 +144,7 @@ public:
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
-    BlockCache::Ptr cache() const;
+    BlockCache::ptr cache() const;
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 
@@ -153,23 +152,23 @@ public:
     void setVisible(bool v);
 
     BlockLayout block_layout() const;
-    VisualizationParams::ConstPtr visualization_params() const;
+    VisualizationParams::const_ptr visualization_params() const;
 
 private:
     friend class Heightmap::TfrMapping;
 
     void length(float length);
     void block_layout(BlockLayout block_layout);
-    void visualization_params(VisualizationParams::ConstPtr visualization_params);
+    void visualization_params(VisualizationParams::const_ptr visualization_params);
 
     BlockLayout block_layout_;
-    VisualizationParams::ConstPtr visualization_params_;
+    VisualizationParams::const_ptr visualization_params_;
 
     typedef std::list<pBlock> toremove_t;
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
 
-    BlockCache::Ptr cache_;
-    VolatilePtr<BlockInstaller> block_installer_;
+    BlockCache::ptr cache_;
+    shared_state<BlockInstaller> block_installer_;
 
     bool
         _is_visible;

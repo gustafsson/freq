@@ -83,10 +83,10 @@ Signal::OperationDesc::Extent Rectangle::
 }
 
 
-ChunkFilterDesc::Ptr Rectangle::
+ChunkFilterDesc::ptr Rectangle::
         copy() const
 {
-    return ChunkFilterDesc::Ptr(new Rectangle(_s1, _f1, _s2, _f2, _save_inside));
+    return ChunkFilterDesc::ptr(new Rectangle(_s1, _f1, _s2, _f2, _save_inside));
 }
 
 
@@ -166,6 +166,8 @@ Signal::Intervals Rectangle::
 #include "test/operationmockups.h"
 #include "test/randombuffer.h"
 #include "tfr/transformoperation.h"
+#include "tasktimer.h"
+
 #include <QApplication>
 
 namespace Filters {
@@ -180,17 +182,17 @@ void Rectangle::
 
     // It should apply a bandpass and time filter between f1,s1 and f2,s2 to a signal.
     {
-        Signal::Processing::Chain::Ptr cp = Signal::Processing::Chain::createDefaultChain ();
-        Signal::OperationDesc::Ptr transparent(new Test::TransparentOperationDesc);
-        Signal::OperationDesc::Ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
-        Tfr::ChunkFilterDesc::Ptr cfd(new Rectangle(1,2,4,4,false));
-        Signal::OperationDesc::Ptr rectangledesc(new TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::Ptr at = write1(cp)->addTarget(transparent);
-        Signal::Processing::TargetNeeds::Ptr n = at->target_needs();
-        write1(cp)->addOperationAt(buffersource,at);
-        write1(cp)->addOperationAt(rectangledesc,at);
-        write1(n)->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( n->sleep(n, 100) );
+        Signal::Processing::Chain::ptr cp = Signal::Processing::Chain::createDefaultChain ();
+        Signal::OperationDesc::ptr transparent(new Test::TransparentOperationDesc);
+        Signal::OperationDesc::ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
+        Tfr::ChunkFilterDesc::ptr cfd(new Rectangle(1,2,4,4,false));
+        Signal::OperationDesc::ptr rectangledesc(new TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::ptr at = cp.write ()->addTarget(transparent);
+        Signal::Processing::TargetNeeds::ptr n = at->target_needs();
+        cp.write ()->addOperationAt(buffersource,at);
+        cp.write ()->addOperationAt(rectangledesc,at);
+        n.write ()->updateNeeds(Signal::Interval(0,10));
+        EXCEPTION_ASSERT( Signal::Processing::TargetNeeds::sleep (n,100) );
     }
 }
 

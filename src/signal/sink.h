@@ -40,16 +40,16 @@ public:
 class SinkDesc: public Signal::OperationDesc
 {
 public:
-    SinkDesc(Signal::Operation::Ptr sink);
+    SinkDesc(Signal::Operation::ptr sink);
 
     Interval requiredInterval( const Interval& I, Interval* expectedOutput ) const;
     Interval affectedInterval( const Interval& I ) const;
-    OperationDesc::Ptr copy() const;
-    Operation::Ptr createOperation(ComputingEngine* engine) const;
-    Operation::Ptr sink() const;
+    OperationDesc::ptr copy() const;
+    Operation::ptr createOperation(ComputingEngine* engine) const;
+    Operation::ptr sink() const;
 
 private:
-    Signal::Operation::Ptr sink_;
+    Signal::Operation::ptr sink_;
 };
 
 } // namespace Signal

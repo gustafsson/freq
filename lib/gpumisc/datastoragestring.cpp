@@ -2,7 +2,7 @@
 #include "Statistics.h"
 
 std::string DataStorageString::
-        printDataStorage(DataStorage<float>::Ptr data)
+        printDataStorage(DataStorage<float>::ptr data)
 {
     EXCEPTION_ASSERT(data);
 
@@ -58,7 +58,7 @@ std::string DataStorageString::
 
 
 std::string DataStorageString::
-        printDataStorageStats(DataStorage<float>::Ptr data)
+        printDataStorageStats(DataStorage<float>::ptr data)
 {
     std::stringstream ss;
     Statistics<float> s(data, false, true);
@@ -75,7 +75,7 @@ void DataStorageString::
     // It should print contents of a DataStorage for debugging purposes.
     {
         float srcdata[] = { 1, 2, 3, 4 };
-        DataStorage<float>::Ptr data;
+        DataStorage<float>::ptr data;
         {
             data = CpuMemoryStorage::BorrowPtr( DataStorageSize(2,2), srcdata, false );
 

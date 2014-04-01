@@ -9,13 +9,13 @@ namespace Blocks {
 class GarbageCollector
 {
 public:
-    GarbageCollector(BlockCache::Ptr cache);
+    GarbageCollector(BlockCache::ptr cache);
 
     pBlock releaseOneBlock(unsigned frame_counter);
     void releaseAllNotUsedInThisFrame(unsigned _frame_counter);
 
 private:
-    BlockCache::Ptr cache_;
+    BlockCache::ptr cache_;
 };
 
 } // namespace Block

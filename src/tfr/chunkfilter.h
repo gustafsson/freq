@@ -2,7 +2,7 @@
 #define TFR_CHUNKFILTER_H
 
 #include "signal/buffer.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "signal/computingengine.h"
 #include "signal/operation.h"
 
@@ -60,7 +60,7 @@ struct ChunkAndInverse
 class ChunkFilter
 {
 public:
-    typedef boost::shared_ptr<ChunkFilter> Ptr;
+    typedef boost::shared_ptr<ChunkFilter> ptr;
 
 
     /**
@@ -90,7 +90,7 @@ public:
       */
     virtual void set_number_of_channels( unsigned ) {}
 };
-typedef ChunkFilter::Ptr pChunkFilter;
+typedef ChunkFilter::ptr pChunkFilter;
 
 
 /**
@@ -100,14 +100,14 @@ typedef ChunkFilter::Ptr pChunkFilter;
 class ChunkFilterDesc
 {
 public:
-    typedef VolatilePtr<ChunkFilterDesc> Ptr;
+    typedef shared_state<ChunkFilterDesc> ptr;
 
     virtual ~ChunkFilterDesc() {}
 
     virtual pChunkFilter                    createChunkFilter(Signal::ComputingEngine* engine=0) const = 0;
     virtual Signal::OperationDesc::Extent   extent() const;
     virtual void                            transformDesc(pTransformDesc d);
-    virtual ChunkFilterDesc::Ptr            copy() const;
+    virtual ChunkFilterDesc::ptr            copy() const;
 
     pTransformDesc                          transformDesc() const;
 

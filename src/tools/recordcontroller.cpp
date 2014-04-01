@@ -52,7 +52,7 @@ void RecordController::
     if (destroyed_)
         return;
 
-    Adapters::Recorder::WritePtr r(model()->recording);
+    auto r = model()->recording.write ();
     if (!r->isStopped())
         r->stopRecording();
 
@@ -62,7 +62,7 @@ void RecordController::
 void RecordController::
         receiveRecord(bool active)
 {
-    Adapters::Recorder::WritePtr r(model()->recording);
+    auto r = model()->recording.write ();
 
     if (active)
     {
@@ -128,7 +128,7 @@ void RecordController::
     if (model()->recording)
     {
         ui->actionRecord->setVisible (true);
-        if (write1(model()->recording) -> canRecord())
+        if (model()->recording.write ()->canRecord ())
             ui->actionRecord->setEnabled( true );
         else
             ui->actionRecord->setToolTip("Can't record, no record devices found");

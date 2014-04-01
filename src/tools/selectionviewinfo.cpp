@@ -111,7 +111,7 @@ void SelectionViewInfo::
     Signal::OperationDesc::Ptr info_desc( new Signal::OldOperationDescWrapper(infoOperation));
     Signal::OperationDesc::Ptr selection_desc( new Signal::OldOperationDescWrapper(selection));
 
-    Signal::Processing::Chain::WritePtr chain( project_->processing_chain () );
+    auto chain = project_->processing_chain ().write ();
     target_marker_ = chain->addTarget(info_desc, project_->default_target());
     chain->addOperationAt(selection_desc, target_marker_);
 }

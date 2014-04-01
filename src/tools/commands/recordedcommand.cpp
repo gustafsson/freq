@@ -6,10 +6,10 @@ namespace Tools {
 namespace Commands {
 
 RecordedCommand::
-        RecordedCommand(Adapters::Recorder::Ptr recording,
+        RecordedCommand(Adapters::Recorder::ptr recording,
                         Signal::IntervalType prevLength,
                         Tools::RenderModel* model,
-                        Signal::Processing::IInvalidator::Ptr iinvalidator)
+                        Signal::Processing::IInvalidator::ptr iinvalidator)
             :
             recording(recording),
             model(model),
@@ -17,7 +17,7 @@ RecordedCommand::
             undone(false),
             prev_qx(-1)
 {
-    Adapters::Recorder::WritePtr r(recording);
+    auto r = recording.write ();
     recordedData = r->data().read(Signal::Interval(prevLength, r->number_of_samples()) );
 }
 
@@ -34,10 +34,10 @@ void RecordedCommand::
 {
     if (undone)
     {
-        Adapters::Recorder::WritePtr r(recording);
+        auto r = recording.write ();
         recordedData->set_sample_offset( r->number_of_samples() );
         r->data().put(recordedData);
-        write1(iinvalidator)->deprecateCache(recordedData->getInterval());
+        iinvalidator.write ()->deprecateCache(recordedData->getInterval());
 
         if (0<=prev_qx)
             model->_qx = prev_qx;
@@ -48,9 +48,9 @@ void RecordedCommand::
 void RecordedCommand::
         undo()
 {
-    write1(recording)->data().invalidate_samples(recordedData->getInterval());
+    recording.write ()->data().invalidate_samples(recordedData->getInterval());
     prev_qx = model->_qx;
-    write1(iinvalidator)->deprecateCache(recordedData->getInterval());
+    iinvalidator.write ()->deprecateCache(recordedData->getInterval());
     if (prev_qx == model->_qx)
         prev_qx = -1;
 

@@ -466,8 +466,8 @@ using namespace std;
 
 
 template<typename AxisConverter>
-void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
-                 DataStorage<float>::Ptr output,
+void blockResampleChunkAxis( Tfr::ChunkData::ptr inputp,
+                 DataStorage<float>::ptr output,
                  ValidInterval validInputs,
                  ResampleArea inputRegion,
                  ResampleArea outputRegion,
@@ -486,7 +486,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
                     CudaGlobalStorage::ReadOnly<2>( inputp ).getCudaPitchedPtr()
                     );
 #else
-    Tfr::ChunkData::Ptr input = inputp;
+    Tfr::ChunkData::ptr input = inputp;
 #endif
 
     DataStorageSize sz_output = output->size();
@@ -594,8 +594,8 @@ void blockResampleChunkAxis( Tfr::ChunkData::Ptr inputp,
 
 
 
-void blockResampleChunk( Tfr::ChunkData::Ptr input,
-                  BlockData::Ptr output,
+void blockResampleChunk( Tfr::ChunkData::ptr input,
+                  BlockData::ptr output,
                  ValidInterval validInputs, // validInputs is the first and last-1 valid samples in x
                  ResampleArea inputRegion,
                  ResampleArea outputRegion,
@@ -639,9 +639,9 @@ void blockResampleChunk( Tfr::ChunkData::Ptr input,
 
 
 template<typename AxisConverter>
-void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
+void resampleStftAxis( Tfr::ChunkData::ptr inputp,
                    size_t nScales, size_t nSamples,
-                   BlockData::Ptr output,
+                   BlockData::ptr output,
                    ValidInterval outputInterval,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
@@ -659,7 +659,7 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
             CudaGlobalStorage::BorrowPitchedPtr<float2>( DataStorageSize( nScales, nSamples ), cpp );
 #else
     Tfr::ChunkElement* p = CpuMemoryStorage::ReadOnly<2>( inputp ).ptr();
-    Tfr::ChunkData::Ptr input =
+    Tfr::ChunkData::ptr input =
             CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>(
                     DataStorageSize( nScales, nSamples ), p );
 #endif
@@ -707,9 +707,9 @@ void resampleStftAxis( Tfr::ChunkData::Ptr inputp,
 
 
 
-void resampleStft( Tfr::ChunkData::Ptr input,
+void resampleStft( Tfr::ChunkData::ptr input,
                    size_t nScales, size_t nSamples,
-                   BlockData::Ptr output,
+                   BlockData::ptr output,
                    ValidInterval outputInterval,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
@@ -755,8 +755,8 @@ void resampleStft( Tfr::ChunkData::Ptr input,
 
 
 extern "C"
-void blockMerge( BlockData::Ptr inBlock,
-                 BlockData::Ptr outBlock,
+void blockMerge( BlockData::ptr inBlock,
+                 BlockData::ptr outBlock,
                  ResampleArea in_area,
                  ResampleArea out_area)
 {
@@ -782,7 +782,7 @@ private:
 
 
 extern "C"
-void blockClearPart( BlockData::Ptr block,
+void blockClearPart( BlockData::ptr block,
                  int start_t )
 {
     element_operate(block, ResampleArea(0,0, block->size().width, 1), SetZero(start_t));

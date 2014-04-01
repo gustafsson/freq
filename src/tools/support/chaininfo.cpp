@@ -10,7 +10,7 @@ namespace Tools {
 namespace Support {
 
 ChainInfo::
-        ChainInfo(Chain::ConstPtr chain)
+        ChainInfo(shared_state<const Chain> chain)
     :
       chain_(chain)
 {
@@ -27,15 +27,15 @@ bool ChainInfo::
 int ChainInfo::
         n_workers()
 {
-    Workers::Ptr workers = read1(chain_)->workers();
-    return read1(workers)->n_workers();
+    Workers::ptr workers = chain_.read ()->workers();
+    return workers.read ()->n_workers();
 }
 
 
 int ChainInfo::
         dead_workers()
 {
-    Workers::ReadPtr workers (read1(chain_)->workers());
+    auto workers = chain_.read ()->workers().read ();
     return workers->workers().size() - workers->n_workers();
 }
 
@@ -45,12 +45,12 @@ Signal::UnsignedIntervalType ChainInfo::
 {
     Signal::Intervals I;
 
-    Targets::Ptr targets = read1(chain_)->targets();
-    const std::vector<TargetNeeds::Ptr>& T = read1(targets)->getTargets();
+    Targets::ptr targets = chain_.read ()->targets();
+    const std::vector<TargetNeeds::ptr>& T = targets.read ()->getTargets();
     for (auto i=T.begin(); i!=T.end(); i++)
     {
-        const TargetNeeds::Ptr& t = *i;
-        I |= read1(t)->out_of_date();
+        const TargetNeeds::ptr& t = *i;
+        I |= t.read ()->out_of_date();
     }
 
     return I.count ();
@@ -81,8 +81,8 @@ class ProcessCrashOperationDesc: public Test::TransparentOperationDesc {
         }
     };
 
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const override {
-        return Signal::Operation::Ptr(new Operation);
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine*) const override {
+        return Signal::Operation::ptr(new Operation);
     }
 };
 
@@ -104,7 +104,7 @@ void ChainInfo::
 
     // It should provide info about the running state of a signal processing chain
     {
-        Chain::Ptr cp = Chain::createDefaultChain ();
+        Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
         EXCEPTION_ASSERT( !c.hasWork () );
@@ -112,21 +112,21 @@ void ChainInfo::
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
     }
 
-    Signal::OperationDesc::Ptr transparent(new Test::TransparentOperationDesc);
-    Signal::OperationDesc::Ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
+    Signal::OperationDesc::ptr transparent(new Test::TransparentOperationDesc);
+    Signal::OperationDesc::ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
     // It should say that there is no work if a step has crashed (no crash).
     {
         UNITTEST_STEPS TaskInfo("It should say that there is no work if a step has crashed (no crash)");
 
-        Chain::Ptr cp = Chain::createDefaultChain ();
+        Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
-        TargetMarker::Ptr at = write1(cp)->addTarget(transparent);
-        TargetNeeds::Ptr n = at->target_needs();
-        write1(cp)->addOperationAt(buffersource,at);
+        TargetMarker::ptr at = cp.write ()->addTarget(transparent);
+        TargetNeeds::ptr n = at->target_needs();
+        cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        write1(n)->updateNeeds(Signal::Interval(0,10));
+        n.write ()->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
         QThread::msleep (10);
         EXCEPTION_ASSERT( !c.hasWork () );
@@ -137,17 +137,17 @@ void ChainInfo::
     {
         UNITTEST_STEPS TaskInfo("It should say that there is no work if a step has crashed (requiredIntervalCrash)");
 
-        Chain::Ptr cp = Chain::createDefaultChain ();
+        Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
-        TargetMarker::Ptr at = write1(cp)->addTarget(Signal::OperationDesc::Ptr(new RequiredIntervalCrash));
-        TargetNeeds::Ptr n = at->target_needs();
-        write1(cp)->addOperationAt(buffersource,at);
+        TargetMarker::ptr at = cp.write ()->addTarget(Signal::OperationDesc::ptr(new RequiredIntervalCrash));
+        TargetNeeds::ptr n = at->target_needs();
+        cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        write1(n)->updateNeeds(Signal::Interval(0,10));
+        n.write ()->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
-        EXCEPTION_ASSERT( n->sleep (12) );
+        EXCEPTION_ASSERT( TargetNeeds::sleep (n, 12) );
         EXCEPTION_ASSERT( !c.hasWork () );
         QThread::msleep (1);
         EXCEPTION_ASSERT_EQUALS( 1, c.dead_workers () );
@@ -157,18 +157,18 @@ void ChainInfo::
     {
         UNITTEST_STEPS TaskInfo("It should say that there is no work if a step has crashed (process)");
 
-        Chain::Ptr cp = Chain::createDefaultChain ();
+        Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
-        TargetMarker::Ptr at = write1(cp)->addTarget(Signal::OperationDesc::Ptr(new ProcessCrashOperationDesc));
-        TargetNeeds::Ptr n = at->target_needs();
-        write1(cp)->addOperationAt(buffersource,at);
+        TargetMarker::ptr at = cp.write ()->addTarget(Signal::OperationDesc::ptr(new ProcessCrashOperationDesc));
+        TargetNeeds::ptr n = at->target_needs();
+        cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        write1(n)->updateNeeds(Signal::Interval(0,10));
+        n.write ()->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
         QThread::msleep (10);
         a.processEvents (); // a crashed worker announces 'wakeup' to the others through the application eventloop
-        EXCEPTION_ASSERT( n->sleep (10) );
+        EXCEPTION_ASSERT( TargetNeeds::sleep (n, 10) );
         EXCEPTION_ASSERT( !c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 1, c.dead_workers () );
     }

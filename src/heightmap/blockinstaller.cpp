@@ -39,7 +39,7 @@ private:
 
 
 BlockInstaller::
-        BlockInstaller(BlockLayout bl, VisualizationParams::ConstPtr vp, BlockCache::Ptr c)
+        BlockInstaller(BlockLayout bl, VisualizationParams::const_ptr vp, BlockCache::ptr c)
     :
       block_layout_(bl),
       visualization_params_(vp),
@@ -97,11 +97,11 @@ void BlockInstaller::
 pBlock BlockInstaller::
         getBlock( const Reference& ref, int frame_counter )
 {
-    // ReadPtr/WritePtr doesn't use the 'upgrade ownership' concept, but the mutex they use supports it.
+    // shared_state doesn't use the 'upgrade ownership' concept, but it could use a mutex that supports it (boost::shared_mutex does for instance).
 //    UnlockAndLockUpgrade unlock_and_lock_upgrade(this->readWriteLock ());
 
     // Look among cached blocks for this reference
-    pBlock block = write1(cache_)->find( ref );
+    pBlock block = cache_.write ()->find( ref );
 
     if (!block)
     {
@@ -118,7 +118,7 @@ pBlock BlockInstaller::
 
             BlockFactory bf(block_layout_, visualization_params_);
             block = bf.createBlock (ref, reuse);
-            bool empty_cache = read1(cache_)->cache().empty();
+            bool empty_cache = cache_.read ()->cache().empty();
             if ( !block && !empty_cache ) {
                 TaskTimer tt(format("Memory allocation failed creating new block %s. Doing garbage collection") % ref);
                 Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (frame_counter);
@@ -129,7 +129,7 @@ pBlock BlockInstaller::
             //Blocks::Merger(cache_).fillBlockFromOthers (block);
             merger_->fillBlockFromOthers (block);
 
-            write1(cache_)->insert(block);
+            cache_.write ()->insert(block);
 
 //            unlock_and_lock_upgrade.restore ();
 
@@ -170,8 +170,8 @@ void BlockInstaller::
     // It should create new blocks and install them in a cache.
     {
         BlockLayout bl(4,4,4);
-        VisualizationParams::ConstPtr vp(new VisualizationParams);
-        BlockCache::Ptr cache(new BlockCache);
+        VisualizationParams::const_ptr vp(new VisualizationParams);
+        BlockCache::ptr cache(new BlockCache);
 
         BlockInstaller block_installer(bl, vp, cache);
 
@@ -186,8 +186,8 @@ void BlockInstaller::
         pBlock block = block_installer.getBlock (r, 0);
 
         EXCEPTION_ASSERT(block);
-        EXCEPTION_ASSERT(read1(cache)->probe(r));
-        EXCEPTION_ASSERT(read1(cache)->probe(r) == block);
+        EXCEPTION_ASSERT(cache.read ()->probe(r));
+        EXCEPTION_ASSERT(cache.read ()->probe(r) == block);
 
         pBlock block2 = block_installer.getBlock (r, 0);
 
@@ -198,7 +198,7 @@ void BlockInstaller::
 
         EXCEPTION_ASSERT(block3);
         EXCEPTION_ASSERT(block != block3);
-        EXCEPTION_ASSERT(read1(cache)->probe(r.bottom ()) == block3);
+        EXCEPTION_ASSERT(cache.read ()->probe(r.bottom ()) == block3);
     }
 
     // TODO test that BlockInstaller behaves well on out-of-memory/reusing old blocks

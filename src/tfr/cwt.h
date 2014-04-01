@@ -42,7 +42,7 @@ public:
     const TransformDesc* transformDesc() const override { return this; }
 
     // TransformDesc
-    TransformDesc::Ptr copy() const override;
+    TransformDesc::ptr copy() const override;
     pTransform createTransform() const override;
     float displayedTimeResolution( float FS, float hz ) const override;
     FreqAxis freqAxis( float FS ) const override;
@@ -137,10 +137,10 @@ private:
     float           _least_meaningful_fraction_of_r;
     unsigned        _least_meaningful_samples_per_chunk;
 
-    std::map<int, Tfr::FftImplementation::Ptr> fft_instances;
+    std::map<int, Tfr::FftImplementation::ptr> fft_instances;
     std::set<int> fft_usage; // remove any that wasn't recently used
-    Tfr::FftImplementation::Ptr fft() const;
-    Tfr::FftImplementation::Ptr fft(int width); // width=0 -> don't care
+    Tfr::FftImplementation::ptr fft() const;
+    Tfr::FftImplementation::ptr fft(int width); // width=0 -> don't care
     void clearFft();
 
     /**

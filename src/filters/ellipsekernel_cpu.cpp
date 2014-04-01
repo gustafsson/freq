@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-void removeDisc( Tfr::ChunkData::Ptr waveletp, Area area, bool save_inside, float fs )
+void removeDisc( Tfr::ChunkData::ptr waveletp, Area area, bool save_inside, float fs )
 {
     Tfr::ChunkElement* wavelet = CpuMemoryStorage::ReadWrite<2>( waveletp ).ptr();
 

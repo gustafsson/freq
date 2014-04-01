@@ -12,15 +12,15 @@ namespace Commands {
 class ChangeSelectionCommand : public Tools::Commands::Command
 {
 public:
-    ChangeSelectionCommand(Tools::SelectionController*p, Signal::OperationDesc::Ptr s);
+    ChangeSelectionCommand(Tools::SelectionController*p, Signal::OperationDesc::ptr s);
 
     virtual void execute();
     virtual void undo();
     virtual std::string toString();
 
 private:
-    Signal::OperationDesc::Ptr s;
-    Signal::OperationDesc::Ptr prevSelection;
+    Signal::OperationDesc::ptr s;
+    Signal::OperationDesc::ptr prevSelection;
     Tools::SelectionController* p;
 };
 

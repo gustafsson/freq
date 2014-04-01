@@ -35,8 +35,8 @@ public:
     // OperationDesc
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    Signal::OperationDesc::Ptr copy() const;
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    Signal::OperationDesc::ptr copy() const;
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine=0) const;
 
     Signal::Intervals zeroed_samples();
 
@@ -179,8 +179,8 @@ public:
     // OperationDesc
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    Signal::OperationDesc::Ptr copy() const;
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    Signal::OperationDesc::ptr copy() const;
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine=0) const;
     Extent extent() const;
 
 private:

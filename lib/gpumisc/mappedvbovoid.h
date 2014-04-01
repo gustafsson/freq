@@ -19,7 +19,7 @@ protected:
     void unmap(DataStorageVoid* datap);
 
 private:
-    DataStorage<char>::Ptr mapped_gl_mem;
+    DataStorage<char>::ptr mapped_gl_mem;
 
     pVbo _vbo;
     bool _is_mapped;

@@ -72,6 +72,6 @@ private:
 
 
 void addGauss(
-        ResampleArea imageArea, DataStorage<float>::Ptr image, Gauss gauss );
+        ResampleArea imageArea, DataStorage<float>::ptr image, Gauss gauss );
 void multiplyGauss(
-        ResampleArea imageArea, DataStorage<float>::Ptr image, Gauss gauss, Heightmap::AmplitudeAxis );
+        ResampleArea imageArea, DataStorage<float>::ptr image, Gauss gauss, Heightmap::AmplitudeAxis );

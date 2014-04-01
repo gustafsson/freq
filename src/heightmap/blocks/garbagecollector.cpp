@@ -16,7 +16,7 @@ namespace Heightmap {
 namespace Blocks {
 
 GarbageCollector::
-        GarbageCollector(BlockCache::Ptr cache)
+        GarbageCollector(BlockCache::ptr cache)
     :
       cache_(cache)
 {
@@ -28,7 +28,7 @@ pBlock GarbageCollector::
 {
     size_t _free_memory = availableMemoryForSingleAllocation();
 
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
     // prefer to use block rather than discard an old block and then reallocate it
 
     // _recent is ordered with the most recently accessed blocks first,
@@ -104,7 +104,7 @@ pBlock GarbageCollector::
 void GarbageCollector::
         releaseAllNotUsedInThisFrame(unsigned _frame_counter)
 {
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
     const BlockCache::cache_t C = cache->cache (); // copy
     TaskTimer tt("Collection doing garbage collection", C.size());
     BlockCacheInfo::printCacheSize(C);

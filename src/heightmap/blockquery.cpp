@@ -11,7 +11,7 @@ using namespace Signal;
 namespace Heightmap {
 
 BlockQuery::
-        BlockQuery(BlockCache::ConstPtr cache)
+        BlockQuery(BlockCache::const_ptr cache)
     :
       cache_(cache)
 {
@@ -21,7 +21,7 @@ BlockQuery::
 std::vector<pBlock> BlockQuery::
         getIntersectingBlocks( const Intervals& I, bool only_visible, int frame_counter ) const
 {
-    BlockCache::ReadPtr cache(cache_);
+    auto cache = cache_.read ();
     std::vector<pBlock> r;
     r.reserve(32);
 

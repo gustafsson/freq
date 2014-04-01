@@ -17,14 +17,14 @@ namespace Tools
 
 class TargetInvalidator: public Signal::Processing::IInvalidator {
 public:
-    TargetInvalidator(Signal::Processing::TargetNeeds::Ptr needs):needs_(needs) {}
+    TargetInvalidator(Signal::Processing::TargetNeeds::ptr needs):needs_(needs) {}
 
     virtual void deprecateCache(Signal::Intervals what) const {
-        write1(needs_)->deprecateCache(what);
+        needs_.write ()->deprecateCache(what);
     }
 
 private:
-    Signal::Processing::TargetNeeds::Ptr needs_;
+    Signal::Processing::TargetNeeds::ptr needs_;
 };
 
 RenderModel::
@@ -77,13 +77,13 @@ RenderModel::
 
 
 void RenderModel::
-        init(Signal::Processing::Chain::Ptr chain, Support::RenderOperationDesc::RenderTarget::Ptr rt)
+        init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt)
 {
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
-    render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::Ptr(), rt));
-    target_marker_ = write1(chain)->addTarget(render_operation_desc_);
-    rod->setInvalidator(Signal::Processing::IInvalidator::Ptr(
+    render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::ptr(), rt));
+    target_marker_ = chain.write ()->addTarget(render_operation_desc_);
+    rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
 
@@ -141,21 +141,21 @@ void RenderModel::
 Heightmap::TfrMapping::Collections RenderModel::
         collections()
 {
-    return read1(tfr_map_)->collections();
+    return tfr_map_.read ()->collections();
 }
 
 
 void RenderModel::
         block_layout(Heightmap::BlockLayout bs)
 {
-    write1(tfr_map_)->block_layout( bs );
+    tfr_map_.write ()->block_layout( bs );
 }
 
 
 Tfr::FreqAxis RenderModel::
         display_scale()
 {
-    return read1(tfr_map_)->display_scale();
+    return tfr_map_.read ()->display_scale();
 }
 
 
@@ -163,15 +163,15 @@ void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
     if (x != display_scale ())
-        if (chunk_merger) write1(chunk_merger)->clear();
-    write1(tfr_map_)->display_scale( x );
+        if (chunk_merger) chunk_merger.write ()->clear();
+    tfr_map_.write ()->display_scale( x );
 }
 
 
 Heightmap::AmplitudeAxis RenderModel::
         amplitude_axis()
 {
-    return read1(tfr_map_)->amplitude_axis();
+    return tfr_map_.read ()->amplitude_axis();
 }
 
 
@@ -179,42 +179,42 @@ void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
     if (x != amplitude_axis ())
-        if (chunk_merger) write1(chunk_merger)->clear();
-    write1(tfr_map_)->amplitude_axis( x );
+        if (chunk_merger) chunk_merger.write ()->clear();
+    tfr_map_.write ()->amplitude_axis( x );
 }
 
 
-Heightmap::TfrMapping::Ptr RenderModel::
+Heightmap::TfrMapping::ptr RenderModel::
         tfr_mapping()
 {
     return tfr_map_;
 }
 
 
-Support::TransformDescs::Ptr RenderModel::
+Support::TransformDescs::ptr RenderModel::
         transform_descs()
 {
     return transform_descs_;
 }
 
 
-Tfr::TransformDesc::Ptr RenderModel::
+Tfr::TransformDesc::ptr RenderModel::
         transform_desc()
 {
-    Signal::OperationDesc::ReadPtr o (render_operation_desc_);
+    auto o = render_operation_desc_.read ();
     const Support::RenderOperationDesc* rod = dynamic_cast<const Support::RenderOperationDesc*>(&*o);
 
     return rod
             ? rod->transform_desc ()
-            : Tfr::TransformDesc::Ptr();
+            : Tfr::TransformDesc::ptr();
 }
 
 
 void RenderModel::
-        set_transform_desc(Tfr::TransformDesc::Ptr t)
+        set_transform_desc(Tfr::TransformDesc::ptr t)
 {
     {
-        Signal::OperationDesc::WritePtr o (render_operation_desc_);
+        auto o = render_operation_desc_.write ();
         Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(&*o);
 
         if (!rod)
@@ -223,7 +223,7 @@ void RenderModel::
         rod->transform_desc (t);
     }
 
-//    write1(target_marker ())->updateNeeds(
+//    target_marker (.write ())->updateNeeds(
 //                Signal::Intervals(),
 //                Signal::Interval::IntervalType_MIN,
 //                Signal::Interval::IntervalType_MAX,
@@ -234,7 +234,7 @@ void RenderModel::
 void RenderModel::
         recompute_extent()
 {
-    Signal::OperationDesc::Extent extent = read1(chain_)->extent(target_marker_);
+    Signal::OperationDesc::Extent extent = chain_.read ()->extent(target_marker_);
     set_extent(extent);
 }
 
@@ -242,14 +242,14 @@ void RenderModel::
 void RenderModel::
         set_extent(Signal::OperationDesc::Extent extent)
 {
-    Heightmap::TfrMapping::WritePtr w(tfr_map_);
+    auto w = tfr_map_.write ();
     w->targetSampleRate( extent.sample_rate.get_value_or (1) );
     w->length( extent.interval.get_value_or (Signal::Interval()).count() / w->targetSampleRate() );
     w->channels( extent.number_of_channels.get_value_or (1) );
 }
 
 
-Signal::Processing::TargetMarker::Ptr RenderModel::
+Signal::Processing::TargetMarker::ptr RenderModel::
         target_marker()
 {
     return target_marker_;
@@ -257,9 +257,9 @@ Signal::Processing::TargetMarker::Ptr RenderModel::
 
 
 void RenderModel::
-        set_filter(Signal::OperationDesc::Ptr o)
+        set_filter(Signal::OperationDesc::ptr o)
 {
-    Signal::OperationDesc::WritePtr wo(render_operation_desc_);
+    auto wo = render_operation_desc_.write ();
     Signal::OperationDescWrapper* w =
             dynamic_cast<Signal::OperationDescWrapper*>(&*wo);
 
@@ -267,16 +267,16 @@ void RenderModel::
 }
 
 
-Signal::OperationDesc::Ptr RenderModel::
+Signal::OperationDesc::ptr RenderModel::
         get_filter()
 {
-    Signal::OperationDesc::ReadPtr ow (render_operation_desc_);
+    auto ow = render_operation_desc_.read ();
     const Signal::OperationDescWrapper* w = dynamic_cast<const Signal::OperationDescWrapper*>(&*ow);
     return w->getWrappedOperationDesc ();
 }
 
 
-Heightmap::TfrMappings::StftBlockFilterParams::Ptr RenderModel::
+Heightmap::TfrMappings::StftBlockFilterParams::ptr RenderModel::
         get_stft_block_filter_params()
 {
     return stft_block_filter_params_;

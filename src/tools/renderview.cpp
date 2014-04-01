@@ -303,15 +303,15 @@ float RenderView::
         *ref = findRefAtCurrentZoomLevel( pos );
     }
 
-    Heightmap::RegionFactory rr(read1(model->tfr_mapping ())->block_layout ());
+    Heightmap::RegionFactory rr(model->tfr_mapping ().read ()->block_layout ());
     Heightmap::Region r = rr(*ref);
 
     ref->block_index[0] = pos.time / r.time();
     ref->block_index[1] = pos.scale / r.scale();
     r = rr(*ref);
 
-    Heightmap::Collection::Ptr collection = model->collections()[0];
-    Heightmap::pBlock block = read1(collection)->getBlock( *ref );
+    Heightmap::Collection::ptr collection = model->collections()[0];
+    Heightmap::pBlock block = collection.read ()->getBlock( *ref );
     Heightmap::ReferenceInfo ri(block->referenceInfo ());
     if (!block)
         return 0;
@@ -327,10 +327,10 @@ float RenderView::
             return 0;
     }
 
-    DataStorage<float>::Ptr blockData = block->glblock->height()->data;
+    DataStorage<float>::ptr blockData = block->glblock->height()->data;
 
     float* data = blockData->getCpuMemory();
-    Heightmap::BlockLayout block_layout = read1(model->tfr_mapping ())->block_layout();
+    Heightmap::BlockLayout block_layout = model->tfr_mapping ().read ()->block_layout();
     unsigned w = block_layout.texels_per_row ();
     unsigned h = block_layout.texels_per_column ();
     unsigned x0 = (pos.time-r.a.time)/r.time()*(w-1) + .5f;
@@ -652,7 +652,7 @@ void RenderView::
     // draw the first without fbo
     for (; i < N; ++i)
     {
-        if (!read1(collections[i])->isVisible())
+        if (!collections[i].read ()->isVisible())
             continue;
 
         drawCollection(i, yscale);
@@ -665,7 +665,7 @@ void RenderView::
 
     for (; i<N; ++i)
     {
-        if (!read1(collections[i])->isVisible())
+        if (!collections[i].read ()->isVisible())
             continue;
 
         if (!hasValidatedFboSize)
@@ -734,7 +734,7 @@ void RenderView::
     {
         unsigned collections_n = 0;
         for (i=0; i < N; ++i)
-            collections_n += read1(collections[i])->isVisible();
+            collections_n += collections[i].read ()->isVisible();
 
         TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
         collections_n,
@@ -991,7 +991,7 @@ void RenderView::
 void RenderView::
         paintGL()
 {
-    model->renderer->collection = read1(model->tfr_mapping ())->collections()[0];
+    model->renderer->collection = model->tfr_mapping ().read ()->collections()[0];
     model->renderer->init();
     if (!model->renderer->isInitialized())
         return;
@@ -1013,21 +1013,21 @@ void RenderView::
         unsigned long sumsize = 0;
         unsigned cacheCount = 0;
 
-        sumsize = read1(collections[0])->cacheByteSize();
-        cacheCount = read1(collections[0])->cacheCount();
+        sumsize = collections[0].read ()->cacheByteSize();
+        cacheCount = collections[0].read ()->cacheCount();
         for (unsigned i=1; i<N; ++i)
         {
-            TaskLogIfFalse( sumsize == read1(collections[i])->cacheByteSize() );
-            TaskLogIfFalse( cacheCount == read1(collections[i])->cacheCount() );
+            TaskLogIfFalse( sumsize == collections[i].read ()->cacheByteSize() );
+            TaskLogIfFalse( cacheCount == collections[i].read ()->cacheCount() );
         }
 
         TaskInfo("Drawing (%s cache for %u*%u blocks)",
             DataStorageVoid::getMemorySizeText( N*sumsize ).c_str(),
             N, cacheCount);
 
-        if(0) foreach( const Heightmap::Collection::Ptr& c, collections )
+        if(0) foreach( const Heightmap::Collection::ptr& c, collections )
         {
-            read1(c)->printCacheSize();
+            c.read ()->printCacheSize();
         }
     }
 
@@ -1073,7 +1073,7 @@ void RenderView::
     }
 
     Tools::RecordModel* r = model->project ()->tools ().record_model ();
-    if(r && r->recording && !write1(r->recording)->isStopped ())
+    if(r && r->recording && !r->recording.write ()->isStopped ())
     {
         isRecording = true;
     }
@@ -1107,17 +1107,17 @@ void RenderView::
         float length=0.f;
 
         if (onlyComputeBlocksForRenderView)
-        foreach( const Heightmap::Collection::Ptr& collection, collections )
+        foreach( const Heightmap::Collection::ptr& collection, collections )
         {
-            write1(collection)->next_frame(); // Discard needed blocks before this row
+            collection.write ()->next_frame(); // Discard needed blocks before this row
         }
 
-        Signal::Processing::Step::Ptr step_with_new_extent;
+        Signal::Processing::Step::ptr step_with_new_extent;
         {
             x = model->project()->extent ();
             length = x.interval.get ().count() / x.sample_rate.get ();
 
-            Heightmap::TfrMapping::WritePtr w(model->tfr_mapping ());
+            auto w = model->tfr_mapping ().write ();
             w->length( length );
             w->channels( x.number_of_channels.get () );
             w->targetSampleRate( x.sample_rate.get () );
@@ -1132,7 +1132,7 @@ void RenderView::
             }
         }
         if (step_with_new_extent)
-            write1(step_with_new_extent)->deprecateCache(Signal::Interval::Interval_ALL);
+            step_with_new_extent.write ()->deprecateCache(Signal::Interval::Interval_ALL);
 
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
@@ -1168,7 +1168,7 @@ void RenderView::
 
 
     // It should update the view in sections with the same size as blocks
-    Signal::Processing::TargetNeeds::Ptr target_needs = model->target_marker()->target_needs();
+    Signal::Processing::TargetNeeds::ptr target_needs = model->target_marker()->target_needs();
     Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
     wu.update(model->_qx, x, _last_update_size);
 
@@ -1202,10 +1202,10 @@ void RenderView::
     if (!onlyComputeBlocksForRenderView)
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-        foreach( const Heightmap::Collection::Ptr& collection, collections )
+        foreach( const Heightmap::Collection::ptr& collection, collections )
         {
             // Start looking for which blocks that are requested for the next frame.
-            write1(collection)->next_frame();
+            collection.write ()->next_frame();
         }
     }
 
@@ -1263,9 +1263,9 @@ void RenderView::
         clearCaches()
 {
     TaskTimer tt("RenderView::clearCaches(), %p", this);
-    foreach( const Heightmap::Collection::Ptr& collection, model->collections() )
+    foreach( const Heightmap::Collection::ptr& collection, model->collections() )
     {
-        write1(collection)->clear();
+        collection.write ()->clear();
     }
 
     if (model->renderer && model->renderer->isInitialized())

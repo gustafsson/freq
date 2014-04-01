@@ -39,8 +39,8 @@ void Selection::
     // It should tag that the behaviour of a class can be flipped to select the
     // interior or the exterior part.
     {
-        Signal::OperationDesc::Ptr o( new DummySelectionOperaitonTest );
-        Signal::OperationDesc::WritePtr wo(o);
+        Signal::OperationDesc::ptr o( new DummySelectionOperaitonTest );
+        auto wo = o.write ();
         Selection* s = dynamic_cast<Selection*>(&*wo);
 
         EXCEPTION_ASSERT(!s->isExteriorSelected ());

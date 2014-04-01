@@ -21,7 +21,6 @@ QT += opengl
 DEFINES += GPUMISC_LIBRARY
 
 SOURCES += \
-    atomicvalue.cpp \
     cpumemorystorage.cpp \
     cpuproperties.cpp \
     datastorage.cpp \
@@ -47,7 +46,6 @@ SOURCES += \
     ../backtrace/*.cpp \
 
 HEADERS += \
-    atomicvalue.h \
     computationkernel.h \
     cpumemoryaccess.h \
     cpumemorystorage.h \

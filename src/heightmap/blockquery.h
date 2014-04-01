@@ -11,7 +11,7 @@ namespace Heightmap {
 class BlockQuery
 {
 public:
-    BlockQuery(BlockCache::ConstPtr cache);
+    BlockQuery(BlockCache::const_ptr cache);
 
     /**
      * @brief getIntersectingBlocks
@@ -29,7 +29,7 @@ public:
     std::vector<pBlock> getIntersectingBlocks( const Signal::Intervals& I, bool only_visible, int frame_counter ) const;
 
 private:
-    BlockCache::ConstPtr cache_;
+    BlockCache::const_ptr cache_;
 };
 
 } // namespace Heightmap

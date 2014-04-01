@@ -16,7 +16,7 @@
 
 // TODO could optimize this by computing the rms more sparsely and interpolate the rms value on a spline, would work really well in cuda as well
 void normalizedata(
-        DataStorage<float>::Ptr data,
+        DataStorage<float>::ptr data,
         int radius )
 {
     unsigned width = data->size().width;
@@ -53,7 +53,7 @@ void normalizedata(
 
 // TODO not in use
 void normalizedatawindowed(
-        DataStorage<float>::Ptr data,
+        DataStorage<float>::ptr data,
         int radius )
 {
     unsigned width = data->size().width;
@@ -83,7 +83,7 @@ void normalizedatawindowed(
 
 // TODO not finished
 void normalizeTruncatedMean(
-        DataStorage<float>::Ptr data,
+        DataStorage<float>::ptr data,
         int radius, float truncation )
 {
     unsigned width = data->size().width;

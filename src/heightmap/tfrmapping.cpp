@@ -122,7 +122,7 @@ void TfrMapping::
 }
 
 
-Tfr::TransformDesc::Ptr TfrMapping::
+Tfr::TransformDesc::ptr TfrMapping::
         transform_desc() const
 {
     return visualization_params_->transform_desc();
@@ -130,9 +130,9 @@ Tfr::TransformDesc::Ptr TfrMapping::
 
 
 void TfrMapping::
-        transform_desc(Tfr::TransformDesc::Ptr t)
+        transform_desc(Tfr::TransformDesc::ptr t)
 {
-    VisualizationParams::Ptr vp = visualization_params_;
+    VisualizationParams::ptr vp = visualization_params_;
     if (t == vp->transform_desc())
         return;
 
@@ -168,7 +168,7 @@ void TfrMapping::
     length_ = L;
 
     for (unsigned c=0; c<collections_.size(); ++c)
-        write1(collections_[c])->length( length_ );
+        collections_[c].write ()->length( length_ );
 }
 
 
@@ -197,8 +197,8 @@ void TfrMapping::
 
     for (pCollection& c : new_collections)
     {
-        c = Heightmap::Collection::Ptr( new Heightmap::Collection(block_layout_, visualization_params_));
-        write1(c)->length( length_ );
+        c = Heightmap::Collection::ptr( new Heightmap::Collection(block_layout_, visualization_params_));
+        c->length( length_ );
     }
 
     collections_ = new_collections;
@@ -216,10 +216,10 @@ void TfrMapping::
         updateCollections()
 {
     for (pCollection c : collections_)
-        write1(c)->block_layout( block_layout_ );
+        c->block_layout( block_layout_ );
 
     for (pCollection c : collections_)
-        write1(c)->visualization_params( visualization_params_ );
+        c->visualization_params( visualization_params_ );
 }
 
 } // namespace Heightmap
@@ -243,19 +243,19 @@ void TfrMapping::
     w.makeCurrent ();
 
     {
-        TfrMapping::Ptr t = testInstance();
-        write1(t)->block_layout( BlockLayout(123,456,789) );
-        EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), read1(t)->block_layout() );
+        TfrMapping::ptr t = testInstance();
+        t.write ()->block_layout( BlockLayout(123,456,789) );
+        EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), t.read ()->block_layout() );
     }
 }
 
 
-TfrMapping::Ptr TfrMapping::
+TfrMapping::ptr TfrMapping::
         testInstance()
 {
     BlockLayout bl(1<<8, 1<<8, 10);
-    TfrMapping::Ptr tfrmap(new TfrMapping(bl, 1));
-    write1(tfrmap)->transform_desc( Tfr::StftDesc ().copy ());
+    TfrMapping::ptr tfrmap(new TfrMapping(bl, 1));
+    tfrmap.write ()->transform_desc( Tfr::StftDesc ().copy ());
     return tfrmap;
 }
 

@@ -21,18 +21,18 @@ Bedroom::Data::
 
 
 Bedroom::Bed::
-        Bed(Data::Ptr data)
+        Bed(shared_state<Data> data)
     :
       data_(data)
 {
-    write1(data_)->beds.insert(this);
+    data_.write ()->beds.insert(this);
 }
 
 
 Bedroom::Bed::
         ~Bed()
 {
-    write1(data_)->beds.erase(this);
+    data_.write ()->beds.erase(this);
 }
 
 
@@ -46,7 +46,7 @@ void Bedroom::Bed::
 bool Bedroom::Bed::
         sleep(unsigned long ms_timeout)
 {
-    Data::Ptr::WritePtr data(data_);
+    auto data = data_.write ();
 
     if (data->is_closed) {
         BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
@@ -60,10 +60,10 @@ bool Bedroom::Bed::
     // Wait in a while-loop to cope with spurious wakeups
     if (ULONG_MAX == ms_timeout)
         while (!skip_sleep_)
-            data->work.wait ( *data_.readWriteLock() );
+            data->work.wait ( data_.readWriteLock() );
     else
         while (r && !skip_sleep_)
-            r = boost::cv_status::no_timeout == data->work.wait_for (*data_.readWriteLock(), boost::chrono::milliseconds(ms_timeout));
+            r = std::cv_status::no_timeout == data->work.wait_for (data_.readWriteLock(), std::chrono::milliseconds(ms_timeout));
 
     skip_sleep_.reset();
 
@@ -82,7 +82,7 @@ Bedroom::
 void Bedroom::
         wakeup()
 {
-    Data::WritePtr data(data_);
+    auto data = data_.write ();
     // no one is going into sleep as long as data_ is locked
 
     BOOST_FOREACH(Bed* b, data->beds) {
@@ -96,10 +96,7 @@ void Bedroom::
 void Bedroom::
         close()
 {
-    {
-        Data::WritePtr data(data_);
-        data->is_closed = true;
-    }
+    data_->is_closed = true;
 
     wakeup();
 }
@@ -116,8 +113,7 @@ int Bedroom::
         sleepers()
 {
     // Remove 1 to compensate for the instance used by 'this'
-    Data::WritePtr data(data_);
-    return data->sleepers.use_count() - 1;
+    return data_->sleepers.use_count() - 1;
 }
 
 
@@ -132,7 +128,7 @@ namespace Processing {
 
 class SleepyFaceMock: public QThread {
 public:
-    SleepyFaceMock(Bedroom::Ptr bedroom, int snooze) : bedroom_(bedroom), snooze_(snooze) {}
+    SleepyFaceMock(Bedroom::ptr bedroom, int snooze) : bedroom_(bedroom), snooze_(snooze) {}
 
     void run() {
         Bedroom::Bed bed = bedroom_->getBed();
@@ -145,14 +141,14 @@ public:
     int snooze() { return snooze_; }
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
     int snooze_;
 };
 
 
 class SleepingBeautyMock: public QThread {
 public:
-    SleepingBeautyMock(Bedroom::Ptr bedroom, int sleep_ms) : bedroom_(bedroom), sleep_ms_(sleep_ms) {}
+    SleepingBeautyMock(Bedroom::ptr bedroom, int sleep_ms) : bedroom_(bedroom), sleep_ms_(sleep_ms) {}
 
     void run() {
         Bedroom::Bed bed = bedroom_->getBed();
@@ -164,7 +160,7 @@ public:
     int sleep_count() { return sleep_count_; }
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
     int sleep_ms_;
     int sleep_count_ = 0;
 };
@@ -175,7 +171,7 @@ void Bedroom::
 {
     // It should allow different threads to sleep on this object until another thread calls wakeup()
     for (int j=0;j<2; j++) {
-        Bedroom::Ptr bedroom(new Bedroom);
+        Bedroom::ptr bedroom(new Bedroom);
         int snoozes = 10;
         SleepyFaceMock sleepyface1(bedroom, snoozes);
         SleepyFaceMock sleepyface2(bedroom, snoozes);
@@ -225,11 +221,10 @@ void Bedroom::
 
     // It should just sleep until the given timeout has elapsed
     {
-        Bedroom::Ptr bedroom(new Bedroom);
+        Bedroom::ptr bedroom(new Bedroom);
         SleepingBeautyMock sbm(bedroom, 2);
 
         sbm.start ();
-        TaskTimer tt("sbm.start");
         EXCEPTION_ASSERT( !sbm.wait (7) );
         bedroom->wakeup();
         EXCEPTION_ASSERT( sbm.wait (2) );

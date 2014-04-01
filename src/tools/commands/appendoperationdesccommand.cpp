@@ -7,9 +7,9 @@ namespace Tools {
 namespace Commands {
 
 AppendOperationDescCommand::
-        AppendOperationDescCommand(OperationDesc::Ptr o,
-                                   Chain::Ptr c,
-                                   TargetMarker::Ptr a)
+        AppendOperationDescCommand(OperationDesc::ptr o,
+                                   Chain::ptr c,
+                                   TargetMarker::ptr a)
     :
       operation_(o),
       chain_(c),
@@ -21,23 +21,23 @@ AppendOperationDescCommand::
 void AppendOperationDescCommand::
         execute()
 {
-    IInvalidator::Ptr i = write1(chain_)->addOperationAt ( operation_, at_ );
+    IInvalidator::ptr i = chain_.write ()->addOperationAt ( operation_, at_ );
 
-    write1(operation_)->setInvalidator (i);
+    operation_.write ()->setInvalidator (i);
 }
 
 
 void AppendOperationDescCommand::
         undo()
 {
-    write1(chain_)->removeOperationsAt ( at_ );
+    chain_.write ()->removeOperationsAt ( at_ );
 }
 
 
 std::string AppendOperationDescCommand::
         toString()
 {
-    return read1(operation_)->toString ().toStdString ();
+    return operation_.read ()->toString ().toStdString ();
 }
 
 
@@ -74,34 +74,34 @@ void AppendOperationDescCommand::
 
     // It should add a new operation to the signal processing chain at the given targets current position
     {
-        Chain::Ptr chain = Chain::createDefaultChain ();
-        OperationDesc::Ptr target_desc(new Test::TransparentOperationDesc);
-        OperationDesc::Ptr operation_desc(new Test::TransparentOperationDesc);
-        OperationDesc::Ptr source_desc(new SourceMock);
-        TargetMarker::Ptr target = write1(chain)->addTarget(target_desc);
+        Chain::ptr chain = Chain::createDefaultChain ();
+        OperationDesc::ptr target_desc(new Test::TransparentOperationDesc);
+        OperationDesc::ptr operation_desc(new Test::TransparentOperationDesc);
+        OperationDesc::ptr source_desc(new SourceMock);
+        TargetMarker::ptr target = chain.write ()->addTarget(target_desc);
 
 
         AppendOperationDescCommand aodc1(source_desc, chain, target);
         AppendOperationDescCommand aodc2(operation_desc, chain, target);
 
 
-        EXCEPTION_ASSERT( !read1(chain)->extent (target).interval.is_initialized() );
+        EXCEPTION_ASSERT( !chain.read ()->extent (target).interval.is_initialized() );
 
         aodc1.execute ();
-        EXCEPTION_ASSERT_EQUALS( read1(chain)->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain.read ()->extent (target).interval, Interval(3,5));
 
         aodc1.undo ();
-        EXCEPTION_ASSERT( !read1(chain)->extent (target).interval.is_initialized() );
+        EXCEPTION_ASSERT( !chain.read ()->extent (target).interval.is_initialized() );
 
         aodc1.execute ();
         aodc2.execute ();
-        EXCEPTION_ASSERT_EQUALS( read1(chain)->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain.read ()->extent (target).interval, Interval(3,5));
 
         aodc2.undo ();
-        EXCEPTION_ASSERT_EQUALS( read1(chain)->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain.read ()->extent (target).interval, Interval(3,5));
 
         aodc1.undo ();
-        EXCEPTION_ASSERT( !read1(chain)->extent (target).interval.is_initialized() );
+        EXCEPTION_ASSERT( !chain.read ()->extent (target).interval.is_initialized() );
     }
 }
 

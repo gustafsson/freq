@@ -3,7 +3,7 @@
 
 #include "freqaxis.h"
 #include "signal/intervals.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -76,7 +76,7 @@ typedef boost::shared_ptr<Transform> pTransform;
  */
 class TransformDesc {
 public:
-    typedef boost::shared_ptr<TransformDesc> Ptr;
+    typedef boost::shared_ptr<TransformDesc> ptr;
 
     TransformDesc() {}
 
@@ -90,7 +90,7 @@ public:
      * @brief copy creates a copy of 'this'.
      * @return a copy.
      */
-    virtual TransformDesc::Ptr copy() const = 0;
+    virtual TransformDesc::ptr copy() const = 0;
 
 
     /**

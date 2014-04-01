@@ -9,7 +9,7 @@ namespace Blocks {
 class ClearInterval
 {
 public:
-    ClearInterval(BlockCache::Ptr cache);
+    ClearInterval(BlockCache::ptr cache);
 
     /**
      * @brief discardOutside sets everything in cache to 0 outside the interval.
@@ -19,7 +19,7 @@ public:
     std::list<pBlock> discardOutside(Signal::Interval& I);
 
 private:
-    BlockCache::Ptr cache_;
+    BlockCache::ptr cache_;
 };
 
 } // namespace Blocks

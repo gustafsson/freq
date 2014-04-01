@@ -2,7 +2,7 @@
 #define SIGNAL_PROCESSING_IINVALIDATOR_H
 
 #include "signal/intervals.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 namespace Signal {
 namespace Processing {
@@ -10,14 +10,12 @@ namespace Processing {
 /**
  * @brief The IInvalidator interface should invalidate step cache and its implementation specific dependencies.
  *
- * It should be accessed from multiple threads. So use VolatilePtr.
+ * It should be accessed from multiple threads. So use shared_state.
  */
 class IInvalidator
 {
 public:
-    typedef VolatilePtr<IInvalidator> Ptr;
-    typedef Ptr::WritePtr WritePtr;
-    typedef Ptr::ReadPtr ReadPtr;
+    typedef shared_state<IInvalidator> ptr;
 
     virtual ~IInvalidator() {}
 

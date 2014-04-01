@@ -140,13 +140,11 @@ void WriteWav::
 void WriteWav::
         writeToDisk(std::string filename, Signal::pBuffer b, bool normalize)
 {
-    WriteWav* w = 0;
-    Signal::Operation::Ptr writer(w = new WriteWav(filename));
-    Signal::Operation::WritePtr ww(writer);
-    w->normalize( normalize );
+    WriteWav w(filename);
+    w.normalize( normalize );
 
-    w->invalidate_samples(b->getInterval());
-    w->put(b);
+    w.invalidate_samples(b->getInterval());
+    w.put(b);
 }
 
 

@@ -6,7 +6,7 @@
 namespace Tools {
 namespace Commands {
 
-ChangeSelectionCommand::ChangeSelectionCommand(Tools::SelectionController*p, Signal::OperationDesc::Ptr s)
+ChangeSelectionCommand::ChangeSelectionCommand(Tools::SelectionController*p, Signal::OperationDesc::ptr s)
     :
     s(s),
     p(p)
@@ -36,7 +36,7 @@ void ChangeSelectionCommand::
 std::string ChangeSelectionCommand::
         toString()
 {
-    return s ? read1(s)->toString().toStdString() : "No selection";
+    return s ? s.read ()->toString().toStdString() : "No selection";
 }
 
 

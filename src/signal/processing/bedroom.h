@@ -1,9 +1,10 @@
 #ifndef SIGNAL_PROCESSING_BEDROOM_H
 #define SIGNAL_PROCESSING_BEDROOM_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include <set>
+#include <condition_variable>
 
 namespace Signal {
 namespace Processing {
@@ -23,14 +24,13 @@ class BedroomClosed: public virtual boost::exception, public virtual std::except
 class Bedroom
 {
 private:
-    friend class Bed;
-    class Data;
     class Void {};
     typedef boost::shared_ptr<Void> Counter;
 
 public:
-    typedef std::shared_ptr<Bedroom> Ptr;
-    typedef std::weak_ptr<Bedroom> WeakPtr;
+    typedef std::shared_ptr<Bedroom> ptr;
+    typedef std::weak_ptr<Bedroom> weak_ptr;
+    class Data;
 
     class Bed {
     public:
@@ -52,9 +52,26 @@ public:
     private:
         friend class Bedroom;
 
-        Bed(VolatilePtr<Data> data);
-        VolatilePtr<Data> data_;
+        Bed(shared_state<Data> data);
+        shared_state<Data> data_;
         Counter skip_sleep_;
+    };
+
+
+    class Data {
+    public:
+        struct shared_state_traits {
+            double timeout() { return -1; }
+        };
+
+        Data();
+
+        std::condition_variable_any work;
+
+        std::set<Bed*> beds;
+        Counter sleepers;
+        Counter skip_sleep_marker;
+        bool is_closed;
     };
 
 
@@ -69,28 +86,9 @@ public:
     int sleepers();
 
 private:
-    class Data {
-    public:
-        typedef VolatilePtr<Data> Ptr;
-        typedef Ptr::WritePtr WritePtr;
 
-        struct VolatilePtrTypeTraits {
-            int timeout_ms() { return -1; }
-            int verify_execution_time_ms() { return -1; }
-            VerifyExecutionTime::report report_func() { return 0; }
-        };
 
-        Data();
-
-        boost::condition_variable_any work;
-
-        std::set<Bed*> beds;
-        Counter sleepers;
-        Counter skip_sleep_marker;
-        bool is_closed;
-    };
-
-    Data::Ptr data_;
+    shared_state<Data> data_;
 
 public:
     static void test();
@@ -98,13 +96,5 @@ public:
 
 } // namespace Processing
 } // namespace Signal
-
-template<>
-class VolatilePtrTypeTraits<Signal::Processing::Bedroom::Data> {
-public:
-    int timeout_ms() { return -1; }
-    int verify_execution_time_ms() { return -1; }
-    VerifyExecutionTime::report report_func() { return 0; }
-};
 
 #endif // SIGNAL_PROCESSING_BEDROOM_H

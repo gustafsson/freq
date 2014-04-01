@@ -14,16 +14,16 @@ namespace Heightmap {
 class ChunkBlockFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
 {
 public:
-    ChunkBlockFilter( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap, MergeChunk::Ptr merge_chunk );
+    ChunkBlockFilter( Blocks::IChunkMerger::ptr chunk_merger, Heightmap::TfrMapping::const_ptr tfrmap, MergeChunk::ptr merge_chunk );
 
     void operator()( Tfr::ChunkAndInverse& chunk );
 
     void set_number_of_channels( unsigned C );
 
 private:
-    Blocks::IChunkMerger::Ptr chunk_merger_;
-    Heightmap::TfrMapping::ConstPtr tfrmap_;
-    MergeChunk::Ptr merge_chunk_;
+    Blocks::IChunkMerger::ptr chunk_merger_;
+    Heightmap::TfrMapping::const_ptr tfrmap_;
+    MergeChunk::ptr merge_chunk_;
 
 public:
     static void test();
@@ -42,7 +42,7 @@ public:
 class ChunkBlockFilterDesc: public Tfr::ChunkFilterDesc
 {
 public:
-    ChunkBlockFilterDesc( Blocks::IChunkMerger::Ptr chunk_merger, Heightmap::TfrMapping::ConstPtr tfrmap );
+    ChunkBlockFilterDesc( Blocks::IChunkMerger::ptr chunk_merger, Heightmap::TfrMapping::const_ptr tfrmap );
 
     /**
      * @brief createChunkFilter creates a ChunkFilter.
@@ -53,12 +53,12 @@ public:
     Tfr::pChunkFilter createChunkFilter( Signal::ComputingEngine* engine=0 ) const;
 
 
-    void setMergeChunkDesc( MergeChunkDesc::Ptr mcdp ) { merge_chunk_desc_ = mcdp; }
+    void setMergeChunkDesc( MergeChunkDesc::ptr mcdp ) { merge_chunk_desc_ = mcdp; }
 
 private:
-    Blocks::IChunkMerger::Ptr chunk_merger_;
-    Heightmap::TfrMapping::ConstPtr tfrmap_;
-    MergeChunkDesc::Ptr merge_chunk_desc_;
+    Blocks::IChunkMerger::ptr chunk_merger_;
+    Heightmap::TfrMapping::const_ptr tfrmap_;
+    MergeChunkDesc::ptr merge_chunk_desc_;
 
 public:
     static void test();

@@ -41,42 +41,73 @@ Somewhere else
     }
 ````
 
-#### VolatilePtr example ####
-_The VolatilePtr class should guarantee thread-safe access to objects, with compile-time errors on missing locks and run-time exceptions with backtraces on deadlocks._
+#### shared_state example ####
+_The shared\_state<T> class is a smart pointer that guarantees thread-safe access to objects of type T._
 
-Make an object thread-safe by inheriting from VolatilePtr and make all member variables private or protected.
+Make an instance of an object thread-safe by storing it in a shared\_state smart pointer.
 
 ````cpp
-class A: public VolatilePtr<A>
-{
-public:
-    void a (int v);
-};
+    shared_state<MyType> a {new MyType};
+    a->foo ();
+
+    shared_state<const MyType> ac {a};
+    ac->bar ();
 ````
 
-Then use the object like so:
+The call to foo() will have mutually exclusive write access and the call to bar() will have shared read-only const access. Given
 
 ````cpp
-    A::Ptr mya (new A);
-    
-    // can't write to mya
-    // compile time error: passing 'volatile A' as 'this' argument of 'void A::a (int)' discards qualifiers
-    // mya->a (5);
-    
+    class MyType {
+    public:
+      void foo();
+      void bar() const;
+    };
+````
+
+To keep the lock over multiple method calls, do:
+
+````cpp
+    shared_state<MyType> a {new MyType};
+
     {
-        // Lock for write access
-        A::WritePtr w (mya);
-        w->a (5);
-        // Unlock on out-of-scope
+      auto w = a.write();
+      w->foo();
+      w->bar();
     }
-    
-    // Lock for a single call
-    A::WritePtr (mya)->a (5);
-    write1(mya)->a (5);
+
+    {
+      auto r = a.read();
+      r->bar();
+      r->bar();
+    }
 ````
 
-The idea is to use a pointer to a volatile object when juggling references to objects. From a volatile object you can only access methods that are volatile (just like only const methods are accessible from a const object). Using the volatile classifier blocks access to use any "regular" (non-volatile) methods.
+.read() and .write() are implicitly called by the -> operator on shared_state and create thread-safe critical sections. For shared read-only access when using .read() and for mutually exclusive read-and-write access using .write(). They both throw exceptions on lock timeout, embed a backtrace in an exception object like this:
 
+````cpp
+#include "shared_state_traits_backtrace.h"
+
+class MyType {
+public:
+    typedef shared_state_traits_backtrace shared_state_traits;
+    ...
+};
+
+
+... {
+  shared_state<MyType> a(new MyType);
+  ...
+  try {
+    auto w = a.write();
+    ...
+  } catch (lock_failed& x) {
+    const Backtrace* backtrace = boost::get_error_info<Backtrace::info>(x);
+    ...
+  }
+... }
+````
+
+See shared\_state.pdf and shared\_state.h for details.
 
 #### ExceptionAssert example ####
 _The ExceptionAssert class should store details about an assertion that failed._

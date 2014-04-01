@@ -40,17 +40,17 @@ Signal::Interval AbsoluteValueDesc::
 }
 
 
-Signal::OperationDesc::Ptr AbsoluteValueDesc::
+Signal::OperationDesc::ptr AbsoluteValueDesc::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new AbsoluteValueDesc());
+    return Signal::OperationDesc::ptr(new AbsoluteValueDesc());
 }
 
 
-Signal::Operation::Ptr AbsoluteValueDesc::
+Signal::Operation::ptr AbsoluteValueDesc::
         createOperation(Signal::ComputingEngine* ) const
 {
-    return Signal::Operation::Ptr(new AbsoluteValue);
+    return Signal::Operation::ptr(new AbsoluteValue);
 }
 
 } // namespace Filters
@@ -65,8 +65,8 @@ void AbsoluteValueDesc::
     // It should compute the absolute value of a signal.
     {
         AbsoluteValueDesc avd;
-        Signal::Operation::Ptr o = avd.createOperation (0);
-        Signal::pBuffer b = write1(o)->process (Test::RandomBuffer::smallBuffer ());
+        Signal::Operation::ptr o = avd.createOperation (0);
+        Signal::pBuffer b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
         float b1[] = {3, 7, 8, 5, 3};
         float b2[] = {1, 9, 3, 6, 2};
         EXCEPTION_ASSERT(0 == memcmp(b1, b->getChannel (0)->waveform_data ()->getCpuMemory (), sizeof(b1)));

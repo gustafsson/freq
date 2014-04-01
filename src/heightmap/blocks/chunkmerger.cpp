@@ -26,7 +26,7 @@ void ChunkMerger::
 
 
 void ChunkMerger::
-        addChunk( MergeChunk::Ptr merge_chunk,
+        addChunk( MergeChunk::ptr merge_chunk,
                   Tfr::ChunkAndInverse chunk,
                   std::vector<pBlock> intersecting_blocks )
 {
@@ -64,9 +64,9 @@ bool ChunkMerger::
 void ChunkMerger::
         processJob(Job& j)
 {
-    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = write1( j.merge_chunk )->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
 
-    BOOST_FOREACH( IChunkToBlock::Ptr chunk_to_block, chunk_to_blocks)
+    BOOST_FOREACH( IChunkToBlock::ptr chunk_to_block, chunk_to_blocks)
       {
         BOOST_FOREACH( pBlock block, j.intersecting_blocks)
           {

@@ -10,12 +10,12 @@ namespace Processing {
 class BedroomNotifier : public INotifier
 {
 public:
-    explicit BedroomNotifier(Bedroom::Ptr bedroom);
+    explicit BedroomNotifier(Bedroom::ptr bedroom);
 
     void wakeup() const;
 
 private:
-    Bedroom::WeakPtr bedroom_;
+    Bedroom::weak_ptr bedroom_;
 };
 
 } // namespace Processing

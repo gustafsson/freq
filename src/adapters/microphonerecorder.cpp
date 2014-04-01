@@ -231,7 +231,7 @@ void MicrophoneRecorder::stopRecording()
     }
 }
 
-bool MicrophoneRecorder::isStopped()
+bool MicrophoneRecorder::isStopped() const
 {
     return _stream_record?_stream_record->isStopped():true;
 }
@@ -287,14 +287,14 @@ std::string MicrophoneRecorder::
 
 
 float MicrophoneRecorder::
-        sample_rate()
+        sample_rate() const
 {
     return _sample_rate;
 }
 
 
 unsigned MicrophoneRecorder::
-        num_channels()
+        num_channels() const
 {
     return _num_channels;
 }
@@ -363,14 +363,14 @@ int MicrophoneRecorder::
     lock.unlock();
 
     if (_invalidator)
-        write1(_invalidator)->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
+        _invalidator.write ()->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
 
     return paContinue;
 }
 
 
 MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Recorder::Ptr recorder )
+        MicrophoneRecorderOperation( Recorder::ptr recorder )
     :
       recorder_(recorder)
 {
@@ -380,44 +380,44 @@ MicrophoneRecorderOperation::
 Signal::pBuffer MicrophoneRecorderOperation::
         process(Signal::pBuffer b)
 {
-    return write1(recorder_)->read (b->getInterval ());
+    return recorder_.write ()->read (b->getInterval ());
 }
 
 
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder::Ptr recorder, Recorder::IGotDataCallback::Ptr invalidator)
+        MicrophoneRecorderDesc(Recorder::ptr recorder, Recorder::IGotDataCallback::ptr invalidator)
     :
       recorder_(recorder)
 {
-    write1(recorder_)->setDataCallback(invalidator);
+    recorder_.write ()->setDataCallback(invalidator);
 }
 
 
 void MicrophoneRecorderDesc::
         startRecording()
 {
-    write1(recorder_)->startRecording ();
+    recorder_.write ()->startRecording ();
 }
 
 
 void MicrophoneRecorderDesc::
         stopRecording()
 {
-    write1(recorder_)->stopRecording ();
+    recorder_.write ()->stopRecording ();
 }
 
 
 bool MicrophoneRecorderDesc::
         isStopped()
 {
-    return write1(recorder_)->isStopped ();
+    return recorder_.write ()->isStopped ();
 }
 
 
 bool MicrophoneRecorderDesc::
         canRecord()
 {
-    return write1(recorder_)->canRecord ();
+    return recorder_.write ()->canRecord ();
 }
 
 
@@ -437,18 +437,18 @@ Signal::Interval MicrophoneRecorderDesc::
 }
 
 
-Signal::OperationDesc::Ptr MicrophoneRecorderDesc::
+Signal::OperationDesc::ptr MicrophoneRecorderDesc::
         copy() const
 {
     EXCEPTION_ASSERTX(false, "Can't make a copy of microphone recording");
-    return Signal::OperationDesc::Ptr();
+    return Signal::OperationDesc::ptr();
 }
 
 
-Signal::Operation::Ptr MicrophoneRecorderDesc::
+Signal::Operation::ptr MicrophoneRecorderDesc::
         createOperation(Signal::ComputingEngine*) const
 {
-    Signal::Operation::Ptr r(new MicrophoneRecorderOperation(recorder_));
+    Signal::Operation::ptr r(new MicrophoneRecorderOperation(recorder_));
     return r;
 }
 
@@ -456,7 +456,7 @@ Signal::Operation::Ptr MicrophoneRecorderDesc::
 MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
         extent() const
 {
-    Recorder::WritePtr rec(recorder_);
+    auto rec = recorder_.read ();
     MicrophoneRecorderDesc::Extent x;
     x.interval = Signal::Interval(0, rec->number_of_samples());
     x.number_of_channels = rec->num_channels ();
@@ -465,7 +465,7 @@ MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
 }
 
 
-Recorder::Ptr MicrophoneRecorderDesc::
+Recorder::ptr MicrophoneRecorderDesc::
         recorder() const
 {
     return recorder_;
@@ -492,8 +492,8 @@ public:
         semaphore_.release ();
     }
 
-    void wait(int ms_timeout) volatile {
-        const_cast<GotDataCallback*>(this)->semaphore_.tryAcquire (1, ms_timeout);
+    void wait(int ms_timeout) {
+        semaphore_.tryAcquire (1, ms_timeout);
     }
 
 private:
@@ -507,9 +507,9 @@ void MicrophoneRecorderDesc::
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        Recorder::IGotDataCallback::Ptr callback(new GotDataCallback);
+        Recorder::IGotDataCallback::ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(Recorder::Ptr(new MicrophoneRecorder(inputDevice)), callback);
+        MicrophoneRecorderDesc mrd(Recorder::ptr(new MicrophoneRecorder(inputDevice)), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );
@@ -519,14 +519,14 @@ void MicrophoneRecorderDesc::
         EXCEPTION_ASSERT( !mrd.isStopped() );
 
         Timer t;
-        dynamic_cast<volatile GotDataCallback*>(callback.get ())->wait (6000);
+        dynamic_cast<GotDataCallback*>(callback.raw ())->wait (6000);
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.200 );
 
         mrd.stopRecording();
 
         EXCEPTION_ASSERT( mrd.isStopped() );
 
-        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(&*read1(callback))->marked_data () != Signal::Intervals());
+        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(&*callback.read ())->marked_data () != Signal::Intervals());
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.300 );
     }
 }

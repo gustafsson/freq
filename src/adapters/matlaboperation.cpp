@@ -487,20 +487,20 @@ Signal::Interval MatlabOperationDesc::
 }
 
 
-Signal::OperationDesc::Ptr MatlabOperationDesc::
+Signal::OperationDesc::ptr MatlabOperationDesc::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new MatlabOperationDesc(settings));
+    return Signal::OperationDesc::ptr(new MatlabOperationDesc(settings));
 }
 
 
-Signal::Operation::Ptr MatlabOperationDesc::
+Signal::Operation::ptr MatlabOperationDesc::
         createOperation(Signal::ComputingEngine* engine) const
 {
     if (dynamic_cast<MatlabComputingEngine*>(engine))
-        return Signal::Operation::Ptr(new MatlabOperationWrapper(settings));
+        return Signal::Operation::ptr(new MatlabOperationWrapper(settings));
 
-    return Signal::Operation::Ptr();
+    return Signal::Operation::ptr();
 }
 
 

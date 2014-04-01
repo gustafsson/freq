@@ -145,21 +145,21 @@ void GlBlock::
 }
 
 
-GlTexture::Ptr GlBlock::
+GlTexture::ptr GlBlock::
         glTexture()
 {
     create_texture (HeightMode_Flat);
 
-    return GlTexture::Ptr(new GlTexture(_tex_height));
+    return GlTexture::ptr(new GlTexture(_tex_height));
 }
 
 
-GlTexture::Ptr GlBlock::
+GlTexture::ptr GlBlock::
         glVertTexture()
 {
     create_texture (HeightMode_VertexTexture);
 
-    return GlTexture::Ptr(new GlTexture(_tex_height_nearest));
+    return GlTexture::ptr(new GlTexture(_tex_height_nearest));
 }
 
 
