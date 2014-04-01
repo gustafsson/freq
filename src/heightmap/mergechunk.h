@@ -4,6 +4,7 @@
 #include "tfr/chunkfilter.h"
 #include "signal/computingengine.h"
 #include "heightmap/ichunktoblock.h"
+#include "shared_state_traits_backtrace.h"
 #include <vector>
 
 namespace Heightmap {
@@ -11,6 +12,7 @@ namespace Heightmap {
 class MergeChunk {
 public:
     typedef shared_state<MergeChunk> ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
 
     virtual ~MergeChunk() {}
 
