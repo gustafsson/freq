@@ -63,6 +63,13 @@ Signal::pBuffer Recorder::
         read( const Signal::Interval& I )
 {
     QMutexLocker lock(&_data_lock);
+
+    if (_exception) {
+        std::exception_ptr x = _exception;
+        _exception = std::exception_ptr();
+        std::rethrow_exception(x);
+    }
+
     if (_data.empty())
         return Signal::pBuffer(new Signal::Buffer(I, sample_rate(), num_channels ()));
 

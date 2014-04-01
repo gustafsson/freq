@@ -307,6 +307,7 @@ int MicrophoneRecorder::
                  const PaStreamCallbackTimeInfo * /*timeInfo*/,
                  PaStreamCallbackFlags /*statusFlags*/)
 {
+    try {
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
 
     Signal::IntervalType offset = actual_number_of_samples();
@@ -364,6 +365,11 @@ int MicrophoneRecorder::
 
     if (_invalidator)
         _invalidator.write ()->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
+
+    } catch (...) {
+        _exception = std::current_exception ();
+        return paAbort;
+    }
 
     return paContinue;
 }
@@ -520,6 +526,8 @@ void MicrophoneRecorderDesc::
 
         Timer t;
         dynamic_cast<GotDataCallback*>(callback.raw ())->wait (6000);
+        // Re-throw exception if an exception was generated
+        mrd.recorder_->read (Signal::Interval (0, 1));
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.200 );
 
         mrd.stopRecording();

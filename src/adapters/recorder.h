@@ -69,6 +69,7 @@ protected:
     mutable QMutex _data_lock;
     Signal::Cache _data; // TODO use shared_state<Signal::Cache>
     IGotDataCallback::ptr _invalidator;
+    std::exception_ptr _exception;
     float _offset;
     boost::posix_time::ptime _start_recording, _last_update;
     Signal::IntervalType actual_number_of_samples() const;
