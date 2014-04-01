@@ -65,15 +65,18 @@ static shared_state<performance_traces> traces {new performance_traces};
 performance_traces::
         performance_traces()
 {
-    add_path("trace_perf");
+    add_path ("trace_perf");
 }
 
 
 performance_traces::
         ~performance_traces()
 {
-    compare_to_db();
-    dump_entries();
+    fflush (stdout);
+    fflush (stderr);
+
+    compare_to_db ();
+    dump_entries ();
 }
 
 

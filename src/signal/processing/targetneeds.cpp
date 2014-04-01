@@ -195,6 +195,7 @@ bool TargetNeeds::
 #include "dag.h"
 #include "targets.h"
 #include "bedroomnotifier.h"
+#include "trace_perf.h"
 
 namespace Signal {
 namespace Processing {
@@ -236,14 +237,14 @@ void TargetNeeds::
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         {
-            Timer t;
+            TRACE_PERF("Should not sleep since updateNeeds needs something deprecated");
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something deprecated
         }
 
         {
+            TRACE_PERF("Should not sleep for too long");
             target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
 
             Timer t;
@@ -251,29 +252,32 @@ void TargetNeeds::
             bed.sleep (2);
             float T = t.elapsed ();
             EXCEPTION_ASSERT_LESS(2e-3, T); // Should sleep, updateNeeds didn't affect this
-            EXCEPTION_ASSERT_LESS(T, 3e-3); // Should not sleep for too long
         }
 
         {
+            TRACE_PERF("Should not sleep for too long 2");
+
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->updateNeeds(Signal::Interval(-15,4));
             bed.sleep (2);
             float T = t.elapsed ();
             EXCEPTION_ASSERT_LESS(2e-3, T); // Should sleep, updateNeeds didn't affect this
-            EXCEPTION_ASSERT_LESS(T, 3e-3); // Should not sleep for too long
         }
 
         {
+            TRACE_PERF("Should not sleep for too long 3");
+
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->updateNeeds(Signal::Interval(-15,6));
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
         }
 
         {
+            TRACE_PERF("Should not sleep for too long 4");
+
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
@@ -282,18 +286,19 @@ void TargetNeeds::
                                               Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3); // Should not sleep for too long
         }
 
         {
+            TRACE_PERF("Should not sleep since updateNeeds needs something new");
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->updateNeeds(Signal::Interval(-15,7));
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
         }
 
         {
+            TRACE_PERF("Should not sleep since updateNeeds needs something new 2");
+
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
@@ -301,10 +306,11 @@ void TargetNeeds::
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
         }
 
         {
+            TRACE_PERF("Should not sleep since updateNeeds needs something new 3");
+
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
             target_needs.write ()->deprecateCache(Signal::Intervals(5,7));
@@ -312,7 +318,6 @@ void TargetNeeds::
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
-            EXCEPTION_ASSERT_LESS(t.elapsed (), 1e-3); // Should not sleep since updateNeeds needs something new
         }
     }
 }
