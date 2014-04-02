@@ -51,7 +51,7 @@
 #include "ui/mainwindow.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // Qt
 #include <QHBoxLayout>
@@ -198,7 +198,7 @@ ToolFactory::
 
     _objects.push_back( QPointer<QObject>( new WaveformController (render_controller)));
 
-    _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(read1(p->processing_chain ())->workers(), true)));
+    _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(p->processing_chain ().read ()->workers(), true)));
 
     //
     // Insert new tools here, and delete things in the destructor in the
@@ -271,7 +271,7 @@ ToolFactory::
 
 
 void ToolFactory::
-        addRecording (Adapters::Recorder::Ptr recorder)
+        addRecording (Adapters::Recorder::ptr recorder)
 {
     Sawe::Project*p = render_model.project ();
 

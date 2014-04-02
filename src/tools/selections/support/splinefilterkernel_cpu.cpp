@@ -5,8 +5,8 @@
 #include "splinefilterkerneldef.h"
 
 void applyspline(
-        Tfr::ChunkData::Ptr data,
-        DataStorage<Tfr::ChunkElement>::Ptr splinep, bool save_inside, float fs )
+        Tfr::ChunkData::ptr data,
+        DataStorage<Tfr::ChunkElement>::ptr splinep, bool save_inside, float fs )
 {
     Spliner< CpuReader<Tfr::ChunkElement>, Tfr::ChunkElement > spliner(
             CpuReader<Tfr::ChunkElement>( CpuMemoryStorage::ReadOnly<2>(splinep) ),

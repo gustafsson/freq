@@ -48,10 +48,10 @@ macx {
         QMAKE_LFLAGS -= -Wl,-syslibroot,$$QMAKE_MAC_SDK_PATH
     }
 
-    CONFIG(debug, debug|release) {
-        QMAKE_CXXFLAGS -= -gdwarf-2
-        QMAKE_CXXFLAGS += -gdwarf-4
-    }
+#    CONFIG(debug, debug|release) {
+#        QMAKE_CXXFLAGS -= -gdwarf-2
+#        QMAKE_CXXFLAGS += -gdwarf-4
+#    }
 }
 
 win32 {

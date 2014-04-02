@@ -19,7 +19,7 @@ public:
 
 
 OperationDescWrapper::
-        OperationDescWrapper(OperationDesc::Ptr wrap)
+        OperationDescWrapper(OperationDesc::ptr wrap)
     :
       wrap_(wrap)
 {
@@ -27,18 +27,16 @@ OperationDescWrapper::
 
 
 void OperationDescWrapper::
-        setWrappedOperationDesc(OperationDesc::Ptr wrap)
+        setWrappedOperationDesc(OperationDesc::ptr wrap)
 {
     if (wrap == wrap_)
         return;
 
     wrap_ = wrap;
-
-    deprecateCache();
 }
 
 
-OperationDesc::Ptr OperationDescWrapper::
+OperationDesc::ptr OperationDescWrapper::
         getWrappedOperationDesc() const
 {
     return wrap_;
@@ -49,7 +47,7 @@ Signal::Interval OperationDescWrapper::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
     if (wrap_)
-        return read1(wrap_)->requiredInterval (I, expectedOutput);
+        return wrap_.read ()->requiredInterval (I, expectedOutput);
 
     if (expectedOutput)
         *expectedOutput = I;
@@ -61,26 +59,26 @@ Interval OperationDescWrapper::
         affectedInterval( const Interval& I ) const
 {
     if (wrap_)
-        return read1(wrap_)->affectedInterval (I);
+        return wrap_.read ()->affectedInterval (I);
     return I;
 }
 
 
-OperationDesc::Ptr OperationDescWrapper::
+OperationDesc::ptr OperationDescWrapper::
         copy() const
 {
-    OperationDesc::Ptr od(new OperationDescWrapper(wrap_));
+    OperationDesc::ptr od(new OperationDescWrapper(wrap_));
     return od;
 }
 
 
-Operation::Ptr OperationDescWrapper::
+Operation::ptr OperationDescWrapper::
         createOperation(ComputingEngine* engine=0) const
 {
     if (!wrap_)
-        return Operation::Ptr(new NoopOperationWrapper);
+        return Operation::ptr(new NoopOperationWrapper);
 
-    return read1(wrap_)->createOperation (engine);
+    return wrap_.read ()->createOperation (engine);
 }
 
 
@@ -88,7 +86,7 @@ OperationDesc::Extent OperationDescWrapper::
         extent() const
 {
     if (wrap_)
-        return read1(wrap_)->extent ();
+        return wrap_.read ()->extent ();
 
     return Extent();
 }
@@ -98,7 +96,7 @@ QString OperationDescWrapper::
         toString() const
 {
     if (wrap_)
-        return read1(wrap_)->toString ();
+        return wrap_.read ()->toString ();
 
     return vartype(*this).c_str ();
 }
@@ -118,7 +116,7 @@ bool OperationDescWrapper::
         return true;
 
     if (wrap_ && w->wrap_)
-        return *read1(wrap_) == *read1(w->wrap_);
+        return *wrap_.read () == *w->wrap_.read ();
 
     return false;
 }
@@ -147,13 +145,13 @@ class EmptyOperationDesc : public OperationDesc
         return Interval();
     }
 
-    OperationDesc::Ptr copy() const {
+    OperationDesc::ptr copy() const {
         EXCEPTION_ASSERTX(false, "not implemented");
-        return OperationDesc::Ptr();
+        return OperationDesc::ptr();
     }
 
-    Operation::Ptr createOperation( ComputingEngine* ) const {
-        return Operation::Ptr();
+    Operation::ptr createOperation( ComputingEngine* ) const {
+        return Operation::ptr();
     }
 };
 
@@ -179,21 +177,21 @@ class WrappedOperationDescMock : public EmptyOperationDesc
 public:
     boost::shared_ptr<int> createOperationCount = boost::shared_ptr<int>(new int(0));
 
-    Operation::Ptr createOperation( ComputingEngine* ) const {
+    Operation::ptr createOperation( ComputingEngine* ) const {
         (*createOperationCount)++;
-        return Operation::Ptr(new WrappedOperationMock);
+        return Operation::ptr(new WrappedOperationMock);
     }
 };
 
 class WrappedOperationWorkerMock : public QThread
 {
 public:
-    Operation::Ptr operation;
+    Operation::ptr operation;
     Signal::pBuffer buffer;
 
     void run () {
         if (operation && buffer)
-            buffer = write1(operation)->process(buffer);
+            buffer = operation->process(buffer);
     }
 };
 
@@ -202,42 +200,42 @@ void OperationDescWrapper::
 {
     // It should behave as another OperationDesc
     {
-        OperationDescWrapper w(OperationDesc::Ptr(new ExtentDesc()));
+        OperationDescWrapper w(OperationDesc::ptr(new ExtentDesc()));
         EXCEPTION_ASSERT_EQUALS( w.extent ().sample_rate.get_value_or (-1), 17);
     }
 
     // It should recreate instantiated operations when the wrapped operation is changed
     {
-        OperationDesc::Ptr a(new WrappedOperationDescMock());
-        OperationDesc::Ptr b(new WrappedOperationDescMock());
+        OperationDesc::ptr a(new WrappedOperationDescMock());
+        OperationDesc::ptr b(new WrappedOperationDescMock());
         OperationDescWrapper w(a);
 
         {
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 0 );
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
-            UNUSED(Signal::Operation::Ptr o1) = w.createOperation (0);
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 0 );
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*b.write ())->createOperationCount, 0 );
+            UNUSED(Signal::Operation::ptr o1) = w.createOperation (0);
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 1 );
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*b.write ())->createOperationCount, 0 );
             w.setWrappedOperationDesc (b);
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
-            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 1 );
+            EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*b.write ())->createOperationCount, 0 );
         }
         w.setWrappedOperationDesc (a);
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(b))->createOperationCount, 0 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 1 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*b.write ())->createOperationCount, 0 );
     }
 
     // It should behave as a transparent operation if no operation is wrapped
     {
         OperationDescWrapper w;
-        OperationDesc::Ptr a(new WrappedOperationDescMock());
+        OperationDesc::ptr a(new WrappedOperationDescMock());
 
-        Signal::Operation::Ptr o0 = w.createOperation (0);
+        Signal::Operation::ptr o0 = w.createOperation (0);
         EXCEPTION_ASSERT(o0);
         EXCEPTION_ASSERT_EQUALS(vartype(*o0.get ()), "Signal::NoopOperationWrapper");
 
         w.setWrappedOperationDesc (a);
-        Signal::Operation::Ptr o1 = w.createOperation (0);
+        Signal::Operation::ptr o1 = w.createOperation (0);
         EXCEPTION_ASSERT(o1);
         EXCEPTION_ASSERT_EQUALS(vartype(*o1.get ()), "Signal::WrappedOperationMock");
 
@@ -245,7 +243,7 @@ void OperationDescWrapper::
         Signal::pBuffer b2(new Signal::Buffer(Signal::Interval(0,1),1,1));
         *b1->getChannel (0)->waveform_data ()->getCpuMemory () = 1234;
         *b2->getChannel (0)->waveform_data () = *b1->getChannel (0)->waveform_data ();
-        Signal::pBuffer r1 = write1(o1)->process(b1);
+        Signal::pBuffer r1 = o1->process(b1);
         EXCEPTION_ASSERT_EQUALS(r1, b1);
         EXCEPTION_ASSERT(*r1 == *b2);
     }
@@ -253,24 +251,24 @@ void OperationDescWrapper::
     // It should allow new opertions without blocking while processing existing operations
     {
         OperationDescWrapper w;
-        OperationDesc::Ptr a(new WrappedOperationDescMock());
-        OperationDesc::Ptr b(new WrappedOperationDescMock());
-        OperationDesc::Ptr c(new WrappedOperationDescMock());
+        OperationDesc::ptr a(new WrappedOperationDescMock());
+        OperationDesc::ptr b(new WrappedOperationDescMock());
+        OperationDesc::ptr c(new WrappedOperationDescMock());
 
         WrappedOperationWorkerMock wowm;
         wowm.operation = w.createOperation (0);
         wowm.buffer = Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,1),1,1));
 
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 0 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 0 );
         w.setWrappedOperationDesc (a);
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 0 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 0 );
         wowm.operation = w.createOperation (0);
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 1 );
-        ComputingEngine::Ptr ce(new ComputingCpu);
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 1 );
+        ComputingEngine::ptr ce(new ComputingCpu);
         wowm.operation = w.createOperation (ce.get());
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 2 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 2 );
         w.setWrappedOperationDesc (b);
-        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*write1(a))->createOperationCount, 2 );
+        EXCEPTION_ASSERT_EQUALS( *dynamic_cast<WrappedOperationDescMock*>(&*a.write ())->createOperationCount, 2 );
 
         wowm.start ();
         QSemaphore().tryAcquire (1, 1); // sleep 1 ms to make sure the operation is locked for writing

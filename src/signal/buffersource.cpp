@@ -45,11 +45,9 @@ BufferSource::
 
 
 void BufferSource::
-        setBuffer( pBuffer buffer ) volatile
+        setBuffer( pBuffer buffer )
 {
-    ((BufferSource*)&*WritePtr(this))->buffer_ = buffer;
-
-    deprecateCache (Intervals::Intervals_ALL);
+    this->buffer_ = buffer;
 }
 
 
@@ -75,11 +73,9 @@ float BufferSource::
 
 
 void BufferSource::
-        setSampleRate( float fs ) volatile
+        setSampleRate( float fs )
 {
-    ((BufferSource*)&*WritePtr(this))->buffer_->set_sample_rate ( fs );
-
-    deprecateCache ( Signal::Interval::Interval_ALL );
+    this->buffer_->set_sample_rate ( fs );
 }
 
 
@@ -120,17 +116,17 @@ Interval BufferSource::
 }
 
 
-OperationDesc::Ptr BufferSource::
+OperationDesc::ptr BufferSource::
         copy() const
 {
-    return OperationDesc::Ptr(new BufferSource(buffer_));
+    return OperationDesc::ptr(new BufferSource(buffer_));
 }
 
 
-Operation::Ptr BufferSource::
+Operation::ptr BufferSource::
         createOperation(ComputingEngine*) const
 {
-    return Operation::Ptr(new BufferSourceOperation(buffer_));
+    return Operation::ptr(new BufferSourceOperation(buffer_));
 }
 
 
@@ -171,15 +167,15 @@ void BufferSource::
             p[i] = c + i/(float)b->number_of_samples ();
     }
     BufferSource s(b);
-    Operation::Ptr o = s.createOperation (0);
+    Operation::ptr o = s.createOperation (0);
     Operation::test (o, &s);
 
     pBuffer r(new Buffer(Interval(60,70), 40, 7));
-    pBuffer d = write1(o)->process (r);
+    pBuffer d = o->process (r);
     EXCEPTION_ASSERT( *d == *b );
 
     r = pBuffer(new Buffer(Interval(61,71), 1, 1));
-    d = write1(o)->process (r);
+    d = o->process (r);
     EXCEPTION_ASSERT_EQUALS (b->number_of_channels (), d->number_of_channels ());
     EXCEPTION_ASSERT_EQUALS (b->number_of_samples (), d->number_of_samples ());
     EXCEPTION_ASSERT_EQUALS (r->getInterval (), d->getInterval ());

@@ -3,7 +3,6 @@
 
 #include "ischedule.h"
 #include "signal/computingengine.h"
-#include "atomicvalue.h"
 
 #include <QThread>
 #include <QPointer>
@@ -20,10 +19,10 @@ namespace Processing {
  * It should wait to be dispatched with a wakeup signal if there are no tasks.
  *
  * It should store information about a crashed task (both segfault and
- * std::exception) and stop execution.
+ * std::exception as well as LockFailed) and stop execution.
  *
- * It should swallow one LockFailed without aborting the thread, but abort if
- * several consecutive LockFailed are thrown.
+ * It should not hang if it causes a deadlock.
+ * In the sense that Worker.terminate () still works;
  *
  * It should announce when tasks are finished.
  */
@@ -31,11 +30,11 @@ class Worker: public QObject
 {
     Q_OBJECT
 public:
-    typedef QPointer<Worker> Ptr;
+    typedef QPointer<Worker> ptr;
 
     class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
-    Worker (Signal::ComputingEngine::Ptr computing_eninge, ISchedule::Ptr schedule);
+    Worker (Signal::ComputingEngine::ptr computing_eninge, ISchedule::ptr schedule);
     ~Worker ();
 
     void abort();
@@ -54,11 +53,11 @@ public:
     //         ... get_error_info<...>(x);
     //         boost::diagnostic_information(x);
     //     }
-    boost::exception_ptr caught_exception() const;
+    std::exception_ptr caught_exception() const;
 
 signals:
     void oneTaskDone();
-    void finished(boost::exception_ptr, Signal::ComputingEngine::Ptr);
+    void finished(std::exception_ptr, Signal::ComputingEngine::ptr);
 
 public slots:
     void wakeup();
@@ -69,12 +68,12 @@ private slots:
 private:
     void loop_while_tasks();
 
-    Signal::ComputingEngine::Ptr            computing_engine_;
-    ISchedule::Ptr                          schedule_;
+    Signal::ComputingEngine::ptr            computing_engine_;
+    ISchedule::ptr                          schedule_;
 
     QThread*                                thread_;
-    AtomicValue<boost::exception_ptr>::Ptr  exception_;
-    boost::exception_ptr                    terminated_exception_;
+    shared_state<std::exception_ptr>        exception_;
+    std::exception_ptr                      terminated_exception_;
 
 public:
     static void test ();

@@ -44,7 +44,6 @@ Configuration::
             scales_per_octave_( 27.f+2.f/3 ), // this gives an stft window size of 4096 samples (with default cwt settings) due to the combined slider in RenderController::receiveSetTimeFrequencyResolution
             wavelet_time_support_( 3 ),
             wavelet_scale_support_( 3 ),
-            min_hz_( 60 ),
             samples_per_chunk_hint_( 1 ),
             samples_per_block_( 1<<8 ),
             scales_per_block_( 1<<8 ),
@@ -381,8 +380,6 @@ static const char _sawe_usage_string[] =
     "    --wavelet_scale_support\n"
     "                        Transform CWT chunks with this many sigmas overlap in scale\n"
     "                        domain.\n"
-    "    --min_hz            Transform CWT with scales logarithmically distributed\n"
-    "                        on (min_hz, fs/2]\n"
     "\n"
     "Rendering settings\n"
     "    --samples_per_block The transform chunks are downsampled to blocks for\n"
@@ -479,7 +476,6 @@ int Configuration::
         else if (readarg(&cmd, channel));
         else if (readarg(&cmd, get_hdf));
         else if (readarg(&cmd, get_csv));
-        else if (readarg(&cmd, min_hz));
         else if (readarg(&cmd, version));
         else if (readarg(&cmd, use_saved_state));
         else if (readarg(&cmd, skip_update_check));
@@ -653,13 +649,6 @@ float Configuration::
         wavelet_scale_support()
 {
     return Singleton().wavelet_scale_support_;
-}
-
-
-float Configuration::
-        min_hz()
-{
-    return Singleton().min_hz_;
 }
 
 

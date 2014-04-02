@@ -5,14 +5,14 @@
 
 template<typename T>
 void        stftNormalizeInverse( boost::shared_ptr<DataStorage<T> > wave, unsigned length );
-void        stftNormalizeInverse( Tfr::ChunkData::Ptr inwave, DataStorage<float>::Ptr outwave, unsigned length );
-inline void stftDiscardImag( Tfr::ChunkData::Ptr inwavep, DataStorage<float>::Ptr outwavep )
+void        stftNormalizeInverse( Tfr::ChunkData::ptr inwave, DataStorage<float>::ptr outwave, unsigned length );
+inline void stftDiscardImag( Tfr::ChunkData::ptr inwavep, DataStorage<float>::ptr outwavep )
 {
     stftNormalizeInverse(inwavep, outwavep, 1);
 }
 
-void        stftToComplex( DataStorage<float>::Ptr inwavep, Tfr::ChunkData::Ptr outwavep );
-void        cepstrumPrepareCepstra( Tfr::ChunkData::Ptr chunk, float normalization );
-void        stftAverage( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, unsigned scales );
+void        stftToComplex( DataStorage<float>::ptr inwavep, Tfr::ChunkData::ptr outwavep );
+void        cepstrumPrepareCepstra( Tfr::ChunkData::ptr chunk, float normalization );
+void        stftAverage( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, unsigned scales );
 
 #endif // STFTKERNEL_H

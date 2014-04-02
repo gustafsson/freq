@@ -52,7 +52,7 @@ namespace Tools
         };
         boost::shared_ptr<Actions> ui_items_;
 
-        void startPlayback ( Signal::OperationDesc::Ptr filter );
+        void startPlayback ( Signal::OperationDesc::ptr filter );
 
         // GUI
         void setupGui( RenderView* render_view );

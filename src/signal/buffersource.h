@@ -31,13 +31,13 @@ public:
     // OperationDesc
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Interval affectedInterval( const Interval& I ) const;
-    OperationDesc::Ptr copy() const;
-    Operation::Ptr createOperation(ComputingEngine* engine) const;
+    OperationDesc::ptr copy() const;
+    Operation::ptr createOperation(ComputingEngine* engine) const;
     Extent extent() const;
     bool operator==(const OperationDesc& d) const;
 
-    void setBuffer( pBuffer waveform ) volatile;
-    void setSampleRate( float fs ) volatile;
+    void setBuffer( pBuffer waveform );
+    void setSampleRate( float fs );
 
 private:
     pBuffer buffer_;

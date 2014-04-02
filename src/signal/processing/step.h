@@ -1,12 +1,12 @@
 #ifndef SIGNAL_PROCESSING_STEP_H
 #define SIGNAL_PROCESSING_STEP_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "signal/computingengine.h"
 #include "signal/operation.h"
 #include "signal/cache.h"
 
-#include <QWaitCondition>
+#include <condition_variable>
 
 namespace Signal {
 namespace Processing {
@@ -22,16 +22,19 @@ class Task;
  *
  * A crashed signal processing step should behave as a transparent operation.
  */
-class Step: public VolatilePtr<Step>
+class Step
 {
 public:
+    typedef shared_state<Step> ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
+
     // To be appended to exceptions while using Step
-    typedef boost::error_info<struct crashed_step_tag, Step::Ptr> crashed_step;
+    typedef boost::error_info<struct crashed_step_tag, Step::ptr> crashed_step;
 
-    Step(Signal::OperationDesc::Ptr operation_desc);
+    Step(Signal::OperationDesc::ptr operation_desc);
 
-    Signal::OperationDesc::Ptr  get_crashed() const;
-    void                        mark_as_crashed();
+    Signal::OperationDesc::ptr  get_crashed() const;
+    Signal::Processing::IInvalidator::ptr mark_as_crashed_and_get_invalidator();
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
@@ -44,11 +47,11 @@ public:
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
-    Signal::OperationDesc::Ptr  operation_desc() const;
+    Signal::OperationDesc::ptr  operation_desc() const; // Safe to call without lock
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
     void                        finishTask(Task* taskid, Signal::pBuffer result);
-    void                        sleepWhileTasks(int sleep_ms);
+    static void                 sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms);
 
     /**
      * @brief readFixedLengthFromCache should read a buffer from the cache.
@@ -62,15 +65,15 @@ public:
 private:
     typedef std::map<Task*, Signal::Interval> RunningTaskMap;
 
-    Signal::OperationDesc::Ptr  died_;
+    Signal::OperationDesc::ptr  died_;
     Signal::Cache               cache_;
     Signal::Intervals           not_started_;
 
     RunningTaskMap              running_tasks;
 
-    Signal::OperationDesc::Ptr  operation_desc_;
+    Signal::OperationDesc::ptr  operation_desc_;
 
-    QWaitCondition              wait_for_tasks_;
+    mutable std::condition_variable_any wait_for_tasks_;
 
     std::string                 operation_name();
     Signal::Intervals           currently_processing() const; // from running_tasks

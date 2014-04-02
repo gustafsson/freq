@@ -25,12 +25,12 @@ pTransformDesc ChunkFilterDesc::
 }
 
 
-ChunkFilterDesc::Ptr ChunkFilterDesc::
+ChunkFilterDesc::ptr ChunkFilterDesc::
         copy() const
 {
     EXCEPTION_ASSERTX(false, vartype(*this) + "::copy not implemented");
 
-    return ChunkFilterDesc::Ptr();
+    return ChunkFilterDesc::ptr();
 }
 
 

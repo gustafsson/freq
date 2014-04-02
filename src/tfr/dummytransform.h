@@ -11,7 +11,7 @@ namespace Tfr {
 class DummyTransformDesc: public TransformDesc
 {
 public:
-    TransformDesc::Ptr copy() const;
+    TransformDesc::ptr copy() const;
     pTransform createTransform() const;
     float displayedTimeResolution( float FS, float hz ) const;
     FreqAxis freqAxis( float FS ) const;

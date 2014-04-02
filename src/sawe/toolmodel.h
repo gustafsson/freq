@@ -1,7 +1,7 @@
 #ifndef TOOLMODEL_H
 #define TOOLMODEL_H
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "exceptionassert.h"
 
 #include <boost/shared_ptr.hpp>

@@ -1,7 +1,7 @@
 #include "blockcacheinfo.h"
 
 #include "glblock.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <boost/foreach.hpp>
 

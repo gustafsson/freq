@@ -50,6 +50,7 @@ public:
 
     std::string name();
     std::string filename() const { return _original_relative_filename; }
+    virtual QString toString() const;
 
 private:
     CsvTimeseries() {} // for deserialization

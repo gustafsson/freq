@@ -32,14 +32,14 @@ float Recorder::
 
 
 void Recorder::
-        setDataCallback( IGotDataCallback::Ptr invalidator )
+        setDataCallback( IGotDataCallback::ptr invalidator )
 {
     _invalidator = invalidator;
 }
 
 
 Signal::IntervalType Recorder::
-        actual_number_of_samples()
+        actual_number_of_samples() const
 {
     QMutexLocker lock(&_data_lock);
     Signal::IntervalType N = _data.spannedInterval().count();
@@ -49,7 +49,7 @@ Signal::IntervalType Recorder::
 
 
 Signal::IntervalType Recorder::
-        number_of_samples()
+        number_of_samples() const
 {
     return actual_number_of_samples();
 /*    if (isStopped())
@@ -63,6 +63,13 @@ Signal::pBuffer Recorder::
         read( const Signal::Interval& I )
 {
     QMutexLocker lock(&_data_lock);
+
+    if (_exception) {
+        std::exception_ptr x = _exception;
+        _exception = std::exception_ptr();
+        std::rethrow_exception(x);
+    }
+
     if (_data.empty())
         return Signal::pBuffer(new Signal::Buffer(I, sample_rate(), num_channels ()));
 
@@ -71,14 +78,14 @@ Signal::pBuffer Recorder::
 
 
 float Recorder::
-        length()
+        length() const
 {
     return isStopped() ? number_of_samples()/sample_rate() : time();
 }
 
 
 float Recorder::
-        time()
+        time() const
 {
     boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _start_recording;
     float dt = d.total_milliseconds()*0.001f;

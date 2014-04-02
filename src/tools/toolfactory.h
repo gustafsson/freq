@@ -29,7 +29,7 @@ namespace Tools
         ToolFactory(Sawe::Project* p);
         ~ToolFactory();
 
-        void addRecording(Adapters::Recorder::Ptr recorder);
+        void addRecording(Adapters::Recorder::ptr recorder);
 
         /**
          * TODO render_model should not be public. And a session could have more than one render model.

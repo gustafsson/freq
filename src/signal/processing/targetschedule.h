@@ -14,17 +14,17 @@ namespace Processing {
 class TargetSchedule: public ISchedule {
 public:
     // Requires workers and/or current worker
-    TargetSchedule(Dag::Ptr g, IScheduleAlgorithm::Ptr algorithm, Targets::Ptr targets);
+    TargetSchedule(Dag::ptr g, IScheduleAlgorithm::ptr algorithm, Targets::ptr targets);
 
-    virtual Task::Ptr getTask(Signal::ComputingEngine::Ptr engine) volatile;
+    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const;
 
 private:
-    Targets::Ptr targets;
+    Targets::ptr targets;
 
-    Dag::Ptr g;
-    IScheduleAlgorithm::Ptr algorithm;
+    Dag::ptr g;
+    IScheduleAlgorithm::ptr algorithm;
 
-    boost::shared_ptr<TargetNeeds::ReadPtr> prioritizedTarget() const;
+    TargetNeeds::ptr::read_ptr prioritizedTarget() const;
 
 public:
     static void test();

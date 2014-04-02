@@ -22,7 +22,7 @@ class HeightmapProcessingPublisher
 {
 public:
     HeightmapProcessingPublisher(
-            Signal::Processing::TargetNeeds::Ptr target_needs,
+            Signal::Processing::TargetNeeds::ptr target_needs,
             Heightmap::TfrMapping::Collections collections);
 
     void update(float t_center, Signal::OperationDesc::Extent x, Signal::UnsignedIntervalType preferred_update_size);
@@ -31,7 +31,7 @@ public:
     bool failedAllocation() const;
 
 private:
-    Signal::Processing::TargetNeeds::Ptr   target_needs_;
+    Signal::Processing::TargetNeeds::ptr   target_needs_;
     Heightmap::TfrMapping::Collections      collections_;
     bool failed_allocation_;
 

@@ -1,6 +1,6 @@
 #include "renderviewupdateadapter.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 //#define UPDATEINFO
 #define UPDATEINFO if(0)
@@ -65,7 +65,7 @@ void RenderViewUpdateAdapter::
     // interface to Qt signals/slots that match RenderView.
     {
         RenderViewUpdateAdapter* a;
-        RenderTarget::Ptr rt(a = new RenderViewUpdateAdapter);
+        RenderTarget::ptr rt(a = new RenderViewUpdateAdapter);
         RenderViewUpdateAdapterMock mock;
 
         connect(a, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), &mock, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
@@ -74,12 +74,12 @@ void RenderViewUpdateAdapter::
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 0);
 
-        write1(rt)->refreshSamples(Signal::Intervals(1,2));
+        rt.write ()->refreshSamples(Signal::Intervals(1,2));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);
 
-        write1(rt)->processedData(Signal::Interval(1,2), Signal::Interval(3,4));
+        rt.write ()->processedData(Signal::Interval(1,2), Signal::Interval(3,4));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 1);
         EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);

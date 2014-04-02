@@ -2,7 +2,7 @@
 
 #include "computationkernel.h"
 #include "cpumemorystorage.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 
 #include <algorithm>

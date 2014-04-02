@@ -15,8 +15,8 @@ namespace Tools { namespace Selections
         EllipseModel( RenderModel* rendermodel );
         ~EllipseModel();
 
-        Signal::OperationDesc::Ptr updateFilter();
-        void tryFilter(Signal::OperationDesc::Ptr o);
+        Signal::OperationDesc::ptr updateFilter();
+        void tryFilter(Signal::OperationDesc::ptr o);
 
         Heightmap::Position centre, centrePlusRadius;
         Tfr::FreqAxis freqAxis();

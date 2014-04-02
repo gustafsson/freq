@@ -2,7 +2,7 @@
 #include "heightmap/collection.h"
 #include "signal/processing/step.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -14,7 +14,7 @@ namespace Tools {
 namespace Support {
 
 HeightmapProcessingPublisher::
-        HeightmapProcessingPublisher(TargetNeeds::Ptr target_needs,
+        HeightmapProcessingPublisher(TargetNeeds::ptr target_needs,
                       Heightmap::TfrMapping::Collections collections)
     :
       target_needs_(target_needs),
@@ -38,8 +38,8 @@ void HeightmapProcessingPublisher::
     // visible block if the view isn't currently being invalidated.
     UnsignedIntervalType update_size = preferred_update_size;
 
-    foreach( const Heightmap::Collection::Ptr &c, collections_ ) {
-        Heightmap::Collection::WritePtr wc(c);
+    foreach( const Heightmap::Collection::ptr &c, collections_ ) {
+        auto wc = c.write ();
         //invalid_samples |= wc->invalid_samples();
         things_to_add |= wc->recently_created();
         needed_samples |= wc->needed_samples(update_size);
@@ -58,8 +58,8 @@ void HeightmapProcessingPublisher::
             % center
             % update_size);
 
-    write1(target_needs_)->deprecateCache(things_to_add);
-    write1(target_needs_)->updateNeeds(
+    target_needs_.write ()->deprecateCache(things_to_add);
+    target_needs_.write ()->updateNeeds(
                 needed_samples,
                 center,
                 update_size,
@@ -67,18 +67,18 @@ void HeightmapProcessingPublisher::
             );
 
     failed_allocation_ = false;
-    foreach( const Heightmap::Collection::Ptr &c, collections_ )
+    foreach( const Heightmap::Collection::ptr &c, collections_ )
     {
-        failed_allocation_ |= write1(c)->failed_allocation ();
+        failed_allocation_ |= c.write ()->failed_allocation ();
     }
 
     TIME_PAINTGL_DETAILS {
-        Step::Ptr step = read1(target_needs_)->step().lock();
-        Signal::Intervals not_started = read1(target_needs_)->not_started();
+        Step::ptr step = target_needs_.read ()->step().lock();
+        Signal::Intervals not_started = target_needs_.read ()->not_started();
 
         if (step)
         {
-            Step::ReadPtr stepp(step);
+            auto stepp = step.read ();
             TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
                              % stepp->out_of_date()
                              % stepp->not_started()
@@ -91,8 +91,7 @@ void HeightmapProcessingPublisher::
 bool HeightmapProcessingPublisher::
         isHeightmapDone() const
 {
-    TargetNeeds::ReadPtr target_needs(target_needs_);
-    return !target_needs->out_of_date();
+    return !target_needs_.read ()->out_of_date();
 }
 
 
@@ -127,15 +126,15 @@ void HeightmapProcessingPublisher::
     // It should update a processing target depending on which things that are
     // missing in a heightmap block cache
     {
-        OperationDesc::Ptr operation_desc;
-        Step::Ptr step(new Step(operation_desc));
-        Bedroom::Ptr bedroom(new Bedroom);
-        BedroomNotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        TargetNeeds::Ptr target_needs(new TargetNeeds(step, notifier));
+        OperationDesc::ptr operation_desc;
+        Step::ptr step(new Step(operation_desc));
+        Bedroom::ptr bedroom(new Bedroom);
+        BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
+        TargetNeeds::ptr target_needs(new TargetNeeds(step, notifier));
 
         Heightmap::BlockLayout block_layout(10,10,1);
-        Heightmap::VisualizationParams::Ptr visualization_params(new Heightmap::VisualizationParams);
-        Heightmap::Collection::Ptr collection(new Heightmap::Collection(
+        Heightmap::VisualizationParams::ptr visualization_params(new Heightmap::VisualizationParams);
+        Heightmap::Collection::ptr collection(new Heightmap::Collection(
                                                    block_layout, visualization_params));
 
         Heightmap::TfrMapping::Collections collections;
@@ -156,8 +155,8 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        Heightmap::Reference entireHeightmap = read1(collection)->entireHeightmap();
-        write1(collection)->getBlock(entireHeightmap);
+        Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
+        collection.read ()->getBlock(entireHeightmap);
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -165,8 +164,8 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        unsigned frame_number = read1(collection)->frame_number();
-        write1(collection)->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
+        unsigned frame_number = collection.read ()->frame_number();
+        collection.read ()->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -174,9 +173,10 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
-        Task task(write1(step),
-                  std::vector<Signal::Processing::Step::Ptr>(),
-                  Operation::Ptr(),
+        Task task(step.write (),
+                  Step::ptr (),
+                  std::vector<Signal::Processing::Step::ptr>(),
+                  Operation::ptr(),
                   Signal::Interval(0,2), Signal::Interval());
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());

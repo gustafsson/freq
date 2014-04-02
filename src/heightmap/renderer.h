@@ -11,7 +11,7 @@
 #include "collection.h"
 
 // gpumisc
-#include "volatileptr.h"
+#include "shared_state.h"
 
 // std
 #include <vector>
@@ -28,7 +28,7 @@ class Renderer
 public:
     Renderer();
 
-    VolatilePtr<Collection>::Ptr    collection;
+    shared_state<Collection>        collection;
     RenderSettings                  render_settings;
     glProjection                    gl_projection;
 

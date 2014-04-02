@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 
 #include "exceptionassert.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 cudaError_t cudaMemcpy3Dfix(const struct cudaMemcpy3DParms *param) {
     const cudaMemcpy3DParms& p = *param;

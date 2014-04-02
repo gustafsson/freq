@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_ISCHEDULE_H
 #define SIGNAL_PROCESSING_ISCHEDULE_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "signal/computingengine.h"
 
 namespace Signal {
@@ -15,19 +15,21 @@ class Task;
  *
  * Shall return null if no plausible task was found.
  */
-class ISchedule: public VolatilePtr<ISchedule>
+class ISchedule
 {
 public:
+    typedef shared_state<ISchedule> ptr;
+
     virtual ~ISchedule() {}
 
     /**
      * @brief getTask finds if there is something to work on.
      *
-     * Note that multiple threads may call getTask simultaneously (see VolatilePtr)
+     * Note that multiple threads may call getTask simultaneously
      *
      * @return
      */
-    virtual boost::shared_ptr<volatile Task> getTask(Signal::ComputingEngine::Ptr engine) volatile=0;
+    virtual shared_state<Task> getTask(Signal::ComputingEngine::ptr engine) const = 0;
 };
 
 } // namespace Processing

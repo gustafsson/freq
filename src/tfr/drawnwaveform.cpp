@@ -93,10 +93,10 @@ Signal::pMonoBuffer DrawnWaveform::
 }
 
 
-TransformDesc::Ptr DrawnWaveform::
+TransformDesc::ptr DrawnWaveform::
         copy() const
 {
-    return TransformDesc::Ptr(new DrawnWaveform(*this));
+    return TransformDesc::ptr(new DrawnWaveform(*this));
 }
 
 
@@ -130,7 +130,7 @@ FreqAxis DrawnWaveform::
 }
 
 
-static const unsigned DrawnWaveform_step_constant = 1024;
+//static const unsigned DrawnWaveform_step_constant = 1024;
 
 
 unsigned DrawnWaveform::

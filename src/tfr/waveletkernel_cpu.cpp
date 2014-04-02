@@ -3,14 +3,14 @@
 
 #include "waveletkerneldef.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #define SQRTLOG2E        1.201122409f
 #define PI               3.141592654f
 
 void wtCompute(
-        DataStorage<Tfr::ChunkElement>::Ptr in_waveform_ftp,
-        Tfr::ChunkData::Ptr out_wavelet_ftp,
+        DataStorage<Tfr::ChunkElement>::ptr in_waveform_ftp,
+        Tfr::ChunkData::ptr out_wavelet_ftp,
         float fs,
         float /*minHz*/,
         float maxHz,
@@ -94,7 +94,7 @@ void wtCompute(
 }
 
 
-void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inverse_waveform, DataStorageSize size )
+void wtInverse( Tfr::ChunkData::ptr in_waveletp, DataStorage<float>::ptr out_inverse_waveform, DataStorageSize size )
 {
     // Multiply the coefficients together and normalize the result
     Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<2>(in_waveletp).ptr();
@@ -110,7 +110,7 @@ void wtInverse( Tfr::ChunkData::Ptr in_waveletp, DataStorage<float>::Ptr out_inv
 }
 
 
-void wtClamp( Tfr::ChunkData::Ptr in_wtp, size_t sample_offset, Tfr::ChunkData::Ptr out_clamped_wtp )
+void wtClamp( Tfr::ChunkData::ptr in_wtp, size_t sample_offset, Tfr::ChunkData::ptr out_clamped_wtp )
 {
     CpuMemoryReadOnly<Tfr::ChunkElement, 2> in_wt = CpuMemoryStorage::ReadOnly<2>( in_wtp );
     CpuMemoryWriteOnly<Tfr::ChunkElement, 2> out_clamped_wt = CpuMemoryStorage::WriteAll<2>( out_clamped_wtp );

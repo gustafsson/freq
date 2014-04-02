@@ -6,7 +6,7 @@
 #include "signal/computingengine.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 // std
@@ -75,10 +75,10 @@ Tfr::pChunkFilter Ellipse::
 }
 
 
-ChunkFilterDesc::Ptr Ellipse::
+ChunkFilterDesc::ptr Ellipse::
         copy() const
 {
-    return ChunkFilterDesc::Ptr(new Ellipse(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
+    return ChunkFilterDesc::ptr(new Ellipse(_centre_t, _centre_f, _centre_plus_radius_t, _centre_plus_radius_f, _save_inside));
 }
 
 

@@ -79,20 +79,20 @@ Signal::Interval Normalize::
 }
 
 
-Signal::OperationDesc::Ptr Normalize::
+Signal::OperationDesc::ptr Normalize::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new Normalize(normalizationRadius));
+    return Signal::OperationDesc::ptr(new Normalize(normalizationRadius));
 }
 
 
-Signal::Operation::Ptr Normalize::
+Signal::Operation::ptr Normalize::
         createOperation(Signal::ComputingEngine* engine) const
 {
     if (engine == 0 || dynamic_cast<Signal::ComputingCpu*>(engine))
-        return Signal::Operation::Ptr(new NormalizeOperation(normalizationRadius));
+        return Signal::Operation::ptr(new NormalizeOperation(normalizationRadius));
 
-    return Signal::Operation::Ptr();
+    return Signal::Operation::ptr();
 }
 
 
@@ -131,8 +131,8 @@ void Normalize::
 
         Signal::pBuffer b2 = Signal::BufferSource(b).readFixedLength (r);
 
-        Signal::Operation::Ptr o = n.createOperation (0);
-        Signal::pBuffer b3 = write1(o)->process(b2);
+        Signal::Operation::ptr o = n.createOperation (0);
+        Signal::pBuffer b3 = o->process(b2);
         EXCEPTION_ASSERT_EQUALS(expectedOutput, b3->getInterval ());
 
         for (unsigned c=0; c<b->number_of_channels (); c++)

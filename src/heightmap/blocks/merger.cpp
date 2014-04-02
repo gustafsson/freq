@@ -2,7 +2,7 @@
 #include "../blockquery.h"
 #include "../blockkernel.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 #include <boost/foreach.hpp>
@@ -19,7 +19,7 @@ namespace Heightmap {
 namespace Blocks {
 
 Merger::
-        Merger(BlockCache::ConstPtr cache)
+        Merger(BlockCache::const_ptr cache)
     :
       cache_(cache)
 {
@@ -34,13 +34,13 @@ void Merger::
     const Reference& ref = block->reference ();
     Intervals things_to_update = block->getInterval ();
     std::vector<pBlock> gib = BlockQuery(cache_).getIntersectingBlocks ( things_to_update.spannedInterval(), false, 0 );
-    BlockData::WritePtr outdata = block->block_data ();
+    auto outdata = block->block_data ();
 
     const Region& r = block->getRegion ();
 
     int merge_levels = 10;
 
-    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), read1(cache_)->cache().size(), merge_levels);
+    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_.read ()->cache().size(), merge_levels);
 
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
@@ -90,7 +90,7 @@ void Merger::
             {
                 next.push_back ( bl );
             }
-        } catch (const BlockData::LockFailed&) {}
+        } catch (const shared_state<BlockData>::lock_failed&) {}
 
         gib = next;
     }
@@ -98,7 +98,10 @@ void Merger::
 
 
 bool Merger::
-        mergeBlock( const Block& outBlock, const Block& inBlock, const BlockData::WritePtr& poutData, const BlockData::ReadPtr& pinData )
+        mergeBlock( const Block& outBlock,
+                    const Block& inBlock,
+                    const shared_state<BlockData>::write_ptr& poutData,
+                    const shared_state<BlockData>::read_ptr& pinData )
 {
     if (!poutData.get () || !pinData.get ())
         return false;
@@ -179,7 +182,7 @@ namespace Blocks {
 
 
 // Same as in the test for ResampleTexture
-static void compare(float* expected, size_t sizeof_expected, DataStorage<float>::Ptr data)
+static void compare(float* expected, size_t sizeof_expected, DataStorage<float>::ptr data)
 {
     EXCEPTION_ASSERT(data);
     EXCEPTION_ASSERT_EQUALS(sizeof_expected, data->numberOfBytes ());
@@ -198,11 +201,11 @@ static void compare(float* expected, size_t sizeof_expected, DataStorage<float>:
 }
 
 
-static void clearCache(BlockCache::Ptr cache) {
-    while(!read1(cache)->cache().empty()) {
-        pBlock b = read1(cache)->cache().begin()->second;
+static void clearCache(BlockCache::ptr cache) {
+    while(!cache.read ()->cache().empty()) {
+        pBlock b = cache.read ()->cache().begin()->second;
         b->glblock.reset();
-        write1(cache)->erase(b->reference ());
+        cache.write ()->erase(b->reference ());
     }
 }
 
@@ -212,14 +215,14 @@ void Merger::
 {
     // It should merge contents from other blocks to stub the contents of a new block.
     {
-        BlockCache::Ptr cache(new BlockCache);
+        BlockCache::ptr cache(new BlockCache);
 
         Reference ref;
         BlockLayout bl(4,4,4);
         DataStorageSize ds(bl.texels_per_column (), bl.texels_per_row ());
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         pBlock block(new Block(ref,bl,vp));
         const Region& r = block->getRegion();
         block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
@@ -246,7 +249,7 @@ void Merger::
             const Region& r = block->getRegion();
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            write1(cache)->insert(block);
+            cache.write ()->insert(block);
         }
 
         Merger(cache).fillBlockFromOthers(block);
@@ -267,7 +270,7 @@ void Merger::
             const Region& r = block->getRegion();
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            write1(cache)->insert(block);
+            cache.write ()->insert(block);
         }
 
         Merger(cache).fillBlockFromOthers(block);

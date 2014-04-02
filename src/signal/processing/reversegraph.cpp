@@ -18,7 +18,7 @@ void ReverseGraph::
 
 
 GraphVertex ReverseGraph::
-        find_first_vertex(const Graph& g, Step::Ptr property)
+        find_first_vertex(const Graph& g, Step::ptr property)
 {
     GraphVertex u = graph_traits<Graph>::null_vertex ();
 

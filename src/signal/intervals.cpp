@@ -1,7 +1,7 @@
 #include "intervals.h"
 
 #include "exceptionassert.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <stdexcept>
 #include <cfloat>

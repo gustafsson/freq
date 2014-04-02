@@ -8,7 +8,7 @@
 #include "neat_math.h"
 #include "computationkernel.h"
 #include "unused.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -76,7 +76,7 @@ pChunk Fft::
     // TODO choose method based on data size and locality
     if (_compute_redundant)
     {
-        Tfr::ChunkData::Ptr input( new Tfr::ChunkData( real_buffer->waveform_data()->size()));
+        Tfr::ChunkData::ptr input( new Tfr::ChunkData( real_buffer->waveform_data()->size()));
         ::stftToComplex( real_buffer->waveform_data(), input );
 
         chunk.reset( new StftChunk( output_n.width, StftDesc::WindowType_Rectangular, output_n.width, true ) );
@@ -115,10 +115,10 @@ pChunk Fft::
 }
 
 
-TransformDesc::Ptr Fft::
+TransformDesc::ptr Fft::
         copy() const
 {
-    return TransformDesc::Ptr(new Fft(*this));
+    return TransformDesc::ptr(new Fft(*this));
 }
 
 
@@ -213,7 +213,7 @@ Signal::pMonoBuffer Fft::
         unsigned scales = chunk->nScales();
 
         // original_sample_rate == fs * scales
-        Tfr::ChunkData::Ptr output( new Tfr::ChunkData( scales ));
+        Tfr::ChunkData::ptr output( new Tfr::ChunkData( scales ));
 
         fft->compute( chunk->transform_data, output, FftDirection_Inverse );
 
@@ -282,7 +282,7 @@ Tfr::pChunk Stft::
     TIME_STFT TaskTimer ti("Stft::operator, p.chunk_size() = %d, b = %s, computeredundant = %s",
                            p.chunk_size(), b->getInterval().toString().c_str(), p.compute_redundant()?"true":"false");
 
-    DataStorage<float>::Ptr windowedInput = prepareWindow( b->waveform_data() );
+    DataStorage<float>::ptr windowedInput = prepareWindow( b->waveform_data() );
 
     // @see compute_redundant()
     Tfr::pChunk chunk;
@@ -297,7 +297,7 @@ Tfr::pChunk Stft::
         unsigned width = chunk->nScales();
         unsigned height = chunk->nSamples()/p.averaging();
 
-        Tfr::ChunkData::Ptr averagedOutput(
+        Tfr::ChunkData::ptr averagedOutput(
                 new Tfr::ChunkData( height*width ));
 
         stftAverage( chunk->transform_data, averagedOutput, width );
@@ -358,7 +358,7 @@ Tfr::pChunk Stft::
 
 
 Tfr::pChunk Stft::
-        ComputeChunk(DataStorage<float>::Ptr inputbuffer)
+        ComputeChunk(DataStorage<float>::ptr inputbuffer)
 {
     STFT_ASSERT( 0!=p.chunk_size() );
 
@@ -382,9 +382,9 @@ Tfr::pChunk Stft::
 
 
 Tfr::pChunk Stft::
-        ChunkWithRedundant(DataStorage<float>::Ptr inputbuffer)
+        ChunkWithRedundant(DataStorage<float>::ptr inputbuffer)
 {
-    Tfr::ChunkData::Ptr input( new Tfr::ChunkData( inputbuffer->size()));
+    Tfr::ChunkData::ptr input( new Tfr::ChunkData( inputbuffer->size()));
     ::stftToComplex( inputbuffer, input );
 
     STFT_ASSERT( 0!=p.chunk_size() );
@@ -456,7 +456,7 @@ Signal::pMonoBuffer Stft::
             chunk_window_size,
             nwindows );
 
-    DataStorage<float>::Ptr windowedOutput(new DataStorage<float>(nwindows*chunk_window_size));
+    DataStorage<float>::ptr windowedOutput(new DataStorage<float>(nwindows*chunk_window_size));
 
     fft->inverse( chunk->transform_data, windowedOutput, n );
 
@@ -471,7 +471,7 @@ Signal::pMonoBuffer Stft::
 
     // TODO normalize while reducing
     // TODO reduce and prepare in kernel
-    DataStorage<float>::Ptr signal = reduceWindow( windowedOutput, stftchunk );
+    DataStorage<float>::ptr signal = reduceWindow( windowedOutput, stftchunk );
 
 
     Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
@@ -507,13 +507,13 @@ Signal::pMonoBuffer Stft::
             chunk_window_size,
             nwindows );
 
-    Tfr::ChunkData::Ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
+    Tfr::ChunkData::ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
 
     fft->compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
 
     TIME_STFT ComputationSynchronize();
 
-    DataStorage<float>::Ptr windowedOutput( new DataStorage<float>(nwindows*chunk_window_size));
+    DataStorage<float>::ptr windowedOutput( new DataStorage<float>(nwindows*chunk_window_size));
 
     {
         TIME_STFT TaskTimer ti("normalizing %u elements", n.width);
@@ -524,7 +524,7 @@ Signal::pMonoBuffer Stft::
 
     // TODO discard imaginary part while reducing
     StftChunk*stftchunk = dynamic_cast<StftChunk*>(chunk.get());
-    DataStorage<float>::Ptr signal = reduceWindow( windowedOutput, stftchunk );
+    DataStorage<float>::ptr signal = reduceWindow( windowedOutput, stftchunk );
 
 
     Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
@@ -535,7 +535,7 @@ Signal::pMonoBuffer Stft::
 }
 
 
-Tfr::ComplexBuffer::Ptr Stft::
+Tfr::ComplexBuffer::ptr Stft::
         inverseKeepComplex( pChunk chunk )
 {
     STFT_ASSERT( chunk->nChannels() == 1 );
@@ -560,7 +560,7 @@ Tfr::ComplexBuffer::Ptr Stft::
             chunk_window_size,
             nwindows );
 
-    Tfr::ChunkData::Ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
+    Tfr::ChunkData::ptr complexWindowedOutput( new Tfr::ChunkData(nwindows*chunk_window_size));
 
     fft->compute( chunk->transform_data, complexWindowedOutput, n, FftDirection_Inverse );
 
@@ -575,10 +575,10 @@ Tfr::ComplexBuffer::Ptr Stft::
 
     // TODO discard imaginary part while reducing
     StftChunk*stftchunk = dynamic_cast<StftChunk*>(chunk.get());
-    Tfr::ChunkData::Ptr signal = reduceWindow( complexWindowedOutput, stftchunk );
+    Tfr::ChunkData::ptr signal = reduceWindow( complexWindowedOutput, stftchunk );
 
 
-    Tfr::ComplexBuffer::Ptr b(new Tfr::ComplexBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    Tfr::ComplexBuffer::ptr b(new Tfr::ComplexBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
     *b->complex_waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
 
 
@@ -597,7 +597,7 @@ Tfr::ComplexBuffer::Ptr Stft::
 
 
 void Stft::
-        compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+        compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction )
 {
     int window_size = p.chunk_size();
     DataStorageSize size( window_size, input->numberOfElements()/window_size);
@@ -626,7 +626,7 @@ template<StftDesc::WindowType> float Stft::computeWindowValue( float )          
 
 template<StftDesc::WindowType Type>
 void Stft::
-        prepareWindowKernel( DataStorage<float>::Ptr source, DataStorage<float>::Ptr windowedData )
+        prepareWindowKernel( DataStorage<float>::ptr source, DataStorage<float>::ptr windowedData )
 {
     unsigned increment = p.increment();
     int windowCount = windowedData->size().width/p.chunk_size();
@@ -685,7 +685,7 @@ void Stft::
 
 template<StftDesc::WindowType Type, typename T>
 void Stft::
-        reduceWindowKernel( boost::shared_ptr<DataStorage<T> > windowedSignal, typename DataStorage<T>::Ptr signal, const StftChunk* c )
+        reduceWindowKernel( boost::shared_ptr<DataStorage<T> > windowedSignal, typename DataStorage<T>::ptr signal, const StftChunk* c )
 {
     int increment = c->increment();
     int window_size = c->window_size();
@@ -763,8 +763,8 @@ void Stft::
 }
 
 
-DataStorage<float>::Ptr Stft::
-        prepareWindow( DataStorage<float>::Ptr source )
+DataStorage<float>::ptr Stft::
+        prepareWindow( DataStorage<float>::ptr source )
 {
     if (p.windowType() == StftDesc::WindowType_Rectangular && p.overlap() == 0.f )
         return source;
@@ -775,7 +775,7 @@ DataStorage<float>::Ptr Stft::
     unsigned increment = p.increment();
     unsigned windowCount = 1 + (source->size().width-p.chunk_size()) / increment; // round down
 
-    DataStorage<float>::Ptr windowedData(new DataStorage<float>(windowCount*p.chunk_size(), source->size().height, source->size().depth ));
+    DataStorage<float>::ptr windowedData(new DataStorage<float>(windowCount*p.chunk_size(), source->size().height, source->size().depth ));
 
     switch(p.windowType())
     {
@@ -829,7 +829,7 @@ DataStorage<float>::Ptr Stft::
 
 
 template<typename T>
-typename DataStorage<T>::Ptr Stft::
+typename DataStorage<T>::ptr Stft::
         reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c )
 {
     if (c->window_type() == StftDesc::WindowType_Rectangular && c->increment() == c->window_size() )
@@ -842,7 +842,7 @@ typename DataStorage<T>::Ptr Stft::
 
 
     unsigned L = c->n_valid_samples*increment;
-    typename DataStorage<T>::Ptr signal(new DataStorage<T>( L ));
+    typename DataStorage<T>::ptr signal(new DataStorage<T>( L ));
 
     switch(c->window_type())
     {

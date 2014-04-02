@@ -8,7 +8,7 @@
 #include <math.h>
 #endif
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 namespace Tools { namespace Selections
 {

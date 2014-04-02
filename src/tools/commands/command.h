@@ -33,7 +33,7 @@ private:
 
 
     /**
-      @breif meldPrevCommand stores the undo-state of another Command.
+      @brief meldPrevCommand stores the undo-state of another Command.
 
       If two similiar Commands are executed right after each other they might
       be melded into one only command. This is typically used for small

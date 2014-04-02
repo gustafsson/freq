@@ -20,8 +20,8 @@ class AbsoluteValueDesc : public Signal::OperationDesc
 public:
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    Signal::OperationDesc::Ptr copy() const;
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine) const;
+    Signal::OperationDesc::ptr copy() const;
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine) const;
 
 public:
     static void test();

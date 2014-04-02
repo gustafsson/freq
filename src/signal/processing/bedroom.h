@@ -1,11 +1,10 @@
 #ifndef SIGNAL_PROCESSING_BEDROOM_H
 #define SIGNAL_PROCESSING_BEDROOM_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 
 #include <set>
-
-#include <QWaitCondition>
+#include <condition_variable>
 
 namespace Signal {
 namespace Processing {
@@ -22,28 +21,16 @@ class BedroomClosed: public virtual boost::exception, public virtual std::except
  *
  * See Bedroom::test for usage example.
  */
-class Bedroom: public VolatilePtr<Bedroom>
+class Bedroom
 {
-public:
-    class Bed;
-
+private:
     class Void {};
     typedef boost::shared_ptr<Void> Counter;
 
-    class Data: public VolatilePtr<Data> {
-    public:
-        Data();
-
-        QWaitCondition work;
-
-        std::set<Bed*> beds;
-        Counter sleepers;
-        Counter skip_sleep_marker;
-        bool is_closed;
-
-        QReadWriteLock* readWriteLock() const volatile;
-    };
-
+public:
+    typedef std::shared_ptr<Bedroom> ptr;
+    typedef std::weak_ptr<Bedroom> weak_ptr;
+    class Data;
 
     class Bed {
     public:
@@ -65,24 +52,43 @@ public:
     private:
         friend class Bedroom;
 
-        Bed(Data::Ptr data);
-        Data::Ptr data_;
+        Bed(shared_state<Data> data);
+        shared_state<Data> data_;
         Counter skip_sleep_;
+    };
+
+
+    class Data {
+    public:
+        struct shared_state_traits {
+            double timeout() { return -1; }
+        };
+
+        Data();
+
+        std::condition_variable_any work;
+
+        std::set<Bed*> beds;
+        Counter sleepers;
+        Counter skip_sleep_marker;
+        bool is_closed;
     };
 
 
     Bedroom();
 
     // Wake up sleepers
-    void wakeup() volatile;
-    void close() volatile;
+    void wakeup();
+    void close();
 
-    Bed getBed() volatile;
+    Bed getBed();
 
-    int sleepers() volatile;
+    int sleepers();
 
 private:
-    Data::Ptr data_;
+
+
+    shared_state<Data> data_;
 
 public:
     static void test();

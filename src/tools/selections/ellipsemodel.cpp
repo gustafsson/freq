@@ -30,28 +30,28 @@ EllipseModel::
 }
 
 
-Signal::OperationDesc::Ptr EllipseModel::
+Signal::OperationDesc::ptr EllipseModel::
         updateFilter()
 {
     if (centre.time == centrePlusRadius.time || centre.scale == centrePlusRadius.scale)
-        return Signal::OperationDesc::Ptr();
+        return Signal::OperationDesc::ptr();
 
     Filters::Ellipse* e;
-    Tfr::ChunkFilterDesc::Ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
+    Tfr::ChunkFilterDesc::ptr filter( e = new Filters::Ellipse( 0,0,0,0, true ) );
 
     e->_centre_t = centre.time;
     e->_centre_plus_radius_t = centrePlusRadius.time;
     e->_centre_f = freqAxis().getFrequency( centre.scale );
     e->_centre_plus_radius_f = freqAxis().getFrequency( centrePlusRadius.scale );
 
-    return Signal::OperationDesc::Ptr(new Tfr::TransformOperationDesc(filter));
+    return Signal::OperationDesc::ptr(new Tfr::TransformOperationDesc(filter));
 }
 
 
 void EllipseModel::
-        tryFilter(Signal::OperationDesc::Ptr filterp)
+        tryFilter(Signal::OperationDesc::ptr filterp)
 {
-    Signal::OperationDesc::ReadPtr filter(filterp);
+    auto filter = filterp.read ();
     const Filters::Ellipse* e = dynamic_cast<const Filters::Ellipse*>(filter.get());
     if (!e)
     {

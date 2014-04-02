@@ -26,14 +26,15 @@ public:
         typedef Patterns Patterns;
 
         virtual Patterns patterns() = 0;
-        virtual Signal::OperationDesc::Ptr open(QString url) = 0;
+        virtual Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr) = 0;
     };
 
     QList<QPointer<OpenfileInterface> > get_openers() { return file_openers; }
     void registerOpener(QPointer<OpenfileInterface> file_opener);
     Patterns patterns();
 
-    Signal::OperationDesc::Ptr open(QString url);
+    Signal::OperationDesc::ptr open(QString url) { return reopen(url, Signal::OperationDesc::ptr()); }
+    Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr);
 
 signals:
 

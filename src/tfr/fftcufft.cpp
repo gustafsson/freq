@@ -8,7 +8,7 @@
 #include "CudaException.h"
 #include "CudaProperties.h"
 #include "cudaglobalstorage.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "cuffthandlecontext.h"
 
 //#define TIME_STFT

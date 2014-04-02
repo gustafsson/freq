@@ -2,7 +2,7 @@
 #include "tfr/cwt.h"
 #include "tfr/cwtchunk.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 #include <sstream>
 #include <fstream>
@@ -75,10 +75,10 @@ Tfr::pChunkFilter CsvDesc::
 }
 
 
-Tfr::ChunkFilterDesc::Ptr CsvDesc::
+Tfr::ChunkFilterDesc::ptr CsvDesc::
         copy() const
 {
-    return ChunkFilterDesc::Ptr( new CsvDesc(filename_));
+    return ChunkFilterDesc::ptr( new CsvDesc(filename_));
 }
 
 } // namespace Adapters

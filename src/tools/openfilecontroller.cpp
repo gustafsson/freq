@@ -39,13 +39,16 @@ QList<std::pair<QString,QString> > OpenfileController::
 }
 
 
-Signal::OperationDesc::Ptr OpenfileController::
-        open(QString url)
+Signal::OperationDesc::ptr OpenfileController::
+        reopen(QString url, Signal::OperationDesc::ptr prev)
 {
-    Signal::OperationDesc::Ptr o;
+    Signal::OperationDesc::ptr o;
+
+    // TODO match url against patterns and try matching patterns first
+    // string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
 
     foreach(QPointer<OpenfileInterface> file_opener, file_openers) {
-        if ((o = file_opener->open (url)))
+        if ((o = file_opener->reopen (url, prev)))
             return o;
     }
 
@@ -67,8 +70,8 @@ public:
     DummyFileOperationDesc(QString which):which(which) {}
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* ) const { return I; }
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const { return I; }
-    virtual OperationDesc::Ptr copy() const { return OperationDesc::Ptr(); }
-    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const { return Signal::Operation::Ptr(); }
+    virtual OperationDesc::ptr copy() const { return OperationDesc::ptr(); }
+    virtual Signal::Operation::ptr createOperation(Signal::ComputingEngine*) const { return Signal::Operation::ptr(); }
     virtual QString toString() const { return which; }
 
 private:
@@ -86,10 +89,10 @@ public:
         return R;
     }
 
-    Signal::OperationDesc::Ptr open(QString url) {
+    Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr) {
         if (url == which)
-            return Signal::OperationDesc::Ptr(new DummyFileOperationDesc(which));
-        return Signal::OperationDesc::Ptr();
+            return Signal::OperationDesc::ptr(new DummyFileOperationDesc(which));
+        return Signal::OperationDesc::ptr();
     }
 
     QString which;
@@ -111,21 +114,21 @@ void OpenfileController::
         EXCEPTION_ASSERT_EQUALS( openfile.patterns ().first ().second.toStdString (), "Dummy files file1" );
         EXCEPTION_ASSERT_EQUALS( openfile.patterns ().last ().second.toStdString (), "Dummy files file2" );
 
-        Signal::OperationDesc::Ptr o = openfile.open("blaj");
+        Signal::OperationDesc::ptr o = openfile.open("blaj");
         EXCEPTION_ASSERT(!o);
 
         o = openfile.open("file1");
         EXCEPTION_ASSERT(o);
-        EXCEPTION_ASSERT(dynamic_cast<volatile DummyFileOperationDesc*>(o.get ()));
-        EXCEPTION_ASSERT_EQUALS(read1(o)->toString().toStdString(), "file1");
+        EXCEPTION_ASSERT(dynamic_cast<DummyFileOperationDesc*>(o.raw ()));
+        EXCEPTION_ASSERT_EQUALS(o.read ()->toString().toStdString(), "file1");
 
         o = openfile.open("file0");
         EXCEPTION_ASSERT(!o);
 
         o = openfile.open("file2");
         EXCEPTION_ASSERT(o);
-        EXCEPTION_ASSERT(dynamic_cast<volatile DummyFileOperationDesc*>(o.get ()));
-        EXCEPTION_ASSERT_EQUALS(read1(o)->toString().toStdString(), "file2");
+        EXCEPTION_ASSERT(dynamic_cast<DummyFileOperationDesc*>(o.raw ()));
+        EXCEPTION_ASSERT_EQUALS(o.read ()->toString().toStdString(), "file2");
     }
 }
 

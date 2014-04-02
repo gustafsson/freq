@@ -1,6 +1,6 @@
 #include "cache.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "exceptionassert.h"
 #include "neat_math.h"
 #include "backtrace.h"
@@ -50,16 +50,21 @@ void Cache::
         allocateCache( Signal::Interval I, float fs, int num_channels )
 {
     int N = this->num_channels ();
-    if (N>0 && N != num_channels)
-        BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
-                              (boost::format("Expected %d channels, got %d") %
-                                        N % num_channels) << Backtrace::make ());
-
     float F = this->sample_rate ();
-    if (F>0 && F != fs) // Not fuzzy compare, must be identical.
-        BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
-                              (boost::format("Expected fs=%g, got %g") %
-                               F % fs) << Backtrace::make ());
+    if (empty()) {
+        N = num_channels;
+        F = fs;
+    } else {
+        if (N != num_channels)
+            BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                                  (boost::format("Expected %d channels, got %d") %
+                                            N % num_channels) << Backtrace::make ());
+
+        if (F != fs) // Not fuzzy compare, must be identical.
+            BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                                  (boost::format("Expected fs=%g, got %g") %
+                                   F % fs) << Backtrace::make ());
+    }
 
     // chunkSize 1 << ...
     // 22 -> 1.8 ms
@@ -187,7 +192,7 @@ float Cache::
         sample_rate() const
 {
     if (_cache.empty())
-        return 0;
+        return 1;
 
     return _cache.front()->sample_rate();
 }

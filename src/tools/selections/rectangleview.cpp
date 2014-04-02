@@ -4,7 +4,7 @@
 #include "tools/support/toolglbrush.h"
 #include "sawe/project.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 namespace Tools { namespace Selections
 {

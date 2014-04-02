@@ -3,7 +3,7 @@
 
 #include "tools/support/toolglbrush.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 namespace Tools { namespace Selections
 {

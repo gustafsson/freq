@@ -1,5 +1,5 @@
 #include "GpuCpuData.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include <time.h>
 #include <string.h>
 

@@ -4,7 +4,6 @@
 #include "backtrace.h"
 #include "datastoragestring.h"
 #include "exceptionassert.h"
-#include "atomicvalue.h"
 #include "factor.h"
 #include "geometricalgebra.h"
 #include "glframebuffer.h"
@@ -13,7 +12,7 @@
 #include "gltextureread.h"
 #include "prettifysegfault.h"
 #include "resampletexture.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 // sonicawe
 #include "test/implicitordering.h"
@@ -48,6 +47,7 @@
 #include "filters/rectangle.h"
 #include "filters/timeselection.h"
 #include "tools/support/audiofileopener.h"
+#include "tools/support/csvfileopener.h"
 #include "tools/support/chaininfo.h"
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
@@ -62,6 +62,7 @@
 #include "tools/applicationerrorlogcontroller.h"
 #include "heightmap/blocks/merger.h"
 #include "heightmap/blocks/mergertexture.h"
+#include "heightmap/blockinstaller.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -74,8 +75,9 @@
 #include "filters/absolutevalue.h"
 
 // gpumisc tool
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "timer.h"
+#include "../lib/backtrace/unittest.h"
 
 #include <stdio.h>
 #include <exception>
@@ -101,10 +103,8 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
-        RUNTEST(Backtrace);
+        RUNTEST(BacktraceTest::UnitTest);
         RUNTEST(DataStorageString);
-        RUNTEST(ExceptionAssert);
-        RUNTEST(AtomicValueTest);
         RUNTEST(Factor);
         RUNTEST(GeometricAlgebra);
         RUNTEST(GlFrameBuffer);
@@ -112,9 +112,7 @@ int UnitTest::
         RUNTEST(glProjection);
         RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
-        RUNTEST(PrettifySegfault);
         RUNTEST(ResampleTexture);
-        RUNTEST(VolatilePtrTest);
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
@@ -124,7 +122,6 @@ int UnitTest::
         RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
-        RUNTEST(Timer);
         // PortAudio complains if testing Microphone in the end
         RUNTEST(Adapters::MicrophoneRecorderDesc);
         RUNTEST(Signal::Cache);
@@ -139,7 +136,7 @@ int UnitTest::
         RUNTEST(Signal::Processing::Targets);
         RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
-        RUNTEST(Signal::Processing::Worker);
+//        RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
         RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);
@@ -156,6 +153,7 @@ int UnitTest::
         RUNTEST(Tools::OpenWatchedFileController);
         RUNTEST(Tools::RecordModel);
         RUNTEST(Tools::Support::AudiofileOpener);
+        RUNTEST(Tools::Support::CsvfileOpener);
         RUNTEST(Tools::Support::ChainInfo);
         RUNTEST(Tools::Support::OperationCrop);
         RUNTEST(Tools::Support::RenderOperationDesc);
@@ -168,6 +166,7 @@ int UnitTest::
         RUNTEST(Heightmap::Block);
         RUNTEST(Heightmap::Blocks::Merger);
         RUNTEST(Heightmap::Blocks::MergerTexture);
+        RUNTEST(Heightmap::BlockInstaller);
         RUNTEST(Heightmap::BlockLayout);
         RUNTEST(Heightmap::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);
@@ -187,12 +186,22 @@ int UnitTest::
         RUNTEST(Filters::AbsoluteValueDesc);
 
     } catch (const exception& x) {
-        TaskInfo(boost::format("%s") % boost::diagnostic_information(x));
-        printf("\n FAILED in %s::test()\n\n", lastname.c_str ());
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                str(boost::format("%s\n"
+                                  "%s\n"
+                                  " FAILED in %s::test()\n\n")
+                    % vartype(x) % boost::diagnostic_information(x) % lastname ).c_str());
+        fflush(stderr);
         return 1;
     } catch (...) {
-        TaskInfo(boost::format("Not an std::exception\n%s") % boost::current_exception_diagnostic_information ());
-        printf("\n FAILED in %s::test()\n\n", lastname.c_str ());
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                str(boost::format("Not an std::exception\n"
+                                  "%s\n"
+                                  " FAILED in %s::test()\n\n")
+                    % boost::current_exception_diagnostic_information () % lastname ).c_str());
+        fflush(stderr);
         return 1;
     }
 

@@ -6,25 +6,23 @@
 namespace Tools {
 namespace Support {
 
-class RmsValue : public VolatilePtr<RmsValue>
+class RmsValue
 {
 public:
-    RmsValue();
-
     Signal::Intervals rms_I;
-    double rms;
+    double rms = 0;
 };
 
 
 class ComputeRms : public Signal::Operation
 {
 public:
-    ComputeRms(RmsValue::Ptr rms);
+    ComputeRms(shared_state<RmsValue> rms);
 
     Signal::pBuffer process( Signal::pBuffer b);
 
 private:
-    RmsValue::Ptr rms;
+    shared_state<RmsValue> rms;
 };
 
 
@@ -41,13 +39,13 @@ public:
 
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    Signal::OperationDesc::Ptr copy() const;
-    Signal::Operation::Ptr createOperation(Signal::ComputingEngine* engine=0) const;
+    Signal::OperationDesc::ptr copy() const;
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine=0) const;
 
     float rms();
 
 private:
-    RmsValue::Ptr rms_;
+    shared_state<RmsValue> rms_;
 
 public:
     static void test();

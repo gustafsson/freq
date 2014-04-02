@@ -1,6 +1,6 @@
 #include "task.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "expectexception.h"
 #include "log.h"
@@ -14,13 +14,14 @@ namespace Signal {
 namespace Processing {
 
 Task::
-        Task(const Step::WritePtr& step,
-             std::vector<Step::Ptr> children,
-             Signal::Operation::Ptr operation,
+        Task(const shared_state<Step>::write_ptr& step,
+             Step::ptr stepp,
+             std::vector<Step::ptr> children,
+             Signal::Operation::ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
-      step_(step.getPtr()),
+      step_(stepp),
       children_(children),
       operation_(operation),
       expected_output_(expected_output),
@@ -58,7 +59,9 @@ void Task::
             << Task::crashed_expected_output(expected_output_);
 
         try {
-            write1(step_)->mark_as_crashed();
+            Signal::Processing::IInvalidator::ptr i = step_.write ()->mark_as_crashed_and_get_invalidator();
+            EXCEPTION_ASSERT(i);
+            i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
         } catch(const std::exception& y) {
             x << unexpected_exception_info(boost::current_exception());
         }
@@ -71,12 +74,12 @@ void Task::
 void Task::
         run_private()
 {
-    Signal::OperationDesc::Ptr od;
-    TIME_TASK od = read1(step_)->operation_desc ();
+    Signal::OperationDesc::ptr od;
+    TIME_TASK od = step_.raw ()->operation_desc ();
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
-                           % read1(od)->toString ().toStdString ());
+                           % od.read ()->toString ().toStdString ());
 
-    Signal::Operation::Ptr o = this->operation_;
+    Signal::Operation::ptr o = this->operation_;
 
     Signal::pBuffer input_buffer, output_buffer;
 
@@ -88,7 +91,7 @@ void Task::
 
     {
         TIME_TASK TaskTimer tt(boost::format("process %s") % input_buffer->getInterval ());
-        output_buffer = write1(o)->process (input_buffer);
+        output_buffer = o->process (input_buffer);
         finish(output_buffer);
     }
 }
@@ -97,19 +100,19 @@ void Task::
 Signal::pBuffer Task::
         get_input() const
 {
-    Signal::OperationDesc::Ptr operation_desc = read1(step_)->operation_desc ();
+    Signal::OperationDesc::ptr operation_desc = step_.raw ()->operation_desc ();
 
     // Sum all sources
     std::vector<Signal::pBuffer> buffers;
     buffers.reserve (children_.size ());
 
-    Signal::OperationDesc::Extent x = read1(operation_desc)->extent ();
+    Signal::OperationDesc::Extent x = operation_desc.read ()->extent ();
 
     unsigned num_channels = x.number_of_channels.get_value_or (0);
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = read1(children_[i])->readFixedLengthFromCache(required_input_);
+        Signal::pBuffer b = children_[i].read ()->readFixedLengthFromCache(required_input_);
         if (b) {
             num_channels = std::max(num_channels, b->number_of_channels ());
             sample_rate = std::max(sample_rate, b->sample_rate ());
@@ -146,7 +149,7 @@ void Task::
         finish(Signal::pBuffer b)
 {
     if (step_)
-        write1(step_)->finishTask(this, b);
+        step_.write ()->finishTask(this, b);
     step_.reset();
 }
 
@@ -155,7 +158,7 @@ void Task::
         cancel()
 {
     if (step_)
-        write1(step_)->finishTask(this, Signal::pBuffer());
+        step_.write ()->finishTask(this, Signal::pBuffer());
     step_.reset();
 }
 
@@ -174,27 +177,27 @@ void Task::
     {
         // setup a known signal processing operation (take data from a predefined buffer)
         pBuffer b = Test::RandomBuffer::randomBuffer (Interval(60,70), 40, 7);
-        Signal::OperationDesc::Ptr od(new BufferSource(b));
+        Signal::OperationDesc::ptr od(new BufferSource(b));
 
         // setup a known signal processing step
-        Step::Ptr step (new Step(od));
-        std::vector<Step::Ptr> children; // empty
+        Step::ptr step (new Step(od));
+        std::vector<Step::ptr> children; // empty
         Signal::Interval expected_output(-10,80);
         Signal::Interval required_input;
-        Signal::Operation::Ptr o;
+        Signal::Operation::ptr o;
         {
-            Signal::ComputingEngine::Ptr c(new Signal::ComputingCpu);
-            Signal::OperationDesc::ReadPtr r(od);
+            Signal::ComputingEngine::ptr c(new Signal::ComputingCpu);
+            auto r = od.read ();
             required_input = r->requiredInterval(expected_output, 0);
             o = r->createOperation (c.get ());
         }
 
         // perform a signal processing task
-        Task t(write1(step), children, o, expected_output, required_input);
+        Task t(step.write (), step, children, o, expected_output, required_input);
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
-        Signal::pBuffer r = write1(step)->readFixedLengthFromCache(to_read);
+        Signal::pBuffer r = step.write ()->readFixedLengthFromCache(to_read);
         EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
         EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
 

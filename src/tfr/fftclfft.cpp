@@ -8,7 +8,7 @@
 
 #include "cpumemorystorage.h"
 #include "openclmemorystorage.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 #include "clfft/clfftkernelbuffer.h"
 

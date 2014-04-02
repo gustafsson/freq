@@ -7,7 +7,8 @@
 #include "processing/iinvalidator.h"
 
 // gpumisc
-#include "volatileptr.h"
+#include "shared_state.h"
+#include "shared_state_traits_backtrace.h"
 
 // QString
 #include <QString>
@@ -23,11 +24,13 @@ class OperationDesc;
 /**
  * @brief The Operation class should describe the interface for performing signal processing on signal data.
  *
- * 'process' should only be called from one thread. But use VolatilePtr anyways. The overhead is low.
+ * 'process' should only be called from one thread.
  */
-class SaweDll Operation: public VolatilePtr<Operation>
+class SaweDll Operation
 {
 public:
+    typedef std::shared_ptr<Operation> ptr;
+
     /**
       Virtual housekeeping.
       */
@@ -44,7 +47,7 @@ public:
     virtual Signal::pBuffer process(Signal::pBuffer b) = 0;
 
 
-    static void test(Ptr o, OperationDesc*);
+    static void test(ptr o, OperationDesc*);
 };
 
 
@@ -55,9 +58,12 @@ public:
  *
  * All methods except one have const access to make it more likely that there are none or few side-effects.
  */
-class SaweDll OperationDesc: public VolatilePtr<OperationDesc>
+class SaweDll OperationDesc
 {
 public:
+    typedef shared_state<OperationDesc> ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
+
     /**
       Virtual housekeeping.
       */
@@ -92,7 +98,7 @@ public:
      * @brief copy creates a copy of 'this'.
      * @return a copy.
      */
-    virtual OperationDesc::Ptr copy() const = 0;
+    virtual OperationDesc::ptr copy() const = 0;
 
 
     /**
@@ -113,7 +119,7 @@ public:
      *
      * @return a newly created operation.
      */
-    virtual Operation::Ptr createOperation(ComputingEngine* engine=0) const = 0;
+    virtual Operation::ptr createOperation(ComputingEngine* engine=0) const = 0;
 
 
     /**
@@ -143,8 +149,12 @@ public:
     /**
      * @brief setInvalidator sets an functor to be used by deprecateCache.
      * @param invalidator
+     *
+     * Could be a list<IInvalidator::Ptr> to support adding the same OperationDesc
+     * at multiple locations in the Dag.
      */
-    void setInvalidator(Signal::Processing::IInvalidator::Ptr invalidator);
+    void setInvalidator(Signal::Processing::IInvalidator::ptr invalidator);
+    Signal::Processing::IInvalidator::ptr getInvalidator() const;
 
 
     /**
@@ -168,20 +178,6 @@ public:
     friend std::ostream& operator << (std::ostream& os, const OperationDesc& d);
 
 
-protected:
-    friend class Signal::Processing::Step;
-
-    /**
-     * @brief deprecateCache should be called when parameters change.
-     * @param what If what is Signal::Intervals::Intervals_ALL then Step will
-     * recreate operations for computing engines as needed.
-     *
-     * deprecateCache without 'volatile' will release the lock while calling IInvalidator.
-     */
-    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL);
-    void deprecateCache(Signal::Intervals what=Signal::Intervals::Intervals_ALL) const volatile;
-
-
 private:
     /**
      * @brief invalidator_ is used by deprecateCache.
@@ -189,7 +185,7 @@ private:
      * Could be a list<IInvalidator::Ptr> to support adding the same OperationDesc
      * at multiple locations in the Dag.
      */
-    Signal::Processing::IInvalidator::Ptr invalidator_;
+    Signal::Processing::IInvalidator::ptr invalidator_;
 };
 
 } // namespace Signal

@@ -5,23 +5,35 @@
 
 namespace Tools {
 
-
-class OpenfileWatcher: public FileChangedBase, public Signal::OperationDescWrapper
+class OpenfileWatcher: public FileChangedBase
 {
 public:
     OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path);
 
+    void setWrapper(shared_state<Signal::OperationDesc>::weak_ptr wrapper);
+    void setWrappedOperationDesc(Signal::OperationDesc::ptr);
+    Signal::OperationDesc::ptr getWrappedOperationDesc();
+
 private:
     void fileChanged (const QString & path);
 
+    shared_state<Signal::OperationDesc>::weak_ptr wrapper_;
+    Signal::OperationDesc::ptr last_loaded_operation_;
     QPointer<OpenfileController> openfilecontroller_;
     QFileSystemWatcher watcher_;
+    shared_state<Signal::OperationDesc>::weak_ptr operation_;
 };
+
+
+class OpenfileWatcherOperationDesc: public Signal::OperationDescWrapper {
+public:
+    QSharedPointer<OpenfileWatcher> openfile_watcher;
+};
+
 
 OpenfileWatcher::
         OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path)
     :
-      OperationDescWrapper(Signal::OperationDesc::Ptr()),
       openfilecontroller_(openfilecontroller)
 {
     watcher_.addPath (path);
@@ -32,13 +44,54 @@ OpenfileWatcher::
 
 
 void OpenfileWatcher::
+        setWrapper(shared_state<Signal::OperationDesc>::weak_ptr wrapper)
+{
+    wrapper_ = wrapper;
+
+    setWrappedOperationDesc (last_loaded_operation_);
+}
+
+
+void OpenfileWatcher::
+        setWrappedOperationDesc(Signal::OperationDesc::ptr o)
+{
+    if (Signal::OperationDesc::ptr wrapper = wrapper_.lock ())
+    {
+        auto w = wrapper.write ();
+        Signal::OperationDescWrapper* odw = dynamic_cast<Signal::OperationDescWrapper*>(w.get ());
+        if (odw) {
+            odw->setWrappedOperationDesc (o);
+            w.unlock ();
+
+            Signal::Processing::IInvalidator::ptr i = wrapper.raw ()->getInvalidator ();
+            if (i)
+                i->deprecateCache (Signal::Interval::Interval_ALL);
+        }
+    }
+}
+
+
+Signal::OperationDesc::ptr OpenfileWatcher::
+        getWrappedOperationDesc()
+{
+    return last_loaded_operation_;
+}
+
+
+void OpenfileWatcher::
         fileChanged ( const QString & path)
 {
     TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
 
-    Signal::OperationDesc::Ptr file = openfilecontroller_->open(path);
+    Signal::OperationDesc::ptr newop = openfilecontroller_->reopen(path, last_loaded_operation_);
+    if (!newop) {
+        TaskInfo("Could not open file, ignoring reload");
+        return;
+    }
 
-    setWrappedOperationDesc (file);
+    last_loaded_operation_ = newop;
+
+    setWrappedOperationDesc (last_loaded_operation_);
 }
 
 
@@ -51,18 +104,24 @@ OpenWatchedFileController::
 }
 
 
-Signal::OperationDesc::Ptr OpenWatchedFileController::
+Signal::OperationDesc::ptr OpenWatchedFileController::
         openWatched(QString url)
 {
-    OpenfileWatcher* w;
-    Signal::OperationDesc::Ptr o(w = new OpenfileWatcher(openfilecontroller_, url));
+    QSharedPointer<OpenfileWatcher> w {new OpenfileWatcher(openfilecontroller_, url)};
 
     // The file must exist to begin with
     if (w->getWrappedOperationDesc ())
-        return o;
+    {
+        OpenfileWatcherOperationDesc* d;
+        Signal::OperationDesc::ptr o {d = new OpenfileWatcherOperationDesc};
 
+        d->openfile_watcher = w; // ownership
+        w->setWrapper (o);       // to lock while calling setWrappedOperationDesc
+
+        return o;
+    }
     // Failed to open url
-    return Signal::OperationDesc::Ptr();
+    return Signal::OperationDesc::ptr();
 }
 
 } // namespace Tools
@@ -79,8 +138,8 @@ public:
     DummyFileWatchedOperationDesc(QString which):which(which) {}
     virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* ) const { return I; }
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const { return I; }
-    virtual OperationDesc::Ptr copy() const { return OperationDesc::Ptr(); }
-    virtual Signal::Operation::Ptr createOperation(Signal::ComputingEngine*) const { return Signal::Operation::Ptr(); }
+    virtual OperationDesc::ptr copy() const { return OperationDesc::ptr(); }
+    virtual Signal::Operation::ptr createOperation(Signal::ComputingEngine*) const { return Signal::Operation::ptr(); }
     virtual QString toString() const { return which; }
 
 private:
@@ -91,14 +150,14 @@ class DummyFileWatchedOpener : public OpenfileController::OpenfileInterface {
 public:
     Patterns patterns() { return Patterns(); }
 
-    Signal::OperationDesc::Ptr open(QString url) {
+    Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr) {
         QFile file(url);
         if (!file.exists ())
-            return Signal::OperationDesc::Ptr();
+            return Signal::OperationDesc::ptr();
 
         file.open (QIODevice::ReadOnly);
         QString str(file.readAll ());
-        return Signal::OperationDesc::Ptr(new DummyFileWatchedOperationDesc(str));
+        return Signal::OperationDesc::ptr(new DummyFileWatchedOperationDesc(str));
     }
 };
 
@@ -125,20 +184,20 @@ void OpenWatchedFileController::
         ofc->registerOpener (ofi);
 
         OpenWatchedFileController owfc(ofc);
-        Signal::OperationDesc::Ptr od = owfc.openWatched (filename);
+        Signal::OperationDesc::ptr od = owfc.openWatched (filename);
 
         EXCEPTION_ASSERT(od);
 
         application.processEvents ();
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), "foobar");
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
 
         file.open (QIODevice::WriteOnly);
         file.write ("baz");
         file.close ();
 
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), "foobar");
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
         application.processEvents ();
-        EXCEPTION_ASSERT_EQUALS(read1(od)->toString().toStdString(), "baz");
+        EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "baz");
 
         file.remove ();
     }

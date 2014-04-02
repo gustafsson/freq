@@ -20,17 +20,15 @@ class ChunkMergerThread: public QThread, public IChunkMerger
 {
     Q_OBJECT
 public:
-    typedef std::shared_ptr<ChunkMergerThread> Ptr;
-
     ChunkMergerThread(QGLWidget* shared_gl_context);
     ~ChunkMergerThread();
 
     // IChunkMerger
     void clear();
-    void addChunk( MergeChunk::Ptr merge_chunk,
+    void addChunk( MergeChunk::ptr merge_chunk,
                    Tfr::ChunkAndInverse chunk,
                    std::vector<pBlock> intersecting_blocks );
-    bool processChunks(float timeout) volatile;
+    bool processChunks(float timeout);
 
     bool isEmpty() const;
     /**
@@ -44,15 +42,14 @@ private slots:
 
 private:
     struct Job {
-        MergeChunk::Ptr merge_chunk;
+        MergeChunk::ptr merge_chunk;
         Tfr::ChunkAndInverse chunk;
         std::vector<pBlock> intersecting_blocks;
     };
 
-    class Jobs: public VolatilePtr<Jobs>, public std::queue<Job> {};
+    class Jobs: public std::queue<Job> {};
 
-
-    Jobs::Ptr   jobs;
+    shared_state<Jobs> jobs;
     QSemaphore  semaphore;
     QGLWidget*  shared_gl_context;
 

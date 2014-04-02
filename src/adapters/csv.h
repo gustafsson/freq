@@ -34,7 +34,7 @@ public:
 
     // ChunkFilterDesc
     Tfr::pChunkFilter       createChunkFilter(Signal::ComputingEngine* engine=0) const;
-    ChunkFilterDesc::Ptr    copy() const;
+    ChunkFilterDesc::ptr    copy() const;
 
 private:
     std::string filename_;

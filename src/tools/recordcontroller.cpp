@@ -12,7 +12,7 @@
 #include "heightmap/collection.h"
 #include "tools/commands/recordedcommand.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "Statistics.h"
 
@@ -52,15 +52,17 @@ void RecordController::
     if (destroyed_)
         return;
 
-    receiveRecord(false);
+    auto r = model()->recording.write ();
+    if (!r->isStopped())
+        r->stopRecording();
+
     destroyed_ = true;
 }
 
 void RecordController::
         receiveRecord(bool active)
 {
-    boost::shared_ptr<Adapters::Recorder::WritePtr> rs(new Adapters::Recorder::WritePtr(model()->recording));
-    Adapters::Recorder* r = &**rs;
+    auto r = model()->recording.write ();
 
     if (active)
     {
@@ -80,9 +82,12 @@ void RecordController::
 
             if (r->number_of_samples() > prev_length_)
             {
-                rs.reset ();
-                r = 0;
-// TODO this command really should be invoked when the recording is started.
+                r.unlock ();
+
+                // TODO this command really should be invoked when the
+                // recording is started rather than when it is finished. As it
+                // would be less surprising to the user when looking at the undo
+                // menu.
                 Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand(
                                                    model()->recording,
                                                    prev_length_,
@@ -123,7 +128,7 @@ void RecordController::
     if (model()->recording)
     {
         ui->actionRecord->setVisible (true);
-        if (write1(model()->recording) -> canRecord())
+        if (model()->recording.write ()->canRecord ())
             ui->actionRecord->setEnabled( true );
         else
             ui->actionRecord->setToolTip("Can't record, no record devices found");

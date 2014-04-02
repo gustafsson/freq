@@ -67,10 +67,10 @@ void Application::
         ::exit(3);
 
     Tools::RenderModel& render_model = p->tools().render_model;
-    Tools::Support::TransformDescs::WritePtr td (render_model.transform_descs ());
+    auto td = render_model.transform_descs ().write ();
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     //Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
-    Signal::OperationDesc::Extent extent = read1(p->processing_chain ())->extent(p->default_target ());
+    Signal::OperationDesc::Extent extent = p->processing_chain().read ()->extent(p->default_target ());
     Signal::IntervalType number_of_samples = extent.interval.get_value_or (Signal::Interval());
     float sample_rate = extent.sample_rate.get_value_or (1);
     unsigned samples_per_chunk_hint = Sawe::Configuration::samples_per_chunk_hint();
@@ -85,14 +85,14 @@ void Application::
             ::exit(4);
         }
 
-        Tfr::ChunkFilterDesc::Ptr cfd(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
-        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
-        Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
+        Tfr::ChunkFilterDesc::ptr cfd(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
+        Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTarget(o, p->default_target ());
+        Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
-        write1(needs)->updateNeeds (I);
-        needs->sleep(-1);
+        needs.write ()->updateNeeds (I);
+        needs->sleep(needs, -1);
 
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
@@ -105,14 +105,14 @@ void Application::
             ::exit(5);
         }
 
-        Tfr::ChunkFilterDesc::Ptr cfd(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
-        Signal::OperationDesc::Ptr o(new Tfr::TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::Ptr t = write1(p->processing_chain ())->addTarget(o, p->default_target ());
-        Signal::Processing::TargetNeeds::Ptr needs = t->target_needs ();
+        Tfr::ChunkFilterDesc::ptr cfd(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
+        Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
+        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTarget(o, p->default_target ());
+        Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );
-        write1(needs)->updateNeeds (I);
-        needs->sleep(-1);
+        needs.write ()->updateNeeds (I);
+        needs->sleep(needs, -1);
 
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
@@ -146,10 +146,10 @@ void Application::
         apply_command_line_options( pProject p )
 {
     {
-        Tools::Support::TransformDescs::WritePtr td (p->tools().render_model.transform_descs ());
+        auto td = p->tools().render_model.transform_descs ().write ();
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
         cwt.scales_per_octave( Sawe::Configuration::scales_per_octave() );
-        cwt.set_wanted_min_hz( Sawe::Configuration::min_hz(), p->extent ().sample_rate.get () );
+        cwt.set_wanted_min_hz( p->extent ().sample_rate.get ()/1000, p->extent ().sample_rate.get () );
         cwt.wavelet_time_support( Sawe::Configuration::wavelet_time_support() );
         cwt.wavelet_scale_support( Sawe::Configuration::wavelet_scale_support() );
     }
@@ -160,9 +160,9 @@ void Application::
 
     Heightmap::BlockLayout newbc =
                 Heightmap::BlockLayout(
-                    Sawe::Configuration::samples_per_block(),
+                    Sawe::Configuration::samples_per_block (),
                     Sawe::Configuration::scales_per_block (),
-                    read1(tools.render_model.tfr_mapping ())->targetSampleRate()
+                    tools.render_model.tfr_mapping ()->targetSampleRate ()
                 );
 
     tools.render_model.block_layout ( newbc );

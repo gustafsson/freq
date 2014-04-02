@@ -35,7 +35,7 @@ namespace Signal {
 class SinkSource: public SourceBase
 {
 public:
-    typedef boost::shared_ptr<SinkSource> Ptr;
+    typedef boost::shared_ptr<SinkSource> ptr;
 
     /// @see SinkSource
     SinkSource( int num_channels );
@@ -148,7 +148,7 @@ private:
     std::vector<pBuffer>::iterator findBuffer( Signal::IntervalType sample );
 };
 
-typedef SinkSource::Ptr pSinkSource;
+typedef SinkSource::ptr pSinkSource;
 
 } // namespace Signal
 

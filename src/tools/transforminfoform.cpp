@@ -148,7 +148,7 @@ void TransformInfoForm::
     if (renderview->model->collections().empty())
         return;
 
-    Tfr::TransformDesc::Ptr f = renderview->model->transform_desc();
+    Tfr::TransformDesc::ptr f = renderview->model->transform_desc();
     const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(f.get ());
     const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(f.get ());
     const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(f.get ());
@@ -267,9 +267,9 @@ void TransformInfoForm::
 #endif
 
     size_t cacheByteSize=0;
-    foreach( const Heightmap::Collection::Ptr& h, renderview->model->collections())
+    foreach( const Heightmap::Collection::ptr& h, renderview->model->collections())
     {
-        cacheByteSize += write1(h)->cacheByteSize();
+        cacheByteSize += h.write ()->cacheByteSize();
     }
 
     addRow("Sonic AWE caches", DataStorageVoid::getMemorySizeText( cacheByteSize ).c_str());
@@ -297,7 +297,7 @@ void TransformInfoForm::
         newValue=fs/2;
 
     {
-        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        auto td = renderview->model->transform_descs ().write ();
         Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
 
         if (cwt.get_wanted_min_hz (fs) == newValue)
@@ -322,7 +322,7 @@ void TransformInfoForm::
     Signal::IntervalType new_chunk_size = fs/newValue;
 
     {
-        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        auto td = renderview->model->transform_descs ().write ();
         Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
 
         if (new_chunk_size == stft.chunk_size())
@@ -346,7 +346,7 @@ void TransformInfoForm::
         newValue=N*2;
 
     {
-        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        auto td = renderview->model->transform_descs ().write ();
         Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
 
         if (newValue == stft.chunk_size())
@@ -374,7 +374,7 @@ void TransformInfoForm::
 //    if (minHz>newValue/2)
 //        minHz=newValue/2;
 //    if (orgMinHz != minHz)
-//        write1(renderview->model->transform_descs ())->getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
+//        renderview->model->transform_descs (.write ())->getParam<Tfr::Cwt>().set_wanted_min_hz(minHz);
 
 //    Signal::BufferSource* bs = dynamic_cast<Signal::BufferSource*>(project->head->head_source()->root());
 //    if (bs && (bs->sample_rate() != newValue || orgMinHz != minHz))
@@ -392,7 +392,7 @@ void TransformInfoForm::
     int windowtype = ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt();
 
     {
-        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        auto td = renderview->model->transform_descs ().write ();
         Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
         if (stft.windowType() == windowtype)
             return;
@@ -416,7 +416,7 @@ void TransformInfoForm::
     // Tfr::Stft::setWindow validates value range
 
     {
-        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        auto td = renderview->model->transform_descs ().write ();
         Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
         if (stft.overlap() == newValue)
             return;
@@ -435,7 +435,7 @@ void TransformInfoForm::
     float newValue = ui->averagingEdit->text().toFloat();
 
     {
-        Tools::Support::TransformDescs::WritePtr td (renderview->model->transform_descs ());
+        auto td = renderview->model->transform_descs ().write ();
         Tfr::StftDesc& stft = td->getParam<Tfr::StftDesc>();
         if (stft.averaging() == newValue)
             return;
@@ -469,20 +469,20 @@ void TransformInfoForm::
 void TransformInfoForm::
         freqNormalizationChanged(qreal newValue)
 {
-    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+    Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_params =
             project->tools ().render_model.get_stft_block_filter_params ();
     EXCEPTION_ASSERT( stft_params );
 
     if (0.f < newValue)
     {
         ui->freqNormalizationSliderPercent->setValue ( 0 );
-        write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
+        stft_params.write ()->freq_normalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(newValue));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
     {
-        write1(stft_params)->freq_normalization.reset();
+        stft_params.write ()->freq_normalization.reset();
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
     }
 
@@ -493,7 +493,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         freqNormalizationPercentChanged(qreal newValue)
 {
-    Heightmap::TfrMappings::StftBlockFilterParams::Ptr stft_params =
+    Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_params =
             project->tools ().render_model.get_stft_block_filter_params ();
     EXCEPTION_ASSERT( stft_params );
 
@@ -502,13 +502,13 @@ void TransformInfoForm::
         ui->freqNormalizationSlider->setValue ( 0 );
         TaskInfo("new stuff: %f", -newValue/100.0f);
 
-        write1(stft_params)->freq_normalization = Tfr::pChunkFilter(
+        stft_params.write ()->freq_normalization = Tfr::pChunkFilter(
                     new Filters::NormalizeSpectra(-newValue/100.0f));
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Real);
     }
     else
     {
-        write1(stft_params)->freq_normalization.reset();
+        stft_params.write ()->freq_normalization.reset();
         //project->tools ().render_model.amplitude_axis (Heightmap::AmplitudeAxis_Linear);
     }
 
@@ -526,7 +526,7 @@ void TransformInfoForm::
 void TransformInfoForm::
         deprecateAll()
 {
-    write1(renderview->model->target_marker()->target_needs ())->deprecateCache( Signal::Intervals::Intervals_ALL );
+    renderview->model->target_marker()->target_needs ().write ()->deprecateCache( Signal::Intervals::Intervals_ALL );
     renderview->emitTransformChanged();
 }
 

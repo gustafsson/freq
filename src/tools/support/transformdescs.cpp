@@ -4,13 +4,13 @@ namespace Tools {
 namespace Support {
 
 
-Tfr::TransformDesc::Ptr TransformDescs::
+Tfr::TransformDesc::ptr TransformDescs::
         cloneType(const std::type_info& i) const
 {
-    foreach (Tfr::TransformDesc::Ptr p, descriptions_)
+    foreach (Tfr::TransformDesc::ptr p, descriptions_)
         if (typeid(*p.get()) == i)
             return p->copy ();
-    return Tfr::TransformDesc::Ptr();
+    return Tfr::TransformDesc::ptr();
 }
 
 

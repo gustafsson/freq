@@ -32,7 +32,7 @@ void Envelope::
 
 
     Tfr::Stft* stft = dynamic_cast<Tfr::Stft*>(chunk.t.get ());
-    Tfr::ComplexBuffer::Ptr b = stft->inverseKeepComplex (chunk.chunk);
+    Tfr::ComplexBuffer::ptr b = stft->inverseKeepComplex (chunk.chunk);
     Tfr::ChunkElement* d = b->complex_waveform_data ()->getCpuMemory ();
     for (int i=0; i<b->number_of_samples (); ++i)
         d[i] = ChunkElement( abs(d[i]), 0 );
@@ -93,9 +93,9 @@ void EnvelopeDesc::
 {
     // It should compute the envelope of a signal.
     {
-        ChunkFilterDesc::Ptr cfd(new EnvelopeDesc);
+        ChunkFilterDesc::ptr cfd(new EnvelopeDesc);
         Tfr::TransformOperationDesc ed(cfd);
-        Signal::Operation::Ptr o = ed.createOperation ();
+        Signal::Operation::ptr o = ed.createOperation ();
 
 //        _window_size = 256
 //        _compute_redundant = true
@@ -110,7 +110,7 @@ void EnvelopeDesc::
         EXCEPTION_ASSERT_EQUALS(expected, Signal::Interval(0,64));
         EXCEPTION_ASSERT_EQUALS(i, Signal::Interval(-192,256));
         Signal::pBuffer b = Test::RandomBuffer::randomBuffer (i, 1, 1);
-        Signal::pBuffer r = write1(o)->process(b);
+        Signal::pBuffer r = o->process(b);
 
         EXCEPTION_ASSERT_EQUALS(r->getInterval (), expected);
 

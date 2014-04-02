@@ -17,6 +17,7 @@
 #include "tools/commands/appendoperationdesccommand.h"
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/support/audiofileopener.h"
+#include "tools/support/csvfileopener.h"
 
 // Qt
 #include <QFileDialog>
@@ -56,7 +57,7 @@ Project::
     // Instead attempt unnesting of dependencies.
     {
         TaskInfo ti("Closing signal processing chain");
-        write1(processing_chain_)->close();
+        processing_chain_.write ()->close();
     }
 
     {
@@ -71,7 +72,7 @@ Project::
 
     {
         TaskInfo ti("Releasing signal processing chain");
-        processing_chain_.reset ();
+        processing_chain_ = Signal::Processing::Chain::ptr();
     }
 
     if (_mainWindow)
@@ -82,7 +83,7 @@ Project::
 
 
 void Project::
-        appendOperation(Signal::OperationDesc::Ptr s)
+        appendOperation(Signal::OperationDesc::ptr s)
 {
     Tools::Commands::pCommand c(
                 new Tools::Commands::AppendOperationDescCommand(
@@ -142,7 +143,7 @@ pProject Project::
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (Adapters::Recorder::Ptr(new Adapters::NetworkRecorder(url)));
+            p->tools ().addRecording (Adapters::Recorder::ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -190,45 +191,20 @@ pProject Project::
         err = "File '" + filename + "' does not exist";
     else
     {
-        int availableFileTypes = 1;
-    #if !defined(TARGET_reader)
-        availableFileTypes+=2;
-    #endif
-    #if !defined(TARGET_reader) && !defined(TARGET_hast)
-        availableFileTypes++;
-    #endif
-
-        string suffix = QFileInfo(filename.c_str()).completeSuffix().toLower().toStdString();
-        int expected = -1;
-        if (suffix == "sonicawe") expected = 0;
-#if !defined(TARGET_reader)
-        if (Adapters::Audiofile::hasExpectedSuffix(suffix)) expected = 1;
-#endif
-#if !defined(TARGET_reader) && !defined(TARGET_hast)
-        if (Adapters::CsvTimeseries::hasExpectedSuffix(suffix)) expected = 2;
-#endif
-
-        int i = 0;
-        if (expected >= 0)
-            i = expected, availableFileTypes=expected+1;
-
-        for (; i<availableFileTypes; i++) try
+        for (int i=0; i<2; i++) try
         {
             switch(i) {
                 case 0: p = Project::openProject( filename ); break;
     #if !defined(TARGET_reader)
                 case 1: p = Project::openWatched ( filename ); break;
-                case 2: p = Project::openAudio( filename ); break;
-    #endif
-    #if !defined(TARGET_reader) && !defined(TARGET_hast)
-                case 3: p = Project::openCsvTimeseries( filename ); break;
     #endif
             }
 
-            if (!p)
-                continue;
-
-            break; // successful loading without thrown exception
+            if (p)
+            {
+                // successful loading without thrown exception
+                break;
+            }
         }
         catch (const OpenFileError& x) {
             if (!openfile_err.empty())
@@ -294,12 +270,12 @@ pProject Project::
 {
     int device = QSettings().value("inputdevice", -1).toInt();
 
-    Adapters::Recorder::Ptr recorder(new Adapters::MicrophoneRecorder(device));
+    Adapters::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
 
     Signal::OperationDesc::Extent x;
     x.interval = Signal::Interval();
-    x.number_of_channels = write1(recorder)->num_channels();
-    x.sample_rate = write1(recorder)->sample_rate();
+    x.number_of_channels = recorder.write ()->num_channels();
+    x.sample_rate = recorder.write ()->sample_rate();
 
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();
@@ -456,7 +432,7 @@ bool Project::
 }
 
 
-Signal::Processing::TargetMarker::Ptr Project::
+Signal::Processing::TargetMarker::ptr Project::
         default_target()
 {
     return tools().render_model.target_marker();
@@ -469,7 +445,7 @@ Signal::OperationDesc::Extent Project::
     Signal::OperationDesc::Extent x;
 
     if (areToolsInitialized())
-        x = read1(processing_chain_)->extent(this->default_target ());
+        x = processing_chain_.read ()->extent(this->default_target ());
 
     if (!x.interval.is_initialized ())
         x.interval = Signal::Interval();
@@ -538,12 +514,14 @@ pProject Project::
         openWatched(std::string path)
 {
     Tools::OpenfileController* ofc = Tools::OpenfileController::instance();
-    if (ofc->get_openers().empty())
+    if (ofc->get_openers().empty()) {
         ofc->registerOpener(new Tools::Support::AudiofileOpener);
+        ofc->registerOpener(new Tools::Support::CsvfileOpener);
+    }
 
     Tools::OpenWatchedFileController* watchedopener = new Tools::OpenWatchedFileController( ofc );
 
-    Signal::OperationDesc::Ptr d = watchedopener->openWatched (path.c_str ());
+    Signal::OperationDesc::ptr d = watchedopener->openWatched (path.c_str ());
     if (!d)
         return pProject();
 
@@ -552,14 +530,14 @@ pProject Project::
 
 
 pProject Project::
-        openOperation(Signal::OperationDesc::Ptr operation, std::string name)
+        openOperation(Signal::OperationDesc::ptr operation, std::string name)
 {
     if (name.empty ())
-        name = read1(operation)->toString().toStdString();
+        name = operation.read ()->toString().toStdString();
 
     pProject p( new Project(name) );
     p->createMainWindow ();
-    p->tools ().render_model.set_extent (read1(operation)->extent());
+    p->tools ().render_model.set_extent (operation.read ()->extent());
     p->appendOperation (operation);
     p->setModified (false);
 
@@ -574,7 +552,7 @@ pProject Project::
     std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString ();
 
     boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
-    Signal::OperationDesc::Ptr d(new Adapters::AudiofileDesc(a));
+    Signal::OperationDesc::ptr d(new Adapters::AudiofileDesc(a));
 
     return openOperation(d, a->name());
 }
@@ -585,7 +563,7 @@ pProject Project::
         openCsvTimeseries(std::string audio_file)
 {
     Adapters::CsvTimeseries*a;
-    Signal::OperationDesc::Ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
+    Signal::OperationDesc::ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
     double fs = QInputDialog::getDouble (0, "Sample rate",
                                            "Enter the sample rate for the csv data:", 1);
     if (fs<=0)

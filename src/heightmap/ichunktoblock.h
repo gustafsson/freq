@@ -9,7 +9,7 @@ namespace Heightmap {
 class IChunkToBlock
 {
 public:
-    typedef std::shared_ptr<IChunkToBlock> Ptr;
+    typedef std::shared_ptr<IChunkToBlock> ptr;
 
     IChunkToBlock() {}
     IChunkToBlock(const IChunkToBlock&) = delete;

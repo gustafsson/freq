@@ -1,7 +1,7 @@
 #include "matlabfunction.h"
 
 // gpumisc
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // qt
 #include <QFileInfo>

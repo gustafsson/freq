@@ -1,6 +1,6 @@
 #include "chunkmerger.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "timer.h"
 
 #include <boost/foreach.hpp>
@@ -26,7 +26,7 @@ void ChunkMerger::
 
 
 void ChunkMerger::
-        addChunk( MergeChunk::Ptr merge_chunk,
+        addChunk( MergeChunk::ptr merge_chunk,
                   Tfr::ChunkAndInverse chunk,
                   std::vector<pBlock> intersecting_blocks )
 {
@@ -39,23 +39,24 @@ void ChunkMerger::
 
 
 bool ChunkMerger::
-        processChunks(float timeout) volatile
+        processChunks(float timeout)
 {
     Timer t;
-    while (timeout < 0 || t.elapsed () < timeout) {
+
+    do
+    {
         Job job;
 
         {
-            WritePtr selfp(this);
-            ChunkMerger* self = dynamic_cast<ChunkMerger*>(selfp.get ());
-            if (self->jobs.empty ())
+            if (jobs.empty ())
                 return true;
-            job = self->jobs.front ();
-            self->jobs.pop ();
+            job = jobs.front ();
+            jobs.pop ();
         }
 
         processJob (job);
-    }
+    } while (timeout < 0 || t.elapsed () < timeout);
+
     return false;
 }
 
@@ -63,9 +64,9 @@ bool ChunkMerger::
 void ChunkMerger::
         processJob(Job& j)
 {
-    std::vector<IChunkToBlock::Ptr> chunk_to_blocks = write1( j.merge_chunk )->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk->createChunkToBlock( j.chunk );
 
-    BOOST_FOREACH( IChunkToBlock::Ptr chunk_to_block, chunk_to_blocks)
+    BOOST_FOREACH( IChunkToBlock::ptr chunk_to_block, chunk_to_blocks)
       {
         BOOST_FOREACH( pBlock block, j.intersecting_blocks)
           {

@@ -9,29 +9,24 @@ TARGET = gpumisc
 TEMPLATE = lib
 win32:TEMPLATE = vclib
 win32:CONFIG += debug_and_release
-#QT = core # gpumisc uses QMutex from Qt library in TaskTimer
 
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
+INCLUDEPATH += ../backtrace
+
 QT += opengl
 
-#DEFINES += NO_TASKTIMER_MUTEX
 #DEFINES += THREADCHECKER_NO_CHECK
 #DEFINES += CUDA_MEMCHECK_TEST
 DEFINES += GPUMISC_LIBRARY
 
 SOURCES += \
-    atomicvalue.cpp \
-    backtrace.cpp \
     cpumemorystorage.cpp \
     cpuproperties.cpp \
     datastorage.cpp \
     datastoragestring.cpp \
     debugbuf.cpp \
-    detectgdb.cpp \
-    demangle.cpp \
     factor.cpp \
-    exceptionassert.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
     glframebuffer.cpp \
@@ -44,19 +39,13 @@ SOURCES += \
     log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
-    prettifysegfault.cpp \
     redirectstdout.cpp \
     resampletexture.cpp \
-    signalname.cpp \
-    TaskTimer.cpp \
     ThreadChecker.cpp \
-    timer.cpp \
     vbo.cpp \
-    volatileptr.cpp \
+    ../backtrace/*.cpp \
 
 HEADERS += \
-    atomicvalue.h \
-    backtrace.h \
     computationkernel.h \
     cpumemoryaccess.h \
     cpumemorystorage.h \
@@ -64,16 +53,11 @@ HEADERS += \
     datastorageaccess.h \
     datastoragestring.h \
     cpuproperties.h \
-    cva_list.h \
     debugbuf.h \
     debugmacros.h \
     debugstreams.h \
-    demangle.h \
-    detectgdb.h \
     deprecated.h \
     factor.h \
-    exceptionassert.h \
-    expectexception.h \
     gl.h \
     GlException.h \
     glframebuffer.h \
@@ -94,7 +78,6 @@ HEADERS += \
     msc_stdc.h \
     neat_math.h \
     operate.h \
-    prettifysegfault.h \
     redirectstdout.h \
     redirectStream.h \
     releaseaftercontext.h \
@@ -103,28 +86,19 @@ HEADERS += \
     resamplehelpers.h \
     resampletexture.h \
     resampletypes.h \
-    signalname.h \
     Statistics.h \
     StatisticsRandom.h \
     TAni.h \
-    TaskTimer.h \
     texturereader.cu.h \
     ThreadChecker.h \
     throwInvalidArgument.h \
-    timer.h \
     tmatrix.h \
     tmatrixstring.h \
     tvector.h \
     tvectorstring.h \
     unsignedf.h \
-    unused.h \
     vbo.h \
-    volatileptr.h \
-
-win32 {
-    SOURCES += StackWalker.cpp
-    HEADERS += StackWalker.h
-}
+    ../backtrace/*.h \
 
 useopencl {
 DEFINES += USE_OPENCL

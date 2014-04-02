@@ -3,7 +3,7 @@
 #include "GlException.h"
 #include "gl.h"
 #include "exceptionassert.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "backtrace.h"
 
 //#define DEBUG_INFO
@@ -28,7 +28,6 @@ GlFrameBuffer::
     }
     catch(...)
     {
-        TaskInfo("GlFrameBuffer() caught exception");
         if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
         if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
 
@@ -54,7 +53,6 @@ GlFrameBuffer::
     }
     catch(...)
     {
-        TaskInfo("GlFrameBuffer() caught exception");
         if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
         if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
 

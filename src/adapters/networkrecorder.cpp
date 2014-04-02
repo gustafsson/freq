@@ -4,7 +4,7 @@
 #include <QTcpSocket>
 #include <QErrorMessage>
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 namespace Adapters {
 
@@ -56,7 +56,7 @@ void NetworkRecorder::
 
 
 bool NetworkRecorder::
-        isStopped()
+        isStopped() const
 {
     switch(tcpSocket.state())
     {
@@ -83,28 +83,28 @@ std::string NetworkRecorder::
 
 
 unsigned NetworkRecorder::
-        num_channels ()
+        num_channels () const
 {
     return 1;
 }
 
 
 float NetworkRecorder::
-        sample_rate()
+        sample_rate() const
 {
     return samplerate;
 }
 
 
 float NetworkRecorder::
-        length()
+        length() const
 {
     return std::min( Recorder::length(), time() );
 }
 
 
 float NetworkRecorder::
-        time()
+        time() const
 {
     switch(tcpSocket.state())
     {
@@ -141,7 +141,7 @@ int NetworkRecorder::
 
     // notify listeners that we've got new data
     if (_invalidator)
-        write1(_invalidator)->markNewlyRecordedData( Signal::Interval( offset, offset + sampleCount ) );
+        _invalidator.write ()->markNewlyRecordedData( Signal::Interval( offset, offset + sampleCount ) );
 
     return sampleCount*sizeof(short);
 }
@@ -245,7 +245,7 @@ void NetworkRecorder::
 
     // notify listeners that something happened (most meaningful if state == UnconnectedState)
     if (_invalidator)
-        write1(_invalidator)->markNewlyRecordedData( Signal::Interval() );
+        _invalidator.write ()->markNewlyRecordedData( Signal::Interval() );
 }
 
 } // namespace Adapters

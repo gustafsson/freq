@@ -27,17 +27,17 @@ Signal::Interval TransparentOperationDesc::
 }
 
 
-Signal::Operation::Ptr TransparentOperationDesc::
+Signal::Operation::ptr TransparentOperationDesc::
         createOperation(Signal::ComputingEngine*) const
 {
-    return Signal::Operation::Ptr( new TransparentOperation );
+    return Signal::Operation::ptr( new TransparentOperation );
 }
 
 
-Signal::OperationDesc::Ptr TransparentOperationDesc::
+Signal::OperationDesc::ptr TransparentOperationDesc::
         copy() const
 {
-    return OperationDesc::Ptr( new TransparentOperationDesc );
+    return OperationDesc::ptr( new TransparentOperationDesc );
 }
 
 

@@ -74,7 +74,7 @@ void PlaybackMarkersView::
         b = *itr;
     else {
 //        b = project_->worker.length();
-        Signal::OperationDesc::Extent x = read1(project_->processing_chain ())->extent(project_->default_target ());
+        Signal::OperationDesc::Extent x = project_->processing_chain ().read ()->extent(project_->default_target ());
         b = x.interval.get_value_or (Signal::Interval()).count();
     }
 

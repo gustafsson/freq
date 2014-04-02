@@ -9,7 +9,7 @@
 #include "splinemodel.h"
 
 // gpumisc
-#include "volatileptr.h"
+#include "shared_state.h"
 
 namespace Heightmap { class Collection; }
 
@@ -27,11 +27,11 @@ class PeakModel
 public:
     PeakModel( RenderModel* rendermodel );
 
-    Signal::OperationDesc::Ptr updateFilter() { return spline_model.updateFilter(); }
+    Signal::OperationDesc::ptr updateFilter() { return spline_model.updateFilter(); }
 
     SplineModel spline_model;
 
-    void findAddPeak( VolatilePtr<Heightmap::Collection>::Ptr c, Heightmap::Reference ref, Heightmap::Position pos );
+    void findAddPeak( shared_state<Heightmap::Collection> c, Heightmap::Reference ref, Heightmap::Position pos );
 
 private:
     struct BorderCoordinates
@@ -40,11 +40,11 @@ private:
         unsigned x, y;
     };
 
-    typedef DataStorage<bool>::Ptr PeakAreaP;
+    typedef DataStorage<bool>::ptr PeakAreaP;
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
 
     PeakAreas classifictions;
-    Heightmap::Collection* c;
+    Heightmap::Collection const* c;
 
     void findBorder();
     std::vector<BorderCoordinates> border_nodes;

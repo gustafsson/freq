@@ -14,7 +14,7 @@ namespace TfrMappings {
 class WaveformBlockFilter: public Heightmap::MergeChunk
 {
 public:
-    std::vector<IChunkToBlock::Ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
+    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
 
 public:
     static void test();
@@ -27,7 +27,7 @@ public:
 class WaveformBlockFilterDesc: public Heightmap::MergeChunkDesc
 {
 private:
-    MergeChunk::Ptr createMergeChunk(Signal::ComputingEngine* engine) const;
+    MergeChunk::ptr createMergeChunk(Signal::ComputingEngine* engine) const;
 
 public:
     static void test();

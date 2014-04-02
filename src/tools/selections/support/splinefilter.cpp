@@ -5,7 +5,7 @@
 
 // gpumisc
 #include "computationkernel.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // boost
 #include <boost/foreach.hpp>
@@ -77,7 +77,7 @@ void SplineFilter::operator()( ChunkAndInverse& chunkai )
     {
         TIME_SPLINEFILTER TaskTimer tt("SplineFilter applyspline (using subset with %u points out of %u total points)", j, N);
 
-        DataStorage<ChunkElement>::Ptr pts = CpuMemoryStorage::BorrowPtr( DataStorageSize(j), &p[0] );
+        DataStorage<ChunkElement>::ptr pts = CpuMemoryStorage::BorrowPtr( DataStorageSize(j), &p[0] );
 
         ::applyspline(
                 chunk.transform_data,
@@ -149,10 +149,10 @@ Tfr::pChunkFilter SplineFilterDesc::
 }
 
 
-Tfr::ChunkFilterDesc::Ptr SplineFilterDesc::
+Tfr::ChunkFilterDesc::ptr SplineFilterDesc::
         copy() const
 {
-    return Tfr::ChunkFilterDesc::Ptr(new SplineFilterDesc(save_inside, v));
+    return Tfr::ChunkFilterDesc::ptr(new SplineFilterDesc(save_inside, v));
 }
 
 }}} // namespace Tools::Selections::Support

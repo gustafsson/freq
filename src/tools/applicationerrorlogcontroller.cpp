@@ -3,7 +3,7 @@
 #include "support/sendfeedback.h"
 #include "sendfeedbackdialog.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "demangle.h"
 #include "exceptionassert.h"
 #include "expectexception.h"
@@ -39,7 +39,7 @@ ApplicationErrorLogController::
 
     connect (send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
     connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)), Qt::QueuedConnection);
-    connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::BlockingQueuedConnection);
+    connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::DirectConnection);
 
     bool had_previous_crash = QSettings().value (currently_running_key, false).toBool ();
 
@@ -191,10 +191,10 @@ void ApplicationErrorLogController::
 
         std::cout.flush ();
         std::cerr.flush ();
-        std::cerr << std::endl << std::endl
-             << "======================" << std::endl
-             << str << std::endl
-             << "======================" << std::endl << std::endl;
+        std::cerr
+             << ("\n\n======================\n"
+                + str
+                + "\n======================\n\n");
         std::cerr.flush ();
 
         char const* condition = 0;

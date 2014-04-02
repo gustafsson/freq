@@ -1,7 +1,7 @@
 #include "source.h"
 
 #include "demangle.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "cpumemorystorage.h"
 #ifdef USE_CUDA
 #include "cudaglobalstorage.h"

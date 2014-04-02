@@ -420,7 +420,7 @@ void Audiofile::
 
 
 AudiofileOperation::
-        AudiofileOperation(Audiofile::Ptr audiofile) : audiofile_(audiofile)
+        AudiofileOperation(Audiofile::ptr audiofile) : audiofile_(audiofile)
 {}
 
 
@@ -459,20 +459,20 @@ Signal::Interval AudiofileDesc::
 }
 
 
-Signal::Operation::Ptr AudiofileDesc::
+Signal::Operation::ptr AudiofileDesc::
         createOperation(Signal::ComputingEngine* engine) const
 {
     if (0 == engine)
-        return Signal::Operation::Ptr(new AudiofileOperation(audiofile_));
+        return Signal::Operation::ptr(new AudiofileOperation(audiofile_));
 
-    return Signal::Operation::Ptr();
+    return Signal::Operation::ptr();
 }
 
 
-Signal::OperationDesc::Ptr AudiofileDesc::
+Signal::OperationDesc::ptr AudiofileDesc::
         copy() const
 {
-    return OperationDesc::Ptr(new AudiofileDesc(audiofile_));
+    return OperationDesc::ptr(new AudiofileDesc(audiofile_));
 }
 
 

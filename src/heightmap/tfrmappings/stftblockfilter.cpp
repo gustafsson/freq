@@ -13,7 +13,7 @@ namespace Heightmap {
 namespace TfrMappings {
 
 StftBlockFilter::
-        StftBlockFilter(StftBlockFilterParams::Ptr params)
+        StftBlockFilter(StftBlockFilterParams::ptr params)
     :
       params_(params)
 {
@@ -25,20 +25,20 @@ void StftBlockFilter::
         filterChunk(Tfr::ChunkAndInverse& chunk)
 {
     if (params_) {
-        Tfr::pChunkFilter freq_normalization = read1(params_)->freq_normalization;
+        Tfr::pChunkFilter freq_normalization = params_.read ()->freq_normalization;
         if (freq_normalization)
             (*freq_normalization)(chunk);
     }
 }
 
 
-std::vector<IChunkToBlock::Ptr> StftBlockFilter::
+std::vector<IChunkToBlock::ptr> StftBlockFilter::
         createChunkToBlock(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( stftchunk );
 
-    IChunkToBlock::Ptr chunktoblock;
+    IChunkToBlock::ptr chunktoblock;
 
     try {
         chunktoblock.reset(new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
@@ -52,14 +52,14 @@ std::vector<IChunkToBlock::Ptr> StftBlockFilter::
     }
 
     chunktoblock->normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    std::vector<IChunkToBlock::Ptr> R;
+    std::vector<IChunkToBlock::ptr> R;
     R.push_back (chunktoblock);
     return R;
 }
 
 
 StftBlockFilterDesc::
-        StftBlockFilterDesc(StftBlockFilterParams::Ptr params)
+        StftBlockFilterDesc(StftBlockFilterParams::ptr params)
     :
       params_(params)
 {
@@ -67,13 +67,13 @@ StftBlockFilterDesc::
 }
 
 
-MergeChunk::Ptr StftBlockFilterDesc::
+MergeChunk::ptr StftBlockFilterDesc::
         createMergeChunk( Signal::ComputingEngine* engine ) const
 {
     if (dynamic_cast<Signal::ComputingCpu*>(engine))
-        return MergeChunk::Ptr( new StftBlockFilter(params_) );
+        return MergeChunk::ptr( new StftBlockFilter(params_) );
 
-    return MergeChunk::Ptr();
+    return MergeChunk::ptr();
 }
 
 } // namespace TfrMappings
@@ -117,7 +117,7 @@ void StftBlockFilter::
 
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
-        VisualizationParams::Ptr vp(new VisualizationParams);
+        VisualizationParams::ptr vp(new VisualizationParams);
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -144,9 +144,9 @@ void StftBlockFilter::
         cai.chunk = (*cai.t)( buffer );
 
         // Do the merge
-        Heightmap::MergeChunk::Ptr mc( new StftBlockFilter(StftBlockFilterParams::Ptr()) );
-        write1(mc)->filterChunk(cai);
-        write1(mc)->createChunkToBlock(cai)[0]->mergeChunk (block);
+        Heightmap::MergeChunk::ptr mc( new StftBlockFilter(StftBlockFilterParams::ptr()) );
+        mc->filterChunk(cai);
+        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
 //        if (DetectGdb::is_running_through_gdb ()) {
@@ -168,22 +168,22 @@ void StftBlockFilterDesc::
 {
     // It should instantiate StftBlockFilter for different engines.
     {
-        Heightmap::MergeChunkDesc::Ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::Ptr()));
-        MergeChunk::Ptr mc = read1(mcd)->createMergeChunk (0);
+        Heightmap::MergeChunkDesc::ptr mcd(new StftBlockFilterDesc(StftBlockFilterParams::ptr()));
+        MergeChunk::ptr mc = mcd.read ()->createMergeChunk (0);
 
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingCpu cpu;
-        mc = read1(mcd)->createMergeChunk (&cpu);
+        mc = mcd.read ()->createMergeChunk (&cpu);
         EXCEPTION_ASSERT( mc );
-        EXCEPTION_ASSERT_EQUALS( vartype(*mc), "Heightmap::TfrMappings::StftBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*mc.get ()), "Heightmap::TfrMappings::StftBlockFilter" );
 
         Signal::ComputingCuda cuda;
-        mc = read1(mcd)->createMergeChunk (&cuda);
+        mc = mcd.read ()->createMergeChunk (&cuda);
         EXCEPTION_ASSERT( !mc );
 
         Signal::ComputingOpenCL opencl;
-        mc = read1(mcd)->createMergeChunk (&opencl);
+        mc = mcd.read ()->createMergeChunk (&opencl);
         EXCEPTION_ASSERT( !mc );
     }
 }

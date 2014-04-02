@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_CHAIN_H
 #define SIGNAL_PROCESSING_CHAIN_H
 
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "targets.h"
 #include "targetmarker.h"
 #include "dag.h"
@@ -24,10 +24,12 @@ class Workers;
  * It should provide means to deprecate caches when the an added operation
  * changes (such as settings or contained data).
  */
-class Chain: public VolatilePtr<Chain>
+class Chain
 {
 public:
-    static Chain::Ptr createDefaultChain();
+    typedef shared_state<Chain> ptr;
+
+    static Chain::ptr createDefaultChain();
 
     ~Chain();
 
@@ -46,7 +48,7 @@ public:
      * @param at
      * @return A marker to keep track of the target. The Target is removed from the Dag when TargetMarker is deleted.
      */
-    TargetMarker::Ptr addTarget(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at=TargetMarker::Ptr());
+    TargetMarker::ptr addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at=TargetMarker::ptr());
 
     /**
      * @brief addOperation
@@ -56,28 +58,28 @@ public:
      *
      * Call IInvalidator::deprecateCache to update the chain with the samples that
      * were affected by this definition. A generic call would be
-     * 'read1(invalidator)->deprecateCache(chain->extent(at));'
+     * 'invalidator.read ()->deprecateCache(chain->extent(at));'
      */
-    IInvalidator::Ptr addOperationAt(Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    void removeOperationsAt(TargetMarker::Ptr at);
-    Signal::OperationDesc::Extent extent(TargetMarker::Ptr at) const;
+    IInvalidator::ptr addOperationAt(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    void removeOperationsAt(TargetMarker::ptr at);
+    Signal::OperationDesc::Extent extent(TargetMarker::ptr at) const;
 
-    boost::shared_ptr<volatile Workers> workers() const;
-    Targets::Ptr targets() const;
+    shared_state<Workers> workers() const;
+    Targets::ptr targets() const;
 
     // Add jumping around with targets later.
 
 private:
-    Dag::Ptr dag_;
-    Targets::Ptr targets_;
-    boost::shared_ptr<volatile Workers> workers_;
-    Bedroom::Ptr bedroom_;
-    INotifier::Ptr notifier_;
+    Dag::ptr dag_;
+    Targets::ptr targets_;
+    shared_state<Workers> workers_;
+    Bedroom::ptr bedroom_;
+    INotifier::ptr notifier_;
 
-    Chain(Dag::Ptr, Targets::Ptr targets, boost::shared_ptr<volatile Workers> workers, Bedroom::Ptr bedroom, INotifier::Ptr notifier);
+    Chain(Dag::ptr, Targets::ptr targets, shared_state<Workers> workers, Bedroom::ptr bedroom, INotifier::ptr notifier);
 
-    Step::WeakPtr createBranchStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
-    Step::WeakPtr insertStep (Dag& dag, Signal::OperationDesc::Ptr desc, TargetMarker::Ptr at);
+    Step::ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    Step::ptr::weak_ptr insertStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
 
 public:
     static void test();

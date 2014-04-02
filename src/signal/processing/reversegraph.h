@@ -23,7 +23,7 @@ public:
      * @param p
      * @return graph_traits<Graph>::null_vertex () if p was not found in g.
      */
-    static GraphVertex find_first_vertex(const Graph& g, Step::Ptr p);
+    static GraphVertex find_first_vertex(const Graph& g, Step::ptr p);
 };
 
 } // namespace Processing

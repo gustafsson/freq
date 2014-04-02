@@ -1,7 +1,7 @@
 #include "step.h"
 #include "test/operationmockups.h"
 
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "log.h"
 
 #include <boost/foreach.hpp>
@@ -18,7 +18,7 @@ namespace Signal {
 namespace Processing {
 
 
-Step::Step(OperationDesc::Ptr operation_desc)
+Step::Step(OperationDesc::ptr operation_desc)
     :
         not_started_(Intervals::Intervals_ALL),
         operation_desc_(operation_desc)
@@ -26,42 +26,32 @@ Step::Step(OperationDesc::Ptr operation_desc)
 }
 
 
-Signal::OperationDesc::Ptr Step::
+Signal::OperationDesc::ptr Step::
         get_crashed() const
 {
     return died_;
 }
 
 
-void Step::
-        mark_as_crashed()
+Signal::Processing::IInvalidator::ptr Step::
+        mark_as_crashed_and_get_invalidator()
 {
     if (died_)
-        return;
+        return Signal::Processing::IInvalidator::ptr();
 
     DEBUGINFO TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
 
     died_ = operation_desc_;
-    operation_desc_ = Signal::OperationDesc::Ptr(new Test::TransparentOperationDesc);
+    operation_desc_ = Signal::OperationDesc::ptr(new Test::TransparentOperationDesc);
 
-    Signal::OperationDesc::Ptr died = died_;
-    bool was_locked = !readWriteLock ()->tryLockForWrite ();
-    readWriteLock ()->unlock ();
-
-    // Don't use 'this' while unlocked.
-    died->deprecateCache(Signal::Interval::Interval_ALL);
-
-    if (was_locked && !readWriteLock ()->tryLockForWrite (VolatilePtr_lock_timeout_ms))
-        BOOST_THROW_EXCEPTION(LockFailed()
-                              << typename LockFailed::timeout_value(VolatilePtr_lock_timeout_ms)
-                              << Backtrace::make());
+    return died_.read ()->getInvalidator ();
 }
 
 
 std::string Step::
         operation_name ()
 {
-    return (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)");
+    return (operation_desc_?operation_desc_.read ()->toString ().toStdString ():"(no operation)");
 }
 
 
@@ -87,7 +77,7 @@ Intervals Step::
     }
 
     if (operation_desc_ && deprecated) {
-        OperationDesc::ReadPtr o(operation_desc_);
+        auto o = operation_desc_.read ();
 
         Intervals A;
         BOOST_FOREACH(const Interval& i, deprecated) {
@@ -97,7 +87,7 @@ Intervals Step::
     }
 
     DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
-              % (operation_desc_?read1(operation_desc_)->toString ().toStdString ():"(no operation)")
+              % (operation_desc_?operation_desc_.read ()->toString ().toStdString ():"(no operation)")
               % deprecated);
 
     not_started_ |= deprecated;
@@ -120,7 +110,7 @@ Intervals Step::
 }
 
 
-OperationDesc::Ptr Step::
+OperationDesc::ptr Step::
         operation_desc () const
 {
     return operation_desc_;
@@ -167,7 +157,7 @@ void Step::
     not_started_ |= update_miss;
 
     if (!result) {
-        TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
+        TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
                  % update_miss
                  % operation_name());
     } else {
@@ -193,18 +183,29 @@ void Step::
     }
 
     running_tasks.erase ( taskid );
-    wait_for_tasks_.wakeAll ();
+    wait_for_tasks_.notify_all ();
 }
 
 
 void Step::
-        sleepWhileTasks(int sleep_ms)
+        sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms)
 {
+    DEBUGINFO TaskTimer tt(boost::format("sleepWhileTasks %d") % step->running_tasks.size ());
+
     // The caller keeps a lock that is released while waiting
-    while (!running_tasks.empty ()) {
-        DEBUGINFO TaskInfo(boost::format("sleepWhileTasks %d") % running_tasks.size ());
-        if (!wait_for_tasks_.wait (readWriteLock(), sleep_ms < 0 ? ULONG_MAX : sleep_ms))
-            return;
+    // Wait in a while-loop to cope with spurious wakeups
+    if (sleep_ms < 0)
+    {
+        while (!step->running_tasks.empty ())
+            step->wait_for_tasks_.wait(step);
+    }
+    else
+    {
+        std::chrono::milliseconds ms(sleep_ms);
+
+        while (!step->running_tasks.empty ())
+            if (std::cv_status::timeout == step->wait_for_tasks_.wait_for (step, ms))
+                return;
     }
 }
 
@@ -241,7 +242,7 @@ void Step::
         }
 
         // Create a Step
-        Step s((OperationDesc::Ptr()));
+        Step s((OperationDesc::ptr()));
 
         // It should contain information about what's out_of_date and what's currently being updated.
         s.registerTask(0, b->getInterval ());
@@ -255,19 +256,19 @@ void Step::
 
     // A crashed signal processing step should behave as a transparent operation.
     {
-        OperationDesc::Ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
+        OperationDesc::ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
         Step s(silence);
         EXCEPTION_ASSERT(!s.get_crashed ());
         EXCEPTION_ASSERT(s.operation_desc ());
-        EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
-        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
-        EXCEPTION_ASSERT(!dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
-        s.mark_as_crashed ();
+        EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
+        s.mark_as_crashed_and_get_invalidator ();
         EXCEPTION_ASSERT(s.get_crashed ());
         EXCEPTION_ASSERT(s.operation_desc ());
-        EXCEPTION_ASSERT(read1(s.operation_desc ())->createOperation (0));
-        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperationDesc*>(s.operation_desc ().get ()));
-        EXCEPTION_ASSERT(dynamic_cast<volatile Test::TransparentOperation*>(read1(s.operation_desc ())->createOperation (0).get ()));
+        EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
     }
 }
 

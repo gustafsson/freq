@@ -2,7 +2,7 @@
 
 #include "cpumemorystorage.h"
 #include "openclcontext.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 OpenClMemoryStorage::
         OpenClMemoryStorage( DataStorageVoid* p, bool read, bool write )

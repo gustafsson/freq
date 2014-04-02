@@ -2,7 +2,7 @@
 #define HEIGHTMAP_TFRMAPPING_H
 
 #include "blocklayout.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "visualizationparams.h"
 
 #include <vector>
@@ -11,8 +11,11 @@ namespace Heightmap {
 class Collection;
 typedef int ChannelCount;
 
-class TfrMapping: public VolatilePtr<TfrMapping> {
+class TfrMapping {
 public:
+    typedef shared_state<TfrMapping> ptr;
+    typedef shared_state<const TfrMapping> const_ptr;
+
     TfrMapping(BlockLayout, ChannelCount channels);
     ~TfrMapping();
 
@@ -27,8 +30,8 @@ public:
     float targetSampleRate() const;
     void targetSampleRate(float);
 
-    Tfr::TransformDesc::Ptr transform_desc() const;
-    void transform_desc(Tfr::TransformDesc::Ptr);
+    Tfr::TransformDesc::ptr transform_desc() const;
+    void transform_desc(Tfr::TransformDesc::ptr);
 
     float length() const;
     void length(float L);
@@ -36,7 +39,7 @@ public:
     int channels() const;
     void channels(int value);
 
-    typedef VolatilePtr<Heightmap::Collection>::Ptr pCollection;
+    typedef shared_state<Heightmap::Collection> pCollection;
     typedef std::vector<pCollection> Collections;
     Collections collections() const;
 
@@ -45,12 +48,12 @@ private:
 
     Collections                 collections_;
     BlockLayout                 block_layout_;
-    VisualizationParams::Ptr    visualization_params_;
+    VisualizationParams::ptr    visualization_params_;
     float                       length_;
 
 public:
     static void test();
-    static TfrMapping::Ptr testInstance();
+    static TfrMapping::ptr testInstance();
 };
 
 } // namespace Heightmap

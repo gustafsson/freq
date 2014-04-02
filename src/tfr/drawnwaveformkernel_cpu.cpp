@@ -7,8 +7,8 @@
 
 
 void drawWaveform(
-        DataStorage<float>::Ptr in_waveformp,
-        Tfr::ChunkData::Ptr out_waveform_matrixp,
+        DataStorage<float>::ptr in_waveformp,
+        Tfr::ChunkData::ptr out_waveform_matrixp,
         float blob, int readstop, float maxValue, float writeposoffs )
 {
     CpuMemoryReadOnly<float, 1> in_waveform = CpuMemoryStorage::ReadOnly<1>( in_waveformp );
@@ -29,8 +29,8 @@ void drawWaveform(
 
 
 void drawWaveform(
-        DataStorage<float>::Ptr in_waveformp,
-        DataStorage<float>::Ptr out_waveform_matrixp,
+        DataStorage<float>::ptr in_waveformp,
+        DataStorage<float>::ptr out_waveform_matrixp,
         float blob, int readstop, float maxValue, float writeposoffs, float y0 )
 {
     CpuMemoryReadOnly<float, 1> in_waveform = CpuMemoryStorage::ReadOnly<1>( in_waveformp );

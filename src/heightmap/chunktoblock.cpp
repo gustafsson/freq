@@ -27,7 +27,7 @@ void ChunkToBlock::
 
     bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
 
-    BlockData::WritePtr blockdata(block->block_data());
+    auto blockdata = block->block_data ();
 
     if (transpose)
         mergeColumnMajorChunk (*block, *chunk, *blockdata);
@@ -44,7 +44,7 @@ void ChunkToBlock::mergeColumnMajorChunk(
         BlockData& outData )
 {
     Region r = block.getRegion();
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    VisualizationParams::const_ptr vp = block.visualization_params ();
 
     Signal::Interval inInterval = chunk.getCoveredInterval();
 
@@ -82,7 +82,7 @@ void ChunkToBlock::mergeRowMajorChunk(
         BlockData& outData )
 {
     Region r = block.getRegion();
-    VisualizationParams::ConstPtr vp = block.visualization_params ();
+    VisualizationParams::const_ptr vp = block.visualization_params ();
 
     Signal::Interval inInterval = chunk.getCoveredInterval();
 
@@ -152,24 +152,24 @@ void ChunkToBlock::
         test()
 {
     BlockLayout bl(1<<8,1<<8,100);
-    VisualizationParams::Ptr vp(new VisualizationParams);
+    VisualizationParams::ptr vp(new VisualizationParams);
     Tfr::FreqAxis ds; ds.setLinear (1);
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);
 
-    Tfr::ChunkFilterDesc::Ptr fdesc( new DummyKernelDesc );
-    write1(fdesc)->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
-    Signal::OperationDesc::Ptr desc(new Tfr::TransformOperationDesc(fdesc));
-    Signal::Operation::WritePtr operation = write1(read1(desc)->createOperation (0));
+    Tfr::ChunkFilterDesc::ptr fdesc( new DummyKernelDesc );
+    fdesc.write ()->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
+    Signal::OperationDesc::ptr desc(new Tfr::TransformOperationDesc(fdesc));
+    Signal::Operation::ptr operation = desc->createOperation (0);
 
     Signal::Interval expectedOutput;
-    Signal::Interval requiredInterval = read1(desc)->requiredInterval (Signal::Interval (11,31), &expectedOutput);
+    Signal::Interval requiredInterval = desc->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
     Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
     operation->process( buffer );
 
     Signal::pMonoBuffer monobuffer( new Signal::MonoBuffer (requiredInterval, 1));
-    Tfr::pChunk chunk = (*read1(fdesc)->transformDesc()->createTransform ())( monobuffer );
+    Tfr::pChunk chunk = (*fdesc.read ()->transformDesc()->createTransform ())( monobuffer );
 
     Heightmap::Reference ref;
 

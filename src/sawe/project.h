@@ -55,7 +55,7 @@ public:
     /**
       Appends 's' to head. If there is a current selection this only applies 's' to that selection.
       */
-    void appendOperation(Signal::OperationDesc::Ptr s);
+    void appendOperation(Signal::OperationDesc::ptr s);
 
 
     /**
@@ -164,8 +164,8 @@ public:
      * targets and operations.
      * @return
      */
-    Signal::Processing::Chain::Ptr processing_chain() { return processing_chain_; }
-    Signal::Processing::TargetMarker::Ptr default_target();
+    Signal::Processing::Chain::ptr processing_chain() { return processing_chain_; }
+    Signal::Processing::TargetMarker::ptr default_target();
     Signal::OperationDesc::Extent extent();
     float length();
 
@@ -181,7 +181,7 @@ private:
     bool is_modified_, is_sawe_project_;
     boost::scoped_ptr<Tools::Commands::CommandInvoker> command_invoker_;
 
-    Signal::Processing::Chain::Ptr processing_chain_;
+    Signal::Processing::Chain::ptr processing_chain_;
     std::string project_filename_, project_title_;
 
     boost::scoped_ptr<Tools::ToolRepo> _tools;
@@ -189,7 +189,7 @@ private:
     QPointer<QMainWindow> _mainWindow;
 
     static boost::shared_ptr<Project> openWatched(std::string project_file);
-    static boost::shared_ptr<Project> openOperation(Signal::OperationDesc::Ptr operation, std::string name="");
+    static boost::shared_ptr<Project> openOperation(Signal::OperationDesc::ptr operation, std::string name="");
     static boost::shared_ptr<Project> openProject(std::string project_file);
 #if !defined(TARGET_reader)
     static boost::shared_ptr<Project> openAudio(std::string audio_file);

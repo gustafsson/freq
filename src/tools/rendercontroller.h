@@ -29,7 +29,7 @@ namespace Tools
         RenderModel*        model();
 
         ::Ui::MainWindow*   getItems();
-        void                setBlockFilter(Heightmap::MergeChunkDesc::Ptr mcdp, Tfr::TransformDesc::Ptr transform_desc);
+        void                setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc);
         void                stateChanged();
         void                emitAxisChanged();
 
@@ -106,10 +106,10 @@ namespace Tools
         void clearCaches();
 
     private:
-        void setCurrentFilterTransform(Tfr::TransformDesc::Ptr);
-        void setBlockFilter(Tfr::ChunkFilterDesc::Ptr kernel);
+        void setCurrentFilterTransform(Tfr::TransformDesc::ptr);
+        void setBlockFilter(Tfr::ChunkFilterDesc::ptr kernel);
         //Tfr::Filter* currentFilter();
-        Tfr::TransformDesc::Ptr currentTransform();
+        Tfr::TransformDesc::ptr currentTransform();
         float headSampleRate();
         float currentTransformMinHz();
 

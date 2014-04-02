@@ -104,8 +104,8 @@ namespace Heightmap {
 
 extern "C"
         void blockResampleChunk(
-                Tfr::ChunkData::Ptr input,
-                BlockData::Ptr output,
+                Tfr::ChunkData::ptr input,
+                BlockData::ptr output,
                  ValidInterval validInputs,
                  ResampleArea inputRegion,
                  ResampleArea outputRegion,
@@ -118,13 +118,13 @@ extern "C"
                  );
 
 extern "C"
-void blockMerge( BlockData::Ptr inBlock,
-                 BlockData::Ptr outBlock,
+void blockMerge( BlockData::ptr inBlock,
+                 BlockData::ptr outBlock,
                  ResampleArea in_area,
                  ResampleArea out_area );
 
 extern "C"
-void blockClearPart( BlockData::Ptr block,
+void blockClearPart( BlockData::ptr block,
                  int start_t );
 
 /*
@@ -150,9 +150,9 @@ void expandCompleteStft( cudaPitchedPtrType<float2> inStft,
                  unsigned cuda_stream);
 */
 extern "C"
-void resampleStft( Tfr::ChunkData::Ptr input,
+void resampleStft( Tfr::ChunkData::ptr input,
                    size_t nScales, size_t nSamples,
-                   BlockData::Ptr output,
+                   BlockData::ptr output,
                    ValidInterval outputInterval,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,

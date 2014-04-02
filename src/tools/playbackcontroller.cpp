@@ -160,7 +160,7 @@ void PlaybackController::
     ui_items_->actionPlay->setChecked( true );
 
     // startPlayback will insert it in the system so that the source is properly set    
-    Signal::OperationDesc::Ptr filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
+    Signal::OperationDesc::ptr filter = _view->model->selection->current_selection_copy(SelectionModel::SaveInside_TRUE);
     if (!filter) {
         // here we just need to create a filter that does the right thing to an arbitrary source
         // and responds properly to zeroed_samples(), that is; a dummy Operation that doesn't do anything
@@ -173,14 +173,14 @@ void PlaybackController::
 
 
 void PlaybackController::
-        startPlayback ( Signal::OperationDesc::Ptr filterdesc )
+        startPlayback ( Signal::OperationDesc::ptr filterdesc )
 {
     Signal::Intervals zeroed_samples = Signal::Intervals();
 
     _view->just_started = true;
 
     if (filterdesc)
-        TaskInfo("Selection: %s", read1(filterdesc)->toString().toStdString().c_str());
+        TaskInfo("Selection: %s", filterdesc.read ()->toString().toStdString().c_str());
 
 //    Signal::PostSink* postsink_operations = _view->model->playbackTarget->post_sink();
 //    if ( postsink_operations->sinks().empty() || postsink_operations->filter() != filter )
@@ -189,24 +189,23 @@ void PlaybackController::
         int playback_device = QSettings().value("outputdevice", -1).toInt();
 
         model()->adapter_playback.reset();
-        Signal::Sink::Ptr playbacksink(new Adapters::Playback( playback_device ));
+        Signal::Sink::ptr playbacksink(new Adapters::Playback( playback_device ));
         model()->adapter_playback.reset(new Signal::SinkDesc(playbacksink));
 
-        Signal::OperationDesc::Ptr desc(model()->adapter_playback);
-        model()->target_marker = write1(project_->processing_chain ())->addTarget(desc, project_->default_target ());
+        Signal::OperationDesc::ptr desc(model()->adapter_playback);
+        model()->target_marker = project_->processing_chain ().write ()->addTarget(desc, project_->default_target ());
 
         if (filterdesc)
-            write1(project_->processing_chain ())->addOperationAt(filterdesc, model()->target_marker);
+            project_->processing_chain ().write ()->addOperationAt(filterdesc, model()->target_marker);
 
-        Signal::OperationDesc::Extent x = write1(project_->processing_chain ())->extent(model()->target_marker);
+        Signal::OperationDesc::Extent x = project_->processing_chain ().write ()->extent(model()->target_marker);
         Signal::Intervals expected_data = ~zeroed_samples & x.interval.get_value_or (Signal::Interval());
         TaskInfo(boost::format("expected_data = %s") % expected_data);
 
-        Signal::Operation::WritePtr playbackw(model()->playback());
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
 
-        write1(model()->target_marker->target_needs ())->updateNeeds(
+        model()->target_marker->target_needs ().write ()->updateNeeds(
                     expected_data,
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX,
@@ -217,8 +216,7 @@ void PlaybackController::
     }
     else
     {
-        Signal::Operation::WritePtr playbackw(model()->playback());
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->restart_playback();
     }
 
@@ -230,8 +228,7 @@ void PlaybackController::
         pause( bool active )
 {
     if (model()->playback()) {
-        Signal::Operation::WritePtr playbackw(model()->playback());
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->pausePlayback( active );
     }
 
@@ -263,10 +260,9 @@ void PlaybackController::
 {
     //TaskInfo("PlaybackController::receiveStop()");
 
-    Signal::Operation::Ptr p = model()->playback();
+    Signal::Operation::ptr p = model()->playback();
     if (p) {
-        Signal::Operation::WritePtr playbackw(p);
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->stop();
     }
 

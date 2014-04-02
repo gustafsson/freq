@@ -102,19 +102,19 @@ Interval OperationOtherSilent::
 }
 
 
-OperationDesc::Ptr OperationOtherSilent::
+OperationDesc::ptr OperationOtherSilent::
         copy() const
 {
-    return OperationDesc::Ptr(new OperationOtherSilent(section_));
+    return OperationDesc::ptr(new OperationOtherSilent(section_));
 }
 
 
-Signal::Operation::Ptr OperationOtherSilent::
+Signal::Operation::ptr OperationOtherSilent::
         createOperation(ComputingEngine* engine) const
 {
     if (0==engine || dynamic_cast<Signal::ComputingCpu*>(engine))
-        return Signal::Operation::Ptr(new OperationOtherSilent::Operation(section_));
-    return Signal::Operation::Ptr();
+        return Signal::Operation::ptr(new OperationOtherSilent::Operation(section_));
+    return Signal::Operation::ptr();
 }
 
 
@@ -236,18 +236,18 @@ Signal::Interval OperationShift::
     return (Signal::Intervals(I) <<= sampleShift_).spannedInterval ();
 }
 
-Signal::OperationDesc::Ptr OperationShift::
+Signal::OperationDesc::ptr OperationShift::
         copy() const
 {
-    return Signal::OperationDesc::Ptr(new OperationShift(sampleShift_, extent_interval_));
+    return Signal::OperationDesc::ptr(new OperationShift(sampleShift_, extent_interval_));
 }
 
-Signal::Operation::Ptr OperationShift::
+Signal::Operation::ptr OperationShift::
         createOperation(Signal::ComputingEngine* engine) const
 {
     if (0==engine || dynamic_cast<Signal::ComputingCpu*>(engine))
-        return Signal::Operation::Ptr(new OperationShiftOperation(sampleShift_));
-    return Signal::Operation::Ptr();
+        return Signal::Operation::ptr(new OperationShiftOperation(sampleShift_));
+    return Signal::Operation::ptr();
 }
 
 OperationShift::Extent OperationShift::

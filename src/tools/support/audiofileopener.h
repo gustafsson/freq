@@ -13,7 +13,7 @@ class AudiofileOpener : public OpenfileController::OpenfileInterface
 {
 public:
     virtual Patterns patterns();
-    virtual Signal::OperationDesc::Ptr open(QString url);
+    virtual Signal::OperationDesc::ptr reopen(QString url, Signal::OperationDesc::ptr);
 
 private:
 

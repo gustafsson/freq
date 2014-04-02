@@ -2,6 +2,9 @@
 #include "exceptionassert.h"
 #include "collection.h"
 
+//#define LOGINFO
+#define LOGINFO if(0)
+
 namespace Heightmap {
 
 TfrMapping::
@@ -11,7 +14,7 @@ TfrMapping::
       visualization_params_(new VisualizationParams),
       length_( 0 )
 {
-    TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
+    LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column ());
@@ -23,7 +26,7 @@ TfrMapping::
 TfrMapping::
         ~TfrMapping()
 {
-    TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
+    LOGINFO TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column (),
@@ -46,7 +49,7 @@ void TfrMapping::
     if (bl == block_layout_)
         return;
 
-    TaskInfo ti("Target sample rate: %g. %d x %d blocks",
+    LOGINFO TaskInfo ti("Target sample rate: %g. %d x %d blocks",
                 bl.targetSampleRate (),
                 bl.texels_per_row(),
                 bl.texels_per_column ());
@@ -108,7 +111,7 @@ void TfrMapping::
     if (v == block_layout_.targetSampleRate ())
         return;
 
-    TaskInfo ti("Target sample rate: %g", v);
+    LOGINFO TaskInfo ti("Target sample rate: %g", v);
 
     block_layout_ = BlockLayout(
                 block_layout_.texels_per_row (),
@@ -119,7 +122,7 @@ void TfrMapping::
 }
 
 
-Tfr::TransformDesc::Ptr TfrMapping::
+Tfr::TransformDesc::ptr TfrMapping::
         transform_desc() const
 {
     return visualization_params_->transform_desc();
@@ -127,9 +130,9 @@ Tfr::TransformDesc::Ptr TfrMapping::
 
 
 void TfrMapping::
-        transform_desc(Tfr::TransformDesc::Ptr t)
+        transform_desc(Tfr::TransformDesc::ptr t)
 {
-    VisualizationParams::Ptr vp = visualization_params_;
+    VisualizationParams::ptr vp = visualization_params_;
     if (t == vp->transform_desc())
         return;
 
@@ -165,7 +168,7 @@ void TfrMapping::
     length_ = L;
 
     for (unsigned c=0; c<collections_.size(); ++c)
-        write1(collections_[c])->length( length_ );
+        collections_[c].write ()->length( length_ );
 }
 
 
@@ -186,7 +189,7 @@ void TfrMapping::
     if (v == channels())
         return;
 
-    TaskInfo ti("Number of channels: %d", v);
+    LOGINFO TaskInfo ti("Number of channels: %d", v);
 
     collections_.clear ();
 
@@ -194,8 +197,8 @@ void TfrMapping::
 
     for (pCollection& c : new_collections)
     {
-        c.reset( new Heightmap::Collection(block_layout_, visualization_params_));
-        write1(c)->length( length_ );
+        c = Heightmap::Collection::ptr( new Heightmap::Collection(block_layout_, visualization_params_));
+        c->length( length_ );
     }
 
     collections_ = new_collections;
@@ -213,10 +216,10 @@ void TfrMapping::
         updateCollections()
 {
     for (pCollection c : collections_)
-        write1(c)->block_layout( block_layout_ );
+        c->block_layout( block_layout_ );
 
     for (pCollection c : collections_)
-        write1(c)->visualization_params( visualization_params_ );
+        c->visualization_params( visualization_params_ );
 }
 
 } // namespace Heightmap
@@ -240,19 +243,19 @@ void TfrMapping::
     w.makeCurrent ();
 
     {
-        TfrMapping::Ptr t = testInstance();
-        write1(t)->block_layout( BlockLayout(123,456,789) );
-        EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), read1(t)->block_layout() );
+        TfrMapping::ptr t = testInstance();
+        t.write ()->block_layout( BlockLayout(123,456,789) );
+        EXCEPTION_ASSERT_EQUALS( BlockLayout(123,456,789), t.read ()->block_layout() );
     }
 }
 
 
-TfrMapping::Ptr TfrMapping::
+TfrMapping::ptr TfrMapping::
         testInstance()
 {
     BlockLayout bl(1<<8, 1<<8, 10);
-    TfrMapping::Ptr tfrmap(new TfrMapping(bl, 1));
-    write1(tfrmap)->transform_desc( Tfr::StftDesc ().copy ());
+    TfrMapping::ptr tfrmap(new TfrMapping(bl, 1));
+    tfrmap.write ()->transform_desc( Tfr::StftDesc ().copy ());
     return tfrmap;
 }
 

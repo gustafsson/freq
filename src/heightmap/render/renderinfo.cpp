@@ -9,7 +9,7 @@ namespace Render {
 
 
 RenderInfo::
-        RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::ConstPtr vp, FrustumClip* frustum_clip, float redundancy)
+        RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, FrustumClip* frustum_clip, float redundancy)
     :
       gl_projection(gl_projection),
       bl(bl),

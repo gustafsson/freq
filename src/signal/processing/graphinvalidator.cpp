@@ -7,7 +7,7 @@ namespace Signal {
 namespace Processing {
 
 GraphInvalidator::
-        GraphInvalidator(Dag::WeakPtr dag, INotifier::WeakPtr notifier, Step::WeakPtr step)
+        GraphInvalidator(Dag::ptr::weak_ptr dag, INotifier::weak_ptr notifier, Step::ptr::weak_ptr step)
     :
       dag_(dag),
       notifier_(notifier),
@@ -19,13 +19,13 @@ GraphInvalidator::
 void GraphInvalidator::
         deprecateCache(Signal::Intervals what) const
 {
-    Dag::Ptr dagp = dag_.lock ();
+    Dag::ptr dagp = dag_.lock ();
     if (!dagp)
         return;
 
-    Dag::ReadPtr dag(dagp);
-    INotifier::Ptr notifier = notifier_.lock ();
-    Step::Ptr step = step_.lock ();
+    auto dag = dagp.read ();
+    INotifier::ptr notifier = notifier_.lock ();
+    Step::ptr step = step_.lock ();
 
     if (!notifier || !step)
         return;
@@ -37,11 +37,11 @@ void GraphInvalidator::
 
 
 void GraphInvalidator::
-        deprecateCache(const Dag& dag, Step::Ptr step, Signal::Intervals what)
+        deprecateCache(const Dag& dag, Step::ptr step, Signal::Intervals what)
 {
-    what = write1(step)->deprecateCache(what);
+    what = step.write ()->deprecateCache(what);
 
-    BOOST_FOREACH(Step::Ptr ts, dag.targetSteps(step)) {
+    BOOST_FOREACH(Step::ptr ts, dag.targetSteps(step)) {
         deprecateCache(dag, ts, what);
     }
 }
@@ -58,14 +58,14 @@ namespace Processing {
 
 class WaitForWakeupMock: public QThread {
 public:
-    WaitForWakeupMock(Bedroom::Ptr bedroom) : bedroom_(bedroom) {}
+    WaitForWakeupMock(Bedroom::ptr bedroom) : bedroom_(bedroom) {}
 
     void run() {
         bedroom_->getBed().sleep();
     }
 
 private:
-    Bedroom::Ptr bedroom_;
+    Bedroom::ptr bedroom_;
 };
 
 void GraphInvalidator::
@@ -74,18 +74,18 @@ void GraphInvalidator::
     // It should invalidate caches and wakeup workers
     {
         // create
-        Dag::Ptr dag(new Dag);
-        Bedroom::Ptr bedroom(new Bedroom);
-        INotifier::Ptr notifier(new BedroomNotifier(bedroom));
-        Step::Ptr step(new Step(Signal::OperationDesc::Ptr()));
+        Dag::ptr dag(new Dag);
+        Bedroom::ptr bedroom(new Bedroom);
+        INotifier::ptr notifier(new BedroomNotifier(bedroom));
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         WaitForWakeupMock sleeper(bedroom);
 
         // wire up
         sleeper.start ();
-        write1(dag)->appendStep(step);
+        dag.write ()->appendStep(step);
         Signal::Intervals initial_valid(-20,60);
-        write1(step)->registerTask(0, initial_valid.spannedInterval ());
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), ~initial_valid);
+        step.write ()->registerTask(0, initial_valid.spannedInterval ());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid);
         EXCEPTION_ASSERT(sleeper.isRunning ());
 
         EXCEPTION_ASSERT_EQUALS(sleeper.wait (1), false);
@@ -96,7 +96,7 @@ void GraphInvalidator::
         Signal::Intervals deprected(40,50);
         graphInvalidator.deprecateCache (deprected);
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->not_started(), ~initial_valid | deprected);
+        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid | deprected);
         sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());

@@ -4,7 +4,7 @@
 
 #include "cpumemorystorage.h"
 #include "complexbuffer.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "computationkernel.h"
 
 
@@ -36,7 +36,7 @@ namespace Tfr {
 
 
 void FftOoura::
-        compute( Tfr::ChunkData::Ptr input, Tfr::ChunkData::Ptr output, FftDirection direction )
+        compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction )
 {
     bool expectPrepared = false;
 
@@ -82,7 +82,7 @@ void FftOoura::
 
 
 void FftOoura::
-        computeR2C( DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output )
+        computeR2C( DataStorage<float>::ptr input, Tfr::ChunkData::ptr output )
 {
     int denseWidth = output->size().width;
     int redundantWidth = input->size().width;
@@ -90,11 +90,11 @@ void FftOoura::
    EXCEPTION_ASSERT( denseWidth == redundantWidth/2+1 );
 
     // interleave input to complex data
-    Tfr::ChunkData::Ptr complexinput( new Tfr::ChunkData( input->size()));
+    Tfr::ChunkData::ptr complexinput( new Tfr::ChunkData( input->size()));
     ::stftToComplex( input, complexinput );
 
     // make room for full output
-    Tfr::ChunkData::Ptr redundantOutput( new Tfr::ChunkData( redundantWidth ));
+    Tfr::ChunkData::ptr redundantOutput( new Tfr::ChunkData( redundantWidth ));
 
     // compute
     compute(complexinput, redundantOutput, FftDirection_Forward);
@@ -111,14 +111,14 @@ void FftOoura::
 
 
 void FftOoura::
-        computeC2R( Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output )
+        computeC2R( Tfr::ChunkData::ptr input, DataStorage<float>::ptr output )
 {
     int denseWidth = input->size().width;
     int redundantWidth = output->size().width;
 
     EXCEPTION_ASSERT( denseWidth == redundantWidth/2+1 );
 
-    Tfr::ChunkData::Ptr redundantInput( new Tfr::ChunkData( redundantWidth, input->size().height ));
+    Tfr::ChunkData::ptr redundantInput( new Tfr::ChunkData( redundantWidth, input->size().height ));
 
     {
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
@@ -139,7 +139,7 @@ void FftOoura::
 
 
 void FftOoura::
-        compute( Tfr::ChunkData::Ptr inputdata, Tfr::ChunkData::Ptr outputdata, DataStorageSize n, FftDirection direction )
+        compute( Tfr::ChunkData::ptr inputdata, Tfr::ChunkData::ptr outputdata, DataStorageSize n, FftDirection direction )
 {
     TIME_STFT TaskTimer tt("Stft Ooura");
 
@@ -176,7 +176,7 @@ void FftOoura::
 
 
 void FftOoura::
-        compute(DataStorage<float>::Ptr input, Tfr::ChunkData::Ptr output, DataStorageSize n )
+        compute(DataStorage<float>::ptr input, Tfr::ChunkData::ptr output, DataStorageSize n )
 {
     TIME_STFT TaskTimer tt("Stft Ooura R2C");
 
@@ -186,11 +186,11 @@ void FftOoura::
     EXCEPTION_ASSERT( (int)input->numberOfElements()/n.width == n.height );
 
     // interleave input to complex data
-    Tfr::ChunkData::Ptr complexinput( new Tfr::ChunkData( input->size()));
+    Tfr::ChunkData::ptr complexinput( new Tfr::ChunkData( input->size()));
     ::stftToComplex( input, complexinput );
 
     // make room for full output
-    Tfr::ChunkData::Ptr redundantOutput( new Tfr::ChunkData( n.width*actualSize.height ));
+    Tfr::ChunkData::ptr redundantOutput( new Tfr::ChunkData( n.width*actualSize.height ));
 
     // compute
     compute(complexinput, redundantOutput, n, FftDirection_Forward );
@@ -210,7 +210,7 @@ void FftOoura::
 
 
 void FftOoura::
-        inverse(Tfr::ChunkData::Ptr input, DataStorage<float>::Ptr output, DataStorageSize n )
+        inverse(Tfr::ChunkData::ptr input, DataStorage<float>::ptr output, DataStorageSize n )
 {
     TIME_STFT TaskTimer tt("Stft Ooura C2R");
 
@@ -222,7 +222,7 @@ void FftOoura::
     EXCEPTION_ASSERT( batchcount1 == batchcount2 );
     EXCEPTION_ASSERT( (denseWidth-1)*2 == redundantWidth );
 
-    Tfr::ChunkData::Ptr redundantInput( new Tfr::ChunkData( n.height*redundantWidth ));
+    Tfr::ChunkData::ptr redundantInput( new Tfr::ChunkData( n.height*redundantWidth ));
 
     {
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();

@@ -25,7 +25,7 @@ bool Sink::
 
 
 SinkDesc::
-        SinkDesc(Signal::Operation::Ptr sink)
+        SinkDesc(Signal::Operation::ptr sink)
     :
       sink_(sink)
 {
@@ -49,24 +49,24 @@ Interval SinkDesc::
 }
 
 
-OperationDesc::Ptr SinkDesc::
+OperationDesc::ptr SinkDesc::
         copy() const
 {
-    return OperationDesc::Ptr(new SinkDesc(sink_));
+    return OperationDesc::ptr(new SinkDesc(sink_));
 }
 
 
-Operation::Ptr SinkDesc::
+Operation::ptr SinkDesc::
         createOperation(ComputingEngine* engine) const
 {
     if (0 == engine)
         return sink_;
 
-    return Operation::Ptr();
+    return Operation::ptr();
 }
 
 
-Operation::Ptr SinkDesc::
+Operation::ptr SinkDesc::
         sink() const
 {
     return sink_;

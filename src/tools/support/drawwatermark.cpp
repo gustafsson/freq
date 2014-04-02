@@ -6,7 +6,7 @@
 #include "GlTexture.h"
 #include "glPushContext.h"
 #include "GlException.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "Statistics.h"
 #include "vbo.h"
 

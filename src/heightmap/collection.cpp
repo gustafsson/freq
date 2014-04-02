@@ -1,22 +1,18 @@
 #include "collection.h"
 #include "glblock.h"
-#include "blockfactory.h"
+#include "blockinstaller.h"
 #include "blockquery.h"
 #include "blockcacheinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "reference_hash.h"
-#include "blocks/garbagecollector.h"
-#include "blocks/merger.h"
-#include "blocks/mergertexture.h"
 #include "blocks/clearinterval.h"
-#include "blocks/chunkmerger.h"
 
 // Gpumisc
 //#include "GlException.h"
 #include "neat_math.h"
 #include "computationkernel.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -39,11 +35,6 @@
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)
 
-//#define TIME_GETBLOCK
-#define TIME_GETBLOCK if(0)
-
-#define MAX_CREATED_BLOCKS_PER_FRAME 16
-
 using namespace Signal;
 using namespace boost;
 
@@ -51,17 +42,14 @@ namespace Heightmap {
 
 
 Collection::
-        Collection( BlockLayout block_layout, VisualizationParams::ConstPtr visualization_params)
+        Collection( BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
 :   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_(),
     cache_( new BlockCache ),
-    merger_(),
+    block_installer_(new BlockInstaller(block_layout, visualization_params, cache_)),
     _is_visible( true ),
-    _created_count(0),
     _frame_counter(0),
-    _prev_length(.0f),
-    failed_allocation_(false),
-    failed_allocation_prev_(false)
+    _prev_length(.0f)
 {
     // set _max_sample_size
     this->block_layout (block_layout);
@@ -72,7 +60,7 @@ Collection::
 Collection::
         ~Collection()
 {
-    TaskInfo ti("~Collection");
+    INFO_COLLECTION TaskInfo ti("~Collection");
     clear();
 }
 
@@ -80,7 +68,7 @@ Collection::
 void Collection::
         clear()
 {
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
     const BlockCache::cache_t& C = cache->cache ();
     VERBOSE_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
@@ -123,12 +111,12 @@ void Collection::
 void Collection::
         next_frame()
 {
-    BlockCache::WritePtr cache(cache_);
+    auto cache = cache_.write ();
 
-    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u, %u")
-            % __FUNCTION__ % _created_count % cache->recent().size());
+    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")
+            % __FUNCTION__ % cache->recent().size());
 
-    _created_count = 0;
+    block_installer_.write ()->next_frame();
 
     RegionFactory rr(block_layout_);
 
@@ -251,82 +239,34 @@ Reference Collection::
 
 
 pBlock Collection::
-        getBlock( const Reference& ref )
+        getBlock( const Reference& ref ) const
 {
-    // Look among cached blocks for this reference
-    pBlock block = write1(cache_)->find( ref );
-
-    if (!block)
-    {
-        TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
-
-        if ( MAX_CREATED_BLOCKS_PER_FRAME > _created_count || true )
-        {
-            pBlock reuse;
-            if (0!= "Reuse old redundant blocks")
-            {
-                // prefer to use block rather than discard an old block and then reallocate it
-                reuse = Blocks::GarbageCollector(cache_).releaseOneBlock(_frame_counter);
-            }
-
-            BlockFactory bf(block_layout_, visualization_params_);
-            block = bf.createBlock (ref, reuse);
-            bool empty_cache = this->cacheCount () == 0;
-            if ( !block && !empty_cache ) {
-                TaskTimer tt(format("Memory allocation failed creating new block %s. Doing garbage collection") % ref);
-                Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (_frame_counter);
-                reuse.reset ();
-                block = bf.createBlock (ref, pBlock());
-            }
-
-            //Blocks::Merger(cache_).fillBlockFromOthers (block);
-            merger_->fillBlockFromOthers (block);
-
-            write1(cache_)->insert(block);
-
-            _created_count++;
-            recently_created_ |= block->getInterval ();
-        }
-        else
-        {
-            failed_allocation_ = true;
-            TaskInfo(format("Delaying creation of block %s") % RegionFactory(block_layout_)(ref));
-        }
-    }
-
-    return block;
-}
-
-
-std::vector<pBlock> Collection::
-        getIntersectingBlocks( const Intervals& I, bool only_visible ) const
-{
-    return BlockQuery(cache_).getIntersectingBlocks(I, only_visible, _frame_counter);
+    return block_installer_.write ()->getBlock(ref, _frame_counter);
 }
 
 
 unsigned long Collection::
         cacheByteSize() const
 {
-    return BlockCacheInfo::cacheByteSize (read1(cache_)->cache());
+    return BlockCacheInfo::cacheByteSize (cache_.read ()->cache());
 }
 
 
 unsigned Collection::
         cacheCount() const
 {
-    return read1(cache_)->cache().size();
+    return cache_.read ()->cache().size();
 }
 
 
 void Collection::
         printCacheSize() const
 {
-    BlockCacheInfo::printCacheSize(read1(cache_)->cache());
+    BlockCacheInfo::printCacheSize(cache_.read ()->cache());
 }
 
 
-BlockCache::Ptr Collection::
+BlockCache::ptr Collection::
         cache() const
 {
     return cache_;
@@ -346,10 +286,7 @@ void Collection::
 bool Collection::
         failed_allocation()
 {
-    bool r = failed_allocation_ || failed_allocation_prev_;
-    failed_allocation_prev_ = failed_allocation_;
-    failed_allocation_ = false;
-    return r;
+    return block_installer_.write ()->failed_allocation();
 }
 
 
@@ -374,7 +311,7 @@ BlockLayout Collection::
 }
 
 
-VisualizationParams::ConstPtr Collection::
+VisualizationParams::const_ptr Collection::
         visualization_params() const
 {
     return visualization_params_;
@@ -403,7 +340,7 @@ void Collection::
 
     block_layout_ = v;
 
-    merger_.reset( new Blocks::MergerTexture(cache_, block_layout_) );
+    block_installer_.write ()->block_layout(v);
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
@@ -412,7 +349,7 @@ void Collection::
 
 
 void Collection::
-        visualization_params(VisualizationParams::ConstPtr v)
+        visualization_params(VisualizationParams::const_ptr v)
 {
     EXCEPTION_ASSERT( v );
 
@@ -423,7 +360,7 @@ void Collection::
         visualization_params_ = v;
     }
 
-    recently_created_ = Signal::Intervals::Intervals_ALL;
+    block_installer_.write ()->set_recently_created_all();
 }
 
 
@@ -435,7 +372,7 @@ Intervals Collection::
     if (!_is_visible)
         return r;
 
-    BOOST_FOREACH ( const BlockCache::recent_t::value_type& a, read1(cache_)->recent() )
+    BOOST_FOREACH ( const BlockCache::recent_t::value_type& a, cache_.read ()->recent() )
     {
         Block& b = *a;
         unsigned framediff = _frame_counter - b.frame_number_last_used;
@@ -457,16 +394,14 @@ Intervals Collection::
 Signal::Intervals Collection::
         recently_created()
 {
-    Signal::Intervals r = recently_created_;
-    recently_created_.clear ();
-    return r;
+    return block_installer_.write ()->recently_created();
 }
 
 
 void Collection::
         removeBlock (pBlock b)
 {
-    write1(cache_)->erase(b->reference());
+    cache_.write ()->erase(b->reference());
     _to_remove.push_back( b );
     b->glblock.reset ();
 }

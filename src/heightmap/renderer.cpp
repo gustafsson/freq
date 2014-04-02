@@ -23,7 +23,7 @@
 #include "GlException.h"
 #include "computationkernel.h"
 #include "glPushContext.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "GlTexture.h"
 
 // boost
@@ -264,9 +264,9 @@ void Renderer::
 Reference Renderer::
         findRefAtCurrentZoomLevel( Heightmap::Position p )
 {
-    Reference entireHeightmap = read1(collection)->entireHeightmap();
-    BlockLayout bl = read1(collection)->block_layout();
-    VisualizationParams::ConstPtr vp = read1(collection)->visualization_params();
+    Reference entireHeightmap = collection.read ()->entireHeightmap();
+    BlockLayout bl = collection.read ()->block_layout();
+    VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
     Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
     Reference r = Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
     return r;
@@ -279,7 +279,7 @@ void Renderer::
     if (!collection)
         return;
 
-    if (!read1(collection)->visualization_params ()->transform_desc())
+    if (!collection.read ()->visualization_params ()->transform_desc())
         return;
 
     GlException_CHECK_ERROR();
@@ -321,7 +321,7 @@ void Renderer::
     }
     else
     {
-        BlockLayout block_size = read1(collection)->block_layout ();
+        BlockLayout block_size = collection.read ()->block_layout ();
         _render_block.setSize (
                  block_size.texels_per_row ()/_mesh_fraction_width,
                  block_size.texels_per_column ()/_mesh_fraction_height );
@@ -341,9 +341,9 @@ void Renderer::
 Render::RenderSet::references_t Renderer::
         getRenderSet(float L)
 {
-    BlockLayout bl                   = read1(collection)->block_layout ();
-    Reference ref                    = read1(collection)->entireHeightmap();
-    VisualizationParams::ConstPtr vp = read1(collection)->visualization_params ();
+    BlockLayout bl                   = collection.read ()->block_layout ();
+    Reference ref                    = collection.read ()->entireHeightmap();
+    VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
     Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
@@ -356,11 +356,25 @@ void Renderer::
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::createMissingBlocks");
 
-    Collection::WritePtr collectionp(collection);
 
-    BOOST_FOREACH(const Reference& r, R) {
-        // Create blocks
-        collectionp->getBlock (r);
+    Render::RenderSet::references_t missing;
+
+    {
+        auto cache = collection.raw ()->cache ().read ();
+        BOOST_FOREACH(const Reference& r, R) {
+            if (!cache->probe(r))
+                missing.insert (r);
+        }
+    }
+
+    if (!missing.empty ())
+    {
+        auto collectionp = collection.read ();
+
+        BOOST_FOREACH(const Reference& r, missing) {
+            // Create blocks
+            collectionp->getBlock (r);
+        }
     }
 }
 
@@ -370,11 +384,12 @@ void Renderer::
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
 
-    BlockCache::ReadPtr cache( read1(collection)->cache () );
+    auto cache = collection.read ()->cache ().read ();
 
     for (const Reference& r : R)
     {
-        if (pBlock block = cache->probe( r )) {
+        if (pBlock block = cache->probe( r ))
+        {
             block->update_glblock_data ();
             block->glblock->update_texture (
                         render_settings.draw_flat
@@ -397,16 +412,17 @@ void Renderer::
     Render::RenderSet::references_t failed;
 
     {
-        int frame_number = read1(collection)->frame_number ();
-        BlockLayout bl = read1(collection)->block_layout ();
-        BlockCache::Ptr cache = read1(collection)->cache ();
+        auto collection = this->collection.read ();
+        int frame_number = collection->frame_number ();
+        BlockLayout bl = collection->block_layout ();
+        auto cache = collection->cache ().write ();
+        collection.unlock ();
 
-        BlockCache::WritePtr cachep( cache );
         Render::RenderBlock::Renderer block_renderer(&_render_block, bl);
 
         BOOST_FOREACH(const Reference& r, R)
         {
-            if (pBlock block = cachep->find( r ))
+            if (pBlock block = cache->find( r ))
             {
                 block_renderer.renderBlock(block);
                 block->frame_number_last_used = frame_number;
@@ -414,11 +430,7 @@ void Renderer::
             }
             else
             {
-                // getBlock would try to find something else if the requested block
-                // wasn't readily available.
-
-                // If getBlock fails, we're most likely out of memory. Indicate this
-                // silently by not drawing the surface but only a wireframe.
+                // Indicate unavailable blocks by not drawing the surface but only a wireframe.
                 failed.insert(r);
             }
         }
@@ -437,7 +449,7 @@ void Renderer::
 
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawReferences");
 
-    BlockLayout bl = read1(collection)->block_layout ();
+    BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
     BOOST_FOREACH(const Reference& r, R) {
@@ -451,7 +463,7 @@ void Renderer::
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawAxes");
 
-    Tfr::FreqAxis display_scale = read1(collection)->visualization_params ()->display_scale();
+    Tfr::FreqAxis display_scale = collection.read ()->visualization_params ()->display_scale();
 
     Render::RenderAxes ra(
                 render_settings,

@@ -1,7 +1,7 @@
 #include "firstmissalgorithm.h"
 
 #include "reversegraph.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "expectexception.h"
 
 #include <boost/foreach.hpp>
@@ -20,7 +20,7 @@ typedef std::map<GraphVertex, Signal::Intervals> NeededSamples;
 
 
 struct ScheduleParams {
-    Signal::ComputingEngine::Ptr engine;
+    Signal::ComputingEngine::ptr engine;
     Signal::IntervalType preferred_size;
     Signal::IntervalType center;
 };
@@ -28,7 +28,7 @@ struct ScheduleParams {
 
 class find_missing_samples: public default_bfs_visitor {
 public:
-    find_missing_samples(NeededSamples needed, Task::Ptr* output_task, ScheduleParams schedule_params)
+    find_missing_samples(NeededSamples needed, Task::ptr* output_task, ScheduleParams schedule_params)
         :
           needed(needed),
           params(schedule_params),
@@ -47,8 +47,7 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            Step::ReadPtr src( g[v] );
-            missing_input |= src->out_of_date ();
+            missing_input |= g[v].read ()->out_of_date ();
           }
 
         Interval required_input = try_create_task(u, g, missing_input);
@@ -57,15 +56,14 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            Step::ReadPtr src( g[v] );
-            needed[v] |= src->not_started () & required_input;
+            needed[v] |= g[v].read ()->not_started () & required_input;
           }
       }
 
 
     Signal::Interval try_create_task(GraphVertex u, const Graph & g, Signal::Intervals missing_input)
       {
-        Step::WritePtr step( g[u] ); // lock while studying what's needed
+        auto step = g[u].write (); // lock while studying what's needed
 
         try
           {
@@ -78,8 +76,8 @@ public:
                 return Signal::Interval();
               }
 
-            Signal::OperationDesc::Ptr op = step->operation_desc();
-            Signal::OperationDesc::WritePtr o(op);
+            Signal::OperationDesc::ptr op = step->operation_desc();
+            auto o = op.write ();
 
             DEBUGINFO TaskTimer tt(format("Missing %1% in %2% for %3%")
                                    % I
@@ -125,12 +123,13 @@ public:
             // If nothing is missing and this engine supports this operation
             if (missing_input.empty ())
               {
-                Signal::Operation::Ptr operation = o->createOperation (params.engine.get ());
+                Signal::Operation::ptr operation = o->createOperation (params.engine.get ());
+                o.unlock ();
 
                 if (operation)
                   {
                     // Create a task
-                    std::vector<Step::Ptr> children;
+                    std::vector<Step::ptr> children;
 
                     BOOST_FOREACH(GraphEdge e, out_edges(u, g))
                       {
@@ -138,7 +137,7 @@ public:
                         children.push_back (g[v]);
                       }
 
-                    task->reset (new Task(step, children, operation, expected_output, required_input));
+                    *task = Task::ptr(new Task(step, g[u], children, operation, expected_output, required_input));
                   }
               }
 
@@ -153,7 +152,9 @@ public:
 
             try
               {
-                step->mark_as_crashed();
+                Signal::Processing::IInvalidator::ptr i = step->mark_as_crashed_and_get_invalidator();
+                step.unlock ();
+                if (i) i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
             catch(const std::exception& y)
               {
@@ -166,18 +167,18 @@ public:
 
     NeededSamples needed;
     ScheduleParams params;
-    Task::Ptr* task;
+    Task::ptr* task;
 };
 
 
-Task::Ptr FirstMissAlgorithm::
+Task::ptr FirstMissAlgorithm::
         getTask(const Graph& straight_g,
                 GraphVertex straight_target,
                 Signal::Intervals needed,
                 Signal::IntervalType center,
                 Signal::IntervalType preferred_size,
-                Workers::Ptr /*workers*/,
-                Signal::ComputingEngine::Ptr engine) const
+                Workers::ptr /*workers*/,
+                Signal::ComputingEngine::ptr engine) const
 {
     DEBUGINFO TaskTimer tt(boost::format("FirstMissAlgorithm %s %p") % (engine?vartype(*engine):"Signal::ComputingEngine*") % engine.get ());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
@@ -189,7 +190,7 @@ Task::Ptr FirstMissAlgorithm::
     needed_samples[target] = needed;
 
 
-    Task::Ptr task;
+    Task::ptr task;
     find_missing_samples vis(needed_samples, &task, schedule_params);
 
     breadth_first_search(g, target, visitor(vis));
@@ -208,8 +209,8 @@ void FirstMissAlgorithm::
     {
         // Create an OperationDesc and a Step
         Signal::pBuffer b(new Buffer(Interval(60,70), 40, 7));
-        Signal::OperationDesc::Ptr od(new BufferSource(b));
-        Step::Ptr step(new Step(od));
+        Signal::OperationDesc::ptr od(new BufferSource(b));
+        Step::ptr step(new Step(od));
 
         // Create a graph with only one vertex
         Graph g;
@@ -218,25 +219,25 @@ void FirstMissAlgorithm::
 
         // Schedule a task
         FirstMissAlgorithm schedule;
-        Signal::ComputingEngine::Ptr c(new Signal::ComputingCpu);
-        Task::Ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::Ptr(), c);
-        Task::Ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::Ptr(), c);
+        Signal::ComputingEngine::ptr c(new Signal::ComputingCpu);
+        Task::ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
+        Task::ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
 
 
         // Verify output
         EXCEPTION_ASSERT(t1);
         EXCEPTION_ASSERT(t2);
-        EXCEPTION_ASSERT_EQUALS(read1(t1)->expected_output(), Interval(20,30));
-        EXCEPTION_ASSERT_EQUALS(read1(t2)->expected_output(), Interval(10, 20));
+        EXCEPTION_ASSERT_EQUALS(t1.read ()->expected_output(), Interval(20,30));
+        EXCEPTION_ASSERT_EQUALS(t2.read ()->expected_output(), Interval(10, 20));
 
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), Signal::Intervals::Intervals_ALL);
-        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), read1(step)->not_started());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), Signal::Intervals::Intervals_ALL);
+        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), step.read ()->not_started());
 
         // Verify that the output objects can be used
-        write1(t1)->run();
-        write1(t2)->run();
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), read1(step)->not_started());
-        EXCEPTION_ASSERT_EQUALS(read1(step)->out_of_date(), ~Signal::Intervals(10,30));
+        t1.write ()->run();
+        t2.write ()->run();
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), step.read ()->not_started());
+        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals(10,30));
     }
 
     // It should let missing_in_target override out_of_date in the given vertex

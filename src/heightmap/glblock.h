@@ -31,13 +31,13 @@ public:
     ~GlBlock();
 
     typedef boost::shared_ptr< MappedVbo<float> > pHeight;
-    typedef DataStorage<float>::Ptr pHeightReadOnlyCpu;
+    typedef DataStorage<float>::ptr pHeightReadOnlyCpu;
     //typedef cudaArray* HeightReadOnlyArray;
 
     void                reset( float width, float height );
 
-    GlTexture::Ptr      glTexture();
-    GlTexture::Ptr      glVertTexture();
+    GlTexture::ptr      glTexture();
+    GlTexture::ptr      glVertTexture();
     pHeight             height();
     pHeightReadOnlyCpu  heightReadOnlyCpu();
     //HeightReadOnlyArray heightReadOnlyArray();

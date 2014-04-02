@@ -13,7 +13,7 @@
 // gpumisc
 #include "ThreadChecker.h"
 #include "deprecated.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 
 // std
 #include <vector>
@@ -88,13 +88,10 @@ namespace Tfr {
 
 namespace Heightmap {
 
-namespace Blocks {
-class MergerTexture;
-}
-
 class Renderer;
 class Block;
 class BlockData;
+class BlockInstaller;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -103,9 +100,11 @@ typedef boost::shared_ptr<Block> pBlock;
   Signal::Sink::put is used to insert information into this collection.
   getBlock is used to extract blocks for rendering.
   */
-class Collection: public VolatilePtr<Collection> {
+class Collection {
 public:
-    Collection(BlockLayout, VisualizationParams::ConstPtr);
+    typedef shared_state<Collection> ptr;
+
+    Collection(BlockLayout, VisualizationParams::const_ptr);
     ~Collection();
 
 
@@ -139,33 +138,13 @@ public:
     Reference   entireHeightmap() const;
 
 
-    /**
-      Get a heightmap block. If the referenced block doesn't exist it is created.
-
-      This method is used by Heightmap::Renderer to get the heightmap data of
-      blocks that has been decided for rendering.
-
-      Might return 0 if collections decides that it doesn't want to allocate
-      another block.
-      */
-    pBlock      getBlock( const Reference& ref );
-
-
-    /**
-      Blocks are updated by CwtToBlock and StftToBlock by merging chunks into
-      all existing blocks that intersect with the chunk interval.
-
-      This method is called by working threads.
-
-      TODO don't expose OpenGL data to other threads.
-      */
-    std::vector<pBlock>      getIntersectingBlocks( const Signal::Intervals& I, bool only_visible ) const;
+    pBlock      getBlock( const Reference& ref ) const;
 
 
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
-    BlockCache::Ptr cache() const;
+    BlockCache::ptr cache() const;
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 
@@ -173,30 +152,28 @@ public:
     void setVisible(bool v);
 
     BlockLayout block_layout() const;
-    VisualizationParams::ConstPtr visualization_params() const;
+    VisualizationParams::const_ptr visualization_params() const;
 
 private:
     friend class Heightmap::TfrMapping;
 
     void length(float length);
     void block_layout(BlockLayout block_layout);
-    void visualization_params(VisualizationParams::ConstPtr visualization_params);
+    void visualization_params(VisualizationParams::const_ptr visualization_params);
 
     BlockLayout block_layout_;
-    VisualizationParams::ConstPtr visualization_params_;
-    Signal::Intervals recently_created_;
+    VisualizationParams::const_ptr visualization_params_;
 
     typedef std::list<pBlock> toremove_t;
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
 
-    BlockCache::Ptr cache_;
-    std::shared_ptr<Blocks::MergerTexture> merger_;
+    BlockCache::ptr cache_;
+    shared_state<BlockInstaller> block_installer_;
 
     bool
         _is_visible;
 
     unsigned
-        _created_count,
         _frame_counter;
 
     float
@@ -204,14 +181,6 @@ private:
 
     Position
             _max_sample_size;
-
-    /**
-     * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
-     */
-    bool failed_allocation_;
-    bool failed_allocation_prev_;
-
-
 
     /**
       Update 'b':S last_frame_used so that it wont yet be freed.

@@ -18,7 +18,7 @@ namespace Blocks {
 class MergerTexture
 {
 public:
-    MergerTexture(BlockCache::ConstPtr cache, BlockLayout block_layout);
+    MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout);
     ~MergerTexture();
 
     /**
@@ -28,7 +28,7 @@ public:
     void fillBlockFromOthers( pBlock block );
 
 private:
-    BlockCache::ConstPtr cache_;
+    BlockCache::const_ptr cache_;
     std::shared_ptr<ResampleTexture> rt;
     unsigned tex_, pbo_;
 

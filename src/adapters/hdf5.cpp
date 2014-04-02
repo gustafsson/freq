@@ -451,10 +451,10 @@ Tfr::pChunkFilter Hdf5ChunkDesc::
 }
 
 
-Tfr::CwtChunkFilterDesc::Ptr Hdf5ChunkDesc::
+Tfr::CwtChunkFilterDesc::ptr Hdf5ChunkDesc::
         copy() const
 {
-    return CwtChunkFilterDesc::Ptr(new Hdf5ChunkDesc(filename_));
+    return CwtChunkFilterDesc::ptr(new Hdf5ChunkDesc(filename_));
 }
 
 

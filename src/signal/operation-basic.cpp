@@ -50,17 +50,17 @@ Interval OperationSetSilent::
 }
 
 
-OperationDesc::Ptr OperationSetSilent::
+OperationDesc::ptr OperationSetSilent::
         copy() const
 {
-    return OperationDesc::Ptr(new OperationSetSilent(section_));
+    return OperationDesc::ptr(new OperationSetSilent(section_));
 }
 
 
-Signal::Operation::Ptr OperationSetSilent::
+Signal::Operation::ptr OperationSetSilent::
         createOperation(ComputingEngine*) const
 {
-    return Signal::Operation::Ptr(new OperationSetSilent::Operation(section_));
+    return Signal::Operation::ptr(new OperationSetSilent::Operation(section_));
 }
 
 

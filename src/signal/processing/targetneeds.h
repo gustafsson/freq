@@ -2,8 +2,9 @@
 #define SIGNAL_PROCESSING_TARGETNEEDS_H
 
 #include "signal/intervals.h"
-#include "volatileptr.h"
+#include "shared_state.h"
 #include "inotifier.h"
+#include "shared_state_traits_backtrace.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
 
@@ -16,10 +17,14 @@ class Bedroom;
 /**
  * @brief The TargetNeeds class should describe what needs to be computed for a target.
  */
-class TargetNeeds: public VolatilePtr<TargetNeeds>
+class TargetNeeds
 {
 public:
-    TargetNeeds(boost::weak_ptr<volatile Step> step_, INotifier::WeakPtr notifier);
+    typedef shared_state<TargetNeeds> ptr;
+    typedef shared_state<const TargetNeeds> const_ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
+
+    TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
     ~TargetNeeds();
 
     /**
@@ -50,7 +55,7 @@ public:
      */
     void deprecateCache(Signal::Intervals invalidate);
 
-    boost::weak_ptr<volatile Step> step() const;
+    shared_state<Step>::weak_ptr step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
     Signal::IntervalType preferred_update_size() const;
@@ -62,16 +67,16 @@ public:
      * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
      * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */
-    bool sleep(int sleep_ms) volatile;
+    static bool sleep(TargetNeeds::const_ptr targetneeds, int sleep_ms);
 
 private:
-    const boost::weak_ptr<volatile Step> step_;
+    shared_state<Step>::weak_ptr step_;
     boost::posix_time::ptime last_request_;
     Signal::IntervalType work_center_;
     Signal::IntervalType preferred_update_size_;
     Signal::Intervals needed_samples_;
 
-    INotifier::WeakPtr notifier_;
+    INotifier::weak_ptr notifier_;
 
 public:
     static void test();
@@ -224,7 +229,7 @@ Step::Ptr scheduler.addTargetAt(Step::Ptr position, UnconnectedTarget::Ptr ut) {
     //virtual Signal::Intervals out_of_date(Signal::Intervals skip = Signal::Intervals()) = 0;
 
 
-/*class ClientGoalProvider: VolatilePtr<WorkRequests> {
+/*class ClientGoalProvider: shared_state<WorkRequests> {
 public:
     struct Goal {
         Signal::IntervalType work_center;

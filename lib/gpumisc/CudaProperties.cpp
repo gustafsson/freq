@@ -1,6 +1,6 @@
 #include "CudaProperties.h"
 #include "CudaException.h"
-#include "TaskTimer.h"
+#include "tasktimer.h"
 #include "cpuproperties.h"
 
 #include <cuda_runtime.h>

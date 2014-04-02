@@ -12,7 +12,7 @@ namespace Tfr
 class ComplexBuffer
 {
 public:
-    typedef boost::shared_ptr<ComplexBuffer> Ptr;
+    typedef boost::shared_ptr<ComplexBuffer> ptr;
 
 
     ComplexBuffer(UnsignedF firstSample,
@@ -25,7 +25,7 @@ public:
     */
     ComplexBuffer(const Signal::MonoBuffer& b);
 
-    ComplexBuffer(DataStorage<float>::Ptr inputbuffer);
+    ComplexBuffer(DataStorage<float>::ptr inputbuffer);
 
 
     /**
@@ -36,7 +36,7 @@ public:
         The pointer is valid for the lifetime of this class, or as long as the
         pBuffer returned from get_real() isn't deleted.
     */
-    DataStorage<float>::Ptr waveform_data();
+    DataStorage<float>::ptr waveform_data();
 
 
     /**
@@ -57,15 +57,15 @@ public:
     /**
         Access the complex waveform
     */
-    DataStorage<std::complex<float> >::Ptr complex_waveform_data() const {
+    DataStorage<std::complex<float> >::ptr complex_waveform_data() const {
         return _complex_waveform_data;
     }
 
 protected:
     Signal::pMonoBuffer _my_real;
 
-    void setData(DataStorage<float>::Ptr inputbuffer);
-    DataStorage<std::complex<float> >::Ptr _complex_waveform_data;
+    void setData(DataStorage<float>::ptr inputbuffer);
+    DataStorage<std::complex<float> >::ptr _complex_waveform_data;
 };
 
 } // namespace Tfr

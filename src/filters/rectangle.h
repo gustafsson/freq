@@ -33,7 +33,7 @@ public:
     // ChunkFilterDesc
     Tfr::pChunkFilter               createChunkFilter(Signal::ComputingEngine* engine) const;
     Signal::OperationDesc::Extent   extent() const;
-    ChunkFilterDesc::Ptr            copy() const;
+    ChunkFilterDesc::ptr            copy() const;
 
     // Filters::Selection
     bool isInteriorSelected() const override;

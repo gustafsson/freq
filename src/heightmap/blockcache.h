@@ -4,7 +4,7 @@
 #include "block.h"
 
 // gpumisc
-#include "volatileptr.h"
+#include "shared_state.h"
 
 // boost
 #include <boost/unordered_map.hpp>
@@ -14,9 +14,12 @@ namespace Heightmap {
 /**
  * @brief The BlockCache class should store allocated blocks readily available
  */
-class BlockCache: public VolatilePtr<BlockCache>
+class BlockCache
 {
 public:
+    typedef shared_state<BlockCache> ptr;
+    typedef shared_state<const BlockCache> const_ptr;
+
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 

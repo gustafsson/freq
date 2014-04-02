@@ -3,8 +3,6 @@
 
 #include <stdexcept>
 
-#include "TaskTimer.h" // TODO remove
-
 ThreadChecker::ThreadChecker()
 :   startThread( getCurrentThread() )
 {}

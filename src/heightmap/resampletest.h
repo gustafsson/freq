@@ -23,7 +23,7 @@ private:
     void simpleData();
     void bigData( unsigned w = 1024, unsigned h = 1024 );
 
-    DataStorage< float2 >::Ptr inputData;
+    DataStorage< float2 >::ptr inputData;
 };
 
 #endif // RESAMPLETEST_H
