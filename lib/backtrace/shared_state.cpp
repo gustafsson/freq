@@ -532,7 +532,7 @@ void WriteWhileReadingThread::
         // that write request will fail and then this will succeed
         future<void> f = async(launch::async, [&b](){
             // Make sure readTwice starts before this function
-            this_thread::sleep_for (chrono::milliseconds{1});
+            this_thread::sleep_for (chrono::milliseconds{3});
 
             // Write access should fail as the first thread attempts recursive locks
             // through multiple calls to read ().
