@@ -113,8 +113,8 @@ void WaveformBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new WaveformBlockFilter );
-        mc.write ()->filterChunk(cai);
-        mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
+        mc->filterChunk(cai);
+        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

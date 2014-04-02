@@ -25,13 +25,11 @@ class OperationDesc;
  * @brief The Operation class should describe the interface for performing signal processing on signal data.
  *
  * 'process' should only be called from one thread.
- *
- * TODO use shared_ptr instead of shared_state
  */
 class SaweDll Operation
 {
 public:
-    typedef shared_state<Operation> ptr;
+    typedef std::shared_ptr<Operation> ptr;
 
     /**
       Virtual housekeeping.

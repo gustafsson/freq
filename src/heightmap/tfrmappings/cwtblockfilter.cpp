@@ -139,8 +139,8 @@ void CwtBlockFilter::
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::ptr mc( new CwtBlockFilter(complex_info) );
 
-        mc.write ()->filterChunk(cai);
-        std::vector<IChunkToBlock::ptr> prep = mc.write ()->createChunkToBlock(cai);
+        mc->filterChunk(cai);
+        std::vector<IChunkToBlock::ptr> prep = mc->createChunkToBlock(cai);
         for (size_t i=0; i<prep.size (); ++i)
             prep[i]->mergeChunk (block);
 

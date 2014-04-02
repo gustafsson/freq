@@ -262,13 +262,13 @@ void Step::
         EXCEPTION_ASSERT(s.operation_desc ());
         EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
         EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
-        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).raw ()));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
         s.mark_as_crashed_and_get_invalidator ();
         EXCEPTION_ASSERT(s.get_crashed ());
         EXCEPTION_ASSERT(s.operation_desc ());
         EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
         EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
-        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).raw ()));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
     }
 }
 

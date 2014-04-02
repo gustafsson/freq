@@ -241,7 +241,7 @@ void TransformOperationDesc::
                     t->requiredInterval (Signal::Interval(5,7),0));
 
         Signal::Operation::ptr o = tod.createOperation (0);
-        Signal::pBuffer b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
+        Signal::pBuffer b = o->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT_EQUALS(i, (int)b->number_of_channels ());
     }
 }

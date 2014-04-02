@@ -160,10 +160,10 @@ void ChunkToBlock::
     Tfr::ChunkFilterDesc::ptr fdesc( new DummyKernelDesc );
     fdesc.write ()->transformDesc(Tfr::pTransformDesc( new Tfr::StftDesc() ));
     Signal::OperationDesc::ptr desc(new Tfr::TransformOperationDesc(fdesc));
-    auto operation = desc.read ()->createOperation (0).write ();
+    Signal::Operation::ptr operation = desc->createOperation (0);
 
     Signal::Interval expectedOutput;
-    Signal::Interval requiredInterval = desc.read ()->requiredInterval (Signal::Interval (11,31), &expectedOutput);
+    Signal::Interval requiredInterval = desc->requiredInterval (Signal::Interval (11,31), &expectedOutput);
 
     Signal::pBuffer buffer( new Signal::Buffer (requiredInterval, 1, 1));
     operation->process( buffer );

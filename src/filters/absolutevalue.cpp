@@ -66,7 +66,7 @@ void AbsoluteValueDesc::
     {
         AbsoluteValueDesc avd;
         Signal::Operation::ptr o = avd.createOperation (0);
-        Signal::pBuffer b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
+        Signal::pBuffer b = o->process (Test::RandomBuffer::smallBuffer ());
         float b1[] = {3, 7, 8, 5, 3};
         float b2[] = {1, 9, 3, 6, 2};
         EXCEPTION_ASSERT(0 == memcmp(b1, b->getChannel (0)->waveform_data ()->getCpuMemory (), sizeof(b1)));

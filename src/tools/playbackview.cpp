@@ -80,8 +80,7 @@ void PlaybackView::
         return;
     }
 
-    auto playbackw = model->playback().write ();
-    Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+    Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model->playback().get ());
 
     // Playback has stopped/or hasn't started
     bool is_stopped = playback->isStopped();

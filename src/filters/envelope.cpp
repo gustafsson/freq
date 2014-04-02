@@ -110,7 +110,7 @@ void EnvelopeDesc::
         EXCEPTION_ASSERT_EQUALS(expected, Signal::Interval(0,64));
         EXCEPTION_ASSERT_EQUALS(i, Signal::Interval(-192,256));
         Signal::pBuffer b = Test::RandomBuffer::randomBuffer (i, 1, 1);
-        Signal::pBuffer r = o.write ()->process(b);
+        Signal::pBuffer r = o->process(b);
 
         EXCEPTION_ASSERT_EQUALS(r->getInterval (), expected);
 

@@ -171,11 +171,11 @@ void BufferSource::
     Operation::test (o, &s);
 
     pBuffer r(new Buffer(Interval(60,70), 40, 7));
-    pBuffer d = o.write ()->process (r);
+    pBuffer d = o->process (r);
     EXCEPTION_ASSERT( *d == *b );
 
     r = pBuffer(new Buffer(Interval(61,71), 1, 1));
-    d = o.write ()->process (r);
+    d = o->process (r);
     EXCEPTION_ASSERT_EQUALS (b->number_of_channels (), d->number_of_channels ());
     EXCEPTION_ASSERT_EQUALS (b->number_of_samples (), d->number_of_samples ());
     EXCEPTION_ASSERT_EQUALS (r->getInterval (), d->getInterval ());

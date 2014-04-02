@@ -124,8 +124,8 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::ptr()) );
-        mc.write ()->filterChunk(cai);
-        mc.write ()->createChunkToBlock(cai)[0]->mergeChunk (block);
+        mc->filterChunk(cai);
+        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
 
         float T = t.elapsed ();
         if (DetectGdb::is_running_through_gdb ()) {

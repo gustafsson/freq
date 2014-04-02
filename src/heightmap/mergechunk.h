@@ -11,19 +11,18 @@ namespace Heightmap {
 
 class MergeChunk {
 public:
-    typedef shared_state<MergeChunk> ptr;
-    typedef shared_state_traits_backtrace shared_state_traits;
+    typedef std::shared_ptr<MergeChunk> ptr;
 
     virtual ~MergeChunk() {}
 
     /**
      * @brief filterChunk is called from a worker thread.
-     * May be empty.
+     * May be empty. Must be reentrant.
      */
     virtual void filterChunk(Tfr::ChunkAndInverse&) {}
 
     /**
-     * @brief createChunkToBlock will be called from the UI thread.
+     * @brief createChunkToBlock will be called from the UI thread. Must be reentrant.
      */
     virtual std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
 };

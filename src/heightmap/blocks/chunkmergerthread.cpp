@@ -205,8 +205,9 @@ void ChunkMergerThread::
     // 2.1. prepare to draw into block
     // 2.2. draw all chunks
     // 2.3. update whatever needs to be updated
+    // And rename all these "chunk block merger to merge block chunk merge"
 
-    std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk->createChunkToBlock( j.chunk );
 
     for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
       {

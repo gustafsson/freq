@@ -191,7 +191,7 @@ public:
 
     void run () {
         if (operation && buffer)
-            buffer = operation.write ()->process(buffer);
+            buffer = operation->process(buffer);
     }
 };
 
@@ -243,7 +243,7 @@ void OperationDescWrapper::
         Signal::pBuffer b2(new Signal::Buffer(Signal::Interval(0,1),1,1));
         *b1->getChannel (0)->waveform_data ()->getCpuMemory () = 1234;
         *b2->getChannel (0)->waveform_data () = *b1->getChannel (0)->waveform_data ();
-        Signal::pBuffer r1 = o1.write ()->process(b1);
+        Signal::pBuffer r1 = o1->process(b1);
         EXCEPTION_ASSERT_EQUALS(r1, b1);
         EXCEPTION_ASSERT(*r1 == *b2);
     }

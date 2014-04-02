@@ -91,7 +91,7 @@ void Task::
 
     {
         TIME_TASK TaskTimer tt(boost::format("process %s") % input_buffer->getInterval ());
-        output_buffer = o.write ()->process (input_buffer);
+        output_buffer = o->process (input_buffer);
         finish(output_buffer);
     }
 }

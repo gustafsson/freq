@@ -87,7 +87,7 @@ pBuffer RenderOperationDesc::Operation::
 {
     Signal::Interval input = b?b->getInterval ():Signal::Interval();
 
-    b = wrapped_.write ()->process (b);
+    b = wrapped_->process (b);
 
     Signal::Interval output = b?b->getInterval ():Signal::Interval();
 
@@ -146,7 +146,7 @@ void RenderOperationDesc::
         // Operations are processed through a Processing::Step
         Processing::Step step(ro);
         step.deprecateCache (Interval(4,9));
-        o.write ()->process (pBuffer());
+        o->process (pBuffer());
 
         EXCEPTION_ASSERT_EQUALS( Interval(4,9), target->I );
         EXCEPTION_ASSERT_EQUALS( 1, target->processed_count );

@@ -76,15 +76,15 @@ void TimeSelection::
         pBuffer b;
 
         Operation::ptr o = ts.createOperation (0);
-        b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
+        b = o->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT(*gold_interior == *b);
 
         ts.selectInterior (false);
-        b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
+        b = o->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT(*gold_interior == *b);
 
         o = ts.createOperation (0);
-        b = o.write ()->process (Test::RandomBuffer::smallBuffer ());
+        b = o->process (Test::RandomBuffer::smallBuffer ());
         EXCEPTION_ASSERT(*gold_exterior == *b);
     }
 }

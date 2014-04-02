@@ -79,10 +79,9 @@ void AudiofileOpener::
         {
             Signal::Operation::ptr o = od.read ()->createOperation(0);
             EXCEPTION_ASSERT(o);
-            auto op = o.write ();
             Signal::OperationDesc::Extent x = od.read ()->extent();
             Signal::pBuffer b(new Signal::Buffer(0, x.interval.get().count(), x.sample_rate.get(), x.number_of_channels.get()));
-            Signal::pBuffer b2 = op->process(b);
+            Signal::pBuffer b2 = o->process(b);
 
             EXCEPTION_ASSERT_EQUALS(buffer->number_of_channels (), b2->number_of_channels ());
             EXCEPTION_ASSERT_EQUALS(buffer->number_of_samples (), b2->number_of_samples ());

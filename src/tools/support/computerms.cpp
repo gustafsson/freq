@@ -122,7 +122,7 @@ void ComputeRmsDesc::
         Signal::pBuffer b = Test::RandomBuffer::smallBuffer ();
         ComputeRmsDesc crd;
         Signal::Operation::ptr o = crd.createOperation ();
-        o.write ()->process (b);
+        o->process (b);
 
         EXCEPTION_ASSERT_EQUALS(5.3572383f, crd.rms ());
     }

@@ -33,7 +33,6 @@ void ChunkBlockFilter::
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
-    // this write1 failed once, but that shouldn't be possible as merge_chunk_ only ever exists in one worker thread!
     merge_chunk_->filterChunk( pchunk );
 
     BlockCache::ptr cache = C[pchunk.channel].read ()->cache();

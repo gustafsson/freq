@@ -202,8 +202,7 @@ void PlaybackController::
         Signal::Intervals expected_data = ~zeroed_samples & x.interval.get_value_or (Signal::Interval());
         TaskInfo(boost::format("expected_data = %s") % expected_data);
 
-        auto playbackw = model()->playback().write ();
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
 
         model()->target_marker->target_needs ().write ()->updateNeeds(
@@ -217,8 +216,7 @@ void PlaybackController::
     }
     else
     {
-        auto playbackw = model()->playback().write ();
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->restart_playback();
     }
 
@@ -230,8 +228,7 @@ void PlaybackController::
         pause( bool active )
 {
     if (model()->playback()) {
-        auto playbackw = model()->playback().write ();
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->pausePlayback( active );
     }
 
@@ -265,8 +262,7 @@ void PlaybackController::
 
     Signal::Operation::ptr p = model()->playback();
     if (p) {
-        auto playbackw = p.write ();
-        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(playbackw.get ());
+        Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->stop();
     }
 
