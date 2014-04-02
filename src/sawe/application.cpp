@@ -418,7 +418,7 @@ void Application::
 
     Sawe::Configuration::rebuild_version_string();
 
-    emit global_ptr()->titleChanged();
+    emit global_ptr()->licenseChecked();
 }
 
 
