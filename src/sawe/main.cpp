@@ -387,6 +387,10 @@ int main(int argc, char *argv[])
                 return -1;
 
             r = a.exec();
+        } else {
+            // Tidy quit, plenty of things might have been started already
+            QMetaObject::invokeMethod (&a, "quit", Qt::QueuedConnection);
+            r = a.exec ();
         }
 
         // When the OpenGL context is destroyed, the Cuda context becomes

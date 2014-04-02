@@ -44,6 +44,7 @@ private:
 
     QThread                             thread_;
     Support::SendFeedback*              send_feedback_;
+    bool                                finished_ok_;
 
 public:
     static void test();
