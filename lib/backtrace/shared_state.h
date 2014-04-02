@@ -295,8 +295,8 @@ public:
         const T* operator-> () const { assert(p); return p; }
         const T& operator* () const { assert(p); return *p; }
 #else
-        const T* operator-> () const { return t; }
-        const T& operator* () const { return *t; }
+        const T* operator-> () const { return p; }
+        const T& operator* () const { return *p; }
 #endif
         const T* get () const { return p; }
         explicit operator bool() const { return (bool)p; }
@@ -407,8 +407,8 @@ public:
         T* operator-> () const { assert(p); return p; }
         T& operator* () const { assert(p); return *p; }
 #else
-        T* operator-> () const { return t; }
-        T& operator* () const { return *t; }
+        T* operator-> () const { return p; }
+        T& operator* () const { return *p; }
 #endif
         T* get () const { return p; }
         explicit operator bool() const { return (bool)p; }
