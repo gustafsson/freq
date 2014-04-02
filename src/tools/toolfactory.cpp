@@ -34,6 +34,7 @@
 #include "waveformcontroller.h"
 #include "applicationerrorlogcontroller.h"
 #include "support/workercrashlogger.h"
+#include "suggestpurchase.h"
 
 #include "selectioncontroller.h"
 //#include "brushcontroller.h"
@@ -199,6 +200,8 @@ ToolFactory::
     _objects.push_back( QPointer<QObject>( new WaveformController (render_controller)));
 
     _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(p->processing_chain ().read ()->workers(), true)));
+
+    _objects.push_back( QPointer<QObject>( new SuggestPurchase( p->mainWindow ()->centralWidget ())));
 
     //
     // Insert new tools here, and delete things in the destructor in the

@@ -9,7 +9,7 @@ urls=
 url=
 
 unset targets
-targets[${#targets[*]}]="reader"
+#targets[${#targets[*]}]="myThing"
 targets[${#targets[*]}]="" # this is the default build
 
 if [ -n "$1" ]; then

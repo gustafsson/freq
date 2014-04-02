@@ -35,6 +35,7 @@ private:
     bool manualUpdate;
     QString targetUrl, checkUpdatesTag;
     QScopedPointer<QNetworkAccessManager> manager;
+    QNetworkReply* pending_request;
 };
 
 } // namespace Tools

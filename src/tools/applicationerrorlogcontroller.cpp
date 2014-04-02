@@ -29,7 +29,8 @@ std::shared_ptr<ApplicationErrorLogController> application_error_log_controller_
 ApplicationErrorLogController::
         ApplicationErrorLogController()
     :
-      send_feedback_(new Support::SendFeedback(this))
+      send_feedback_(new Support::SendFeedback(this)),
+      finished_ok_(false)
 {    
     qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
 
@@ -60,9 +61,14 @@ ApplicationErrorLogController::
 ApplicationErrorLogController::
         ~ApplicationErrorLogController()
 {
-    TaskInfo ti("~ApplicationErrorLogController");
-    thread_.quit ();
-    thread_.wait ();
+    if (finished_ok_) {
+        thread_.quit ();
+        thread_.wait ();
+    } else {
+        TaskTimer tt("~ApplicationErrorLogController, finished_ok_ = %d", finished_ok_);
+        thread_.terminate ();
+        thread_.wait ();
+    }
 }
 
 
@@ -71,6 +77,7 @@ void ApplicationErrorLogController::
 {
     QSettings().remove (currently_running_key);
     QSettings().remove (has_unreported_error_key);
+    finished_ok_ = true;
     application_error_log_controller_instance.reset ();
 }
 
