@@ -294,9 +294,8 @@ void Application::
             q->mainWindow()->close();
     }
 
-    if (bool disallow_unregistered_start = false)
+    if (!Configuration::feature ("allow_unregistered_start"))
     {
-        (void)disallow_unregistered_start;
         if ("not"==Reader::reader_text().substr(0,3))
             return;
     }
@@ -418,6 +417,10 @@ void Application::
 {
     bool annoy_during_startup = QSettings().value ("ask for missing licence during startup", false).toBool ();
     QSettings().remove ("ask for missing licence during startup");
+
+    if (!Configuration::feature ("allow_unregistered_start"))
+        if ("not"==Reader::reader_text().substr(0,3))
+            annoy_during_startup = true;
 
     Reader::reader_text(annoy_during_startup);
 
