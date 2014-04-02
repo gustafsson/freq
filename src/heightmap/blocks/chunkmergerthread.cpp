@@ -198,6 +198,14 @@ void ChunkMergerThread::
 void ChunkMergerThread::
         processJob(Job& j)
 {
+    // TODO refactor to do one thing at a time
+    // 1. prepare to draw from chunks (i.e copy to OpenGL texture and create vertex buffers)
+    // 1.1. Same chunk_scale and display_scale for all chunks and all blocks
+    // 2. For each block.
+    // 2.1. prepare to draw into block
+    // 2.2. draw all chunks
+    // 2.3. update whatever needs to be updated
+
     std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk.write ()->createChunkToBlock( j.chunk );
 
     for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
