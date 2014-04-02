@@ -137,11 +137,9 @@ Application::
 Application::
         ~Application()
 {
-    TaskInfo ti("Closing Sonic AWE, %s", Sawe::Configuration::version_string().c_str());
-    ti.tt().partlyDone();
+    TaskTimer tt("Closing Sonic AWE, %s", Sawe::Configuration::version_string().c_str());
 
     _projects.clear();
-
     delete shared_glwidget_;
 }
 
@@ -296,8 +294,12 @@ void Application::
             q->mainWindow()->close();
     }
 
-    if ("not"==Reader::reader_text().substr(0,3))
-        return;
+    if (bool disallow_unregistered_start = false)
+    {
+        (void)disallow_unregistered_start;
+        if ("not"==Reader::reader_text().substr(0,3))
+            return;
+    }
 
     _projects.insert( p );
 
@@ -414,7 +416,10 @@ void Application::
 void Application::
         check_license()
 {
-    Reader::reader_text(true);
+    bool annoy_during_startup = QSettings().value ("ask for missing licence during startup", false).toBool ();
+    QSettings().remove ("ask for missing licence during startup");
+
+    Reader::reader_text(annoy_during_startup);
 
     Sawe::Configuration::rebuild_version_string();
 

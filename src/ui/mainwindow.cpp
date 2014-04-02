@@ -443,11 +443,12 @@ void SaweMainWindow::
 void SaweMainWindow::
         reenterProductKey()
 {
-    if (QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored license key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
+    QSettings settings;
+    if (!settings.contains ("value") || QMessageBox::Yes == QMessageBox::question(this, "Sonic AWE", "Clear the currently stored license key?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No))
     {
         QMessageBox::information(this, "Sonic AWE", "Restart Sonic AWE to enter a new license key");
-        QSettings settings;
-        settings.remove("value");
+        settings.remove ("value");
+        settings.setValue ("ask for missing licence during startup", true);
     }
 }
 

@@ -113,7 +113,8 @@ void DropNotifyForm::
     if (formHeight != &formHeight)
     {
         animate.start( std::max(10, (int)(dt*1000)) );
-        render_view->redraw();
+        if (render_view)
+            render_view->redraw();
     }
 }
 
