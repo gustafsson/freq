@@ -3,7 +3,6 @@
 
 #include "tfr/chunkfilter.h"
 #include "heightmap/block.h"
-#include "heightmap/chunkblockfilter.h"
 
 namespace Heightmap {
 namespace TfrMappings {

@@ -14,9 +14,8 @@
 #include "filters/reassign.h"
 #include "filters/ridge.h"
 #include "heightmap/renderer.h"
-#include "heightmap/chunkblockfilter.h"
-#include "heightmap/blocks/chunkmerger.h"
-#include "heightmap/blocks/chunkmergerthread.h"
+#include "heightmap/blocks/updateproducer.h"
+#include "heightmap/blocks/updateconsumer.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -373,7 +372,7 @@ void RenderController::
 
         if (*newuseroptions != *useroptions)
           {
-            model()->chunk_merger->clear();
+            model()->block_update_queue->clear();
             tfr_map->transform_desc( newuseroptions );
           }
     }
@@ -407,9 +406,9 @@ void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc)
 {
     // Wire it up to a FilterDesc
-    Heightmap::ChunkBlockFilterDesc* cbfd;
+    Heightmap::Blocks::UpdateProducerDesc* cbfd;
     Tfr::ChunkFilterDesc::ptr kernel(cbfd
-            = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
+            = new Heightmap::Blocks::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -467,7 +466,7 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    model()->chunk_merger->clear();
+    model()->block_update_queue->clear();
     model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
@@ -1028,7 +1027,12 @@ void RenderController::
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
     //model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
-    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMergerThread(view->glwidget));
+    model()->block_update_queue.reset (new Heightmap::Blocks::UpdateQueue());
+
+    // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
+    int n_update_consumers = 1;
+    for (int i=0; i<n_update_consumers; i++)
+        new Heightmap::Blocks::UpdateConsumer(view->glwidget, model()->block_update_queue);
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);

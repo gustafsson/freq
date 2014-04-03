@@ -4,7 +4,6 @@
 #include "tfr/cepstrum.h"
 #include "tfr/stft.h"
 #include "heightmap/chunktoblock.h"
-#include "heightmap/chunkblockfilter.h"
 
 #include "demangle.h"
 

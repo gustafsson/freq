@@ -2,7 +2,6 @@
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunktoblocktexture.h"
 #include "heightmap/chunktoblockdegeneratetexture.h"
-#include "heightmap/chunkblockfilter.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
 #include "heightmap/glblock.h"

@@ -2,7 +2,6 @@
 #define RENDERCONTROLLER_H
 
 #include "renderview.h"
-#include "heightmap/chunkblockfilter.h"
 
 #include <QWidget>
 #include <QPointer>

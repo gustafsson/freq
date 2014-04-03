@@ -62,9 +62,9 @@
 #include "tools/applicationerrorlogcontroller.h"
 #include "heightmap/blocks/merger.h"
 #include "heightmap/blocks/mergertexture.h"
+#include "heightmap/blocks/updateproducer.h"
 #include "heightmap/blockinstaller.h"
 #include "heightmap/chunktoblock.h"
-#include "heightmap/chunkblockfilter.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
@@ -172,8 +172,8 @@ int UnitTest::
         RUNTEST(Heightmap::Render::RenderSet);
         RUNTEST(Heightmap::TfrMapping);
         RUNTEST(Heightmap::VisualizationParams);
-        RUNTEST(Heightmap::ChunkBlockFilter);
-        RUNTEST(Heightmap::ChunkBlockFilterDesc);
+        RUNTEST(Heightmap::Blocks::UpdateProducer);
+        RUNTEST(Heightmap::Blocks::UpdateProducerDesc);
         RUNTEST(Heightmap::TfrMappings::StftBlockFilter);
         RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);

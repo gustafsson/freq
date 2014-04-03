@@ -1,7 +1,6 @@
 #include "cwtblockfilter.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunktoblockdegeneratetexture.h"
-#include "heightmap/chunkblockfilter.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"

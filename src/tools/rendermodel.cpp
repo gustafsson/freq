@@ -60,11 +60,11 @@ RenderModel::
     render_operation_desc_.reset ();
 
     // Need to make sure that this thread really quits here, before the block cache is deleted.
-    if (!chunk_merger)
+    if (!block_update_queue)
         TaskInfo("!!! Lost chunk_merger");
-    if (chunk_merger && !chunk_merger.unique ())
+    if (block_update_queue && !block_update_queue.unique ())
         TaskInfo("!!! chunk_merger not unique");
-    chunk_merger.reset ();
+    block_update_queue.reset ();
 
     renderer.reset();
 
@@ -163,7 +163,7 @@ void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
     if (x != display_scale ())
-        if (chunk_merger) chunk_merger->clear();
+        if (block_update_queue) block_update_queue->clear();
     tfr_map_.write ()->display_scale( x );
 }
 
@@ -179,7 +179,7 @@ void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
     if (x != amplitude_axis ())
-        if (chunk_merger) chunk_merger->clear();
+        if (block_update_queue) block_update_queue->clear();
     tfr_map_.write ()->amplitude_axis( x );
 }
 

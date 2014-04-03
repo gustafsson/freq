@@ -1,11 +1,10 @@
-#include "chunkblockfilter.h"
+#include "updateproducer.h"
 
-#include "chunktoblock.h"
-#include "collection.h"
-#include "blockquery.h"
+#include "heightmap/chunktoblock.h"
+#include "heightmap/collection.h"
+#include "heightmap/blockquery.h"
 
 #include "tfr/chunk.h"
-#include "blocks/ichunkmerger.h"
 
 #include "cpumemorystorage.h"
 #include "demangle.h"
@@ -15,18 +14,19 @@
 using namespace boost;
 
 namespace Heightmap {
+namespace Blocks {
 
-ChunkBlockFilter::
-        ChunkBlockFilter( Blocks::IChunkMerger::ptr chunk_merger, Heightmap::TfrMapping::const_ptr tfrmap, MergeChunk::ptr merge_chunk )
+UpdateProducer::
+        UpdateProducer( UpdateQueue::ptr update_queue, Heightmap::TfrMapping::const_ptr tfrmap, MergeChunk::ptr merge_chunk )
     :
-      chunk_merger_(chunk_merger),
+      update_queue_(update_queue),
       tfrmap_(tfrmap),
       merge_chunk_(merge_chunk)
 {
 }
 
 
-void ChunkBlockFilter::
+void UpdateProducer::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
     Heightmap::TfrMapping::Collections C = tfrmap_.read ()->collections();
@@ -35,33 +35,34 @@ void ChunkBlockFilter::
 
     merge_chunk_->filterChunk( pchunk );
 
-    BlockCache::ptr cache = C[pchunk.channel].read ()->cache();
+    BlockCache::ptr cache = C[pchunk.channel].raw ()->cache();
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 
-    chunk_merger_->addChunk( merge_chunk_, pchunk, intersecting_blocks );
+    TaskTimer tt(boost::format("creating job %s") % chunk_interval);
+    update_queue_->addJob( merge_chunk_, pchunk, intersecting_blocks );
     // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 
 
-void ChunkBlockFilter::
+void UpdateProducer::
         set_number_of_channels(unsigned C)
 {
     EXCEPTION_ASSERT_EQUALS((int)C, tfrmap_.read ()->channels());
 }
 
 
-ChunkBlockFilterDesc::
-        ChunkBlockFilterDesc( Blocks::IChunkMerger::ptr chunk_merger, Heightmap::TfrMapping::const_ptr tfrmap )
+UpdateProducerDesc::
+        UpdateProducerDesc( UpdateQueue::ptr update_queue, Heightmap::TfrMapping::const_ptr tfrmap )
     :
-      chunk_merger_(chunk_merger),
+      update_queue_(update_queue),
       tfrmap_(tfrmap)
 {
 
 }
 
 
-Tfr::pChunkFilter ChunkBlockFilterDesc::
+Tfr::pChunkFilter UpdateProducerDesc::
         createChunkFilter(Signal::ComputingEngine* engine) const
 {
     MergeChunk::ptr merge_chunk;
@@ -71,18 +72,21 @@ Tfr::pChunkFilter ChunkBlockFilterDesc::
     if (!merge_chunk)
         return Tfr::pChunkFilter();
 
-    return Tfr::pChunkFilter( new ChunkBlockFilter(chunk_merger_, tfrmap_, merge_chunk));
+    return Tfr::pChunkFilter( new UpdateProducer(update_queue_, tfrmap_, merge_chunk));
 }
 
+} // namespace Blocks
 } // namespace Heightmap
 
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
-#include "blocks/chunkmerger.h"
+#include "blockupdater.h"
+
 #include <QApplication>
 #include <QGLWidget>
 
 namespace Heightmap {
+namespace Blocks {
 
 class ChunkToBlockMock : public IChunkToBlock {
 public:
@@ -131,10 +135,10 @@ class MergeChunkDescMock : public MergeChunkDesc {
 };
 
 
-void ChunkBlockFilter::
+void UpdateProducer::
         test()
 {
-    std::string name = "ChunkBlockFilter";
+    std::string name = "UpdateProducer";
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv);
@@ -148,8 +152,8 @@ void ChunkBlockFilter::
         BlockLayout bl(4, 4, SampleRate(4));
         Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
         tfrmap.write ()->length( 1 );
-        Blocks::IChunkMerger::ptr chunk_merger(new Blocks::ChunkMerger);
-        ChunkBlockFilter cbf( chunk_merger, tfrmap, merge_chunk );
+        UpdateQueue::ptr update_queue(new UpdateQueue);
+        UpdateProducer cbf( update_queue, tfrmap, merge_chunk );
 
         Tfr::StftDesc stftdesc;
         stftdesc.enable_inverse (false);
@@ -172,30 +176,31 @@ void ChunkBlockFilter::
 
         EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
-        chunk_merger->processChunks(-1);
+        UpdateQueue::Job j = update_queue->getJob ();
+        Blocks::BlockUpdater().processJob(j.merge_chunk, j.chunk, j.intersecting_blocks);
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
     }
 }
 
 
-void ChunkBlockFilterDesc::
+void UpdateProducerDesc::
         test()
 {
-    std::string name = "ChunkBlockFilterDesc";
+    std::string name = "UpdateProducerDesc";
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv);
     QGLWidget w;
     w.makeCurrent ();
 
-    // It should instantiate ChunkBlockFilters for different engines.
+    // It should instantiate UpdateProducer for different engines.
     {
         BlockLayout bl(4,4,4);
         Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
 
-        Blocks::IChunkMerger::ptr chunk_merger(new Blocks::ChunkMerger);
-        ChunkBlockFilterDesc cbfd( chunk_merger, tfrmap );
+        UpdateQueue::ptr update_queue(new UpdateQueue);
+        UpdateProducerDesc cbfd( update_queue, tfrmap );
 
         Tfr::pChunkFilter cf = cbfd.createChunkFilter (0);
         EXCEPTION_ASSERT( !cf );
@@ -203,7 +208,7 @@ void ChunkBlockFilterDesc::
         cbfd.setMergeChunkDesc (MergeChunkDesc::ptr( new MergeChunkDescMock ));
         cf = cbfd.createChunkFilter (0);
         EXCEPTION_ASSERT( cf );
-        EXCEPTION_ASSERT_EQUALS( vartype(*cf), "Heightmap::ChunkBlockFilter" );
+        EXCEPTION_ASSERT_EQUALS( vartype(*cf), "Heightmap::Blocks::UpdateProducer" );
 
         Signal::ComputingCpu cpu;
         cf = cbfd.createChunkFilter (&cpu);
@@ -219,4 +224,5 @@ void ChunkBlockFilterDesc::
     }
 }
 
+} // namespace Blocks
 } // namespace Heightmap

@@ -3,7 +3,6 @@
 #include "blocks/garbagecollector.h"
 #include "blocks/merger.h"
 #include "blocks/mergertexture.h"
-#include "blocks/chunkmerger.h"
 
 #include "tasktimer.h"
 #include "neat_math.h"

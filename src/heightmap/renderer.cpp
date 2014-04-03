@@ -9,7 +9,6 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/reference_hash.h"
-#include "heightmap/blocks/chunkmerger.h"
 #include "heightmap/render/renderregion.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"

@@ -19,6 +19,7 @@ class ISchedule
 {
 public:
     typedef shared_state<ISchedule> ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
 
     virtual ~ISchedule() {}
 

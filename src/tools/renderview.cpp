@@ -12,7 +12,6 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/collection.h"
-#include "heightmap/blocks/chunkmerger.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "sawe/configuration.h"
@@ -1078,8 +1077,7 @@ void RenderView::
         isRecording = true;
     }
 
-    bool chunk_merger_has_work = !model->chunk_merger->processChunks(0);
-    //model->chunk_merger->processChunks(-1);
+    bool chunk_merger_has_work = !model->block_update_queue->isEmpty ();
 
     if (chunk_merger_has_work)
         redraw (); // won't redraw right away, but enqueue an update
