@@ -31,6 +31,7 @@ public:
     bool processChunks(float timeout);
 
     bool isEmpty() const;
+
     /**
      * @brief wait waits until the list of chunks to process is empty.
      * @return true if the wait was aborted because the list was empty.
@@ -47,9 +48,7 @@ private:
         std::vector<pBlock> intersecting_blocks;
     };
 
-    class Jobs: public std::queue<Job> {};
-
-    shared_state<Jobs> jobs;
+    shared_state<std::queue<Job>> jobs;
     QSemaphore  semaphore;
     QGLWidget*  shared_gl_context;
 

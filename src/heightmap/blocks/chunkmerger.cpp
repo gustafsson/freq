@@ -13,6 +13,8 @@ namespace Blocks {
 
 ChunkMerger::
         ChunkMerger()
+    :
+      jobs(new std::queue<Job>)
 {
 }
 
@@ -20,8 +22,9 @@ ChunkMerger::
 void ChunkMerger::
         clear()
 {
-    while (!jobs.empty ())
-        jobs.pop ();
+    auto jobs = this->jobs.write ();
+    while (!jobs->empty ())
+        jobs->pop ();
 }
 
 
@@ -34,7 +37,7 @@ void ChunkMerger::
     j.merge_chunk = merge_chunk;
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
-    jobs.push (j);
+    jobs->push (j);
 }
 
 
@@ -48,10 +51,12 @@ bool ChunkMerger::
         Job job;
 
         {
-            if (jobs.empty ())
+            auto jobs = this->jobs.write ();
+
+            if (jobs->empty ())
                 return true;
-            job = jobs.front ();
-            jobs.pop ();
+            job = jobs->front ();
+            jobs->pop ();
         }
 
         processJob (job);

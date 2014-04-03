@@ -19,6 +19,9 @@ public:
     bool full_resolution;
     bool enable_subtexel_aggregation;
 
+    void init() {}
+    void prepareTransfer() {}
+    void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout bl) {}
     void mergeChunk( pBlock block );
 
 private:

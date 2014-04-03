@@ -16,7 +16,7 @@ namespace Blocks {
 ChunkMergerThread::
         ChunkMergerThread(QGLWidget*shared_gl_context)
     :
-      jobs(new Jobs),
+      jobs(new std::queue<Job>),
       shared_gl_context(shared_gl_context)
 {
     // Check for clean exit
@@ -79,9 +79,8 @@ void ChunkMergerThread::
     j.chunk = chunk;
     j.intersecting_blocks = intersecting_blocks;
 
-    auto jobsw = jobs.write ();
     if (!isInterruptionRequested ())
-        jobsw->push (j);
+        jobs->push (j);
 
     semaphore.release (1);
 }
@@ -156,7 +155,8 @@ void ChunkMergerThread::
               {
                 Job job;
                   {
-                    auto jobsr = jobs.write ();
+                    TaskTimer tt("read job");
+                    auto jobsr = jobs.read ();
                     if (jobsr->empty ())
                         break;
                     job = jobsr->front ();
@@ -180,10 +180,10 @@ void ChunkMergerThread::
               }
 
             // Make sure any texture upload is complete
-            {
-                INFO TaskTimer tt("glFinish");
-                glFinish ();
-            }
+//            {
+//                INFO TaskTimer tt("glFinish");
+//                glFinish ();
+//            }
 
             semaphore.acquire ();
           }
@@ -198,6 +198,7 @@ void ChunkMergerThread::
 void ChunkMergerThread::
         processJob(Job& j)
 {
+    TaskTimer tt0("processJob");
     // TODO refactor to do one thing at a time
     // 1. prepare to draw from chunks (i.e copy to OpenGL texture and create vertex buffers)
     // 1.1. Same chunk_scale and display_scale for all chunks and all blocks
@@ -207,8 +208,32 @@ void ChunkMergerThread::
     // 2.3. update whatever needs to be updated
     // And rename all these "chunk block merger to merge block chunk merge"
 
-    std::vector<IChunkToBlock::ptr> chunk_to_blocks = j.merge_chunk->createChunkToBlock( j.chunk );
+    std::vector<IChunkToBlock::ptr> chunk_to_blocks;
+    {
+//        TaskTimer tt("creating chunk to blocks");
+        chunk_to_blocks = j.merge_chunk->createChunkToBlock( j.chunk );
+    }
 
+    {
+//        TaskTimer tt("init");
+        for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
+            chunk_to_block->init ();
+    }
+    {
+//        TaskTimer tt("prepareTransfer");
+        for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
+            chunk_to_block->prepareTransfer ();
+    }
+    // j.intersecting_blocks is non-empty from addChunk
+    pBlock example_block = j.intersecting_blocks.front ();
+    BlockLayout bl = example_block->block_layout ();
+    Tfr::FreqAxis display_scale = example_block->visualization_params ()->display_scale ();
+    AmplitudeAxis amplitude_axis = example_block->visualization_params ()->amplitude_axis ();
+
+    for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
+        chunk_to_block->prepareMerge (amplitude_axis, display_scale, bl);
+
+//    TaskTimer tt(boost::format("processing job %s") % j.chunk.chunk->getCoveredInterval ());
     for (IChunkToBlock::ptr chunk_to_block : chunk_to_blocks)
       {
         for (pBlock block : j.intersecting_blocks)

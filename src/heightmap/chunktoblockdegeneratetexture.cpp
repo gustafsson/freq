@@ -20,45 +20,39 @@ struct vertex_format {
 };
 
 
+int gl_max_texture_size() {
+    static int v = 0;
+    if (0 == v)
+    {
+        glGetIntegerv (GL_MAX_TEXTURE_SIZE, &v);
+        // GL_MAX_TEXTURE_SIZE-1 seems to be the largest allowed texture in practice...
+        v = lpo2s (v); // power of 2 is slightly faster
+    }
+    return v;
+}
+
+
 ChunkToBlockDegenerateTexture::
         ChunkToBlockDegenerateTexture(Tfr::pChunk chunk)
     :
+      block_layout(BlockLayout(2,2,1)),
+      p(0),
       vbo_(0),
       chunk_pbo_(0),
       shader_(0)
 {
+    chunk_data_ = chunk->transform_data;
+    chunk_scale = chunk->freqAxis;
     nScales = chunk->nScales ();
     nSamples = chunk->nSamples ();
     nValidSamples = chunk->n_valid_samples;
     transpose = chunk->order == Tfr::Chunk::Order_column_major;
     data_width  = transpose ? nScales : nSamples;
     data_height = transpose ? nSamples : nScales;
-    int n = chunk->transform_data->numberOfElements ();
-    EXCEPTION_ASSERT_EQUALS(n, data_width*data_height);
-
-
-    gl_max_texture_size = 0;
-    glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
-    // GL_MAX_TEXTURE_SIZE-1 seems to be the largest allowed texture in practice...
-    gl_max_texture_size = lpo2s (gl_max_texture_size); // power of 2 is slightly faster
 
     Signal::Interval inInterval = chunk->getCoveredInterval();
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture(%s) %u x %u <> %d")
-                      % inInterval % nSamples % nScales % gl_max_texture_size);
-
-
-    Tfr::ChunkElement *cp = chunk->transform_data->getCpuMemory ();
-    // Compute the norm of the complex elements in the chunk prior to resampling and interpolating
-    float *p = (float*)cp; // Overwrite 'cp'
-    // This takes a while, simply because p is large so that a lot of memory has to be copied.
-    for (int i = 0; i<n; ++i)
-        p[i] = norm(cp[i]);
-
-
-    GlException_SAFE_CALL( glGenBuffers (1, &chunk_pbo_) ); // Generate 1 buffer
-    GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
-    GlException_SAFE_CALL( glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeof(float)*n, p, GL_STREAM_DRAW) );
-    GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0) );
+                      % inInterval % nSamples % nScales % gl_max_texture_size());
 
     a_t = inInterval.first / chunk->original_sample_rate;
     b_t = inInterval.last / chunk->original_sample_rate;
@@ -73,10 +67,6 @@ ChunkToBlockDegenerateTexture::
         u0 = chunk->first_valid_sample / (float)nSamples;
         u1 = (chunk->first_valid_sample+chunk->n_valid_samples-1.0f) / (float)nSamples;
       }
-
-    chunk_scale = chunk->freqAxis;
-
-    prepTexture(chunk_pbo_ ? 0 : p);
 }
 
 
@@ -98,21 +88,49 @@ ChunkToBlockDegenerateTexture::
 
 
 void ChunkToBlockDegenerateTexture::
-        prepTexture (float*p)
+        init ()
+{
+    int n = chunk_data_->numberOfElements ();
+    EXCEPTION_ASSERT_EQUALS(n, data_width*data_height);
+
+    Tfr::ChunkElement *cp = chunk_data_->getCpuMemory ();
+    // Compute the norm of the complex elements in the chunk prior to resampling and interpolating
+    float *p = (float*)cp; // Overwrite 'cp'
+    // This takes a while, simply because p is large so that a lot of memory has to be copied.
+    for (int i = 0; i<n; ++i)
+        p[i] = norm(cp[i]);
+
+    GlException_SAFE_CALL( glGenBuffers (1, &chunk_pbo_) ); // Generate 1 buffer
+    GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+    GlException_SAFE_CALL( glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeof(float)*n, p, GL_STREAM_DRAW) );
+    GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0) );
+
+    this->p = chunk_pbo_ ? 0 : p;
+}
+
+
+void ChunkToBlockDegenerateTexture::
+        prepareTransfer ()
 {
     if (chunk_texture_)
         return;
+
+    TaskTimer tt("prepareTransfer");
 
     // Either through chunk_vbo_ or p
     EXCEPTION_ASSERT((chunk_pbo_!=0) == (p==0));
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::prepTexture %u x %u <> %d")
-                      % nSamples % nScales % gl_max_texture_size);
+                      % nSamples % nScales % gl_max_texture_size());
 
-    if (data_width <= gl_max_texture_size && data_height <= gl_max_texture_size)
+    if (data_width <= gl_max_texture_size() && data_height <= gl_max_texture_size())
       {
         // No need for degeneracy
-        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag");
+        {
+            TaskTimer tt("shader");
+            shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag");
+        }
+
         // But a power of 2 might help
         if (0 == "do a power of 2")
         {
@@ -129,20 +147,26 @@ void ChunkToBlockDegenerateTexture::
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RED, GL_RED, GL_FLOAT, 0));
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        {
+        TaskTimer tt("glTexSubImage2D", tex_width, tex_height);
         glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, data_width, data_height, GL_RED, GL_FLOAT, p);
+        }
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0) );
       }
-    else if (data_width > gl_max_texture_size)
+    else if (data_width > gl_max_texture_size())
       {
         // Degeneracy. Make the size a multiple of data_height.
-        shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxwidth.frag");
+        {
+            TaskTimer tt("shader");
+            shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxwidth.frag");
+        }
 
-        tex_width = gl_max_texture_size;
+        tex_width = gl_max_texture_size();
         int s = int_div_ceil (data_width, (tex_width-1));
         tex_height = spo2g (data_height * s - 1);
 
         // Out of open gl memory if this happens...
-        EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_height, gl_max_texture_size);
+        EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_height, gl_max_texture_size());
 
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RED, GL_RED, GL_FLOAT, 0));
 
@@ -159,8 +183,9 @@ void ChunkToBlockDegenerateTexture::
 //            glTexSubImage2D (GL_TEXTURE_2D, 0, 0, rows-1, last_row_length, 1, GL_RED, GL_FLOAT, p + tex_width*(rows-1));
 
             GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
-            if (0 == "GL_UNPACK_ROW_LENGTH doesn't play with PBO")
+            if (0 != "GL_UNPACK_ROW_LENGTH doesn't play with PBO")
               {
+                TaskTimer tt("GL_UNPACK_ROW_LENGTH");
                 GlException_SAFE_CALL( glPixelStorei(GL_UNPACK_ROW_LENGTH, data_width) );
 
                 for (int i=0; i<s; ++i)
@@ -196,12 +221,12 @@ void ChunkToBlockDegenerateTexture::
       {
         shader_ = ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxheight.frag");
 
-        tex_height = gl_max_texture_size;
+        tex_height = gl_max_texture_size();
         int s = int_div_ceil (data_height, (tex_height-1));
         tex_width = data_width * s;
 
         // Out of open gl memory if this happens...
-        EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_width, gl_max_texture_size);
+        EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_width, gl_max_texture_size());
 
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RED, GL_RED, GL_FLOAT, 0));
 
@@ -239,14 +264,18 @@ void ChunkToBlockDegenerateTexture::
 
 
 void ChunkToBlockDegenerateTexture::
-        prepVbo(Tfr::FreqAxis display_scale, BlockLayout bl)
+        prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout block_layout)
 {
-    if (this->display_scale == display_scale)
+    // Setup the VBO, need to know the current display scale, which is defined by the block.
+    if (this->display_scale == display_scale && this->amplitude_axis == amplitude_axis && this->block_layout == block_layout)
         return;
+
     this->display_scale = display_scale;
+    this->amplitude_axis = amplitude_axis;
+    this->block_layout = block_layout;
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::prepVbo %u x %u -> %s")
-                      % nSamples % nScales % bl);
+                      % nSamples % nScales % block_layout);
 
     float a_t = this->a_t; // The first sample should be centered on a_t
     float b_t = this->b_t; // The last sample should be centered on b_t
@@ -323,22 +352,28 @@ void ChunkToBlockDegenerateTexture::
         return;
       }
 
+    if (!chunk_pbo_)
+        init();
+    if (!this->chunk_texture_)
+        prepareTransfer ();
+    if (display_scale.axis_scale == Tfr::AxisScale_Unknown)
+    {
+        prepareMerge (pblock->visualization_params ()->amplitude_axis (),
+                      pblock->visualization_params ()->display_scale (),
+                      pblock->block_layout ());
+    }
+
     Block& block = *pblock;
     Region br = block.getRegion ();
 
     GlException_CHECK_ERROR();
 
     // Juggle texture coordinates so that border texels are centered on the border
-    const BlockLayout bl = block.block_layout ();
     float dt = br.time (), ds = br.scale ();
-    br.a.time -= 0.5*dt / bl.texels_per_row ();
-    br.b.time += 0.5*dt / bl.texels_per_row ();
-    br.a.scale -= 0.5*ds / bl.texels_per_column ();
-    br.b.scale += 0.5*ds / bl.texels_per_column ();
-
-    // Setup the VBO, need to know the current display scale, which is defined by the block.
-    VisualizationParams::const_ptr vp = block.visualization_params ();
-    prepVbo(vp->display_scale (), bl);
+    br.a.time -= 0.5*dt / block_layout.texels_per_row ();
+    br.b.time += 0.5*dt / block_layout.texels_per_row ();
+    br.a.scale -= 0.5*ds / block_layout.texels_per_column ();
+    br.b.scale += 0.5*ds / block_layout.texels_per_column ();
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::mergeChunk %s") % br);
 
@@ -351,7 +386,7 @@ void ChunkToBlockDegenerateTexture::
     // Setup matrices, while preserving the old ones
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
-    GlException_SAFE_CALL( glViewport(0, 0, bl.texels_per_row (), bl.texels_per_column ()) );
+    GlException_SAFE_CALL( glViewport(0, 0, block_layout.texels_per_row (), block_layout.texels_per_column ()) );
     glPushMatrixContext mpc( GL_PROJECTION );
     glLoadIdentity();
     glOrtho(br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
@@ -368,7 +403,7 @@ void ChunkToBlockDegenerateTexture::
     // Setup the shader
     glUseProgram(shader_);
     glUniform1f(normalization_location_, normalization_factor);
-    glUniform1i(amplitude_axis_location_, (int)vp->amplitude_axis());
+    glUniform1i(amplitude_axis_location_, (int)amplitude_axis);
 
     // Draw from chunk texture onto block texture
     {

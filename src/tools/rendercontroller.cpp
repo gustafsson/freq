@@ -373,7 +373,7 @@ void RenderController::
 
         if (*newuseroptions != *useroptions)
           {
-            model()->chunk_merger.write ()->clear();
+            model()->chunk_merger->clear();
             tfr_map->transform_desc( newuseroptions );
           }
     }
@@ -467,7 +467,7 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    model()->chunk_merger.write ()->clear();
+    model()->chunk_merger->clear();
     model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();

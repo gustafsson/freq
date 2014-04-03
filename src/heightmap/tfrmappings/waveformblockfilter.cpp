@@ -14,6 +14,10 @@ class WaveformChunkToBlock: public IChunkToBlock
 public:
     WaveformChunkToBlock(Signal::pMonoBuffer b) : b(b) {}
 
+    void init() {}
+    void prepareTransfer() {}
+    void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout bl) {}
+
     void mergeChunk( pBlock block ) {
         float blobsize = b->sample_rate() / block->sample_rate();
 

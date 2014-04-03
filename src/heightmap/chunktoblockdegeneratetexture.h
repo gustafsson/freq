@@ -2,6 +2,7 @@
 #define HEIGHTMAP_CHUNKTOBLOCKDEGENERATETEXTURE_H
 
 #include "block.h"
+#include "tfr/chunkdata.h"
 #include "tfr/chunkfilter.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
@@ -24,19 +25,25 @@ public:
     ChunkToBlockDegenerateTexture(Tfr::pChunk chunk);
     ~ChunkToBlockDegenerateTexture();
 
-    void mergeChunk(pBlock block);
+    void init() override;
+    void prepareTransfer() override;
+    void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout block_layout) override;
+    void mergeChunk(pBlock block) override;
 
 private:
-    void prepTexture(float*p);
-    void prepVbo(Tfr::FreqAxis display_scale, BlockLayout bl);
-
+    Tfr::ChunkData::ptr chunk_data_;
     std::shared_ptr<GlTexture> chunk_texture_;
-    Tfr::FreqAxis display_scale;
     Tfr::FreqAxis chunk_scale;
+
+    AmplitudeAxis amplitude_axis;
+    Tfr::FreqAxis display_scale;
+    BlockLayout block_layout;
+
     float a_t, b_t, u0, u1;
     unsigned nScales, nSamples, nValidSamples;
-    int tex_height, tex_width, data_width, data_height, gl_max_texture_size;
+    int tex_height, tex_width, data_width, data_height;
     bool transpose;
+    float *p;
 
     unsigned vbo_;
     unsigned chunk_pbo_;

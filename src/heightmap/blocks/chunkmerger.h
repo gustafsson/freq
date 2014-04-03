@@ -32,7 +32,7 @@ private:
         std::vector<pBlock> intersecting_blocks;
     };
 
-    std::queue<Job> jobs;
+    shared_state<std::queue<Job>> jobs;
 
     static void processJob(Job& j);
 

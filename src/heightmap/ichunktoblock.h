@@ -14,10 +14,13 @@ public:
     IChunkToBlock() {}
     IChunkToBlock(const IChunkToBlock&) = delete;
     IChunkToBlock& operator=(const IChunkToBlock&) = delete;
-    ~IChunkToBlock() {}
+    virtual ~IChunkToBlock() {}
 
     float normalization_factor;
 
+    virtual void init() = 0;
+    virtual void prepareTransfer() = 0;
+    virtual void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout bl) = 0;
     virtual void mergeChunk( pBlock block ) = 0;
 };
 

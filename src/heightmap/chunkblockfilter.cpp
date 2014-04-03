@@ -39,7 +39,7 @@ void ChunkBlockFilter::
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 
-    chunk_merger_.write ()->addChunk( merge_chunk_, pchunk, intersecting_blocks );
+    chunk_merger_->addChunk( merge_chunk_, pchunk, intersecting_blocks );
     // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 
@@ -87,6 +87,10 @@ namespace Heightmap {
 class ChunkToBlockMock : public IChunkToBlock {
 public:
     ChunkToBlockMock(bool* called) : called(called) {}
+
+    void init() {}
+    void prepareTransfer() {}
+    void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout bl) {}
 
     void mergeChunk( pBlock block ) {
         *called = true;
@@ -168,7 +172,7 @@ void ChunkBlockFilter::
 
         EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
-        chunk_merger.write ()->processChunks(-1);
+        chunk_merger->processChunks(-1);
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
     }
