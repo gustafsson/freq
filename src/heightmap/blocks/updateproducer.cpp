@@ -33,14 +33,27 @@ void UpdateProducer::
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
-    merge_chunk_->filterChunk( pchunk );
-
     BlockCache::ptr cache = C[pchunk.channel].raw ()->cache();
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 
+    if (intersecting_blocks.empty ())
+    {
+        TaskInfo(boost::format("Discarding chunk since there are no longer any intersecting_blocks with %s")
+                 % chunk_interval);
+        return;
+    }
+
     TaskTimer tt(boost::format("creating job %s") % chunk_interval);
-    update_queue_->addJob( merge_chunk_, pchunk, intersecting_blocks );
+    for (Blocks::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk))
+    {
+        // Use same or different intersecting_blocks
+//        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);
+        job->getCoveredInterval ();
+        UpdateQueue::Job upjob = { job, intersecting_blocks };
+
+        update_queue_->addJob( upjob );
+    }
     // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
 }
 
@@ -88,33 +101,28 @@ Tfr::pChunkFilter UpdateProducerDesc::
 namespace Heightmap {
 namespace Blocks {
 
-class ChunkToBlockMock : public IChunkToBlock {
+class UpdateJobMock : public Blocks::IUpdateJob {
 public:
-    ChunkToBlockMock(bool* called) : called(called) {}
+    UpdateJobMock(bool& called) : called(called) {}
 
-    void init() {}
-    void prepareTransfer() {}
-    void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout bl) {}
-
-    void mergeChunk( pBlock block ) {
-        *called = true;
+    Signal::Interval getCoveredInterval() const override {
+        called = true;
+        return Signal::Interval();
     }
 
-    bool* called;
+    bool& called;
 };
 
 class MergeChunkMock : public MergeChunk {
 public:
     MergeChunkMock() : chunk_to_block_called(false) {}
 
-    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+    std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse& chunk)
     {
         calledi |= chunk.chunk->getInterval ();
 
-        std::vector<IChunkToBlock::ptr> R;
-        IChunkToBlock::ptr p(new ChunkToBlockMock(&chunk_to_block_called));
-        R.push_back (p);
-        return R;
+        Blocks::IUpdateJob::ptr p(new UpdateJobMock(chunk_to_block_called));
+        return std::vector<Blocks::IUpdateJob::ptr> {p};
     }
 
     bool chunk_to_block_called;
@@ -172,14 +180,16 @@ void UpdateProducer::
         cai.t = stftdesc.createTransform ();
         cai.chunk = (*cai.t)( buffer );
 
-        cbf(cai);
-
         EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
-        UpdateQueue::Job j = update_queue->getJob ();
-        Blocks::BlockUpdater().processJob(j.merge_chunk, j.chunk, j.intersecting_blocks);
+        cbf(cai);
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
+
+        UpdateQueue::Job j = update_queue->getJob ();
+        EXCEPTION_ASSERT( j.updatejob );
+        EXCEPTION_ASSERT( j );
+        EXCEPTION_ASSERT( dynamic_cast<UpdateJobMock*>(j.updatejob.get ()) );
     }
 }
 

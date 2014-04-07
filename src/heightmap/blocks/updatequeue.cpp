@@ -38,26 +38,12 @@ void UpdateQueue::
 
 
 void UpdateQueue::
-        addJob( MergeChunk::ptr merge_chunk,
-                  Tfr::ChunkAndInverse chunk,
-                  std::vector<pBlock> intersecting_blocks )
+        addJob( Job job )
 {
-    if (intersecting_blocks.empty ())
-    {
-        TaskInfo(boost::format("Discarding chunk since there are no longer any intersecting_blocks with %s")
-                 % chunk.chunk->getCoveredInterval());
-        return;
-    }
+    EXCEPTION_ASSERT( !job.intersecting_blocks.empty () );
+    EXCEPTION_ASSERT( job.updatejob );
 
-    EXCEPTION_ASSERT( merge_chunk );
-    EXCEPTION_ASSERT( chunk.chunk );
-
-    Job j;
-    j.merge_chunk = merge_chunk;
-    j.chunk = chunk;
-    j.intersecting_blocks = intersecting_blocks;
-
-    jobs->push (j);
+    jobs->push (job);
 
     got_chunk.notify_one ();
 }

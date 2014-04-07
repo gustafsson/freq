@@ -186,7 +186,7 @@ void WorkerCrashLogger::
 
 #include <QApplication>
 #include "timer.h"
-#include "detectgdb.h"
+#include "trace_perf.h"
 
 namespace Signal { namespace Processing { class Task; }}
 
@@ -217,8 +217,6 @@ void addAndWaitForStop(Workers::ptr workers)
 void WorkerCrashLogger::
         test()
 {
-    bool gdb = DetectGdb::is_running_through_gdb();
-
     // It should fetch information asynchronously of crashed workers.
     {
         DEBUG TaskInfo ti("Catch info from a previously crashed worker");
@@ -227,8 +225,6 @@ void WorkerCrashLogger::
         int argc = 1;
         char * argv = &name[0];
         QApplication a(argc,&argv);
-
-        Timer timer;
 
         //for (int consume=0; consume<2; consume++)
         ISchedule::ptr schedule(new DummyScheduler);
@@ -243,13 +239,11 @@ void WorkerCrashLogger::
         addAndWaitForStop(workers);
         addAndWaitForStop(workers);
 
-
         {
+            TRACE_PERF("Init");
+
             WorkerCrashLogger wcl(workers);
             a.processEvents (); // Init new thread before telling it to quit
-
-            double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 15e-3 );
 
             // When the thread quits. Wait for the beautifier to log everything.
         }
@@ -257,11 +251,6 @@ void WorkerCrashLogger::
         // Should have consumed all workers
         Workers::DeadEngines de = workers.write ()->clean_dead_workers();
         EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
-
-        // Should have taken a while (the backtrace beautifier is slow)
-        double T = timer.elapsedAndRestart ();
-        EXCEPTION_ASSERT_LESS( 1e-5, T );
-        EXCEPTION_ASSERT_LESS( T, 1e-3 );
     }
 
     {
@@ -272,29 +261,22 @@ void WorkerCrashLogger::
         char * argv = &name[0];
         QApplication a(argc,&argv);
 
-        Timer timer;
-
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
         Workers::ptr workers(new Workers(schedule, bedroom));
 
         {
+            TRACE_PERF("Catch info from a crashed worker as it happens");
+
             WorkerCrashLogger wcl(workers);
 
             // Catch info from a crashed worker as it happens
             addAndWaitForStop(workers);
             addAndWaitForStop(workers);
-
-            double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, 3e-3 );
         }
 
         Workers::DeadEngines de = workers.write ()->clean_dead_workers();
         EXCEPTION_ASSERT_EQUALS(de.size (), 0u);
-
-        double T = timer.elapsedAndRestart ();
-        EXCEPTION_ASSERT_LESS( 1e-5, T );
-        EXCEPTION_ASSERT_LESS( T, 2e-4 );
     }
 
     {
@@ -305,8 +287,6 @@ void WorkerCrashLogger::
         char * argv = &name[0];
         QApplication a(argc,&argv);
 
-        Timer timer;
-
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
         Workers::ptr workers(new Workers(schedule, bedroom));
@@ -315,24 +295,19 @@ void WorkerCrashLogger::
         addAndWaitForStop(workers);
 
         {
+            TRACE_PERF("Support not consuming workers");
+
             WorkerCrashLogger wcl(workers, false);
 
             a.processEvents ();
 
             // Catch info from a crashed worker as it happens
             addAndWaitForStop(workers);
-
-            double T = timer.elapsedAndRestart ();
-            EXCEPTION_ASSERT_LESS( T, gdb ? 20e-3 : 4e-3 );
         }
 
         // Should not have consumed any workers
         Workers::DeadEngines de = workers.write ()->clean_dead_workers();
         EXCEPTION_ASSERT_EQUALS(de.size (), 2u);
-
-        double T = timer.elapsedAndRestart ();
-        EXCEPTION_ASSERT_LESS( 1e-6, T );
-        EXCEPTION_ASSERT_LESS( T, 300e-6 );
     }
 }
 

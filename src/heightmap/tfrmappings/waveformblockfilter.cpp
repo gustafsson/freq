@@ -1,5 +1,6 @@
 #include "waveformblockfilter.h"
 #include "heightmap/chunktoblock.h"
+#include "heightmap/blocks/blockupdater.h"
 #include "tfr/drawnwaveform.h"
 #include "signal/computingengine.h"
 #include "tfr/drawnwaveformkernel.h"
@@ -9,47 +10,44 @@
 namespace Heightmap {
 namespace TfrMappings {
 
-class WaveformChunkToBlock: public IChunkToBlock
+
+void WaveformBlockUpdater::
+        processJob( const WaveformBlockUpdater::Job& job,
+                    std::vector<pBlock> intersecting_blocks )
 {
-public:
-    WaveformChunkToBlock(Signal::pMonoBuffer b) : b(b) {}
-
-    void init() {}
-    void prepareTransfer() {}
-    void prepareMerge(AmplitudeAxis amplitude_axis, Tfr::FreqAxis display_scale, BlockLayout bl) {}
-
-    void mergeChunk( pBlock block ) {
-        float blobsize = b->sample_rate() / block->sample_rate();
-
-        int readstop = b->number_of_samples ();
-
-        // todo should substract blobsize/2
-        Region r = block->getRegion ();
-        float writeposoffs = (b->start () - r.a.time)*block->sample_rate ();
-        float y0 = r.a.scale*2-1;
-        float yscale = r.scale ()*2;
-        ::drawWaveform(
-                b->waveform_data(),
-                block->block_data ()->cpu_copy,
-                blobsize,
-                readstop,
-                yscale,
-                writeposoffs,
-                y0);
-    }
-
-private:
-    Signal::pMonoBuffer b;
-};
+    for (pBlock block : intersecting_blocks)
+        mergeChunk (job.b, block);
+}
 
 
-std::vector<IChunkToBlock::ptr> WaveformBlockFilter::
-        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+void WaveformBlockUpdater::
+        mergeChunk( Signal::pMonoBuffer b, pBlock block )
 {
-    IChunkToBlock::ptr ctb(new WaveformChunkToBlock(chunk.input));
-    std::vector<IChunkToBlock::ptr> R;
-    R.push_back (ctb);
-    return R;
+    float blobsize = b->sample_rate() / block->sample_rate();
+
+    int readstop = b->number_of_samples ();
+
+    // todo should substract blobsize/2
+    Region r = block->getRegion ();
+    float writeposoffs = (b->start () - r.a.time)*block->sample_rate ();
+    float y0 = r.a.scale*2-1;
+    float yscale = r.scale ()*2;
+    ::drawWaveform(
+            b->waveform_data(),
+            block->block_data ()->cpu_copy,
+            blobsize,
+            readstop,
+            yscale,
+            writeposoffs,
+            y0);
+}
+
+
+std::vector<Blocks::IUpdateJob::ptr> WaveformBlockFilter::
+        prepareUpdate(Tfr::ChunkAndInverse& chunk)
+{
+    Blocks::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job(chunk.input));
+    return std::vector<Blocks::IUpdateJob::ptr>{ctb};
 }
 
 
@@ -95,6 +93,7 @@ void WaveformBlockFilter::
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::ptr vp(new VisualizationParams);
+
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -117,8 +116,14 @@ void WaveformBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new WaveformBlockFilter );
-        mc->filterChunk(cai);
-        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
+        Blocks::IUpdateJob::ptr job = mc->prepareUpdate (cai)[0];
+
+        EXCEPTION_ASSERT(dynamic_cast<WaveformBlockUpdater::Job*>(job.get ()));
+
+        WaveformBlockUpdater().processJob(
+                    (WaveformBlockUpdater::Job&)(*job),
+                    std::vector<pBlock>{block}
+                    );
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

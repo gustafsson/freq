@@ -4,6 +4,7 @@
 #include "tasktimer.h"
 #include "timer.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "tfr/chunk.h"
 
 #include <QGLWidget>
@@ -71,14 +72,19 @@ void UpdateConsumer::
 
         while (!isInterruptionRequested ())
           {
+            if (update_queue->isEmpty ())
+                block_updater.sync ();
+
             UpdateQueue::Job job = update_queue->getJob ();
 
-            if (job.merge_chunk)
+            if (auto bujob = dynamic_cast<BlockUpdater::Job*>(job.updatejob.get ()))
             {
-                block_updater.processJob (job.merge_chunk, job.chunk, job.intersecting_blocks);
+                block_updater.processJob (*bujob, job.intersecting_blocks);
+            }
 
-                // Release OpenGL resources before releasing the memory held by chunk
-                job.merge_chunk = MergeChunk::ptr ();
+            if (auto bujob = dynamic_cast<TfrMappings::WaveformBlockUpdater::Job*>(job.updatejob.get ()))
+            {
+                TfrMappings::WaveformBlockUpdater().processJob (*bujob, job.intersecting_blocks);
             }
           }
       }

@@ -3,6 +3,7 @@
 
 #include "heightmap/mergechunk.h"
 #include "shared_state.h"
+#include "iupdatejob.h"
 
 #include <queue>
 #include <condition_variable>
@@ -16,13 +17,11 @@ public:
     typedef std::shared_ptr<UpdateQueue> ptr;
 
     struct Job {
-        MergeChunk::ptr merge_chunk;
-        Tfr::ChunkAndInverse chunk;
-        std::vector<pBlock> intersecting_blocks;
+        const IUpdateJob::ptr updatejob;
+        const std::vector<pBlock> intersecting_blocks;
 
-        operator bool() { return (bool)merge_chunk; }
+        operator bool() const { return updatejob && !intersecting_blocks.empty (); }
     };
-
 
     UpdateQueue();
     ~UpdateQueue();
@@ -32,9 +31,7 @@ public:
     void clear ();
 
     // TODO assume constant MergeChunk::ptr merge_chunk
-    void addJob (MergeChunk::ptr merge_chunk,
-                 Tfr::ChunkAndInverse chunk,
-                 std::vector<pBlock> intersecting_blocks );
+    void addJob (Job job);
 
     // Wait until there is any Job, return an empty Job if timeout elapsed or clear or abortGetJob was called.
     // timeout <= 0 returns immediately
@@ -48,7 +45,7 @@ public:
 private:
     std::condition_variable_any got_chunk;
 
-    struct jobqueue : public std::queue<Job> {
+    struct jobqueue : public std::queue<const Job> {
         // Has only simple accessors, a simple mutex is faster than a more complex one
         typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
     };
