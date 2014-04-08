@@ -106,6 +106,7 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(BacktraceTest::UnitTest);
+        RUNTEST(JustmiscTest::UnitTest);
         RUNTEST(DataStorageString);
         RUNTEST(Factor);
         RUNTEST(GeometricAlgebra);
@@ -187,6 +188,20 @@ int UnitTest::
         RUNTEST(Adapters::Playback);
         RUNTEST(Filters::AbsoluteValueDesc);
 
+    } catch (const ExceptionAssert& x) {
+        char const * const * f = boost::get_error_info<boost::throw_file>(x);
+        int const * l = boost::get_error_info<boost::throw_line>(x);
+        char const * const * c = boost::get_error_info<ExceptionAssert::ExceptionAssert_condition>(x);
+        std::string const * m = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
+
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                str(boost::format("%s:%d: %s. %s\n"
+                                  "%s\n"
+                                  " FAILED in %s::test()\n\n")
+                    % (f?*f:0) % (l?*l:-1) % (c?*c:0) % (m?*m:0) % boost::diagnostic_information(x) % lastname ).c_str());
+        fflush(stderr);
+        return 1;
     } catch (const exception& x) {
         fflush(stdout);
         fprintf(stderr, "%s",
