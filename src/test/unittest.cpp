@@ -1,5 +1,8 @@
 #include "unittest.h"
 
+#include "../lib/backtrace/unittest.h"
+#include "../lib/justmisc/justmisc-unittest.h"
+
 // gpumisc units
 #include "backtrace.h"
 #include "datastoragestring.h"
@@ -77,7 +80,6 @@
 // gpumisc tool
 #include "tasktimer.h"
 #include "timer.h"
-#include "../lib/backtrace/unittest.h"
 
 #include <stdio.h>
 #include <exception>
