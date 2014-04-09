@@ -1,11 +1,12 @@
 #include "blockquery.h"
 #include "tasktimer.h"
 
-#include <boost/foreach.hpp>
+#include <numeric>
 
 //#define INFO_COLLECTION
 #define INFO_COLLECTION if(0)
 
+using namespace std;
 using namespace Signal;
 
 namespace Heightmap {
@@ -18,30 +19,29 @@ BlockQuery::
 }
 
 
-std::vector<pBlock> BlockQuery::
+vector<pBlock> BlockQuery::
         getIntersectingBlocks( const Intervals& I, bool only_visible, int frame_counter ) const
 {
-    auto cache = cache_.read ();
-    std::vector<pBlock> r;
+    // Don't keep a lock, work with a local copy instead
+    BlockCache::cache_t cache = cache_->cache();
+
+    // Keep a lock
+//    auto cache_r = cache_.read ();
+//    auto cache = cache_r->cache();
+
+    vector<pBlock> r;
     r.reserve(32);
 
     INFO_COLLECTION TaskTimer tt(boost::format("getIntersectingBlocks( %s, %s ) from %u caches spanning %s")
                  % I
                  % (only_visible?"only visible":"all")
-                 % cache->cache().size()
-                 % [&]()
-                 {
-                    Intervals J;
-                    BOOST_FOREACH( const BlockCache::cache_t::value_type& c, cache->cache ())
-                    {
-                        const pBlock& pb = c.second;
-                        J |= pb->getInterval();
-                    }
-                    return J;
-                }());
+                 % cache.size()
+                 % accumulate(cache.begin(), cache.end(), Intervals(),
+                        [&cache]( Intervals& I, const BlockCache::cache_t::value_type& c) {
+                            return I |= c.second->getInterval();
+                        }));
 
-
-    BOOST_FOREACH( const BlockCache::cache_t::value_type& c, cache->cache() )
+    for( auto c : cache )
     {
         const pBlock& pb = c.second;
 
@@ -51,7 +51,7 @@ std::vector<pBlock> BlockQuery::
                 continue;
         }
 
-        if ((I & pb->getInterval()).count())
+        if (I & pb->getInterval())
             r.push_back(pb);
     }
 
