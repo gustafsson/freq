@@ -697,6 +697,8 @@ void Configuration::
     features_.push_back("transform_info");
     features_.push_back("timeline_dock");
     features_.push_back("allow_unregistered_start");
+    features_.push_back("autofeedback");
+
     if (!DetectGdb::is_running_through_gdb() && !DetectGdb::was_started_through_gdb ())
         features_.push_back("logfile");
 }
