@@ -3,7 +3,7 @@
   This file is not required for using shared_state.
 
   The tests are written so that they can be read as examples.
-  Scroll down to void shared_state_test::test ().
+  Scroll down to void test ().
   */
 
 #include "shared_state.h"
@@ -18,6 +18,8 @@
 
 
 using namespace std;
+
+namespace shared_state_test {
 
 class A
 {
@@ -38,13 +40,14 @@ private:
 
     int a_;
 };
-
+} // namespace shared_state_test
 
 template<>
-struct shared_state_traits<A>: shared_state_traits_default {
+struct shared_state_traits<shared_state_test::A>: shared_state_traits_default {
     double timeout() { return 0.001; }
 };
 
+namespace shared_state_test {
 
 class B
 {
@@ -79,14 +82,12 @@ struct C2: C {
 class with_timeout_0
 {
 public:
+    struct shared_state_traits: shared_state_traits_default {
+        double timeout() { return 0; }
+    };
+
     typedef shared_state<with_timeout_0> ptr;
     typedef shared_state<const with_timeout_0> const_ptr;
-};
-
-
-template<>
-struct shared_state_traits<with_timeout_0>: shared_state_traits_default {
-    double timeout() { return 0; }
 };
 
 
@@ -123,8 +124,7 @@ struct WriteWhileReadingThread
 };
 
 
-void shared_state_test::
-        test ()
+void test ()
 {
     // It should guarantee compile-time thread safe access to objects.
     shared_state<A> mya {new A};
@@ -534,3 +534,5 @@ void WriteWhileReadingThread::
         }
     }
 }
+
+} // namespace shared_state_test

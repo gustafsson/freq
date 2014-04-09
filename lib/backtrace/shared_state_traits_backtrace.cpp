@@ -7,13 +7,20 @@
 
 using namespace std;
 
+namespace shared_state_traits_backtrace_test {
+
 class A {
 public:
     struct shared_state_traits: shared_state_traits_backtrace {
-        double timeout() { return 0.002; }
+        double timeout() override { return 0.002; }
+        double verify_lock_time() override { return lock_time; }
+        double lock_time = 0.001;
     };
 };
 
+} // namespace shared_state_traits_backtrace_test
+
+using namespace shared_state_traits_backtrace_test;
 
 void shared_state_traits_backtrace::
         test()
@@ -25,6 +32,8 @@ void shared_state_traits_backtrace::
         typedef shared_state<A> ptr;
         ptr a{new A};
         ptr b{new A};
+        a.traits ()->lock_time = 1;
+        b.traits ()->lock_time = 1;
 
         spinning_barrier barrier(2);
 
