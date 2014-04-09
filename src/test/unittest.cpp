@@ -106,7 +106,7 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(BacktraceTest::UnitTest);
-        RUNTEST(JustmiscTest::UnitTest);
+        RUNTEST(JustMisc::UnitTest);
         RUNTEST(DataStorageString);
         RUNTEST(Factor);
         RUNTEST(GeometricAlgebra);
