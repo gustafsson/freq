@@ -6,6 +6,8 @@
 
 using namespace std;
 
+namespace JustMisc {
+
 void blocking_queue_test::
         test ()
 {
@@ -30,21 +32,21 @@ void blocking_queue_test::
             return S;
         };
 
-        std::vector<std::thread> producers;
-        std::vector<std::future<int>> consumers;
+        vector<thread> producers;
+        vector<future<int>> consumers;
         for (int i=0; i<10; i++)
         {
             producers.push_back (thread(producer, 100*i, 100*i + 100));
             consumers.push_back (async(launch::async, consumer));
         }
 
-        for (std::thread& t : producers)
+        for (thread& t : producers)
             t.join ();
 
         q.abort_on_empty ();
 
         int S = 0;
-        for (std::future<int>& f : consumers)
+        for (future<int>& f : consumers)
         {
             int v = f.get ();
             EXCEPTION_ASSERT_LESS(1000, v);
@@ -60,12 +62,12 @@ void blocking_queue_test::
         queue q;
 
         auto a = async(launch::async, [&q]() {
-            EXCEPTION_ASSERT_EQUALS(q.pop_for (std::chrono::duration<double>(0.0001)), 0);
-            EXCEPTION_ASSERT_EQUALS(q.pop_for (std::chrono::duration<double>(0.1)), 2);
-            EXCEPTION_ASSERT_EQUALS(q.pop_for (std::chrono::duration<double>(0.0001)), 0);
+            EXCEPTION_ASSERT_EQUALS(q.pop_for (chrono::duration<double>(0.0001)), 0);
+            EXCEPTION_ASSERT_EQUALS(q.pop_for (chrono::duration<double>(0.1)), 2);
+            EXCEPTION_ASSERT_EQUALS(q.pop_for (chrono::duration<double>(0.0001)), 0);
         });
 
-        std::this_thread::sleep_for (std::chrono::duration<double>(0.001));
+        this_thread::sleep_for (chrono::duration<double>(0.001));
 
         q.push (2);
         a.get();
@@ -85,3 +87,5 @@ void blocking_queue_test::
         EXCEPTION_ASSERT_EQUALS(q2.size (), 2u);
     }
 }
+
+} // namespace JustMisc

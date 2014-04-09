@@ -1,6 +1,7 @@
 #include "justmisc-unittest.h"
 
 #include "blocking_queue.h"
+#include "thread_pool.h"
 
 #include "timer.h"
 #include "exceptionassert.h"
@@ -14,7 +15,7 @@
 
 using namespace std;
 
-namespace JustmiscTest {
+namespace JustMisc {
 
 string lastname;
 
@@ -32,6 +33,7 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(blocking_queue_test);
+        RUNTEST(thread_pool);
 
     } catch (const ExceptionAssert& x) {
         if (rethrow_exceptions)
@@ -80,4 +82,4 @@ int UnitTest::
     return 0;
 }
 
-} // namespace JustmiscTest
+} // namespace JustMisc

@@ -1,8 +1,10 @@
-#ifndef BLOCKING_QUEUE_H
-#define BLOCKING_QUEUE_H
+#ifndef JUSTMISC_BLOCKING_QUEUE_H
+#define JUSTMISC_BLOCKING_QUEUE_H
 
 #include <mutex>
 #include <queue>
+
+namespace JustMisc {
 
 /**
  * @brief The blocking_queue class should provide a thread safe solution to the
@@ -12,7 +14,15 @@ template<class T>
 class blocking_queue
 {
 public:
+    typedef T value_type;
+    typedef std::queue<T> queue;
+
     class abort_exception : public std::exception {};
+
+    ~blocking_queue() {
+        abort_on_empty ();
+        clear ();
+    }
 
     std::queue<T> clear()
     {
@@ -31,7 +41,6 @@ public:
         std::unique_lock<std::mutex> l(m);
         return q.empty ();
     }
-
 
     T pop() {
         std::unique_lock<std::mutex> l(m);
@@ -68,9 +77,17 @@ public:
         return t;
     }
 
-    void push(T t) {
+    void push(const T& t) {
+        std::unique_lock<std::mutex> l(m);
+        q.push (t);
+        l.unlock ();
+        c.notify_one ();
+    }
+
+    void push(T&& t) {
         std::unique_lock<std::mutex> l(m);
         q.push (std::move(t));
+        l.unlock ();
         c.notify_one ();
     }
 
@@ -86,4 +103,6 @@ public:
     static void test();
 };
 
-#endif // BLOCKING_QUEUE_H
+} // namespace JustMisc
+
+#endif // JUSTMISC_BLOCKING_QUEUE_H
