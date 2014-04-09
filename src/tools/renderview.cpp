@@ -1077,9 +1077,9 @@ void RenderView::
         isRecording = true;
     }
 
-    bool chunk_merger_has_work = !model->block_update_queue->isEmpty ();
+    bool update_queue_has_work = !model->block_update_queue->empty ();
 
-    if (chunk_merger_has_work)
+    if (update_queue_has_work)
         redraw (); // won't redraw right away, but enqueue an update
 
 
@@ -1171,7 +1171,7 @@ void RenderView::
     wu.update(model->_qx, x, _last_update_size);
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
-    bool isWorking = ci.hasWork () || chunk_merger_has_work;
+    bool isWorking = ci.hasWork () || update_queue_has_work;
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
     if (wu.failedAllocation ())

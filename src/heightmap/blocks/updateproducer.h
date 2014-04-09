@@ -4,6 +4,7 @@
 #include "heightmap/tfrmapping.h"
 #include "heightmap/mergechunk.h"
 #include "updatequeue.h"
+#include "tfr/chunkfilter.h"
 
 namespace Heightmap {
 namespace Blocks {

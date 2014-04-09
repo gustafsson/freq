@@ -3,7 +3,10 @@
 
 #include "signal/computingengine.h"
 #include "heightmap/blocks/iupdatejob.h"
+#include "tfr/chunkfilter.h"
+
 #include "shared_state.h"
+
 #include <vector>
 
 namespace Heightmap {
@@ -15,7 +18,6 @@ public:
     virtual ~MergeChunk() {}
 
     virtual std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&) = 0;
-
 };
 
 

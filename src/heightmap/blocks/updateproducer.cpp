@@ -44,17 +44,16 @@ void UpdateProducer::
         return;
     }
 
-    TaskTimer tt(boost::format("creating job %s") % chunk_interval);
+//    TaskTimer tt(boost::format("UpdateProducer %s") % chunk_interval);
     for (Blocks::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk))
     {
         // Use same or different intersecting_blocks
 //        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);
         job->getCoveredInterval ();
-        UpdateQueue::Job upjob = { job, intersecting_blocks };
 
-        update_queue_->addJob( upjob );
+        update_queue_->push( UpdateQueue::Job { job, intersecting_blocks } );
     }
-    // The target view will be refreshed when a task is finished, thus calling chunk_merger->processChunks();
+    // The target view will be refreshed when a job is finished
 }
 
 
@@ -160,7 +159,7 @@ void UpdateProducer::
         BlockLayout bl(4, 4, SampleRate(4));
         Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
         tfrmap.write ()->length( 1 );
-        UpdateQueue::ptr update_queue(new UpdateQueue);
+        UpdateQueue::ptr update_queue(new UpdateQueue::ptr::element_type);
         UpdateProducer cbf( update_queue, tfrmap, merge_chunk );
 
         Tfr::StftDesc stftdesc;
@@ -186,7 +185,7 @@ void UpdateProducer::
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
 
-        UpdateQueue::Job j = update_queue->getJob ();
+        UpdateQueue::Job j = update_queue->pop ();
         EXCEPTION_ASSERT( j.updatejob );
         EXCEPTION_ASSERT( j );
         EXCEPTION_ASSERT( dynamic_cast<UpdateJobMock*>(j.updatejob.get ()) );
@@ -209,7 +208,7 @@ void UpdateProducerDesc::
         BlockLayout bl(4,4,4);
         Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, 1));
 
-        UpdateQueue::ptr update_queue(new UpdateQueue);
+        UpdateQueue::ptr update_queue(new UpdateQueue::ptr::element_type);
         UpdateProducerDesc cbfd( update_queue, tfrmap );
 
         Tfr::pChunkFilter cf = cbfd.createChunkFilter (0);

@@ -6,12 +6,27 @@
 #include "tfr/chunkfilter.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
+#include "glframebuffer.h"
+
+#include <future>
 
 class GlTexture;
 
 namespace Heightmap {
 
-class BlockFbo;
+class BlockFbo {
+public:
+    BlockFbo (pBlock block);
+    ~BlockFbo();
+
+    void begin ();
+    void end ();
+
+private:
+    pBlock block;
+    boost::shared_ptr<GlBlock> glblock;
+    GlFrameBuffer fbo;
+};
 
 /**
  * @brief The ChunkToBlockDegenerateTexture class should merge the contents of
@@ -99,9 +114,11 @@ public:
         DrawableChunk& operator=(DrawableChunk&) = delete;
         ~DrawableChunk();
 
-        bool ready() { return true; }
+        bool has_chunk() const;
+        bool ready() const;
+        std::packaged_task<void()> transferData(float *p);
         void prepareShader();
-        void draw(pBlock block);
+        void draw();
 
     private:
         void setupPbo();
@@ -114,28 +131,32 @@ public:
             ZeroOnMove(ZeroOnMove&&b) : t(b.t) {b.t=0;}
             ZeroOnMove(ZeroOnMove&b)=delete;
             ZeroOnMove& operator=(ZeroOnMove&b)=delete;
-            ZeroOnMove& operator=(T t) { this->t = t; return *this; }
-            operator bool() { return (bool)t; }
-            operator T() { return t; }
+            ZeroOnMove& operator=(T v) { t = v; return *this; }
+            operator bool() const { return (bool)t; }
+            operator T() const { return t; }
             T* operator &() { return &t; } // Behave like a 'T'
+            const T* operator &() const { return &t; } // Behave like a 'T'
         private:
             T t;
         };
 
+        Tfr::ChunkData::ptr chunk_;
         const Parameters params_;
         BlockFbos& block_fbos_;
-
         ShaderTexture shader_;
-        Tfr::ChunkData::ptr chunk_data_;
+
+        float* mapped_chunk_data_;
+        std::future<void> data_transfer;
+
         Tfr::FreqAxis chunk_scale;
         ZeroOnMove<unsigned> vbo_;
         ZeroOnMove<unsigned> chunk_pbo_;
+        ZeroOnMove<void*> sync_;
 
         float a_t, b_t, u0, u1;
         unsigned nScales, nSamples, nValidSamples;
         int data_width, data_height;
         bool transpose;
-        bool prepared_shader_;
     };
 
 
@@ -146,6 +167,7 @@ public:
     void            prepareBlock (pBlock block);
     DrawableChunk   prepareChunk (Tfr::pChunk chunk);
     void            finishBlocks ();
+    BlockFbos&      block_fbos() { return block_fbos_; }
 
 private:
     Shaders shaders_;

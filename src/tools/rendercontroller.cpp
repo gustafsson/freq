@@ -1026,8 +1026,7 @@ void RenderController::
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
-    //model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
-    model()->block_update_queue.reset (new Heightmap::Blocks::UpdateQueue());
+    model()->block_update_queue.reset (new Heightmap::Blocks::UpdateQueue::ptr::element_type());
 
     // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
     int n_update_consumers = 1;
@@ -1055,7 +1054,7 @@ void RenderController::
 void RenderController::
         deleteTarget()
 {
-//    model()->chunk_merger.reset ();
+//    model()->block_update_queue.reset ();
 //    model()->renderer.reset();
 //    clearCaches();
 }
@@ -1064,7 +1063,7 @@ void RenderController::
 void RenderController::
         clearCaches()
 {
-    // Canät do this, chunk_merger might have glblock instances
+    // Cannot do this, UpdateConsumer might have glblock instances
 //    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
 //        collection.write ()->clear();
 }

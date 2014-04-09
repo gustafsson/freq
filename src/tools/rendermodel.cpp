@@ -61,9 +61,9 @@ RenderModel::
 
     // Need to make sure that this thread really quits here, before the block cache is deleted.
     if (!block_update_queue)
-        TaskInfo("!!! Lost chunk_merger");
+        TaskInfo("!!! Lost block_update_queue");
     if (block_update_queue && !block_update_queue.unique ())
-        TaskInfo("!!! chunk_merger not unique");
+        TaskInfo("!!! block_update_queue unique");
     block_update_queue.reset ();
 
     renderer.reset();

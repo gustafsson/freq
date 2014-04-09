@@ -10,6 +10,8 @@
 #include "glPushContext.h"
 #include "neat_math.h"
 
+#include "tools/applicationerrorlogcontroller.h"
+
 //#define INFO
 #define INFO if(0)
 
@@ -32,38 +34,76 @@ int gl_max_texture_size() {
 }
 
 
-class BlockFbo {
-public:
-    BlockFbo (boost::shared_ptr<GlBlock> glblock)
-        :
-          glblock(glblock),
-          fbo(glblock->glTexture ()->getOpenGlTextureId ())
-    {
-        // Setup framebuffer rendering
-    }
+BlockFbo::BlockFbo (pBlock block)
+    :
+      block(block),
+      glblock(block->glblock),
+      fbo(block->glblock->glTexture ()->getOpenGlTextureId ())
+{
+    // Setup framebuffer rendering
+}
 
-    void begin ()
-    {
+
+BlockFbo::~BlockFbo()
+{
+    try {
         fbo.bindFrameBuffer ();
-//        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-//        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
-    }
 
-    void end ()
-    {
         // Copy to vertex texture from framebuffer
-        GlTexture::ptr t = glblock->glVertTexture ();
-        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
-        glBindTexture(GL_TEXTURE_2D, 0);
+//        GlTexture::ptr t = glblock->glVertTexture ();
+//        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+//        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+//        glBindTexture(GL_TEXTURE_2D, 0);
 
         fbo.unbindFrameBuffer ();
-    }
 
-private:
-    boost::shared_ptr<GlBlock> glblock;
-    GlFrameBuffer fbo;
-};
+        block->discard_new_block_data ();
+    } catch (...) {
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception());
+    }
+}
+
+void BlockFbo::begin ()
+{
+    GlException_CHECK_ERROR ();
+
+    fbo.bindFrameBuffer ();
+//        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+//        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
+
+    Region br = block->getRegion ();
+    BlockLayout block_layout = block->block_layout ();
+
+    // Juggle texture coordinates so that border texels are centered on the border
+    float dt = br.time (), ds = br.scale ();
+    br.a.time -= 0.5*dt / block_layout.texels_per_row ();
+    br.b.time += 0.5*dt / block_layout.texels_per_row ();
+    br.a.scale -= 0.5*ds / block_layout.texels_per_column ();
+    br.b.scale += 0.5*ds / block_layout.texels_per_column ();
+
+    // Setup matrices
+    glViewport (0, 0, block_layout.texels_per_row (), block_layout.texels_per_column ());
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity ();
+    glOrtho (br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
+    glMatrixMode (GL_MODELVIEW);
+    glLoadIdentity ();
+
+    GlException_CHECK_ERROR ();
+
+    // Disable unwanted capabilities when resampling a texture
+//    glPushAttrib(GL_ENABLE_BIT);
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_BLEND);
+    glDisable (GL_CULL_FACE);
+}
+
+void BlockFbo::end ()
+{
+//    glPopAttrib();
+    fbo.unbindFrameBuffer ();
+}
+
 
 ChunkToBlockDegenerateTexture::Shader::Shader(GLuint program)
     :
@@ -289,17 +329,17 @@ ChunkToBlockDegenerateTexture::DrawableChunk::DrawableChunk(
         Shaders& shaders
         )
     :
+        chunk_(chunk->transform_data),
         params_(params),
         block_fbos_(block_fbos),
         shader_(shaders),
+        mapped_chunk_data_(0),
         vbo_(0),
         chunk_pbo_(0),
-        prepared_shader_(false)
+        sync_(0)
 {
     EXCEPTION_ASSERT(chunk);
-    EXCEPTION_ASSERT(chunk->transform_data);
 
-    chunk_data_ = chunk->transform_data;
     chunk_scale = chunk->freqAxis;
     nScales = chunk->nScales ();
     nSamples = chunk->nSamples ();
@@ -328,6 +368,10 @@ ChunkToBlockDegenerateTexture::DrawableChunk::DrawableChunk(
 
     setupPbo ();
     setupVbo ();
+
+    sync_ = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+    EXCEPTION_ASSERT (chunk_pbo_);
 }
 
 
@@ -339,26 +383,46 @@ ChunkToBlockDegenerateTexture::DrawableChunk::
 
     if (chunk_pbo_)
         glDeleteBuffers (1, &chunk_pbo_);
+
+    if (sync_)
+        glDeleteSync((GLsync)(void*)sync_);
+}
+
+
+std::packaged_task<void()> ChunkToBlockDegenerateTexture::DrawableChunk::
+        transferData(float *p)
+{
+    // http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
+    mapped_chunk_data_ = (float*)glMapBuffer (GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    int n = data_width*data_height;
+
+    float *c = mapped_chunk_data_;
+    auto t = std::packaged_task<void()>([c, p, n](){
+//        Timer t;
+        memcpy(c, p, n*sizeof(float));
+//        TaskInfo("memcpy %s with %s/s", DataStorageVoid::getMemorySizeText(n*sizeof(float)).c_str (), DataStorageVoid::getMemorySizeText(n*sizeof(float) / t.elapsed ()).c_str ());
+    });
+
+    data_transfer = t.get_future();
+    return t;
 }
 
 
 void ChunkToBlockDegenerateTexture::DrawableChunk::
         setupPbo ()
 {
-    int n = chunk_data_->numberOfElements ();
-    EXCEPTION_ASSERT_EQUALS(n, data_width*data_height);
+    int n = data_width*data_height;
 
-    Tfr::ChunkElement *cp = chunk_data_->getCpuMemory ();
-    // Compute the norm of the complex elements in the chunk prior to resampling and interpolating
-    float *p = (float*)cp; // Overwrite 'cp'
-    // This takes a while, simply because p is large so that a lot of memory has to be copied.
-    for (int i = 0; i<n; ++i)
-        p[i] = norm(cp[i]); // Compute norm here and square root in shader.
+    glGenBuffers (1, &chunk_pbo_); // Generate 1 buffer
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeof(float)*n, 0, GL_STATIC_DRAW);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    GlException_SAFE_CALL( glGenBuffers (1, &chunk_pbo_) ); // Generate 1 buffer
-    GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
-    GlException_SAFE_CALL( glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeof(float)*n, p, GL_STREAM_DRAW) );
-    GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0) );
+    GlException_CHECK_ERROR();
 }
 
 
@@ -434,64 +498,54 @@ void ChunkToBlockDegenerateTexture::DrawableChunk::
 }
 
 
-void ChunkToBlockDegenerateTexture::DrawableChunk::
-        prepareShader ()
+bool ChunkToBlockDegenerateTexture::DrawableChunk::
+        has_chunk() const
 {
-    if (!prepared_shader_)
-        shader_.prepareShader (data_width, data_height, chunk_pbo_);
-    prepared_shader_ = true;
+    return chunk_pbo_;
+}
+
+
+bool ChunkToBlockDegenerateTexture::DrawableChunk::
+        ready() const
+{
+    return data_transfer.valid ();
+//    GLint result = GL_UNSIGNALED;
+//    glGetSynciv((GLsync)(void*)sync_, GL_SYNC_STATUS, sizeof(GLint), NULL, &result);
+//    return result == GL_SIGNALED;
 }
 
 
 void ChunkToBlockDegenerateTexture::DrawableChunk::
-        draw (pBlock pblock)
+        prepareShader ()
 {
-    prepareShader ();
-
-    boost::shared_ptr<GlBlock> glblock = pblock->glblock;
-    if (!glblock)
-      {
-        // This block was garbage collected after the list of matching blocks were created.
-        // Doesn't really harm anything to update anyways, but it is a waste of time.
-        return;
-      }
-
-    if (!block_fbos_.count (pblock))
+    if (mapped_chunk_data_)
     {
-        std::shared_ptr<BlockFbo> fbo(new BlockFbo(pblock->glblock));
-        block_fbos_.insert (std::pair<pBlock, std::shared_ptr<BlockFbo>>(pblock, fbo));
-    }
-    std::shared_ptr<BlockFbo> fbo = block_fbos_[pblock];
+        if (!data_transfer.valid ())
+        {
+            int n = data_width*data_height;
+            TaskTimer tt("data_transfer.wait () %d", n);
+            data_transfer.wait ();
+        }
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
+        glUnmapBuffer (GL_PIXEL_UNPACK_BUFFER);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        mapped_chunk_data_ = 0;
 
+        shader_.prepareShader (data_width, data_height, chunk_pbo_);
+    }
+}
+
+
+void ChunkToBlockDegenerateTexture::DrawableChunk::
+        draw ()
+{
     EXCEPTION_ASSERT (chunk_pbo_);
 
-    Block& block = *pblock;
-    Region br = block.getRegion ();
+    prepareShader ();
 
-    GlException_CHECK_ERROR();
+    GlException_CHECK_ERROR ();
 
-    // Juggle texture coordinates so that border texels are centered on the border
-    float dt = br.time (), ds = br.scale ();
-    br.a.time -= 0.5*dt / params_.block_layout.texels_per_row ();
-    br.b.time += 0.5*dt / params_.block_layout.texels_per_row ();
-    br.a.scale -= 0.5*ds / params_.block_layout.texels_per_column ();
-    br.b.scale += 0.5*ds / params_.block_layout.texels_per_column ();
-
-    INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::mergeChunk %s") % br);
-
-    // Disable unwanted capabilities when resampling a texture
-    glPushAttribContext pa(GL_ENABLE_BIT);
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
-
-    // Setup matrices
-    glViewport(0, 0, params_.block_layout.texels_per_row (), params_.block_layout.texels_per_column ());
-    glMatrixMode ( GL_PROJECTION );
-    glLoadIdentity();
-    glOrtho (br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
-    glMatrixMode ( GL_MODELVIEW );
-    glLoadIdentity();
+    INFO TaskTimer tt("ChunkToBlockDegenerateTexture::mergeChunk");
 
     // Setup drawing with VBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
@@ -508,24 +562,20 @@ void ChunkToBlockDegenerateTexture::DrawableChunk::
 
     // Draw from chunk texture onto block texture with framebuffer rendering
     {
-        fbo->begin ();
         chunk_texture.bindTexture2D ();
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2);
 
         chunk_texture.unbindTexture2D ();
-        fbo->end ();
     }
 
     // Finish with shader
     glUseProgram(0);
 
-    // Finish drawing with WBO
+    // Finish drawing with VBO
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    const_cast<Block*>(&block)->discard_new_block_data ();
 
     GlException_CHECK_ERROR();
 }
@@ -575,7 +625,7 @@ void ChunkToBlockDegenerateTexture::
 
     EXCEPTION_ASSERT (block->glblock);
 
-    std::shared_ptr<BlockFbo> fbo(new BlockFbo(block->glblock));
+    std::shared_ptr<BlockFbo> fbo(new BlockFbo(block));
     block_fbos_.insert (std::pair<pBlock, std::shared_ptr<BlockFbo>>(block, fbo));
 }
 
