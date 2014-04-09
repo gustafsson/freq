@@ -1,6 +1,7 @@
 #include "targetneeds.h"
 #include "step.h"
 #include "bedroom.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 #include "timer.h"
 #include "tasktimer.h"
@@ -29,7 +30,13 @@ TargetNeeds::
 TargetNeeds::
         ~TargetNeeds()
 {
-    updateNeeds(Signal::Intervals());
+    try {
+        updateNeeds(Signal::Intervals());
+    } catch (...) {
+        try {
+            Tools::ApplicationErrorLogController::registerException (boost::current_exception());
+        } catch (...) {}
+    }
 }
 
 
