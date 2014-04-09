@@ -3,8 +3,8 @@
 
 #include "block.h"
 
-// gpumisc
 #include "shared_state.h"
+#include "shared_state_traits_backtrace.h"
 
 // boost
 #include <boost/unordered_map.hpp>
@@ -19,6 +19,7 @@ class BlockCache
 public:
     typedef shared_state<BlockCache> ptr;
     typedef shared_state<const BlockCache> const_ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
 
     typedef boost::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
