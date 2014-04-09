@@ -1031,7 +1031,10 @@ void RenderController::
     // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)
-        new Heightmap::Blocks::UpdateConsumer(view->glwidget, model()->block_update_queue);
+    {
+        auto uc = new Heightmap::Blocks::UpdateConsumer(view->glwidget, model()->block_update_queue);
+        connect(uc, SIGNAL(didUpdate()), view.data (), SLOT(redraw()));
+    }
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
