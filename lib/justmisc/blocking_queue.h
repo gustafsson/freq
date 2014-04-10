@@ -24,7 +24,7 @@ public:
         clear ();
     }
 
-    std::queue<T> clear()
+    queue clear()
     {
         std::unique_lock<std::mutex> l(m);
         std::queue<T> q;
@@ -33,7 +33,9 @@ public:
     }
 
     void abort_on_empty() {
+        std::unique_lock<std::mutex> l(m);
         abort_on_empty_ = true;
+        l.unlock ();
         c.notify_all ();
     }
 
@@ -44,14 +46,13 @@ public:
 
     T pop() {
         std::unique_lock<std::mutex> l(m);
-        while (q.empty())
-        {
-            if (abort_on_empty_)
-                throw abort_exception{};
-            c.wait (l);
-        }
 
-        T t( std::move(q.front ()) );
+        c.wait (l, [this](){return !q.empty() || abort_on_empty_;});
+
+        if (abort_on_empty_)
+            throw abort_exception{};
+
+        T t( std::move(q.front()) );
         q.pop ();
         return t;
     }
@@ -62,17 +63,14 @@ public:
     template <class Rep, class Period>
     T pop_for(const std::chrono::duration<Rep, Period>& d) {
         std::unique_lock<std::mutex> l(m);
-        if (q.empty())
-        {
-            if (abort_on_empty_)
-                throw abort_exception{};
-            c.wait_for (l, d);
-        }
 
-        if (q.empty())
+        if (!c.wait_for (l, d, [this](){return !q.empty() || abort_on_empty_;}))
             return T();
 
-        T t( std::move(q.front ()) );
+        if (abort_on_empty_)
+            throw abort_exception{};
+
+        T t( std::move(q.front()) );
         q.pop ();
         return t;
     }
