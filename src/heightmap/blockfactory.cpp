@@ -27,7 +27,7 @@ BlockFactory::
 
 
 pBlock BlockFactory::
-        createBlock( const Reference& ref, pBlock reuse )
+        createBlock( const Reference& ref, pGlBlock reuse )
 {
     // A precautious wrapper to getAllocatedBlock which is a precautious wrapper to attempt
 
@@ -43,11 +43,10 @@ pBlock BlockFactory::
                              ref,
                              block_layout_,
                              visualization_params_) );
-            block->glblock = reuse->glblock;
+            block->glblock = reuse;
             // Sets to zero on first read
             block->block_data()->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
 
-            reuse->glblock.reset();
             const Region& r = block->getRegion();
             block->glblock->reset( r.time(), r.scale() );
         }

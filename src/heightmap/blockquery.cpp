@@ -22,8 +22,7 @@ BlockQuery::
 vector<pBlock> BlockQuery::
         getIntersectingBlocks( const Intervals& I, bool only_visible, int frame_counter ) const
 {
-    // Don't keep a lock, work with a local copy instead
-    BlockCache::cache_t cache = cache_->cache();
+    BlockCache::cache_t cache = cache_->clone();
 
     // Keep a lock
 //    auto cache_r = cache_.read ();

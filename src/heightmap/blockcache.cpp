@@ -5,6 +5,8 @@
 
 #include <boost/foreach.hpp>
 
+using namespace std;
+
 namespace Heightmap {
 
 BlockCache::
@@ -14,39 +16,27 @@ BlockCache::
 
 
 pBlock BlockCache::
-        find( const Reference& ref )
+        find( const Reference& ref ) const
 {
-    if (pBlock b = probe(ref))
-        {
-        recent_.remove (b);
-        recent_.push_front (b);
-        return b;
-        }
-    else
-        {
-        return pBlock();
-        }
-}
+    lock_guard<mutex> l(mutex_);
 
-
-pBlock BlockCache::
-        probe( const Reference& ref ) const
-{
     cache_t::const_iterator itr = cache_.find( ref );
     if (itr != cache_.end())
-        {
+      {
         return itr->second;
-        }
+      }
     else
-        {
+      {
         return pBlock();
-        }
+      }
 }
 
 
 void BlockCache::
         insert( pBlock b )
 {
+    lock_guard<mutex> l(mutex_);
+
     cache_[ b->reference() ] = b;
 }
 
@@ -54,33 +44,49 @@ void BlockCache::
 void BlockCache::
         erase (const Reference& ref)
 {
+    lock_guard<mutex> l(mutex_);
+
     cache_t::iterator i = cache_.find(ref);
-    if (i != cache_.end()) {
-        recent_.remove(i->second);
+    if (i != cache_.end())
         cache_.erase(i);
-    }
 }
 
 
-void BlockCache::
+BlockCache::cache_t BlockCache::
         clear()
 {
-    cache_.clear();
-    recent_.clear();
+    lock_guard<mutex> l(mutex_);
+
+    BlockCache::cache_t c;
+    c.swap(cache_);
+    return c;
 }
 
 
-const BlockCache::cache_t& BlockCache::
-        cache() const
+size_t BlockCache::
+        size() const
 {
+    lock_guard<mutex> l(mutex_);
+
+    return cache_.size();
+}
+
+
+bool BlockCache::
+        empty() const
+{
+    lock_guard<mutex> l(mutex_);
+
+    return cache_.empty();
+}
+
+
+BlockCache::cache_t BlockCache::
+        clone() const
+{
+    lock_guard<mutex> l(mutex_);
+
     return cache_;
-}
-
-
-const BlockCache::recent_t& BlockCache::
-        recent() const
-{
-    return recent_;
 }
 
 
@@ -101,8 +107,8 @@ void BlockCache::
         c.insert (b2);
         pBlock b3 = c.find(r1);
         pBlock b4 = c.find(r2);
-        pBlock b5 = c.probe (r2.parentHorizontal ());
-        pBlock b6 = c.probe (r1.left ());
+        pBlock b5 = c.find (r2.parentHorizontal ());
+        pBlock b6 = c.find (r1.left ());
 
         EXCEPTION_ASSERT( b1 == b3 );
         EXCEPTION_ASSERT( b2 == b4 );

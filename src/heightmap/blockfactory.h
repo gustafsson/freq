@@ -2,6 +2,7 @@
 #define HEIGHTMAP_BLOCKFACTORY_H
 
 #include "blockcache.h"
+#include "glblock.h"
 
 namespace Heightmap {
 
@@ -19,7 +20,7 @@ public:
     /**
       Creates a new block.
       */
-    pBlock      createBlock( const Reference& ref, pBlock reuse );
+    pBlock      createBlock( const Reference& ref, pGlBlock reuse );
 
 private:
     /**

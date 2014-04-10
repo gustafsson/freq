@@ -21,4 +21,17 @@ inline std::size_t hash_value(Reference const& ref)
 
 } // namespace Heightmap
 
+
+// http://en.cppreference.com/w/cpp/utility/hash
+namespace std
+{
+    template<>
+    struct hash<Heightmap::Reference> {
+        size_t operator()(Heightmap::Reference const& s) const
+        {
+            return hash_value(s);
+        }
+    };
+}
+
 #endif // REFERENCE_HASH_H

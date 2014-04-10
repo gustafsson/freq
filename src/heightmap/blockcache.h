@@ -2,12 +2,10 @@
 #define HEIGHTMAP_BLOCKCACHE_H
 
 #include "block.h"
+#include "reference_hash.h"
 
-#include "shared_state.h"
-#include "shared_state_traits_backtrace.h"
-
-// boost
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
+#include <thread>
 
 namespace Heightmap {
 
@@ -17,10 +15,9 @@ namespace Heightmap {
 class BlockCache
 {
 public:
-    typedef shared_state<BlockCache> ptr;
-    typedef shared_state<const BlockCache> const_ptr;
-    typedef shared_state_traits_backtrace shared_state_traits;
-    typedef boost::unordered_map<Reference, pBlock> cache_t;
+    typedef std::shared_ptr<BlockCache> ptr;
+    typedef std::shared_ptr<const BlockCache> const_ptr;
+    typedef std::unordered_map<Reference, pBlock> cache_t;
     typedef std::list<pBlock> recent_t;
 
 
@@ -30,18 +27,8 @@ public:
      * @brief findBlock searches through the cache for a block with reference 'ref'
      * @param ref the block to search for.
      * @return a block if it is found or pBlock() otherwise.
-     *
-     * Is not const because it updates a list of recently accessed blocks.
      */
-    pBlock      find( const Reference& ref );
-
-
-    /**
-     * @brief probe tests if 'ref' can be found in the BlockCache.
-     * @param ref the block to search for.
-     * @return a block if it is found or pBlock() otherwise.
-     */
-    pBlock      probe( const Reference& ref ) const;
+    pBlock      find( const Reference& ref ) const;
 
 
     /**
@@ -57,12 +44,15 @@ public:
     void        erase( const Reference& ref );
 
     /**
-     * @brief clear empties this cache.
+     * @brief clear empties this cache and returns the contents it had. The return value can safely be discarded.
      */
-    void        clear();
+    cache_t     clear();
 
-    const cache_t& cache() const;
-    const recent_t& recent() const;
+    size_t      size() const;
+
+    bool        empty() const;
+
+    cache_t     clone() const;
 
 private:
 
@@ -75,8 +65,8 @@ private:
             3) if _cache is empty, Sonic AWE is terminated with an OpenGL or Cuda error.
       */
 
-    cache_t         cache_;
-    recent_t        recent_;     /// Ordered with the most recently accessed blocks first
+    mutable std::mutex  mutex_;
+    cache_t             cache_;
 
 public:
     static void test();

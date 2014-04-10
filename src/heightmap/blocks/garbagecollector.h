@@ -2,6 +2,7 @@
 #define HEIGHTMAP_BLOCK_GARBAGECOLLECTOR_H
 
 #include "heightmap/blockcache.h"
+#include "heightmap/glblock.h"
 
 namespace Heightmap {
 namespace Blocks {
@@ -11,8 +12,8 @@ class GarbageCollector
 public:
     GarbageCollector(BlockCache::ptr cache);
 
-    pBlock releaseOneBlock(unsigned frame_counter);
-    void releaseAllNotUsedInThisFrame(unsigned _frame_counter);
+    pGlBlock reuseOnOutOfMemory(unsigned frame_counter, const BlockLayout& block_layout);
+    void releaseAllNotUsedInThisFrame(unsigned frame_counter);
 
 private:
     BlockCache::ptr cache_;

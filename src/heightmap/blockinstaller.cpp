@@ -100,7 +100,7 @@ pBlock BlockInstaller::
 //    UnlockAndLockUpgrade unlock_and_lock_upgrade(this->readWriteLock ());
 
     // Look among cached blocks for this reference
-    pBlock block = cache_.write ()->find( ref );
+    pBlock block = cache_->find( ref );
 
     if (!block)
     {
@@ -108,27 +108,27 @@ pBlock BlockInstaller::
 
         if ( MAX_CREATED_BLOCKS_PER_FRAME > created_count_ || true )
         {
-            pBlock reuse;
+            pGlBlock reuse;
             if (0 != "Reuse old redundant blocks")
             {
                 // prefer to use block rather than discard an old block and then reallocate it
-                reuse = Blocks::GarbageCollector(cache_).releaseOneBlock (frame_counter);
+                reuse = Blocks::GarbageCollector(cache_).reuseOnOutOfMemory (frame_counter, block_layout_);
             }
 
             BlockFactory bf(block_layout_, visualization_params_);
             block = bf.createBlock (ref, reuse);
-            bool empty_cache = cache_.read ()->cache().empty();
+            bool empty_cache = cache_->empty();
             if ( !block && !empty_cache ) {
                 TaskTimer tt(format("Memory allocation failed creating new block %s. Doing garbage collection") % ref);
                 Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (frame_counter);
                 reuse.reset ();
-                block = bf.createBlock (ref, pBlock());
+                block = bf.createBlock (ref, pGlBlock());
             }
 
             //Blocks::Merger(cache_).fillBlockFromOthers (block);
             merger_->fillBlockFromOthers (block);
 
-            cache_.write ()->insert(block);
+            cache_->insert(block);
 
 //            unlock_and_lock_upgrade.restore ();
 
@@ -185,8 +185,8 @@ void BlockInstaller::
         pBlock block = block_installer.getBlock (r, 0);
 
         EXCEPTION_ASSERT(block);
-        EXCEPTION_ASSERT(cache.read ()->probe(r));
-        EXCEPTION_ASSERT(cache.read ()->probe(r) == block);
+        EXCEPTION_ASSERT(cache->find(r));
+        EXCEPTION_ASSERT(cache->find(r) == block);
 
         pBlock block2 = block_installer.getBlock (r, 0);
 
@@ -197,7 +197,7 @@ void BlockInstaller::
 
         EXCEPTION_ASSERT(block3);
         EXCEPTION_ASSERT(block != block3);
-        EXCEPTION_ASSERT(cache.read ()->probe(r.bottom ()) == block3);
+        EXCEPTION_ASSERT(cache->find(r.bottom ()) == block3);
     }
 
     // TODO test that BlockInstaller behaves well on out-of-memory/reusing old blocks
