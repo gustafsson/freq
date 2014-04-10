@@ -23,15 +23,17 @@ thread_pool::
 {
     for (thread& t: threads_)
     {
-        t = thread( [this]()
-        {
-            try {
-                while (true) {
-                    auto task = queue_.pop ();
-                    task();
+        t = thread(
+                [this]()
+                {
+                    try {
+                        while (true) {
+                            auto task = queue_.pop ();
+                            task();
+                        }
+                    } catch (decltype(queue_)::abort_exception) {}
                 }
-            } catch (decltype(queue_)::abort_exception) {}
-        });
+        );
     }
 }
 
@@ -57,25 +59,31 @@ void thread_pool::
 
         for (int i=0; i<1000; i++)
         {
-            packaged_task<int()> task( [i]()
-            {
-                return i;
-            });
+            packaged_task<int()> task(
+                    [i]()
+                    {
+                        return i;
+                    }
+            );
 
             R.push_back (task.get_future ());
 
             pool.addTask (move(task));
 
-            pool.addTask (packaged_task<void()>( []()
-            {
-                this_thread::sleep_for (chrono::duration<double>(0.0001));
-            }));
+            pool.addTask (packaged_task<void()>(
+                    []()
+                    {
+                        this_thread::sleep_for (chrono::duration<double>(0.0001));
+                    }
+            ));
         }
 
-        int S = accumulate(R.begin (), R.end (), 0, [](int a, future<int>& b)
-        {
-            return a + b.get();
-        });
+        int S = accumulate(R.begin (), R.end (), 0,
+                [](int a, future<int>& b)
+                {
+                    return a + b.get();
+                }
+        );
 
         EXCEPTION_ASSERT_EQUALS(S, (999-0)/2.0 * 1000);
     }
