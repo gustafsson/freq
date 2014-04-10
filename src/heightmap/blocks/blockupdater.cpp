@@ -14,6 +14,15 @@ namespace Heightmap {
 namespace Blocks {
 
 
+float* computeNorm(Tfr::ChunkElement* cp, int n) {
+    float *p = (float*)cp; // Overwrite 'cp'
+    // This takes a while, simply because p is large so that a lot of memory has to be copied.
+    for (int i = 0; i<n; ++i)
+        p[i] = norm(cp[i]); // Compute norm here and square root in shader.
+    return p;
+}
+
+
 BlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor)
     :
       chunk(chunk),
@@ -23,12 +32,8 @@ BlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor)
     Tfr::ChunkElement *cp = chunk->transform_data->getCpuMemory ();
     int n = chunk->transform_data->numberOfElements ();
     // Compute the norm of the complex elements in the chunk prior to resampling and interpolating
-    float *p = (float*)cp; // Overwrite 'cp'
-    // This takes a while, simply because p is large so that a lot of memory has to be copied.
-    for (int i = 0; i<n; ++i)
-        p[i] = norm(cp[i]); // Compute norm here and square root in shader.
+    this->p = computeNorm(cp, n);
 
-    this->p = p;
     // Keep chunk->transform_data for memory management
 }
 
