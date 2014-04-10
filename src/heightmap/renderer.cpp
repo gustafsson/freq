@@ -368,11 +368,11 @@ void Renderer::
 
     if (!missing.empty ())
     {
-        auto collectionp = collection.read ();
+        Collection* c = collection.raw ();
 
         BOOST_FOREACH(const Reference& r, missing) {
             // Create blocks
-            collectionp->getBlock (r);
+            c->getBlock (r);
         }
     }
 }

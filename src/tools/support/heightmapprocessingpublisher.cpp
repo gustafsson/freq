@@ -38,7 +38,7 @@ void HeightmapProcessingPublisher::
     // visible block if the view isn't currently being invalidated.
     UnsignedIntervalType update_size = preferred_update_size;
 
-    foreach( const Heightmap::Collection::ptr &c, collections_ ) {
+    for ( const Heightmap::Collection::ptr &c : collections_ ) {
         auto wc = c.write ();
         //invalid_samples |= wc->invalid_samples();
         things_to_add |= wc->recently_created();
@@ -156,7 +156,7 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
-        collection.read ()->getBlock(entireHeightmap);
+        collection.raw ()->getBlock(entireHeightmap);
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -165,7 +165,7 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         unsigned frame_number = collection.read ()->frame_number();
-        collection.read ()->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
+        collection.raw ()->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 

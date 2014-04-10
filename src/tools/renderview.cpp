@@ -310,7 +310,7 @@ float RenderView::
     r = rr(*ref);
 
     Heightmap::Collection::ptr collection = model->collections()[0];
-    Heightmap::pBlock block = collection.read ()->getBlock( *ref );
+    Heightmap::pBlock block = collection.raw ()->getBlock( *ref );
     Heightmap::ReferenceInfo ri(block->referenceInfo ());
     if (!block)
         return 0;
