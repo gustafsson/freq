@@ -57,7 +57,7 @@ void SuggestPurchase::
     new DropNotifyForm(
             dynamic_cast<QWidget*>(parent()),
             0,
-            "You are using an evaluation version of " + QApplication::instance ()->applicationName () + ". You must purchase a license to continue using the program.",
+            "You are using an evaluation version of " + QApplication::instance ()->applicationName () + ". Please purchase a license to continue using the program.",
             "https://gumroad.com/l/sonicawe",
             "Purchase");
 }
