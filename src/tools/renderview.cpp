@@ -207,7 +207,7 @@ void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
     double T = _last_frame.elapsedAndRestart();
-    TIME_PAINTGL TaskTimer tt("%g ms", T*1e3);
+    TIME_PAINTGL TaskTimer tt("Draw. Last frame %.0f ms / %.0f fps", T*1e3, 1/T);
 
     painter->beginNativePainting();
 
@@ -1002,7 +1002,7 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL.............................");
+    TIME_PAINTGL_DETAILS TaskTimer tt(".............................RenderView::paintGL.............................");
 
     Heightmap::TfrMapping::Collections collections = model->collections ();
 
