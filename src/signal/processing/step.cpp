@@ -87,7 +87,7 @@ Intervals Step::
     }
 
     DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
-              % (operation_desc_?operation_desc_.read ()->toString ().toStdString ():"(no operation)")
+              % (operation_desc_?operation_desc_.raw ()->toString ().toStdString ():"(no operation)")
               % deprecated);
 
     not_started_ |= deprecated;
