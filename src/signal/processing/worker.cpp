@@ -325,7 +325,7 @@ void Worker::
 
         worker.wait (1);
 
-        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask.write ())->get_task_count );
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
         // Verify that tasks execute properly in Task::test.
 
         EXCEPTION_ASSERT( worker.isRunning () );
@@ -342,13 +342,13 @@ void Worker::
         Worker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( !worker.wait (1) );
-        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask.write ())->get_task_count );
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
         QThread::msleep (1);
-        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask.write ())->get_task_count );
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
 
         worker.wakeup ();
         worker.wait (1);
-        EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*gettask.write ())->get_task_count );
+        EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
@@ -419,7 +419,7 @@ void Worker::
         EXCEPTION_ASSERT( worker.caught_exception () );
         EXPECT_EXCEPTION(lock_failed, rethrow_exception(worker.caught_exception ()));
 
-        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask.write ())->get_task_count );
+        EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
     }
 
     // It should not hang if it causes a deadlock (1)

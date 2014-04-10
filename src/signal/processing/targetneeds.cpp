@@ -43,7 +43,7 @@ TargetNeeds::
 void TargetNeeds::
         updateNeeds
         (
-        Signal::Intervals needed_samples,
+        const Signal::Intervals& needed_samples,
         Signal::IntervalType center,
         Signal::IntervalType preferred_update_size,
         int prio
@@ -83,7 +83,7 @@ void TargetNeeds::
 
 
 void TargetNeeds::
-        deprecateCache(Signal::Intervals invalidate)
+        deprecateCache(const Signal::Intervals& invalidate)
 {
     if (!invalidate)
         return;
