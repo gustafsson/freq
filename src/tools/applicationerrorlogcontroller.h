@@ -6,7 +6,7 @@
 #include <QNetworkReply>
 #include <QThread>
 
-#include <boost/exception/all.hpp>
+#include <boost/exception_ptr.hpp>
 
 namespace Tools {
 

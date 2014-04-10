@@ -15,7 +15,7 @@ namespace Support {
  * It is worth noting that HeightmapProcessingPublisher doesn't depend on any
  * actual worker nor on any signal processing chain. It just asynchronously
  * publishes work prioritization to a target and assumes that there is a worker
- * somewhere that will detect this. That worker mayfetch the required data
+ * somewhere that will detect this. That worker may fetch the required data
  * through some signal processing chain but this publisher doesn't care.
  */
 class HeightmapProcessingPublisher
