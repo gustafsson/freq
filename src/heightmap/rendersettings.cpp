@@ -21,7 +21,9 @@ RenderSettings::RenderSettings()
         left_handed_axes(true),
         vertex_texture(true),
         draw_flat(true),
-        drawcrosseswhen0( Sawe::Configuration::version().empty() )
+        drawcrosseswhen0( Sawe::Configuration::version().empty() ),
+        dpifactor( 1 ),
+        axes_border(false)
 {
 }
 
