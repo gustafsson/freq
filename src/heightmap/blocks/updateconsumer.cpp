@@ -78,7 +78,6 @@ void UpdateConsumer::
         BlockUpdater block_updater;
 
         typedef shared_ptr<ChunkToBlockDegenerateTexture::DrawableChunk> pDrawableChunk;
-        map<pBlock, queue<pDrawableChunk>> chunks_per_block;
 
 //        typedef pair<pDrawableChunk,vector<pBlock>> chunk_with_blocks_t;
 //        vector<chunk_with_blocks_t> chunks_with_blocks;
@@ -87,23 +86,35 @@ void UpdateConsumer::
 
         while (!isInterruptionRequested ())
           {
-            vector<UpdateQueue::Job> jobs {update_queue->pop ()};
+            std::unique_ptr<TaskTimer> tt;
+            if (update_queue->empty ())
+                tt.reset (new TaskTimer("Waiting for updates"));
+            UpdateQueue::Job j = update_queue->pop ();
+            tt.reset ();
             queue<UpdateQueue::Job> jobqueue = update_queue->clear ();
+            map<pBlock, queue<pDrawableChunk>> chunks_per_block;
 
+            Timer t;
+
+            vector<UpdateQueue::Job> jobs;
             jobs.reserve (1 + jobqueue.size ());
+
+            jobs.push_back (move(j));
             while (!jobqueue.empty ())
               {
-                jobs.push_back (jobqueue.front ());
+                jobs.push_back (move(jobqueue.front ()));
                 jobqueue.pop ();
               }
 
             Signal::Intervals span = accumulate(jobs.begin (), jobs.end (), Signal::Intervals(),
                     [](Signal::Intervals& I, const UpdateQueue::Job& j) {
+                        if (!j.updatejob)
+                            return I;
                         return I|=j.updatejob->getCoveredInterval();
                     });
 
               {
-                TaskTimer tt("Preparing %d jobs, span %s", jobs.size (), span.toString ().c_str ());
+//                TaskTimer tt("Preparing %d jobs, span %s", jobs.size (), span.toString ().c_str ());
 
                 for (const UpdateQueue::Job& job : jobs)
                   {
@@ -131,7 +142,7 @@ void UpdateConsumer::
 
             if (!chunks_per_block.empty ())
               {
-                TaskTimer tt("Updating %d blocks", chunks_per_block.size ());
+//                TaskTimer tt("Updating %d blocks", chunks_per_block.size ());
                 // draw all chunks who share the same block in one go
                 for (map<pBlock, queue<pDrawableChunk>>::value_type& p : chunks_per_block)
                   {
@@ -175,18 +186,25 @@ void UpdateConsumer::
 //                  }
 //              }
 
-            chunks_per_block.clear ();
 //            chunks_with_blocks.clear ();
+
+            for (UpdateQueue::Job& j : jobs)
+                j.promise.set_value ();
 
             if (!isInterruptionRequested ())
               {
-                TaskTimer tt("sync");
+//                TaskTimer tt("sync");
                 block_updater.sync ();
                 emit didUpdate ();
               }
-          }
+
+            TaskInfo("Updated %d -> %d. %s. %.0f samples/s",
+                     jobs.size (), chunks_per_block.size (),
+                     span.toString ().c_str (),
+                     span.count ()/t.elapsed ());
+        }
       }
-    catch (UpdateQueue::ptr::element_type::abort_exception&)
+    catch (UpdateQueue::abort_exception&)
       {
       }
     catch (...)

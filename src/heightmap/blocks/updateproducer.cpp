@@ -8,6 +8,7 @@
 
 #include "cpumemorystorage.h"
 #include "demangle.h"
+#include "log.h"
 
 #include <boost/foreach.hpp>
 
@@ -39,20 +40,36 @@ void UpdateProducer::
 
     if (intersecting_blocks.empty ())
     {
-        TaskInfo(boost::format("Discarding chunk since there are no longer any intersecting_blocks with %s")
-                 % chunk_interval);
+        Log("Discarding chunk since there are no longer any intersecting_blocks with %s")
+                 % chunk_interval;
         return;
     }
 
 //    TaskTimer tt(boost::format("UpdateProducer %s") % chunk_interval);
+    std::vector<std::future<void>> F;
+
     for (Blocks::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk))
     {
         // Use same or different intersecting_blocks
 //        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);
         job->getCoveredInterval ();
 
-        update_queue_->push( UpdateQueue::Job { job, intersecting_blocks } );
+        auto f = update_queue_->push( job, intersecting_blocks );
+        F.push_back (std::move(f));
     }
+
+    // Wait for these to finish
+    try
+    {
+        for (std::future<void>& f : F)
+            f.get();
+    }
+    catch (const std::logic_error&)
+    {
+        // The queue may be emptied before the task has been processed
+        Log("Discarded job: %s") % chunk_interval;
+    }
+
     // The target view will be refreshed when a job is finished
 }
 
@@ -181,11 +198,12 @@ void UpdateProducer::
 
         EXCEPTION_ASSERT( !merge_chunk_mock->called() );
 
-        cbf(cai);
+        std::thread t([&](){cbf(cai);});
+        UpdateQueue::Job j = update_queue->pop ();
+        j.promise.set_value();
+        t.join();
 
         EXCEPTION_ASSERT( merge_chunk_mock->called() );
-
-        UpdateQueue::Job j = update_queue->pop ();
         EXCEPTION_ASSERT( j.updatejob );
         EXCEPTION_ASSERT( j );
         EXCEPTION_ASSERT( dynamic_cast<UpdateJobMock*>(j.updatejob.get ()) );

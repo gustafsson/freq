@@ -27,9 +27,9 @@ public:
     queue clear()
     {
         std::unique_lock<std::mutex> l(m);
-        std::queue<T> q;
-        q.swap (this->q);
-        return q;
+        queue p;
+        p.swap (q);
+        return p;
     }
 
     void abort_on_empty() {
