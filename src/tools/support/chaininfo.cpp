@@ -90,7 +90,6 @@ class RequiredIntervalCrash: public Test::TransparentOperationDesc {
     class exception: virtual public boost::exception, virtual public std::exception {};
 
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* ) const override {
-        std::this_thread::sleep_for (std::chrono::duration<double>(0.001));
         BOOST_THROW_EXCEPTION(exception() << Backtrace::make ());
     }
 };
@@ -145,9 +144,8 @@ void ChainInfo::
         TargetNeeds::ptr n = at->target_needs();
         cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        n.write ()->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
+        n.write ()->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( TargetNeeds::sleep (n, 12) );
         EXCEPTION_ASSERT( !c.hasWork () );
         QThread::msleep (1);
