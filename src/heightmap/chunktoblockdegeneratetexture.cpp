@@ -50,10 +50,10 @@ BlockFbo::~BlockFbo()
         fbo.bindFrameBuffer ();
 
         // Copy to vertex texture from framebuffer
-//        GlTexture::ptr t = glblock->glVertTexture ();
-//        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-//        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
-//        glBindTexture(GL_TEXTURE_2D, 0);
+        GlTexture::ptr t = glblock->glVertTexture ();
+        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         fbo.unbindFrameBuffer ();
 
