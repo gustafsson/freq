@@ -5,6 +5,7 @@
 
 #include "timer.h"
 #include "tasktimer.h"
+#include "log.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -149,6 +150,7 @@ Signal::Intervals TargetNeeds::
     if (step)
         out_of_date = step.read ()->out_of_date();
 
+    DEBUG_INFO Log("out_of_date(): %s & %s") % needed_samples_ % out_of_date;
     return needed_samples_ & out_of_date;
 }
 

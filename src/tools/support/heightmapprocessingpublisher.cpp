@@ -156,19 +156,14 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
-        collection.raw ()->getBlock(entireHeightmap);
+        unsigned frame_number = collection.read ()->frame_number();
 
-        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
-
+        collection->getBlock(entireHeightmap)->frame_number_last_used = frame_number - 2;
         hpp.update(t_center, x, preferred_update_size);
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        unsigned frame_number = collection.read ()->frame_number();
-        collection.raw ()->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
-
-        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
-
+        collection->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
         hpp.update(t_center, x, preferred_update_size);
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
