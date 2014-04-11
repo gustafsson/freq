@@ -31,7 +31,7 @@ Block::
 {
     if (glblock)
     {
-        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_layout_, visualization_params_));
+//        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_layout_, visualization_params_));
         glblock.reset();
     }
 }

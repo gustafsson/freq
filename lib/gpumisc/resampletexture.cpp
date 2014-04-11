@@ -66,7 +66,7 @@ void ResampleTexture::
     float v[4];
     glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
     GlException_SAFE_CALL( glClearColor (r,g,b,a) );
-    GlException_SAFE_CALL( glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ) );
+    GlException_SAFE_CALL( glClear( GL_COLOR_BUFFER_BIT ) );
     GlException_SAFE_CALL( glClearColor (v[0],v[1],v[2],v[3]) );
 }
 

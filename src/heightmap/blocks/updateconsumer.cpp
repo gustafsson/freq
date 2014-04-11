@@ -87,8 +87,8 @@ void UpdateConsumer::
         while (!isInterruptionRequested ())
           {
             std::unique_ptr<TaskTimer> tt;
-            if (update_queue->empty ())
-                tt.reset (new TaskTimer("Waiting for updates"));
+//            if (update_queue->empty ())
+//                tt.reset (new TaskTimer("Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
             queue<UpdateQueue::Job> jobqueue = update_queue->clear ();
@@ -198,6 +198,7 @@ void UpdateConsumer::
                 emit didUpdate ();
               }
 
+            if (false)
             TaskInfo("Updated %d -> %d. %s. %.0f samples/s",
                      jobs.size (), chunks_per_block.size (),
                      span.toString ().c_str (),

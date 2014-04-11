@@ -18,7 +18,6 @@ public:
     typedef std::shared_ptr<BlockCache> ptr;
     typedef std::shared_ptr<const BlockCache> const_ptr;
     typedef std::unordered_map<Reference, pBlock> cache_t;
-    typedef std::list<pBlock> recent_t;
 
 
     BlockCache();
