@@ -185,7 +185,7 @@ void UpdateProducer::
         Signal::pMonoBuffer buffer(new Signal::MonoBuffer(data, data.count ()));
 
         {
-            auto c = tfrmap.read ()->collections()[0].read ();
+            auto c = tfrmap.read ()->collections()[0];
             Reference entireHeightmap = c->entireHeightmap();
             c->getBlock (entireHeightmap);
         }

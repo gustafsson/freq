@@ -368,11 +368,13 @@ void Renderer::
 
     if (!missing.empty ())
     {
-        Collection* c = collection.raw ();
+        auto c = collection.write ();
 
         BOOST_FOREACH(const Reference& r, missing) {
             // Create blocks
-            c->getBlock (r);
+            pBlock b = c->getBlock (r);
+            if (!b)
+                TaskInfo("Failed to create a block");
         }
     }
 }

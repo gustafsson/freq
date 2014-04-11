@@ -20,9 +20,21 @@ public:
     /**
       Creates a new block.
       */
-    pBlock      createBlock( const Reference& ref, pGlBlock reuse );
+    pBlock              createBlock( const Reference& ref, pGlBlock reuse=pGlBlock() );
+
+    Signal::Intervals   recently_created();
+    void                set_recently_created_all();
+
+    bool                failed_allocation();
+    void                next_frame();
 
 private:
+    /**
+      Creates a new block.
+      */
+    pBlock              createBlockInternal( const Reference& ref, pGlBlock reuse );
+
+
     /**
       Attempts to allocate a new block.
       */
@@ -46,6 +58,16 @@ private:
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
     size_t _free_memory;
+
+
+    Signal::Intervals recently_created_;
+    unsigned created_count_;
+
+    /**
+     * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
+     */
+    bool failed_allocation_;
+    bool failed_allocation_prev_;
 
 public:
     static void test();

@@ -10,13 +10,14 @@ namespace Blocks {
 class GarbageCollector
 {
 public:
-    GarbageCollector(BlockCache::ptr cache);
+    GarbageCollector(BlockCache::const_ptr cache);
 
-    pGlBlock reuseOnOutOfMemory(unsigned frame_counter, const BlockLayout& block_layout);
-    void releaseAllNotUsedInThisFrame(unsigned frame_counter);
+    pBlock runOnce(unsigned frame_counter);
+    std::vector<pBlock> runUntilComplete(unsigned frame_counter);
+    std::vector<pBlock> releaseAllNotUsedInThisFrame(unsigned frame_counter);
 
 private:
-    BlockCache::ptr cache_;
+    BlockCache::const_ptr cache_;
 };
 
 } // namespace Block

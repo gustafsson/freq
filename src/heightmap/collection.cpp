@@ -1,12 +1,14 @@
 #include "collection.h"
 #include "glblock.h"
-#include "blockinstaller.h"
+#include "blockfactory.h"
+#include "blockinitializer.h"
 #include "blockquery.h"
 #include "blockcacheinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "reference_hash.h"
 #include "blocks/clearinterval.h"
+#include "blocks/garbagecollector.h"
 
 // Gpumisc
 //#include "GlException.h"
@@ -47,7 +49,8 @@ Collection::
 :   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_(),
     cache_( new BlockCache ),
-    block_installer_(new BlockInstaller(block_layout, visualization_params, cache_)),
+    block_factory_(new BlockFactory(block_layout, visualization_params)),
+    block_initializer_(new BlockInitializer(block_layout, visualization_params, cache_)),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -63,6 +66,13 @@ Collection::
 {
     INFO_COLLECTION TaskInfo ti("~Collection");
     clear();
+
+
+    for (const pBlock b: _to_remove)
+    {
+        if (!b.unique ())
+            TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b.use_count ());
+    }
 }
 
 
@@ -81,17 +91,10 @@ void Collection::
         TaskInfo("of which recent count %u", C.size ());
     }
 
-    BOOST_FOREACH (const BlockCache::cache_t::value_type& v, C)
+    for (const BlockCache::cache_t::value_type& v: C)
     {
-        pBlock b = v.second;
-        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
-        b->glblock.reset ();
-    }
-
-    BOOST_FOREACH (const pBlock b, _to_remove)
-    {
-        if (b->glblock && !b->glblock.unique ()) TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b->glblock.use_count ());
-        b->glblock.reset ();
+        if (!v.second.unique ())
+            _to_remove.push_back (v.second);
     }
 }
 
@@ -104,25 +107,7 @@ void Collection::
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")
             % __FUNCTION__ % cache.size ());
 
-    block_installer_.write ()->next_frame();
-
-    RegionFactory rr(block_layout_);
-
-    BlockCache::recent_t delayremoval;
-    BOOST_FOREACH(const toremove_t::value_type& b, _to_remove)
-    {
-        if (b.unique ())
-            TaskInfo(format("Release block %s") % rr (b->reference()));
-        else
-        {
-            delayremoval.push_back (b);
-        }
-    }
-    if (!delayremoval.empty ())
-        TaskInfo(format("Delaying removal of %d blocks") % delayremoval.size ());
-
-    _to_remove = delayremoval;
-
+    block_factory_->next_frame();
 
     boost::unordered_set<Reference> blocksToPoke;
 
@@ -189,6 +174,25 @@ void Collection::
             poke(i->second);
     }
 
+
+    runGarbageCollection(false);
+    decltype(_to_remove) delayremoval;
+
+    for(const toremove_t::value_type& b : _to_remove)
+    {
+        if (b.unique ())
+        {
+//            Log("Released block %s") % b->getRegion());
+            _up_for_grabs.push_back (b);
+        }
+        else
+        {
+            delayremoval.push_back (b);
+        }
+    }
+
+    _to_remove.swap (delayremoval);
+
     _frame_counter++;
 }
 
@@ -218,9 +222,59 @@ Reference Collection::
 
 
 pBlock Collection::
-        getBlock( const Reference& ref ) const
+        getBlock( const Reference& ref )
 {
-    return block_installer_.write ()->getBlock(ref, _frame_counter);
+    pBlock block = cache_->find( ref );
+    if (block)
+        return block;
+
+    pGlBlock reuse;
+    if (!_up_for_grabs.empty ())
+    {
+        reuse = _up_for_grabs.back ()->glblock;
+        _up_for_grabs.pop_back ();
+    }
+
+    block = block_factory_->createBlock (ref, reuse);
+
+    if (block)
+    {
+        block_initializer_->initBlock(block);
+        block->frame_number_last_used = _frame_counter;
+        EXCEPTION_ASSERT(block->visualization_params ());
+        cache_->insert (block);
+    }
+
+    return block;
+}
+
+
+int Collection::
+        runGarbageCollection(bool aggressive)
+{
+    int i = 0;
+    if (aggressive)
+    {
+        for (pBlock b : Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (_frame_counter))
+        {
+            removeBlock (b);
+            ++i;
+        }
+    }
+    else
+    {
+        for (pBlock b : Blocks::GarbageCollector(cache_).runUntilComplete (_frame_counter))
+        {
+            removeBlock (b);
+            ++i;
+        }
+//        while( pBlock released = Blocks::GarbageCollector(cache_).runOnce (_frame_counter))
+//        {
+//            removeBlock (released);
+//            ++i;
+//        }
+    }
+    return i;
 }
 
 
@@ -265,7 +319,7 @@ void Collection::
 bool Collection::
         failed_allocation()
 {
-    return block_installer_.write ()->failed_allocation();
+    return block_factory_->failed_allocation();
 }
 
 
@@ -319,7 +373,8 @@ void Collection::
 
     block_layout_ = v;
 
-    block_installer_.write ()->block_layout(v);
+    block_factory_.reset(new BlockFactory(block_layout_, visualization_params_));
+    block_initializer_.reset(new BlockInitializer(block_layout_, visualization_params_, cache_));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
@@ -331,15 +386,16 @@ void Collection::
         visualization_params(VisualizationParams::const_ptr v)
 {
     EXCEPTION_ASSERT( v );
+    if (visualization_params_ == v)
+        return;
 
-    if (visualization_params_ != v)
-    {
-        clear();
+    visualization_params_ = v;
 
-        visualization_params_ = v;
-    }
+    block_factory_.reset(new BlockFactory(block_layout_, visualization_params_));
+    block_initializer_.reset(new BlockInitializer(block_layout_, visualization_params_, cache_));
 
-    block_installer_.write ()->set_recently_created_all();
+    block_factory_->set_recently_created_all();
+    clear();
 }
 
 
@@ -373,7 +429,7 @@ Intervals Collection::
 Signal::Intervals Collection::
         recently_created()
 {
-    return block_installer_.write ()->recently_created();
+    return block_factory_->recently_created();
 }
 
 
@@ -382,7 +438,6 @@ void Collection::
 {
     cache_->erase(b->reference());
     _to_remove.push_back( b );
-    b->glblock.reset ();
 }
 
 } // namespace Heightmap
