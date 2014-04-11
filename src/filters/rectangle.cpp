@@ -192,7 +192,7 @@ void Rectangle::
         cp.write ()->addOperationAt(buffersource,at);
         cp.write ()->addOperationAt(rectangledesc,at);
         n.write ()->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( Signal::Processing::TargetNeeds::sleep (n,100) );
+        EXCEPTION_ASSERT( Signal::Processing::TargetNeeds::sleep (n,200) );
     }
 }
 

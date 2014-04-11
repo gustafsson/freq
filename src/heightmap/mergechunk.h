@@ -1,10 +1,12 @@
 #ifndef HEIGHTMAP_MERGECHUNK_H
 #define HEIGHTMAP_MERGECHUNK_H
 
-#include "tfr/chunkfilter.h"
 #include "signal/computingengine.h"
-#include "heightmap/ichunktoblock.h"
-#include "shared_state_traits_backtrace.h"
+#include "heightmap/blocks/iupdatejob.h"
+#include "tfr/chunkfilter.h"
+
+#include "shared_state.h"
+
 #include <vector>
 
 namespace Heightmap {
@@ -15,16 +17,7 @@ public:
 
     virtual ~MergeChunk() {}
 
-    /**
-     * @brief filterChunk is called from a worker thread.
-     * May be empty. Must be reentrant.
-     */
-    virtual void filterChunk(Tfr::ChunkAndInverse&) {}
-
-    /**
-     * @brief createChunkToBlock will be called from the UI thread. Must be reentrant.
-     */
-    virtual std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&) = 0;
+    virtual std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&) = 0;
 };
 
 

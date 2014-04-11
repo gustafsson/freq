@@ -14,9 +14,8 @@
 #include "filters/reassign.h"
 #include "filters/ridge.h"
 #include "heightmap/renderer.h"
-#include "heightmap/chunkblockfilter.h"
-#include "heightmap/blocks/chunkmerger.h"
-#include "heightmap/blocks/chunkmergerthread.h"
+#include "heightmap/blocks/updateproducer.h"
+#include "heightmap/blocks/updateconsumer.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -373,7 +372,7 @@ void RenderController::
 
         if (*newuseroptions != *useroptions)
           {
-            model()->chunk_merger.write ()->clear();
+            model()->block_update_queue->clear();
             tfr_map->transform_desc( newuseroptions );
           }
     }
@@ -407,9 +406,9 @@ void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc)
 {
     // Wire it up to a FilterDesc
-    Heightmap::ChunkBlockFilterDesc* cbfd;
+    Heightmap::Blocks::UpdateProducerDesc* cbfd;
     Tfr::ChunkFilterDesc::ptr kernel(cbfd
-            = new Heightmap::ChunkBlockFilterDesc(model()->chunk_merger, model()->tfr_mapping ()));
+            = new Heightmap::Blocks::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -467,7 +466,7 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    model()->chunk_merger.write ()->clear();
+    model()->block_update_queue->clear();
     model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
@@ -1021,14 +1020,22 @@ void RenderController::
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     view->glwidget->makeCurrent();
+    model()->renderer->render_settings.dpifactor = model()->project ()->mainWindow ()->devicePixelRatio ();
 
     view->graphicsview = new GraphicsView(view);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
-    //model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMerger);
-    model()->chunk_merger.reset (new Heightmap::Blocks::ChunkMergerThread(view->glwidget));
+    model()->block_update_queue.reset (new Heightmap::Blocks::UpdateQueue::ptr::element_type());
+
+    // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
+    int n_update_consumers = 1;
+    for (int i=0; i<n_update_consumers; i++)
+    {
+        auto uc = new Heightmap::Blocks::UpdateConsumer(view->glwidget, model()->block_update_queue);
+        connect(uc, SIGNAL(didUpdate()), view.data (), SLOT(redraw()));
+    }
 
     main->centralWidget()->layout()->setMargin(0);
     main->centralWidget()->layout()->addWidget(view->graphicsview);
@@ -1051,7 +1058,7 @@ void RenderController::
 void RenderController::
         deleteTarget()
 {
-//    model()->chunk_merger.reset ();
+//    model()->block_update_queue.reset ();
 //    model()->renderer.reset();
 //    clearCaches();
 }
@@ -1060,7 +1067,7 @@ void RenderController::
 void RenderController::
         clearCaches()
 {
-    // Canät do this, chunk_merger might have glblock instances
+    // Cannot do this, UpdateConsumer might have glblock instances
 //    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
 //        collection.write ()->clear();
 }

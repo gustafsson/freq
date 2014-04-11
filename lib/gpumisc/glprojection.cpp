@@ -23,6 +23,20 @@ void glProjection::
 }
 
 
+void glProjection::
+        setZoom(float zoom)
+{
+    this->zoom = zoom;
+}
+
+
+float glProjection::
+        getZoom()
+{
+    return zoom;
+}
+
+
 GLvector glProjection::
         gluProject(GLvector obj, bool *r)
 {
@@ -97,6 +111,9 @@ void glProjection::
 
     // time/freqPerPixel is how much difference in time/freq there can be when moving one pixel away from the
     // pixel that represents the closest point in ref
+
+    scalePerPixel *= zoom;
+    timePerPixel *= zoom;
 }
 
 

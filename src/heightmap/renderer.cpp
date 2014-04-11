@@ -9,7 +9,6 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/reference_hash.h"
-#include "heightmap/blocks/chunkmerger.h"
 #include "heightmap/render/renderregion.h"
 #include "sawe/configuration.h"
 #include "sawe/nonblockingmessagebox.h"
@@ -360,20 +359,22 @@ void Renderer::
     Render::RenderSet::references_t missing;
 
     {
-        auto cache = collection.raw ()->cache ().read ();
+        BlockCache::cache_t cache = collection.raw ()->cache ()->clone ();
         BOOST_FOREACH(const Reference& r, R) {
-            if (!cache->probe(r))
+            if (cache.find(r) == cache.end())
                 missing.insert (r);
         }
     }
 
     if (!missing.empty ())
     {
-        auto collectionp = collection.read ();
+        auto c = collection.write ();
 
         BOOST_FOREACH(const Reference& r, missing) {
             // Create blocks
-            collectionp->getBlock (r);
+            pBlock b = c->getBlock (r);
+            if (!b)
+                TaskInfo("Failed to create a block");
         }
     }
 }
@@ -384,12 +385,15 @@ void Renderer::
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
 
-    auto cache = collection.read ()->cache ().read ();
+    auto cache = collection.raw ()->cache ()->clone ();
 
     for (const Reference& r : R)
-    {
-        if (pBlock block = cache->probe( r ))
-        {
+      {
+        auto i = cache.find (r);
+        if (i != cache.end ())
+          {
+            pBlock block = i->second;
+
             block->update_glblock_data ();
             block->glblock->update_texture (
                         render_settings.draw_flat
@@ -399,8 +403,8 @@ void Renderer::
                             ?
                                 GlBlock::HeightMode_VertexTexture
                               : GlBlock::HeightMode_VertexBuffer );
-        }
-    }
+          }
+      }
 }
 
 
@@ -415,15 +419,19 @@ void Renderer::
         auto collection = this->collection.read ();
         int frame_number = collection->frame_number ();
         BlockLayout bl = collection->block_layout ();
-        auto cache = collection->cache ().write ();
         collection.unlock ();
+
+        // Copy the block list
+        auto cache = this->collection.raw ()->cache ()->clone ();
 
         Render::RenderBlock::Renderer block_renderer(&_render_block, bl);
 
-        BOOST_FOREACH(const Reference& r, R)
+        for(const Reference& r : R)
         {
-            if (pBlock block = cache->find( r ))
+            auto i = cache.find(r);
+            if (i != cache.end())
             {
+                pBlock block = i->second;
                 block_renderer.renderBlock(block);
                 block->frame_number_last_used = frame_number;
                 render_settings.drawn_blocks++;

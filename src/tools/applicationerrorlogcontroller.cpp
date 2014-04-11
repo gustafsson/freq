@@ -1,5 +1,6 @@
 #include "applicationerrorlogcontroller.h"
 
+#include "sawe/configuration.h"
 #include "support/sendfeedback.h"
 #include "sendfeedbackdialog.h"
 
@@ -212,23 +213,26 @@ void ApplicationErrorLogController::
         if( std::string const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x) )
             message = *mi;
 
-        TaskTimer ti2("Sending feedback");
-
-        // Place message before details
-        QString msg;
-        if (condition)
+        if (Sawe::Configuration::feature ("autofeedback"))
           {
-            msg += condition;
-            msg += "\n";
+            TaskTimer ti2("Sending feedback");
+
+            // Place message before details
+            QString msg;
+            if (condition)
+              {
+                msg += condition;
+                msg += "\n";
+              }
+
+            if (!message.empty ())
+                msg += QString::fromStdString (message + "\n\n");
+            msg += QString::fromStdString (str);
+
+            QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
+            if (!omittedMessage.isEmpty ())
+                TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
           }
-
-        if (!message.empty ())
-            msg += QString::fromStdString (message + "\n\n");
-        msg += QString::fromStdString (str);
-
-        QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
-        if (!omittedMessage.isEmpty ())
-            TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
       }
 }
 

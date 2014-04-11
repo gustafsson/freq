@@ -3,7 +3,7 @@
 
 #include "tfr/chunkfilter.h"
 #include "heightmap/block.h"
-#include "heightmap/chunkblockfilter.h"
+#include "heightmap/mergechunk.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -24,8 +24,7 @@ class StftBlockFilter: public Heightmap::MergeChunk
 public:
     StftBlockFilter(StftBlockFilterParams::ptr params);
 
-    void filterChunk(Tfr::ChunkAndInverse&);
-    std::vector<IChunkToBlock::ptr> createChunkToBlock(Tfr::ChunkAndInverse&);
+    std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&) override;
 
 private:
     StftBlockFilterParams::ptr params_;

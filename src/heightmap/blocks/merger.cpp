@@ -40,7 +40,7 @@ void Merger::
 
     int merge_levels = 10;
 
-    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_.read ()->cache().size(), merge_levels);
+    VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_->size(), merge_levels);
 
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
@@ -202,10 +202,9 @@ static void compare(float* expected, size_t sizeof_expected, DataStorage<float>:
 
 
 static void clearCache(BlockCache::ptr cache) {
-    while(!cache.read ()->cache().empty()) {
-        pBlock b = cache.read ()->cache().begin()->second;
-        b->glblock.reset();
-        cache.write ()->erase(b->reference ());
+    for (auto c : cache->clear ())
+    {
+        c.second->glblock.reset();
     }
 }
 
@@ -249,7 +248,7 @@ void Merger::
             const Region& r = block->getRegion();
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            cache.write ()->insert(block);
+            cache->insert(block);
         }
 
         Merger(cache).fillBlockFromOthers(block);
@@ -270,7 +269,7 @@ void Merger::
             const Region& r = block->getRegion();
             block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            cache.write ()->insert(block);
+            cache->insert(block);
         }
 
         Merger(cache).fillBlockFromOthers(block);

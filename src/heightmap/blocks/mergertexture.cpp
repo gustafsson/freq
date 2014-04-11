@@ -82,7 +82,7 @@ void MergerTexture::
 
     int merge_levels = 10;
 
-    { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_.read ()->cache().size(), merge_levels);
+    { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_->size(), merge_levels);
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
         VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
@@ -198,10 +198,9 @@ namespace Heightmap {
 namespace Blocks {
 
 static void clearCache(BlockCache::ptr cache) {
-    while(!cache.read ()->cache().empty()) {
-        pBlock b = cache.read ()->cache().begin()->second;
-        b->glblock.reset();
-        cache.write ()->erase(b->reference ());
+    for (auto c : cache->clear ())
+    {
+        c.second->glblock.reset();
     }
 }
 
@@ -259,7 +258,7 @@ void MergerTexture::
             block->update_glblock_data ();
             block->glblock->update_texture( GlBlock::HeightMode_Flat );
 
-            cache.write ()->insert(block);
+            cache->insert(block);
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -287,7 +286,7 @@ void MergerTexture::
             block->update_glblock_data ();
             block->glblock->update_texture( GlBlock::HeightMode_Flat );
 
-            cache.write ()->insert(block);
+            cache->insert(block);
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);

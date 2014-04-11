@@ -145,7 +145,7 @@ namespace Tools
 
 
         /**
-         * @brief postUpdate. Use 'Qt::DirectConnection'
+         * @brief postUpdate. Use 'Qt::AutoConnection'
          */
         void postUpdate();
 

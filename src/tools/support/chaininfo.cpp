@@ -144,9 +144,8 @@ void ChainInfo::
         TargetNeeds::ptr n = at->target_needs();
         cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        n.write ()->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
+        n.write ()->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( TargetNeeds::sleep (n, 12) );
         EXCEPTION_ASSERT( !c.hasWork () );
         QThread::msleep (1);

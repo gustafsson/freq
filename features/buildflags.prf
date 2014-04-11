@@ -33,6 +33,7 @@ macx {
         CONFIG -= warn_on
     }
 
+    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
     QMAKE_CXXFLAGS += -Wno-unused-parameter
     CCNAME = $$system(basename $$QMAKE_CC)
     equals(CCNAME, clang) {

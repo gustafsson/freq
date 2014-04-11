@@ -2,20 +2,16 @@
  * Include: shared_state.h, shared_state_mutex.h, shared_timed_mutex_polyfill.h
  * Library: C++11 only
  *
- * The shared_state class is a smart pointer that should guarantee thread-safe
- * access to objects, with
+ * The shared_state class is a smart pointer that guarantees thread-safe access
+ * to shared states in a multithreaded environment, with
  *
- *  - compile-time errors on missing locks,
- *  - run-time exceptions on lock timeout, from all racing threads
- *    participating in a deadlock.
+ *   - compile-time errors on write attempts from shared read-only locks and,
+ *   - run-time exceptions on lock timeouts
  *
+ * shared_state can be extended with type traits to get, for instance,
  *
- * It should be extensible enough to let clients add features without modifying
- * the source, like
- *
- *  - backtraces on failed locks,
- *  - run-time warnings on locks that are kept long enough to make it likely
- *    that other simultaneous lock attempts will fail.
+ *   - backtraces on deadlocks from all participating threads,
+ *   - warnings on locks that are held too long.
  *
  *
  * In a nutshell
@@ -116,15 +112,7 @@
 template<class T>
 class shared_state;
 
-
-#if defined(SHARED_STATE_NO_TIMEOUT) || defined(SHARED_STATE_NO_SHARED_MUTEX) || defined(SHARED_STATE_BOOST_MUTEX)
-    #include "shared_state_mutex.h"
-#else
-    #include "shared_timed_mutex_polyfill.h" // Only requires C++11, until std::shared_timed_mutex is available in C++14.
-    namespace shared_state_chrono = std::chrono;
-    typedef std_polyfill::shared_timed_mutex shared_state_mutex;
-#endif
-
+#include "shared_state_mutex.h"
 
 class lock_failed: public virtual std::exception {};
 
@@ -144,26 +132,25 @@ struct shared_state_traits_default {
     double timeout () { return 0.100; }
 
     /**
-     If 'timeout_failed' does not frow the attempted read_ptr or write_ptr will
+     If 'timeout_failed' does not throw the attempted read_ptr or write_ptr will
      become a null-pointer.
      */
-    template<class C>
-    void timeout_failed () {
-        throw typename shared_state<C>::lock_failed {};
+    template<class T>
+    void timeout_failed (T*) {
+        throw typename shared_state<T>::lock_failed {};
     }
 
     /**
-     was_locked and was_unlocked are called each time the mutex for this is
+     'locked' and 'unlocked' are called each time the mutex for this is
      instance is locked and unlocked, respectively. Regardless if the lock
-     is a read-only lock or a read-and-write lock.
+     is a read-only lock or a read-and-write lock. The lock is still active
+     when these functions are called.
      */
-    void was_locked () {}
+    template<class T>
+    void locked (T*) {}
 
-    /**
-     * was_unlocked is called in the destructor of the lock wrappers
-     * read_ptr/write_ptr, throwing from here will thus crash the program.
-     */
-    void was_unlocked () {}
+    template<class T>
+    void unlocked (T*) {}
 
     /**
      * @brief shared_state_mutex defines which mutex shared_state will use to
@@ -180,7 +167,7 @@ template<class C>
 struct shared_state_traits: public shared_state_traits_default {};
 
 template<class T>
-struct shared_state_traits_helper {
+struct shared_state_details_helper {
     template<typename C>
     static typename C::shared_state_traits test(typename C::shared_state_traits*);
 
@@ -191,12 +178,13 @@ struct shared_state_traits_helper {
 };
 
 template<typename T>
-struct shared_state_details: public shared_state_traits_helper<T>::type {
+struct shared_state_details: public shared_state_details_helper<T>::type {
     shared_state_details(T*p) : p(p) {}
     shared_state_details(shared_state_details const&) = delete;
     shared_state_details& operator=(shared_state_details const&) = delete;
     ~shared_state_details() { delete p; }
-    typedef typename shared_state_traits_helper<T>::type::shared_state_mutex shared_state_mutex;
+
+    typedef typename shared_state_details_helper<T>::type::shared_state_mutex shared_state_mutex;
     mutable shared_state_mutex lock;
 
     T* const p;
@@ -286,8 +274,7 @@ public:
         read_ptr(const read_ptr&) = delete;
         read_ptr& operator=(read_ptr const&) = delete;
 
-        ~read_ptr() {
-            // The destructor isn't called if the constructor throws.
+        ~read_ptr() throw(...) {
             unlock ();
         }
 
@@ -322,23 +309,36 @@ public:
             }
             else
             {
-                d->template timeout_failed<T> ();
+                d->template timeout_failed<T> (d->p);
                 // timeout_failed is expected to throw. But if it doesn't,
                 // make this behave as a null pointer
-                p = 0;
-                return; // don't call was_locked
+                return;
             }
 
             p = d->p;
-            d->was_locked();
+
+            try {
+                d->locked (p);
+            } catch (...) {
+                p = 0;
+                l->unlock_shared ();
+                throw;
+            }
         }
 
         void unlock() {
             if (p)
             {
+                try {
+                    d->unlocked (p);
+                } catch (...) {
+                    p = 0;
+                    l->unlock_shared ();
+                    throw;
+                }
+
                 p = 0;
                 l->unlock_shared ();
-                d->was_unlocked();
             }
         }
 
@@ -364,11 +364,9 @@ public:
                 d (vp.d),
                 p (0)
         {
-            if (!l->try_lock_shared ())
-                p = 0;
-            else {
+            if (l->try_lock_shared ()) {
                 p = d->p;
-                d->was_locked();
+                d->locked (p);
             }
         }
 
@@ -399,7 +397,7 @@ public:
         write_ptr(const write_ptr&) = delete;
         write_ptr& operator=(write_ptr const&) = delete;
 
-        ~write_ptr() {
+        ~write_ptr() throw(...) {
             unlock ();
         }
 
@@ -429,21 +427,34 @@ public:
             }
             else
             {
-                d->template timeout_failed<T> ();
-                p = 0;
+                d->timeout_failed(d->p);
                 return;
             }
 
             p = d->p;
-            d->was_locked();
+
+            try {
+                d->locked (p);
+            } catch (...) {
+                p = 0;
+                l->unlock ();
+                throw;
+            }
         }
 
         void unlock() {
             if (p)
             {
+                try {
+                    d->unlocked (p);
+                } catch (...) {
+                    p = 0;
+                    l->unlock ();
+                    throw;
+                }
+
                 p = 0;
                 l->unlock ();
-                d->was_unlocked();
             }
         }
 
@@ -471,11 +482,9 @@ public:
                 d (vp.d),
                 p (0)
         {
-            if (!l->try_lock ())
-                p = 0;
-            else {
+            if (l->try_lock ()) {
                 p = d->p;
-                d->was_locked();
+                d->locked (p);
             }
         }
 
@@ -528,7 +537,7 @@ public:
      * The shared_state is not released as long as the shared_ptr return from
      * traits is alive.
      */
-    std::shared_ptr<typename shared_state_traits_helper<T>::type> traits() const { return d; }
+    std::shared_ptr<typename shared_state_details_helper<T>::type> traits() const { return d; }
 
     explicit operator bool() const { return (bool)d; }
     bool operator== (const shared_state& b) const { return d == b.d; }
@@ -555,9 +564,23 @@ private:
     std::shared_ptr<details> d;
 };
 
-class shared_state_test {
-public:
-    static void test ();
-};
+
+template<class T>
+inline void swap(typename shared_state<T>::read_ptr& a, typename shared_state<T>::read_ptr& b)
+{
+    a.swap(b);
+}
+
+
+template<class T>
+inline void swap(typename shared_state<T>::write_ptr& a, typename shared_state<T>::write_ptr& b)
+{
+    a.swap(b);
+}
+
+
+namespace shared_state_test {
+    void test ();
+}
 
 #endif // SHARED_STATE_H

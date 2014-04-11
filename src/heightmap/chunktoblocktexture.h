@@ -5,7 +5,6 @@
 #include "tfr/chunkfilter.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
-#include "ichunktoblock.h"
 
 class GlTexture;
 
@@ -22,7 +21,7 @@ namespace Heightmap {
  * 2) Copying to VBO can be done from worker thread. Creating a texture from
  *    a VBO is fast. The VBO must be created in the GUI thread.
  */
-class ChunkToBlockTexture: public IChunkToBlock
+class ChunkToBlockTexture
 {
 public:
     ChunkToBlockTexture(Tfr::pChunk chunk);

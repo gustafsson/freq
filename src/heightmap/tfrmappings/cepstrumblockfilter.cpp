@@ -4,7 +4,8 @@
 #include "tfr/cepstrum.h"
 #include "tfr/stft.h"
 #include "heightmap/chunktoblock.h"
-#include "heightmap/chunkblockfilter.h"
+#include "heightmap/glblock.h"
+#include "heightmap/blocks/blockupdater.h"
 
 #include "demangle.h"
 
@@ -20,30 +21,17 @@ CepstrumBlockFilter::
 }
 
 
-void CepstrumBlockFilter::
-        filterChunk(Tfr::ChunkAndInverse&)
-{
-//    if (params_) {
-//        params_.write ();
-//    }
-}
-
-
-std::vector<IChunkToBlock::ptr> CepstrumBlockFilter::
-        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+std::vector<Blocks::IUpdateJob::ptr> CepstrumBlockFilter::
+        prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
     EXCEPTION_ASSERT( cepstrumchunk );
 
-    Heightmap::ChunkToBlock* chunktoblock;
-    IChunkToBlock::ptr chunktoblockp(chunktoblock = new Heightmap::ChunkToBlock(chunk.chunk));
-    //IChunkToBlock::Ptr chunktoblockp(new Heightmap::ChunkToBlockTexture);
+    // already normalized when return from Cepstrum.cpp
+    float normalization_factor = 1.f;
+    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor});
 
-    chunktoblock->normalization_factor = 1.f; // already normalized when return from Cepstrum.cpp
-
-    std::vector<IChunkToBlock::ptr> R;
-    R.push_back (chunktoblockp);
-    return R;
+    return std::vector<Blocks::IUpdateJob::ptr>{chunktoblockp};
 }
 
 
@@ -74,6 +62,8 @@ MergeChunk::ptr CepstrumBlockFilterDesc::
 #include "signal/computingengine.h"
 #include "detectgdb.h"
 
+#include <QApplication>
+#include <QGLWidget>
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -81,10 +71,15 @@ namespace TfrMappings {
 void CepstrumBlockFilter::
         test()
 {
+    std::string name = "CepstrumBlockFilter";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should update a block with cepstrum transform data.
     {
-        Timer t;
-
         Tfr::CepstrumDesc cepstrumdesc;
         Signal::Interval data = cepstrumdesc.requiredInterval (Signal::Interval(0,4), 0);
 
@@ -99,6 +94,9 @@ void CepstrumBlockFilter::
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::ptr vp(new VisualizationParams);
+        Tfr::FreqAxis fa; fa.setLinear (bl.sample_rate ());
+        vp->display_scale (fa);
+
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -114,6 +112,7 @@ void CepstrumBlockFilter::
         Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->glblock.reset( new GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -124,15 +123,12 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::ptr()) );
-        mc->filterChunk(cai);
-        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
-
-        float T = t.elapsed ();
-        if (DetectGdb::is_running_through_gdb ()) {
-            EXCEPTION_ASSERT_LESS(T, 3e-3);
-        } else {
-            EXCEPTION_ASSERT_LESS(T, 1e-3);
-        }
+        Blocks::BlockUpdater bu;
+        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+            bu.processJob(
+                    (Blocks::BlockUpdater::Job&)(*job),
+                    std::vector<pBlock>{block}
+                    );
     }
 }
 

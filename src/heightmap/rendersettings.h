@@ -41,6 +41,8 @@ public:
     bool vertex_texture;
     bool draw_flat;
     bool drawcrosseswhen0;
+    double dpifactor;
+    bool axes_border;
 };
 
 } // namespace Heightmap

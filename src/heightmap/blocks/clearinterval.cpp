@@ -17,11 +17,9 @@ ClearInterval::
 std::list<pBlock> ClearInterval::
         discardOutside(Signal::Interval& I)
 {
-    auto cache = cache_.write ();
-
     std::list<pBlock> discarded;
 
-    BlockCache::cache_t C = cache->cache();
+    BlockCache::cache_t C = cache_->clone();
     BOOST_FOREACH(BlockCache::cache_t::value_type itr, C)
     {
         pBlock block(itr.second);

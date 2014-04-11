@@ -18,16 +18,17 @@ public:
     struct shared_state_traits: shared_state_traits_default {
         double timeout() { return 0.500; }
 
-        void was_locked() {
+        template<class T>
+        void locked (T*) {
             verify_ = VerifyExecutionTime::start(0.250);
         }
 
-        void was_unlocked() {
-            verify_.reset();
+        template<class T>
+        void unlocked (T*) {
+            verify_.reset ();
         }
 
     private:
-        int verify_execution_time_ms() { return 250; }
         VerifyExecutionTime::ptr verify_;
     };
 

@@ -2,7 +2,7 @@
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunktoblocktexture.h"
 #include "heightmap/chunktoblockdegeneratetexture.h"
-#include "heightmap/chunkblockfilter.h"
+#include "heightmap/blocks/blockupdater.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
 #include "heightmap/glblock.h"
@@ -21,40 +21,22 @@ StftBlockFilter::
 }
 
 
-void StftBlockFilter::
-        filterChunk(Tfr::ChunkAndInverse& chunk)
+std::vector<Blocks::IUpdateJob::ptr> StftBlockFilter::
+        prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
+    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
+    EXCEPTION_ASSERT( stftchunk );
+
     if (params_) {
         Tfr::pChunkFilter freq_normalization = params_.read ()->freq_normalization;
         if (freq_normalization)
             (*freq_normalization)(chunk);
     }
-}
 
+    float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
+    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor});
 
-std::vector<IChunkToBlock::ptr> StftBlockFilter::
-        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
-{
-    Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
-    EXCEPTION_ASSERT( stftchunk );
-
-    IChunkToBlock::ptr chunktoblock;
-
-    try {
-        chunktoblock.reset(new Heightmap::ChunkToBlockDegenerateTexture(chunk.chunk));
-    } catch (const ExceptionAssert& x) {
-        try {
-            TaskTimer tt("ChunkToBlockDegenerateTexture failed. Trying CPU fallback");
-            chunktoblock.reset(new Heightmap::ChunkToBlock(chunk.chunk));
-        } catch(...) {
-            throw x;
-        }
-    }
-
-    chunktoblock->normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    std::vector<IChunkToBlock::ptr> R;
-    R.push_back (chunktoblock);
-    return R;
+    return std::vector<Blocks::IUpdateJob::ptr>{chunktoblockp};
 }
 
 
@@ -118,6 +100,9 @@ void StftBlockFilter::
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::ptr vp(new VisualizationParams);
+        Tfr::FreqAxis fa; fa.setLinear (bl.sample_rate ());
+        vp->display_scale (fa);
+
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -145,8 +130,12 @@ void StftBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new StftBlockFilter(StftBlockFilterParams::ptr()) );
-        mc->filterChunk(cai);
-        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
+        Blocks::BlockUpdater bu;
+        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+            bu.processJob(
+                    (Blocks::BlockUpdater::Job&)(*job),
+                    std::vector<pBlock>{block}
+                    );
 
         float T = t.elapsed ();
 //        if (DetectGdb::is_running_through_gdb ()) {

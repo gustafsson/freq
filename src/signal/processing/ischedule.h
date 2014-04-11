@@ -18,7 +18,7 @@ class Task;
 class ISchedule
 {
 public:
-    typedef shared_state<ISchedule> ptr;
+    typedef std::shared_ptr<ISchedule> ptr;
 
     virtual ~ISchedule() {}
 

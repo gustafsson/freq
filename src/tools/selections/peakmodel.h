@@ -44,7 +44,7 @@ private:
     typedef boost::unordered_map<Heightmap::Reference, PeakAreaP> PeakAreas;
 
     PeakAreas classifictions;
-    Heightmap::Collection const* c;
+    Heightmap::Collection* c;
 
     void findBorder();
     std::vector<BorderCoordinates> border_nodes;

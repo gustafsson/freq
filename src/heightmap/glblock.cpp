@@ -50,7 +50,9 @@ GlBlock::
     // unmap();
     if (_mapped_height)
     {
-        EXCEPTION_ASSERT( _mapped_height.unique() );
+        if ( !_mapped_height.unique() )
+            TaskInfo("!!! ~GlBlock: _mapped_height must be released before destroying GlBlock");
+
         _mapped_height.reset();
         TIME_GLBLOCK TaskInfo("_mapped_height.reset()");
     }
@@ -61,7 +63,12 @@ GlBlock::
     _mesh.reset();
     if (tt) tt->partlyDone();
 
-    delete_texture();
+    try {
+        delete_texture();
+    } catch (...) {
+        TaskInfo(boost::format("!!! ~GlBlock: delete_texture failed\n%s") % boost::current_exception_diagnostic_information());
+    }
+
     if (tt) tt->partlyDone();
 }
 

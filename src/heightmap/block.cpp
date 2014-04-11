@@ -13,7 +13,7 @@ namespace Heightmap {
 Block::
         Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
     :
-    frame_number_last_used(-1),
+    frame_number_last_used(unsigned(-1)>>1),
     block_data_(new BlockData),
     new_data_available_(false),
     ref_(ref),
@@ -31,7 +31,7 @@ Block::
 {
     if (glblock)
     {
-        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_layout_, visualization_params_));
+//        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_layout_, visualization_params_));
         glblock.reset();
     }
 }
