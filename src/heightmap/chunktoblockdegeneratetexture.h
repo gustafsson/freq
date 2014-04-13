@@ -25,7 +25,7 @@ public:
 private:
     pBlock block;
     boost::shared_ptr<GlBlock> glblock;
-    GlFrameBuffer fbo;
+    std::unique_ptr<GlFrameBuffer> fbo;
 };
 
 /**

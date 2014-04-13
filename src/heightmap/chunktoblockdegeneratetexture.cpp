@@ -34,28 +34,47 @@ int gl_max_texture_size() {
 }
 
 
+void grabToTexture(GlTexture::ptr t)
+{
+    glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
 BlockFbo::BlockFbo (pBlock block)
     :
       block(block),
-      glblock(block->glblock),
-      fbo(block->glblock->glTexture ()->getOpenGlTextureId ())
+      glblock(block->glblock)
 {
-    // Setup framebuffer rendering
+    // Create new texture
+//    glblock.reset(new GlBlock(block->block_layout(), block->getRegion().time (), block->getRegion().scale ()));
+    fbo.reset (new GlFrameBuffer(glblock->glTexture ()->getOpenGlTextureId ()));
+
+    // Copy from texture to own fbo
+//    {
+//        GlFrameBuffer fbo(block->glblock->glTexture ()->getOpenGlTextureId ());
+//        fbo.bindFrameBuffer ();
+//        grabToTexture(glblock->glTexture());
+//        fbo.unbindFrameBuffer ();
+//    }
 }
 
 
 BlockFbo::~BlockFbo()
 {
     try {
-        fbo.bindFrameBuffer ();
+//        fbo->bindFrameBuffer ();
+//        grabToTexture(block->glblock->glTexture());
+//        grabToTexture(block->glblock->glVertTexture());
+//        fbo->unbindFrameBuffer ();
 
-        // Copy to vertex texture from framebuffer
-        GlTexture::ptr t = glblock->glVertTexture ();
-        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        fbo.unbindFrameBuffer ();
+        // Discard previous glblock ... wrong thread ... could also grabToTexture into oldglblock
+        fbo->bindFrameBuffer ();
+        grabToTexture(glblock->glVertTexture());
+        fbo->unbindFrameBuffer ();
+//        glFinish ();
+//        block->glblock = glblock;
 
         block->discard_new_block_data ();
     } catch (...) {
@@ -63,11 +82,12 @@ BlockFbo::~BlockFbo()
     }
 }
 
-void BlockFbo::begin ()
+void BlockFbo::
+        begin ()
 {
     GlException_CHECK_ERROR ();
 
-    fbo.bindFrameBuffer ();
+    fbo->bindFrameBuffer ();
 //        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
 //        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
 
@@ -92,16 +112,16 @@ void BlockFbo::begin ()
     GlException_CHECK_ERROR ();
 
     // Disable unwanted capabilities when resampling a texture
-//    glPushAttrib(GL_ENABLE_BIT);
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
 }
 
-void BlockFbo::end ()
+
+void BlockFbo::
+        end ()
 {
-//    glPopAttrib();
-    fbo.unbindFrameBuffer ();
+    fbo->unbindFrameBuffer ();
 }
 
 
@@ -248,9 +268,13 @@ void ChunkToBlockDegenerateTexture::ShaderTexture::
 
         tex_width = gl_max_texture_size();
         int s = int_div_ceil (data_width, (tex_width-1));
-        tex_height = spo2g (data_height * s - 1);
+        tex_height = data_height * s;
 
-        // Out of open gl memory if this happens...
+        int N = data_width*data_height;
+        int M = tex_height*tex_width;
+        EXCEPTION_ASSERT_LESS_OR_EQUAL(N,M);
+
+        // Would run out of OpenGL memory if this happens...
         EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_height, gl_max_texture_size());
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);
@@ -258,18 +282,18 @@ void ChunkToBlockDegenerateTexture::ShaderTexture::
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 
-        if (0 == "GL_UNPACK_ROW_LENGTH doesn't play well with PBO")
+        if (0 == chunk_pbo_)
           {
+            // GL_UNPACK_ROW_LENGTH with a very large data_width doesn't play well with PBO
             TaskTimer tt("GL_UNPACK_ROW_LENGTH");
             GlException_SAFE_CALL( glPixelStorei(GL_UNPACK_ROW_LENGTH, data_width) );
 
             for (int i=0; i<s; ++i)
               {
                 int w = std::min(tex_width, data_width - (tex_width-1)*i);
-                int h = data_height;
                 int y = i*data_height;
                 int n = i*(tex_width-1);
-                glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, w, h, GL_RED, GL_FLOAT, p + n);
+                glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, w, data_height, GL_RED, GL_FLOAT, p + n);
               }
 
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -289,6 +313,18 @@ void ChunkToBlockDegenerateTexture::ShaderTexture::
           }
 
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+        // Clear remaining
+        int i = s-1;
+        int w = std::min(tex_width, data_width - (tex_width-1)*i);
+        int leftcols = tex_width - w;
+
+        if (leftcols > 0)
+          {
+            int leftdata = leftcols*data_height;
+            std::vector<float> zeros(leftdata);
+            glTexSubImage2D (GL_TEXTURE_2D, 0, w, i*data_height, leftcols, data_height, GL_RED, GL_FLOAT, &zeros[0]);
+          }
       }
     else
       {
@@ -376,7 +412,7 @@ ChunkToBlockDegenerateTexture::DrawableChunk::DrawableChunk(
 
 
 ChunkToBlockDegenerateTexture::DrawableChunk::
-    ~DrawableChunk()
+        ~DrawableChunk()
 {
     if (vbo_)
         glDeleteBuffers (1, &vbo_);
@@ -404,6 +440,7 @@ std::packaged_task<void()> ChunkToBlockDegenerateTexture::DrawableChunk::
     auto t = std::packaged_task<void()>([c, p, n](){
 //        Timer t;
         memcpy(c, p, n*sizeof(float));
+//        memset(c, 0, n*sizeof(float));
 //        TaskInfo("memcpy %s with %s/s", DataStorageVoid::getMemorySizeText(n*sizeof(float)).c_str (), DataStorageVoid::getMemorySizeText(n*sizeof(float) / t.elapsed ()).c_str ());
     });
 
