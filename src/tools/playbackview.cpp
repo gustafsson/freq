@@ -169,7 +169,11 @@ void PlaybackView::
 bool PlaybackView::
         drawPlaybackMarkerInEllipse()
 {
-    auto w = model->selection->current_selection().write ();
+    auto current_selection = model->selection->current_selection();
+    if (!current_selection)
+        return false;
+
+    auto w = current_selection.write ();
     Filters::Ellipse* e = dynamic_cast<Filters::Ellipse*>( w.get() );
 //Use Signal::Processing namespace
 //    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
