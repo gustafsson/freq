@@ -199,7 +199,7 @@ for configname in $configurations; do
 	  continue
 	fi
 
-    if [ "" != "$*" ] && [ -z "$( echo "${name} ${configname}" | eval egrep \"$*\" )" ]; then
+    if [ "" != "$*" ] && [ -z "$( echo "${name} ${configname}" | egrep $* )" ]; then
 	  echo -n "_"
 	  skipped=$(( skipped + 1 ))
       continue
