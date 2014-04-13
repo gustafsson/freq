@@ -72,7 +72,7 @@ void RenderAxes::
     float borderh = 12.5*1.1;
 
     float scale = render_settings.dpifactor;
-    scale *= 2;
+//    scale *= 2;
 
     g->setZoom (scale);
     borderw *= scale;
