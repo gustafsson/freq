@@ -173,7 +173,7 @@ void MergerTexture::
 bool MergerTexture::
         mergeBlock( const Block& inBlock )
 {
-    if (!inBlock.glblock->has_texture ())
+    if (!inBlock.glblock || !inBlock.glblock->has_texture ())
         return false;
 
     Region ri = inBlock.getRegion ();

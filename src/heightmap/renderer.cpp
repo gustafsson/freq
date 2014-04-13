@@ -395,7 +395,8 @@ void Renderer::
             pBlock block = i->second;
 
             block->update_glblock_data ();
-            block->glblock->update_texture (
+            if (block->glblock)
+                block->glblock->update_texture (
                         render_settings.draw_flat
                         ?
                             GlBlock::HeightMode_Flat
@@ -429,7 +430,7 @@ void Renderer::
         for(const Reference& r : R)
         {
             auto i = cache.find(r);
-            if (i != cache.end())
+            if (i != cache.end() && i->second && i->second->glblock)
             {
                 pBlock block = i->second;
                 block_renderer.renderBlock(block);
