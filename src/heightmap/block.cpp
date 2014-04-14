@@ -2,6 +2,7 @@
 #include "glblock.h"
 
 #include "tasktimer.h"
+#include "log.h"
 
 
 //#define BLOCK_INFO
@@ -49,6 +50,9 @@ shared_state<BlockData>::write_ptr Block::
 void Block::
         discard_new_block_data()
 {
+    if (new_data_available_) {
+        BLOCK_INFO Log("Discarded glblock %s %s") % block_interval_ % region_;
+    }
     new_data_available_ = false;
 }
 

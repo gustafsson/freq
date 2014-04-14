@@ -35,6 +35,7 @@
 // gpumisc
 #include "demangle.h"
 #include "computationkernel.h"
+#include "log.h"
 
 // Qt
 #include <QSlider>
@@ -423,6 +424,7 @@ void RenderController::
     // Tfr::TransformOperationDesc defines a current transformDesc
     // VisualizationParams also defines a current transformDesc
 
+    std::string oldTransform_name = currentTransform() ? vartype(*currentTransform()) : "(null)";
     bool wasCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
 
     model()->set_filter (adapter);
@@ -466,7 +468,23 @@ void RenderController::
         c.wavelet_fast_time_support( wavelet_fast_time_support );
     }
 
-    model()->block_update_queue->clear();
+    // abort target needs
+    auto needs = model ()->target_marker ()->target_needs ();
+    auto step = needs->step ().lock (); // lock weak_ptr
+    needs->updateNeeds (Signal::Intervals());
+    int sleep_ms = 1000;
+    Timer t;
+    for (int i=0; i<sleep_ms && !Signal::Processing::Step::sleepWhileTasks (step.read(), 1); i++)
+    {
+        model ()->block_update_queue->clear ();
+    }
+
+    if (!Signal::Processing::Step::sleepWhileTasks (step.read(), 1))
+        Log("%s didn't finish in %g ms, changing anyway to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
+    else
+        Log("%s finished in %g ms, changing to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
+
+    // then change the tfr_mapping
     model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );
 
     view->emitTransformChanged();
