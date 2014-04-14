@@ -99,15 +99,22 @@ RESAMPLE_CALL void draw_waveform_elem(
 
     typedef typename Writer::Position WritePos;
     typedef typename Writer::Size WriteSize;
+
     WriteSize matrix_sz = out_waveform_matrix.numberOfElements();
+    if (writePos_x >= matrix_sz.width)
+        return;
 
     int readPos1 = (writePos_x + writeposoffs) * blob;
     int readPos2 = (writePos_x + writeposoffs + 1) * blob;
+    int readCenter = (readPos1+readPos2)/2;
 
-    if (writePos_x < 0 || readPos1 < 0)
+    if (readCenter < 0)
         return;
-    if (writePos_x >= matrix_sz.width || readPos2 >= readstop)
+    if (readCenter >= readstop)
         return;
+
+    if (readPos1 < 0) readPos1 = 0;
+    if (readPos2 >= readstop) readPos2 = readstop-1;
 
     float maxy = 0;
     float miny = matrix_sz.height;
@@ -186,17 +193,19 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     typedef typename Writer::Position WritePos;
     typedef typename Writer::Size WriteSize;
     WriteSize matrix_sz = out_waveform_matrix.numberOfElements();
+    if( writePos_xu >= matrix_sz.width )
+        return;
 
-    float writePos_x = writePos_xu + writeposoffs;
-    int readPos = writePos_x * blob;
-    float px1_0 = (writePos_x-1) * blob - readPos;
-    float px2_0 = (writePos_x+1) * blob - readPos;
+    float readPos_x = writePos_xu + writeposoffs;
+    int readPos = readPos_x * blob;
+    float px1_0 = (readPos_x-1) * blob - readPos;
+    float px2_0 = (readPos_x+1) * blob - readPos;
     float px1 = px1_0;
     float px2 = px2_0;
     if (px2>1.f) { px2 = 1.f; }
     if (px1<0.f) { px1 = 0.f; }
 
-    if( writePos_x >= matrix_sz.width || readPos >= readstop )
+    if (readPos < 0 || readPos >= readstop )
         return;
 
     float v1 = in_waveform.read( readPos );
@@ -214,10 +223,11 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
     float dy = (px2_0-px1_0)*y_per_x;
     float my = fy1 - (px1-px1_0)*y_per_x + dy/2;
 
+    dy = fabsf(dy);
     //float dy = fy2-fy1;
     //float my = 0.5f*(fy2+fy1);
 
-    if (fabsf(dy) < 6)
+    if (dy < 6)
     {
         fy1 = my-3;
         fy2 = my+3;
@@ -239,19 +249,17 @@ RESAMPLE_CALL void draw_waveform_with_lines_elem(
         fy2 += fy1;
         fy1 = fy2 - fy1;
         fy2 = fy2 - fy1;
-
-        dy *= -1;
     }
 
     int y1 = (int)fy1;
     int y2 = (int)ceil(fy2);
 
     float invdy = 2.f/dy;
-    for (int y=y1; y<=y2; ++y)
+    for (int y=y1; y<y2; ++y)
     {
         float py = y;
         py = fmax(0.f, 1.f - fabsf(my - y)*invdy);
-        out_waveform_matrix.ref( WritePos( writePos_x, y ) ) = e<typename Writer::T>(A*py);
+        out_waveform_matrix.ref( WritePos( writePos_xu, y ) ) = e<typename Writer::T>(A*py);
     }
 }
 

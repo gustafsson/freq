@@ -29,7 +29,7 @@ void WaveformBlockUpdater::
 
     // todo should substract blobsize/2
     Region r = block->getRegion ();
-    float writeposoffs = (b->start () - r.a.time)*block->sample_rate ();
+    float writeposoffs = (r.a.time - b->start ())*block->sample_rate ();
     float y0 = r.a.scale*2-1;
     float yscale = r.scale ()*2;
     ::drawWaveform(

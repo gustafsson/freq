@@ -52,10 +52,10 @@ Signal::Interval WaveformRepresentationDesc::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
     Signal::Intervals J = I;
-    J.enlarge (1000);
+    J = J.enlarge (1);
 
     if (expectedOutput)
-        *expectedOutput = I;
+        *expectedOutput = J.spannedInterval ();
 
     return J.spannedInterval ();
 }
