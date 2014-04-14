@@ -24,7 +24,7 @@ class ApplicationErrorLogController : public QObject
 public:
     ~ApplicationErrorLogController();
 
-    static void registerException(boost::exception_ptr x);
+    static void registerException(boost::exception_ptr x) noexcept;
 
     static void registerMainWindow(QMainWindow* window);
 

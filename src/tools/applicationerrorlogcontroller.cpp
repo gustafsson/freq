@@ -96,7 +96,7 @@ ApplicationErrorLogController* ApplicationErrorLogController::
 
 
 void ApplicationErrorLogController::
-        registerException(boost::exception_ptr e)
+        registerException(boost::exception_ptr e) noexcept
 {
     if (!e)
         return;

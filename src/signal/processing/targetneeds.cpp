@@ -34,9 +34,7 @@ TargetNeeds::
     try {
         updateNeeds(Signal::Intervals());
     } catch (...) {
-        try {
-            Tools::ApplicationErrorLogController::registerException (boost::current_exception());
-        } catch (...) {}
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception());
     }
 }
 
