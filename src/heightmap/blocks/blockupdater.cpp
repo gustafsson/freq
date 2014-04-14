@@ -10,6 +10,8 @@
 //#define INFO
 #define INFO if(0)
 
+using namespace std;
+
 namespace Heightmap {
 namespace Blocks {
 
@@ -58,6 +60,82 @@ BlockUpdater::
         ~BlockUpdater()
 {
     sync ();
+}
+
+
+void BlockUpdater::
+        processJobs( const std::vector<UpdateQueue::Job>& jobs )
+{
+    typedef shared_ptr<ChunkToBlockDegenerateTexture::DrawableChunk> pDrawableChunk;
+    ChunkToBlockDegenerateTexture::BlockFbos& block_fbos = chunktoblock_texture.block_fbos ();
+
+    std::map<pBlock, std::queue<pDrawableChunk>> chunks_per_block;
+
+    {
+//                TaskTimer tt("Preparing %d jobs, span %s", jobs.size (), span.toString ().c_str ());
+
+      for (const UpdateQueue::Job& job : jobs)
+        {
+          if (!job.updatejob)
+              continue;
+
+          if (auto bujob = dynamic_cast<const BlockUpdater::Job*>(job.updatejob.get ()))
+            {
+              auto drawable = processJob (*bujob, job.intersecting_blocks);
+              pDrawableChunk d(new ChunkToBlockDegenerateTexture::DrawableChunk(move(drawable)));
+
+//                        chunks_with_blocks.push_back (chunk_with_blocks_t(d, job.intersecting_blocks));
+              for (pBlock b : job.intersecting_blocks)
+                  chunks_per_block[b].push(d);
+            }
+        }
+    }
+
+  if (!chunks_per_block.empty ())
+    {
+//                TaskTimer tt("Updating %d blocks", chunks_per_block.size ());
+      // draw all chunks who share the same block in one go
+      for (map<pBlock, queue<pDrawableChunk>>::value_type& p : chunks_per_block)
+        {
+          shared_ptr<BlockFbo> fbo = block_fbos[p.first];
+          if (!fbo)
+              continue;
+
+//                    TaskTimer tt(boost::format("Drawing %d chunks into block %s")
+//                                 % p.second.size() % p.first->getRegion());
+
+          fbo->begin ();
+
+          while (!p.second.empty ())
+            {
+              pDrawableChunk c {move(p.second.front ())};
+              p.second.pop ();
+              c->draw ();
+            }
+
+          fbo->end ();
+        }
+    }
+
+//            if (!chunks_with_blocks.empty ())
+//              {
+//                TaskTimer tt("Updating from %d chunks", chunks_with_blocks.size ());
+//                for (auto& c : chunks_with_blocks)
+//                  {
+//                    for (auto& b : c.second)
+//                      {
+//                        shared_ptr<BlockFbo> fbo = block_fbos[b];
+//                        if (!fbo)
+//                            continue;
+//                        fbo->begin ();
+//                        c.first->draw();
+//                        fbo->end ();
+//                      }
+//                  }
+//              }
+
+//            chunks_with_blocks.clear ();
+  sync ();
 }
 
 

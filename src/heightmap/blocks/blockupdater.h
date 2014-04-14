@@ -35,13 +35,14 @@ public:
     BlockUpdater& operator=(const BlockUpdater&) = delete;
     ~BlockUpdater();
 
+    void processJobs( const std::vector<UpdateQueue::Job>& jobs );
     ChunkToBlockDegenerateTexture::DrawableChunk processJob(
             const Job& job,
             const std::vector<pBlock>& intersecting_blocks );
-    ChunkToBlockDegenerateTexture::BlockFbos&      block_fbos() { return chunktoblock_texture.block_fbos (); }
-    void sync();
 
 private:
+    void sync();
+
     JustMisc::thread_pool memcpythread;
     ChunkToBlockDegenerateTexture chunktoblock_texture;
 //    ChunkToBlock chunktoblock;

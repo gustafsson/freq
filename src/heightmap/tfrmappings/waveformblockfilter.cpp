@@ -8,13 +8,30 @@
 #include "demangle.h"
 #include "log.h"
 
+using namespace std;
+
 namespace Heightmap {
+using namespace Blocks;
+
 namespace TfrMappings {
 
 
 void WaveformBlockUpdater::
+        processJobs( const vector<UpdateQueue::Job>& jobs )
+{
+    for (const UpdateQueue::Job& job : jobs)
+      {
+        if (auto bujob = dynamic_cast<const TfrMappings::WaveformBlockUpdater::Job*>(job.updatejob.get ()))
+          {
+            processJob (*bujob, job.intersecting_blocks);
+          }
+      }
+}
+
+
+void WaveformBlockUpdater::
         processJob( const WaveformBlockUpdater::Job& job,
-                    const std::vector<pBlock>& intersecting_blocks )
+                    const vector<pBlock>& intersecting_blocks )
 {
     for (pBlock block : intersecting_blocks)
         processJob (job, block);
@@ -47,11 +64,11 @@ void WaveformBlockUpdater::
 }
 
 
-std::vector<Blocks::IUpdateJob::ptr> WaveformBlockFilter::
+vector<Blocks::IUpdateJob::ptr> WaveformBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
     Blocks::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job{chunk.input});
-    return std::vector<Blocks::IUpdateJob::ptr>{ctb};
+    return vector<Blocks::IUpdateJob::ptr>{ctb};
 }
 
 
@@ -101,7 +118,7 @@ void WaveformBlockFilter::
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
-            max_sample_size.time = 2.f*std::max(1.f, buffer->length ())/bl.texels_per_row ();
+            max_sample_size.time = 2.f*max(1.f, buffer->length ())/bl.texels_per_row ();
             max_sample_size.scale = 1.f/bl.texels_per_column ();
             ref.log2_samples_size = Reference::Scale(
                         floor_log2( max_sample_size.time ),
@@ -126,7 +143,7 @@ void WaveformBlockFilter::
 
         WaveformBlockUpdater().processJob(
                     (WaveformBlockUpdater::Job&)(*job),
-                    std::vector<pBlock>{block}
+                    vector<pBlock>{block}
                     );
 
         float T = t.elapsed ();

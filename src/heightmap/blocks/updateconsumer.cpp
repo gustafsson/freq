@@ -1,15 +1,17 @@
 #include "updateconsumer.h"
 #include "updatequeue.h"
 
-#include "tasktimer.h"
-#include "timer.h"
 #include "tools/applicationerrorlogcontroller.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "tfr/chunk.h"
 
-#include <numeric>
+#include "tasktimer.h"
+#include "timer.h"
+#include "log.h"
 
 #include <QGLWidget>
+
+#include <numeric>
 
 //#define INFO
 #define INFO if(0)
@@ -77,22 +79,14 @@ void UpdateConsumer::
       {
         BlockUpdater block_updater;
 
-        typedef shared_ptr<ChunkToBlockDegenerateTexture::DrawableChunk> pDrawableChunk;
-
-//        typedef pair<pDrawableChunk,vector<pBlock>> chunk_with_blocks_t;
-//        vector<chunk_with_blocks_t> chunks_with_blocks;
-
-        ChunkToBlockDegenerateTexture::BlockFbos& block_fbos = block_updater.block_fbos ();
-
         while (!isInterruptionRequested ())
           {
             std::unique_ptr<TaskTimer> tt;
-//            if (update_queue->empty ())
-//                tt.reset (new TaskTimer("Waiting for updates"));
+            INFO if (update_queue->empty ())
+                tt.reset (new TaskTimer("Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
             queue<UpdateQueue::Job> jobqueue = update_queue->clear ();
-            map<pBlock, queue<pDrawableChunk>> chunks_per_block;
 
             Timer t;
 
@@ -106,103 +100,36 @@ void UpdateConsumer::
                 jobqueue.pop ();
               }
 
-            Signal::Intervals span = accumulate(jobs.begin (), jobs.end (), Signal::Intervals(),
-                    [](Signal::Intervals& I, const UpdateQueue::Job& j) {
-                        if (!j.updatejob)
-                            return I;
-                        return I|=j.updatejob->getCoveredInterval();
-                    });
+            block_updater.processJobs (jobs);
+            TfrMappings::WaveformBlockUpdater().processJobs (jobs);
 
+            if (!isInterruptionRequested ())
               {
-//                TaskTimer tt("Preparing %d jobs, span %s", jobs.size (), span.toString ().c_str ());
-
-                for (const UpdateQueue::Job& job : jobs)
-                  {
-                    if (isInterruptionRequested ())
-                        break;
-                    if (!job.updatejob)
-                        continue;
-
-                    if (auto bujob = dynamic_cast<const BlockUpdater::Job*>(job.updatejob.get ()))
-                      {
-                        auto drawable = block_updater.processJob (*bujob, job.intersecting_blocks);
-                        pDrawableChunk d(new ChunkToBlockDegenerateTexture::DrawableChunk(move(drawable)));
-
-//                        chunks_with_blocks.push_back (chunk_with_blocks_t(d, job.intersecting_blocks));
-                        for (pBlock b : job.intersecting_blocks)
-                            chunks_per_block[b].push(d);
-                      }
-
-                    if (auto bujob = dynamic_cast<const TfrMappings::WaveformBlockUpdater::Job*>(job.updatejob.get ()))
-                      {
-                        TfrMappings::WaveformBlockUpdater().processJob (*bujob, job.intersecting_blocks);
-                      }
-                  }
+                emit didUpdate ();
               }
-
-            if (!chunks_per_block.empty ())
-              {
-//                TaskTimer tt("Updating %d blocks", chunks_per_block.size ());
-                // draw all chunks who share the same block in one go
-                for (map<pBlock, queue<pDrawableChunk>>::value_type& p : chunks_per_block)
-                  {
-                    if (isInterruptionRequested ())
-                        break;
-
-                    shared_ptr<BlockFbo> fbo = block_fbos[p.first];
-                    if (!fbo)
-                        continue;
-
-//                    TaskTimer tt(boost::format("Drawing %d chunks into block %s")
-//                                 % p.second.size() % p.first->getRegion());
-
-                    fbo->begin ();
-
-                    while (!p.second.empty ())
-                      {
-                        pDrawableChunk c {move(p.second.front ())};
-                        p.second.pop ();
-                        c->draw ();
-                      }
-
-                    fbo->end ();
-                  }
-              }
-
-//            if (!chunks_with_blocks.empty ())
-//              {
-//                TaskTimer tt("Updating from %d chunks", chunks_with_blocks.size ());
-//                for (auto& c : chunks_with_blocks)
-//                  {
-//                    for (auto& b : c.second)
-//                      {
-//                        shared_ptr<BlockFbo> fbo = block_fbos[b];
-//                        if (!fbo)
-//                            continue;
-//                        fbo->begin ();
-//                        c.first->draw();
-//                        fbo->end ();
-//                      }
-//                  }
-//              }
-
-//            chunks_with_blocks.clear ();
 
             for (UpdateQueue::Job& j : jobs)
                 j.promise.set_value ();
 
-            if (!isInterruptionRequested ())
-              {
-//                TaskTimer tt("sync");
-                block_updater.sync ();
-                emit didUpdate ();
-              }
+            INFO
+            {
+                Signal::Intervals span = accumulate(jobs.begin (), jobs.end (), Signal::Intervals(),
+                        [](Signal::Intervals& I, const UpdateQueue::Job& j) {
+                            if (!j.updatejob)
+                                return I;
+                            return I|=j.updatejob->getCoveredInterval();
+                        });
 
-            if (false)
-            TaskInfo("Updated %d -> %d. %s. %.0f samples/s",
-                     jobs.size (), chunks_per_block.size (),
-                     span.toString ().c_str (),
-                     span.count ()/t.elapsed ());
+                std::set<pBlock> blocks;
+                for (auto& j : jobs)
+                    if (j.updatejob)
+                        for (pBlock b : j.intersecting_blocks)
+                            blocks.insert(b);
+
+                Log("Updated %d chunks -> %d blocks. %s. %.0f samples/s")
+                         % jobs.size () % blocks.size ()
+                         % span % (span.count ()/t.elapsed ());
+            }
         }
       }
     catch (UpdateQueue::abort_exception&)

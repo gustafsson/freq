@@ -4,6 +4,7 @@
 #include "tfr/chunkfilter.h"
 #include "heightmap/block.h"
 #include "heightmap/mergechunk.h"
+#include "heightmap/blocks/updatequeue.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -25,6 +26,7 @@ public:
     };
 
 
+    void processJobs( const std::vector<Heightmap::Blocks::UpdateQueue::Job>& jobs );
     void processJob( const Job& job, const std::vector<pBlock>& intersecting_blocks );
     void processJob( const Job& job, pBlock block );
 };
