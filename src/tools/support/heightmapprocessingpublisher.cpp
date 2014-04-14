@@ -50,6 +50,8 @@ void HeightmapProcessingPublisher::
     else
         needed_samples = needed_samples.fetchInterval (1, center);
 
+    update_size = std::min(update_size, (UnsignedIntervalType)Interval::IntervalType_MAX);
+
     TIME_PAINTGL_DETAILS TaskInfo(boost::format(
             "RenderView needed_samples = %s, "
             "things_to_add = %s, center = %d, size = %d")
