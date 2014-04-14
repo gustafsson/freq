@@ -38,7 +38,6 @@ Tools::RenderController* WaveformController::
 void WaveformController::
         receiveSetTransform_DrawnWaveform(bool enabled)
 {
-    TaskInfo(boost::format("enabled = %s") %enabled);
     Tools::RenderController* r = render_controller();
 
     ::Ui::MainWindow* ui = r->getItems();

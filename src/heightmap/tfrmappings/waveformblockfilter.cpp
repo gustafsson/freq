@@ -6,6 +6,7 @@
 #include "tfr/drawnwaveformkernel.h"
 
 #include "demangle.h"
+#include "log.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -13,16 +14,17 @@ namespace TfrMappings {
 
 void WaveformBlockUpdater::
         processJob( const WaveformBlockUpdater::Job& job,
-                    std::vector<pBlock> intersecting_blocks )
+                    const std::vector<pBlock>& intersecting_blocks )
 {
     for (pBlock block : intersecting_blocks)
-        mergeChunk (job.b, block);
+        processJob (job, block);
 }
 
 
 void WaveformBlockUpdater::
-        mergeChunk( Signal::pMonoBuffer b, pBlock block )
+        processJob( const WaveformBlockUpdater::Job& job, pBlock block )
 {
+    Signal::pMonoBuffer b = job.b;
     float blobsize = b->sample_rate() / block->sample_rate();
 
     int readstop = b->number_of_samples ();
@@ -32,9 +34,11 @@ void WaveformBlockUpdater::
     float writeposoffs = (r.a.time - b->start ())*block->sample_rate ();
     float y0 = r.a.scale*2-1;
     float yscale = r.scale ()*2;
+    auto d = block->block_data ();
+
     ::drawWaveform(
             b->waveform_data(),
-            block->block_data ()->cpu_copy,
+            d->cpu_copy,
             blobsize,
             readstop,
             yscale,
@@ -46,7 +50,7 @@ void WaveformBlockUpdater::
 std::vector<Blocks::IUpdateJob::ptr> WaveformBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
-    Blocks::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job(chunk.input));
+    Blocks::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job{chunk.input});
     return std::vector<Blocks::IUpdateJob::ptr>{ctb};
 }
 

@@ -25,13 +25,8 @@ public:
     };
 
 
-    void begin();
-    void processJob( const Job& job,
-                     std::vector<pBlock> intersecting_blocks );
-    void end();
-
-private:
-    void mergeChunk( Signal::pMonoBuffer b, pBlock block );
+    void processJob( const Job& job, const std::vector<pBlock>& intersecting_blocks );
+    void processJob( const Job& job, pBlock block );
 };
 
 

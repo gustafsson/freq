@@ -12,6 +12,10 @@
 
 #include <boost/foreach.hpp>
 
+
+//#define DEBUG_INFO
+#define DEBUG_INFO if(0)
+
 using namespace boost;
 
 namespace Heightmap {
@@ -45,7 +49,7 @@ void UpdateProducer::
         return;
     }
 
-//    TaskTimer tt(boost::format("UpdateProducer %s") % chunk_interval);
+    DEBUG_INFO TaskTimer tt(boost::format("Channel %d. %s updating %s") % pchunk.channel % vartype(*merge_chunk_.get ()) % chunk_interval);
     std::vector<std::future<void>> F;
 
     for (Blocks::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk))
