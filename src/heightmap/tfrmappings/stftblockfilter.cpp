@@ -34,7 +34,7 @@ std::vector<Blocks::IUpdateJob::ptr> StftBlockFilter::
     }
 
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor});
+    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor, 0});
 
     return std::vector<Blocks::IUpdateJob::ptr>{chunktoblockp};
 }

@@ -18,6 +18,9 @@ public:
     virtual ~MergeChunk() {}
 
     virtual std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&) = 0;
+    virtual std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse& cai, const std::vector<pBlock>&) {
+        return prepareUpdate (cai);
+    }
 };
 
 

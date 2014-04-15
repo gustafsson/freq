@@ -17,6 +17,7 @@ public:
     CwtBlockFilter(ComplexInfo complex_info);
 
     std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&) override;
+    std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&, const std::vector<pBlock>&) override;
 
 private:
     ComplexInfo complex_info_;

@@ -52,7 +52,7 @@ void UpdateProducer::
     DEBUG_INFO TaskTimer tt(boost::format("Channel %d. %s updating %s") % pchunk.channel % vartype(*merge_chunk_.get ()) % chunk_interval);
     std::vector<std::future<void>> F;
 
-    for (Blocks::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk))
+    for (Blocks::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk, intersecting_blocks))
     {
         // Use same or different intersecting_blocks
 //        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);

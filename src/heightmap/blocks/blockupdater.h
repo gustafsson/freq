@@ -21,7 +21,7 @@ class BlockUpdater
 public:
     class Job: public IUpdateJob {
     public:
-        Job(Tfr::pChunk chunk, float normalization_factor);
+        Job(Tfr::pChunk chunk, float normalization_factor, float largest_fs=0);
 
         Tfr::pChunk chunk;
         float *p;
