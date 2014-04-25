@@ -440,7 +440,6 @@ std::packaged_task<void()> ChunkToBlockDegenerateTexture::DrawableChunk::
     auto t = std::packaged_task<void()>([c, p, n](){
 //        Timer t;
         memcpy(c, p, n*sizeof(float));
-//        memset(c, 0, n*sizeof(float));
 //        TaskInfo("memcpy %s with %s/s", DataStorageVoid::getMemorySizeText(n*sizeof(float)).c_str (), DataStorageVoid::getMemorySizeText(n*sizeof(float) / t.elapsed ()).c_str ());
     });
 
