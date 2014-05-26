@@ -51,7 +51,14 @@ public:
 
     void                        registerTask(Task* taskid, Signal::Interval expected_output);
     void                        finishTask(Task* taskid, Signal::pBuffer result);
-    static void                 sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms);
+
+    /**
+     * @brief sleepWhileTasks wait until all created tasks for this step has been finished.
+     * @param sleep_ms Sleep indefinitely if sleep_ms < 0.
+     * @return true if all tasks where finished within sleep_ms, false otherwise.
+     */
+    static bool                 sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms);
+    static bool                 sleepWhileTasks(Step::ptr::read_ptr&& step, int sleep_ms);
 
     /**
      * @brief readFixedLengthFromCache should read a buffer from the cache.

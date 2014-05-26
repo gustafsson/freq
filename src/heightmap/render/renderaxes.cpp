@@ -71,10 +71,17 @@ void RenderAxes::
     float borderw = 12.5*1.1;
     float borderh = 12.5*1.1;
 
+    float scale = render_settings.dpifactor;
+//    scale *= 2;
+
+    g->setZoom (scale);
+    borderw *= scale;
+    borderh *= scale;
+
     float w = borderw/screen_width, h=borderh/screen_height;
     frustum_clip->update(w, h);
 
-    if (0) { // 1 gray draw overlay
+    if (render_settings.axes_border) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
         glPushMatrixContext push_proj(GL_PROJECTION);
 
@@ -168,15 +175,15 @@ void RenderAxes::
 
         // decide if this side is a t or f axis
         GLvector::T timePerPixel, scalePerPixel;
-        gl_projection->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
+        g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
 
         bool taxis = fabsf(v0[0]*scalePerPixel) > fabsf(v0[2]*timePerPixel);
 
 
         // decide in which direction to traverse this edge
         GLvector::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
-        gl_projection->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
-        gl_projection->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
+        g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
+        g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
 
         double dscale = 0.001;
         double hzDelta1= fabs(fa.getFrequencyT( p1[2] + v0[2]*dscale ) - fa.getFrequencyT( p1[2] ));
@@ -197,7 +204,7 @@ void RenderAxes::
 
 
         GLvector::T timePerPixel_closest, scalePerPixel_closest;
-        gl_projection->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
+        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
 
         if (render_settings.draw_axis_at0==-1)
         {
@@ -704,6 +711,8 @@ void RenderAxes::
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
+
+    g->setZoom (1);
 }
 
 

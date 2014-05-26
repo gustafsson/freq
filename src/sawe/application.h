@@ -47,7 +47,7 @@ public:
 
 signals:
     void clearCachesSignal();
-    void titleChanged();
+    void licenseChecked();
 
 public slots:
     pProject slotNew_recording( );

@@ -91,7 +91,8 @@ namespace Heightmap {
 class Renderer;
 class Block;
 class BlockData;
-class BlockInstaller;
+class BlockFactory;
+class BlockInitializer;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -138,13 +139,14 @@ public:
     Reference   entireHeightmap() const;
 
 
-    pBlock      getBlock( const Reference& ref ) const;
+    pBlock      getBlock( const Reference& ref );
+    int         runGarbageCollection( bool aggressive=false );
 
 
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
-    BlockCache::ptr cache() const;
+    BlockCache::ptr cache() const; // thread-safe
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 
@@ -164,11 +166,13 @@ private:
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
 
-    typedef std::list<pBlock> toremove_t;
+    typedef std::vector<pBlock> toremove_t;
     toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
+    toremove_t      _up_for_grabs;
 
     BlockCache::ptr cache_;
-    shared_state<BlockInstaller> block_installer_;
+    std::unique_ptr<BlockFactory> block_factory_;
+    std::unique_ptr<BlockInitializer> block_initializer_;
 
     bool
         _is_visible;

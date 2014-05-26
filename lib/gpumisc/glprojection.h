@@ -14,6 +14,10 @@ public:
 
     void update();
 
+    // scales computeUnitsPerPixel
+    void setZoom(float zoom);
+    float getZoom();
+
     const double* modelview_matrix() const { return modelview_matrix_; }
     const double* projection_matrix() const { return projection_matrix_; }
     const int* viewport_matrix() const { return viewport_matrix_; }
@@ -23,6 +27,7 @@ public:
     void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
 
 private:
+    float                           zoom;
     double                          modelview_matrix_[16];
     double                          projection_matrix_[16];
     int                             viewport_matrix_[4];

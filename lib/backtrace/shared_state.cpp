@@ -1,63 +1,25 @@
 /**
   This file only contains unit tests for shared_state.
   This file is not required for using shared_state.
+
+  The tests are written so that they can be read as examples.
+  Scroll down to void test ().
   */
 
 #include "shared_state.h"
 #include "exceptionassert.h"
 #include "expectexception.h"
 #include "trace_perf.h"
-#include "shared_state_traits_backtrace.h"
 #include "barrier.h"
 
 #include <thread>
 #include <future>
 #include <condition_variable>
 
-// scroll down to void shared_state_test::test () to see more examples
 
 using namespace std;
 
-class OrderOfOperationsCheck
-{
-public:
-    const OrderOfOperationsCheck& operator= (int a) {
-        a_ = a;
-        return *this;
-    }
-
-private:
-    int a_;
-};
-
-
-class InnerDestructor {
-public:
-    InnerDestructor(bool* inner_destructor):inner_destructor(inner_destructor) {}
-    ~InnerDestructor() { *inner_destructor = true; }
-
-private:
-    bool* inner_destructor;
-};
-
-
-class ThrowInConstructor {
-public:
-    ThrowInConstructor(bool*outer_destructor, bool*inner_destructor)
-        :
-          outer_destructor(outer_destructor),
-          inner(inner_destructor)
-    {
-        throw 1;
-    }
-
-    ~ThrowInConstructor() { *outer_destructor = true; }
-
-private:
-    bool* outer_destructor;
-    InnerDestructor inner;
-};
-
+namespace shared_state_test {
 
 class A
 {
@@ -77,15 +39,15 @@ public:
 private:
 
     int a_;
-    OrderOfOperationsCheck c_;
 };
-
+} // namespace shared_state_test
 
 template<>
-struct shared_state_traits<A>: shared_state_traits_default {
+struct shared_state_traits<shared_state_test::A>: shared_state_traits_default {
     double timeout() { return 0.001; }
 };
 
+namespace shared_state_test {
 
 class B
 {
@@ -110,15 +72,7 @@ struct C {
 
 struct C2: C {
     struct shared_state_traits: shared_state_traits_default {
-        class shared_state_mutex: public std::mutex {
-        public:
-            void lock_shared() { lock(); }
-            bool try_lock_shared() { return try_lock(); }
-            void unlock_shared() { unlock(); }
-
-            bool try_lock_for(...) { lock(); return true; }
-            bool try_lock_shared_for(...) { lock_shared(); return true; }
-        };
+        typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
 
         double timeout() { return -1; }
     };
@@ -128,41 +82,12 @@ struct C2: C {
 class with_timeout_0
 {
 public:
+    struct shared_state_traits: shared_state_traits_default {
+        double timeout() { return 0; }
+    };
+
     typedef shared_state<with_timeout_0> ptr;
     typedef shared_state<const with_timeout_0> const_ptr;
-};
-
-
-template<>
-struct shared_state_traits<with_timeout_0>: shared_state_traits_default {
-    double timeout() { return 0; }
-};
-
-
-class with_timeout_1_and_verify_1 {};
-
-template<>
-struct shared_state_traits<with_timeout_1_and_verify_1>
-: shared_state_traits_default
-{
-  double timeout() { return 0.001; }
-
-  void was_locked() {
-    start = chrono::high_resolution_clock::now ();
-  }
-
-  void was_unlocked() {
-    chrono::duration<double> diff = chrono::high_resolution_clock::now () - start;
-    if (diff.count() > verify_execution_time)
-      exceeded_execution_time (diff.count());
-  }
-
-  float verify_execution_time = 0.001;
-  function<void(double)> exceeded_execution_time = [](double T) {
-    cout << "Warning: Lock of MyType was held for " << T << "seconds" << endl;
-  };
-private:
-  chrono::high_resolution_clock::time_point start;
 };
 
 
@@ -171,10 +96,13 @@ public:
     struct shared_state_traits: shared_state_traits_default {
         base* b;
 
-        void was_locked () {
+        template<class T>
+        void locked (T*) {
             EXCEPTION_ASSERT_EQUALS(++b->step, 1);
         }
-        void was_unlocked () {
+
+        template<class T>
+        void unlocked (T*) {
             ++b->step;
         }
     };
@@ -199,8 +127,7 @@ struct WriteWhileReadingThread
 };
 
 
-void shared_state_test::
-        test ()
+void test ()
 {
     // It should guarantee compile-time thread safe access to objects.
     shared_state<A> mya {new A};
@@ -373,20 +300,6 @@ void shared_state_test::
     }
 
 
-    // Verify the behaviour of a practice commonly frowned upon; throwing from constructors.
-    //
-    // It should be fine to throw from the constructor as long as allocated
-    // resources are taken care of as usual in any other scope without the help
-    // of the explicit destructor corresponding to the throwing constructor.
-    {
-        bool outer_destructor = false;
-        bool inner_destructor = false;
-        EXPECT_EXCEPTION(int, ThrowInConstructor d(&outer_destructor, &inner_destructor));
-        EXCEPTION_ASSERT(inner_destructor);
-        EXCEPTION_ASSERT(!outer_destructor);
-    }
-
-
     // shared_state should cause an overhead of less than 0.3 microseconds in a
     // 'release' build.
     {
@@ -448,7 +361,6 @@ void shared_state_test::
 
     condition_variable_any cond;
     future<void> f = async(launch::async, [&](){
-        // Make sure readTwice starts before this function
         auto w = mya.write ();
         w->method (1);
         // wait unlocks w before waiting
@@ -459,9 +371,11 @@ void shared_state_test::
 
     while (future_status::timeout == f.wait_for(std::chrono::milliseconds(1)))
     {
-        mya.write ()->method (3);
+        mya->method (3);
         cond.notify_one ();
     }
+
+    EXCEPTION_ASSERT_EQUALS(mya->const_method(), 2);
 
     auto rlock = mya.read ();
     auto rlock2 = std::move(rlock); // Move lock
@@ -479,7 +393,6 @@ A& A::
         operator= (const A& b)
 {
     a_ = b.a_;
-    c_ = b.c_;
     return *this;
 }
 
@@ -556,37 +469,6 @@ void WriteWhileReadingThread::
     }
 
 
-    // It should be extensible enough to let clients efficiently add features like
-    //  - run-time warnings on locks that are kept long enough to make it likely
-    //    that other simultaneous lock attempts will fail.
-    {
-        shared_state<with_timeout_1_and_verify_1> a{new with_timeout_1_and_verify_1};
-
-        bool did_report = false;
-
-        a.traits ()->exceeded_execution_time = [&did_report](float){ did_report = true; };
-
-        auto w = a.write ();
-
-        // Wait to make VerifyExecutionTime detect that the lock was kept too long
-        this_thread::sleep_for (chrono::milliseconds{10});
-
-        EXCEPTION_ASSERT(!did_report);
-        w.unlock ();
-        EXCEPTION_ASSERT(did_report);
-
-        {
-            int N = 10000;
-
-            TRACE_PERF("shared_state with VerifyExecutionTime should cause a low overhead");
-            for (int i=0; i<N; i++)
-            {
-                a.write ();
-                a.read ();
-            }
-        }
-    }
-
     // it should handle lock contention efficiently
     // 'Mv' decides how long a lock should be kept
     std::vector<int> Mv{100, 1000};
@@ -656,3 +538,5 @@ void WriteWhileReadingThread::
         }
     }
 }
+
+} // namespace shared_state_test

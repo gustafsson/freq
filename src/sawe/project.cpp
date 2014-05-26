@@ -21,10 +21,8 @@
 
 // Qt
 #include <QFileDialog>
-#include <QVBoxLayout>
 #include <QMessageBox>
 #include <QSettings>
-#include <QInputDialog>
 
 // Std
 #include <sys/stat.h>
@@ -543,37 +541,5 @@ pProject Project::
 
     return p;
 }
-
-
-#if !defined(TARGET_reader)
-pProject Project::
-        openAudio(std::string audio_file)
-{
-    std::string path = QDir::current().relativeFilePath( audio_file.c_str() ).toStdString ();
-
-    boost::shared_ptr<Adapters::Audiofile> a( new Adapters::Audiofile( path ) );
-    Signal::OperationDesc::ptr d(new Adapters::AudiofileDesc(a));
-
-    return openOperation(d, a->name());
-}
-#endif
-
-#if !defined(TARGET_reader) && !defined(TARGET_hast)
-pProject Project::
-        openCsvTimeseries(std::string audio_file)
-{
-    Adapters::CsvTimeseries*a;
-    Signal::OperationDesc::ptr s( a = new Adapters::CsvTimeseries( QDir::current().relativeFilePath( audio_file.c_str() ).toStdString()) );
-    double fs = QInputDialog::getDouble (0, "Sample rate",
-                                           "Enter the sample rate for the csv data:", 1);
-    if (fs<=0)
-        fs = 1;
-
-    a->setSampleRate (fs);
-    pProject p = openOperation(s, a->name());
-    p->mainWindow()->getItems()->actionTransform_info->setChecked( true );
-    return p;
-}
-#endif
 
 } // namespace Sawe

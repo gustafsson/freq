@@ -80,7 +80,7 @@ private:
     pHeight _mapped_height;
     // Create and destroy in the same context, which
     // is only being kept in the main thread.
-    ThreadChecker _constructor_thread;
+//    ThreadChecker _constructor_thread;
 
     unsigned _tex_height;
     unsigned _tex_height_nearest;

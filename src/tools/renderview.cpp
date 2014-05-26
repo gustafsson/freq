@@ -12,7 +12,6 @@
 #include "heightmap/block.h"
 #include "heightmap/glblock.h"
 #include "heightmap/collection.h"
-#include "heightmap/blocks/chunkmerger.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
 #include "sawe/configuration.h"
@@ -208,7 +207,7 @@ void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
     double T = _last_frame.elapsedAndRestart();
-    TIME_PAINTGL TaskTimer tt("%g ms", T*1e3);
+    TIME_PAINTGL TaskTimer tt("Draw. Last frame %.0f ms / %.0f fps", T*1e3, 1/T);
 
     painter->beginNativePainting();
 
@@ -311,7 +310,7 @@ float RenderView::
     r = rr(*ref);
 
     Heightmap::Collection::ptr collection = model->collections()[0];
-    Heightmap::pBlock block = collection.read ()->getBlock( *ref );
+    Heightmap::pBlock block = collection.raw ()->getBlock( *ref );
     Heightmap::ReferenceInfo ri(block->referenceInfo ());
     if (!block)
         return 0;
@@ -1003,7 +1002,7 @@ void RenderView::
     TIME_PAINTGL_DETAILS _render_timer.reset();
     TIME_PAINTGL_DETAILS _render_timer.reset(new TaskTimer("Time since last RenderView::paintGL (%g ms, %g fps)", elapsed_ms, 1000.f/elapsed_ms));
 
-    TIME_PAINTGL TaskTimer tt("............................. RenderView::paintGL.............................");
+    TIME_PAINTGL_DETAILS TaskTimer tt(".............................RenderView::paintGL.............................");
 
     Heightmap::TfrMapping::Collections collections = model->collections ();
 
@@ -1078,10 +1077,9 @@ void RenderView::
         isRecording = true;
     }
 
-    bool chunk_merger_has_work = !model->chunk_merger->processChunks(0);
-    //model->chunk_merger->processChunks(-1);
+    bool update_queue_has_work = !model->block_update_queue->empty ();
 
-    if (chunk_merger_has_work)
+    if (update_queue_has_work)
         redraw (); // won't redraw right away, but enqueue an update
 
 
@@ -1173,7 +1171,7 @@ void RenderView::
     wu.update(model->_qx, x, _last_update_size);
 
     Support::ChainInfo ci(model->project ()->processing_chain ());
-    bool isWorking = ci.hasWork () || chunk_merger_has_work;
+    bool isWorking = ci.hasWork () || update_queue_has_work;
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
     if (wu.failedAllocation ())

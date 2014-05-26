@@ -38,7 +38,7 @@ void HeightmapProcessingPublisher::
     // visible block if the view isn't currently being invalidated.
     UnsignedIntervalType update_size = preferred_update_size;
 
-    foreach( const Heightmap::Collection::ptr &c, collections_ ) {
+    for ( const Heightmap::Collection::ptr &c : collections_ ) {
         auto wc = c.write ();
         //invalid_samples |= wc->invalid_samples();
         things_to_add |= wc->recently_created();
@@ -49,6 +49,8 @@ void HeightmapProcessingPublisher::
         needed_samples &= x.interval.get ();
     else
         needed_samples = needed_samples.fetchInterval (1, center);
+
+    update_size = std::min(update_size, (UnsignedIntervalType)Interval::IntervalType_MAX);
 
     TIME_PAINTGL_DETAILS TaskInfo(boost::format(
             "RenderView needed_samples = %s, "
@@ -156,19 +158,14 @@ void HeightmapProcessingPublisher::
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
-        collection.read ()->getBlock(entireHeightmap);
+        unsigned frame_number = collection.read ()->frame_number();
 
-        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
-
+        collection->getBlock(entireHeightmap)->frame_number_last_used = frame_number - 2;
         hpp.update(t_center, x, preferred_update_size);
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        unsigned frame_number = collection.read ()->frame_number();
-        collection.read ()->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
-
-        EXCEPTION_ASSERT(hpp.isHeightmapDone ());
-
+        collection->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
         hpp.update(t_center, x, preferred_update_size);
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());

@@ -8,8 +8,11 @@
 //#define TIME_BLOCKFACTORY
 #define TIME_BLOCKFACTORY if(0)
 
-//#define INFO_COLLECTION
-#define INFO_COLLECTION if(0)
+//#define INFO_BLOCKFACTORY
+#define INFO_BLOCKFACTORY if(0)
+
+#define MAX_CREATED_BLOCKS_PER_FRAME 16
+
 
 using namespace boost;
 using namespace Signal;
@@ -21,15 +24,48 @@ BlockFactory::
     :
       block_layout_(bl),
       visualization_params_(vp),
-      _free_memory(availableMemoryForSingleAllocation())
+      _free_memory(availableMemoryForSingleAllocation()),
+      created_count_(0),
+      failed_allocation_(false),
+      failed_allocation_prev_(false)
 {
 }
 
 
 pBlock BlockFactory::
-        createBlock( const Reference& ref, pBlock reuse )
+        createBlock( const Reference& ref, pGlBlock reuse )
+{
+    pBlock b;
+
+    if ( MAX_CREATED_BLOCKS_PER_FRAME > created_count_ || true )
+    {
+        if ((b = createBlockInternal (ref, reuse)))
+        {
+            created_count_++;
+            recently_created_ |= b->getInterval ();
+        }
+        else
+        {
+            TaskInfo("failed");
+        }
+    }
+    else
+    {
+        failed_allocation_ = true;
+
+        TaskInfo(format("Delaying creation of block %s") % RegionFactory(block_layout_)(ref));
+    }
+
+    return b;
+}
+
+
+pBlock BlockFactory::
+        createBlockInternal( const Reference& ref, pGlBlock reuse )
 {
     // A precautious wrapper to getAllocatedBlock which is a precautious wrapper to attempt
+
+    EXCEPTION_ASSERT(visualization_params_);
 
     TIME_BLOCKFACTORY TaskTimer tt(format("New block %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
@@ -43,11 +79,11 @@ pBlock BlockFactory::
                              ref,
                              block_layout_,
                              visualization_params_) );
-            block->glblock = reuse->glblock;
+            block->glblock = reuse;
             // Sets to zero on first read
             block->block_data()->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
+            block->discard_new_block_data();
 
-            reuse->glblock.reset();
             const Region& r = block->getRegion();
             block->glblock->reset( r.time(), r.scale() );
         }
@@ -93,11 +129,46 @@ pBlock BlockFactory::
 }
 
 
+Signal::Intervals BlockFactory::
+        recently_created()
+{
+    Signal::Intervals r = recently_created_;
+    recently_created_.clear ();
+    return r;
+}
+
+
+void BlockFactory::
+        set_recently_created_all()
+{
+    recently_created_ = Signal::Intervals::Intervals_ALL;
+}
+
+
+bool BlockFactory::
+
+
+        failed_allocation()
+{
+    bool r = failed_allocation_ || failed_allocation_prev_;
+    failed_allocation_prev_ = failed_allocation_;
+    failed_allocation_ = false;
+    return r;
+}
+
+
+void BlockFactory::
+        next_frame()
+{
+    created_count_ = 0;
+}
+
+
 pBlock BlockFactory::
         attempt( const Reference& ref )
 {
     try {
-        INFO_COLLECTION TaskTimer tt("Allocation attempt");
+        INFO_BLOCKFACTORY TaskTimer tt("Allocation attempt");
 
         GlException_CHECK_ERROR();
         ComputationCheckError();
@@ -194,14 +265,58 @@ void BlockFactory::
     }
 }
 
+} // namespace Heightmap
+
+#include <QApplication>
+#include <QGLWidget>
+#include "neat_math.h"
+
+namespace Heightmap {
 
 void BlockFactory::
         test()
 {
+    std::string name = "BlockFactory";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should create new blocks to make them ready for receiving transform data and rendering.
+    {
+        BlockLayout bl(4,4,4);
+        VisualizationParams::const_ptr vp(new VisualizationParams);
+        BlockCache::ptr cache(new BlockCache);
+
+        Position max_sample_size;
+        max_sample_size.time = 2.f / bl.texels_per_row ();
+        max_sample_size.scale = 1.f / bl.texels_per_column ();
+
+        Reference r;
+        r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
+        r.block_index = Reference::Index(0,0);
+
+        pBlock block = BlockFactory(bl, vp).createBlock(r);
+        cache->insert (block);
+
+        EXCEPTION_ASSERT(block);
+        EXCEPTION_ASSERT(cache->find(r));
+        EXCEPTION_ASSERT(cache->find(r) == block);
+
+        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom ());
+        cache->insert (block3);
+
+        EXCEPTION_ASSERT(block3);
+        EXCEPTION_ASSERT(block != block3);
+        EXCEPTION_ASSERT(cache->find(r.bottom ()) == block3);
+    }
+
+    // TODO test that BlockFactory behaves well on out-of-memory/reusing old blocks
     {
 
     }
+
 }
 
 

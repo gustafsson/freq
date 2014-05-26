@@ -21,8 +21,9 @@ unsigned long BlockCacheInfo::
 
     BOOST_FOREACH (const BlockCache::cache_t::value_type& b, cache)
         {
-        sumsize += b.second->glblock->allocated_bytes_per_element()
-                * b.second->block_layout().texels_per_block ();
+        if (b.second->glblock)
+            sumsize += b.second->glblock->allocated_bytes_per_element()
+                    * b.second->block_layout().texels_per_block ();
         }
 
     return sumsize;

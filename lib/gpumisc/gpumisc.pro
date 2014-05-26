@@ -44,6 +44,7 @@ SOURCES += \
     ThreadChecker.cpp \
     vbo.cpp \
     ../backtrace/*.cpp \
+    ../justmisc/*.cpp \
 
 HEADERS += \
     computationkernel.h \
@@ -99,6 +100,7 @@ HEADERS += \
     unsignedf.h \
     vbo.h \
     ../backtrace/*.h \
+    ../justmisc/*.h \
 
 useopencl {
 DEFINES += USE_OPENCL

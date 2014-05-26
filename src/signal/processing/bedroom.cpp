@@ -60,10 +60,10 @@ bool Bedroom::Bed::
     // Wait in a while-loop to cope with spurious wakeups
     if (ULONG_MAX == ms_timeout)
         while (!skip_sleep_)
-            data->work.wait ( data_.readWriteLock() );
+            data->work.wait ( data_.mutex() );
     else
         while (r && !skip_sleep_)
-            r = std::cv_status::no_timeout == data->work.wait_for (data_.readWriteLock(), std::chrono::milliseconds(ms_timeout));
+            r = std::cv_status::no_timeout == data->work.wait_for (data_.mutex(), std::chrono::milliseconds(ms_timeout));
 
     skip_sleep_.reset();
 

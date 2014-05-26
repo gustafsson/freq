@@ -437,7 +437,7 @@ void Workers::
             BOOST_FOREACH (Worker::ptr& w, workerlist) { w->abort (); w->wait (); }
             maxwait = std::max(maxwait, t.elapsed ());
 
-            int get_task_count = ((const GetEmptyTaskMock*)schedule.raw ())->get_task_count;
+            int get_task_count = ((const GetEmptyTaskMock*)schedule.get ())->get_task_count;
             EXCEPTION_ASSERT_EQUALS(workerlist.size (), (size_t)worker_count);
             EXCEPTION_ASSERT_LESS_OR_EQUAL(worker_count, get_task_count);
 
@@ -485,7 +485,7 @@ void Workers::
                 Bedroom::ptr bedroom(new Bedroom);
 
                 Workers workers(s, bedroom);
-                Bedroom::Bed bed = dynamic_cast<BlockScheduleMock*>(s.raw ())->bedroom.getBed();
+                Bedroom::Bed bed = dynamic_cast<BlockScheduleMock*>(s.get ())->bedroom.getBed();
 
                 workers.addComputingEngine(Signal::ComputingEngine::ptr());
 

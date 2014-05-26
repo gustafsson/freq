@@ -6,7 +6,7 @@
 #include <QNetworkReply>
 #include <QThread>
 
-#include <boost/exception/all.hpp>
+#include <boost/exception_ptr.hpp>
 
 namespace Tools {
 
@@ -24,7 +24,7 @@ class ApplicationErrorLogController : public QObject
 public:
     ~ApplicationErrorLogController();
 
-    static void registerException(boost::exception_ptr x);
+    static void registerException(boost::exception_ptr x) noexcept;
 
     static void registerMainWindow(QMainWindow* window);
 
@@ -44,6 +44,7 @@ private:
 
     QThread                             thread_;
     Support::SendFeedback*              send_feedback_;
+    bool                                finished_ok_;
 
 public:
     static void test();

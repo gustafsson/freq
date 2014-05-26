@@ -2,6 +2,7 @@
 #define HEIGHTMAP_BLOCK_GARBAGECOLLECTOR_H
 
 #include "heightmap/blockcache.h"
+#include "heightmap/glblock.h"
 
 namespace Heightmap {
 namespace Blocks {
@@ -9,13 +10,14 @@ namespace Blocks {
 class GarbageCollector
 {
 public:
-    GarbageCollector(BlockCache::ptr cache);
+    GarbageCollector(BlockCache::const_ptr cache);
 
-    pBlock releaseOneBlock(unsigned frame_counter);
-    void releaseAllNotUsedInThisFrame(unsigned _frame_counter);
+    pBlock runOnce(unsigned frame_counter);
+    std::vector<pBlock> runUntilComplete(unsigned frame_counter);
+    std::vector<pBlock> releaseAllNotUsedInThisFrame(unsigned frame_counter);
 
 private:
-    BlockCache::ptr cache_;
+    BlockCache::const_ptr cache_;
 };
 
 } // namespace Block

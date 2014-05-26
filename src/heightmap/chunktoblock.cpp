@@ -12,17 +12,17 @@
 namespace Heightmap {
 
 ChunkToBlock::
-        ChunkToBlock(Tfr::pChunk chunk)
-    :
-      chunk(chunk)
+        ChunkToBlock()
+{
+}
+
+
+void ChunkToBlock::
+        mergeChunk( Tfr::pChunk chunk, pBlock block )
 {
     INFO TaskInfo(boost::format("ChunkToBlock. Chunk %s with nSamples=%u, nScales=%u")
                       % chunk->getCoveredInterval() % chunk->nSamples () % chunk->nScales ());
-}
 
-void ChunkToBlock::
-        mergeChunk( pBlock block )
-{
     INFO TaskTimer tt(boost::format("ChunkToBlock::mergeChunk %s") % block->getRegion ());
 
     bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
@@ -174,24 +174,18 @@ void ChunkToBlock::
     Heightmap::Reference ref;
 
     pBlock block( new Block (ref, bl, vp));
-    BlockData blockdata;
-    blockdata.cpu_copy.reset( new DataStorage<float>(32,32) );
+    block->block_data ()->cpu_copy.reset( new DataStorage<float>(32,32) );
 
-    ChunkToBlock ctb(chunk);
+    ChunkToBlock ctb;
     ctb.complex_info = ComplexInfo_Amplitude_Non_Weighted;
     ctb.enable_subtexel_aggregation = false;
     ctb.full_resolution = false;
     ctb.normalization_factor = 1;
 
-    ctb.mergeColumnMajorChunk(
-            *block,
-            *chunk,
-            blockdata );
-
-    ctb.mergeRowMajorChunk(
-            *block,
-            *chunk,
-            blockdata );
+    chunk->order = Tfr::Chunk::Order_column_major;
+    ctb.mergeChunk (chunk, block);
+    chunk->order = Tfr::Chunk::Order_row_major;
+    ctb.mergeChunk (chunk, block);
 }
 
 } // namespace Heightmap

@@ -23,7 +23,8 @@ CheckUpdates::
     QObject(parent),
     manualUpdate(false),
     targetUrl("http://feedback.sonicawe.com/checkforupdates.php"),
-    checkUpdatesTag("CheckForUpdates")
+    checkUpdatesTag("CheckForUpdates"),
+    pending_request(0)
 {
     ::Ui::MainWindow* ui = parent->getItems();
     connect(ui->actionFind_updates, SIGNAL(triggered()), SLOT(checkForUpdates()));
@@ -34,11 +35,10 @@ CheckUpdates::
         return;
     hasChecked = true;
 
-
     if ("not"==Sawe::Reader::reader_text().substr(0,3))
     {
         // wait for reader to finish
-        connect( Sawe::Application::global_ptr(), SIGNAL(titleChanged()), SLOT(autoCheckForUpdatesSoon()) );
+        connect( Sawe::Application::global_ptr(), SIGNAL(licenseChecked()), SLOT(autoCheckForUpdatesSoon()) );
     }
     else
     {
@@ -50,7 +50,8 @@ CheckUpdates::
 CheckUpdates::
         ~CheckUpdates()
 {
-
+    if (pending_request)
+        pending_request->abort ();
 }
 
 
@@ -118,7 +119,7 @@ void CheckUpdates::
     manager.reset( new QNetworkAccessManager(this) );
     connect(manager.data(), SIGNAL(finished(QNetworkReply*)),
             this, SLOT(replyFinished(QNetworkReply*)));
-    postdata.send( manager.data(), targetUrl );
+    pending_request = postdata.send( manager.data(), targetUrl );
 
     settings.setValue(checkUpdatesTag, checkAuto); // restore value before attempting update
 }
@@ -127,6 +128,7 @@ void CheckUpdates::
 void CheckUpdates::
         replyFinished(QNetworkReply* reply)
 {
+    pending_request = 0;
     QString s = reply->readAll();
     TaskInfo ti("CheckUpdates reply");
     TaskInfo("%s", s.replace("\\r\\n","\n").replace("\r","").toStdString().c_str());
@@ -196,7 +198,7 @@ void CheckUpdates::
             typedef ::Ui::SaweMainWindow SaweMainWindowType;
             SaweMainWindowType* mainwindow = dynamic_cast<SaweMainWindowType*>(parent());
 
-            // GetCudaForm has Qt::WA_DeleteOnClose
+            // DropNotifyForm has Qt::WA_DeleteOnClose
             new DropNotifyForm(
                     mainwindow->centralWidget(),
                     mainwindow->getProject()->tools().render_view(),

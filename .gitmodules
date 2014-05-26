@@ -1,6 +1,3 @@
-[submodule "lib/gpumisc"]
-	path = lib/gpumisc
-	url = git@bitbucket.org:MuchDifferent/sonicawe-misc.git
 [submodule "lib/sonicawe-winlib"]
 	path = lib/sonicawe-winlib
 	url = git@bitbucket.org:MuchDifferent/sonicawe-winlib.git

@@ -11,11 +11,11 @@ class QNetworkReply;
 namespace Tools {
 namespace Support {
 
-class BuildHttpPost
+class BuildHttpPost final
 {
 public:
     BuildHttpPost();
-    virtual ~BuildHttpPost();
+    ~BuildHttpPost();
 
 
     /**

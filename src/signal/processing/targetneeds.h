@@ -40,7 +40,7 @@ public:
      * @arg center From where to work of intervals from this->not_started()
      */
     void updateNeeds(
-            Signal::Intervals needed_samples,
+            const Signal::Intervals& needed_samples,
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
             Signal::IntervalType preferred_update_size=Signal::Interval::IntervalType_MAX,
             int prio=0 );
@@ -53,7 +53,7 @@ public:
      *                 calculation (this->not_started() returns the intersection
      *                 of deprecated caches and needed samples).
      */
-    void deprecateCache(Signal::Intervals invalidate);
+    void deprecateCache(const Signal::Intervals& invalidate);
 
     shared_state<Step>::weak_ptr step() const;
     boost::posix_time::ptime last_request() const;

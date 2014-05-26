@@ -30,7 +30,7 @@ void main()
         // interpolate the right texels
         uv = (uv + 0.5) / tex_size;
 
-        float r = texture2D(mytex, vec2(uv.x, uv.y)).r;
+        float r = texture2D(mytex, uv).r;
         a = max(a, r);
     }
 

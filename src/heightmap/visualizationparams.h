@@ -52,6 +52,11 @@ public:
 
 private:
     struct details {
+        struct shared_state_traits: shared_state_traits_default {
+            // Has only simple accessors, a simple mutex is faster than a more complex one
+            typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
+        };
+
         Tfr::TransformDesc::ptr transform_desc_;
         Tfr::FreqAxis display_scale_;
         AmplitudeAxis amplitude_axis_;

@@ -1,7 +1,8 @@
 #include "cwtblockfilter.h"
 #include "heightmap/chunktoblock.h"
 #include "heightmap/chunktoblockdegeneratetexture.h"
-#include "heightmap/chunkblockfilter.h"
+#include "heightmap/glblock.h"
+#include "heightmap/blocks/blockupdater.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"
@@ -20,8 +21,15 @@ CwtBlockFilter::
 {}
 
 
-std::vector<IChunkToBlock::ptr> CwtBlockFilter::
-        createChunkToBlock(Tfr::ChunkAndInverse& pchunk)
+std::vector<Blocks::IUpdateJob::ptr> CwtBlockFilter::
+        prepareUpdate(Tfr::ChunkAndInverse& cai)
+{
+    return prepareUpdate (cai, std::vector<pBlock>{});
+}
+
+
+std::vector<Blocks::IUpdateJob::ptr> CwtBlockFilter::
+        prepareUpdate(Tfr::ChunkAndInverse& pchunk, const std::vector<pBlock>& B)
 {
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
     EXCEPTION_ASSERT( cwt );
@@ -30,7 +38,11 @@ std::vector<IChunkToBlock::ptr> CwtBlockFilter::
 
     Tfr::CwtChunk& chunks = *dynamic_cast<Tfr::CwtChunk*>( pchunk.chunk.get () );
 
-    std::vector<IChunkToBlock::ptr> R;
+    float largest_fs =0;
+    for (pBlock b : B)
+        largest_fs = std::max(largest_fs, b->sample_rate ());
+
+    std::vector<Blocks::IUpdateJob::ptr> R;
 
     for ( const Tfr::pChunk& chunkpart : chunks.chunks )
       {
@@ -40,11 +52,10 @@ std::vector<IChunkToBlock::ptr> CwtBlockFilter::
 //        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
 //        chunktoblock->complex_info = complex_info_;
 
-        IChunkToBlock::ptr chunktoblockp(new Heightmap::ChunkToBlockDegenerateTexture(chunkpart));
-        chunktoblockp->normalization_factor = normalization_factor;
+        Blocks::IUpdateJob::ptr job(new Blocks::BlockUpdater::Job{chunkpart, normalization_factor, largest_fs});
         EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
 
-        R.push_back (chunktoblockp);
+        R.push_back (job);
       }
 
     return R;
@@ -111,6 +122,9 @@ void CwtBlockFilter::
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::ptr vp(new VisualizationParams);
+        Tfr::FreqAxis fa; fa.setLinear (bl.sample_rate ());
+        vp->display_scale (fa);
+
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
@@ -126,6 +140,7 @@ void CwtBlockFilter::
         Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
+        block->glblock.reset( new GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -139,10 +154,12 @@ void CwtBlockFilter::
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::ptr mc( new CwtBlockFilter(complex_info) );
 
-        mc->filterChunk(cai);
-        std::vector<IChunkToBlock::ptr> prep = mc->createChunkToBlock(cai);
-        for (size_t i=0; i<prep.size (); ++i)
-            prep[i]->mergeChunk (block);
+        Blocks::BlockUpdater bu;
+        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+            bu.processJob(
+                    (Blocks::BlockUpdater::Job&)(*job),
+                    std::vector<pBlock>{block}
+                    );
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

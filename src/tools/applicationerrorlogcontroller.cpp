@@ -1,5 +1,6 @@
 #include "applicationerrorlogcontroller.h"
 
+#include "sawe/configuration.h"
 #include "support/sendfeedback.h"
 #include "sendfeedbackdialog.h"
 
@@ -29,7 +30,8 @@ std::shared_ptr<ApplicationErrorLogController> application_error_log_controller_
 ApplicationErrorLogController::
         ApplicationErrorLogController()
     :
-      send_feedback_(new Support::SendFeedback(this))
+      send_feedback_(new Support::SendFeedback(this)),
+      finished_ok_(false)
 {    
     qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
 
@@ -60,9 +62,14 @@ ApplicationErrorLogController::
 ApplicationErrorLogController::
         ~ApplicationErrorLogController()
 {
-    TaskInfo ti("~ApplicationErrorLogController");
-    thread_.quit ();
-    thread_.wait ();
+    if (finished_ok_) {
+        thread_.quit ();
+        thread_.wait ();
+    } else {
+        TaskTimer tt("~ApplicationErrorLogController, finished_ok_ = %d", finished_ok_);
+        thread_.terminate ();
+        thread_.wait ();
+    }
 }
 
 
@@ -71,6 +78,7 @@ void ApplicationErrorLogController::
 {
     QSettings().remove (currently_running_key);
     QSettings().remove (has_unreported_error_key);
+    finished_ok_ = true;
     application_error_log_controller_instance.reset ();
 }
 
@@ -88,7 +96,7 @@ ApplicationErrorLogController* ApplicationErrorLogController::
 
 
 void ApplicationErrorLogController::
-        registerException(boost::exception_ptr e)
+        registerException(boost::exception_ptr e) noexcept
 {
     if (!e)
         return;
@@ -205,23 +213,26 @@ void ApplicationErrorLogController::
         if( std::string const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x) )
             message = *mi;
 
-        TaskTimer ti2("Sending feedback");
-
-        // Place message before details
-        QString msg;
-        if (condition)
+        if (Sawe::Configuration::feature ("autofeedback"))
           {
-            msg += condition;
-            msg += "\n";
+            TaskTimer ti2("Sending feedback");
+
+            // Place message before details
+            QString msg;
+            if (condition)
+              {
+                msg += condition;
+                msg += "\n";
+              }
+
+            if (!message.empty ())
+                msg += QString::fromStdString (message + "\n\n");
+            msg += QString::fromStdString (str);
+
+            QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
+            if (!omittedMessage.isEmpty ())
+                TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
           }
-
-        if (!message.empty ())
-            msg += QString::fromStdString (message + "\n\n");
-        msg += QString::fromStdString (str);
-
-        QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
-        if (!omittedMessage.isEmpty ())
-            TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
       }
 }
 

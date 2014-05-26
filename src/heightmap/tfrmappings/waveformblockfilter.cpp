@@ -1,51 +1,74 @@
 #include "waveformblockfilter.h"
 #include "heightmap/chunktoblock.h"
+#include "heightmap/blocks/blockupdater.h"
 #include "tfr/drawnwaveform.h"
 #include "signal/computingengine.h"
 #include "tfr/drawnwaveformkernel.h"
 
 #include "demangle.h"
+#include "log.h"
+
+using namespace std;
 
 namespace Heightmap {
+using namespace Blocks;
+
 namespace TfrMappings {
 
-class WaveformChunkToBlock: public IChunkToBlock
+
+void WaveformBlockUpdater::
+        processJobs( const vector<UpdateQueue::Job>& jobs )
 {
-public:
-    WaveformChunkToBlock(Signal::pMonoBuffer b) : b(b) {}
-
-    void mergeChunk( pBlock block ) {
-        float blobsize = b->sample_rate() / block->sample_rate();
-
-        int readstop = b->number_of_samples ();
-
-        // todo should substract blobsize/2
-        Region r = block->getRegion ();
-        float writeposoffs = (b->start () - r.a.time)*block->sample_rate ();
-        float y0 = r.a.scale*2-1;
-        float yscale = r.scale ()*2;
-        ::drawWaveform(
-                b->waveform_data(),
-                block->block_data ()->cpu_copy,
-                blobsize,
-                readstop,
-                yscale,
-                writeposoffs,
-                y0);
-    }
-
-private:
-    Signal::pMonoBuffer b;
-};
+    for (const UpdateQueue::Job& job : jobs)
+      {
+        if (auto bujob = dynamic_cast<const TfrMappings::WaveformBlockUpdater::Job*>(job.updatejob.get ()))
+          {
+            processJob (*bujob, job.intersecting_blocks);
+          }
+      }
+}
 
 
-std::vector<IChunkToBlock::ptr> WaveformBlockFilter::
-        createChunkToBlock(Tfr::ChunkAndInverse& chunk)
+void WaveformBlockUpdater::
+        processJob( const WaveformBlockUpdater::Job& job,
+                    const vector<pBlock>& intersecting_blocks )
 {
-    IChunkToBlock::ptr ctb(new WaveformChunkToBlock(chunk.input));
-    std::vector<IChunkToBlock::ptr> R;
-    R.push_back (ctb);
-    return R;
+    for (pBlock block : intersecting_blocks)
+        processJob (job, block);
+}
+
+
+void WaveformBlockUpdater::
+        processJob( const WaveformBlockUpdater::Job& job, pBlock block )
+{
+    Signal::pMonoBuffer b = job.b;
+    float blobsize = b->sample_rate() / block->sample_rate();
+
+    int readstop = b->number_of_samples ();
+
+    // todo should substract blobsize/2
+    Region r = block->getRegion ();
+    float writeposoffs = (r.a.time - b->start ())*block->sample_rate ();
+    float y0 = r.a.scale*2-1;
+    float yscale = r.scale ()*2;
+    auto d = block->block_data ();
+
+    ::drawWaveform(
+            b->waveform_data(),
+            d->cpu_copy,
+            blobsize,
+            readstop,
+            yscale,
+            writeposoffs,
+            y0);
+}
+
+
+vector<Blocks::IUpdateJob::ptr> WaveformBlockFilter::
+        prepareUpdate(Tfr::ChunkAndInverse& chunk)
+{
+    Blocks::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job{chunk.input});
+    return vector<Blocks::IUpdateJob::ptr>{ctb};
 }
 
 
@@ -91,10 +114,11 @@ void WaveformBlockFilter::
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::ptr vp(new VisualizationParams);
+
         Reference ref = [&]() {
             Reference ref;
             Position max_sample_size;
-            max_sample_size.time = 2.f*std::max(1.f, buffer->length ())/bl.texels_per_row ();
+            max_sample_size.time = 2.f*max(1.f, buffer->length ())/bl.texels_per_row ();
             max_sample_size.scale = 1.f/bl.texels_per_column ();
             ref.log2_samples_size = Reference::Scale(
                         floor_log2( max_sample_size.time ),
@@ -113,8 +137,14 @@ void WaveformBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new WaveformBlockFilter );
-        mc->filterChunk(cai);
-        mc->createChunkToBlock(cai)[0]->mergeChunk (block);
+        Blocks::IUpdateJob::ptr job = mc->prepareUpdate (cai)[0];
+
+        EXCEPTION_ASSERT(dynamic_cast<WaveformBlockUpdater::Job*>(job.get ()));
+
+        WaveformBlockUpdater().processJob(
+                    (WaveformBlockUpdater::Job&)(*job),
+                    vector<pBlock>{block}
+                    );
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

@@ -87,7 +87,7 @@ Intervals Step::
     }
 
     DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
-              % (operation_desc_?operation_desc_.read ()->toString ().toStdString ():"(no operation)")
+              % (operation_desc_?operation_desc_.raw ()->toString ().toStdString ():"(no operation)")
               % deprecated);
 
     not_started_ |= deprecated;
@@ -187,7 +187,7 @@ void Step::
 }
 
 
-void Step::
+bool Step::
         sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms)
 {
     DEBUGINFO TaskTimer tt(boost::format("sleepWhileTasks %d") % step->running_tasks.size ());
@@ -205,8 +205,17 @@ void Step::
 
         while (!step->running_tasks.empty ())
             if (std::cv_status::timeout == step->wait_for_tasks_.wait_for (step, ms))
-                return;
+                return false;
     }
+
+    return step->running_tasks.empty ();
+}
+
+
+bool Step::
+        sleepWhileTasks(Step::ptr::read_ptr&& step, int sleep_ms)
+{
+    return sleepWhileTasks(step, sleep_ms);
 }
 
 

@@ -1,9 +1,11 @@
 #include "targetneeds.h"
 #include "step.h"
 #include "bedroom.h"
+#include "tools/applicationerrorlogcontroller.h"
 
 #include "timer.h"
 #include "tasktimer.h"
+#include "log.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -29,14 +31,18 @@ TargetNeeds::
 TargetNeeds::
         ~TargetNeeds()
 {
-    updateNeeds(Signal::Intervals());
+    try {
+        updateNeeds(Signal::Intervals());
+    } catch (...) {
+        Tools::ApplicationErrorLogController::registerException (boost::current_exception());
+    }
 }
 
 
 void TargetNeeds::
         updateNeeds
         (
-        Signal::Intervals needed_samples,
+        const Signal::Intervals& needed_samples,
         Signal::IntervalType center,
         Signal::IntervalType preferred_update_size,
         int prio
@@ -76,7 +82,7 @@ void TargetNeeds::
 
 
 void TargetNeeds::
-        deprecateCache(Signal::Intervals invalidate)
+        deprecateCache(const Signal::Intervals& invalidate)
 {
     if (!invalidate)
         return;
@@ -142,6 +148,7 @@ Signal::Intervals TargetNeeds::
     if (step)
         out_of_date = step.read ()->out_of_date();
 
+    DEBUG_INFO Log("out_of_date(): %s & %s") % needed_samples_ % out_of_date;
     return needed_samples_ & out_of_date;
 }
 
