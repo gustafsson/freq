@@ -76,8 +76,7 @@ public:
                 return Signal::Interval();
               }
 
-            Signal::OperationDesc::ptr op = step->operation_desc();
-            auto o = op.write ();
+            Signal::OperationDesc::const_ptr o = step->operation_desc();
 
             DEBUGINFO TaskTimer tt(format("Missing %1% in %2% for %3%")
                                    % I
@@ -107,7 +106,7 @@ public:
             missing_input &= required_input;
 
             // If there are no sources
-            if (0==out_degree(u, g))
+            if( !missing_input && 0==out_degree(u, g) )
               {
                 // Then this operation must specify sample rate and number of
                 // samples for this to be a valid read. Otherwise the signal is
@@ -120,12 +119,12 @@ public:
                   }
               }
 
-            // If nothing is missing and this engine supports this operation
-            if (missing_input.empty ())
+            // If nothing is missing
+            if( !missing_input )
               {
                 Signal::Operation::ptr operation = o->createOperation (params.engine.get ());
-                o.unlock ();
 
+                // If this engine supports this operation
                 if (operation)
                   {
                     // Create a task

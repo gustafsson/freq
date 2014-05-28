@@ -24,7 +24,7 @@ RecordController::
             :   view_ ( view ),
                 ui( new Actions() ),
                 destroyed_ ( false ),
-                prev_length_( 0 )
+                prev_num_samples_( 0 )
 {
     qRegisterMetaType<Signal::Interval>("Signal::Interval");
 
@@ -66,7 +66,7 @@ void RecordController::
 
     if (active)
     {
-        prev_length_ = r->number_of_samples();
+        prev_num_samples_ = r->number_of_samples();
         r->startRecording();
 
         if (!r->canRecord()) {
@@ -80,7 +80,7 @@ void RecordController::
         {
             r->stopRecording();
 
-            if (r->number_of_samples() > prev_length_)
+            if (r->number_of_samples() > prev_num_samples_)
             {
                 r.unlock ();
 
@@ -90,7 +90,7 @@ void RecordController::
                 // menu.
                 Tools::Commands::pCommand cmd( new Tools::Commands::RecordedCommand(
                                                    model()->recording,
-                                                   prev_length_,
+                                                   prev_num_samples_,
                                                    model()->render_view->model,
                                                    model()->invalidator ));
                 model()->project->commandInvoker()->invokeCommand(  cmd );

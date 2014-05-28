@@ -30,19 +30,15 @@ public:
     virtual void stopRecording() override;
     virtual bool isStopped() const override;
     virtual bool canRecord() override;
+    virtual std::string name() override;
 
     void changeInputDevice( int inputDevice );
     void setProjectName(std::string, int);
-
-    virtual std::string name() override;
-    virtual float sample_rate() const override;
-    virtual unsigned num_channels() const override;
 
 private:
     MicrophoneRecorder()
         :
         input_device_(-1),
-        _sample_rate(1),
         _is_interleaved(false)
     {} // for deserialization
 
@@ -50,8 +46,6 @@ private:
     void init();
 
     int input_device_;
-    float _sample_rate;
-    unsigned _num_channels;
     bool _is_interleaved;
     bool _has_input_device;
     std::vector<float> _rolling_mean;
@@ -109,7 +103,7 @@ private:
 
         init();
 
-        _data.put(wavfile->readFixedLength( wavfile->getInterval() ));
+        _data->samples.put(wavfile->readFixedLength( wavfile->getInterval() ));
     }
 };
 

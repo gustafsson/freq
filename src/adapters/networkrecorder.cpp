@@ -10,9 +10,10 @@ namespace Adapters {
 
 NetworkRecorder::NetworkRecorder(QUrl url, float samplerate)
 :
-    url(url),
-    samplerate(samplerate)
+    url(url)
 {
+    this->_data.reset (new Recorder::Data(samplerate, 1));
+
     if (url.scheme() != "s16bursts")
     {
         // only our own special newly invented scheme 's16bursts' is supported
@@ -82,20 +83,6 @@ std::string NetworkRecorder::
 }
 
 
-unsigned NetworkRecorder::
-        num_channels () const
-{
-    return 1;
-}
-
-
-float NetworkRecorder::
-        sample_rate() const
-{
-    return samplerate;
-}
-
-
 float NetworkRecorder::
         length() const
 {
@@ -117,27 +104,26 @@ float NetworkRecorder::
 
 
 int NetworkRecorder::
-        receivedData(const void*data, int byteCount)
+        receivedData(const void*voiddata, int byteCount)
 {
-    const short* shortdata = (const short*)data;
+    const short* shortdata = (const short*)voiddata;
     int sampleCount = byteCount/sizeof(short);
 
     if (0 == sampleCount)
         return 0;
 
     Signal::IntervalType offset = actual_number_of_samples();
+    shared_state<Data> data = _data;
 
     // convert shortdata to normalized floats
-    Signal::pBuffer b( new Signal::Buffer(offset, sampleCount, sample_rate(), 1 ) );
+    Signal::pBuffer b( new Signal::Buffer(offset, sampleCount, data.raw ()->sample_rate, data.raw ()->num_channels ) );
     float* p = b->getChannel (0)->waveform_data()->getCpuMemory();
     for (int i=0; i<sampleCount; ++i)
         p[i] = shortdata[i]/(float)SHRT_MAX;
 
     // add data
-    QMutexLocker lock(&_data_lock);
     _last_update = boost::posix_time::microsec_clock::local_time();
-    _data.put( b );
-    lock.unlock();
+    data.write ()->samples.put( b );
 
     // notify listeners that we've got new data
     if (_invalidator)
@@ -160,6 +146,7 @@ void NetworkRecorder::
     }
 
     QByteArray byteArray;
+    float samplerate = sample_rate ();
     do
     {
         byteArray = tcpSocket.read(samplerate);

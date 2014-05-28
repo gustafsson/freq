@@ -271,9 +271,10 @@ pProject Project::
     Adapters::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
 
     Signal::OperationDesc::Extent x;
-    x.interval = Signal::Interval();
-    x.number_of_channels = recorder.write ()->num_channels();
-    x.sample_rate = recorder.write ()->sample_rate();
+    const auto d = recorder.raw ()->data ();
+    x.interval = d->samples.spannedInterval();
+    x.number_of_channels = d->num_channels;
+    x.sample_rate = d->sample_rate;
 
     pProject p( new Project( "New recording" ));
     p->createMainWindow ();

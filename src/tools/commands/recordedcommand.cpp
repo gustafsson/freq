@@ -17,8 +17,8 @@ RecordedCommand::
             undone(false),
             prev_qx(-1)
 {
-    auto r = recording.write ();
-    recordedData = r->data().read(Signal::Interval(prevLength, r->number_of_samples()) );
+    const auto d = recording.raw ()->data ().read ();
+    recordedData = d->samples.read(Signal::Interval(prevLength, d->samples.spannedInterval().last) );
 }
 
 
@@ -34,9 +34,12 @@ void RecordedCommand::
 {
     if (undone)
     {
-        auto r = recording.write ();
-        recordedData->set_sample_offset( r->number_of_samples() );
-        r->data().put(recordedData);
+        {
+            auto d = recording.raw ()->data ().write ();
+            recordedData->set_sample_offset ( (long long)d->samples.spannedInterval().count() );
+            d->samples.put (recordedData);
+        }
+
         iinvalidator.write ()->deprecateCache(recordedData->getInterval());
 
         if (0<=prev_qx)
@@ -48,9 +51,9 @@ void RecordedCommand::
 void RecordedCommand::
         undo()
 {
-    recording.write ()->data().invalidate_samples(recordedData->getInterval());
+    recording.raw ()->data ()->samples.invalidate_samples (recordedData->getInterval());
     prev_qx = model->_qx;
-    iinvalidator.write ()->deprecateCache(recordedData->getInterval());
+    iinvalidator.write ()->deprecateCache (recordedData->getInterval());
     if (prev_qx == model->_qx)
         prev_qx = -1;
 

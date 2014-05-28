@@ -43,8 +43,6 @@ void MicrophoneRecorder::
     try
     {
         _offset = 0;
-        _sample_rate = 1;
-        _num_channels = 0;
 
         TIME_MICROPHONERECORDER TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
         portaudio::System &sys = portaudio::System::instance();
@@ -77,27 +75,30 @@ void MicrophoneRecorder::
         TIME_MICROPHONERECORDER TaskInfo(boost::format("Using device '%s' for audio input") % sys.deviceByIndex(input_device_).name());
 
         portaudio::Device& device = sys.deviceByIndex(input_device_);
-        _sample_rate = device.defaultSampleRate();
+        auto sample_rate = device.defaultSampleRate();
+        unsigned num_channels = device.maxInputChannels();
 
-        _num_channels = device.maxInputChannels();
-        if (_num_channels > 2)
-            _num_channels = 2;
+        if (num_channels > 2)
+            num_channels = 2;
 
         if (Sawe::Configuration::mono()) {
-            if (_num_channels > 1)
-                _num_channels = 1;
+            if (num_channels > 1)
+                num_channels = 1;
         }
+
+        if (!_data || this->sample_rate() != sample_rate || this->num_channels() != num_channels)
+            _data.reset (new Recorder::Data(sample_rate, num_channels));
 
         TIME_MICROPHONERECORDER TaskInfo(boost::format("Opening recording input stream on '%s' with %d"
                        " channels, %g samples/second"
                        " and input latency %g s")
                                          % device.name()
-                                         % _num_channels
-                                         % _sample_rate
+                                         % num_channels
+                                         % sample_rate
                                          % device.defaultHighInputLatency());
 
-        _rolling_mean.resize(_num_channels);
-        for (unsigned i=0; i<_num_channels; ++i)
+        _rolling_mean.resize(num_channels);
+        for (unsigned i=0; i<num_channels; ++i)
             _rolling_mean[i] = 0;
 
         for (int interleaved=0; interleaved<2; ++interleaved)
@@ -106,7 +107,7 @@ void MicrophoneRecorder::
 
             portaudio::DirectionSpecificStreamParameters inParamsRecord(
                     device,
-                    _num_channels, // channels
+                    num_channels, // channels
                     portaudio::FLOAT32,
                     interleaved, // interleaved
         //#ifdef __APPLE__ // TODO document why
@@ -157,12 +158,13 @@ MicrophoneRecorder::~MicrophoneRecorder()
 {
     stopRecording();
 
-    QMutexLocker lock(&_data_lock);
-    if (0<_data.spannedInterval ().count ()) {
+    auto d = _data.write ();
+    auto& samples = d->samples;
+    if (0<samples.spannedInterval ().count ()) {
         TIME_MICROPHONERECORDER TaskTimer tt("Releasing %s recorded data in %u channels",
-                     Signal::SourceBase::lengthLongFormat ( _data.spannedInterval ().count ()/_data.sample_rate ()).c_str(),
-                     _data.num_channels());
-        _data.clear();
+                     Signal::SourceBase::lengthLongFormat ( samples.spannedInterval ().count ()/samples.sample_rate ()).c_str(),
+                     samples.num_channels());
+        samples.clear();
     }
 }
 
@@ -286,20 +288,6 @@ std::string MicrophoneRecorder::
 }
 
 
-float MicrophoneRecorder::
-        sample_rate() const
-{
-    return _sample_rate;
-}
-
-
-unsigned MicrophoneRecorder::
-        num_channels() const
-{
-    return _num_channels;
-}
-
-
 int MicrophoneRecorder::
         writeBuffer(const void *inputBuffer,
                  void * /*outputBuffer*/,
@@ -311,11 +299,11 @@ int MicrophoneRecorder::
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
 
     Signal::IntervalType offset = actual_number_of_samples();
-    QMutexLocker lock(&_data_lock);
+    auto data = _data;
     _last_update = boost::posix_time::microsec_clock::local_time();
 
-    Signal::pBuffer mb( new Signal::Buffer(0, framesPerBuffer, sample_rate(), _num_channels ) );
-    for (unsigned i=0; i<_num_channels; ++i)
+    Signal::pBuffer mb( new Signal::Buffer(0, framesPerBuffer, data.raw ()->sample_rate, data.raw ()->num_channels ) );
+    for (unsigned i=0; i<data->num_channels; ++i)
     {
         Signal::pMonoBuffer b = mb->getChannel (i);
         float* p = b->waveform_data()->getCpuMemory();
@@ -351,7 +339,7 @@ int MicrophoneRecorder::
 //                 framesPerBuffer*sizeof(float) );
 
         b->set_sample_offset( offset );
-        b->set_sample_rate( sample_rate() );
+        b->set_sample_rate( data.raw ()->sample_rate );
 
         TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s, [%g, %g) s",
                                             b->getInterval().toString().c_str(),
@@ -360,8 +348,7 @@ int MicrophoneRecorder::
 
     }
 
-    _data.put( mb );
-    lock.unlock();
+    data.write ()->samples.put( mb );
 
     if (_invalidator)
         _invalidator.write ()->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
@@ -462,11 +449,11 @@ Signal::Operation::ptr MicrophoneRecorderDesc::
 MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
         extent() const
 {
-    auto rec = recorder_.read ();
+    auto data = recorder_.raw ()->data ();
     MicrophoneRecorderDesc::Extent x;
-    x.interval = Signal::Interval(0, rec->number_of_samples());
-    x.number_of_channels = rec->num_channels ();
-    x.sample_rate = rec->sample_rate ();
+    x.interval = data.read ()->samples.spannedInterval ();
+    x.number_of_channels = data.raw ()->num_channels;
+    x.sample_rate = data.raw ()->sample_rate;
     return x;
 }
 
