@@ -1,10 +1,9 @@
 #ifndef RECORDER_H
 #define RECORDER_H
 
-#include "cache.h"
+#include "signal/cache.h"
 #include "shared_state.h"
 #include "verifyexecutiontime.h"
-#include <QMutex>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -44,6 +43,19 @@ public:
     };
 
 
+    struct Data
+    {
+        Data(float sample_rate, unsigned num_channels)
+            : sample_rate (sample_rate),
+              num_channels (num_channels)
+        {}
+
+        Signal::Cache samples;
+        const float sample_rate;
+        const unsigned num_channels;
+    };
+
+
     Recorder();
     virtual ~Recorder();
 
@@ -51,24 +63,25 @@ public:
     virtual void stopRecording() = 0;
     virtual bool isStopped() const = 0;
     virtual bool canRecord() = 0;
+    virtual std::string name() = 0;
+    virtual float length() const;
 
     float time_since_last_update();
     void setDataCallback( IGotDataCallback::ptr invalidator );
-    Signal::Cache& data() { return _data; }
 
-    // virtual from Signal::SourceBase
-    virtual std::string name() = 0;
-    virtual float sample_rate() const = 0;
-    virtual unsigned num_channels() const = 0;
+    // Data race free and lock free methods
+    shared_state<Data> data() { return _data; }
+    shared_state<const Data> data() const { return _data; }
+    float sample_rate() const;
+    unsigned num_channels() const;
 
-    // overloaded from Signal::FinalSource
-    virtual Signal::pBuffer read( const Signal::Interval& I );
-    virtual Signal::IntervalType number_of_samples() const;
-    virtual float length() const;
+    // Data race free methods
+    Signal::IntervalType number_of_samples() const;
+    Signal::pBuffer read( const Signal::Interval& I );
 
 protected:
-    mutable QMutex _data_lock;
-    Signal::Cache _data; // TODO use shared_state<Signal::Cache>
+
+    shared_state<Data> _data;
     IGotDataCallback::ptr _invalidator;
     std::exception_ptr _exception;
     float _offset;

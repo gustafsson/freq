@@ -38,7 +38,7 @@ namespace Tools
         boost::shared_ptr<Actions> ui;
 
         bool destroyed_;
-        Signal::IntervalType prev_length_;
+        Signal::IntervalType prev_num_samples_;
 
         void setupGui();
     };

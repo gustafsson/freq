@@ -62,6 +62,7 @@ class SaweDll OperationDesc
 {
 public:
     typedef shared_state<OperationDesc> ptr;
+    typedef shared_state<const OperationDesc> const_ptr;
     typedef shared_state_traits_backtrace shared_state_traits;
 
     /**

@@ -32,16 +32,12 @@ public:
     virtual void stopRecording() override;
     virtual bool isStopped() const override;
     virtual bool canRecord() override;
-
     virtual std::string name() override;
-    virtual unsigned num_channels () const override;
-    virtual float sample_rate() const override;
     virtual float length() const override;
 
 private:
     QUrl url;
     QTcpSocket tcpSocket;
-    float samplerate;
 
     virtual float time() const override;
     int receivedData(const void*data, int byteCount);
