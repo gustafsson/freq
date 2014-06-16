@@ -42,9 +42,11 @@ private:
     ApplicationErrorLogController();
     static ApplicationErrorLogController* instance();
 
+    int                                 feedback_count_ = 0;
+    int                                 feedback_limit_ = 1;
     QThread                             thread_;
-    Support::SendFeedback*              send_feedback_;
-    bool                                finished_ok_;
+    Support::SendFeedback*              send_feedback_ = 0;
+    bool                                finished_ok_ = false;
 
 public:
     static void test();

@@ -30,8 +30,7 @@ std::shared_ptr<ApplicationErrorLogController> application_error_log_controller_
 ApplicationErrorLogController::
         ApplicationErrorLogController()
     :
-      send_feedback_(new Support::SendFeedback(this)),
-      finished_ok_(false)
+      send_feedback_(new Support::SendFeedback(this))
 {    
     qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
 
@@ -51,6 +50,7 @@ ApplicationErrorLogController::
       }
     catch ( const boost::exception& x)
       {
+        ++feedback_limit_;
         emit got_exception (boost::current_exception());
       }
 
@@ -101,13 +101,9 @@ void ApplicationErrorLogController::
     if (!e)
         return;
 
-    static bool has_registered_an_exception_already = false;
-    bool log_exception_details =
-            !has_registered_an_exception_already ||
+    bool log_exception_details = true ||
+            feedback_count_==0 ||
             !QSettings().value (has_unreported_error_key, false).toBool ();
-
-    if (log_exception_details)
-        has_registered_an_exception_already = true;
 
     try
       {
@@ -140,11 +136,10 @@ void ApplicationErrorLogController::
 
     if (log_exception_details)
       {
-        has_registered_an_exception_already = true;
+        QSettings().setValue (has_unreported_error_key, true);
+
         // Will be executed in instance()->thread_
         emit instance()->got_exception (e);
-        emit instance()->showToolbar (true);
-        QSettings().setValue (has_unreported_error_key, true);
       }
 }
 
@@ -213,7 +208,7 @@ void ApplicationErrorLogController::
         if( std::string const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x) )
             message = *mi;
 
-        if (Sawe::Configuration::feature ("autofeedback"))
+        if (Sawe::Configuration::feature ("autofeedback") && feedback_count_<feedback_limit_)
           {
             TaskTimer ti2("Sending feedback");
 
@@ -230,6 +225,7 @@ void ApplicationErrorLogController::
             msg += QString::fromStdString (str);
 
             QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
+            ++feedback_count_;
             if (!omittedMessage.isEmpty ())
                 TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
           }
