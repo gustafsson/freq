@@ -1,5 +1,6 @@
 #include "thread_pool.h"
 #include "exceptionassert.h"
+#include "expectexception.h"
 #include "tasktimer.h"
 
 #include <numeric>
@@ -42,7 +43,7 @@ thread_pool::
         ~thread_pool()
 {
     queue_.abort_on_empty ();
-    queue_.clear ();
+    queue_.clear (); // Any associated futures to a packaged_task will be notified if the task is destroyed prior to evaluation
 
     for (thread& t: threads_)
         t.join ();
@@ -86,6 +87,24 @@ void thread_pool::
         );
 
         EXCEPTION_ASSERT_EQUALS(S, (999-0)/2.0 * 1000);
+    }
+
+    // Any associated futures to a packaged_task will be notified if the task is destroyed prior to evaluation
+    {
+        auto* task = new packaged_task<void()>(
+                []()
+                {
+                    return;
+                }
+        );
+
+        auto f = task->get_future();
+
+        delete task;
+
+        f.wait();
+
+        EXPECT_EXCEPTION(std::future_error, f.get());
     }
 }
 
