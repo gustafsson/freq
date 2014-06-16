@@ -151,7 +151,7 @@ public:
         Tfr::FreqAxis chunk_scale;
         ZeroOnMove<unsigned> vbo_;
         ZeroOnMove<unsigned> chunk_pbo_;
-        ZeroOnMove<void*> sync_;
+//        ZeroOnMove<void*> sync_;
 
         float a_t, b_t, u0, u1;
         unsigned nScales, nSamples, nValidSamples;

@@ -405,7 +405,7 @@ ChunkToBlockDegenerateTexture::DrawableChunk::DrawableChunk(
     setupPbo ();
     setupVbo ();
 
-    sync_ = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+//    sync_ = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 
     EXCEPTION_ASSERT (chunk_pbo_);
 }
@@ -426,8 +426,8 @@ ChunkToBlockDegenerateTexture::DrawableChunk::
     if (chunk_pbo_)
         glDeleteBuffers (1, &chunk_pbo_);
 
-    if (sync_)
-        glDeleteSync((GLsync)(void*)sync_);
+//    if (sync_)
+//        glDeleteSync((GLsync)(void*)sync_);
 }
 
 
