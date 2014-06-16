@@ -414,6 +414,12 @@ ChunkToBlockDegenerateTexture::DrawableChunk::DrawableChunk(
 ChunkToBlockDegenerateTexture::DrawableChunk::
         ~DrawableChunk()
 {
+    if (mapped_chunk_data_)
+    {
+        TaskInfo("Waiting for data_transfer before releasing gl resources");
+        data_transfer.wait ();
+    }
+
     if (vbo_)
         glDeleteBuffers (1, &vbo_);
 
