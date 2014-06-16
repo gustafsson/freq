@@ -143,6 +143,7 @@ void BlockUpdater::
     typedef shared_ptr<ChunkToBlockDegenerateTexture::DrawableChunk> pDrawableChunk;
     ChunkToBlockDegenerateTexture::BlockFbos& block_fbos = chunktoblock_texture.block_fbos ();
 
+    // 'jobs' contains all pBlock and survives longer than pDrawableChunk
     std::map<pBlock, std::queue<pDrawableChunk>> chunks_per_block;
 
     {
@@ -178,16 +179,17 @@ void BlockUpdater::
 //                    TaskTimer tt(boost::format("Drawing %d chunks into block %s")
 //                                 % p.second.size() % p.first->getRegion());
 
-          fbo->begin ();
+          auto fboScopeBinding = fbo->begin ();
 
-          while (!p.second.empty ())
+          auto& q = p.second;
+          while (!q.empty ())
             {
-              pDrawableChunk c {move(p.second.front ())};
-              p.second.pop ();
+              pDrawableChunk c {move(q.front ())};
+              q.pop ();
               c->draw ();
             }
 
-          fbo->end ();
+          // unbind fbo on out-of-scope
         }
     }
 
@@ -209,7 +211,8 @@ void BlockUpdater::
 //              }
 
 //            chunks_with_blocks.clear ();
-  sync ();
+
+  sync (); // Wait for block textures to become updated by BlockFbo destructor.
 }
 
 

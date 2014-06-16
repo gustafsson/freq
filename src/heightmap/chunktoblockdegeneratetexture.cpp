@@ -82,12 +82,12 @@ BlockFbo::~BlockFbo()
     }
 }
 
-void BlockFbo::
+GlFrameBuffer::ScopeBinding BlockFbo::
         begin ()
 {
     GlException_CHECK_ERROR ();
 
-    fbo->bindFrameBuffer ();
+    GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding ();
 //        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
 //        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
 
@@ -115,13 +115,8 @@ void BlockFbo::
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
-}
 
-
-void BlockFbo::
-        end ()
-{
-    fbo->unbindFrameBuffer ();
+    return fboBinding;
 }
 
 

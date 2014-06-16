@@ -19,8 +19,7 @@ public:
     BlockFbo (pBlock block);
     ~BlockFbo();
 
-    void begin ();
-    void end ();
+    GlFrameBuffer::ScopeBinding begin ();
 
 private:
     pBlock block;
