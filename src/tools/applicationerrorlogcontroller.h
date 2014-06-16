@@ -37,6 +37,7 @@ private slots:
     void log(boost::exception_ptr x);
     void finishedSending(QNetworkReply*);
     void finishedOk();
+    void sendFeedback();
 
 private:
     ApplicationErrorLogController();
@@ -44,6 +45,10 @@ private:
 
     int                                 feedback_count_ = 0;
     int                                 feedback_limit_ = 1;
+
+    void sendFeedback(QString msg);
+
+    QString                             feedbackMessage_;
     QThread                             thread_;
     Support::SendFeedback*              send_feedback_ = 0;
     bool                                finished_ok_ = false;

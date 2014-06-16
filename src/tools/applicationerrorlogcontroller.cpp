@@ -178,6 +178,9 @@ void ApplicationErrorLogController::
 
     emit showToolbar (true);
 
+    // Render the toolbar
+    QApplication::instance ()->eventDispatcher ()->processEvents();
+
     try
       {
         rethrow_exception(e);
@@ -210,26 +213,50 @@ void ApplicationErrorLogController::
 
         if (Sawe::Configuration::feature ("autofeedback") && feedback_count_<feedback_limit_)
           {
-            TaskTimer ti2("Sending feedback");
+            // Wait a while before sending automatic feedback in order to fill
+            // the log file with more data about what happened next.
+            float delay = 2.f; // seconds
+            TaskInfo(boost::format("Sending feedback in %g seconds") % delay);
 
             // Place message before details
-            QString msg;
+            if (feedbackMessage_)
+            {
+                TaskInfo(boost::format("Replacing previous message: %s") % feedbackMessage_.toStdString());
+                feedbackMessage_.clear();
+            }
+
             if (condition)
               {
-                msg += condition;
-                msg += "\n";
+                feedbackMessage_ += condition;
+                feedbackMessage_ += "\n";
               }
 
             if (!message.empty ())
-                msg += QString::fromStdString (message + "\n\n");
-            msg += QString::fromStdString (str);
+                feedbackMessage_ += QString::fromStdString (message + "\n\n");
+            feedbackMessage_ += QString::fromStdString (str);
 
-            QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
-            ++feedback_count_;
-            if (!omittedMessage.isEmpty ())
-                TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
+            QTimer::singleShot (delay*1000, this, SLOT(sendFeedback()));
           }
       }
+}
+
+
+void ApplicationErrorLogController::
+        sendFeedback()
+{
+    sendFeedback(feedbackMessage_);
+}
+
+
+void ApplicationErrorLogController::
+        sendFeedback(QString msg)
+{
+    TaskTimer ti("Sending feedback");
+
+    QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
+    ++feedback_count_;
+    if (!omittedMessage.isEmpty ())
+        TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
 }
 
 
