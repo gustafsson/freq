@@ -33,7 +33,7 @@ public:
     // input_buffer and output_buffer does not need to be allocated beforehand
     Task (const shared_state<Step>::write_ptr& step,
           Step::ptr stepp,
-          std::vector<Step::ptr> children,
+          std::vector<Step::const_ptr> children,
           Signal::Operation::ptr operation,
           Signal::Interval expected_output,
           Signal::Interval required_input);
@@ -45,7 +45,7 @@ public:
 
 private:
     Step::ptr               step_;
-    std::vector<Step::ptr>  children_;
+    std::vector<Step::const_ptr>  children_;
     Signal::Operation::ptr  operation_;
     Signal::Interval        expected_output_;
     Signal::Interval        required_input_;

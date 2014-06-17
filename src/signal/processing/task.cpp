@@ -16,7 +16,7 @@ namespace Processing {
 Task::
         Task(const shared_state<Step>::write_ptr& step,
              Step::ptr stepp,
-             std::vector<Step::ptr> children,
+             std::vector<Step::const_ptr> children,
              Signal::Operation::ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
@@ -181,7 +181,7 @@ void Task::
 
         // setup a known signal processing step
         Step::ptr step (new Step(od));
-        std::vector<Step::ptr> children; // empty
+        std::vector<Step::const_ptr> children; // empty
         Signal::Interval expected_output(-10,80);
         Signal::Interval required_input;
         Signal::Operation::ptr o;

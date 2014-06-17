@@ -172,7 +172,7 @@ void HeightmapProcessingPublisher::
 
         Task task(step.write (),
                   Step::ptr (),
-                  std::vector<Signal::Processing::Step::ptr>(),
+                  std::vector<Step::const_ptr>(),
                   Operation::ptr(),
                   Signal::Interval(0,2), Signal::Interval());
 

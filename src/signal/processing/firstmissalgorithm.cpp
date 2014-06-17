@@ -63,7 +63,10 @@ public:
 
     Signal::Interval try_create_task(GraphVertex u, const Graph & g, Signal::Intervals missing_input)
       {
-        auto step = g[u].write (); // lock while studying what's needed
+        // No other thread is allowed to reach the same conclusion about what needs to be done.
+        // So the lock has to be kept from checking what's needed all the way until the task has
+        // been registered in step->running_tasks.
+        auto step = g[u].write (); // lock while studying what's needed.
 
         try
           {
@@ -111,7 +114,7 @@ public:
                 // Then this operation must specify sample rate and number of
                 // samples for this to be a valid read. Otherwise the signal is
                 // undefined.
-                Signal ::OperationDesc::Extent x = o->extent ();
+                auto x = o->extent ();
                 if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
                   {
                     // "Undefined signal. No sources and no extent"
@@ -128,7 +131,7 @@ public:
                 if (operation)
                   {
                     // Create a task
-                    std::vector<Step::ptr> children;
+                    std::vector<Step::const_ptr> children;
 
                     BOOST_FOREACH(GraphEdge e, out_edges(u, g))
                       {
@@ -147,12 +150,16 @@ public:
           }
         catch (const boost::exception& x)
           {
-            x   << Step::crashed_step(g[u]);
+            // Keep lock until the step has been marked as crashed
+            IInvalidator::ptr i = step->mark_as_crashed_and_get_invalidator();
+            step.unlock();
+
+            // Propagate the exception but decorate it with some info
+            x << Step::crashed_step(g[u]);
 
             try
               {
-                Signal::Processing::IInvalidator::ptr i = step->mark_as_crashed_and_get_invalidator();
-                step.unlock ();
+                // When an exc
                 if (i) i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
             catch(const std::exception& y)
