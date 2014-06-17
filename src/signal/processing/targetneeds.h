@@ -14,6 +14,11 @@ namespace Processing {
 class Step;
 class Bedroom;
 
+struct TargetNeedsTraits : shared_state_traits_backtrace {
+    double timeout () override { return 2*shared_state_traits_default::timeout (); }
+    double verify_lock_time() override { return timeout()/8.0f; }
+};
+
 /**
  * @brief The TargetNeeds class should describe what needs to be computed for a target.
  */
@@ -22,7 +27,7 @@ class TargetNeeds
 public:
     typedef shared_state<TargetNeeds> ptr;
     typedef shared_state<const TargetNeeds> const_ptr;
-    typedef shared_state_traits_backtrace shared_state_traits;
+    typedef TargetNeedsTraits shared_state_traits;
 
     TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
     ~TargetNeeds();
