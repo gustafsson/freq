@@ -35,7 +35,7 @@ OpenClMemoryStorage::
     OpenClMemoryStorage* q = p->FindStorage<OpenClMemoryStorage>();
     EXCEPTION_ASSERT( q == this );
 
-    p->FindCreateStorage<OpenClMemoryStorage>( false, true ); // Mark memory as up to date
+    p->AccessStorage<OpenClMemoryStorage>( false, true ); // Mark memory as up to date
 }
 
 
@@ -61,7 +61,7 @@ OpenClMemoryStorage::
         throw std::runtime_error("An OpenCL kernel can't read from memory created write only (or write to read only).");
 
     // ok flags, make sure it's up-to-date, or create it if needed
-    return dsv->FindCreateStorage<OpenClMemoryStorage>( read, write );
+    return dsv->AccessStorage<OpenClMemoryStorage>( read, write );
 }
 
 
@@ -141,7 +141,7 @@ void OpenClMemoryStorage::
                  size().width, size().height, size().depth,
                  DataStorageVoid::getMemorySizeText( dataStorage()->numberOfBytes() ).c_str());
 
-    CpuMemoryStorage* c = dataStorage()->FindCreateStorage<CpuMemoryStorage>( false, true );
+    CpuMemoryStorage* c = dataStorage()->AccessStorage<CpuMemoryStorage>( false, true );
     // CpuMemoryStorage is here the only updated storage so calling clear here will not be recursive
     dataStorage()->ClearContents();
     updateFromOther( c );
