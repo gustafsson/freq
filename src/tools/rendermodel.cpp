@@ -17,14 +17,14 @@ namespace Tools
 
 class TargetInvalidator: public Signal::Processing::IInvalidator {
 public:
-    TargetInvalidator(Signal::Processing::TargetNeeds::ptr needs):needs_(needs) {}
+    TargetInvalidator(Signal::Processing::TargetNeeds::const_ptr needs):needs_(needs) {}
 
     virtual void deprecateCache(Signal::Intervals what) const {
-        needs_.write ()->deprecateCache(what);
+        Signal::Processing::TargetNeeds::deprecateCache(needs_, what);
     }
 
 private:
-    Signal::Processing::TargetNeeds::ptr needs_;
+    Signal::Processing::TargetNeeds::const_ptr needs_;
 };
 
 RenderModel::

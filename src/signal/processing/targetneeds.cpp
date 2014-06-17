@@ -82,19 +82,19 @@ void TargetNeeds::
 
 
 void TargetNeeds::
-        deprecateCache(const Signal::Intervals& invalidate)
+        deprecateCache(TargetNeeds::const_ptr self, const Signal::Intervals& invalidate)
 {
     if (!invalidate)
         return;
 
     DEBUG_INFO TaskInfo(boost::format("invalidate = %s") % invalidate);
 
-    if (Step::ptr step = step_.lock ())
+    if (Step::ptr step = self.raw ()->step_.lock ())
         step.write ()->deprecateCache(invalidate);
 
-    if (invalidate & needed_samples_) {
-        INotifier::ptr notifier = notifier_.lock ();
-        if (notifier)
+    if (invalidate & self.read ()->needed_samples_)
+    {
+        if (INotifier::ptr notifier = self.raw ()->notifier_.lock ())
             notifier->wakeup();
     }
 }
@@ -287,7 +287,7 @@ void TargetNeeds::
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
+            Signal::Processing::TargetNeeds::deprecateCache(target_needs, Signal::Intervals(6,7));
             target_needs.write ()->updateNeeds(Signal::Interval(-15,6),
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
@@ -308,7 +308,7 @@ void TargetNeeds::
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
+            Signal::Processing::TargetNeeds::deprecateCache(target_needs, Signal::Intervals(6,7));
             target_needs.write ()->updateNeeds(Signal::Interval(-15,7),
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);
@@ -320,7 +320,7 @@ void TargetNeeds::
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->deprecateCache(Signal::Intervals(5,7));
+            Signal::Processing::TargetNeeds::deprecateCache(target_needs, Signal::Intervals(5,7));
             target_needs.write ()->updateNeeds(Signal::Interval(-15,7),
                                               Signal::Interval::IntervalType_MIN,
                                               Signal::Interval::IntervalType_MAX);

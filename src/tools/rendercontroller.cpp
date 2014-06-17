@@ -470,7 +470,7 @@ void RenderController::
 
     // abort target needs
     auto needs = model ()->target_marker ()->target_needs ();
-    auto step = needs->step ().lock (); // lock weak_ptr
+    auto step = needs.raw ()->step ().lock (); // lock weak_ptr
     needs->updateNeeds (Signal::Intervals());
     int sleep_ms = 1000;
     Timer t;

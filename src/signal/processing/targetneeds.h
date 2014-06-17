@@ -53,8 +53,13 @@ public:
      *                 calculation (this->not_started() returns the intersection
      *                 of deprecated caches and needed samples).
      */
-    void deprecateCache(const Signal::Intervals& invalidate);
+    static void deprecateCache(TargetNeeds::const_ptr self, const Signal::Intervals& invalidate);
 
+    /**
+     * @brief step returns the step corresponding to a target
+     * step() is data-race free
+     * @return
+     */
     shared_state<Step>::weak_ptr step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
