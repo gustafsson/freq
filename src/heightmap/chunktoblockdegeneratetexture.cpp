@@ -366,8 +366,8 @@ ChunkToBlockDegenerateTexture::DrawableChunk::DrawableChunk(
         shader_(shaders),
         mapped_chunk_data_(0),
         vbo_(0),
-        chunk_pbo_(0),
-        sync_(0)
+        chunk_pbo_(0)
+        //,sync_(0)
 {
     EXCEPTION_ASSERT(chunk);
 
