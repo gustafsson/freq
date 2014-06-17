@@ -108,8 +108,11 @@ public:
     template<typename StorageType>
     void OnlyKeepOneStorage()
     {
-        DataStorageImplementation* t = FindCreateStorage<StorageType>(true, true);
-        OnlyKeepOneStorage( t );
+        if (!validContent_.empty ())
+        {
+            DataStorageImplementation* t = AccessStorage<StorageType>(true, true);
+            OnlyKeepOneStorage( t );
+        }
     }
 
 
