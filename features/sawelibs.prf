@@ -32,8 +32,6 @@ QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
 }
 
 macx {
-INCLUDEPATH += \
-    /opt/local/include/
 LIBS += -lsndfile \
     -framework GLUT \
     -framework OpenGL \
@@ -44,7 +42,14 @@ LIBS += -lsndfile \
     -lboost_system-mt \
     -lboost_thread-mt \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc \
-    -L/opt/local/lib
+
+# macports
+exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/
+exists(/opt/local/lib): LIBS += -L/opt/local/lib
+
+# homebrew
+exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/
+exists(/usr/local/lib): LIBS += -L/usr/local/lib
 }
 
 win32 {

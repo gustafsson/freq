@@ -156,8 +156,8 @@ win32: INCLUDEPATH += \
     ../sonicawe-winlib \
     ../sonicawe-winlib/glew/include
 
-macx:INCLUDEPATH += \
-    /opt/local/include/
+macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
+macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
 
 ####################
