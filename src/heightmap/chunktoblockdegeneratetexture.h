@@ -144,7 +144,7 @@ public:
         BlockFbos& block_fbos_;
         ShaderTexture shader_;
 
-        float* mapped_chunk_data_;
+        ZeroOnMove<float*> mapped_chunk_data_;
         std::future<void> data_transfer;
 
         Tfr::FreqAxis chunk_scale;
