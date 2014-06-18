@@ -371,9 +371,6 @@ void Project::
 
     saweMain->restoreSettings( QSettings().value("GuiState").toByteArray() );
 
-    // don't start in fullscreen mode
-    saweMain->disableFullscreen();
-
     _mainWindow->show();
 
     Sawe::Application::check_license();

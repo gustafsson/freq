@@ -520,14 +520,17 @@ void SaweMainWindow::
         }
     }
 
-    restoreState(state["MainWindow/windowState"].toByteArray());
-
     // Always start stopped
     state["actionRecord"] = false;
     state["actionPlayEntireSound"] = false;
     state["actionPlaySection"] = false;
     state["actionPlaySelection"] = false;
 
+    // Don't start in fullscreen mode
+    state.remove (ui->actionToggleFullscreen->objectName ());
+    state.remove (ui->actionToggleFullscreenNoMenus->objectName ());
+
+    restoreState(state["MainWindow/windowState"].toByteArray());
     restoreGuiState( this, state );
 
     // Always start with the navigation tool activated
