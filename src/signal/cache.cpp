@@ -4,6 +4,7 @@
 #include "exceptionassert.h"
 #include "neat_math.h"
 #include "backtrace.h"
+#include "timer.h"
 
 using namespace boost;
 
@@ -33,6 +34,8 @@ Cache& Cache::
 void Cache::
         put( pBuffer bp )
 {
+    Timer t;
+
     bp->release_extra_resources();
 
     const Buffer& b = *bp;
@@ -43,6 +46,9 @@ void Cache::
         **itr |= b;
 
     _valid_samples |= b.getInterval();
+
+    if (t.elapsed ()>10e-3)
+        TaskInfo(boost::format("!!! It took %s to put(%s) into cache") % TaskTimer::timeToString(t.elapsed ()) % b.getInterval ());
 }
 
 
@@ -117,6 +123,8 @@ void Cache::
 pBuffer Cache::
         read( const Interval& I ) const
 {
+    Timer t;
+
     // COPIED FROM SourceBase::readFixedLength
 
     // Try a simple read
@@ -129,15 +137,17 @@ pBuffer Cache::
 
     Intervals sid(I);
 
-    do
+    while(sid)
     {
-        if (!p)
-            p = readAtLeastFirstSample( sid.fetchFirstInterval() );
-
-        sid -= p->getInterval();
         *r |= *p; // Fill buffer
-        p.reset();
-    } while (sid);
+        sid -= p->getInterval();
+
+        if (sid)
+            p = readAtLeastFirstSample( sid.fetchFirstInterval() );
+    }
+
+    if (t.elapsed ()>10e-3)
+        TaskInfo(boost::format("!!! It took %s to read(%s) from cache") % TaskTimer::timeToString(t.elapsed ()) % I);
 
     return r;
 }

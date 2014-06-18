@@ -41,7 +41,7 @@ std::set<Step::ptr> single_paths(GraphVertex v, const Graph& g) {
 TargetMarker::
         ~TargetMarker()
 {
-    Step::ptr step = target_needs_.read ()->step().lock();
+    Step::ptr step = target_needs_.raw ()->step().lock();
     if (!step)
         return;
 
@@ -69,7 +69,7 @@ shared_state<TargetNeeds> TargetMarker::
 Step::ptr::weak_ptr TargetMarker::
         step() const
 {
-    return target_needs_.read ()->step();
+    return target_needs_.raw ()->step();
 }
 
 } // namespace Processing

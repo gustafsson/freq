@@ -69,7 +69,7 @@ void Targets::
         Targets::ptr targets(new Targets(bedroom_notifier));
         TargetNeeds::ptr updater( targets.write ()->addTarget(step) );
         EXCEPTION_ASSERT(updater);
-        EXCEPTION_ASSERT(updater.read ()->step().lock() == step);
+        EXCEPTION_ASSERT(updater.raw ()->step().lock() == step);
     }
 }
 

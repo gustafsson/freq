@@ -280,7 +280,7 @@ public:
         : Task(
               Step::ptr(new Step(Signal::OperationDesc::ptr())).write(),
               Step::ptr(),
-              std::vector<Step::ptr>(),
+              std::vector<Step::const_ptr>(),
               Signal::Operation::ptr(),
               Signal::Interval(),
               Signal::Interval())

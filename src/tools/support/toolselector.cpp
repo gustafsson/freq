@@ -50,8 +50,7 @@ QWidget* ToolSelector::
 //    {}
 //};
 
-// "inline" suppresses warning about unused function
-inline static void printChildren(QObject* o)
+inline void printChildren(QObject* o)
 {
     TaskTimer tt("%s", vartype(*o).c_str());
     tt.suppressTiming();

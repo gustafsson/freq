@@ -26,6 +26,7 @@ class Step
 {
 public:
     typedef shared_state<Step> ptr;
+    typedef shared_state<const Step> const_ptr;
     typedef shared_state_traits_backtrace shared_state_traits;
 
     // To be appended to exceptions while using Step
@@ -33,7 +34,7 @@ public:
 
     Step(Signal::OperationDesc::ptr operation_desc);
 
-    Signal::OperationDesc::ptr  get_crashed() const;
+    Signal::OperationDesc::ptr get_crashed() const;
     Signal::Processing::IInvalidator::ptr mark_as_crashed_and_get_invalidator();
 
     /**
