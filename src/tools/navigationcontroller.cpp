@@ -4,7 +4,7 @@
 #include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "tools/commands/movecameracommand.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "tools/commands/rotatecameracommand.h"

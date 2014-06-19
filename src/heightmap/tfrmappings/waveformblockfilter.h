@@ -3,8 +3,8 @@
 
 #include "tfr/chunkfilter.h"
 #include "heightmap/block.h"
-#include "heightmap/mergechunk.h"
-#include "heightmap/blocks/updatequeue.h"
+#include "heightmap/update/mergechunk.h"
+#include "heightmap/update/updatequeue.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -15,7 +15,7 @@ namespace TfrMappings {
 class WaveformBlockUpdater
 {
 public:
-    class Job: public Blocks::IUpdateJob
+    class Job: public Update::IUpdateJob
     {
     public:
         Job(Signal::pMonoBuffer b) : b(b) {}
@@ -26,7 +26,7 @@ public:
     };
 
 
-    void processJobs( const std::vector<Heightmap::Blocks::UpdateQueue::Job>& jobs );
+    void processJobs( const std::vector<Heightmap::Update::UpdateQueue::Job>& jobs );
     void processJob( const Job& job, const std::vector<pBlock>& intersecting_blocks );
     void processJob( const Job& job, pBlock block );
 };
@@ -38,7 +38,7 @@ public:
 class WaveformBlockFilter: public Heightmap::MergeChunk
 {
 public:
-    std::vector<Blocks::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&);
+    std::vector<Update::IUpdateJob::ptr> prepareUpdate(Tfr::ChunkAndInverse&);
 
 public:
     static void test();

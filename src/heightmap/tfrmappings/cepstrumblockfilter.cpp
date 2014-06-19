@@ -3,9 +3,9 @@
 #include "signal/computingengine.h"
 #include "tfr/cepstrum.h"
 #include "tfr/stft.h"
-#include "heightmap/chunktoblock.h"
-#include "heightmap/glblock.h"
-#include "heightmap/blocks/blockupdater.h"
+#include "heightmap/render/glblock.h"
+#include "heightmap/update/chunktoblock.h"
+#include "heightmap/update/blockupdater.h"
 
 #include "demangle.h"
 
@@ -21,7 +21,7 @@ CepstrumBlockFilter::
 }
 
 
-std::vector<Blocks::IUpdateJob::ptr> CepstrumBlockFilter::
+std::vector<Update::IUpdateJob::ptr> CepstrumBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
@@ -29,9 +29,9 @@ std::vector<Blocks::IUpdateJob::ptr> CepstrumBlockFilter::
 
     // already normalized when return from Cepstrum.cpp
     float normalization_factor = 1.f;
-    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor});
+    Update::IUpdateJob::ptr chunktoblockp(new Update::BlockUpdater::Job{chunk.chunk, normalization_factor});
 
-    return std::vector<Blocks::IUpdateJob::ptr>{chunktoblockp};
+    return std::vector<Update::IUpdateJob::ptr>{chunktoblockp};
 }
 
 
@@ -123,10 +123,10 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::ptr()) );
-        Blocks::BlockUpdater bu;
-        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+        Update::BlockUpdater bu;
+        for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
             bu.processJob(
-                    (Blocks::BlockUpdater::Job&)(*job),
+                    (Update::BlockUpdater::Job&)(*job),
                     std::vector<pBlock>{block}
                     );
     }

@@ -1,7 +1,7 @@
 #include "renderblock.h"
 #include "sawe/configuration.h"
-#include "heightmap/glblock.h"
-#include "heightmap/shaderresource.h"
+#include "glblock.h"
+#include "shaderresource.h"
 
 // gpumisc
 #include "computationkernel.h"

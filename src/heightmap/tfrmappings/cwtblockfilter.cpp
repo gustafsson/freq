@@ -1,8 +1,9 @@
 #include "cwtblockfilter.h"
-#include "heightmap/chunktoblock.h"
-#include "heightmap/chunktoblockdegeneratetexture.h"
-#include "heightmap/glblock.h"
-#include "heightmap/blocks/blockupdater.h"
+
+#include "heightmap/update/chunktoblock.h"
+#include "heightmap/update/chunktoblockdegeneratetexture.h"
+#include "heightmap/render/glblock.h"
+#include "heightmap/update/blockupdater.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"
@@ -21,14 +22,14 @@ CwtBlockFilter::
 {}
 
 
-std::vector<Blocks::IUpdateJob::ptr> CwtBlockFilter::
+std::vector<Update::IUpdateJob::ptr> CwtBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& cai)
 {
     return prepareUpdate (cai, std::vector<pBlock>{});
 }
 
 
-std::vector<Blocks::IUpdateJob::ptr> CwtBlockFilter::
+std::vector<Update::IUpdateJob::ptr> CwtBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& pchunk, const std::vector<pBlock>& B)
 {
     Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(pchunk.t.get ());
@@ -42,7 +43,7 @@ std::vector<Blocks::IUpdateJob::ptr> CwtBlockFilter::
     for (pBlock b : B)
         largest_fs = std::max(largest_fs, b->sample_rate ());
 
-    std::vector<Blocks::IUpdateJob::ptr> R;
+    std::vector<Update::IUpdateJob::ptr> R;
 
     for ( const Tfr::pChunk& chunkpart : chunks.chunks )
       {
@@ -52,7 +53,7 @@ std::vector<Blocks::IUpdateJob::ptr> CwtBlockFilter::
 //        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
 //        chunktoblock->complex_info = complex_info_;
 
-        Blocks::IUpdateJob::ptr job(new Blocks::BlockUpdater::Job{chunkpart, normalization_factor, largest_fs});
+        Update::IUpdateJob::ptr job(new Update::BlockUpdater::Job{chunkpart, normalization_factor, largest_fs});
         EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
 
         R.push_back (job);
@@ -154,10 +155,10 @@ void CwtBlockFilter::
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::ptr mc( new CwtBlockFilter(complex_info) );
 
-        Blocks::BlockUpdater bu;
-        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+        Update::BlockUpdater bu;
+        for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
             bu.processJob(
-                    (Blocks::BlockUpdater::Job&)(*job),
+                    (Update::BlockUpdater::Job&)(*job),
                     std::vector<pBlock>{block}
                     );
 

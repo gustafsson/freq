@@ -9,7 +9,7 @@
 #include "tfr/cwtchunk.h"
 
 #include "commentcontroller.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "heightmap/collection.h"
 
 // gpumisc

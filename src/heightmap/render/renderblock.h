@@ -3,7 +3,7 @@
 
 #include "heightmap/block.h"
 #include "vbo.h"
-#include "../rendersettings.h"
+#include "rendersettings.h"
 #include "GlTexture.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;

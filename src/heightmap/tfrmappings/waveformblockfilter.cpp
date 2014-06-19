@@ -1,6 +1,6 @@
 #include "waveformblockfilter.h"
-#include "heightmap/chunktoblock.h"
-#include "heightmap/blocks/blockupdater.h"
+#include "heightmap/update/chunktoblock.h"
+#include "heightmap/update/blockupdater.h"
 #include "tfr/drawnwaveform.h"
 #include "signal/computingengine.h"
 #include "tfr/drawnwaveformkernel.h"
@@ -11,7 +11,7 @@
 using namespace std;
 
 namespace Heightmap {
-using namespace Blocks;
+using namespace Update;
 
 namespace TfrMappings {
 
@@ -64,11 +64,11 @@ void WaveformBlockUpdater::
 }
 
 
-vector<Blocks::IUpdateJob::ptr> WaveformBlockFilter::
+vector<Update::IUpdateJob::ptr> WaveformBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
-    Blocks::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job{chunk.input});
-    return vector<Blocks::IUpdateJob::ptr>{ctb};
+    Update::IUpdateJob::ptr ctb(new WaveformBlockUpdater::Job{chunk.input});
+    return vector<Update::IUpdateJob::ptr>{ctb};
 }
 
 
@@ -137,7 +137,7 @@ void WaveformBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new WaveformBlockFilter );
-        Blocks::IUpdateJob::ptr job = mc->prepareUpdate (cai)[0];
+        Update::IUpdateJob::ptr job = mc->prepareUpdate (cai)[0];
 
         EXCEPTION_ASSERT(dynamic_cast<WaveformBlockUpdater::Job*>(job.get ()));
 

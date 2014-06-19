@@ -8,9 +8,9 @@
 
 // Sonic AWE
 #include "adapters/recorder.h"
-#include "heightmap/renderer.h"
 #include "heightmap/block.h"
-#include "heightmap/glblock.h"
+#include "heightmap/render/renderer.h"
+#include "heightmap/render/glblock.h"
 #include "heightmap/collection.h"
 #include "sawe/application.h"
 #include "sawe/project.h"

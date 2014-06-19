@@ -2,7 +2,7 @@
 #include "brushmodel.h"
 
 #include "heightmap/block.h"
-#include "heightmap/glblock.h"
+#include "heightmap/render/glblock.h"
 #include "heightmap/collection.h"
 #include "heightmap/referenceinfo.h"
 

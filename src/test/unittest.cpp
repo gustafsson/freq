@@ -63,12 +63,12 @@
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/recordmodel.h"
 #include "tools/applicationerrorlogcontroller.h"
-#include "heightmap/blocks/merger.h"
-#include "heightmap/blocks/mergertexture.h"
-#include "heightmap/blocks/updateproducer.h"
-#include "heightmap/blockfactory.h"
-#include "heightmap/blockinitializer.h"
-#include "heightmap/chunktoblock.h"
+#include "heightmap/blockmanagement/merge/merger.h"
+#include "heightmap/blockmanagement/merge/mergertexture.h"
+#include "heightmap/update/updateproducer.h"
+#include "heightmap/blockmanagement/blockfactory.h"
+#include "heightmap/blockmanagement/blockinitializer.h"
+#include "heightmap/update/chunktoblock.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
@@ -168,17 +168,17 @@ int UnitTest::
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::ApplicationErrorLogController);
         RUNTEST(Heightmap::Block);
-        RUNTEST(Heightmap::Blocks::Merger);
-        RUNTEST(Heightmap::Blocks::MergerTexture);
-        RUNTEST(Heightmap::BlockFactory);
-        RUNTEST(Heightmap::BlockInitializer);
+        RUNTEST(Heightmap::BlockManagement::Merge::Merger);
+        RUNTEST(Heightmap::BlockManagement::Merge::MergerTexture);
+        RUNTEST(Heightmap::BlockManagement::BlockFactory);
+        RUNTEST(Heightmap::BlockManagement::BlockInitializer);
         RUNTEST(Heightmap::BlockLayout);
-        RUNTEST(Heightmap::ChunkToBlock);
+        RUNTEST(Heightmap::Update::ChunkToBlock);
         RUNTEST(Heightmap::Render::RenderSet);
         RUNTEST(Heightmap::TfrMapping);
         RUNTEST(Heightmap::VisualizationParams);
-        RUNTEST(Heightmap::Blocks::UpdateProducer);
-        RUNTEST(Heightmap::Blocks::UpdateProducerDesc);
+        RUNTEST(Heightmap::Update::UpdateProducer);
+        RUNTEST(Heightmap::Update::UpdateProducerDesc);
         RUNTEST(Heightmap::TfrMappings::StftBlockFilter);
         RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
         RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);

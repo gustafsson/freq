@@ -7,7 +7,7 @@
 #include "ui_mainwindow.h"
 #include "support/toolbar.h"
 
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "heightmap/referenceinfo.h"
 
 #include <QMouseEvent>

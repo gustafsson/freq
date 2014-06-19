@@ -2,7 +2,7 @@
 #include "sawe/project.h"
 
 #include "heightmap/collection.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 
 #include "signal/operationwrapper.h"
 
@@ -45,7 +45,7 @@ RenderModel::
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
-    renderer.reset( new Heightmap::Renderer() );
+    renderer.reset( new Heightmap::Render::Renderer() );
 
     resetSettings();
 //    setTestCamera();

@@ -3,10 +3,10 @@
 
 #include "tfr/freqaxis.h"
 #include "heightmap/amplitudeaxis.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
-#include "heightmap/blocks/updatequeue.h"
+#include "heightmap/update/updatequeue.h"
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 #include "support/transformdescs.h"
@@ -74,10 +74,10 @@ namespace Tools
 
         Heightmap::TfrMappings::StftBlockFilterParams::ptr get_stft_block_filter_params();
 
-        Heightmap::Blocks::UpdateQueue::ptr block_update_queue;
+        Heightmap::Update::UpdateQueue::ptr block_update_queue;
 
         //Signal::pTarget renderSignalTarget;
-        boost::shared_ptr<Heightmap::Renderer> renderer;
+        boost::shared_ptr<Heightmap::Render::Renderer> renderer;
 
         Sawe::Project* project() { return _project; }
 
