@@ -1,9 +1,7 @@
 #include "cwtblockfilter.h"
 
-#include "heightmap/update/chunktoblock.h"
-#include "heightmap/update/chunktoblockdegeneratetexture.h"
+#include "heightmap/update/tfrblockupdater.h"
 #include "heightmap/render/glblock.h"
-#include "heightmap/update/blockupdater.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"
@@ -53,7 +51,7 @@ std::vector<Update::IUpdateJob::ptr> CwtBlockFilter::
 //        chunktoblock->enable_subtexel_aggregation = false; //renderer->redundancy() <= 1;
 //        chunktoblock->complex_info = complex_info_;
 
-        Update::IUpdateJob::ptr job(new Update::BlockUpdater::Job{chunkpart, normalization_factor, largest_fs});
+        Update::IUpdateJob::ptr job(new Update::TfrBlockUpdater::Job{chunkpart, normalization_factor, largest_fs});
         EXCEPTION_ASSERT_EQUALS( complex_info_, ComplexInfo_Amplitude_Non_Weighted );
 
         R.push_back (job);
@@ -141,7 +139,7 @@ void CwtBlockFilter::
         Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
-        block->glblock.reset( new GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
+        block->glblock.reset( new Render::GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -155,17 +153,23 @@ void CwtBlockFilter::
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::ptr mc( new CwtBlockFilter(complex_info) );
 
-        Update::BlockUpdater bu;
+        std::vector<Update::UpdateQueue::Job> jobs;
+
         for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
-            bu.processJob(
-                    (Update::BlockUpdater::Job&)(*job),
-                    std::vector<pBlock>{block}
-                    );
+        {
+            Update::UpdateQueue::Job uj;
+            uj.intersecting_blocks = std::vector<pBlock>{block};
+            uj.updatejob = job;
+            jobs.push_back (std::move(uj));
+        }
+
+        Update::TfrBlockUpdater().processJobs (jobs);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow
     }
 }
+
 
 void CwtBlockFilterDesc::
         test()

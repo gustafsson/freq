@@ -17,6 +17,7 @@
 
 namespace Heightmap {
 namespace Update {
+namespace OpenGL {
 
 struct vertex_format {
     float x, y, u, v;
@@ -674,6 +675,7 @@ void ChunkToBlockDegenerateTexture::
     block_fbos_.clear ();
 }
 
+} // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
 
@@ -681,6 +683,7 @@ void ChunkToBlockDegenerateTexture::
 
 namespace Heightmap {
 namespace Update {
+namespace OpenGL {
 
 void ChunkToBlockDegenerateTexture::
         test()
@@ -691,6 +694,7 @@ void ChunkToBlockDegenerateTexture::
     }
 }
 
+} // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
 

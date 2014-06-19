@@ -1,6 +1,6 @@
 #include "chunktoblock.h"
 
-#include "blockkernel.h"
+#include "../blockkernel.h"
 #include "signal/operation.h"
 #include "tfr/chunk.h"
 #include "tfr/transformoperation.h"

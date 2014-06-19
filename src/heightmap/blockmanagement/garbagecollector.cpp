@@ -62,7 +62,7 @@ pBlock GarbageCollector::
     if (!releasedBlock)
         return pBlock(); // Nothing to release
 
-    Heightmap::pGlBlock glblock = releasedBlock->glblock;
+    Heightmap::Render::pGlBlock glblock = releasedBlock->glblock;
     size_t blockMemory = glblock
             ? glblock->allocated_bytes_per_element() * releasedBlock->block_layout().texels_per_block ()
             : 0;
@@ -118,7 +118,7 @@ std::vector<pBlock> GarbageCollector::
         if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
             break;
 
-        Heightmap::pGlBlock glblock = b->glblock;
+        Heightmap::Render::pGlBlock glblock = b->glblock;
         size_t blockMemory = glblock
                 ? glblock->allocated_bytes_per_element() * b->block_layout().texels_per_block ()
                 : 0;

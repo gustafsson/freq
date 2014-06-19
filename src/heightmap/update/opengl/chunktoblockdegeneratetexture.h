@@ -1,5 +1,5 @@
-#ifndef HEIGHTMAP_CHUNKTOBLOCKDEGENERATETEXTURE_H
-#define HEIGHTMAP_CHUNKTOBLOCKDEGENERATETEXTURE_H
+#ifndef HEIGHTMAP_UPDATE_OPENGL_CHUNKTOBLOCKDEGENERATETEXTURE_H
+#define HEIGHTMAP_UPDATE_OPENGL_CHUNKTOBLOCKDEGENERATETEXTURE_H
 
 #include "block.h"
 #include "tfr/chunkdata.h"
@@ -14,6 +14,7 @@ class GlTexture;
 
 namespace Heightmap {
 namespace Update {
+namespace OpenGL {
 
 class BlockFbo {
 public:
@@ -24,7 +25,7 @@ public:
 
 private:
     pBlock block;
-    boost::shared_ptr<GlBlock> glblock;
+    boost::shared_ptr<Render::GlBlock> glblock;
     std::unique_ptr<GlFrameBuffer> fbo;
 };
 
@@ -178,7 +179,8 @@ public:
     static void test();
 };
 
+} // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
 
-#endif // HEIGHTMAP_CHUNKTOBLOCKDEGENERATETEXTURE_H
+#endif // HEIGHTMAP_UPDATE_OPENGL_CHUNKTOBLOCKDEGENERATETEXTURE_H

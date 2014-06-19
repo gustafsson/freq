@@ -222,7 +222,7 @@ pBlock Collection::
     if (block)
         return block;
 
-    pGlBlock reuse;
+    Render::pGlBlock reuse;
     if (!_up_for_grabs.empty ())
     {
         reuse = _up_for_grabs.back ()->glblock;

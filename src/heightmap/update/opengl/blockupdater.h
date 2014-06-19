@@ -1,16 +1,17 @@
-#ifndef HEIGHTMAP_UPDATE_CHUNKMERGER_H
-#define HEIGHTMAP_UPDATE_CHUNKMERGER_H
+#ifndef HEIGHTMAP_UPDATE_OPENGL_CHUNKMERGER_H
+#define HEIGHTMAP_UPDATE_OPENGL_CHUNKMERGER_H
 
 #include "tfr/chunkfilter.h"
-#include "updatequeue.h"
-#include "heightmap/update/chunktoblockdegeneratetexture.h"
-#include "heightmap/update/chunktoblock.h"
-#include "iupdatejob.h"
+#include "../updatequeue.h"
+#include "../tfrblockupdater.h"
+#include "chunktoblockdegeneratetexture.h"
+#include "../iupdatejob.h"
 
 #include "thread_pool.h"
 
 namespace Heightmap {
 namespace Update {
+namespace OpenGL {
 
 
 /**
@@ -69,17 +70,6 @@ namespace Update {
 class BlockUpdater
 {
 public:
-    class Job: public IUpdateJob {
-    public:
-        Job(Tfr::pChunk chunk, float normalization_factor, float largest_fs=0);
-
-        Tfr::pChunk chunk;
-        float *p;
-        float normalization_factor;
-
-        Signal::Interval getCoveredInterval() const override;
-    };
-
     BlockUpdater();
     BlockUpdater(const BlockUpdater&) = delete;
     BlockUpdater& operator=(const BlockUpdater&) = delete;
@@ -87,7 +77,7 @@ public:
 
     void processJobs( const std::vector<UpdateQueue::Job>& jobs );
     ChunkToBlockDegenerateTexture::DrawableChunk processJob(
-            const Job& job,
+            const TfrBlockUpdater::Job& job,
             const std::vector<pBlock>& intersecting_blocks );
 
 private:
@@ -100,7 +90,8 @@ public:
     static void test();
 };
 
+} // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
 
-#endif // HEIGHTMAP_UPDATE_CHUNKMERGER_H
+#endif // HEIGHTMAP_UPDATE_OPENGL_CHUNKMERGER_H

@@ -1,9 +1,6 @@
 #include "stftblockfilter.h"
 
-#include "heightmap/update/chunktoblock.h"
-#include "heightmap/update/chunktoblocktexture.h"
-#include "heightmap/update/chunktoblockdegeneratetexture.h"
-#include "heightmap/update/blockupdater.h"
+#include "heightmap/update/tfrblockupdater.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
 #include "heightmap/render/glblock.h"
@@ -35,7 +32,7 @@ std::vector<Update::IUpdateJob::ptr> StftBlockFilter::
     }
 
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    Update::IUpdateJob::ptr chunktoblockp(new Update::BlockUpdater::Job{chunk.chunk, normalization_factor, 0});
+    Update::IUpdateJob::ptr chunktoblockp(new Update::TfrBlockUpdater::Job{chunk.chunk, normalization_factor, 0});
 
     return std::vector<Update::IUpdateJob::ptr>{chunktoblockp};
 }
@@ -120,7 +117,7 @@ void StftBlockFilter::
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
         Region r = RegionFactory( bl )( ref );
-        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+        block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -131,12 +128,18 @@ void StftBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new StftBlockFilter(StftBlockFilterParams::ptr()) );
-        Update::BlockUpdater bu;
+
+        std::vector<Update::UpdateQueue::Job> jobs;
+
         for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
-            bu.processJob(
-                    (Update::BlockUpdater::Job&)(*job),
-                    std::vector<pBlock>{block}
-                    );
+        {
+            Update::UpdateQueue::Job uj;
+            uj.intersecting_blocks = std::vector<pBlock>{block};
+            uj.updatejob = job;
+            jobs.push_back (std::move(uj));
+        }
+
+        Update::TfrBlockUpdater().processJobs (jobs);
 
         float T = t.elapsed ();
 //        if (DetectGdb::is_running_through_gdb ()) {

@@ -2,7 +2,7 @@
 #define HEIGHTMAP_UPDATE_UPDATEPRODUCER_H
 
 #include "heightmap/tfrmapping.h"
-#include "heightmap/update/mergechunk.h"
+#include "heightmap/tfrmappings/mergechunk.h"
 #include "updatequeue.h"
 #include "tfr/chunkfilter.h"
 

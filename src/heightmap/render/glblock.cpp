@@ -22,6 +22,7 @@ using namespace std;
 
 
 namespace Heightmap {
+namespace Render {
 
 GlBlock::
 GlBlock( BlockLayout block_size, float width, float height )
@@ -564,5 +565,5 @@ unsigned GlBlock::
     return s;
 }
 
-
+} // namespace Render
 } // namespace Heightmap

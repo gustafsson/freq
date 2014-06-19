@@ -53,6 +53,7 @@ SOURCES += \
     heightmap/render/*.cpp \
     heightmap/tfrmappings/*.cpp \
     heightmap/update/*.cpp \
+    heightmap/update/cpu/*.cpp \
     heightmap/update/opengl/*.cpp \
     sawe/*.cpp \
     signal/*.cpp \
@@ -80,6 +81,7 @@ HEADERS += \
     heightmap/render/*.h \
     heightmap/tfrmappings/*.h \
     heightmap/update/*.h \
+    heightmap/update/cpu/*.h \
     heightmap/update/opengl/*.h \
     sawe/*.h \
     signal/*.h \

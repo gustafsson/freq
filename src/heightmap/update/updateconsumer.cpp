@@ -1,8 +1,9 @@
 #include "updateconsumer.h"
 #include "updatequeue.h"
 
+#include "waveformblockupdater.h"
+#include "tfrblockupdater.h"
 #include "tools/applicationerrorlogcontroller.h"
-#include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "tfr/chunk.h"
 
 #include "tasktimer.h"
@@ -77,7 +78,8 @@ void UpdateConsumer::
 
     try
       {
-        BlockUpdater block_updater;
+        TfrBlockUpdater block_updater;
+        WaveformBlockUpdater waveform_updater;
 
         while (!isInterruptionRequested ())
           {
@@ -101,7 +103,7 @@ void UpdateConsumer::
               }
 
             block_updater.processJobs (jobs);
-            TfrMappings::WaveformBlockUpdater().processJobs (jobs);
+            waveform_updater.processJobs (jobs);
 
             if (!isInterruptionRequested ())
               {

@@ -229,10 +229,10 @@ void MergerTexture::
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
         pBlock block(new Block(ref,bl,vp));
-        block->glblock.reset( new GlBlock( bl, block->getRegion().time(), block->getRegion().scale() ));
+        block->glblock.reset( new Render::GlBlock( bl, block->getRegion().time(), block->getRegion().scale() ));
         block->block_data()->cpu_copy.reset( new DataStorage<float>(ds) );
         block->update_glblock_data ();
-        block->glblock->update_texture( GlBlock::HeightMode_Flat );
+        block->glblock->update_texture( Render::GlBlock::HeightMode_Flat );
         EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -256,10 +256,10 @@ void MergerTexture::
 
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
             const Region& r = block->getRegion();
-            block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+            block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
             block->update_glblock_data ();
-            block->glblock->update_texture( GlBlock::HeightMode_Flat );
+            block->glblock->update_texture( Render::GlBlock::HeightMode_Flat );
 
             cache->insert(block);
         }
@@ -284,10 +284,10 @@ void MergerTexture::
 
             pBlock block(new Block(ref.right (),bl,vp));
             const Region& r = block->getRegion();
-            block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+            block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
             block->update_glblock_data ();
-            block->glblock->update_texture( GlBlock::HeightMode_Flat );
+            block->glblock->update_texture( Render::GlBlock::HeightMode_Flat );
 
             cache->insert(block);
         }

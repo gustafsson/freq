@@ -15,6 +15,7 @@
 
 
 namespace Heightmap {
+namespace Render {
 
 class GlBlock
 {
@@ -90,6 +91,7 @@ private:
 
 typedef boost::shared_ptr<GlBlock> pGlBlock;
 
+} // namespace Render
 } // namespace Heightmap
 
 #endif // HEIGHTMAPVBO_H

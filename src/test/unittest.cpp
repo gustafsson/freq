@@ -68,7 +68,7 @@
 #include "heightmap/update/updateproducer.h"
 #include "heightmap/blockmanagement/blockfactory.h"
 #include "heightmap/blockmanagement/blockinitializer.h"
-#include "heightmap/update/chunktoblock.h"
+#include "heightmap/update/cpu/chunktoblock.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"

@@ -34,7 +34,7 @@ BlockFactory::
 
 
 pBlock BlockFactory::
-        createBlock( const Reference& ref, pGlBlock reuse )
+        createBlock( const Reference& ref, Render::pGlBlock reuse )
 {
     pBlock b;
 
@@ -62,7 +62,7 @@ pBlock BlockFactory::
 
 
 pBlock BlockFactory::
-        createBlockInternal( const Reference& ref, pGlBlock reuse )
+        createBlockInternal( const Reference& ref, Render::pGlBlock reuse )
 {
     // A precautious wrapper to getAllocatedBlock which is a precautious wrapper to attempt
 
@@ -178,7 +178,7 @@ pBlock BlockFactory::
         Region r = RegionFactory( block_layout_ )( ref );
         EXCEPTION_ASSERT_LESS( r.a.scale, 1 );
         EXCEPTION_ASSERT_LESS_OR_EQUAL( r.b.scale, 1 );
-        attempt->glblock.reset( new GlBlock( block_layout_, r.time(), r.scale() ));
+        attempt->glblock.reset( new Render::GlBlock( block_layout_, r.time(), r.scale() ));
 
         attempt->block_data()->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
         attempt->discard_new_block_data();
@@ -255,7 +255,7 @@ pBlock BlockFactory::
 void BlockFactory::
         setDummyValues( pBlock block )
 {
-    GlBlock::pHeight h = block->glblock->height();
+    Render::GlBlock::pHeight h = block->glblock->height();
     float* p = h->data->getCpuMemory();
     unsigned samples = block_layout_.texels_per_row (),
             scales = block_layout_.texels_per_column ();

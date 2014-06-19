@@ -227,7 +227,7 @@ void Merger::
         VisualizationParams::ptr vp(new VisualizationParams);
         pBlock block(new Block(ref,bl,vp));
         const Region& r = block->getRegion();
-        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+        block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
         EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
         block->block_data()->cpu_copy.reset( new DataStorage<float>(ds) );
 
@@ -249,7 +249,7 @@ void Merger::
 
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
             const Region& r = block->getRegion();
-            block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+            block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
             cache->insert(block);
         }
@@ -270,7 +270,7 @@ void Merger::
 
             pBlock block(new Block(ref.right (),bl,vp));
             const Region& r = block->getRegion();
-            block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+            block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
             block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
             cache->insert(block);
         }

@@ -21,7 +21,7 @@ public:
     /**
       Creates a new block.
       */
-    pBlock              createBlock( const Reference& ref, pGlBlock reuse=pGlBlock() );
+    pBlock              createBlock( const Reference& ref, Render::pGlBlock reuse=Render::pGlBlock() );
 
     Signal::Intervals   recently_created();
     void                set_recently_created_all();
@@ -33,7 +33,7 @@ private:
     /**
       Creates a new block.
       */
-    pBlock              createBlockInternal( const Reference& ref, pGlBlock reuse );
+    pBlock              createBlockInternal( const Reference& ref, Render::pGlBlock reuse );
 
 
     /**

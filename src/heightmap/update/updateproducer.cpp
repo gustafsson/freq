@@ -1,6 +1,5 @@
 #include "updateproducer.h"
 
-#include "heightmap/update/chunktoblock.h"
 #include "heightmap/collection.h"
 #include "heightmap/blockquery.h"
 
@@ -113,7 +112,6 @@ Tfr::pChunkFilter UpdateProducerDesc::
 
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
-#include "blockupdater.h"
 
 #include <QApplication>
 #include <QGLWidget>

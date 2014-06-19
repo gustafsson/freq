@@ -1,7 +1,6 @@
 #ifndef HEIGHTMAP_UPDATE_UPDATECONSUMER_H
 #define HEIGHTMAP_UPDATE_UPDATECONSUMER_H
 
-#include "blockupdater.h"
 #include "updatequeue.h"
 #include <QThread>
 
