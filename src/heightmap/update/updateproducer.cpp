@@ -72,7 +72,7 @@ void UpdateProducer::
     catch (const std::logic_error&)
     {
         // The queue may be emptied before the task has been processed
-        Log("Discarded job: %s") % chunk_interval;
+        //Log("Discarded job: %s") % chunk_interval;
     }
 
     // The target view will be refreshed when a job is finished

@@ -2,6 +2,7 @@
 #include "signal/operationwrapper.h"
 
 #include <QFileSystemWatcher>
+#include <QTimer>
 
 namespace Tools {
 
@@ -15,13 +16,16 @@ public:
     Signal::OperationDesc::ptr getWrappedOperationDesc();
 
 private:
-    void fileChanged (const QString & path);
+    void fileChanged (const QString & path) override;
+    void delayedFileChanged () override;
 
     shared_state<Signal::OperationDesc>::weak_ptr wrapper_;
     Signal::OperationDesc::ptr last_loaded_operation_;
     QPointer<OpenfileController> openfilecontroller_;
     QFileSystemWatcher watcher_;
     shared_state<Signal::OperationDesc>::weak_ptr operation_;
+    QString path_;
+    QTimer timer_;
 };
 
 
@@ -34,12 +38,16 @@ public:
 OpenfileWatcher::
         OpenfileWatcher(QPointer<OpenfileController> openfilecontroller, QString path)
     :
-      openfilecontroller_(openfilecontroller)
+      openfilecontroller_(openfilecontroller),
+      path_(path)
 {
     watcher_.addPath (path);
-    connect(&watcher_, SIGNAL(fileChanged(QString)), SLOT(fileChanged(QString)));
+    timer_.setSingleShot(true);
 
-    fileChanged (path);
+    connect(&watcher_, SIGNAL(fileChanged(QString)), SLOT(fileChanged(QString)));
+    connect(&timer_, SIGNAL(timeout()), SLOT(delayedFileChanged()));
+
+    delayedFileChanged ();
 }
 
 
@@ -81,9 +89,18 @@ Signal::OperationDesc::ptr OpenfileWatcher::
 void OpenfileWatcher::
         fileChanged ( const QString & path)
 {
-    TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
+//    TaskInfo ti(boost::format("File changed: %s") % path.toStdString ());
 
-    Signal::OperationDesc::ptr newop = openfilecontroller_->reopen(path, last_loaded_operation_);
+    timer_.start(250);
+}
+
+
+void OpenfileWatcher::
+        delayedFileChanged ()
+{
+    TaskInfo ti(boost::format("Delayed file changed: %s") % path_.toStdString ());
+
+    Signal::OperationDesc::ptr newop = openfilecontroller_->reopen(path_, last_loaded_operation_);
     if (!newop) {
         TaskInfo("Could not open file, ignoring reload");
         return;
@@ -130,6 +147,7 @@ Signal::OperationDesc::ptr OpenWatchedFileController::
 #include <QDir>
 #include <QStandardPaths>
 #include <QApplication>
+#include <QThread>
 
 namespace Tools {
 
@@ -196,6 +214,8 @@ void OpenWatchedFileController::
         file.close ();
 
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
+        application.processEvents ();
+        QThread::msleep(300);
         application.processEvents ();
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "baz");
 

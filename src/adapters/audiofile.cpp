@@ -321,13 +321,19 @@ Signal::pBuffer Audiofile::
     float* data = CpuMemoryStorage::WriteAll<float,3>( &partialfile ).ptr();
     sf_count_t readframes;
     TIME_AUDIOFILE_LINE( readframes = sndfile->read(data, num_channels()*I.count())); // read float
-    if ((sf_count_t)I.count() > readframes)
-        I.last = I.first + readframes;
 
     Signal::pBuffer waveform( new Signal::Buffer(I.first, I.count(), sample_rate(), num_channels()));
     Signal::pTimeSeriesData mergedata = waveform->mergeChannelData ();
     TIME_AUDIOFILE_LINE( Signal::transpose( mergedata.get(), &partialfile ) );
     waveform.reset (new Signal::Buffer(I.first, mergedata, sample_rate()));
+
+    if ((sf_count_t)I.count() > readframes)
+    {
+        I.last = I.first + readframes;
+        Signal::pBuffer waveform2( new Signal::Buffer(I.first, I.count(), sample_rate(), num_channels()));
+        *waveform2 |= *waveform;
+        waveform.swap (waveform2);
+    }
 
     VERBOSE_AUDIOFILE TaskInfo(boost::format("Read %s, total signal length %s") % I % lengthLongFormat());
     VERBOSE_AUDIOFILE TaskInfo(boost::format("Data size: %lu samples, %lu channels") % (size_t)sndfile->frames() % (size_t)sndfile->channels() );
@@ -428,8 +434,14 @@ Signal::pBuffer AudiofileOperation::
         process(Signal::pBuffer b)
 {
     Signal::pBuffer p = audiofile_->readRaw(b->getInterval ());
-    EXCEPTION_ASSERT_EQUALS(p->getInterval (), b->getInterval ());
-    return p;
+    if (p->getInterval () == b->getInterval ())
+        return p;
+    else
+    {
+        // This only happens if something goes wrong during reading, i.e if the file is being changed
+        *b |= *p;
+        return b;
+    }
 }
 
 
