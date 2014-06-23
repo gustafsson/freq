@@ -527,9 +527,7 @@ void TransformInfoForm::
         deprecateAll()
 {
     auto needs = renderview->model->target_marker()->target_needs ();
-    Signal::Processing::TargetNeeds::deprecateCache(
-                needs,
-                Signal::Intervals::Intervals_ALL);
+    needs->deprecateCache(Signal::Intervals::Intervals_ALL);
     renderview->emitTransformChanged();
 }
 

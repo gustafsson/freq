@@ -20,7 +20,7 @@ public:
     TargetInvalidator(Signal::Processing::TargetNeeds::const_ptr needs):needs_(needs) {}
 
     virtual void deprecateCache(Signal::Intervals what) const {
-        Signal::Processing::TargetNeeds::deprecateCache(needs_, what);
+        needs_->deprecateCache(what);
     }
 
 private:

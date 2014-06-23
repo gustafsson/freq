@@ -24,7 +24,8 @@ private:
     Dag::ptr g;
     IScheduleAlgorithm::ptr algorithm;
 
-    TargetNeeds::ptr::read_ptr prioritizedTarget() const;
+    typedef std::pair<Step::ptr, TargetNeeds::State> TargetState;
+    TargetState prioritizedTarget() const;
 
 public:
     static void test();

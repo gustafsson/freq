@@ -33,31 +33,25 @@ Task::ptr TargetSchedule::
     // Lock the graph from writing during getTask
     auto dag = g.read();
 
-    TargetNeeds::ptr::read_ptr target = prioritizedTarget();
-    if (!target) {
+    TargetState targetstate = prioritizedTarget();
+    TargetNeeds::State& state = targetstate.second;
+    Step::ptr& step = targetstate.first;
+    if (!step) {
         DEBUGINFO TaskInfo("No target needs anything right now");
         return Task::ptr();
     }
 
-    Step::ptr step                              = target->step().lock ();
-    Signal::Intervals needed                    = target->not_started();
-    Signal::IntervalType work_center            = target->work_center();
-    Signal::IntervalType preferred_update_size  = target->preferred_update_size();
+    DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % state.needed_samples % state.work_center);
 
-    target.unlock (); // release lock on TargetNeeds
-
-    DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % needed % work_center);
-
-    EXCEPTION_ASSERT(step);
     GraphVertex vertex = dag->getVertex(step);
     EXCEPTION_ASSERT(vertex);
 
     Task::ptr task = algorithm.read ()->getTask(
             dag->g(),
             vertex,
-            needed,
-            work_center,
-            preferred_update_size,
+            state.needed_samples,
+            state.work_center,
+            state.preferred_update_size,
             Workers::ptr(),
             engine);
 
@@ -68,26 +62,34 @@ Task::ptr TargetSchedule::
 }
 
 
-TargetNeeds::ptr::read_ptr TargetSchedule::
+TargetSchedule::TargetState TargetSchedule::
         prioritizedTarget() const
 {
-    TargetNeeds::ptr::read_ptr target;
+    TargetState r;
 
-    ptime latest(neg_infin);
-    BOOST_FOREACH(const TargetNeeds::ptr& t, targets.read ()->getTargets())
+    r.second.last_request = neg_infin;
+
+    for (const TargetNeeds::ptr& t: targets->getTargets())
     {
-        auto rt = t.read ();
+        auto step = t->step ().lock ();
+        if (!step)
+            continue;
 
-        Signal::Intervals needed = rt->not_started();
-        ptime last_request       = rt->last_request();
+        Signal::Intervals step_needed = step.read()->not_started();
+        if (!step_needed)
+            continue;
 
-        if (latest < last_request && needed) {
-            latest = last_request;
-            target.swap (rt);
+        TargetNeeds::State state = t->state ();
+        state.needed_samples &= step_needed;
+
+        if (r.second.last_request < state.last_request && state.needed_samples)
+        {
+            r.first = step;
+            r.second = state;
         }
     }
 
-    return target;
+    return r;
 }
 
 } // namespace Processing
@@ -140,13 +142,13 @@ void TargetSchedule::
         EXCEPTION_ASSERT(!targetschedule.getTask (engine));
 
         // It should not return a task for a target without needed_samples
-        TargetNeeds::ptr targetneeds ( targets.write ()->addTarget(step) );
+        TargetNeeds::ptr targetneeds ( targets->addTarget(step) );
         EXCEPTION_ASSERT(!targetschedule.getTask (engine));
 
         // The scheduler should be used to find a task when the target has
         // a non-empty not_started();
-        targetneeds.write ()->updateNeeds(Signal::Interval(3,4));
-        EXCEPTION_ASSERT(targetneeds.read ()->not_started());
+        targetneeds->updateNeeds(Signal::Interval(3,4));
+        EXCEPTION_ASSERT(targetneeds->not_started());
         Task::ptr task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
         EXCEPTION_ASSERT_EQUALS(task.read ()->expected_output(), Signal::Interval(3,4));
@@ -172,10 +174,10 @@ void TargetSchedule::
         Targets::ptr targets(new Targets(notifier));
         Signal::ComputingEngine::ptr engine;
 
-        TargetNeeds::ptr targetneeds ( targets.write ()->addTarget(step) );
-        TargetNeeds::ptr targetneeds2 ( targets.write ()->addTarget(step2) );
-        targetneeds.write ()->updateNeeds(Signal::Interval(),0,10,1);
-        targetneeds2.write ()->updateNeeds(Signal::Interval(5,6),0,10,0);
+        TargetNeeds::ptr targetneeds ( targets->addTarget(step) );
+        TargetNeeds::ptr targetneeds2 ( targets->addTarget(step2) );
+        targetneeds->updateNeeds(Signal::Interval(),0,10,1);
+        targetneeds2->updateNeeds(Signal::Interval(5,6),0,10,0);
 
         TargetSchedule targetschedule(dag, algorithm, targets);
         Task::ptr task = targetschedule.getTask (engine);

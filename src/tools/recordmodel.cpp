@@ -155,13 +155,13 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals());
 
         Signal::Processing::TargetNeeds::ptr needs = target_marker->target_needs();
-        needs.write ()->updateNeeds(Signal::Intervals(10,20));
+        needs->updateNeeds(Signal::Intervals(10,20));
 
         Signal::OperationDesc::Extent x = chain.read ()->extent(target_marker);
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
-        if (!Signal::Processing::TargetNeeds::sleep(needs, 1000)) {
+        if (!needs->sleep(1000)) {
             auto w = chain.read ()->workers().write();
             Signal::Processing::Workers::print(w->clean_dead_workers());
             EXCEPTION_ASSERT( false );

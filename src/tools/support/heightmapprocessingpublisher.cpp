@@ -60,8 +60,8 @@ void HeightmapProcessingPublisher::
             % center
             % update_size);
 
-    Signal::Processing::TargetNeeds::deprecateCache (target_needs_, things_to_add);
-    target_needs_.write ()->updateNeeds(
+    target_needs_->deprecateCache (things_to_add);
+    target_needs_->updateNeeds(
                 needed_samples,
                 center,
                 update_size,
@@ -75,9 +75,9 @@ void HeightmapProcessingPublisher::
     }
 
     TIME_PAINTGL_DETAILS {
-        if (Step::ptr step = target_needs_.raw ()->step ().lock())
+        if (Step::ptr step = target_needs_->step ().lock())
         {
-            Signal::Intervals not_started = target_needs_.read ()->not_started();
+            Signal::Intervals not_started = target_needs_->not_started();
             auto stepp = step.read ();
             TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
                              % stepp->out_of_date()
@@ -91,7 +91,7 @@ void HeightmapProcessingPublisher::
 bool HeightmapProcessingPublisher::
         isHeightmapDone() const
 {
-    return !target_needs_.read ()->out_of_date();
+    return !target_needs_->out_of_date();
 }
 
 
