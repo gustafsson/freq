@@ -38,7 +38,7 @@ struct shared_state_traits_backtrace: shared_state_traits_default {
         timeout as in the failed lock attempt) for any other thread that is
         deadlocking with this thread to also fail its lock attempt.
         */
-        std::this_thread::sleep_for (std::chrono::duration<double>{1 + timeout()});
+        std::this_thread::sleep_for (std::chrono::duration<double>{2*timeout()});
 
         BOOST_THROW_EXCEPTION(lock_failed_boost<T>()
                               << Backtrace::make ());
