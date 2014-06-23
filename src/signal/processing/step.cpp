@@ -60,7 +60,7 @@ Intervals Step::
 {
     Intervals I;
 
-    BOOST_FOREACH(RunningTaskMap::value_type ti, running_tasks)
+    for (RunningTaskMap::value_type ti : running_tasks)
     {
         I |= ti.second;
     }
@@ -80,7 +80,7 @@ Intervals Step::
         auto o = operation_desc_.read ();
 
         Intervals A;
-        BOOST_FOREACH(const Interval& i, deprecated) {
+        for (const Interval& i : deprecated) {
             A |= o->affectedInterval(i);
         }
         deprecated = A;

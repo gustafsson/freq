@@ -86,8 +86,6 @@ public:
     int sleepers();
 
 private:
-
-
     shared_state<Data> data_;
 
 public:

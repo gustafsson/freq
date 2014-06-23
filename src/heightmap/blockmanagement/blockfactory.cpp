@@ -147,8 +147,6 @@ void BlockFactory::
 
 
 bool BlockFactory::
-
-
         failed_allocation()
 {
     bool r = failed_allocation_ || failed_allocation_prev_;

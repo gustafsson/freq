@@ -41,7 +41,7 @@ void GraphInvalidator::
 {
     what = step.write ()->deprecateCache(what);
 
-    BOOST_FOREACH(Step::ptr ts, dag.targetSteps(step)) {
+    for (Step::ptr ts: dag.targetSteps(step)) {
         deprecateCache(dag, ts, what);
     }
 }
