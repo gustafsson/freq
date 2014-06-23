@@ -220,12 +220,15 @@ void RenderView::
         if (!_inited)
             initializeGL();
 
-		if (painter->device())
+        float dpr = 1.f;
+        if (painter->device())
 		{
+            dpr = painter->device ()->devicePixelRatio();
+            model->renderer->render_settings.dpifactor = dpr;
             unsigned w = painter->device()->width();
             unsigned h = painter->device()->height();
-            w *= painter->device ()->devicePixelRatio();
-            h *= painter->device ()->devicePixelRatio();
+            w *= dpr;
+            h *= dpr;
             if (w != _last_width || h != _last_height)
                 redraw();
             _last_width = w;
@@ -244,7 +247,7 @@ void RenderView::
             emit prePaint();
         }
 
-        resizeGL(_last_width, _last_height, painter->device ()->devicePixelRatio() );
+        resizeGL(_last_width, _last_height, dpr );
 
         paintGL();
 
