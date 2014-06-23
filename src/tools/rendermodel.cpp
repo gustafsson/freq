@@ -221,13 +221,13 @@ void RenderModel::
             return;
 
         rod->transform_desc (t);
-    }
+        o.unlock ();
 
-//    target_marker (.write ())->updateNeeds(
-//                Signal::Intervals(),
-//                Signal::Interval::IntervalType_MIN,
-//                Signal::Interval::IntervalType_MAX,
-//                Signal::Intervals::Intervals_ALL);
+        Signal::Processing::IInvalidator::ptr i =
+                render_operation_desc_.raw ()->getInvalidator ();
+        if (i)
+            i->deprecateCache(Signal::Interval::Interval_ALL);
+    }
 }
 
 
