@@ -93,7 +93,6 @@ void RescaleWidget::
         paintEvent(QPaintEvent *event)
 {
     QPainter painter (this);
-    painter.beginNativePainting ();
     painter.setRenderHints (QPainter::Antialiasing | QPainter::HighQualityAntialiasing);
     //painter.fillPath (path_, QBrush(QColor(125,125,125,125)));
     painter.fillPath (path_, QColor(220,220,220,200));
@@ -113,7 +112,8 @@ void RescaleWidget::
 void RescaleWidget::
         resizeEvent ( QResizeEvent * )
 {
-    recreatePolygon ();
+    QPolygon poly = recreatePolygon ();
+    setMask(growRegion(poly));
 }
 
 
@@ -145,7 +145,7 @@ void RescaleWidget::
 }
 
 
-void RescaleWidget::
+QPolygon RescaleWidget::
         recreatePolygon ()
 {
     QPoint o = rect().center();
@@ -181,8 +181,9 @@ void RescaleWidget::
     path_ = QPainterPath();
     path_.addPolygon(poly);
 
-    setMask(growRegion(poly));
     update();
+
+    return poly;
 }
 
 
