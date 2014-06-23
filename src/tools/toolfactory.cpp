@@ -61,6 +61,8 @@
 namespace Tools
 {
 
+SetupLockTimeWarning warning_with_backtrace_on_lock_time;
+
 ToolFactory::
         ToolFactory(Sawe::Project* p)
 :   ToolRepo(p),
@@ -203,8 +205,6 @@ ToolFactory::
     _objects.push_back( QPointer<QObject>( new Support::WorkerCrashLogger(p->processing_chain ().read ()->workers(), true)));
 
     _objects.push_back( QPointer<QObject>( new SuggestPurchase( p->mainWindow ()->centralWidget ())));
-
-    _objects.push_back( QPointer<QObject>( new SetupLockTimeWarning));
 
     //
     // Insert new tools here, and delete things in the destructor in the
