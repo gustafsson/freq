@@ -97,12 +97,11 @@ RenderView::
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(redraw()) );
     connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(redraw()));
-    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(restartUpdateTimer()));
+    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(redraw()));
 
     _update_timer = new QTimer;
     _update_timer->setSingleShot( true );
 
-    connect( this, SIGNAL(postUpdate()), SLOT(restartUpdateTimer()), Qt::QueuedConnection );
     connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
 }
 
@@ -278,6 +277,11 @@ void RenderView::
     defaultStates();
 
     painter->endNativePainting();
+
+    if (0 < draw_more)
+        draw_more--;
+    if (0 < draw_more)
+        _update_timer->start(1);
 }
 
 
@@ -902,35 +906,16 @@ void RenderView::
 void RenderView::
         redraw()
 {
-    emit postUpdate();
-}
-
-
-void RenderView::
-        restartUpdateTimer()
-{
-    if (_update_timer->isActive())
-        return;
-
-    float dt = _last_frame.elapsed();
-    float wait = 1.f/60.f - 0.0015f; // 1.5 ms overhead
-
-    // Sleeping in _update_timer is not needed if vsync is in use
-    if (const QGLContext* context = QGLContext::currentContext ())
-      {
-        bool vsync = 0 < context->format ().swapInterval ();
-        if (vsync)
-            wait = 0;
-      }
-
-    if (wait < dt)
-        wait = dt;
-
-    unsigned ms = (wait-dt)*1e3; // round down
-    if (ms < 3) // but don't stall
-        ms = 3;
-
-    _update_timer->start(ms);
+    if (0 == draw_more)
+    {
+        draw_more++;
+        _update_timer->start(1);
+    }
+    else if (1 == draw_more)
+    {
+        draw_more++;
+        // queue a redraw when finsihed drawing
+    }
 }
 
 

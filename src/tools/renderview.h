@@ -144,12 +144,6 @@ namespace Tools
 
 
         /**
-         * @brief postUpdate. Use 'Qt::AutoConnection'
-         */
-        void postUpdate();
-
-
-        /**
          * @brief transformChanged is emitted through emitTransformChanged.
          * emitTransformChanged should be called whenever the state of the
          * transform description has changed. This signal might be issued
@@ -165,9 +159,10 @@ namespace Tools
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
-        void restartUpdateTimer();
 
     private:
+        int draw_more = 0;
+
         /// Similiar to QGLWidget::initializeGL()
         void initializeGL();
 

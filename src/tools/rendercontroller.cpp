@@ -136,7 +136,6 @@ RenderController::
 void RenderController::
         stateChanged()
 {
-    // Don't lock the UI, instead wait a moment before any change is made
     view->redraw();
 
     model()->project()->setModified();
