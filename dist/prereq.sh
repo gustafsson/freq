@@ -122,7 +122,7 @@ if [ "Y" == "${verifyRepos}" ]; then
 				false
 			fi
 
-			if [ -n `which brew` ] && [ ! -f "/usr/local/lib/libsndfile.dylib" ];
+			if [ -n `which brew` ] && [ ! -f "/usr/local/lib/libsndfile.dylib" ]; then
 				echo "Some required libraries seem to be missing, running brew install"
 				echo "and modifying portaudio Formula to use --enable-cxx"
 				echo "$ brew tap homebrew/science"
