@@ -16,7 +16,7 @@ public:
     // Requires workers and/or current worker
     TargetSchedule(Dag::ptr g, IScheduleAlgorithm::ptr algorithm, Targets::ptr targets);
 
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const;
+    virtual Task getTask(Signal::ComputingEngine::ptr engine) const;
 
 private:
     Targets::ptr targets;

@@ -54,8 +54,8 @@ public:
 
     Signal::OperationDesc::ptr  operation_desc() const; // Safe to call without lock
 
-    void                        registerTask(Task* taskid, Signal::Interval expected_output);
-    static void                 finishTask(Step::ptr, Task* taskid, Signal::pBuffer result);
+    int                         registerTask(Signal::Interval expected_output);
+    static void                 finishTask(Step::ptr, int taskid, Signal::pBuffer result);
 
     /**
      * @brief sleepWhileTasks wait until all created tasks for this step has been finished.
@@ -75,11 +75,12 @@ public:
     static Signal::pBuffer      readFixedLengthFromCache(Step::const_ptr, Signal::Interval I);
 
 private:
-    typedef std::map<Task*, Signal::Interval> RunningTaskMap;
+    typedef std::map<int, Signal::Interval> RunningTaskMap;
 
     Signal::OperationDesc::ptr  died_;
     shared_state<Signal::Cache> cache_;
     Signal::Intervals           not_started_;
+    int                         task_counter_ = 0;
 
     RunningTaskMap              running_tasks;
 

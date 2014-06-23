@@ -117,19 +117,26 @@ OperationDesc::ptr Step::
 }
 
 
-void Step::
-        registerTask(Task* taskid, Interval expected_output)
+int Step::
+        registerTask(Interval expected_output)
 {
     TASKINFO TaskInfo ti(format("Step %1%. Starting %2%")
               % operation_name()
               % expected_output);
+
+    ++task_counter_;
+    if (0 == task_counter_)
+        ++task_counter_;
+    int taskid = task_counter_;
+
     running_tasks[taskid] = expected_output;
     not_started_ -= expected_output;
+    return taskid;
 }
 
 
 void Step::
-        finishTask(Step::ptr step, Task* taskid, pBuffer result)
+        finishTask(Step::ptr step, int taskid, pBuffer result)
 {
     Interval result_interval;
     if (result)
@@ -257,10 +264,10 @@ void Step::
         Step::ptr s( new Step(OperationDesc::ptr()));
 
         // It should contain information about what's out_of_date and what's currently being updated.
-        s->registerTask(0, b->getInterval ());
+        int taskid = s->registerTask(b->getInterval ());
         EXCEPTION_ASSERT_EQUALS(s->not_started (), ~Intervals(b->getInterval ()));
         EXCEPTION_ASSERT_EQUALS(s->out_of_date(), Intervals::Intervals_ALL);
-        Step::finishTask(s, 0, b);
+        Step::finishTask(s, taskid, b);
         EXCEPTION_ASSERT_EQUALS(s->out_of_date(), ~Intervals(b->getInterval ()));
 
         EXCEPTION_ASSERT( *b == *Step::readFixedLengthFromCache (s, b->getInterval ()) );

@@ -158,7 +158,7 @@ void Worker::
   {
     while (!QThread::currentThread ()->isInterruptionRequested ())
       {
-        Task::ptr task;
+        Task task;
 
         {
             DEBUGINFO TaskTimer tt(boost::format("Get task %s %s") % vartype(*schedule_.get ()) % (computing_engine_?vartype(*computing_engine_):"(null)") );
@@ -167,8 +167,8 @@ void Worker::
 
         if (task)
           {
-            DEBUGINFO TaskTimer tt(boost::format("Running task %s") % task.read ()->expected_output());
-            task.write ()->run();
+            DEBUGINFO TaskTimer tt(boost::format("Running task %s") % task.expected_output());
+            task.run();
             emit oneTaskDone();
           }
         else
@@ -201,16 +201,16 @@ public:
 
     mutable std::atomic<int> get_task_count;
 
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr) const override {
         get_task_count++;
-        return Task::ptr();
+        return Task();
     }
 };
 
 
 class GetTaskSegFaultMock: public ISchedule {
 public:
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr) const override {
         if (DetectGdb::was_started_through_gdb ())
             BOOST_THROW_EXCEPTION(segfault_sigill_exception());
 
@@ -223,18 +223,18 @@ public:
 #pragma clang diagnostic pop
 
         // unreachable code
-        return Task::ptr();
+        return Task();
     }
 };
 
 
 class GetTaskExceptionMock: public ISchedule {
 public:
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr) const override {
         EXCEPTION_ASSERTX(false, "testing that worker catches exceptions from a scheduler");
 
         // unreachable code
-        return Task::ptr();
+        return Task();
     }
 };
 
@@ -245,7 +245,7 @@ public:
         double timeout() { return 0.001; }
     };
 
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr engine) const override {
         GetTaskMock::getTask (engine);
 
         // cause dead lock in 1 ms
@@ -253,7 +253,7 @@ public:
         m.write () && m.write ();
 
         // unreachable code
-        return Task::ptr();
+        return Task();
     }
 };
 
@@ -264,7 +264,7 @@ public:
         double timeout() { return 1; }
     };
 
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr engine) const override {
         GetTaskMock::getTask (engine);
 
         // cause dead lock, but wait a few seconds (at least 2*2 * 1000 ms)
@@ -272,33 +272,18 @@ public:
         m.write () && m.write ();
 
         // unreachable code
-        return Task::ptr();
+        return Task();
     }
 };
 
-
-class DummyTask: public Task {
-public:
-    DummyTask()
-        : Task(
-              Step::ptr(new Step(Signal::OperationDesc::ptr())).write(),
-              Step::ptr(),
-              std::vector<Step::const_ptr>(),
-              Signal::Operation::ptr(),
-              Signal::Interval(),
-              Signal::Interval())
-    {}
-
-    void run() override {
-        // Keeps on running a lot of tasks as fast as possible
-    }
-};
 
 class DummySchedule: public ISchedule {
-    Task::ptr getTask(Signal::ComputingEngine::ptr engine) const override {
-        return Task::ptr(new DummyTask);
+    Task getTask(Signal::ComputingEngine::ptr engine) const override {
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
+        return Task(step.write (), step, std::vector<Step::const_ptr>(), Signal::Operation::ptr(), Signal::Interval(), Signal::Interval() );
     }
 };
+
 
 void Worker::
         test()

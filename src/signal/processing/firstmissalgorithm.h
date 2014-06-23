@@ -38,7 +38,7 @@ namespace Processing {
 class FirstMissAlgorithm: public IScheduleAlgorithm
 {
 public:
-    Task::ptr getTask(
+    Task getTask(
             const Graph& g,
             GraphVertex target,
             Signal::Intervals needed=Intervals::Intervals_ALL,

@@ -26,7 +26,7 @@ TargetSchedule::
 }
 
 
-Task::ptr TargetSchedule::
+Task TargetSchedule::
         getTask(Signal::ComputingEngine::ptr engine) const
 {
     // Lock this from writing during getTask
@@ -38,7 +38,7 @@ Task::ptr TargetSchedule::
     Step::ptr& step = targetstate.first;
     if (!step) {
         DEBUGINFO TaskInfo("No target needs anything right now");
-        return Task::ptr();
+        return Task();
     }
 
     DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % state.needed_samples % state.work_center);
@@ -46,7 +46,7 @@ Task::ptr TargetSchedule::
     GraphVertex vertex = dag->getVertex(step);
     EXCEPTION_ASSERT(vertex);
 
-    Task::ptr task = algorithm.read ()->getTask(
+    Task task = algorithm.read ()->getTask(
             dag->g(),
             vertex,
             state.needed_samples,
@@ -56,7 +56,7 @@ Task::ptr TargetSchedule::
             engine);
 
     DEBUGINFO if (task)
-        TaskInfo(boost::format("task->expected_output() = %s") % task.read ()->expected_output());
+        TaskInfo(boost::format("task->expected_output() = %s") % task.expected_output());
 
     return task;
 }
@@ -103,7 +103,7 @@ namespace Processing {
 class GetDagTaskAlgorithmMockup: public IScheduleAlgorithm
 {
 public:
-    virtual Task::ptr getTask(
+    virtual Task getTask(
             const Graph&,
             GraphVertex,
             Signal::Intervals needed,
@@ -112,12 +112,12 @@ public:
             Workers::ptr,
             Signal::ComputingEngine::ptr) const
     {
-        return Task::ptr(new Task(Step::ptr(new Step(Signal::OperationDesc::ptr())).write(),
-                                  Step::ptr(),
+        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
+        return Task(step.write(), step,
                                   std::vector<Step::const_ptr>(),
                                   Signal::Operation::ptr(),
                                   needed.spannedInterval (),
-                                  Signal::Interval()));
+                                  Signal::Interval());
     }
 };
 
@@ -149,9 +149,9 @@ void TargetSchedule::
         // a non-empty not_started();
         targetneeds->updateNeeds(Signal::Interval(3,4));
         EXCEPTION_ASSERT(targetneeds->not_started());
-        Task::ptr task = targetschedule.getTask (engine);
+        Task task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
-        EXCEPTION_ASSERT_EQUALS(task.read ()->expected_output(), Signal::Interval(3,4));
+        EXCEPTION_ASSERT_EQUALS(task.expected_output(), Signal::Interval(3,4));
     }
 
     // It should provide tasks to keep a Dag up-to-date with respect to all targets
@@ -180,9 +180,9 @@ void TargetSchedule::
         targetneeds2->updateNeeds(Signal::Interval(5,6),0,10,0);
 
         TargetSchedule targetschedule(dag, algorithm, targets);
-        Task::ptr task = targetschedule.getTask (engine);
+        Task task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
-        EXCEPTION_ASSERT_EQUALS(task.read ()->expected_output(), Signal::Interval(5,6));
+        EXCEPTION_ASSERT_EQUALS(task.expected_output(), Signal::Interval(5,6));
     }
 }
 

@@ -7,11 +7,19 @@
 
 #include <boost/foreach.hpp>
 
+#include <algorithm>
+
 //#define TIME_TASK
 #define TIME_TASK if(0)
 
 namespace Signal {
 namespace Processing {
+
+Task::Task()
+    :
+        task_id_(0)
+{}
+
 
 Task::
         Task(const shared_state<Step>::write_ptr& step,
@@ -21,20 +29,46 @@ Task::
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
+      task_id_(step->registerTask (expected_output)),
       step_(stepp),
       children_(children),
       operation_(operation),
       expected_output_(expected_output),
       required_input_(required_input)
 {
-    step->registerTask (this, expected_output);
 }
 
 
 Task::
         ~Task()
 {
-    cancel();
+    try
+    {
+        cancel();
+    } catch (...) {
+        TaskInfo(boost::format("~Task %p\n%s")
+                 % ((void*)this)
+                 % boost::current_exception_diagnostic_information ());
+    }
+}
+
+
+Task& Task::
+        operator=(Task&& b)
+{
+    std::swap(task_id_, b.task_id_);
+    std::swap(step_, b.step_);
+    std::swap(children_, b.children_);
+    std::swap(operation_, b.operation_);
+    std::swap(expected_output_, b.expected_output_);
+    std::swap(required_input_, b.required_input_);
+    return *this;
+}
+
+
+Task::operator bool() const
+{
+    return (bool)step_;
 }
 
 
@@ -149,7 +183,7 @@ void Task::
         finish(Signal::pBuffer b)
 {
     if (step_)
-        Step::finishTask(step_, this, b);
+        Step::finishTask(step_, task_id_, b);
     step_.reset();
 }
 
@@ -158,7 +192,7 @@ void Task::
         cancel()
 {
     if (step_)
-        Step::finishTask(step_, this, Signal::pBuffer());
+        Step::finishTask(step_, task_id_, Signal::pBuffer());
     step_.reset();
 }
 

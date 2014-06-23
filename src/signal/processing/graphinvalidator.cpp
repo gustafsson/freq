@@ -84,7 +84,8 @@ void GraphInvalidator::
         sleeper.start ();
         dag.write ()->appendStep(step);
         Signal::Intervals initial_valid(-20,60);
-        step.write ()->registerTask(0, initial_valid.spannedInterval ());
+        int taskid = step.write ()->registerTask(initial_valid.spannedInterval ());
+        (void)taskid; // discard
         EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid);
         EXCEPTION_ASSERT(sleeper.isRunning ());
 

@@ -542,6 +542,10 @@ public:
 
     bool unique() const { return d.unique (); }
 
+    void swap(shared_state& b) {
+        std::swap(d, b.d);
+    }
+
 private:
     template<typename Y>
     friend class shared_state;

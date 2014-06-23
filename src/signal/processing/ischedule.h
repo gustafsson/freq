@@ -1,7 +1,6 @@
 #ifndef SIGNAL_PROCESSING_ISCHEDULE_H
 #define SIGNAL_PROCESSING_ISCHEDULE_H
 
-#include "shared_state.h"
 #include "signal/computingengine.h"
 
 namespace Signal {
@@ -29,7 +28,7 @@ public:
      *
      * @return
      */
-    virtual shared_state<Task> getTask(Signal::ComputingEngine::ptr engine) const = 0;
+    virtual Task getTask(Signal::ComputingEngine::ptr engine) const = 0;
 };
 
 } // namespace Processing
