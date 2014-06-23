@@ -42,6 +42,8 @@ ApplicationErrorLogController::
     connect (send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
     connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)), Qt::QueuedConnection);
     connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::DirectConnection);
+    connect (&feedbackTimer_, SIGNAL(timeout()), SLOT(sendFeedback()));
+    feedbackTimer_.setSingleShot (true);
 
     bool had_previous_crash = QSettings().value (currently_running_key, false).toBool ();
 
@@ -179,9 +181,6 @@ void ApplicationErrorLogController::
 
     emit showToolbar (true);
 
-    // Render the toolbar
-    QApplication::instance ()->eventDispatcher ()->processEvents(QEventLoop::AllEvents);
-
     try
       {
         rethrow_exception(e);
@@ -212,8 +211,10 @@ void ApplicationErrorLogController::
         if( std::string const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x) )
             message = *mi;
 
-        if (Sawe::Configuration::feature ("autofeedback") && feedback_count_<feedback_limit_)
+        if (Sawe::Configuration::feature ("autofeedback") &&
+                (feedback_count_<feedback_limit_ || !feedbackMessage_.isEmpty ()))
           {
+            ++feedback_count_;
             // Wait a while before sending automatic feedback in order to fill
             // the log file with more data about what happened next.
             float delay = 2.f; // seconds
@@ -236,7 +237,7 @@ void ApplicationErrorLogController::
                 feedbackMessage_ += QString::fromStdString (message + "\n\n");
             feedbackMessage_ += QString::fromStdString (str);
 
-            QTimer::singleShot (delay*1000, this, SLOT(sendFeedback()));
+            feedbackTimer_.start (delay*1000);
           }
       }
 }
@@ -246,16 +247,17 @@ void ApplicationErrorLogController::
         sendFeedback()
 {
     sendFeedback(feedbackMessage_);
+    feedbackMessage_.clear ();
 }
 
 
 void ApplicationErrorLogController::
         sendFeedback(QString msg)
 {
-    TaskTimer ti("Sending feedback");
+    TaskTimer ti("Sending feedback now");
+    TaskInfo(boost::format("Message: %s") % msg.toStdString ());
 
     QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
-    ++feedback_count_;
     if (!omittedMessage.isEmpty ())
         TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
 }
