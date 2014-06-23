@@ -33,10 +33,16 @@ public:
     float sample_rate() const;
 
     /**
-      Extract an exact interval from cache. Samples in the interval
+      Extract an exact interval from cache. Samples in
       "I - sampleDesc()" will be returned as zeros.
       */
     pBuffer read( const Interval& I ) const;
+
+    /**
+      Extract an exact interval from cache. Samples in
+      "r->getInterval() - sampleDesc()" will be left as is.
+      */
+    void read( pBuffer r ) const;
 
     /**
       A slightly more efficient version than read(I) that is only guaranteed to
