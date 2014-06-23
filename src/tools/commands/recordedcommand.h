@@ -23,6 +23,7 @@ public:
 
 private:
     Adapters::Recorder::ptr recording;
+    // To do, should be another structure that can handle larger amounts of data.
     Signal::pBuffer recordedData;
     Tools::RenderModel* model;
     Signal::Processing::IInvalidator::ptr iinvalidator;
