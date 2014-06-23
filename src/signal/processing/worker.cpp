@@ -47,7 +47,7 @@ Worker::
 
     // Start the worker thread as an event based background thread
     thread_->setParent (this);
-    thread_->setObjectName (QString("Worker %1%").arg (computing_engine
+    thread_->setObjectName (QString("Worker %1").arg (computing_engine
                             ? vartype(*computing_engine).c_str ()
                             : "(null)"));
     thread_->start (QThread::LowPriority);
