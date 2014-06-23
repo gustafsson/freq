@@ -10,7 +10,7 @@
 #include "tools/renderview.h"
 
 // Sonic AWE
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "heightmap/referenceinfo.h"
 #include "heightmap/collection.h"
 

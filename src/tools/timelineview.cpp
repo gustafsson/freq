@@ -7,7 +7,7 @@
 
 // Sonic AWE lib
 #include "sawe/application.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 
 // gpumisc
 #include "computationkernel.h"

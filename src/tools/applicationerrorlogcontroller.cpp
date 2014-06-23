@@ -18,6 +18,7 @@
 #include <QCommonStyle>
 #include <QMainWindow>
 #include <QAction>
+#include <QAbstractEventDispatcher>
 
 namespace Tools {
 
@@ -101,9 +102,9 @@ void ApplicationErrorLogController::
     if (!e)
         return;
 
-    bool log_exception_details = true ||
-            feedback_count_==0 ||
-            !QSettings().value (has_unreported_error_key, false).toBool ();
+    bool log_exception_details = true;
+//  bool log_exception_details =  feedback_count_==0 ||
+//            !QSettings().value (has_unreported_error_key, false).toBool ();
 
     try
       {
@@ -179,7 +180,7 @@ void ApplicationErrorLogController::
     emit showToolbar (true);
 
     // Render the toolbar
-    QApplication::instance ()->eventDispatcher ()->processEvents();
+    QApplication::instance ()->eventDispatcher ()->processEvents(QEventLoop::AllEvents);
 
     try
       {
@@ -219,7 +220,7 @@ void ApplicationErrorLogController::
             TaskInfo(boost::format("Sending feedback in %g seconds") % delay);
 
             // Place message before details
-            if (feedbackMessage_)
+            if (!feedbackMessage_.isEmpty ())
             {
                 TaskInfo(boost::format("Replacing previous message: %s") % feedbackMessage_.toStdString());
                 feedbackMessage_.clear();

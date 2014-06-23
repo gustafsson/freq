@@ -16,7 +16,7 @@ public:
     template<typename T, unsigned Dimension> static
     CpuMemoryReadOnly<T, Dimension> ReadOnly( DataStorageVoid* dsv )
     {
-        return dsv->FindCreateStorage<CpuMemoryStorage>( true, false )->Access<T, Dimension>();
+        return dsv->AccessStorage<CpuMemoryStorage>( true, false )->Access<T, Dimension>();
     }
 
 
@@ -29,7 +29,7 @@ public:
     template<typename T, unsigned Dimension> static
     CpuMemoryReadWrite<T, Dimension> ReadWrite( DataStorageVoid* dsv )
     {
-        return dsv->FindCreateStorage<CpuMemoryStorage>( true, true )->Access<T, Dimension>();
+        return dsv->AccessStorage<CpuMemoryStorage>( true, true )->Access<T, Dimension>();
     }
 
 
@@ -42,7 +42,7 @@ public:
     template<typename T, unsigned Dimension> static
     CpuMemoryWriteOnly<T, Dimension> WriteAll( DataStorageVoid* dsv )
     {
-        return dsv->FindCreateStorage<CpuMemoryStorage>( false, true )->Access<T, Dimension>();
+        return dsv->AccessStorage<CpuMemoryStorage>( false, true )->Access<T, Dimension>();
     }
 
 

@@ -3,9 +3,8 @@
 #include "signal/computingengine.h"
 #include "tfr/cepstrum.h"
 #include "tfr/stft.h"
-#include "heightmap/chunktoblock.h"
-#include "heightmap/glblock.h"
-#include "heightmap/blocks/blockupdater.h"
+#include "heightmap/render/glblock.h"
+#include "heightmap/update/tfrblockupdater.h"
 
 #include "demangle.h"
 
@@ -21,7 +20,7 @@ CepstrumBlockFilter::
 }
 
 
-std::vector<Blocks::IUpdateJob::ptr> CepstrumBlockFilter::
+std::vector<Update::IUpdateJob::ptr> CepstrumBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* cepstrumchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
@@ -29,9 +28,9 @@ std::vector<Blocks::IUpdateJob::ptr> CepstrumBlockFilter::
 
     // already normalized when return from Cepstrum.cpp
     float normalization_factor = 1.f;
-    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor});
+    Update::IUpdateJob::ptr chunktoblockp(new Update::TfrBlockUpdater::Job{chunk.chunk, normalization_factor});
 
-    return std::vector<Blocks::IUpdateJob::ptr>{chunktoblockp};
+    return std::vector<Update::IUpdateJob::ptr>{chunktoblockp};
 }
 
 
@@ -112,7 +111,7 @@ void CepstrumBlockFilter::
         Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
-        block->glblock.reset( new GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
+        block->glblock.reset( new Render::GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -123,12 +122,18 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::ptr()) );
-        Blocks::BlockUpdater bu;
-        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
-            bu.processJob(
-                    (Blocks::BlockUpdater::Job&)(*job),
-                    std::vector<pBlock>{block}
-                    );
+        std::queue<Update::UpdateQueue::Job> jobs;
+
+        for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+        {
+            Update::UpdateQueue::Job uj;
+            uj.intersecting_blocks = std::vector<pBlock>{block};
+            uj.updatejob = job;
+            jobs.push (std::move(uj));
+        }
+
+        Update::TfrBlockUpdater().processJobs (jobs);
+        EXCEPTION_ASSERT_EQUALS(jobs.size (), 0u);
     }
 }
 

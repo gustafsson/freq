@@ -1,14 +1,14 @@
 #include "collection.h"
-#include "glblock.h"
-#include "blockfactory.h"
-#include "blockinitializer.h"
+#include "render/glblock.h"
+#include "blockmanagement/blockfactory.h"
+#include "blockmanagement/blockinitializer.h"
 #include "blockquery.h"
 #include "blockcacheinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "reference_hash.h"
-#include "blocks/clearinterval.h"
-#include "blocks/garbagecollector.h"
+#include "blockmanagement/clearinterval.h"
+#include "blockmanagement/garbagecollector.h"
 
 // Gpumisc
 //#include "GlException.h"
@@ -49,8 +49,8 @@ Collection::
 :   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_(),
     cache_( new BlockCache ),
-    block_factory_(new BlockFactory(block_layout, visualization_params)),
-    block_initializer_(new BlockInitializer(block_layout, visualization_params, cache_)),
+    block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
+    block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -222,7 +222,7 @@ pBlock Collection::
     if (block)
         return block;
 
-    pGlBlock reuse;
+    Render::pGlBlock reuse;
     if (!_up_for_grabs.empty ())
     {
         reuse = _up_for_grabs.back ()->glblock;
@@ -367,8 +367,8 @@ void Collection::
 
     block_layout_ = v;
 
-    block_factory_.reset(new BlockFactory(block_layout_, visualization_params_));
-    block_initializer_.reset(new BlockInitializer(block_layout_, visualization_params_, cache_));
+    block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
+    block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
@@ -385,8 +385,8 @@ void Collection::
 
     visualization_params_ = v;
 
-    block_factory_.reset(new BlockFactory(block_layout_, visualization_params_));
-    block_initializer_.reset(new BlockInitializer(block_layout_, visualization_params_, cache_));
+    block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
+    block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
 
     block_factory_->set_recently_created_all();
     clear();

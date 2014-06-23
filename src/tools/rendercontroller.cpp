@@ -13,9 +13,9 @@
 // Sonic AWE, Setting different transforms for rendering
 #include "filters/reassign.h"
 #include "filters/ridge.h"
-#include "heightmap/renderer.h"
-#include "heightmap/blocks/updateproducer.h"
-#include "heightmap/blocks/updateconsumer.h"
+#include "heightmap/render/renderer.h"
+#include "heightmap/update/updateproducer.h"
+#include "heightmap/update/updateconsumer.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -407,9 +407,9 @@ void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc)
 {
     // Wire it up to a FilterDesc
-    Heightmap::Blocks::UpdateProducerDesc* cbfd;
+    Heightmap::Update::UpdateProducerDesc* cbfd;
     Tfr::ChunkFilterDesc::ptr kernel(cbfd
-            = new Heightmap::Blocks::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
+            = new Heightmap::Update::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -1045,13 +1045,13 @@ void RenderController::
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
-    model()->block_update_queue.reset (new Heightmap::Blocks::UpdateQueue::ptr::element_type());
+    model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
 
     // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)
     {
-        auto uc = new Heightmap::Blocks::UpdateConsumer(view->glwidget, model()->block_update_queue);
+        auto uc = new Heightmap::Update::UpdateConsumer(view->glwidget, model()->block_update_queue);
         connect(uc, SIGNAL(didUpdate()), view.data (), SLOT(redraw()));
     }
 

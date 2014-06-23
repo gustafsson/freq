@@ -1,7 +1,7 @@
 #ifndef HEIGHTMAP_RENDER_RENDERAXES_H
 #define HEIGHTMAP_RENDER_RENDERAXES_H
 
-#include "../rendersettings.h"
+#include "rendersettings.h"
 #include "frustumclip.h"
 #include "tfr/freqaxis.h"
 

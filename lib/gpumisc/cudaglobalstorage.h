@@ -20,7 +20,7 @@ public:
     template<typename T, unsigned Dimension> static
     CudaGlobalReadOnly<T, Dimension> ReadOnly( DataStorageVoid* dsv )
     {
-        return dsv->FindCreateStorage<CudaGlobalStorage>( true, false )->Access<T, Dimension>();
+        return dsv->AccessStorage<CudaGlobalStorage>( true, false )->Access<T, Dimension>();
     }
 
 
@@ -33,7 +33,7 @@ public:
     template<typename T, unsigned Dimension> static
     CudaGlobalReadWrite<T, Dimension> ReadWrite( DataStorageVoid* dsv )
     {
-        return dsv->FindCreateStorage<CudaGlobalStorage>( true, true )->Access<T, Dimension>();
+        return dsv->AccessStorage<CudaGlobalStorage>( true, true )->Access<T, Dimension>();
     }
 
 
@@ -46,7 +46,7 @@ public:
     template<typename T, unsigned Dimension> static
     CudaGlobalWriteOnly<T, Dimension> WriteAll( DataStorageVoid* dsv )
     {
-        return dsv->FindCreateStorage<CudaGlobalStorage>( false, true )->Access<T, Dimension>();
+        return dsv->AccessStorage<CudaGlobalStorage>( false, true )->Access<T, Dimension>();
     }
 
 

@@ -1,31 +1,42 @@
 #include "thread_pool.h"
 #include "exceptionassert.h"
+#include "expectexception.h"
 #include "tasktimer.h"
 
 #include <numeric>
 #include <functional>
+#include <sstream>
 
 using namespace std;
 
 namespace JustMisc {
 
 thread_pool::
-        thread_pool()
+        thread_pool(const char* name)
     :
-      thread_pool(thread::hardware_concurrency ())
+      thread_pool(thread::hardware_concurrency (), name)
 {}
 
 
 thread_pool::
-        thread_pool(int n)
+        thread_pool(int n, const char* name)
     :
       threads_(n)
 {
+    int i=0;
     for (thread& t: threads_)
     {
+        i++;
         t = thread(
-                [this]()
+                [this, i, n, name]()
                 {
+#ifdef __GNUC__
+                    {
+                        stringstream ss;
+                        ss << (name?name:"thread_pool") << " " << i << "/" << n;
+                        pthread_setname_np(ss.str ().c_str ());
+                    }
+#endif
                     try {
                         while (true) {
                             auto task = queue_.pop ();
@@ -42,7 +53,7 @@ thread_pool::
         ~thread_pool()
 {
     queue_.abort_on_empty ();
-    queue_.clear ();
+    queue_.clear (); // Any associated futures to a packaged_task will be notified if the task is destroyed prior to evaluation
 
     for (thread& t: threads_)
         t.join ();
@@ -86,6 +97,24 @@ void thread_pool::
         );
 
         EXCEPTION_ASSERT_EQUALS(S, (999-0)/2.0 * 1000);
+    }
+
+    // Any associated futures to a packaged_task will be notified if the task is destroyed prior to evaluation
+    {
+        auto* task = new packaged_task<void()>(
+                []()
+                {
+                    return;
+                }
+        );
+
+        auto f = task->get_future();
+
+        delete task;
+
+        f.wait();
+
+        EXPECT_EXCEPTION(std::future_error, f.get());
     }
 }
 

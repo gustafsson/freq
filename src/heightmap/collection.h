@@ -88,11 +88,17 @@ namespace Tfr {
 
 namespace Heightmap {
 
+namespace Render {
 class Renderer;
-class Block;
-class BlockData;
+}
+
+namespace BlockManagement {
 class BlockFactory;
 class BlockInitializer;
+}
+
+class Block;
+class BlockData;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -171,8 +177,8 @@ private:
     toremove_t      _up_for_grabs;
 
     BlockCache::ptr cache_;
-    std::unique_ptr<BlockFactory> block_factory_;
-    std::unique_ptr<BlockInitializer> block_initializer_;
+    std::unique_ptr<BlockManagement::BlockFactory> block_factory_;
+    std::unique_ptr<BlockManagement::BlockInitializer> block_initializer_;
 
     bool
         _is_visible;

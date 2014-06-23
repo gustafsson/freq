@@ -3,7 +3,7 @@
 #include "configuration.h"
 
 // heightmap
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "heightmap/collection.h"
 
 // tfr

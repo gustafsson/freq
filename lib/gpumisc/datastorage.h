@@ -92,9 +92,8 @@ public:
     }
 
 
-    // TODO Rename to AccessStorage
     template<typename StorageType>
-    StorageType* FindCreateStorage(bool read, bool write)
+    StorageType* AccessStorage(bool read, bool write)
     {
         StorageType* t = FindStorage<StorageType>();
         if (!t)
@@ -108,8 +107,11 @@ public:
     template<typename StorageType>
     void OnlyKeepOneStorage()
     {
-        DataStorageImplementation* t = FindCreateStorage<StorageType>(true, true);
-        OnlyKeepOneStorage( t );
+        if (!validContent_.empty ())
+        {
+            DataStorageImplementation* t = AccessStorage<StorageType>(true, true);
+            OnlyKeepOneStorage( t );
+        }
     }
 
 
@@ -274,7 +276,7 @@ void* getCpuMemory(DataStorageVoid*);
  *
  *
  * Advanced usage:
- * myData->FindCreateStorage<'StorageType'>(...)->Access(...) can be used
+ * myData->AccessStorage<'StorageType'>(...)->Access(...) can be used
  * instead of the helpers 'StorageType'::ReadWrite, etc.
  *
  * myData->HasValidContent<'StorageType'>() can be used to check if a read

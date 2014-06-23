@@ -1,6 +1,6 @@
 #include "plotlines.h"
 #include "paintline.h"
-#include "heightmap/blockkernel.h" // amplitudevalueruntime
+#include "heightmap/update/blockkernel.h" // amplitudevalueruntime
 
 #include "tools/renderview.h"
 
