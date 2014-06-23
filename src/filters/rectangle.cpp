@@ -191,8 +191,8 @@ void Rectangle::
         Signal::Processing::TargetNeeds::ptr n = at->target_needs();
         cp.write ()->addOperationAt(buffersource,at);
         cp.write ()->addOperationAt(rectangledesc,at);
-        n.write ()->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( Signal::Processing::TargetNeeds::sleep (n,200) );
+        n->updateNeeds(Signal::Interval(0,10));
+        EXCEPTION_ASSERT( n->sleep (200) );
     }
 }
 

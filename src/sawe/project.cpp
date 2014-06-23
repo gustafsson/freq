@@ -417,6 +417,7 @@ void Project::
 {
     tools().render_view()->model->resetSettings();
     Application::global_ptr()->clearCaches();
+    processing_chain_->resetDefaultWorkers();
     tools().render_view()->redraw();
 }
 

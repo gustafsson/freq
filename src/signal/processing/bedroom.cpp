@@ -85,9 +85,8 @@ void Bedroom::
     auto data = data_.write ();
     // no one is going into sleep as long as data_ is locked
 
-    BOOST_FOREACH(Bed* b, data->beds) {
+    for (Bed* b : data->beds)
         b->skip_sleep_ = data->skip_sleep_marker;
-    }
 
     data->work.notify_all ();
 }

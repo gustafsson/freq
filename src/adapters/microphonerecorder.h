@@ -49,8 +49,8 @@ private:
     bool _is_interleaved;
     bool _has_input_device;
     std::vector<float> _rolling_mean;
+    Signal::pBuffer _receive_buffer;
 
-    // todo remove Sink* _callback;
     portaudio::AutoSystem _autoSys;
     boost::scoped_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
 

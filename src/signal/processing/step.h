@@ -27,7 +27,11 @@ class Step
 public:
     typedef shared_state<Step> ptr;
     typedef shared_state<const Step> const_ptr;
-    typedef shared_state_traits_backtrace shared_state_traits;
+    struct shared_state_traits : shared_state_traits_backtrace {
+        virtual double timeout () { return 4*shared_state_traits_default::timeout (); }
+        virtual double verify_lock_time() { return timeout()/4.0f; }
+        typedef shared_state_mutex_noshared shared_state_mutex;
+    };
 
     // To be appended to exceptions while using Step
     typedef boost::error_info<struct crashed_step_tag, Step::ptr> crashed_step;
@@ -50,8 +54,8 @@ public:
 
     Signal::OperationDesc::ptr  operation_desc() const; // Safe to call without lock
 
-    void                        registerTask(Task* taskid, Signal::Interval expected_output);
-    void                        finishTask(Task* taskid, Signal::pBuffer result);
+    int                         registerTask(Signal::Interval expected_output);
+    static void                 finishTask(Step::ptr, int taskid, Signal::pBuffer result);
 
     /**
      * @brief sleepWhileTasks wait until all created tasks for this step has been finished.
@@ -68,14 +72,15 @@ public:
      *         that is stored in the cache for given interval. Cache misses are
      *         returned as 0 values.
      */
-    Signal::pBuffer             readFixedLengthFromCache(Signal::Interval I) const;
+    static Signal::pBuffer      readFixedLengthFromCache(Step::const_ptr, Signal::Interval I);
 
 private:
-    typedef std::map<Task*, Signal::Interval> RunningTaskMap;
+    typedef std::map<int, Signal::Interval> RunningTaskMap;
 
     Signal::OperationDesc::ptr  died_;
-    Signal::Cache               cache_;
+    shared_state<Signal::Cache> cache_;
     Signal::Intervals           not_started_;
+    int                         task_counter_ = 0;
 
     RunningTaskMap              running_tasks;
 

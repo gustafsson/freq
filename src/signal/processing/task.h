@@ -21,29 +21,31 @@ namespace Processing {
 class Task
 {
 public:
-    // TODO A task isn't shared between threads
-    typedef shared_state<Task> ptr;
-    struct shared_state_traits: shared_state_traits_default {
-        double timeout() { return -1; }
-    };
-
     // To be appended to exceptions while using Task
     typedef boost::error_info<struct crashed_expected_output_tag, Signal::Interval> crashed_expected_output;
 
     // input_buffer and output_buffer does not need to be allocated beforehand
+    Task();
     Task (const shared_state<Step>::write_ptr& step,
           Step::ptr stepp,
           std::vector<Step::const_ptr> children,
           Signal::Operation::ptr operation,
           Signal::Interval expected_output,
           Signal::Interval required_input);
+    Task(Task&&) = default;
+    Task(const Task&) = delete;
     virtual ~Task();
+
+    Task& operator=(const Task&) = delete;
+    Task& operator=(Task&&);
+    operator bool() const;
 
     Signal::Interval        expected_output() const;
 
     virtual void run();
 
 private:
+    int                     task_id_;
     Step::ptr               step_;
     std::vector<Step::const_ptr>  children_;
     Signal::Operation::ptr  operation_;

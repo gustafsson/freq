@@ -46,11 +46,11 @@ Signal::UnsignedIntervalType ChainInfo::
     Signal::Intervals I;
 
     Targets::ptr targets = chain_.read ()->targets();
-    const std::vector<TargetNeeds::ptr>& T = targets.read ()->getTargets();
+    const std::vector<TargetNeeds::ptr>& T = targets->getTargets();
     for (auto i=T.begin(); i!=T.end(); i++)
     {
         const TargetNeeds::ptr& t = *i;
-        I |= t.read ()->out_of_date();
+        I |= t->out_of_date();
     }
 
     return I.count ();
@@ -126,7 +126,7 @@ void ChainInfo::
         TargetNeeds::ptr n = at->target_needs();
         cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        n.write ()->updateNeeds(Signal::Interval(0,10));
+        n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
         QThread::msleep (10);
         EXCEPTION_ASSERT( !c.hasWork () );
@@ -145,8 +145,8 @@ void ChainInfo::
         cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
-        n.write ()->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( TargetNeeds::sleep (n, 12) );
+        n->updateNeeds(Signal::Interval(0,10));
+        EXCEPTION_ASSERT( n->sleep (12) );
         EXCEPTION_ASSERT( !c.hasWork () );
         QThread::msleep (1);
         EXCEPTION_ASSERT_EQUALS( 1, c.dead_workers () );
@@ -163,11 +163,11 @@ void ChainInfo::
         TargetNeeds::ptr n = at->target_needs();
         cp.write ()->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
-        n.write ()->updateNeeds(Signal::Interval(0,10));
+        n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
         QThread::msleep (10);
         a.processEvents (); // a crashed worker announces 'wakeup' to the others through the application eventloop
-        EXCEPTION_ASSERT( TargetNeeds::sleep (n, 10) );
+        EXCEPTION_ASSERT( n->sleep (10) );
         EXCEPTION_ASSERT( !c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 1, c.dead_workers () );
     }

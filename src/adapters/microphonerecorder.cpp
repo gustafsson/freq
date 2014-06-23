@@ -299,13 +299,21 @@ int MicrophoneRecorder::
     TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
 
     Signal::IntervalType offset = actual_number_of_samples();
-    auto data = _data;
+
+    float fs = _data.raw ()->sample_rate;
+    unsigned nc = _data.raw ()->num_channels;
+
     _last_update = boost::posix_time::microsec_clock::local_time();
 
-    Signal::pBuffer mb( new Signal::Buffer(0, framesPerBuffer, data.raw ()->sample_rate, data.raw ()->num_channels ) );
-    for (unsigned i=0; i<data->num_channels; ++i)
+    if (!_receive_buffer || _receive_buffer->number_of_samples ()!=(int)framesPerBuffer || _receive_buffer->number_of_channels ()!=nc)
+        _receive_buffer = Signal::pBuffer( new Signal::Buffer(0, framesPerBuffer, 1, nc ) );
+
+    _receive_buffer->set_sample_offset (offset);
+    _receive_buffer->set_sample_rate (fs);
+
+    for (unsigned i=0; i<nc; ++i)
     {
-        Signal::pMonoBuffer b = mb->getChannel (i);
+        Signal::pMonoBuffer b = _receive_buffer->getChannel (i);
         float* p = b->waveform_data()->getCpuMemory();
         unsigned in_num_channels = _rolling_mean.size ();
         unsigned in_i = i;
@@ -334,24 +342,17 @@ int MicrophoneRecorder::
             mean = mean*0.99999f + v*0.00001f;
         }
 
-//        memcpy ( b->waveform_data()->getCpuMemory(),
-//                 buffer,
-//                 framesPerBuffer*sizeof(float) );
-
-        b->set_sample_offset( offset );
-        b->set_sample_rate( data.raw ()->sample_rate );
-
         TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s, [%g, %g) s",
                                             b->getInterval().toString().c_str(),
                                             b->getInterval().first / b->sample_rate(),
                                             b->getInterval().last / b->sample_rate() );
-
     }
 
-    data.write ()->samples.put( mb );
+    _data.write ()->samples.put( _receive_buffer );
 
     if (_invalidator)
-        _invalidator.write ()->markNewlyRecordedData( Signal::Interval( offset, offset + framesPerBuffer ) );
+        // Tell someone that there is new data available to read
+        _invalidator.write ()->markNewlyRecordedData( _receive_buffer->getInterval () );
 
     } catch (...) {
         _exception = std::current_exception ();

@@ -102,7 +102,6 @@ namespace Tools
         void emitAxisChanged();
 
     public slots:
-        void setLastUpdateSize( Signal::UnsignedIntervalType length );
         void redraw();
 
     signals:
@@ -131,7 +130,7 @@ namespace Tools
         /**
          * @brief postPaint. Use 'Qt::DirectConnection'
          */
-        void postPaint();
+        void postPaint(float t_center);
 
         /**
          * @brief paintingForeground. Use 'Qt::DirectConnection'
@@ -142,12 +141,6 @@ namespace Tools
          * @brief finishedWorkSection. Use 'Qt::AutoConnection'
          */
         void finishedWorkSection();
-
-
-        /**
-         * @brief postUpdate. Use 'Qt::AutoConnection'
-         */
-        void postUpdate();
 
 
         /**
@@ -166,9 +159,10 @@ namespace Tools
     private slots:
         void clearCaches();
         void finishedWorkSectionSlot();
-        void restartUpdateTimer();
 
     private:
+        int draw_more = 0;
+
         /// Similiar to QGLWidget::initializeGL()
         void initializeGL();
 

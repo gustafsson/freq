@@ -9,6 +9,7 @@ namespace Processing {
 Targets::
         Targets(INotifier::weak_ptr notifier)
     :
+      state_(new State),
       notifier_(notifier)
 {
 }
@@ -18,10 +19,13 @@ TargetNeeds::ptr Targets::
         addTarget(Step::ptr::weak_ptr step)
 {
     TargetNeeds::ptr target(new TargetNeeds(step, notifier_));
+
+    auto state = state_.write ();
+    State::Targets& targets = state->targets;
     targets.push_back (target);
 
     // perform gc
-    Targets::TargetNeedsCollection T = getTargets();
+    Targets::TargetNeedsCollection T = getTargets(*state.get ());
     targets.clear ();
     targets.reserve (T.size ());
     BOOST_FOREACH(const TargetNeeds::ptr& i, T) {
@@ -35,10 +39,18 @@ TargetNeeds::ptr Targets::
 Targets::TargetNeedsCollection Targets::
         getTargets() const
 {
+    return getTargets(*state_.read ().get ());
+}
+
+
+Targets::TargetNeedsCollection Targets::
+        getTargets(const State& state) const
+{
     TargetNeedsCollection C;
+    const State::Targets& targets = state.targets;
     C.reserve (targets.size ());
 
-    BOOST_FOREACH(const TargetNeeds::ptr::weak_ptr& i, targets) {
+    for (const std::weak_ptr<TargetNeeds>& i: targets) {
         TargetNeeds::ptr t = i.lock ();
         if (t)
             C.push_back (t);
@@ -67,9 +79,9 @@ void Targets::
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
 
         Targets::ptr targets(new Targets(bedroom_notifier));
-        TargetNeeds::ptr updater( targets.write ()->addTarget(step) );
+        TargetNeeds::ptr updater( targets->addTarget(step) );
         EXCEPTION_ASSERT(updater);
-        EXCEPTION_ASSERT(updater.raw ()->step().lock() == step);
+        EXCEPTION_ASSERT(updater->step().lock() == step);
     }
 }
 

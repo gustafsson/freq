@@ -317,7 +317,7 @@ public:
         // Only check the first channel
         // TODO check other channels
 //        Tfr::pChunk chunk = (*stft->createTransform())( o->readFixedLength(I)->getChannel (0));
-        Tfr::pChunk chunk = (*stft->createTransform())( s.write ()->readFixedLengthFromCache(I)->getChannel (0));
+        Tfr::pChunk chunk = (*stft->createTransform())( Signal::Processing::Step::readFixedLengthFromCache (s,I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>( chunk->transform_data->size() ));
 
@@ -350,7 +350,7 @@ public:
         // Only check the first channel
         // TODO check other channels
 //        Tfr::pChunk chunk = (*cepstrum->createTransform())( o->readFixedLength(I)->getChannel (0));
-        Tfr::pChunk chunk = (*cepstrum->createTransform())( s.write ()->readFixedLengthFromCache(I)->getChannel (0));
+        Tfr::pChunk chunk = (*cepstrum->createTransform())( Signal::Processing::Step::readFixedLengthFromCache (s,I)->getChannel (0));
 
         abslog.reset( new DataStorage<float>(chunk->transform_data->size()));
 
@@ -389,7 +389,7 @@ public:
 
         Signal::IntervalType sample = std::max(0.f, t) * fs;
         const Signal::Interval I = cwt->requiredInterval (Signal::Interval(sample, sample+1), 0);
-        Tfr::pChunk chunk = (*cwt->copy ()->createTransform ())(s.write ()->readFixedLengthFromCache (I)->getChannel (0));
+        Tfr::pChunk chunk = (*cwt->copy ()->createTransform ())( Signal::Processing::Step::readFixedLengthFromCache (s,I)->getChannel (0));
 
         Tfr::CwtChunk* cwtchunk = dynamic_cast<Tfr::CwtChunk*>( chunk.get() );
         unsigned N = 0;

@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QNetworkReply>
 #include <QThread>
+#include <QTimer>
 
 #include <boost/exception_ptr.hpp>
 
@@ -50,6 +51,7 @@ private:
 
     QString                             feedbackMessage_;
     QThread                             thread_;
+    QTimer                              feedbackTimer_;
     Support::SendFeedback*              send_feedback_ = 0;
     bool                                finished_ok_ = false;
 

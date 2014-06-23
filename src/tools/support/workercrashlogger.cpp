@@ -195,7 +195,7 @@ namespace Support {
 
 class DummyScheduler: public ISchedule
 {
-    Task::ptr getTask(Signal::ComputingEngine::ptr) const override
+    Task getTask(Signal::ComputingEngine::ptr) const override
     {
         // Throw exception
         BOOST_THROW_EXCEPTION(DummyException());

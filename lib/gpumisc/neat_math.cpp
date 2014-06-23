@@ -202,7 +202,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( floor_log2(-2107612212123456789012.f), 70 );
 
         double T = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T, debug_build ? gdb ? 100e-6 : 42e-6 : 30e-6);
+        EXCEPTION_ASSERT_LESS (T, debug_build ? gdb ? 200e-6 : 42e-6 : 30e-6);
 
         // in general floor(log2(x)) == floor_log2(x)
         uniform_real_distribution<double> unif(

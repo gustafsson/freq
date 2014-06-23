@@ -91,8 +91,8 @@ void Application::
         Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
-        needs.write ()->updateNeeds (I);
-        needs->sleep(needs, -1);
+        needs->updateNeeds (I);
+        needs->sleep(-1);
 
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
@@ -111,8 +111,8 @@ void Application::
         Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );
-        needs.write ()->updateNeeds (I);
-        needs->sleep(needs, -1);
+        needs->updateNeeds (I);
+        needs->sleep(-1);
 
         TaskInfo("Samples per chunk = %u", total_samples_per_chunk);
         sawe_exit = true;
