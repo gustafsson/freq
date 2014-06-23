@@ -140,7 +140,7 @@ int UnitTest::
         RUNTEST(Signal::Processing::Targets);
         RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
-//        RUNTEST(Signal::Processing::Worker);
+        RUNTEST(Signal::Processing::Worker);
         RUNTEST(Signal::Processing::Workers);
         RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);

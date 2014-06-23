@@ -108,8 +108,13 @@ void Task::
 void Task::
         run_private()
 {
-    Signal::OperationDesc::ptr od;
-    TIME_TASK od = step_.raw ()->operation_desc ();
+    Signal::OperationDesc::ptr od = step_.raw ()->operation_desc ();
+    if (!od)
+    {
+        cancel ();
+        return;
+    }
+
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
                            % od.read ()->toString ().toStdString ());
 
@@ -183,8 +188,10 @@ void Task::
         finish(Signal::pBuffer b)
 {
     if (step_)
+    {
         Step::finishTask(step_, task_id_, b);
-    step_.reset();
+        step_.reset();
+    }
 }
 
 
@@ -192,8 +199,10 @@ void Task::
         cancel()
 {
     if (step_)
+    {
         Step::finishTask(step_, task_id_, Signal::pBuffer());
-    step_.reset();
+        step_.reset();
+    }
 }
 
 } // namespace Processing
