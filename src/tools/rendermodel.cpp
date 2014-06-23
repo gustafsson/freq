@@ -163,8 +163,15 @@ void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
     if (x != display_scale ())
-        if (block_update_queue) block_update_queue->clear();
+        if (block_update_queue)
+            block_update_queue->clear();
+
     tfr_map_.write ()->display_scale( x );
+
+    Signal::Processing::IInvalidator::ptr i =
+            render_operation_desc_.raw ()->getInvalidator ();
+    if (i)
+        i->deprecateCache(Signal::Interval::Interval_ALL);
 }
 
 
@@ -179,8 +186,15 @@ void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
     if (x != amplitude_axis ())
-        if (block_update_queue) block_update_queue->clear();
+        if (block_update_queue)
+            block_update_queue->clear();
+
     tfr_map_.write ()->amplitude_axis( x );
+
+    Signal::Processing::IInvalidator::ptr i =
+            render_operation_desc_.raw ()->getInvalidator ();
+    if (i)
+        i->deprecateCache(Signal::Interval::Interval_ALL);
 }
 
 
