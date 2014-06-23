@@ -87,8 +87,7 @@ RenderView::
             _last_x(0),
             _last_y(0),
             _try_gc(0),
-            _target_fps(10.0f),
-            _last_update_size(std::numeric_limits<Signal::UnsignedIntervalType>::max())
+            _target_fps(10.0f)
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -865,20 +864,6 @@ void RenderView::
 }
 
 
-void RenderView::
-        setLastUpdateSize( Signal::UnsignedIntervalType last_update_size )
-{
-    // _last_update_size must be non-zero to be divisable
-    _last_update_size = std::max(1llu, last_update_size);
-
-    if ((Signal::UnsignedIntervalType)Signal::Interval::IntervalType_MAX < _last_update_size)
-      {
-        // Oddly enough
-        // '_last_update_size' is close but not equal to 'Signal::Interval::Interval_ALL.count ()'
-      }
-}
-
-
 Support::ToolSelector* RenderView::
         toolSelector()
 {
@@ -1165,18 +1150,10 @@ void RenderView::
     }
 
 
-    // It should update the view in sections with the same size as blocks
-    Signal::Processing::TargetNeeds::ptr target_needs = model->target_marker()->target_needs();
-    Support::HeightmapProcessingPublisher wu(target_needs, model->collections());
-    wu.update(model->_qx, x, _last_update_size);
-
     Support::ChainInfo ci(model->project ()->processing_chain ());
     bool isWorking = ci.hasWork () || update_queue_has_work;
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
-    if (wu.failedAllocation ())
-        dead_workers += n_workers;
-    // dead_workers = (wu.failedAllocation () || n_workers==0) && !isRecording
 
     if (isWorking || isRecording || dead_workers) {
         Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], n_workers, dead_workers );
@@ -1251,8 +1228,10 @@ void RenderView::
 
 
     {
-        TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
-        emit postPaint();
+        float t_center = model->_qx;
+        TIME_PAINTGL_DETAILS TaskTimer tt(boost::format("emit postPaint(%s)")
+                                          % t_center);
+        emit postPaint(t_center);
     }
 }
 

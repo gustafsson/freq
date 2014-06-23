@@ -30,6 +30,7 @@
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
+#include "tools/support/heightmapprocessingpublisher.h"
 #include "sawe/configuration.h"
 
 // gpumisc
@@ -84,10 +85,13 @@ RenderController::
                 rvup = new Support::RenderViewUpdateAdapter);
 
     connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
-    connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), view, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
 
     model()->init(model()->project ()->processing_chain (), rvu);
 
+    // 'this' is parent
+    auto hpp = new Support::HeightmapProcessingPublisher(view->model->target_marker ()->target_needs (), view->model->tfr_mapping (), this);
+    connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), hpp, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
+    connect(view, SIGNAL(postPaint(float)), hpp, SLOT(update(float)));
 
     setupGui();
 

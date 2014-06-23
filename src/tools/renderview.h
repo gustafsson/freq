@@ -102,7 +102,6 @@ namespace Tools
         void emitAxisChanged();
 
     public slots:
-        void setLastUpdateSize( Signal::UnsignedIntervalType length );
         void redraw();
 
     signals:
@@ -131,7 +130,7 @@ namespace Tools
         /**
          * @brief postPaint. Use 'Qt::DirectConnection'
          */
-        void postPaint();
+        void postPaint(float t_center);
 
         /**
          * @brief paintingForeground. Use 'Qt::DirectConnection'
