@@ -239,7 +239,7 @@ void TargetNeeds::
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
         step.write ()->registerTask(0, Signal::Interval(0,10));
-        step.write ()->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
+        Step::finishTask(step, 0, pBuffer(new Buffer(Interval(0,10),1,1)));
 
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 

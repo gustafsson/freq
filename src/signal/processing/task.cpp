@@ -112,7 +112,7 @@ Signal::pBuffer Task::
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = children_[i].read ()->readFixedLengthFromCache(required_input_);
+        Signal::pBuffer b = Step::readFixedLengthFromCache(children_[i], required_input_);
         if (b) {
             num_channels = std::max(num_channels, b->number_of_channels ());
             sample_rate = std::max(sample_rate, b->sample_rate ());
@@ -149,7 +149,7 @@ void Task::
         finish(Signal::pBuffer b)
 {
     if (step_)
-        step_.write ()->finishTask(this, b);
+        Step::finishTask(step_, this, b);
     step_.reset();
 }
 
@@ -158,7 +158,7 @@ void Task::
         cancel()
 {
     if (step_)
-        step_.write ()->finishTask(this, Signal::pBuffer());
+        Step::finishTask(step_, this, Signal::pBuffer());
     step_.reset();
 }
 
@@ -197,7 +197,7 @@ void Task::
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
-        Signal::pBuffer r = step.write ()->readFixedLengthFromCache(to_read);
+        Signal::pBuffer r = Step::readFixedLengthFromCache(step, to_read);
         EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
         EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
 
