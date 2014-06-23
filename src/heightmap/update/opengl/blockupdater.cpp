@@ -2,29 +2,55 @@
 #include "heightmap/update/tfrblockupdater.h"
 #include "tfr/chunk.h"
 
+#include "fbo2block.h"
+#include "pbo2texture.h"
+#include "source2pbo.h"
+#include "texture2fbo.h"
+
 #include "tasktimer.h"
 #include "timer.h"
 #include "log.h"
 #include "neat_math.h"
+#include "lazy.h"
 
 #include <thread>
 #include <future>
+#include <unordered_map>
 
 //#define INFO
 #define INFO if(0)
 
 using namespace std;
+using namespace JustMisc;
+
+namespace std {
+    template<class T>
+    struct hash<boost::shared_ptr<T>>
+    {
+        std::size_t operator()(boost::shared_ptr<T> const& t) const
+        {
+            return std::hash<T*>()(t.get ());
+        }
+    };
+}
 
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
 
+class BlockUpdaterPrivate
+{
+public:
+    Shaders shaders;
+};
+
 BlockUpdater::
         BlockUpdater()
     :
-//      memcpythread(std::thread::hardware_concurrency ())
-      memcpythread(2)
+//      memcpythread(thread::hardware_concurrency ())
+      p(new BlockUpdaterPrivate),
+      memcpythread(2, "BlockUpdater")
 {
 }
 
@@ -37,123 +63,113 @@ BlockUpdater::
 
 
 void BlockUpdater::
-        processJobs( const std::vector<UpdateQueue::Job>& jobs )
+        processJobs( queue<UpdateQueue::Job>& jobs )
 {
-    typedef shared_ptr<ChunkToBlockDegenerateTexture::DrawableChunk> pDrawableChunk;
-    ChunkToBlockDegenerateTexture::BlockFbos& block_fbos = chunktoblock_texture.block_fbos ();
-
-    // 'jobs' contains all pBlock and survives longer than pDrawableChunk
-    std::map<pBlock, std::queue<pDrawableChunk>> chunks_per_block;
-
+    // Select subset to work on, must consume jobs in order
+    vector<UpdateQueue::Job> myjobs;
+    while (!jobs.empty ())
     {
-//                TaskTimer tt("Preparing %d jobs, span %s", jobs.size (), span.toString ().c_str ());
-
-      for (const UpdateQueue::Job& job : jobs)
+        UpdateQueue::Job& j = jobs.front ();
+        if (dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ()))
         {
-          if (!job.updatejob)
-              continue;
+            myjobs.push_back (std::move(j)); // Steal it
+            jobs.pop ();
+        }
+        else
+            break;
+    }
 
-          if (auto bujob = dynamic_cast<const TfrBlockUpdater::Job*>(job.updatejob.get ()))
-            {
-              auto drawable = processJob (*bujob, job.intersecting_blocks);
-              pDrawableChunk d(new ChunkToBlockDegenerateTexture::DrawableChunk(move(drawable)));
+    // Begin chunk transfer to gpu right away
+    unordered_map<Tfr::pChunk,lazy<Source2Pbo>> source2pbo;
+    for (const UpdateQueue::Job& j : myjobs)
+    {
+        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-//                        chunks_with_blocks.push_back (chunk_with_blocks_t(d, job.intersecting_blocks));
-              for (pBlock b : job.intersecting_blocks)
-                  chunks_per_block[b].push(d);
-            }
+        Source2Pbo sp(job->chunk);
+        memcpythread.addTask (sp.transferData(job->p));
+
+        source2pbo[job->chunk] = move(sp);
+    }
+
+    // Begin transfer of vbo data to gpu
+    unordered_map<Texture2Fbo::Params, lazy<Texture2Fbo>> vbos;
+    for (const UpdateQueue::Job& j : myjobs)
+    {
+        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
+
+        if (!j.intersecting_blocks.empty ())
+        {
+            pBlock block = j.intersecting_blocks.front ();
+            auto vp = block->visualization_params();
+
+            Texture2Fbo::Params p(job->chunk,
+                                  vp->display_scale (),
+                                  block->block_layout ());
+
+            // Most vbo's will look the same, only create as many as needed.
+            if (vbos.count (p))
+                continue;
+
+            vbos[p] = Texture2Fbo(p, job->normalization_factor);
         }
     }
 
-  if (!chunks_per_block.empty ())
+    // Remap block -> chunks (instead of chunk -> blocks) because we want to draw all
+    // chunks to each block, instead of each chunk to all blocks.
+    //
+    // The chunks must be drawn in order, thus a "vector<Tfr::pChunk>" is required
+    // to preserve ordering.
+    unordered_map<pBlock, vector<Tfr::pChunk>> chunks_per_block;
+    for (const UpdateQueue::Job& j : myjobs)
     {
-//                TaskTimer tt("Updating %d blocks", chunks_per_block.size ());
-      // draw all chunks who share the same block in one go
-      for (map<pBlock, queue<pDrawableChunk>>::value_type& p : chunks_per_block)
-        {
-          shared_ptr<BlockFbo> fbo = block_fbos[p.first];
-          if (!fbo)
-              continue;
+        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-//                    TaskTimer tt(boost::format("Drawing %d chunks into block %s")
-//                                 % p.second.size() % p.first->getRegion());
-
-          auto fboScopeBinding = fbo->begin ();
-
-          auto& q = p.second;
-          while (!q.empty ())
-            {
-              pDrawableChunk c {move(q.front ())};
-              q.pop ();
-              c->draw ();
-            }
-
-          // unbind fbo on out-of-scope
-        }
+        for (pBlock block : j.intersecting_blocks)
+            chunks_per_block[block].push_back(job->chunk);
     }
 
-//            if (!chunks_with_blocks.empty ())
-//              {
-//                TaskTimer tt("Updating from %d chunks", chunks_with_blocks.size ());
-//                for (auto& c : chunks_with_blocks)
-//                  {
-//                    for (auto& b : c.second)
-//                      {
-//                        shared_ptr<BlockFbo> fbo = block_fbos[b];
-//                        if (!fbo)
-//                            continue;
-//                        fbo->begin ();
-//                        c.first->draw();
-//                        fbo->end ();
-//                      }
-//                  }
-//              }
+    // Prepare block for drawing to
+    unordered_map<pBlock, lazy<Fbo2Block>> fbo2block;
+    for (const auto& b: chunks_per_block)
+        fbo2block[b.first] = Fbo2Block(b.first);
 
-//            chunks_with_blocks.clear ();
+    // Prepare to draw with transferred chunk
+    unordered_map<Tfr::pChunk, lazy<Pbo2Texture>> pbo2texture;
+    for (auto& sp : source2pbo)
+        pbo2texture[sp.first] = Pbo2Texture(p->shaders,
+                                            sp.first,
+                                            sp.second->getPboWhenReady());
 
-  sync (); // Wait for block textures to become updated by BlockFbo destructor.
-}
+    // Draw from all chunks to each block
+    for (auto& f : chunks_per_block)
+    {
+        const pBlock& block = f.first;
+        auto fbo_mapping = fbo2block[block]->begin();
 
+        for (auto& c : f.second)
+        {
+            auto vp = block->visualization_params();
+            Texture2Fbo::Params p(c, vp->display_scale (), block->block_layout ());
 
-ChunkToBlockDegenerateTexture::DrawableChunk BlockUpdater::
-        processJob( const TfrBlockUpdater::Job& job,
-                    const std::vector<pBlock>& intersecting_blocks )
-{
-    EXCEPTION_ASSERT (!intersecting_blocks.empty ());
-    EXCEPTION_ASSERT (job.chunk);
+            // If something has changed the vbo is out-of-date, skip this
+            if (!vbos.count (p))
+                continue;
 
-    pBlock example_block = intersecting_blocks.front ();
-    BlockLayout block_layout = example_block->block_layout ();
-    Tfr::FreqAxis display_scale = example_block->visualization_params ()->display_scale ();
-    AmplitudeAxis amplitude_axis = example_block->visualization_params ()->amplitude_axis ();
+            auto& vbo = vbos[p];
+            auto tex_mapping = pbo2texture[c]->map(
+                        vbo->normalization_factor(),
+                        vp->amplitude_axis ());
 
-    chunktoblock_texture.setParams( amplitude_axis, display_scale, block_layout, job.normalization_factor );
+            vbo->draw();
+            (void)tex_mapping; // suppress warning caused by RAII
+        }
 
-//    TaskTimer tt0(boost::format("processJob %s") % job.getCoveredInterval ());
-    // TODO refactor to do one thing at a time
-    // 1. prepare to draw from chunks (i.e copy to OpenGL texture and create vertex buffers)
-    // 1.1. Same chunk_scale and display_scale for all chunks and all blocks
-    // 2. For each block.
-    // 2.1. prepare to draw into block
-    // 2.2. draw all chunks
-    // 2.3. update whatever needs to be updated
-    // And rename all these "chunk block merger to merge block chunk merge"
+        // suppress warning caused by RAII
+        (void)fbo_mapping;
+    }
 
-    // Setup FBO
-    for (pBlock block : intersecting_blocks)
-        chunktoblock_texture.prepareBlock (block);
-
-    // Update PBO and VBO
-    auto d = chunktoblock_texture.prepareChunk (job.chunk);
-    memcpythread.addTask (d.transferData(job.p));
-    return d;
-}
-
-
-void BlockUpdater::
-        sync ()
-{
-    chunktoblock_texture.finishBlocks ();
+    for (UpdateQueue::Job& j : myjobs)
+        j.promise.set_value ();
 }
 
 } // namespace OpenGL

@@ -62,6 +62,8 @@ void UpdateProducer::
     }
 
     // Wait for these to finish
+    // If this worker thread doesn't wait it might produce jobs faster than
+    // they can be consumed.
     try
     {
         for (std::future<void>& f : F)

@@ -7,14 +7,27 @@ namespace Heightmap {
 namespace Update {
 
 void WaveformBlockUpdater::
-        processJobs( const vector<UpdateQueue::Job>& jobs )
+        processJobs( std::queue<UpdateQueue::Job>& jobs )
 {
-    for (const UpdateQueue::Job& job : jobs)
+    // Select subset to work on, must consume jobs in order
+    std::vector<UpdateQueue::Job> myjobs;
+    while (!jobs.empty ())
+    {
+        UpdateQueue::Job& j = jobs.front ();
+        if (dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ()))
+        {
+            myjobs.push_back (std::move(j)); // Steal it
+            jobs.pop ();
+        }
+        else
+            break;
+    }
+
+    for (UpdateQueue::Job& job : myjobs)
       {
-        if (auto bujob = dynamic_cast<const WaveformBlockUpdater::Job*>(job.updatejob.get ()))
-          {
-            processJob (*bujob, job.intersecting_blocks);
-          }
+        auto bujob = dynamic_cast<const WaveformBlockUpdater::Job*>(job.updatejob.get ());
+        processJob (*bujob, job.intersecting_blocks);
+        job.promise.set_value ();
       }
 }
 

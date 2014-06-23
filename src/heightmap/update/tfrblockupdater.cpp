@@ -30,6 +30,7 @@ private:
 float* computeNorm(Tfr::ChunkElement* cp, int n) {
     float *p = (float*)cp; // Overwrite 'cp'
     // This takes a while, simply because p is large so that a lot of memory has to be copied.
+    // This has to be computed in sequence, no parallelization allowed.
     for (int i = 0; i<n; ++i)
         p[i] = norm(cp[i]); // Compute norm here and square root in shader.
     return p;
@@ -128,9 +129,9 @@ TfrBlockUpdater::~TfrBlockUpdater()
 
 
 void TfrBlockUpdater::
-        processJobs( const std::vector<UpdateQueue::Job>& jobs )
+        processJobs( std::queue<UpdateQueue::Job>& jobs )
 {
-    p->processJobs(jobs);
+    return p->processJobs(jobs);
 }
 
 } // namespace Update

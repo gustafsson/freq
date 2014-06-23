@@ -1,6 +1,8 @@
 #ifndef HEIGHTMAP_UPDATE_WAVEFORMBLOCKUPDATER_H
 #define HEIGHTMAP_UPDATE_WAVEFORMBLOCKUPDATER_H
 
+#include "updatequeue.h"
+
 namespace Heightmap {
 namespace Update {
 
@@ -21,7 +23,7 @@ public:
     };
 
 
-    void processJobs( const std::vector<Heightmap::Update::UpdateQueue::Job>& jobs );
+    void processJobs( std::queue<Heightmap::Update::UpdateQueue::Job>& jobs );
     void processJob( const Job& job, const std::vector<pBlock>& intersecting_blocks );
     void processJob( const Job& job, pBlock block );
 };

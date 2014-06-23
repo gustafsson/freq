@@ -122,17 +122,18 @@ void CepstrumBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new CepstrumBlockFilter(CepstrumBlockFilterParams::ptr()) );
-        std::vector<Update::UpdateQueue::Job> jobs;
+        std::queue<Update::UpdateQueue::Job> jobs;
 
         for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
         {
             Update::UpdateQueue::Job uj;
             uj.intersecting_blocks = std::vector<pBlock>{block};
             uj.updatejob = job;
-            jobs.push_back (std::move(uj));
+            jobs.push (std::move(uj));
         }
 
         Update::TfrBlockUpdater().processJobs (jobs);
+        EXCEPTION_ASSERT_EQUALS(jobs.size (), 0u);
     }
 }
 

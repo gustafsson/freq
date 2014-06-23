@@ -153,17 +153,18 @@ void CwtBlockFilter::
         ComplexInfo complex_info = ComplexInfo_Amplitude_Non_Weighted;
         Heightmap::MergeChunk::ptr mc( new CwtBlockFilter(complex_info) );
 
-        std::vector<Update::UpdateQueue::Job> jobs;
+        std::queue<Update::UpdateQueue::Job> jobs;
 
         for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
         {
             Update::UpdateQueue::Job uj;
             uj.intersecting_blocks = std::vector<pBlock>{block};
             uj.updatejob = job;
-            jobs.push_back (std::move(uj));
+            jobs.push (std::move(uj));
         }
 
         Update::TfrBlockUpdater().processJobs (jobs);
+        EXCEPTION_ASSERT_EQUALS(jobs.size (), 0u);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow

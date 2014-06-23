@@ -26,7 +26,7 @@ public:
     TfrBlockUpdater& operator=(const TfrBlockUpdater&) = delete;
     ~TfrBlockUpdater();
 
-    void processJobs( const std::vector<UpdateQueue::Job>& jobs );
+    void processJobs( std::queue<UpdateQueue::Job>& jobs );
 
 private:
     TfrBlockUpdaterPrivate* p;

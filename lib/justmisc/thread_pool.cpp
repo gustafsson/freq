@@ -5,28 +5,38 @@
 
 #include <numeric>
 #include <functional>
+#include <sstream>
 
 using namespace std;
 
 namespace JustMisc {
 
 thread_pool::
-        thread_pool()
+        thread_pool(const char* name)
     :
-      thread_pool(thread::hardware_concurrency ())
+      thread_pool(thread::hardware_concurrency (), name)
 {}
 
 
 thread_pool::
-        thread_pool(int n)
+        thread_pool(int n, const char* name)
     :
       threads_(n)
 {
+    int i=0;
     for (thread& t: threads_)
     {
+        i++;
         t = thread(
-                [this]()
+                [this, i, n, name]()
                 {
+#ifdef __GNUC__
+                    {
+                        stringstream ss;
+                        ss << (name?name:"thread_pool") << " " << i << "/" << n;
+                        pthread_setname_np(ss.str ().c_str ());
+                    }
+#endif
                     try {
                         while (true) {
                             auto task = queue_.pop ();

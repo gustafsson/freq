@@ -6,6 +6,7 @@
 #include "heightmap/render/glblock.h"
 
 #include "demangle.h"
+#include "trace_perf.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -82,7 +83,7 @@ void StftBlockFilter::
 
     // It should update a block with stft transform data.
     {
-        Timer t;
+        TRACE_PERF ("StftBlockFilter should update a block with stft transform data");
 
         Tfr::StftDesc stftdesc;
         Signal::Interval data = stftdesc.requiredInterval (Signal::Interval(0,4), 0);
@@ -129,29 +130,18 @@ void StftBlockFilter::
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new StftBlockFilter(StftBlockFilterParams::ptr()) );
 
-        std::vector<Update::UpdateQueue::Job> jobs;
+        std::queue<Update::UpdateQueue::Job> jobs;
 
         for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
         {
             Update::UpdateQueue::Job uj;
             uj.intersecting_blocks = std::vector<pBlock>{block};
             uj.updatejob = job;
-            jobs.push_back (std::move(uj));
+            jobs.push (std::move(uj));
         }
 
         Update::TfrBlockUpdater().processJobs (jobs);
-
-        float T = t.elapsed ();
-//        if (DetectGdb::is_running_through_gdb ()) {
-//            EXCEPTION_ASSERT_LESS(T, 3e-3);
-//        } else {
-//            EXCEPTION_ASSERT_LESS(T, 1e-3);
-//        }
-        if (DetectGdb::is_running_through_gdb ()) {
-            EXCEPTION_ASSERT_LESS(T, 50e-3);
-        } else {
-            EXCEPTION_ASSERT_LESS(T, 1e-3);
-        }
+        EXCEPTION_ASSERT_EQUALS(jobs.size (), 0u);
     }
 }
 

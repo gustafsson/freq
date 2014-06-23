@@ -70,6 +70,17 @@ void UpdateConsumer::
 }
 
 
+template <class Q>
+    typename Q::container_type& Container(Q& q) {
+        struct HackedQueue : private Q {
+            static typename Q::container_type& Container(Q& q) {
+                return q.*&HackedQueue::c;
+            }
+        };
+    return HackedQueue::Container(q);
+}
+
+
 void UpdateConsumer::
         run()
 {
@@ -83,37 +94,33 @@ void UpdateConsumer::
 
         while (!isInterruptionRequested ())
           {
-            std::unique_ptr<TaskTimer> tt;
+            unique_ptr<TaskTimer> tt;
             INFO if (update_queue->empty ())
                 tt.reset (new TaskTimer("Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
-            queue<UpdateQueue::Job> jobqueue = update_queue->clear ();
 
-            Timer t;
+            auto jobqueue = update_queue->clear ();
 
-            vector<UpdateQueue::Job> jobs;
-            jobs.reserve (1 + jobqueue.size ());
+            // Force a push_front to the std::queue
+            Container(jobqueue).push_front (std::move(j));
 
-            jobs.push_back (move(j));
+//            Timer t;
+
             while (!jobqueue.empty ())
-              {
-                jobs.push_back (move(jobqueue.front ()));
-                jobqueue.pop ();
-              }
-
-            block_updater.processJobs (jobs);
-            waveform_updater.processJobs (jobs);
+            {
+                unsigned s = jobqueue.size ();
+                block_updater.processJobs (jobqueue);
+                waveform_updater.processJobs (jobqueue);
+                EXCEPTION_ASSERT_LESS(jobqueue.size (), s);
+            }
 
             if (!isInterruptionRequested ())
               {
                 emit didUpdate ();
               }
 
-            for (UpdateQueue::Job& j : jobs)
-                j.promise.set_value ();
-
-            INFO
+/*            INFO
             {
                 Signal::Intervals span = accumulate(jobs.begin (), jobs.end (), Signal::Intervals(),
                         [](Signal::Intervals& I, const UpdateQueue::Job& j) {
@@ -132,6 +139,7 @@ void UpdateConsumer::
                          % jobs.size () % blocks.size ()
                          % span % (span.count ()/t.elapsed ());
             }
+            */
         }
       }
     catch (UpdateQueue::abort_exception&)

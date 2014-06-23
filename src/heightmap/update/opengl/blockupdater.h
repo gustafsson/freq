@@ -4,7 +4,6 @@
 #include "tfr/chunkfilter.h"
 #include "../updatequeue.h"
 #include "../tfrblockupdater.h"
-#include "chunktoblockdegeneratetexture.h"
 #include "../iupdatejob.h"
 
 #include "thread_pool.h"
@@ -67,6 +66,7 @@ namespace OpenGL {
  * block fbo was created so that it draws straight onto the texture.
  * function grabToTexture updates the vertex texture with glCopyTexSubImage2D.
  */
+class BlockUpdaterPrivate;
 class BlockUpdater
 {
 public:
@@ -75,17 +75,12 @@ public:
     BlockUpdater& operator=(const BlockUpdater&) = delete;
     ~BlockUpdater();
 
-    void processJobs( const std::vector<UpdateQueue::Job>& jobs );
-    ChunkToBlockDegenerateTexture::DrawableChunk processJob(
-            const TfrBlockUpdater::Job& job,
-            const std::vector<pBlock>& intersecting_blocks );
+    void processJobs( std::queue<UpdateQueue::Job>& jobs );
 
 private:
-    void sync();
-
+    BlockUpdaterPrivate* p;
     JustMisc::thread_pool memcpythread;
-    ChunkToBlockDegenerateTexture chunktoblock_texture;
-//    ChunkToBlock chunktoblock;
+
 public:
     static void test();
 };

@@ -14,8 +14,8 @@ namespace JustMisc {
 class thread_pool
 {
 public:
-    thread_pool();
-    thread_pool(int N);
+    thread_pool(const char* name=0);
+    thread_pool(int N, const char* name=0);
     ~thread_pool();
 
     void addTask(std::packaged_task<void()>&& task)
