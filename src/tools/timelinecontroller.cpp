@@ -79,7 +79,7 @@ void TimelineController::
 
     bool create_dock_window = Sawe::Configuration::feature("timeline_dock");
 
-    if (bool dock_window_doesnt_work = true)
+    if (bool dock_window_doesnt_work = false)
         create_dock_window &= !dock_window_doesnt_work;
 
     if (create_dock_window)

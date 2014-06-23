@@ -14,25 +14,8 @@ class GlFrameBufferException: virtual public boost::exception, virtual public st
 GlFrameBuffer::
         GlFrameBuffer()
             :
-            fboId_(0),
-            rboId_(0),
-            own_texture_(new GlTexture),
-            textureid_(own_texture_->getOpenGlTextureId ()),
-            enable_depth_component_(true)
+              GlFrameBuffer(0,0)
 {
-    init();
-
-    try
-    {
-        recreate(0, 0);
-    }
-    catch(...)
-    {
-        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
-        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
-
-        throw;
-    }
 }
 
 
@@ -85,6 +68,7 @@ GlFrameBuffer::
         TaskInfo("GlFrameBuffer() caught exception");
         if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
         if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+        unbindFrameBuffer ();
 
         throw;
     }
@@ -161,7 +145,7 @@ void GlFrameBuffer::
     {
         action = "Creating";
 
-        GLint viewport[4];
+        GLint viewport[4] = {0,0,0,0};
         glGetIntegerv(GL_VIEWPORT, viewport);
         width = viewport[2];
         height = viewport[3];

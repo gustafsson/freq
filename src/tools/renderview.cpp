@@ -683,7 +683,7 @@ void RenderView::
                 || viewportWidth*2 < fbo->getWidth()
                 || viewportHeight*2 < fbo->getHeight())
             {
-                fbo->recreate();
+                fbo->recreate(viewportWidth*1.5, viewportHeight*1.5);
             }
 
             hasValidatedFboSize = true;
