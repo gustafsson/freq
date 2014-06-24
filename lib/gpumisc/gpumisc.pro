@@ -16,8 +16,6 @@ INCLUDEPATH += ../backtrace
 
 QT += opengl
 
-#DEFINES += THREADCHECKER_NO_CHECK
-#DEFINES += CUDA_MEMCHECK_TEST
 DEFINES += GPUMISC_LIBRARY
 
 SOURCES += \
@@ -42,6 +40,7 @@ SOURCES += \
     redirectstdout.cpp \
     resampletexture.cpp \
     ThreadChecker.cpp \
+    unittest.cpp \
     vbo.cpp \
 
 HEADERS += \
@@ -95,6 +94,7 @@ HEADERS += \
     tmatrixstring.h \
     tvector.h \
     tvectorstring.h \
+    unittest.h \
     unsignedf.h \
     vbo.h \
 

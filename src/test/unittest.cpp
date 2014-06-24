@@ -2,20 +2,7 @@
 
 #include "../lib/backtrace/unittest.h"
 #include "../lib/justmisc/justmisc-unittest.h"
-
-// gpumisc units
-#include "backtrace.h"
-#include "datastoragestring.h"
-#include "exceptionassert.h"
-#include "factor.h"
-#include "geometricalgebra.h"
-#include "glframebuffer.h"
-#include "glinfo.h"
-#include "glprojection.h"
-#include "gltextureread.h"
-#include "prettifysegfault.h"
-#include "resampletexture.h"
-#include "shared_state.h"
+#include "../lib/gpumisc/unittest.h"
 
 // sonicawe
 #include "test/implicitordering.h"
@@ -78,9 +65,10 @@
 #include "adapters/microphonerecorder.h"
 #include "filters/absolutevalue.h"
 
-// gpumisc tool
-#include "tasktimer.h"
+// common backtrace tools
 #include "timer.h"
+#include "tasktimer.h"
+#include "trace_perf.h"
 
 #include <stdio.h>
 #include <exception>
@@ -106,17 +94,13 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
+        trace_perf::add_database_path("../lib/backtrace/trace_perf");
+        trace_perf::add_database_path("../lib/gpumisc/trace_perf");
+
         RUNTEST(BacktraceTest::UnitTest);
         RUNTEST(JustMisc::UnitTest);
-        RUNTEST(DataStorageString);
-        RUNTEST(Factor);
-        RUNTEST(GeometricAlgebra);
-        RUNTEST(GlFrameBuffer);
-        RUNTEST(glinfo);
-        RUNTEST(glProjection);
-        RUNTEST(GlTextureRead);
-        RUNTEST(neat_math);
-        RUNTEST(ResampleTexture);
+        RUNTEST(gpumisc::UnitTest);
+
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
         RUNTEST(Test::TaskTimerTiming);
