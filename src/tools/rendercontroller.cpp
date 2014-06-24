@@ -42,7 +42,6 @@
 #include <QSlider>
 #include <QGraphicsView>
 #include <QResizeEvent>
-#include <QMetaClassInfo>
 #include <QGLContext>
 #include <QSettings>
 
