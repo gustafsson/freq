@@ -128,6 +128,7 @@ Signal::pMonoBuffer DummyTransform::
 } // namespace Tfr
 
 #include "timer.h"
+#include "trace_perf.h"
 
 namespace Tfr {
 
@@ -152,7 +153,10 @@ void DummyTransform::
 {
     // It should transform a buffer into a dummy state and back.
     for (int i=0; i<2; i++) {
-        Timer timer;
+        TRACE_PERF(i==0
+                   ? "It should init dummytransform"
+                   : "It should transform a buffer into a dummy state and back");
+
         DummyTransform t;
 
         Signal::pBuffer b = Test::RandomBuffer::smallBuffer(std::hash<std::string>()("DummyTransform"));
@@ -163,14 +167,6 @@ void DummyTransform::
         EXCEPTION_ASSERT(b->getChannel (0) == b2);
 
         EXCEPTION_ASSERT_EQUALS(c->getCoveredInterval (), b->getInterval ());
-
-        double T = timer.elapsed ();
-#ifdef _DEBUG
-        EXCEPTION_ASSERT_LESS(T, i==0 ? 1000e-6 : 80e-6);
-#else
-        EXCEPTION_ASSERT_LESS(i==0 ? 4e-6 : 1e-6, T);
-        EXCEPTION_ASSERT_LESS(T, i==0 ? 500e-6 : 13e-6);
-#endif
     }
 }
 
