@@ -67,6 +67,7 @@ public:
     shared_state<Workers> workers() const;
     Targets::ptr targets() const;
 
+    void resetDefaultWorkers();
     // Add jumping around with targets later.
 
 private:

@@ -92,7 +92,7 @@ TargetMarker::ptr Chain::
 {
     Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at);
 
-    TargetNeeds::ptr target_needs = targets_.write ()->addTarget(step);
+    TargetNeeds::ptr target_needs = targets_->addTarget(step);
 
     TargetMarker::ptr marker(new TargetMarker {target_needs, dag_});
 
@@ -210,6 +210,41 @@ Targets::ptr Chain::
         targets() const
 {
     return targets_;
+}
+
+
+void Chain::
+        resetDefaultWorkers()
+{
+    TaskTimer tt("Chain::resetDefaultWorkers");
+
+    auto workers = workers_.write ();
+    workers->remove_all_engines(1000);
+
+    Workers::DeadEngines dead = workers->clean_dead_workers();
+    for (auto d : dead)
+        if (d.second)
+            TaskInfo(boost::format("%s crashed") % (d.first.get() ? vartype(*d.first.get()) : "ComputingEngine(null)"));
+
+    Workers::EngineWorkerMap engines = workers->workers_map();
+    if (!engines.empty ())
+    {
+        TaskInfo ti("Couldn't remove all old workers");
+        for (auto e : engines)
+            TaskInfo(boost::format("%s") % (e.first.get() ? vartype(*e.first.get()) : "ComputingEngine(null)"));
+    }
+
+    if (!engines.count (0))
+        workers->addComputingEngine(Signal::ComputingEngine::ptr());
+
+    int cpu_workers = 0;
+    for (auto e : engines)
+        if (dynamic_cast<Signal::ComputingEngine*>(e.first.get()))
+            cpu_workers++;
+
+    // Add worker threads to occupy all kernels
+    for (int i=cpu_workers; i<QThread::idealThreadCount (); i++)
+        workers->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
 }
 
 
@@ -346,7 +381,7 @@ void Chain::
         EXCEPTION_ASSERT_EQUALS (chain.read ()->extent(target).interval, Signal::Interval(3,5));
 
         TargetNeeds::ptr needs = target->target_needs();
-        needs.write ()->updateNeeds(Signal::Interval(4,6));
+        needs->updateNeeds(Signal::Interval(4,6));
         usleep(4000);
         //target->sleep();
 

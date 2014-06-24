@@ -28,7 +28,7 @@ struct ScheduleParams {
 
 class find_missing_samples: public default_bfs_visitor {
 public:
-    find_missing_samples(NeededSamples needed, Task::ptr* output_task, ScheduleParams schedule_params)
+    find_missing_samples(NeededSamples needed, Task* output_task, ScheduleParams schedule_params)
         :
           needed(needed),
           params(schedule_params),
@@ -63,7 +63,10 @@ public:
 
     Signal::Interval try_create_task(GraphVertex u, const Graph & g, Signal::Intervals missing_input)
       {
-        auto step = g[u].write (); // lock while studying what's needed
+        // No other thread is allowed to reach the same conclusion about what needs to be done.
+        // So the lock has to be kept from checking what's needed all the way until the task has
+        // been registered in step->running_tasks.
+        auto step = g[u].write (); // lock while studying what's needed.
 
         try
           {
@@ -111,7 +114,7 @@ public:
                 // Then this operation must specify sample rate and number of
                 // samples for this to be a valid read. Otherwise the signal is
                 // undefined.
-                Signal ::OperationDesc::Extent x = o->extent ();
+                auto x = o->extent ();
                 if (!x.number_of_channels.is_initialized () || !x.sample_rate.is_initialized ())
                   {
                     // "Undefined signal. No sources and no extent"
@@ -128,7 +131,7 @@ public:
                 if (operation)
                   {
                     // Create a task
-                    std::vector<Step::ptr> children;
+                    std::vector<Step::const_ptr> children;
 
                     BOOST_FOREACH(GraphEdge e, out_edges(u, g))
                       {
@@ -136,7 +139,7 @@ public:
                         children.push_back (g[v]);
                       }
 
-                    *task = Task::ptr(new Task(step, g[u], children, operation, expected_output, required_input));
+                    *task = Task(step, g[u], children, operation, expected_output, required_input);
                   }
               }
 
@@ -147,12 +150,15 @@ public:
           }
         catch (const boost::exception& x)
           {
-            x   << Step::crashed_step(g[u]);
+            // Keep lock until the step has been marked as crashed
+            IInvalidator::ptr i = step->mark_as_crashed_and_get_invalidator();
+            step.unlock();
+
+            // Propagate the exception but decorate it with some info
+            x << Step::crashed_step(g[u]);
 
             try
               {
-                Signal::Processing::IInvalidator::ptr i = step->mark_as_crashed_and_get_invalidator();
-                step.unlock ();
                 if (i) i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
             catch(const std::exception& y)
@@ -166,11 +172,11 @@ public:
 
     NeededSamples needed;
     ScheduleParams params;
-    Task::ptr* task;
+    Task* task;
 };
 
 
-Task::ptr FirstMissAlgorithm::
+Task FirstMissAlgorithm::
         getTask(const Graph& straight_g,
                 GraphVertex straight_target,
                 Signal::Intervals needed,
@@ -189,7 +195,7 @@ Task::ptr FirstMissAlgorithm::
     needed_samples[target] = needed;
 
 
-    Task::ptr task;
+    Task task;
     find_missing_samples vis(needed_samples, &task, schedule_params);
 
     breadth_first_search(g, target, visitor(vis));
@@ -219,22 +225,22 @@ void FirstMissAlgorithm::
         // Schedule a task
         FirstMissAlgorithm schedule;
         Signal::ComputingEngine::ptr c(new Signal::ComputingCpu);
-        Task::ptr t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
-        Task::ptr t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
+        Task t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
+        Task t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
 
 
         // Verify output
         EXCEPTION_ASSERT(t1);
         EXCEPTION_ASSERT(t2);
-        EXCEPTION_ASSERT_EQUALS(t1.read ()->expected_output(), Interval(20,30));
-        EXCEPTION_ASSERT_EQUALS(t2.read ()->expected_output(), Interval(10, 20));
+        EXCEPTION_ASSERT_EQUALS(t1.expected_output(), Interval(20,30));
+        EXCEPTION_ASSERT_EQUALS(t2.expected_output(), Interval(10, 20));
 
         EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), Signal::Intervals::Intervals_ALL);
         EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), step.read ()->not_started());
 
         // Verify that the output objects can be used
-        t1.write ()->run();
-        t2.write ()->run();
+        t1.run();
+        t2.run();
         EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), step.read ()->not_started());
         EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals(10,30));
     }

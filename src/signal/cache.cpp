@@ -4,6 +4,8 @@
 #include "exceptionassert.h"
 #include "neat_math.h"
 #include "backtrace.h"
+#include "timer.h"
+#include "cpumemorystorage.h"
 
 using namespace boost;
 
@@ -36,18 +38,22 @@ void Cache::
     bp->release_extra_resources();
 
     const Buffer& b = *bp;
-
     allocateCache(b.getInterval(), b.sample_rate(), b.number_of_channels ());
 
+    Timer t;
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
         **itr |= b;
 
     _valid_samples |= b.getInterval();
+
+    double T=t.elapsed ();
+    if (T>10e-3)
+        TaskInfo(boost::format("!!! It took %s to put(%s) into cache") % TaskTimer::timeToString(T) % b.getInterval ());
 }
 
 
 void Cache::
-        allocateCache( Signal::Interval I, float fs, int num_channels )
+        allocateCache( Interval I, float fs, int num_channels )
 {
     int N = this->num_channels ();
     float F = this->sample_rate ();
@@ -73,7 +79,7 @@ void Cache::
     // 19 -> 1.2 ms
     // 18 -> 1.2 ms
     // 10 -> 1.2 ms
-    const Signal::IntervalType chunkSize = 1<<20;
+    const IntervalType chunkSize = 1<<20;
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 
@@ -90,9 +96,18 @@ void Cache::
             }
         }
 
+//        TaskTimer tt(boost::format("Allocating cache %s") % Interval(I.first, I.first+chunkSize));
+
         pBuffer n( new Buffer( I.first, chunkSize, fs, num_channels) );
-        // Don't bother clearing the buffer with zeros. _valid_samples keeps
-        // track of what data we can readily use.
+        for (int i=0; i<num_channels; i++)
+        {
+            // Force allocation here, don't delay it.
+            //
+            // Don't bother clearing the buffer with zeros. _valid_samples keeps
+            // track of what data we can readily use.
+            //CpuMemoryStorage::WriteAll<1>(n->getChannel (i)->waveform_data ());
+        }
+
         itr = _cache.insert(itr, n);
         I.first += chunkSize;
     }
@@ -117,29 +132,28 @@ void Cache::
 pBuffer Cache::
         read( const Interval& I ) const
 {
-    // COPIED FROM SourceBase::readFixedLength
-
-    // Try a simple read
-    pBuffer p = readAtLeastFirstSample( I );
-    if (I == p->getInterval())
-        return p;
-
-    // Didn't get exact result, prepare new Buffer
-    pBuffer r = pBuffer( new Buffer(I, p->sample_rate(), p->number_of_channels ()) );
-
-    Intervals sid(I);
-
-    do
-    {
-        if (!p)
-            p = readAtLeastFirstSample( sid.fetchFirstInterval() );
-
-        sid -= p->getInterval();
-        *r |= *p; // Fill buffer
-        p.reset();
-    } while (sid);
-
+    pBuffer r = pBuffer( new Buffer(I, sample_rate(), num_channels ()) );
+    read(r);
     return r;
+}
+
+
+void Cache::
+        read( pBuffer r ) const
+{
+    Timer t;
+
+    Intervals sid(r->getInterval ());
+    while(sid)
+    {
+        pBuffer p = readAtLeastFirstSample( sid.fetchFirstInterval() );
+        *r |= *p; // Fill buffer
+        sid -= p->getInterval();
+    }
+
+    double T=t.elapsed ();
+    if (T > 10e-3 && T/r->number_of_samples ()>10e-6)
+        TaskInfo(boost::format("!!! It took %s to read(%s) from cache") % TaskTimer::timeToString(T) % r->number_of_samples ());
 }
 
 
@@ -253,13 +267,13 @@ public:
 
 
 std::vector<pBuffer>::iterator Cache::
-        findBuffer( Signal::IntervalType sample )
+        findBuffer( IntervalType sample )
 {
     return upper_bound(_cache.begin(), _cache.end(), sample, cache_search());
 }
 
 std::vector<pBuffer>::const_iterator Cache::
-        findBuffer( Signal::IntervalType sample ) const
+        findBuffer( IntervalType sample ) const
 {
     return upper_bound(_cache.begin(), _cache.end(), sample, cache_search());
 }

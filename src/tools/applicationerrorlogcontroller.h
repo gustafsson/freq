@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QNetworkReply>
 #include <QThread>
+#include <QTimer>
 
 #include <boost/exception_ptr.hpp>
 
@@ -37,14 +38,22 @@ private slots:
     void log(boost::exception_ptr x);
     void finishedSending(QNetworkReply*);
     void finishedOk();
+    void sendFeedback();
 
 private:
     ApplicationErrorLogController();
     static ApplicationErrorLogController* instance();
 
+    int                                 feedback_count_ = 0;
+    int                                 feedback_limit_ = 1;
+
+    void sendFeedback(QString msg);
+
+    QString                             feedbackMessage_;
     QThread                             thread_;
-    Support::SendFeedback*              send_feedback_;
-    bool                                finished_ok_;
+    QTimer                              feedbackTimer_;
+    Support::SendFeedback*              send_feedback_ = 0;
+    bool                                finished_ok_ = false;
 
 public:
     static void test();

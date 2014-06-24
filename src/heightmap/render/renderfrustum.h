@@ -2,7 +2,7 @@
 #define HEIGHTMAP_RENDER_RENDERFRUSTUM_H
 
 #include "renderaxes.h"
-#include "../rendersettings.h"
+#include "rendersettings.h"
 
 namespace Heightmap {
 namespace Render {

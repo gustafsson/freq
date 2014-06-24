@@ -205,7 +205,7 @@ void PlaybackController::
         Adapters::Playback* playback = dynamic_cast<Adapters::Playback*>(model()->playback().get ());
         playback->setExpectedSamples (expected_data.spannedInterval (), x.number_of_channels.get_value_or (1));
 
-        model()->target_marker->target_needs ().write ()->updateNeeds(
+        model()->target_marker->target_needs ()->updateNeeds(
                     expected_data,
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX,

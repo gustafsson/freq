@@ -7,34 +7,68 @@
 
 #include <boost/foreach.hpp>
 
+#include <algorithm>
+
 //#define TIME_TASK
 #define TIME_TASK if(0)
 
 namespace Signal {
 namespace Processing {
 
+Task::Task()
+    :
+        task_id_(0)
+{}
+
+
 Task::
         Task(const shared_state<Step>::write_ptr& step,
              Step::ptr stepp,
-             std::vector<Step::ptr> children,
+             std::vector<Step::const_ptr> children,
              Signal::Operation::ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
+      task_id_(step->registerTask (expected_output)),
       step_(stepp),
       children_(children),
       operation_(operation),
       expected_output_(expected_output),
       required_input_(required_input)
 {
-    step->registerTask (this, expected_output);
 }
 
 
 Task::
         ~Task()
 {
-    cancel();
+    try
+    {
+        cancel();
+    } catch (...) {
+        TaskInfo(boost::format("~Task %p\n%s")
+                 % ((void*)this)
+                 % boost::current_exception_diagnostic_information ());
+    }
+}
+
+
+Task& Task::
+        operator=(Task&& b)
+{
+    std::swap(task_id_, b.task_id_);
+    std::swap(step_, b.step_);
+    std::swap(children_, b.children_);
+    std::swap(operation_, b.operation_);
+    std::swap(expected_output_, b.expected_output_);
+    std::swap(required_input_, b.required_input_);
+    return *this;
+}
+
+
+Task::operator bool() const
+{
+    return (bool)step_;
 }
 
 
@@ -74,8 +108,13 @@ void Task::
 void Task::
         run_private()
 {
-    Signal::OperationDesc::ptr od;
-    TIME_TASK od = step_.raw ()->operation_desc ();
+    Signal::OperationDesc::ptr od = step_.raw ()->operation_desc ();
+    if (!od)
+    {
+        cancel ();
+        return;
+    }
+
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
                            % od.read ()->toString ().toStdString ());
 
@@ -112,7 +151,7 @@ Signal::pBuffer Task::
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = children_[i].read ()->readFixedLengthFromCache(required_input_);
+        Signal::pBuffer b = Step::readFixedLengthFromCache(children_[i], required_input_);
         if (b) {
             num_channels = std::max(num_channels, b->number_of_channels ());
             sample_rate = std::max(sample_rate, b->sample_rate ());
@@ -149,8 +188,10 @@ void Task::
         finish(Signal::pBuffer b)
 {
     if (step_)
-        step_.write ()->finishTask(this, b);
-    step_.reset();
+    {
+        Step::finishTask(step_, task_id_, b);
+        step_.reset();
+    }
 }
 
 
@@ -158,8 +199,10 @@ void Task::
         cancel()
 {
     if (step_)
-        step_.write ()->finishTask(this, Signal::pBuffer());
-    step_.reset();
+    {
+        Step::finishTask(step_, task_id_, Signal::pBuffer());
+        step_.reset();
+    }
 }
 
 } // namespace Processing
@@ -181,7 +224,7 @@ void Task::
 
         // setup a known signal processing step
         Step::ptr step (new Step(od));
-        std::vector<Step::ptr> children; // empty
+        std::vector<Step::const_ptr> children; // empty
         Signal::Interval expected_output(-10,80);
         Signal::Interval required_input;
         Signal::Operation::ptr o;
@@ -197,7 +240,7 @@ void Task::
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
-        Signal::pBuffer r = step.write ()->readFixedLengthFromCache(to_read);
+        Signal::pBuffer r = Step::readFixedLengthFromCache(step, to_read);
         EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
         EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
 

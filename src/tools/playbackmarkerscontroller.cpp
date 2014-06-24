@@ -1,7 +1,7 @@
 #include "playbackmarkerscontroller.h"
 #include "renderview.h"
 #include "rendermodel.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 

@@ -7,7 +7,7 @@
 
 // Sonic AWE lib
 #include "sawe/application.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -170,8 +170,18 @@ void TimelineView::
 void TimelineView::
         initializeTimeline()
 {
-    if (!_timeline_bar_fbo) _timeline_bar_fbo.reset( new GlFrameBuffer );
-    if (!_timeline_fbo) _timeline_fbo.reset( new GlFrameBuffer );
+    GLint viewport[4] = {0,0,0,0};
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    int width = viewport[2];
+    int height = viewport[3];
+
+    if (width*height==0)
+        return;
+
+    GlException_CHECK_ERROR();
+    if (!_timeline_bar_fbo) _timeline_bar_fbo.reset( new GlFrameBuffer(width,height) );
+    if (!_timeline_fbo) _timeline_fbo.reset( new GlFrameBuffer(width,height) );
+    GlException_CHECK_ERROR();
 }
 
 
@@ -203,6 +213,14 @@ void TimelineView::
 void TimelineView::
         paintGL()
 {
+    if (!_timeline_fbo || !_timeline_bar_fbo)
+    {
+        initializeTimeline();
+
+        // OpenGL produces error 1286: invalid framebuffer operation if rendering is continued here.
+        return;
+    }
+
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
     _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );

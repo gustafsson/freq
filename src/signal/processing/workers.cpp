@@ -348,7 +348,7 @@ public:
 
     mutable std::atomic<int> get_task_count;
 
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr) const override {
         //__sync_fetch_and_add (&self->get_task_count, 1);
 
         // could also use 'boost::detail::atomic_count get_task_count;'
@@ -356,14 +356,14 @@ public:
         if (v%2)
             throw std::logic_error("test crash");
         else
-            return Task::ptr();
+            return Task();
     }
 };
 
 
 class BlockScheduleMock: public ISchedule {
 protected:
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr) const override {
+    virtual Task getTask(Signal::ComputingEngine::ptr) const override {
         bedroom.wakeup ();
 
         // This should block the thread and be aborted by QThread::terminate
@@ -371,7 +371,7 @@ protected:
 
         EXCEPTION_ASSERT( false );
 
-        return Task::ptr();
+        return Task();
     }
 
     virtual void dont_return() const = 0;

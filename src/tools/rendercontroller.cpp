@@ -13,9 +13,9 @@
 // Sonic AWE, Setting different transforms for rendering
 #include "filters/reassign.h"
 #include "filters/ridge.h"
-#include "heightmap/renderer.h"
-#include "heightmap/blocks/updateproducer.h"
-#include "heightmap/blocks/updateconsumer.h"
+#include "heightmap/render/renderer.h"
+#include "heightmap/update/updateproducer.h"
+#include "heightmap/update/updateconsumer.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/cepstrumblockfilter.h"
@@ -30,6 +30,7 @@
 #include "tools/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
+#include "tools/support/heightmapprocessingpublisher.h"
 #include "sawe/configuration.h"
 
 // gpumisc
@@ -84,10 +85,13 @@ RenderController::
                 rvup = new Support::RenderViewUpdateAdapter);
 
     connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
-    connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), view, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
 
     model()->init(model()->project ()->processing_chain (), rvu);
 
+    // 'this' is parent
+    auto hpp = new Support::HeightmapProcessingPublisher(view->model->target_marker ()->target_needs (), view->model->tfr_mapping (), this);
+    connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), hpp, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
+    connect(view, SIGNAL(postPaint(float)), hpp, SLOT(update(float)));
 
     setupGui();
 
@@ -132,7 +136,6 @@ RenderController::
 void RenderController::
         stateChanged()
 {
-    // Don't lock the UI, instead wait a moment before any change is made
     view->redraw();
 
     model()->project()->setModified();
@@ -407,9 +410,9 @@ void RenderController::
         setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc)
 {
     // Wire it up to a FilterDesc
-    Heightmap::Blocks::UpdateProducerDesc* cbfd;
+    Heightmap::Update::UpdateProducerDesc* cbfd;
     Tfr::ChunkFilterDesc::ptr kernel(cbfd
-            = new Heightmap::Blocks::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
+            = new Heightmap::Update::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -1045,13 +1048,13 @@ void RenderController::
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
 
-    model()->block_update_queue.reset (new Heightmap::Blocks::UpdateQueue::ptr::element_type());
+    model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
 
     // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)
     {
-        auto uc = new Heightmap::Blocks::UpdateConsumer(view->glwidget, model()->block_update_queue);
+        auto uc = new Heightmap::Update::UpdateConsumer(view->glwidget, model()->block_update_queue);
         connect(uc, SIGNAL(didUpdate()), view.data (), SLOT(redraw()));
     }
 

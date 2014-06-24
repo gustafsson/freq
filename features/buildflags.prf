@@ -35,6 +35,7 @@ macx {
 
     QMAKE_CXXFLAGS += -Wno-c++1y-extensions
     QMAKE_CXXFLAGS += -Wno-unused-parameter
+
     CCNAME = $$system(basename $$QMAKE_CC)
     equals(CCNAME, clang) {
         QMAKE_CXXFLAGS += -Wno-tautological-constant-out-of-range-compare

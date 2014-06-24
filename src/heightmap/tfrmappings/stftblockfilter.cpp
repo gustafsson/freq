@@ -1,13 +1,12 @@
 #include "stftblockfilter.h"
-#include "heightmap/chunktoblock.h"
-#include "heightmap/chunktoblocktexture.h"
-#include "heightmap/chunktoblockdegeneratetexture.h"
-#include "heightmap/blocks/blockupdater.h"
+
+#include "heightmap/update/tfrblockupdater.h"
 #include "tfr/stft.h"
 #include "signal/computingengine.h"
-#include "heightmap/glblock.h"
+#include "heightmap/render/glblock.h"
 
 #include "demangle.h"
+#include "trace_perf.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -21,7 +20,7 @@ StftBlockFilter::
 }
 
 
-std::vector<Blocks::IUpdateJob::ptr> StftBlockFilter::
+std::vector<Update::IUpdateJob::ptr> StftBlockFilter::
         prepareUpdate(Tfr::ChunkAndInverse& chunk)
 {
     Tfr::StftChunk* stftchunk = dynamic_cast<Tfr::StftChunk*>(chunk.chunk.get ());
@@ -34,9 +33,9 @@ std::vector<Blocks::IUpdateJob::ptr> StftBlockFilter::
     }
 
     float normalization_factor = 1.f/sqrtf(stftchunk->window_size());
-    Blocks::IUpdateJob::ptr chunktoblockp(new Blocks::BlockUpdater::Job{chunk.chunk, normalization_factor, 0});
+    Update::IUpdateJob::ptr chunktoblockp(new Update::TfrBlockUpdater::Job{chunk.chunk, normalization_factor, 0});
 
-    return std::vector<Blocks::IUpdateJob::ptr>{chunktoblockp};
+    return std::vector<Update::IUpdateJob::ptr>{chunktoblockp};
 }
 
 
@@ -84,7 +83,7 @@ void StftBlockFilter::
 
     // It should update a block with stft transform data.
     {
-        Timer t;
+        TRACE_PERF ("StftBlockFilter should update a block with stft transform data");
 
         Tfr::StftDesc stftdesc;
         Signal::Interval data = stftdesc.requiredInterval (Signal::Interval(0,4), 0);
@@ -119,7 +118,7 @@ void StftBlockFilter::
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
         block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
         Region r = RegionFactory( bl )( ref );
-        block->glblock.reset( new GlBlock( bl, r.time(), r.scale() ));
+        block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -130,24 +129,19 @@ void StftBlockFilter::
 
         // Do the merge
         Heightmap::MergeChunk::ptr mc( new StftBlockFilter(StftBlockFilterParams::ptr()) );
-        Blocks::BlockUpdater bu;
-        for (Blocks::IUpdateJob::ptr job : mc->prepareUpdate (cai))
-            bu.processJob(
-                    (Blocks::BlockUpdater::Job&)(*job),
-                    std::vector<pBlock>{block}
-                    );
 
-        float T = t.elapsed ();
-//        if (DetectGdb::is_running_through_gdb ()) {
-//            EXCEPTION_ASSERT_LESS(T, 3e-3);
-//        } else {
-//            EXCEPTION_ASSERT_LESS(T, 1e-3);
-//        }
-        if (DetectGdb::is_running_through_gdb ()) {
-            EXCEPTION_ASSERT_LESS(T, 50e-3);
-        } else {
-            EXCEPTION_ASSERT_LESS(T, 1e-3);
+        std::queue<Update::UpdateQueue::Job> jobs;
+
+        for (Update::IUpdateJob::ptr job : mc->prepareUpdate (cai))
+        {
+            Update::UpdateQueue::Job uj;
+            uj.intersecting_blocks = std::vector<pBlock>{block};
+            uj.updatejob = job;
+            jobs.push (std::move(uj));
         }
+
+        Update::TfrBlockUpdater().processJobs (jobs);
+        EXCEPTION_ASSERT_EQUALS(jobs.size (), 0u);
     }
 }
 

@@ -18,6 +18,7 @@
 #include <QCommonStyle>
 #include <QMainWindow>
 #include <QAction>
+#include <QAbstractEventDispatcher>
 
 namespace Tools {
 
@@ -30,8 +31,7 @@ std::shared_ptr<ApplicationErrorLogController> application_error_log_controller_
 ApplicationErrorLogController::
         ApplicationErrorLogController()
     :
-      send_feedback_(new Support::SendFeedback(this)),
-      finished_ok_(false)
+      send_feedback_(new Support::SendFeedback(this))
 {    
     qRegisterMetaType<boost::exception_ptr>("boost::exception_ptr");
 
@@ -42,6 +42,8 @@ ApplicationErrorLogController::
     connect (send_feedback_, SIGNAL(finished(QNetworkReply*)), SLOT(finishedSending(QNetworkReply*)), Qt::QueuedConnection);
     connect (this, SIGNAL(got_exception(boost::exception_ptr)), SLOT(log(boost::exception_ptr)), Qt::QueuedConnection);
     connect (QApplication::instance (), SIGNAL(aboutToQuit()), this, SLOT(finishedOk()), Qt::DirectConnection);
+    connect (&feedbackTimer_, SIGNAL(timeout()), SLOT(sendFeedback()));
+    feedbackTimer_.setSingleShot (true);
 
     bool had_previous_crash = QSettings().value (currently_running_key, false).toBool ();
 
@@ -51,6 +53,7 @@ ApplicationErrorLogController::
       }
     catch ( const boost::exception& x)
       {
+        ++feedback_limit_;
         emit got_exception (boost::current_exception());
       }
 
@@ -101,13 +104,9 @@ void ApplicationErrorLogController::
     if (!e)
         return;
 
-    static bool has_registered_an_exception_already = false;
-    bool log_exception_details =
-            !has_registered_an_exception_already ||
-            !QSettings().value (has_unreported_error_key, false).toBool ();
-
-    if (log_exception_details)
-        has_registered_an_exception_already = true;
+    bool log_exception_details = true;
+//  bool log_exception_details =  feedback_count_==0 ||
+//            !QSettings().value (has_unreported_error_key, false).toBool ();
 
     try
       {
@@ -140,11 +139,10 @@ void ApplicationErrorLogController::
 
     if (log_exception_details)
       {
-        has_registered_an_exception_already = true;
+        QSettings().setValue (has_unreported_error_key, true);
+
         // Will be executed in instance()->thread_
         emit instance()->got_exception (e);
-        emit instance()->showToolbar (true);
-        QSettings().setValue (has_unreported_error_key, true);
       }
 }
 
@@ -213,27 +211,55 @@ void ApplicationErrorLogController::
         if( std::string const * mi = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x) )
             message = *mi;
 
-        if (Sawe::Configuration::feature ("autofeedback"))
+        if (Sawe::Configuration::feature ("autofeedback") &&
+                (feedback_count_<feedback_limit_ || !feedbackMessage_.isEmpty ()))
           {
-            TaskTimer ti2("Sending feedback");
+            ++feedback_count_;
+            // Wait a while before sending automatic feedback in order to fill
+            // the log file with more data about what happened next.
+            float delay = 2.f; // seconds
+            TaskInfo(boost::format("Sending feedback in %g seconds") % delay);
 
             // Place message before details
-            QString msg;
+            if (!feedbackMessage_.isEmpty ())
+            {
+                TaskInfo(boost::format("Replacing previous message: %s") % feedbackMessage_.toStdString());
+                feedbackMessage_.clear();
+            }
+
             if (condition)
               {
-                msg += condition;
-                msg += "\n";
+                feedbackMessage_ += condition;
+                feedbackMessage_ += "\n";
               }
 
             if (!message.empty ())
-                msg += QString::fromStdString (message + "\n\n");
-            msg += QString::fromStdString (str);
+                feedbackMessage_ += QString::fromStdString (message + "\n\n");
+            feedbackMessage_ += QString::fromStdString (str);
 
-            QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
-            if (!omittedMessage.isEmpty ())
-                TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
+            feedbackTimer_.start (delay*1000);
           }
       }
+}
+
+
+void ApplicationErrorLogController::
+        sendFeedback()
+{
+    sendFeedback(feedbackMessage_);
+    feedbackMessage_.clear ();
+}
+
+
+void ApplicationErrorLogController::
+        sendFeedback(QString msg)
+{
+    TaskTimer ti("Sending feedback now");
+    TaskInfo(boost::format("Message: %s") % msg.toStdString ());
+
+    QString omittedMessage = send_feedback_->sendLogFiles ("errorlog", msg, "");
+    if (!omittedMessage.isEmpty ())
+        TaskInfo(boost::format("omittedMessage = %s") % omittedMessage.toStdString ());
 }
 
 

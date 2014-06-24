@@ -2,7 +2,7 @@
 #include "sawe/project.h"
 
 #include "heightmap/collection.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 
 #include "signal/operationwrapper.h"
 
@@ -17,14 +17,14 @@ namespace Tools
 
 class TargetInvalidator: public Signal::Processing::IInvalidator {
 public:
-    TargetInvalidator(Signal::Processing::TargetNeeds::ptr needs):needs_(needs) {}
+    TargetInvalidator(Signal::Processing::TargetNeeds::const_ptr needs):needs_(needs) {}
 
     virtual void deprecateCache(Signal::Intervals what) const {
-        needs_.write ()->deprecateCache(what);
+        needs_->deprecateCache(what);
     }
 
 private:
-    Signal::Processing::TargetNeeds::ptr needs_;
+    Signal::Processing::TargetNeeds::const_ptr needs_;
 };
 
 RenderModel::
@@ -45,7 +45,7 @@ RenderModel::
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
-    renderer.reset( new Heightmap::Renderer() );
+    renderer.reset( new Heightmap::Render::Renderer() );
 
     resetSettings();
 //    setTestCamera();
@@ -163,8 +163,15 @@ void RenderModel::
         display_scale(Tfr::FreqAxis x)
 {
     if (x != display_scale ())
-        if (block_update_queue) block_update_queue->clear();
+        if (block_update_queue)
+            block_update_queue->clear();
+
     tfr_map_.write ()->display_scale( x );
+
+    Signal::Processing::IInvalidator::ptr i =
+            render_operation_desc_.raw ()->getInvalidator ();
+    if (i)
+        i->deprecateCache(Signal::Interval::Interval_ALL);
 }
 
 
@@ -179,8 +186,15 @@ void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
     if (x != amplitude_axis ())
-        if (block_update_queue) block_update_queue->clear();
+        if (block_update_queue)
+            block_update_queue->clear();
+
     tfr_map_.write ()->amplitude_axis( x );
+
+    Signal::Processing::IInvalidator::ptr i =
+            render_operation_desc_.raw ()->getInvalidator ();
+    if (i)
+        i->deprecateCache(Signal::Interval::Interval_ALL);
 }
 
 
@@ -221,13 +235,13 @@ void RenderModel::
             return;
 
         rod->transform_desc (t);
-    }
+        o.unlock ();
 
-//    target_marker (.write ())->updateNeeds(
-//                Signal::Intervals(),
-//                Signal::Interval::IntervalType_MIN,
-//                Signal::Interval::IntervalType_MAX,
-//                Signal::Intervals::Intervals_ALL);
+        Signal::Processing::IInvalidator::ptr i =
+                render_operation_desc_.raw ()->getInvalidator ();
+        if (i)
+            i->deprecateCache(Signal::Interval::Interval_ALL);
+    }
 }
 
 

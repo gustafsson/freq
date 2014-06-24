@@ -41,15 +41,20 @@ CONFIG += c++11 buildflags
 
 RESOURCES += \
     ui/icon-resources.qrc \
-    heightmap/shaders.qrc \
+    heightmap/render/shaders.qrc \
+    heightmap/update/opengl/updateshaders.qrc \
 
 SOURCES += \
     adapters/*.cpp \
     filters/*.cpp \
     heightmap/*.cpp \
-    heightmap/blocks/*.cpp \
+    heightmap/blockmanagement/*.cpp \
+    heightmap/blockmanagement/merge/*.cpp \
     heightmap/render/*.cpp \
     heightmap/tfrmappings/*.cpp \
+    heightmap/update/*.cpp \
+    heightmap/update/cpu/*.cpp \
+    heightmap/update/opengl/*.cpp \
     sawe/*.cpp \
     signal/*.cpp \
     signal/processing/*.cpp \
@@ -71,9 +76,13 @@ HEADERS += \
     adapters/*.h \
     filters/*.h \
     heightmap/*.h \
-    heightmap/blocks/*.h \
+    heightmap/blockmanagement/*.h \
+    heightmap/blockmanagement/merge/*.h \
     heightmap/render/*.h \
     heightmap/tfrmappings/*.h \
+    heightmap/update/*.h \
+    heightmap/update/cpu/*.h \
+    heightmap/update/opengl/*.h \
     sawe/*.h \
     signal/*.h \
     test/*.h \
@@ -120,8 +129,9 @@ CUDA_SOURCES += \
 #    tools/selections/support/*.cu \
 
 SHADER_SOURCES += \
-    heightmap/*.frag \
-    heightmap/*.vert \
+    heightmap/render/*.frag \
+    heightmap/render/*.vert \
+    heightmap/update/opengl/*.frag \
 
 CONFIGURATION_SOURCES = \
     sawe/configuration/configuration.cpp

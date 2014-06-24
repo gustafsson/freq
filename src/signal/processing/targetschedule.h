@@ -16,7 +16,7 @@ public:
     // Requires workers and/or current worker
     TargetSchedule(Dag::ptr g, IScheduleAlgorithm::ptr algorithm, Targets::ptr targets);
 
-    virtual Task::ptr getTask(Signal::ComputingEngine::ptr engine) const;
+    virtual Task getTask(Signal::ComputingEngine::ptr engine) const;
 
 private:
     Targets::ptr targets;
@@ -24,7 +24,8 @@ private:
     Dag::ptr g;
     IScheduleAlgorithm::ptr algorithm;
 
-    TargetNeeds::ptr::read_ptr prioritizedTarget() const;
+    typedef std::pair<Step::ptr, TargetNeeds::State> TargetState;
+    TargetState prioritizedTarget() const;
 
 public:
     static void test();

@@ -59,7 +59,7 @@ CudaGlobalStorage::
 
     data = externalData;
 
-    p->FindCreateStorage<CudaGlobalStorage>( false, true ); // Mark memory as up to date
+    p->AccessStorage<CudaGlobalStorage>( false, true ); // Mark memory as up to date
 }
 
 

@@ -23,7 +23,7 @@ CpuMemoryStorage::
     data( data ),
     borrowsData( !adoptData )
 {
-    CpuMemoryStorage* q = p->FindCreateStorage<CpuMemoryStorage>( false, true ); // Mark borrowed memory as up to date
+    CpuMemoryStorage* q = p->AccessStorage<CpuMemoryStorage>( false, true ); // Mark borrowed memory as up to date
     EXCEPTION_ASSERT( q == this );
 }
 

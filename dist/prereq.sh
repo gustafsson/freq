@@ -117,14 +117,31 @@ if [ "Y" == "${verifyRepos}" ]; then
 			fi
 		elif [ "$(uname -s)" == "Darwin" ]; then
 			#git submodule update --init lib/sonicawe-maclib
-
-			if [ -z `which port` ]; then
-				echo "Please install macports to install required libraries"
+			if [ -z `which brew` ] && [ -z `which port` ]; then
+				echo "Please install macports or homebrew to install required libraries"
 				false
 			fi
-			if [ ! -f "/opt/local/lib/libsndfile.dylib" ]; then
+
+			if [ -n `which brew` ] && [ ! -f "/usr/local/lib/libsndfile.dylib" ]; then
+				echo "Some required libraries seem to be missing, running brew install"
+				echo "and modifying portaudio Formula to use --enable-cxx"
+				echo "$ brew tap homebrew/science"
+				echo "$ brew install portaudio boost libsndfile hdf5"
+				read -p "Press Ctrl-C to abort or any other key to continue... " -n1 -s
+				brew tap homebrew/science
+				brew install portaudio boost libsndfile hdf5
+
+				# Modify portaudio formula to include --enable-cxx
+				if [ -n `brew cat portaudio | grep '--enable-cxx'` ]; then
+					sed -i '' 's/"--disable-debug",$/"--disable-debug","--enable-cxx",/' /usr/local/Library/Formula/portaudio.rb
+		            brew reinstall portaudio
+				fi
+			fi
+
+			if [ -n `which port` ] && [ ! -f "/opt/local/lib/libsndfile.dylib" ]; then
 				echo "Some required libraries seem to be missing, running port install"
 				echo "$ sudo port install portaudio libsndfile hdf5-18 boost tbb"
+				read -p "Press Ctrl-C to abort or any other key to continue... " -n1 -s
 				sudo port install portaudio libsndfile hdf5-18 boost tbb
 			fi
 		else

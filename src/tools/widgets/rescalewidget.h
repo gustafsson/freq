@@ -26,7 +26,7 @@ protected:
     void painting ();
     void paintWidgetGl2D ();
 
-    void recreatePolygon ();
+    QPolygon recreatePolygon ();
     void updateModel ();
 
 private:

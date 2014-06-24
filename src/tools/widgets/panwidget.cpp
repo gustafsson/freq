@@ -74,7 +74,6 @@ void PanWidget::
         paintEvent ( QPaintEvent * event )
 {
     QPainter painter (this);
-    painter.beginNativePainting ();
     painter.setRenderHints (QPainter::Antialiasing | QPainter::HighQualityAntialiasing);
     painter.fillPath (path_, QColor(220,220,220,200));
     painter.strokePath (path_, QPen(

@@ -41,7 +41,7 @@ std::set<Step::ptr> single_paths(GraphVertex v, const Graph& g) {
 TargetMarker::
         ~TargetMarker()
 {
-    Step::ptr step = target_needs_.read ()->step().lock();
+    Step::ptr step = target_needs_->step().lock();
     if (!step)
         return;
 
@@ -53,13 +53,13 @@ TargetMarker::
 
     std::set<Step::ptr> steps_to_remove = single_paths(start, dag->g ());
 
-    BOOST_FOREACH( Step::ptr s, steps_to_remove ) {
+    for ( Step::ptr s : steps_to_remove ) {
         dag->removeStep (s);
     }
 }
 
 
-shared_state<TargetNeeds> TargetMarker::
+std::shared_ptr<TargetNeeds> TargetMarker::
         target_needs() const
 {
     return target_needs_;
@@ -69,7 +69,7 @@ shared_state<TargetNeeds> TargetMarker::
 Step::ptr::weak_ptr TargetMarker::
         step() const
 {
-    return target_needs_.read ()->step();
+    return target_needs_->step();
 }
 
 } // namespace Processing

@@ -35,6 +35,7 @@ class FileChangedBase: public QObject
     Q_OBJECT
 public slots:
     virtual void fileChanged ( const QString & path) = 0;
+    virtual void delayedFileChanged () = 0;
 };
 
 } // namespace Tools

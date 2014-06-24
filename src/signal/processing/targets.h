@@ -14,12 +14,13 @@ namespace Processing {
  * what each target needs afterwards.
  *
  * Multiple targets can be added for the same Step.
+ *
+ * Targets is data-race free.
  */
 class Targets
 {
 public:
-    typedef shared_state<Targets> ptr;
-
+    typedef std::shared_ptr<Targets> ptr;
     typedef std::vector<TargetNeeds::ptr> TargetNeedsCollection;
 
     Targets(INotifier::weak_ptr notifier);
@@ -40,9 +41,15 @@ public:
     TargetNeedsCollection         getTargets() const;
 
 private:
+    struct State {
+        typedef std::vector<std::weak_ptr<TargetNeeds>> Targets;
+        Targets targets;
+    };
+
+    shared_state<State> state_;
     INotifier::weak_ptr notifier_;
 
-    std::vector<TargetNeeds::ptr::weak_ptr> targets;
+    TargetNeedsCollection         getTargets(const State& state) const;
 
 public:
     static void test();

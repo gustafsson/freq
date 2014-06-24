@@ -16,7 +16,7 @@ public:
 
     virtual ~IScheduleAlgorithm() {}
 
-    virtual Task::ptr getTask(
+    virtual Task getTask(
             const Graph& g,
             GraphVertex target,
             Signal::Intervals needed, //=Intervals::Intervals_ALL,

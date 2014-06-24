@@ -137,6 +137,7 @@ public:
     void                    clear() { base::clear(); }
     bool operator==         (const Intervals& b) const { return ((base&)*this)==b; }
     bool operator!=         (const Intervals& b) const { return ((base&)*this)!=b; }
+    void                    swap(Intervals& c) { base::swap (c); }
 
 private:
     base::iterator firstIntersecting( const Interval& b );

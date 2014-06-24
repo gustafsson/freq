@@ -422,5 +422,5 @@ DataStorageImplementation* DataStorageVoid::
 
 void* getCpuMemory(DataStorageVoid*p)
 {
-    return p->FindCreateStorage<CpuMemoryStorage>( true, true )->AccessBytes<3>().ptr();
+    return p->AccessStorage<CpuMemoryStorage>( true, true )->AccessBytes<3>().ptr();
 }

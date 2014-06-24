@@ -2,8 +2,10 @@
 #define HEIGHTMAP_TFRMAPPING_H
 
 #include "blocklayout.h"
-#include "shared_state.h"
 #include "visualizationparams.h"
+
+#include "shared_state.h"
+#include "shared_state_traits_backtrace.h"
 
 #include <vector>
 
@@ -15,6 +17,7 @@ class TfrMapping {
 public:
     typedef shared_state<TfrMapping> ptr;
     typedef shared_state<const TfrMapping> const_ptr;
+    typedef shared_state_traits_backtrace shared_state_traits;
 
     TfrMapping(BlockLayout, ChannelCount channels);
     ~TfrMapping();

@@ -1,7 +1,6 @@
 #include "targetneeds.h"
 #include "step.h"
 #include "bedroom.h"
-#include "tools/applicationerrorlogcontroller.h"
 
 #include "timer.h"
 #include "tasktimer.h"
@@ -20,22 +19,19 @@ namespace Processing {
 TargetNeeds::
         TargetNeeds(Step::ptr::weak_ptr step, INotifier::weak_ptr notifier)
     :
+      state_(new State),
       step_(step),
-      work_center_(Signal::Interval::IntervalType_MIN),
-      preferred_update_size_(Signal::Interval::IntervalType_MAX),
       notifier_(notifier)
 {
+    auto state = state_.write ();
+    state->work_center = Interval::IntervalType_MIN;
+    state->preferred_update_size = Interval::IntervalType_MAX;
 }
 
 
 TargetNeeds::
         ~TargetNeeds()
 {
-    try {
-        updateNeeds(Signal::Intervals());
-    } catch (...) {
-        Tools::ApplicationErrorLogController::registerException (boost::current_exception());
-    }
 }
 
 
@@ -48,41 +44,32 @@ void TargetNeeds::
         int prio
         )
 {
-    EXCEPTION_ASSERT_LESS( 0, preferred_update_size_ );
-    Signal::Intervals not_started;
-    if (Step::ptr step = step_.lock ()) {
-        not_started = step.read ()->not_started ();
-    }
+    EXCEPTION_ASSERT_LESS( 0, preferred_update_size );
 
-    // got news if something new and deprecated is needed
-    bool got_news = (needed_samples - needed_samples_) & not_started;
-
-    DEBUG_INFO {
-        TaskInfo ti(boost::format("news = %s, needed_samples = %s, not_started = %s")
-                 % got_news % needed_samples % not_started);
-        if (needed_samples != needed_samples_)
-            TaskInfo(boost::format("needed_samples_ = %s") % needed_samples_);
-    }
-
-    needed_samples_ = needed_samples;
-
+    auto state = state_.write ();
+    Intervals new_samples = needed_samples - state->needed_samples;
     ptime now = microsec_clock::local_time();
-    last_request_ = now + time_duration(0,0,prio);
+    state->last_request = now + time_duration(0,0,prio);
+    state->needed_samples = needed_samples;
+    state->work_center = center;
+    state->preferred_update_size = preferred_update_size;
+    state.unlock ();
 
-    work_center_ = center;
+    DEBUG_INFO TaskInfo(boost::format("needed_samples = %s") % needed_samples);
 
-    preferred_update_size_ = preferred_update_size;
-
-    if (got_news) {
-        INotifier::ptr notifier = notifier_.lock ();
-        if (notifier)
+    Step::const_ptr step = step_.lock ();
+    INotifier::ptr notifier = notifier_.lock ();
+    if (new_samples && step && notifier)
+    {
+        // got news if something new and deprecated is needed
+        if (new_samples & step.read ()->not_started ())
             notifier->wakeup();
     }
 }
 
 
 void TargetNeeds::
-        deprecateCache(const Signal::Intervals& invalidate)
+        deprecateCache(const Intervals& invalidate) const
 {
     if (!invalidate)
         return;
@@ -90,13 +77,11 @@ void TargetNeeds::
     DEBUG_INFO TaskInfo(boost::format("invalidate = %s") % invalidate);
 
     if (Step::ptr step = step_.lock ())
-        step.write ()->deprecateCache(invalidate);
+        step->deprecateCache(invalidate);
 
-    if (invalidate & needed_samples_) {
-        INotifier::ptr notifier = notifier_.lock ();
-        if (notifier)
+    if (INotifier::ptr notifier = notifier_.lock ())
+        if (invalidate & state_.read ()->needed_samples)
             notifier->wakeup();
-    }
 }
 
 
@@ -110,21 +95,21 @@ Step::ptr::weak_ptr TargetNeeds::
 boost::posix_time::ptime TargetNeeds::
         last_request() const
 {
-    return last_request_;
+    return state_->last_request;
 }
 
 
 Signal::IntervalType TargetNeeds::
         work_center() const
 {
-    return work_center_;
+    return state_->work_center;
 }
 
 
 Signal::IntervalType TargetNeeds::
         preferred_update_size() const
 {
-    return preferred_update_size_;
+    return state_->preferred_update_size;
 }
 
 
@@ -136,7 +121,21 @@ Signal::Intervals TargetNeeds::
     if (step)
         not_started = step.read ()->not_started();
 
-    return needed_samples_ & not_started;
+    return needed() & not_started;
+}
+
+
+Signal::Intervals TargetNeeds::
+        needed() const
+{
+    return state_->needed_samples;
+}
+
+
+TargetNeeds::State TargetNeeds::
+        state() const
+{
+    return *state_.get ();
 }
 
 
@@ -148,8 +147,8 @@ Signal::Intervals TargetNeeds::
     if (step)
         out_of_date = step.read ()->out_of_date();
 
-    DEBUG_INFO Log("out_of_date(): %s & %s") % needed_samples_ % out_of_date;
-    return needed_samples_ & out_of_date;
+    DEBUG_INFO Log("out_of_date(): %s & %s") % needed() % out_of_date;
+    return needed() & out_of_date;
 }
 
 
@@ -166,11 +165,11 @@ int left(const Timer& t, int sleep_ms) {
 
 
 bool TargetNeeds::
-        sleep(TargetNeeds::const_ptr self, int sleep_ms)
+        sleep(int sleep_ms) const
 {
     Timer t;
 
-    Step::ptr pstep = self.raw ()->step_.lock();
+    Step::ptr pstep = step_.lock();
 
     if (!pstep)
         return false;
@@ -179,12 +178,12 @@ bool TargetNeeds::
     {
         auto step = pstep.read ();
 
-        if (!(self->needed_samples_ & step->out_of_date ()))
+        if (!(needed() & step->out_of_date ()))
             return true;
 
         Step::sleepWhileTasks (step, left(t, sleep_ms));
 
-        if (!(self->needed_samples_ & step->out_of_date ()))
+        if (!(needed() & step->out_of_date ()))
             return true;
 
         step.unlock ();
@@ -219,16 +218,17 @@ void TargetNeeds::
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         Signal::Intervals initial_valid(0,60);
-        step.write ()->registerTask(0, initial_valid.spannedInterval ());
+        int taskid = step.write ()->registerTask(initial_valid.spannedInterval ());
+        (void)taskid; // discard
 
-        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Signal::Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Interval::Interval_ALL );
         EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
-        EXCEPTION_ASSERT_EQUALS( target_needs.read ()->out_of_date(), Signal::Interval() );
-        target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
-        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Signal::Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( target_needs->out_of_date(), Interval() );
+        target_needs->updateNeeds(Interval(-15,5));
+        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Interval::Interval_ALL );
         EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
-        EXCEPTION_ASSERT_EQUALS( target_needs.read ()->out_of_date(), Signal::Interval(-15,5) );
-        EXCEPTION_ASSERT_EQUALS( target_needs.read ()->not_started(), Signal::Interval(-15,0) );
+        EXCEPTION_ASSERT_EQUALS( target_needs->out_of_date(), Interval(-15,5) );
+        EXCEPTION_ASSERT_EQUALS( target_needs->not_started(), Interval(-15,0) );
     }
 
     // It should not wakeup the bedroom if nothing has changed
@@ -238,21 +238,21 @@ void TargetNeeds::
         BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
-        step.write ()->registerTask(0, Signal::Interval(0,10));
-        step.write ()->finishTask(0, Signal::pBuffer(new Signal::Buffer(Signal::Interval(0,10),1,1)));
+        int taskid = step.write ()->registerTask(Signal::Interval(0,10));
+        Step::finishTask(step, taskid, pBuffer(new Buffer(Interval(0,10),1,1)));
 
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         {
             TRACE_PERF("Should not sleep since updateNeeds needs something deprecated");
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
+            target_needs->updateNeeds(Interval(-15,5));
             bed.sleep (2);
         }
 
         {
             TRACE_PERF("Should not sleep for too long");
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,5));
+            target_needs->updateNeeds(Signal::Interval(-15,5));
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
@@ -266,7 +266,7 @@ void TargetNeeds::
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,4));
+            target_needs->updateNeeds(Signal::Interval(-15,4));
             bed.sleep (2);
             float T = t.elapsed ();
             EXCEPTION_ASSERT_LESS(2e-3, T); // Should sleep, updateNeeds didn't affect this
@@ -277,7 +277,7 @@ void TargetNeeds::
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,6));
+            target_needs->updateNeeds(Signal::Interval(-15,6));
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
         }
@@ -287,43 +287,41 @@ void TargetNeeds::
 
             Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,6),
-                                              Signal::Interval::IntervalType_MIN,
-                                              Signal::Interval::IntervalType_MAX);
+            target_needs->deprecateCache(Signal::Intervals(6,7));
+            target_needs->updateNeeds(Signal::Interval(-15,6),
+                                      Signal::Interval::IntervalType_MIN,
+                                      Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
             EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ()); // Should sleep, updateNeeds didn't affect this
         }
 
         {
             TRACE_PERF("Should not sleep since updateNeeds needs something new");
-            Timer t;
+
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,7));
+            target_needs->updateNeeds(Signal::Interval(-15,7));
             bed.sleep (2);
         }
 
         {
             TRACE_PERF("Should not sleep since updateNeeds needs something new 2");
 
-            Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->deprecateCache(Signal::Intervals(6,7));
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,7),
-                                              Signal::Interval::IntervalType_MIN,
-                                              Signal::Interval::IntervalType_MAX);
+            target_needs->deprecateCache(Signal::Intervals(6,7));
+            target_needs->updateNeeds(Signal::Interval(-15,7),
+                                      Signal::Interval::IntervalType_MIN,
+                                      Signal::Interval::IntervalType_MAX);
             bed.sleep (2);
         }
 
         {
             TRACE_PERF("Should not sleep since updateNeeds needs something new 3");
 
-            Timer t;
             Bedroom::Bed bed = bedroom->getBed();
-            target_needs.write ()->deprecateCache(Signal::Intervals(5,7));
-            target_needs.write ()->updateNeeds(Signal::Interval(-15,7),
-                                              Signal::Interval::IntervalType_MIN,
-                                              Signal::Interval::IntervalType_MAX);
+            target_needs->deprecateCache(Intervals(5,7));
+            target_needs->updateNeeds(Interval(-15,7),
+                                      Interval::IntervalType_MIN,
+                                      Interval::IntervalType_MAX);
             bed.sleep (2);
         }
     }

@@ -2,8 +2,10 @@
 #define TOOLS_SUPPORT_HEIGHTMAPPROCESSINGPUBLISHER_H
 
 #include "heightmap/tfrmapping.h"
-#include "signal/operation.h"
-#include "signal/processing/targetmarker.h"
+#include "signal/intervals.h"
+#include "signal/processing/targetneeds.h"
+
+#include <QObject>
 
 namespace Tools {
 namespace Support {
@@ -18,22 +20,27 @@ namespace Support {
  * somewhere that will detect this. That worker may fetch the required data
  * through some signal processing chain but this publisher doesn't care.
  */
-class HeightmapProcessingPublisher
+class HeightmapProcessingPublisher: public QObject
 {
+    Q_OBJECT
 public:
     HeightmapProcessingPublisher(
             Signal::Processing::TargetNeeds::ptr target_needs,
-            Heightmap::TfrMapping::Collections collections);
+            Heightmap::TfrMapping::const_ptr tfrmapping,
+            QObject* parent=0);
 
-    void update(float t_center, Signal::OperationDesc::Extent x, Signal::UnsignedIntervalType preferred_update_size);
+public slots:
+    void setLastUpdateSize( Signal::UnsignedIntervalType length );
+    void update(float t_center);
+
+private:
+    Signal::Processing::TargetNeeds::ptr    target_needs_;
+    Heightmap::TfrMapping::const_ptr        tfrmapping_;
+    Signal::UnsignedIntervalType            preferred_update_size_;
+    bool                                    failed_allocation_;
 
     bool isHeightmapDone() const;
     bool failedAllocation() const;
-
-private:
-    Signal::Processing::TargetNeeds::ptr   target_needs_;
-    Heightmap::TfrMapping::Collections      collections_;
-    bool failed_allocation_;
 
 public:
     static void test();

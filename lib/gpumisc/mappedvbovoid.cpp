@@ -116,7 +116,7 @@ void MappedVboVoid::
 
 #ifdef USE_CUDA
         // make sure data is located in cuda
-        datap->FindCreateStorage<CudaGlobalStorage>( true, false );
+        datap->AccessStorage<CudaGlobalStorage>( true, false );
 
     #ifdef CUDA_MEMCHECK_TEST
         // copy data back over the mapped memory
@@ -138,7 +138,7 @@ void MappedVboVoid::
         cudaGetLastError();
 #else
         // make sure data is located in cpu
-        datap->FindCreateStorage<CpuMemoryStorage>( true, false );
+        datap->AccessStorage<CpuMemoryStorage>( true, false );
 
         // sync from mem to vbo
         glBindBuffer(_vbo->vbo_type(), *_vbo);

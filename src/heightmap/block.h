@@ -13,7 +13,9 @@
 
 namespace Heightmap {
 
-    class GlBlock;
+    namespace Render {
+        class GlBlock;
+    }
 
     class BlockData {
     public:
@@ -50,7 +52,7 @@ namespace Heightmap {
         unsigned frame_number_last_used;
 
         // OpenGL data to render
-        boost::shared_ptr<GlBlock> glblock;
+        boost::shared_ptr<Render::GlBlock> glblock;
         shared_state<BlockData>::write_ptr block_data();
         void discard_new_block_data();
 

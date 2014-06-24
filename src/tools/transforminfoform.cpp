@@ -6,7 +6,7 @@
 #include "ui_mainwindow.h"
 
 #include "heightmap/collection.h"
-#include "heightmap/renderer.h"
+#include "heightmap/render/renderer.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cepstrum.h"
@@ -526,7 +526,8 @@ void TransformInfoForm::
 void TransformInfoForm::
         deprecateAll()
 {
-    renderview->model->target_marker()->target_needs ().write ()->deprecateCache( Signal::Intervals::Intervals_ALL );
+    auto needs = renderview->model->target_marker()->target_needs ();
+    needs->deprecateCache(Signal::Intervals::Intervals_ALL);
     renderview->emitTransformChanged();
 }
 

@@ -224,8 +224,8 @@ void SettingsDialog::
     {
         Tools::RenderModel* rendermodel = &project->tools ().render_model;
         Signal::Processing::TargetNeeds::ptr needs = rendermodel->target_marker()->target_needs();
-        needs.write ()->deprecateCache(Signal::Intervals::Intervals_ALL);
-        needs.write ()->updateNeeds(
+        needs->deprecateCache (Signal::Intervals::Intervals_ALL);
+        needs->updateNeeds(
                     Signal::Intervals(),
                     Signal::Interval::IntervalType_MIN,
                     Signal::Interval::IntervalType_MAX);

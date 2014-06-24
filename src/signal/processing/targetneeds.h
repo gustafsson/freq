@@ -2,8 +2,9 @@
 #define SIGNAL_PROCESSING_TARGETNEEDS_H
 
 #include "signal/intervals.h"
-#include "shared_state.h"
 #include "inotifier.h"
+
+#include "shared_state.h"
 #include "shared_state_traits_backtrace.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
@@ -20,9 +21,19 @@ class Bedroom;
 class TargetNeeds
 {
 public:
-    typedef shared_state<TargetNeeds> ptr;
-    typedef shared_state<const TargetNeeds> const_ptr;
-    typedef shared_state_traits_backtrace shared_state_traits;
+    typedef std::shared_ptr<TargetNeeds> ptr;
+    typedef std::shared_ptr<const TargetNeeds> const_ptr;
+
+    struct State {
+        struct shared_state_traits : shared_state_traits_backtrace {
+            typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
+        };
+
+        boost::posix_time::ptime last_request;
+        Signal::IntervalType work_center;
+        Signal::IntervalType preferred_update_size;
+        Signal::Intervals needed_samples;
+    };
 
     TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
     ~TargetNeeds();
@@ -37,7 +48,7 @@ public:
      * @arg needed_samples Which portion that is actually needed by the target.
      * @arg prio A higher number makes sure this TargetNeed is computed before
      *           others.
-     * @arg center From where to work of intervals from this->not_started()
+     * @arg center From where to work off intervals from this->not_started()
      */
     void updateNeeds(
             const Signal::Intervals& needed_samples,
@@ -52,30 +63,36 @@ public:
      *                 arg 'needed_samples' will actually be scheduled for
      *                 calculation (this->not_started() returns the intersection
      *                 of deprecated caches and needed samples).
+     *
+     * This shouldn't be needed. There is another deprecateCache that should be able to take care of this as well, or?
+     * step()->operationDesc()->getInvalidator()->deprecateCache(invalidate) ...
      */
-    void deprecateCache(const Signal::Intervals& invalidate);
+    void deprecateCache(const Signal::Intervals& invalidate) const;
 
+    /**
+     * @brief step returns the step corresponding to a target
+     * step() is data-race free
+     * @return
+     */
     shared_state<Step>::weak_ptr step() const;
     boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
     Signal::IntervalType preferred_update_size() const;
     Signal::Intervals out_of_date() const;
     Signal::Intervals not_started() const;
+    Signal::Intervals needed() const;
+    State state() const;
 
     /**
      * @brief sleep sleeps the caller until all needed_samples have been provided.
      * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
      * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */
-    static bool sleep(TargetNeeds::const_ptr targetneeds, int sleep_ms);
+    bool sleep(int sleep_ms) const;
 
 private:
+    shared_state<State> state_;
     shared_state<Step>::weak_ptr step_;
-    boost::posix_time::ptime last_request_;
-    Signal::IntervalType work_center_;
-    Signal::IntervalType preferred_update_size_;
-    Signal::Intervals needed_samples_;
-
     INotifier::weak_ptr notifier_;
 
 public:
@@ -155,7 +172,7 @@ public:
     Signal::IntervalType work_center() const;
 
     void last_request(boost::posix_time::ptime);
-    void work_center(Signal::IntervalType);
+    void work_center(IntervalType);
 };*/
 /*
 class TargetInfo {
