@@ -26,6 +26,8 @@ LIBS += \
     -L$$SAWEROOT/lib/sonicawe-ubuntulib/lib \
     -lportaudiocpp -lportaudio \
     -lhdf5 -lhdf5_hl \
+    -L$$SAWEROOT/lib/justmisc -ljustmisc \
+    -L$$SAWEROOT/lib/backtrace -lbacktrace \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc
 
 QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
@@ -41,6 +43,8 @@ LIBS += -lsndfile \
     -lboost_serialization-mt \
     -lboost_system-mt \
     -lboost_thread-mt \
+    -L$$SAWEROOT/lib/justmisc -ljustmisc \
+    -L$$SAWEROOT/lib/backtrace -lbacktrace \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc \
 
 # macports

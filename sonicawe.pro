@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
-SUBDIRS = lib/gpumisc src
+SUBDIRS = lib/justmisc lib/backtrace lib/gpumisc src
 CONFIG += ordered
 
 cache()

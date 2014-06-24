@@ -1,4 +1,4 @@
-#include "unittest.h"
+#include "../justmisc-unittest.h"
 #include "prettifysegfault.h"
 
 int main(int argc, char** argv)
@@ -11,5 +11,5 @@ int main(int argc, char** argv)
 
     PrettifySegfault::setup ();
 
-    return BacktraceTest::UnitTest::test(false);
+    return JustMisc::UnitTest::test(false);
 }

@@ -1,0 +1,5 @@
+*.o
+.depend
+Makefile
+justmisc-unittest
+*.a

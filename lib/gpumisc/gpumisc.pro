@@ -43,8 +43,6 @@ SOURCES += \
     resampletexture.cpp \
     ThreadChecker.cpp \
     vbo.cpp \
-    ../backtrace/*.cpp \
-    ../justmisc/*.cpp \
 
 HEADERS += \
     computationkernel.h \
@@ -99,8 +97,6 @@ HEADERS += \
     tvectorstring.h \
     unsignedf.h \
     vbo.h \
-    ../backtrace/*.h \
-    ../justmisc/*.h \
 
 useopencl {
 DEFINES += USE_OPENCL
