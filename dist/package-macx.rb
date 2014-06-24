@@ -4,8 +4,9 @@
 
 $cuda_library_path = "/usr/local/cuda/lib"
 $custom_library_path = "/opt/local/lib"
+$custom_library_path = "/usr/local/lib"
 $compiler_library_path = "/opt/local/lib/gcc49"
-$compiler_library_path = `xcode-select -p`[0..-2] + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib"
+$compiler_library_path = `xcode-select -p`[0..-2] + "/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib"
 $command_line_width = 80
 
 # Configuration
