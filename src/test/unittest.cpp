@@ -4,6 +4,7 @@
 #include "../lib/justmisc/justmisc-unittest.h"
 #include "../lib/gpumisc/unittest.h"
 #include "../lib/signal/signal/unittest.h"
+#include "../lib/tfr/tfr/unittest.h"
 
 // sonicawe
 #include "test/implicitordering.h"
@@ -11,11 +12,7 @@
 #include "test/tasktimertiming.h"
 #include "test/randombuffer.h"
 #include "test/printbuffer.h"
-#include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
-#include "tfr/stftdesc.h"
-#include "tfr/dummytransform.h"
-#include "tfr/transformoperation.h"
 #include "filters/selection.h"
 #include "filters/envelope.h"
 #include "filters/normalize.h"
@@ -87,6 +84,7 @@ int UnitTest::
         RUNTEST(JustMisc::UnitTest);
         RUNTEST(gpumisc::UnitTest);
         RUNTEST(Signal::UnitTest);
+        RUNTEST(Tfr::UnitTest);
 
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
@@ -99,10 +97,6 @@ int UnitTest::
         RUNTEST(Gauss);
         // PortAudio complains if testing Microphone in the end
         RUNTEST(Adapters::MicrophoneRecorderDesc);
-        RUNTEST(Tfr::StftDesc);
-        RUNTEST(Tfr::DummyTransform);
-        RUNTEST(Tfr::DummyTransformDesc);
-        RUNTEST(Tfr::TransformOperationDesc);
         RUNTEST(Filters::Selection);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);
