@@ -136,13 +136,14 @@ void TfrMapping::
         transform_desc(Tfr::TransformDesc::ptr t)
 {
     VisualizationParams::ptr vp = visualization_params_;
-    if (t == vp->transform_desc())
+    Tfr::TransformDesc::ptr o = vp->transform_desc();
+    if (t == o)
         return;
 
-    if (t && vp->transform_desc() && (*t == *vp->transform_desc()))
+    if (t && o && (*t == *o))
         return;
 
-    visualization_params_->transform_desc( t );
+    vp->transform_desc( t );
 
     updateCollections();
 }

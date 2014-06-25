@@ -57,11 +57,11 @@ private:
             typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
         };
 
-        Tfr::TransformDesc::ptr transform_desc_;
         Tfr::FreqAxis display_scale_;
         AmplitudeAxis amplitude_axis_;
     };
 
+    Tfr::TransformDesc::ptr transform_desc_;
     shared_state<details> details_;
 
 public:

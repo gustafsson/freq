@@ -41,14 +41,14 @@ bool VisualizationParams::
 Tfr::TransformDesc::ptr VisualizationParams::
         transform_desc() const
 {
-    return details_->transform_desc_;
+    return transform_desc_;
 }
 
 
 void VisualizationParams::
         transform_desc(Tfr::TransformDesc::ptr v)
 {
-    details_->transform_desc_ = v;
+    transform_desc_ = v;
 }
 
 
