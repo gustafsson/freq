@@ -65,6 +65,7 @@ namespace Tools
 
         // Sliders
         void receiveSetYScale(qreal);
+        void receiveSetYBottom(qreal);
         void receiveSetTimeFrequencyResolution(qreal);
         void yscaleIncrease();
         void yscaleDecrease();
@@ -128,6 +129,7 @@ namespace Tools
         QToolButton* channelselector;
 
         Widgets::ValueSlider* yscale;
+        Widgets::ValueSlider* ybottom;
         Widgets::ValueSlider* tf_resolution;
 
         void setupGui();

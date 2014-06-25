@@ -323,6 +323,17 @@ void RenderController::
 
 
 void RenderController::
+        receiveSetYBottom( qreal value )
+{
+    model()->renderer->render_settings.y_offset = value;
+
+    stateChanged();
+
+    ybottom->setToolTip(QString("Offset %1").arg(model()->renderer->render_settings.y_offset));
+}
+
+
+void RenderController::
         receiveSetTimeFrequencyResolution( qreal value )
 {
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
@@ -352,6 +363,14 @@ void RenderController::tfresolutionDecrease()
 void RenderController::
         updateTransformDesc()
 {
+    {
+        // don't bother about proper timesteps
+        auto& log_scale = model()->renderer->render_settings.log_scale;
+        log_scale.TimeStep (0.05f);
+        if (log_scale != &log_scale)
+            view->redraw ();
+    }
+
     Tfr::TransformDesc::ptr t = currentTransform();
     Tfr::TransformDesc::ptr newuseroptions;
 
@@ -723,8 +742,9 @@ void RenderController::
 void RenderController::
         receiveLinearAmplitude()
 {
-    model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
-    view->emitAxisChanged();
+    model()->renderer->render_settings.log_scale = 0;
+//    model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
+//    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -732,8 +752,9 @@ void RenderController::
 void RenderController::
         receiveLogAmplitude()
 {
-    model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
-    view->emitAxisChanged();
+    model()->renderer->render_settings.log_scale = 1;
+//    model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
+//    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -952,7 +973,7 @@ void RenderController::
         amplitude_scale = new ComboBoxAction();
         amplitude_scale->addActionItem( linearAmplitude );
         amplitude_scale->addActionItem( logAmpltidue );
-        amplitude_scale->addActionItem( fifthAmpltidue );
+//        amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
         amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
@@ -992,6 +1013,20 @@ void RenderController::
         yscale->addAction( yscaleDecrease );
     }
 
+    // QSlider * ybottom
+    {   ybottom = new Widgets::ValueSlider( toolbar_render );
+        ybottom->setObjectName("ybottom");
+        ybottom->setOrientation( Qt::Horizontal );
+        ybottom->setRange (-1, 1, Widgets::ValueSlider::Linear );
+        ybottom->setValue (0);
+        ybottom->setDecimals (2);
+        ybottom->setToolTip( "Offset" );
+        ybottom->setSliderSize ( 300 );
+        toolbar_render->addWidget( ybottom );
+
+        connect(ybottom, SIGNAL(valueChanged(qreal)), SLOT(receiveSetYBottom(qreal)));
+        receiveSetYBottom(ybottom->value());
+    }
 
     // QSlider * tf_resolution
     {   tf_resolution = new Widgets::ValueSlider( toolbar_render );

@@ -11,14 +11,26 @@ uniform sampler2D tex_color;
 uniform float colorTextureFactor;
 uniform float contourPlot;
 uniform float yScale;
+uniform float yOffset;
+uniform float logScale;
 uniform vec4 fixedColor;
 uniform vec4 clearColor;
+
+float heightValue(float v) {
+    float a = v == 0.0 ? 0.0 : 1.0;
+    float b = 0.99/98.0 * exp(-yOffset * log(98.0)) - 0.01/98.0;
+    float x1 = yScale / (log(1.0) - log(b));
+    float x2 = - log(b) * x1;
+    float logvalue = log(v) * x1 + x2;
+    float h = mix(v*yScale + yOffset, logvalue, logScale);
+    return v == 0.0 ? 0.0 : max(0.01, h);
+}
 
 void main()
 {
     float v = texture2D(tex, gl_TexCoord[0].xy).x;
 
-    v *= yScale;
+    v = heightValue(v);
 
     vec4 curveColor = fixedColor; // colorscale or grayscale
 

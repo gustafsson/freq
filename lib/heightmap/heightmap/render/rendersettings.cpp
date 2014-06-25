@@ -14,6 +14,8 @@ RenderSettings::RenderSettings()
         fixed_color( 1,0,0,1 ),
         clear_color( 1,1,1,0 ),
         y_scale( 1 ),
+        y_offset( 0 ),
+        log_scale( 0 ),
         last_ysize( 1 ),
         last_axes_length( 0 ),
         drawn_blocks(0),

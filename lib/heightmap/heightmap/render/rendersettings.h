@@ -3,6 +3,7 @@
 
 // gpumisc
 #include "GLvector.h"
+#include "TAni.h"
 
 namespace Heightmap {
 
@@ -34,6 +35,8 @@ public:
     tvector<4, float> fixed_color;
     tvector<4, float> clear_color;
     float y_scale;
+    float y_offset;
+    TAni<> log_scale;
     float last_ysize;
     float last_axes_length;
     unsigned drawn_blocks;

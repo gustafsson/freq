@@ -126,7 +126,18 @@ void RenderBlock::
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
         TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
-        GLuint uniVertText0, uniVertText1, uniVertText2, uniColorTextureFactor, uniFixedColor, uniClearColor, uniContourPlot, uniYScale, uniScaleTex, uniOffsTex;
+        GLuint uniVertText0,
+                uniVertText1,
+                uniVertText2,
+                uniColorTextureFactor,
+                uniFixedColor,
+                uniClearColor,
+                uniContourPlot,
+                uniYScale,
+                uniYOffset,
+                uniLogScale,
+                uniScaleTex,
+                uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0
@@ -177,6 +188,12 @@ void RenderBlock::
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, render_settings->y_scale);
+
+        uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
+        glUniform1f(uniYOffset, render_settings->y_offset);
+
+        uniLogScale = glGetUniformLocation(_shader_prog, "logScale");
+        glUniform1f(uniLogScale, render_settings->log_scale);
 
         float
                 w = block_size.texels_per_row (),

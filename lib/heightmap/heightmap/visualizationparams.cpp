@@ -13,7 +13,8 @@ VisualizationParams::
 
     // display_scale is also left to its default value
 
-    details_->amplitude_axis_ = AmplitudeAxis_5thRoot;
+    details_->amplitude_axis_ = AmplitudeAxis_Linear;
+//    details_->amplitude_axis_ = AmplitudeAxis_5thRoot;
 }
 
 
