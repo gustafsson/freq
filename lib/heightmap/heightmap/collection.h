@@ -23,9 +23,9 @@ TODO: rewrite this section
 
 Data structures
 ---
-The transform is rendered in blocks at different zoomlevels, think google maps.
-Each block is queued for computation (instead of being downloaded) when it is
-requested for.
+The heightmap data (tfr transform) is rendered in blocks at different
+zoomlevels, think digital map tools. Each block is queued for computation
+(instead of being downloaded) when it is requested for.
 
 These blocks have an arbitrary aspect ratio, unlike map software where the
 width is always equal to the height.
@@ -79,12 +79,6 @@ Spectogram. For altering the output refer to transform-inverse.h.
 
 The term scaleogram is not used in the source code, in favor of spectrogram.
 */
-
-
-namespace Tfr {
-    class Chunk;
-    class TransformDesc;
-}
 
 namespace Heightmap {
 

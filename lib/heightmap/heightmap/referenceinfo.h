@@ -7,7 +7,6 @@
 #include "visualizationparams.h"
 
 #include "signal/intervals.h"
-#include "tfr/transform.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -64,7 +63,7 @@ public:
     static void test();
 
 private:
-    Tfr::FreqAxis transformScale() const;
+    Tfr::FreqAxis freqAxis() const;
     float displayedTimeResolution(float ahz) const;
 
     const BlockLayout block_layout_;

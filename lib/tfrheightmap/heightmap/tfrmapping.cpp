@@ -10,6 +10,42 @@
 
 namespace Heightmap {
 
+TransformDetailInfo::
+        TransformDetailInfo(Tfr::TransformDesc::ptr p)
+    :
+      p_(p)
+{
+
+}
+
+
+bool TransformDetailInfo::
+        operator==(const DetailInfo& db) const
+{
+    const TransformDetailInfo* b = dynamic_cast<const TransformDetailInfo*>(&db);
+    if (!b)
+        return false;
+    if (p_ && b->p_)
+        return *p_ == *b->p_;
+    else
+        return p_ == b->p_;
+}
+
+
+float TransformDetailInfo::
+        displayedTimeResolution( float FS, float hz ) const
+{
+    return p_->displayedTimeResolution (FS, hz);
+}
+
+
+Tfr::FreqAxis TransformDetailInfo::
+        freqAxis( float fs ) const
+{
+    return p_->freqAxis (fs);
+}
+
+
 TfrMapping::
         TfrMapping( BlockLayout block_layout, int channels )
     :
@@ -128,22 +164,24 @@ void TfrMapping::
 Tfr::TransformDesc::ptr TfrMapping::
         transform_desc() const
 {
-    return visualization_params_->transform_desc();
+    DetailInfo::ptr d = visualization_params_->detail_info ();
+    TransformDetailInfo* t = dynamic_cast<TransformDetailInfo*>(d.get ());
+    return t ? t->transform_desc() : Tfr::TransformDesc::ptr();
 }
 
 
 void TfrMapping::
         transform_desc(Tfr::TransformDesc::ptr t)
 {
-    VisualizationParams::ptr vp = visualization_params_;
-    Tfr::TransformDesc::ptr o = vp->transform_desc();
+    Tfr::TransformDesc::ptr o = transform_desc();
     if (t == o)
         return;
 
     if (t && o && (*t == *o))
         return;
 
-    vp->transform_desc( t );
+    DetailInfo::ptr d(new TransformDetailInfo(t));
+    visualization_params_->detail_info (d);
 
     updateCollections();
 }

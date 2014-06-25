@@ -2,6 +2,7 @@
 #define HEIGHTMAP_UPDATE_TFRBLOCKUPDATER_H
 
 #include "updatequeue.h"
+#include "tfr/chunk.h"
 
 namespace Heightmap {
 namespace Update {

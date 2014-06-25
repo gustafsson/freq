@@ -78,7 +78,7 @@ bool ReferenceInfo::
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
-        const Tfr::FreqAxis& tfa = transformScale ();
+        const Tfr::FreqAxis& tfa = freqAxis ();
         float scalara = tfa.getFrequencyScalar(ahz);
         float scalarb = tfa.getFrequencyScalar(bhz);
         float scalara2 = tfa.getFrequencyScalar(a2hz);
@@ -218,16 +218,16 @@ Reference ReferenceInfo::
 
 
 Tfr::FreqAxis ReferenceInfo::
-        transformScale() const
+        freqAxis() const
 {
-    return visualization_params_->transform_desc()->freqAxis(block_layout_.targetSampleRate());
+    return visualization_params_->detail_info()->freqAxis(block_layout_.targetSampleRate());
 }
 
 
 float ReferenceInfo::
         displayedTimeResolution(float hz) const
 {
-    return visualization_params_->transform_desc()->displayedTimeResolution(block_layout_.targetSampleRate(), hz);
+    return visualization_params_->detail_info()->displayedTimeResolution(block_layout_.targetSampleRate(), hz);
 }
 
 

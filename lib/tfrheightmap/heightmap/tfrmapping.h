@@ -7,11 +7,28 @@
 #include "shared_state.h"
 #include "shared_state_traits_backtrace.h"
 
+#include "tfr/transform.h"
+
 #include <vector>
 
 namespace Heightmap {
 class Collection;
 typedef int ChannelCount;
+
+class TransformDetailInfo : public DetailInfo {
+public:
+    TransformDetailInfo(Tfr::TransformDesc::ptr p);
+
+    bool operator==(const DetailInfo&) const override;
+    float displayedTimeResolution( float FS, float hz ) const override;
+    Tfr::FreqAxis freqAxis( float fs ) const override;
+
+    Tfr::TransformDesc::ptr transform_desc() const { return p_; }
+
+private:
+    Tfr::TransformDesc::ptr p_;
+};
+
 
 class TfrMapping {
 public:

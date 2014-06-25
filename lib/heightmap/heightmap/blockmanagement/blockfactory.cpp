@@ -284,7 +284,7 @@ void BlockFactory::
     QGLWidget w;
     w.makeCurrent ();
 
-    // It should create new blocks to make them ready for receiving transform data and rendering.
+    // It should create new blocks to make them ready for receiving heightmap data and rendering.
     {
         BlockLayout bl(4,4,4);
         VisualizationParams::const_ptr vp(new VisualizationParams);

@@ -292,7 +292,7 @@ void Renderer::
     if (!collection)
         return;
 
-    if (!collection.read ()->visualization_params ()->transform_desc())
+    if (!collection.read ()->visualization_params ()->detail_info())
         return;
 
     GlException_CHECK_ERROR();

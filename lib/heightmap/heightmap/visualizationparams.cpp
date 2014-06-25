@@ -9,7 +9,7 @@ VisualizationParams::
     :
       details_(new details)
 {
-    // by default there is no transform_desc, and nothing will be drawn
+    // by default there is no detail_info, and nothing will be drawn
 
     // display_scale is also left to its default value
 
@@ -23,9 +23,9 @@ bool VisualizationParams::
     if (&b == this)
         return true;
 
-    return (transform_desc() && b.transform_desc()
-            ? *transform_desc() == *b.transform_desc()
-            : transform_desc() == b.transform_desc()) &&
+    return (detail_info() && b.detail_info()
+            ? *detail_info() == *b.detail_info()
+            : detail_info() == b.detail_info()) &&
         display_scale() == b.display_scale() &&
         amplitude_axis() == b.amplitude_axis();
 }
@@ -38,17 +38,17 @@ bool VisualizationParams::
 }
 
 
-Tfr::TransformDesc::ptr VisualizationParams::
-        transform_desc() const
+DetailInfo::ptr VisualizationParams::
+        detail_info() const
 {
-    return transform_desc_;
+    return detail_info_;
 }
 
 
 void VisualizationParams::
-        transform_desc(Tfr::TransformDesc::ptr v)
+        detail_info(DetailInfo::ptr v)
 {
-    transform_desc_ = v;
+    detail_info_ = v;
 }
 
 
@@ -90,13 +90,13 @@ void VisualizationParams::
 
         Tfr::FreqAxis f; f.setLinear (1);
         VisualizationParams::ptr v(new VisualizationParams);
-        v->transform_desc(Tfr::TransformDesc::ptr());
+        v->detail_info(DetailInfo::ptr());
         v->amplitude_axis(AmplitudeAxis_Linear);
 
         EXCEPTION_ASSERT(*v == *v);
 
         VisualizationParams::ptr v2(new VisualizationParams);
-        v2->transform_desc(Tfr::TransformDesc::ptr());
+        v2->detail_info(DetailInfo::ptr());
         v2->amplitude_axis(AmplitudeAxis_Linear);
 
         // FreqAxis compares not equal to an uninitialized instance

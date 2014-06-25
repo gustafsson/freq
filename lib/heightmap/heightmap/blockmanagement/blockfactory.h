@@ -9,7 +9,7 @@ namespace BlockManagement {
 
 /**
  * @brief The BlockFactory class should create new blocks to make them ready
- * for receiving transform data and rendering.
+ * for receiving heightmap data and rendering.
  *
  * TODO should take BlockCache::ConstPtr
  */

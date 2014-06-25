@@ -2,7 +2,6 @@
 #define HEIGHTMAP_VISUALIZATIONPARAMS_H
 
 #include "shared_state.h"
-#include "tfr/transform.h"
 #include "tfr/freqaxis.h"
 #include "amplitudeaxis.h"
 
@@ -10,6 +9,14 @@
 
 namespace Heightmap {
 
+class DetailInfo {
+public:
+    typedef std::shared_ptr<DetailInfo> ptr;
+
+    virtual bool operator==(const DetailInfo&) const = 0;
+    virtual float displayedTimeResolution( float FS, float hz ) const = 0;
+    virtual Tfr::FreqAxis freqAxis( float fs ) const = 0;
+};
 
 /**
  * @brief The VisualizationParams class should describe all parameters that
@@ -30,11 +37,11 @@ public:
     bool operator!=(const VisualizationParams& b) const;
 
     /**
-     * Not that this is the transform that should be used. Blocks computed by
-     * an old transform desc might still exist as they are being processed.
+     * Not that this is for the data that should be used. Blocks computed by
+     * an old data source might still exist as they are being processed.
      */
-    Tfr::TransformDesc::ptr transform_desc() const;
-    void transform_desc(Tfr::TransformDesc::ptr);
+    DetailInfo::ptr detail_info() const;
+    void detail_info(DetailInfo::ptr);
 
     /**
      * Heightmap blocks are rather agnostic to FreqAxis. But it's needed to
@@ -61,7 +68,7 @@ private:
         AmplitudeAxis amplitude_axis_;
     };
 
-    Tfr::TransformDesc::ptr transform_desc_;
+    DetailInfo::ptr detail_info_;
     shared_state<details> details_;
 
 public:
