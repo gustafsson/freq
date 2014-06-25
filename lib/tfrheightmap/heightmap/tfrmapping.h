@@ -1,8 +1,8 @@
 #ifndef HEIGHTMAP_TFRMAPPING_H
 #define HEIGHTMAP_TFRMAPPING_H
 
-#include "blocklayout.h"
-#include "visualizationparams.h"
+#include "heightmap/blocklayout.h"
+#include "heightmap/visualizationparams.h"
 
 #include "shared_state.h"
 #include "shared_state_traits_backtrace.h"

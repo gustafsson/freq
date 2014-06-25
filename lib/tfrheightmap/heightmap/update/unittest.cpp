@@ -1,10 +1,12 @@
 #include "unittest.h"
 
-#include "heightmap/blockmanagement/merge/merger.h"
-#include "heightmap/blockmanagement/merge/mergertexture.h"
-#include "heightmap/blockmanagement/blockfactory.h"
-#include "heightmap/blockmanagement/blockinitializer.h"
-#include "heightmap/render/renderset.h"
+#include "heightmap/tfrmapping.h"
+#include "heightmap/update/cpu/chunktoblock.h"
+#include "heightmap/update/updateproducer.h"
+#include "heightmap/tfrmappings/stftblockfilter.h"
+#include "heightmap/tfrmappings/cwtblockfilter.h"
+#include "heightmap/tfrmappings/waveformblockfilter.h"
+#include "heightmap/tfrmappings/cepstrumblockfilter.h"
 
 // common backtrace tools
 #include "timer.h"
@@ -20,6 +22,7 @@
 using namespace std;
 
 namespace Heightmap {
+namespace Update {
 
 string lastname;
 
@@ -36,14 +39,18 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
-        RUNTEST(Heightmap::Block);
-        RUNTEST(Heightmap::BlockManagement::Merge::Merger);
-        RUNTEST(Heightmap::BlockManagement::Merge::MergerTexture);
-        RUNTEST(Heightmap::BlockManagement::BlockFactory);
-        RUNTEST(Heightmap::BlockManagement::BlockInitializer);
-        RUNTEST(Heightmap::BlockLayout);
-        RUNTEST(Heightmap::Render::RenderSet);
-        RUNTEST(Heightmap::VisualizationParams);
+        RUNTEST(Heightmap::TfrMapping);
+        RUNTEST(Heightmap::Update::ChunkToBlock);
+        RUNTEST(Heightmap::Update::UpdateProducer);
+        RUNTEST(Heightmap::Update::UpdateProducerDesc);
+        RUNTEST(Heightmap::TfrMappings::StftBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
+        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilter);
+        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilterDesc);
 
     } catch (const ExceptionAssert& x) {
         if (rethrow_exceptions)
@@ -92,4 +99,5 @@ int UnitTest::
     return 0;
 }
 
-} // namespace BacktraceTest
+} // namespace Update
+} // namespace Heightmap

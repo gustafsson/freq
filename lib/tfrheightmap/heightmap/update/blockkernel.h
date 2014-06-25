@@ -100,7 +100,7 @@ namespace Heightmap {
     private:
         AmplitudeAxis x;
     };
-};
+}
 
 extern "C"
         void blockResampleChunk(
@@ -116,16 +116,6 @@ extern "C"
                  float normalization_factor,
                  bool enable_subtexel_aggregation
                  );
-
-extern "C"
-void blockMerge( BlockData::ptr inBlock,
-                 BlockData::ptr outBlock,
-                 ResampleArea in_area,
-                 ResampleArea out_area );
-
-extern "C"
-void blockClearPart( BlockData::ptr block,
-                 int start_t );
 
 /*
 extern "C"

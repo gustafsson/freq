@@ -2,8 +2,9 @@
 #define HEIGHTMAP_REFERENCEINFO_H
 
 #include "reference.h"
-#include "tfrmapping.h"
 #include "position.h"
+#include "blocklayout.h"
+#include "visualizationparams.h"
 
 #include "signal/intervals.h"
 #include "tfr/transform.h"

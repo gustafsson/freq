@@ -8,6 +8,7 @@ SUBDIRS = \
     lib/signal \
     lib/tfr \
     lib/heightmap \
+    lib/tfrheightmap \
     src
 
 cache()

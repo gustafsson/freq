@@ -1,6 +1,8 @@
 #include "tfrmapping.h"
+
+#include "heightmap/collection.h"
+
 #include "exceptionassert.h"
-#include "collection.h"
 #include "tasktimer.h"
 
 //#define LOGINFO

@@ -1,5 +1,5 @@
 #include "clearinterval.h"
-#include "heightmap/update/blockkernel.h"
+#include "clearkernel.h"
 
 #include <boost/foreach.hpp>
 

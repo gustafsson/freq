@@ -1,7 +1,7 @@
 #include "mergertexture.h"
 
 #include "heightmap/blockquery.h"
-#include "heightmap/update/blockkernel.h"
+#include "mergekernel.h"
 #include "heightmap/render/glblock.h"
 
 #include "tasktimer.h"

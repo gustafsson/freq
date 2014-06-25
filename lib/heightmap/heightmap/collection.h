@@ -99,6 +99,7 @@ class BlockInitializer;
 
 class Block;
 class BlockData;
+class TfrMapping;
 
 typedef boost::shared_ptr<Block> pBlock;
 

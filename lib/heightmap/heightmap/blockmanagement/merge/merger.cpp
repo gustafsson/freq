@@ -1,6 +1,6 @@
 #include "merger.h"
 #include "heightmap/blockquery.h"
-#include "heightmap/update/blockkernel.h"
+#include "mergekernel.h"
 
 #include "tasktimer.h"
 #include "computationkernel.h"
