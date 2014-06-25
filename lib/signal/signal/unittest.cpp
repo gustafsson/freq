@@ -1,15 +1,27 @@
 #include "unittest.h"
 
-#include "backtrace.h"
-#include "exceptionassert.h"
-#include "prettifysegfault.h"
-#include "shared_state.h"
-#include "tasktimer.h"
+#include "signal/buffer.h"
+#include "signal/cache.h"
+#include "signal/processing/bedroom.h"
+#include "signal/processing/chain.h"
+#include "signal/processing/dag.h"
+#include "signal/processing/firstmissalgorithm.h"
+#include "signal/processing/graphinvalidator.h"
+#include "signal/processing/step.h"
+#include "signal/processing/targetmarker.h"
+#include "signal/processing/targetneeds.h"
+#include "signal/processing/targets.h"
+#include "signal/processing/targetschedule.h"
+#include "signal/processing/task.h"
+#include "signal/processing/worker.h"
+#include "signal/processing/workers.h"
+#include "signal/operationwrapper.h"
+
+// common backtrace tools
 #include "timer.h"
-#include "verifyexecutiontime.h"
+#include "tasktimer.h"
+#include "trace_perf.h"
 #include "demangle.h"
-#include "barrier.h"
-#include "shared_state_traits_backtrace.h"
 
 #include <stdio.h>
 #include <exception>
@@ -18,7 +30,7 @@
 
 using namespace std;
 
-namespace BacktraceTest {
+namespace Signal {
 
 string lastname;
 
@@ -35,15 +47,22 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
-        RUNTEST(Backtrace);
-        RUNTEST(ExceptionAssert);
-        RUNTEST(PrettifySegfault);
-        RUNTEST(Timer);
-        RUNTEST(shared_state_test);
-        RUNTEST(VerifyExecutionTime);
-        RUNTEST(spinning_barrier);
-        RUNTEST(locking_barrier);
-        RUNTEST(shared_state_traits_backtrace);
+        RUNTEST(Signal::Cache);
+        RUNTEST(Signal::Intervals);
+        RUNTEST(Signal::Processing::Bedroom);
+        RUNTEST(Signal::Processing::Dag);
+        RUNTEST(Signal::Processing::FirstMissAlgorithm);
+        RUNTEST(Signal::Processing::GraphInvalidator);
+        RUNTEST(Signal::Processing::Step);
+        RUNTEST(Signal::Processing::TargetMarker);
+        RUNTEST(Signal::Processing::TargetNeeds);
+        RUNTEST(Signal::Processing::Targets);
+        RUNTEST(Signal::Processing::TargetSchedule);
+        RUNTEST(Signal::Processing::Task);
+        RUNTEST(Signal::Processing::Worker);
+        RUNTEST(Signal::Processing::Workers);
+        RUNTEST(Signal::Processing::Chain); // Chain last
+        RUNTEST(Signal::OperationDescWrapper);
 
     } catch (const ExceptionAssert& x) {
         if (rethrow_exceptions)

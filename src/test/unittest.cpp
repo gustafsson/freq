@@ -3,6 +3,7 @@
 #include "../lib/backtrace/unittest.h"
 #include "../lib/justmisc/justmisc-unittest.h"
 #include "../lib/gpumisc/unittest.h"
+#include "../lib/signal/signal/unittest.h"
 
 // sonicawe
 #include "test/implicitordering.h"
@@ -12,22 +13,6 @@
 #include "test/printbuffer.h"
 #include "tfr/freqaxis.h"
 #include "tools/support/brushpaintkernel.h"
-#include "signal/buffer.h"
-#include "signal/cache.h"
-#include "signal/processing/bedroom.h"
-#include "signal/processing/chain.h"
-#include "signal/processing/dag.h"
-#include "signal/processing/firstmissalgorithm.h"
-#include "signal/processing/graphinvalidator.h"
-#include "signal/processing/step.h"
-#include "signal/processing/targetmarker.h"
-#include "signal/processing/targetneeds.h"
-#include "signal/processing/targets.h"
-#include "signal/processing/targetschedule.h"
-#include "signal/processing/task.h"
-#include "signal/processing/worker.h"
-#include "signal/processing/workers.h"
-#include "signal/operationwrapper.h"
 #include "tfr/stftdesc.h"
 #include "tfr/dummytransform.h"
 #include "tfr/transformoperation.h"
@@ -69,6 +54,7 @@
 #include "timer.h"
 #include "tasktimer.h"
 #include "trace_perf.h"
+#include "demangle.h"
 
 #include <stdio.h>
 #include <exception>
@@ -100,6 +86,7 @@ int UnitTest::
         RUNTEST(BacktraceTest::UnitTest);
         RUNTEST(JustMisc::UnitTest);
         RUNTEST(gpumisc::UnitTest);
+        RUNTEST(Signal::UnitTest);
 
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
@@ -112,22 +99,6 @@ int UnitTest::
         RUNTEST(Gauss);
         // PortAudio complains if testing Microphone in the end
         RUNTEST(Adapters::MicrophoneRecorderDesc);
-        RUNTEST(Signal::Cache);
-        RUNTEST(Signal::Intervals);
-        RUNTEST(Signal::Processing::Bedroom);
-        RUNTEST(Signal::Processing::Dag);
-        RUNTEST(Signal::Processing::FirstMissAlgorithm);
-        RUNTEST(Signal::Processing::GraphInvalidator);
-        RUNTEST(Signal::Processing::Step);
-        RUNTEST(Signal::Processing::TargetMarker);
-        RUNTEST(Signal::Processing::TargetNeeds);
-        RUNTEST(Signal::Processing::Targets);
-        RUNTEST(Signal::Processing::TargetSchedule);
-        RUNTEST(Signal::Processing::Task);
-        RUNTEST(Signal::Processing::Worker);
-        RUNTEST(Signal::Processing::Workers);
-        RUNTEST(Signal::Processing::Chain); // Chain last
-        RUNTEST(Signal::OperationDescWrapper);
         RUNTEST(Tfr::StftDesc);
         RUNTEST(Tfr::DummyTransform);
         RUNTEST(Tfr::DummyTransformDesc);

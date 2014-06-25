@@ -1,7 +1,7 @@
-#ifndef BACKTRACETEST_UNITTEST_H
-#define BACKTRACETEST_UNITTEST_H
+#ifndef SIGNALTEST_UNITTEST_H
+#define SIGNALTEST_UNITTEST_H
 
-namespace BacktraceTest {
+namespace Signal {
 
 class UnitTest
 {
@@ -11,4 +11,4 @@ public:
 
 } // namespace BacktraceTest
 
-#endif // BACKTRACETEST_UNITTEST_H
+#endif // SIGNALTEST_UNITTEST_H
