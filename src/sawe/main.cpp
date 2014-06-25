@@ -227,6 +227,10 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+#ifdef __GNUC__
+    pthread_setname_np("main");
+#endif
+
     // Init configuration
     Sawe::Configuration::version();
 
