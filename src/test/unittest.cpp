@@ -5,6 +5,7 @@
 #include "../lib/gpumisc/unittest.h"
 #include "../lib/signal/signal/unittest.h"
 #include "../lib/tfr/tfr/unittest.h"
+#include "../lib/heightmap/heightmap/unittest.h"
 
 // sonicawe
 #include "test/implicitordering.h"
@@ -32,17 +33,6 @@
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/recordmodel.h"
 #include "tools/applicationerrorlogcontroller.h"
-#include "heightmap/blockmanagement/merge/merger.h"
-#include "heightmap/blockmanagement/merge/mergertexture.h"
-#include "heightmap/update/updateproducer.h"
-#include "heightmap/blockmanagement/blockfactory.h"
-#include "heightmap/blockmanagement/blockinitializer.h"
-#include "heightmap/update/cpu/chunktoblock.h"
-#include "heightmap/tfrmappings/stftblockfilter.h"
-#include "heightmap/tfrmappings/cwtblockfilter.h"
-#include "heightmap/tfrmappings/waveformblockfilter.h"
-#include "heightmap/tfrmappings/cepstrumblockfilter.h"
-#include "heightmap/render/renderset.h"
 #include "adapters/playback.h"
 #include "adapters/microphonerecorder.h"
 #include "filters/absolutevalue.h"
@@ -85,6 +75,7 @@ int UnitTest::
         RUNTEST(gpumisc::UnitTest);
         RUNTEST(Signal::UnitTest);
         RUNTEST(Tfr::UnitTest);
+        RUNTEST(Heightmap::UnitTest);
 
         RUNTEST(Test::ImplicitOrdering);
         RUNTEST(Test::Stdlibtest);
@@ -116,26 +107,6 @@ int UnitTest::
         RUNTEST(Tools::Support::ComputeRmsDesc);
         RUNTEST(Tools::Commands::AppendOperationDescCommand);
         RUNTEST(Tools::ApplicationErrorLogController);
-        RUNTEST(Heightmap::Block);
-        RUNTEST(Heightmap::BlockManagement::Merge::Merger);
-        RUNTEST(Heightmap::BlockManagement::Merge::MergerTexture);
-        RUNTEST(Heightmap::BlockManagement::BlockFactory);
-        RUNTEST(Heightmap::BlockManagement::BlockInitializer);
-        RUNTEST(Heightmap::BlockLayout);
-        RUNTEST(Heightmap::Update::ChunkToBlock);
-        RUNTEST(Heightmap::Render::RenderSet);
-        RUNTEST(Heightmap::TfrMapping);
-        RUNTEST(Heightmap::VisualizationParams);
-        RUNTEST(Heightmap::Update::UpdateProducer);
-        RUNTEST(Heightmap::Update::UpdateProducerDesc);
-        RUNTEST(Heightmap::TfrMappings::StftBlockFilter);
-        RUNTEST(Heightmap::TfrMappings::StftBlockFilterDesc);
-        RUNTEST(Heightmap::TfrMappings::CwtBlockFilter);
-        RUNTEST(Heightmap::TfrMappings::CwtBlockFilterDesc);
-        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilter);
-        RUNTEST(Heightmap::TfrMappings::WaveformBlockFilterDesc);
-        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilter);
-        RUNTEST(Heightmap::TfrMappings::CepstrumBlockFilterDesc);
         RUNTEST(Adapters::Playback);
         RUNTEST(Filters::AbsoluteValueDesc);
 

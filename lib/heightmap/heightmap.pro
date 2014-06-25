@@ -34,7 +34,7 @@ HEADERS += \
     heightmap/update/*.h \
     heightmap/update/cpu/*.h \
     heightmap/update/opengl/*.h \
-    
+
 INCLUDEPATH += ../backtrace ../gpumisc ../signal ../tfr ../justmisc
 win32: INCLUDEPATH += ../sonicawe-winlib
 
