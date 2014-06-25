@@ -56,8 +56,6 @@ SOURCES += \
     heightmap/update/cpu/*.cpp \
     heightmap/update/opengl/*.cpp \
     sawe/*.cpp \
-    signal/*.cpp \
-    signal/processing/*.cpp \
     test/*.cpp \
     tfr/fft4g.c \
     tfr/*.cpp \
@@ -84,9 +82,6 @@ HEADERS += \
     heightmap/update/cpu/*.h \
     heightmap/update/opengl/*.h \
     sawe/*.h \
-    signal/*.h \
-    test/*.h \
-    signal/processing/*.h \
     test/*.h \
     tfr/*.h \
     tools/*.h \

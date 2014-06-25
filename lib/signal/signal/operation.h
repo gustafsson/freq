@@ -26,7 +26,7 @@ class OperationDesc;
  *
  * 'process' should only be called from one thread.
  */
-class SaweDll Operation
+class SignalDll Operation
 {
 public:
     typedef std::shared_ptr<Operation> ptr;
@@ -58,7 +58,7 @@ public:
  *
  * All methods except one have const access to make it more likely that there are none or few side-effects.
  */
-class SaweDll OperationDesc
+class SignalDll OperationDesc
 {
 public:
     typedef shared_state<OperationDesc> ptr;

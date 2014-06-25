@@ -1,7 +1,5 @@
 #include "buffersource.h"
 
-#include "sawe/configuration.h"
-
 #include "cpumemorystorage.h"
 
 #include <boost/foreach.hpp>
@@ -92,10 +90,7 @@ unsigned BufferSource::
     if (!buffer_)
         return 0;
 
-    if (Sawe::Configuration::mono())
-        return 1;
-    else
-        return buffer_->number_of_channels ();
+    return buffer_->number_of_channels ();
 }
 
 

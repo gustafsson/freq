@@ -1,6 +1,8 @@
 #include "firstmissalgorithm.h"
 
 #include "reversegraph.h"
+#include "signal/buffersource.h"
+
 #include "tasktimer.h"
 #include "expectexception.h"
 

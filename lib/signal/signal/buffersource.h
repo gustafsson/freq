@@ -7,7 +7,7 @@
 namespace Signal
 {
 
-class SaweDll BufferSource: public SourceBase, public OperationDesc
+class SignalDll BufferSource: public SourceBase, public OperationDesc
 {
 public:
     class BufferSourceOperation: public Operation {

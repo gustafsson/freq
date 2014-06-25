@@ -8,6 +8,7 @@
 #include "commentview.h"
 #include "sawe/toolmainloop.h"
 #include "tools/commands/viewstate.h"
+#include "sawe/sawedll.h"
 
 // gpumisc
 #include "timer.h"

@@ -209,6 +209,7 @@ void Task::
 } // namespace Signal
 
 #include "test/randombuffer.h"
+#include "signal/buffersource.h"
 
 namespace Signal {
 namespace Processing {

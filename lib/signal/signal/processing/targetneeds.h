@@ -3,16 +3,17 @@
 
 #include "signal/intervals.h"
 #include "inotifier.h"
+#include "step.h"
 
 #include "shared_state.h"
 #include "shared_state_traits_backtrace.h"
 
 #include <boost/date_time/posix_time/ptime.hpp>
+#include <boost/weak_ptr.hpp>
 
 namespace Signal {
 namespace Processing {
 
-class Step;
 class Bedroom;
 
 /**

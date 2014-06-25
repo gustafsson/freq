@@ -19,7 +19,7 @@ namespace Signal {
 typedef DataStorage<float> TimeSeriesData;
 typedef TimeSeriesData::ptr pTimeSeriesData;
 
-class SaweDll MonoBuffer : public boost::noncopyable {
+class SignalDll MonoBuffer : public boost::noncopyable {
 public:
     MonoBuffer(Interval I, float sample_rate);
     MonoBuffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
@@ -66,7 +66,7 @@ namespace. A Buffer can contain an entire song as when created by
 Signal::Audiofile, or a Buffer can contain sound as fractions of a second
 as when created by Signal::MicrophoneRecorder.
 */
-class SaweDll Buffer : public boost::noncopyable {
+class SignalDll Buffer : public boost::noncopyable {
 public:
     Buffer(Interval I, float sample_rate, int number_of_channels);
     Buffer(UnsignedF first_sample,

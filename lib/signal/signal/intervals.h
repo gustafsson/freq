@@ -1,7 +1,7 @@
 #ifndef SAMPLESINTERVALDESCRIPTOR_H
 #define SAMPLESINTERVALDESCRIPTOR_H
 
-#include "sawe/sawedll.h"
+#include "signaldll.h"
 
 #include <list>
 #include <string>
@@ -20,7 +20,7 @@ typedef unsigned long long UnsignedIntervalType;
      I = [first, last)
 
   */
-class SaweDll Interval {
+class SignalDll Interval {
 public:
     static const IntervalType IntervalType_MIN;
     static const IntervalType IntervalType_MAX;
@@ -81,7 +81,7 @@ public:
   Could speed up performance by allocating a limited number of Interval on the
   stack instead, if performance of Intervals becomes an issue.
   */
-class SaweDll Intervals: private std::list<Interval>
+class SignalDll Intervals: private std::list<Interval>
 {
     typedef std::list<Interval> base;
 public:
@@ -146,13 +146,13 @@ public:
     static void test();
 };
 
-SaweDll std::ostream& operator<< (std::ostream& o, const Interval& I);
-SaweDll std::ostream& operator<< (std::ostream& o, const Intervals& I);
-SaweDll Intervals  operator |  (const Interval& a, const Intervals& b);
-SaweDll Intervals  operator -  (const Interval& a, const Intervals& b);
-SaweDll Intervals  operator &  (const Interval& a, const Intervals& b);
-SaweDll Intervals  operator ^  (const Interval& a, const Intervals& b);
-SaweDll Intervals  operator |  (const Interval& a, const Interval& b);
+SignalDll std::ostream& operator<< (std::ostream& o, const Interval& I);
+SignalDll std::ostream& operator<< (std::ostream& o, const Intervals& I);
+SignalDll Intervals  operator |  (const Interval& a, const Intervals& b);
+SignalDll Intervals  operator -  (const Interval& a, const Intervals& b);
+SignalDll Intervals  operator &  (const Interval& a, const Intervals& b);
+SignalDll Intervals  operator ^  (const Interval& a, const Intervals& b);
+SignalDll Intervals  operator |  (const Interval& a, const Interval& b);
 
 } // namespace Signal
 

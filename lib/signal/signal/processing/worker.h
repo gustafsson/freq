@@ -4,6 +4,8 @@
 #include "ischedule.h"
 #include "signal/computingengine.h"
 
+#include "shared_state.h"
+
 #include <QThread>
 #include <QPointer>
 

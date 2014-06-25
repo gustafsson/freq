@@ -7,6 +7,8 @@
 #include "bedroomnotifier.h"
 #include "workers.h"
 
+// backtrace
+#include "demangle.h"
 #include "timer.h"
 #include "tasktimer.h"
 

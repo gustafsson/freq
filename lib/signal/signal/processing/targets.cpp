@@ -18,7 +18,7 @@ Targets::
 TargetNeeds::ptr Targets::
         addTarget(Step::ptr::weak_ptr step)
 {
-    TargetNeeds::ptr target(new TargetNeeds(step, notifier_));
+    TargetNeeds::ptr target(new TargetNeeds(step.lock (), notifier_));
 
     auto state = state_.write ();
     State::Targets& targets = state->targets;

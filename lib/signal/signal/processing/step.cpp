@@ -261,7 +261,10 @@ void Step::
         }
 
         // Create a Step
-        Step::ptr s( new Step(OperationDesc::ptr()));
+        Step::ptr s2( new Step(OperationDesc::ptr()));
+
+        shared_state<Step>::weak_ptr ws = s2;
+        Step::ptr s = ws.lock ();
 
         // It should contain information about what's out_of_date and what's currently being updated.
         int taskid = s->registerTask(b->getInterval ());

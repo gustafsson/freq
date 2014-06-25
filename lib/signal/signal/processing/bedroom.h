@@ -3,6 +3,9 @@
 
 #include "shared_state.h"
 
+#include <boost/exception/exception.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include <set>
 #include <condition_variable>
 

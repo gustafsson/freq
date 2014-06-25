@@ -1,5 +1,4 @@
 #include "targetneeds.h"
-#include "step.h"
 #include "bedroom.h"
 
 #include "timer.h"
@@ -17,7 +16,7 @@ namespace Signal {
 namespace Processing {
 
 TargetNeeds::
-        TargetNeeds(Step::ptr::weak_ptr step, INotifier::weak_ptr notifier)
+        TargetNeeds(shared_state<Step>::weak_ptr step, INotifier::weak_ptr notifier)
     :
       state_(new State),
       step_(step),
@@ -53,6 +52,7 @@ void TargetNeeds::
     state->needed_samples = needed_samples;
     state->work_center = center;
     state->preferred_update_size = preferred_update_size;
+
     state.unlock ();
 
     DEBUG_INFO TaskInfo(boost::format("needed_samples = %s") % needed_samples);
@@ -202,6 +202,8 @@ bool TargetNeeds::
 #include "targets.h"
 #include "bedroomnotifier.h"
 #include "trace_perf.h"
+
+using namespace std;
 
 namespace Signal {
 namespace Processing {
