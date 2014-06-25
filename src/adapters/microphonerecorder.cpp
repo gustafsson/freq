@@ -12,8 +12,11 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_MICROPHONERECORDER
-#define TIME_MICROPHONERECORDER if(0)
+#define TIME_MICROPHONERECORDER
+//#define TIME_MICROPHONERECORDER if(0)
+
+//#define TIME_MICROPHONERECORDER_WRITEBUFFER
+#define TIME_MICROPHONERECORDER_WRITEBUFFER if(0)
 
 using namespace std;
 
@@ -46,6 +49,11 @@ void MicrophoneRecorder::
 
         TIME_MICROPHONERECORDER TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
         portaudio::System &sys = portaudio::System::instance();
+
+        PaError err = Pa_Initialize();
+        if (err != paNoError) {
+            TaskInfo("MicrophoneRecorder: Pa_Initialize returned err = %d: %s", err, Pa_GetErrorText(err));
+        }
 
         _has_input_device = false;
         for (int i=0; i < sys.deviceCount(); ++i)
@@ -91,11 +99,12 @@ void MicrophoneRecorder::
 
         TIME_MICROPHONERECORDER TaskInfo(boost::format("Opening recording input stream on '%s' with %d"
                        " channels, %g samples/second"
-                       " and input latency %g s")
+                       " and input latency %g s or %g s")
                                          % device.name()
                                          % num_channels
                                          % sample_rate
-                                         % device.defaultHighInputLatency());
+                                         % device.defaultHighInputLatency()
+                                         % device.defaultLowInputLatency ());
 
         _rolling_mean.resize(num_channels);
         for (unsigned i=0; i<num_channels; ++i)
@@ -117,10 +126,12 @@ void MicrophoneRecorder::
         //#endif
                     NULL);
 
-            PaError err = Pa_IsFormatSupported(inParamsRecord.paStreamParameters(), 0, device.defaultSampleRate());
+            PaError err = Pa_IsFormatSupported(inParamsRecord.paStreamParameters(), 0, sample_rate);
             bool fmtok = err==paFormatIsSupported;
-            if (!fmtok)
+            if (!fmtok) {
+                TaskInfo("MicrophoneRecorder: interleaved = %d not supported. err = %d: %s", interleaved, err, Pa_GetErrorText(err));
                 continue;
+            }
 
             portaudio::StreamParameters paramsRecord(
                     inParamsRecord,
@@ -136,18 +147,20 @@ void MicrophoneRecorder::
             break;
         }
 
-        if (!_stream_record)
+        if (!_stream_record) {
+            TaskInfo("MicrophoneRecorder: Couldn't open recording stream");
             _has_input_device = false;
+        }
     }
     catch (const portaudio::PaException& x)
     {
-        TaskInfo("a2 MicrophoneRecorder init error: %s %s (%d)\nMessage: %s",
+        TaskInfo("MicrophoneRecorder: PaException init error: %s %s (%d)\nMessage: %s",
                  vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
         _has_input_device = false;
     }
     catch (const portaudio::PaCppException& x)
     {
-        TaskInfo("b2 MicrophoneRecorder init error: %s (%d)\nMessage: %s",
+        TaskInfo("MicrophoneRecorder: PaCppException init error: %s (%d)\nMessage: %s",
                  vartype(x).c_str(), x.specifier(), x.what());
         _has_input_device = false;
     }
@@ -296,7 +309,7 @@ int MicrophoneRecorder::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     try {
-    TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
+    TIME_MICROPHONERECORDER_WRITEBUFFER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
 
     Signal::IntervalType offset = actual_number_of_samples();
 
@@ -342,7 +355,7 @@ int MicrophoneRecorder::
             mean = mean*0.99999f + v*0.00001f;
         }
 
-        TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s, [%g, %g) s",
+        TIME_MICROPHONERECORDER_WRITEBUFFER TaskInfo ti("Interval: %s, [%g, %g) s",
                                             b->getInterval().toString().c_str(),
                                             b->getInterval().first / b->sample_rate(),
                                             b->getInterval().last / b->sample_rate() );

@@ -1,0 +1,5 @@
+*.o
+.depend
+Makefile
+signal-unittest
+*.a

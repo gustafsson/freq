@@ -11,6 +11,7 @@ Factor::vector Factor::
 
     while(n>1)
       {
+        // Canonical implementation is slow but fast enough
         for (unsigned i=2; ; ++i)
           {
             unsigned a = n/i;
@@ -24,8 +25,7 @@ Factor::vector Factor::
             if (a < i)
               {
                 v.push_back (n);
-                n = 1;
-                break;
+                return v;
               }
           }
       }
@@ -34,18 +34,21 @@ Factor::vector Factor::
 }
 
 
+#include "trace_perf.h"
+
 void Factor::
         test()
 {
     // It should factor a number 'n' into its prime factors.
     {
-        Timer T;
         EXCEPTION_ASSERT( factor(0) == vector { 0 } );
         EXCEPTION_ASSERT( factor(1) == vector { 1 } );
         EXCEPTION_ASSERT( factor(2) == vector { 2 } );
-        EXCEPTION_ASSERT( factor(3*13*53*843487) == (vector { 3, 13, 53, 843487 }) );
-        EXCEPTION_ASSERT_LESS( T.elapsed(), 50e-6 );
 
+        TRACE_PERF("It should factor a number 'n' into its prime factors");
+        EXCEPTION_ASSERT( factor(3*13*53*843487) == (vector { 3, 13, 53, 843487 }) );
+
+        trace_perf_.reset ("It should factor a prime into a prime");
         EXCEPTION_ASSERT( factor(1743487517) == vector { 1743487517 } );
     }
 }

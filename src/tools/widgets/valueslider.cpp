@@ -213,9 +213,10 @@ void ValueSlider::
         case Quadratic:
             d = sqrt(max) - sqrt(min);
             break;
-        case Logaritmic:
         case LogaritmicZeroMin:
             if (min <= 0) min = 1;
+            // fall through
+        case Logaritmic:
             if (max < min) max = min;
 
             d = log(max) - log(min);

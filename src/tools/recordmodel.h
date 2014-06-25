@@ -33,7 +33,7 @@ public:
                                  Adapters::Recorder::ptr recorder, Sawe::Project* project, RenderView* render_view );
     ~RecordModel();
 
-    static bool canCreateRecordModel( Sawe::Project* project );
+//    static bool canCreateRecordModel( Sawe::Project* project );
 
 
     Adapters::Recorder::ptr recording;

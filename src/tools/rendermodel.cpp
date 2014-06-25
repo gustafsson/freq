@@ -1,9 +1,9 @@
 #include "rendermodel.h"
 #include "sawe/project.h"
+#include "sawe/configuration.h"
 
 #include "heightmap/collection.h"
 #include "heightmap/render/renderer.h"
-
 #include "signal/operationwrapper.h"
 
 #include "tfr/chunkfilter.h"
@@ -46,6 +46,7 @@ RenderModel::
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
     renderer.reset( new Heightmap::Render::Renderer() );
+    renderer->render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
 
     resetSettings();
 //    setTestCamera();
@@ -152,7 +153,7 @@ void RenderModel::
 }
 
 
-Tfr::FreqAxis RenderModel::
+Heightmap::FreqAxis RenderModel::
         display_scale()
 {
     return tfr_map_.read ()->display_scale();
@@ -160,7 +161,7 @@ Tfr::FreqAxis RenderModel::
 
 
 void RenderModel::
-        display_scale(Tfr::FreqAxis x)
+        display_scale(Heightmap::FreqAxis x)
 {
     if (x != display_scale ())
         if (block_update_queue)

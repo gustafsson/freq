@@ -71,11 +71,11 @@ RecordModel* RecordModel::
 }
 
 
-bool RecordModel::
-        canCreateRecordModel( Sawe::Project* )
-{
-    return Adapters::MicrophoneRecorder(-1).canRecord ();
-}
+//bool RecordModel::
+//        canCreateRecordModel( Sawe::Project* )
+//{
+//    return Adapters::MicrophoneRecorder(-1).canRecord ();
+//}
 
 } // namespace Tools
 

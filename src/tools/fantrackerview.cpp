@@ -19,7 +19,7 @@ void FanTrackerView::
 
     if (f)
     {
-    Tfr::FreqAxis const& fa = render_view_->model->display_scale();
+    Heightmap::FreqAxis const& fa = render_view_->model->display_scale();
     //float FS = model_->selected_filter()->sample_rate();
     float FS = f->last_fs;
 

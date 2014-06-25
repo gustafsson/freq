@@ -135,7 +135,7 @@ void PlotLines::
 void PlotLines::
         draw(Line& l)
 {
-    const Tfr::FreqAxis& fa = render_view_->model->display_scale();
+    const Heightmap::FreqAxis& fa = render_view_->model->display_scale();
     Heightmap::AmplitudeValueRuntime height = render_view_->model->amplitude_axis();
 
     GlException_CHECK_ERROR();

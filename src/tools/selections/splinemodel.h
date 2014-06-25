@@ -21,7 +21,7 @@ namespace Tools { namespace Selections
 
         std::vector<Heightmap::Position> v;
         bool drawing;
-        Tfr::FreqAxis freqAxis();
+        Heightmap::FreqAxis freqAxis();
 
     private:
         void createFilter();

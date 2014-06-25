@@ -12,12 +12,10 @@ win32:CONFIG += debug_and_release
 
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
-INCLUDEPATH += ../backtrace
+CONFIG += tmpdir
 
 QT += opengl
 
-#DEFINES += THREADCHECKER_NO_CHECK
-#DEFINES += CUDA_MEMCHECK_TEST
 DEFINES += GPUMISC_LIBRARY
 
 SOURCES += \
@@ -42,9 +40,8 @@ SOURCES += \
     redirectstdout.cpp \
     resampletexture.cpp \
     ThreadChecker.cpp \
+    unittest.cpp \
     vbo.cpp \
-    ../backtrace/*.cpp \
-    ../justmisc/*.cpp \
 
 HEADERS += \
     computationkernel.h \
@@ -97,10 +94,9 @@ HEADERS += \
     tmatrixstring.h \
     tvector.h \
     tvectorstring.h \
+    unittest.h \
     unsignedf.h \
     vbo.h \
-    ../backtrace/*.h \
-    ../justmisc/*.h \
 
 useopencl {
 DEFINES += USE_OPENCL
@@ -159,23 +155,7 @@ win32: INCLUDEPATH += \
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
-
-####################
-# Temporary output
-
-usecuda {
-  TMPDIR = tmp/cuda
-} else:useopencl {
-  TMPDIR = tmp/opencl
-} else {
-  TMPDIR = tmp/cpu
-}
-
-OBJECTS_DIR = $${TMPDIR}/
-
-CONFIG(debug, debug|release):OBJECTS_DIR = $${OBJECTS_DIR}debug/
-else:OBJECTS_DIR = $${OBJECTS_DIR}release/
-
+INCLUDEPATH += ../backtrace
 
 OTHER_FILES += \
     LICENSE \
