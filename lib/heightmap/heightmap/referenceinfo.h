@@ -63,8 +63,8 @@ public:
     static void test();
 
 private:
-    Tfr::FreqAxis freqAxis() const;
     float displayedTimeResolution(float ahz) const;
+    float displayedFrequencyResolution(float hz1, float hz2 ) const;
 
     const BlockLayout block_layout_;
     const VisualizationParams::const_ptr visualization_params_;

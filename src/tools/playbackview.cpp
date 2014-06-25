@@ -182,7 +182,7 @@ bool PlaybackView::
 
     glDepthMask(false);
 
-    Tfr::FreqAxis const& fa =
+    Heightmap::FreqAxis const& fa =
             _render_view->model->display_scale();
     float
             s1 = fa.getFrequencyScalar( e->_centre_f ),

@@ -67,7 +67,7 @@ void EllipseModel::
 }
 
 
-Tfr::FreqAxis EllipseModel::
+Heightmap::FreqAxis EllipseModel::
         freqAxis()
 {
     return rendermodel_->display_scale();

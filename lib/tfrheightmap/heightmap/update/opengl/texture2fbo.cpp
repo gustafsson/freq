@@ -17,7 +17,7 @@ struct vertex_format {
 
 Texture2Fbo::Params::
         Params(Tfr::pChunk chunk,
-               Tfr::FreqAxis display_scale,
+               Heightmap::FreqAxis display_scale,
                Heightmap::BlockLayout block_layout)
     :
       block_layout(block_layout)
@@ -72,7 +72,7 @@ int Texture2Fbo::Params::
     unsigned Y = nScales;
     bool transpose = this->transpose;
     const Tfr::FreqAxis chunk_scale = this->chunk_scale;
-    const Tfr::FreqAxis display_scale = this->display_scale;
+    const Heightmap::FreqAxis display_scale = this->display_scale;
 
 //    float min_hz = chunk_scale.getFrequency (0u);
 //    float max_hz = chunk_scale.getFrequency (Y);

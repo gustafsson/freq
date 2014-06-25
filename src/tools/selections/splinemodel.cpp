@@ -48,7 +48,7 @@ Signal::OperationDesc::ptr SplineModel::
 }
 
 
-Tfr::FreqAxis SplineModel::
+Heightmap::FreqAxis SplineModel::
         freqAxis()
 {
     return rendermodel_->display_scale();

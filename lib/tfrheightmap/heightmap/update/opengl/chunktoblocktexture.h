@@ -36,10 +36,10 @@ public:
     void mergeChunk(pBlock block);
 
 private:
-    void prepVbo(Tfr::FreqAxis display_scale);
+    void prepVbo(Heightmap::FreqAxis display_scale);
 
     std::shared_ptr<GlTexture> chunk_texture_;
-    Tfr::FreqAxis display_scale;
+    Heightmap::FreqAxis display_scale;
     Tfr::FreqAxis chunk_scale;
     float a_t, b_t, a_t0, b_t0;
     unsigned nScales, nSamples, nValidSamples;

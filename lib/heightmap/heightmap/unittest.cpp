@@ -1,5 +1,6 @@
 #include "unittest.h"
 
+#include "heightmap/freqaxis.h"
 #include "heightmap/blockmanagement/merge/merger.h"
 #include "heightmap/blockmanagement/merge/mergertexture.h"
 #include "heightmap/blockmanagement/blockfactory.h"
@@ -36,6 +37,7 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
+        RUNTEST(Heightmap::FreqAxis);
         RUNTEST(Heightmap::Block);
         RUNTEST(Heightmap::BlockManagement::Merge::Merger);
         RUNTEST(Heightmap::BlockManagement::Merge::MergerTexture);

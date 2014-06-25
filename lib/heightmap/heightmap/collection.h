@@ -3,7 +3,7 @@
 
 // Heightmap namespace
 #include "amplitudeaxis.h"
-#include "tfr/freqaxis.h"
+#include "freqaxis.h"
 #include "position.h"
 #include "blockcache.h"
 
@@ -93,7 +93,6 @@ class BlockInitializer;
 
 class Block;
 class BlockData;
-class TfrMapping;
 
 typedef boost::shared_ptr<Block> pBlock;
 
@@ -157,13 +156,11 @@ public:
     BlockLayout block_layout() const;
     VisualizationParams::const_ptr visualization_params() const;
 
-private:
-    friend class Heightmap::TfrMapping;
-
     void length(float length);
     void block_layout(BlockLayout block_layout);
     void visualization_params(VisualizationParams::const_ptr visualization_params);
 
+private:
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
 

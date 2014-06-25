@@ -99,7 +99,7 @@ void StftBlockFilter::
         // Create a block to plot into
         BlockLayout bl(4,4, buffer->sample_rate ());
         VisualizationParams::ptr vp(new VisualizationParams);
-        Tfr::FreqAxis fa; fa.setLinear (bl.sample_rate ());
+        Heightmap::FreqAxis fa; fa.setLinear (bl.sample_rate ());
         vp->display_scale (fa);
 
         Reference ref = [&]() {

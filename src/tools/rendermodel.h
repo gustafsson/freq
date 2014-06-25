@@ -50,8 +50,8 @@ namespace Tools
 
         void block_layout(Heightmap::BlockLayout);
 
-        Tfr::FreqAxis display_scale();
-        void display_scale(Tfr::FreqAxis x);
+        Heightmap::FreqAxis display_scale();
+        void display_scale(Heightmap::FreqAxis x);
 
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);

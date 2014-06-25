@@ -21,7 +21,7 @@ public:
 
     bool operator==(const DetailInfo&) const override;
     float displayedTimeResolution( float FS, float hz ) const override;
-    Tfr::FreqAxis freqAxis( float fs ) const override;
+    float displayedFrequencyResolution( float FS, float hz1, float hz2 ) const override;
 
     Tfr::TransformDesc::ptr transform_desc() const { return p_; }
 
@@ -42,9 +42,9 @@ public:
     BlockLayout block_layout() const;
     void block_layout(BlockLayout bs);
 
-    Tfr::FreqAxis display_scale() const;
+    FreqAxis display_scale() const;
     AmplitudeAxis amplitude_axis() const;
-    void display_scale(Tfr::FreqAxis);
+    void display_scale(FreqAxis);
     void amplitude_axis(AmplitudeAxis);
 
     float targetSampleRate() const;

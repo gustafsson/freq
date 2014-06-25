@@ -82,7 +82,7 @@ ChunkToBlockTexture::
 
 
 void ChunkToBlockTexture::
-        prepVbo(Tfr::FreqAxis display_scale)
+        prepVbo(Heightmap::FreqAxis display_scale)
 {
     if (this->display_scale == display_scale)
         return;

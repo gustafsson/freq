@@ -486,7 +486,7 @@ void Renderer::
 {
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawAxes");
 
-    Tfr::FreqAxis display_scale = collection.read ()->visualization_params ()->display_scale();
+    FreqAxis display_scale = collection.read ()->visualization_params ()->display_scale();
 
     Render::RenderAxes ra(
                 render_settings,

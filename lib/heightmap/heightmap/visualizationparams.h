@@ -2,7 +2,7 @@
 #define HEIGHTMAP_VISUALIZATIONPARAMS_H
 
 #include "shared_state.h"
-#include "tfr/freqaxis.h"
+#include "freqaxis.h"
 #include "amplitudeaxis.h"
 
 #include <memory>
@@ -15,7 +15,7 @@ public:
 
     virtual bool operator==(const DetailInfo&) const = 0;
     virtual float displayedTimeResolution( float FS, float hz ) const = 0;
-    virtual Tfr::FreqAxis freqAxis( float fs ) const = 0;
+    virtual float displayedFrequencyResolution( float FS, float hz1, float hz2 ) const = 0;
 };
 
 /**
@@ -47,8 +47,8 @@ public:
      * Heightmap blocks are rather agnostic to FreqAxis. But it's needed to
      * create them.
      */
-    Tfr::FreqAxis display_scale() const;
-    void display_scale(Tfr::FreqAxis);
+    FreqAxis display_scale() const;
+    void display_scale(FreqAxis);
 
     /**
      * Heightmap blocks are rather agnostic to Heightmap::AmplitudeAxis. But
@@ -64,7 +64,7 @@ private:
             typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
         };
 
-        Tfr::FreqAxis display_scale_;
+        FreqAxis display_scale_;
         AmplitudeAxis amplitude_axis_;
     };
 

@@ -4,8 +4,6 @@
 #include "blockmanagement/blockinitializer.h"
 #include "blockquery.h"
 #include "blockcacheinfo.h"
-#include "tfr/cwt.h"
-#include "tfr/stft.h"
 #include "reference_hash.h"
 #include "blockmanagement/clearinterval.h"
 #include "blockmanagement/garbagecollector.h"

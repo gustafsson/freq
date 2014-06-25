@@ -68,7 +68,7 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         boundsCheck(BoundsCheck c) const
 {
-    const Tfr::FreqAxis& cfa = visualization_params_->display_scale();
+    const FreqAxis& cfa = visualization_params_->display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
@@ -78,13 +78,10 @@ bool ReferenceInfo::
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
-        const Tfr::FreqAxis& tfa = freqAxis ();
-        float scalara = tfa.getFrequencyScalar(ahz);
-        float scalarb = tfa.getFrequencyScalar(bhz);
-        float scalara2 = tfa.getFrequencyScalar(a2hz);
-        float scalarb2 = tfa.getFrequencyScalar(b2hz);
+        float scalara = displayedFrequencyResolution(ahz, a2hz);
+        float scalarb = displayedFrequencyResolution(bhz, b2hz);
 
-        if (fabsf(scalara2 - scalara) < 0.5f && fabsf(scalarb2 - scalarb) < 0.5f )
+        if (fabsf(scalara) < 0.5f && fabsf(scalarb) < 0.5f )
             return false;
     }
 
@@ -217,17 +214,17 @@ Reference ReferenceInfo::
 }
 
 
-Tfr::FreqAxis ReferenceInfo::
-        freqAxis() const
-{
-    return visualization_params_->detail_info()->freqAxis(block_layout_.targetSampleRate());
-}
-
-
 float ReferenceInfo::
         displayedTimeResolution(float hz) const
 {
     return visualization_params_->detail_info()->displayedTimeResolution(block_layout_.targetSampleRate(), hz);
+}
+
+
+float ReferenceInfo::
+        displayedFrequencyResolution(float hz1, float hz2 ) const
+{
+    return visualization_params_->detail_info()->displayedFrequencyResolution(block_layout_.targetSampleRate(), hz1, hz2);
 }
 
 

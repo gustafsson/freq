@@ -52,7 +52,7 @@ void VisualizationParams::
 }
 
 
-Tfr::FreqAxis VisualizationParams::
+FreqAxis VisualizationParams::
         display_scale() const
 {
     return details_->display_scale_;
@@ -60,7 +60,7 @@ Tfr::FreqAxis VisualizationParams::
 
 
 void VisualizationParams::
-        display_scale(Tfr::FreqAxis v)
+        display_scale(FreqAxis v)
 {
     details_->display_scale_ = v;
 }
@@ -88,7 +88,7 @@ void VisualizationParams::
     {
         // This class has requirements on how other classes should use it.
 
-        Tfr::FreqAxis f; f.setLinear (1);
+        FreqAxis f; f.setLinear (1);
         VisualizationParams::ptr v(new VisualizationParams);
         v->detail_info(DetailInfo::ptr());
         v->amplitude_axis(AmplitudeAxis_Linear);

@@ -1,13 +1,16 @@
 #ifndef HEIGHTMAP_UPDATE_OPENGL_TEXTURE2FBO_H
 #define HEIGHTMAP_UPDATE_OPENGL_TEXTURE2FBO_H
 
-#include "tfr/freqaxis.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/blocklayout.h"
+#include "heightmap/freqaxis.h"
+#include "tfr/freqaxis.h"
 #include "tfr/chunk.h"
 
-#include <functional>
 #include "zero_on_move.h"
+
+#include <functional>
+
 
 namespace Heightmap {
 namespace Update {
@@ -26,7 +29,7 @@ public:
     class Params {
     public:
         Params(Tfr::pChunk chunk,
-               Tfr::FreqAxis display_scale,
+               Heightmap::FreqAxis display_scale,
                Heightmap::BlockLayout block_layout);
 
         bool operator==(const Params& p) const {
@@ -39,7 +42,7 @@ public:
     private:
         BlockLayout block_layout;
 
-        Tfr::FreqAxis display_scale;
+        Heightmap::FreqAxis display_scale;
         Tfr::FreqAxis chunk_scale;
 
         float a_t, b_t, u0, u1;

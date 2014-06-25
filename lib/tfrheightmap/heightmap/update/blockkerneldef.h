@@ -9,6 +9,7 @@
 #endif
 #define FREQAXIS_CALL RESAMPLE_ANYCALL
 #include "tfr/freqaxis.h"
+#include "heightmap/freqaxis.h"
 
 // order of included headers matters because of FREQAXIS_CALL and RESAMPLE_CALL
 #include "blockkernel.h"
@@ -216,7 +217,7 @@ public:
     }
 
     Tfr::FreqAxis inputAxis;
-    Tfr::FreqAxis outputAxis;
+    Heightmap::FreqAxis outputAxis;
     DefaultConverter defaultConverter;
 
     float scale;
@@ -357,7 +358,7 @@ public:
 
     DefaultConverter defaultConverter;
     Tfr::FreqAxis inputAxis;
-    Tfr::FreqAxis outputAxis;
+    Heightmap::FreqAxis outputAxis;
 
     float xstep;
     int ystep;
@@ -473,7 +474,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::ptr inputp,
                  ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
-                 Tfr::FreqAxis outputAxis,
+                 Heightmap::FreqAxis outputAxis,
                  AxisConverter amplitudeAxis,
                  bool enable_subtexel_aggregation
                  )
@@ -601,7 +602,7 @@ void blockResampleChunk( Tfr::ChunkData::ptr input,
                  ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
-                 Tfr::FreqAxis outputAxis,
+                 Heightmap::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
                  float normalization_factor,
                  bool enable_subtexel_aggregation
@@ -646,7 +647,7 @@ void resampleStftAxis( Tfr::ChunkData::ptr inputp,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
-                   Tfr::FreqAxis outputAxis,
+                   Heightmap::FreqAxis outputAxis,
                    AxisConverter axisConverter,
                    bool enable_subtexel_aggregation
                    )
@@ -714,7 +715,7 @@ void resampleStft( Tfr::ChunkData::ptr input,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
-                   Tfr::FreqAxis outputAxis,
+                   Heightmap::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis,
                    float normalization_factor,
                    bool enable_subtexel_aggregation)

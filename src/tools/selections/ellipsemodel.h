@@ -19,7 +19,7 @@ namespace Tools { namespace Selections
         void tryFilter(Signal::OperationDesc::ptr o);
 
         Heightmap::Position centre, centrePlusRadius;
-        Tfr::FreqAxis freqAxis();
+        Heightmap::FreqAxis freqAxis();
 
     private:
         void createFilter();

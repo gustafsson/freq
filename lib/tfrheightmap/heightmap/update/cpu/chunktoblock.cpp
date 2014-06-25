@@ -157,7 +157,7 @@ void ChunkToBlock::
 {
     BlockLayout bl(1<<8,1<<8,100);
     VisualizationParams::ptr vp(new VisualizationParams);
-    Tfr::FreqAxis ds; ds.setLinear (1);
+    Heightmap::FreqAxis ds; ds.setLinear (1);
     vp->display_scale(ds);
     vp->amplitude_axis(AmplitudeAxis_Linear);
 

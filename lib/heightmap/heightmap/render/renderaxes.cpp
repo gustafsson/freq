@@ -1,6 +1,5 @@
 #include "renderaxes.h"
 #include "frustumclip.h"
-#include "tfr/freqaxis.h"
 
 // gpumisc
 #include "tasktimer.h"
@@ -27,7 +26,7 @@ RenderAxes::
                 RenderSettings& render_settings,
                 glProjection* gl_projection,
                 Render::FrustumClip* frustum_clip,
-                Tfr::FreqAxis display_scale)
+                FreqAxis display_scale)
     :
       render_settings(render_settings),
       gl_projection(gl_projection),
@@ -157,7 +156,7 @@ void RenderAxes::
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    Tfr::FreqAxis fa = display_scale;
+    FreqAxis fa = display_scale;
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
     typedef tvector<2,GLfloat> GLvector2F;

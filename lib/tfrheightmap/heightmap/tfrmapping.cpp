@@ -39,10 +39,14 @@ float TransformDetailInfo::
 }
 
 
-Tfr::FreqAxis TransformDetailInfo::
-        freqAxis( float fs ) const
+float TransformDetailInfo::
+        displayedFrequencyResolution( float FS, float hz1, float hz2 ) const
 {
-    return p_->freqAxis (fs);
+    Tfr::FreqAxis tfa = p_->freqAxis (FS);
+    float scalara = tfa.getFrequencyScalar(hz1);
+    float scalara2 = tfa.getFrequencyScalar(hz2);
+
+    return scalara2 - scalara;
 }
 
 
@@ -99,7 +103,7 @@ void TfrMapping::
 }
 
 
-Tfr::FreqAxis TfrMapping::
+FreqAxis TfrMapping::
         display_scale() const
 {
     return visualization_params_->display_scale();
@@ -114,7 +118,7 @@ AmplitudeAxis TfrMapping::
 
 
 void TfrMapping::
-        display_scale(Tfr::FreqAxis v)
+        display_scale(FreqAxis v)
 {
     if (v == visualization_params_->display_scale())
         return;

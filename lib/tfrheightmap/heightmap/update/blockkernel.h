@@ -2,6 +2,7 @@
 #define HEIGHTMAPBLOCK_CU_H
 
 #include "tfr/freqaxis.h"
+#include "heightmap/freqaxis.h"
 #include "tfr/chunkdata.h"
 #include "resampletypes.h"
 #include "heightmap/amplitudeaxis.h"
@@ -111,7 +112,7 @@ extern "C"
                  ResampleArea outputRegion,
                  Heightmap::ComplexInfo transformMethod,
                  Tfr::FreqAxis inputAxis,
-                 Tfr::FreqAxis outputAxis,
+                 Heightmap::FreqAxis outputAxis,
                  Heightmap::AmplitudeAxis amplitudeAxis,
                  float normalization_factor,
                  bool enable_subtexel_aggregation
@@ -147,7 +148,7 @@ void resampleStft( Tfr::ChunkData::ptr input,
                    ResampleArea inputRegion,
                    ResampleArea outputRegion,
                    Tfr::FreqAxis inputAxis,
-                   Tfr::FreqAxis outputAxis,
+                   Heightmap::FreqAxis outputAxis,
                    Heightmap::AmplitudeAxis amplitudeAxis,
                    float normalization_factor,
                    bool enable_subtexel_aggregation);

@@ -27,7 +27,7 @@ HEADERS += \
     heightmap/blockmanagement/merge/*.h \
     heightmap/render/*.h \
 
-INCLUDEPATH += ../backtrace ../gpumisc ../signal ../tfr
+INCLUDEPATH += ../backtrace ../gpumisc ../signal
 win32: INCLUDEPATH += ../sonicawe-winlib
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports

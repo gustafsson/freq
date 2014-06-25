@@ -636,7 +636,7 @@ void RenderController::
 {
     float fs = headSampleRate();
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
     fa.setLinear( fs );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
@@ -658,7 +658,7 @@ void RenderController::
     float maxvalue = 1;
     float minvalue = -1;
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
     fa.setWaveform (minvalue, maxvalue);
 
     model()->display_scale( fa );
@@ -673,7 +673,7 @@ void RenderController::
 {
     float fs = headSampleRate();
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
 
     {
         auto td = model()->transform_descs ().write ();
@@ -703,7 +703,7 @@ void RenderController::
 {
     float fs = headSampleRate();
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
     fa.setQuefrencyNormalized( fs, model()->transform_descs ()->getParam<Tfr::CepstrumDesc>().chunk_size() );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())

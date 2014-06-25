@@ -3,7 +3,7 @@
 
 #include "rendersettings.h"
 #include "frustumclip.h"
-#include "tfr/freqaxis.h"
+#include "heightmap/freqaxis.h"
 
 #include "glprojection.h"
 
@@ -25,7 +25,7 @@ public:
             RenderSettings& render_settings,
             glProjection* gl_projection,
             Render::FrustumClip* frustum_clip,
-            Tfr::FreqAxis display_scale);
+            FreqAxis display_scale);
 
     void drawAxes( float T );
 
@@ -39,7 +39,7 @@ private:
     RenderSettings& render_settings;
     glProjection* gl_projection;
     Render::FrustumClip* frustum_clip;
-    Tfr::FreqAxis display_scale;
+    FreqAxis display_scale;
 };
 
 } // namespace Render
