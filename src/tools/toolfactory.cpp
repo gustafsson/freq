@@ -51,6 +51,7 @@
 #include "sawe/project.h"
 #include "sawe/configuration.h"
 #include "ui/mainwindow.h"
+#include "heightmap/uncaughtexception.h"
 
 // gpumisc
 #include "tasktimer.h"
@@ -72,6 +73,13 @@ ToolFactory::
 {
     try
     {
+
+    Heightmap::UncaughtException::handle_exception =
+            [](boost::exception_ptr x)
+            {
+                ApplicationErrorLogController::registerException (x);
+            };
+
     ApplicationErrorLogController::registerMainWindow (p->mainWindow());
 
     _render_view = new RenderView(&render_model);

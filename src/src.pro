@@ -41,20 +41,10 @@ CONFIG += c++11 buildflags
 
 RESOURCES += \
     ui/icon-resources.qrc \
-    heightmap/render/shaders.qrc \
-    heightmap/update/opengl/updateshaders.qrc \
 
 SOURCES += \
     adapters/*.cpp \
     filters/*.cpp \
-    heightmap/*.cpp \
-    heightmap/blockmanagement/*.cpp \
-    heightmap/blockmanagement/merge/*.cpp \
-    heightmap/render/*.cpp \
-    heightmap/tfrmappings/*.cpp \
-    heightmap/update/*.cpp \
-    heightmap/update/cpu/*.cpp \
-    heightmap/update/opengl/*.cpp \
     sawe/*.cpp \
     test/*.cpp \
     tools/*.cpp \
@@ -71,14 +61,6 @@ win32:SOURCES += sonicawe.rc \
 HEADERS += \
     adapters/*.h \
     filters/*.h \
-    heightmap/*.h \
-    heightmap/blockmanagement/*.h \
-    heightmap/blockmanagement/merge/*.h \
-    heightmap/render/*.h \
-    heightmap/tfrmappings/*.h \
-    heightmap/update/*.h \
-    heightmap/update/cpu/*.h \
-    heightmap/update/opengl/*.h \
     sawe/*.h \
     test/*.h \
     tools/*.h \
