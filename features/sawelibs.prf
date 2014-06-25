@@ -8,6 +8,7 @@ INCLUDEPATH += \
     $$SAWEROOT/lib/backtrace \
     $$SAWEROOT/lib/justmisc \
     $$SAWEROOT/lib/signal \
+    $$SAWEROOT/lib/tfr \
     $$SAWEROOT/src \
 
 unix:!macx {
@@ -31,6 +32,7 @@ LIBS += \
     -L$$SAWEROOT/lib/backtrace -lbacktrace \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc \
     -L$$SAWEROOT/lib/signal -lsignal \
+    -L$$SAWEROOT/lib/tfr -ltfr \
 
 QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
 }
@@ -49,6 +51,7 @@ LIBS += -lsndfile \
     -L$$SAWEROOT/lib/backtrace -lbacktrace \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc \
     -L$$SAWEROOT/lib/signal -lsignal \
+    -L$$SAWEROOT/lib/tfr -ltfr \
 
 # macports
 exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/

@@ -57,8 +57,6 @@ SOURCES += \
     heightmap/update/opengl/*.cpp \
     sawe/*.cpp \
     test/*.cpp \
-    tfr/fft4g.c \
-    tfr/*.cpp \
     tools/*.cpp \
     tools/commands/*.cpp \
     tools/selections/*.cpp \
@@ -83,7 +81,6 @@ HEADERS += \
     heightmap/update/opengl/*.h \
     sawe/*.h \
     test/*.h \
-    tfr/*.h \
     tools/*.h \
     tools/commands/*.h \
     tools/selections/*.h \

@@ -2,10 +2,11 @@
 #define SUPERSAMPLE_H
 
 #include "signal/source.h"
+#include "tfrdll.h"
 
 namespace Tfr {
 
-class SaweDll SuperSample
+class TfrDll SuperSample
 {
 public:
     static Signal::pMonoBuffer supersample( Signal::pMonoBuffer b, float requested_sample_rate );

@@ -6,6 +6,7 @@
 #include "fftimplementation.h"
 #include "stftdesc.h"
 #include "complexbuffer.h"
+#include "tfrdll.h"
 
 // std
 #include <vector>
@@ -21,7 +22,7 @@ class StftChunk;
 /**
 Computes the complex Fast Fourier Transform of a Signal::Buffer.
 */
-class SaweDll Fft: public Transform, public TransformDesc
+class TfrDll Fft: public Transform, public TransformDesc
 {
 public:
     Fft( bool computeRedundant=false );
@@ -66,7 +67,7 @@ Computes the Short-Time Fourier Transform, or Windowed Fourier Transform.
 
 @see Stft::operator()
 */
-class SaweDll Stft: public Transform
+class TfrDll Stft: public Transform
 {
 public:
     Stft(const StftDesc&s = StftDesc());

@@ -2,6 +2,7 @@
 #define TFR_STFTSETTINGS_H
 
 #include "transform.h"
+#include "tfrdll.h"
 
 namespace Tfr {
 
@@ -12,7 +13,7 @@ namespace Tfr {
  *
  * It should be copyable and stringable.
  */
-class SaweDll StftDesc: public TransformDesc
+class TfrDll StftDesc: public TransformDesc
 {
 public:
     enum WindowType

@@ -1,17 +1,22 @@
 #include "fftimplementation.h"
 #include "neat_math.h"
 
-#include "fftooura.h"
+#ifdef USE_OPENCL
 #include "fftclfft.h"
+#elif defined(USE_CUDA)
 #include "fftcufft.h"
-
-#include <boost/make_shared.hpp>
-
-using namespace boost;
+#else
+#include "fftooura.h"
+#endif
 
 #if defined(USE_CUDA) && !defined(USE_CUFFT)
 #define USE_CUFFT
 #endif
+
+
+#include <boost/make_shared.hpp>
+
+using namespace boost;
 
 namespace Tfr {
 
