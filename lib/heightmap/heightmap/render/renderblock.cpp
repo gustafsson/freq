@@ -192,8 +192,25 @@ void RenderBlock::
         uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
         glUniform1f(uniYOffset, render_settings->y_offset);
 
+        // yOffset specifies 'b' which says which 'v' that should render as 0
+        // yOffset=-1 => v>1 => fragColor>0
+        // yOffset=0  => v>L => fragColor>0
+        // yOffset=1  => v>0 => fragColor>0
+        float L = 0.00001;
+        float tb = 1.0/L - 1.0;
+        float tc = L/(1.0 - tb);
+        float ta = L - tc;
+        float b = ta * exp(-render_settings->y_offset * log(tb)) + tc;
+
+        // yScale specifies which intensity 'v=1' should have
+        // v<1 => fragColor < yScale
+        // v=1 => fragColor = yScale
+        // v>1 => fragColor > yScale
+        float x1 = render_settings->y_scale / (log(1.0) - log(b));
+        float x2 = - log(b) * x1;
+
         uniLogScale = glGetUniformLocation(_shader_prog, "logScale");
-        glUniform1f(uniLogScale, render_settings->log_scale);
+        glUniform3f(uniLogScale, render_settings->log_scale, x1, x2);
 
         float
                 w = block_size.texels_per_row (),
