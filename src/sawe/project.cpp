@@ -408,6 +408,7 @@ void Project::
 void Project::
         resetView()
 {
+    TaskInfo("Project::resetView");
     setGuiState( defaultGuiState );
     tools().render_view()->model->resetCameraSettings();
     resetCache();
@@ -417,6 +418,7 @@ void Project::
 void Project::
         resetCache()
 {
+    TaskTimer tt("Project::resetCache");
     tools().render_view()->model->resetBlockCaches ();
     Application::global_ptr()->clearCaches();
     processing_chain_->resetDefaultWorkers();
