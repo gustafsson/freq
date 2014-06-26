@@ -28,7 +28,8 @@ public:
         \
         if (0 != memcmp(p, expected, sizeof_expected)) \
         { \
-            Log("%s = %s vs %s") % (#data) % data->size () % (#expected); \
+            Log("Data comparsion (%s):") % data->size (); \
+            Log("i: %s[i]\t%s[i]\tdiff") % (#data) % (#expected); \
             for (size_t i=0; i<data->numberOfElements (); i++) \
                 Log("%s: %s\t%s\t%s") % i % p[i] % expected[i] % (p[i] - expected[i]); \
         \
