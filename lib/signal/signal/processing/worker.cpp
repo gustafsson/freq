@@ -393,6 +393,7 @@ void Worker::
         }
     }
 
+#if !defined SHARED_STATE_NO_TIMEOUT
     // It should store information about a crashed task (LockFailed) and stop execution.
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (LockFailed) and stop execution.");
@@ -409,6 +410,7 @@ void Worker::
 
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
     }
+#endif
 
     // It should not hang if it causes a deadlock (1)
     {
