@@ -127,7 +127,7 @@ int Texture2Fbo::Params::
       {
         GlException_SAFE_CALL( glGenBuffers (1, &vbo) ); // Generate 1 buffer
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo) );
-        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*vertices.size (), &vertices[0], GL_STREAM_DRAW) );
+        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*vertices.size (), &vertices[0], GL_STATIC_DRAW) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
       }
 
