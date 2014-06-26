@@ -266,12 +266,11 @@ void MergerTexture::
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
         clearCache(cache);
-        float a = 0.875, b = 0.75,  c = 0.25,
-              d = 0.5,   e = 0.375, f = 0.125;
-        float expected2[]={   a, b, c, 0,
-                              0, 0, 0, 0,
-                              0, 0, 0, 0,
-                              d, e, f, 0};
+        float a = 1.0, b = 0.75,  c = 0.25;
+        float expected2[]={   a,   b,   c,   0,
+                              0,   0,   0,   0,
+                              0,   0,   0,   0,
+                              a/2, b/2, c/2, 0};
         data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
