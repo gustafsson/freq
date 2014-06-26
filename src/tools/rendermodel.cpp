@@ -48,7 +48,7 @@ RenderModel::
     renderer.reset( new Heightmap::Render::Renderer() );
     renderer->render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
 
-    resetSettings();
+    resetCameraSettings();
 //    setTestCamera();
 }
 
@@ -93,7 +93,7 @@ void RenderModel::
 
 
 void RenderModel::
-        resetSettings()
+        resetCameraSettings()
 {
     _qx = 0;
     _qy = 0;
@@ -118,6 +118,14 @@ void RenderModel::
         _qx = 0.5*L;
     }
 #endif
+}
+
+
+void RenderModel::
+        resetBlockCaches()
+{
+    for (auto c : collections())
+        c->cache()->clear();
 }
 
 

@@ -406,16 +406,18 @@ void Project::
 
 
 void Project::
-        resetLayout()
+        resetView()
 {
     setGuiState( defaultGuiState );
+    tools().render_view()->model->resetCameraSettings();
+    resetCache();
 }
 
 
 void Project::
-        resetView()
+        resetCache()
 {
-    tools().render_view()->model->resetSettings();
+    tools().render_view()->model->resetBlockCaches ();
     Application::global_ptr()->clearCaches();
     processing_chain_->resetDefaultWorkers();
     tools().render_view()->redraw();

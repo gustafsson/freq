@@ -72,8 +72,8 @@ protected:
 //    void sendCurrentSelection(int, bool);
 //    void sendRemoveItem(int);
 public slots:
-    void resetLayout();
     void resetView();
+    void resetCache();
 
 private slots:
     void openRecentFile();

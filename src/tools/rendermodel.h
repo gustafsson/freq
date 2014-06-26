@@ -44,7 +44,8 @@ namespace Tools
         ~RenderModel();
 
         void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt);
-        void resetSettings();
+        void resetCameraSettings();
+        void resetBlockCaches();
 
         Heightmap::TfrMapping::Collections collections();
 
