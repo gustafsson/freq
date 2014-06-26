@@ -1,13 +1,43 @@
 #include "waveformblockupdater.h"
 #include "tfr/drawnwaveformkernel.h"
+#include "opengl/waveupdater.h"
 
 using namespace std;
 
 namespace Heightmap {
 namespace Update {
 
+
+class WaveformBlockUpdaterPrivate {
+public:
+    OpenGL::WaveUpdater w;
+};
+
+WaveformBlockUpdater::
+        WaveformBlockUpdater()
+    :
+      p(new WaveformBlockUpdaterPrivate)
+{
+
+}
+
+
+WaveformBlockUpdater::
+        ~WaveformBlockUpdater()
+{
+    delete p;
+}
+
+
 void WaveformBlockUpdater::
         processJobs( std::queue<UpdateQueue::Job>& jobs )
+{
+    p->w.processJobs (jobs);
+}
+
+
+void WaveformBlockUpdater::
+        processJobsCpu( std::queue<UpdateQueue::Job>& jobs )
 {
     // Select subset to work on, must consume jobs in order
     std::vector<UpdateQueue::Job> myjobs;

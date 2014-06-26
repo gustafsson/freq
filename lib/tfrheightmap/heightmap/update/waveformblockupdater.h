@@ -10,6 +10,7 @@ namespace Update {
 /**
  * @brief The WaveformBlockUpdater class should draw a waveform on a heightmap block.
  */
+class WaveformBlockUpdaterPrivate;
 class WaveformBlockUpdater
 {
 public:
@@ -23,10 +24,17 @@ public:
         Signal::Interval getCoveredInterval() const override { return b->getInterval (); }
     };
 
+    WaveformBlockUpdater();
+    WaveformBlockUpdater(WaveformBlockUpdater const&)=delete;
+    WaveformBlockUpdater& operator=(WaveformBlockUpdater const&)=delete;
+    ~WaveformBlockUpdater();
 
     void processJobs( std::queue<Heightmap::Update::UpdateQueue::Job>& jobs );
+    void processJobsCpu( std::queue<Heightmap::Update::UpdateQueue::Job>& jobs );
     void processJob( const Job& job, const std::vector<pBlock>& intersecting_blocks );
     void processJob( const Job& job, pBlock block );
+private:
+    WaveformBlockUpdaterPrivate* p;
 };
 
 } // namespace Update
