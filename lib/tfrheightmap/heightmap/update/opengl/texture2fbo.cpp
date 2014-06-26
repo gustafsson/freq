@@ -85,7 +85,7 @@ int Texture2Fbo::Params::
 //    INFO TaskTimer tt(boost::format("Creating VBO for %s") % chunk_region);
 
     // Build VBO contents
-    std::vector<float> vertices((Y*2)*sizeof(vertex_format)/sizeof(float));
+    std::vector<vertex_format> vertices(Y*2);
     int i=0;
 
     // Juggle texture coordinates so that border texels are centered on the border
@@ -105,27 +105,29 @@ int Texture2Fbo::Params::
         float s = display_scale.getFrequencyScalar(hz);
         float v = (y + 0.0)*iY;
 
-        vertices[i++] = a_t;
-        vertices[i++] = s;
-        vertices[i++] = transpose ? v : u0; // Normalized index
-        vertices[i++] = transpose ? u0 : v;
-        vertices[i++] = b_t;
-        vertices[i++] = s;
-        vertices[i++] = transpose ? v : u1;
-        vertices[i++] = transpose ? u1 : v;
+        vertices[i].x = a_t;
+        vertices[i].y = s;
+        vertices[i].u = transpose ? v : u0; // Normalized index
+        vertices[i].v = transpose ? u0 : v;
+        i++;
+        vertices[i].x = b_t;
+        vertices[i].y = s;
+        vertices[i].u = transpose ? v : u1;
+        vertices[i].v = transpose ? u1 : v;
+        i++;
       }
 
     if (vbo)
       {
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo) );
-        GlException_SAFE_CALL( glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(float)*vertices.size (), &vertices[0]) );
+        GlException_SAFE_CALL( glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(vertex_format)*vertices.size (), &vertices[0]) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
       }
     else
       {
         GlException_SAFE_CALL( glGenBuffers (1, &vbo) ); // Generate 1 buffer
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo) );
-        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size (), &vertices[0], GL_STREAM_DRAW) );
+        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*vertices.size (), &vertices[0], GL_STREAM_DRAW) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
       }
 
