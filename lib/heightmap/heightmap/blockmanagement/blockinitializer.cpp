@@ -11,6 +11,8 @@
 //#define TIME_GETBLOCK
 #define TIME_GETBLOCK if(0)
 
+#define DO_MERGE
+
 using namespace boost;
 
 namespace Heightmap {
@@ -32,10 +34,10 @@ void BlockInitializer::
 {
     TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
 
+#ifdef DO_MERGE
 //    Blocks::Merger(cache_).fillBlockFromOthers (block);
     merger_->fillBlockFromOthers (block);
-
-    if (0 == "make 0")
+#else
     {
         GlFrameBuffer fbo(block->glblock->glTexture ()->getOpenGlTextureId ());
         fbo.bindFrameBuffer ();
@@ -46,6 +48,7 @@ void BlockInitializer::
         glClearColor (v[0],v[1],v[2],v[3]);
         fbo.unbindFrameBuffer ();
     }
+#endif
 }
 
 } // namespace BlockManagement

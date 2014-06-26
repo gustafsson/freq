@@ -13,7 +13,7 @@
 #include <functional>
 
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
-#define MAX_FRACTION_FOR_CACHES (1.f/2.f)
+#define MAX_FRACTION_FOR_CACHES (1.f/8.f)
 
 using namespace boost;
 
