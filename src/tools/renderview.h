@@ -131,7 +131,7 @@ namespace Tools
         /**
          * @brief postPaint. Use 'Qt::DirectConnection'
          */
-        void postPaint(float t_center);
+        void postPaint();
 
         /**
          * @brief paintingForeground. Use 'Qt::DirectConnection'

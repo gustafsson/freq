@@ -16,11 +16,13 @@ namespace Support {
 HeightmapProcessingPublisher::HeightmapProcessingPublisher(
           TargetNeeds::ptr target_needs,
           Heightmap::TfrMapping::const_ptr tfrmapping,
+          float* t_center,
           QObject* parent)
     :
       QObject(parent),
       target_needs_(target_needs),
       tfrmapping_(tfrmapping),
+      t_center_(t_center),
       preferred_update_size_(std::numeric_limits<Signal::UnsignedIntervalType>::max()),
       failed_allocation_(false)
 {
@@ -36,7 +38,7 @@ void HeightmapProcessingPublisher::
 
 
 void HeightmapProcessingPublisher::
-        update(float t_center)
+        update()
 {
     TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
@@ -52,7 +54,7 @@ void HeightmapProcessingPublisher::
         C = tm->collections();
     }
 
-    IntervalType center = t_center * fs;
+    IntervalType center = std::round(*t_center_ * fs);
 
     // It should update the view in sections equal in size to the smallest
     // visible block if the view isn't currently being invalidated.
@@ -65,7 +67,7 @@ void HeightmapProcessingPublisher::
         needed_samples |= wc->needed_samples(update_size);
     }
 
-    Signal::Interval target_interval(0, L*fs);
+    Signal::Interval target_interval(0, std::round(L*fs));
 
     if (needed_samples & target_interval)
         needed_samples &= target_interval;
@@ -156,11 +158,11 @@ void HeightmapProcessingPublisher::
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::TfrMapping::ptr tfrmapping(new Heightmap::TfrMapping(block_layout,1));
-        HeightmapProcessingPublisher hpp(target_needs, tfrmapping);
+        float t_center = 10;
+        HeightmapProcessingPublisher hpp(target_needs, tfrmapping, &t_center);
 
         Heightmap::Collection::ptr collection = tfrmapping->collections()[0];
 
-        float t_center = 10;
 //        OperationDesc::Extent x;
 //        x.interval = Interval(-10,20);
         tfrmapping->length(30);
@@ -169,7 +171,7 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
-        hpp.update(t_center);
+        hpp.update();
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -177,12 +179,12 @@ void HeightmapProcessingPublisher::
         unsigned frame_number = collection.read ()->frame_number();
 
         collection->getBlock(entireHeightmap)->frame_number_last_used = frame_number - 2;
-        hpp.update(t_center);
+        hpp.update();
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
         collection->getBlock(entireHeightmap)->frame_number_last_used = frame_number;
-        hpp.update(t_center);
+        hpp.update();
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
