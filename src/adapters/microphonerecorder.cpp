@@ -334,7 +334,7 @@ int MicrophoneRecorder::
     for (unsigned i=0; i<nc; ++i)
     {
         Signal::pMonoBuffer b = _receive_buffer->getChannel (i);
-        float* p = b->waveform_data()->getCpuMemory();
+        float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
         unsigned in_num_channels = _rolling_mean.size ();
         unsigned in_i = i;
         if (in_i >= in_num_channels)
@@ -354,13 +354,16 @@ int MicrophoneRecorder::
                 p[j] = buffer[j];
         }
 
-        float& mean = _rolling_mean[in_i];
+        // Not really a rolling mean, rather an IIR. It is anyway an approximated high-pass
+        // filter at a few Hz, the microphone is not expected to such low frequencies
+        float mean = _rolling_mean[in_i];
         for (unsigned j=0; j<framesPerBuffer; ++j)
         {
             float v = p[j];
             p[j] = v - mean;
             mean = mean*0.99999f + v*0.00001f;
         }
+        _rolling_mean[in_i] = mean;
     }
 
     _data.write ()->samples.put( _receive_buffer );
