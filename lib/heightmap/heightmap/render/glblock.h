@@ -40,7 +40,7 @@ public:
     GlTexture::ptr      glTexture();
     GlTexture::ptr      glVertTexture();
     pHeight             height();
-    pHeightReadOnlyCpu  heightReadOnlyCpu();
+    //pHeightReadOnlyCpu  heightReadOnlyCpu();
     //HeightReadOnlyArray heightReadOnlyArray();
     DataStorageSize     heightSize() const;
 

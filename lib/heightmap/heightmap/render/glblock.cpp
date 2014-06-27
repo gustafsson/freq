@@ -91,7 +91,7 @@ DataStorageSize GlBlock::
 }
 
 
-GlBlock::pHeightReadOnlyCpu GlBlock::
+/*GlBlock::pHeightReadOnlyCpu GlBlock::
         heightReadOnlyCpu()
 {
     if (_read_only_cpu) return _read_only_cpu;
@@ -115,7 +115,7 @@ GlBlock::pHeightReadOnlyCpu GlBlock::
     glBindBuffer(_height->vbo_type(), 0);
 
     return _read_only_cpu;
-}
+}*/
 
 
 /*GlBlock::HeightReadOnlyArray GlBlock::
