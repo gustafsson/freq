@@ -3,8 +3,12 @@
 #include "fbo2block.h"
 #include "wave2fbo.h"
 #include "lazy.h"
+#include "log.h"
 
 #include <unordered_map>
+
+//#define INFO
+#define INFO if(0)
 
 using namespace std;
 using namespace JustMisc;
@@ -93,8 +97,14 @@ void WaveUpdater::
         (void)fbo_mapping;
     }
 
-    for (UpdateQueue::Job& j : myjobs)
+    for (UpdateQueue::Job& j : myjobs) {
+        INFO {
+            auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
+            Log("WaveUpdater finished %s") % job->b->getInterval();
+        }
+
         j.promise.set_value ();
+    }
 }
 
 } // namespace OpenGL

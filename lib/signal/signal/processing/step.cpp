@@ -50,9 +50,9 @@ Signal::Processing::IInvalidator::ptr Step::
 
 
 std::string Step::
-        operation_name ()
+        operation_name () const
 {
-    return (operation_desc_?operation_desc_.read ()->toString ().toStdString ():"(no operation)");
+    return (operation_desc_?operation_desc_.raw ()->toString ().toStdString ():"(no operation)");
 }
 
 
@@ -86,9 +86,10 @@ Intervals Step::
         deprecated = A;
     }
 
-    DEBUGINFO TaskInfo(format("Step %1%. Deprecate %2%")
-              % (operation_desc_?operation_desc_.raw ()->toString ().toStdString ():"(no operation)")
-              % deprecated);
+    DEBUGINFO TaskInfo(format("Step::deprecateCache %2% | %3% on %1%")
+              % operation_name()
+              % deprecated
+              % not_started_);
 
     not_started_ |= deprecated;
 
@@ -106,7 +107,10 @@ Intervals Step::
 Intervals Step::
         out_of_date() const
 {
-    return not_started_ | currently_processing();
+    Intervals c = currently_processing();
+    //DEBUGINFO TaskInfo(boost::format("Step::out_of_date: %s = %s | %s in %s")
+    //         % (not_started_ | c) % not_started_ % c % operation_name());
+    return not_started_ | c;
 }
 
 
@@ -120,7 +124,7 @@ OperationDesc::ptr Step::
 int Step::
         registerTask(Interval expected_output)
 {
-    TASKINFO TaskInfo ti(format("Step %1%. Starting %2%")
+    TASKINFO TaskInfo ti(format("Step::registerTask %2% on %1%")
               % operation_name()
               % expected_output);
 
@@ -142,7 +146,7 @@ void Step::
     if (result)
         result_interval = result->getInterval ();
 
-    TASKINFO TaskInfo ti(format("Step %1%. Finish %2%")
+    TASKINFO TaskInfo ti(format("Step::finishTask %2% on %1%")
               % step.raw ()->operation_name()
               % result_interval);
 

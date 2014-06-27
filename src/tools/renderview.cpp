@@ -1216,10 +1216,8 @@ void RenderView::
 
 
     {
-        float t_center = model->_qx;
-        TIME_PAINTGL_DETAILS TaskTimer tt(boost::format("emit postPaint(%s)")
-                                          % t_center);
-        emit postPaint(t_center);
+        TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
+        emit postPaint();
     }
 }
 

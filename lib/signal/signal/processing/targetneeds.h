@@ -14,8 +14,6 @@
 namespace Signal {
 namespace Processing {
 
-class Bedroom;
-
 /**
  * @brief The TargetNeeds class should describe what needs to be computed for a target.
  */

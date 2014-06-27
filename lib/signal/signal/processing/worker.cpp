@@ -50,7 +50,7 @@ Worker::
     thread_->setObjectName (QString("Worker %1").arg (computing_engine
                             ? vartype(*computing_engine).c_str ()
                             : "(null)"));
-    thread_->start (QThread::LowPriority);
+    thread_->start (QThread::IdlePriority);
     moveToThread (thread_);
 
     connect (thread_, SIGNAL(finished()), SLOT(finished()));
@@ -119,7 +119,7 @@ void Worker::
         return;
       }
 
-    DEBUGINFO TaskInfo("Worker::wakeup");
+    DEBUGINFO TaskInfo("worker: wakeup");
 
     try
       {
@@ -147,7 +147,7 @@ void Worker::
 void Worker::
         finished()
   {
-    DEBUGINFO TaskInfo("Worker::finished");
+    DEBUGINFO TaskInfo("worker: finished");
     moveToThread (0); // important. otherwise 'thread_' will try to delete 'this', but 'this' owns 'thread_' -> crash.
     emit finished(*exception_.read (), computing_engine_);
   }
@@ -161,18 +161,19 @@ void Worker::
         Task task;
 
         {
-            DEBUGINFO TaskTimer tt(boost::format("Get task %s %s") % vartype(*schedule_.get ()) % (computing_engine_?vartype(*computing_engine_):"(null)") );
+            DEBUGINFO TaskTimer tt(boost::format("worker: get task %s %s") % vartype(*schedule_.get ()) % (computing_engine_?vartype(*computing_engine_):"(null)") );
             task = schedule_->getTask(computing_engine_);
         }
 
         if (task)
           {
-            DEBUGINFO TaskTimer tt(boost::format("Running task %s") % task.expected_output());
+            DEBUGINFO TaskTimer tt(boost::format("worker: running task %s") % task.expected_output());
             task.run();
             emit oneTaskDone();
           }
         else
           {
+            DEBUGINFO TaskInfo("worker: back to sleep");
             // Wait for a new wakeup call
             break;
           }

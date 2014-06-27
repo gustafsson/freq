@@ -23,7 +23,7 @@ RenderViewUpdateAdapter::
 void RenderViewUpdateAdapter::
         refreshSamples(const Intervals& I)
 {
-    UPDATEINFO TaskInfo(format("refreshSamples %s") % I);
+    UPDATEINFO TaskInfo(format("RenderViewUpdateAdapter::refreshSamples %s") % I);
 
     emit setLastUpdateSize( I.count () );
 }
@@ -32,7 +32,7 @@ void RenderViewUpdateAdapter::
 void RenderViewUpdateAdapter::
         processedData(const Interval& input, const Interval& output)
 {
-    UPDATEINFO TaskInfo(format("processedData %s -> %s") % input % output);
+    UPDATEINFO TaskInfo(format("RenderViewUpdateAdapter::processedData %s -> %s") % input % output);
 
     emit redraw ();
 }

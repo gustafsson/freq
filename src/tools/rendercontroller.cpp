@@ -88,10 +88,13 @@ RenderController::
     model()->init(model()->project ()->processing_chain (), rvu);
 
     // 'this' is parent
-    auto hpp = new Support::HeightmapProcessingPublisher(view->model->target_marker ()->target_needs (), view->model->tfr_mapping (), this);
+    auto hpp = new Support::HeightmapProcessingPublisher(
+                view->model->target_marker ()->target_needs (),
+                view->model->tfr_mapping (),
+                &view->model->_qx,
+                this);
     connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), hpp, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
-    connect(view, SIGNAL(postPaint(float)), hpp, SLOT(update(float)));
-
+    connect(view, SIGNAL(painting()), hpp, SLOT(update()));
     setupGui();
 
     {
@@ -975,6 +978,7 @@ void RenderController::
         amplitude_scale->addActionItem( logAmpltidue );
 //        amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
+        amplitude_scale->setDefaultAction (logAmpltidue);
         amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
         unsigned k=0;

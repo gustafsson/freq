@@ -160,11 +160,13 @@ std::vector<Step::ptr> Dag::
 std::vector<Step::ptr> Dag::
         targetSteps(Step::ptr step) const
 {
-    std::vector<Step::ptr> steps;
 
     GraphVertex v = getVertex(step);
     if (!v)
-        return steps;
+        return std::vector<Step::ptr>();
+
+    std::vector<Step::ptr> steps;
+    steps.reserve (out_degree(v, g_));
 
     BOOST_FOREACH(GraphEdge e, out_edges(v, g_)) {
         GraphVertex u = boost::target(e,g_);

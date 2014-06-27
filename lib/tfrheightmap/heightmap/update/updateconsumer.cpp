@@ -9,6 +9,7 @@
 #include "tasktimer.h"
 #include "timer.h"
 #include "log.h"
+#include "gl.h"
 
 #include <QGLWidget>
 
@@ -105,7 +106,8 @@ void UpdateConsumer::
             // Force a push_front to the std::queue
             Container(jobqueue).push_front (std::move(j));
 
-//            Timer t;
+            unsigned num_jobs = jobqueue.size ();
+            Timer t;
 
             while (!jobqueue.empty ())
             {
@@ -119,6 +121,11 @@ void UpdateConsumer::
               {
                 emit didUpdate ();
               }
+
+            glFlush();
+
+            INFO Log("UpdateConsumer did %d jobs in %s")
+                     % num_jobs % TaskTimer::timeToString (t.elapsed ());
 
 /*            INFO
             {
