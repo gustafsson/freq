@@ -50,7 +50,7 @@ Worker::
     thread_->setObjectName (QString("Worker %1").arg (computing_engine
                             ? vartype(*computing_engine).c_str ()
                             : "(null)"));
-    thread_->start (QThread::LowPriority);
+    thread_->start (QThread::IdlePriority);
     moveToThread (thread_);
 
     connect (thread_, SIGNAL(finished()), SLOT(finished()));
