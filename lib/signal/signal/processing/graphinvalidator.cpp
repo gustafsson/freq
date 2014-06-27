@@ -27,20 +27,22 @@ void GraphInvalidator::
     INotifier::ptr notifier = notifier_.lock ();
     Step::ptr step = step_.lock ();
 
-    if (!notifier || !step)
-        return;
+    if (step)
+        GraphInvalidator::deprecateCache(*dag, step, what);
 
-    GraphInvalidator::deprecateCache(*dag, step, what);
-
-    notifier->wakeup();
+    if (notifier)
+        notifier->wakeup();
 }
 
 
 void GraphInvalidator::
         deprecateCache(const Dag& dag, Step::ptr step, Signal::Intervals what)
 {
+    // Invalidate the source first
     what = step.write ()->deprecateCache(what);
 
+    // Invalidate the targets afterwards
+    // Otherwise the scheduler might start working on data that isn't ready yet
     for (Step::ptr ts: dag.targetSteps(step)) {
         deprecateCache(dag, ts, what);
     }
