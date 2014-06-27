@@ -1,4 +1,5 @@
 #include "waveformrepresentation.h"
+#include "neat_math.h"
 
 namespace Tfr {
 
@@ -51,20 +52,21 @@ unsigned WaveformRepresentationDesc::
 Signal::Interval WaveformRepresentationDesc::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
-    Signal::Intervals J = I;
-    J = J.enlarge (1);
+    // if a sample 'i' is valid it means that the line between i-1 and i is valid
+    Signal::Interval J(clamped_sub(I.first, Signal::IntervalType(1)), I.last);
 
     if (expectedOutput)
-        *expectedOutput = J.spannedInterval ();
+        *expectedOutput = J;
 
-    return J.spannedInterval ();
+    return J;
 }
 
 
 Signal::Interval WaveformRepresentationDesc::
         affectedInterval( const Signal::Interval& I ) const
 {
-    return requiredInterval (I,0);
+    // if a sample 'i' is valid it means that the line between i-1 and i is valid
+    return Signal::Interval(I.first, clamped_add(I.last, Signal::IntervalType(1)));
 }
 
 
