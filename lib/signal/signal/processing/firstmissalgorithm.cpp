@@ -5,12 +5,16 @@
 
 #include "tasktimer.h"
 #include "expectexception.h"
+#include "neat_math.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
+
+//#define DEBUGINFO_TASK
+#define DEBUGINFO_TASK if(0)
 
 using namespace boost;
 
@@ -58,7 +62,16 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            needed[v] |= g[v].read ()->not_started () & required_input;
+            Intervals not_started = g[v].read ()->not_started ();
+            DEBUGINFO_TASK if (not_started & required_input)
+            {
+                TaskInfo(format("FirstMissing: %s needs %s from %s to create a task. %s is not started.")
+                                     % g[u].raw()->operation_desc()->toString ().toStdString ()
+                                     % required_input
+                                     % g[v].raw()->operation_desc()->toString ().toStdString ()
+                                     % not_started);
+            }
+            needed[v] |= not_started & required_input;
           }
       }
 
@@ -83,12 +96,6 @@ public:
 
             Signal::OperationDesc::const_ptr o = step->operation_desc();
 
-            DEBUGINFO TaskTimer tt(format("Missing %1% in %2% for %3%")
-                                   % I
-                                   % o->toString ().toStdString ()
-                                   % (params.engine?vartype(*params.engine.get ()):""));
-
-
             // params.preferred_size is just a preferred update size, not a required update size.
             // Accept whatever requiredInterval sets as expected_output
             Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
@@ -97,13 +104,18 @@ public:
                 wanted_output = wanted_output2;
             Signal::Interval expected_output;
             Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);;
-            EXCEPTION_ASSERTX(required_input, o->toString ().toStdString ());
 
+            DEBUGINFO TaskInfo tt(format("Missing %s = %s & %s in %s for %s")
+                                   % I % needed[u] % step->not_started ()
+                                   % o->toString ().toStdString ()
+                                   % (params.engine?vartype(*params.engine.get ()):"ComputingEngine(null)"));
             DEBUGINFO TaskInfo(boost::format("params.preferred_size = %d, params.center = %d, wanted_output = %s")
                      % params.preferred_size % params.center % wanted_output);
-            DEBUGINFO TaskInfo(boost::format("expected_output = %s, required_input = %s")
-                     % expected_output % required_input);
+            DEBUGINFO TaskInfo(boost::format("expected_output = %s, required_input = %s, missing_input = %s")
+                     % expected_output % required_input % missing_input);
 
+            //check that OperationDesc returned that it needed at least something
+            EXCEPTION_ASSERTX(required_input, o->toString ().toStdString ());
             // check for valid 'requiredInterval' by making sure that expected_output overlaps I.
             // Otherwise no work for that interval will be necessary.
             EXCEPTION_ASSERTX (expected_output & Signal::Interval(wanted_output.first, wanted_output.first+1),
@@ -130,6 +142,15 @@ public:
             // If nothing is missing
             if( !missing_input )
               {
+                DEBUGINFO_TASK TaskInfo tt(format("Missing %s = %s & %s in %s for %s")
+                                       % I % needed[u] % step->not_started ()
+                                       % o->toString ().toStdString ()
+                                       % (params.engine?vartype(*params.engine.get ()):""));
+                DEBUGINFO_TASK TaskInfo(boost::format("params.preferred_size = %d, params.center = %d, wanted_output = %s")
+                         % params.preferred_size % params.center % wanted_output);
+                DEBUGINFO_TASK TaskInfo(boost::format("expected_output = %s, required_input = %s, missing_input = %s")
+                         % expected_output % required_input % missing_input);
+
                 Signal::Operation::ptr operation = o->createOperation (params.engine.get ());
 
                 // If this engine supports this operation
@@ -191,6 +212,7 @@ Task FirstMissAlgorithm::
                 Signal::ComputingEngine::ptr engine) const
 {
     DEBUGINFO TaskTimer tt(boost::format("FirstMissAlgorithm %s %p") % (engine?vartype(*engine):"Signal::ComputingEngine*") % engine.get ());
+    DEBUGINFO TaskInfo(boost::format("needed = %s in %s") % needed % straight_g[straight_target]->operation_desc()->toString().toStdString());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 
