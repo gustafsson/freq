@@ -225,9 +225,14 @@ void MicrophoneRecorder::stopRecording()
         try
         {
         TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
+
         //stop could hang the ui (codaset #24)
         //_stream_record->isStopped()? void(): _stream_record->stop();
+
+        // using abort instead of stop means that the recording thread will continue for a
+        // while after abort has returned.
         _stream_record->isStopped()? void(): _stream_record->abort();
+
         _stream_record->close();
         _stream_record.reset();
         }
@@ -309,8 +314,6 @@ int MicrophoneRecorder::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     try {
-    TIME_MICROPHONERECORDER_WRITEBUFFER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
-
     Signal::IntervalType offset = actual_number_of_samples();
 
     float fs = _data.raw ()->sample_rate;
@@ -323,6 +326,10 @@ int MicrophoneRecorder::
 
     _receive_buffer->set_sample_offset (offset);
     _receive_buffer->set_sample_rate (fs);
+
+    Signal::Interval I = _receive_buffer->getInterval ();
+    TIME_MICROPHONERECORDER_WRITEBUFFER TaskTimer tt(boost::format("MicrophoneRecorder: writeBuffer %s, [%g, %g) s")
+                                        % I % (I.first/fs) % (I.last/fs));
 
     for (unsigned i=0; i<nc; ++i)
     {
@@ -354,11 +361,6 @@ int MicrophoneRecorder::
             p[j] = v - mean;
             mean = mean*0.99999f + v*0.00001f;
         }
-
-        TIME_MICROPHONERECORDER_WRITEBUFFER TaskInfo ti("Interval: %s, [%g, %g) s",
-                                            b->getInterval().toString().c_str(),
-                                            b->getInterval().first / b->sample_rate(),
-                                            b->getInterval().last / b->sample_rate() );
     }
 
     _data.write ()->samples.put( _receive_buffer );
