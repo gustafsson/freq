@@ -92,6 +92,9 @@ public:
             // params.preferred_size is just a preferred update size, not a required update size.
             // Accept whatever requiredInterval sets as expected_output
             Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
+            Signal::Interval wanted_output2 = I.fetchInterval(clamped_add(params.preferred_size,params.preferred_size), params.center);
+            if (wanted_output.count () > wanted_output2.count ()/2)
+                wanted_output = wanted_output2;
             Signal::Interval expected_output;
             Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);;
             EXCEPTION_ASSERTX(required_input, o->toString ().toStdString ());
