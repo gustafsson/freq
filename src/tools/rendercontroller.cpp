@@ -978,6 +978,7 @@ void RenderController::
         amplitude_scale->addActionItem( logAmpltidue );
 //        amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
+        amplitude_scale->setDefaultAction (logAmpltidue);
         amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
         unsigned k=0;
