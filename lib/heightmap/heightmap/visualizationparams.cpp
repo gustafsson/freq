@@ -1,6 +1,7 @@
 #include "visualizationparams.h"
 
 #include "exceptionassert.h"
+#include "log.h"
 
 namespace Heightmap {
 
@@ -77,7 +78,8 @@ AmplitudeAxis VisualizationParams::
 void VisualizationParams::
         amplitude_axis(AmplitudeAxis v)
 {
-    details_->amplitude_axis_ = v;
+    Log("VisualizationParams: Discarding amplitude_axis %d") % (int)v;
+//    details_->amplitude_axis_ = v;
 }
 
 
@@ -108,8 +110,8 @@ void VisualizationParams::
 
         EXCEPTION_ASSERT(*v == *v2);
 
-        v2->amplitude_axis(AmplitudeAxis_Logarithmic);
-        EXCEPTION_ASSERT(*v != *v2);
+        //v2->amplitude_axis(AmplitudeAxis_Logarithmic);
+        //EXCEPTION_ASSERT(*v != *v2);
     }
 }
 
