@@ -9,6 +9,7 @@
 #include "tasktimer.h"
 #include "timer.h"
 #include "log.h"
+#include "gl.h"
 
 #include <QGLWidget>
 
@@ -120,6 +121,8 @@ void UpdateConsumer::
               {
                 emit didUpdate ();
               }
+
+            glFlush();
 
             INFO Log("UpdateConsumer did %d jobs in %s")
                      % num_jobs % TaskTimer::timeToString (t.elapsed ());
