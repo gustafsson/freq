@@ -147,8 +147,10 @@ Signal::Intervals TargetNeeds::
     if (step)
         out_of_date = step.read ()->out_of_date();
 
-    DEBUG_INFO Log("out_of_date(): %s & %s") % needed() % out_of_date;
-    return needed() & out_of_date;
+    Signal::Intervals needed = this->needed ();
+    DEBUG_INFO Log("TargetNeeds::out_of_date: %s = %s & %s")
+            % (needed & out_of_date) % needed % out_of_date;
+    return needed & out_of_date;
 }
 
 

@@ -88,7 +88,7 @@ private:
 
     mutable std::condition_variable_any wait_for_tasks_;
 
-    std::string                 operation_name();
+    std::string                 operation_name() const;
     Signal::Intervals           currently_processing() const; // from running_tasks
 
 public:

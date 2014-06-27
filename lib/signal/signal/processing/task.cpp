@@ -116,7 +116,7 @@ void Task::
     }
 
     TIME_TASK TaskTimer tt(boost::format("Task::run %1%")
-                           % od.read ()->toString ().toStdString ());
+                           % od.raw ()->toString ().toStdString ());
 
     Signal::Operation::ptr o = this->operation_;
 
