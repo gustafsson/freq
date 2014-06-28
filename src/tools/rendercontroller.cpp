@@ -67,16 +67,16 @@ RenderController::
             :
             transform(0),
             hz_scale(0),
+            amplitude_scale(0),
+            hzmarker(0),
             hz_scale_action(0),
             amplitude_scale_action(0),
             tf_resolution_action(0),
             linearScale(0),
-            hzmarker(0),
             view(view),
             toolbar_render(0),
             logScale(0),
             cepstraScale(0),
-            amplitude_scale(0),
             color(0)
 {
     Support::RenderViewUpdateAdapter* rvup;
