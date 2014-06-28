@@ -47,10 +47,9 @@ Fbo2Block::~Fbo2Block()
 //        grabToTexture(block->glblock->glVertTexture());
 //        fbo->unbindFrameBuffer ();
 
-        // Discard previous glblock ... wrong thread ... could also grabToTexture into oldglblock
-        fbo->bindFrameBuffer ();
-        grabToTexture(glblock->glVertTexture());
-        fbo->unbindFrameBuffer ();
+        //fbo->bindFrameBuffer ();
+        //grabToTexture(glblock->glVertTexture());
+        //fbo->unbindFrameBuffer ();
 //        glFinish ();
 //        block->glblock = glblock;
     } catch (...) {
@@ -64,8 +63,6 @@ GlFrameBuffer::ScopeBinding Fbo2Block::
     GlException_CHECK_ERROR ();
 
     GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding ();
-//        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-//        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
 
     Region br = block->getRegion ();
     BlockLayout block_layout = block->block_layout ();

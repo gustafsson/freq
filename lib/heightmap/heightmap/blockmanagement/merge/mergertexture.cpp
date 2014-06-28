@@ -143,11 +143,6 @@ void MergerTexture::
         glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
         glBindTexture(GL_TEXTURE_2D, 0);
-
-        t = block->glblock->glVertTexture ();
-        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
 

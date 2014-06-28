@@ -37,14 +37,17 @@ RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_siz
 
 RenderBlock::Renderer::~Renderer()
 {
-    RenderBlock::endVboRendering();
+    try {
+        RenderBlock::endVboRendering();
+    } catch (...) {
+        TaskInfo(boost::format("!!! ~RenderBlock::Renderer: endVboRendering failed\n%s") % boost::current_exception_diagnostic_information());
+    }
 }
 
 
 void RenderBlock::Renderer::
         renderBlock( pBlock block )
 {
-    TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Region r = block->getRegion ();
@@ -55,13 +58,8 @@ void RenderBlock::Renderer::
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
 
-    if (0 /* direct rendering */ )
-        ;//block->glblock->draw_directMode();
-    else if (1 /* vbo */ ) {
-        block->glblock->draw( vbo_size, render_settings.draw_flat ? GlBlock::HeightMode_Flat : render_settings.vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
-    }
+    block->glblock->draw( vbo_size );
 
-    TIME_RENDERER_BLOCKS ComputationCheckError();
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
@@ -126,12 +124,12 @@ void RenderBlock::
     {   // Set default uniform variables parameters for the vertex and pixel shader
         TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
         GLuint uniVertText0,
-                uniVertText1,
                 uniVertText2,
                 uniColorTextureFactor,
                 uniFixedColor,
                 uniClearColor,
                 uniContourPlot,
+                uniFlatness,
                 uniYScale,
                 uniYOffset,
                 uniLogScale,
@@ -139,13 +137,13 @@ void RenderBlock::
                 uniOffsTex;
 
         uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
-        glUniform1i(uniVertText0, 0); // GL_TEXTURE0
+        glUniform1i(uniVertText0, 0); // GL_TEXTURE0 + i
 
-        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_nearest");
-        glUniform1i(uniVertText1, 1); // GL_TEXTURE1
+//        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_nearest");
+//        glUniform1i(uniVertText1, _mesh_width*_mesh_height>4 ? 0 : 0);
 
         uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
-        glUniform1i(uniVertText2, 2); // GL_TEXTURE2
+        glUniform1i(uniVertText2, 2);
 
         uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
         switch (render_settings->color_mode)
@@ -184,6 +182,9 @@ void RenderBlock::
 
         uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
         glUniform1f(uniContourPlot, render_settings->draw_contour_plot ? 1.f : 0.f );
+
+        uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
+        glUniform1f(uniFlatness, render_settings->draw_flat ? 0 : 2*render_settings->last_ysize); // as glScalef in setupGlStates
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, render_settings->y_scale);
@@ -235,6 +236,8 @@ void RenderBlock::
 void RenderBlock::
         endVboRendering()
 {
+    GlException_CHECK_ERROR();
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glActiveTexture(GL_TEXTURE2);
@@ -243,6 +246,8 @@ void RenderBlock::
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glUseProgram(0);
+
+    GlException_CHECK_ERROR();
 }
 
 
