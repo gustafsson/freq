@@ -110,7 +110,6 @@ void CepstrumBlockFilter::
 
         Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
         block->glblock.reset( new Render::GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
 
         // Create some data to plot into the block

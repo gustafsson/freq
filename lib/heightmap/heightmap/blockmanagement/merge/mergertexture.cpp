@@ -149,25 +149,6 @@ void MergerTexture::
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-
-    bool need_cpu_copy = false;
-    if (need_cpu_copy)
-    {
-        VERBOSE_COLLECTION TaskTimer tt("Updating cpu_copy");
-        // This is slow, and hard to do asynchronously.
-
-        GlTexture::ptr t = block->glblock->glTexture ();
-        glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo_);
-        glReadPixels (0, 0, t->getWidth (), t->getHeight (), GL_RED, GL_FLOAT, 0);
-        float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-        {
-            auto outdata = block->block_data ();
-            memcpy(outdata->cpu_copy->getCpuMemory(), src, outdata->cpu_copy->numberOfBytes ());
-            block->discard_new_block_data ();
-        }
-        glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-        glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
-    }
 }
 
 
@@ -225,19 +206,14 @@ void MergerTexture::
         Reference ref;
         BlockLayout bl(4,4,4);
         VisualizationParams::ptr vp(new VisualizationParams);
-        DataStorageSize ds(bl.texels_per_column (), bl.texels_per_row ());
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
         pBlock block(new Block(ref,bl,vp));
         block->glblock.reset( new Render::GlBlock( bl, block->getRegion().time(), block->getRegion().scale() ));
-        block->block_data()->cpu_copy.reset( new DataStorage<float>(ds) );
-        block->update_glblock_data ();
-        block->glblock->update_texture( Render::GlBlock::HeightMode_Flat );
-        EXCEPTION_ASSERT_EQUALS(ds, block->glblock->heightSize());
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
 
-        BlockData::pData data;
+        DataStorage<float>::ptr data;
 
         float expected1[]={ 0, 0, 0, 0,
                             0, 0, 0, 0,
@@ -257,9 +233,7 @@ void MergerTexture::
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
             const Region& r = block->getRegion();
             block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
-            block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            block->update_glblock_data ();
-            block->glblock->update_texture( Render::GlBlock::HeightMode_Flat );
+            block->glblock->updateTexture (srcdata, 16);
 
             cache->insert(block);
         }
@@ -284,9 +258,7 @@ void MergerTexture::
             pBlock block(new Block(ref.right (),bl,vp));
             const Region& r = block->getRegion();
             block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
-            block->block_data()->cpu_copy = CpuMemoryStorage::BorrowPtr( ds, srcdata, true );
-            block->update_glblock_data ();
-            block->glblock->update_texture( Render::GlBlock::HeightMode_Flat );
+            block->glblock->updateTexture (srcdata,16);
 
             cache->insert(block);
         }

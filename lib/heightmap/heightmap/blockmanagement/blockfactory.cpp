@@ -34,7 +34,7 @@ BlockFactory::
 
 
 pBlock BlockFactory::
-        createBlock( const Reference& ref, Render::pGlBlock reuse )
+        createBlock( const Reference& ref, Block::pGlBlock reuse )
 {
     pBlock b;
 
@@ -62,7 +62,7 @@ pBlock BlockFactory::
 
 
 pBlock BlockFactory::
-        createBlockInternal( const Reference& ref, Render::pGlBlock reuse )
+        createBlockInternal( const Reference& ref, Block::pGlBlock reuse )
 {
     // A precautious wrapper to getAllocatedBlock which is a precautious wrapper to attempt
 
@@ -81,9 +81,6 @@ pBlock BlockFactory::
                              block_layout_,
                              visualization_params_) );
             block->glblock = reuse;
-            // Sets to zero on first read
-            block->block_data()->cpu_copy.reset( new DataStorage<float>(block->glblock->heightSize()) );
-            block->discard_new_block_data();
 
             const Region& r = block->getRegion();
             block->glblock->reset( r.time(), r.scale() );
@@ -94,11 +91,6 @@ pBlock BlockFactory::
 
         if (!block)
             return pBlock();
-
-        // For some filters a block could be created with valid content from existing blocks
-        //BlockFilter* blockFilter = dynamic_cast<BlockFilter*>(_filter.get());
-        //if (!blockFilter->createFromOthers())
-        //    block->valid_samples.clear();
 
         //setDummyValues(block);
 
@@ -178,16 +170,6 @@ pBlock BlockFactory::
         EXCEPTION_ASSERT_LESS_OR_EQUAL( r.b.scale, 1 );
         attempt->glblock.reset( new Render::GlBlock( block_layout_, r.time(), r.scale() ));
 
-        attempt->block_data()->cpu_copy.reset( new DataStorage<float>(attempt->glblock->heightSize()) );
-        attempt->discard_new_block_data();
-
-/*
-        {
-            GlBlock::pHeight h = attempt->glblock->height();
-            //GlBlock::pSlope sl = attempt->glblock->slope();
-        }
-        attempt->glblock->unmap();
-*/
         GlException_CHECK_ERROR();
         ComputationCheckError();
 
@@ -253,15 +235,17 @@ pBlock BlockFactory::
 void BlockFactory::
         setDummyValues( pBlock block )
 {
-    Render::GlBlock::pHeight h = block->glblock->height();
-    float* p = h->data->getCpuMemory();
     unsigned samples = block_layout_.texels_per_row (),
             scales = block_layout_.texels_per_column ();
-    for (unsigned s = 0; s<samples/2; s++) {
+    std::vector<float> p(samples*scales);
+
+    for (unsigned s = 0; s<samples; s++) {
         for (unsigned f = 0; f<scales; f++) {
             p[ f*samples + s] = 0.05f  +  0.05f * sin(s*10./samples) * cos(f*10./scales);
         }
     }
+
+    block->glblock->updateTexture (&p[0], p.size ());
 }
 
 } // namespace BlockManagement

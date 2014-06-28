@@ -53,8 +53,6 @@ Fbo2Block::~Fbo2Block()
         fbo->unbindFrameBuffer ();
 //        glFinish ();
 //        block->glblock = glblock;
-
-        block->discard_new_block_data ();
     } catch (...) {
         Heightmap::UncaughtException::handle_exception(boost::current_exception());
     }

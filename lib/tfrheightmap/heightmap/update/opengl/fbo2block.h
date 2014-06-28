@@ -20,7 +20,7 @@ public:
 
 private:
     pBlock block;
-    boost::shared_ptr<Render::GlBlock> glblock;
+    Block::pGlBlock glblock;
     std::unique_ptr<GlFrameBuffer> fbo;
 };
 

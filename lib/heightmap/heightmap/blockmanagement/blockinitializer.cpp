@@ -1,6 +1,5 @@
 #include "blockinitializer.h"
 #include "blockfactory.h"
-#include "merge/merger.h"
 #include "merge/mergertexture.h"
 
 #include "tasktimer.h"

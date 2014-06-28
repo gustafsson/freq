@@ -311,7 +311,6 @@ void Renderer::
     {
         Render::RenderSet::references_t R = getRenderSet(L);
         createMissingBlocks(R);
-        updateTextures(R);
         drawBlocks(R);
     }
     else
@@ -391,35 +390,6 @@ void Renderer::
                 TaskInfo("Failed to create a block");
         }
     }
-}
-
-
-void Renderer::
-        updateTextures(const Render::RenderSet::references_t& R)
-{
-    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
-
-    auto cache = collection.raw ()->cache ()->clone ();
-
-    for (const Reference& r : R)
-      {
-        auto i = cache.find (r);
-        if (i != cache.end ())
-          {
-            pBlock block = i->second;
-
-            block->update_glblock_data ();
-            if (block->glblock)
-                block->glblock->update_texture (
-                        render_settings.draw_flat
-                        ?
-                            GlBlock::HeightMode_Flat
-                          : render_settings.vertex_texture
-                            ?
-                                GlBlock::HeightMode_VertexTexture
-                              : GlBlock::HeightMode_VertexBuffer );
-          }
-      }
 }
 
 

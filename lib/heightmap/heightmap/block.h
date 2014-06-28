@@ -17,22 +17,6 @@ namespace Heightmap {
         class GlBlock;
     }
 
-    class BlockData {
-    public:
-        typedef DataStorage<float>::ptr pData;
-
-        /**
-            TODO test this in a multi gpu environment
-            For multi-GPU or (just multithreaded) environments, each GPU-thread have
-            its own cuda context and data can't be transfered between cuda contexts
-            without first going to the cpu. Therefore a 'cpu_copy' is kept in CPU
-            memory so that the block data is readily available for merging new
-            blocks. Only one GPU may access 'cpu_copy' at once. The OpenGL textures
-            are updated from cpu_copy whenever new_data_available is set to true.
-        */
-        pData cpu_copy;
-    };
-
     // FEATURE it would probably look awesome if new blocks weren't displayed
     // instantaneously but rather faded in from 0 or from their previous value.
     // This method could be used to slide between the images of two different
@@ -45,6 +29,8 @@ namespace Heightmap {
      */
     class Block {
     public:
+        typedef std::shared_ptr<Render::GlBlock> pGlBlock;
+
         Block( Reference, BlockLayout, VisualizationParams::const_ptr);
         ~Block();
 
@@ -52,21 +38,7 @@ namespace Heightmap {
         unsigned frame_number_last_used;
 
         // OpenGL data to render
-        boost::shared_ptr<Render::GlBlock> glblock;
-        shared_state<BlockData>::write_ptr block_data();
-        void discard_new_block_data();
-
-        // Lock if available but don't wait for it to become available
-        shared_state<BlockData>::read_ptr block_data_const() const {
-            return block_data_.try_read();
-        }
-
-        /**
-         * @brief update_data updates glblock from block_data
-         * @return true if data was updated. false if block_data is currently
-         * in use or if glblock is already up-to-date.
-         */
-        bool update_glblock_data();
+        pGlBlock glblock;
 
         // Shared state
         const VisualizationParams::const_ptr visualization_params() const { return visualization_params_; }
@@ -82,8 +54,6 @@ namespace Heightmap {
         ReferenceInfo referenceInfo() const { return ReferenceInfo(reference (), block_layout (), visualization_params ()); }
 
     private:
-        shared_state<BlockData> block_data_;
-        bool new_data_available_;
         const Reference ref_;
         const BlockLayout block_layout_;
         const VisualizationParams::const_ptr visualization_params_;

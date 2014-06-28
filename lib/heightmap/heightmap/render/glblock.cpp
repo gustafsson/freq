@@ -82,42 +82,6 @@ void GlBlock::
 }
 
 
-DataStorageSize GlBlock::
-        heightSize() const
-{
-    return DataStorageSize(
-                block_size_.texels_per_row (),
-                block_size_.texels_per_column ());
-}
-
-
-/*GlBlock::pHeightReadOnlyCpu GlBlock::
-        heightReadOnlyCpu()
-{
-    if (_read_only_cpu) return _read_only_cpu;
-
-    if (_mapped_height)
-    {
-        // Transfer from Cuda instead of OpenGL if it can already be found in Cuda memory
-        _read_only_cpu.reset(new DataStorage<float>( _mapped_height->data->size() ));
-        *_read_only_cpu = *_mapped_height->data;
-        return _read_only_cpu;
-    }
-
-    createHeightVbo();
-
-    glBindBuffer(_height->vbo_type(), *_height);
-    float *cpu_height = (float *) glMapBuffer(_height->vbo_type(), GL_READ_ONLY);
-
-    _read_only_cpu.reset( new DataStorage<float>( *CpuMemoryStorage::BorrowPtr( heightSize(), cpu_height ) ));
-
-    glUnmapBuffer(_height->vbo_type());
-    glBindBuffer(_height->vbo_type(), 0);
-
-    return _read_only_cpu;
-}*/
-
-
 /*GlBlock::HeightReadOnlyArray GlBlock::
         heightReadOnlyArray()
 {
@@ -171,20 +135,29 @@ GlTexture::ptr GlBlock::
 }
 
 
-GlBlock::pHeight GlBlock::
-        height()
+void GlBlock::
+        updateTexture( float*p, int n )
 {
-    if (_mapped_height) return _mapped_height;
+    create_texture (HeightMode_VertexTexture);
 
-    createHeightVbo();
+    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
 
-    TIME_GLBLOCK TaskTimer tt("Heightmap OpenGL->Cuda, vbo=%u", (unsigned)*_height);
+    int w = block_size_.texels_per_row ();
+    int h = block_size_.texels_per_column ();
 
-    _mapped_height.reset( new MappedVbo<float>(_height, heightSize() ));
+    EXCEPTION_ASSERT_EQUALS(n, block_size_.texels_per_block ());
 
-    TIME_GLBLOCK ComputationSynchronize();
+    if (!hasTextureFloat)
+        glPixelTransferf( GL_RED_SCALE, 0.1f );
 
-    return _mapped_height;
+    glBindTexture(GL_TEXTURE_2D, _tex_height);
+    GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, w, h, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, p) );
+    glBindTexture(GL_TEXTURE_2D, _tex_height_nearest);
+    GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, w, h, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, p) );
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (!hasTextureFloat)
+        glPixelTransferf( GL_RED_SCALE, 1.0f );
 }
 
 

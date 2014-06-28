@@ -39,15 +39,11 @@ public:
 
     GlTexture::ptr      glTexture();
     GlTexture::ptr      glVertTexture();
-    pHeight             height();
-    //pHeightReadOnlyCpu  heightReadOnlyCpu();
-    //HeightReadOnlyArray heightReadOnlyArray();
-    DataStorageSize     heightSize() const;
+    void                updateTexture( float*p, int n );
 
     bool has_texture() const;
     void delete_texture();
 
-    void update_texture( HeightMode heightMode );
     void draw( unsigned vbo_size, HeightMode heightMode=HeightMode_VertexTexture );
     //void draw_directMode( );
 
@@ -68,20 +64,17 @@ private:
     void createHeightVbo();
 
     bool create_texture( HeightMode heightMode );
+    void update_texture( HeightMode heightMode );
 
     const BlockLayout block_size_;
 
     pHeightReadOnlyCpu _read_only_cpu;
     //cudaGraphicsResource* _read_only_array_resource;
-    //HeightReadOnlyArray _read_only_array;
 
     pVbo _height;
     pVbo _mesh;
 
     pHeight _mapped_height;
-    // Create and destroy in the same context, which
-    // is only being kept in the main thread.
-//    ThreadChecker _constructor_thread;
 
     unsigned _tex_height;
     unsigned _tex_height_nearest;

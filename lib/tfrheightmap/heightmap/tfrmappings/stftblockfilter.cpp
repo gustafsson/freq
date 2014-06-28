@@ -116,7 +116,6 @@ void StftBlockFilter::
 
         Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
         Region r = RegionFactory( bl )( ref );
         block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
 

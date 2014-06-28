@@ -58,7 +58,6 @@ void RenderBlock::Renderer::
     if (0 /* direct rendering */ )
         ;//block->glblock->draw_directMode();
     else if (1 /* vbo */ ) {
-        block->update_glblock_data ();
         block->glblock->draw( vbo_size, render_settings.draw_flat ? GlBlock::HeightMode_Flat : render_settings.vertex_texture ? GlBlock::HeightMode_VertexTexture : GlBlock::HeightMode_VertexBuffer);
     }
 

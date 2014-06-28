@@ -78,8 +78,6 @@ void WaveformBlockFilter::
         }();
 
         Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
-        DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block->block_data ()->cpu_copy.reset( new DataStorage<float>(s) );
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;
@@ -91,10 +89,13 @@ void WaveformBlockFilter::
 
         EXCEPTION_ASSERT(dynamic_cast<WaveformBlockUpdater::Job*>(job.get ()));
 
-        WaveformBlockUpdater().processJob(
-                    (WaveformBlockUpdater::Job&)(*job),
-                    vector<pBlock>{block}
-                    );
+        std::queue<Heightmap::Update::UpdateQueue::Job> jobs;
+        Heightmap::Update::UpdateQueue::Job j;
+        j.updatejob = job;
+        j.intersecting_blocks = vector<pBlock>{block};
+        jobs.push (std::move(j));
+
+        WaveformBlockUpdater().processJobs(jobs);
 
         float T = t.elapsed ();
         EXCEPTION_ASSERT_LESS(T, 1.0); // this is ridiculously slow
