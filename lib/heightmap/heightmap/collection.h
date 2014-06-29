@@ -6,6 +6,8 @@
 #include "freqaxis.h"
 #include "position.h"
 #include "blockcache.h"
+#include "render/blocktextures.h"
+#include "render/renderset.h"
 
 // Sonic AWE
 #include "signal/intervals.h"
@@ -140,6 +142,7 @@ public:
 
 
     pBlock      getBlock( const Reference& ref );
+    void        createMissingBlocks(const Render::RenderSet::references_t& R);
     int         runGarbageCollection( bool aggressive=false );
 
 
@@ -164,13 +167,12 @@ private:
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
 
-    typedef std::vector<pBlock> toremove_t;
-    toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
-    toremove_t      _up_for_grabs;
+    bool failed_allocation_ = false;
 
     BlockCache::ptr cache_;
     std::unique_ptr<BlockManagement::BlockFactory> block_factory_;
     std::unique_ptr<BlockManagement::BlockInitializer> block_initializer_;
+    Render::BlockTextures::ptr block_textures_;
 
     bool
         _is_visible;

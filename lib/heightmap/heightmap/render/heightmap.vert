@@ -5,7 +5,8 @@
 varying float vertex_height;
 varying float shadow;
 
-uniform sampler2D tex_nearest;
+uniform sampler2D tex;
+uniform float flatness;
 uniform float yScale;
 uniform float yOffset;
 uniform vec3 logScale;
@@ -18,6 +19,8 @@ float heightValue(float v) {
                   log(v) * logScale.y + logScale.z,
                   logScale.x);
 
+    h *= flatness;
+
     return v == 0.0 ? 0.0 : max(0.01, h);
 }
 
@@ -26,18 +29,18 @@ void main()
 {
     // We want linear interpolation all the way out to the edge
     vec2 vertex = clamp(gl_Vertex.xz, 0.0, 1.0);
-    vec2 tex = vertex*scale_tex + offset_tex;
+    vec2 tex0 = vertex*scale_tex + offset_tex;
 
-    gl_TexCoord[0].xy = tex;
+    gl_TexCoord[0].xy = tex0;
 
-    vec2 tex1 = max(tex - offset_tex*2.0, offset_tex);
-    vec2 tex2 = min(tex + offset_tex*2.0, 1.0-offset_tex);
+    vec2 tex1 = max(tex0 - offset_tex*2.0, offset_tex);
+    vec2 tex2 = min(tex0 + offset_tex*2.0, 1.0-offset_tex);
 
-    float height       = texture2D(tex_nearest, tex).x;
-    float heightx1     = texture2D(tex_nearest, vec2(tex1.x, tex.y)).x;
-    float heightx2     = texture2D(tex_nearest, vec2(tex2.x, tex.y)).x;
-    float heighty1     = texture2D(tex_nearest, vec2(tex.x, tex1.y)).x;
-    float heighty2     = texture2D(tex_nearest, vec2(tex.x, tex2.y)).x;
+    float height       = texture2D(tex, tex0).x;
+    float heightx1     = texture2D(tex, vec2(tex1.x, tex0.y)).x;
+    float heightx2     = texture2D(tex, vec2(tex2.x, tex0.y)).x;
+    float heighty1     = texture2D(tex, vec2(tex0.x, tex1.y)).x;
+    float heighty2     = texture2D(tex, vec2(tex0.x, tex2.y)).x;
 
     height = heightValue(height);
     heightx1 = heightValue(heightx1);

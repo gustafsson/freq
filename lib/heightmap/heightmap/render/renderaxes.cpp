@@ -12,9 +12,6 @@
 #   include <GLUT/glut.h>
 #endif
 
-// boost
-#include <boost/foreach.hpp>
-
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
 
@@ -728,7 +725,7 @@ std::vector<GLvector> RenderAxes::
 //    max_t = 0;
 //    min_t = FLT_MAX;
 
-//    BOOST_FOREACH( GLvector v, clippedFrustum)
+//    for ( GLvector v : clippedFrustum)
 //    {
 //        if (max_t < v[0])
 //            max_t = v[0];

@@ -419,8 +419,9 @@ void Project::
         resetCache()
 {
     TaskTimer tt("Project::resetCache");
-    tools().render_view()->model->resetBlockCaches ();
     Application::global_ptr()->clearCaches();
+    tools().render_view()->model->resetBlockCaches ();
+    tools().render_view()->model->target_marker ()->target_needs ()->deprecateCache (Signal::Intervals::Intervals_ALL);
     processing_chain_->resetDefaultWorkers();
     tools().render_view()->redraw();
 }

@@ -104,13 +104,15 @@ GlTexture::ScopeBinding GlTexture::getScopeBinding() const
 }
 
 void GlTexture::bindTexture2D() const {
-	GlException_SAFE_CALL( glEnable(GL_TEXTURE_2D) );
-	GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, textureId) );
+    GlException_CHECK_ERROR();
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture( GL_TEXTURE_2D, textureId);
+    GlException_CHECK_ERROR();
 }
 
 void GlTexture::unbindTexture2D() {
-	GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
-	GlException_SAFE_CALL( glDisable(GL_TEXTURE_2D) );
+    glBindTexture( GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
 }
 
 void GlTexture::unbindTexture2Dwrap() const {

@@ -35,6 +35,7 @@
 #include "glframebuffer.h"
 #include "neat_math.h"
 #include "gluunproject.h"
+#include "gltextureread.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -332,7 +333,7 @@ float RenderView::
             return 0;
     }
 
-    DataStorage<float>::ptr blockData = block->glblock->height()->data;
+    DataStorage<float>::ptr blockData = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat();
 
     float* data = blockData->getCpuMemory();
     Heightmap::BlockLayout block_layout = model->tfr_mapping ().read ()->block_layout();

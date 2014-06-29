@@ -3,6 +3,7 @@
 
 #include "heightmap/blockcache.h"
 #include "heightmap/render/glblock.h"
+#include "GlTexture.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -21,39 +22,24 @@ public:
     /**
       Creates a new block.
       */
-    pBlock              createBlock( const Reference& ref, Render::pGlBlock reuse=Render::pGlBlock() );
+    pBlock              createBlock( const Reference& ref, GlTexture::ptr tex );
 
     Signal::Intervals   recently_created();
-    void                set_recently_created_all();
 
-    bool                failed_allocation();
     void                next_frame();
 
 private:
     /**
       Creates a new block.
       */
-    pBlock              createBlockInternal( const Reference& ref, Render::pGlBlock reuse );
-
-
-    /**
-      Attempts to allocate a new block.
-      */
-    pBlock      attempt( const Reference& ref );
-
-
-    /**
-     * @brief getAllocatedBlock returns an allocated block either by new a
-     * memory allocation or by reusing the data from an old block.
-     */
-    pBlock      getAllocatedBlock( const Reference& ref );
+    pBlock              createBlockInternal( const Reference& ref, GlTexture::ptr tex );
 
 
     /**
      * @brief setDummyValues fills a block with dummy values, used for testing.
      * @param block
      */
-    void        setDummyValues( pBlock block );
+    void                setDummyValues( pBlock block );
 
 
     BlockLayout block_layout_;
@@ -63,12 +49,6 @@ private:
 
     Signal::Intervals recently_created_;
     unsigned created_count_;
-
-    /**
-     * @brief failed_allocation_ is cleared by failed_allocation() and populated by getBlock()
-     */
-    bool failed_allocation_;
-    bool failed_allocation_prev_;
 
 public:
     static void test();

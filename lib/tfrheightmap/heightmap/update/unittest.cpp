@@ -1,7 +1,6 @@
 #include "unittest.h"
 
 #include "heightmap/tfrmapping.h"
-#include "heightmap/update/cpu/chunktoblock.h"
 #include "heightmap/update/updateproducer.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/tfrmappings/cwtblockfilter.h"
@@ -40,7 +39,6 @@ int UnitTest::
         TaskTimer tt("Running tests");
 
         RUNTEST(Heightmap::TfrMapping);
-        RUNTEST(Heightmap::Update::ChunkToBlock);
         RUNTEST(Heightmap::Update::UpdateProducer);
         RUNTEST(Heightmap::Update::UpdateProducerDesc);
         RUNTEST(Heightmap::TfrMappings::StftBlockFilter);

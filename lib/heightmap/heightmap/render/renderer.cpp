@@ -24,9 +24,6 @@
 #include "tasktimer.h"
 #include "GlTexture.h"
 
-// boost
-#include <boost/foreach.hpp>
-
 // Qt
 #include <QSettings>
 
@@ -311,7 +308,6 @@ void Renderer::
     {
         Render::RenderSet::references_t R = getRenderSet(L);
         createMissingBlocks(R);
-        updateTextures(R);
         drawBlocks(R);
     }
     else
@@ -367,59 +363,7 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::createMissingBlocks");
-
-
-    Render::RenderSet::references_t missing;
-
-    {
-        BlockCache::cache_t cache = collection.raw ()->cache ()->clone ();
-        BOOST_FOREACH(const Reference& r, R) {
-            if (cache.find(r) == cache.end())
-                missing.insert (r);
-        }
-    }
-
-    if (!missing.empty ())
-    {
-        auto c = collection.write ();
-
-        BOOST_FOREACH(const Reference& r, missing) {
-            // Create blocks
-            pBlock b = c->getBlock (r);
-            if (!b)
-                TaskInfo("Failed to create a block");
-        }
-    }
-}
-
-
-void Renderer::
-        updateTextures(const Render::RenderSet::references_t& R)
-{
-    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::updateTextures");
-
-    auto cache = collection.raw ()->cache ()->clone ();
-
-    for (const Reference& r : R)
-      {
-        auto i = cache.find (r);
-        if (i != cache.end ())
-          {
-            pBlock block = i->second;
-
-            block->update_glblock_data ();
-            if (block->glblock)
-                block->glblock->update_texture (
-                        render_settings.draw_flat
-                        ?
-                            GlBlock::HeightMode_Flat
-                          : render_settings.vertex_texture
-                            ?
-                                GlBlock::HeightMode_VertexTexture
-                              : GlBlock::HeightMode_VertexBuffer );
-          }
-      }
+    collection.raw ()->createMissingBlocks (R);
 }
 
 
@@ -475,9 +419,8 @@ void Renderer::
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
-    BOOST_FOREACH(const Reference& r, R) {
+    for (const Reference& r : R)
         Render::RenderRegion(region(r)).render();
-    }
 }
 
 

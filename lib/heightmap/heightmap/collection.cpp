@@ -17,7 +17,6 @@
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/foreach.hpp>
 #include <boost/unordered_set.hpp>
 
 // std
@@ -29,9 +28,6 @@
 
 //#define INFO_COLLECTION
 #define INFO_COLLECTION if(0)
-
-//#define VERBOSE_COLLECTION
-#define VERBOSE_COLLECTION if(0)
 
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)
@@ -49,6 +45,7 @@ Collection::
     cache_( new BlockCache ),
     block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
     block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
+    block_textures_(new Render::BlockTextures(block_layout)),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -64,13 +61,6 @@ Collection::
 {
     INFO_COLLECTION TaskInfo ti("~Collection");
     clear();
-
-
-    for (const pBlock b: _to_remove)
-    {
-        if (!b.unique ())
-            TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b.use_count ());
-    }
 }
 
 
@@ -78,10 +68,10 @@ void Collection::
         clear()
 {
     BlockCache::cache_t C = cache_->clear ();
-    VERBOSE_COLLECTION {
+    INFO_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);
-        BOOST_FOREACH (const BlockCache::cache_t::value_type& b, C)
+        for (const BlockCache::cache_t::value_type& b : C)
         {
             TaskInfo(format("%s") % rr(b.first));
         }
@@ -89,11 +79,7 @@ void Collection::
         TaskInfo("of which recent count %u", C.size ());
     }
 
-    for (const BlockCache::cache_t::value_type& v: C)
-    {
-        if (!v.second.unique ())
-            _to_remove.push_back (v.second);
-    }
+    failed_allocation_ = false;
 }
 
 
@@ -109,7 +95,7 @@ void Collection::
 
     boost::unordered_set<Reference> blocksToPoke;
 
-    BOOST_FOREACH(const BlockCache::cache_t::value_type& b, cache)
+    for (const BlockCache::cache_t::value_type& b : cache)
     {
         Block* block = b.second.get();
         if (block->frame_number_last_used == _frame_counter)
@@ -121,14 +107,14 @@ void Collection::
         {
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
-//            VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
+//            INFO_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
             //block->glblock->delete_texture ();
         }
     }
 
     boost::unordered_set<Reference> blocksToPoke2;
 
-    BOOST_FOREACH(const Reference& r, blocksToPoke)
+    for (const Reference& r : blocksToPoke)
     {
         // poke blocks that are likely to be needed soon
 
@@ -159,7 +145,7 @@ void Collection::
     }
 
 
-    BOOST_FOREACH(const Reference& r, blocksToPoke2)
+    for (const Reference& r : blocksToPoke2)
     {
         auto i = cache.find (r);
         if (i != cache.end ())
@@ -168,22 +154,6 @@ void Collection::
 
 
     runGarbageCollection(false);
-    decltype(_to_remove) delayremoval;
-
-    for(const toremove_t::value_type& b : _to_remove)
-    {
-        if (b.unique ())
-        {
-//            Log("Released block %s") % b->getRegion());
-            _up_for_grabs.push_back (b);
-        }
-        else
-        {
-            delayremoval.push_back (b);
-        }
-    }
-
-    _to_remove.swap (delayremoval);
 
     _frame_counter++;
 }
@@ -220,31 +190,99 @@ pBlock Collection::
     if (block)
         return block;
 
-    Render::pGlBlock reuse;
-    if (!_up_for_grabs.empty ())
+    createMissingBlocks(Render::RenderSet::references_t{ref});
+
+    return cache_->find( ref );
+}
+
+
+void Collection::
+         createMissingBlocks(const Render::RenderSet::references_t& R)
+{
+    Render::RenderSet::references_t missing;
+
     {
-        reuse = _up_for_grabs.back ()->glblock;
-        _up_for_grabs.pop_back ();
+        BlockCache::cache_t cache = this->cache ()->clone ();
+        for (const Reference& r : R)
+            if (cache.find(r) == cache.end())
+                missing.insert (r);
     }
 
-    block = block_factory_->createBlock (ref, reuse);
-
-    if (block)
+    if (missing.empty ())
     {
-        block_initializer_->initBlock(block);
+        // Nothing to do
+        return;
+    }
+
+    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks %d new", missing.size());
+
+    auto w = block_textures_.write ();
+    std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(missing.size());
+    int need_more = missing.size() - missing_textures.size ();
+    if (need_more)
+    {
+        // Only grow capacity here, possibly shrink when running garbage collection after each frame
+        w->setCapacityHint (w->getCapacity () + need_more);
+    }
+
+    auto T = w->getUnusedTextures(need_more);
+    w.unlock ();
+    for (GlTexture::ptr& t : T)
+        missing_textures.push_back (t);
+
+    std::vector<pBlock> blocks_to_init;
+    blocks_to_init.reserve (missing.size());
+
+    for (const Reference& ref : missing )
+    {
+        if (missing_textures.empty ()) {
+            failed_allocation_ = true;
+            return;
+        }
+
+        pBlock block = block_factory_->createBlock (ref, missing_textures.back ());
+        if (block)
+        {
+            missing_textures.pop_back ();
+            blocks_to_init.push_back (block);
+        }
+    }
+
+    block_initializer_->initBlocks(blocks_to_init);
+
+    for (const pBlock& block : blocks_to_init)
+    {
         block->frame_number_last_used = _frame_counter;
-        EXCEPTION_ASSERT(block->visualization_params ());
         cache_->insert (block);
     }
-
-    return block;
 }
 
 
 int Collection::
         runGarbageCollection(bool aggressive)
 {
+    {
+        // Make sure this global block covering everything is available to provide a background color
+        pBlock b = getBlock(entireHeightmap ());
+        b->frame_number_last_used = _frame_counter;
+    }
+
+    Blocks::GarbageCollector gc(cache_);
+    unsigned F = gc.countBlocksUsedThisFrame(_frame_counter);
+    block_textures_->setCapacityHint( F );
+    unsigned max_cache_size = 4*F;
+
+    if (cache_->size() <= max_cache_size)
+        return 0;
+
+    unsigned n_to_release = cache_->size() - max_cache_size;
     int i = 0;
+    for (pBlock b : gc.releaseNOldest( _frame_counter, n_to_release))
+    {
+        removeBlock (b);
+        ++i;
+    }
+
     if (aggressive)
     {
         for (pBlock b : Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (_frame_counter))
@@ -302,7 +340,7 @@ void Collection::
         discardOutside(Signal::Interval I)
 {
     std::list<pBlock> discarded = Blocks::ClearInterval(cache_).discardOutside (I);
-    BOOST_FOREACH(pBlock b, discarded) {
+    for (pBlock b : discarded) {
         removeBlock (b);
     }
 }
@@ -311,7 +349,7 @@ void Collection::
 bool Collection::
         failed_allocation()
 {
-    return block_factory_->failed_allocation();
+    return failed_allocation_;
 }
 
 
@@ -365,8 +403,12 @@ void Collection::
 
     block_layout_ = v;
 
-    block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
-    block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
+    if (visualization_params_)
+    {
+        block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
+        block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
+    }
+    block_textures_.reset(new Render::BlockTextures(block_layout_));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
@@ -386,7 +428,6 @@ void Collection::
     block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
     block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
 
-    block_factory_->set_recently_created_all();
     clear();
 }
 
@@ -429,7 +470,6 @@ void Collection::
         removeBlock (pBlock b)
 {
     cache_->erase(b->reference());
-    _to_remove.push_back( b );
 }
 
 } // namespace Heightmap

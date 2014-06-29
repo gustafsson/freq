@@ -1,7 +1,7 @@
 #include "clearinterval.h"
 #include "clearkernel.h"
-
-#include <boost/foreach.hpp>
+#include "resampletexture.h"
+#include "heightmap/render/glblock.h"
 
 namespace Heightmap {
 namespace Blocks {
@@ -20,7 +20,7 @@ std::list<pBlock> ClearInterval::
     std::list<pBlock> discarded;
 
     BlockCache::cache_t C = cache_->clone();
-    BOOST_FOREACH(BlockCache::cache_t::value_type itr, C)
+    for (BlockCache::cache_t::value_type itr : C)
     {
         pBlock block(itr.second);
         Signal::Interval blockInterval = block->getInterval();
@@ -40,12 +40,13 @@ std::list<pBlock> ClearInterval::
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
                 Region ir = block->getRegion ();
-                float t = I.last / block->block_layout ().targetSampleRate() - ir.a.time;
-
-                auto bd = block->block_data();
-
-                ::blockClearPart( bd->cpu_copy,
-                              ceil(t * block->sample_rate ()) );
+                ResampleTexture rt(block->glblock->glTexture ()->getOpenGlTextureId ());
+                ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
+                GlFrameBuffer::ScopeBinding sb = rt.enable(A);
+                float t = I.last / block->block_layout ().targetSampleRate();
+                A.x1 = t;
+                rt.drawColoredArea (A, 0.f);
+                (void)sb; // RAII
             }
         }
     }

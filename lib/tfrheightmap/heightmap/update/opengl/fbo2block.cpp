@@ -22,16 +22,78 @@ Fbo2Block::Fbo2Block (pBlock block)
       block(block),
       glblock(block->glblock)
 {
-    // Create new texture
-//    glblock.reset(new GlBlock(block->block_layout(), block->getRegion().time (), block->getRegion().scale ()));
+    // Draw straight onto glblock
     fbo.reset (new GlFrameBuffer(glblock->glTexture ()->getOpenGlTextureId ()));
+
+
+//    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+//                           GL_TEXTURE_2D, tex1, 0);
+//    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
+//                           GL_TEXTURE_2D, tex2, 0);
+//    glDrawBuffer(GL_COLOR_ATTACHMENT1);
+//    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+//                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    // Draw to fbo, copy to glblock
+    // Create new texture
+/*    unsigned tex_;
+    glGenTextures(1, &tex_);
+    glBindTexture(GL_TEXTURE_2D, tex_);
+
+    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    int w = block->block_layout().texels_per_row();
+    int h =  block->block_layout().texels_per_column ();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                 w, h, 0,
+                 GL_RED, GL_FLOAT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    fbo.reset (new GlFrameBuffer(tex_));
+
+    glCopyImageSubData();*/
+
+    {
+//        glCopyImageSubData​(glblock->glTexture ()->getOpenGlTextureId (), GL_TEXTURE_2D​,
+//                                    0​, 0​, 0​, 0​,
+//                                    fbo_->getGlTexture()​, GL_TEXTURE_2D,
+//                                    0​, 0​, 0, 0​,
+//                                    w, h, 1);
+//        unsigned vbo=0;
+//        glGenBuffers (1, &vbo);
+//        struct vertex_format {
+//            float x, y, u, v;
+//        };
+
+//        float vertices[] = {
+//            0, 0, 0, 0,
+//            0, 1, 0, 1,
+//            1, 0, 1, 0,
+//            1, 1, 1, 1,
+//        };
+
+//        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+//        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+
+//        glEnableClientState(GL_VERTEX_ARRAY);
+//        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+//        glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
+//        glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+
+//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
+
+//        glDeleteBuffers (1, &vbo);
+    }
 
     // Copy from texture to own fbo
 //    {
 //        GlFrameBuffer fbo(block->glblock->glTexture ()->getOpenGlTextureId ());
-//        fbo.bindFrameBuffer ();
+//        fbo_->bindFrameBuffer ();
 //        grabToTexture(glblock->glTexture());
-//        fbo.unbindFrameBuffer ();
+//        fbo_->unbindFrameBuffer ();
 //    }
 }
 
@@ -47,14 +109,11 @@ Fbo2Block::~Fbo2Block()
 //        grabToTexture(block->glblock->glVertTexture());
 //        fbo->unbindFrameBuffer ();
 
-        // Discard previous glblock ... wrong thread ... could also grabToTexture into oldglblock
-        fbo->bindFrameBuffer ();
-        grabToTexture(glblock->glVertTexture());
-        fbo->unbindFrameBuffer ();
+        //fbo->bindFrameBuffer ();
+        //grabToTexture(glblock->glVertTexture());
+        //fbo->unbindFrameBuffer ();
 //        glFinish ();
 //        block->glblock = glblock;
-
-        block->discard_new_block_data ();
     } catch (...) {
         Heightmap::UncaughtException::handle_exception(boost::current_exception());
     }
@@ -66,8 +125,6 @@ GlFrameBuffer::ScopeBinding Fbo2Block::
     GlException_CHECK_ERROR ();
 
     GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding ();
-//        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-//        GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, nScales*2) );
 
     Region br = block->getRegion ();
     BlockLayout block_layout = block->block_layout ();

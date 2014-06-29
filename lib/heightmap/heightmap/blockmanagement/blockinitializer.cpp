@@ -1,6 +1,5 @@
 #include "blockinitializer.h"
 #include "blockfactory.h"
-#include "merge/merger.h"
 #include "merge/mergertexture.h"
 
 #include "tasktimer.h"
@@ -25,30 +24,22 @@ BlockInitializer::
       visualization_params_(vp),
       cache_(c)
 {
+#ifdef DO_MERGE
     merger_.reset( new Merge::MergerTexture(cache_, bl) );
+#else
+    bool disable_merge = true;
+    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
+#endif
 }
 
 
 void BlockInitializer::
-        initBlock( pBlock block )
+        initBlocks( const std::vector<pBlock>& blocks )
 {
-    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
+    TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % blocks.size ());
+    //TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
 
-#ifdef DO_MERGE
-//    Blocks::Merger(cache_).fillBlockFromOthers (block);
-    merger_->fillBlockFromOthers (block);
-#else
-    {
-        GlFrameBuffer fbo(block->glblock->glTexture ()->getOpenGlTextureId ());
-        fbo.bindFrameBuffer ();
-        float v[4];
-        glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
-        glClearColor (0,0,0,1);
-        glClear (GL_COLOR_BUFFER_BIT);
-        glClearColor (v[0],v[1],v[2],v[3]);
-        fbo.unbindFrameBuffer ();
-    }
-#endif
+    merger_->fillBlocksFromOthers (blocks);
 }
 
 } // namespace BlockManagement
@@ -87,7 +78,8 @@ void BlockInitializer::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        pBlock block = BlockFactory(bl, vp).createBlock(r);
+        GlTexture::ptr tex(new GlTexture(128,128));
+        pBlock block = BlockFactory(bl, vp).createBlock(r, tex);
         block_initializer.initBlock (block);
         cache->insert (block);
 
@@ -95,7 +87,7 @@ void BlockInitializer::
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom ());
+        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), tex);
         block_initializer.initBlock (block3);
         cache->insert (block3);
 

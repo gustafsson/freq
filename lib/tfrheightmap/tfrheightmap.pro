@@ -19,14 +19,12 @@ SOURCES += \
     heightmap/*.cpp \
     heightmap/tfrmappings/*.cpp \
     heightmap/update/*.cpp \
-    heightmap/update/cpu/*.cpp \
     heightmap/update/opengl/*.cpp \
 
 HEADERS += \
     heightmap/*.h \
     heightmap/tfrmappings/*.h \
     heightmap/update/*.h \
-    heightmap/update/cpu/*.h \
     heightmap/update/opengl/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal ../tfr ../justmisc ../heightmap

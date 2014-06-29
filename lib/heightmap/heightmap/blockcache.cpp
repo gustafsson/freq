@@ -3,8 +3,6 @@
 
 #include "tasktimer.h"
 
-#include <boost/foreach.hpp>
-
 using namespace std;
 
 namespace Heightmap {
@@ -86,7 +84,9 @@ BlockCache::cache_t BlockCache::
 {
     lock_guard<mutex> l(mutex_);
 
-    return cache_;
+    BlockCache::cache_t C = cache_;
+
+    return C;
 }
 
 
