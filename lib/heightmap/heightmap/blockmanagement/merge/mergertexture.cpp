@@ -106,8 +106,12 @@ void MergerTexture::
     glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
     glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
+    cache_clone = cache_->clone();
+
     for (pBlock b : blocks)
         fillBlockFromOthersInternal (b);
+
+    cache_clone.clear ();
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -131,75 +135,55 @@ void MergerTexture::
 {
     INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
 
-    const Reference& ref = block->reference ();
-    Intervals things_to_update = block->getInterval ();
-    std::vector<pBlock> gib = BlockQuery(cache_).getIntersectingBlocks ( things_to_update.spannedInterval(), false, 0 );
-
-    const Region& r = block->getRegion ();
+    Region r = block->getRegion ();
 
     glClear( GL_COLOR_BUFFER_BIT );
+
     glMatrixMode (GL_PROJECTION);
-    glLoadIdentity();
+    glLoadIdentity ();
     glOrtho(r.a.time, r.b.time, r.a.scale, r.b.scale, -10,10);
-
     glMatrixMode ( GL_MODELVIEW );
-    glLoadIdentity();
-
-    int merge_levels = 10;
 
     if (!disable_merge_)
-    { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_->size(), merge_levels);
-
-    for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
-        VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
+        class isRegionLarger{
+        public:
+            bool operator()(const pBlock& a, const pBlock& b) const {
+                const Region ra = a->getRegion ();
+                const Region rb = b->getRegion ();
+                return ra.time ()*ra.scale () > rb.time ()*rb.scale ();
+            }
+        };
 
-        std::vector<pBlock> next;
-        BOOST_FOREACH ( const pBlock& bl, gib ) try
+        // Largest first
+        std::set<pBlock, isRegionLarger> smaller;
+        pBlock smallest_larger;
+
+        for( const auto& c : cache_clone )
         {
-            // The switch from high resolution blocks to low resolution blocks (or
-            // the other way around) should be as invisible as possible. Therefor
-            // the contents should be stubbed from whatever contents the previous
-            // blocks already have, even if the contents are out-of-date.
-            //
-            Interval v = bl->getInterval ();
+            const pBlock& bl = c.second;
 
-            // Check if these samples are still considered for update
-            if ( (things_to_update & v).count() <= 1)
+            const Region& r2 = bl->getRegion ();
+            if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
+                continue;
+            if (r2.a.time >= r.b.time || r2.b.time <= r.a.time )
                 continue;
 
-            int d = bl->reference().log2_samples_size[0];
-            d -= ref.log2_samples_size[0];
-            d += bl->reference().log2_samples_size[1];
-            d -= ref.log2_samples_size[1];
-
-            if (d==merge_level || -d==merge_level)
+            if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale && r2.a.time <= r.a.time && r2.b.time >= r.b.time)
             {
-                const Region& r2 = bl->getRegion ();
-                if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale )
-                {
-                    // 'bl' covers all scales in 'block' (not necessarily all time samples though)
-                    if (mergeBlock( *bl ))
-                        things_to_update -= v;
-                }
-                else if (bl->reference ().log2_samples_size[1] + 1 == ref.log2_samples_size[1])
-                {
-                    // mergeBlock makes sure that their scales overlap more or less
-                    //mergeBlock( block, bl, 0 ); takes time
-                }
-                else
-                {
-                    // don't bother with things that doesn't match very well
-                }
+                if (!smallest_larger || isRegionLarger()(smallest_larger, bl))
+                    smallest_larger = bl;
             }
             else
-            {
-                next.push_back ( bl );
-            }
-        } catch (const shared_state<BlockData>::lock_failed&) {}
+                smaller.insert (bl);
+        }
 
-        gib = next;
-    }
+        if (smallest_larger)
+            mergeBlock( *smallest_larger );
+
+        // Merge everything smaller than 'block' in order from largest to smallest
+        for( pBlock bl : smaller )
+            mergeBlock( *bl );
     }
 
     {
@@ -219,17 +203,16 @@ bool MergerTexture::
     if (!inBlock.glblock || !inBlock.glblock->has_texture ())
         return false;
 
-    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
 
     Region ri = inBlock.getRegion ();
-    glPushMatrix ();
+    glLoadIdentity();
     glTranslatef (ri.a.time, ri.a.scale, 0);
     glScalef (ri.time (), ri.scale (), 1.f);
 
     glBindTexture( GL_TEXTURE_2D, inBlock.glblock->glTexture ()->getOpenGlTextureId ());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
     glBindTexture(GL_TEXTURE_2D, 0);
-    glPopMatrix ();
 
     return true;
 }
