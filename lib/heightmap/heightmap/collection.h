@@ -142,7 +142,6 @@ public:
 
 
     pBlock      getBlock( const Reference& ref );
-    // Doesn't need lock
     void        createMissingBlocks(const Render::RenderSet::references_t& R);
     int         runGarbageCollection( bool aggressive=false );
 
