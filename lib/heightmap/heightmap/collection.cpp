@@ -62,13 +62,6 @@ Collection::
 {
     INFO_COLLECTION TaskInfo ti("~Collection");
     clear();
-
-
-    for (const pBlock b: _to_remove)
-    {
-        if (!b.unique ())
-            TaskInfo(boost::format("Error. glblock %s is in use %d") % b->getRegion () % b.use_count ());
-    }
 }
 
 
@@ -85,12 +78,6 @@ void Collection::
         }
 
         TaskInfo("of which recent count %u", C.size ());
-    }
-
-    for (const BlockCache::cache_t::value_type& v: C)
-    {
-        if (!v.second.unique ())
-            _to_remove.push_back (v.second);
     }
 
     failed_allocation_ = false;
@@ -168,24 +155,6 @@ void Collection::
 
 
     runGarbageCollection(false);
-    decltype(_to_remove) delayremoval;
-
-    for(const toremove_t::value_type& b : _to_remove)
-    {
-        if (b.unique ())
-        {
-//            Log("Released block %s") % b->getRegion());
-            _up_for_grabs.push_back (b);
-        }
-        else
-        {
-            delayremoval.push_back (b);
-        }
-    }
-
-    _to_remove.swap (delayremoval);
-
-    _up_for_grabs.clear ();
 
     _frame_counter++;
 }
@@ -502,7 +471,6 @@ void Collection::
         removeBlock (pBlock b)
 {
     cache_->erase(b->reference());
-    _to_remove.push_back( b );
 }
 
 } // namespace Heightmap

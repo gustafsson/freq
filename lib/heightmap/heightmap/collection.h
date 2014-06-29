@@ -167,9 +167,6 @@ private:
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
 
-    typedef std::vector<pBlock> toremove_t;
-    toremove_t      _to_remove;  /// Need to ensure that the right memory is released from the right thread
-    toremove_t      _up_for_grabs;
     bool failed_allocation_ = false;
 
     BlockCache::ptr cache_;
