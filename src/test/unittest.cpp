@@ -69,6 +69,7 @@ int UnitTest::
 
         trace_perf::add_database_path("../lib/backtrace/trace_perf");
         trace_perf::add_database_path("../lib/gpumisc/trace_perf");
+        trace_perf::add_database_path("../lib/heightmap/trace_perf");
 
         RUNTEST(BacktraceTest::UnitTest);
         RUNTEST(JustMisc::UnitTest);

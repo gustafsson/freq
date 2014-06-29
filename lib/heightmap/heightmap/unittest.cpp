@@ -5,6 +5,7 @@
 #include "heightmap/blockmanagement/blockfactory.h"
 #include "heightmap/blockmanagement/blockinitializer.h"
 #include "heightmap/render/renderset.h"
+#include "heightmap/render/blocktextures.h"
 
 // common backtrace tools
 #include "timer.h"
@@ -42,6 +43,7 @@ int UnitTest::
         RUNTEST(Heightmap::BlockManagement::BlockFactory);
         RUNTEST(Heightmap::BlockManagement::BlockInitializer);
         RUNTEST(Heightmap::BlockLayout);
+        RUNTEST(Heightmap::Render::BlockTextures);
         RUNTEST(Heightmap::Render::RenderSet);
         RUNTEST(Heightmap::VisualizationParams);
 
