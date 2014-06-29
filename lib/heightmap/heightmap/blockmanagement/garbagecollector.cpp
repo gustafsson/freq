@@ -55,7 +55,6 @@ unsigned GarbageCollector::
         countBlocksUsedThisFrame(unsigned frame_counter)
 {
     const BlockCache::cache_t C = cache_->clone (); // copy
-    INFO TaskTimer tt("GarbageCollector::countBlocksUsedThisFrame");
 
     unsigned i = 0;
     for (const BlockCache::cache_t::value_type& v : C)

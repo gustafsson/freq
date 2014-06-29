@@ -26,16 +26,13 @@ BlockFactory::
       _free_memory(availableMemoryForSingleAllocation()),
       created_count_(0)
 {
+    EXCEPTION_ASSERT(visualization_params_);
 }
 
 
 pBlock BlockFactory::
         createBlock( const Reference& ref, GlTexture::ptr tex )
 {
-    // A precautious wrapper to getAllocatedBlock which is a precautious wrapper to attempt
-
-    EXCEPTION_ASSERT(visualization_params_);
-
     TIME_BLOCKFACTORY TaskTimer tt(format("New block %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
     pBlock block( new Block(
@@ -45,8 +42,6 @@ pBlock BlockFactory::
     block->glblock.reset (new Render::GlBlock(tex));
 
     //setDummyValues(block);
-
-    EXCEPTION_ASSERT( block );
 
     return block;
 }

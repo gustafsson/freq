@@ -7,8 +7,10 @@
 #include "tasktimer.h"
 #include "computationkernel.h"
 #include "gltextureread.h"
-#include "resampletexture.h"
+#include "glframebuffer.h"
 #include "datastoragestring.h"
+#include "GlException.h"
+#include "glPushContext.h"
 
 #include <QGLContext>
 
@@ -27,10 +29,12 @@ namespace BlockManagement {
 namespace Merge {
 
 MergerTexture::
-        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout)
+        MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
     :
       cache_(cache),
-      tex_(0)
+      block_layout_(block_layout),
+      tex_(0),
+      disable_merge_(disable_merge)
 {
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
@@ -45,12 +49,9 @@ MergerTexture::
                  hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    rt.reset(new ResampleTexture(tex_));
+    fbo_.reset (new GlFrameBuffer(tex_));
 
-    glGenBuffers (1, &pbo_);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo_);
-    glBufferData (GL_PIXEL_PACK_BUFFER, block_layout.texels_per_block ()*sizeof(float), NULL, GL_DYNAMIC_READ);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    glGenBuffers (1, &vbo_);
 }
 
 
@@ -60,15 +61,81 @@ MergerTexture::
     glDeleteTextures (1, &tex_);
     tex_ = 0;
 
-    glDeleteBuffers (1, &pbo_);
-    pbo_ = 0;
+    glDeleteBuffers (1, &vbo_);
+    vbo_ = 0;
 }
 
 
 void MergerTexture::
-        fillBlockFromOthers( pBlock block )
+        fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
-    INFO_COLLECTION TaskTimer tt(boost::format("Stubbing new block %s") % block->getRegion ());
+    GlException_CHECK_ERROR();
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    float v[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
+    glClearColor (0,0,0,1);
+
+    auto fboBinding = fbo_->getScopeBinding ();
+
+    glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
+    glMatrixMode (GL_PROJECTION);
+    glPushMatrix ();
+    glMatrixMode (GL_MODELVIEW);
+    glPushMatrix ();
+
+    glPushAttribContext pa(GL_ENABLE_BIT);
+    glDisable (GL_DEPTH_TEST);
+    glDisable (GL_BLEND);
+    glDisable (GL_CULL_FACE);
+    glEnable (GL_TEXTURE_2D);
+
+    struct vertex_format {
+        float x, y, u, v;
+    };
+
+    float vertices[] = {
+        0, 0, 0, 0,
+        0, 1, 0, 1,
+        1, 0, 1, 0,
+        1, 1, 1, 1,
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+
+    for (pBlock b : blocks)
+        fillBlockFromOthersInternal (b);
+
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glMatrixMode (GL_PROJECTION);
+    glPopMatrix ();
+    glMatrixMode (GL_MODELVIEW);
+    glPopMatrix ();
+
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3] );
+    glClearColor (v[0],v[1],v[2],v[3]);
+
+    (void)fboBinding; // RAII
+    GlException_CHECK_ERROR();
+}
+
+
+void MergerTexture::
+        fillBlockFromOthersInternal( pBlock block )
+{
+    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
 
     const Reference& ref = block->reference ();
     Intervals things_to_update = block->getInterval ();
@@ -76,14 +143,19 @@ void MergerTexture::
 
     const Region& r = block->getRegion ();
 
-    ResampleTexture::Area out(r.a.time, r.a.scale, r.b.time, r.b.scale);
+    glClear( GL_COLOR_BUFFER_BIT );
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(r.a.time, r.b.time, r.a.scale, r.b.scale, -10,10);
 
-    GlFrameBuffer::ScopeBinding sb = rt->enable (out);
-    rt->clear ();
+    glMatrixMode ( GL_MODELVIEW );
+    glLoadIdentity();
 
     int merge_levels = 10;
 
+    if (!disable_merge_)
     { VERBOSE_COLLECTION TaskTimer tt2("Checking %u blocks out of %u blocks, %d times", gib.size(), cache_->size(), merge_levels);
+
     for (int merge_level=0; merge_level<merge_levels && things_to_update; ++merge_level)
     {
         VERBOSE_COLLECTION TaskTimer tt("%d, %s", merge_level, things_to_update.toString().c_str());
@@ -153,10 +225,17 @@ bool MergerTexture::
     if (!inBlock.glblock || !inBlock.glblock->has_texture ())
         return false;
 
-    Region ri = inBlock.getRegion ();
-    ResampleTexture::Area in(ri.a.time, ri.a.scale, ri.b.time, ri.b.scale);
+    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
 
-    (*rt)(inBlock.glblock->glTexture ().get (), in); // Paint new contents over it
+    Region ri = inBlock.getRegion ();
+    glPushMatrix ();
+    glTranslatef (ri.a.time, ri.a.scale, 0);
+    glScalef (ri.time (), ri.scale (), 1.f);
+
+    glBindTexture( GL_TEXTURE_2D, inBlock.glblock->glTexture ()->getOpenGlTextureId ());
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glPopMatrix ();
 
     return true;
 }

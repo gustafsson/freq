@@ -30,9 +30,6 @@
 //#define INFO_COLLECTION
 #define INFO_COLLECTION if(0)
 
-//#define VERBOSE_COLLECTION
-#define VERBOSE_COLLECTION if(0)
-
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)
 
@@ -79,7 +76,7 @@ void Collection::
         clear()
 {
     BlockCache::cache_t C = cache_->clear ();
-    VERBOSE_COLLECTION {
+    INFO_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);
         BOOST_FOREACH (const BlockCache::cache_t::value_type& b, C)
@@ -124,7 +121,7 @@ void Collection::
         {
             // This block isn't used but it has allocated a texture in OpenGL
             // memory that can easily recreate as soon as it is needed.
-//            VERBOSE_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
+//            INFO_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
             //block->glblock->delete_texture ();
         }
     }
@@ -234,8 +231,6 @@ pBlock Collection::
 void Collection::
          createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks");
-
     Render::RenderSet::references_t missing;
 
     {
@@ -251,6 +246,8 @@ void Collection::
         return;
     }
 
+    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks %d new", missing.size());
+
     auto w = block_textures_.write ();
     std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(missing.size());
     int need_more = missing.size() - missing_textures.size ();
@@ -265,6 +262,9 @@ void Collection::
     for (GlTexture::ptr& t : T)
         missing_textures.push_back (t);
 
+    std::vector<pBlock> blocks_to_init;
+    blocks_to_init.reserve (missing.size());
+
     for (const Reference& ref : missing )
     {
         if (missing_textures.empty ()) {
@@ -273,14 +273,19 @@ void Collection::
         }
 
         pBlock block = block_factory_->createBlock (ref, missing_textures.back ());
-        missing_textures.pop_back ();
-
         if (block)
         {
-            block_initializer_->initBlock(block);
-            block->frame_number_last_used = _frame_counter;
-            cache_->insert (block);
+            missing_textures.pop_back ();
+            blocks_to_init.push_back (block);
         }
+    }
+
+    block_initializer_->initBlocks(blocks_to_init);
+
+    for (const pBlock& block : blocks_to_init)
+    {
+        block->frame_number_last_used = _frame_counter;
+        cache_->insert (block);
     }
 }
 
@@ -430,8 +435,11 @@ void Collection::
 
     block_layout_ = v;
 
-    block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
-    block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
+    if (visualization_params_)
+    {
+        block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
+        block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
+    }
     block_textures_.reset(new Render::BlockTextures(block_layout_));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();

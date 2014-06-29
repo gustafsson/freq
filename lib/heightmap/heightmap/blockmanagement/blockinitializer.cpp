@@ -24,30 +24,22 @@ BlockInitializer::
       visualization_params_(vp),
       cache_(c)
 {
+#ifdef DO_MERGE
     merger_.reset( new Merge::MergerTexture(cache_, bl) );
+#else
+    bool disable_merge = true;
+    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
+#endif
 }
 
 
 void BlockInitializer::
-        initBlock( pBlock block )
+        initBlocks( const std::vector<pBlock>& blocks )
 {
-    TIME_GETBLOCK TaskTimer tt(format("getBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
+    TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % blocks.size ());
+    //TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
 
-#ifdef DO_MERGE
-//    Blocks::Merger(cache_).fillBlockFromOthers (block);
-    merger_->fillBlockFromOthers (block);
-#else
-    {
-        GlFrameBuffer fbo(block->glblock->glTexture ()->getOpenGlTextureId ());
-        fbo.bindFrameBuffer ();
-        float v[4];
-        glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
-        glClearColor (0,0,0,1);
-        glClear (GL_COLOR_BUFFER_BIT);
-        glClearColor (v[0],v[1],v[2],v[3]);
-        fbo.unbindFrameBuffer ();
-    }
-#endif
+    merger_->fillBlocksFromOthers (blocks);
 }
 
 } // namespace BlockManagement

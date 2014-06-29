@@ -24,7 +24,8 @@ public:
     BlockInitializer(BlockInitializer const&) = delete;
     BlockInitializer& operator=(BlockInitializer const&) = delete;
 
-    void      initBlock( pBlock );
+    void      initBlock( pBlock b ) { initBlocks( std::vector<pBlock>{b}); }
+    void      initBlocks( const std::vector<pBlock>& );
 
 private:
     BlockLayout block_layout_;
