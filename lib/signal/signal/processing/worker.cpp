@@ -341,7 +341,7 @@ void Worker::
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
-#ifdef _DEBUG
+    if (!DetectGdb::is_running_through_gdb() && !DetectGdb::was_started_through_gdb ())
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
 
@@ -359,7 +359,6 @@ void Worker::
 
         PrettifySegfault::EnableDirectPrint (true);
     }
-#endif
 
     // It should store information about a crashed task (std::exception) and stop execution. (1)
     {
