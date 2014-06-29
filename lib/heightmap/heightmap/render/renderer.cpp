@@ -366,30 +366,7 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::createMissingBlocks");
-
-
-    Render::RenderSet::references_t missing;
-
-    {
-        BlockCache::cache_t cache = collection.raw ()->cache ()->clone ();
-        BOOST_FOREACH(const Reference& r, R) {
-            if (cache.find(r) == cache.end())
-                missing.insert (r);
-        }
-    }
-
-    if (!missing.empty ())
-    {
-        auto c = collection.write ();
-
-        BOOST_FOREACH(const Reference& r, missing) {
-            // Create blocks
-            pBlock b = c->getBlock (r);
-            if (!b)
-                TaskInfo("Failed to create a block");
-        }
-    }
+    collection.raw ()->createMissingBlocks (R);
 }
 
 

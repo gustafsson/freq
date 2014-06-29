@@ -21,12 +21,14 @@ class BlockTextures
 public:
     typedef shared_state<BlockTextures> ptr;
 
-    BlockTextures(BlockLayout l);
+    BlockTextures(BlockLayout bl);
+
 
     /**
      * @brief setCapacityHint
      * The actual capacity will be above 'c' and below '3*c'.
-     * When the capacity is out of range
+     * When the capacity is out of range the new capacity will be set to '2*c'.
+     *
      * @param c
      */
     void setCapacityHint(unsigned c);

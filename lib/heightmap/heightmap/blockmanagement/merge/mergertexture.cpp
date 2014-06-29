@@ -169,6 +169,7 @@ bool MergerTexture::
 #include "log.h"
 #include "heightmap/render/glblock.h"
 #include "cpumemorystorage.h"
+#include "heightmap/render/blocktextures.h"
 #include <QApplication>
 #include <QGLWidget>
 
@@ -202,9 +203,12 @@ void MergerTexture::
         BlockLayout bl(4,4,4);
         VisualizationParams::ptr vp(new VisualizationParams);
 
+        Render::BlockTextures block_textures(bl);
+        block_textures.setCapacityHint (2);
+
         // VisualizationParams has only things that have nothing to do with MergerTexture.
         pBlock block(new Block(ref,bl,vp));
-        block->glblock.reset( new Render::GlBlock( bl, block->getRegion().time(), block->getRegion().scale() ));
+        block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
 
@@ -226,8 +230,7 @@ void MergerTexture::
                                          .5, 0, 0, .5};
 
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
-            const Region& r = block->getRegion();
-            block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
+            block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
             block->glblock->updateTexture (srcdata, 16);
 
             cache->insert(block);
@@ -251,8 +254,7 @@ void MergerTexture::
                                           13, 14, 15, .16};
 
             pBlock block(new Block(ref.right (),bl,vp));
-            const Region& r = block->getRegion();
-            block->glblock.reset( new Render::GlBlock( bl, r.time(), r.scale() ));
+            block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
             block->glblock->updateTexture (srcdata,16);
 
             cache->insert(block);

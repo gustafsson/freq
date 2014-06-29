@@ -5,7 +5,6 @@
 
 // gpumisc
 #include "datastorage.h"
-#include "shared_state.h"
 
 #ifndef SAWE_NO_MUTEX
 #include <QMutex>

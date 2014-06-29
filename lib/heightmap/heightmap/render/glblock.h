@@ -20,29 +20,18 @@ namespace Render {
 class GlBlock
 {
 public:
-    GlBlock( BlockLayout block_size, float width, float height );
-    ~GlBlock();
+    GlBlock( GlTexture::ptr tex );
 
-    void                reset( float width, float height );
+    void            draw( unsigned vbo_size );
 
-    GlTexture::ptr      glTexture();
-    void                updateTexture( float*p, int n );
-
-    bool has_texture() const;
-    void delete_texture();
-
-    void draw( unsigned vbo_size );
-
-    unsigned allocated_bytes_per_element() const;
+    GlTexture::ptr  glTexture();
+    void            updateTexture( float*p, int n );
+    bool            has_texture() const;
+    unsigned        allocated_bytes_per_element() const;
 
 private:
-    void create_texture();
-
-    const BlockLayout block_size_;
-
+    GlTexture::ptr tex_;
     unsigned _tex_height;
-
-    float _world_width, _world_height;
 };
 
 } // namespace Render

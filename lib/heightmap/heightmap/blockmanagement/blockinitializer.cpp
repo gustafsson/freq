@@ -86,7 +86,8 @@ void BlockInitializer::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        pBlock block = BlockFactory(bl, vp).createBlock(r);
+        GlTexture::ptr tex(new GlTexture(128,128));
+        pBlock block = BlockFactory(bl, vp).createBlock(r, tex);
         block_initializer.initBlock (block);
         cache->insert (block);
 
@@ -94,7 +95,7 @@ void BlockInitializer::
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom ());
+        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), tex);
         block_initializer.initBlock (block3);
         cache->insert (block3);
 

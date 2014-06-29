@@ -15,6 +15,9 @@
 // Limit the amount of memory used for caches by memoryUsedForCaches < freeMemory*MAX_FRACTION_FOR_CACHES
 #define MAX_FRACTION_FOR_CACHES (1.f/8.f)
 
+#define INFO
+//#define INFO if(0)
+
 using namespace boost;
 
 namespace Heightmap {
@@ -45,6 +48,20 @@ GarbageCollector::
     :
       cache_(cache)
 {
+}
+
+
+unsigned GarbageCollector::
+        countBlocksUsedThisFrame(unsigned frame_counter)
+{
+    const BlockCache::cache_t C = cache_->clone (); // copy
+    INFO TaskTimer tt("GarbageCollector::countBlocksUsedThisFrame");
+
+    unsigned i = 0;
+    for (const BlockCache::cache_t::value_type& v : C)
+        i += frame_counter == v.second->frame_number_last_used;
+
+    return i;
 }
 
 
@@ -84,32 +101,13 @@ pBlock GarbageCollector::
 std::vector<pBlock> GarbageCollector::
         runUntilComplete(unsigned frame_counter)
 {
-    std::vector<pBlock> R;
-
-    size_t free_memory = availableMemoryForSingleAllocation();
     BlockCache::cache_t cacheCopy = cache_->clone();
+    size_t free_memory = availableMemoryForSingleAllocation();
     size_t allocatedMemory = BlockCacheInfo::cacheByteSize (cacheCopy);
 
-    if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
-        return R; // No need to release memory
+    auto sorted = getSorted(frame_counter);
 
-    // Sort with decreasing age
-    std::set<pBlock, std::function<bool(const pBlock&, const pBlock&)>> sorted (
-            [frame_counter](const pBlock& a, const pBlock& b) {
-                unsigned age_a = frame_counter - a->frame_number_last_used;
-                unsigned age_b = frame_counter - b->frame_number_last_used;
-                if (age_a == age_b)
-                    return a < b;
-                return age_a > age_b;
-            }
-    );
-
-    for (auto& v : cacheCopy) {
-        unsigned age = frame_counter - v.second->frame_number_last_used;
-        if (age>1) // Initial filtering
-            sorted.insert (v.second);
-    }
-
+    std::vector<pBlock> R;
     R.reserve (sorted.size ());
 
     // Go from oldest to newest
@@ -131,13 +129,29 @@ std::vector<pBlock> GarbageCollector::
 }
 
 
+std::vector<pBlock> GarbageCollector::
+        releaseNOldest(unsigned frame_counter, unsigned N)
+{
+    auto sorted = getSorted(frame_counter);
+
+    std::vector<pBlock> R;
+    R.reserve (N);
+
+    // Go from oldest to newest
+    for (pBlock b : sorted)
+        if (R.size () < N)
+            R.push_back (b);
+
+    return R;
+}
+
 
 std::vector<pBlock> GarbageCollector::
         releaseAllNotUsedInThisFrame(unsigned frame_counter)
 {
     std::vector<pBlock> R;
     const BlockCache::cache_t C = cache_->clone (); // copy
-    TaskTimer tt("Collection doing garbage collection", C.size());
+    TaskTimer tt("Collection doing garbage collection. Cache size %u", C.size());
     BlockCacheInfo::printCacheSize(C);
 
     for (BlockCache::cache_t::const_iterator itr = C.begin(); itr!=C.end(); itr++ )
@@ -152,6 +166,38 @@ std::vector<pBlock> GarbageCollector::
 
     return R;
 }
+
+
+GarbageCollector::Sorted GarbageCollector::
+        getSorted(unsigned frame_counter)
+{
+    size_t free_memory = availableMemoryForSingleAllocation();
+    BlockCache::cache_t cacheCopy = cache_->clone();
+    size_t allocatedMemory = BlockCacheInfo::cacheByteSize (cacheCopy);
+
+    // Sort with decreasing age
+    GarbageCollector::Sorted sorted (
+            [frame_counter](const pBlock& a, const pBlock& b) {
+                unsigned age_a = frame_counter - a->frame_number_last_used;
+                unsigned age_b = frame_counter - b->frame_number_last_used;
+                if (age_a == age_b)
+                    return a < b;
+                return age_a > age_b;
+            }
+    );
+
+    if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
+        return sorted; // No need to release memory
+
+    for (auto& v : cacheCopy) {
+        unsigned age = frame_counter - v.second->frame_number_last_used;
+        if (age>1) // Initial filtering
+            sorted.insert (v.second);
+    }
+
+    return sorted;
+}
+
 
 } // namespace Block
 } // namespace Heightmap

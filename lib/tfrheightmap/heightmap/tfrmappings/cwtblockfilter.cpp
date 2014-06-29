@@ -138,7 +138,8 @@ void CwtBlockFilter::
 
         Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
         DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        block->glblock.reset( new Render::GlBlock( bl, block->getRegion ().time(), block->getRegion ().scale() ));
+        GlTexture::ptr gltexture(new GlTexture(bl.texels_per_row (), bl.texels_per_column ()));
+        block->glblock.reset( new Render::GlBlock( gltexture ));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;

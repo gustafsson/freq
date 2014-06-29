@@ -49,6 +49,7 @@ Collection::
     cache_( new BlockCache ),
     block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
     block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
+    block_textures_(new Render::BlockTextures(block_layout)),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -94,6 +95,8 @@ void Collection::
         if (!v.second.unique ())
             _to_remove.push_back (v.second);
     }
+
+    failed_allocation_ = false;
 }
 
 
@@ -185,6 +188,8 @@ void Collection::
 
     _to_remove.swap (delayremoval);
 
+    _up_for_grabs.clear ();
+
     _frame_counter++;
 }
 
@@ -220,31 +225,85 @@ pBlock Collection::
     if (block)
         return block;
 
-    Block::pGlBlock reuse;
-    if (!_up_for_grabs.empty ())
+    createMissingBlocks(Render::RenderSet::references_t{ref});
+
+    return cache_->find( ref );
+}
+
+
+void Collection::
+         createMissingBlocks(const Render::RenderSet::references_t& R)
+{
+    VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks");
+
+    Render::RenderSet::references_t missing;
+
     {
-        reuse = _up_for_grabs.back ()->glblock;
-        _up_for_grabs.pop_back ();
+        BlockCache::cache_t cache = this->cache ()->clone ();
+        for (const Reference& r : R)
+            if (cache.find(r) == cache.end())
+                missing.insert (r);
     }
 
-    block = block_factory_->createBlock (ref, reuse);
-
-    if (block)
+    if (missing.empty ())
     {
-        block_initializer_->initBlock(block);
-        block->frame_number_last_used = _frame_counter;
-        EXCEPTION_ASSERT(block->visualization_params ());
-        cache_->insert (block);
+        // Nothing to do
+        return;
     }
 
-    return block;
+    auto w = block_textures_.write ();
+    std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(missing.size());
+    int need_more = missing.size() - missing_textures.size ();
+    if (need_more)
+    {
+        // Only grow capacity here, possibly shrink when running garbage collection after each frame
+        w->setCapacityHint (w->getCapacity () + need_more);
+    }
+
+    auto T = w->getUnusedTextures(need_more);
+    w.unlock ();
+    for (GlTexture::ptr& t : T)
+        missing_textures.push_back (t);
+
+    for (const Reference& ref : missing )
+    {
+        if (missing_textures.empty ()) {
+            failed_allocation_ = true;
+            return;
+        }
+
+        pBlock block = block_factory_->createBlock (ref, missing_textures.back ());
+        missing_textures.pop_back ();
+
+        if (block)
+        {
+            block_initializer_->initBlock(block);
+            block->frame_number_last_used = _frame_counter;
+            cache_->insert (block);
+        }
+    }
 }
 
 
 int Collection::
         runGarbageCollection(bool aggressive)
 {
+    Blocks::GarbageCollector gc(cache_);
+    unsigned F = gc.countBlocksUsedThisFrame(_frame_counter);
+    block_textures_->setCapacityHint( 2*F );
+    unsigned max_cache_size = 4*F;
+
+    if (cache_->size() <= max_cache_size)
+        return 0;
+
+    unsigned n_to_release = cache_->size() - max_cache_size;
     int i = 0;
+    for (pBlock b : gc.releaseNOldest( _frame_counter, n_to_release))
+    {
+        removeBlock (b);
+        ++i;
+    }
+
     if (aggressive)
     {
         for (pBlock b : Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (_frame_counter))
@@ -311,7 +370,7 @@ void Collection::
 bool Collection::
         failed_allocation()
 {
-    return block_factory_->failed_allocation();
+    return failed_allocation_;
 }
 
 
@@ -367,6 +426,7 @@ void Collection::
 
     block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
     block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
+    block_textures_.reset(new Render::BlockTextures(block_layout_));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);

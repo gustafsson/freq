@@ -1,6 +1,10 @@
 #include "blocktextures.h"
 #include "gl.h"
 #include "GlException.h"
+#include "log.h"
+
+//#define INFO
+#define INFO if(0)
 
 namespace Heightmap {
 namespace Render {
@@ -25,11 +29,28 @@ void BlockTextures::
     unsigned target_capacity = c*2;
     if (target_capacity < textures.size ())
     {
-        textures.resize (target_capacity);
+        std::vector<GlTexture::ptr> pick;
+        pick.reserve (target_capacity);
+
+        // Keep all textures that are still in use
+        for (const GlTexture::ptr& p : textures)
+            if (!p.unique ())
+                pick.push_back (p);
+
+        // Keep up to 'target_capacity' textures
+        for (const GlTexture::ptr& p : textures)
+            if (p.unique () && pick.size ()<target_capacity)
+                pick.push_back (p);
+
+        int discarded = textures.size () - pick.size ();
+        INFO Log("BlockTextures: discarding %d textures") % discarded;
+
+        textures.swap (pick);
         return;
     }
 
     int new_textures = target_capacity - textures.size ();
+    INFO Log("BlockTextures: allocating %d new textures") % new_textures;
     GLuint t[new_textures];
     glGenTextures (new_textures, t);
     textures.reserve (target_capacity);
