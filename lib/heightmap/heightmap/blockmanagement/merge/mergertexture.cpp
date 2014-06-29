@@ -40,13 +40,7 @@ MergerTexture::
 
     glGenTextures(1, &tex_);
     glBindTexture(GL_TEXTURE_2D, tex_);
-
-    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-                 block_layout.texels_per_row(), block_layout.texels_per_column (), 0,
-                 hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout.texels_per_row(), block_layout.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     fbo_.reset (new GlFrameBuffer(tex_));
@@ -340,10 +334,13 @@ void MergerTexture::
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
+        float v16 = 7.57812476837;
+        //float v32 = 7.58;
         float expected3[]={   0, 0,    1.5,  3.5,
                               0, 0,    5.5,  7.5,
                               0, 0,    9.5,  11.5,
-                              0, 0,   13.5,  7.58};
+                              0, 0,   13.5,  v16};
+
         data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
