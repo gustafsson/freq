@@ -3,8 +3,6 @@
 
 #include "tasktimer.h"
 
-#include <boost/foreach.hpp>
-
 using namespace std;
 
 namespace Heightmap {

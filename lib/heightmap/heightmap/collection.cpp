@@ -17,7 +17,6 @@
 
 // boost
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/foreach.hpp>
 #include <boost/unordered_set.hpp>
 
 // std
@@ -72,7 +71,7 @@ void Collection::
     INFO_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);
-        BOOST_FOREACH (const BlockCache::cache_t::value_type& b, C)
+        for (const BlockCache::cache_t::value_type& b : C)
         {
             TaskInfo(format("%s") % rr(b.first));
         }
@@ -96,7 +95,7 @@ void Collection::
 
     boost::unordered_set<Reference> blocksToPoke;
 
-    BOOST_FOREACH(const BlockCache::cache_t::value_type& b, cache)
+    for (const BlockCache::cache_t::value_type& b : cache)
     {
         Block* block = b.second.get();
         if (block->frame_number_last_used == _frame_counter)
@@ -115,7 +114,7 @@ void Collection::
 
     boost::unordered_set<Reference> blocksToPoke2;
 
-    BOOST_FOREACH(const Reference& r, blocksToPoke)
+    for (const Reference& r : blocksToPoke)
     {
         // poke blocks that are likely to be needed soon
 
@@ -146,7 +145,7 @@ void Collection::
     }
 
 
-    BOOST_FOREACH(const Reference& r, blocksToPoke2)
+    for (const Reference& r : blocksToPoke2)
     {
         auto i = cache.find (r);
         if (i != cache.end ())
@@ -341,7 +340,7 @@ void Collection::
         discardOutside(Signal::Interval I)
 {
     std::list<pBlock> discarded = Blocks::ClearInterval(cache_).discardOutside (I);
-    BOOST_FOREACH(pBlock b, discarded) {
+    for (pBlock b : discarded) {
         removeBlock (b);
     }
 }

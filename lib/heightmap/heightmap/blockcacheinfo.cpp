@@ -3,8 +3,6 @@
 #include "render/glblock.h"
 #include "tasktimer.h"
 
-#include <boost/foreach.hpp>
-
 
 namespace Heightmap {
 
@@ -19,7 +17,7 @@ unsigned long BlockCacheInfo::
 
     unsigned long sumsize = 0;
 
-    BOOST_FOREACH (const BlockCache::cache_t::value_type& b, cache)
+    for (const BlockCache::cache_t::value_type& b : cache)
         {
         if (b.second->glblock)
             sumsize += b.second->glblock->allocated_bytes_per_element()

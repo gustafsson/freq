@@ -3,8 +3,6 @@
 #include "resampletexture.h"
 #include "heightmap/render/glblock.h"
 
-#include <boost/foreach.hpp>
-
 namespace Heightmap {
 namespace Blocks {
 
@@ -22,7 +20,7 @@ std::list<pBlock> ClearInterval::
     std::list<pBlock> discarded;
 
     BlockCache::cache_t C = cache_->clone();
-    BOOST_FOREACH(BlockCache::cache_t::value_type itr, C)
+    for (BlockCache::cache_t::value_type itr : C)
     {
         pBlock block(itr.second);
         Signal::Interval blockInterval = block->getInterval();

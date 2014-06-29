@@ -14,8 +14,6 @@
 
 #include <QGLContext>
 
-#include <boost/foreach.hpp>
-
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
 

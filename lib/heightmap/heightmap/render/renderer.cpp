@@ -24,9 +24,6 @@
 #include "tasktimer.h"
 #include "GlTexture.h"
 
-// boost
-#include <boost/foreach.hpp>
-
 // Qt
 #include <QSettings>
 
@@ -422,9 +419,8 @@ void Renderer::
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
-    BOOST_FOREACH(const Reference& r, R) {
+    for (const Reference& r : R)
         Render::RenderRegion(region(r)).render();
-    }
 }
 
 
