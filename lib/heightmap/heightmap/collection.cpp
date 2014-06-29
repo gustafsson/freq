@@ -460,7 +460,6 @@ void Collection::
     block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
     block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
 
-    block_factory_->set_recently_created_all();
     clear();
 }
 

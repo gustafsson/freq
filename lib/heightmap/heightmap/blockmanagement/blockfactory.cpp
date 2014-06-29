@@ -24,6 +24,7 @@ BlockFactory::
       block_layout_(bl),
       visualization_params_(vp),
       _free_memory(availableMemoryForSingleAllocation()),
+      recently_created_(Signal::Intervals::Intervals_ALL),
       created_count_(0)
 {
     EXCEPTION_ASSERT(visualization_params_);
@@ -41,6 +42,8 @@ pBlock BlockFactory::
                      visualization_params_) );
     block->glblock.reset (new Render::GlBlock(tex));
 
+    recently_created_ |= block->getInterval ();
+
     //setDummyValues(block);
 
     return block;
@@ -53,13 +56,6 @@ Signal::Intervals BlockFactory::
     Signal::Intervals r = recently_created_;
     recently_created_.clear ();
     return r;
-}
-
-
-void BlockFactory::
-        set_recently_created_all()
-{
-    recently_created_ = Signal::Intervals::Intervals_ALL;
 }
 
 

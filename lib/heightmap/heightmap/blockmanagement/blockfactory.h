@@ -25,7 +25,6 @@ public:
     pBlock              createBlock( const Reference& ref, GlTexture::ptr tex );
 
     Signal::Intervals   recently_created();
-    void                set_recently_created_all();
 
     void                next_frame();
 
