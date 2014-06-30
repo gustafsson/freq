@@ -121,7 +121,7 @@ void GlFrameBuffer::
 }
 
 void GlFrameBuffer::
-        unbindFrameBuffer() const
+        unbindFrameBuffer()
 {
     GlException_CHECK_ERROR();
 

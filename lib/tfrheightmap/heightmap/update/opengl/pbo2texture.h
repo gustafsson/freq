@@ -48,7 +48,7 @@ public:
     void prepareShader (int data_width, int data_height, unsigned chunk_pbo);
     void prepareShader (int data_width, int data_height, float* data);
 
-    const GlTexture& getTexture ();
+    GlTexture& getTexture ();
     unsigned getProgram (float normalization_factor, int amplitude_axis);
 
 private:

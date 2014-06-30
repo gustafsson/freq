@@ -114,7 +114,7 @@ void ShaderTexture::
 }
 
 
-const GlTexture& ShaderTexture::
+GlTexture& ShaderTexture::
         getTexture ()
 {
     EXCEPTION_ASSERT(chunk_texture_);

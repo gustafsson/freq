@@ -97,13 +97,13 @@ GlTexture::~GlTexture() {
     }
 }
 
-GlTexture::ScopeBinding GlTexture::getScopeBinding() const
+GlTexture::ScopeBinding GlTexture::getScopeBinding()
 {
     bindTexture2D();
     return ScopeBinding(*this, &GlTexture::unbindTexture2Dwrap);
 }
 
-void GlTexture::bindTexture2D() const {
+void GlTexture::bindTexture2D() {
     GlException_CHECK_ERROR();
     glEnable(GL_TEXTURE_2D);
     glBindTexture( GL_TEXTURE_2D, textureId);
@@ -115,6 +115,6 @@ void GlTexture::unbindTexture2D() {
     glDisable(GL_TEXTURE_2D);
 }
 
-void GlTexture::unbindTexture2Dwrap() const {
+void GlTexture::unbindTexture2Dwrap() {
     unbindTexture2D();
 }
