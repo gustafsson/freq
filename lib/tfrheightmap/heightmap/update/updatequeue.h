@@ -23,6 +23,7 @@ public:
     };
 
     typedef std::shared_ptr<UpdateQueue> ptr;
+    class skip_job_exception : public std::exception {};
     typedef JustMisc::blocking_queue<Job>::abort_exception abort_exception;
     typedef JustMisc::blocking_queue<Job>::queue queue;
 

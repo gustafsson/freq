@@ -88,12 +88,12 @@ void UpdateConsumer::
     QGLWidget w(0, shared_gl_context);
     w.makeCurrent ();
 
-    try
-      {
-        TfrBlockUpdater block_updater;
-        WaveformBlockUpdater waveform_updater;
+    TfrBlockUpdater block_updater;
+    WaveformBlockUpdater waveform_updater;
 
-        while (!isInterruptionRequested ())
+    while (!isInterruptionRequested ())
+      {
+        try
           {
             unique_ptr<TaskTimer> tt;
             INFO if (update_queue->empty ())
@@ -147,14 +147,19 @@ void UpdateConsumer::
                          % span % (span.count ()/t.elapsed ());
             }
             */
-        }
-      }
-    catch (UpdateQueue::abort_exception&)
-      {
-      }
-    catch (...)
-      {
-        Heightmap::UncaughtException::handle_exception(boost::current_exception());
+          }
+        catch (UpdateQueue::skip_job_exception&)
+          {
+          }
+        catch (UpdateQueue::abort_exception&)
+          {
+            requestInterruption ();
+          }
+        catch (...)
+          {
+            Heightmap::UncaughtException::handle_exception(boost::current_exception());
+            requestInterruption ();
+          }
       }
 }
 
