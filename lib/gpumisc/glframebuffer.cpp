@@ -157,7 +157,7 @@ void GlFrameBuffer::
             throw std::logic_error("Can't call GlFrameBuffer when no valid viewport is active");
     }
 
-    if (width == texture_width_ && height == texture_height_ && rboId_ && fboId_)
+    if (width == texture_width_ && height == texture_height_ && (enable_depth_component_?rboId_:true) && fboId_)
         return;
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
