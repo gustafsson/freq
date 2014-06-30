@@ -44,14 +44,15 @@ namespace Tools
         ~RenderModel();
 
         void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt);
-        void resetSettings();
+        void resetCameraSettings();
+        void resetBlockCaches();
 
         Heightmap::TfrMapping::Collections collections();
 
         void block_layout(Heightmap::BlockLayout);
 
-        Tfr::FreqAxis display_scale();
-        void display_scale(Tfr::FreqAxis x);
+        Heightmap::FreqAxis display_scale();
+        void display_scale(Heightmap::FreqAxis x);
 
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);

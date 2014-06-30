@@ -97,22 +97,24 @@ GlTexture::~GlTexture() {
     }
 }
 
-GlTexture::ScopeBinding GlTexture::getScopeBinding() const
+GlTexture::ScopeBinding GlTexture::getScopeBinding()
 {
     bindTexture2D();
     return ScopeBinding(*this, &GlTexture::unbindTexture2Dwrap);
 }
 
-void GlTexture::bindTexture2D() const {
-	GlException_SAFE_CALL( glEnable(GL_TEXTURE_2D) );
-	GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, textureId) );
+void GlTexture::bindTexture2D() {
+    GlException_CHECK_ERROR();
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture( GL_TEXTURE_2D, textureId);
+    GlException_CHECK_ERROR();
 }
 
 void GlTexture::unbindTexture2D() {
-	GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
-	GlException_SAFE_CALL( glDisable(GL_TEXTURE_2D) );
+    glBindTexture( GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
 }
 
-void GlTexture::unbindTexture2Dwrap() const {
+void GlTexture::unbindTexture2Dwrap() {
     unbindTexture2D();
 }

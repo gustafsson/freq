@@ -69,8 +69,8 @@ void SaweMainWindow::
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(toggled(bool)), SLOT(toggleFullscreenNoMenus(bool)));
     connect(ui->actionToggleFullscreen, SIGNAL(triggered(bool)), SLOT(toggleFullscreen(bool)));
     connect(ui->actionToggleFullscreenNoMenus, SIGNAL(triggered(bool)), SLOT(toggleFullscreenNoMenus(bool)));
-    connect(ui->actionReset_layout, SIGNAL(triggered()), SLOT(resetLayout()));
     connect(ui->actionReset_view, SIGNAL(triggered()), SLOT(resetView()));
+    connect(ui->actionReset_caches, SIGNAL(triggered()), SLOT(resetCache()));
     connect(ui->actionOperation_details, SIGNAL(toggled(bool)), ui->toolPropertiesWindow, SLOT(setVisible(bool)));
     connect(ui->actionOperation_details, SIGNAL(triggered()), ui->toolPropertiesWindow, SLOT(raise()));
     connect(ui->toolPropertiesWindow, SIGNAL(visibilityChanged(bool)), SLOT(checkVisibilityToolProperties(bool)));
@@ -427,16 +427,16 @@ void SaweMainWindow::
 
 
 void SaweMainWindow::
-        resetLayout()
+        resetView()
 {
-    project->resetLayout();
+    project->resetView();
 }
 
 
 void SaweMainWindow::
-        resetView()
+        resetCache()
 {
-    project->resetView();
+    project->resetCache();
 }
 
 

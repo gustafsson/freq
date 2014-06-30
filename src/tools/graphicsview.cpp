@@ -35,7 +35,7 @@ GraphicsView::
 
     setRenderHints(renderHints() | QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+    setViewportUpdateMode(QGraphicsView::NoViewportUpdate);
     // Caching slows down rendering of animated frames.
     setCacheMode(QGraphicsView::CacheNone);
 

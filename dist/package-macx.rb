@@ -93,6 +93,7 @@ def package_macos(app_name, version, packagename, zip = false)
         local_lib = "#{appfolder}/Contents/Frameworks/#{File.basename(library)}"
         use_bin.push(local_lib)
         run("cp #{library} #{local_lib}")
+        run("chmod +w #{local_lib}")
     end
 
     # Make libgcc_s a symbol reference to System.B

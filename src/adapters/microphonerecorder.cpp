@@ -12,8 +12,11 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_MICROPHONERECORDER
-#define TIME_MICROPHONERECORDER if(0)
+#define TIME_MICROPHONERECORDER
+//#define TIME_MICROPHONERECORDER if(0)
+
+//#define TIME_MICROPHONERECORDER_WRITEBUFFER
+#define TIME_MICROPHONERECORDER_WRITEBUFFER if(0)
 
 using namespace std;
 
@@ -46,6 +49,11 @@ void MicrophoneRecorder::
 
         TIME_MICROPHONERECORDER TaskTimer tt("Creating MicrophoneRecorder for device %d", input_device_);
         portaudio::System &sys = portaudio::System::instance();
+
+        PaError err = Pa_Initialize();
+        if (err != paNoError) {
+            TaskInfo("MicrophoneRecorder: Pa_Initialize returned err = %d: %s", err, Pa_GetErrorText(err));
+        }
 
         _has_input_device = false;
         for (int i=0; i < sys.deviceCount(); ++i)
@@ -91,11 +99,12 @@ void MicrophoneRecorder::
 
         TIME_MICROPHONERECORDER TaskInfo(boost::format("Opening recording input stream on '%s' with %d"
                        " channels, %g samples/second"
-                       " and input latency %g s")
+                       " and input latency %g s or %g s")
                                          % device.name()
                                          % num_channels
                                          % sample_rate
-                                         % device.defaultHighInputLatency());
+                                         % device.defaultHighInputLatency()
+                                         % device.defaultLowInputLatency ());
 
         _rolling_mean.resize(num_channels);
         for (unsigned i=0; i<num_channels; ++i)
@@ -117,10 +126,12 @@ void MicrophoneRecorder::
         //#endif
                     NULL);
 
-            PaError err = Pa_IsFormatSupported(inParamsRecord.paStreamParameters(), 0, device.defaultSampleRate());
+            PaError err = Pa_IsFormatSupported(inParamsRecord.paStreamParameters(), 0, sample_rate);
             bool fmtok = err==paFormatIsSupported;
-            if (!fmtok)
+            if (!fmtok) {
+                TaskInfo("MicrophoneRecorder: interleaved = %d not supported. err = %d: %s", interleaved, err, Pa_GetErrorText(err));
                 continue;
+            }
 
             portaudio::StreamParameters paramsRecord(
                     inParamsRecord,
@@ -136,18 +147,20 @@ void MicrophoneRecorder::
             break;
         }
 
-        if (!_stream_record)
+        if (!_stream_record) {
+            TaskInfo("MicrophoneRecorder: Couldn't open recording stream");
             _has_input_device = false;
+        }
     }
     catch (const portaudio::PaException& x)
     {
-        TaskInfo("a2 MicrophoneRecorder init error: %s %s (%d)\nMessage: %s",
+        TaskInfo("MicrophoneRecorder: PaException init error: %s %s (%d)\nMessage: %s",
                  vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
         _has_input_device = false;
     }
     catch (const portaudio::PaCppException& x)
     {
-        TaskInfo("b2 MicrophoneRecorder init error: %s (%d)\nMessage: %s",
+        TaskInfo("MicrophoneRecorder: PaCppException init error: %s (%d)\nMessage: %s",
                  vartype(x).c_str(), x.specifier(), x.what());
         _has_input_device = false;
     }
@@ -212,9 +225,14 @@ void MicrophoneRecorder::stopRecording()
         try
         {
         TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
+
         //stop could hang the ui (codaset #24)
         //_stream_record->isStopped()? void(): _stream_record->stop();
+
+        // using abort instead of stop means that the recording thread will continue for a
+        // while after abort has returned.
         _stream_record->isStopped()? void(): _stream_record->abort();
+
         _stream_record->close();
         _stream_record.reset();
         }
@@ -296,8 +314,6 @@ int MicrophoneRecorder::
                  PaStreamCallbackFlags /*statusFlags*/)
 {
     try {
-    TIME_MICROPHONERECORDER TaskTimer tt("MicrophoneRecorder::writeBuffer(%u new samples) inputBuffer = %p", framesPerBuffer, inputBuffer);
-
     Signal::IntervalType offset = actual_number_of_samples();
 
     float fs = _data.raw ()->sample_rate;
@@ -311,10 +327,14 @@ int MicrophoneRecorder::
     _receive_buffer->set_sample_offset (offset);
     _receive_buffer->set_sample_rate (fs);
 
+    Signal::Interval I = _receive_buffer->getInterval ();
+    TIME_MICROPHONERECORDER_WRITEBUFFER TaskTimer tt(boost::format("MicrophoneRecorder: writeBuffer %s, [%g, %g) s")
+                                        % I % (I.first/fs) % (I.last/fs));
+
     for (unsigned i=0; i<nc; ++i)
     {
         Signal::pMonoBuffer b = _receive_buffer->getChannel (i);
-        float* p = b->waveform_data()->getCpuMemory();
+        float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
         unsigned in_num_channels = _rolling_mean.size ();
         unsigned in_i = i;
         if (in_i >= in_num_channels)
@@ -334,18 +354,16 @@ int MicrophoneRecorder::
                 p[j] = buffer[j];
         }
 
-        float& mean = _rolling_mean[in_i];
+        // Not really a rolling mean, rather an IIR. It is anyway an approximated high-pass
+        // filter at a few Hz, the microphone is not expected to such low frequencies
+        float mean = _rolling_mean[in_i];
         for (unsigned j=0; j<framesPerBuffer; ++j)
         {
             float v = p[j];
             p[j] = v - mean;
             mean = mean*0.99999f + v*0.00001f;
         }
-
-        TIME_MICROPHONERECORDER TaskInfo ti("Interval: %s, [%g, %g) s",
-                                            b->getInterval().toString().c_str(),
-                                            b->getInterval().first / b->sample_rate(),
-                                            b->getInterval().last / b->sample_rate() );
+        _rolling_mean[in_i] = mean;
     }
 
     _data.write ()->samples.put( _receive_buffer );

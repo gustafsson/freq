@@ -9,7 +9,7 @@ if [ "$branch" == "master" ]; then
 elif [ "$branch" == "develop" ]; then
   snapshot="-snapshot"
 else
-  snapshot="-$branch"
+  snapshot="-$(echo $branch | sed 's/\//-/g')"
 fi
 
 echo "===================== Deploying Sonic AWE ====================="

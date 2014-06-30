@@ -71,13 +71,13 @@ public:
     with glEnable. Then removes the binding and disables 2D texturing
     when the object goes out of scope.
     */
-    ScopeBinding getScopeBinding() const;
+    ScopeBinding getScopeBinding();
 
     /**
 	Binds this texture with glBindTexture and enables 2D texturing 
 	with glEnable.
 	*/
-	void bindTexture2D() const;
+    void bindTexture2D();
 
 	/**
     Removes the binding with glBindTexture and disables 2D texturing
@@ -118,5 +118,5 @@ private:
     unsigned int textureId;
     unsigned int ownTextureId;
 
-    void unbindTexture2Dwrap() const;
+    void unbindTexture2Dwrap();
 };

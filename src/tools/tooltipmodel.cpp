@@ -524,7 +524,7 @@ unsigned TooltipModel::
     unsigned max_i = 1;
     fetched_heightmap_values = 0;
 
-    const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
+    const Heightmap::FreqAxis& display_scale = render_view_->model->display_scale();
     boost::shared_ptr<FetchData> fetcher = FetchData::createFetchData( render_view_, pos.time );
     if (!fetcher)
         return 0;
@@ -568,7 +568,7 @@ float TooltipModel::
         fetcher = myfetcher.get();
     }
 
-    const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
+    const Heightmap::FreqAxis& display_scale = render_view_->model->display_scale();
     double F = display_scale.getFrequency( pos.scale );
     double F_top = display_scale.getFrequency(1.f);
     double penalty = 0.95;

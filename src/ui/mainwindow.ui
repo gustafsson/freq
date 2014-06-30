@@ -73,8 +73,8 @@
     <addaction name="actionToggleFullscreenNoMenus"/>
     <addaction name="actionToggleFullscreen"/>
     <addaction name="separator"/>
+    <addaction name="actionReset_caches"/>
     <addaction name="actionReset_view"/>
-    <addaction name="actionReset_layout"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuFile">
@@ -1243,9 +1243,12 @@
     <string>&amp;Brushes</string>
    </property>
   </action>
-  <action name="actionReset_layout">
+  <action name="actionReset_view">
    <property name="text">
-    <string>Reset &amp;layout</string>
+    <string>Reset &amp;view</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset view</string>
    </property>
   </action>
   <action name="actionOperation_details">
@@ -1336,9 +1339,12 @@
     <string>Ask for &amp;help</string>
    </property>
   </action>
-  <action name="actionReset_view">
+  <action name="actionReset_caches">
    <property name="text">
-    <string>Reset &amp;view</string>
+    <string>Reset &amp;caches</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset caches</string>
    </property>
   </action>
   <action name="actionFind_plugins">

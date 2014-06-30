@@ -1,0 +1,5 @@
+It should init dummytransform
+3e-03
+
+It should transform a buffer into a dummy state and back
+50e-06

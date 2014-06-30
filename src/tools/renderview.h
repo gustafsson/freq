@@ -8,6 +8,7 @@
 #include "commentview.h"
 #include "sawe/toolmainloop.h"
 #include "tools/commands/viewstate.h"
+#include "sawe/sawedll.h"
 
 // gpumisc
 #include "timer.h"
@@ -130,7 +131,7 @@ namespace Tools
         /**
          * @brief postPaint. Use 'Qt::DirectConnection'
          */
-        void postPaint(float t_center);
+        void postPaint();
 
         /**
          * @brief paintingForeground. Use 'Qt::DirectConnection'

@@ -7,7 +7,7 @@ template<typename T>
 class ReleaseAfterContext
 {
 public:
-    ReleaseAfterContext(const T& obj, void (T::*releaseCall)() const)
+    ReleaseAfterContext(T& obj, void (T::*releaseCall)())
         :
         obj_(obj),
         releaseCall_(releaseCall)
@@ -21,8 +21,8 @@ public:
 
 
 private:
-    const T& obj_;
-    void (T::*releaseCall_)() const;
+    T& obj_;
+    void (T::*releaseCall_)();
 };
 
 #endif // RELEASEAFTERCONTEXT_H

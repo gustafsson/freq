@@ -218,7 +218,6 @@ static bool check_cuda( bool use_OpenGL_bindings ) {
 #include "Statistics.h"
 #include "adapters/audiofile.h"
 #include "adapters/writewav.h"
-#include "trace_perf.h"
 
 #include <fstream>
 #include <boost/algorithm/string.hpp>
@@ -228,12 +227,14 @@ using namespace Signal;
 
 int main(int argc, char *argv[])
 {
+#ifdef __GNUC__
+    pthread_setname_np("main");
+#endif
+
     // Init configuration
     Sawe::Configuration::version();
 
     PrettifySegfault::setup ();
-
-    trace_perf::add_database_path("../lib/backtrace/trace_perf");
 
     if (argc == 2 && 0 == strcmp(argv[1],"--test"))
         return Test::UnitTest::test ();

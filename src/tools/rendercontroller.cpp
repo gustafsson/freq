@@ -42,7 +42,6 @@
 #include <QSlider>
 #include <QGraphicsView>
 #include <QResizeEvent>
-#include <QMetaClassInfo>
 #include <QGLContext>
 #include <QSettings>
 
@@ -68,16 +67,16 @@ RenderController::
             :
             transform(0),
             hz_scale(0),
+            amplitude_scale(0),
+            hzmarker(0),
             hz_scale_action(0),
             amplitude_scale_action(0),
             tf_resolution_action(0),
             linearScale(0),
-            hzmarker(0),
             view(view),
             toolbar_render(0),
             logScale(0),
             cepstraScale(0),
-            amplitude_scale(0),
             color(0)
 {
     Support::RenderViewUpdateAdapter* rvup;
@@ -89,10 +88,13 @@ RenderController::
     model()->init(model()->project ()->processing_chain (), rvu);
 
     // 'this' is parent
-    auto hpp = new Support::HeightmapProcessingPublisher(view->model->target_marker ()->target_needs (), view->model->tfr_mapping (), this);
+    auto hpp = new Support::HeightmapProcessingPublisher(
+                view->model->target_marker ()->target_needs (),
+                view->model->tfr_mapping (),
+                &view->model->_qx,
+                this);
     connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), hpp, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
-    connect(view, SIGNAL(postPaint(float)), hpp, SLOT(update(float)));
-
+    connect(view, SIGNAL(painting()), hpp, SLOT(update()));
     setupGui();
 
     {
@@ -324,6 +326,17 @@ void RenderController::
 
 
 void RenderController::
+        receiveSetYBottom( qreal value )
+{
+    model()->renderer->render_settings.y_offset = value;
+
+    stateChanged();
+
+    ybottom->setToolTip(QString("Offset %1").arg(model()->renderer->render_settings.y_offset));
+}
+
+
+void RenderController::
         receiveSetTimeFrequencyResolution( qreal value )
 {
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
@@ -353,6 +366,14 @@ void RenderController::tfresolutionDecrease()
 void RenderController::
         updateTransformDesc()
 {
+    {
+        // don't bother about proper timesteps
+        auto& log_scale = model()->renderer->render_settings.log_scale;
+        log_scale.TimeStep (0.05f);
+        if (log_scale != &log_scale)
+            view->redraw ();
+    }
+
     Tfr::TransformDesc::ptr t = currentTransform();
     Tfr::TransformDesc::ptr newuseroptions;
 
@@ -637,7 +658,7 @@ void RenderController::
 {
     float fs = headSampleRate();
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
     fa.setLinear( fs );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
@@ -659,7 +680,7 @@ void RenderController::
     float maxvalue = 1;
     float minvalue = -1;
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
     fa.setWaveform (minvalue, maxvalue);
 
     model()->display_scale( fa );
@@ -674,7 +695,7 @@ void RenderController::
 {
     float fs = headSampleRate();
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
 
     {
         auto td = model()->transform_descs ().write ();
@@ -704,7 +725,7 @@ void RenderController::
 {
     float fs = headSampleRate();
 
-    Tfr::FreqAxis fa;
+    Heightmap::FreqAxis fa;
     fa.setQuefrencyNormalized( fs, model()->transform_descs ()->getParam<Tfr::CepstrumDesc>().chunk_size() );
 
     if (currentTransform() && fa.min_hz < currentTransformMinHz())
@@ -724,8 +745,9 @@ void RenderController::
 void RenderController::
         receiveLinearAmplitude()
 {
-    model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
-    view->emitAxisChanged();
+    model()->renderer->render_settings.log_scale = 0;
+//    model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
+//    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -733,8 +755,9 @@ void RenderController::
 void RenderController::
         receiveLogAmplitude()
 {
-    model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
-    view->emitAxisChanged();
+    model()->renderer->render_settings.log_scale = 1;
+//    model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
+//    view->emitAxisChanged();
     stateChanged();
 }
 
@@ -953,8 +976,9 @@ void RenderController::
         amplitude_scale = new ComboBoxAction();
         amplitude_scale->addActionItem( linearAmplitude );
         amplitude_scale->addActionItem( logAmpltidue );
-        amplitude_scale->addActionItem( fifthAmpltidue );
+//        amplitude_scale->addActionItem( fifthAmpltidue );
         amplitude_scale->decheckable( false );
+        amplitude_scale->setDefaultAction (logAmpltidue);
         amplitude_scale_action = toolbar_render->addWidget( amplitude_scale );
 
         unsigned k=0;
@@ -993,6 +1017,20 @@ void RenderController::
         yscale->addAction( yscaleDecrease );
     }
 
+    // QSlider * ybottom
+    {   ybottom = new Widgets::ValueSlider( toolbar_render );
+        ybottom->setObjectName("ybottom");
+        ybottom->setOrientation( Qt::Horizontal );
+        ybottom->setRange (-1, 1, Widgets::ValueSlider::Linear );
+        ybottom->setValue (0);
+        ybottom->setDecimals (2);
+        ybottom->setToolTip( "Offset" );
+        ybottom->setSliderSize ( 300 );
+        toolbar_render->addWidget( ybottom );
+
+        connect(ybottom, SIGNAL(valueChanged(qreal)), SLOT(receiveSetYBottom(qreal)));
+        receiveSetYBottom(ybottom->value());
+    }
 
     // QSlider * tf_resolution
     {   tf_resolution = new Widgets::ValueSlider( toolbar_render );

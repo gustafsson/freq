@@ -34,12 +34,13 @@ namespace Tools
 
         Ui::ComboBoxAction* transform;
         Ui::ComboBoxAction* hz_scale;
+        Ui::ComboBoxAction* amplitude_scale;
+        Ui::ComboBoxAction* hzmarker;
         QAction*            hz_scale_action;
         QAction*            amplitude_scale_action;
         QAction*            tf_resolution_action;
         QAction*            waveformScale;
         QAction*            linearScale;
-        Ui::ComboBoxAction* hzmarker;
 
     public slots:
         // GUI bindings are set up in RenderController constructor
@@ -65,6 +66,7 @@ namespace Tools
 
         // Sliders
         void receiveSetYScale(qreal);
+        void receiveSetYBottom(qreal);
         void receiveSetTimeFrequencyResolution(qreal);
         void yscaleIncrease();
         void yscaleDecrease();
@@ -123,11 +125,11 @@ namespace Tools
         QToolBar* toolbar_render;
         QAction* logScale;
         QAction* cepstraScale;
-        Ui::ComboBoxAction* amplitude_scale;
         Ui::ComboBoxAction* color;
         QToolButton* channelselector;
 
         Widgets::ValueSlider* yscale;
+        Widgets::ValueSlider* ybottom;
         Widgets::ValueSlider* tf_resolution;
 
         void setupGui();

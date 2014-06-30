@@ -209,6 +209,7 @@ void OpenWatchedFileController::
         application.processEvents ();
         EXCEPTION_ASSERT_EQUALS(od.read ()->toString().toStdString(), "foobar");
 
+        QThread::msleep(1);
         file.open (QIODevice::WriteOnly);
         file.write ("baz");
         file.close ();

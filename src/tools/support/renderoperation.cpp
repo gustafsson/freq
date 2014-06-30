@@ -35,6 +35,13 @@ Interval RenderOperationDesc::
     const Interval& a = OperationDescWrapper::affectedInterval( I );
 
     // This will result in an update rate that matches the invalidated intervals if possible.
+    // This is for instane needed if many samples are currently invalid (as after a transform
+    // change) and a recording is started. The user would prioritize immediate feedback of
+    // newly recorded data over the more sluggish (but high throughput) response that is
+    // the default when a lot of things needs to be recalculated.
+    //
+    // 'affectedInterval' is called when figuring out how much to invalide, therefore it makes
+    // sense to use the information from this call when scheduling new tasks.
     render_target_.write ()->refreshSamples( a );
 
     return a;

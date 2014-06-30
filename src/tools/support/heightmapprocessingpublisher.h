@@ -27,15 +27,17 @@ public:
     HeightmapProcessingPublisher(
             Signal::Processing::TargetNeeds::ptr target_needs,
             Heightmap::TfrMapping::const_ptr tfrmapping,
+            float* t_center,
             QObject* parent=0);
 
 public slots:
     void setLastUpdateSize( Signal::UnsignedIntervalType length );
-    void update(float t_center);
+    void update();
 
 private:
     Signal::Processing::TargetNeeds::ptr    target_needs_;
     Heightmap::TfrMapping::const_ptr        tfrmapping_;
+    float*                                  t_center_;
     Signal::UnsignedIntervalType            preferred_update_size_;
     bool                                    failed_allocation_;
 

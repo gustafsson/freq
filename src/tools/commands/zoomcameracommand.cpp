@@ -56,6 +56,7 @@ bool ZoomCameraCommand::
     float max_xscale = 0.05f*fs;
 
 
+    // Could use VisualizationParams::detail_info instead
     const Tfr::FreqAxis& tfa = model->transform_desc ()->freqAxis(fs);
     unsigned maxi = tfa.getFrequencyScalar(fs/2);
 
@@ -64,7 +65,7 @@ bool ZoomCameraCommand::
     float hzb = tfa.getFrequency(maxi - 1);
     float hzb2 = tfa.getFrequency(maxi - 2);
 
-    const Tfr::FreqAxis& ds = model->display_scale();
+    const Heightmap::FreqAxis& ds = model->display_scale();
     float scalara = ds.getFrequencyScalar( hza );
     float scalara2 = ds.getFrequencyScalar( hza2 );
     float scalarb = ds.getFrequencyScalar( hzb );

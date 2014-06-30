@@ -34,7 +34,7 @@ namespace Tools { namespace Selections
         bool select_interior;
 
         void validate();
-        Tfr::FreqAxis freqAxis();
+        Heightmap::FreqAxis freqAxis();
         Sawe::Project* project() { return project_; }
 
     private:

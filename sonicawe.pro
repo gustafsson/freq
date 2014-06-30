@@ -1,5 +1,14 @@
 TEMPLATE = subdirs
-SUBDIRS = lib/gpumisc src
 CONFIG += ordered
+
+SUBDIRS = \
+    lib/justmisc \
+    lib/backtrace \
+    lib/gpumisc \
+    lib/signal \
+    lib/tfr \
+    lib/heightmap \
+    lib/tfrheightmap \
+    src
 
 cache()

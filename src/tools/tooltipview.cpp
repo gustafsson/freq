@@ -41,7 +41,7 @@ void TooltipView::
 
     prev_pos_ = p;
 
-    const Tfr::FreqAxis& display_scale = render_view_->model->display_scale();
+    const Heightmap::FreqAxis& display_scale = render_view_->model->display_scale();
     double fundamental_frequency = model_->pos_hz / model_->markers;
     for (unsigned i=1; i<=2*model_->markers || i <= 10; ++i)
     {

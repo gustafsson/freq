@@ -457,7 +457,7 @@ void PrettifySegfault::
         test()
 {
     // Skip test if running through gdb
-    if (DetectGdb::was_started_through_gdb ()) {
+    if (DetectGdb::is_running_through_gdb() || DetectGdb::was_started_through_gdb ()) {
         TaskInfo("Running as child process, skipping PrettifySegfault test");
         return;
     }

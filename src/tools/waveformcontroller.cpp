@@ -47,6 +47,7 @@ void WaveformController::
             r->hzmarker->setChecked( false );
 
         r->waveformScale->trigger ();
+        r->amplitude_scale->defaultAction ()->trigger ();
     }
 
     r->hz_scale_action->setVisible (!enabled);

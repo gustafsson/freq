@@ -50,7 +50,7 @@ public:
     /**
     Removes the binding with glBindFramebufferEXT.
     */
-    void unbindFrameBuffer() const;
+    void unbindFrameBuffer();
 
     /**
     Returns the OpenGL frame buffer object id for this frame buffer. To be used

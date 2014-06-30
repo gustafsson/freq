@@ -185,7 +185,7 @@ void RectangleModel::
 }
 
 
-Tfr::FreqAxis RectangleModel::
+Heightmap::FreqAxis RectangleModel::
         freqAxis()
 {
     return rendermodel_->display_scale();
