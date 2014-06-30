@@ -24,12 +24,22 @@ namespace std {
     };
 }
 
+
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
+class WaveUpdaterPrivate
+{
+public:
+    Fbo2Block fbo2block;
+};
+
+
 WaveUpdater::
         WaveUpdater()
+    :
+      p(new WaveUpdaterPrivate)
 {
 }
 
@@ -37,6 +47,7 @@ WaveUpdater::
 WaveUpdater::
         ~WaveUpdater()
 {
+    delete p;
 }
 
 
@@ -79,16 +90,11 @@ void WaveUpdater::
             buffers_per_block[block].push_back(job->b);
     }
 
-    // Prepare block for drawing to
-    unordered_map<pBlock, lazy<Fbo2Block>> fbo2block;
-    for (const auto& b: buffers_per_block)
-        fbo2block[b.first] = Fbo2Block(b.first);
-
     // Draw from all chunks to each block
     for (auto& f : buffers_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = fbo2block[block]->begin();
+        auto fbo_mapping = p->fbo2block.begin (block);
 
         for (auto& b : f.second)
             wave2fbo[b]->draw();

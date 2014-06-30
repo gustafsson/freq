@@ -43,6 +43,7 @@ class BlockUpdaterPrivate
 {
 public:
     Shaders shaders;
+    Fbo2Block fbo2block;
 };
 
 BlockUpdater::
@@ -128,11 +129,6 @@ void BlockUpdater::
             chunks_per_block[block].push_back(job->chunk);
     }
 
-    // Prepare block for drawing to
-    unordered_map<pBlock, lazy<Fbo2Block>> fbo2block;
-    for (const auto& b: chunks_per_block)
-        fbo2block[b.first] = Fbo2Block(b.first);
-
     // Prepare to draw with transferred chunk
     unordered_map<Tfr::pChunk, lazy<Pbo2Texture>> pbo2texture;
     for (auto& sp : source2pbo)
@@ -144,7 +140,7 @@ void BlockUpdater::
     for (auto& f : chunks_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = fbo2block[block]->begin();
+        auto fbo_mapping = p->fbo2block.begin (block);
 
         for (auto& c : f.second)
         {

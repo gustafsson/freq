@@ -1,9 +1,19 @@
 #include "fbo2block.h"
 #include "heightmap/render/glblock.h"
 #include "heightmap/uncaughtexception.h"
+#include "heightmap/update/updatequeue.h"
+#include "heightmap/render/blocktextures.h"
 #include "GlException.h"
+#include "log.h"
 
 #include "gl.h"
+
+// Not drawing straight onto existing blocks works but requires a more
+// elaborate locking procedure than glblock.swap() to prevent the glblock
+// from still being in use by RenderBlock. "BlockTextures" doesn't work
+// any better in this regard as the drawcalls of the textures are still in
+// the pipeline when the texture is modified here.
+const bool draw_straight_onto_block = true;
 
 namespace Heightmap {
 namespace Update {
@@ -17,23 +27,34 @@ void grabToTexture(GlTexture::ptr t)
 }
 
 
-Fbo2Block::Fbo2Block (pBlock block)
-    :
-      block(block),
-      glblock(block->glblock)
+void copyTexture(unsigned copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
 {
-    // Draw straight onto glblock
-    fbo.reset (new GlFrameBuffer(glblock->glTexture ()->getOpenGlTextureId ()));
+    // Assumes dst and src have the same size and the same pixel format
+    int w = dst->getWidth ();
+    int h =  dst->getHeight ();
+    glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
+                           GL_TEXTURE_2D, dst->getOpenGlTextureId (), 0);
+    glDrawBuffer (GL_COLOR_ATTACHMENT1);
+    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glDrawBuffer (GL_COLOR_ATTACHMENT0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 
-//    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-//    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-//                           GL_TEXTURE_2D, tex1, 0);
-//    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
-//                           GL_TEXTURE_2D, tex2, 0);
-//    glDrawBuffer(GL_COLOR_ATTACHMENT1);
-//    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
-//                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+Fbo2Block::Fbo2Block ()
+{
+    if (!draw_straight_onto_block)
+    {
+        glGenFramebuffersEXT(1, &copyfbo);
+        unsigned textureid;
+        glGenTextures (1, &textureid);
+        Render::BlockTextures::setupTexture (textureid,4,4);
+        glblock.reset (new Render::GlBlock(GlTexture::ptr(new GlTexture(textureid))));
+    }
 
     // Draw to fbo, copy to glblock
     // Create new texture
@@ -98,33 +119,56 @@ Fbo2Block::Fbo2Block (pBlock block)
 }
 
 
-Fbo2Block::~Fbo2Block()
+Fbo2Block::
+        ~Fbo2Block()
 {
-    if (!fbo)
-        return;
-
-    try {
-//        fbo->bindFrameBuffer ();
-//        grabToTexture(block->glblock->glTexture());
-//        grabToTexture(block->glblock->glVertTexture());
-//        fbo->unbindFrameBuffer ();
-
-        //fbo->bindFrameBuffer ();
-        //grabToTexture(glblock->glVertTexture());
-        //fbo->unbindFrameBuffer ();
-//        glFinish ();
-//        block->glblock = glblock;
-    } catch (...) {
-        Heightmap::UncaughtException::handle_exception(boost::current_exception());
-    }
+    end();
+    glDeleteFramebuffers(1, &copyfbo);
 }
 
-GlFrameBuffer::ScopeBinding Fbo2Block::
-        begin ()
+
+Fbo2Block::ScopeBinding Fbo2Block::
+        begin (pBlock block)
 {
+    this->block = block;
+
+    if (draw_straight_onto_block)
+        glblock = block->glblock;
+    else
+    {
+        int w = block->block_layout ().texels_per_row ();
+        int h = block->block_layout ().texels_per_column ();
+        int oldw = glblock->glTexture ()->getWidth ();
+        int oldh = glblock->glTexture ()->getHeight ();
+        if (oldw != w || oldh != h)
+        {
+            int id = glblock->glTexture ()->getOpenGlTextureId ();
+            Render::BlockTextures::setupTexture (id, w, h);
+            glblock.reset (new Render::GlBlock(GlTexture::ptr(new GlTexture(id))));
+        }
+
+        // read from block, write to glblock
+        copyTexture (copyfbo, glblock->glTexture (), block->glblock->glTexture ());
+    }
+
+    fbo.reset (new GlFrameBuffer(glblock->glTexture ()->getOpenGlTextureId ()));
+
+/*        else
+    {
+        fbo->bindFrameBuffer();
+        glFramebufferTexture2DEXT (GL_FRAMEBUFFER_EXT,
+                                  GL_COLOR_ATTACHMENT0_EXT,
+                                  GL_TEXTURE_2D,
+                                  glblock->glTexture ()->getOpenGlTextureId (),
+                                  0);
+        glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        fbo->unbindFrameBuffer();
+    }*/
+
     GlException_CHECK_ERROR ();
 
-    GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding ();
+    fbo->bindFrameBuffer();
+    ScopeBinding fboBinding = ScopeBinding(*this, &Fbo2Block::end);
 
     Region br = block->getRegion ();
     BlockLayout block_layout = block->block_layout ();
@@ -152,6 +196,24 @@ GlFrameBuffer::ScopeBinding Fbo2Block::
     glDisable (GL_CULL_FACE);
 
     return fboBinding;
+}
+
+
+
+void Fbo2Block::
+        end()
+{
+    if (!fbo)
+        return;
+
+    fbo->unbindFrameBuffer();
+
+    fbo.reset ();
+
+    if (!draw_straight_onto_block)
+        block->glblock.swap (glblock);
+
+    block.reset ();
 }
 
 

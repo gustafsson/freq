@@ -7,6 +7,7 @@ namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
+class WaveUpdaterPrivate;
 class WaveUpdater
 {
 public:
@@ -16,6 +17,8 @@ public:
     ~WaveUpdater();
 
     void processJobs( std::queue<UpdateQueue::Job>& jobs );
+private:
+    WaveUpdaterPrivate* p;
 };
 
 } // namespace OpenGL

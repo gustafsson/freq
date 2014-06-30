@@ -10,18 +10,23 @@ namespace OpenGL {
 
 class Fbo2Block {
 public:
-    Fbo2Block (pBlock block);
+    typedef ReleaseAfterContext<Fbo2Block> ScopeBinding;
+
+    Fbo2Block ();
     Fbo2Block (Fbo2Block&&) = default;
     Fbo2Block (const Fbo2Block&) = delete;
     Fbo2Block& operator=(const Fbo2Block&) = delete;
     ~Fbo2Block();
 
-    GlFrameBuffer::ScopeBinding begin ();
+    ScopeBinding begin (pBlock block);
 
 private:
+    void end();
+
     pBlock block;
     Block::pGlBlock glblock;
     std::unique_ptr<GlFrameBuffer> fbo;
+    unsigned copyfbo;
 };
 
 
