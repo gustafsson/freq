@@ -56,25 +56,10 @@ void BlockTextures::
     textures.reserve (target_capacity);
     int w = block_layout.texels_per_row ();
     int h = block_layout.texels_per_column ();
-    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
 
     for (int i=0; i<new_textures; i++)
     {
-        glBindTexture(GL_TEXTURE_2D, t[i]);
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
-        // Not compatible with GlFrameBuffer
-        //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
-
-        // Compatible with GlFrameBuffer
-        //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,GL_R32F,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
-        GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,GL_R16F,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
-        //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
-
-        glBindTexture(GL_TEXTURE_2D, 0);
+        setupTexture (t[i], w, h);
 
         textures.push_back (GlTexture::ptr(new GlTexture(t[i])));
     }
@@ -88,8 +73,13 @@ std::vector<GlTexture::ptr> BlockTextures::
     pick.reserve (count);
 
     for (const GlTexture::ptr& p : textures)
-        if (p.unique () && pick.size ()<count)
+        if (p.unique ())
+        {
             pick.push_back (p);
+
+            if (pick.size () == count)
+                break;
+        }
 
     return pick;
 }
@@ -99,6 +89,28 @@ int BlockTextures::
         getCapacity() const
 {
     return textures.size ();
+}
+
+
+void BlockTextures::
+        setupTexture(unsigned name, unsigned w, unsigned h)
+{
+    glBindTexture(GL_TEXTURE_2D, name);
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+    // Not compatible with GlFrameBuffer
+    //static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
+    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
+
+    // Compatible with GlFrameBuffer
+    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
+    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
+    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RED, GL_FLOAT, 0) );
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 

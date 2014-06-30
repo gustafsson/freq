@@ -23,6 +23,11 @@ public:
 
     BlockTextures(BlockLayout bl);
 
+    /**
+     * @brief blockLayout
+     * @return
+     */
+    BlockLayout blockLayout() { return block_layout; }
 
     /**
      * @brief setCapacityHint
@@ -46,6 +51,14 @@ public:
      * @return
      */
     int getCapacity() const;
+
+    /**
+     * @brief setupTexture
+     * @param name
+     * @param width
+     * @param height
+     */
+    static void setupTexture(unsigned name, unsigned width, unsigned height);
 
 private:
     std::vector<GlTexture::ptr> textures;
