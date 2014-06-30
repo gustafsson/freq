@@ -184,7 +184,8 @@ void RenderBlock::
         glUniform1f(uniContourPlot, render_settings->draw_contour_plot ? 1.f : 0.f );
 
         uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
-        glUniform1f(uniFlatness, render_settings->draw_flat ? 0 : 2*render_settings->last_ysize); // as glScalef in setupGlStates
+        float v = render_settings->draw_flat ? 0 : 2*render_settings->last_ysize; // as glScalef in setupGlStates
+        glUniform1f(uniFlatness, v);
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, render_settings->y_scale);
