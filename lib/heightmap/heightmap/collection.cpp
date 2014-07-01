@@ -103,13 +103,6 @@ void Collection::
             // Mark these blocks and surrounding blocks as in-use
             blocksToPoke.insert (block->reference ());
         }
-        else if (block->glblock && block->glblock->has_texture ())
-        {
-            // This block isn't used but it has allocated a texture in OpenGL
-            // memory that can easily recreate as soon as it is needed.
-//            INFO_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
-            //block->glblock->delete_texture ();
-        }
     }
 
     boost::unordered_set<Reference> blocksToPoke2;
@@ -304,6 +297,14 @@ int Collection::
 //            ++i;
 //        }
     }
+
+    std::set<pBlock> keep;
+
+    for (pBlock b : to_remove_)
+        if (!b.unique ())
+            keep.insert (b);
+
+    to_remove_.swap (keep);
     return i;
 }
 
@@ -469,6 +470,7 @@ Signal::Intervals Collection::
 void Collection::
         removeBlock (pBlock b)
 {
+    to_remove_.insert (b);
     cache_->erase(b->reference());
 }
 
