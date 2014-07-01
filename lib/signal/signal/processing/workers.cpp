@@ -63,7 +63,7 @@ Worker::ptr Workers::
     if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
-    Worker::ptr w(new Worker(ce, schedule_));
+    Worker::ptr w(new Worker(ce, schedule_, false));
     workers_map_[ce] = w;
 
     updateWorkers();
@@ -78,6 +78,8 @@ Worker::ptr Workers::
     EXCEPTION_ASSERT(b);
     EXCEPTION_ASSERT(c);
     EXCEPTION_ASSERT(d);
+
+    w->wakeup ();
 
     return w;
 }

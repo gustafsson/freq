@@ -22,7 +22,7 @@ public:
 
 
 Worker::
-        Worker (Signal::ComputingEngine::ptr computing_engine, ISchedule::ptr schedule)
+        Worker (Signal::ComputingEngine::ptr computing_engine, ISchedule::ptr schedule, bool wakeuprightaway)
     :
       computing_engine_(computing_engine),
       schedule_(schedule),
@@ -55,8 +55,11 @@ Worker::
 
     connect (thread_, SIGNAL(finished()), SLOT(finished()));
 
-    // Initial check to see if work can begin right away
-    wakeup (); // will be dispatched to execute in thread_
+    if (wakeuprightaway)
+    {
+        // Initial check to see if work can begin right away
+        wakeup (); // will be dispatched to execute in thread_
+    }
 }
 
 
@@ -449,16 +452,23 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should announce when tasks are finished.");
 
         ISchedule::ptr gettask(new DummySchedule());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
-        QEventLoop e;
+        Worker worker(Signal::ComputingEngine::ptr(), gettask, false);
+
         QTimer t;
+        t.setSingleShot( true );
+        t.setInterval( 100 );
+
+        QEventLoop e;
         connect (&t, SIGNAL(timeout()), &e, SLOT(quit()));
         connect (&worker, SIGNAL(oneTaskDone()), &e, SLOT(quit()));
-        t.setSingleShot( true );
-        t.setInterval( 0 );
+
+        worker.wakeup ();
         t.start();
+
         e.exec ();
-        EXCEPTION_ASSERT(t.isActive());
+
+        bool aborted_from_timeout = !t.isActive();
+        EXCEPTION_ASSERT(!aborted_from_timeout);
    }
 }
 
