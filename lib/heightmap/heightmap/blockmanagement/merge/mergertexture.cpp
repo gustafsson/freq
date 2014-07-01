@@ -279,14 +279,15 @@ void MergerTexture::
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         {
-            float* srcdata=new float[16]{ 1, 0, 0, .5,
-                                          0, 0, 0, 0,
-                                          0, 0, 0, 0,
-                                         .5, 0, 0, .5};
+            float srcdata[]={ 1, 0, 0, .5,
+                              0, 0, 0, 0,
+                              0, 0, 0, 0,
+                             .5, 0, 0, .5};
 
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
             block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
-            block->glblock->updateTexture (srcdata, 16);
+            auto ts = block->glblock->glTexture ()->getScopeBinding ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
         }
@@ -303,14 +304,15 @@ void MergerTexture::
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
         {
-            float* srcdata=new float[16]{ 1, 2, 3, 4,
-                                          5, 6, 7, 8,
-                                          9, 10, 11, 12,
-                                          13, 14, 15, .16};
+            float srcdata[]={ 1, 2, 3, 4,
+                              5, 6, 7, 8,
+                              9, 10, 11, 12,
+                              13, 14, 15, .16};
 
             pBlock block(new Block(ref.right (),bl,vp));
             block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
-            block->glblock->updateTexture (srcdata,16);
+            auto ts = block->glblock->glTexture ()->getScopeBinding ();
+            GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
         }

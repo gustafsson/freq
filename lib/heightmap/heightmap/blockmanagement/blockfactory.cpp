@@ -4,6 +4,7 @@
 
 #include "GlException.h"
 #include "computationkernel.h"
+#include "gl.h"
 
 //#define TIME_BLOCKFACTORY
 #define TIME_BLOCKFACTORY if(0)
@@ -79,7 +80,8 @@ void BlockFactory::
         }
     }
 
-    block->glblock->updateTexture (&p[0], p.size ());
+    auto ts = block->glblock->glTexture ()->getScopeBinding ();
+    GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, samples, scales, GL_RED, GL_FLOAT, &p[0]) );
 }
 
 } // namespace BlockManagement

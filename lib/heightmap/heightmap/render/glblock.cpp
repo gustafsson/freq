@@ -42,29 +42,6 @@ GlTexture::ptr GlBlock::
 }
 
 
-void GlBlock::
-        updateTexture( float*p, int n )
-{
-    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
-
-    int w = tex_->getWidth ();
-    int h = tex_->getHeight ();
-
-    EXCEPTION_ASSERT_EQUALS(n, w*h);
-
-    if (!hasTextureFloat)
-        glPixelTransferf( GL_RED_SCALE, 0.1f );
-
-    auto t = tex_->getScopeBinding ();
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
-    GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, w, h, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, p) );
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    if (!hasTextureFloat)
-        glPixelTransferf( GL_RED_SCALE, 1.0f );
-}
-
-
 bool GlBlock::
         has_texture() const
 {

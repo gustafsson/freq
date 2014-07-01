@@ -22,7 +22,6 @@ public:
     void            draw( unsigned vbo_size );
 
     GlTexture::ptr  glTexture();
-    void            updateTexture( float*p, int n );
     bool            has_texture() const;
 
 private:
