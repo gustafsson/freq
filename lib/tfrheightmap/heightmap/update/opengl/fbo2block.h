@@ -1,8 +1,10 @@
 #ifndef HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
 #define HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
 
-#include "heightmap/block.h"
+#include "heightmap/render/glblock.h"
+#include "heightmap/position.h"
 #include "glframebuffer.h"
+#include "GlTexture.h"
 
 namespace Heightmap {
 namespace Update {
@@ -18,13 +20,14 @@ public:
     Fbo2Block& operator=(const Fbo2Block&) = delete;
     ~Fbo2Block();
 
-    ScopeBinding begin (pBlock block);
+    ScopeBinding begin (Region br, Render::GlBlock::ptr glblock);
 
 private:
     void end();
 
-    pBlock block;
-    Block::pGlBlock glblock;
+    Render::GlBlock::ptr glblock;
+    std::shared_ptr<Render::GlBlock::ptr::write_ptr> glblockw;
+    GlTexture::ptr texture;
     std::unique_ptr<GlFrameBuffer> fbo;
     unsigned copyfbo;
 };

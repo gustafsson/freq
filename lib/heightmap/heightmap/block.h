@@ -2,6 +2,7 @@
 #define BLOCK_H
 
 #include "referenceinfo.h"
+#include "render/glblock.h"
 
 // gpumisc
 #include "datastorage.h"
@@ -28,7 +29,7 @@ namespace Heightmap {
      */
     class Block {
     public:
-        typedef std::shared_ptr<Render::GlBlock> pGlBlock;
+        typedef Render::GlBlock::ptr pGlBlock;
 
         Block( Reference, BlockLayout, VisualizationParams::const_ptr);
         ~Block();

@@ -79,7 +79,7 @@ void BlockFactory::
         }
     }
 
-    block->glblock->updateTexture (&p[0], p.size ());
+    block->glblock.write ()->updateTexture (&p[0], p.size ());
 }
 
 } // namespace BlockManagement

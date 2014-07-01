@@ -68,6 +68,10 @@ void Collection::
         clear()
 {
     BlockCache::cache_t C = cache_->clear ();
+    for (const BlockCache::cache_t::value_type& b : C) {
+        b.second->glblock.reset();
+    }
+
     INFO_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);

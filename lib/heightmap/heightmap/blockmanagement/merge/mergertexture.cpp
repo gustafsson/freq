@@ -187,7 +187,8 @@ void MergerTexture::
     {
         VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getRegion ());
 
-        GlTexture::ptr t = block->glblock->glTexture ();
+        auto glblock = block->glblock.write ();
+        GlTexture::ptr t = glblock->glTexture ();
         glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -198,7 +199,7 @@ void MergerTexture::
 bool MergerTexture::
         mergeBlock( const Block& inBlock )
 {
-    if (!inBlock.glblock || !inBlock.glblock->has_texture ())
+    if (!inBlock.glblock || !inBlock.glblock.raw ()->has_texture ())
         return false;
 
     VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
@@ -208,7 +209,8 @@ bool MergerTexture::
     glTranslatef (ri.a.time, ri.a.scale, 0);
     glScalef (ri.time (), ri.scale (), 1.f);
 
-    glBindTexture( GL_TEXTURE_2D, inBlock.glblock->glTexture ()->getOpenGlTextureId ());
+    auto glblock = inBlock.glblock.write ();
+    glBindTexture( GL_TEXTURE_2D, glblock->glTexture ()->getOpenGlTextureId ());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -273,7 +275,7 @@ void MergerTexture::
                             0, 0, 0, 0,
                             0, 0, 0, 0};
 
-        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(block->glblock.write ()->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
@@ -285,7 +287,7 @@ void MergerTexture::
 
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
             block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
-            block->glblock->updateTexture (srcdata, 16);
+            block->glblock.write ()->updateTexture (srcdata, 16);
 
             cache->insert(block);
         }
@@ -297,7 +299,7 @@ void MergerTexture::
                               0,   0,   0,   0,
                               0,   0,   0,   0,
                               a/2, b/2, c/2, 0};
-        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(block->glblock.write ()->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
@@ -309,7 +311,7 @@ void MergerTexture::
 
             pBlock block(new Block(ref.right (),bl,vp));
             block->glblock.reset( new Render::GlBlock( block_textures.getUnusedTextures (1)[0] ));
-            block->glblock->updateTexture (srcdata,16);
+            block->glblock.write ()->updateTexture (srcdata,16);
 
             cache->insert(block);
         }
@@ -322,7 +324,7 @@ void MergerTexture::
                               0, 0,    9.5,  11.5,
                               0, 0,   13.5,  v16};
 
-        data = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(block->glblock.write ()->glTexture ()->getOpenGlTextureId ()).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);

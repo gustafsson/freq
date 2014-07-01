@@ -58,7 +58,7 @@ void RenderBlock::Renderer::
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
 
-    block->glblock->draw( vbo_size );
+    block->glblock.write ()->draw( vbo_size );
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }

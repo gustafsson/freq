@@ -40,7 +40,8 @@ std::list<pBlock> ClearInterval::
             if( I.first <= blockInterval.first && I.last < blockInterval.last )
             {
                 Region ir = block->getRegion ();
-                ResampleTexture rt(block->glblock->glTexture ()->getOpenGlTextureId ());
+                auto glblock = block->glblock.write ();
+                ResampleTexture rt(glblock->glTexture ()->getOpenGlTextureId ());
                 ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
                 GlFrameBuffer::ScopeBinding sb = rt.enable(A);
                 float t = I.last / block->block_layout ().targetSampleRate();

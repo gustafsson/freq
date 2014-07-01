@@ -20,7 +20,7 @@ unsigned long BlockCacheInfo::
     for (const BlockCache::cache_t::value_type& b : cache)
         {
         if (b.second->glblock)
-            sumsize += b.second->glblock->allocated_bytes_per_element()
+            sumsize += b.second->glblock.raw()->allocated_bytes_per_element()
                     * b.second->block_layout().texels_per_block ();
         }
 

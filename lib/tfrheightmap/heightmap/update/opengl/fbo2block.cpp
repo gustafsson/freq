@@ -8,12 +8,7 @@
 
 #include "gl.h"
 
-// Not drawing straight onto existing blocks works but requires a more
-// elaborate locking procedure than glblock.swap() to prevent the glblock
-// from still being in use by RenderBlock. "BlockTextures" doesn't work
-// any better in this regard as the drawcalls of the textures are still in
-// the pipeline when the texture is modified here.
-const bool draw_straight_onto_block = true;
+const bool draw_straight_onto_block = false;
 
 namespace Heightmap {
 namespace Update {
@@ -31,7 +26,7 @@ void copyTexture(unsigned copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
 {
     // Assumes dst and src have the same size and the same pixel format
     int w = dst->getWidth ();
-    int h =  dst->getHeight ();
+    int h = dst->getHeight ();
     glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
     glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
@@ -53,69 +48,8 @@ Fbo2Block::Fbo2Block ()
         unsigned textureid;
         glGenTextures (1, &textureid);
         Render::BlockTextures::setupTexture (textureid,4,4);
-        glblock.reset (new Render::GlBlock(GlTexture::ptr(new GlTexture(textureid))));
+        texture.reset (new GlTexture(textureid));
     }
-
-    // Draw to fbo, copy to glblock
-    // Create new texture
-/*    unsigned tex_;
-    glGenTextures(1, &tex_);
-    glBindTexture(GL_TEXTURE_2D, tex_);
-
-    static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    int w = block->block_layout().texels_per_row();
-    int h =  block->block_layout().texels_per_column ();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                 w, h, 0,
-                 GL_RED, GL_FLOAT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    fbo.reset (new GlFrameBuffer(tex_));
-
-    glCopyImageSubData();*/
-
-    {
-//        glCopyImageSubData​(glblock->glTexture ()->getOpenGlTextureId (), GL_TEXTURE_2D​,
-//                                    0​, 0​, 0​, 0​,
-//                                    fbo_->getGlTexture()​, GL_TEXTURE_2D,
-//                                    0​, 0​, 0, 0​,
-//                                    w, h, 1);
-//        unsigned vbo=0;
-//        glGenBuffers (1, &vbo);
-//        struct vertex_format {
-//            float x, y, u, v;
-//        };
-
-//        float vertices[] = {
-//            0, 0, 0, 0,
-//            0, 1, 0, 1,
-//            1, 0, 1, 0,
-//            1, 1, 1, 1,
-//        };
-
-//        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-//        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-
-//        glEnableClientState(GL_VERTEX_ARRAY);
-//        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-//        glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
-//        glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
-
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
-
-//        glDeleteBuffers (1, &vbo);
-    }
-
-    // Copy from texture to own fbo
-//    {
-//        GlFrameBuffer fbo(block->glblock->glTexture ()->getOpenGlTextureId ());
-//        fbo_->bindFrameBuffer ();
-//        grabToTexture(glblock->glTexture());
-//        fbo_->unbindFrameBuffer ();
-//    }
 }
 
 
@@ -128,60 +62,57 @@ Fbo2Block::
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (pBlock block)
+        begin (Region br, Block::pGlBlock glblock)
 {
-    this->block = block;
+    EXCEPTION_ASSERT(!this->glblock);
+    EXCEPTION_ASSERT(glblock);
+
+    int w = glblock.raw ()->glTexture ()->getWidth ();
+    int h = glblock.raw ()->glTexture ()->getHeight ();
+    this->glblock = glblock;
 
     if (draw_straight_onto_block)
-        glblock = block->glblock;
+    {
+        texture = glblock.raw ()->glTexture ();
+        glblockw.reset (new Render::GlBlock::ptr::write_ptr(glblock.write ()));
+    }
     else
     {
-        int w = block->block_layout ().texels_per_row ();
-        int h = block->block_layout ().texels_per_column ();
-        int oldw = glblock->glTexture ()->getWidth ();
-        int oldh = glblock->glTexture ()->getHeight ();
+        int oldw = texture->getWidth ();
+        int oldh = texture->getHeight ();
         if (oldw != w || oldh != h)
         {
-            int id = glblock->glTexture ()->getOpenGlTextureId ();
+            int id = texture->getOpenGlTextureId ();
             Render::BlockTextures::setupTexture (id, w, h);
-            glblock.reset (new Render::GlBlock(GlTexture::ptr(new GlTexture(id))));
+            texture.reset (new GlTexture(id));
+            fbo.reset ();
         }
 
-        // read from block, write to glblock
-        copyTexture (copyfbo, glblock->glTexture (), block->glblock->glTexture ());
+        // read from glblock, write to texture. Doesn't need lock to read from
+        // multiple threads. As this thread is the only thread that writes to
+        // glblock after construction a lock is not needed.
+//        auto l = glblock->lock ();
+        copyTexture (copyfbo, texture, glblock.raw ()->glTexture ());
+//        (void)l; // RAII
     }
 
-    fbo.reset (new GlFrameBuffer(glblock->glTexture ()->getOpenGlTextureId ()));
-
-/*        else
-    {
-        fbo->bindFrameBuffer();
-        glFramebufferTexture2DEXT (GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT0_EXT,
-                                  GL_TEXTURE_2D,
-                                  glblock->glTexture ()->getOpenGlTextureId (),
-                                  0);
-        glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-        fbo->unbindFrameBuffer();
-    }*/
+    if (!fbo)
+        fbo.reset (new GlFrameBuffer(texture->getOpenGlTextureId ()));
 
     GlException_CHECK_ERROR ();
 
     fbo->bindFrameBuffer();
     ScopeBinding fboBinding = ScopeBinding(*this, &Fbo2Block::end);
 
-    Region br = block->getRegion ();
-    BlockLayout block_layout = block->block_layout ();
-
     // Juggle texture coordinates so that border texels are centered on the border
     float dt = br.time (), ds = br.scale ();
-    br.a.time -= 0.5*dt / block_layout.texels_per_row ();
-    br.b.time += 0.5*dt / block_layout.texels_per_row ();
-    br.a.scale -= 0.5*ds / block_layout.texels_per_column ();
-    br.b.scale += 0.5*ds / block_layout.texels_per_column ();
+    br.a.time -= 0.5*dt / w;
+    br.b.time += 0.5*dt / w;
+    br.a.scale -= 0.5*ds / h;
+    br.b.scale += 0.5*ds / h;
 
     // Setup matrices
-    glViewport (0, 0, block_layout.texels_per_row (), block_layout.texels_per_column ());
+    glViewport (0, 0, w, h);
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity ();
     glOrtho (br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
@@ -206,14 +137,22 @@ void Fbo2Block::
     if (!fbo)
         return;
 
-    fbo->unbindFrameBuffer();
-
-    fbo.reset ();
-
     if (!draw_straight_onto_block)
-        block->glblock.swap (glblock);
+    {
+        auto l = glblock.write ();
+        grabToTexture (l->glTexture ());
+        fbo->unbindFrameBuffer();
+//        fbo.reset ();
+    }
 
-    block.reset ();
+    if (draw_straight_onto_block)
+    {
+        fbo->unbindFrameBuffer();
+        fbo.reset ();
+        glblockw.reset ();
+    }
+
+    glblock.reset ();
 }
 
 

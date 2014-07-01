@@ -94,7 +94,12 @@ void WaveUpdater::
     for (auto& f : buffers_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block);
+        Region br = block->getRegion ();
+        Block::pGlBlock glblock = block->glblock;
+        if (!glblock)
+            continue;
+
+        auto fbo_mapping = p->fbo2block.begin (br, glblock);
 
         for (auto& b : f.second)
             wave2fbo[b]->draw();
