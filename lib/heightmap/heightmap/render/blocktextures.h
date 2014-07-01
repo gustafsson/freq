@@ -60,6 +60,11 @@ public:
      */
     static void setupTexture(unsigned name, unsigned width, unsigned height);
 
+    /**
+     * @brief allocated_bytes_per_element
+     */
+    static unsigned allocated_bytes_per_element();
+
 private:
     std::vector<GlTexture::ptr> textures;
     BlockLayout block_layout;

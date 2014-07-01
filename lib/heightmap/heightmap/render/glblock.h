@@ -24,7 +24,6 @@ public:
     GlTexture::ptr  glTexture();
     void            updateTexture( float*p, int n );
     bool            has_texture() const;
-    unsigned        allocated_bytes_per_element() const;
 
 private:
     GlTexture::ptr tex_;

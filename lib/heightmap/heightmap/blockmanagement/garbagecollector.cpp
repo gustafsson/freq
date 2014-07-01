@@ -4,6 +4,7 @@
 #include "heightmap/render/glblock.h"
 #include "heightmap/visualizationparams.h"
 #include "heightmap/reference_hash.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 #include "log.h"
@@ -78,10 +79,7 @@ pBlock GarbageCollector::
     if (!releasedBlock)
         return pBlock(); // Nothing to release
 
-    auto glblock = releasedBlock->glblock;
-    size_t blockMemory = glblock
-            ? glblock->allocated_bytes_per_element() * releasedBlock->block_layout().texels_per_block ()
-            : 0;
+    size_t blockMemory = Render::BlockTextures::allocated_bytes_per_element() * releasedBlock->block_layout().texels_per_block ();
 
     if (true)
     TaskInfo(format("Removing block %s last used %u frames ago. Freeing %s, total free %s, cache %s, %u blocks")
@@ -115,11 +113,7 @@ std::vector<pBlock> GarbageCollector::
         if (allocatedMemory < free_memory*MAX_FRACTION_FOR_CACHES)
             break;
 
-        auto glblock = b->glblock;
-        size_t blockMemory = glblock
-                ? glblock->allocated_bytes_per_element() * b->block_layout().texels_per_block ()
-                : 0;
-
+        size_t blockMemory = Render::BlockTextures::allocated_bytes_per_element() * b->block_layout().texels_per_block ();
         allocatedMemory = clamped_sub(allocatedMemory, blockMemory);
         R.push_back (b);
     }

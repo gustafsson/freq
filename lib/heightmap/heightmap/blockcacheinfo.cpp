@@ -1,6 +1,7 @@
 #include "blockcacheinfo.h"
 
 #include "render/glblock.h"
+#include "render/blocktextures.h"
 #include "tasktimer.h"
 
 
@@ -19,8 +20,8 @@ unsigned long BlockCacheInfo::
 
     for (const BlockCache::cache_t::value_type& b : cache)
         {
-        if (auto glblock = b.second->glblock)
-            sumsize += glblock->allocated_bytes_per_element()
+        if (b.second->glblock)
+            sumsize += Render::BlockTextures::allocated_bytes_per_element()
                     * b.second->block_layout().texels_per_block ();
         }
 

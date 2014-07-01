@@ -100,12 +100,5 @@ void GlBlock::
     GlException_CHECK_ERROR();
 }
 
-
-unsigned GlBlock::
-        allocated_bytes_per_element() const
-{
-    return 4*sizeof(float); // OpenGL texture
-}
-
 } // namespace Render
 } // namespace Heightmap

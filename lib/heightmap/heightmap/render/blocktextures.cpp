@@ -114,6 +114,13 @@ void BlockTextures::
 }
 
 
+unsigned BlockTextures::
+        allocated_bytes_per_element()
+{
+    return 2; // GL_R16F
+}
+
+
 } // namespace Render
 } // namespace Heightmap
 
