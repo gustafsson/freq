@@ -2,6 +2,7 @@
 #include "clearkernel.h"
 #include "resampletexture.h"
 #include "heightmap/render/glblock.h"
+#include "gl.h"
 
 namespace Heightmap {
 namespace Blocks {
@@ -34,24 +35,28 @@ std::list<pBlock> ClearInterval::
         else if ( keep_entire_block )
         {
         }
-        else
+        else if (auto glblock = block->glblock)
         {
-            // clear partial block
-            if( I.first <= blockInterval.first && I.last < blockInterval.last )
-            {
-                Region ir = block->getRegion ();
-                auto glblock = block->glblock.write ();
-                ResampleTexture rt(glblock->glTexture ()->getOpenGlTextureId ());
-                ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
-                GlFrameBuffer::ScopeBinding sb = rt.enable(A);
-                float t = I.last / block->block_layout ().targetSampleRate();
-                A.x1 = t;
+            // TODO this update into an existing glblock might collide with updateconsumer
+            Region ir = block->getRegion ();
+            ResampleTexture rt(glblock->glTexture ()->getOpenGlTextureId ());
+            ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
+            GlFrameBuffer::ScopeBinding sb = rt.enable(A);
+            float t = I.last / block->block_layout ().targetSampleRate();
+            A.x1 = t;
+            if (A.x1<A.x2)
                 rt.drawColoredArea (A, 0.f);
-                (void)sb; // RAII
-            }
+
+            t = I.first / block->block_layout ().targetSampleRate();
+            A.x1 = ir.a.time;
+            A.x2 = t;
+            if (A.x1<A.x2)
+                rt.drawColoredArea (A, 0.f);
+            (void)sb; // RAII
         }
     }
 
+    glFlush();
     return discarded;
 }
 
