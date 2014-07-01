@@ -19,8 +19,6 @@ public:
 
     GlBlock( GlTexture::ptr tex );
 
-    void            draw( unsigned vbo_size );
-
     GlTexture::ptr  glTexture();
     bool            has_texture() const;
 

@@ -49,33 +49,7 @@ bool GlBlock::
 }
 
 
-void GlBlock::
-        draw( unsigned vbo_size )
-{
-    if (!has_texture ())
-        return;
 
-    GlException_CHECK_ERROR();
-
-    glBindTexture(GL_TEXTURE_2D, _tex_height);
-
-    const bool wireFrame = false;
-    const bool drawPoints = false;
-
-    if (drawPoints) {
-        glDrawArrays(GL_POINTS, 0, vbo_size);
-    } else if (wireFrame) {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    } else {
-        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    GlException_CHECK_ERROR();
-}
 
 } // namespace Render
 } // namespace Heightmap
