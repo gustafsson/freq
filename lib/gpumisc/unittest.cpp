@@ -7,6 +7,7 @@
 #include "glframebuffer.h"
 #include "glinfo.h"
 #include "glprojection.h"
+#include "glsyncobjectmutex.h"
 #include "gltextureread.h"
 #include "neat_math.h"
 #include "resampletexture.h"
@@ -46,6 +47,7 @@ int UnitTest::
         RUNTEST(GlFrameBuffer);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
+        RUNTEST(GlSyncObjectMutex);
         RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
         RUNTEST(ResampleTexture);

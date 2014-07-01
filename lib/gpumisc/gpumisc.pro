@@ -31,6 +31,7 @@ SOURCES += \
     glinfo.cpp \
     glprojection.cpp \
     glPushContext.cpp \
+    glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
     gluunproject.cpp \
@@ -62,6 +63,7 @@ HEADERS += \
     glinfo.h \
     glprojection.h \
     glPushContext.h \
+    glsyncobjectmutex.h \
     GlTexture.h \
     gltextureread.h \
     GLvector.h \
