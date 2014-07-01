@@ -26,7 +26,6 @@ private:
     void end();
 
     Render::GlBlock::ptr glblock;
-    std::shared_ptr<Render::GlBlock::ptr::write_ptr> glblockw;
     GlTexture::ptr texture;
     std::unique_ptr<GlFrameBuffer> fbo;
     unsigned copyfbo;

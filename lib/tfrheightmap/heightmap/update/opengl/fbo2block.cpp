@@ -67,14 +67,13 @@ Fbo2Block::ScopeBinding Fbo2Block::
     EXCEPTION_ASSERT(!this->glblock);
     EXCEPTION_ASSERT(glblock);
 
-    int w = glblock.raw ()->glTexture ()->getWidth ();
-    int h = glblock.raw ()->glTexture ()->getHeight ();
+    int w = glblock->glTexture ()->getWidth ();
+    int h = glblock->glTexture ()->getHeight ();
     this->glblock = glblock;
 
     if (draw_straight_onto_block)
     {
-        texture = glblock.raw ()->glTexture ();
-        glblockw.reset (new Render::GlBlock::ptr::write_ptr(glblock.write ()));
+        texture = glblock->glTexture ();
     }
     else
     {
@@ -88,12 +87,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
             fbo.reset ();
         }
 
-        // read from glblock, write to texture. Doesn't need lock to read from
-        // multiple threads. As this thread is the only thread that writes to
-        // glblock after construction a lock is not needed.
-//        auto l = glblock->lock ();
-        copyTexture (copyfbo, texture, glblock.raw ()->glTexture ());
-//        (void)l; // RAII
+        copyTexture (copyfbo, texture, glblock->glTexture ());
     }
 
     if (!fbo)
@@ -134,22 +128,18 @@ Fbo2Block::ScopeBinding Fbo2Block::
 void Fbo2Block::
         end()
 {
-    if (!fbo)
+    if (!glblock)
         return;
-
-    if (!draw_straight_onto_block)
-    {
-        auto l = glblock.write ();
-        grabToTexture (l->glTexture ());
-        fbo->unbindFrameBuffer();
-//        fbo.reset ();
-    }
 
     if (draw_straight_onto_block)
     {
         fbo->unbindFrameBuffer();
         fbo.reset ();
-        glblockw.reset ();
+    }
+    else
+    {
+        grabToTexture (glblock->glTexture ());
+        fbo->unbindFrameBuffer();
     }
 
     glblock.reset ();

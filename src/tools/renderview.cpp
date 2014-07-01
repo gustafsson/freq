@@ -333,7 +333,7 @@ float RenderView::
             return 0;
     }
 
-    DataStorage<float>::ptr blockData = GlTextureRead(block->glblock.write ()->glTexture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat();
 
     float* data = blockData->getCpuMemory();
     Heightmap::BlockLayout block_layout = model->tfr_mapping ().read ()->block_layout();
