@@ -247,6 +247,13 @@ void Chain::
     // Add worker threads to occupy all kernels
     for (int i=cpu_workers; i<QThread::idealThreadCount (); i++)
         workers->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+
+    auto dag = dag_.write ();
+    BOOST_FOREACH (GraphVertex v, vertices(dag->g()))
+    {
+        Step::ptr s = dag->g()[v];
+        s->undie();
+    }
 }
 
 

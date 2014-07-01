@@ -40,6 +40,7 @@ public:
 
     Signal::OperationDesc::ptr get_crashed() const;
     Signal::Processing::IInvalidator::ptr mark_as_crashed_and_get_invalidator();
+    void undie();
 
     /**
      * @brief deprecateCache should mark which intervals the scheduler should find tasks for.
