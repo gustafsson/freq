@@ -124,6 +124,10 @@ void MergerTexture::
 
     (void)fboBinding; // RAII
     GlException_CHECK_ERROR();
+
+    // Flush all these drawing commands onto the device queue before the
+    // updater starts issuing drawing commands onto the device.
+    glFlush ();
 }
 
 
