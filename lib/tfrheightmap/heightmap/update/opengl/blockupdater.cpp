@@ -149,7 +149,10 @@ void BlockUpdater::
 
             // If something has changed the vbo is out-of-date, skip this
             if (!vbos.count (p))
+            {
+                TaskInfo(boost::format("blockupdater: skipping update of block: %s") % block->getRegion ());
                 continue;
+            }
 
             auto& vbo = vbos[p];
             auto tex_mapping = pbo2texture[c]->map(
