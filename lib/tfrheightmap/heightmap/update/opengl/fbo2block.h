@@ -1,7 +1,6 @@
 #ifndef HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
 #define HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
 
-#include "heightmap/render/glblock.h"
 #include "heightmap/position.h"
 #include "glframebuffer.h"
 #include "GlTexture.h"
@@ -20,13 +19,13 @@ public:
     Fbo2Block& operator=(const Fbo2Block&) = delete;
     ~Fbo2Block();
 
-    ScopeBinding begin (Region br, Render::GlBlock::ptr glblock);
+    ScopeBinding begin (Region br, GlTexture::ptr fboTexture);
 
 private:
     void end();
 
-    Render::GlBlock::ptr glblock;
-    GlTexture::ptr texture;
+    GlTexture::ptr blockTexture;
+    GlTexture::ptr fboTexture;
     std::unique_ptr<GlFrameBuffer> fbo;
     unsigned copyfbo;
 };

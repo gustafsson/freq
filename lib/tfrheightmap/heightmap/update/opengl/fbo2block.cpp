@@ -1,5 +1,4 @@
 #include "fbo2block.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/uncaughtexception.h"
 #include "heightmap/update/updatequeue.h"
 #include "heightmap/render/blocktextures.h"
@@ -45,10 +44,7 @@ Fbo2Block::Fbo2Block ()
     if (!draw_straight_onto_block)
     {
         glGenFramebuffersEXT(1, &copyfbo);
-        unsigned textureid;
-        glGenTextures (1, &textureid);
-        Render::BlockTextures::setupTexture (textureid,4,4);
-        texture.reset (new GlTexture(textureid));
+        fboTexture = Render::BlockTextures(4,4,1).get1 ();
     }
 }
 
@@ -62,36 +58,36 @@ Fbo2Block::
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (Region br, Block::pGlBlock glblock)
+        begin (Region br, GlTexture::ptr blockTexture)
 {
-    EXCEPTION_ASSERT(!this->glblock);
-    EXCEPTION_ASSERT(glblock);
+    EXCEPTION_ASSERT(!this->blockTexture);
+    EXCEPTION_ASSERT(blockTexture);
 
-    int w = glblock->glTexture ()->getWidth ();
-    int h = glblock->glTexture ()->getHeight ();
-    this->glblock = glblock;
+    int w = blockTexture->getWidth ();
+    int h = blockTexture->getHeight ();
+    this->blockTexture = blockTexture;
 
     if (draw_straight_onto_block)
     {
-        texture = glblock->glTexture ();
+        fboTexture = blockTexture;
     }
     else
     {
-        int oldw = texture->getWidth ();
-        int oldh = texture->getHeight ();
+        int oldw = fboTexture->getWidth ();
+        int oldh = fboTexture->getHeight ();
         if (oldw != w || oldh != h)
         {
-            int id = texture->getOpenGlTextureId ();
+            int id = fboTexture->getOpenGlTextureId ();
             Render::BlockTextures::setupTexture (id, w, h);
-            texture.reset (new GlTexture(id));
+            fboTexture.reset (new GlTexture(id));
             fbo.reset ();
         }
 
-        copyTexture (copyfbo, texture, glblock->glTexture ());
+        copyTexture (copyfbo, fboTexture, blockTexture);
     }
 
     if (!fbo)
-        fbo.reset (new GlFrameBuffer(texture->getOpenGlTextureId ()));
+        fbo.reset (new GlFrameBuffer(fboTexture->getOpenGlTextureId ()));
 
     GlException_CHECK_ERROR ();
 
@@ -128,21 +124,22 @@ Fbo2Block::ScopeBinding Fbo2Block::
 void Fbo2Block::
         end()
 {
-    if (!glblock)
+    if (!blockTexture)
         return;
 
     if (draw_straight_onto_block)
     {
         fbo->unbindFrameBuffer();
         fbo.reset ();
+        fboTexture.reset ();
     }
     else
     {
-        grabToTexture (glblock->glTexture ());
+        grabToTexture (blockTexture);
         fbo->unbindFrameBuffer();
     }
 
-    glblock.reset ();
+    blockTexture.reset ();
 }
 
 

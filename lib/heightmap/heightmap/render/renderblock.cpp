@@ -1,5 +1,4 @@
 #include "renderblock.h"
-#include "glblock.h"
 #include "shaderresource.h"
 
 // gpumisc
@@ -61,7 +60,7 @@ void RenderBlock::Renderer::
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
 
-    draw( block->glblock->glTexture ()->getOpenGlTextureId () );
+    draw( block->texture ()->getOpenGlTextureId () );
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }

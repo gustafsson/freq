@@ -38,6 +38,7 @@ MergeChunk::ptr WaveformBlockFilterDesc::
 #include "timer.h"
 #include "neat_math.h"
 #include "signal/computingengine.h"
+#include "heightmap/render/blocktextures.h"
 
 namespace Heightmap {
 namespace TfrMappings {
@@ -77,7 +78,8 @@ void WaveformBlockFilter::
             return ref;
         }();
 
-        Heightmap::pBlock block( new Heightmap::Block(ref, bl, vp));
+        GlTexture::ptr tex = Render::BlockTextures(4,4,1).get1 ();;
+        pBlock block( new Block(ref, bl, vp, tex));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;

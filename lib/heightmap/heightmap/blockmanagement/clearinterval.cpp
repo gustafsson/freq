@@ -1,7 +1,6 @@
 #include "clearinterval.h"
 #include "clearkernel.h"
 #include "resampletexture.h"
-#include "heightmap/render/glblock.h"
 #include "gl.h"
 
 namespace Heightmap {
@@ -35,11 +34,11 @@ std::list<pBlock> ClearInterval::
         else if ( keep_entire_block )
         {
         }
-        else if (auto glblock = block->glblock)
+        else
         {
-            // TODO this update into an existing glblock might collide with updateconsumer
+            // TODO this update into an existing texture might collide with updateconsumer
             Region ir = block->getRegion ();
-            ResampleTexture rt(glblock->glTexture ()->getOpenGlTextureId ());
+            ResampleTexture rt(block->texture ()->getOpenGlTextureId ());
             ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
             GlFrameBuffer::ScopeBinding sb = rt.enable(A);
             float t = I.last / block->block_layout ().targetSampleRate();

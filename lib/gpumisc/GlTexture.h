@@ -5,7 +5,7 @@ See class comment #GlTexture.
 #pragma once
 
 #include "releaseaftercontext.h"
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 // It's not necessary to include the whole glew.h here just to get 
 // the constant value of GL_RGBA, which is used as the default value
@@ -35,7 +35,7 @@ construction and destruction and keeping track of texture id).
 */
 class GlTexture: public boost::noncopyable {
 public:
-    typedef boost::shared_ptr<GlTexture> ptr;
+    typedef std::shared_ptr<GlTexture> ptr;
 
 	/**
 	Creates a new OpenGL texture and allocates memory for a given

@@ -1,7 +1,6 @@
 #include "garbagecollector.h"
 #include "heightmap/blockcacheinfo.h"
 #include "heightmap/referenceinfo.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/visualizationparams.h"
 #include "heightmap/reference_hash.h"
 #include "heightmap/render/blocktextures.h"

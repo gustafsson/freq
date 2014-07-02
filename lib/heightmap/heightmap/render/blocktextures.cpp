@@ -9,10 +9,13 @@
 namespace Heightmap {
 namespace Render {
 
-BlockTextures::BlockTextures(BlockLayout bl)
+BlockTextures::BlockTextures(unsigned width, unsigned height, unsigned initialCapacity)
     :
-      block_layout(bl)
+      width_(width),
+      height_(height)
 {
+    if (initialCapacity>0)
+        setCapacity(initialCapacity);
 }
 
 
@@ -26,7 +29,13 @@ void BlockTextures::
     }
 
     // not ok, adjust
-    unsigned target_capacity = c*2;
+    setCapacity(c*2);
+}
+
+
+void BlockTextures::
+        setCapacity (unsigned target_capacity)
+{
     if (target_capacity < textures.size ())
     {
         std::vector<GlTexture::ptr> pick;
@@ -54,12 +63,10 @@ void BlockTextures::
     GLuint t[new_textures];
     glGenTextures (new_textures, t);
     textures.reserve (target_capacity);
-    int w = block_layout.texels_per_row ();
-    int h = block_layout.texels_per_column ();
 
     for (int i=0; i<new_textures; i++)
     {
-        setupTexture (t[i], w, h);
+        setupTexture (t[i], width_, height_);
 
         textures.push_back (GlTexture::ptr(new GlTexture(t[i])));
     }
@@ -121,6 +128,22 @@ unsigned BlockTextures::
 }
 
 
+GlTexture::ptr BlockTextures::
+        get1()
+{
+    auto v = getUnusedTextures(1);
+    if (!v.empty ())
+        return v[0];
+
+    setCapacity (getCapacity ()+1);
+    v = getUnusedTextures(1);
+    if (!v.empty ())
+        return v[0];
+
+    return GlTexture::ptr();
+}
+
+
 } // namespace Render
 } // namespace Heightmap
 
@@ -142,14 +165,12 @@ void BlockTextures::
     QGLWidget w;
     w.makeCurrent ();
 
-    // The BlockTextures class should keep track of all OpenGL textures that
-    // have been allocated for painting GlBlocks and provide already allocated
-    // textures fast
+    // It should keep track of all OpenGL textures that have been allocated for
+    // painting block textures and provide already allocated textures fast.
     {
         GlException_CHECK_ERROR();
 
-        BlockLayout block_layout(512,512,1);
-        BlockTextures block_textures(block_layout);
+        BlockTextures block_textures(512,512);
 
         int c = block_textures.getCapacity ();
 

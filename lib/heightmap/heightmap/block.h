@@ -2,7 +2,6 @@
 #define BLOCK_H
 
 #include "referenceinfo.h"
-#include "render/glblock.h"
 
 // gpumisc
 #include "datastorage.h"
@@ -11,11 +10,9 @@
 #include <QMutex>
 #endif
 
-namespace Heightmap {
+class GlTexture;
 
-    namespace Render {
-        class GlBlock;
-    }
+namespace Heightmap {
 
     // FEATURE it would probably look awesome if new blocks weren't displayed
     // instantaneously but rather faded in from 0 or from their previous value.
@@ -24,24 +21,22 @@ namespace Heightmap {
     // more separate collections in Heightmap::Renderer. It would fetch Blocks by
     // their 'Reference' from the different collections and use a shader to
     // transfer results between them.
+
     /**
      * @brief The Block class should store information and data about a block.
      */
     class Block {
     public:
-        typedef Render::GlBlock::ptr pGlBlock;
-
-        Block( Reference, BlockLayout, VisualizationParams::const_ptr);
-        ~Block();
+        typedef std::shared_ptr<GlTexture> pGlTexture;
+        Block( Reference, BlockLayout, VisualizationParams::const_ptr, pGlTexture t);
+        Block( const Block&)=delete;
+        Block& operator=( const Block&)=delete;
 
         // TODO move this value to a complementary class
         unsigned frame_number_last_used;
 
         // OpenGL data to render
-        pGlBlock glblock;
-
-        // Shared state
-        const VisualizationParams::const_ptr visualization_params() const { return visualization_params_; }
+        pGlTexture texture() const { return texture_; }
 
         // POD properties
         const BlockLayout block_layout() const { return block_layout_; }
@@ -53,14 +48,18 @@ namespace Heightmap {
         // Helper
         ReferenceInfo referenceInfo() const { return ReferenceInfo(reference (), block_layout (), visualization_params ()); }
 
+        // Shared state
+        const VisualizationParams::const_ptr visualization_params() const { return visualization_params_; }
+
     private:
         const Reference ref_;
         const BlockLayout block_layout_;
-        const VisualizationParams::const_ptr visualization_params_;
-
         const Signal::Interval block_interval_;
         const Region region_;
         const float sample_rate_;
+
+        const VisualizationParams::const_ptr visualization_params_;
+        const pGlTexture texture_;
 
     public:
         static void test();

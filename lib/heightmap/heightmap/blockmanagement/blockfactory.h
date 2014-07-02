@@ -2,7 +2,6 @@
 #define HEIGHTMAP_BLOCKFACTORY_H
 
 #include "heightmap/blockcache.h"
-#include "heightmap/render/glblock.h"
 #include "GlTexture.h"
 
 namespace Heightmap {

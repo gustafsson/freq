@@ -1,5 +1,4 @@
 #include "collection.h"
-#include "render/glblock.h"
 #include "blockmanagement/blockfactory.h"
 #include "blockmanagement/blockinitializer.h"
 #include "blockquery.h"
@@ -45,7 +44,7 @@ Collection::
     cache_( new BlockCache ),
     block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
     block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
-    block_textures_(new Render::BlockTextures(block_layout)),
+    block_textures_(new Render::BlockTextures(block_layout.texels_per_row (), block_layout.texels_per_column ())),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -67,9 +66,12 @@ Collection::
 void Collection::
         clear()
 {
-    BlockCache::cache_t C = cache_->clear ();
-    for (const BlockCache::cache_t::value_type& b : C) {
-        b.second->glblock.reset();
+    auto C = cache_->clear ();
+    for (auto const& v : C)
+    {
+        pBlock const& b = v.second;
+        if (!b.unique())
+            to_remove_.insert (b);
     }
 
     INFO_COLLECTION {
@@ -413,7 +415,7 @@ void Collection::
         block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
         block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
     }
-    block_textures_.reset(new Render::BlockTextures(block_layout_));
+    block_textures_.reset(new Render::BlockTextures(v.texels_per_row (), v.texels_per_column ()));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);

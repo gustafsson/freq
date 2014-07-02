@@ -10,7 +10,6 @@
 #include "adapters/recorder.h"
 #include "heightmap/block.h"
 #include "heightmap/render/renderer.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/collection.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
@@ -333,7 +332,7 @@ float RenderView::
             return 0;
     }
 
-    DataStorage<float>::ptr blockData = GlTextureRead(block->glblock->glTexture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(block->texture ()->getOpenGlTextureId ()).readFloat();
 
     float* data = blockData->getCpuMemory();
     Heightmap::BlockLayout block_layout = model->tfr_mapping ().read ()->block_layout();

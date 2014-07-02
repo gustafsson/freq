@@ -1,5 +1,5 @@
 #include "block.h"
-#include "render/glblock.h"
+#include "GlTexture.h"
 
 #include "tasktimer.h"
 #include "log.h"
@@ -12,28 +12,25 @@ namespace Heightmap {
 
 
 Block::
-        Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
+        Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params, std::shared_ptr<GlTexture> texture)
     :
     frame_number_last_used(0),
     ref_(ref),
     block_layout_(block_layout),
+    block_interval_( ReferenceInfo(ref, block_layout, visualization_params).getInterval() ),
+    region_( RegionFactory(block_layout)(ref) ),
+    sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
-    block_interval_( ReferenceInfo(ref, block_layout_, visualization_params_).getInterval() ),
-    region_( RegionFactory(block_layout_)(ref) ),
-    sample_rate_( ReferenceInfo(ref, block_layout_, visualization_params_).sample_rate() )
+    texture_(texture)
 {
-}
-
-
-Block::
-        ~Block()
-{
-    if (glblock)
+    if (texture_)
     {
-//        TaskTimer tt(boost::format("Deleting block %s %s") % ref_ % ReferenceInfo(ref_, block_layout_, visualization_params_));
-        glblock.reset();
+        EXCEPTION_ASSERT_EQUALS(texture_->getWidth (), block_layout.texels_per_row ());
+        EXCEPTION_ASSERT_EQUALS(texture_->getHeight (), block_layout.texels_per_column ());
     }
 }
+
+
 
 
 void Block::

@@ -2,7 +2,6 @@
 #define HEIGHTMAP_BLOCK_GARBAGECOLLECTOR_H
 
 #include "heightmap/blockcache.h"
-#include "heightmap/render/glblock.h"
 #include <functional>
 #include <set>
 
