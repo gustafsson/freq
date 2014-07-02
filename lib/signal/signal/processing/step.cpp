@@ -49,6 +49,17 @@ Signal::Processing::IInvalidator::ptr Step::
 }
 
 
+void Step::
+        undie()
+{
+    if (died_)
+        operation_desc_ = died_;
+    died_.reset ();
+    cache_->clear ();
+    not_started_ = Signal::Intervals::Intervals_ALL;
+}
+
+
 std::string Step::
         operation_name () const
 {

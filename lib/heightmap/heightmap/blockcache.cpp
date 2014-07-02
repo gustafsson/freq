@@ -99,8 +99,8 @@ void BlockCache::
         Reference r2 = r1.right ();
         BlockLayout bl(2,2,1);
         VisualizationParams::ptr vp;
-        pBlock b1(new Block(r1, bl, vp));
-        pBlock b2(new Block(r2, bl, vp));
+        pBlock b1(new Block(r1, bl, vp, Block::pGlTexture()));
+        pBlock b2(new Block(r2, bl, vp, Block::pGlTexture()));
 
         BlockCache c;
         c.insert (b1);

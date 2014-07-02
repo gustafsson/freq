@@ -1126,9 +1126,8 @@ void RenderController::
 void RenderController::
         clearCaches()
 {
-    // Cannot do this, UpdateConsumer might have glblock instances
-//    foreach( const Heightmap::Collection::Ptr& collection, model()->collections() )
-//        collection.write ()->clear();
+    foreach( const Heightmap::Collection::ptr& collection, model()->collections() )
+        collection.write ()->clear();
 }
 
 

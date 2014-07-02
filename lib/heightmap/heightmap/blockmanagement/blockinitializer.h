@@ -5,7 +5,6 @@
 #include "heightmap/visualizationparams.h"
 #include "heightmap/block.h"
 #include "heightmap/blockcache.h"
-#include "heightmap/render/glblock.h"
 
 namespace Heightmap {
 namespace BlockManagement {

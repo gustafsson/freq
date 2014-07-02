@@ -140,7 +140,7 @@ void BlockUpdater::
     for (auto& f : chunks_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block);
+        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture ());
 
         for (auto& c : f.second)
         {
@@ -149,7 +149,10 @@ void BlockUpdater::
 
             // If something has changed the vbo is out-of-date, skip this
             if (!vbos.count (p))
+            {
+                TaskInfo(boost::format("blockupdater: skipping update of block: %s") % block->getRegion ());
                 continue;
+            }
 
             auto& vbo = vbos[p];
             auto tex_mapping = pbo2texture[c]->map(

@@ -1,7 +1,6 @@
 #include "cwtblockfilter.h"
 
 #include "heightmap/update/tfrblockupdater.h"
-#include "heightmap/render/glblock.h"
 #include "tfr/cwtchunk.h"
 #include "tfr/cwt.h"
 #include "signal/computingengine.h"
@@ -86,6 +85,7 @@ MergeChunk::ptr CwtBlockFilterDesc::
 #include "neat_math.h"
 #include "signal/computingengine.h"
 #include "test/randombuffer.h"
+#include "heightmap/render/blocktextures.h"
 
 #include <QApplication>
 #include <QGLWidget>
@@ -136,10 +136,8 @@ void CwtBlockFilter::
             return ref;
         }();
 
-        Heightmap::pBlock block(new Heightmap::Block(ref, bl, vp));
-        DataStorageSize s(bl.texels_per_row (), bl.texels_per_column ());
-        GlTexture::ptr gltexture(new GlTexture(bl.texels_per_row (), bl.texels_per_column ()));
-        block->glblock.reset( new Render::GlBlock( gltexture ));
+        GlTexture::ptr tex = Render::BlockTextures(4,4,1).get1 ();;
+        pBlock block( new Block(ref, bl, vp, tex));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;

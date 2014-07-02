@@ -24,6 +24,8 @@ public:
     private:
         unsigned vbo_size;
         RenderSettings render_settings;
+
+        void draw(unsigned tex_height);
     };
 
     RenderBlock(RenderSettings* render_settings);

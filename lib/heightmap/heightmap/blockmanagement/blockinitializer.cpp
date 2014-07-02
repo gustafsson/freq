@@ -45,6 +45,7 @@ void BlockInitializer::
 } // namespace BlockManagement
 } // namespace Heightmap
 
+#include "heightmap/render/blocktextures.h"
 
 #include <QGLWidget>
 #include <QApplication>
@@ -78,8 +79,8 @@ void BlockInitializer::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        GlTexture::ptr tex(new GlTexture(128,128));
-        pBlock block = BlockFactory(bl, vp).createBlock(r, tex);
+        auto bt = Render::BlockTextures (bl.texels_per_row (), bl.texels_per_column ());
+        pBlock block = BlockFactory (bl, vp).createBlock(r, bt.get1 ());
         block_initializer.initBlock (block);
         cache->insert (block);
 
@@ -87,7 +88,7 @@ void BlockInitializer::
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), tex);
+        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), bt.get1 ());
         block_initializer.initBlock (block3);
         cache->insert (block3);
 

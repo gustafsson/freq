@@ -1,5 +1,4 @@
 #include "collection.h"
-#include "render/glblock.h"
 #include "blockmanagement/blockfactory.h"
 #include "blockmanagement/blockinitializer.h"
 #include "blockquery.h"
@@ -45,7 +44,7 @@ Collection::
     cache_( new BlockCache ),
     block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
     block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
-    block_textures_(new Render::BlockTextures(block_layout)),
+    block_textures_(new Render::BlockTextures(block_layout.texels_per_row (), block_layout.texels_per_column ())),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -67,7 +66,14 @@ Collection::
 void Collection::
         clear()
 {
-    BlockCache::cache_t C = cache_->clear ();
+    auto C = cache_->clear ();
+    for (auto const& v : C)
+    {
+        pBlock const& b = v.second;
+        if (!b.unique())
+            to_remove_.insert (b);
+    }
+
     INFO_COLLECTION {
         TaskInfo ti("Collection::Reset, cache count = %u, size = %s", C.size(), DataStorageVoid::getMemorySizeText( BlockCacheInfo::cacheByteSize (C) ).c_str() );
         RegionFactory rr(block_layout_);
@@ -102,13 +108,6 @@ void Collection::
         {
             // Mark these blocks and surrounding blocks as in-use
             blocksToPoke.insert (block->reference ());
-        }
-        else if (block->glblock && block->glblock->has_texture ())
-        {
-            // This block isn't used but it has allocated a texture in OpenGL
-            // memory that can easily recreate as soon as it is needed.
-//            INFO_COLLECTION TaskTimer tt(boost::format("Deleting texture for block %s") % block->getRegion ());
-            //block->glblock->delete_texture ();
         }
     }
 
@@ -304,6 +303,14 @@ int Collection::
 //            ++i;
 //        }
     }
+
+    std::set<pBlock> keep;
+
+    for (pBlock b : to_remove_)
+        if (!b.unique ())
+            keep.insert (b);
+
+    to_remove_.swap (keep);
     return i;
 }
 
@@ -408,7 +415,7 @@ void Collection::
         block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
         block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
     }
-    block_textures_.reset(new Render::BlockTextures(block_layout_));
+    block_textures_.reset(new Render::BlockTextures(v.texels_per_row (), v.texels_per_column ()));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);
@@ -469,6 +476,7 @@ Signal::Intervals Collection::
 void Collection::
         removeBlock (pBlock b)
 {
+    to_remove_.insert (b);
     cache_->erase(b->reference());
 }
 

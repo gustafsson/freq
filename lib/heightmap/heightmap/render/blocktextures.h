@@ -1,7 +1,6 @@
 #ifndef HEIGHTMAP_RENDER_BLOCKTEXTURES_H
 #define HEIGHTMAP_RENDER_BLOCKTEXTURES_H
 
-#include "heightmap/blocklayout.h"
 #include "GlTexture.h"
 #include "shared_state.h"
 #include <memory>
@@ -12,7 +11,8 @@ namespace Render {
 
 /**
  * @brief The BlockTextures class should keep track of all OpenGL textures that
- * have been allocated for painting GlBlocks.
+ * have been allocated for painting block textures and provide already
+ * allocated textures fast.
  *
  * It should provide already allocated textures fast.
  */
@@ -21,13 +21,7 @@ class BlockTextures
 public:
     typedef shared_state<BlockTextures> ptr;
 
-    BlockTextures(BlockLayout bl);
-
-    /**
-     * @brief blockLayout
-     * @return
-     */
-    BlockLayout blockLayout() { return block_layout; }
+    explicit BlockTextures(unsigned width, unsigned height, unsigned initialCapacity = 0);
 
     /**
      * @brief setCapacityHint
@@ -47,10 +41,18 @@ public:
     std::vector<GlTexture::ptr> getUnusedTextures(unsigned count) const;
 
     /**
+     * @brief get1
+     * @return
+     */
+    GlTexture::ptr get1();
+
+    /**
      * @brief getCapacity
      * @return
      */
     int getCapacity() const;
+    unsigned getWidth() const { return width_; }
+    unsigned getHeight() const { return height_; }
 
     /**
      * @brief setupTexture
@@ -60,10 +62,16 @@ public:
      */
     static void setupTexture(unsigned name, unsigned width, unsigned height);
 
+    /**
+     * @brief allocated_bytes_per_element
+     */
+    static unsigned allocated_bytes_per_element();
+
 private:
     std::vector<GlTexture::ptr> textures;
-    BlockLayout block_layout;
+    const unsigned width_, height_;
 
+    void setCapacity (unsigned target_capacity);
 public:
     static void test();
 };

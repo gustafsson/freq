@@ -7,7 +7,6 @@
 #include "heightmap/render/renderer.h"
 #include "heightmap/collection.h"
 #include "heightmap/block.h"
-#include "heightmap/render/glblock.h"
 #include "heightmap/reference_hash.h"
 #include "heightmap/render/renderregion.h"
 #include "heightmap/uncaughtexception.h"
@@ -385,10 +384,10 @@ void Renderer::
 
         Render::RenderBlock::Renderer block_renderer(&_render_block, bl);
 
-        for(const Reference& r : R)
+        for (const Reference& r : R)
         {
             auto i = cache.find(r);
-            if (i != cache.end() && i->second && i->second->glblock)
+            if (i != cache.end())
             {
                 pBlock block = i->second;
                 block_renderer.renderBlock(block);

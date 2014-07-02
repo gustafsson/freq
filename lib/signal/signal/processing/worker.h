@@ -36,7 +36,7 @@ public:
 
     class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
-    Worker (Signal::ComputingEngine::ptr computing_eninge, ISchedule::ptr schedule);
+    Worker (Signal::ComputingEngine::ptr computing_eninge, ISchedule::ptr schedule, bool wakeuprightaway=true);
     ~Worker ();
 
     void abort();

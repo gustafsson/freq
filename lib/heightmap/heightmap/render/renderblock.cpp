@@ -1,5 +1,4 @@
 #include "renderblock.h"
-#include "glblock.h"
 #include "shaderresource.h"
 
 // gpumisc
@@ -10,10 +9,13 @@
 #include "glPushContext.h"
 #include "unused.h"
 
+//#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
+//#define BLOCKindexType GLushort
+#define BLOCK_INDEX_TYPE GL_UNSIGNED_INT
+#define BLOCKindexType GLuint
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
-
 
 using namespace std;
 
@@ -58,9 +60,35 @@ void RenderBlock::Renderer::
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
 
-    block->glblock->draw( vbo_size );
+    draw( block->texture ()->getOpenGlTextureId () );
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
+}
+
+
+void RenderBlock::Renderer::
+        draw(unsigned tex_height)
+{
+    GlException_CHECK_ERROR();
+
+    glBindTexture(GL_TEXTURE_2D, tex_height);
+
+    const bool wireFrame = false;
+    const bool drawPoints = false;
+
+    if (drawPoints) {
+        glDrawArrays(GL_POINTS, 0, vbo_size);
+    } else if (wireFrame) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
+            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    } else {
+        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    GlException_CHECK_ERROR();
 }
 
 
