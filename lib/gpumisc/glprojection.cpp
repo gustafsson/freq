@@ -2,6 +2,7 @@
 #include "gluunproject.h"
 #include <string.h>
 #include <algorithm>
+#include <limits>
 
 glProjection::
         glProjection()
@@ -72,45 +73,46 @@ void glProjection::
             w1 = gluUnProject( screenX ),
             w2 = gluUnProject( screenY );
 
-    screen[2]+=1;
-    screenX[2]+=1;
-    screenY[2]+=1;
+    // Move out of the screen (towards the viewer along the 'zbuffer-axis' in screen coordinates)
+    screen[2]-=1;
+    screenX[2]-=1;
+    screenY[2]-=1;
 
-    // directions
+    // Calculate the ray cast direction for the pixel corresponding to 'p' as well as directions
+    // for nearby pixels
     GLvector
             dirBase = gluUnProject( screen )-wBase,
             dir1 = gluUnProject( screenX )-w1,
             dir2 = gluUnProject( screenY )-w2;
 
-    // valid projection on xz-plane exists if dir?[1]<0 wBase[1]<0
+    // A valid projection on the xz-plane exists if dir[1]>0 and wBase[1]>0
     GLvector
             xzBase = wBase - dirBase*(wBase[1]/dirBase[1]),
             xz1 = w1 - dir1*(w1[1]/dir1[1]),
             xz2 = w2 - dir2*(w2[1]/dir2[1]);
 
     // compute {units in xz-plane} per {screen pixel}, that determines the required resolution
-    timePerPixel = 0;
-    scalePerPixel = 0;
+    // i.e How long along each axis on the heightmap project is one pixel in the x or y direction on the screen
+    // If there is no valid intersection point the time per pixel is set to maximum distance which results
+    // in a Heightmap::Reference that covers the entire signal.
+    float timePerPixel_x = std::numeric_limits<float>::max ();
+    float timePerPixel_y = std::numeric_limits<float>::max ();
+    float scalePerPixel_x = std::numeric_limits<float>::max ();
+    float scalePerPixel_y = std::numeric_limits<float>::max ();
 
-    if (dir1[1] != 0 && dirBase[1] != 0) {
-        timePerPixel = std::max(timePerPixel, fabs(xz1[0]-xzBase[0]));
-        scalePerPixel = std::max(scalePerPixel, fabs(xz1[2]-xzBase[2]));
+    if (dir1[1] > 0 && dirBase[1] > 0) {
+        timePerPixel_x = xz1[0]-xzBase[0];
+        scalePerPixel_x = xz1[2]-xzBase[2];
     }
-    if (dir2[1] != 0 && dirBase[1] != 0) {
-        timePerPixel = std::max(timePerPixel, fabs(xz2[0]-xzBase[0]));
-        scalePerPixel = std::max(scalePerPixel, fabs(xz2[2]-xzBase[2]));
+    if (dir2[1] > 0 && dirBase[1] > 0) {
+        timePerPixel_y = xz2[0]-xzBase[0];
+        scalePerPixel_y = xz2[2]-xzBase[2];
     }
-
-    if (0 == timePerPixel)
-        timePerPixel = std::max(fabs(w1[0]-wBase[0]), fabs(w2[0]-wBase[0]));
-    if (0 == scalePerPixel)
-        scalePerPixel = std::max(fabs(w1[2]-wBase[2]), fabs(w2[2]-wBase[2]));
-
-    if (0==scalePerPixel) scalePerPixel=timePerPixel;
-    if (0==timePerPixel) timePerPixel=scalePerPixel;
 
     // time/freqPerPixel is how much difference in time/freq there can be when moving one pixel away from the
     // pixel that represents the closest point in ref
+    timePerPixel = sqrt(timePerPixel_x*timePerPixel_x + timePerPixel_y*timePerPixel_y);
+    scalePerPixel = sqrt(scalePerPixel_x*scalePerPixel_x + scalePerPixel_y*scalePerPixel_y);
 
     scalePerPixel *= zoom;
     timePerPixel *= zoom;

@@ -30,6 +30,9 @@ RenderSet::
 RenderSet::references_t RenderSet::
         computeRenderSet(Reference entireHeightmap)
 {
+    if (0.f == L)
+        return references_t{entireHeightmap};
+
     references_t R = computeChildrenRenderSet( entireHeightmap );
     if (R.empty()) {
         R |= entireHeightmap;

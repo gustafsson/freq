@@ -33,16 +33,8 @@ RenderInfo::LevelOfDetal RenderInfo::
         fflush(stdout);
     }
 
-    GLdouble needBetterF, needBetterT;
-
-    if (0==scalePixels)
-        needBetterF = 1.01;
-    else
-        needBetterF = scalePixels / (redundancy*bl.texels_per_column ());
-    if (0==timePixels)
-        needBetterT = 1.01;
-    else
-        needBetterT = timePixels / (redundancy*bl.texels_per_row ());
+    GLdouble needBetterF = scalePixels / (redundancy*bl.texels_per_column ()),
+             needBetterT = timePixels / (redundancy*bl.texels_per_row ());
 
     if (!ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
         !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
