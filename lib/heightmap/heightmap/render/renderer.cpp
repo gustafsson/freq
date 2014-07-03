@@ -347,7 +347,7 @@ void Renderer::
     gl_projection.update();
     _frustum_clip.update (0, 0);
 
-    glScalef(1, render_settings.draw_flat ? 0 : 2*scaley, 1);
+    glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
 }
 
 
