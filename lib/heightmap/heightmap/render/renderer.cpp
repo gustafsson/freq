@@ -311,6 +311,8 @@ void Renderer::
         Render::RenderSet::references_t R = getRenderSet(L);
         createMissingBlocks(R);
         drawBlocks(R);
+
+        LOG_REFERENCES_TO_RENDER drawReferences(R, false);
     }
     else
     {
@@ -417,7 +419,7 @@ void Renderer::
 
 
 void Renderer::
-        drawReferences(const Render::RenderSet::references_t& R)
+        drawReferences(const Render::RenderSet::references_t& R, bool drawcross)
 {
     if (R.empty ())
         return;
@@ -428,7 +430,7 @@ void Renderer::
     RegionFactory region(bl);
 
     for (const Reference& r : R)
-        Render::RenderRegion(region(r)).render();
+        Render::RenderRegion(region(r)).render(drawcross);
 }
 
 

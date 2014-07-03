@@ -11,7 +11,7 @@ class RenderRegion
 public:
     RenderRegion(Region r);
 
-    void render();
+    void render(bool drawcross=true);
 
 private:
     Region r;
