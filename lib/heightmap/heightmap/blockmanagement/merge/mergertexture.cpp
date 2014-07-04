@@ -14,11 +14,11 @@
 
 #include <QGLContext>
 
-//#define VERBOSE_COLLECTION
-#define VERBOSE_COLLECTION if(0)
+#define VERBOSE_COLLECTION
+//#define VERBOSE_COLLECTION if(0)
 
-//#define INFO_COLLECTION
-#define INFO_COLLECTION if(0)
+#define INFO_COLLECTION
+//#define INFO_COLLECTION if(0)
 
 using namespace Signal;
 
@@ -164,12 +164,24 @@ void MergerTexture::
             bool operator()(const pBlock& a, const pBlock& b) const {
                 const Region ra = a->getRegion ();
                 const Region rb = b->getRegion ();
-                return ra.time ()*ra.scale () > rb.time ()*rb.scale ();
+                float va = ra.time ()*ra.scale ();
+                float vb = rb.time ()*rb.scale ();
+                if (va != vb)
+                    return va > vb;
+                if (ra.time () != rb.time())
+                    return ra.time () > rb.time();
+                if (ra.scale () != rb.scale())
+                    return ra.scale () > rb.scale();
+
+                // They have the same size, order by position
+                if (ra.a.time != rb.a.time)
+                    return ra.a.time > rb.a.time;
+                return ra.a.scale > rb.a.scale;
             }
         };
 
         // Largest first
-        std::set<pBlock, isRegionLarger> smaller;
+        std::set<pBlock, isRegionLarger> tomerge;
         pBlock smallest_larger;
 
         for( const auto& c : cache_clone )
@@ -177,25 +189,36 @@ void MergerTexture::
             const pBlock& bl = c.second;
 
             const Region& r2 = bl->getRegion ();
+            // If r2 doesn't overlap r at all
             if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
                 continue;
             if (r2.a.time >= r.b.time || r2.b.time <= r.a.time )
                 continue;
 
+            // If r2 covers all of r
             if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale && r2.a.time <= r.a.time && r2.b.time >= r.b.time)
             {
                 if (!smallest_larger || isRegionLarger()(smallest_larger, bl))
                     smallest_larger = bl;
             }
-            else
-                smaller.insert (bl);
+            // If r2 has the same scale extent (but more time details, would be smallest_larger otherwise)
+            else if (r2.a.scale == r.a.scale && r2.b.scale == r.b.scale)
+                tomerge.insert (bl);
+            // If r2 has the same time extent (but more scale details, would be smallest_larger otherwise)
+            else if (r2.a.time == r.a.time && r2.b.time == r.b.time)
+                tomerge.insert (bl);
+                // If r covers all of r2
+            else if (r.a.scale <= r2.a.scale && r.b.scale >= r2.b.scale && r.a.time <= r2.a.time && r.b.time >= r2.b.time)
+                tomerge.insert (bl);
         }
 
         if (smallest_larger)
-            mergeBlock( *smallest_larger );
+            tomerge.insert (smallest_larger);
 
-        // Merge everything smaller than 'block' in order from largest to smallest
-        for( pBlock bl : smaller )
+        // TODO filter 'smaller' in a smart way to remove blocks that doesn't contribute
+
+        // Merge everything in order from largest to smallest
+        for( pBlock bl : tomerge )
             mergeBlock( *bl );
     }
 
