@@ -183,9 +183,7 @@ void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
     if (model->renderer->render_settings.draw_cursor_marker)
-        update();
-
-    redraw();
+        redraw();
 
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
