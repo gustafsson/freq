@@ -148,8 +148,7 @@ void WorkerCrashLogger::
         if (od)
         {
             auto o = od.read ();
-            Signal::Processing::IInvalidator::ptr i = o->getInvalidator();
-            i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
+            o->getInvalidator()->deprecateCache (Signal::Intervals::Intervals_ALL);
             operation_desc_text = " in " + o->toString().toStdString();
         }
       }

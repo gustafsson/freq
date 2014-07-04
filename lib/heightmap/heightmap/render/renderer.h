@@ -77,7 +77,7 @@ private:
     Render::RenderSet::references_t getRenderSet(float L);
     void createMissingBlocks(const Render::RenderSet::references_t& R);
     void drawBlocks(const Render::RenderSet::references_t& R);
-    void drawReferences(const Render::RenderSet::references_t& R);
+    void drawReferences(const Render::RenderSet::references_t& R, bool drawcross=true);
 };
 typedef boost::shared_ptr<Renderer> pRenderer;
 

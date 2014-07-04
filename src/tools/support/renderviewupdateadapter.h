@@ -31,7 +31,7 @@ public:
 
 signals:
     void redraw();
-    void setLastUpdateSize( Signal::UnsignedIntervalType length );
+    void setLastUpdatedInterval( Signal::Interval last_update );
 
 public:
     static void test();
@@ -42,11 +42,11 @@ class RenderViewUpdateAdapterMock: public QObject {
     Q_OBJECT
 public:
     int redraw_count = 0;
-    int setLastUpdateSize_count = 0;
+    int setLastUpdatedInterval_count = 0;
 
 public slots:
     void redraw();
-    void setLastUpdateSize( Signal::UnsignedIntervalType );
+    void setLastUpdatedInterval( Signal::Interval );
 };
 
 } // namespace Support

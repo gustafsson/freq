@@ -93,7 +93,7 @@ RenderController::
                 view->model->tfr_mapping (),
                 &view->model->_qx,
                 this);
-    connect(rvup, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), hpp, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
+    connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
     connect(view, SIGNAL(painting()), hpp, SLOT(update()));
     setupGui();
 

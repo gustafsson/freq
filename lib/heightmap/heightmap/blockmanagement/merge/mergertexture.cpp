@@ -2,6 +2,7 @@
 
 #include "heightmap/blockquery.h"
 #include "mergekernel.h"
+#include "heightmap/render/shaderresource.h"
 
 #include "tasktimer.h"
 #include "computationkernel.h"
@@ -31,7 +32,8 @@ MergerTexture::
       cache_(cache),
       block_layout_(block_layout),
       tex_(0),
-      disable_merge_(disable_merge)
+      disable_merge_(disable_merge),
+      program_(0)
 {
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
@@ -43,12 +45,18 @@ MergerTexture::
     fbo_.reset (new GlFrameBuffer(tex_));
 
     glGenBuffers (1, &vbo_);
+
+//    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 }
 
 
 MergerTexture::
         ~MergerTexture()
 {
+    if (program_)
+        glDeleteProgram(program_);
+    program_ = 0;
+
     glDeleteTextures (1, &tex_);
     tex_ = 0;
 
@@ -60,6 +68,8 @@ MergerTexture::
 void MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: fillBlocksFromOthers %s blocks") % blocks.size ());
+
     GlException_CHECK_ERROR();
 
     GLint viewport[4];
@@ -103,12 +113,16 @@ void MergerTexture::
     glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
     glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
+    glUseProgram (program_);
+
     cache_clone = cache_->clone();
 
     for (pBlock b : blocks)
         fillBlockFromOthersInternal (b);
 
     cache_clone.clear ();
+
+    glUseProgram (0);
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -134,7 +148,7 @@ void MergerTexture::
 void MergerTexture::
         fillBlockFromOthersInternal( pBlock block )
 {
-    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
 
     Region r = block->getRegion ();
 
@@ -152,12 +166,24 @@ void MergerTexture::
             bool operator()(const pBlock& a, const pBlock& b) const {
                 const Region ra = a->getRegion ();
                 const Region rb = b->getRegion ();
-                return ra.time ()*ra.scale () > rb.time ()*rb.scale ();
+                float va = ra.time ()*ra.scale ();
+                float vb = rb.time ()*rb.scale ();
+                if (va != vb)
+                    return va > vb;
+                if (ra.time () != rb.time())
+                    return ra.time () > rb.time();
+                if (ra.scale () != rb.scale())
+                    return ra.scale () > rb.scale();
+
+                // They have the same size, order by position
+                if (ra.a.time != rb.a.time)
+                    return ra.a.time > rb.a.time;
+                return ra.a.scale > rb.a.scale;
             }
         };
 
         // Largest first
-        std::set<pBlock, isRegionLarger> smaller;
+        std::set<pBlock, isRegionLarger> tomerge;
         pBlock smallest_larger;
 
         for( const auto& c : cache_clone )
@@ -165,25 +191,36 @@ void MergerTexture::
             const pBlock& bl = c.second;
 
             const Region& r2 = bl->getRegion ();
+            // If r2 doesn't overlap r at all
             if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
                 continue;
             if (r2.a.time >= r.b.time || r2.b.time <= r.a.time )
                 continue;
 
+            // If r2 covers all of r
             if (r2.a.scale <= r.a.scale && r2.b.scale >= r.b.scale && r2.a.time <= r.a.time && r2.b.time >= r.b.time)
             {
                 if (!smallest_larger || isRegionLarger()(smallest_larger, bl))
                     smallest_larger = bl;
             }
-            else
-                smaller.insert (bl);
+            // If r2 has the same scale extent (but more time details, would be smallest_larger otherwise)
+            else if (r2.a.scale == r.a.scale && r2.b.scale == r.b.scale)
+                tomerge.insert (bl);
+            // If r2 has the same time extent (but more scale details, would be smallest_larger otherwise)
+            else if (r2.a.time == r.a.time && r2.b.time == r.b.time)
+                tomerge.insert (bl);
+                // If r covers all of r2
+            else if (r.a.scale <= r2.a.scale && r.b.scale >= r2.b.scale && r.a.time <= r2.a.time && r.b.time >= r2.b.time)
+                tomerge.insert (bl);
         }
 
         if (smallest_larger)
-            mergeBlock( *smallest_larger );
+            tomerge.insert (smallest_larger);
 
-        // Merge everything smaller than 'block' in order from largest to smallest
-        for( pBlock bl : smaller )
+        // TODO filter 'smaller' in a smart way to remove blocks that doesn't contribute
+
+        // Merge everything in order from largest to smallest
+        for( pBlock bl : tomerge )
             mergeBlock( *bl );
     }
 

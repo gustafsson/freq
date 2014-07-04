@@ -37,6 +37,7 @@ private:
     unsigned tex_;
     const bool disable_merge_;
     BlockCache::cache_t cache_clone;
+    unsigned program_;
 
     void fillBlockFromOthersInternal( pBlock block );
 

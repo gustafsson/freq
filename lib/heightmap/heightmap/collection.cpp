@@ -440,24 +440,19 @@ void Collection::
 
 
 Intervals Collection::
-        needed_samples(UnsignedIntervalType& smallest_length)
+        needed_samples() const
 {
     Intervals r;
 
     if (!_is_visible)
         return r;
 
-    for ( auto a : cache_->clone () )
+    for ( auto const& a : cache_->clone () )
     {
-        const Block& b = *a.second;
+        Block const& b = *a.second;
         unsigned framediff = _frame_counter - b.frame_number_last_used;
         if (1 == framediff || 0 == framediff) // this block was used last frame or this frame
-        {
-            Interval i = b.getInterval();
-            r |= i;
-            if (i.count () < smallest_length)
-                smallest_length = i.count ();
-        }
+            r |= b.getInterval();
     }
 
     return r;
@@ -467,7 +462,7 @@ Intervals Collection::
 
 
 Signal::Intervals Collection::
-        recently_created()
+        recently_created() const
 {
     return block_factory_->recently_created();
 }

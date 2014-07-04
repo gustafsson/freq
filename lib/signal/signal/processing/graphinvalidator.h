@@ -18,7 +18,7 @@ class GraphInvalidator: public IInvalidator
 public:
     GraphInvalidator(Dag::ptr::weak_ptr dag, INotifier::weak_ptr notifier, Step::ptr::weak_ptr step);
 
-    void deprecateCache(Signal::Intervals what) const;
+    void deprecateCache(Signal::Intervals what) const override;
     static void deprecateCache(const Dag& dag, Step::ptr s, Signal::Intervals what);
 
 private:

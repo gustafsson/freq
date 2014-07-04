@@ -47,18 +47,27 @@ public:
                 for(int i=N; i--;) r[i] = v[i] / b[i];
 		return r;
 	}
-	template<typename t2>
-	tvector operator+(const tvector<N,t2>& b) const {
+    template<typename t2>
+    tvector operator+(const tvector<N,t2>& b) const {
                 tvector r;
                 for(int i=N; i--;) r[i] = v[i] + b[i];
-		return r;
-	}
-	tvector operator*(type b) const {
+        return r;
+    }
+    template<typename t2>
+    tvector& operator+=(const tvector<N,t2>& b) {
+        for(int i=N; i--;) v[i] += b[i];
+        return *this;
+    }
+    tvector operator*(type b) const {
                 tvector r;
                 for(int i=N; i--;) r[i] = v[i] * b;
-		return r;
-	}
-	tvector operator-() const {
+        return r;
+    }
+    tvector operator*=(type b) {
+        for(int i=N; i--;) v[i] *= b;
+        return *this;
+    }
+    tvector operator-() const {
                 tvector r;
                 for(int i=N; i--;) r[i] = -v[i];
 		return r;

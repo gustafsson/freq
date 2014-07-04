@@ -33,16 +33,8 @@ RenderInfo::LevelOfDetal RenderInfo::
         fflush(stdout);
     }
 
-    GLdouble needBetterF, needBetterT;
-
-    if (0==scalePixels)
-        needBetterF = 1.01;
-    else
-        needBetterF = scalePixels / (redundancy*bl.texels_per_column ());
-    if (0==timePixels)
-        needBetterT = 1.01;
-    else
-        needBetterT = timePixels / (redundancy*bl.texels_per_row ());
+    GLdouble needBetterF = scalePixels / (redundancy*bl.texels_per_column ()),
+             needBetterT = timePixels / (redundancy*bl.texels_per_row ());
 
     if (!ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
         !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
@@ -102,15 +94,33 @@ bool RenderInfo::
         if (clippedCorners.empty ())
             continue;
 
-        GLvector::T
-                timePerPixel = 0,
-                freqPerPixel = 0;
+        GLvector timePoint = closest_i;
+        GLvector scalePoint = closest_i;
+        for (GLvector v : clippedCorners)
+        {
+            if (fabsf(v[0]-closest_i[0]) > fabsf(timePoint[0]-closest_i[0]))
+                timePoint = v;
+            if (fabsf(v[2]-closest_i[2]) > fabsf(scalePoint[2]-closest_i[2]))
+                scalePoint = v;
+        }
 
-        gl_projection->computeUnitsPerPixel( closest_i, timePerPixel, freqPerPixel );
+        timePoint[2] = closest_i[2];
+        scalePoint[0] = closest_i[0];
+
+        timePoint = closest_i + (timePoint-closest_i)*0.01f;
+        scalePoint = closest_i + (scalePoint-closest_i)*0.01f;
+
+        GLvector::T timeLength = fabsf (closest_i[0] - timePoint[0]);
+        GLvector::T scaleLength = fabsf (closest_i[2] - scalePoint[2]);
+
+        if (timeLength==0 || scaleLength==0)
+            continue;
 
         // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-        timePixels = (p[1].time - p[0].time)/timePerPixel;
-        scalePixels = (p[1].scale - p[0].scale)/freqPerPixel;
+        GLvector::T pixelsPerTime = gl_projection->computePixelDistance (closest_i, timePoint) / timeLength;
+        GLvector::T pixelsPerScale = gl_projection->computePixelDistance (closest_i, scalePoint) / scaleLength;
+        timePixels = pixelsPerTime * r.time ();
+        scalePixels = pixelsPerScale * r.scale ();
 
         return true;
     }

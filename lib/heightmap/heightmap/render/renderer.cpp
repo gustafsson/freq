@@ -36,6 +36,12 @@
 //#define TIME_RENDERER_DETAILS
 #define TIME_RENDERER_DETAILS if(0)
 
+//#define LOG_REFERENCES_TO_RENDER
+#define LOG_REFERENCES_TO_RENDER if(0)
+
+#define DISPLAY_REFERENCES
+//#define DISPLAY_REFERENCES if(0)
+
 using namespace std;
 
 namespace Heightmap {
@@ -308,6 +314,8 @@ void Renderer::
         Render::RenderSet::references_t R = getRenderSet(L);
         createMissingBlocks(R);
         drawBlocks(R);
+
+        DISPLAY_REFERENCES drawReferences(R, false);
     }
     else
     {
@@ -342,7 +350,7 @@ void Renderer::
     gl_projection.update();
     _frustum_clip.update (0, 0);
 
-    glScalef(1, render_settings.draw_flat ? 0 : 2*scaley, 1);
+    glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
 }
 
 
@@ -354,6 +362,12 @@ Render::RenderSet::references_t Renderer::
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
     Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
+
+    LOG_REFERENCES_TO_RENDER {
+        TaskInfo("Rendering %d blocks", R.size());
+        for ( auto const& r : R)
+            TaskInfo(boost::format("%s") % ReferenceInfo(r, bl, vp));
+    }
 
     return R;
 }
@@ -408,7 +422,7 @@ void Renderer::
 
 
 void Renderer::
-        drawReferences(const Render::RenderSet::references_t& R)
+        drawReferences(const Render::RenderSet::references_t& R, bool drawcross)
 {
     if (R.empty ())
         return;
@@ -419,7 +433,7 @@ void Renderer::
     RegionFactory region(bl);
 
     for (const Reference& r : R)
-        Render::RenderRegion(region(r)).render();
+        Render::RenderRegion(region(r)).render(drawcross);
 }
 
 

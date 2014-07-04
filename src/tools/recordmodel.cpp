@@ -37,9 +37,11 @@ public:
     void setInvalidator(Signal::Processing::IInvalidator::ptr i) { i_ = i; }
     void setRecordModel(RecordModel* model) { model_ = model; }
 
-    virtual void markNewlyRecordedData(Signal::Interval what) {
+    virtual void markNewlyRecordedData(Signal::Interval what)
+    {
         if (i_)
-            i_.read ()->deprecateCache(what);
+            i_->deprecateCache(what);
+
         if (model_)
             emit model_->markNewlyRecordedData(what);
     }

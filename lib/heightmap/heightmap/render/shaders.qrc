@@ -4,5 +4,6 @@
         <file>heightmap.frag</file>
         <file>heightmap.vert</file>
         <file>noop.vert</file>
+        <file>mergertexture.frag</file>
     </qresource>
 </RCC>

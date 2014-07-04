@@ -31,14 +31,14 @@ public:
             QObject* parent=0);
 
 public slots:
-    void setLastUpdateSize( Signal::UnsignedIntervalType length );
+    void setLastUpdatedInterval( Signal::Interval last_update );
     void update();
 
 private:
     Signal::Processing::TargetNeeds::ptr    target_needs_;
     Heightmap::TfrMapping::const_ptr        tfrmapping_;
     float*                                  t_center_;
-    Signal::UnsignedIntervalType            preferred_update_size_;
+    Signal::Interval                        last_update_;
     bool                                    failed_allocation_;
 
     bool isHeightmapDone() const;

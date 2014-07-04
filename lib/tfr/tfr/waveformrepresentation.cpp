@@ -24,7 +24,6 @@ float WaveformRepresentationDesc::
 }
 
 
-
 FreqAxis WaveformRepresentationDesc::
         freqAxis( float ) const
 {

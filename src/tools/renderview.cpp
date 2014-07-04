@@ -183,9 +183,7 @@ void RenderView::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
     if (model->renderer->render_settings.draw_cursor_marker)
-        update();
-
-    redraw();
+        redraw();
 
     DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
     QGraphicsScene::mouseMoveEvent(e);
@@ -205,7 +203,9 @@ void RenderView::
         drawBackground(QPainter *painter, const QRectF &)
 {
     double T = _last_frame.elapsedAndRestart();
-    TIME_PAINTGL TaskTimer tt("Draw. Last frame %.0f ms / %.0f fps", T*1e3, 1/T);
+    TIME_PAINTGL TaskTimer tt("RenderView: Draw, last frame %.0f ms / %.0f fps", T*1e3, 1/T);
+    if (_update_timer->isActive ())
+        TaskInfo("RenderView: Forced redraw");
 
     painter->beginNativePainting();
 
@@ -281,7 +281,7 @@ void RenderView::
     if (0 < draw_more)
         draw_more--;
     if (0 < draw_more)
-        _update_timer->start(1);
+        _update_timer->start(5);
 }
 
 
@@ -909,7 +909,7 @@ void RenderView::
     if (0 == draw_more)
     {
         draw_more++;
-        _update_timer->start(1);
+        _update_timer->start(5);
     }
     else if (1 == draw_more)
     {

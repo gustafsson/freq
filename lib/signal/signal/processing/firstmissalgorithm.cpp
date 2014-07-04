@@ -185,7 +185,7 @@ public:
 
             try
               {
-                if (i) i.read ()->deprecateCache (Signal::Intervals::Intervals_ALL);
+                if (i) i->deprecateCache (Signal::Intervals::Intervals_ALL);
               }
             catch(const std::exception& y)
               {

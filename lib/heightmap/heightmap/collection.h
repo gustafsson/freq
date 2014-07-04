@@ -117,8 +117,8 @@ public:
     void clear();
 
 
-    Signal::Intervals needed_samples(Signal::UnsignedIntervalType& smallest_length);
-    Signal::Intervals recently_created();
+    Signal::Intervals needed_samples() const;
+    Signal::Intervals recently_created() const;
 
 
     /**

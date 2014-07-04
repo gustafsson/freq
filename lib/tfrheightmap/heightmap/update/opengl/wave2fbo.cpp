@@ -22,7 +22,14 @@ Wave2Fbo::
     float ifs = 1.0f/b_->sample_rate ();
     float t1 = t0 + N*ifs;
 
-    std::vector<vertex_format_xy> d(N + 4);
+    GlException_CHECK_ERROR();
+
+    glGenBuffers (1, &vbo_); // Generate 1 buffer
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glBufferData (GL_ARRAY_BUFFER, sizeof(vertex_format_xy)*(N + 4), 0, GL_STATIC_DRAW);
+    vertex_format_xy* d = (vertex_format_xy*)glMapBuffer (GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     float* p = CpuMemoryStorage::ReadOnly<1>(b_->waveform_data()).ptr ();
     for (int i=0; i<N; i++)
         d[i] = vertex_format_xy{ t0 + i*ifs, 0.5f + 0.5f*p[i] };
@@ -32,10 +39,12 @@ Wave2Fbo::
     d[N+2] = vertex_format_xy{ t0, 1 };
     d[N+3] = vertex_format_xy{ t1, 1 };
 
-    GlException_SAFE_CALL( glGenBuffers (1, &vbo_) ); // Generate 1 buffer
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo_) );
-    GlException_SAFE_CALL( glBufferData (GL_ARRAY_BUFFER, sizeof(vertex_format_xy)*d.size (), &d[0], GL_STATIC_DRAW) );
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glUnmapBuffer (GL_ARRAY_BUFFER);
+    d = 0;
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    GlException_CHECK_ERROR();
 }
 
 
@@ -50,7 +59,7 @@ Wave2Fbo::
 void Wave2Fbo::
         draw()
 {
-//    TaskTimer tt(boost::format("Wave2Fbo::draw %s") % b_->getInterval ());
+    //TaskTimer tt(boost::format("Wave2Fbo::draw %s") % b_->getInterval ());
 
     GlException_CHECK_ERROR();
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
