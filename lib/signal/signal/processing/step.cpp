@@ -63,7 +63,8 @@ void Step::
 std::string Step::
         operation_name () const
 {
-    return (operation_desc_?operation_desc_.raw ()->toString ().toStdString ():"(no operation)");
+    Signal::OperationDesc::ptr operation_desc = this->operation_desc_;
+    return (operation_desc?operation_desc.raw ()->toString ().toStdString ():"(no operation)");
 }
 
 
@@ -170,7 +171,7 @@ void Step::
     auto self = step.write ();
     int matched_task = self->running_tasks.count (taskid);
     if (1 != matched_task) {
-        Log("C = %d, taskid = %x on %s") % matched_task % taskid % self->operation_name ();
+        Log("C = %d, taskid = %x on %s") % matched_task % taskid % step.raw ()->operation_name ();
         EXCEPTION_ASSERT_EQUALS( 1, matched_task );
     }
 
@@ -182,12 +183,12 @@ void Step::
     if (!result) {
         TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
                  % update_miss
-                 % self->operation_name());
+                 % step.raw ()->operation_name());
     } else {
         if (update_miss) {
             TaskInfo(format("These samples were supposed to be updated by the task but missed: %1% by %2%")
                      % update_miss
-                     % self->operation_name());
+                     % step.raw ()->operation_name());
         }
         if (result_interval - expected_output) {
             // These samples were not supposed to be updated by the task but were calculated anyway
@@ -195,7 +196,7 @@ void Step::
                      % (result_interval - expected_output)
                      % result_interval
                      % expected_output
-                     % self->operation_name());
+                     % step.raw ()->operation_name());
 
             // The samples are still marked as invalid. Would need to remove the
             // extra calculated samples from not_started_ but that would fail
@@ -206,6 +207,7 @@ void Step::
     }
 
     self->running_tasks.erase ( taskid );
+
     self.unlock ();
 
     step.raw ()->wait_for_tasks_.notify_all ();
