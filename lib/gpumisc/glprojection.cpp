@@ -119,6 +119,15 @@ void glProjection::
 }
 
 
+GLvector::T glProjection::
+        computePixelDistance( GLvector p1, GLvector p2 )
+{
+    GLvector screen1 = gluProject( p1 );
+    GLvector screen2 = gluProject( p2 );
+    return (screen2-screen1).length() * zoom;
+}
+
+
 #include "tmatrixstring.h"
 #include "exceptionassert.h"
 

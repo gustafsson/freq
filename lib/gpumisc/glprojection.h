@@ -25,6 +25,7 @@ public:
     GLvector gluProject(GLvector obj, bool *r=0);
     GLvector gluUnProject(GLvector win, bool *r=0);
     void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
+    GLvector::T computePixelDistance( GLvector p1, GLvector p2 );
 
 private:
     float                           zoom;
