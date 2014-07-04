@@ -59,7 +59,7 @@ Wave2Fbo::
 void Wave2Fbo::
         draw()
 {
-    TaskTimer tt(boost::format("Wave2Fbo::draw %s") % b_->getInterval ());
+    //TaskTimer tt(boost::format("Wave2Fbo::draw %s") % b_->getInterval ());
 
     GlException_CHECK_ERROR();
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
