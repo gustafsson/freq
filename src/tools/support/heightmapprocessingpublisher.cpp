@@ -23,17 +23,16 @@ HeightmapProcessingPublisher::HeightmapProcessingPublisher(
       target_needs_(target_needs),
       tfrmapping_(tfrmapping),
       t_center_(t_center),
-      preferred_update_size_(std::numeric_limits<Signal::UnsignedIntervalType>::max()),
+      last_update_(Interval::Interval_ALL),
       failed_allocation_(false)
 {
 }
 
 
 void HeightmapProcessingPublisher::
-        setLastUpdateSize( Signal::UnsignedIntervalType last_update_size )
+        setLastUpdatedInterval( Interval last_update )
 {
-    // _last_update_size must be non-zero to be divisable
-    preferred_update_size_ = std::max(1llu, last_update_size);
+    last_update_ = last_update ? last_update : Interval::Interval_ALL;
 }
 
 
@@ -56,25 +55,53 @@ void HeightmapProcessingPublisher::
 
     IntervalType center = std::round(*t_center_ * fs);
 
-    // It should update the view in sections equal in size to the smallest
-    // visible block if the view isn't currently being invalidated.
-    UnsignedIntervalType update_size = preferred_update_size_;
-
-    for ( const Heightmap::Collection::ptr &c : C ) {
-        auto wc = c.write ();
-        //invalid_samples |= wc->invalid_samples();
-        things_to_add |= wc->recently_created();
-        needed_samples |= wc->needed_samples(update_size);
+    for ( auto cp : C )
+    {
+        auto c = cp.read();
+        things_to_add |= c->recently_created();
+        needed_samples |= c->needed_samples();
     }
 
-    Signal::Interval target_interval(0, std::round(L*fs));
+    target_needs_->deprecateCache (things_to_add);
 
-    if (needed_samples & target_interval)
-        needed_samples &= target_interval;
-    else
-        needed_samples = needed_samples.fetchInterval (1, center);
+    Interval target_interval(0, std::round(L*fs));
+    needed_samples &= target_interval;
 
-    update_size = std::min(update_size, (UnsignedIntervalType)Interval::IntervalType_MAX);
+    Intervals to_compute;
+    if (auto step = target_needs_->step ().lock ())
+        to_compute = step.read ()->not_started();
+    to_compute |= things_to_add;
+    to_compute &= needed_samples;
+
+
+    // It should update the view (a) in sections equal in size to (the smallest
+    // visible block with deprecated content), unless (b) the view isn't
+    // currently being invalidated.
+    //
+    // (case a): default, this makes the size of update sections correlate to
+    // the size of visible blocks, it doesn't mean some optimization of
+    // updating whole. Interactive feedback is a tradeoff between computing
+    // something immediately after a request (latency) to computing everything
+    // needed after a request (throughput).
+    //
+    // (case b): during a recording it is, generally, more important to render
+    // newly recorded data than to redraw everything else.
+    UnsignedIntervalType update_size = Interval::IntervalType_MAX;
+    for ( auto c : C ) for ( auto a : c.raw()->cache()->clone () )
+    {
+        const Heightmap::Block& b = *a.second;
+        Interval i = b.getInterval();
+
+        // If this block overlaps data to be computed
+        if (i & to_compute)
+            update_size = std::min(update_size, i.count ());
+    }
+
+    // If the last invalidated interval is smaller than the suggested
+    // update_size use the size of the invalidated interval instead.
+    // But only if the last invalidated interval is visible and still invalid.
+    if (to_compute.fetchInterval (update_size, center) & last_update_)
+        update_size = std::min(update_size, last_update_.count ());
 
     TIME_PAINTGL_DETAILS TaskInfo(boost::format(
             "RenderView needed_samples = %s, "
@@ -84,7 +111,6 @@ void HeightmapProcessingPublisher::
             % center
             % update_size);
 
-    target_needs_->deprecateCache (things_to_add);
     target_needs_->updateNeeds(
                 needed_samples,
                 center,
@@ -93,15 +119,13 @@ void HeightmapProcessingPublisher::
             );
 
     failed_allocation_ = false;
-    foreach( const Heightmap::Collection::ptr &c, tfrmapping_->collections() )
-    {
+    for ( auto c : C )
         failed_allocation_ |= c.write ()->failed_allocation ();
-    }
 
     TIME_PAINTGL_DETAILS {
         if (Step::ptr step = target_needs_->step ().lock())
         {
-            Signal::Intervals not_started = target_needs_->not_started();
+            Intervals not_started = target_needs_->not_started();
             auto stepp = step.read ();
             TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
                              % stepp->out_of_date()
@@ -166,8 +190,7 @@ void HeightmapProcessingPublisher::
 //        OperationDesc::Extent x;
 //        x.interval = Interval(-10,20);
         tfrmapping->length(30);
-        UnsignedIntervalType preferred_update_size = 5;
-        hpp.setLastUpdateSize (preferred_update_size);
+        hpp.setLastUpdatedInterval (Signal::Interval(0,5));
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());
 
@@ -192,7 +215,7 @@ void HeightmapProcessingPublisher::
                   Step::ptr (),
                   std::vector<Step::const_ptr>(),
                   Operation::ptr(),
-                  Signal::Interval(0,2), Signal::Interval());
+                  Interval(0,2), Interval());
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
     }

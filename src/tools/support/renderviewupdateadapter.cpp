@@ -25,7 +25,7 @@ void RenderViewUpdateAdapter::
 {
     UPDATEINFO TaskInfo(format("RenderViewUpdateAdapter::refreshSamples %s") % I);
 
-    emit setLastUpdateSize( I.count () );
+    emit setLastUpdatedInterval( I.spannedInterval () );
 }
 
 
@@ -52,9 +52,9 @@ void RenderViewUpdateAdapterMock::
 
 
 void RenderViewUpdateAdapterMock::
-        setLastUpdateSize( Signal::UnsignedIntervalType )
+        setLastUpdatedInterval( Signal::Interval )
 {
-    setLastUpdateSize_count++;
+    setLastUpdatedInterval_count++;
 }
 
 
@@ -68,21 +68,21 @@ void RenderViewUpdateAdapter::
         RenderTarget::ptr rt(a = new RenderViewUpdateAdapter);
         RenderViewUpdateAdapterMock mock;
 
-        connect(a, SIGNAL(setLastUpdateSize(Signal::UnsignedIntervalType)), &mock, SLOT(setLastUpdateSize(Signal::UnsignedIntervalType)));
+        connect(a, SIGNAL(setLastUpdatedInterval(Signal::Interval)), &mock, SLOT(setLastUpdatedInterval(Signal::Interval)));
         connect(a, SIGNAL(redraw()), &mock, SLOT(redraw()));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
-        EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 0);
+        EXCEPTION_ASSERT_EQUALS(mock.setLastUpdatedInterval_count, 0);
 
         rt.write ()->refreshSamples(Signal::Intervals(1,2));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 0);
-        EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);
+        EXCEPTION_ASSERT_EQUALS(mock.setLastUpdatedInterval_count, 1);
 
         rt.write ()->processedData(Signal::Interval(1,2), Signal::Interval(3,4));
 
         EXCEPTION_ASSERT_EQUALS(mock.redraw_count, 1);
-        EXCEPTION_ASSERT_EQUALS(mock.setLastUpdateSize_count, 1);
+        EXCEPTION_ASSERT_EQUALS(mock.setLastUpdatedInterval_count, 1);
     }
 
     // It should not rely on a valid instance of RenderView
