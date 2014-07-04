@@ -113,7 +113,7 @@ IInvalidator::ptr Chain::
 
     desc.write ()->setInvalidator( graph_invalidator );
 
-    graph_invalidator.read ()->deprecateCache (Signal::Interval::Interval_ALL);
+    graph_invalidator->deprecateCache (Signal::Interval::Interval_ALL);
 
     return graph_invalidator;
 }
@@ -399,7 +399,7 @@ void Chain::
 
         // So using invalidator should not do anything (would throw an
         // exception if OperationDescChainMock::affectedInterval was called)
-        invalidator.write ()->deprecateCache(Signal::Interval(9,11));
+        invalidator->deprecateCache(Signal::Interval(9,11));
 
         usleep(4000);
         chain.read ()->workers()->rethrow_any_worker_exception();

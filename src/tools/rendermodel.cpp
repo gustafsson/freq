@@ -17,9 +17,9 @@ namespace Tools
 
 class TargetInvalidator: public Signal::Processing::IInvalidator {
 public:
-    TargetInvalidator(Signal::Processing::TargetNeeds::const_ptr needs):needs_(needs) {}
+    TargetInvalidator(Signal::Processing::TargetNeeds::const_ptr needs) : needs_(needs) {}
 
-    virtual void deprecateCache(Signal::Intervals what) const {
+    void deprecateCache(Signal::Intervals what) const override {
         needs_->deprecateCache(what);
     }
 

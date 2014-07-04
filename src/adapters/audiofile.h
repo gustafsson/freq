@@ -2,6 +2,7 @@
 #define ADAPTERS_AUDIOFILE_H
 
 #include "signal/buffersource.h"
+#include "sawe/sawedll.h"
 
 #include <boost/serialization/nvp.hpp>
 
@@ -438,6 +439,7 @@ public:
 private:
     Audiofile::ptr audiofile_;
 };
+
 
 class SaweDll AudiofileDesc: public Signal::OperationDesc
 {

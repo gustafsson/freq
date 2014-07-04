@@ -28,7 +28,7 @@ void GraphInvalidator::
     Step::ptr step = step_.lock ();
 
     if (step)
-        GraphInvalidator::deprecateCache(*dag, step, what);
+        deprecateCache(*dag, step, what);
 
     if (notifier)
         notifier->wakeup();
@@ -43,9 +43,8 @@ void GraphInvalidator::
 
     // Invalidate the targets afterwards
     // Otherwise the scheduler might start working on data that isn't ready yet
-    for (Step::ptr ts: dag.targetSteps(step)) {
+    for (Step::ptr ts: dag.targetSteps(step))
         deprecateCache(dag, ts, what);
-    }
 }
 
 } // namespace Processing

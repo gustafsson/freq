@@ -40,7 +40,7 @@ void RecordedCommand::
             d->samples.put (recordedData);
         }
 
-        iinvalidator.write ()->deprecateCache(recordedData->getInterval());
+        iinvalidator->deprecateCache(recordedData->getInterval());
 
         if (0<=prev_qx)
             model->_qx = prev_qx;
@@ -53,7 +53,7 @@ void RecordedCommand::
 {
     recording.raw ()->data ()->samples.invalidate_samples (recordedData->getInterval());
     prev_qx = model->_qx;
-    iinvalidator.write ()->deprecateCache (recordedData->getInterval());
+    iinvalidator->deprecateCache (recordedData->getInterval());
     if (prev_qx == model->_qx)
         prev_qx = -1;
 
