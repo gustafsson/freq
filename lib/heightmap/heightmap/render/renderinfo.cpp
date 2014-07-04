@@ -94,12 +94,21 @@ bool RenderInfo::
         if (clippedCorners.empty ())
             continue;
 
-        GLvector middle;
-        for (GLvector v : clippedCorners) middle += v;
-        middle *= 1.f / clippedCorners.size ();
+        GLvector timePoint = closest_i;
+        GLvector scalePoint = closest_i;
+        for (GLvector v : clippedCorners)
+        {
+            if (fabsf(v[0]-closest_i[0]) > fabsf(timePoint[0]-closest_i[0]))
+                timePoint = v;
+            if (fabsf(v[2]-closest_i[2]) > fabsf(scalePoint[2]-closest_i[2]))
+                scalePoint = v;
+        }
 
-        GLvector timePoint = closest_i;  timePoint[0] = middle[0];
-        GLvector scalePoint = closest_i; scalePoint[2] = middle[2];
+        timePoint[2] = closest_i[2];
+        scalePoint[0] = closest_i[0];
+
+        timePoint = closest_i + (timePoint-closest_i)*0.01f;
+        scalePoint = closest_i + (scalePoint-closest_i)*0.01f;
 
         GLvector::T timeLength = fabsf (closest_i[0] - timePoint[0]);
         GLvector::T scaleLength = fabsf (closest_i[2] - scalePoint[2]);
