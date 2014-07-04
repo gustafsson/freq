@@ -2,6 +2,7 @@
 
 #include "heightmap/blockquery.h"
 #include "mergekernel.h"
+#include "heightmap/render/shaderresource.h"
 
 #include "tasktimer.h"
 #include "computationkernel.h"
@@ -31,7 +32,8 @@ MergerTexture::
       cache_(cache),
       block_layout_(block_layout),
       tex_(0),
-      disable_merge_(disable_merge)
+      disable_merge_(disable_merge),
+      program_(0)
 {
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
@@ -43,12 +45,18 @@ MergerTexture::
     fbo_.reset (new GlFrameBuffer(tex_));
 
     glGenBuffers (1, &vbo_);
+
+//    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 }
 
 
 MergerTexture::
         ~MergerTexture()
 {
+    if (program_)
+        glDeleteProgram(program_);
+    program_ = 0;
+
     glDeleteTextures (1, &tex_);
     tex_ = 0;
 
@@ -103,12 +111,16 @@ void MergerTexture::
     glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
     glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
+    glUseProgram (program_);
+
     cache_clone = cache_->clone();
 
     for (pBlock b : blocks)
         fillBlockFromOthersInternal (b);
 
     cache_clone.clear ();
+
+    glUseProgram (0);
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
