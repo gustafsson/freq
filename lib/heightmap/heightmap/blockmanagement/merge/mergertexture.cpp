@@ -14,11 +14,11 @@
 
 #include <QGLContext>
 
-#define VERBOSE_COLLECTION
-//#define VERBOSE_COLLECTION if(0)
+//#define VERBOSE_COLLECTION
+#define VERBOSE_COLLECTION if(0)
 
-#define INFO_COLLECTION
-//#define INFO_COLLECTION if(0)
+//#define INFO_COLLECTION
+#define INFO_COLLECTION if(0)
 
 using namespace Signal;
 
@@ -68,6 +68,8 @@ MergerTexture::
 void MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: fillBlocksFromOthers %s blocks") % blocks.size ());
+
     GlException_CHECK_ERROR();
 
     GLint viewport[4];
@@ -146,7 +148,7 @@ void MergerTexture::
 void MergerTexture::
         fillBlockFromOthersInternal( pBlock block )
 {
-    INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
 
     Region r = block->getRegion ();
 
