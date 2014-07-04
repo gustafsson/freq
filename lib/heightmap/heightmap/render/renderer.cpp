@@ -39,6 +39,9 @@
 //#define LOG_REFERENCES_TO_RENDER
 #define LOG_REFERENCES_TO_RENDER if(0)
 
+#define DISPLAY_REFERENCES
+//#define DISPLAY_REFERENCES if(0)
+
 using namespace std;
 
 namespace Heightmap {
@@ -312,7 +315,7 @@ void Renderer::
         createMissingBlocks(R);
         drawBlocks(R);
 
-        LOG_REFERENCES_TO_RENDER drawReferences(R, false);
+        DISPLAY_REFERENCES drawReferences(R, false);
     }
     else
     {
