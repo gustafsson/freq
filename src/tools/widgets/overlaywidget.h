@@ -24,10 +24,11 @@ signals:
 public slots:
 
 protected:
-    virtual void updatePosition() = 0;
+    virtual void updatePosition();
 
 private:
-    bool eventFilter(QObject *o, QEvent *e);
+    bool event(QEvent *e) override;
+    bool eventFilter(QObject *o, QEvent *e) override;
 
     QWidget* sceneSection_;
     QGraphicsScene* scene_;

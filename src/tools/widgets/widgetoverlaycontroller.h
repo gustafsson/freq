@@ -24,7 +24,7 @@ public:
     void mouseReleaseEvent ( QMouseEvent * event );
 
 protected:
-    void updatePosition();
+    void updatePosition() override;
 
 private:
     void setupLayout();
