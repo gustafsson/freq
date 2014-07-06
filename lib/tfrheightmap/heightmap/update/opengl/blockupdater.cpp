@@ -167,6 +167,7 @@ void BlockUpdater::
         (void)fbo_mapping;
     }
 
+    source2pbo.clear ();
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
 }
