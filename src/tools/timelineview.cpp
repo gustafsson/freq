@@ -262,6 +262,7 @@ void TimelineView::
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
+                _render_view->model->renderer->gl_projection = gl_projection;
                 _render_view->drawCollections( _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?

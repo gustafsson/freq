@@ -1053,6 +1053,7 @@ void RenderView::
 
 
     // Set up camera position
+    glProjection drawAxes_rotation;
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 
@@ -1062,12 +1063,14 @@ void RenderView::
         int viewport_matrix[4];
         glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
         glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+        glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
+        gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
 
-        // drawCollections shouldn't use the matrix applied by setRotationForAxes
+        // drawAxes uses its own rotation
         glPushMatrixContext ctx(GL_MODELVIEW);
         setRotationForAxes(false);
         glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-        gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
+        drawAxes_rotation.update (modelview_matrix, projection_matrix, viewport_matrix);
     }
 
     bool onlyComputeBlocksForRenderView = false;
@@ -1104,6 +1107,7 @@ void RenderView::
         if (step_with_new_extent)
             step_with_new_extent.write ()->deprecateCache(Signal::Interval::Interval_ALL);
 
+        model->renderer->gl_projection = gl_projection;
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
         last_ysize = model->renderer->render_settings.last_ysize;
@@ -1123,7 +1127,7 @@ void RenderView::
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
-            model->renderer->gl_projection = gl_projection;
+            model->renderer->gl_projection = drawAxes_rotation;
 
             model->renderer->drawAxes( length ); // 4.7 ms
 
