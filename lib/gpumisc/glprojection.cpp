@@ -7,9 +7,6 @@
 glProjection::
         glProjection()
 {
-    memset(modelview_matrix_, 0, sizeof(modelview_matrix_));
-    memset(projection_matrix_, 0, sizeof(projection_matrix_));
-    memset(viewport_matrix_, 0, sizeof(viewport_matrix_));
 }
 
 
@@ -18,9 +15,9 @@ void glProjection::
                GLvector::T projection_matrix[16],
                int viewport_matrix[4])
 {
-    memcpy(modelview_matrix_, modelview_matrix, sizeof(modelview_matrix_));
-    memcpy(projection_matrix_, projection_matrix, sizeof(projection_matrix_));
-    memcpy(viewport_matrix_, viewport_matrix, sizeof(viewport_matrix_));
+    modelview_matrix_ = modelview_matrix;
+    projection_matrix_ = projection_matrix;
+    viewport_matrix_ = viewport_matrix;
 }
 
 
@@ -41,14 +38,14 @@ float glProjection::
 GLvector glProjection::
         gluProject(GLvector obj, bool *r)
 {
-    return ::gluProject(obj, modelview_matrix_, projection_matrix_, viewport_matrix_, r);
+    return ::gluProject(obj, modelview_matrix(), projection_matrix(), viewport_matrix_.v, r);
 }
 
 
 GLvector glProjection::
         gluUnProject(GLvector win, bool *r)
 {
-    return ::gluUnProject(win, modelview_matrix_, projection_matrix_, viewport_matrix_, r);
+    return ::gluUnProject(win, modelview_matrix(), projection_matrix(), viewport_matrix_.v, r);
 }
 
 

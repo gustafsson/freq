@@ -33,7 +33,7 @@ public:
 	tmatrix( const t *b )
 	{
 		for(int i=0; i<cols; i++)
-			m[i] = &b[i *rows];
+            m[i] = b + i*rows;
 	}
 	tmatrix( const tmatrix &b )
 	{
@@ -144,8 +144,12 @@ public:
 		};
 		return tmatrix<4,t,4>(p);
 	}
+
+    t* v() { return m[0].v; }
+    const t* v() const { return m[0].v; }
+
 private:
-	tvector<rows, t> m[cols];
+    tvector<rows, t> m[cols];
 };
 
 template<>

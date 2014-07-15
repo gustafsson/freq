@@ -2,6 +2,7 @@
 #define GLPROJECTION_H
 
 #include "GLvector.h"
+#include "tmatrix.h"
 
 /**
  * @brief The glProjection class should describe how OpenGL object space is
@@ -20,9 +21,9 @@ public:
     void setZoom(float zoom);
     float getZoom();
 
-    const GLvector::T* modelview_matrix() const { return modelview_matrix_; }
-    const GLvector::T* projection_matrix() const { return projection_matrix_; }
-    const int* viewport_matrix() const { return viewport_matrix_; }
+    const GLvector::T* modelview_matrix() const { return modelview_matrix_.v (); }
+    const GLvector::T* projection_matrix() const { return projection_matrix_.v (); }
+    const int* viewport_matrix() const { return viewport_matrix_.v; }
 
     GLvector gluProject(GLvector obj, bool *r=0);
     GLvector gluUnProject(GLvector win, bool *r=0);
@@ -31,9 +32,9 @@ public:
 
 private:
     float                           zoom;
-    GLvector::T                     modelview_matrix_[16];
-    GLvector::T                     projection_matrix_[16];
-    int                             viewport_matrix_[4];
+    tmatrix<4,GLvector::T>          modelview_matrix_;
+    tmatrix<4,GLvector::T>          projection_matrix_;
+    tvector<4,int>                  viewport_matrix_;
 
 public:
     static void test();
