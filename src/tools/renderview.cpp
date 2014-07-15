@@ -332,7 +332,7 @@ float RenderView::
             return 0;
     }
 
-    DataStorage<float>::ptr blockData = GlTextureRead(block->texture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
 
     float* data = blockData->getCpuMemory();
     Heightmap::BlockLayout block_layout = model->tfr_mapping ().read ()->block_layout();
@@ -713,7 +713,7 @@ void RenderView::
         glDisable(GL_DEPTH_TEST);
 
         glColor4f(1,1,1,1);
-        GlTexture t(fbo->getGlTexture());
+        GlTexture t(fbo->getGlTexture(), fbo->getWidth (), fbo->getHeight ());
         GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
 
         glBegin(GL_TRIANGLE_STRIP);

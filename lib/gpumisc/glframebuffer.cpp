@@ -44,23 +44,20 @@ GlFrameBuffer::
 }
 
 GlFrameBuffer::
-        GlFrameBuffer(unsigned textureid)
+        GlFrameBuffer(unsigned textureid, int width, int height)
     :
     fboId_(0),
     rboId_(0),
     own_texture_(0),
     textureid_(textureid),
-    enable_depth_component_(false)
+    enable_depth_component_(false),
+    texture_width_(width),
+    texture_height_(height)
 {
     init();
 
     try
     {
-        glBindTexture (GL_TEXTURE_2D, textureid_);
-        GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texture_width_) );
-        GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texture_height_) );
-        glBindTexture (GL_TEXTURE_2D, 0);
-
         recreate(texture_width_, texture_height_);
     }
     catch(...)
@@ -72,6 +69,13 @@ GlFrameBuffer::
 
         throw;
     }
+}
+
+GlFrameBuffer::
+        GlFrameBuffer(const GlTexture& texture)
+    :
+      GlFrameBuffer(texture.getOpenGlTextureId (), texture.getWidth (), texture.getHeight ())
+{
 }
 
 GlFrameBuffer::
@@ -135,11 +139,6 @@ void GlFrameBuffer::
 void GlFrameBuffer::
         recreate(int width, int height)
 {
-    glBindTexture (GL_TEXTURE_2D, textureid_);
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texture_width_) );
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texture_height_) );
-    glBindTexture (GL_TEXTURE_2D, 0);
-
     const char* action = "Resizing";
     if (0==width)
     {

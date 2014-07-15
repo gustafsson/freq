@@ -86,7 +86,7 @@ float PeakModel::
     Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return 0;
-    DataStorage<float>::ptr blockData = GlTextureRead(block->texture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
     float* data = blockData->getCpuMemory();
 
     Heightmap::BlockLayout block_size = c->block_layout();
@@ -433,7 +433,7 @@ void PeakModel::
     Heightmap::pBlock block = c->getBlock( ref );
     if (!block)
         return;
-    DataStorage<float>::ptr blockData = GlTextureRead(block->texture ()->getOpenGlTextureId ()).readFloat();
+    DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
     float* data = blockData->getCpuMemory();
 
     PeakAreaP area = getPeakArea(ref);
@@ -616,7 +616,7 @@ void PeakModel::
                 return;
             }
 
-            DataStorage<float>::ptr blockData = GlTextureRead(block->texture ()->getOpenGlTextureId ()).readFloat();
+            DataStorage<float>::ptr blockData = GlTextureRead(*block->texture ()).readFloat();
             data = blockData->getCpuMemory();
 
             PeakAreaP area = getPeakArea(ref);

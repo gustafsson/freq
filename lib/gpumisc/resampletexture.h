@@ -2,6 +2,7 @@
 #define RESAMPLETEXTURE_H
 
 #include "glframebuffer.h"
+#include "GlTexture.h"
 
 /**
  * @brief The ResampleTexture class should paint a texture on top of another texture.
@@ -16,7 +17,8 @@ public:
         Area(float x1, float y1, float x2, float y2);
     };
 
-    ResampleTexture(unsigned dest);
+    ResampleTexture(unsigned dest, int width, int height);
+    ResampleTexture(const GlTexture& dest);
     ~ResampleTexture();
 
     GlFrameBuffer::ScopeBinding enable(Area destarea);

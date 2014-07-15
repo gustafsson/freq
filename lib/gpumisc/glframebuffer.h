@@ -26,7 +26,8 @@ public:
     */
     GlFrameBuffer();
     GlFrameBuffer(int width, int height);
-    GlFrameBuffer(unsigned textureid);
+    GlFrameBuffer(unsigned textureid, int width, int height);
+    GlFrameBuffer(const GlTexture& texture);
 
     /**
     Releases the frame buffer object.

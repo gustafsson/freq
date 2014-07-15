@@ -42,7 +42,7 @@ MergerTexture::
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout.texels_per_row(), block_layout.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    fbo_.reset (new GlFrameBuffer(tex_));
+    fbo_.reset (new GlFrameBuffer(tex_, block_layout.texels_per_row(), block_layout.texels_per_column ()));
 
     glGenBuffers (1, &vbo_);
 
@@ -306,7 +306,7 @@ void MergerTexture::
                             0, 0, 0, 0,
                             0, 0, 0, 0};
 
-        data = GlTextureRead(tex->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
@@ -332,7 +332,7 @@ void MergerTexture::
                               0,   0,   0,   0,
                               0,   0,   0,   0,
                               a/2, b/2, c/2, 0};
-        data = GlTextureRead(tex->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
@@ -359,7 +359,7 @@ void MergerTexture::
                               0, 0,    9.5,  11.5,
                               0, 0,   13.5,  v16};
 
-        data = GlTextureRead(tex->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);

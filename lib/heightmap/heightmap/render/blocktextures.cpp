@@ -68,7 +68,7 @@ void BlockTextures::
     {
         setupTexture (t[i], width_, height_);
 
-        textures.push_back (GlTexture::ptr(new GlTexture(t[i])));
+        textures.push_back (GlTexture::ptr(new GlTexture(t[i], width_, height_)));
     }
 }
 

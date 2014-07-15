@@ -2,6 +2,7 @@
 #define GLTEXTUREREAD_H
 
 #include "datastorage.h"
+#include "GlTexture.h"
 
 #ifndef GL_RGBA
 #define GL_RGBA 0x1908
@@ -17,7 +18,8 @@
 class GlTextureRead
 {
 public:
-    GlTextureRead(int texture);
+    GlTextureRead(int texture, int width, int height);
+    GlTextureRead(const GlTexture& texture);
 
     /**
      * @brief read
@@ -25,11 +27,16 @@ public:
      * @param format See glGetTexImage
      * @return
      */
+//    DataStorage<float>::ptr readFloat(int level=0, int format=GL_RGBA);
+//    DataStorage<unsigned char>::ptr readByte(int level=0, int format=GL_RGBA);
+//    DataStorage<float>::ptr readFloatWithReadPixels(int width, int height, int level=0, int format=GL_RGBA);
+//    DataStorage<unsigned char>::ptr readByteWithReadPixels(int width, int height, int level=0, int format=GL_RGBA);
+
     DataStorage<float>::ptr readFloat(int level=0, int format=GL_RGBA);
     DataStorage<unsigned char>::ptr readByte(int level=0, int format=GL_RGBA);
 
 private:
-    int texture;
+    int texture, width, height;
 
 public:
     static void test();

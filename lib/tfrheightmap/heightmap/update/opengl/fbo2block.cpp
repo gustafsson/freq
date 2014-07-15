@@ -79,7 +79,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
         {
             int id = fboTexture->getOpenGlTextureId ();
             Render::BlockTextures::setupTexture (id, w, h);
-            fboTexture.reset (new GlTexture(id));
+            fboTexture.reset (new GlTexture(id, w, h));
             fbo.reset ();
         }
 
@@ -87,7 +87,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
     }
 
     if (!fbo)
-        fbo.reset (new GlFrameBuffer(fboTexture->getOpenGlTextureId ()));
+        fbo.reset (new GlFrameBuffer(*fboTexture));
 
     GlException_CHECK_ERROR ();
 

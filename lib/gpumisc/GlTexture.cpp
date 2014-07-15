@@ -33,24 +33,15 @@ GlTexture::GlTexture(unsigned short width, unsigned short height,
     reset(width, height, pixelFormat, internalFormat, type, data);
 }
 
-GlTexture::GlTexture(unsigned int textureId)
-    :	width( 0 ),
-        height( 0 ),
+GlTexture::GlTexture(unsigned int textureId, int width, int height)
+    :	width( width ),
+        height( height ),
         textureId( textureId ),
         ownTextureId( 0 )
 {
     EXCEPTION_ASSERT_LESS(0u, textureId);
-    int width=0, height=0;
-    glBindTexture (GL_TEXTURE_2D, textureId);
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width) );
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height) );
-    glBindTexture (GL_TEXTURE_2D, 0);
-    this->width = width;
-    this->height = height;
     EXCEPTION_ASSERT_LESS(0, width);
     EXCEPTION_ASSERT_LESS(0, height);
-    EXCEPTION_ASSERT_EQUALS(this->width, width);
-    EXCEPTION_ASSERT_EQUALS(this->height, height);
 }
 
 void GlTexture::
