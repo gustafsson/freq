@@ -67,38 +67,47 @@ GLvector closestPointOnPoly( const vector<GLvector>& l, const GLvector &target)
 }
 
 
-GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, GLvector const& plane, GLvector const& normal ) {
+GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, const tvector<4,GLfloat>& plane) {
     GLvector dir = pt2-pt1;
+    GLvector normal = {plane[0], plane[1], plane[2]};
 
-    s = ((plane-pt1)%normal)/(dir % normal);
+    s = (plane[3] - (pt1 % normal))/(dir % normal);
     GLvector p = pt1 + dir * s;
 
     return p;
 }
 
-
 vector<GLvector> clipPlane( const vector<GLvector>& p, const GLvector& p0, const GLvector& n )
+{
+    tvector<4,GLfloat> plane(n[0], n[1], n[2], p0 % n);
+    return clipPlane( p, plane );
+}
+
+std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, const tvector<4,GLfloat>& plane )
 {
     if (p.empty())
         return vector<GLvector>();
 
+    GLvector n(plane[0], plane[1], plane[2]);
+    float d = plane[3];
+
     unsigned i;
 
     GLvector const* a, * b = &p[p.size()-1];
-    bool a_side, b_side = (p0-*b)%n < 0;
+    bool a_side, b_side = d - (*b % n) < 0;
     for (i=0; i<p.size(); i++) {
         a = b;
         b = &p[i];
 
         a_side = b_side;
-        b_side = (p0-*b)%n < 0;
+        b_side = d - (*b % n) < 0;
 
         if (a_side != b_side )
         {
             GLvector dir = *b-*a;
 
             // planeIntersection
-            float s = ((p0-*a)%n)/(dir % n);
+            float s = (d - (*a % n))/(dir % n);
 
             // TODO why [-.1, 1.1]?
             //if (!isnan(s) && -.1 <= s && s <= 1.1)
@@ -121,14 +130,14 @@ vector<GLvector> clipPlane( const vector<GLvector>& p, const GLvector& p0, const
     r.reserve(2*p.size());
 
     b = &p[p.size()-1];
-    b_side = (p0-*b)%n < 0;
+    b_side = d - (*b % n) < 0;
 
     for (unsigned i=0; i<p.size(); i++) {
         a = b;
         b = &p[i];
 
         a_side = b_side;
-        b_side = (p0-*b)%n <0;
+        b_side = d - (*b % n) <0;
 
         if (a_side)
             r.push_back( *a );
@@ -136,7 +145,7 @@ vector<GLvector> clipPlane( const vector<GLvector>& p, const GLvector& p0, const
         if (a_side != b_side )
         {
             float s;
-            GLvector xy = planeIntersection( *a, *b, s, p0, n );
+            GLvector xy = planeIntersection( *a, *b, s, plane );
 
             //if (!isnan(s) && -.1 <= s && s <= 1.1)
             if (!isnan(s) && 0 <= s && s <= 1)
@@ -223,7 +232,8 @@ void test() {
         float s = 0.f/0.f;
         GLvector plane(2,1,1);
         GLvector normal(1,0,0);
-        GLvector p = planeIntersection( pt1, pt2, s, plane, normal );
+        tvector<4,GLfloat> comb(1, 0, 0, plane % normal);
+        GLvector p = planeIntersection( pt1, pt2, s, comb );
         EXCEPTION_ASSERT_EQUALS(p, GLvector(2, 0, 0));
         EXCEPTION_ASSERT_EQUALS(s, 0.5);
     }

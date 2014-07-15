@@ -40,7 +40,7 @@ GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &tar
  * The normal does not need to be normalized.
  * @return A point in the plane. Perpendicular line and normal leads to division by 0.
  */
-GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, GLvector const& plane, GLvector const& normal );
+GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, const tvector<4,GLfloat>& plane );
 
 
 /**
@@ -50,6 +50,7 @@ GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, 
  * @return The polygon on the frontside of the plane.
  */
 std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, const GLvector& p0, const GLvector& n );
+std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, const tvector<4,GLfloat>& plane );
 
 void test();
 
