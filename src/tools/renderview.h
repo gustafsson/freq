@@ -201,8 +201,7 @@ namespace Tools
 
         Signal::UnsignedIntervalType _last_update_size;
 
-        GLvector::T modelview_matrix[16], projection_matrix[16];
-        int viewport_matrix[4];
+        glProjection gl_projection;
 
         std::vector<tvector<4> > channel_colors;
     };

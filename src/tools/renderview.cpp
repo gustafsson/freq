@@ -408,11 +408,7 @@ float RenderView::
 Heightmap::Reference RenderView::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    model->renderer->gl_projection.update (this->modelview_matrix, this->projection_matrix, this->viewport_matrix);
-//    memcpy( model->renderer->gl_projection.viewport_matrix (), viewport_matrix, sizeof(viewport_matrix));
-//    memcpy( model->renderer->gl_projection.modelview_matrix (), modelview_matrix, sizeof(modelview_matrix));
-//    memcpy( model->renderer->gl_projection.projection_matrix (), projection_matrix, sizeof(projection_matrix));
-
+    model->renderer->gl_projection = this->gl_projection;
     model->renderer->collection = model->collections()[0];
 
     return model->renderer->findRefAtCurrentZoomLevel( p );
@@ -426,17 +422,15 @@ QPointF RenderView::
     if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->renderer->render_settings.y_scale * last_ysize;
 
-    GLvector::T winX, winY, winZ;
-    gluProject( pos.time, objY, pos.scale,
-                modelview_matrix, projection_matrix, viewport_matrix,
-                &winX, &winY, &winZ);
+    GLvector win = gl_projection.gluProject (GLvector(pos.time, objY, pos.scale));
+    GLvector::T winX = win[0], winY = win[1]; // winZ = win[2];
 
     if (dist)
     {
-        GLint const* const& vp = viewport_matrix;
+        GLint const* const& vp = gl_projection.viewport_matrix ();
         float z0 = .1, z1=.2;
-        GLvector projectionPlane = ::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0), modelview_matrix, projection_matrix, vp );
-        GLvector projectionNormal = (::gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1), modelview_matrix, projection_matrix, vp ) - projectionPlane);
+        GLvector projectionPlane = gl_projection.gluUnProject ( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
+        GLvector projectionNormal = gl_projection.gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
 
         GLvector p;
         p[0] = pos.time;
@@ -481,8 +475,8 @@ Heightmap::Position RenderView::
     pos.setX( widget_pos.x() + _last_x );
     pos.setY( _last_height - 1 - widget_pos.y() + _last_y );
 
-    GLvector::T* m = this->modelview_matrix, *proj = this->projection_matrix;
-    GLint* vp = this->viewport_matrix;
+    const GLvector::T* m = gl_projection.modelview_matrix (), *proj = gl_projection.projection_matrix ();
+    const GLint* vp = gl_projection.viewport_matrix ();
     GLvector::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
@@ -554,8 +548,8 @@ Heightmap::Position RenderView::
     pos.setX( pos.x() + _last_x );
     pos.setY( _last_height - 1 - pos.y() + _last_y );
 
-    GLvector::T* m = this->modelview_matrix, *proj = this->projection_matrix;
-    GLint* vp = this->viewport_matrix;
+    const GLvector::T* m = gl_projection.modelview_matrix (), *proj = gl_projection.projection_matrix ();
+    const GLint* vp = gl_projection.viewport_matrix ();
     GLvector::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
@@ -1064,6 +1058,8 @@ void RenderView::
 
         setupCamera();
 
+        GLvector::T modelview_matrix[16], projection_matrix[16];
+        int viewport_matrix[4];
         glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
         glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
@@ -1071,6 +1067,7 @@ void RenderView::
         glPushMatrixContext ctx(GL_MODELVIEW);
         setRotationForAxes(false);
         glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
+        gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
     }
 
     bool onlyComputeBlocksForRenderView = false;
@@ -1126,10 +1123,7 @@ void RenderView::
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
-            model->renderer->gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
-//            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
-//            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
-//            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));
+            model->renderer->gl_projection = gl_projection;
 
             model->renderer->drawAxes( length ); // 4.7 ms
 
@@ -1146,7 +1140,7 @@ void RenderView::
     int dead_workers = ci.dead_workers ();
 
     if (isWorking || isRecording || dead_workers) {
-        Support::DrawWorking::drawWorking( viewport_matrix[2], viewport_matrix[3], n_workers, dead_workers );
+        Support::DrawWorking::drawWorking( gl_projection.viewport_matrix ()[2], gl_projection.viewport_matrix ()[3], n_workers, dead_workers );
     }
 
     {

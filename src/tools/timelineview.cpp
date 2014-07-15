@@ -84,12 +84,7 @@ Heightmap::Position TimelineView::
     int r = devicePixelRatio ();
     GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
 
-    GLvector world_coord = gluUnProject(
-            win_coord,
-            modelview_matrix,
-            projection_matrix,
-            viewport_matrix,
-            success);
+    GLvector world_coord = gl_projection.gluUnProject (win_coord, success);
 
     return Heightmap::Position( world_coord[0], world_coord[2] );
 }
@@ -257,9 +252,12 @@ void TimelineView::
             }
             setupCamera( false );
 
+            GLvector::T modelview_matrix[16], projection_matrix[16];
+            int viewport_matrix[4];
             glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
             glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
             glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+            gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
 
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
