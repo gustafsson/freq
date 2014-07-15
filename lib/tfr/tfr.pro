@@ -10,12 +10,14 @@ CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
 
+PWD = $$_PRO_FILE_PWD_
+
 SOURCES += \
-    tfr/*.c \
-    tfr/*.cpp \
+    $$PWD/tfr/*.c \
+    $$PWD/tfr/*.cpp \
 
 HEADERS += \
-    tfr/*.h \
+    $$PWD/tfr/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal
 win32: INCLUDEPATH += ../sonicawe-winlib

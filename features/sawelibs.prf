@@ -1,4 +1,5 @@
-SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
+# SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
+isEmpty(SAWEROOT): SAWEROOT = ..
 
 QT += opengl
 QT += network
