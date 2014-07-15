@@ -116,10 +116,9 @@ void GlFrameBuffer::
 {
     GlException_CHECK_ERROR();
 
-    glGetIntegerv (GL_DRAW_FRAMEBUFFER_BINDING, &prev_fbo_draw_);
-    glGetIntegerv (GL_READ_FRAMEBUFFER_BINDING, &prev_fbo_read_);
+    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_);
 
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId_));
+    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
 
     GlException_CHECK_ERROR();
 }
@@ -129,8 +128,7 @@ void GlFrameBuffer::
 {
     GlException_CHECK_ERROR();
 
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, prev_fbo_draw_));
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_READ_FRAMEBUFFER, prev_fbo_read_));
+    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo_));
 
     GlException_CHECK_ERROR();
 }

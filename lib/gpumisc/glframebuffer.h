@@ -41,7 +41,6 @@ public:
     when the object goes out of scope.
     */
     ScopeBinding getScopeBinding();
-    //ScopeBinding doOffscreenRenderingInCallersScope() const { return getScopeBinding(); }
 
     /**
     Binds this frame buffer with glBindFramebufferEXT.
@@ -101,8 +100,7 @@ private:
     /**
     Used by (un)bindFrameBuffer to restore the state after binding.
      */
-    int prev_fbo_draw_;
-    int prev_fbo_read_;
+    int prev_fbo_;
 
     /**
       Texture to access the frame buffer.
