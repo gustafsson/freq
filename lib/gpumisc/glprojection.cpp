@@ -10,17 +10,17 @@ glProjection::
     memset(modelview_matrix_, 0, sizeof(modelview_matrix_));
     memset(projection_matrix_, 0, sizeof(projection_matrix_));
     memset(viewport_matrix_, 0, sizeof(viewport_matrix_));
-
-    update();
 }
 
 
 void glProjection::
-        update()
+        update(GLvector::T modelview_matrix[16],
+               GLvector::T projection_matrix[16],
+               int viewport_matrix[4])
 {
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix_);
-    glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix_);
-    glGetIntegerv(GL_VIEWPORT, viewport_matrix_);
+    memcpy(modelview_matrix_, modelview_matrix, sizeof(modelview_matrix_));
+    memcpy(projection_matrix_, projection_matrix, sizeof(projection_matrix_));
+    memcpy(viewport_matrix_, viewport_matrix, sizeof(viewport_matrix_));
 }
 
 
@@ -150,8 +150,18 @@ void glProjection::
         glViewport (0,0,100,100);
         glProjection g;
 
-        tmatrix<4, double> modelview = g.modelview_matrix ();
-        tmatrix<4, double> projection = g.projection_matrix ();
+        {
+            GLvector::T                     modelview_matrix_[16];
+            GLvector::T                     projection_matrix_[16];
+            int                             viewport_matrix_[4];
+            glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix_);
+            glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix_);
+            glGetIntegerv(GL_VIEWPORT, viewport_matrix_);
+            g.update(modelview_matrix_, projection_matrix_, viewport_matrix_);
+        }
+
+        tmatrix<4, GLvector::T> modelview = g.modelview_matrix ();
+        tmatrix<4, GLvector::T> projection = g.projection_matrix ();
         tvector<4, int> viewport = g.viewport_matrix ();
 
         double id4[]{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};

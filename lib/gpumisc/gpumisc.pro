@@ -34,6 +34,7 @@ SOURCES += \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
+    gluproject_ios.cpp \
     gluunproject.cpp \
     log.cpp \
     mappedvbovoid.cpp \
@@ -69,6 +70,7 @@ HEADERS += \
     GLvector.h \
     geometricalgebra.h \
     gluunproject.h \
+    gluproject_ios.h \
     gpumisc_global.h \
     HasSingleton.h \
     InvokeOnDestruction.hpp \

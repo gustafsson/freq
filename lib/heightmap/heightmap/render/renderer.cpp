@@ -347,7 +347,15 @@ void Renderer::
     render_settings.drawn_blocks = 0;
 
 
-    gl_projection.update();
+    GLvector::T                     modelview_matrix_[16];
+    GLvector::T                     projection_matrix_[16];
+    int                             viewport_matrix_[4];
+    glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix_);
+    glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix_);
+    glGetIntegerv(GL_VIEWPORT, viewport_matrix_);
+    gl_projection.update(modelview_matrix_, projection_matrix_, viewport_matrix_);
+
+
     _frustum_clip.update (0, 0);
 
     glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);

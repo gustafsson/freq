@@ -1,7 +1,12 @@
 #include "gluunproject.h"
 
+//#ifdef GL_ES_VERSION_2_0
+#include "gluproject_ios.h"
+#define GLU_FALSE 0
+#define GLU_TRUE 1
+//#endif
 
-GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r)
+GLvector gluProject(GLvector obj, const GLvector::T* model, const GLvector::T* proj, const GLint *view, bool *r)
 {
 //    //gluProject does this, (win - screenspace).dot() < 1e18
 //    tmatrix<4, double> modelmatrix(model);
@@ -25,9 +30,9 @@ GLvector gluProject(GLvector obj, const GLdouble* model, const GLdouble* proj, c
 }
 
 
-GLvector gluUnProject(GLvector win, const GLdouble* model, const GLdouble* proj, const GLint *view, bool *r)
+GLvector gluUnProject(GLvector win, const GLvector::T* model, const GLvector::T* proj, const GLint *view, bool *r)
 {
-    GLdouble obj0=0, obj1=0, obj2=0;
+    GLvector::T obj0=0, obj1=0, obj2=0;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
     return GLvector(obj0, obj1, obj2);

@@ -41,6 +41,8 @@
 #include <cuda.h> // threadexit
 #endif
 
+#include "gluproject_ios.h"
+
 // Qt
 #include <QTimer>
 #include <QEvent>
@@ -406,7 +408,7 @@ float RenderView::
 Heightmap::Reference RenderView::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    model->renderer->gl_projection.update ();
+    model->renderer->gl_projection.update (this->modelview_matrix, this->projection_matrix, this->viewport_matrix);
 //    memcpy( model->renderer->gl_projection.viewport_matrix (), viewport_matrix, sizeof(viewport_matrix));
 //    memcpy( model->renderer->gl_projection.modelview_matrix (), modelview_matrix, sizeof(modelview_matrix));
 //    memcpy( model->renderer->gl_projection.projection_matrix (), projection_matrix, sizeof(projection_matrix));
@@ -424,7 +426,7 @@ QPointF RenderView::
     if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->renderer->render_settings.y_scale * last_ysize;
 
-    GLdouble winX, winY, winZ;
+    GLvector::T winX, winY, winZ;
     gluProject( pos.time, objY, pos.scale,
                 modelview_matrix, projection_matrix, viewport_matrix,
                 &winX, &winY, &winZ);
@@ -479,26 +481,26 @@ Heightmap::Position RenderView::
     pos.setX( widget_pos.x() + _last_x );
     pos.setY( _last_height - 1 - widget_pos.y() + _last_y );
 
-    GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
+    GLvector::T* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
-    GLdouble other_m[16], other_proj[16];
+    GLvector::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
-        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
-        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
+        glGetFloatv(GL_MODELVIEW_MATRIX, other_m);
+        glGetFloatv(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
         vp = other_vp;
     }
 
-    GLdouble objX1, objY1, objZ1;
+    GLvector::T objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
                 m, proj, vp,
                 &objX1, &objY1, &objZ1);
 
-    GLdouble objX2, objY2, objZ2;
+    GLvector::T objX2, objY2, objZ2;
     gluUnProject( pos.x(), pos.y(), 0.2,
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
@@ -552,26 +554,26 @@ Heightmap::Position RenderView::
     pos.setX( pos.x() + _last_x );
     pos.setY( _last_height - 1 - pos.y() + _last_y );
 
-    GLdouble* m = this->modelview_matrix, *proj = this->projection_matrix;
+    GLvector::T* m = this->modelview_matrix, *proj = this->projection_matrix;
     GLint* vp = this->viewport_matrix;
-    GLdouble other_m[16], other_proj[16];
+    GLvector::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
-        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
-        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
+        glGetFloatv(GL_MODELVIEW_MATRIX, other_m);
+        glGetFloatv(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
         vp = other_vp;
     }
 
-    GLdouble objX1, objY1, objZ1;
+    GLvector::T objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
                 m, proj, vp,
                 &objX1, &objY1, &objZ1);
 
-    GLdouble objX2, objY2, objZ2;
+    GLvector::T objX2, objY2, objZ2;
     gluUnProject( pos.x(), pos.y(), 0.2,
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
@@ -1062,13 +1064,13 @@ void RenderView::
 
         setupCamera();
 
-        glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+        glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
         glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
         // drawCollections shouldn't use the matrix applied by setRotationForAxes
         glPushMatrixContext ctx(GL_MODELVIEW);
         setRotationForAxes(false);
-        glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
+        glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
     }
 
     bool onlyComputeBlocksForRenderView = false;
@@ -1124,7 +1126,7 @@ void RenderView::
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
-            model->renderer->gl_projection.update ();
+            model->renderer->gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
 //            memcpy( model->renderer->viewport_matrix, viewport_matrix, sizeof(viewport_matrix));
 //            memcpy( model->renderer->modelview_matrix, modelview_matrix, sizeof(modelview_matrix));
 //            memcpy( model->renderer->projection_matrix, projection_matrix, sizeof(projection_matrix));

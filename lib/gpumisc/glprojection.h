@@ -12,14 +12,16 @@ class glProjection
 public:
     glProjection();
 
-    void update();
+    void update(GLvector::T modelview_matrix[16],
+                GLvector::T projection_matrix[16],
+                int viewport_matrix[4]);
 
     // scales computeUnitsPerPixel
     void setZoom(float zoom);
     float getZoom();
 
-    const double* modelview_matrix() const { return modelview_matrix_; }
-    const double* projection_matrix() const { return projection_matrix_; }
+    const GLvector::T* modelview_matrix() const { return modelview_matrix_; }
+    const GLvector::T* projection_matrix() const { return projection_matrix_; }
     const int* viewport_matrix() const { return viewport_matrix_; }
 
     GLvector gluProject(GLvector obj, bool *r=0);
@@ -29,8 +31,8 @@ public:
 
 private:
     float                           zoom;
-    double                          modelview_matrix_[16];
-    double                          projection_matrix_[16];
+    GLvector::T                     modelview_matrix_[16];
+    GLvector::T                     projection_matrix_[16];
     int                             viewport_matrix_[4];
 
 public:

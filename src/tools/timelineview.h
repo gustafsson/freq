@@ -81,7 +81,7 @@ private:
     RenderView* _render_view;
     int _except_count;
 
-    double modelview_matrix[16], projection_matrix[16];
+    GLvector::T modelview_matrix[16], projection_matrix[16];
     int viewport_matrix[4];
 
     boost::scoped_ptr<GlFrameBuffer> _timeline_fbo;

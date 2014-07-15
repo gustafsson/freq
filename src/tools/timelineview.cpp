@@ -257,8 +257,8 @@ void TimelineView::
             }
             setupCamera( false );
 
-            glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
-            glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
+            glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
+            glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
             glGetIntegerv(GL_VIEWPORT, viewport_matrix);
 
             {

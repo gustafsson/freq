@@ -222,8 +222,8 @@ void RenderAxes::
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
-            double ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
-            double SF = scalePerPixel * 750;
+            GLvector::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
+            GLvector::T SF = scalePerPixel * 750;
             double drawScaleT = std::min(ST, 50*timePerPixel_closest*750);
             double drawScaleF = std::min(SF, 50*scalePerPixel_closest*750);
 
@@ -620,7 +620,7 @@ void RenderAxes::
                         glBegin(GL_TRIANGLE_FAN);
                             if (blackKeyP)
                             {
-                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3fv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
                                 glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
                             }
                             glVertex3f(pp[0] - xscale*ST*(0.f), 0, pp[2]);
@@ -628,11 +628,11 @@ void RenderAxes::
                             glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
                             if (blackKeyN)
                             {
-                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                                glVertex3fv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3fv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
                             }
                             if (blackKeyP)
-                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                                glVertex3fv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
                             else
                                 glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
                         glEnd();

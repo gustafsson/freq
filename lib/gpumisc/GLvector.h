@@ -4,6 +4,6 @@
 #include "gl.h"
 
 #include "tvector.h"
-typedef tvector<3,GLdouble> GLvector;
+typedef tvector<3,GLfloat> GLvector;
 
 #endif // GLVECTOR_H
