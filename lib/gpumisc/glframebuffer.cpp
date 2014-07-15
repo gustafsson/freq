@@ -264,23 +264,31 @@ void GlFrameBuffer::
     // buffer in an object oriented manner
     {
         GlTexture sum1(4, 4, GL_RGBA, GL_RGBA, GL_FLOAT);
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
         GlTexture sum2(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT);
         GlTexture sum3(4, 4, GL_RED, GL_LUMINANCE32F_ARB, GL_FLOAT);
+#endif
         GlTexture sum4(4, 4, GL_LUMINANCE, GL_LUMINANCE, GL_FLOAT);
         GlTexture sum5(4, 4, GL_RED, GL_LUMINANCE, GL_FLOAT);
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
         GlTexture sum6(4, 4, GL_RGBA, GL_LUMINANCE32F_ARB, GL_FLOAT);
+#endif
         GlTexture sum7(4, 4, GL_RGBA, GL_LUMINANCE, GL_FLOAT);
         GlTexture sum8(4, 4, GL_RED, GL_RGBA, GL_FLOAT);
         GlTexture sum9(4, 4, GL_LUMINANCE, GL_RGBA, GL_FLOAT);
 
-        {GlFrameBuffer fb(sum1.getOpenGlTextureId ());}
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum2.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum3.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum4.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum5.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum6.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum7.getOpenGlTextureId ()));
-        {GlFrameBuffer fb(sum8.getOpenGlTextureId ());}
-        {GlFrameBuffer fb(sum9.getOpenGlTextureId ());}
+        {GlFrameBuffer fb(sum1.getOpenGlTextureId (), 4,4);}
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum2.getOpenGlTextureId (), 4,4));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum3.getOpenGlTextureId (), 4,4));
+#endif
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum4.getOpenGlTextureId (), 4,4));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum5.getOpenGlTextureId (), 4,4));
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum6.getOpenGlTextureId (), 4,4));
+#endif
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum7.getOpenGlTextureId (), 4,4));
+        {GlFrameBuffer fb(sum8.getOpenGlTextureId (), 4,4);}
+        {GlFrameBuffer fb(sum9.getOpenGlTextureId (), 4,4);}
     }
 }
