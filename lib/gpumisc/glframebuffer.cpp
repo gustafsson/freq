@@ -36,8 +36,8 @@ GlFrameBuffer::
     }
     catch(...)
     {
-        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
-        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+        if (rboId_) glDeleteRenderbuffers(1, &rboId_);
+        if (fboId_) glDeleteFramebuffers(1, &fboId_);
 
         throw;
     }
@@ -63,8 +63,8 @@ GlFrameBuffer::
     catch(...)
     {
         TaskInfo("GlFrameBuffer() caught exception");
-        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
-        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+        if (rboId_) glDeleteRenderbuffers(1, &rboId_);
+        if (fboId_) glDeleteFramebuffers(1, &fboId_);
         unbindFrameBuffer ();
 
         throw;
@@ -92,10 +92,10 @@ GlFrameBuffer::
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e);
 
     DEBUG_INFO TaskInfo("glDeleteRenderbuffersEXT");
-    glDeleteRenderbuffersEXT(1, &rboId_);
+    glDeleteRenderbuffers(1, &rboId_);
 
     DEBUG_INFO TaskInfo("glDeleteFramebuffersEXT");
-    glDeleteFramebuffersEXT(1, &fboId_);
+    glDeleteFramebuffers(1, &fboId_);
 
     GLenum e2 = glGetError();
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e2);
@@ -159,8 +159,8 @@ void GlFrameBuffer::
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
 
-    // if (rboId_) { glDeleteRenderbuffersEXT(1, &rboId_); rboId_ = 0; }
-    // if (fboId_) { glDeleteFramebuffersEXT(1, &fboId_); fboId_ = 0; }
+    // if (rboId_) { glDeleteRenderbuffers(1, &rboId_); rboId_ = 0; }
+    // if (fboId_) { glDeleteFramebuffers(1, &fboId_); fboId_ = 0; }
 
     if (width != texture_width_ || height != texture_height_) {
         EXCEPTION_ASSERT(own_texture_);
@@ -173,40 +173,40 @@ void GlFrameBuffer::
 
     if (enable_depth_component_) {
         if (!rboId_)
-            glGenRenderbuffersEXT(1, &rboId_);
+            glGenRenderbuffers(1, &rboId_);
 
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboId_);
-        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, width, height);
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, rboId_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }
 
     {
         if (!fboId_)
-            glGenFramebuffersEXT(1, &fboId_);
+            glGenFramebuffers(1, &fboId_);
 
         bindFrameBuffer ();
 
-        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT0_EXT,
+        glFramebufferTexture2D(   GL_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D,
                                   textureid_,
                                   0);
 
         if (enable_depth_component_)
-            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
-                                         GL_DEPTH_ATTACHMENT_EXT,
-                                         GL_RENDERBUFFER_EXT,
+            glFramebufferRenderbuffer(   GL_FRAMEBUFFER,
+                                         GL_DEPTH_ATTACHMENT,
+                                         GL_RENDERBUFFER,
                                          rboId_);
 
-        int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
-        if (GL_FRAMEBUFFER_UNSUPPORTED_EXT == status)
+        if (GL_FRAMEBUFFER_UNSUPPORTED == status)
           {
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Got GL_FRAMEBUFFER_UNSUPPORTED_EXT. See GlFrameBuffer::test for supported formats")) << Backtrace::make ());
+                    "Got GL_FRAMEBUFFER_UNSUPPORTED. See GlFrameBuffer::test for supported formats")) << Backtrace::make ());
           }
 
-        EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE_EXT, status );
+        EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE, status );
 
         unbindFrameBuffer ();
     }
@@ -233,11 +233,11 @@ void GlFrameBuffer::
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
                     "Couldn't initialize \"glew\"")) << Backtrace::make ());
 
-        if (!glewIsSupported( "GL_EXT_framebuffer_object" )) {
+        if (!glewIsSupported( "GL_framebuffer_object" )) {
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
                     "Failed to get minimal extensions\n"
                     "Sonic AWE requires:\n"
-                    "  GL_EXT_framebuffer_object\n")) << Backtrace::make ());
+                    "  GL_framebuffer_object\n")) << Backtrace::make ());
         }
     }
 #endif
