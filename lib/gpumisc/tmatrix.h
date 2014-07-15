@@ -99,6 +99,7 @@ public:
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
             r[b][a] = m[a][b];
+        return r;
 	}
 	static tmatrix<4,t,4> rotHead( tvector<3, t> r )
 	{

@@ -26,10 +26,7 @@ public:
     GLvector projectionPlane, projectionNormal; // for clipFrustum
 
 private:
-    GLvector rightPlane, rightNormal,
-        leftPlane, leftNormal,
-        topPlane, topNormal,
-        bottomPlane, bottomNormal;
+    tvector<4,GLfloat> right, left, top, bottom, far, near;
 
     glProjection* gl_projection;
     bool* left_handed_axes;
