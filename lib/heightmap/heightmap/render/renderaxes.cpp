@@ -70,7 +70,6 @@ void RenderAxes::
     float scale = render_settings.dpifactor;
 //    scale *= 2;
 
-    g->setZoom (scale);
     borderw *= scale;
     borderh *= scale;
 
@@ -171,15 +170,15 @@ void RenderAxes::
 
         // decide if this side is a t or f axis
         GLvector::T timePerPixel, scalePerPixel;
-        g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
+        g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel ) * scale;
 
         bool taxis = fabsf(v0[0]*scalePerPixel) > fabsf(v0[2]*timePerPixel);
 
 
         // decide in which direction to traverse this edge
         GLvector::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
-        g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
-        g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
+        g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 ) * scale;
+        g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 ) * scale;
 
         double dscale = 0.001;
         double hzDelta1= fabs(fa.getFrequencyT( p1[2] + v0[2]*dscale ) - fa.getFrequencyT( p1[2] ));
@@ -200,7 +199,7 @@ void RenderAxes::
 
 
         GLvector::T timePerPixel_closest, scalePerPixel_closest;
-        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
+        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest ) * scale;
 
         if (render_settings.draw_axis_at0==-1)
         {
@@ -217,7 +216,7 @@ void RenderAxes::
         for (double u=-1; true; )
         {
             GLvector::T timePerPixel, scalePerPixel;
-            g->computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+            g->computeUnitsPerPixel( p, timePerPixel, scalePerPixel ) * scale;
             double ppp=0.4;
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
@@ -519,7 +518,7 @@ void RenderAxes::
         if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p[0]==0:true))
         {
             GLvector::T timePerPixel, scalePerPixel;
-            g->computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
+            g->computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel ) * scale;
 
             double ST = timePerPixel * 750;
             // double SF = scalePerPixel * 750;
@@ -707,8 +706,6 @@ void RenderAxes::
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
-
-    g->setZoom (1);
 }
 
 

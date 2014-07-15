@@ -21,20 +21,6 @@ void glProjection::
 }
 
 
-void glProjection::
-        setZoom(float zoom)
-{
-    this->zoom = zoom;
-}
-
-
-float glProjection::
-        getZoom()
-{
-    return zoom;
-}
-
-
 GLvector glProjection::
         gluProject(GLvector obj, bool *r)
 {
@@ -110,9 +96,6 @@ void glProjection::
     // pixel that represents the closest point in ref
     timePerPixel = sqrt(timePerPixel_x*timePerPixel_x + timePerPixel_y*timePerPixel_y);
     scalePerPixel = sqrt(scalePerPixel_x*scalePerPixel_x + scalePerPixel_y*scalePerPixel_y);
-
-    scalePerPixel *= zoom;
-    timePerPixel *= zoom;
 }
 
 
@@ -121,7 +104,7 @@ GLvector::T glProjection::
 {
     GLvector screen1 = gluProject( p1 );
     GLvector screen2 = gluProject( p2 );
-    return (screen2-screen1).length() * zoom;
+    return (screen2-screen1).length();
 }
 
 
