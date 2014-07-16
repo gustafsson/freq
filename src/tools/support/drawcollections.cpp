@@ -159,7 +159,8 @@ void DrawCollections::
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     else
         glEnable( GL_DEPTH_TEST );
-    model->renderer->draw( yscale, model->tfr_mapping()->length()); // 0.6 ms
+    float L = model->tfr_mapping().read()->length();
+    model->renderer->draw( yscale, L ); // 0.6 ms
     glDisable( GL_CULL_FACE );
     glEnable(GL_BLEND);
 }
