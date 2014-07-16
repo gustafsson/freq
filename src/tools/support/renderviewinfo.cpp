@@ -177,7 +177,7 @@ QPointF RenderViewInfo::
     }
 
     int r = model->renderer->render_settings.dpifactor;
-    return QPointF( winX, view->_last_height-1 - winY ) /= r;
+    return QPointF( winX, view->rect().height() - 1 - winY ) /= r;
 }
 
 
@@ -185,7 +185,7 @@ QPointF RenderViewInfo::
         getWidgetPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     QPointF pt = getScreenPos(pos, dist, use_heightmap_value);
-    pt -= QPointF(view->_last_x, view->_last_y);
+    pt -= view->rect().topLeft();
     return pt;
 }
 
@@ -200,8 +200,8 @@ Heightmap::Position RenderViewInfo::
     widget_pos *= model->renderer->render_settings.dpifactor;
 
     QPointF pos;
-    pos.setX( widget_pos.x() + view->_last_x );
-    pos.setY( view->_last_height - 1 - widget_pos.y() + view->_last_y );
+    pos.setX( widget_pos.x() + view->rect().left() );
+    pos.setY( view->rect().height() - 1 - widget_pos.y() + view->rect().top() );
 
     const GLvector::T* m = view->gl_projection.modelview_matrix (), *proj = view->gl_projection.projection_matrix ();
     const GLint* vp = view->gl_projection.viewport_matrix ();
@@ -273,8 +273,8 @@ Heightmap::Position RenderViewInfo::
 {
     pos *= model->renderer->render_settings.dpifactor;
 
-    pos.setX( pos.x() + view->_last_x );
-    pos.setY( view->_last_height - 1 - pos.y() + view->_last_y );
+    pos.setX( pos.x() + view->rect().left() );
+    pos.setY( view->rect().height() - 1 - pos.y() + view->rect().top() );
 
     const GLvector::T* m = view->gl_projection.modelview_matrix (), *proj = view->gl_projection.projection_matrix ();
     const GLint* vp = view->gl_projection.viewport_matrix ();
@@ -332,14 +332,14 @@ Heightmap::Position RenderViewInfo::
 QPointF RenderViewInfo::
         widget_coordinates( QPointF window_coordinates )
 {
-    return window_coordinates - QPointF(view->_last_x, view->_last_y);
+    return window_coordinates - view->rect().topLeft();
 }
 
 
 QPointF RenderViewInfo::
         window_coordinates( QPointF widget_coordinates )
 {
-    return widget_coordinates + QPointF(view->_last_x, view->_last_y);
+    return widget_coordinates + view->rect().topLeft();
 }
 
 

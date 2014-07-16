@@ -37,6 +37,7 @@
 #include "neat_math.h"
 #include "gluunproject.h"
 #include "gltextureread.h"
+#include "log.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -78,10 +79,7 @@ RenderView::
             model(model),
             glwidget(0),
             graphicsview(0),
-            _last_width(0),
-            _last_height(0),
-            _last_x(0),
-            _last_y(0)
+            rect_y_(0)
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -223,30 +221,18 @@ void RenderView::
 
 
 void RenderView::
-        resizeGL( int width, int height, int ratio )
+        resizeGL( QRect rect, int device_height )
 {
-    TIME_PAINTGL_DETAILS TaskInfo("RenderView width=%d, height=%d", width, height);
-    height = height?height:1;
+    TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device_height;
+    EXCEPTION_ASSERT_LESS(0 , rect.height ());
 
-    QRect rect = tool_selector->parentTool()->geometry();
-    rect.setWidth (rect.width ()*ratio);
-    rect.setHeight (rect.height ()*ratio);
-    rect.setLeft (rect.left ()*ratio);
-    rect.setTop (rect.top ()*ratio);
-
-    // Might happen during the first (few) frame during startup. Before "parentTool()" knows which size it should have.
-    if (width > 1 && rect.width () > width) rect.setWidth (width);
-    if (height > 1 && rect.height () > height) rect.setHeight (height);
-
-    glViewport( rect.x(), height - rect.y() - rect.height(), rect.width(), rect.height() );
-    _last_x = rect.x();
-    _last_y = rect.y();
-    height = rect.height();
-    width = rect.width();
+    glViewport( rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height() );
+    glGetIntegerv( GL_VIEWPORT,const_cast<int*>(gl_projection.viewport_matrix()) );
+    rect_y_ = rect.y();
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0f,(GLfloat)width/(GLfloat)height,0.01f,1000.0f);
+    gluPerspective(45.0f,rect.width ()/(float)rect.height (),0.01f,1000.0f);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -256,8 +242,9 @@ void RenderView::
 QRect RenderView::
         rect()
 {
-    //int* viewport = gl_projection->;
-    return QRect();
+    const int* viewport = gl_projection.viewport_matrix();
+
+    return QRect(viewport[0],rect_y_,viewport[2],viewport[3]);
 }
 
 

@@ -37,6 +37,9 @@ GraphicsScene::~GraphicsScene()
 void GraphicsScene::
         drawBackground(QPainter *painter, const QRectF &)
 {
+    if (!painter->device())
+        return;
+
     double T = last_frame_.elapsedAndRestart();
     TIME_PAINTGL TaskTimer tt("GraphicsScene: Draw, last frame %.0f ms / %.0f fps", T*1e3, 1/T);
     if (update_timer_->isActive ())
@@ -53,20 +56,12 @@ void GraphicsScene::
 
         renderview_->initializeGL();
 
-        float dpr = 1.f;
-        if (painter->device())
-        {
-            dpr = painter->device ()->devicePixelRatio();
-            renderview_->model->renderer->render_settings.dpifactor = dpr;
-            unsigned w = painter->device()->width();
-            unsigned h = painter->device()->height();
-            w *= dpr;
-            h *= dpr;
-            if (w != renderview_->_last_width || h != renderview_->_last_height)
-                redraw();
-            renderview_->_last_width = w;
-            renderview_->_last_height = h;
-        }
+        float dpr = painter->device ()->devicePixelRatio();
+        renderview_->model->renderer->render_settings.dpifactor = dpr;
+        unsigned w = painter->device()->width();
+        unsigned h = painter->device()->height();
+        w *= dpr;
+        h *= dpr;
 
         renderview_->setStates();
 
@@ -75,7 +70,13 @@ void GraphicsScene::
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
-        renderview_->resizeGL(renderview_->_last_width, renderview_->_last_height, dpr );
+        QRect rect = renderview_->tool_selector->parentTool()->geometry();
+        rect.setWidth (rect.width ()*dpr);
+        rect.setHeight (rect.height ()*dpr);
+        rect.setLeft (rect.left ()*dpr);
+        rect.setTop (rect.top ()*dpr);
+
+        renderview_->resizeGL( rect, h );
 
         renderview_->paintGL();
 

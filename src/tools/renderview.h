@@ -42,7 +42,7 @@ namespace Tools
         void defaultStates();
 
         /// Similiar to QGLWidget::resizeGL()
-        void resizeGL( int width, int height, int ratio );
+        void resizeGL( QRect rect, int device_height );
 
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
@@ -58,14 +58,16 @@ namespace Tools
         GraphicsView* graphicsview;
         Support::ToolSelector* tool_selector;
 
-        unsigned last_width() { return _last_width; }
-        unsigned last_height() { return _last_height; }
-
         glProjection gl_projection;
-        unsigned _last_width;  // This is viewport, gl_projection is also viewport
-        unsigned _last_height;
-        unsigned _last_x;
-        unsigned _last_y;
+
+        /**
+         * @brief rect describes the viewport in QWidget pixels
+         * gl_projection->viewport and rect() describe the same area. However,
+         * gl_projection->viewport has the bottom of the drawable area as y=0,
+         * rect() has the top of the drawable area as y=0.
+         * @return QRect in pixels, high-dpi pixels if applicable
+         */
+        QRect rect();
 
         void emitTransformChanged();
         void emitAxisChanged();
@@ -133,6 +135,7 @@ namespace Tools
         void setupCamera();
         void setRotationForAxes(bool);
 
+        unsigned rect_y_;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
     };
