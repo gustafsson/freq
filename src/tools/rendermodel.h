@@ -85,9 +85,10 @@ namespace Tools
         // TODO remove position and use renderer->render_settings.camera instead
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
+
         float _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
-        float _px, _py, _pz, // camera position relative center, i.e (0, 0, -6)
-            _rx, _ry, _rz; // rotation around center
+        float _px, _py, _pz, // camera position relative focus point, i.e (0, 0, -6)
+            _rx, _ry, _rz; // rotation around focus point
         float effective_ry(); // take orthoview into account
         float xscale;
         float zscale;
