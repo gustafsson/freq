@@ -192,7 +192,10 @@ void HarmonicsInfoForm::
     {
         harmonicscontroller->setCurrentView( cvud->view() );
         if (0==rebuilding)
-            render_view->setPosition( cvud->view()->model()->pos() );
+        {
+            render_view->model->setPosition( cvud->view()->model()->pos() );
+            render_view->redraw ();
+        }
     }
 }
 

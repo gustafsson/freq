@@ -195,7 +195,8 @@ void TimelineController::
         {
             // Updates both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
-            view->_render_view->setPosition( current );
+            view->_render_view->model->setPosition( current );
+            view->redraw();
         }
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))

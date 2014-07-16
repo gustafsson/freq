@@ -494,22 +494,6 @@ void RenderView::
 }
 
 
-void RenderView::
-        setPosition( Heightmap::Position pos )
-{
-    float l = model->project()->length();
-    model->_qx = pos.time;
-    if (model->_qx<0) model->_qx=0;
-    if (model->_qx>l) model->_qx=l;
-
-    model->_qz = pos.scale;
-    if (model->_qz<0) model->_qz=0;
-    if (model->_qz>1) model->_qz=1;
-
-    redraw();
-}
-
-
 Support::ToolSelector* RenderView::
         toolSelector()
 {

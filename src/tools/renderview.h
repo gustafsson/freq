@@ -46,8 +46,6 @@ namespace Tools
         virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
-        void setPosition( Heightmap::Position pos );
-
         float last_ysize;
         // Owned by commandInvoker
         QPointer<Tools::Commands::ViewState> viewstate;

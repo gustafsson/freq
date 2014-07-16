@@ -378,7 +378,8 @@ void TimelineView::
             if (0<=new_t)
             {
                 float f = _render_view->model->renderer->render_settings.camera[2];
-                _render_view->setPosition( Heightmap::Position( new_t, f) );
+                _render_view->model->setPosition( Heightmap::Position( new_t, f) );
+                redraw ();
             }
             break;
         }

@@ -312,6 +312,27 @@ Heightmap::TfrMappings::StftBlockFilterParams::ptr RenderModel::
 }
 
 
+void RenderModel::
+        setPosition( Heightmap::Position pos )
+{
+    float l = tfr_mapping()->length();
+    _qx = pos.time;
+    if (_qx<0) _qx=0;
+    if (_qx>l) _qx=l;
+
+    _qz = pos.scale;
+    if (_qz<0) _qz=0;
+    if (_qz>1) _qz=1;
+}
+
+
+Heightmap::Position RenderModel::
+        position() const
+{
+    return Heightmap::Position(_qx, _qz);
+}
+
+
 float RenderModel::
         effective_ry()
 {
