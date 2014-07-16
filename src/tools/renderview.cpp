@@ -26,6 +26,7 @@
 #include "tools/applicationerrorlogcontroller.h"
 #include "signal/processing/workers.h"
 #include "tools/support/renderviewinfo.h"
+#include "tools/support/drawcollections.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -137,156 +138,6 @@ RenderView::
 
 
 void RenderView::
-        drawCollections(GlFrameBuffer* fbo, float yscale)
-{
-    TIME_PAINTGL_DRAW TaskTimer tt2("Drawing...");
-    GlException_CHECK_ERROR();
-
-    unsigned N = model->collections().size();
-    if (N != channel_colors.size ())
-        computeChannelColors ();
-
-    TIME_PAINTGL_DETAILS ComputationCheckError();
-
-    // Draw the first channel without a frame buffer
-    model->renderer->render_settings.camera = GLvector(model->_qx, model->_qy, model->_qz);
-    model->renderer->render_settings.cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
-
-    Tools::Support::RenderViewInfo r(this);
-    Heightmap::Position cursorPos = r.getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
-    model->renderer->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
-
-    // When rendering to fbo, draw to the entire fbo, then update the current
-    // viewport.
-    GLint current_viewport[4];
-    glGetIntegerv(GL_VIEWPORT, current_viewport);
-    GLint viewportWidth = current_viewport[2],
-          viewportHeight = current_viewport[3];
-
-
-    TIME_PAINTGL_DETAILS TaskTimer tt("Viewport (%u, %u, %u, %u)",
-        current_viewport[0], current_viewport[1],
-        current_viewport[2], current_viewport[3]);
-
-    unsigned i=0;
-
-    const Heightmap::TfrMapping::Collections collections = model->collections ();
-
-    // draw the first without fbo
-    for (; i < N; ++i)
-    {
-        if (!collections[i].read ()->isVisible())
-            continue;
-
-        drawCollection(i, yscale);
-        ++i;
-        break;
-    }
-
-
-    bool hasValidatedFboSize = false;
-
-    for (; i<N; ++i)
-    {
-        if (!collections[i].read ()->isVisible())
-            continue;
-
-        if (!hasValidatedFboSize)
-        {
-            // drawCollections is called for several different viewports each frame.
-            // GlFrameBuffer will query the current viewport to determine the size
-            // of the fbo for this iteration.
-            if (viewportWidth > fbo->getWidth ()
-                || viewportHeight > fbo->getHeight()
-                || viewportWidth*2 < fbo->getWidth()
-                || viewportHeight*2 < fbo->getHeight())
-            {
-                fbo->recreate(viewportWidth*1.5, viewportHeight*1.5);
-            }
-
-            hasValidatedFboSize = true;
-        }
-
-        GlException_CHECK_ERROR();
-
-        {
-            GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            glViewport(0, 0, viewportWidth, viewportHeight);
-
-            drawCollection(i, yscale);
-        }
-
-        glViewport(current_viewport[0], current_viewport[1],
-                   current_viewport[2], current_viewport[3]);
-
-        glPushMatrixContext mpc( GL_PROJECTION );
-        glLoadIdentity();
-        glOrtho(0,1,0,1,-10,10);
-        glPushMatrixContext mc( GL_MODELVIEW );
-        glLoadIdentity();
-
-        glBlendFunc( GL_DST_COLOR, GL_ZERO );
-
-        glDisable(GL_DEPTH_TEST);
-
-        glColor4f(1,1,1,1);
-        GlTexture t(fbo->getGlTexture(), fbo->getWidth (), fbo->getHeight ());
-        GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
-
-        glBegin(GL_TRIANGLE_STRIP);
-            float tx = viewportWidth/(float)fbo->getWidth();
-            float ty = viewportHeight/(float)fbo->getHeight();
-            glTexCoord2f(0,0); glVertex2f(0,0);
-            glTexCoord2f(tx,0); glVertex2f(1,0);
-            glTexCoord2f(0,ty); glVertex2f(0,1);
-            glTexCoord2f(tx,ty); glVertex2f(1,1);
-        glEnd();
-
-        glEnable(GL_DEPTH_TEST);
-
-        GlException_CHECK_ERROR();
-    }
-
-    TIME_PAINTGL_DETAILS ComputationCheckError();
-    TIME_PAINTGL_DETAILS GlException_CHECK_ERROR();
-
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-    TIME_PAINTGL_DRAW
-    {
-        unsigned collections_n = 0;
-        for (i=0; i < N; ++i)
-            collections_n += collections[i].read ()->isVisible();
-
-        TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
-        collections_n,
-        model->renderer->render_settings.drawn_blocks,
-        model->renderer->render_settings.drawn_blocks==1?"":"s",
-        model->renderer->trianglesPerBlock(),
-        collections_n*model->renderer->render_settings.drawn_blocks*model->renderer->trianglesPerBlock(),
-        current_viewport[2], current_viewport[3]);
-    }
-}
-
-
-void RenderView::
-        drawCollection(int i, float yscale )
-{
-    model->renderer->collection = model->collections()[i];
-    model->renderer->render_settings.fixed_color = channel_colors[i];
-    glDisable(GL_BLEND);
-    if (0 != model->_rx)
-        glEnable( GL_CULL_FACE ); // enabled only while drawing collections
-    else
-        glEnable( GL_DEPTH_TEST );
-    model->renderer->draw( yscale, model->tfr_mapping()->length()); // 0.6 ms
-    glDisable( GL_CULL_FACE );
-    glEnable(GL_BLEND);
-}
-
-
-void RenderView::
         setStates()
 {
     glMatrixMode(GL_PROJECTION);
@@ -345,7 +196,6 @@ void RenderView::
 void RenderView::
         emitTransformChanged()
 {
-    channel_colors.clear ();
     emit transformChanged();
 }
 
@@ -400,6 +250,14 @@ void RenderView::
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+}
+
+
+QRect RenderView::
+        rect()
+{
+    //int* viewport = gl_projection->;
+    return QRect();
 }
 
 
@@ -523,6 +381,13 @@ void RenderView::
         drawAxes_rotation.update (modelview_matrix, projection_matrix, viewport_matrix);
     }
 
+    // Use camera
+    {
+        Tools::Support::RenderViewInfo r(this);
+        Heightmap::Position cursorPos = r.getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
+        model->renderer->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+    }
+
     bool onlyComputeBlocksForRenderView = false;
     Signal::OperationDesc::Extent x;
     { // Render
@@ -558,7 +423,7 @@ void RenderView::
             step_with_new_extent.write ()->deprecateCache(Signal::Interval::Interval_ALL);
 
         model->renderer->gl_projection = gl_projection;
-        drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
+        Support::DrawCollections(model).drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
         float last_ysize = model->renderer->render_settings.last_ysize;
         glScalef(1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
@@ -756,34 +621,6 @@ void RenderView::
             }
         }
     }
-}
-
-
-void RenderView::
-        computeChannelColors()
-{
-    unsigned N = model->collections().size();
-    channel_colors.resize( N );
-
-    // Set colors
-    float R = 0, G = 0, B = 0;
-    for (unsigned i=0; i<N; ++i)
-    {
-        QColor c = QColor::fromHsvF( i/(float)N, 1, 1 );
-        channel_colors[i] = tvector<4>(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-        R += channel_colors[i][0];
-        G += channel_colors[i][1];
-        B += channel_colors[i][2];
-    }
-
-    // R, G and B sum up to the same constant = N/2 if N > 1
-    for (unsigned i=0; i<N; ++i)
-    {
-        channel_colors[i] = channel_colors[i] * (N/2.f);
-    }
-
-    if(0) if (1==N) // There is a grayscale mode to use for this
-        channel_colors[0] = tvector<4>(0,0,0,1);
 }
 
 

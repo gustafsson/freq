@@ -47,8 +47,6 @@ namespace Tools
         /// Similiar to QGLWidget::paintGL()
         void paintGL();
 
-        void drawCollections(GlFrameBuffer* fbo, float yscale);
-
         // Owned by commandInvoker
         QPointer<Tools::Commands::ViewState> viewstate;
 
@@ -68,8 +66,6 @@ namespace Tools
         unsigned _last_height;
         unsigned _last_x;
         unsigned _last_y;
-
-        const std::vector<tvector<4> >& channelColors() const { return channel_colors; }
 
         void emitTransformChanged();
         void emitAxisChanged();
@@ -134,16 +130,11 @@ namespace Tools
         void finishedWorkSectionSlot();
 
     private:
-        void drawCollection(int channel, float yscale);
-
         void setupCamera();
         void setRotationForAxes(bool);
-        void computeChannelColors();
 
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
-
-        std::vector<tvector<4> > channel_colors;
     };
 } // namespace Tools
 

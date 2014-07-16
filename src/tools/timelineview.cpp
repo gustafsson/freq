@@ -4,6 +4,7 @@
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
+#include "tools/support/drawcollections.h"
 
 // Sonic AWE lib
 #include "sawe/application.h"
@@ -263,7 +264,7 @@ void TimelineView::
                 glPushMatrixContext mc(GL_MODELVIEW);
 
                 _render_view->model->renderer->gl_projection = gl_projection;
-                _render_view->drawCollections( _timeline_fbo.get(), 0 );
+                Support::DrawCollections(_render_view->model).drawCollections( _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
@@ -289,7 +290,7 @@ void TimelineView::
             }
             setupCamera( true );
 
-            _render_view->drawCollections( _timeline_bar_fbo.get(), 0 );
+            Support::DrawCollections(_render_view->model).drawCollections( _timeline_bar_fbo.get(), 0 );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
