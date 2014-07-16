@@ -44,15 +44,10 @@ public:
     void drawAxes( float T );
     void drawFrustum();
 
-    void setFractionSize( unsigned divW=1, unsigned divH=1 );
-    bool fullMeshResolution();
     unsigned trianglesPerBlock();
     void setSize( unsigned w, unsigned h );
     bool isInitialized();
     void init();
-
-    float redundancy();
-    void redundancy(float value);
 
     void clearCaches();
 
@@ -66,12 +61,9 @@ private:
 
     InitializedLevel _initialized;
     bool _draw_flat;
-    float _redundancy;
     Render::FrustumClip _frustum_clip;
     std::vector<GLvector> clippedFrustum;
     Render::RenderBlock _render_block;
-    unsigned _mesh_fraction_width;
-    unsigned _mesh_fraction_height;
 
     void setupGlStates(float scaley);
     Render::RenderSet::references_t getRenderSet(float L);

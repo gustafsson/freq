@@ -51,39 +51,9 @@ Renderer::Renderer()
     :
     _initialized(NotInitialized),
     _draw_flat(false),
-    /*
-     reasoning about the default _redundancy value.
-     The thing about Sonic AWE is a good visualization. In this there is value
-     booth in smooth navigation and high resolution. As the navigation is fast
-     on new computers even with high resolution we set this value to give most
-     people a good first impression. For people with older computers it's
-     possible to suggest that they lower the resolution for faster navigation.
-
-     This could be done through a dropdownnotification if plain rendering
-     takes too long.
-     */
-    _redundancy(1.0f), // 1 means every pixel gets at least one texel (and vertex), 10 means every 10th pixel gets its own vertex, default=2
     _frustum_clip( &gl_projection, &render_settings.left_handed_axes ),
-    _render_block( &render_settings ),
-    _mesh_fraction_width(1),
-    _mesh_fraction_height(1)
+    _render_block( &render_settings )
 {
-    _mesh_fraction_width = _mesh_fraction_height = 1 << (int)(_redundancy*.5f);
-}
-
-
-void Renderer::
-        setFractionSize( unsigned divW, unsigned divH)
-{
-    _mesh_fraction_width = divW;
-    _mesh_fraction_height = divH;
-}
-
-
-bool Renderer::
-        fullMeshResolution()
-{
-    return _mesh_fraction_height == 1 && _mesh_fraction_width == 1;
 }
 
 
@@ -254,20 +224,6 @@ void Renderer::init()
 }
 
 
-float Renderer::
-        redundancy()
-{
-    return _redundancy;
-}
-
-
-void Renderer::
-        redundancy(float value)
-{
-    _redundancy = value;
-}
-
-
 void Renderer::
         clearCaches()
 {
@@ -282,7 +238,7 @@ Reference Renderer::
     Reference entireHeightmap = collection.read ()->entireHeightmap();
     BlockLayout bl = collection.read ()->block_layout();
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
-    Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
+    Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, render_settings.redundancy);
     Reference r = Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
     return r;
 }
@@ -338,9 +294,14 @@ void Renderer::
     else
     {
         BlockLayout block_size = collection.read ()->block_layout ();
+
+        unsigned mesh_fraction_width, mesh_fraction_height;
+        mesh_fraction_width = mesh_fraction_height = 1 << (int)(render_settings.redundancy*.5f);
+        // mesh resolution equal to texel resolution if mesh_fraction_width == 1 and mesh_fraction_height == 1
+
         _render_block.setSize (
-                 block_size.texels_per_row ()/_mesh_fraction_width,
-                 block_size.texels_per_column ()/_mesh_fraction_height );
+                 block_size.texels_per_row ()/mesh_fraction_width,
+                 block_size.texels_per_column ()/mesh_fraction_height );
     }
 
     render_settings.last_ysize = scaley;
@@ -358,7 +319,7 @@ Render::RenderSet::references_t Renderer::
     BlockLayout bl                   = collection.read ()->block_layout ();
     Reference ref                    = collection.read ()->entireHeightmap();
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
-    Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, _redundancy);
+    Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, render_settings.redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
     LOG_REFERENCES_TO_RENDER {

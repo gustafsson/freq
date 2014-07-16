@@ -203,14 +203,11 @@ void SettingsDialog::
     float p = 1 - (v-ui->horizontalSliderResolution->minimum())/(float)(ui->horizontalSliderResolution->maximum()-ui->horizontalSliderResolution->minimum());
     // keep in sync with updateResolutionSlider
     float resolution = 1 + p*5;
-    int fraction = 1 << (int)(resolution*0.5);
 
     QSettings().setValue("resolution", resolution);
 
-
-    float prevRedundancy = project->tools().render_view()->model->renderer->redundancy();
-    project->tools().render_view()->model->renderer->redundancy(resolution);
-    project->tools().render_view()->model->renderer->setFractionSize(fraction, fraction);
+    float prevRedundancy = project->tools().render_view()->model->renderer->render_settings.redundancy;
+    project->tools().render_view()->model->renderer->render_settings.redundancy = resolution;
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(project->tools().render_model.transform_desc().get ());
     bool subtexelAggregationChanged = isCwt && (prevRedundancy == 1.f) != (resolution == 1.f);
@@ -248,7 +245,7 @@ void SettingsDialog::
 void SettingsDialog::
         updateResolutionSlider()
 {
-    float resolution = project->tools().render_view()->model->renderer->redundancy();
+    float resolution = project->tools().render_view()->model->renderer->render_settings.redundancy;
     if (!project->isSaweProject())
         resolution = QSettings().value("resolution", resolution).toFloat();
 

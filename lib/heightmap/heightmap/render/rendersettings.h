@@ -46,6 +46,7 @@ public:
     bool drawcrosseswhen0;
     double dpifactor;
     bool axes_border;
+    float redundancy;
 };
 
 } // namespace Heightmap

@@ -140,9 +140,9 @@ namespace Tools
 
             if (version >= 2)
             {
-                float redundancy = renderer->redundancy();
+                float redundancy = renderer->render_settings.redundancy;
                 ar & BOOST_SERIALIZATION_NVP(redundancy);
-                renderer->redundancy(redundancy);
+                renderer->render_settings.redundancy = redundancy;
             }
         }
 
