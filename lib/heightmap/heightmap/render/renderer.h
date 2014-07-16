@@ -42,7 +42,6 @@ public:
       */
     void draw( float scaley, float T );
     void drawAxes( float T );
-    void drawFrustum();
 
     unsigned trianglesPerBlock();
     void setSize( unsigned w, unsigned h );
@@ -60,9 +59,6 @@ private:
     };
 
     InitializedLevel _initialized;
-    bool _draw_flat;
-    Render::FrustumClip _frustum_clip;
-    std::vector<GLvector> clippedFrustum;
     Render::RenderBlock _render_block;
 
     void setupGlStates(float scaley);

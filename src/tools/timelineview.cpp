@@ -5,10 +5,10 @@
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
 #include "tools/support/drawcollections.h"
-
 // Sonic AWE lib
 #include "sawe/application.h"
 #include "heightmap/render/renderer.h"
+#include "heightmap/render/renderfrustum.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -269,7 +269,7 @@ void TimelineView::
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
-                _render_view->model->renderer->drawFrustum();
+                Heightmap::Render::RenderFrustum(_render_view->gl_projection).drawFrustum();
 
                 emit painting();
             }
@@ -322,7 +322,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _render_view->model->renderer->drawFrustum();
+            Heightmap::Render::RenderFrustum(_render_view->gl_projection).drawFrustum();
         }
 
         GlException_CHECK_ERROR();

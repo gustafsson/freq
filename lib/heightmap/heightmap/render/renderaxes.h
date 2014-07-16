@@ -12,33 +12,19 @@
 namespace Heightmap {
 namespace Render {
 
-class Axes
-{
-public:
-    virtual std::vector<GLvector> getClippedFrustum()=0;
-};
-
-class RenderAxes: public Axes
+class RenderAxes
 {
 public:
     RenderAxes(
             RenderSettings& render_settings,
-            glProjection* gl_projection,
-            Render::FrustumClip* frustum_clip,
+            const glProjection* gl_projection,
             FreqAxis display_scale);
 
     void drawAxes( float T );
 
-    // Axes
-    std::vector<GLvector> getClippedFrustum();
-
 private:
-//    void frustumMinMaxT( float& min_t, float& max_t);
-    std::vector<GLvector> clippedFrustum;
-
     RenderSettings& render_settings;
-    glProjection* gl_projection;
-    Render::FrustumClip* frustum_clip;
+    const glProjection* gl_projection;
     FreqAxis display_scale;
 };
 

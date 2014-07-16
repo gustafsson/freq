@@ -1,4 +1,5 @@
 #include "renderfrustum.h"
+#include "frustumclip.h"
 
 // gpumisc
 #include "gl.h"
@@ -8,11 +9,11 @@ namespace Heightmap {
 namespace Render {
 
 RenderFrustum::
-        RenderFrustum(RenderSettings& render_settings, std::vector<GLvector> clippedFrustum)
-    :
-      render_settings(render_settings),
-      clippedFrustum(clippedFrustum)
+        RenderFrustum(const glProjection& gl_projection)
 {
+    Render::FrustumClip frustum(gl_projection);
+    clippedFrustum = frustum.visibleXZ ();
+    camera = frustum.getCamera ();
 }
 
 
@@ -27,7 +28,7 @@ void RenderFrustum::
             i!=clippedFrustum.end();
             i++)
     {
-        if ((closest - render_settings.camera).dot() > (*i - render_settings.camera).dot())
+        if ((closest - camera).dot() > (*i - camera).dot())
             closest = *i;
     }
 
@@ -40,7 +41,7 @@ void RenderFrustum::
 
     glEnable(GL_BLEND);
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_DOUBLE, 0, &clippedFrustum[0]);
+    glVertexPointer(3, GL_FLOAT, 0, &clippedFrustum[0]);
 
 
     // dark inside

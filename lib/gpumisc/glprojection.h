@@ -21,10 +21,10 @@ public:
     const GLvector::T* projection_matrix() const { return projection_matrix_.v (); }
     const int* viewport_matrix() const { return viewport_matrix_.v; }
 
-    GLvector gluProject(GLvector obj, bool *r=0);
-    GLvector gluUnProject(GLvector win, bool *r=0);
-    void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
-    GLvector::T computePixelDistance( GLvector p1, GLvector p2 );
+    GLvector gluProject(GLvector obj, bool *r=0) const;
+    GLvector gluUnProject(GLvector win, bool *r=0) const;
+    void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel ) const;
+    GLvector::T computePixelDistance( GLvector p1, GLvector p2 ) const;
 
 private:
     tmatrix<4,GLvector::T>          modelview_matrix_;

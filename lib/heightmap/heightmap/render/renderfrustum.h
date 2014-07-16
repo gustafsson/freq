@@ -1,8 +1,7 @@
 #ifndef HEIGHTMAP_RENDER_RENDERFRUSTUM_H
 #define HEIGHTMAP_RENDER_RENDERFRUSTUM_H
 
-#include "renderaxes.h"
-#include "rendersettings.h"
+#include "glprojection.h"
 
 namespace Heightmap {
 namespace Render {
@@ -10,13 +9,13 @@ namespace Render {
 class RenderFrustum
 {
 public:
-    RenderFrustum(RenderSettings& render_settings, std::vector<GLvector> clippedFrustum);
+    RenderFrustum(const glProjection& gl_projection);
 
     // More like, drawExtentOfPrimaryViewportInSecondaryViewport
     void drawFrustum();
 
 private:
-    RenderSettings& render_settings;
+    GLvector camera;
     std::vector<GLvector> clippedFrustum;
 };
 

@@ -21,13 +21,11 @@ namespace Render {
 RenderAxes::
         RenderAxes(
                 RenderSettings& render_settings,
-                glProjection* gl_projection,
-                Render::FrustumClip* frustum_clip,
+                const glProjection* gl_projection,
                 FreqAxis display_scale)
     :
       render_settings(render_settings),
       gl_projection(gl_projection),
-      frustum_clip(frustum_clip),
       display_scale(display_scale)
 {
     // Using glut for drawing fonts, so glutInit must be called.
@@ -59,7 +57,7 @@ void RenderAxes::
     // 2 clip entire sound to frustum
     // 3 decide upon scale
     // 4 draw axis
-    glProjection* g = gl_projection;
+    const glProjection* g = gl_projection;
     const int* viewport_matrix = g->viewport_matrix ();
     unsigned screen_width = viewport_matrix[2];
     unsigned screen_height = viewport_matrix[3];
@@ -68,13 +66,11 @@ void RenderAxes::
     float borderh = 12.5*1.1;
 
     float scale = render_settings.dpifactor;
-//    scale *= 2;
-
     borderw *= scale;
     borderh *= scale;
 
     float w = borderw/screen_width, h=borderh/screen_height;
-    frustum_clip->update(w, h);
+    Render::FrustumClip frustum_clip(*g, w, h);
 
     if (render_settings.axes_border) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
@@ -118,7 +114,7 @@ void RenderAxes::
     }
 
     // 2 clip entire sound to frustum
-    clippedFrustum.clear();
+    std::vector<GLvector> clippedFrustum;
 
     GLvector closest_i;
     {   //float T = collection->worker->source()->length();
@@ -130,7 +126,7 @@ void RenderAxes::
             GLvector( T, 0, 0),
         };
 
-        clippedFrustum = frustum_clip->clipFrustum (corner, closest_i);
+        clippedFrustum = frustum_clip.clipFrustum (corner, &closest_i);
     }
 
 
@@ -714,29 +710,6 @@ void RenderAxes::
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
 }
-
-
-std::vector<GLvector> RenderAxes::
-        getClippedFrustum()
-{
-    return clippedFrustum;
-}
-
-
-//void Renderer::
-//        frustumMinMaxT( float& min_t, float& max_t )
-//{
-//    max_t = 0;
-//    min_t = FLT_MAX;
-
-//    for ( GLvector v : clippedFrustum)
-//    {
-//        if (max_t < v[0])
-//            max_t = v[0];
-//        if (min_t > v[0])
-//            min_t = v[0];
-//    }
-//}
 
 
 } // namespace Render

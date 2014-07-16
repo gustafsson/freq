@@ -32,16 +32,15 @@ public:
 class RenderInfo: public RenderInfoI
 {
 public:
-    RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, FrustumClip* frustum_clip, float redundancy);
+    RenderInfo(const glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy);
 
     RenderInfoI::LevelOfDetal   testLod( Reference ref ) const;
     Region                      region(Reference ref) const;
 
 private:
-    glProjection* gl_projection;
+    const glProjection* gl_projection;
     BlockLayout bl;
     VisualizationParams::const_ptr vp;
-    FrustumClip* frustum_clip;
     float redundancy;
 
     bool boundsCheck( Reference ref, ReferenceInfo::BoundsCheck) const;

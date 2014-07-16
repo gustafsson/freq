@@ -50,8 +50,6 @@ namespace Render {
 Renderer::Renderer()
     :
     _initialized(NotInitialized),
-    _draw_flat(false),
-    _frustum_clip( &gl_projection, &render_settings.left_handed_axes ),
     _render_block( &render_settings )
 {
 }
@@ -238,7 +236,7 @@ Reference Renderer::
     Reference entireHeightmap = collection.read ()->entireHeightmap();
     BlockLayout bl = collection.read ()->block_layout();
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
-    Render::RenderInfo ri(&gl_projection, bl, vp, &_frustum_clip, render_settings.redundancy);
+    Render::RenderInfo ri(&gl_projection, bl, vp, render_settings.redundancy);
     Reference r = Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
     return r;
 }
@@ -307,8 +305,6 @@ void Renderer::
     render_settings.last_ysize = scaley;
     render_settings.drawn_blocks = 0;
 
-    _frustum_clip.update (0, 0);
-
     glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
 }
 
@@ -319,7 +315,7 @@ Render::RenderSet::references_t Renderer::
     BlockLayout bl                   = collection.read ()->block_layout ();
     Reference ref                    = collection.read ()->entireHeightmap();
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
-    Render::RenderInfo render_info(&gl_projection, bl, vp, &_frustum_clip, render_settings.redundancy);
+    Render::RenderInfo render_info(&gl_projection, bl, vp, render_settings.redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
     LOG_REFERENCES_TO_RENDER {
@@ -403,24 +399,13 @@ void Renderer::
 
     FreqAxis display_scale = collection.read ()->visualization_params ()->display_scale();
 
-    Render::RenderAxes ra(
+    Render::RenderAxes(
                 render_settings,
                 &gl_projection,
-                &_frustum_clip,
                 display_scale
-                );
-    ra.drawAxes(T);
-    clippedFrustum = ra.getClippedFrustum ();
+                ).drawAxes(T);
 }
 
-
-void Renderer::
-        drawFrustum()
-{
-    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawFrustum");
-
-    Render::RenderFrustum(render_settings, clippedFrustum).drawFrustum();
-}
 
 } // namespace Render
 } // namespace Heightmap

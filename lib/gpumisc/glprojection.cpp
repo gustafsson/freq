@@ -22,21 +22,21 @@ void glProjection::
 
 
 GLvector glProjection::
-        gluProject(GLvector obj, bool *r)
+        gluProject(GLvector obj, bool *r) const
 {
     return ::gluProject(obj, modelview_matrix(), projection_matrix(), viewport_matrix_.v, r);
 }
 
 
 GLvector glProjection::
-        gluUnProject(GLvector win, bool *r)
+        gluUnProject(GLvector win, bool *r) const
 {
     return ::gluUnProject(win, modelview_matrix(), projection_matrix(), viewport_matrix_.v, r);
 }
 
 
 void glProjection::
-        computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel )
+        computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel ) const
 {
     // Find units per pixel at point 'p' with glUnProject
     GLvector screen = gluProject( p );
@@ -100,7 +100,7 @@ void glProjection::
 
 
 GLvector::T glProjection::
-        computePixelDistance( GLvector p1, GLvector p2 )
+        computePixelDistance( GLvector p1, GLvector p2 ) const
 {
     GLvector screen1 = gluProject( p1 );
     GLvector screen2 = gluProject( p2 );
