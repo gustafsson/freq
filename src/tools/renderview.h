@@ -176,7 +176,6 @@ namespace Tools
         void drawCollection(int channel, float yscale);
 
         void setStates();
-        void setLights();
         void defaultStates();
         void setupCamera();
         void setRotationForAxes(bool);

@@ -797,38 +797,7 @@ void RenderView::
         glEnable(GL_BLEND);
     }
 
-
-    // Must disable texturing and lighting as well when drawing primitives
-    glDisable(GL_COLOR_MATERIAL);
-    //glEnable(GL_TEXTURE_2D);
-    //glEnable(GL_NORMALIZE);
-
-    setLights();
-
-    //float materialSpecular[] = {0.5f, 0.5f, 0.5f, 1.0f};
-    //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialSpecular);
-    //glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32.0f);
-
     GlException_CHECK_ERROR();
-}
-
-
-void RenderView::
-        setLights()
-{
-    glDisable(GL_LIGHTING);
-    //glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-
-/*    GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
-    GLfloat LightDiffuse[]= { 1.0f, 1.0f, 1.0f, 1.0f };
-    GLfloat LightPosition[]= { 0.0f, 0.0f, 2.0f, 1.0f };
-    //GLfloat LightDirection[]= { 0.0f, 0.0f, 1.0f, 0.0f };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, LightAmbient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, LightDiffuse);
-    //glLightfv(GL_LIGHT0, GL_SPECULAR, LightDiffuse);
-    glLightfv(GL_LIGHT0, GL_POSITION, LightPosition);
-    //glLightfv(GL_LIGHT0, GL_POSITION, LightDirection);
-    glEnable(GL_LIGHT0);*/
 }
 
 
