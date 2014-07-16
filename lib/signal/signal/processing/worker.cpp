@@ -66,6 +66,8 @@ Worker::
 Worker::
         ~Worker ()
 {
+    while (!thread_->isRunning () && !thread_->isFinished ())
+        wait (1);
     abort ();
     wait (1); // To quit the thread normally if idle (returns within 1 ms if it is ready to quit)
     terminate ();
