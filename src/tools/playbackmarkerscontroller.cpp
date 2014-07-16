@@ -27,7 +27,7 @@ void PlaybackMarkersController::
         enableMarkerTool(bool active)
 {
     if (active)
-        render_view_->toolSelector()->setCurrentTool( this, active );
+        render_view_->tool_selector->setCurrentTool( this, active );
 
     setMouseTracking(active);
 

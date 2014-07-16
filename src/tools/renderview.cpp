@@ -79,7 +79,6 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
-            last_ysize(1),
             viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
@@ -494,16 +493,6 @@ void RenderView::
 }
 
 
-Support::ToolSelector* RenderView::
-        toolSelector()
-{
-//    if (!tool_selector_)
-//        tool_selector_.reset( new Support::ToolSelector(glwidget));
-
-    return tool_selector;
-}
-
-
 void RenderView::
         emitTransformChanged()
 {
@@ -730,8 +719,8 @@ void RenderView::
         model->renderer->gl_projection = gl_projection;
         drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
-        last_ysize = model->renderer->render_settings.last_ysize;
-        glScalef(1, last_ysize*1.5<1.?last_ysize*1.5:1., 1); // global effect on all tools
+        float last_ysize = model->renderer->render_settings.last_ysize;
+        glScalef(1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
 		{
 			TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");

@@ -40,7 +40,7 @@ ClickableImageView::
     parent->addItem( proxy );
 
     //parentwidget = parent->glwidget;
-    parentwidget = parent->toolSelector()->parentTool();
+    parentwidget = parent->tool_selector->parentTool();
     parentwidget->installEventFilter( this );
     setMouseTracking( true ); // setCursor with mask doesn't work with QGraphicsProxyWidget
 

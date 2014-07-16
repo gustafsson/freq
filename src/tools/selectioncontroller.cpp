@@ -277,9 +277,9 @@ namespace Tools
             setCurrentSelection( Signal::OperationDesc::ptr() );
 
         if (active)
-            _render_view->toolSelector()->setCurrentToolCommand( this );
+            _render_view->tool_selector->setCurrentToolCommand( this );
         else
-            _render_view->toolSelector()->setCurrentTool( this, active );
+            _render_view->tool_selector->setCurrentTool( this, active );
     }
 
 

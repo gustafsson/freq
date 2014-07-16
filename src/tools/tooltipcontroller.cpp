@@ -114,7 +114,7 @@ void TooltipController::
 
     if (value == 0)
     {
-        render_view_->toolSelector()->setCurrentTool( this, value != 0 );
+        render_view_->tool_selector->setCurrentTool( this, value != 0 );
         setEnabled( value != 0 );
     }
 }
@@ -130,7 +130,7 @@ TooltipView* TooltipController::
 void TooltipController::
         receiveToggleInfoTool(bool active)
 {
-    render_view_->toolSelector()->setCurrentTool( this, active );
+    render_view_->tool_selector->setCurrentTool( this, active );
 
     emitTooltipChanged();
 }

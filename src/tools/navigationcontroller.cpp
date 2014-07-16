@@ -46,7 +46,7 @@ void NavigationController::
         receiveToggleNavigation(bool active)
 {
     if (active || zoom_only_ == false)
-        _view->toolSelector()->setCurrentTool( this, active );
+        _view->tool_selector->setCurrentTool( this, active );
     if (active)
         zoom_only_ = false;
 }
@@ -56,7 +56,7 @@ void NavigationController::
         receiveToggleZoom(bool active)
 {
     if (active || zoom_only_ == true)
-        _view->toolSelector()->setCurrentTool( this, active );
+        _view->tool_selector->setCurrentTool( this, active );
     if (active)
         zoom_only_ = true;
 }
@@ -410,7 +410,7 @@ void NavigationController::
     shortcuts.push_back( Qt::Key_Escape );
     ui->actionActivateNavigation->setShortcuts( shortcuts );
 
-    _view->toolSelector()->setCurrentToolCommand( this );
+    _view->tool_selector->setCurrentToolCommand( this );
     ui->actionActivateNavigation->setChecked(true);
 
     bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );

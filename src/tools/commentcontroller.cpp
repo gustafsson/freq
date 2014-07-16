@@ -128,7 +128,7 @@ void CommentController::
 void CommentController::
         enableCommentAdder(bool active)
 {
-    view_->toolSelector()->setCurrentTool( this, active );
+    view_->tool_selector->setCurrentTool( this, active );
     view_->graphicsview->setToolFocus( active );
 
     if (active)

@@ -33,7 +33,7 @@ OverlayWidget::OverlayWidget(RenderView *scene)
 
     scene->addItem( proxy_ );
 
-    sceneSection_ = scene->toolSelector()->parentTool();
+    sceneSection_ = scene->tool_selector->parentTool();
     sceneSection_->installEventFilter( this );
     setMouseTracking( true ); // setCursor with mask doesn't work with QGraphicsProxyWidget
 }

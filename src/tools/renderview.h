@@ -46,16 +46,8 @@ namespace Tools
         virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
         virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 
-        float last_ysize;
         // Owned by commandInvoker
         QPointer<Tools::Commands::ViewState> viewstate;
-
-        //QTransform projectionTransform;
-        //QTransform modelviewTransform;
-        //QTransform viewTransform;
-
-        // TODO need to be able to update a QWidget, signal?
-        // is this data/function model or view?
 
         RenderModel* model;
 
@@ -63,9 +55,6 @@ namespace Tools
 
         // graphicsview belongs in rendercontroller but this simplifies access from other classes
         GraphicsView* graphicsview;
-
-        Support::ToolSelector* toolSelector();
-
         Support::ToolSelector* tool_selector;
 
         unsigned last_width() { return _last_width; }
