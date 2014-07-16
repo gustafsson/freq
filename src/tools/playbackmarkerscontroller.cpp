@@ -1,5 +1,5 @@
 #include "playbackmarkerscontroller.h"
-#include "renderview.h"
+#include "support/renderviewinfo.h"
 #include "rendermodel.h"
 #include "heightmap/render/renderer.h"
 #include "ui/mainwindow.h"
@@ -88,7 +88,8 @@ void PlaybackMarkersController::
 {
     e->accept();
 
-    RenderView &r = *render_view_;
+    Support::RenderViewInfo r(render_view_);
+
     bool success;
     Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)
@@ -98,8 +99,8 @@ void PlaybackMarkersController::
     // clamp
     if (click.time < 0)
         click.time = 0;
-    if (click.time > r.last_length())
-        click.time = r.last_length();
+    if (click.time > r.length())
+        click.time = r.length();
 
 
     PlaybackMarkersModel::Markers::iterator itr = model()->findMaker( click.time );
@@ -109,7 +110,7 @@ void PlaybackMarkersController::
         {
             // No markers created, create one
             model()->addMarker( click.time );
-            r.model->project()->setModified();
+            render_view_->model->project()->setModified();
         }
     }
     else
@@ -144,7 +145,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    Tools::RenderView &r = *render_view_;
+    Support::RenderViewInfo r(render_view_);
     bool success;
     Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)

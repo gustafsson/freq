@@ -1,13 +1,13 @@
 #include "navigationcontroller.h"
 
 // Sonic AWE
-#include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "heightmap/render/renderer.h"
 #include "tools/commands/movecameracommand.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "tools/commands/rotatecameracommand.h"
+#include "support/renderviewinfo.h"
 
 // Qt
 #include <QMouseEvent>
@@ -20,6 +20,8 @@
 
 namespace Tools
 {
+
+using Support::RenderViewInfo;
 
 NavigationController::
         NavigationController(RenderView* view)
@@ -248,8 +250,8 @@ void NavigationController::
             else
                 prev.setY( prev.y() + s*e->delta() );
 
-            Heightmap::Position last = _view->getPlanePos( prev, &success1);
-            Heightmap::Position current = _view->getPlanePos( e->pos(), &success2);
+            Heightmap::Position last = RenderViewInfo(_view).getPlanePos( prev, &success1);
+            Heightmap::Position current = RenderViewInfo(_view).getPlanePos( e->pos(), &success2);
             if (success1 && success2)
             {
                 if (e->modifiers().testFlag(Qt::ControlModifier))
@@ -288,7 +290,7 @@ void NavigationController::
     mouseReleaseEvent(e);
 
     //TaskTimer("NavigationController mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-    Tools::RenderView &r = *_view;
+    RenderViewInfo r(_view);
 
     int x = e->x(), y = e->y();
 //    TaskTimer tt("moving");

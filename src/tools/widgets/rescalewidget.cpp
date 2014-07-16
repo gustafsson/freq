@@ -7,7 +7,7 @@
 #include <QTimer>
 
 #include "sawe/project.h"
-#include "tools/renderview.h"
+#include "tools/support/renderviewinfo.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "gl.h"
 
@@ -192,8 +192,9 @@ void RescaleWidget::
 {
     bool success1, success2;
 
-    Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
-    Heightmap::Position current = view_->getPlanePos( mapToParent(lastPos_), &success2);
+    Tools::Support::RenderViewInfo r(view_);
+    Heightmap::Position last = r.getPlanePos( mapToParent(dragSource_), &success1);
+    Heightmap::Position current = r.getPlanePos( mapToParent(lastPos_), &success2);
 
     QPointF d = lastPos_ - dragSource_;
     float dx = d.x() / width();

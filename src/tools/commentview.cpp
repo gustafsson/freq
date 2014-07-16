@@ -1,7 +1,7 @@
 #include "commentview.h"
 #include "ui_commentview.h"
 
-#include "renderview.h"
+#include "support/renderviewinfo.h"
 #include "ui/mousecontrol.h"
 
 #include "sawe/project.h"
@@ -529,6 +529,8 @@ void CommentView::
 {
     bool use_heightmap_value = true;
 
+    Tools::Support::RenderViewInfo r(view);
+
     // moveEvent can't be used when updating the reference position while moving
     if (!proxy->pos().isNull() || model()->screen_pos[0] == UpdateModelPositionFromScreen)
     {
@@ -536,12 +538,12 @@ void CommentView::
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
-            c = view->widget_coordinates( c );
+            c = r.widget_coordinates( c );
 
             if (use_heightmap_value)
-                model()->pos = view->getHeightmapPos( c );
+                model()->pos = r.getHeightmapPos( c );
             else
-                model()->pos = view->getPlanePos( c );
+                model()->pos = r.getPlanePos( c );
 
             model()->screen_pos[0] = UpdateScreenPositionFromWorld;
         }
@@ -564,7 +566,7 @@ void CommentView::
     }
     else
     {
-        pt = view->getScreenPos( model()->pos, &z, use_heightmap_value );
+        pt = r.getScreenPos( model()->pos, &z, use_heightmap_value );
         lastz = z;
     }
     //TaskInfo("model->pos( %g, %g ) -> ( %g, %g, %g )",

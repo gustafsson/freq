@@ -3,10 +3,10 @@
 #include "toolfactory.h"
 
 // Sonic AWE
-#include "renderview.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "graphicsview.h"
+#include "support/renderviewinfo.h"
 
 // Qt
 #include <QGraphicsProxyWidget>
@@ -14,6 +14,8 @@
 
 namespace Tools
 {
+
+using Support::RenderViewInfo;
 
 CommentController::
         CommentController(RenderView* view)
@@ -173,11 +175,11 @@ void CommentController::
     bool use_heightmap_value = true;
 
     if (use_heightmap_value)
-        comment_->model()->pos = view_->getHeightmapPos( e->localPos() );
+        comment_->model()->pos = RenderViewInfo(view_).getHeightmapPos( e->localPos() );
     else
-        comment_->model()->pos = view_->getPlanePos( e->localPos() );
+        comment_->model()->pos = RenderViewInfo(view_).getPlanePos( e->localPos() );
 
-    QPointF window_coordinates = view_->window_coordinates( e->localPos() );
+    QPointF window_coordinates = RenderViewInfo(view_).window_coordinates( e->localPos() );
     comment_->model()->screen_pos[0] = window_coordinates.x();
     comment_->model()->screen_pos[1] = window_coordinates.y();
 
