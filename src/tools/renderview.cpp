@@ -80,8 +80,7 @@ RenderView::
             _last_width(0),
             _last_height(0),
             _last_x(0),
-            _last_y(0),
-            _try_gc(0)
+            _last_y(0)
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -452,8 +451,6 @@ void RenderView::
         }
     }
 
-
-    _try_gc = 0;
     try
     {
     {
@@ -635,34 +632,6 @@ void RenderView::
         ComputationCheckError();
     }
 
-    _try_gc = 0;
-
-#ifdef USE_CUDA
-    } catch (const CudaException &x) {
-        TaskInfo tt("RenderView::paintGL CAUGHT CUDAEXCEPTION\n%s", x.what());
-
-        if (2>_try_gc)
-        {
-            Sawe::Application::global_ptr()->clearCaches();
-
-            if (cudaErrorMemoryAllocation == x.getCudaError() && _try_gc == 0)
-            {
-                Tfr::Cwt* cwt = model->getParam<Tfr::Cwt>();
-                TaskInfo("scales_per_octave was %g", cwt->scales_per_octave());
-
-                float fs = worker.target()->source()->sample_rate();
-                cwt->scales_per_octave( cwt->scales_per_octave() , fs );
-
-                TaskInfo("scales_per_octave is %g", cwt->scales_per_octave());
-
-                model->renderSignalTarget->post_sink()->invalidate_samples( Signal::Intervals::Intervals_ALL );
-            }
-            emit transformChanged();
-
-            _try_gc++;
-        }
-        else throw;
-#endif
     } catch (...) {
         Tools::ApplicationErrorLogController::registerException (boost::current_exception ());
     }

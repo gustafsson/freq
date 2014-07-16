@@ -143,10 +143,6 @@ namespace Tools
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 
-        int _try_gc;
-
-        Signal::UnsignedIntervalType _last_update_size;
-
         std::vector<tvector<4> > channel_colors;
     };
 } // namespace Tools
