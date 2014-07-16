@@ -29,22 +29,25 @@ namespace Tools
 {
     class GraphicsView;
 
-    class SaweDll RenderView: public QGraphicsScene
+    class SaweDll RenderView: public QObject
     {
         Q_OBJECT
     public:
         RenderView(RenderModel* model);
         virtual ~RenderView();
 
-        virtual void drawBackground(QPainter *painter, const QRectF &);
-        virtual void drawForeground(QPainter *painter, const QRectF &);
-        void drawCollections(GlFrameBuffer* fbo, float yscale);
+        /// Similiar to QGLWidget::initializeGL()
+        void initializeGL();
+        void setStates();
+        void defaultStates();
 
-        virtual bool event( QEvent * e );
-        virtual bool eventFilter(QObject* o, QEvent* e);
-        virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
-        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
-        virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+        /// Similiar to QGLWidget::resizeGL()
+        void resizeGL( int width, int height, int ratio );
+
+        /// Similiar to QGLWidget::paintGL()
+        void paintGL();
+
+        void drawCollections(GlFrameBuffer* fbo, float yscale);
 
         // Owned by commandInvoker
         QPointer<Tools::Commands::ViewState> viewstate;
@@ -66,14 +69,6 @@ namespace Tools
         unsigned _last_x;
         unsigned _last_y;
 
-		template<class Archive> void serialize_items(Archive& ar, const unsigned int version) {
-			QList<QGraphicsItem *> itms = items();
-			/*foreach( QGraphicsItem * itm, itms ) {
-				if (dynamic_cast<
-			}
-			this->*/
-		}
-
         const std::vector<tvector<4> >& channelColors() const { return channel_colors; }
 
         void emitTransformChanged();
@@ -83,6 +78,11 @@ namespace Tools
         void redraw();
 
     signals:
+        /**
+         * @brief redraw
+         */
+        void redrawSignal();
+
         /**
          * @brief destroying. Use 'Qt::DirectConnection'
           Emitted in the destructor, before the OpenGL context is destroyed.
@@ -111,11 +111,6 @@ namespace Tools
         void postPaint();
 
         /**
-         * @brief paintingForeground. Use 'Qt::DirectConnection'
-         */
-        void paintingForeground();
-
-        /**
          * @brief finishedWorkSection. Use 'Qt::AutoConnection'
          */
         void finishedWorkSection();
@@ -139,21 +134,8 @@ namespace Tools
         void finishedWorkSectionSlot();
 
     private:
-        int draw_more = 0;
-
-        /// Similiar to QGLWidget::initializeGL()
-        void initializeGL();
-
-        /// Similiar to QGLWidget::resizeGL()
-        void resizeGL( int width, int height, int ratio );
-
-        /// Similiar to QGLWidget::paintGL()
-        void paintGL();
-
         void drawCollection(int channel, float yscale);
 
-        void setStates();
-        void defaultStates();
         void setupCamera();
         void setRotationForAxes(bool);
         void computeChannelColors();
@@ -161,16 +143,7 @@ namespace Tools
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
 
-        bool _inited;
-
         int _try_gc;
-        QPointer<QTimer> _update_timer;
-
-        /**
-          Adjusting sleep between frames based on fps.
-          */
-        Timer _last_frame;
-        float _target_fps;
 
         Signal::UnsignedIntervalType _last_update_size;
 

@@ -144,12 +144,12 @@ void TimelineController::
 
     if (!visible)
     {
-        disconnect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
+        disconnect(view->_render_view, SIGNAL(postPaint()), view, SLOT(paintInGraphicsView()));
         disconnect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     }
     else
     {
-        connect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
+        connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(paintInGraphicsView()));
         connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
     }
 

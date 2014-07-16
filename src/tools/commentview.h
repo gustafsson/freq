@@ -4,6 +4,7 @@
 #include "commentmodel.h"
 
 #include <QWidget>
+#include <QGraphicsScene>
 
 namespace Ui { class CommentView; }
 
@@ -16,7 +17,7 @@ class CommentView : public QWidget
     Q_OBJECT
 
 public:
-    CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent=0);
+    CommentView(ToolModelP modelp, QGraphicsScene* graphicsscene, RenderView* render_view, QWidget *parent=0);
     ~CommentView();
 
     std::string html();

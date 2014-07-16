@@ -23,8 +23,8 @@ namespace Tools {
 namespace Widgets {
 
 WidgetOverlayController::
-        WidgetOverlayController(RenderView* view)
-    : OverlayWidget(view),
+        WidgetOverlayController(QGraphicsScene* scene, RenderView* view)
+    : OverlayWidget(scene, view->tool_selector->parentTool()),
       pan_(0), rescale_(0), rotate_(0),
       proxy_mousepress_(0),
       view_(view),

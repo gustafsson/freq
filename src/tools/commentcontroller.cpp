@@ -18,8 +18,9 @@ namespace Tools
 using Support::RenderViewInfo;
 
 CommentController::
-        CommentController(RenderView* view)
-            :   view_(view),
+        CommentController(QGraphicsScene* graphicsscene, RenderView* view)
+            :   graphicsscene_(graphicsscene),
+                view_(view),
                 comment_(0)
 {
     setEnabled( false );
@@ -42,7 +43,7 @@ void CommentController::
     if (0 == cmodel)
         return;
 
-    CommentView* comment = new CommentView(model, repo->render_view());
+    CommentView* comment = new CommentView(model, graphicsscene_, repo->render_view());
 
     comments_.append( comment );
 }

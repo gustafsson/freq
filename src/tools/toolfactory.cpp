@@ -36,6 +36,7 @@
 #include "support/workercrashlogger.h"
 #include "suggestpurchase.h"
 #include "setuplocktimewarning.h"
+#include "graphicsview.h"
 
 #include "selectioncontroller.h"
 //#include "brushcontroller.h"
@@ -202,7 +203,7 @@ ToolFactory::
         _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
     if (Sawe::Configuration::feature("overlay_navigation"))
-        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view ) ));
+        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view->graphicsview->scene(), _render_view ) ));
 
     _objects.push_back( QPointer<QObject>( new FilterController( p )));
 

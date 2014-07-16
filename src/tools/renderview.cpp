@@ -53,17 +53,11 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_PAINTGL
-#define TIME_PAINTGL if(0)
-
 //#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
-
-//#define DEBUG_EVENTS
-#define DEBUG_EVENTS if(0)
 
 #ifdef max
 #undef max
@@ -87,9 +81,7 @@ RenderView::
             _last_height(0),
             _last_x(0),
             _last_y(0),
-            _inited(false),
-            _try_gc(0),
-            _target_fps(10.0f)
+            _try_gc(0)
 {
     // Validate rotation and set orthoview accordingly
     if (model->_rx<0) model->_rx=0;
@@ -97,14 +89,8 @@ RenderView::
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
-    connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(redraw()) );
     connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(redraw()));
     connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(redraw()));
-
-    _update_timer = new QTimer;
-    _update_timer->setSingleShot( true );
-
-    connect( _update_timer.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
 }
 
 
@@ -113,16 +99,12 @@ RenderView::
 {
     TaskTimer tt("%s", __FUNCTION__);
 
-    delete _update_timer;
-
     glwidget->makeCurrent();
 
     emit destroying();
 
     _render_timer.reset();
     _renderview_fbo.reset();
-
-    QGraphicsScene::clear();
 
     if (Sawe::Application::global_ptr()->has_other_projects_than(this->model->project()))
         return;
@@ -152,138 +134,6 @@ RenderView::
     // Destroy the cuda context for this thread
     CudaException_SAFE_CALL( cudaThreadExit() );
 #endif
-}
-
-
-bool RenderView::
-        event ( QEvent * e )
-{
-    DEBUG_EVENTS TaskTimer tt("RenderView event %s %d", vartype(*e).c_str(), e->isAccepted());
-    bool r = QGraphicsScene::event(e);
-    DEBUG_EVENTS TaskTimer("RenderView event %s info %d %d", vartype(*e).c_str(), r, e->isAccepted()).suppressTiming();
-    return r;
-}
-
-bool RenderView::
-        eventFilter(QObject* o, QEvent* e)
-{
-    DEBUG_EVENTS TaskTimer tt("RenderView eventFilter %s %s %d", vartype(*o).c_str(), vartype(*e).c_str(), e->isAccepted());
-    bool r = QGraphicsScene::eventFilter(o, e);
-    DEBUG_EVENTS TaskTimer("RenderView eventFilter %s %s info %d %d", vartype(*o).c_str(), vartype(*e).c_str(), r, e->isAccepted()).suppressTiming();
-    return r;
-}
-
-void RenderView::
-        mousePressEvent(QGraphicsSceneMouseEvent *e)
-{
-    DEBUG_EVENTS TaskTimer tt("RenderView mousePressEvent %s %d", vartype(*e).c_str(), e->isAccepted());
-    QGraphicsScene::mousePressEvent(e);
-    DEBUG_EVENTS TaskTimer("RenderView mousePressEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-}
-
-void RenderView::
-        mouseMoveEvent(QGraphicsSceneMouseEvent *e)
-{
-    if (model->renderer->render_settings.draw_cursor_marker)
-        redraw();
-
-    DEBUG_EVENTS TaskTimer tt("RenderView mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());
-    QGraphicsScene::mouseMoveEvent(e);
-    DEBUG_EVENTS TaskTimer("RenderView mouseMoveEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-}
-
-void RenderView::
-        mouseReleaseEvent(QGraphicsSceneMouseEvent *e)
-{
-    DEBUG_EVENTS TaskTimer tt("RenderView mouseReleaseEvent %s %d", vartype(*e).c_str(), e->isAccepted());
-    QGraphicsScene::mouseReleaseEvent(e);
-    DEBUG_EVENTS TaskTimer("RenderView mouseReleaseEvent %s info %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
-}
-
-
-void RenderView::
-        drawBackground(QPainter *painter, const QRectF &)
-{
-    double T = _last_frame.elapsedAndRestart();
-    TIME_PAINTGL TaskTimer tt("RenderView: Draw, last frame %.0f ms / %.0f fps", T*1e3, 1/T);
-    if (_update_timer->isActive ())
-        TaskInfo("RenderView: Forced redraw");
-
-    painter->beginNativePainting();
-
-    glMatrixMode(GL_MODELVIEW);
-
-    try { {
-        glPushAttribContext attribs;
-        glPushMatrixContext pmcp(GL_PROJECTION);
-        glPushMatrixContext pmcm(GL_MODELVIEW);
-
-        if (!_inited)
-            initializeGL();
-
-        float dpr = 1.f;
-        if (painter->device())
-		{
-            dpr = painter->device ()->devicePixelRatio();
-            model->renderer->render_settings.dpifactor = dpr;
-            unsigned w = painter->device()->width();
-            unsigned h = painter->device()->height();
-            w *= dpr;
-            h *= dpr;
-            if (w != _last_width || h != _last_height)
-                redraw();
-            _last_width = w;
-            _last_height = h;
-		}
-
-        setStates();
-
-        {
-            TIME_PAINTGL_DETAILS TaskTimer tt("glClear");
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
-
-        {
-            TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
-            emit prePaint();
-        }
-
-        resizeGL(_last_width, _last_height, dpr );
-
-        paintGL();
-
-        defaultStates();
-
-        }
-        GlException_CHECK_ERROR();
-    } catch (const std::exception& x) {
-        TaskInfo("");
-        TaskInfo(boost::format("std::exception\n%s") % boost::diagnostic_information(x));
-        TaskInfo("");
-    } catch (...) {
-        TaskInfo(boost::format("Not an std::exception\n%s") % boost::current_exception_diagnostic_information ());
-    }
-
-    painter->endNativePainting();
-}
-
-
-void RenderView::
-        drawForeground(QPainter *painter, const QRectF &)
-{
-    painter->beginNativePainting();
-    setStates();
-
-    emit paintingForeground();
-
-    defaultStates();
-
-    painter->endNativePainting();
-
-    if (0 < draw_more)
-        draw_more--;
-    if (0 < draw_more)
-        _update_timer->start(5);
 }
 
 
@@ -511,24 +361,13 @@ void RenderView::
 void RenderView::
         redraw()
 {
-    if (0 == draw_more)
-    {
-        draw_more++;
-        _update_timer->start(5);
-    }
-    else if (1 == draw_more)
-    {
-        draw_more++;
-        // queue a redraw when finsihed drawing
-    }
+    emit redrawSignal ();
 }
 
 
 void RenderView::
         initializeGL()
 {
-    _inited = true;
-
     if (!_renderview_fbo)
         _renderview_fbo.reset( new GlFrameBuffer );
 }
@@ -568,6 +407,11 @@ void RenderView::
 void RenderView::
         paintGL()
 {
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
+        emit prePaint();
+    }
+
     model->renderer->collection = model->tfr_mapping ().read ()->collections()[0];
     model->renderer->init();
     if (!model->renderer->isInitialized())

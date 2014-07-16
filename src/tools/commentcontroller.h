@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QPointer>
+#include <QGraphicsScene>
 #include "sawe/toolmodel.h"
 #include "heightmap/position.h"
 
@@ -17,7 +18,7 @@ class CommentController: public ToolController
 {
     Q_OBJECT
 public:
-    CommentController(RenderView* view);
+    CommentController(QGraphicsScene* graphicsscene, RenderView* view);
     ~CommentController();
 
     virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* p );
@@ -42,6 +43,7 @@ private:
 
     void setupGui();
 
+    QGraphicsScene* graphicsscene_;
     RenderView* view_;
 
     CommentView* comment_;

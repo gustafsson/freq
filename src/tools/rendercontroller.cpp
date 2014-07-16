@@ -24,6 +24,7 @@
 #include "tfr/cepstrum.h"
 #include "tfr/transformoperation.h"
 #include "graphicsview.h"
+#include "graphicsscene.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
 #include "signal/reroutechannels.h"
@@ -1050,7 +1051,9 @@ void RenderController::
     view->glwidget->makeCurrent();
     model()->renderer->render_settings.dpifactor = model()->project ()->mainWindow ()->devicePixelRatio ();
 
-    view->graphicsview = new GraphicsView(view);
+    GraphicsScene* scene = new GraphicsScene(view);
+    connect(this->view.data (), SIGNAL(redrawSignal()), scene, SLOT(redraw()));
+    view->graphicsview = new GraphicsView(scene);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());

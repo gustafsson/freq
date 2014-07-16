@@ -20,7 +20,7 @@
 
 namespace Tools {
 
-CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent) :
+CommentView::CommentView(ToolModelP modelp, QGraphicsScene* graphicsscene, RenderView* render_view, QWidget *parent) :
     QWidget(parent),
     view( render_view ),
     modelp(modelp),
@@ -70,7 +70,7 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
-    render_view->addItem( proxy );
+    graphicsscene->addItem( proxy );
 
     setCursor(Qt::ArrowCursor);
 }
@@ -498,7 +498,7 @@ void CommentView::
     {
         clearFocus();
         ui->textEdit->clearFocus();
-        view->setFocus(Qt::MouseFocusReason);
+        proxy->scene ()->setFocus(Qt::MouseFocusReason);
     }
 }
 

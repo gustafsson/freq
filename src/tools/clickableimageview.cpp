@@ -18,7 +18,7 @@ namespace Tools {
 // url = "http://muchdifferent.com/?page=signals"
 
 ClickableImageView::
-        ClickableImageView(RenderView *parent, QString imagefile, QString url)
+        ClickableImageView(QGraphicsScene *parent, QWidget* parentwidget, QString imagefile, QString url)
             :
     QWidget(),
     image(imagefile),
@@ -40,7 +40,7 @@ ClickableImageView::
     parent->addItem( proxy );
 
     //parentwidget = parent->glwidget;
-    parentwidget = parent->tool_selector->parentTool();
+    this->parentwidget = parentwidget;
     parentwidget->installEventFilter( this );
     setMouseTracking( true ); // setCursor with mask doesn't work with QGraphicsProxyWidget
 
