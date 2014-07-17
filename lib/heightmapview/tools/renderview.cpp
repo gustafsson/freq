@@ -344,7 +344,6 @@ void RenderView::
 
 
     // Set up camera position
-    glProjection drawAxes_rotation;
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 
@@ -353,11 +352,6 @@ void RenderView::
         glGetIntegerv(GL_VIEWPORT, gl_projection.viewport ().v);
         glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection ().v ());
 //        glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview ().v ());
-
-        // drawAxes uses its own rotation
-//        glPushMatrixContext ctx(GL_MODELVIEW);
-        drawAxes_rotation = gl_projection;
-        drawAxes_rotation.modelview () *= setRotationForAxes(false);
     }
     glLoadMatrixf(gl_projection.modelview_matrix ());
 
@@ -391,7 +385,8 @@ void RenderView::
             bool draw_t = model->render_settings.draw_t;
 
             // apply rotation again, and make drawAxes use it
-            setRotationForAxes(true);
+            glProjection drawAxes_rotation = gl_projection;
+            drawAxes_rotation.modelview () *= setRotationForAxes();
             glLoadMatrixf(drawAxes_rotation.modelview_matrix ());
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
@@ -560,7 +555,7 @@ void RenderView::
 
 
 GLmatrix RenderView::
-        setRotationForAxes(bool setAxisVisibility)
+        setRotationForAxes()
 {
     GLmatrix M = GLmatrix::identity ();
     float a = model->camera.effective_ry();
@@ -575,7 +570,6 @@ GLmatrix RenderView::
     {
         float f = 1 - model->camera.r[0] / limit;
 
-
         if (dyx<middle)
             M *= GLmatrix::rot (f*-90, 1-dyx/middle,0,0);
         if (dyx2<middle)
@@ -586,19 +580,16 @@ GLmatrix RenderView::
         if (dyz2<middle)
             M *= GLmatrix::rot (f*90,0,0,1-dyz2/middle);
 
-        if (setAxisVisibility)
+        if (dyx<middle || dyx2<middle)
         {
-            if (dyx<middle || dyx2<middle)
-            {
-                model->render_settings.draw_hz = false;
-                model->render_settings.draw_piano = false;
-                model->render_settings.draw_axis_at0 = dyx<middle?1:-1;
-            }
-            if (dyz<middle || dyz2<middle)
-            {
-                model->render_settings.draw_t = false;
-                model->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
-            }
+            model->render_settings.draw_hz = false;
+            model->render_settings.draw_piano = false;
+            model->render_settings.draw_axis_at0 = dyx<middle?1:-1;
+        }
+        if (dyz<middle || dyz2<middle)
+        {
+            model->render_settings.draw_t = false;
+            model->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
         }
     }
     return M;
