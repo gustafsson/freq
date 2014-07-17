@@ -94,16 +94,19 @@ void RenderModel::
     camera.xscale = -camera.p[2]*0.1f;
     camera.zscale = -camera.p[2]*0.75f;
 
+    float L = tfr_mapping ().read ()->length();
+    if (L)
+    {
+        camera.xscale = 10/L;
+        camera.q[0] = 0.5*L;
+    }
+
 #ifdef TARGET_hast
     camera.p[2] = -6;
     xscale = 0.1f;
 
-    float L = _project->worker.length();
     if (L)
-    {
-        xscale = 14/L;
-        camera.q[0] = 0.5*L;
-    }
+        camera.xscale = 14/L;
 #endif
 }
 
