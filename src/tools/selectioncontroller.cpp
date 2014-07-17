@@ -33,13 +33,14 @@
 namespace Tools
 {
     SelectionController::
-            SelectionController( SelectionModel* model, RenderView* render_view )
+            SelectionController( SelectionModel* model, RenderView* render_view, Sawe::Project* project )
                 :
                 _model(model),
                 _render_view(render_view),
+                _project(project),
                 //_worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
-                tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this)),
+                tool_selector_( new Support::ToolSelector(project->commandInvoker(), this)),
                 deselect_action_(0),
                 selecting(false)
     {
@@ -140,7 +141,7 @@ namespace Tools
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 #endif
 */
-        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, render_view()->model->project() ));
+        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, _project ));
         rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data() ));
         rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
 /*

@@ -23,10 +23,6 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/version.hpp>
 
-namespace Sawe {
-    class Project;
-}
-
 namespace Heightmap
 {
     class Collection;
@@ -42,7 +38,7 @@ namespace Tools
     class RenderModel: public ToolModel
     {
     public:
-        RenderModel(Sawe::Project* p);
+        RenderModel();
         ~RenderModel();
 
         void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt);
@@ -50,6 +46,7 @@ namespace Tools
         void resetBlockCaches();
 
         Heightmap::TfrMapping::Collections collections();
+        Signal::Processing::Chain::ptr chain();
 
         void block_layout(Heightmap::BlockLayout);
 
@@ -66,7 +63,7 @@ namespace Tools
         Tfr::TransformDesc::ptr transform_desc();
         void set_transform_desc(Tfr::TransformDesc::ptr t);
 
-        void recompute_extent();
+        Signal::OperationDesc::Extent recompute_extent();
         void set_extent(Signal::OperationDesc::Extent extent);
 
         Signal::OperationDesc::ptr renderOperationDesc();
@@ -83,7 +80,7 @@ namespace Tools
         Heightmap::Render::RenderBlock::ptr render_block;
         Tools::Support::RenderCamera camera;
 
-        Sawe::Project* project() { return _project; }
+//        Sawe::Project* project() { return _project; }
 
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
@@ -92,7 +89,6 @@ namespace Tools
         friend class RenderView; // todo remove
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
-        Sawe::Project* _project; // project should probably be a member of RenderController instead
         Support::TransformDescs::ptr transform_descs_;
         Heightmap::TfrMapping::ptr tfr_map_;
         Signal::OperationDesc::ptr render_operation_desc_;
@@ -101,7 +97,6 @@ namespace Tools
         Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_block_filter_params_;
 
         friend class boost::serialization::access;
-        RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
             float _qx = camera.q[0],

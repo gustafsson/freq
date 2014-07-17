@@ -28,9 +28,8 @@ private:
 };
 
 RenderModel::
-        RenderModel(Sawe::Project* p)
+        RenderModel()
         :
-        _project(p),
         transform_descs_(new Support::TransformDescs),
         stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
 
@@ -138,6 +137,13 @@ Heightmap::TfrMapping::Collections RenderModel::
 }
 
 
+Signal::Processing::Chain::ptr RenderModel::
+        chain()
+{
+    return chain_;
+}
+
+
 void RenderModel::
         block_layout(Heightmap::BlockLayout bs)
 {
@@ -238,11 +244,12 @@ void RenderModel::
 }
 
 
-void RenderModel::
+Signal::OperationDesc::Extent RenderModel::
         recompute_extent()
 {
     Signal::OperationDesc::Extent extent = chain_.read ()->extent(target_marker_);
     set_extent(extent);
+    return extent;
 }
 
 

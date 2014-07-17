@@ -22,7 +22,7 @@ float RenderViewInfo::
     if (is_valid_value)
         *is_valid_value = true;
 
-    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->project()->length())
+    if (pos.time < 0 || pos.scale < 0 || pos.scale >= 1 || pos.time > model->tfr_mapping().read()->length())
         return 0;
 
     if (is_valid_value)

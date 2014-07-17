@@ -20,7 +20,8 @@ namespace Tools
         Q_OBJECT
     public:
         TooltipController(RenderView *render_view,
-                          CommentController* comments);
+                          CommentController* comments,
+                          Sawe::Project* project);
         ~TooltipController();
 
         virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ );
@@ -59,6 +60,7 @@ namespace Tools
         std::list<QPointer<TooltipView> > views_;
         RenderView* render_view_;
         CommentController* comments_;
+        Sawe::Project* project_;
 
         TooltipModel* current_model();
         QPointer<TooltipView> current_view_;

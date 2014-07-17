@@ -20,12 +20,13 @@
 
 namespace Tools {
 
-CommentView::CommentView(ToolModelP modelp, QGraphicsScene* graphicsscene, RenderView* render_view, QWidget *parent) :
+CommentView::CommentView(ToolModelP modelp, QGraphicsScene* graphicsscene, RenderView* render_view, Sawe::Project* project, QWidget *parent) :
     QWidget(parent),
     view( render_view ),
     modelp(modelp),
     ui(new Ui::CommentView),
     proxy( 0 ),
+    project(project),
     keep_pos(false),
     z_hidden(false),
     lastz(6),
@@ -265,7 +266,7 @@ void CommentView::
         }
         resizePosition = -QPoint(width(), height()) + QPoint(gp.x(), -gp.y());
 
-        view->model->project()->setModified();
+        project->setModified();
     }
 
     if (visible)
@@ -456,7 +457,7 @@ void CommentView::
         updateText()
 {
     model()->html = html();
-    view->model->project()->setModified();
+    project->setModified();
 }
 
 

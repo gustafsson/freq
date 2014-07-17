@@ -64,7 +64,7 @@ namespace Tools
 {
 
 RenderController::
-        RenderController( QPointer<RenderView> view )
+        RenderController( QPointer<RenderView> view, Sawe::Project* project )
             :
             transform(0),
             hz_scale(0),
@@ -75,6 +75,7 @@ RenderController::
             tf_resolution_action(0),
             linearScale(0),
             view(view),
+            project(project),
             toolbar_render(0),
             logScale(0),
             cepstraScale(0),
@@ -86,7 +87,7 @@ RenderController::
 
     connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
 
-    model()->init(model()->project ()->processing_chain (), rvu);
+    model()->init(project->processing_chain (), rvu);
 
     // 'this' is parent
     auto hpp = new Support::HeightmapProcessingPublisher(
@@ -141,7 +142,7 @@ void RenderController::
 {
     view->redraw();
 
-    model()->project()->setModified();
+    project->setModified();
 }
 
 
@@ -532,8 +533,8 @@ Tfr::TransformDesc::ptr RenderController::
 float RenderController::
         headSampleRate()
 {
-    return model()->project ()->extent ().sample_rate.get_value_or (1);
-//    return model()->project()->head->head_source()->sample_rate();
+    return project->extent ().sample_rate.get_value_or (1);
+//    return project->head->head_source()->sample_rate();
 }
 
 
@@ -549,7 +550,7 @@ float RenderController::
 ::Ui::MainWindow* RenderController::
         getItems()
 {
-    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(project->mainWindow());
     return main->getItems();
 }
 
@@ -754,7 +755,7 @@ RenderModel *RenderController::
 void RenderController::
         setupGui()
 {
-    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(project->mainWindow());
     toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
     toolbar_render->setWindowTitle("tool bar");
@@ -788,6 +789,7 @@ void RenderController::
     }
 
     connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
+    connect( project->commandInvoker(), SIGNAL(projectChanged(const Command*)), view, SLOT(redraw()));
 
 
     // ComboBoxAction* color
@@ -1049,14 +1051,14 @@ void RenderController::
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     view->glwidget->makeCurrent();
-    model()->render_settings.dpifactor = model()->project ()->mainWindow ()->devicePixelRatio ();
+    model()->render_settings.dpifactor = project->mainWindow ()->devicePixelRatio ();
 
     GraphicsScene* scene = new GraphicsScene(view);
     connect(this->view.data (), SIGNAL(redrawSignal()), scene, SLOT(redraw()));
     view->graphicsview = new GraphicsView(scene);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
-    view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
+    view->tool_selector = view->graphicsview->toolSelector(0, project->commandInvoker());
 
     model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
 
@@ -1182,7 +1184,7 @@ void RenderController::
     Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
     unsigned N = channels->source()->num_channels();
 */
-    unsigned  N = model()->project ()->extent().number_of_channels.get_value_or (0);
+    unsigned  N = project->extent().number_of_channels.get_value_or (0);
     if (model()->tfr_mapping ().read ()->channels() != (int)N)
         model()->recompute_extent ();
     for (unsigned i=0; i<N; ++i)
@@ -1235,7 +1237,7 @@ bool RenderController::
     // determine if we're interested or not
     if (e->type() == QEvent::FocusIn || e->type() == QEvent::FocusOut)
     {
-        if (model()->project()->mainWindow() == o)
+        if (project->mainWindow() == o)
         {
             if (e->type() == QEvent::FocusIn)
                 windowGotFocus();
@@ -1254,7 +1256,7 @@ void RenderController::
 {
 /*
     // Use Signal::Processing namespace
-    model()->project()->worker.min_fps( 20 );
+    project->worker.min_fps( 20 );
 */
 }
 
@@ -1264,7 +1266,7 @@ void RenderController::
 {
 /*
     // Use Signal::Processing namespace
-    model()->project()->worker.min_fps( 4 );
+    project->worker.min_fps( 4 );
 */
 }
 

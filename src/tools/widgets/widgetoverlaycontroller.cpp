@@ -23,11 +23,12 @@ namespace Tools {
 namespace Widgets {
 
 WidgetOverlayController::
-        WidgetOverlayController(QGraphicsScene* scene, RenderView* view)
+        WidgetOverlayController(QGraphicsScene* scene, RenderView* view, Tools::Commands::CommandInvoker* commandInvoker)
     : OverlayWidget(scene, view->tool_selector->parentTool()),
       pan_(0), rescale_(0), rotate_(0),
       proxy_mousepress_(0),
       view_(view),
+      commandInvoker_(commandInvoker),
       child_event_(QMouseEvent(QEvent::None,QPoint(),Qt::NoButton,0,0))
 {
     setupLayout();
@@ -150,9 +151,9 @@ void WidgetOverlayController::
 {    
     QHBoxLayout* h = new QHBoxLayout();
     h->addStretch();
-    h->addWidget(pan_ = new PanWidget(view_));
-    h->addWidget(rescale_ = new RescaleWidget(view_));
-    h->addWidget(rotate_ = new RotateWidget(view_));
+    h->addWidget(pan_ = new PanWidget(view_, commandInvoker_));
+    h->addWidget(rescale_ = new RescaleWidget(view_, commandInvoker_));
+    h->addWidget(rotate_ = new RotateWidget(view_, commandInvoker_));
     h->addStretch();
 
     QVBoxLayout* v = new QVBoxLayout(this);
@@ -168,17 +169,17 @@ void WidgetOverlayController::
     QVBoxLayout* v = new QVBoxLayout();
     v->addSpacerItem(new QSpacerItem(50,50,QSizePolicy::Maximum,QSizePolicy::Maximum));
     v->addStretch();
-    v->addWidget(new PanWidget(view_));
-    v->addWidget(new RescaleWidget(view_));
-    v->addWidget(new RotateWidget(view_));
+    v->addWidget(new PanWidget(view_, commandInvoker_));
+    v->addWidget(new RescaleWidget(view_, commandInvoker_));
+    v->addWidget(new RotateWidget(view_, commandInvoker_));
     v->addStretch();
 
     QHBoxLayout* h = new QHBoxLayout();
     h->addSpacerItem(new QSpacerItem(50,50,QSizePolicy::Maximum,QSizePolicy::Maximum));
     h->addStretch();
-    h->addWidget(new PanWidget(view_));
-    h->addWidget(new RescaleWidget(view_));
-    h->addWidget(new RotateWidget(view_));
+    h->addWidget(new PanWidget(view_, commandInvoker_));
+    h->addWidget(new RescaleWidget(view_, commandInvoker_));
+    h->addWidget(new RotateWidget(view_, commandInvoker_));
     h->addStretch();
 
     QGridLayout* g = new QGridLayout(this);

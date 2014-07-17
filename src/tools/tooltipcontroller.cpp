@@ -58,11 +58,13 @@ TooltipController::Actions::
 
 TooltipController::
         TooltipController(RenderView *render_view,
-                          CommentController* comments)
+                          CommentController* comments,
+                          Sawe::Project* project)
             :
             ui(new Actions(this)),
             render_view_(render_view),
             comments_(comments),
+            project_(project),
             current_view_(0)
 {
     setEnabled( false );
@@ -84,13 +86,13 @@ TooltipController::
 
 
 void TooltipController::
-        createView( ToolModelP modelp, ToolRepo* repo, Sawe::Project* /*p*/ )
+        createView( ToolModelP modelp, ToolRepo* repo, Sawe::Project* p )
 {
     TooltipModel* model = dynamic_cast<TooltipModel*>(modelp.get());
     if (!model)
         return;
 
-    model->setPtrs( repo->render_view(), this->comments_ );
+    model->setPtrs( repo->render_view(), this->comments_, p );
 
     setCurrentView( new TooltipView( model, this, repo->render_view() ) );
     setupView(current_view_);
@@ -166,7 +168,7 @@ void TooltipController::
             model->automarking = TooltipModel::AutoMarkerWorking;
 
             // calls createView
-            render_view_->model->project()->tools().addModel( model );
+            project_->tools().addModel( model );
 
             mouseMoveEvent( e );
         }
@@ -267,7 +269,7 @@ void TooltipController::
 
         hover_info_model_.reset( new TooltipModel() );
         hover_info_model_->automarking = TooltipModel::NoMarkers;
-        hover_info_model_->setPtrs( render_view_, this->comments_ );
+        hover_info_model_->setPtrs( render_view_, this->comments_, project_ );
         setMouseTracking( true );
 
         QMouseEvent event(QEvent::MouseMove, render_view_->glwidget->mapFromGlobal( QCursor::pos() ),  Qt::NoButton, Qt::NoButton, Qt::NoModifier );
@@ -290,7 +292,7 @@ void TooltipController::
 void TooltipController::
         setupGui()
 {
-    Ui::SaweMainWindow* mainWindow = render_view_->model->project()->mainWindow();
+    Ui::SaweMainWindow* mainWindow = project_->mainWindow();
 
     Tools::Support::ToolBar *toolBarOperation;
     toolBarOperation = new Tools::Support::ToolBar(mainWindow);

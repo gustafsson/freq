@@ -75,7 +75,7 @@ namespace Tools
 RenderView::
         RenderView(RenderModel* model)
             :
-            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
+//            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
             graphicsview(0),
@@ -87,8 +87,7 @@ RenderView::
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
-    connect( model->project()->commandInvoker(), SIGNAL(projectChanged(const Command*)), SLOT(redraw()));
-    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(redraw()));
+//    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(redraw()));
 }
 
 
@@ -103,11 +102,6 @@ RenderView::
 
     _render_timer.reset();
     _renderview_fbo.reset();
-
-    if (Sawe::Application::global_ptr()->has_other_projects_than(this->model->project()))
-        return;
-
-    TaskInfo("cudaThreadExit()");
 
 //    Sawe::Application::global_ptr()->clearCaches();
 
@@ -127,6 +121,11 @@ RenderView::
 //    glwidget->makeCurrent();
 
 #ifdef USE_CUDA
+    if (Sawe::Application::global_ptr()->has_other_projects_than(this->model->project()))
+        return;
+
+    TaskInfo("cudaThreadExit()");
+
     EXCEPTION_ASSERT( QGLContext::currentContext() );
 
     // Destroy the cuda context for this thread
@@ -325,20 +324,20 @@ void RenderView::
     // TODO move to rendercontroller
     bool isRecording = false;
 
-    if (0 == "stop after 31 seconds")
-    {
-        float length = model->project()->length();
-        static unsigned frame_counter = 0;
-        TaskInfo("frame_counter = %u", ++frame_counter);
-        if (length > 30) for (static bool once=true; once; once=false)
-            QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
-    }
+//    if (0 == "stop after 31 seconds")
+//    {
+//        float length = model->project()->length();
+//        static unsigned frame_counter = 0;
+//        TaskInfo("frame_counter = %u", ++frame_counter);
+//        if (length > 30) for (static bool once=true; once; once=false)
+//            QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
+//    }
 
-    Tools::RecordModel* r = model->project ()->tools ().record_model ();
-    if(r && r->recording && !r->recording.write ()->isStopped ())
-    {
-        isRecording = true;
-    }
+//    Tools::RecordModel* r = model->project ()->tools ().record_model ();
+//    if(r && r->recording && !r->recording.write ()->isStopped ())
+//    {
+//        isRecording = true;
+//    }
 
     bool update_queue_has_work = !model->block_update_queue->empty ();
 
@@ -375,38 +374,16 @@ void RenderView::
     }
 
     bool onlyComputeBlocksForRenderView = false;
-    Signal::OperationDesc::Extent x;
+    Signal::OperationDesc::Extent x = model->recompute_extent ();
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
-        float length=0.f;
+        float length = x.interval.get ().count() / x.sample_rate.get ();
 
         if (onlyComputeBlocksForRenderView)
         foreach( const Heightmap::Collection::ptr& collection, collections )
         {
             collection.write ()->next_frame(); // Discard needed blocks before this row
         }
-
-        Signal::Processing::Step::ptr step_with_new_extent;
-        {
-            x = model->project()->extent ();
-            length = x.interval.get ().count() / x.sample_rate.get ();
-
-            auto w = model->tfr_mapping ().write ();
-            w->length( length );
-            w->channels( x.number_of_channels.get () );
-            w->targetSampleRate( x.sample_rate.get () );
-
-            if (w->channels() != x.number_of_channels ||
-                w->targetSampleRate() != x.sample_rate)
-            {
-                w->targetSampleRate( x.sample_rate.get ());
-                w->channels( x.number_of_channels.get ());
-
-                step_with_new_extent = model->target_marker ()->step().lock();
-            }
-        }
-        if (step_with_new_extent)
-            step_with_new_extent.write ()->deprecateCache(Signal::Interval::Interval_ALL);
 
         Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
 
@@ -442,7 +419,7 @@ void RenderView::
     }
 
 
-    Support::ChainInfo ci(model->project ()->processing_chain ());
+    Support::ChainInfo ci(model->chain());
     bool isWorking = ci.hasWork () || update_queue_has_work;
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();

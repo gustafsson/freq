@@ -32,7 +32,7 @@ void ZoomCameraCommand::
 {
     if (dt) if (!zoom( dt, ScaleX ))
     {
-        float L = model->project()->length();
+        float L = model->tfr_mapping().read ()->length();
         float d = std::min( 0.5f * fabsf(dt), fabsf(model->camera.q[0] - L/2));
         model->camera.q[0] += model->camera.q[0]>L*.5f ? -d : d;
     }
@@ -50,8 +50,8 @@ void ZoomCameraCommand::
 bool ZoomCameraCommand::
         zoom(float delta, ZoomMode mode)
 {
-    float L = model->project()->length();
-    float fs = model->project()->extent().sample_rate.get();
+    float L = model->tfr_mapping ().read ()->length();
+    float fs = model->tfr_mapping ().read ()->targetSampleRate();
     float min_xscale = 4.f/std::max(L,10/fs);
     float max_xscale = 0.05f*fs;
 

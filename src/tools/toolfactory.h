@@ -35,6 +35,7 @@ namespace Tools
          * TODO render_model should not be public. And a session could have more than one render model.
          * TODO add the concept of sessions.
          */
+        Sawe::Project* project;
         RenderModel render_model;
         SelectionModel selection_model;
         PlaybackModel playback_model;

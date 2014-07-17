@@ -13,8 +13,9 @@ namespace Tools {
 namespace Widgets {
 
 
-PanWidget::PanWidget(RenderView *view) :
-    view_(view)
+PanWidget::PanWidget(RenderView *view, Tools::Commands::CommandInvoker* commandInvoker) :
+    view_(view),
+    commandInvoker_(commandInvoker)
 {
     setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
@@ -49,7 +50,7 @@ void PanWidget::
         float ds = current.scale - last.scale;
 
         Tools::Commands::pCommand cmd( new Tools::Commands::MoveCameraCommand(view_->model, -dt, -ds ));
-        view_->model->project()->commandInvoker()->invokeCommand( cmd );
+        commandInvoker_->invokeCommand( cmd );
     }
 
     dragSource_ = event->pos();

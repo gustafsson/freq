@@ -3,6 +3,7 @@
 
 #include "ui/mousecontrol.h"
 #include "ui/comboboxaction.h"
+#include "sawe/project.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -15,7 +16,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        NavigationController(RenderView* view);
+        NavigationController(RenderView* view, Sawe::Project* project);
         ~NavigationController();
 
     signals:
@@ -51,6 +52,7 @@ namespace Tools
         // View that is controlled, this controller doesn't have a model
         // and shares control of the renderview with rendercontoller
         RenderView* _view;
+        Sawe::Project* _project;
 
         // GUI
         void connectGui();

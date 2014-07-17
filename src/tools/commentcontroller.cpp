@@ -18,9 +18,10 @@ namespace Tools
 using Support::RenderViewInfo;
 
 CommentController::
-        CommentController(QGraphicsScene* graphicsscene, RenderView* view)
+        CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project)
             :   graphicsscene_(graphicsscene),
                 view_(view),
+                project_(project),
                 comment_(0)
 {
     setEnabled( false );
@@ -37,13 +38,13 @@ CommentController::
 
 
 void CommentController::
-        createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ )
+        createView( ToolModelP model, ToolRepo* repo, Sawe::Project* p )
 {
     CommentModel* cmodel = dynamic_cast<CommentModel*>(model.get());
     if (0 == cmodel)
         return;
 
-    CommentView* comment = new CommentView(model, graphicsscene_, repo->render_view());
+    CommentView* comment = new CommentView(model, graphicsscene_, repo->render_view(), p);
 
     comments_.append( comment );
 }
@@ -95,7 +96,7 @@ CommentView* CommentController::
     //model->pos.scale = view_->model->camera.q[2];
 
     // addModel calls createView
-    view_->model->project()->tools().addModel( model );
+    project_->tools().addModel( model );
 
     return comments_.back();
 }
@@ -104,7 +105,7 @@ CommentView* CommentController::
 void CommentController::
         setupGui()
 {
-    Ui::MainWindow* ui = view_->model->project()->mainWindow()->getItems();
+    Ui::MainWindow* ui = project_->mainWindow()->getItems();
 
     // Connect enabled/disable actions,
     // 'enableCommentAdder' sets/unsets this as current tool when

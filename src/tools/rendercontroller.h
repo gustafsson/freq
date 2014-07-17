@@ -2,6 +2,7 @@
 #define RENDERCONTROLLER_H
 
 #include "renderview.h"
+#include "sawe/project.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -22,7 +23,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        RenderController( QPointer<RenderView> view );
+        RenderController( QPointer<RenderView> view, Sawe::Project* project );
         ~RenderController();
 
         RenderModel*        model();
@@ -111,6 +112,7 @@ namespace Tools
         float currentTransformMinHz();
 
         QPointer<RenderView> view;
+        Sawe::Project* project;
 
         // GUI stuff
         // These are never used outside setupGui, but they are named here

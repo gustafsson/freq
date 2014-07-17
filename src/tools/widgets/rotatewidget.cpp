@@ -13,8 +13,9 @@ namespace Tools {
 namespace Widgets {
 
 
-RotateWidget::RotateWidget(RenderView* view) :
+RotateWidget::RotateWidget(RenderView* view, Tools::Commands::CommandInvoker* commandInvoker) :
     view_(view),
+    commandInvoker_(commandInvoker),
     mouseMoved_(true)
 {
     setMinimumSize(70,70);
@@ -45,7 +46,7 @@ void RotateWidget::
     float ds = d.y();
 
     Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(view_->model, dt, ds ));
-    view_->model->project()->commandInvoker()->invokeCommand( cmd );
+    commandInvoker_->invokeCommand( cmd );
 
     dragSource_ = event->pos();
     mouseMoved_ = true;
@@ -75,7 +76,7 @@ void RotateWidget::
 
         const float rs = 0.2;
         Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(view_->model, 0, d/rs ));
-        view_->model->project()->commandInvoker()->invokeCommand( cmd );
+        commandInvoker_->invokeCommand( cmd );
         view_->model->camera.orthoview.TimeStep(1);
     }
 

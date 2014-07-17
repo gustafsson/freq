@@ -10,11 +10,12 @@
 namespace Tools {
 
 PlaybackMarkersController::
-        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view )
+        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view, Sawe::Project* project )
     :
     vicinity_( 10 ),
     render_view_(render_view),
-    view_(view)
+    view_(view),
+    project_(project)
 {
     setupGui();
 
@@ -110,7 +111,7 @@ void PlaybackMarkersController::
         {
             // No markers created, create one
             model()->addMarker( click.time );
-            render_view_->model->project()->setModified();
+            project_->setModified();
         }
     }
     else
@@ -192,7 +193,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         setupGui()
 {
-    Ui::SaweMainWindow* main = render_view_->model->project()->mainWindow();
+    Ui::SaweMainWindow* main = project_->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
     // Connect enabled/disable actions,

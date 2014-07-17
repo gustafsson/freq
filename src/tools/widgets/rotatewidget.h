@@ -2,6 +2,7 @@
 #define TOOLS_WIDGETS_ROTATEWIDGET_H
 
 #include <QWidget>
+#include "tools/commands/commandinvoker.h"
 
 namespace Tools {
 class RenderView;
@@ -11,7 +12,7 @@ class RotateWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit RotateWidget(RenderView *view);
+    explicit RotateWidget(RenderView *view, Tools::Commands::CommandInvoker* commandInvoker);
     
 protected:
     void leaveEvent ( QEvent * event );
@@ -27,6 +28,7 @@ private:
     QPolygon bunkShape ();
 
     RenderView* view_;
+    Tools::Commands::CommandInvoker* commandInvoker_;
     QPainterPath path_;
     QPoint dragSource_;
     bool mouseMoved_;

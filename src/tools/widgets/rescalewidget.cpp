@@ -19,9 +19,10 @@ namespace Tools {
 namespace Widgets {
 
 RescaleWidget::
-        RescaleWidget (RenderView*v)
+        RescaleWidget (RenderView*v, Tools::Commands::CommandInvoker* commandInvoker)
     :   HudGlWidget(v),
         view_(v),
+        commandInvoker_(commandInvoker),
         scalex_(1.f),
         scaley_(1.f),
         image_(":/icons/muchdifferent.png"),
@@ -213,7 +214,7 @@ void RescaleWidget::
         float ds = r*(current.scale - last.scale)*view_->model->camera.zscale/view_->model->camera.p[2];
 
         Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(view_->model, dt, ds, 0.f ));
-        view_->model->project()->commandInvoker()->invokeCommand( cmd );
+        commandInvoker_->invokeCommand( cmd );
     }
 
     //dragSource_ = event->pos();

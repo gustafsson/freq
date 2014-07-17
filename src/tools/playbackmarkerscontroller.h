@@ -17,7 +17,7 @@ class PlaybackMarkersController: public QWidget
 {
     Q_OBJECT
 public:
-    PlaybackMarkersController(PlaybackMarkersView* view, RenderView* render_view);
+    PlaybackMarkersController(PlaybackMarkersView* view, RenderView* render_view, Sawe::Project* project);
 
 signals:
     void enabledChanged(bool enabled);
@@ -38,6 +38,7 @@ private:
     float vicinity_; // in pixels
     RenderView* render_view_;
     PlaybackMarkersView* view_;
+    Sawe::Project* project_;
     PlaybackMarkersModel* model() { return view_->model(); }
 };
 

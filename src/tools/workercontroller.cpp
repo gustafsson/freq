@@ -7,13 +7,13 @@
 namespace Tools {
 
 WorkerController::
-        WorkerController(WorkerView* view, RenderView* renderview, TimelineView* timelineview)
+        WorkerController(WorkerView* view, RenderView* renderview, TimelineView* timelineview, Sawe::Project* project)
     :
     view_(view),
     renderview_(renderview),
     timelineview_(timelineview)
 {
-    Ui::SaweMainWindow* mainwindow = renderview->model->project()->mainWindow();
+    Ui::SaweMainWindow* mainwindow = project->mainWindow();
     QAction* a = new QAction(mainwindow);
     a->setShortcut(QKeySequence("Ctrl+Alt+Shift+W"));
     a->setCheckable( true );

@@ -24,9 +24,10 @@ namespace Tools
 using Support::RenderViewInfo;
 
 NavigationController::
-        NavigationController(RenderView* view)
+        NavigationController(RenderView* view, Sawe::Project* project)
             :
             _view(view),
+            _project(project),
             zoom_only_(false)
 {
     connectGui();
@@ -381,7 +382,7 @@ void NavigationController::
 void NavigationController::
         connectGui()
 {
-    Ui::SaweMainWindow* main = _view->model->project()->mainWindow();
+    Ui::SaweMainWindow* main = _project->mainWindow();
     Ui::MainWindow* ui = main->getItems();
 
     //connect(ui->actionToggleNavigationToolBox, SIGNAL(toggled(bool)), ui->toolBarOperation, SLOT(setVisible(bool)));
@@ -441,7 +442,7 @@ void NavigationController::
         moveCamera( float dt, float ds )
 {
     Tools::Commands::pCommand cmd( new Tools::Commands::MoveCameraCommand(_view->model, dt, ds ));
-    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+    _project->commandInvoker()->invokeCommand( cmd );
 }
 
 
@@ -449,7 +450,7 @@ void NavigationController::
         zoomCamera( float dt, float ds, float dz )
 {
     Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(_view->model, dt, ds, dz*0.005 ));
-    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+    _project->commandInvoker()->invokeCommand( cmd );
 }
 
 
@@ -457,7 +458,7 @@ void NavigationController::
         rotateCamera( float dx, float dy )
 {
     Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(_view->model, dx, dy ));
-    _view->model->project()->commandInvoker()->invokeCommand( cmd );
+    _project->commandInvoker()->invokeCommand( cmd );
 }
 
 

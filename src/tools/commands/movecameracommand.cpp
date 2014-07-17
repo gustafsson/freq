@@ -26,7 +26,7 @@ std::string MoveCameraCommand::
 void MoveCameraCommand::
         executeFirst()
 {
-    float l = model->project()->length();
+    float l = model->tfr_mapping().read ()->length();
 
     GLvector& q = model->camera.q;
     q[0] += dt;

@@ -24,10 +24,11 @@ namespace Tools
 
 
 TimelineController::
-        TimelineController( TimelineView* timeline_view )
+        TimelineController( TimelineView* timeline_view, Sawe::Project* project )
             :
             model(timeline_view->_render_view->model),
             view(timeline_view),
+            project(project),
             dock(0),
             _movingTimeline( 0 )
 {
@@ -75,7 +76,7 @@ void TimelineController::
 void TimelineController::
         setupGui()
 {
-    Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
+    Ui::SaweMainWindow* MainWindow = project->mainWindow();
 
     bool create_dock_window = Sawe::Configuration::feature("timeline_dock");
 
@@ -107,7 +108,7 @@ void TimelineController::
         connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
         connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionToggleTimelineWindow, SLOT(setChecked(bool)));
     } else {
-        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1, model->project()->commandInvoker() );
+        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1, project->commandInvoker() );
         view->tool_selector->setCurrentToolCommand( this );
 
         view->layoutChanged( view->_render_view->graphicsview->layoutDirection());
@@ -214,7 +215,7 @@ void TimelineController::
             //moveButton.spacePos(x, y, current[0], current[1]);
             current.time = (current.time - view->_xoffs) * view->_xscale;
 
-            float length = std::max( 1.f, model->project()->length());
+            float length = std::max( 1.f, project->length());
             view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
             view->redraw();

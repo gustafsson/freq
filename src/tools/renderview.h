@@ -48,7 +48,7 @@ namespace Tools
         void paintGL();
 
         // Owned by commandInvoker
-        QPointer<Tools::Commands::ViewState> viewstate;
+//        QPointer<Tools::Commands::ViewState> viewstate;
 
         RenderModel* model;
 

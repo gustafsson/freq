@@ -2,6 +2,7 @@
 #define TIMELINECONTROLLER_H
 
 #include "ui/mousecontrol.h"
+#include "sawe/project.h"
 
 #include <QWidget>
 
@@ -16,7 +17,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        TimelineController( TimelineView* timeline_view );
+        TimelineController( TimelineView* timeline_view, Sawe::Project* project );
         ~TimelineController();
 
         // QWidget
@@ -25,6 +26,7 @@ namespace Tools
     private:
         RenderModel *model;
         TimelineView *view;
+        Sawe::Project* project;
 
     private slots:
         void hideTimeline();
