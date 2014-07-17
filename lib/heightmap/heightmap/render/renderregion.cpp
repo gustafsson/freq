@@ -10,9 +10,9 @@ namespace Render {
 RenderRegion::RenderRegion(glProjection gl_projection)
 {
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (gl_projection.projection ().v ());
+    glLoadMatrixf (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (gl_projection.modelview ().v ());
+    glLoadMatrixf (gl_projection.modelview.v ());
 }
 
 

@@ -37,8 +37,8 @@ void FrustumClip::
 {
     // http://web.archive.org/web/20120531231005/http://crazyjoke.free.fr/doc/3D/plane%20extraction.pdf
 
-    tmatrix<4, GLfloat> modelview = gl_projection.modelview_matrix ();
-    tmatrix<4, GLfloat> projection = gl_projection.projection_matrix ();
+    const tmatrix<4, GLfloat>& modelview = gl_projection.modelview;
+    const tmatrix<4, GLfloat>& projection = gl_projection.projection;
     tmatrix<4, GLfloat> M = projection*modelview;
     M = M.transpose ();
     border_width = 1.f + 2.f*border_width;

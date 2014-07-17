@@ -55,12 +55,12 @@ public:
 	operator tvector<rows-1, t>();
 
         template<typename t2 >
-        tvector<rows, t> operator*( const tvector<cols, t2> &n ) {
+        tvector<rows, t> operator*( const tvector<cols, t2> &n ) const {
                 return *this * tmatrix<cols,t2,1>( n );
         }
 
         template<int cols2, typename t2 >
-	tmatrix<rows, t, cols2> operator*( const tmatrix<cols, t2, cols2> &n ) {
+    tmatrix<rows, t, cols2> operator*( const tmatrix<cols, t2, cols2> &n ) const {
 		tmatrix<rows,t,cols2> r;
 		for(int a=0; a<cols2; a++)
 		for(int b=0; b<rows; b++)
@@ -68,14 +68,14 @@ public:
 			r[a][b] = r[a][b] + m[c][b]*n[a][c];
 		return r;
 	}
-    tmatrix operator*( const t &v ) {
+    tmatrix operator*( const t &v ) const {
 		tmatrix r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
 			r[a][b] = m[a][b]*v;
 		return r;
 	}
-    tmatrix operator+( const t &v ) {
+    tmatrix operator+( const t &v ) const {
 		tmatrix r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
@@ -98,7 +98,7 @@ public:
     bool operator!=( const tmatrix<rows,T2,cols> &v ) const {
         return !(*this == v);
     }
-    tmatrix<cols,t,rows> transpose() {
+    tmatrix<cols,t,rows> transpose() const {
         tmatrix<cols,t,rows> r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)

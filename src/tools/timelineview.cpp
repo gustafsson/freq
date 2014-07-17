@@ -254,12 +254,9 @@ void TimelineView::
             }
             setupCamera( false );
 
-            GLvector::T modelview_matrix[16], projection_matrix[16];
-            int viewport_matrix[4];
-            glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-            glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
-            glGetIntegerv(GL_VIEWPORT, viewport_matrix);
-            gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
+            glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview.v ());
+            glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection.v ());
+            glGetIntegerv(GL_VIEWPORT, gl_projection.viewport.v);
 
             {
                 glPushMatrixContext mc(GL_MODELVIEW);

@@ -170,7 +170,7 @@ QPointF RenderViewInfo::
 
     if (dist)
     {
-        GLint const* const& vp = view->gl_projection.viewport_matrix ();
+        GLint const* const& vp = view->gl_projection.viewport.v;
         float z0 = .1, z1=.2;
         GLvector projectionPlane = view->gl_projection.gluUnProject ( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
         GLvector projectionNormal = view->gl_projection.gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
@@ -218,8 +218,8 @@ Heightmap::Position RenderViewInfo::
     pos.setX( widget_pos.x() + view->rect().left() );
     pos.setY( view->rect().height() - 1 - widget_pos.y() + view->rect().top() );
 
-    const GLvector::T* m = view->gl_projection.modelview_matrix (), *proj = view->gl_projection.projection_matrix ();
-    const GLint* vp = view->gl_projection.viewport_matrix ();
+    const GLvector::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
+    const GLint* vp = view->gl_projection.viewport.v;
     GLvector::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
@@ -291,8 +291,8 @@ Heightmap::Position RenderViewInfo::
     pos.setX( pos.x() + view->rect().left() );
     pos.setY( view->rect().height() - 1 - pos.y() + view->rect().top() );
 
-    const GLvector::T* m = view->gl_projection.modelview_matrix (), *proj = view->gl_projection.projection_matrix ();
-    const GLint* vp = view->gl_projection.viewport_matrix ();
+    const GLvector::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
+    const GLint* vp = view->gl_projection.viewport.v;
     GLvector::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)

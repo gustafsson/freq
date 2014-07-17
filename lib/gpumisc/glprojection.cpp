@@ -10,49 +10,17 @@ glProjection::
 }
 
 
-void glProjection::
-        update(GLvector::T modelview_matrix[16],
-               GLvector::T projection_matrix[16],
-               int viewport_matrix[4])
-{
-    modelview_matrix_ = modelview_matrix;
-    projection_matrix_ = projection_matrix;
-    viewport_matrix_ = viewport_matrix;
-}
-
-
-tmatrix<4,GLvector::T>& glProjection::
-        modelview()
-{
-    return modelview_matrix_;
-}
-
-
-tmatrix<4,GLvector::T>& glProjection::
-        projection()
-{
-    return projection_matrix_;
-}
-
-
-tvector<4,int>& glProjection::
-        viewport()
-{
-    return viewport_matrix_;
-}
-
-
 GLvector glProjection::
         gluProject(GLvector obj, bool *r) const
 {
-    return ::gluProject(obj, modelview_matrix(), projection_matrix(), viewport_matrix_.v, r);
+    return ::gluProject(obj, modelview.v (), projection.v (), viewport.v, r);
 }
 
 
 GLvector glProjection::
         gluUnProject(GLvector win, bool *r) const
 {
-    return ::gluUnProject(win, modelview_matrix(), projection_matrix(), viewport_matrix_.v, r);
+    return ::gluUnProject(win, modelview.v (), projection.v (), viewport.v, r);
 }
 
 
@@ -62,12 +30,12 @@ void glProjection::
     // Find units per pixel at point 'p' with glUnProject
     GLvector screen = gluProject( p );
     GLvector screenX=screen, screenY=screen;
-    if (screen[0] > viewport_matrix_[0] + viewport_matrix_[2]/2)
+    if (screen[0] > viewport[0] + viewport[2]/2)
         screenX[0]--;
     else
         screenX[0]++;
 
-    if (screen[1] > viewport_matrix_[1] + viewport_matrix_[3]/2)
+    if (screen[1] > viewport[1] + viewport[3]/2)
         screenY[1]--;
     else
         screenY[1]++;
@@ -151,25 +119,15 @@ void glProjection::
         glViewport (0,0,100,100);
         glProjection g;
 
-        {
-            GLvector::T                     modelview_matrix_[16];
-            GLvector::T                     projection_matrix_[16];
-            int                             viewport_matrix_[4];
-            glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix_);
-            glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix_);
-            glGetIntegerv(GL_VIEWPORT, viewport_matrix_);
-            g.update(modelview_matrix_, projection_matrix_, viewport_matrix_);
-        }
-
-        tmatrix<4, GLvector::T> modelview = g.modelview_matrix ();
-        tmatrix<4, GLvector::T> projection = g.projection_matrix ();
-        tvector<4, int> viewport = g.viewport_matrix ();
+        glGetFloatv(GL_MODELVIEW_MATRIX, g.modelview.v ());
+        glGetFloatv(GL_PROJECTION_MATRIX, g.projection.v ());
+        glGetIntegerv(GL_VIEWPORT, g.viewport.v);
 
         double id4[]{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
         double vp[]{0,0,100,100};
 
-        EXCEPTION_ASSERT_EQUALS(modelview, (tmatrix<4, double>(id4)));
-        EXCEPTION_ASSERT_EQUALS(projection, (tmatrix<4, double>(id4)));
-        EXCEPTION_ASSERT_EQUALS(viewport, (tvector<4, double>(vp)));
+        EXCEPTION_ASSERT_EQUALS(g.modelview, (tmatrix<4, double>(id4)));
+        EXCEPTION_ASSERT_EQUALS(g.projection, (tmatrix<4, double>(id4)));
+        EXCEPTION_ASSERT_EQUALS(g.viewport, (tvector<4, double>(vp)));
     }
 }

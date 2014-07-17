@@ -64,10 +64,10 @@ void RenderBlock::Renderer::
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
 
-    GLmatrix modelview = gl_projection.modelview ();
+    GLmatrix modelview = gl_projection.modelview;
     modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
     modelview *= GLmatrix::scale (r.time(), 1, r.scale());
-    glUniformMatrix4fv (uniModelviewprojection, 1, false, (gl_projection.projection ()*modelview).v ());
+    glUniformMatrix4fv (uniModelviewprojection, 1, false, (gl_projection.projection*modelview).v ());
     glUniformMatrix4fv (uniModelview, 1, false, modelview.v ());
     glUniformMatrix4fv (uniNormalMatrix, 1, false, invert(modelview).transpose ().v ());
 

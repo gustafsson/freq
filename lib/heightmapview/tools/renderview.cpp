@@ -225,18 +225,18 @@ void RenderView::
     EXCEPTION_ASSERT_LESS(0 , rect.height ());
 
     glViewport( rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height() );
-    glGetIntegerv( GL_VIEWPORT,const_cast<int*>(gl_projection.viewport_matrix()) );
+    glGetIntegerv( GL_VIEWPORT, gl_projection.viewport.v);
     rect_y_ = rect.y();
 
-    gl_projection.modelview () = GLmatrix::identity ();
-    glhPerspectivef (gl_projection.projection ().v (), 45.0f, rect.width ()/(float)rect.height (), 0.01f, 1000.0f);
+    gl_projection.modelview = GLmatrix::identity ();
+    glhPerspectivef (gl_projection.projection.v (), 45.0f, rect.width ()/(float)rect.height (), 0.01f, 1000.0f);
 }
 
 
 QRect RenderView::
         rect()
 {
-    const int* viewport = gl_projection.viewport_matrix();
+    const int* viewport = gl_projection.viewport.v;
 
     return QRect(viewport[0],rect_y_,viewport[2],viewport[3]);
 }
@@ -367,7 +367,7 @@ void RenderView::
         Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
 
         float last_ysize = model->render_settings.last_ysize;
-        gl_projection.modelview () *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
+        gl_projection.modelview *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
         {
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
@@ -378,7 +378,7 @@ void RenderView::
 
             // apply rotation again, and make drawAxes use it
             glProjection drawAxes_rotation = gl_projection;
-            drawAxes_rotation.modelview () *= setRotationForAxes();
+            drawAxes_rotation.modelview *= setRotationForAxes();
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
             Heightmap::Render::RenderAxes(
@@ -399,12 +399,12 @@ void RenderView::
     int dead_workers = ci.dead_workers ();
 
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (gl_projection.projection ().v ());
+    glLoadMatrixf (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (gl_projection.modelview ().v ());
+    glLoadMatrixf (gl_projection.modelview.v ());
 
     if (isWorking || isRecording || dead_workers) {
-        Support::DrawWorking::drawWorking( gl_projection.viewport_matrix ()[2], gl_projection.viewport_matrix ()[3], n_workers, dead_workers );
+        Support::DrawWorking::drawWorking( gl_projection.viewport[2], gl_projection.viewport[3], n_workers, dead_workers );
     }
 
     {
@@ -515,18 +515,18 @@ void RenderView::
     if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
         redraw();
 
-    gl_projection.modelview () = GLmatrix::identity ();
-    gl_projection.modelview () *= GLmatrix::translate ( model->camera.p );
-    gl_projection.modelview () *= GLmatrix::rot ( model->camera.r[0], 1, 0, 0 );
-    gl_projection.modelview () *= GLmatrix::rot ( model->camera.effective_ry(), 0, 1, 0 );
-    gl_projection.modelview () *= GLmatrix::rot ( model->camera.r[2], 0, 0, 1 );
+    gl_projection.modelview = GLmatrix::identity ();
+    gl_projection.modelview *= GLmatrix::translate ( model->camera.p );
+    gl_projection.modelview *= GLmatrix::rot ( model->camera.r[0], 1, 0, 0 );
+    gl_projection.modelview *= GLmatrix::rot ( model->camera.effective_ry(), 0, 1, 0 );
+    gl_projection.modelview *= GLmatrix::rot ( model->camera.r[2], 0, 0, 1 );
 
     if (model->render_settings.left_handed_axes)
-        gl_projection.modelview () *= GLmatrix::scale (-1,1,1);
+        gl_projection.modelview *= GLmatrix::scale (-1,1,1);
     else
-        gl_projection.modelview () *= GLmatrix::rot (-90,0,1,0);
+        gl_projection.modelview *= GLmatrix::rot (-90,0,1,0);
 
-    gl_projection.modelview () *= GLmatrix::scale (model->camera.xscale, 1, model->camera.zscale);
+    gl_projection.modelview *= GLmatrix::scale (model->camera.xscale, 1, model->camera.zscale);
 
     float a = model->camera.effective_ry();
     float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
@@ -539,12 +539,12 @@ void RenderView::
     {
         float f = 1 - model->camera.r[0] / limit;
         if (dyx<middle || dyx2<middle)
-            gl_projection.modelview () *= GLmatrix::scale (1,1,1-0.99999*f);
+            gl_projection.modelview *= GLmatrix::scale (1,1,1-0.99999*f);
         if (dyz<middle || dyz2<middle)
-            gl_projection.modelview () *= GLmatrix::scale (1-0.99999*f,1,1);
+            gl_projection.modelview *= GLmatrix::scale (1-0.99999*f,1,1);
     }
 
-    gl_projection.modelview () *= GLmatrix::translate ( -model->camera.q );
+    gl_projection.modelview *= GLmatrix::translate ( -model->camera.q );
 
     model->camera.orthoview.TimeStep(.08);
 }

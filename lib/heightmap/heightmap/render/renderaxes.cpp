@@ -44,9 +44,9 @@ RenderAxes::
     }
 
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (gl_projection->projection_matrix ());
+    glLoadMatrixf (gl_projection->projection.v ());
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (gl_projection->modelview_matrix ());
+    glLoadMatrixf (gl_projection->modelview.v ());
 }
 
 
@@ -63,9 +63,8 @@ void RenderAxes::
     // 3 decide upon scale
     // 4 draw axis
     const glProjection* g = gl_projection;
-    const int* viewport_matrix = g->viewport_matrix ();
-    unsigned screen_width = viewport_matrix[2];
-    unsigned screen_height = viewport_matrix[3];
+    unsigned screen_width = g->viewport[2];
+    unsigned screen_height = g->viewport[3];
 
     float borderw = 12.5*1.1;
     float borderh = 12.5*1.1;
