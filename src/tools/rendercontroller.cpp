@@ -1061,9 +1061,7 @@ void RenderController::
     view->graphicsview = new GraphicsView(scene);
     view->graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
-    scene->tool_selector = view->graphicsview->toolSelector(0, project->commandInvoker());
-
-    this->tool_selector = scene->tool_selector;
+    this->tool_selector = view->graphicsview->toolSelector(0, project->commandInvoker());
 
     model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
 

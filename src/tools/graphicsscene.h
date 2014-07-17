@@ -22,8 +22,6 @@ public:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
-    Tools::Support::ToolSelector* tool_selector;
-
 signals:
 
 public slots:

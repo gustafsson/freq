@@ -19,7 +19,6 @@ namespace Tools {
 
 GraphicsScene::GraphicsScene(RenderView* renderview) :
     QGraphicsScene(renderview),
-    tool_selector(0),
     renderview_(renderview)
 {
     update_timer_ = new QTimer;
@@ -40,9 +39,6 @@ void GraphicsScene::
         drawBackground(QPainter *painter, const QRectF & rectf)
 {
     if (!painter->device())
-        return;
-
-    if (!tool_selector)
         return;
 
     double T = last_frame_.elapsedAndRestart();
