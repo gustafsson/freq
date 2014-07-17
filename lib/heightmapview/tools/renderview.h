@@ -18,17 +18,14 @@
 #include <QTransform>
 
 class GlFrameBuffer;
+// TODO remove
 class QGLWidget;
 
 namespace Heightmap { class Reference; }
 
 namespace Tools
 {
-    namespace Support {
     // TODO remove
-    class ToolSelector;
-    }
-
     class GraphicsView;
 
     class RenderView: public QObject
@@ -58,7 +55,6 @@ namespace Tools
 
         // graphicsview belongs in rendercontroller but this simplifies access from other classes
         GraphicsView* graphicsview;
-        Support::ToolSelector* tool_selector;
 
         glProjection gl_projection;
 

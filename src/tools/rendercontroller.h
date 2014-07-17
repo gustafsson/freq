@@ -3,6 +3,7 @@
 
 #include "tools/renderview.h"
 #include "sawe/project.h"
+#include "tools/support/toolselector.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -19,7 +20,7 @@ namespace Tools
 {
     namespace Widgets { class ValueSlider; }
 
-    class SaweDll RenderController: public QObject // This should not be a QWidget. User input is handled by tools.
+    class SaweDll RenderController: public QObject
     {
         Q_OBJECT
     public:
@@ -32,6 +33,8 @@ namespace Tools
         void                setBlockFilter(Heightmap::MergeChunkDesc::ptr mcdp, Tfr::TransformDesc::ptr transform_desc);
         void                stateChanged();
         void                emitAxisChanged();
+
+        Tools::Support::ToolSelector* tool_selector;
 
         Ui::ComboBoxAction* transform;
         Ui::ComboBoxAction* hz_scale;

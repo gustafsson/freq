@@ -33,11 +33,12 @@
 namespace Tools
 {
     SelectionController::
-            SelectionController( SelectionModel* model, RenderView* render_view, Sawe::Project* project )
+            SelectionController( SelectionModel* model, RenderView* render_view, Sawe::Project* project, Tools::Support::ToolSelector* tool_selector )
                 :
                 _model(model),
                 _render_view(render_view),
                 _project(project),
+                renderview_tool_selector(tool_selector),
                 //_worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
                 tool_selector_( new Support::ToolSelector(project->commandInvoker(), this)),
@@ -118,7 +119,7 @@ namespace Tools
 
         toolfactory();
 
-        _render_view->tool_selector->default_tool = this;
+        renderview_tool_selector->default_tool = this;
 
 #ifdef TARGET_hast
         ui->actionActionRemove_selection->setVisible(false);
@@ -277,9 +278,9 @@ namespace Tools
             setCurrentSelection( Signal::OperationDesc::ptr() );
 
         if (active)
-            _render_view->tool_selector->setCurrentToolCommand( this );
+            renderview_tool_selector->setCurrentToolCommand( this );
         else
-            _render_view->tool_selector->setCurrentTool( this, active );
+            renderview_tool_selector->setCurrentTool( this, active );
     }
 
 

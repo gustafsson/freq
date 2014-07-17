@@ -18,10 +18,11 @@ namespace Tools
 using Support::RenderViewInfo;
 
 CommentController::
-        CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project)
+        CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector)
             :   graphicsscene_(graphicsscene),
                 view_(view),
                 project_(project),
+                tool_selector_(tool_selector),
                 comment_(0)
 {
     setEnabled( false );
@@ -130,7 +131,7 @@ void CommentController::
 void CommentController::
         enableCommentAdder(bool active)
 {
-    view_->tool_selector->setCurrentTool( this, active );
+    tool_selector_->setCurrentTool( this, active );
     view_->graphicsview->setToolFocus( active );
 
     if (active)

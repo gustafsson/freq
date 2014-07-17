@@ -25,10 +25,11 @@ namespace Tools
 using Support::RenderViewInfo;
 
 NavigationController::
-        NavigationController(RenderView* view, Sawe::Project* project)
+        NavigationController(RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector)
             :
             _view(view),
             _project(project),
+            _tool_selector(tool_selector),
             zoom_only_(false)
 {
     connectGui();
@@ -48,7 +49,7 @@ void NavigationController::
         receiveToggleNavigation(bool active)
 {
     if (active || zoom_only_ == false)
-        _view->tool_selector->setCurrentTool( this, active );
+        _tool_selector->setCurrentTool( this, active );
     if (active)
         zoom_only_ = false;
 }
@@ -58,7 +59,7 @@ void NavigationController::
         receiveToggleZoom(bool active)
 {
     if (active || zoom_only_ == true)
-        _view->tool_selector->setCurrentTool( this, active );
+        _tool_selector->setCurrentTool( this, active );
     if (active)
         zoom_only_ = true;
 }
@@ -406,13 +407,13 @@ void NavigationController::
     one_action_at_a_time_->addActionItem( ui->actionActivateNavigation );
     one_action_at_a_time_->addActionItem( ui->actionZoom );
 
-    _view->tool_selector->default_tool = this;
+    _tool_selector->default_tool = this;
 
     QList<QKeySequence> shortcuts = ui->actionActivateNavigation->shortcuts();
     shortcuts.push_back( Qt::Key_Escape );
     ui->actionActivateNavigation->setShortcuts( shortcuts );
 
-    _view->tool_selector->setCurrentToolCommand( this );
+    _tool_selector->setCurrentToolCommand( this );
     ui->actionActivateNavigation->setChecked(true);
 
     bindKeyToSlot( main, "Up", this, SLOT(moveUp()) );

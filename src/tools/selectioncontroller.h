@@ -42,7 +42,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        SelectionController( SelectionModel* model, RenderView* render_view, Sawe::Project* project );
+        SelectionController( SelectionModel* model, RenderView* render_view, Sawe::Project* project, Tools::Support::ToolSelector* tool_selector );
         ~SelectionController();
 
 
@@ -91,6 +91,7 @@ namespace Tools
         SelectionModel* _model;
         RenderView* _render_view;
         Sawe::Project* _project;
+        Tools::Support::ToolSelector* renderview_tool_selector;
         //Signal::Worker* _worker;
 
         // GUI

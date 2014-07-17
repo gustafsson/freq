@@ -16,7 +16,7 @@ namespace Tools
     {
         Q_OBJECT
     public:
-        NavigationController(RenderView* view, Sawe::Project* project);
+        NavigationController(RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector);
         ~NavigationController();
 
     signals:
@@ -53,6 +53,7 @@ namespace Tools
         // and shares control of the renderview with rendercontoller
         RenderView* _view;
         Sawe::Project* _project;
+        Support::ToolSelector* _tool_selector;
 
         // GUI
         void connectGui();

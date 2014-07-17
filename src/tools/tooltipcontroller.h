@@ -21,7 +21,8 @@ namespace Tools
     public:
         TooltipController(RenderView *render_view,
                           CommentController* comments,
-                          Sawe::Project* project);
+                          Sawe::Project* project,
+                          Tools::Support::ToolSelector* tool_selector);
         ~TooltipController();
 
         virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* /*p*/ );
@@ -61,6 +62,7 @@ namespace Tools
         RenderView* render_view_;
         CommentController* comments_;
         Sawe::Project* project_;
+        Tools::Support::ToolSelector* tool_selector_;
 
         TooltipModel* current_model();
         QPointer<TooltipView> current_view_;

@@ -19,6 +19,7 @@ namespace Tools {
 
 GraphicsScene::GraphicsScene(RenderView* renderview) :
     QGraphicsScene(renderview),
+    tool_selector(0),
     renderview_(renderview)
 {
     update_timer_ = new QTimer;
@@ -36,9 +37,12 @@ GraphicsScene::~GraphicsScene()
 }
 
 void GraphicsScene::
-        drawBackground(QPainter *painter, const QRectF &)
+        drawBackground(QPainter *painter, const QRectF & rectf)
 {
     if (!painter->device())
+        return;
+
+    if (!tool_selector)
         return;
 
     double T = last_frame_.elapsedAndRestart();
@@ -71,7 +75,8 @@ void GraphicsScene::
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
-        QRect rect = renderview_->tool_selector->parentTool()->geometry();
+        QRect rect = QRectF(rectf.topLeft(), QSizeF(rectf.width ()-1, rectf.height ()-1)).toRect ();
+        // QRect rect = tool_selector->parentTool()->geometry();
         rect.setWidth (rect.width ()*dpr);
         rect.setHeight (rect.height ()*dpr);
         rect.setLeft (rect.left ()*dpr);

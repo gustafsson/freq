@@ -11,12 +11,13 @@
 namespace Tools {
 
 PlaybackMarkersController::
-        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view, Sawe::Project* project )
+        PlaybackMarkersController( PlaybackMarkersView* view, RenderView* render_view, Sawe::Project* project, Tools::Support::ToolSelector* tool_selector )
     :
     vicinity_( 10 ),
     render_view_(render_view),
     view_(view),
-    project_(project)
+    project_(project),
+    tool_selector_(tool_selector)
 {
     setupGui();
 
@@ -29,7 +30,7 @@ void PlaybackMarkersController::
         enableMarkerTool(bool active)
 {
     if (active)
-        render_view_->tool_selector->setCurrentTool( this, active );
+        tool_selector_->setCurrentTool( this, active );
 
     setMouseTracking(active);
 

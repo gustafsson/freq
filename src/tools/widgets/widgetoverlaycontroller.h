@@ -13,7 +13,12 @@ namespace Widgets {
 class WidgetOverlayController: public OverlayWidget
 {
 public:
-    WidgetOverlayController(QGraphicsScene* scene, RenderView* view, Tools::Commands::CommandInvoker* commandInvoker);
+    WidgetOverlayController(
+            QGraphicsScene* scene,
+            RenderView* view,
+            Tools::Commands::CommandInvoker* commandInvoker,
+            Tools::Support::ToolSelector* tool_selector);
+
     ~WidgetOverlayController();
 
     void enterEvent ( QEvent * );

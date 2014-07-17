@@ -30,12 +30,12 @@ void WorkerController::
     if (enabled)
     {
         connect( renderview_, SIGNAL(painting()), view_, SLOT(draw()) );
-        connect( timelineview_, SIGNAL(painting()), view_, SLOT(draw()) );
+        if (timelineview_) connect( timelineview_, SIGNAL(painting()), view_, SLOT(draw()) );
     }
     else
     {
         disconnect( renderview_, SIGNAL(painting()), view_, SLOT(draw()) );
-        disconnect( timelineview_, SIGNAL(painting()), view_, SLOT(draw()) );
+        if (timelineview_) disconnect( timelineview_, SIGNAL(painting()), view_, SLOT(draw()) );
     }
 }
 

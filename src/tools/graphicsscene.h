@@ -22,6 +22,8 @@ public:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
+    Tools::Support::ToolSelector* tool_selector;
+
 signals:
 
 public slots:
@@ -35,7 +37,6 @@ private:
     QPointer<QTimer> update_timer_;
     int              draw_more_ = 0;
     RenderView*      renderview_;
-
 };
 
 } // namespace Tools

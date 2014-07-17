@@ -91,16 +91,10 @@ ToolFactory::
 
     _timeline_view = new TimelineView(p, _render_view);
     _timeline_controller = new TimelineController(_timeline_view, p );
-
-
-//Use Signal::Processing namespace
-    _selection_controller = new SelectionController(&selection_model, _render_view, p );
-
+    _selection_controller = new SelectionController(&selection_model, _render_view, p, render_controller->tool_selector);
 
     //_navigation_controller = new NavigationController(_render_view);
 
-
-//Use Signal::Processing namespace
     playback_model.selection = &selection_model;
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
@@ -204,7 +198,7 @@ ToolFactory::
         _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
     if (Sawe::Configuration::feature("overlay_navigation"))
-        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view->graphicsview->scene(), _render_view, p->commandInvoker ()) ));
+        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view->graphicsview->scene(), _render_view, p->commandInvoker (), render_controller->tool_selector) ));
 
     _objects.push_back( QPointer<QObject>( new FilterController( p )));
 

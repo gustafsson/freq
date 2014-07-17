@@ -59,12 +59,14 @@ TooltipController::Actions::
 TooltipController::
         TooltipController(RenderView *render_view,
                           CommentController* comments,
-                          Sawe::Project* project)
+                          Sawe::Project* project,
+                          Tools::Support::ToolSelector* tool_selector)
             :
             ui(new Actions(this)),
             render_view_(render_view),
             comments_(comments),
             project_(project),
+            tool_selector_(tool_selector),
             current_view_(0)
 {
     setEnabled( false );
@@ -116,7 +118,7 @@ void TooltipController::
 
     if (value == 0)
     {
-        render_view_->tool_selector->setCurrentTool( this, value != 0 );
+        tool_selector_->setCurrentTool( this, value != 0 );
         setEnabled( value != 0 );
     }
 }
@@ -132,7 +134,7 @@ TooltipView* TooltipController::
 void TooltipController::
         receiveToggleInfoTool(bool active)
 {
-    render_view_->tool_selector->setCurrentTool( this, active );
+    tool_selector_->setCurrentTool( this, active );
 
     emitTooltipChanged();
 }
