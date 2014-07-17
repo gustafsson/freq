@@ -579,8 +579,8 @@ void CommentView::
     {
         z *= 0.5;
 
-        if (-1 > view->model->_pz)
-            z += -log(-view->model->_pz);
+        if (-1 > view->model->camera.p[2])
+            z += -log(-view->model->camera.p[2]);
 
         if (z < 1)
             z = 1;

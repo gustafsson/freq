@@ -11,6 +11,7 @@
 #include "sawe/toolmodel.h"
 #include "tfr/transform.h"
 #include "support/transformdescs.h"
+#include "support/rendercamera.h"
 #include "signal/processing/chain.h"
 #include "signal/processing/targetmarker.h"
 #include "support/renderoperation.h"
@@ -80,20 +81,12 @@ namespace Tools
 
         Heightmap::Render::RenderSettings render_settings;
         Heightmap::Render::RenderBlock::ptr render_block;
+        Tools::Support::RenderCamera camera;
 
         Sawe::Project* project() { return _project; }
 
-        // TODO remove position and use render_settings.camera instead
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
-
-        float _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
-        float _px, _py, _pz, // camera position relative focus point, i.e (0, 0, -6)
-            _rx, _ry, _rz; // rotation around focus point
-        float effective_ry(); // take orthoview into account
-        float xscale;
-        float zscale;
-        floatAni orthoview;
 
     private:
         friend class RenderView; // todo remove
@@ -111,6 +104,18 @@ namespace Tools
         RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
+            float _qx = camera.q[0],
+                  _qy = camera.q[1],
+                  _qz = camera.q[2];
+            float _px  = camera.p[0],
+                  _py = camera.p[1],
+                  _pz = camera.p[2],
+                _rx = camera.r[0],
+                _ry = camera.r[1],
+                _rz = camera.r[2];
+            float xscale = camera.xscale;
+            float zscale = camera.zscale;
+
             ar
                     & BOOST_SERIALIZATION_NVP(_qx)
                     & BOOST_SERIALIZATION_NVP(_qy)
@@ -127,7 +132,19 @@ namespace Tools
                     & boost::serialization::make_nvp("y_scale", render_settings.y_scale);
 
             if (typename Archive::is_loading())
-                orthoview.reset( _rx >= 90 );
+                camera.orthoview.reset( _rx >= 90 );
+
+            camera.q[0] = _qx;
+            camera.q[1] = _qy;
+            camera.q[2] = _qz;
+            camera.p[0] = _px;
+            camera.p[1] = _py;
+            camera.p[2] = _pz;
+            camera.r[0] = _rx;
+            camera.r[1] = _ry;
+            camera.r[2] = _rz;
+            camera.xscale = xscale;
+            camera.zscale = zscale;
 
             if (version <= 0)
                 ar & boost::serialization::make_nvp("draw_height_lines", render_settings.draw_contour_plot);

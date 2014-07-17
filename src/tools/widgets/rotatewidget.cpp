@@ -66,9 +66,9 @@ void RotateWidget::
 {
     if (!mouseMoved_)
     {
-        float rx = view_->model->_rx;
+        float rx = view_->model->camera.r[0];
         bool is2D = rx >= 90;
-//        float rx = view_->model->_rx;
+//        float rx = view_->model->camera.r[0];
         float tx3D = 45;
         float tx2D = 91;
         float d = is2D ? tx3D - rx : tx2D - rx;
@@ -76,7 +76,7 @@ void RotateWidget::
         const float rs = 0.2;
         Tools::Commands::pCommand cmd( new Tools::Commands::RotateCameraCommand(view_->model, 0, d/rs ));
         view_->model->project()->commandInvoker()->invokeCommand( cmd );
-        view_->model->orthoview.TimeStep(1);
+        view_->model->camera.orthoview.TimeStep(1);
     }
 
     leaveEvent(event);

@@ -79,7 +79,7 @@ void CommentController::
     view->model()->pos = p;
 
     // keep in sync with CommentView::updatePosition()
-    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->_pz);
+    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera.p[2]);
 
     view->setHtml( text );
     view->show();
@@ -91,8 +91,8 @@ CommentView* CommentController::
 {
     CommentModel* model = new CommentModel();
 
-    model->pos.time = -FLT_MAX;//view_->model->_qx;
-    //model->pos.scale = view_->model->_qz;
+    model->pos.time = -FLT_MAX;//view_->model->camera.q[0];
+    //model->pos.scale = view_->model->camera.q[2];
 
     // addModel calls createView
     view_->model->project()->tools().addModel( model );
@@ -201,7 +201,7 @@ void CommentController::
         comment_->model()->screen_pos[0] = UpdateModelPositionFromScreen;
 
         // keep in sync with CommentView::updatePosition()
-        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->_pz);
+        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera.p[2]);
 
         comment_->setEditFocus(true);
         comment_ = 0;

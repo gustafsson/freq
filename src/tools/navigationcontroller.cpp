@@ -65,7 +65,7 @@ void NavigationController::
 void NavigationController::
         moveUp()
 {
-    moveCamera(0, 0.1f/_view->model->zscale);
+    moveCamera(0, 0.1f/_view->model->camera.zscale);
     _view->redraw();
 }
 
@@ -73,7 +73,7 @@ void NavigationController::
 void NavigationController::
         moveDown()
 {
-    moveCamera(0, -0.1f/_view->model->zscale);
+    moveCamera(0, -0.1f/_view->model->camera.zscale);
     _view->redraw();
 }
 
@@ -81,7 +81,7 @@ void NavigationController::
 void NavigationController::
         moveLeft()
 {
-    moveCamera(-0.1f/_view->model->xscale, 0);
+    moveCamera(-0.1f/_view->model->camera.xscale, 0);
     _view->redraw();
 }
 
@@ -89,7 +89,7 @@ void NavigationController::
 void NavigationController::
         moveRight()
 {
-    moveCamera(0.1f/_view->model->xscale, 0);
+    moveCamera(0.1f/_view->model->camera.xscale, 0);
     _view->redraw();
 }
 
@@ -255,8 +255,8 @@ void NavigationController::
             if (success1 && success2)
             {
                 if (e->modifiers().testFlag(Qt::ControlModifier))
-                    zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
-                                4*(current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
+                    zoomCamera( 4*(current.time - last.time)*_view->model->camera.xscale / _view->model->camera.p[2],
+                                4*(current.scale - last.scale)*_view->model->camera.zscale / _view->model->camera.p[2],
                                 0 );
                 else
                     moveCamera( last.time - current.time, last.scale - current.scale);
@@ -329,8 +329,8 @@ void NavigationController::
         Heightmap::Position current = r.getPlanePos( e->localPos (), &success2);
         if (success1 && success2)
         {
-            zoomCamera( 4*(current.time - last.time)*_view->model->xscale/_view->model->_pz,
-                        4*(current.scale - last.scale)*_view->model->zscale/_view->model->_pz,
+            zoomCamera( 4*(current.time - last.time)*_view->model->camera.xscale/_view->model->camera.p[2],
+                        4*(current.scale - last.scale)*_view->model->camera.zscale/_view->model->camera.p[2],
                         0 );
         }
     }

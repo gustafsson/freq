@@ -160,7 +160,7 @@ QPointF RenderViewInfo::
 {
     GLdouble objY = 0;
     float last_ysize = model->render_settings.last_ysize;
-    if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
+    if ((1 != model->camera.orthoview || model->camera.r[0]!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->render_settings.y_scale * last_ysize;
 
     GLvector win = view->gl_projection.gluProject (GLvector(pos.time, objY, pos.scale));
@@ -179,9 +179,9 @@ QPointF RenderViewInfo::
         p[2] = pos.scale;
 
         GLvector d = p-projectionPlane;
-        projectionNormal[0] *= model->xscale;
+        projectionNormal[0] *= model->camera.xscale;
         projectionNormal[2] *= last_ysize;
-        d[0] *= model->xscale;
+        d[0] *= model->camera.xscale;
         d[2] *= last_ysize;
 
         projectionNormal = projectionNormal.Normalized();
@@ -206,7 +206,7 @@ QPointF RenderViewInfo::
 Heightmap::Position RenderViewInfo::
         getHeightmapPos( QPointF widget_pos, bool useRenderViewContext )
 {
-    if (1 == model->orthoview)
+    if (1 == model->camera.orthoview)
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderViewInfo::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
@@ -256,8 +256,8 @@ Heightmap::Position RenderViewInfo::
         q.scale = objZ1 + s * (objZ2-objZ1);
 
         Heightmap::Position d(
-                (q.time-p.time)*model->xscale,
-                (q.scale-p.scale)*model->zscale);
+                (q.time-p.time)*model->camera.xscale,
+                (q.scale-p.scale)*model->camera.zscale);
 
         QPointF r = getWidgetPos( q, 0 );
         d.time = r.x() - widget_pos.x();
@@ -331,9 +331,9 @@ Heightmap::Position RenderViewInfo::
         if( s < 0)
             if (success) *success=false;
 
-        float L = sqrt((objX1-objX2)*(objX1-objX2)*model->xscale*model->xscale
+        float L = sqrt((objX1-objX2)*(objX1-objX2)*model->camera.xscale*model->camera.xscale
                        +(objY1-objY2)*(objY1-objY2)
-                       +(objZ1-objZ2)*(objZ1-objZ2)*model->zscale*model->zscale);
+                       +(objZ1-objZ2)*(objZ1-objZ2)*model->camera.zscale*model->camera.zscale);
         if (objY1-objY2 < sin(minAngle *(M_PI/180)) * L )
             if (success) *success=false;
     }

@@ -9,7 +9,6 @@ RenderSettings::RenderSettings()
         draw_t(true),
         draw_cursor_marker(false),
         draw_axis_at0(0),
-        camera(0,0,0),
         draw_contour_plot(false),
         color_mode( ColorMode_Rainbow ),
         fixed_color( 1,0,0,1 ),

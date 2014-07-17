@@ -82,8 +82,8 @@ RenderView::
             rect_y_(0)
 {
     // Validate rotation and set orthoview accordingly
-    if (model->_rx<0) model->_rx=0;
-    if (model->_rx>=90) { model->_rx=90; model->orthoview.reset(1); } else model->orthoview.reset(0);
+    if (model->camera.r[0]<0) model->camera.r[0]=0;
+    if (model->camera.r[0]>=90) { model->camera.r[0]=90; model->camera.orthoview.reset(1); } else model->camera.orthoview.reset(0);
 
     connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
@@ -408,7 +408,7 @@ void RenderView::
         if (step_with_new_extent)
             step_with_new_extent.write ()->deprecateCache(Signal::Interval::Interval_ALL);
 
-        Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
+        Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
 
         float last_ysize = model->render_settings.last_ysize;
         glScalef(1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
@@ -530,49 +530,49 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
-    if (model->orthoview != 1 && model->orthoview != 0)
+    if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
         redraw();
 
     glLoadIdentity();
-    glTranslated( model->_px, model->_py, model->_pz );
+    glTranslatef( model->camera.p[0], model->camera.p[1], model->camera.p[2] );
 
-    glRotated( model->_rx, 1, 0, 0 );
-    glRotated( model->effective_ry(), 0, 1, 0 );
-    glRotated( model->_rz, 0, 0, 1 );
+    glRotated( model->camera.r[0], 1, 0, 0 );
+    glRotated( model->camera.effective_ry(), 0, 1, 0 );
+    glRotated( model->camera.r[2], 0, 0, 1 );
 
     if (model->render_settings.left_handed_axes)
         glScaled(-1, 1, 1);
     else
         glRotated(-90,0,1,0);
 
-    glScaled(model->xscale, 1, model->zscale);
+    glScaled(model->camera.xscale, 1, model->camera.zscale);
 
-    float a = model->effective_ry();
+    float a = model->camera.effective_ry();
     float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
     float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
     float dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
     float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
     float limit = 5, middle=45;
-    if (model->_rx<limit)
+    if (model->camera.r[0] < limit)
     {
-        float f = 1 - model->_rx/limit;
+        float f = 1 - model->camera.r[0] / limit;
         if (dyx<middle || dyx2<middle)
             glScalef(1,1,1-0.99999*f);
         if (dyz<middle || dyz2<middle)
             glScalef(1-0.99999*f,1,1);
     }
 
-    glTranslated( -model->_qx, -model->_qy, -model->_qz );
+    glTranslated( -model->camera.q[0], -model->camera.q[1], -model->camera.q[2] );
 
-    model->orthoview.TimeStep(.08);
+    model->camera.orthoview.TimeStep(.08);
 }
 
 
 void RenderView::
         setRotationForAxes(bool setAxisVisibility)
 {
-    float a = model->effective_ry();
+    float a = model->camera.effective_ry();
     float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
     float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
     float dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
@@ -580,9 +580,9 @@ void RenderView::
 
     float limit = 5, middle=45;
     model->render_settings.draw_axis_at0 = 0;
-    if (model->_rx<limit)
+    if (model->camera.r[0] < limit)
     {
-        float f = 1 - model->_rx/limit;
+        float f = 1 - model->camera.r[0] / limit;
         if (dyx<middle)
             glRotatef(f*-90,1-dyx/middle,0,0);
         if (dyx2<middle)

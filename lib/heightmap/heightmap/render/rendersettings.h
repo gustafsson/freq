@@ -28,7 +28,6 @@ public:
     bool draw_t;
     bool draw_cursor_marker;
     int draw_axis_at0;
-    GLvector camera, cameraRotation;
     GLvector cursor;
 
     bool draw_contour_plot;

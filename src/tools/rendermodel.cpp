@@ -30,13 +30,6 @@ private:
 RenderModel::
         RenderModel(Sawe::Project* p)
         :
-        //renderSignalTarget(new Signal::Target(&p->layers, "Heightmap", true, true)),
-        _qx(0), _qy(0), _qz(0),
-        _px(0), _py(0), _pz(0),
-        _rx(0), _ry(0), _rz(0),
-        xscale(0),
-        zscale(0),
-        orthoview(1),
         _project(p),
         transform_descs_(new Support::TransformDescs),
         stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
@@ -95,27 +88,21 @@ void RenderModel::
 void RenderModel::
         resetCameraSettings()
 {
-    _qx = 0;
-    _qy = 0;
-    _qz = .5f;
-    _px = 0;
-    _py = 0;
-    _pz = -10.f;
-    _rx = 91;
-    _ry = 180;
-    _rz = 0;
-    xscale = -_pz*0.1f;
-    zscale = -_pz*0.75f;
+    camera.q = GLvector(0,0,.5f);
+    camera.p = GLvector(0,0,-10.f);
+    camera.r = GLvector(91,180,0);
+    camera.xscale = -camera.p[2]*0.1f;
+    camera.zscale = -camera.p[2]*0.75f;
 
 #ifdef TARGET_hast
-    _pz = -6;
+    camera.p[2] = -6;
     xscale = 0.1f;
 
     float L = _project->worker.length();
     if (L)
     {
         xscale = 14/L;
-        _qx = 0.5*L;
+        camera.q[0] = 0.5*L;
     }
 #endif
 }
@@ -133,17 +120,11 @@ void RenderModel::
         setTestCamera()
 {
     render_settings.y_scale = 0.01f;
-    _qx = 63.4565;
-    _qy = 0;
-    _qz = 0.37;
-    _px = 0;
-    _py = 0;
-    _pz = -10;
-    _rx = 46.2;
-    _ry = 253.186;
-    _rz = 0;
+    camera.q = GLvector(63.4565,0,0.37);
+    camera.p = GLvector(0,0,-10);
+    camera.r = GLvector(46.2, 253.186, 0);
 
-    orthoview.reset( _rx >= 90 );
+    camera.orthoview.reset( camera.r[0] >= 90 );
 }
 
 
@@ -316,28 +297,24 @@ void RenderModel::
         setPosition( Heightmap::Position pos )
 {
     float l = tfr_mapping()->length();
-    _qx = pos.time;
-    if (_qx<0) _qx=0;
-    if (_qx>l) _qx=l;
+    float x = pos.time;
+    if (x<0) x=0;
+    if (x>l) x=l;
 
-    _qz = pos.scale;
-    if (_qz<0) _qz=0;
-    if (_qz>1) _qz=1;
+    float z = pos.scale;
+    if (z<0) z=0;
+
+    if (z>1) z=1;
+
+    camera.q[0] = x;
+    camera.q[2] = z;
 }
 
 
 Heightmap::Position RenderModel::
         position() const
 {
-    return Heightmap::Position(_qx, _qz);
+    return Heightmap::Position(camera.q[0], camera.q[2]);
 }
-
-
-float RenderModel::
-        effective_ry()
-{
-    return fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview;
-}
-
 
 } // namespace Tools

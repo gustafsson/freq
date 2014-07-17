@@ -43,7 +43,7 @@ void RecordedCommand::
         iinvalidator->deprecateCache(recordedData->getInterval());
 
         if (0<=prev_qx)
-            model->_qx = prev_qx;
+            model->camera.q[0] = prev_qx;
     }
 }
 
@@ -52,9 +52,9 @@ void RecordedCommand::
         undo()
 {
     recording.raw ()->data ()->samples.invalidate_samples (recordedData->getInterval());
-    prev_qx = model->_qx;
+    prev_qx = model->camera.q[0];
     iinvalidator->deprecateCache (recordedData->getInterval());
-    if (prev_qx == model->_qx)
+    if (prev_qx == model->camera.q[0])
         prev_qx = -1;
 
     undone = true;

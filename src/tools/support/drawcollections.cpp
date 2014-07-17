@@ -33,10 +33,6 @@ void DrawCollections::
         channel_colors = Support::ChannelColors::compute(N);
     TIME_PAINTGL_DETAILS ComputationCheckError();
 
-    // Draw the first channel without a frame buffer
-    model->render_settings.camera = GLvector(model->_qx, model->_qy, model->_qz);
-    model->render_settings.cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
-
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
     GLint current_viewport[4];
@@ -53,7 +49,7 @@ void DrawCollections::
 
     const Heightmap::TfrMapping::Collections collections = model->collections ();
 
-    // draw the first without fbo
+    // Draw the first channel without a frame buffer
     for (; i < N; ++i)
     {
         if (!collections[i].read ()->isVisible())
@@ -156,7 +152,7 @@ void DrawCollections::
 {
     model->render_settings.fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
-    if (0 != model->_rx)
+    if (0 != model->camera.r[0])
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     else
         glEnable( GL_DEPTH_TEST );

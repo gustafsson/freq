@@ -28,13 +28,14 @@ void MoveCameraCommand::
 {
     float l = model->project()->length();
 
-    model->_qx += dt;
-    model->_qz += ds;
+    GLvector& q = model->camera.q;
+    q[0] += dt;
+    q[2] += ds;
 
-    if (model->_qx<0) model->_qx=0;
-    if (model->_qz<0) model->_qz=0;
-    if (model->_qz>1) model->_qz=1;
-    if (model->_qx>l) model->_qx=l;
+    if (q[0]<0) q[0]=0;
+    if (q[2]<0) q[2]=0;
+    if (q[2]>1) q[2]=1;
+    if (q[0]>l) q[0]=l;
 }
 
 

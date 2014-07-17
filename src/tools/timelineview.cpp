@@ -356,7 +356,7 @@ void TimelineView::
 {
     // Make sure that the camera focus point is within the timeline
     {
-        float t = _render_view->model->render_settings.camera[0];
+        float t = _render_view->model->camera.q[0];
         float new_t = -1;
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
@@ -377,7 +377,7 @@ void TimelineView::
 
             if (0<=new_t)
             {
-                float f = _render_view->model->render_settings.camera[2];
+                float f = _render_view->model->camera.q[2];
                 _render_view->model->setPosition( Heightmap::Position( new_t, f) );
                 redraw ();
             }
