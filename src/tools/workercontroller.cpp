@@ -1,5 +1,5 @@
 #include "workercontroller.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "timelineview.h"
 #include "sawe/project.h"
 #include "ui/mainwindow.h"

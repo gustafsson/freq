@@ -3,7 +3,7 @@
 // Tools
 #include "navigationcontroller.h"
 #include "rendercontroller.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "timelinecontroller.h"
 #include "timelineview.h"
 #include "playbackcontroller.h"

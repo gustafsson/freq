@@ -1,7 +1,7 @@
 #include "recordcontroller.h"
 
 #include "recordmodel.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "ui_mainwindow.h"
 
 #include "sawe/project.h"

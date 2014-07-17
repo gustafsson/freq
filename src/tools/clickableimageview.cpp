@@ -1,5 +1,7 @@
 #include "clickableimageview.h"
 
+#include "tools/renderview.h"
+
 #include <QPainter>
 #include <QImage>
 #include <QBitmap>
@@ -9,7 +11,6 @@
 #include <QGraphicsProxyWidget>
 #include <QGraphicsScene>
 #include <QBoxLayout>
-#include "renderview.h"
 #include <QGLWidget>
 
 namespace Tools {

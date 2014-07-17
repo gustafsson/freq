@@ -1,8 +1,8 @@
 #include "fantrackerview.h"
 #include "ui/mainwindow.h"
-//#include "renderview.h"
-#include "support/paintline.h"
-#include "support/channelcolors.h"
+
+#include "tools/support/paintline.h"
+#include "tools/support/channelcolors.h"
 
 namespace Tools {
 

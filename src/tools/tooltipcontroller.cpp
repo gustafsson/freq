@@ -1,7 +1,7 @@
 #include "tooltipcontroller.h"
 #include "tooltipview.h"
 
-#include "support/renderviewinfo.h"
+#include "tools/support/renderviewinfo.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tools/support/toolbar.h"

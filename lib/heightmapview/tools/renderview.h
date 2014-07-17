@@ -4,11 +4,8 @@
 #pragma once
 
 #include "rendermodel.h"
-#include "support/toolselector.h"
-#include "commentview.h"
-#include "sawe/toolmainloop.h"
-#include "tools/commands/viewstate.h"
-#include "sawe/sawedll.h"
+//#include "tools/commands/viewstate.h"
+#include "glprojection.h"
 
 // gpumisc
 #include "timer.h"
@@ -27,9 +24,14 @@ namespace Heightmap { class Reference; }
 
 namespace Tools
 {
+    namespace Support {
+    // TODO remove
+    class ToolSelector;
+    }
+
     class GraphicsView;
 
-    class SaweDll RenderView: public QObject
+    class RenderView: public QObject
     {
         Q_OBJECT
     public:

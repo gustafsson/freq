@@ -1,7 +1,7 @@
 #ifndef RENDERCONTROLLER_H
 #define RENDERCONTROLLER_H
 
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "sawe/project.h"
 
 #include <QWidget>

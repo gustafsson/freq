@@ -5,6 +5,7 @@
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
 #include "tools/support/drawcollections.h"
+#include "tools/support/toolselector.h"
 // Sonic AWE lib
 #include "sawe/application.h"
 #include "heightmap/render/renderer.h"

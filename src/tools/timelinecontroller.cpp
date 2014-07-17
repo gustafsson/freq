@@ -7,7 +7,7 @@
 // Sonic AWE
 #include "ui/mainwindow.h"
 #include "timelineview.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "sawe/configuration.h"
 
 // Qt

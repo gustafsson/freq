@@ -1,5 +1,7 @@
 #include "channelcolors.h"
 
+#include <QColor>
+
 namespace Tools {
 namespace Support {
 

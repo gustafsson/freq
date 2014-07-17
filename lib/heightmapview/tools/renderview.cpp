@@ -4,26 +4,27 @@
 #include "renderview.h"
 
 // TODO cleanup
-#include "ui/mainwindow.h"
+//#include "ui/mainwindow.h"
 
 // Sonic AWE
-#include "adapters/recorder.h"
+//#include "adapters/recorder.h"
 #include "heightmap/block.h"
 #include "heightmap/render/renderaxes.h"
 #include "heightmap/collection.h"
-#include "sawe/application.h"
-#include "sawe/project.h"
-#include "sawe/configuration.h"
-#include "ui_mainwindow.h"
-#include "support/drawwatermark.h"
+#include "heightmap/uncaughtexception.h"
+//#include "sawe/application.h"
+//#include "sawe/project.h"
+//#include "sawe/configuration.h"
+//#include "ui_mainwindow.h"
+//#include "support/drawwatermark.h"
 #include "support/drawworking.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
-#include "toolfactory.h"
-#include "tools/recordmodel.h"
-#include "tools/support/heightmapprocessingpublisher.h"
+//#include "toolfactory.h"
+//#include "tools/recordmodel.h"
+//#include "tools/support/heightmapprocessingpublisher.h"
+//#include "tools/applicationerrorlogcontroller.h"
 #include "tools/support/chaininfo.h"
-#include "tools/applicationerrorlogcontroller.h"
 #include "signal/processing/workers.h"
 #include "tools/support/renderviewinfo.h"
 #include "tools/support/drawcollections.h"
@@ -85,7 +86,6 @@ RenderView::
     if (model->camera.r[0]<0) model->camera.r[0]=0;
     if (model->camera.r[0]>=90) { model->camera.r[0]=90; model->camera.orthoview.reset(1); } else model->camera.orthoview.reset(0);
 
-    connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), SLOT(clearCaches()) );
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
 //    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(redraw()));
 }
@@ -464,7 +464,7 @@ void RenderView::
     }
 
     } catch (...) {
-        Tools::ApplicationErrorLogController::registerException (boost::current_exception ());
+        Heightmap::UncaughtException::handle_exception(boost::current_exception ());
     }
 
 

@@ -3,6 +3,7 @@
 
 #include "heightmap/position.h"
 #include "heightmap/reference.h"
+#include "glprojection.h"
 
 #include <QPointF>
 

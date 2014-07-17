@@ -1,6 +1,6 @@
 #include "transforminfoform.h"
 #include "ui_transforminfoform.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"

@@ -1,7 +1,7 @@
 #include "playbackview.h"
 
 #include "playbackmodel.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "selectionmodel.h"
 #include "adapters/playback.h"
 #include "filters/ellipse.h"

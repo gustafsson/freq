@@ -1,7 +1,7 @@
 #ifndef TOOLS_SUPPORT_RENDERVIEWUPDATER_H
 #define TOOLS_SUPPORT_RENDERVIEWUPDATER_H
 
-#include "renderoperation.h"
+#include "tools/support/renderoperation.h"
 
 #include <QObject>
 

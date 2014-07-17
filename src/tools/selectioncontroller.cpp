@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 
 // Sonic AWE
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"

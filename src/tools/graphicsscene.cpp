@@ -1,6 +1,7 @@
 #include "graphicsscene.h"
 #include "glPushContext.h"
 #include "GlException.h"
+#include "tools/support/toolselector.h"
 
 #include <QTimer>
 #include <QGraphicsSceneMouseEvent>

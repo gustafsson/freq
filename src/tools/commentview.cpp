@@ -1,7 +1,7 @@
 #include "commentview.h"
 #include "ui_commentview.h"
 
-#include "support/renderviewinfo.h"
+#include "tools/support/renderviewinfo.h"
 #include "ui/mousecontrol.h"
 
 #include "sawe/project.h"

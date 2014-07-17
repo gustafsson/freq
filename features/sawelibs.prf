@@ -12,6 +12,7 @@ INCLUDEPATH += \
     $$SAWEROOT/lib/tfr \
     $$SAWEROOT/lib/heightmap \
     $$SAWEROOT/lib/tfrheightmap \
+    $$SAWEROOT/lib/heightmapview \
     $$SAWEROOT/src \
 
 unix:!macx {
@@ -38,6 +39,7 @@ LIBS += \
     -L$$SAWEROOT/lib/tfr -ltfr \
     -L$$SAWEROOT/lib/heightmap -lheightmap \
     -L$$SAWEROOT/lib/tfrheightmap -ltfrheightmap \
+    -L$$SAWEROOT/lib/heightmapview -lheightmapview \
 
 QMAKE_LFLAGS += -Wl,-rpath=\'\$\${ORIGIN}\'
 }
@@ -59,6 +61,7 @@ LIBS += -lsndfile \
     -L$$SAWEROOT/lib/tfr -ltfr \
     -L$$SAWEROOT/lib/heightmap -lheightmap \
     -L$$SAWEROOT/lib/tfrheightmap -ltfrheightmap \
+    -L$$SAWEROOT/lib/heightmapview -lheightmapview \
 
 # macports
 exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/

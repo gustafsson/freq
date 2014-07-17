@@ -790,6 +790,8 @@ void RenderController::
 
     connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
     connect( project->commandInvoker(), SIGNAL(projectChanged(const Command*)), view, SLOT(redraw()));
+    connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), view, SLOT(clearCaches()) );
+    view->model->render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
 
 
     // ComboBoxAction* color

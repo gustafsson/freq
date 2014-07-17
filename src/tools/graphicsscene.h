@@ -3,7 +3,7 @@
 
 #include <QGraphicsScene>
 #include "timer.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 
 namespace Tools {
 

@@ -18,6 +18,7 @@
 
 // gpumisc
 #include "TAni.h"
+#include "tasktimer.h"
 
 // boost
 #include <boost/serialization/nvp.hpp>

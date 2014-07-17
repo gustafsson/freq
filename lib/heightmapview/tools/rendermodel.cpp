@@ -1,6 +1,4 @@
 #include "rendermodel.h"
-#include "sawe/project.h"
-#include "sawe/configuration.h"
 
 #include "heightmap/collection.h"
 #include "heightmap/render/renderer.h"
@@ -37,7 +35,6 @@ RenderModel::
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
-    render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
     render_block.reset( new Heightmap::Render::RenderBlock(&render_settings));
 
     resetCameraSettings();

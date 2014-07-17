@@ -1,9 +1,12 @@
 #include "drawcollections.h"
+
 #include "GlException.h"
-#include "channelcolors.h"
 #include "computationkernel.h"
 #include "glPushContext.h"
+#include "tasktimer.h"
 
+#include "channelcolors.h"
+#include "tools/rendermodel.h"
 #include "heightmap/render/renderer.h"
 
 //#define TIME_PAINTGL_DRAW

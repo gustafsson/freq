@@ -7,7 +7,8 @@
 #include "tools/commands/movecameracommand.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "tools/commands/rotatecameracommand.h"
-#include "support/renderviewinfo.h"
+#include "tools/support/renderviewinfo.h"
+#include "tools/support/toolselector.h"
 
 // Qt
 #include <QMouseEvent>

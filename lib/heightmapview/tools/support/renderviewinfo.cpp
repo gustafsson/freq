@@ -4,6 +4,8 @@
 #include "gluproject_ios.h"
 #include "heightmap/render/renderinfo.h"
 #include "heightmap/render/renderset.h"
+#include "tools/renderview.h"
+#include "heightmap/collection.h"
 
 namespace Tools {
 namespace Support {

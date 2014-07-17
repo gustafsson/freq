@@ -6,7 +6,7 @@
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
 #include "graphicsview.h"
-#include "support/renderviewinfo.h"
+#include "tools/support/renderviewinfo.h"
 
 // Qt
 #include <QGraphicsProxyWidget>

@@ -6,10 +6,10 @@ namespace Sawe {
 }
 
 // TODO remove
-#include "rendermodel.h"
+#include "tools/rendermodel.h"
+#include "tools/renderview.h"
 #include "selectionmodel.h"
 #include "playbackmodel.h"
-#include "renderview.h"
 #include "sawe/toolmodel.h"
 #include "adapters/recorder.h"
 

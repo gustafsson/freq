@@ -1,5 +1,7 @@
 #include "widgetoverlaycontroller.h"
 
+#include "tools/support/toolselector.h"
+
 // gpumisc
 #include "tasktimer.h"
 #include "demangle.h"
