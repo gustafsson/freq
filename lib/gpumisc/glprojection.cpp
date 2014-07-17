@@ -21,6 +21,27 @@ void glProjection::
 }
 
 
+tmatrix<4,GLvector::T>& glProjection::
+        modelview()
+{
+    return modelview_matrix_;
+}
+
+
+tmatrix<4,GLvector::T>& glProjection::
+        projection()
+{
+    return projection_matrix_;
+}
+
+
+tvector<4,int>& glProjection::
+        viewport()
+{
+    return viewport_matrix_;
+}
+
+
 GLvector glProjection::
         gluProject(GLvector obj, bool *r) const
 {

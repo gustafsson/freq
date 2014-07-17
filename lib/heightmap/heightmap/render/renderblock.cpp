@@ -31,12 +31,14 @@ namespace Heightmap {
 namespace Render {
 
 
-RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size)
+RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection)
     :
       vbo_size(render_block->_vbo_size),
-      render_settings(*render_block->render_settings)
+      render_settings(*render_block->render_settings),
+      gl_projection(gl_projection)
 {
     render_block->beginVboRendering(block_size);
+    uniModelviewprojection = glGetUniformLocation (render_block->_shader_prog, "ModelViewProjectionMatrix");
 }
 
 
@@ -62,6 +64,11 @@ void RenderBlock::Renderer::
 
     glTranslatef(r.a.time, 0, r.a.scale);
     glScalef(r.time(), 1, r.scale());
+
+    GLmatrix modelview = gl_projection.modelview ();
+    modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
+    modelview *= GLmatrix::scale (r.time(), 1, r.scale());
+    glUniformMatrix4fv (uniModelviewprojection, 1, false, (gl_projection.projection ()*modelview).v ());
 
     draw( block->texture ()->getOpenGlTextureId () );
 

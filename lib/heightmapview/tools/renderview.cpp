@@ -350,19 +350,16 @@ void RenderView::
 
         setupCamera();
 
-        GLvector::T modelview_matrix[16], projection_matrix[16];
-        int viewport_matrix[4];
-        glGetFloatv(GL_PROJECTION_MATRIX, projection_matrix);
-        glGetIntegerv(GL_VIEWPORT, viewport_matrix);
-        glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-        gl_projection.update (modelview_matrix, projection_matrix, viewport_matrix);
+        glGetIntegerv(GL_VIEWPORT, gl_projection.viewport ().v);
+        glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection ().v ());
+//        glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview ().v ());
 
         // drawAxes uses its own rotation
-        glPushMatrixContext ctx(GL_MODELVIEW);
-        setRotationForAxes(false);
-        glGetFloatv(GL_MODELVIEW_MATRIX, modelview_matrix);
-        drawAxes_rotation.update (modelview_matrix, projection_matrix, viewport_matrix);
+//        glPushMatrixContext ctx(GL_MODELVIEW);
+        drawAxes_rotation = gl_projection;
+        drawAxes_rotation.modelview () *= setRotationForAxes(false);
     }
+    glLoadMatrixf(gl_projection.modelview_matrix ());
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
@@ -395,6 +392,7 @@ void RenderView::
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
+            glLoadMatrixf(drawAxes_rotation.modelview_matrix ());
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
             Heightmap::Render::RenderAxes(
@@ -499,25 +497,45 @@ void RenderView::
 }
 
 
+#define PRINTMATRIX(M) printMatrix(M, #M)
+
+template<int rows, typename t, int cols>
+void printMatrix(tmatrix<rows,t,cols> const& M, const char* label)
+{
+    if (!label) label = "matrix";
+    TaskInfo ti("%s", label);
+
+    std::string ss;
+    for(int r=0; r<rows; r++)
+    {
+        std::string row;
+        for(int c=0; c<cols; c++)
+            row += (boost::format("%g, ") % M[c][r]).str();
+        if (!row.empty ())
+            row = row.substr (0, row.size ()-2);
+        Log("%s") % row;
+    }
+}
+
+
 void RenderView::
         setupCamera()
 {
     if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
         redraw();
 
-    glLoadIdentity();
-    glTranslatef( model->camera.p[0], model->camera.p[1], model->camera.p[2] );
-
-    glRotated( model->camera.r[0], 1, 0, 0 );
-    glRotated( model->camera.effective_ry(), 0, 1, 0 );
-    glRotated( model->camera.r[2], 0, 0, 1 );
+    gl_projection.modelview () = GLmatrix::identity ();
+    gl_projection.modelview () *= GLmatrix::translate ( model->camera.p );
+    gl_projection.modelview () *= GLmatrix::rot ( model->camera.r[0], 1, 0, 0 );
+    gl_projection.modelview () *= GLmatrix::rot ( model->camera.effective_ry(), 0, 1, 0 );
+    gl_projection.modelview () *= GLmatrix::rot ( model->camera.r[2], 0, 0, 1 );
 
     if (model->render_settings.left_handed_axes)
-        glScaled(-1, 1, 1);
+        gl_projection.modelview () *= GLmatrix::scale (-1,1,1);
     else
-        glRotated(-90,0,1,0);
+        gl_projection.modelview () *= GLmatrix::rot (-90,0,1,0);
 
-    glScaled(model->camera.xscale, 1, model->camera.zscale);
+    gl_projection.modelview () *= GLmatrix::scale (model->camera.xscale, 1, model->camera.zscale);
 
     float a = model->camera.effective_ry();
     float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
@@ -530,20 +548,21 @@ void RenderView::
     {
         float f = 1 - model->camera.r[0] / limit;
         if (dyx<middle || dyx2<middle)
-            glScalef(1,1,1-0.99999*f);
+            gl_projection.modelview () *= GLmatrix::scale (1,1,1-0.99999*f);
         if (dyz<middle || dyz2<middle)
-            glScalef(1-0.99999*f,1,1);
+            gl_projection.modelview () *= GLmatrix::scale (1-0.99999*f,1,1);
     }
 
-    glTranslated( -model->camera.q[0], -model->camera.q[1], -model->camera.q[2] );
+    gl_projection.modelview () *= GLmatrix::translate ( -model->camera.q );
 
     model->camera.orthoview.TimeStep(.08);
 }
 
 
-void RenderView::
+GLmatrix RenderView::
         setRotationForAxes(bool setAxisVisibility)
 {
+    GLmatrix M = GLmatrix::identity ();
     float a = model->camera.effective_ry();
     float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
     float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
@@ -555,15 +574,17 @@ void RenderView::
     if (model->camera.r[0] < limit)
     {
         float f = 1 - model->camera.r[0] / limit;
+
+
         if (dyx<middle)
-            glRotatef(f*-90,1-dyx/middle,0,0);
+            M *= GLmatrix::rot (f*-90, 1-dyx/middle,0,0);
         if (dyx2<middle)
-            glRotatef(f*90,1-dyx2/middle,0,0);
+            M *= GLmatrix::rot (f*90, 1-dyx2/middle,0,0);
 
         if (dyz<middle)
-            glRotatef(f*-90,0,0,1-dyz/middle);
+            M *= GLmatrix::rot (f*-90,0,0,1-dyz/middle);
         if (dyz2<middle)
-            glRotatef(f*90,0,0,1-dyz2/middle);
+            M *= GLmatrix::rot (f*90,0,0,1-dyz2/middle);
 
         if (setAxisVisibility)
         {
@@ -580,6 +601,7 @@ void RenderView::
             }
         }
     }
+    return M;
 }
 
 

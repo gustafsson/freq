@@ -5,6 +5,7 @@
 #include "vbo.h"
 #include "rendersettings.h"
 #include "GlTexture.h"
+#include "glprojection.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
@@ -18,7 +19,7 @@ public:
 
     class Renderer : boost::noncopyable {
     public:
-        Renderer(RenderBlock* render_block, BlockLayout block_size);
+        Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection);
         ~Renderer();
 
         void renderBlock( pBlock ref );
@@ -26,6 +27,8 @@ public:
     private:
         unsigned vbo_size;
         RenderSettings render_settings;
+        glProjection gl_projection;
+        unsigned uniModelviewprojection = 0;
 
         void draw(unsigned tex_height);
     };

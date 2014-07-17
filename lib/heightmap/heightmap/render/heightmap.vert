@@ -12,6 +12,7 @@ uniform float yOffset;
 uniform vec3 logScale;
 uniform vec2 scale_tex;
 uniform vec2 offset_tex;
+uniform mat4 ModelViewProjectionMatrix;
 
 float heightValue(float v) {
     // the linear case is straightforward
@@ -57,7 +58,7 @@ void main()
     vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
 
     // transform to homogeneous clip space
-    gl_Position      = gl_ModelViewProjectionMatrix * pos;
+    gl_Position      = ModelViewProjectionMatrix * pos;
 
     vec3 eyeSpacePos      = (gl_ModelViewMatrix * pos).xyz;
     vec3 eyeSpaceNormal   = (gl_NormalMatrix * worldSpaceNormal).xyz;
