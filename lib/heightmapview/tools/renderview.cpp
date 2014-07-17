@@ -26,7 +26,6 @@
 //#include "tools/applicationerrorlogcontroller.h"
 #include "tools/support/chaininfo.h"
 #include "signal/processing/workers.h"
-#include "tools/support/renderviewinfo.h"
 #include "tools/support/drawcollections.h"
 
 // gpumisc
@@ -365,11 +364,9 @@ void RenderView::
         drawAxes_rotation.update (modelview_matrix, projection_matrix, viewport_matrix);
     }
 
-    // Use camera
     {
-        Tools::Support::RenderViewInfo r(this);
-        Heightmap::Position cursorPos = r.getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
-        model->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+        TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
+        emit updatedCamera();
     }
 
     bool onlyComputeBlocksForRenderView = false;
@@ -411,7 +408,6 @@ void RenderView::
             model->render_settings.draw_t = draw_t;
         }
     }
-
 
     Support::ChainInfo ci(model->chain());
     bool isWorking = ci.hasWork () || update_queue_has_work;

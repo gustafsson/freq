@@ -89,6 +89,13 @@ namespace Tools
         void prePaint();
 
         /**
+         * @brief updatedCamera. Use 'Qt::DirectConnection'
+          Emitted right after camera setup. A tool have the option to use the
+          new camera position to prepare rendering.
+         */
+        void updatedCamera();
+
+        /**
          * @brief painting. Use 'Qt::DirectConnection'
           Emitted during painting, but after the heightmap has been rendered.
           Tool specific stuff is rendered here.

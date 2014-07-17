@@ -2,6 +2,7 @@
 #include "glPushContext.h"
 #include "GlException.h"
 #include "tools/support/toolselector.h"
+#include "tools/support/renderviewinfo.h"
 
 #include <QTimer>
 #include <QGraphicsSceneMouseEvent>
@@ -26,6 +27,7 @@ GraphicsScene::GraphicsScene(RenderView* renderview) :
 
     connect( update_timer_.data(), SIGNAL(timeout()), SLOT(update()), Qt::QueuedConnection );
     connect( this, SIGNAL(sceneRectChanged ( const QRectF & )), SLOT(redraw()) );
+    connect( renderview, SIGNAL(updatedCamera()), SLOT(updateMousePosInWorldCoordinates()), Qt::DirectConnection );
 }
 
 GraphicsScene::~GraphicsScene()
@@ -169,6 +171,13 @@ void GraphicsScene::
 }
 
 
+void GraphicsScene::
+        updateMousePosInWorldCoordinates()
+{
+    Tools::Support::RenderViewInfo r(renderview_);
+    Heightmap::Position cursorPos = r.getPlanePos( renderview_->glwidget->mapFromGlobal(QCursor::pos()) );
+    renderview_->model->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+}
 
 
 } // namespace Tools

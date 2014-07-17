@@ -361,7 +361,7 @@ QPointF RenderViewInfo::
 float RenderViewInfo::
         length()
 {
-    return model->tfr_mapping()->length();
+    return model->tfr_mapping().read ()->length();
 }
 
 } // namespace Support

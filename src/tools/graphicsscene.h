@@ -26,6 +26,7 @@ signals:
 
 public slots:
     void redraw();
+    void updateMousePosInWorldCoordinates();
 
 private:
     /**
