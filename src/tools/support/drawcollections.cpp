@@ -4,6 +4,8 @@
 #include "computationkernel.h"
 #include "glPushContext.h"
 
+#include "heightmap/render/renderer.h"
+
 //#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
 
@@ -21,7 +23,7 @@ DrawCollections::DrawCollections(RenderModel* model)
 
 
 void DrawCollections::
-        drawCollections(GlFrameBuffer* fbo, float yscale)
+        drawCollections(const glProjection& gl_projection, GlFrameBuffer* fbo, float yscale)
 {
     TIME_PAINTGL_DRAW TaskTimer tt2("Drawing...");
     GlException_CHECK_ERROR();
@@ -32,8 +34,8 @@ void DrawCollections::
     TIME_PAINTGL_DETAILS ComputationCheckError();
 
     // Draw the first channel without a frame buffer
-    model->renderer->render_settings.camera = GLvector(model->_qx, model->_qy, model->_qz);
-    model->renderer->render_settings.cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
+    model->render_settings.camera = GLvector(model->_qx, model->_qy, model->_qz);
+    model->render_settings.cameraRotation = GLvector(model->_rx, model->_ry, model->_rz);
 
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
@@ -57,7 +59,7 @@ void DrawCollections::
         if (!collections[i].read ()->isVisible())
             continue;
 
-        drawCollection(i, yscale);
+        drawCollection(gl_projection, i, yscale);
         ++i;
         break;
     }
@@ -93,7 +95,7 @@ void DrawCollections::
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glViewport(0, 0, viewportWidth, viewportHeight);
 
-            drawCollection(i, yscale);
+            drawCollection(gl_projection, i, yscale);
         }
 
         glViewport(current_viewport[0], current_viewport[1],
@@ -140,27 +142,32 @@ void DrawCollections::
 
         TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
         collections_n,
-        model->renderer->render_settings.drawn_blocks,
-        model->renderer->render_settings.drawn_blocks==1?"":"s",
-        model->renderer->trianglesPerBlock(),
-        collections_n*model->renderer->render_settings.drawn_blocks*model->renderer->trianglesPerBlock(),
+        model->render_settings.drawn_blocks,
+        model->render_settings.drawn_blocks==1?"":"s",
+        model->render_block->trianglesPerBlock(),
+        collections_n*model->render_settings.drawn_blocks*model->render_block->trianglesPerBlock(),
         current_viewport[2], current_viewport[3]);
     }
 }
 
 
 void DrawCollections::
-        drawCollection(int i, float yscale )
+        drawCollection(const glProjection& gl_projection, int i, float yscale )
 {
-    model->renderer->collection = model->collections()[i];
-    model->renderer->render_settings.fixed_color = channel_colors[i];
+    model->render_settings.fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
     if (0 != model->_rx)
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     else
         glEnable( GL_DEPTH_TEST );
     float L = model->tfr_mapping().read()->length();
-    model->renderer->draw( yscale, L ); // 0.6 ms
+
+    Heightmap::Render::Renderer renderer(model->collections()[i],
+                                         model->render_settings,
+                                         gl_projection,
+                                         model->render_block.get());
+    renderer.draw( yscale, L ); // 0.6 ms
+
     glDisable( GL_CULL_FACE );
     glEnable(GL_BLEND);
 }

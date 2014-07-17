@@ -9,7 +9,7 @@
 // Sonic AWE
 #include "adapters/recorder.h"
 #include "heightmap/block.h"
-#include "heightmap/render/renderer.h"
+#include "heightmap/render/renderaxes.h"
 #include "heightmap/collection.h"
 #include "sawe/application.h"
 #include "sawe/project.h"
@@ -146,13 +146,13 @@ void RenderView::
 
     glShadeModel(GL_SMOOTH);
 
-    tvector<4,float> a = model->renderer->render_settings.clear_color;
+    tvector<4,float> a = model->render_settings.clear_color;
     glClearColor(a[0], a[1], a[2], a[3]);
     glClearDepth(1.0f);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glFrontFace( model->renderer->render_settings.left_handed_axes ? GL_CCW : GL_CW );
+    glFrontFace( model->render_settings.left_handed_axes ? GL_CCW : GL_CW );
     glCullFace( GL_BACK );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -256,9 +256,8 @@ void RenderView::
         emit prePaint();
     }
 
-    model->renderer->collection = model->tfr_mapping ().read ()->collections()[0];
-    model->renderer->init();
-    if (!model->renderer->isInitialized())
+    model->render_block->init();
+    if (!model->render_block->isInitialized())
         return;
 
     float elapsed_ms = -1;
@@ -372,7 +371,7 @@ void RenderView::
     {
         Tools::Support::RenderViewInfo r(this);
         Heightmap::Position cursorPos = r.getPlanePos( glwidget->mapFromGlobal(QCursor::pos()) );
-        model->renderer->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+        model->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
     }
 
     bool onlyComputeBlocksForRenderView = false;
@@ -409,10 +408,9 @@ void RenderView::
         if (step_with_new_extent)
             step_with_new_extent.write ()->deprecateCache(Signal::Interval::Interval_ALL);
 
-        model->renderer->gl_projection = gl_projection;
-        Support::DrawCollections(model).drawCollections( _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
+        Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->_rx>=45 ? 1 - model->orthoview : 1 );
 
-        float last_ysize = model->renderer->render_settings.last_ysize;
+        float last_ysize = model->render_settings.last_ysize;
         glScalef(1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
 		{
@@ -423,19 +421,23 @@ void RenderView::
         {
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
 
-            bool draw_piano = model->renderer->render_settings.draw_piano;
-            bool draw_hz = model->renderer->render_settings.draw_hz;
-            bool draw_t = model->renderer->render_settings.draw_t;
+            bool draw_piano = model->render_settings.draw_piano;
+            bool draw_hz = model->render_settings.draw_hz;
+            bool draw_t = model->render_settings.draw_t;
 
             // apply rotation again, and make drawAxes use it
             setRotationForAxes(true);
-            model->renderer->gl_projection = drawAxes_rotation;
 
-            model->renderer->drawAxes( length ); // 4.7 ms
+            Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
+            Heightmap::Render::RenderAxes(
+                        model->render_settings,
+                        &drawAxes_rotation,
+                        display_scale
+                        ).drawAxes( length );
 
-            model->renderer->render_settings.draw_piano = draw_piano;
-            model->renderer->render_settings.draw_hz = draw_hz;
-            model->renderer->render_settings.draw_t = draw_t;
+            model->render_settings.draw_piano = draw_piano;
+            model->render_settings.draw_hz = draw_hz;
+            model->render_settings.draw_t = draw_t;
         }
     }
 
@@ -500,17 +502,15 @@ void RenderView::
         clearCaches()
 {
     TaskTimer tt("RenderView::clearCaches(), %p", this);
-    foreach( const Heightmap::Collection::ptr& collection, model->collections() )
-    {
-        collection.write ()->clear();
-    }
+    for ( const auto& collection : model->collections() )
+        collection->clear();
 
-    if (model->renderer && model->renderer->isInitialized())
+    if (model->render_block)
     {
         // model->renderer might be 0 if we're about to close the application
         // and don't bother recreating renderer if initialization has previously failed
 
-        model->renderer->clearCaches();
+        model->render_block->clearCaches();
 
         redraw();
     }
@@ -540,7 +540,7 @@ void RenderView::
     glRotated( model->effective_ry(), 0, 1, 0 );
     glRotated( model->_rz, 0, 0, 1 );
 
-    if (model->renderer->render_settings.left_handed_axes)
+    if (model->render_settings.left_handed_axes)
         glScaled(-1, 1, 1);
     else
         glRotated(-90,0,1,0);
@@ -579,7 +579,7 @@ void RenderView::
     float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
     float limit = 5, middle=45;
-    model->renderer->render_settings.draw_axis_at0 = 0;
+    model->render_settings.draw_axis_at0 = 0;
     if (model->_rx<limit)
     {
         float f = 1 - model->_rx/limit;
@@ -597,14 +597,14 @@ void RenderView::
         {
             if (dyx<middle || dyx2<middle)
             {
-                model->renderer->render_settings.draw_hz = false;
-                model->renderer->render_settings.draw_piano = false;
-                model->renderer->render_settings.draw_axis_at0 = dyx<middle?1:-1;
+                model->render_settings.draw_hz = false;
+                model->render_settings.draw_piano = false;
+                model->render_settings.draw_axis_at0 = dyx<middle?1:-1;
             }
             if (dyz<middle || dyz2<middle)
             {
-                model->renderer->render_settings.draw_t = false;
-                model->renderer->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
+                model->render_settings.draw_t = false;
+                model->render_settings.draw_axis_at0 = dyz2<middle?1:-1;
             }
         }
     }

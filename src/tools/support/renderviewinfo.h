@@ -31,6 +31,7 @@ public:
       given. It will not be valid if 'p' lies outside the spectrogram.
       */
     Heightmap::Reference findRefAtCurrentZoomLevel(Heightmap::Position p);
+    Heightmap::Reference findRefAtCurrentZoomLevel(Heightmap::Position p, glProjection* gl_projection);
 
     float length();
 

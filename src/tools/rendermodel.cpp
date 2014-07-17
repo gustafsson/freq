@@ -45,8 +45,8 @@ RenderModel::
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
-    renderer.reset( new Heightmap::Render::Renderer() );
-    renderer->render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
+    render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
+    render_block.reset( new Heightmap::Render::RenderBlock(&render_settings));
 
     resetCameraSettings();
 //    setTestCamera();
@@ -67,7 +67,7 @@ RenderModel::
         TaskInfo("!!! block_update_queue unique");
     block_update_queue.reset ();
 
-    renderer.reset();
+    render_block.reset();
 
     if (!tfr_map_)
         TaskInfo("!!! Lost tfr_map");
@@ -132,7 +132,7 @@ void RenderModel::
 void RenderModel::
         setTestCamera()
 {
-    renderer->render_settings.y_scale = 0.01f;
+    render_settings.y_scale = 0.01f;
     _qx = 63.4565;
     _qy = 0;
     _qz = 0.37;

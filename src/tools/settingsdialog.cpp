@@ -206,8 +206,8 @@ void SettingsDialog::
 
     QSettings().setValue("resolution", resolution);
 
-    float prevRedundancy = project->tools().render_view()->model->renderer->render_settings.redundancy;
-    project->tools().render_view()->model->renderer->render_settings.redundancy = resolution;
+    float prevRedundancy = project->tools().render_view()->model->render_settings.redundancy;
+    project->tools().render_view()->model->render_settings.redundancy = resolution;
 
     bool isCwt = dynamic_cast<const Tfr::Cwt*>(project->tools().render_model.transform_desc().get ());
     bool subtexelAggregationChanged = isCwt && (prevRedundancy == 1.f) != (resolution == 1.f);
@@ -245,7 +245,7 @@ void SettingsDialog::
 void SettingsDialog::
         updateResolutionSlider()
 {
-    float resolution = project->tools().render_view()->model->renderer->render_settings.redundancy;
+    float resolution = project->tools().render_view()->model->render_settings.redundancy;
     if (!project->isSaweProject())
         resolution = QSettings().value("resolution", resolution).toFloat();
 

@@ -6,6 +6,7 @@
 #include "TAni.h"
 
 namespace Heightmap {
+namespace Render {
 
 class RenderSettings
 {
@@ -49,6 +50,7 @@ public:
     float redundancy;
 };
 
+} // namespace Render
 } // namespace Heightmap
 
 #endif // HEIGHTMAP_RENDERSETTINGS_H

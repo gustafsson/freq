@@ -10,8 +10,6 @@
 #include "heightmap/reference_hash.h"
 #include "heightmap/render/renderregion.h"
 #include "signal/operation.h"
-#include "renderaxes.h"
-#include "renderfrustum.h"
 #include "renderinfo.h"
 
 // gpumisc
@@ -46,49 +44,18 @@ using namespace std;
 namespace Heightmap {
 namespace Render {
 
-Renderer::Renderer()
+Renderer::Renderer(
+        Collection::ptr      collection,
+        RenderSettings&      render_settings,
+        glProjection         gl_projection,
+        Render::RenderBlock* render_block)
     :
-    _render_block( &render_settings )
+      collection(collection),
+      render_settings(render_settings),
+      gl_projection(gl_projection),
+      render_block(render_block)
 {
-}
 
-
-unsigned Renderer::
-        trianglesPerBlock()
-{
-    return _render_block.trianglesPerBlock ();
-}
-
-
-bool Renderer::
-        isInitialized()
-{
-    return _render_block.isInitialized ();
-}
-
-
-void Renderer::init()
-{
-    _render_block.init();
-}
-
-
-void Renderer::
-        clearCaches()
-{
-    _render_block.clearCaches();
-}
-
-
-Reference Renderer::
-        findRefAtCurrentZoomLevel( Heightmap::Position p )
-{
-    Reference entireHeightmap = collection.read ()->entireHeightmap();
-    BlockLayout bl = collection.read ()->block_layout();
-    VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
-    Render::RenderInfo ri(&gl_projection, bl, vp, render_settings.redundancy);
-    Reference r = Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
-    return r;
 }
 
 
@@ -104,7 +71,7 @@ void Renderer::
     GlException_CHECK_ERROR();
 
     TIME_RENDERER TaskTimer tt("Rendering scaletime plot");
-    if (!_render_block.isInitialized ())
+    if (!render_block->isInitialized ())
         return;
 
     glPushMatrixContext mc(GL_MODELVIEW);
@@ -136,7 +103,7 @@ void Renderer::
 {
     if ((render_settings.draw_flat = .001 > scaley))
     {
-        _render_block.setSize (2, 2);
+        render_block->setSize (2, 2);
         scaley = 0.001;
     }
     else
@@ -147,7 +114,7 @@ void Renderer::
         mesh_fraction_width = mesh_fraction_height = 1 << (int)(render_settings.redundancy*.5f);
         // mesh resolution equal to texel resolution if mesh_fraction_width == 1 and mesh_fraction_height == 1
 
-        _render_block.setSize (
+        render_block->setSize (
                  block_size.texels_per_row ()/mesh_fraction_width,
                  block_size.texels_per_column ()/mesh_fraction_height );
     }
@@ -201,7 +168,7 @@ void Renderer::
         // Copy the block list
         auto cache = this->collection.raw ()->cache ()->clone ();
 
-        Render::RenderBlock::Renderer block_renderer(&_render_block, bl);
+        Render::RenderBlock::Renderer block_renderer(render_block, bl);
 
         for (const Reference& r : R)
         {
@@ -239,21 +206,6 @@ void Renderer::
 
     for (const Reference& r : R)
         Render::RenderRegion(region(r)).render(drawcross);
-}
-
-
-void Renderer::
-        drawAxes( float T )
-{
-    TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawAxes");
-
-    FreqAxis display_scale = collection.read ()->visualization_params ()->display_scale();
-
-    Render::RenderAxes(
-                render_settings,
-                &gl_projection,
-                display_scale
-                ).drawAxes(T);
 }
 
 

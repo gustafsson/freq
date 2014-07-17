@@ -57,7 +57,7 @@ void GraphicsScene::
         renderview_->initializeGL();
 
         float dpr = painter->device ()->devicePixelRatio();
-        renderview_->model->renderer->render_settings.dpifactor = dpr;
+        renderview_->model->render_settings.dpifactor = dpr;
         unsigned w = painter->device()->width();
         unsigned h = painter->device()->height();
         w *= dpr;
@@ -134,7 +134,7 @@ void GraphicsScene::
 void GraphicsScene::
         mouseMoveEvent(QGraphicsSceneMouseEvent *e)
 {
-    if (renderview_->model->renderer->render_settings.draw_cursor_marker)
+    if (renderview_->model->render_settings.draw_cursor_marker)
         redraw();
 
     DEBUG_EVENTS TaskTimer tt("GraphicsScene mouseMoveEvent %s %d", vartype(*e).c_str(), e->isAccepted());

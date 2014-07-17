@@ -1,6 +1,7 @@
 #include "rendersettings.h"
 
 namespace Heightmap {
+namespace Render {
 
 RenderSettings::RenderSettings()
     :   draw_piano(false),
@@ -41,4 +42,5 @@ RenderSettings::RenderSettings()
 {
 }
 
+} // namespace Render
 } // namespace Heightmap

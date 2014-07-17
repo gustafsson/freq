@@ -3,7 +3,8 @@
 
 #include "tfr/freqaxis.h"
 #include "heightmap/amplitudeaxis.h"
-#include "heightmap/render/renderer.h"
+#include "heightmap/render/renderblock.h"
+#include "heightmap/render/rendersettings.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/update/updatequeue.h"
@@ -77,12 +78,12 @@ namespace Tools
 
         Heightmap::Update::UpdateQueue::ptr block_update_queue;
 
-        //Signal::pTarget renderSignalTarget;
-        boost::shared_ptr<Heightmap::Render::Renderer> renderer;
+        Heightmap::Render::RenderSettings render_settings;
+        Heightmap::Render::RenderBlock::ptr render_block;
 
         Sawe::Project* project() { return _project; }
 
-        // TODO remove position and use renderer->render_settings.camera instead
+        // TODO remove position and use render_settings.camera instead
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
 
@@ -122,27 +123,27 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(_rz)
                     & BOOST_SERIALIZATION_NVP(xscale)
                     & BOOST_SERIALIZATION_NVP(zscale)
-                    & boost::serialization::make_nvp("color_mode", renderer->render_settings.color_mode)
-                    & boost::serialization::make_nvp("y_scale", renderer->render_settings.y_scale);
+                    & boost::serialization::make_nvp("color_mode", render_settings.color_mode)
+                    & boost::serialization::make_nvp("y_scale", render_settings.y_scale);
 
             if (typename Archive::is_loading())
                 orthoview.reset( _rx >= 90 );
 
             if (version <= 0)
-                ar & boost::serialization::make_nvp("draw_height_lines", renderer->render_settings.draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_height_lines", render_settings.draw_contour_plot);
             else
-                ar & boost::serialization::make_nvp("draw_contour_plot", renderer->render_settings.draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_contour_plot", render_settings.draw_contour_plot);
 
             ar
-                    & boost::serialization::make_nvp("draw_piano", renderer->render_settings.draw_piano)
-                    & boost::serialization::make_nvp("draw_hz", renderer->render_settings.draw_hz)
-                    & boost::serialization::make_nvp("left_handed_axes", renderer->render_settings.left_handed_axes);
+                    & boost::serialization::make_nvp("draw_piano", render_settings.draw_piano)
+                    & boost::serialization::make_nvp("draw_hz", render_settings.draw_hz)
+                    & boost::serialization::make_nvp("left_handed_axes", render_settings.left_handed_axes);
 
             if (version >= 2)
             {
-                float redundancy = renderer->render_settings.redundancy;
+                float redundancy = render_settings.redundancy;
                 ar & BOOST_SERIALIZATION_NVP(redundancy);
-                renderer->render_settings.redundancy = redundancy;
+                render_settings.redundancy = redundancy;
             }
         }
 

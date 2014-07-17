@@ -2,6 +2,8 @@
 #include "gltextureread.h"
 #include "neat_math.h"
 #include "gluproject_ios.h"
+#include "heightmap/render/renderinfo.h"
+#include "heightmap/render/renderset.h"
 
 namespace Tools {
 namespace Support {
@@ -135,10 +137,21 @@ float RenderViewInfo::
 Heightmap::Reference RenderViewInfo::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    model->renderer->gl_projection = view->gl_projection;
-    model->renderer->collection = model->collections()[0];
+    return findRefAtCurrentZoomLevel(p, &view->gl_projection);
+}
 
-    return model->renderer->findRefAtCurrentZoomLevel( p );
+
+Heightmap::Reference RenderViewInfo::
+        findRefAtCurrentZoomLevel(Heightmap::Position p, glProjection* gl_projection)
+{
+    // "collection" isn't needed to compute this, but its convenient
+    auto collection = model->collections()[0];
+    Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
+    Heightmap::BlockLayout bl = collection.read ()->block_layout();
+    Heightmap::VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
+    Heightmap::Render::RenderInfo ri(gl_projection, bl, vp, model->render_settings.redundancy);
+    Heightmap::Reference r = Heightmap::Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
+    return r;
 }
 
 
@@ -146,9 +159,9 @@ QPointF RenderViewInfo::
         getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     GLdouble objY = 0;
-    float last_ysize = model->renderer->render_settings.last_ysize;
+    float last_ysize = model->render_settings.last_ysize;
     if ((1 != model->orthoview || model->_rx!=90) && use_heightmap_value)
-        objY = getHeightmapValue(pos) * model->renderer->render_settings.y_scale * last_ysize;
+        objY = getHeightmapValue(pos) * model->render_settings.y_scale * last_ysize;
 
     GLvector win = view->gl_projection.gluProject (GLvector(pos.time, objY, pos.scale));
     GLvector::T winX = win[0], winY = win[1]; // winZ = win[2];
@@ -176,7 +189,7 @@ QPointF RenderViewInfo::
         *dist = d%projectionNormal;
     }
 
-    int r = model->renderer->render_settings.dpifactor;
+    int r = model->render_settings.dpifactor;
     return QPointF( winX, view->rect().height() - 1 - winY ) /= r;
 }
 
@@ -197,7 +210,7 @@ Heightmap::Position RenderViewInfo::
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderViewInfo::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
-    widget_pos *= model->renderer->render_settings.dpifactor;
+    widget_pos *= model->render_settings.dpifactor;
 
     QPointF pos;
     pos.setX( widget_pos.x() + view->rect().left() );
@@ -256,12 +269,12 @@ Heightmap::Position RenderViewInfo::
         //if (e < 1e-5 )
         //    break;
 
-        y = getHeightmapValue(p) * model->renderer->render_settings.y_scale * 4 * model->renderer->render_settings.last_ysize;
+        y = getHeightmapValue(p) * model->render_settings.y_scale * 4 * model->render_settings.last_ysize;
         tt.info("(%g, %g) %g is Screen(%g, %g), s = %g", p.time, p.scale, y, r.x(), r.y(), s);
         prevs = s;
     }
 
-    y = getHeightmapValue(p) * model->renderer->render_settings.y_scale * 4 * model->renderer->render_settings.last_ysize;
+    y = getHeightmapValue(p) * model->render_settings.y_scale * 4 * model->render_settings.last_ysize;
     TaskInfo("Screen(%g, %g) projects at Heightmap(%g, %g, %g)", widget_pos.x(), widget_pos.y(), p.time, p.scale, y);
     QPointF r = getWidgetPos( p, 0 );
     TaskInfo("Heightmap(%g, %g) projects at Screen(%g, %g)", p.time, p.scale, r.x(), r.y() );
@@ -271,7 +284,7 @@ Heightmap::Position RenderViewInfo::
 Heightmap::Position RenderViewInfo::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
-    pos *= model->renderer->render_settings.dpifactor;
+    pos *= model->render_settings.dpifactor;
 
     pos.setX( pos.x() + view->rect().left() );
     pos.setY( view->rect().height() - 1 - pos.y() + view->rect().top() );

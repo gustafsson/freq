@@ -219,7 +219,7 @@ void TimelineView::
 
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
-    _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );
+    _length = std::max( 1.f, _render_view->model->render_settings.last_axes_length );
     if (_length < 60*10)
         _barHeight = 0;
     else
@@ -243,7 +243,7 @@ void TimelineView::
             if (_xoffs<0) _xoffs = 0;
             if (_xoffs>_length-_length/_xscale) _xoffs = _length-_length/_xscale;
 
-            if (_render_view->model->renderer->render_settings.left_handed_axes)
+            if (_render_view->model->render_settings.left_handed_axes)
             {
                 glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
             }
@@ -263,8 +263,7 @@ void TimelineView::
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-                _render_view->model->renderer->gl_projection = gl_projection;
-                Support::DrawCollections(_render_view->model).drawCollections( _timeline_fbo.get(), 0 );
+                Support::DrawCollections(_render_view->model).drawCollections( gl_projection, _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
@@ -280,7 +279,7 @@ void TimelineView::
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);
 
-            if (_render_view->model->renderer->render_settings.left_handed_axes)
+            if (_render_view->model->render_settings.left_handed_axes)
             {
                 glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
             }
@@ -290,7 +289,7 @@ void TimelineView::
             }
             setupCamera( true );
 
-            Support::DrawCollections(_render_view->model).drawCollections( _timeline_bar_fbo.get(), 0 );
+            Support::DrawCollections(_render_view->model).drawCollections( gl_projection, _timeline_bar_fbo.get(), 0 );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
@@ -357,7 +356,7 @@ void TimelineView::
 {
     // Make sure that the camera focus point is within the timeline
     {
-        float t = _render_view->model->renderer->render_settings.camera[0];
+        float t = _render_view->model->render_settings.camera[0];
         float new_t = -1;
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
@@ -378,7 +377,7 @@ void TimelineView::
 
             if (0<=new_t)
             {
-                float f = _render_view->model->renderer->render_settings.camera[2];
+                float f = _render_view->model->render_settings.camera[2];
                 _render_view->model->setPosition( Heightmap::Position( new_t, f) );
                 redraw ();
             }
@@ -391,7 +390,7 @@ void TimelineView::
     glRotatef( 90, 1, 0, 0 );
     glRotatef( 180, 0, 1, 0 );
 
-    if (!_render_view->model->renderer->render_settings.left_handed_axes)
+    if (!_render_view->model->render_settings.left_handed_axes)
     {
         glTranslatef(-0.5f,0,0);
         glScalef(-1,1,1);
