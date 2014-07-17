@@ -9,6 +9,7 @@
 #include "tasktimer.h"
 #include "glPushContext.h"
 #include "unused.h"
+#include "gluinvertmatrix.h"
 
 #include <QSettings>
 
@@ -39,6 +40,8 @@ RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_siz
 {
     render_block->beginVboRendering(block_size);
     uniModelviewprojection = glGetUniformLocation (render_block->_shader_prog, "ModelViewProjectionMatrix");
+    uniModelview = glGetUniformLocation (render_block->_shader_prog, "ModelViewMatrix");
+    uniNormalMatrix = glGetUniformLocation (render_block->_shader_prog, "NormalMatrix");
 }
 
 
@@ -58,17 +61,15 @@ void RenderBlock::Renderer::
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Region r = block->getRegion ();
-    glPushMatrixContext mc( GL_MODELVIEW );
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
-
-    glTranslatef(r.a.time, 0, r.a.scale);
-    glScalef(r.time(), 1, r.scale());
 
     GLmatrix modelview = gl_projection.modelview ();
     modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
     modelview *= GLmatrix::scale (r.time(), 1, r.scale());
     glUniformMatrix4fv (uniModelviewprojection, 1, false, (gl_projection.projection ()*modelview).v ());
+    glUniformMatrix4fv (uniModelview, 1, false, modelview.v ());
+    glUniformMatrix4fv (uniNormalMatrix, 1, false, invert(modelview).transpose ().v ());
 
     draw( block->texture ()->getOpenGlTextureId () );
 

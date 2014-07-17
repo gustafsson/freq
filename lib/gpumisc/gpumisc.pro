@@ -29,6 +29,7 @@ SOURCES += \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
+    gluinvertmatrix.cpp \
     glprojection.cpp \
     glPushContext.cpp \
     glsyncobjectmutex.cpp \
@@ -69,6 +70,7 @@ HEADERS += \
     gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
+    gluinvertmatrix.h \
     gluunproject.h \
     gluproject_ios.h \
     gpumisc_global.h \

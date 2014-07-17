@@ -13,6 +13,8 @@ uniform vec3 logScale;
 uniform vec2 scale_tex;
 uniform vec2 offset_tex;
 uniform mat4 ModelViewProjectionMatrix;
+uniform mat4 ModelViewMatrix;
+uniform mat4 NormalMatrix;
 
 float heightValue(float v) {
     // the linear case is straightforward
@@ -52,16 +54,18 @@ void main()
     vec2 slope       = vec2(heightx2-heightx1, heighty2-heighty1);
 
     // calculate surface normal from slope for shading
-    vec3 worldSpaceNormal = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
+    vec4 worldSpaceNormal;
+    worldSpaceNormal.xyz = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
                                    vec3(tex2.x-tex1.x,  slope.x, 0.0));
+    worldSpaceNormal.w = 1.0;
 
     vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
 
     // transform to homogeneous clip space
     gl_Position      = ModelViewProjectionMatrix * pos;
 
-    vec3 eyeSpacePos      = (gl_ModelViewMatrix * pos).xyz;
-    vec3 eyeSpaceNormal   = (gl_NormalMatrix * worldSpaceNormal).xyz;
+    vec3 eyeSpacePos      = (ModelViewMatrix * pos).xyz;
+    vec3 eyeSpaceNormal   = (NormalMatrix * worldSpaceNormal).xyz;
 
     eyeSpacePos      = normalize(eyeSpacePos);
     eyeSpaceNormal   = normalize(eyeSpaceNormal);

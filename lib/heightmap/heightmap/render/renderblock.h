@@ -29,6 +29,8 @@ public:
         RenderSettings render_settings;
         glProjection gl_projection;
         unsigned uniModelviewprojection = 0;
+        unsigned uniModelview = 0;
+        unsigned uniNormalMatrix = 0;
 
         void draw(unsigned tex_height);
     };

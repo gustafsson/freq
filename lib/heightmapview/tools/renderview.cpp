@@ -353,7 +353,6 @@ void RenderView::
         glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection ().v ());
 //        glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview ().v ());
     }
-    glLoadMatrixf(gl_projection.modelview_matrix ());
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
@@ -407,6 +406,7 @@ void RenderView::
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
 
+    glLoadMatrixf(gl_projection.modelview_matrix ());
     if (isWorking || isRecording || dead_workers) {
         Support::DrawWorking::drawWorking( gl_projection.viewport_matrix ()[2], gl_projection.viewport_matrix ()[3], n_workers, dead_workers );
     }
