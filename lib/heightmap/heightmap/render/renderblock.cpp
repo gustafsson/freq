@@ -448,6 +448,10 @@ void RenderBlock::
 void RenderBlock::
         setSize( unsigned w, unsigned h)
 {
+    // edge dropout to eliminate visible glitches
+    if (w>2) w+=2;
+    if (h>2) h+=2;
+
     if (w == _mesh_width && h ==_mesh_height)
         return;
 
@@ -472,10 +476,6 @@ void RenderBlock::
     // create index buffer
     if (_mesh_index_buffer)
         glDeleteBuffersARB(1, &_mesh_index_buffer);
-
-    // edge dropout to eliminate visible glitches
-    if (w>2) w+=2;
-    if (h>2) h+=2;
 
     _mesh_width = w;
     _mesh_height = h;
@@ -512,6 +512,10 @@ void RenderBlock::
 void RenderBlock::
         createMeshPositionVBO(int w, int h)
 {
+    // edge dropout to eliminate visible glitches
+    if (w>2) w -= 2;
+    if (h>2) h -= 2;
+
     int y1 = 0, x1 = 0, y2 = h, x2 = w;
 
     // edge dropout to eliminate visible glitches
