@@ -41,7 +41,12 @@ RenderAxes::
         glutInit(&c,0);
         c = 1;
 #endif
-}
+    }
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf (gl_projection->projection_matrix ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf (gl_projection->modelview_matrix ());
 }
 
 

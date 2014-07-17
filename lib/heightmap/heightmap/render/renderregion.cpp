@@ -7,15 +7,17 @@
 namespace Heightmap {
 namespace Render {
 
-RenderRegion::RenderRegion(Region r)
-    :
-      r(r)
+RenderRegion::RenderRegion(glProjection gl_projection)
 {
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf (gl_projection.projection ().v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf (gl_projection.modelview ().v ());
 }
 
 
 void RenderRegion::
-        render(bool drawcross)
+        render(Region r, bool drawcross)
 {
     // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
     //float y = _frustum_clip.projectionPlane[1]*.05;

@@ -2,6 +2,7 @@
 #define HEIGHTMAP_RENDER_RENDERREGION_H
 
 #include "heightmap/position.h"
+#include "glprojection.h"
 
 namespace Heightmap {
 namespace Render {
@@ -9,12 +10,9 @@ namespace Render {
 class RenderRegion
 {
 public:
-    RenderRegion(Region r);
+    RenderRegion(glProjection gl_projection);
 
-    void render(bool drawcross=true);
-
-private:
-    Region r;
+    void render(Region r, bool drawcross=true);
 };
 
 } // namespace Render

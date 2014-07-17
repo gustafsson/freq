@@ -38,6 +38,7 @@
 #include "gluunproject.h"
 #include "gltextureread.h"
 #include "log.h"
+#include "gluperspective.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -227,12 +228,8 @@ void RenderView::
     glGetIntegerv( GL_VIEWPORT,const_cast<int*>(gl_projection.viewport_matrix()) );
     rect_y_ = rect.y();
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0f,rect.width ()/(float)rect.height (),0.01f,1000.0f);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+    gl_projection.modelview () = GLmatrix::identity ();
+    glhPerspectivef (gl_projection.projection ().v (), 45.0f, rect.width ()/(float)rect.height (), 0.01f, 1000.0f);
 }
 
 
@@ -348,10 +345,6 @@ void RenderView::
         TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
 
         setupCamera();
-
-        glGetIntegerv(GL_VIEWPORT, gl_projection.viewport ().v);
-        glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection ().v ());
-//        glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview ().v ());
     }
 
     {
@@ -374,7 +367,7 @@ void RenderView::
         Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
 
         float last_ysize = model->render_settings.last_ysize;
-        glScalef(1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
+        gl_projection.modelview () *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
         {
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
@@ -386,7 +379,6 @@ void RenderView::
             // apply rotation again, and make drawAxes use it
             glProjection drawAxes_rotation = gl_projection;
             drawAxes_rotation.modelview () *= setRotationForAxes();
-            glLoadMatrixf(drawAxes_rotation.modelview_matrix ());
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
             Heightmap::Render::RenderAxes(
@@ -406,7 +398,11 @@ void RenderView::
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
 
-    glLoadMatrixf(gl_projection.modelview_matrix ());
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf (gl_projection.projection ().v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf (gl_projection.modelview ().v ());
+
     if (isWorking || isRecording || dead_workers) {
         Support::DrawWorking::drawWorking( gl_projection.viewport_matrix ()[2], gl_projection.viewport_matrix ()[3], n_workers, dead_workers );
     }

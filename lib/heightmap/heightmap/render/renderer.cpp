@@ -204,8 +204,10 @@ void Renderer::
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
+    Render::RenderRegion rr(gl_projection);
+
     for (const Reference& r : R)
-        Render::RenderRegion(region(r)).render(drawcross);
+        rr.render(region(r), drawcross);
 }
 
 

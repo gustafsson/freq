@@ -35,6 +35,7 @@ SOURCES += \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
+    gluperspective.cpp \
     gluproject_ios.cpp \
     gluunproject.cpp \
     log.cpp \
@@ -71,8 +72,9 @@ HEADERS += \
     GLvector.h \
     geometricalgebra.h \
     gluinvertmatrix.h \
-    gluunproject.h \
+    gluperspective.h \
     gluproject_ios.h \
+    gluunproject.h \
     gpumisc_global.h \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
