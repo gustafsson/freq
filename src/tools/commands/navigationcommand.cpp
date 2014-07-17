@@ -40,8 +40,6 @@ void NavigationCommand::
         executeFirst();
         newState.storeState();
     }
-
-    model->emitModelChanged();
 }
 
 

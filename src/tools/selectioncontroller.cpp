@@ -155,7 +155,6 @@ namespace Tools
         peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
 #endif
 */
-        connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
     }
 
 

@@ -1,19 +1,19 @@
 #ifndef RENDERMODEL_H
 #define RENDERMODEL_H
 
-#include "tfr/freqaxis.h"
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/render/renderblock.h"
 #include "heightmap/render/rendersettings.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/update/updatequeue.h"
-#include "sawe/toolmodel.h"
-#include "tfr/transform.h"
-#include "support/transformdescs.h"
-#include "support/rendercamera.h"
 #include "signal/processing/chain.h"
 #include "signal/processing/targetmarker.h"
+#include "tfr/transform.h"
+#include "tfr/freqaxis.h"
+
+#include "support/transformdescs.h"
+#include "support/rendercamera.h"
 #include "support/renderoperation.h"
 
 // gpumisc
@@ -35,7 +35,7 @@ namespace Tools
      *
      * TODO call set_extent when it's changed
      */
-    class RenderModel: public ToolModel
+    class RenderModel
     {
     public:
         RenderModel();
@@ -79,8 +79,6 @@ namespace Tools
         Heightmap::Render::RenderSettings render_settings;
         Heightmap::Render::RenderBlock::ptr render_block;
         Tools::Support::RenderCamera camera;
-
-//        Sawe::Project* project() { return _project; }
 
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
