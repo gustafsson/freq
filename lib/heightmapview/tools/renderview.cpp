@@ -389,11 +389,6 @@ void RenderView::
         float last_ysize = model->render_settings.last_ysize;
         glScalef(1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
-		{
-			TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");
-			emit painting();
-		}
-
         {
             TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
 
@@ -466,6 +461,11 @@ void RenderView::
         Heightmap::UncaughtException::handle_exception(boost::current_exception ());
     }
 
+
+    {
+        TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");
+        emit painting();
+    }
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
