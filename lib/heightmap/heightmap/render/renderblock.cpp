@@ -1,5 +1,6 @@
 #include "renderblock.h"
 #include "shaderresource.h"
+#include "heightmap/uncaughtexception.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -8,6 +9,8 @@
 #include "tasktimer.h"
 #include "glPushContext.h"
 #include "unused.h"
+
+#include <QSettings>
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -108,6 +111,16 @@ RenderBlock::
 void RenderBlock::
         init()
 {
+    if (NotInitialized != _initialized)
+        return;
+
+    // assume failure unless we reach the end of this method
+    _initialized = InitializationFailed;
+
+    TaskTimer tt("Initializing OpenGL");
+
+    checkExtensions();
+
     initShaders();
 
     // load shader
@@ -116,14 +129,29 @@ void RenderBlock::
     else
         _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
-    if (0 == _shader_prog)
-        return;
+    // default, expected to be overwritten
+    setSize (2, 2);
+
+    //drawBlocks(Render::RenderSet::references_t());
+
+    GlException_CHECK_ERROR();
+
+    _initialized = Initialized;
+}
+
+
+bool RenderBlock::
+        isInitialized()
+{
+    return Initialized == _initialized;
 }
 
 
 void RenderBlock::
         clearCaches()
 {
+    _initialized = NotInitialized;
+
     _mesh_width = 0;
     _mesh_height = 0;
     _mesh_position.reset();
@@ -131,6 +159,143 @@ void RenderBlock::
     _shader_prog = 0;
     _colorTexture.reset();
     _color_texture_colors = (RenderSettings::ColorMode)-1;
+}
+
+
+void RenderBlock::
+        checkExtensions ()
+{
+    GlException_CHECK_ERROR();
+
+#ifdef USE_CUDA
+    int cudaDevices=0;
+    CudaException_SAFE_CALL( cudaGetDeviceCount( &cudaDevices) );
+    if (0 == cudaDevices ) {
+        Sawe::NonblockingMessageBox::show(
+                QMessageBox::Critical,
+                "Couldn't find any \"cuda capable\" device",
+                "This version of Sonic AWE requires a graphics card that supports CUDA and no such graphics card was found.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this." );
+
+        // fail
+        return;
+    }
+#endif
+
+#ifndef __APPLE__ // glewInit is not needed on Mac
+    if (0 != glewInit() ) {
+        Sawe::NonblockingMessageBox::show(
+                QMessageBox::Critical,
+                "Couldn't properly setup graphics",
+                "Sonic AWE failed to setup required graphics hardware.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.",
+
+                "Couldn't initialize \"glew\"");
+
+        // fail
+        return;
+    }
+#endif
+
+    // verify necessary OpenGL extensions
+    const char* glversion = (const char*)glGetString(GL_VERSION);
+    string glversionstring(glversion);
+    stringstream versionreader(glversionstring);
+    int gl_major=0, gl_minor=0;
+    char dummy;
+    versionreader >> gl_major >> dummy >> gl_minor;
+
+    //TaskInfo("OpenGL version %d.%d (%s)", gl_major, gl_minor, glversion);
+
+    if ((1 > gl_major )
+        || ( 1 == gl_major && 4 > gl_minor ))
+    {
+        try {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                    "Couldn't properly setup graphics\n"
+                    "Sonic AWE requires a graphics driver that supports OpenGL 2.0 and no such graphics driver was found.\n\n"
+                    "If you think this messge is an error, please file this as a bug report at muchdifferent.com to help us fix this."
+            ));
+        } catch(...) {
+            Heightmap::UncaughtException::handle_exception(boost::current_exception ());
+        }
+
+        // fail
+        return;
+    }
+
+    const char* exstensions[] = {
+        "GL_ARB_vertex_buffer_object",
+        "GL_ARB_pixel_buffer_object",
+        "",
+        "GL_ARB_texture_float"
+    };
+
+    bool required_extension = true;
+    const char* all_extensions = (const char*)glGetString(GL_EXTENSIONS);
+    //TaskInfo("Checking extensions %s", all_extensions);
+    for (unsigned i=0; i < sizeof(exstensions)/sizeof(exstensions[0]); ++i)
+    {
+        if (0 == strlen(exstensions[i]))
+        {
+            required_extension = false;
+            continue;
+        }
+
+
+        bool hasExtension = 0 != strstr(all_extensions, exstensions[i]);
+        if (!hasExtension)
+            TaskInfo("%s %s extension %s",
+                     hasExtension?"Found":"Couldn't find",
+                     required_extension?"required":"preferred",
+                     exstensions[i]);
+
+        if (hasExtension)
+            continue;
+
+        std::stringstream err;
+        std::stringstream details;
+
+        err << "Sonic AWE can't properly setup graphics. ";
+        if (required_extension)
+        {
+            err << "Sonic AWE requires features that couldn't be found on your graphics card.";
+            details << "Sonic AWE requires a graphics card that supports '" << exstensions[i] << "'";
+        }
+        else
+        {
+            bool warn_expected_opengl = QSettings().value("warn_expected_opengl", true).toBool();
+            if (!warn_expected_opengl)
+                continue;
+             QSettings().setValue("warn_expected_opengl", false);
+
+            err << "Sonic AWE works better with features that couldn't be found on your graphics card. "
+                << "However, Sonic AWE might still run. Click OK to try.";
+            details << "Sonic AWE works better with a graphics card that supports '" << exstensions[i] << "'";
+        }
+
+        err << endl << endl << "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.";
+
+        try {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                                      str(boost::format(
+                      "Couldn't properly setup graphics\n"
+                      "required_extension = %s\n"
+                      "err = %s\n"
+                      "details = %s\n")
+                          % required_extension
+                          % err.str()
+                          % details.str()
+            )));
+        } catch(...) {
+            try {
+            Heightmap::UncaughtException::handle_exception(boost::current_exception ());
+            } catch (...) {}
+        }
+
+        if (required_extension)
+            return;
+    }
 }
 
 

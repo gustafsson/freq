@@ -31,12 +31,21 @@ public:
     RenderBlock(RenderSettings* render_settings);
 
     void        init();
+    bool        isInitialized();
     void        clearCaches();
     void        setSize( unsigned w, unsigned h);
     unsigned    trianglesPerBlock();
 
 private:
     friend class RenderBlock::Renderer;
+
+    enum InitializedLevel {
+        NotInitialized,
+        Initialized,
+        InitializationFailed
+    };
+
+    InitializedLevel _initialized;
 
     RenderSettings* render_settings;
     RenderSettings::ColorMode _color_texture_colors;
@@ -49,6 +58,7 @@ private:
     unsigned _vbo_size;
     pVbo _mesh_position;
 
+    void checkExtensions();
     void beginVboRendering(BlockLayout block_size);
     static void endVboRendering();
     void createMeshIndexBuffer(int w, int h);

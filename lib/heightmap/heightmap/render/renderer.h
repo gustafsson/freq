@@ -51,14 +51,6 @@ public:
     void clearCaches();
 
 private:
-
-    enum InitializedLevel {
-        NotInitialized,
-        Initialized,
-        InitializationFailed
-    };
-
-    InitializedLevel _initialized;
     Render::RenderBlock _render_block;
 
     void setupGlStates(float scaley);
