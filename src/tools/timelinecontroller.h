@@ -12,12 +12,13 @@ namespace Tools
 {
     class RenderModel;
     class TimelineView;
+    class GraphicsView;
 
     class TimelineController: public QWidget
     {
         Q_OBJECT
     public:
-        TimelineController( TimelineView* timeline_view, Sawe::Project* project );
+        TimelineController( TimelineView* timeline_view, Sawe::Project* project, GraphicsView* graphicsview );
         ~TimelineController();
 
         // QWidget
@@ -27,6 +28,7 @@ namespace Tools
         RenderModel *model;
         TimelineView *view;
         Sawe::Project* project;
+        GraphicsView* graphicsview;
 
     private slots:
         void hideTimeline();

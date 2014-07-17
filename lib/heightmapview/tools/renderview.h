@@ -25,9 +25,6 @@ namespace Heightmap { class Reference; }
 
 namespace Tools
 {
-    // TODO remove
-    class GraphicsView;
-
     class RenderView: public QObject
     {
         Q_OBJECT
@@ -52,9 +49,6 @@ namespace Tools
         RenderModel* model;
 
         QGLWidget *glwidget;
-
-        // graphicsview belongs in rendercontroller but this simplifies access from other classes
-        GraphicsView* graphicsview;
 
         glProjection gl_projection;
 

@@ -18,6 +18,7 @@ namespace Ui { class ComboBoxAction; class MainWindow; }
 
 namespace Tools
 {
+    class GraphicsView;
     namespace Widgets { class ValueSlider; }
 
     class SaweDll RenderController: public QObject
@@ -35,6 +36,7 @@ namespace Tools
         void                emitAxisChanged();
 
         Tools::Support::ToolSelector* tool_selector;
+        GraphicsView* graphicsview;
 
         Ui::ComboBoxAction* transform;
         Ui::ComboBoxAction* hz_scale;

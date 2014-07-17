@@ -79,7 +79,6 @@ RenderView::
 //            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
-            graphicsview(0),
             rect_y_(0)
 {
     // Validate rotation and set orthoview accordingly

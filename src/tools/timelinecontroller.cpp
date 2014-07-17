@@ -24,11 +24,12 @@ namespace Tools
 
 
 TimelineController::
-        TimelineController( TimelineView* timeline_view, Sawe::Project* project )
+        TimelineController( TimelineView* timeline_view, Sawe::Project* project, GraphicsView* graphicsview )
             :
             model(timeline_view->_render_view->model),
             view(timeline_view),
             project(project),
+            graphicsview(graphicsview),
             dock(0),
             _movingTimeline( 0 )
 {
@@ -108,11 +109,11 @@ void TimelineController::
         connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
         connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionToggleTimelineWindow, SLOT(setChecked(bool)));
     } else {
-        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1, project->commandInvoker() );
+        view->tool_selector = graphicsview->toolSelector( 1, project->commandInvoker() );
         view->tool_selector->setCurrentToolCommand( this );
 
-        view->layoutChanged( view->_render_view->graphicsview->layoutDirection());
-        connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
+        view->layoutChanged( graphicsview->layoutDirection());
+        connect(graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
                 view, SLOT(layoutChanged(QBoxLayout::Direction)) );
 
         embeddedVisibilityChanged(MainWindow->getItems()->actionToggleTimelineWindow->isChecked());

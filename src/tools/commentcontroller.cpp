@@ -18,11 +18,12 @@ namespace Tools
 using Support::RenderViewInfo;
 
 CommentController::
-        CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector)
+        CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector, GraphicsView* graphicsview)
             :   graphicsscene_(graphicsscene),
                 view_(view),
                 project_(project),
                 tool_selector_(tool_selector),
+                graphicsview_(graphicsview),
                 comment_(0)
 {
     setEnabled( false );
@@ -132,7 +133,7 @@ void CommentController::
         enableCommentAdder(bool active)
 {
     tool_selector_->setCurrentTool( this, active );
-    view_->graphicsview->setToolFocus( active );
+    graphicsview_->setToolFocus( active );
 
     if (active)
     {
@@ -142,7 +143,7 @@ void CommentController::
         setMouseTracking( true );
         mouseMoveEvent(new QMouseEvent(
                 QEvent::MouseMove,
-                mapFromGlobal(view_->graphicsview->mapFromGlobal( QCursor::pos())),
+                mapFromGlobal(graphicsview_->mapFromGlobal( QCursor::pos())),
                 Qt::NoButton,
                 Qt::MouseButtons(),
                 Qt::KeyboardModifiers()));

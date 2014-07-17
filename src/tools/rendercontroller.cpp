@@ -67,6 +67,7 @@ RenderController::
         RenderController( QPointer<RenderView> view, Sawe::Project* project )
             :
             tool_selector(0),
+            graphicsview(0),
             transform(0),
             hz_scale(0),
             amplitude_scale(0),
@@ -223,7 +224,7 @@ void RenderController::
 {
     model()->render_settings.left_handed_axes = !value;
 
-    view->graphicsview->setLayoutDirection( value
+    graphicsview->setLayoutDirection( value
                                             ? QBoxLayout::RightToLeft
                                             : QBoxLayout::TopToBottom );
 
@@ -1058,10 +1059,10 @@ void RenderController::
 
     GraphicsScene* scene = new GraphicsScene(view);
     connect(this->view.data (), SIGNAL(redrawSignal()), scene, SLOT(redraw()));
-    view->graphicsview = new GraphicsView(scene);
-    view->graphicsview->setViewport(view->glwidget);
+    graphicsview = new GraphicsView(scene);
+    graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
-    this->tool_selector = view->graphicsview->toolSelector(0, project->commandInvoker());
+    this->tool_selector = graphicsview->toolSelector(0, project->commandInvoker());
 
     model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
 
@@ -1074,7 +1075,7 @@ void RenderController::
     }
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(view->graphicsview);
+    main->centralWidget()->layout()->addWidget(graphicsview);
     main->centralWidget()->setFocus ();
 
     view->emitTransformChanged();

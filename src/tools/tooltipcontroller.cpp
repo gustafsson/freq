@@ -60,13 +60,15 @@ TooltipController::
         TooltipController(RenderView *render_view,
                           CommentController* comments,
                           Sawe::Project* project,
-                          Tools::Support::ToolSelector* tool_selector)
+                          Tools::Support::ToolSelector* tool_selector,
+                          GraphicsView* graphicsview)
             :
             ui(new Actions(this)),
             render_view_(render_view),
             comments_(comments),
             project_(project),
             tool_selector_(tool_selector),
+            graphicsview_(graphicsview),
             current_view_(0)
 {
     setEnabled( false );
@@ -277,7 +279,7 @@ void TooltipController::
         QMouseEvent event(QEvent::MouseMove, render_view_->glwidget->mapFromGlobal( QCursor::pos() ),  Qt::NoButton, Qt::NoButton, Qt::NoModifier );
         mouseMoveEvent(&event);
 
-        this->render_view_->graphicsview->setToolFocus( true );
+        graphicsview_->setToolFocus( true );
         this->render_view_->redraw();
     }
     else if (hover_info_model_)
@@ -286,7 +288,7 @@ void TooltipController::
         hover_info_model_.reset();
         setMouseTracking( false );
 
-        this->render_view_->graphicsview->setToolFocus( false );
+        graphicsview_->setToolFocus( false );
     }
 }
 
