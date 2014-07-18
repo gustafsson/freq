@@ -95,8 +95,6 @@ RenderView::
 {
     TaskTimer tt("%s", __FUNCTION__);
 
-    glwidget->makeCurrent();
-
     emit destroying();
 
     _render_timer.reset();

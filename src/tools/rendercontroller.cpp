@@ -1064,8 +1064,6 @@ void RenderController::
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
     this->tool_selector = graphicsview->toolSelector(0, project->commandInvoker());
 
-    model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
-
     // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)

@@ -53,6 +53,8 @@ RenderAxes::
 void RenderAxes::
         drawAxes( float T )
 {
+#ifndef GL_ES_VERSION_2_0
+
     render_settings.last_axes_length = T;
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
@@ -329,7 +331,7 @@ void RenderAxes::
                     tmarkanyways = 2;
                 }
             }
-            else if(render_settings.draw_cursor_marker)
+            else if(render_settings.draw_cursor_marker && fa.axis_scale != AxisScale_Unknown)
             {
                 float w = (render_settings.cursor[2] - pp[2])/(p[2] - pp[2]);
 
@@ -449,7 +451,7 @@ void RenderAxes::
                         }
                     }
                 }
-            } else {
+            } else if (fa.axis_scale != AxisScale_Unknown) {
                 if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail || fmarkanyways==2)
                 {
                     int size = 1;
@@ -713,6 +715,7 @@ void RenderAxes::
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
+#endif // GL_ES_VERSION_2_0
 }
 
 

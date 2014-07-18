@@ -37,6 +37,8 @@ RenderModel::
 
     render_block.reset( new Heightmap::Render::RenderBlock(&render_settings));
 
+    block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
+
     resetCameraSettings();
 //    setTestCamera();
 }
@@ -77,7 +79,11 @@ void RenderModel::
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
 
-    recompute_extent ();
+    Signal::OperationDesc::Extent x = recompute_extent ();
+
+    Heightmap::FreqAxis fa;
+    fa.setLinear( x.sample_rate.get () );
+    display_scale( fa );
 }
 
 
@@ -245,7 +251,10 @@ Signal::OperationDesc::Extent RenderModel::
         recompute_extent()
 {
     Signal::OperationDesc::Extent extent = chain_.read ()->extent(target_marker_);
-    set_extent(extent);
+    extent.interval           = extent.interval          .get_value_or (Signal::Interval());
+    extent.number_of_channels = extent.number_of_channels.get_value_or (1);
+    extent.sample_rate        = extent.sample_rate       .get_value_or (1);
+    set_extent (extent);
     return extent;
 }
 
