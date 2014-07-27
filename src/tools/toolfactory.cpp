@@ -284,7 +284,7 @@ ToolFactory::
 
 
 void ToolFactory::
-        addRecording (Adapters::Recorder::ptr recorder)
+        addRecording (Signal::Recorder::ptr recorder)
 {
     Sawe::Project*p = project;
 

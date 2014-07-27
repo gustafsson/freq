@@ -215,7 +215,7 @@ void MicrophoneRecorder::startRecording()
         return;
     }
 
-    _start_recording = boost::posix_time::microsec_clock::local_time();
+    _start_recording.restart ();
 }
 
 void MicrophoneRecorder::stopRecording()
@@ -319,7 +319,7 @@ int MicrophoneRecorder::
     float fs = _data.raw ()->sample_rate;
     unsigned nc = _data.raw ()->num_channels;
 
-    _last_update = boost::posix_time::microsec_clock::local_time();
+    _last_update.restart ();
 
     if (!_receive_buffer || _receive_buffer->number_of_samples ()!=(int)framesPerBuffer || _receive_buffer->number_of_channels ()!=nc)
         _receive_buffer = Signal::pBuffer( new Signal::Buffer(0, framesPerBuffer, 1, nc ) );
@@ -380,121 +380,17 @@ int MicrophoneRecorder::
     return paContinue;
 }
 
-
-MicrophoneRecorderOperation::
-        MicrophoneRecorderOperation( Recorder::ptr recorder )
-    :
-      recorder_(recorder)
-{
-}
-
-
-Signal::pBuffer MicrophoneRecorderOperation::
-        process(Signal::pBuffer b)
-{
-    return recorder_.write ()->read (b->getInterval ());
-}
-
-
-MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Recorder::ptr recorder, Recorder::IGotDataCallback::ptr invalidator)
-    :
-      recorder_(recorder)
-{
-    recorder_.write ()->setDataCallback(invalidator);
-}
-
-
-void MicrophoneRecorderDesc::
-        startRecording()
-{
-    recorder_.write ()->startRecording ();
-}
-
-
-void MicrophoneRecorderDesc::
-        stopRecording()
-{
-    recorder_.write ()->stopRecording ();
-}
-
-
-bool MicrophoneRecorderDesc::
-        isStopped()
-{
-    return recorder_.write ()->isStopped ();
-}
-
-
-bool MicrophoneRecorderDesc::
-        canRecord()
-{
-    return recorder_.write ()->canRecord ();
-}
-
-
-Signal::Interval MicrophoneRecorderDesc::
-        requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
-{
-    if (expectedOutput)
-        *expectedOutput = I;
-    return I;
-}
-
-
-Signal::Interval MicrophoneRecorderDesc::
-        affectedInterval( const Signal::Interval& I ) const
-{
-    return I;
-}
-
-
-Signal::OperationDesc::ptr MicrophoneRecorderDesc::
-        copy() const
-{
-    EXCEPTION_ASSERTX(false, "Can't make a copy of microphone recording");
-    return Signal::OperationDesc::ptr();
-}
-
-
-Signal::Operation::ptr MicrophoneRecorderDesc::
-        createOperation(Signal::ComputingEngine*) const
-{
-    Signal::Operation::ptr r(new MicrophoneRecorderOperation(recorder_));
-    return r;
-}
-
-
-MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
-        extent() const
-{
-    auto data = recorder_.raw ()->data ();
-    MicrophoneRecorderDesc::Extent x;
-    x.interval = data.read ()->samples.spannedInterval ();
-    x.number_of_channels = data.raw ()->num_channels;
-    x.sample_rate = data.raw ()->sample_rate;
-    return x;
-}
-
-
-Recorder::ptr MicrophoneRecorderDesc::
-        recorder() const
-{
-    return recorder_;
-}
-
-
 } // namespace Adapters
 
 
+
 #include "timer.h"
-
+#include "signal/recorderoperation.h"
 #include <QSemaphore>
-
 
 namespace Adapters {
 
-class GotDataCallback: public Recorder::IGotDataCallback
+class GotDataCallback: public Signal::Recorder::IGotDataCallback
 {
 public:
     Signal::Intervals marked_data() const { return marked_data_; }
@@ -513,15 +409,15 @@ private:
     Signal::Intervals marked_data_;
 };
 
-void MicrophoneRecorderDesc::
+void MicrophoneRecorder::
         test()
 {
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        Recorder::IGotDataCallback::ptr callback(new GotDataCallback);
+        Signal::Recorder::IGotDataCallback::ptr callback(new GotDataCallback);
 
-        MicrophoneRecorderDesc mrd(Recorder::ptr(new MicrophoneRecorder(inputDevice)), callback);
+        Signal::MicrophoneRecorderDesc mrd(Signal::Recorder::ptr(new MicrophoneRecorder(inputDevice)), callback);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );
@@ -533,7 +429,7 @@ void MicrophoneRecorderDesc::
         Timer t;
         dynamic_cast<GotDataCallback*>(callback.raw ())->wait (6000);
         // Re-throw exception if an exception was generated
-        mrd.recorder_->read (Signal::Interval (0, 1));
+        mrd.recorder()->read (Signal::Interval (0, 1));
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.200 );
 
         mrd.stopRecording();
@@ -545,4 +441,4 @@ void MicrophoneRecorderDesc::
     }
 }
 
-} // namespace Adapters
+} // namespace Signal

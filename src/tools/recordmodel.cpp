@@ -1,6 +1,7 @@
 #include "recordmodel.h"
 
-#include "adapters/recorder.h"
+#include "signal/recorder.h"
+#include "signal/recorderoperation.h"
 #include "adapters/microphonerecorder.h"
 #include "sawe/project.h"
 
@@ -10,7 +11,7 @@ namespace Tools
 {
 
 RecordModel::
-        RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::ptr recording )
+        RecordModel( Sawe::Project* project, RenderView* render_view, Signal::Recorder::ptr recording )
     :
     recording(recording),
     project(project),
@@ -31,7 +32,7 @@ RecordModel::
 }
 
 
-class GotDataCallback: public Adapters::Recorder::IGotDataCallback
+class GotDataCallback: public Signal::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::ptr i) { i_ = i; }
@@ -54,12 +55,12 @@ private:
 
 RecordModel* RecordModel::
         createRecorder(Signal::Processing::Chain::ptr chain, Signal::Processing::TargetMarker::ptr at,
-                       Adapters::Recorder::ptr recorder,
+                       Signal::Recorder::ptr recorder,
                        Sawe::Project* project, RenderView* render_view)
 {
-    Adapters::Recorder::IGotDataCallback::ptr callback(new GotDataCallback());
+    Signal::Recorder::IGotDataCallback::ptr callback(new GotDataCallback());
 
-    Signal::OperationDesc::ptr desc( new Adapters::MicrophoneRecorderDesc(recorder, callback) );
+    Signal::OperationDesc::ptr desc( new Signal::MicrophoneRecorderDesc(recorder, callback) );
     Signal::Processing::IInvalidator::ptr i = chain.write ()->addOperationAt(desc, at);
 
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
@@ -147,7 +148,7 @@ void RecordModel::
         RecordModel* record_model = RecordModel::createRecorder(
                     chain,
                     target_marker,
-                    Adapters::Recorder::ptr(new Adapters::MicrophoneRecorder(-1)),
+                    Signal::Recorder::ptr(new Adapters::MicrophoneRecorder(-1)),
                     p, r );
 
         EXCEPTION_ASSERT(record_model->recording);

@@ -6,7 +6,7 @@
 
 #include "sawe/project.h"
 #include "ui/mainwindow.h"
-#include "adapters/recorder.h"
+#include "signal/recorder.h"
 #include "support/sinksignalproxy.h"
 #include "tfr/cwt.h"
 #include "heightmap/collection.h"

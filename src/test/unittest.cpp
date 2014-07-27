@@ -84,12 +84,10 @@ int UnitTest::
         RUNTEST(Test::TaskTimerTiming);
         RUNTEST(Test::RandomBuffer);
         RUNTEST(Test::PrintBuffer);
-        RUNTEST(Signal::Buffer);
-        RUNTEST(Signal::BufferSource);
         RUNTEST(Tfr::FreqAxis);
         RUNTEST(Gauss);
         // PortAudio complains if testing Microphone in the end
-        RUNTEST(Adapters::MicrophoneRecorderDesc);
+        RUNTEST(Adapters::MicrophoneRecorder);
         RUNTEST(Filters::Selection);
         RUNTEST(Filters::EnvelopeDesc);
         RUNTEST(Filters::Normalize);

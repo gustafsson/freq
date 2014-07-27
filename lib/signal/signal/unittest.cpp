@@ -1,6 +1,7 @@
 #include "unittest.h"
 
 #include "signal/buffer.h"
+#include "signal/buffersource.h"
 #include "signal/cache.h"
 #include "signal/processing/bedroom.h"
 #include "signal/processing/chain.h"
@@ -47,8 +48,10 @@ int UnitTest::
         Timer(); // Init performance counting
         TaskTimer tt("Running tests");
 
-        RUNTEST(Signal::Cache);
         RUNTEST(Signal::Intervals);
+        RUNTEST(Signal::Buffer);
+        RUNTEST(Signal::BufferSource);
+        RUNTEST(Signal::Cache);
         RUNTEST(Signal::Processing::Bedroom);
         RUNTEST(Signal::Processing::Dag);
         RUNTEST(Signal::Processing::FirstMissAlgorithm);

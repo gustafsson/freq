@@ -1,18 +1,18 @@
-#ifndef RECORDER_H
-#define RECORDER_H
+#ifndef SIGNAL_RECORDER_H
+#define SIGNAL_RECORDER_H
 
 #include "signal/cache.h"
 #include "shared_state.h"
 #include "verifyexecutiontime.h"
+#include "timer.h"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-namespace Adapters {
+namespace Signal {
 
 class Recorder
 {
 public:
     typedef shared_state<Recorder> ptr;
+    typedef shared_state<const Recorder> const_ptr;
 
     struct shared_state_traits: shared_state_traits_default {
         double timeout() { return 0.500; }
@@ -80,18 +80,18 @@ public:
     Signal::pBuffer read( const Signal::Interval& I );
 
 protected:
-
     shared_state<Data> _data;
+    float _offset;
+    Timer _start_recording, _last_update;
     IGotDataCallback::ptr _invalidator;
     std::exception_ptr _exception;
-    float _offset;
-    boost::posix_time::ptime _start_recording, _last_update;
-    Signal::IntervalType actual_number_of_samples() const;
 
     virtual float time() const;
+
+    Signal::IntervalType actual_number_of_samples() const;
 };
 
 
-} // namespace Adapters
+} // namespace Signal
 
-#endif // RECORDER_H
+#endif // SIGNAL_RECORDER_H

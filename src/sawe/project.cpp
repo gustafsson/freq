@@ -141,7 +141,7 @@ pProject Project::
 
             pProject p( new Project( "New network recording" ));
             p->createMainWindow ();
-            p->tools ().addRecording (Adapters::Recorder::ptr(new Adapters::NetworkRecorder(url)));
+            p->tools ().addRecording (Signal::Recorder::ptr(new Adapters::NetworkRecorder(url)));
 
             return p;
         }
@@ -268,7 +268,7 @@ pProject Project::
 {
     int device = QSettings().value("inputdevice", -1).toInt();
 
-    Adapters::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
+    Signal::Recorder::ptr recorder(new Adapters::MicrophoneRecorder(device));
 
     Signal::OperationDesc::Extent x;
     const auto d = recorder.raw ()->data ();
