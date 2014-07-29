@@ -5,6 +5,7 @@
 #include <QThread>
 
 class QGLWidget;
+class QOpenGLContext;
 
 namespace Heightmap {
 namespace Update {
@@ -18,6 +19,7 @@ class UpdateConsumer: public QThread
     Q_OBJECT
 public:
     UpdateConsumer(QGLWidget* parent_and_shared_gl_context, UpdateQueue::ptr update_queue);
+    UpdateConsumer(QOpenGLContext* shared_opengl_context, UpdateQueue::ptr update_queue, QObject* parent);
     ~UpdateConsumer();
 
 signals:
@@ -27,10 +29,11 @@ private slots:
     void threadFinished();
 
 private:
-    QGLWidget*   shared_gl_context;
+    QOpenGLContext* shared_opengl_context;
     UpdateQueue::ptr update_queue;
 
     void        run();
+    void        work();
 
 public:
     static void test();

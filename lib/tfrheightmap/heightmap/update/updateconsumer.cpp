@@ -12,6 +12,9 @@
 #include "gl.h"
 
 #include <QGLWidget>
+#include <QGLContext>
+#include <QOpenGLContext>
+#include <QOffscreenSurface>
 
 #include <numeric>
 
@@ -24,10 +27,18 @@ namespace Heightmap {
 namespace Update {
 
 UpdateConsumer::
-        UpdateConsumer(QGLWidget*shared_gl_context, UpdateQueue::ptr update_queue)
+        UpdateConsumer(QGLWidget* shared_opengl_widget, UpdateQueue::ptr update_queue)
     :
-      QThread(shared_gl_context),
-      shared_gl_context(shared_gl_context),
+      UpdateConsumer( shared_opengl_widget->context ()->contextHandle (), update_queue,  shared_opengl_widget)
+{
+}
+
+
+UpdateConsumer::
+        UpdateConsumer(QOpenGLContext* shared_opengl_context, UpdateQueue::ptr update_queue, QObject* parent)
+    :
+      QThread(parent),
+      shared_opengl_context(shared_opengl_context),
       update_queue(update_queue)
 {
     // Check for clean exit
@@ -36,6 +47,7 @@ UpdateConsumer::
     // Start the worker thread as a background thread
     start (LowPriority);
 }
+
 
 
 UpdateConsumer::
@@ -85,9 +97,41 @@ template <class Q>
 void UpdateConsumer::
         run()
 {
-    QGLWidget w(0, shared_gl_context);
-    w.makeCurrent ();
+    try
+      {
+        QOpenGLContext context;
+        context.setShareContext (shared_opengl_context);
+        context.setFormat (shared_opengl_context->format ());
+        context.create ();
 
+        if (!context.shareContext ()) {
+            Log("!!! Couldn't share contexts. UpdateConsumer thread is stopped.");
+            return;
+        }
+
+        QOffscreenSurface offscreen;
+        offscreen.setFormat (shared_opengl_context->format ());
+        offscreen.create ();
+
+        context.makeCurrent (&offscreen);
+
+        work ();
+      }
+    catch (UpdateQueue::abort_exception&)
+      {
+        requestInterruption ();
+      }
+    catch (...)
+      {
+        Heightmap::UncaughtException::handle_exception(boost::current_exception());
+        requestInterruption ();
+      }
+}
+
+
+void UpdateConsumer::
+        work()
+{
     TfrBlockUpdater block_updater;
     WaveformBlockUpdater waveform_updater;
 
@@ -150,15 +194,6 @@ void UpdateConsumer::
           }
         catch (UpdateQueue::skip_job_exception&)
           {
-          }
-        catch (UpdateQueue::abort_exception&)
-          {
-            requestInterruption ();
-          }
-        catch (...)
-          {
-            Heightmap::UncaughtException::handle_exception(boost::current_exception());
-            requestInterruption ();
           }
       }
 }
