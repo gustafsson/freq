@@ -91,8 +91,8 @@ void DrawCollections::
 
         {
             GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glViewport(0, 0, viewportWidth, viewportHeight);
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
             drawCollection(gl_projection, i, yscale);
         }

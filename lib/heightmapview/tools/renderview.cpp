@@ -142,6 +142,7 @@ void RenderView::
     tvector<4,float> a = model->render_settings.clear_color;
     glClearColor(a[0], a[1], a[2], a[3]);
     glClearDepth(1.0f);
+    glDepthMask(true);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
