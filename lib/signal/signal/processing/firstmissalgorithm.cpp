@@ -21,6 +21,7 @@ using namespace boost;
 namespace Signal {
 namespace Processing {
 
+std::mutex debuginfo_firstmissingalgorithm;
 
 typedef std::map<GraphVertex, Signal::Intervals> NeededSamples;
 
@@ -103,7 +104,7 @@ public:
             if (wanted_output.count () > wanted_output2.count ()/2)
                 wanted_output = wanted_output2;
             Signal::Interval expected_output;
-            Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);;
+            Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);
 
             DEBUGINFO TaskInfo tt(format("Missing %s = %s & %s in %s for %s")
                                    % I % needed[u] % step->not_started ()
@@ -211,6 +212,8 @@ Task FirstMissAlgorithm::
                 Workers::ptr /*workers*/,
                 Signal::ComputingEngine::ptr engine) const
 {
+    DEBUGINFO std::unique_lock<std::mutex> l(debuginfo_firstmissingalgorithm);
+
     DEBUGINFO TaskTimer tt(boost::format("FirstMissAlgorithm %s %p") % (engine?vartype(*engine):"Signal::ComputingEngine*") % engine.get ());
     DEBUGINFO TaskInfo(boost::format("needed = %s in %s") % needed % straight_g[straight_target]->operation_desc()->toString().toStdString());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
