@@ -30,44 +30,53 @@ MergerTexture::
         MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
     :
       cache_(cache),
+      vbo_(0),
       block_layout_(block_layout),
       tex_(0),
       disable_merge_(disable_merge),
       program_(0)
 {
-    EXCEPTION_ASSERT(QGLContext::currentContext ());
-
-    glGenTextures(1, &tex_);
-    glBindTexture(GL_TEXTURE_2D, tex_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout.texels_per_row(), block_layout.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    fbo_.reset (new GlFrameBuffer(tex_, block_layout.texels_per_row(), block_layout.texels_per_column ()));
-
-    glGenBuffers (1, &vbo_);
-
-//    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 }
 
 
 MergerTexture::
         ~MergerTexture()
 {
-    if (program_)
-        glDeleteProgram(program_);
+    if (program_) glDeleteProgram(program_);
     program_ = 0;
 
-    glDeleteTextures (1, &tex_);
+    if (tex_) glDeleteTextures (1, &tex_);
     tex_ = 0;
 
-    glDeleteBuffers (1, &vbo_);
+    if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 }
 
 
 void MergerTexture::
+        init()
+{
+    if (tex_)
+        return;
+
+    EXCEPTION_ASSERT(QGLContext::currentContext ());
+
+    glGenTextures(1, &tex_);
+    glBindTexture(GL_TEXTURE_2D, tex_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    fbo_.reset (new GlFrameBuffer(tex_, block_layout_.texels_per_row(), block_layout_.texels_per_column ()));
+
+    glGenBuffers (1, &vbo_);
+
+    //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
+}
+
+void MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    init ();
     INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: fillBlocksFromOthers %s blocks") % blocks.size ());
 
     GlException_CHECK_ERROR();

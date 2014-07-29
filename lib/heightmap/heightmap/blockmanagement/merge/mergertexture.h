@@ -39,6 +39,7 @@ private:
     BlockCache::cache_t cache_clone;
     unsigned program_;
 
+    void init();
     void fillBlockFromOthersInternal( pBlock block );
 
     /**
