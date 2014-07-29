@@ -56,9 +56,6 @@
 
 #include <boost/foreach.hpp>
 
-//#define TIME_PAINTGL_DRAW
-#define TIME_PAINTGL_DRAW if(0)
-
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
@@ -368,7 +365,7 @@ void RenderView::
         gl_projection.modelview *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
         {
-            TIME_PAINTGL_DRAW TaskTimer tt("Draw axes (%g)", length);
+            TIME_PAINTGL_DETAILS TaskTimer tt("Draw axes (%g)", length);
 
             bool draw_piano = model->render_settings.draw_piano;
             bool draw_hz = model->render_settings.draw_hz;
@@ -379,11 +376,14 @@ void RenderView::
             drawAxes_rotation.modelview *= setRotationForAxes();
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
-            Heightmap::Render::RenderAxes(
+            if (draw_piano || draw_hz || draw_t)
+            {
+                Heightmap::Render::RenderAxes(
                         model->render_settings,
                         &drawAxes_rotation,
                         display_scale
                         ).drawAxes( length );
+            }
 
             model->render_settings.draw_piano = draw_piano;
             model->render_settings.draw_hz = draw_hz;

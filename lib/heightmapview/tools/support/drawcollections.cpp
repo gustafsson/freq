@@ -126,6 +126,8 @@ void DrawCollections::
         glEnable(GL_DEPTH_TEST);
 
         GlException_CHECK_ERROR();
+
+        (void)texObjBinding; // RAII
     }
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
