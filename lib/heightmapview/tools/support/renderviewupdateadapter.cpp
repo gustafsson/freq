@@ -15,6 +15,7 @@ namespace Support {
 RenderViewUpdateAdapter::
         RenderViewUpdateAdapter()
 {
+    qRegisterMetaType<Signal::Interval>("Signal::Interval");
     qRegisterMetaType<Signal::UnsignedIntervalType>("Signal::UnsignedIntervalType");
 }
 
