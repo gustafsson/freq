@@ -376,14 +376,11 @@ void RenderView::
             drawAxes_rotation.modelview *= setRotationForAxes();
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
-            if (draw_piano || draw_hz || draw_t)
-            {
-                Heightmap::Render::RenderAxes(
-                        model->render_settings,
-                        &drawAxes_rotation,
-                        display_scale
-                        ).drawAxes( length );
-            }
+            Heightmap::Render::RenderAxes(
+                    model->render_settings,
+                    &drawAxes_rotation,
+                    display_scale
+                    ).drawAxes( length );
 
             model->render_settings.draw_piano = draw_piano;
             model->render_settings.draw_hz = draw_hz;
