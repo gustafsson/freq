@@ -1,40 +1,33 @@
 #include "squirclerenderer.h"
-#include "tools/support/heightmapprocessingpublisher.h"
-#include "tools/support/renderviewupdateadapter.h"
 #include "signal/processing/chain.h"
+#include "log.h"
 
-SquircleRenderer::SquircleRenderer()
+#include <QTimer>
+
+SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
     :
-      render_view(&render_model),
+      render_view(render_model),
       m_t(0), m_program(0)
 {
-    render_model.resetCameraSettings ();
-
-    Tools::Support::RenderViewUpdateAdapter* rvup;
-    Tools::Support::RenderOperationDesc::RenderTarget::ptr rvu(
-                rvup = new Tools::Support::RenderViewUpdateAdapter);
-
-    connect(rvup, SIGNAL(redraw()), &render_view, SLOT(redraw()));
-
-    render_model.init(Signal::Processing::Chain::createDefaultChain (), rvu);
-
-    // 'this' is parent
-    auto hpp = new Tools::Support::HeightmapProcessingPublisher(
-                render_model.target_marker ()->target_needs (),
-                render_model.tfr_mapping (),
-                &render_model.camera.q[0],
-                this);
-    connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
-    connect(&render_view, SIGNAL(painting()), hpp, SLOT(update()));
 }
+
 
 SquircleRenderer::~SquircleRenderer()
 {
     delete m_program;
 }
 
-/*
-void SquircleRenderer::paint()
+
+void SquircleRenderer::
+        setViewportSize(const QSize &size)
+{
+    m_viewportSize = size;
+    render_view.resizeGL (QRect(QPoint(0,0),m_viewportSize), m_viewportSize.height ());
+    render_view.initializeGL ();
+}
+
+
+void SquircleRenderer::paint2()
 {
     if (!m_program) {
         m_program = new QOpenGLShaderProgram();
@@ -87,13 +80,16 @@ void SquircleRenderer::paint()
 
     m_program->disableAttributeArray(0);
     m_program->release();
- }
-*/
+}
+
+
 void SquircleRenderer::paint()
 {
-    render_view.resizeGL (QRect(QPoint(0,0),m_viewportSize), m_viewportSize.height ());
-    render_view.initializeGL ();
     render_view.setStates ();
+    glUseProgram (0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    float s = m_viewportSize.width ()/(float)m_viewportSize.height ();
+    render_view.model->camera.p[0] = -render_view.model->tfr_mapping ()->length() + s*4;
     render_view.paintGL ();
 }
+

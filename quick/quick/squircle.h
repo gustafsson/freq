@@ -4,6 +4,8 @@
 #include <QQuickItem>
 #include "squirclerenderer.h"
 #include "signal/processing/chain.h"
+#include "tools/rendermodel.h"
+#include "tools/renderview.h"
 
 class Squircle : public QQuickItem
 {
@@ -22,13 +24,21 @@ signals:
 public slots:
     void sync();
     void cleanup();
+    void targetIsCreated(Signal::Processing::TargetMarker::ptr target_marker);
+    void setupUpdateConsumer(QOpenGLContext* context);
 
 private slots:
     void handleWindowChanged(QQuickWindow *win);
 
 private:
-    qreal m_t;
-    SquircleRenderer *m_renderer;
+    Tools::RenderModel render_model;
+
+    qreal m_t = 0;
+    SquircleRenderer *m_renderer = 0;
+    Signal::Processing::Chain::ptr chain;
+
+    void setupRenderTarget();
+    void setStftTransform();
 };
 
 #endif // SQUIRCLE_H

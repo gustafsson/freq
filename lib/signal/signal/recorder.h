@@ -32,6 +32,7 @@ public:
     };
 
 
+    // TODO use Signal::Processing::IInvalidator
     class IGotDataCallback
     {
     public:

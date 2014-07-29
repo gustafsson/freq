@@ -13,8 +13,8 @@ Recorder::Recorder()
 
 Recorder::~Recorder()
 {
-
 }
+
 
 float Recorder::
         time_since_last_update()

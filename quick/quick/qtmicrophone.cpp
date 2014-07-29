@@ -1,33 +1,171 @@
 #include "qtmicrophone.h"
 #include "log.h"
 #include "cpumemorystorage.h"
+#include "heightmap/uncaughtexception.h"
 
 #include <QAudioInput>
+#include <QTimer>
+
+GotData::GotData(
+        shared_state<Signal::Recorder::Data> data,
+        Signal::Recorder::IGotDataCallback::ptr& invalidator,
+        QAudioFormat format,
+        QObject* parent)
+    :
+      QIODevice(parent),
+      data(data),
+      invalidator(invalidator),
+      format(format)
+{
+    open(QIODevice::WriteOnly);
+}
+
+
+GotData::~GotData() {
+    close();
+}
+
+
+qint64 GotData::
+        readData(char *data, qint64 maxlen)
+{
+    Q_UNUSED(data)
+    Q_UNUSED(maxlen)
+
+    return 0;
+}
+
+
+template<class T>
+void makefloat(const char* data, qint64 len, std::vector<float>& f)
+{
+    T* p = (T*)data;
+    qint64 tlen = len / sizeof(T);
+    f.resize (tlen);
+    float minval = std::numeric_limits<T>::min ();
+    float maxval = std::numeric_limits<T>::max ();
+    for (qint64 i=0; i < tlen; i++)
+        f[i] = -1 + 2.f*(p[i] - minval)/(maxval - minval);
+}
+
+qint64 GotData::
+        writeData(const char *in, qint64 len)
+{
+    switch (format.sampleType ())
+    {
+    case QAudioFormat::Float:
+        writeData((const float*)in, len/format.channelCount ()/sizeof(float));
+        break;
+    case QAudioFormat::SignedInt:
+    case QAudioFormat::UnSignedInt:
+        switch (format.sampleSize ())
+        {
+        case 8:
+            if (format.sampleType () == QAudioFormat::SignedInt) makefloat<qint8>(in, len, f);
+            if (format.sampleType () == QAudioFormat::UnSignedInt) makefloat<quint8>(in, len, f);
+            break;
+        case 16:
+            if (format.sampleType () == QAudioFormat::SignedInt) makefloat<qint16>(in, len, f);
+            if (format.sampleType () == QAudioFormat::UnSignedInt) makefloat<quint16>(in, len, f);
+            break;
+        default:
+            Log("Unknown sample size %d") % format.sampleSize ();
+            return 0;
+        }
+        writeData(&f[0], f.size ());
+        break;
+    default:
+        Log("Unknown sample type %d") % format.sampleType ();
+        return 0;
+    }
+
+    return len;
+}
+
+
+void GotData::
+       writeData(const float* in, quint64 len)
+{
+    // Prepare buffer
+    Signal::IntervalType number_of_samples = len / data.raw()->num_channels;
+    if (!buffer || buffer->number_of_samples () != number_of_samples)
+        buffer.reset (new Signal::Buffer(0, number_of_samples, data.raw()->sample_rate, data.raw()->num_channels));
+
+    // What data did we get
+    Signal::Interval I;
+    I.first = data->samples.spannedInterval().last;
+    I.last = I.first + number_of_samples;
+
+    // Transpose
+    unsigned C = buffer->number_of_channels ();
+    for (unsigned i=0; i<C; ++i)
+    {
+        Signal::pMonoBuffer b = buffer->getChannel (i);
+        float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
+        for (unsigned j=0; j<I.count (); ++j)
+        {
+            p[j] = in[j*C + i];
+//            p[j] = 0;
+//            p[j] = -1 + 2*(rand()/(float)RAND_MAX);
+        }
+    }
+
+    // Publish
+    buffer->set_sample_offset (I.first);
+    data.write ()->samples.put( buffer );
+    if (invalidator) invalidator.write ()->markNewlyRecordedData( I );
+}
+
 
 QtMicrophone::
         QtMicrophone()
 {
     QAudioFormat format;
     // Set up the desired format, for example:
-    format.setSampleRate(44100);
-    format.setSampleType(QAudioFormat::Float);
-    audio_.reset (new QAudioInput(format));
+    format.setSampleRate (44100);
+//    format.setSampleType (QAudioFormat::Float);
+    format.setChannelCount (2);
+
+    QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
+    if (!info.isFormatSupported(format))
+        format = info.nearestFormat(format);
+
+    audio_.reset (new QAudioInput(info, format));
+    audio_->setBufferSize (1<<14); // buffer_size/sample_rate = latency
+    audio_->setBufferSize (512); // buffer_size/sample_rate = latency
 
     auto e = audio_->error ();
     if (e != QAudio::NoError)
         Log("QtMicrophone error: ") % (int)e;
 
-    this->connect (audio_.data (), SIGNAL(notify()), SLOT(gotData()));
+    _data.reset (new Recorder::Data(format.sampleRate (), format.channelCount ()));
+    device_.reset (new GotData(_data, _invalidator, format));
+}
+
+
+QtMicrophone::
+        ~QtMicrophone()
+{
+    // Drop any recorded data not already processed (don't stopRecording()
+    // as it would invoke GotData::writeData which uses invalidator which
+    // in turn uses the dag. But the Dag is locked by the caller of this
+    // destructor.
+    audio_->reset();
+
+    // Release resources
+    audio_.reset ();
+    device_.reset ();
 }
 
 
 void QtMicrophone::
         startRecording()
 {
-    device_ = audio_->start ();
-    if (audio_->error ())
+    audio_->start (device_.data ());
+
+    if (audio_->error () != QAudio::NoError)
     {
-        device_ = 0;
+        Log("QtMicrophone::startRecording failed: %d") % audio_->error ();
         return;
     }
 
@@ -61,41 +199,4 @@ std::string QtMicrophone::
         name()
 {
     return "QtMicrophone";
-}
-
-
-void QtMicrophone::
-        gotData()
-{
-    // What data did we got:
-    Signal::Interval I;
-    I.first = this->number_of_samples ();
-    I.last = I.first + device_->bytesAvailable ()/audio_->format ().bytesPerFrame ();
-
-    // Prepare buffers to receive data
-    if (!buffer_ || buffer_->number_of_samples () != (Signal::IntervalType)I.count ())
-    {
-        buffer_.reset (new Signal::Buffer(0, I.count (), audio_->format ().sampleRate (), audio_->format ().channelCount ()));
-        samples_.resize (I.count () * buffer_->number_of_channels ());
-    }
-
-    // Read data
-    device_->read ((char*)&samples_[0], audio_->format ().bytesForFrames (I.count ()));
-
-    // Transpose
-    const float *in = &samples_[0];
-    unsigned C = buffer_->number_of_channels ();
-    for (unsigned i=0; i<C; ++i)
-    {
-        Signal::pMonoBuffer b = buffer_->getChannel (i);
-        float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
-        for (unsigned j=0; j<I.count (); ++j)
-            p[j] = in[j*C + i];
-    }
-
-    _data.write ()->samples.put( buffer_ );
-
-    if (_invalidator)
-        // Tell someone that there is new data available to read
-        _invalidator.write ()->markNewlyRecordedData( I );
 }

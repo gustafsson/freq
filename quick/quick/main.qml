@@ -1,9 +1,8 @@
 import QtQuick 2.2
-import QtQuick 2.2
-import QtQuick.Controls 1.1
+//import QtQuick.Controls 1.1
 import OpenGLUnderQML 1.0
 
-ApplicationWindow {
+Item {
     visible: true
 
     width: 320
@@ -14,7 +13,7 @@ ApplicationWindow {
             NumberAnimation { to: 1; duration: 2500; easing.type: Easing.InQuad }
             NumberAnimation { to: 0; duration: 2500; easing.type: Easing.OutQuad }
             loops: Animation.Infinite
-            running: true
+            running: false
         }
     }
 
