@@ -41,8 +41,15 @@ UpdateConsumer::
       shared_opengl_context(shared_opengl_context),
       update_queue(update_queue)
 {
+    EXCEPTION_ASSERT(shared_opengl_context);
+
     // Check for clean exit
     connect(this, SIGNAL(finished()), SLOT(threadFinished()));
+
+    surface = new QOffscreenSurface;
+    surface->setParent (this);
+    surface->setFormat (shared_opengl_context->format ());
+    surface->create ();
 
     // Start the worker thread as a background thread
     start (LowPriority);
@@ -109,11 +116,7 @@ void UpdateConsumer::
             return;
         }
 
-        QOffscreenSurface offscreen;
-        offscreen.setFormat (shared_opengl_context->format ());
-        offscreen.create ();
-
-        context.makeCurrent (&offscreen);
+        context.makeCurrent (surface);
 
         work ();
       }

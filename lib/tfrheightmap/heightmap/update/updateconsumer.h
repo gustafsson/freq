@@ -6,6 +6,7 @@
 
 class QGLWidget;
 class QOpenGLContext;
+class QOffscreenSurface;
 
 namespace Heightmap {
 namespace Update {
@@ -29,7 +30,8 @@ private slots:
     void threadFinished();
 
 private:
-    QOpenGLContext* shared_opengl_context;
+    QOffscreenSurface* surface = 0;
+    QOpenGLContext* shared_opengl_context = 0;
     UpdateQueue::ptr update_queue;
 
     void        run();
