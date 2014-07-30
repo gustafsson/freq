@@ -9,13 +9,14 @@
 #define GLUPROJECT_IOS_H
 
 #include "gl.h"
+#include "GLvector.h"
 //#include <OpenGLES/ES1/gl.h>
 //#include <OpenGLES/ES1/glext.h>
 
-void
+GLmatrix
 gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar);
 
-void
+GLmatrix
 gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
     GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
     GLfloat upz);
@@ -44,7 +45,7 @@ gluUnProject4(GLfloat winx, GLfloat winy, GLfloat winz, GLfloat clipw,
      GLfloat *objx, GLfloat *objy, GLfloat *objz,
      GLfloat *objw);
 
-void
+GLmatrix
 gluPickMatrix(GLfloat x, GLfloat y, GLfloat deltax, GLfloat deltay,
      GLint viewport[4]);
 

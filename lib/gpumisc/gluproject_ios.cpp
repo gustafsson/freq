@@ -22,7 +22,7 @@ static void __gluMakeIdentityf(GLfloat m[16])
 
 #define __glPi 3.14159265358979323846
 
-void
+GLmatrix
 gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
 {
     GLfloat m[4][4];
@@ -32,7 +32,7 @@ gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
     deltaZ = zFar - zNear;
     sine = sin(radians);
     if ((deltaZ == 0) || (sine == 0) || (aspect == 0)) {
- return;
+        return GLmatrix::identity ();
     }
     cotangent = cos(radians) / sine;
 
@@ -43,7 +43,8 @@ gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
     m[2][3] = -1;
     m[3][2] = -2 * zNear * zFar / deltaZ;
     m[3][3] = 0;
-    glMultMatrixf(&m[0][0]);
+
+    return GLmatrix(&m[0][0]);
 }
 
 static void normalize(float v[3])
@@ -65,7 +66,7 @@ static void cross(float v1[3], float v2[3], float result[3])
     result[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-void
+GLmatrix
 gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
    GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
    GLfloat upz)
@@ -103,8 +104,9 @@ gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
     m[1][2] = -forward[1];
     m[2][2] = -forward[2];
 
-    glMultMatrixf(&m[0][0]);
-    glTranslatef(-eyex, -eyey, -eyez);
+    GLmatrix M(&m[0][0]);
+    M.translate (-eyex, -eyey, -eyez);
+    return M;
 }
 
 static void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4],
@@ -305,16 +307,18 @@ gluUnProject4(GLfloat winx, GLfloat winy, GLfloat winz, GLfloat clipw,
     return(GL_TRUE);
 }
 
-void
+GLmatrix
 gluPickMatrix(GLfloat x, GLfloat y, GLfloat deltax, GLfloat deltay,
     GLint viewport[4])
 {
     if (deltax <= 0 || deltay <= 0) {
- return;
+        return GLmatrix::identity ();
     }
 
     /* Translate and scale the picked region to the entire window */
-    glTranslatef((viewport[2] - 2 * (x - viewport[0])) / deltax,
-     (viewport[3] - 2 * (y - viewport[1])) / deltay, 0);
-    glScalef(viewport[2] / deltax, viewport[3] / deltay, 1.0);
+    GLmatrix M = GLmatrix::identity ();
+    M.translate ((viewport[2] - 2 * (x - viewport[0])) / deltax,
+            (viewport[3] - 2 * (y - viewport[1])) / deltay, 0);
+    M.scale (viewport[2] / deltax, viewport[3] / deltay, 1.0);
+    return M;
 }
