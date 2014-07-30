@@ -11,6 +11,8 @@
 #include "datastoragestring.h"
 #include "GlException.h"
 #include "glPushContext.h"
+#include "glprojection.h"
+#include "gluperspective.h"
 
 #include <QGLContext>
 
@@ -21,6 +23,28 @@
 #define INFO_COLLECTION if(0)
 
 using namespace Signal;
+
+void printUniformInfo(int program)
+{
+    int n_uniforms = 0;
+    int len_uniform = 0;
+    glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
+    glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
+    char name[len_uniform];
+    Log("Found %d uniforms in program") % n_uniforms;
+    for (int i=0; i<n_uniforms; i++) {
+        GLint size;
+        GLenum type;
+        glGetActiveUniform(program,
+            i,
+            len_uniform,
+            0,
+            &size,
+            &type,
+            name);
+        Log("%d: %s, size=%d, type=%d") % i % ((char*)name) % size % type;
+    }
+}
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -63,7 +87,11 @@ void MergerTexture::
 
     glGenTextures(1, &tex_);
     glBindTexture(GL_TEXTURE_2D, tex_);
+#ifdef GL_ES_VERSION_2_0
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
+#endif
     glBindTexture(GL_TEXTURE_2D, 0);
 
     fbo_.reset (new GlFrameBuffer(tex_, block_layout_.texels_per_row(), block_layout_.texels_per_column ()));
@@ -71,6 +99,7 @@ void MergerTexture::
     glGenBuffers (1, &vbo_);
 
     //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
+    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
 }
 
 void MergerTexture::
@@ -91,12 +120,7 @@ void MergerTexture::
     auto fboBinding = fbo_->getScopeBinding ();
 
     glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
-    glMatrixMode (GL_PROJECTION);
-    glPushMatrix ();
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix ();
 
-    glPushAttribContext pa(GL_ENABLE_BIT);
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
@@ -116,11 +140,12 @@ void MergerTexture::
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+    int qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
+    int qt_MultiTexCoord0 = glGetAttribLocation (program_, "qt_MultiTexCoord0");
+    glEnableVertexAttribArray (qt_Vertex);
+    glEnableVertexAttribArray (qt_MultiTexCoord0);
+    glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
+    glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     glUseProgram (program_);
 
@@ -133,14 +158,13 @@ void MergerTexture::
 
     glUseProgram (0);
 
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableVertexAttribArray (qt_MultiTexCoord0);
+    glDisableVertexAttribArray (qt_Vertex);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glMatrixMode (GL_PROJECTION);
-    glPopMatrix ();
-    glMatrixMode (GL_MODELVIEW);
-    glPopMatrix ();
+    glEnable (GL_DEPTH_TEST);
+    glEnable (GL_BLEND);
+    glEnable (GL_CULL_FACE);
 
     glViewport(viewport[0], viewport[1], viewport[2], viewport[3] );
     glClearColor (v[0],v[1],v[2],v[3]);
@@ -163,10 +187,11 @@ void MergerTexture::
 
     glClear( GL_COLOR_BUFFER_BIT );
 
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho(r.a.time, r.b.time, r.a.scale, r.b.scale, -10,10);
-    glMatrixMode ( GL_MODELVIEW );
+    GLmatrix projection;
+    glhFrustumf (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
+
+    int uniProjection = glGetUniformLocation (program_, "qt_ProjectionMatrix");
+    glUniformMatrix4fv (uniProjection, 1, false, projection.v ());
 
     if (!disable_merge_)
     {
@@ -250,9 +275,12 @@ bool MergerTexture::
     VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
 
     Region ri = inBlock.getRegion ();
-    glLoadIdentity();
-    glTranslatef (ri.a.time, ri.a.scale, 0);
-    glScalef (ri.time (), ri.scale (), 1.f);
+    GLmatrix modelview = GLmatrix::identity ();
+    modelview *= GLmatrix::translate (ri.a.time, ri.a.scale, 0);
+    modelview *= GLmatrix::scale (ri.time (), ri.scale (), 1.f);
+
+    int uniModelView = glGetUniformLocation (program_, "qt_ModelViewMatrix");
+    glUniformMatrix4fv (uniModelView, 1, false, modelview.v ());
 
     glBindTexture( GL_TEXTURE_2D, inBlock.texture ()->getOpenGlTextureId ());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
