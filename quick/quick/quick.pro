@@ -12,10 +12,12 @@ RESOURCES += qml.qrc
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 
-SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
-INCLUDEPATH += /Users/johan/dev/sonicawe/lib/sonicawe-ios
+#INCLUDEPATH += /Users/johan/dev/sonicawe/lib/sonicawe-ios
 # how to find a feature in a shadow build?
+#PWD = $$_PRO_FILE_PWD_
+SAWEROOT = $$_PRO_FILE_PWD_/../..
 CONFIG += buildflags
+#QMAKEFEATURES = $$_PRO_FILE_PWD_/../../features
 
 QT += opengl
 QT += network
@@ -42,6 +44,9 @@ LIBS += \
     -L../../lib/heightmap -lheightmap \
     -L../../lib/tfrheightmap -ltfrheightmap \
     -L../../lib/heightmapview -lheightmapview \
+
+macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
+macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
 # Default rules for deployment.
 include(deployment.pri)

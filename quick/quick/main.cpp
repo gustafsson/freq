@@ -1,10 +1,12 @@
-#include <QGuiApplication>
-#include <QQmlApplicationEngine>
+#include <boost/noncopyable.hpp>
+
 #include "squircle.h"
 #include "prettifysegfault.h"
 #include "log.h"
+
+
+#include <QGuiApplication>
 #include <QQuickView>
-#include <QApplication>
 
 int main(int argc, char *argv[])
 {

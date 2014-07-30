@@ -2,6 +2,8 @@
     error("Use \"CONFIG += c++11 buildflags\" instead of \"CONFIG += buildflags\"")
 }
 
+message("buildflags for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
+
 win32:CONFIG += debug_and_release
 CONFIG += warn_on
 CONFIG += openmp
