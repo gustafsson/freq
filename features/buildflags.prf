@@ -6,7 +6,7 @@ message("buildflags for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
 
 win32:CONFIG += debug_and_release
 CONFIG += warn_on
-CONFIG += openmp
+!macx-ios*:CONFIG += openmp
 CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
 CONFIG(debug, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT
 
@@ -95,7 +95,7 @@ win32 {
 }
 
 unix {
-    !macx {
+    !macx* {
         CONFIG(debug, debug|release):QMAKE_CXXFLAGS_DEBUG += -ggdb
         QMAKE_CXX = colorgcc
     }
@@ -123,6 +123,12 @@ profiling {
     # Profiling with gcc, gprof doesn't work with Os X 10.5 Leopard.
     !win32:QMAKE_CXXFLAGS_RELEASE += -pg
     !win32:QMAKE_LFLAGS_RELEASE += -pg
+}
+
+macx-ios* { # ios
+    #SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
+    #INCLUDEPATH += $$SAWEROOT/lib/sonicawe-ios
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../lib/sonicawe-ios
 }
 
 #system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")
