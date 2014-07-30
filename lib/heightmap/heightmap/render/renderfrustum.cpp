@@ -20,6 +20,7 @@ RenderFrustum::
 void RenderFrustum::
         drawFrustum()
 {
+#ifndef GL_ES_VERSION_2_0
     if (clippedFrustum.empty())
         return;
 
@@ -62,6 +63,7 @@ void RenderFrustum::
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_BLEND);
+#endif
 }
 
 } // namespace Render

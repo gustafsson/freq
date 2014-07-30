@@ -9,16 +9,19 @@ namespace Render {
 
 RenderRegion::RenderRegion(glProjection gl_projection)
 {
+#ifndef GL_ES_VERSION_2_0
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixf (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf (gl_projection.modelview.v ());
+#endif
 }
 
 
 void RenderRegion::
         render(Region r, bool drawcross)
 {
+#ifndef GL_ES_VERSION_2_0
     // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
     //float y = _frustum_clip.projectionPlane[1]*.05;
     float y = 0.05f;
@@ -79,6 +82,7 @@ void RenderRegion::
             glVertex3f( 0, y, 1 );
         glEnd();
     }
+#endif
 }
 
 
