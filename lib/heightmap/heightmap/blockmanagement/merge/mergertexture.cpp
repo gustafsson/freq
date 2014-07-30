@@ -142,12 +142,15 @@ void MergerTexture::
 
     int qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
     int qt_MultiTexCoord0 = glGetAttribLocation (program_, "qt_MultiTexCoord0");
+    int qt_Texture0 = glGetUniformLocation(program_, "qt_Texture0");
+
     glEnableVertexAttribArray (qt_Vertex);
     glEnableVertexAttribArray (qt_MultiTexCoord0);
     glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     glUseProgram (program_);
+    glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 
     cache_clone = cache_->clone();
 
@@ -188,7 +191,7 @@ void MergerTexture::
     glClear( GL_COLOR_BUFFER_BIT );
 
     GLmatrix projection;
-    glhFrustumf (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
+    glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
 
     int uniProjection = glGetUniformLocation (program_, "qt_ProjectionMatrix");
     glUniformMatrix4fv (uniProjection, 1, false, projection.v ());

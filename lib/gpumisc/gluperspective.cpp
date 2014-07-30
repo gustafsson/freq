@@ -2,6 +2,7 @@
 
 #include "gluperspective.h"
 #include <cmath>
+#include <string.h>
 
 //matrix will receive the calculated perspective matrix.
 //You would have to upload to your shader
@@ -42,4 +43,26 @@ void glhFrustumf(float *matrix, float left, float right, float bottom, float top
     matrix[13] = 0.0;
     matrix[14] = (-temp * zfar) / temp4;
     matrix[15] = 0.0;
+}
+
+
+void glhOrtho(float *matrix, float left, float right, float bottom, float top,
+                  float near, float far)
+{
+    float a = 2.0f / (right - left);
+    float b = 2.0f / (top - bottom);
+    float c = -2.0f / (far - near);
+
+    float tx = - (right + left)/(right - left);
+    float ty = - (top + bottom)/(top - bottom);
+    float tz = - (far + near)/(far - near);
+
+    float ortho[16] = {
+        a, 0, 0, 0,
+        0, b, 0, 0,
+        0, 0, c, 0,
+        tx, ty, tz, 1
+    };
+
+    memcpy(matrix, ortho, sizeof(ortho));
 }
