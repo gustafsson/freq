@@ -4,12 +4,15 @@
 // gpumisc
 #include "tasktimer.h"
 #include "glPushContext.h"
+#include "gl.h"
 
 // glut
 #ifndef __APPLE__
 #   include <GL/glut.h>
 #else
+# ifndef GL_ES_VERSION_2_0
 #   include <GLUT/glut.h>
+# endif
 #endif
 
 //#define TIME_RENDERER
@@ -42,11 +45,6 @@ RenderAxes::
         c = 1;
 #endif
     }
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (gl_projection->projection.v ());
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (gl_projection->modelview.v ());
 }
 
 
@@ -54,6 +52,10 @@ void RenderAxes::
         drawAxes( float T )
 {
 #ifndef GL_ES_VERSION_2_0
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf (gl_projection->projection.v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf (gl_projection->modelview.v ());
 
     render_settings.last_axes_length = T;
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
