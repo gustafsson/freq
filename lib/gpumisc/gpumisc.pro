@@ -84,6 +84,7 @@ HEADERS += \
     msc_stdc.h \
     neat_math.h \
     operate.h \
+    printmatrix.h \
     redirectstdout.h \
     redirectStream.h \
     releaseaftercontext.h \
