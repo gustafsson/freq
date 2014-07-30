@@ -2,6 +2,7 @@
 //varying vec3 eyeSpacePos;
 //varying vec3 worldSpaceNormal;
 //varying vec3 eyeSpaceNormal;
+attribute vec4 qt_Vertex;
 varying float vertex_height;
 varying float shadow;
 
@@ -31,7 +32,7 @@ float heightValue(float v) {
 void main()
 {
     // We want linear interpolation all the way out to the edge
-    vec2 vertex = clamp(gl_Vertex.xz, 0.0, 1.0);
+    vec2 vertex = clamp(qt_Vertex.xz, 0.0, 1.0);
     vec2 tex0 = vertex*scale_tex + offset_tex;
 
     gl_TexCoord[0].xy = tex0;

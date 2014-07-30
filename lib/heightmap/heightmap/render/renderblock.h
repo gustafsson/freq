@@ -25,6 +25,7 @@ public:
         void renderBlock( pBlock ref );
 
     private:
+        RenderBlock* render_block;
         unsigned vbo_size;
         RenderSettings render_settings;
         glProjection gl_projection;
@@ -67,7 +68,7 @@ private:
 
     void checkExtensions();
     void beginVboRendering(BlockLayout block_size);
-    static void endVboRendering();
+    void endVboRendering();
     void createMeshIndexBuffer(int w, int h);
     void createMeshPositionVBO(int w, int h);
     void createColorTexture(unsigned N);

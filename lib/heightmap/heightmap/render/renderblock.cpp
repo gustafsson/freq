@@ -34,6 +34,7 @@ namespace Render {
 
 RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection)
     :
+      render_block(render_block),
       vbo_size(render_block->_vbo_size),
       render_settings(*render_block->render_settings),
       gl_projection(gl_projection)
@@ -48,7 +49,7 @@ RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_siz
 RenderBlock::Renderer::~Renderer()
 {
     try {
-        RenderBlock::endVboRendering();
+        render_block->endVboRendering();
     } catch (...) {
         TaskInfo(boost::format("!!! ~RenderBlock::Renderer: endVboRendering failed\n%s") % boost::current_exception_diagnostic_information());
     }
@@ -89,10 +90,12 @@ void RenderBlock::Renderer::
 
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, vbo_size);
+#ifndef GL_ES_VERSION_2_0
     } else if (wireFrame) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
             glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
     } else {
         glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
     }
@@ -426,8 +429,9 @@ void RenderBlock::
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    glVertexPointer(4, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
+    glEnableVertexAttribArray (qt_Vertex);
+    glVertexAttribPointer (qt_Vertex, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
 
@@ -446,7 +450,8 @@ void RenderBlock::
     GlTexture::unbindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
-    glDisableClientState(GL_VERTEX_ARRAY);
+    int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
+    glDisableVertexAttribArray (qt_Vertex);
     glUseProgram(0);
 
     GlException_CHECK_ERROR();
@@ -483,7 +488,7 @@ void RenderBlock::
 
     // create index buffer
     if (_mesh_index_buffer)
-        glDeleteBuffersARB(1, &_mesh_index_buffer);
+        glDeleteBuffers(1, &_mesh_index_buffer);
 
     _mesh_width = w;
     _mesh_height = h;
