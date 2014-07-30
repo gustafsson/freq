@@ -119,6 +119,7 @@ void glProjection::
         glViewport (0,0,100,100);
         glProjection g;
 
+#ifndef GL_ES_VERSION_2_0
         glGetFloatv(GL_MODELVIEW_MATRIX, g.modelview.v ());
         glGetFloatv(GL_PROJECTION_MATRIX, g.projection.v ());
         glGetIntegerv(GL_VIEWPORT, g.viewport.v);
@@ -129,5 +130,6 @@ void glProjection::
         EXCEPTION_ASSERT_EQUALS(g.modelview, (tmatrix<4, double>(id4)));
         EXCEPTION_ASSERT_EQUALS(g.projection, (tmatrix<4, double>(id4)));
         EXCEPTION_ASSERT_EQUALS(g.viewport, (tvector<4, double>(vp)));
+#endif
     }
 }
