@@ -37,6 +37,7 @@ std::list<pBlock> ClearInterval::
         else
         {
             // TODO this update into an existing texture might collide with updateconsumer
+#ifndef GL_ES_VERSION_2_0
             Region ir = block->getRegion ();
             ResampleTexture rt(*block->texture ());
             ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
@@ -52,6 +53,7 @@ std::list<pBlock> ClearInterval::
             if (A.x1<A.x2)
                 rt.drawColoredArea (A, 0.f);
             (void)sb; // RAII
+#endif
         }
     }
 
