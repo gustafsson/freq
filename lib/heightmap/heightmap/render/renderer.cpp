@@ -74,7 +74,6 @@ void Renderer::
     if (!render_block->isInitialized ())
         return;
 
-    glPushMatrixContext mc(GL_MODELVIEW);
     setupGlStates(scaley);
 
     float yscalelimit = render_settings.drawcrosseswhen0 ? 0.0004f : 0.f;
@@ -121,8 +120,6 @@ void Renderer::
 
     render_settings.last_ysize = scaley;
     render_settings.drawn_blocks = 0;
-
-    glScalef(1, render_settings.draw_flat ? 0 : scaley, 1);
 }
 
 
