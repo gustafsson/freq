@@ -113,9 +113,13 @@ void BlockTextures::
     //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
 
     // Compatible with GlFrameBuffer
+#ifdef GL_ES_VERSION_2_0
+    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_FLOAT, 0) );
+#elif
     //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
     //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RED, GL_FLOAT, 0) );
+#endif
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -124,7 +128,11 @@ void BlockTextures::
 unsigned BlockTextures::
         allocated_bytes_per_element()
 {
+#ifdef GL_ES_VERSION_2_0
+    return 4; // GL_RED, upper guess, could be 2
+#else
     return 2; // GL_R16F
+#endif
 }
 
 
