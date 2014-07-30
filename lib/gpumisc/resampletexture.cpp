@@ -18,6 +18,7 @@
 //#define INFO
 #define INFO if(0)
 
+#ifndef GL_ES_VERSION_2_0
 ResampleTexture::Area::
         Area(float x1, float y1, float x2, float y2)
     :
@@ -184,6 +185,7 @@ void ResampleTexture::
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture(), fbo.getWidth (), fbo.getHeight ()).readFloat (), "fbo");
 }
+#endif
 
 
 /////////////////// tests ////////////////////////
@@ -206,6 +208,7 @@ void ResampleTexture::
 void ResampleTexture::
         testInContext()
 {
+#ifndef GL_ES_VERSION_2_0
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
     {
         // There must be a current OpenGL context
@@ -426,4 +429,5 @@ void ResampleTexture::
         data = GlTextureRead(dest).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected7, sizeof(expected7), data);
     }
+#endif
 }
