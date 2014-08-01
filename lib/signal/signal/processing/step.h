@@ -34,6 +34,7 @@ public:
     };
 
     // To be appended to exceptions while using Step
+    struct crashed_step_tag {};
     typedef boost::error_info<struct crashed_step_tag, Step::ptr> crashed_step;
 
     Step(Signal::OperationDesc::ptr operation_desc);
