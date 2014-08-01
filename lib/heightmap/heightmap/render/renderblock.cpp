@@ -329,7 +329,7 @@ void RenderBlock::
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
         TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
-        GLuint uniVertText0,
+        GLint uniVertText0,
                 uniVertText2,
                 uniColorTextureFactor,
                 uniFixedColor,
@@ -431,7 +431,7 @@ void RenderBlock::
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
+    GLint qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
     glEnableVertexAttribArray (qt_Vertex);
     glVertexAttribPointer (qt_Vertex, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
