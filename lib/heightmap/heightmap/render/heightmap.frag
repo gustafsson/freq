@@ -4,7 +4,7 @@
 //varying vec3 eyeSpaceNormal;
 varying float vertex_height;
 varying float shadow;
-
+varying vec2 texCoord;
 
 uniform sampler2D tex;
 uniform sampler2D tex_color;
@@ -28,15 +28,15 @@ float heightValue(float v) {
 void main()
 {
     // anti-aliasing, multiplesample the texture four times per pixel
-    //vec2 dt = 0.25*fwidth(gl_TexCoord[0].xy);
-    //vec4 v4 = vec4(texture2D(tex, gl_TexCoord[0].xy + dt).x,
-    //        texture2D(tex, gl_TexCoord[0].xy + vec2(dt.x, -dt.y)).x,
-    //        texture2D(tex, gl_TexCoord[0].xy - dt).x,
-    //        texture2D(tex, gl_TexCoord[0].xy - vec2(dt.x, -dt.y)).x);
+    //vec2 dt = 0.25*fwidth(texCoord);
+    //vec4 v4 = vec4(texture2D(tex, texCoord + dt).x,
+    //        texture2D(tex, texCoord + vec2(dt.x, -dt.y)).x,
+    //        texture2D(tex, texCoord - dt).x,
+    //        texture2D(tex, texCoord - vec2(dt.x, -dt.y)).x);
     //float v = max(max(v4.x, v4.y), max(v4.z, v4.w));
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
-    float v = texture2D(tex, gl_TexCoord[0].xy).x;
+    float v = texture2D(tex, texCoord).x;
     v = heightValue(v);
 
     vec4 curveColor = fixedColor; // colorscale or grayscale

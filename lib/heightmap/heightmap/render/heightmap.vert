@@ -5,6 +5,7 @@
 attribute vec4 qt_Vertex;
 varying float vertex_height;
 varying float shadow;
+varying vec2 texCoord;
 
 uniform sampler2D tex;
 uniform float flatness;
@@ -35,7 +36,7 @@ void main()
     vec2 vertex = clamp(qt_Vertex.xz, 0.0, 1.0);
     vec2 tex0 = vertex*scale_tex + offset_tex;
 
-    gl_TexCoord[0].xy = tex0;
+    texCoord = tex0;
 
     vec2 tex1 = max(tex0 - offset_tex*2.0, offset_tex);
     vec2 tex2 = min(tex0 + offset_tex*2.0, 1.0-offset_tex);
