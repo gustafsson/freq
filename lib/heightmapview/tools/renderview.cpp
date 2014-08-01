@@ -241,6 +241,9 @@ QRect RenderView::
 void RenderView::
         paintGL()
 {
+    if (!model->chain ())
+        return;
+
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
         emit prePaint();
