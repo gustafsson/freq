@@ -120,6 +120,7 @@ void GotData::
 QtMicrophone::
         QtMicrophone()
 {
+    qRegisterMetaType<QAudio::State>("QAudio::State");
     QAudioFormat format;
     // Set up the desired format, for example:
     format.setSampleRate (44100);
