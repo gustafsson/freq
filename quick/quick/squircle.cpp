@@ -68,6 +68,13 @@ void Squircle::
 void Squircle::
         setupRenderTarget()
 {
+    if (QThread::currentThread () != this->thread ())
+    {
+        // Dispatch
+        QMetaObject::invokeMethod (this, "setupRenderTarget");
+        return;
+    }
+
     // requires a window that can be updated
     Tools::Support::RenderViewUpdateAdapter* rvup;
     Tools::Support::RenderOperationDesc::RenderTarget::ptr rvu(
@@ -82,19 +89,12 @@ void Squircle::
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
                 render_model.target_marker ()->target_needs (),
                 render_model.tfr_mapping (),
-                &render_model.camera.q[0]);
-    hpp->moveToThread (this->thread ());
-    hpp->setParent (this);
+                &render_model.camera.q[0], this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
 
     connect(window(), SIGNAL(afterRendering()), hpp, SLOT(update()));
 //    connect(render_view, SIGNAL(painting()), hpp, SLOT(update()));
-}
 
-
-void Squircle::
-        setStftTransform()
-{   
     RenderViewTransform(render_model).receiveSetTransform_Stft ();
 }
 
@@ -119,7 +119,6 @@ void Squircle::sync()
     if (!m_renderer) {
         setupUpdateConsumer(QOpenGLContext::currentContext());
         setupRenderTarget();
-        setStftTransform();
 
         m_renderer = new SquircleRenderer(&render_model);
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);

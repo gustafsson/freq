@@ -26,6 +26,7 @@ public slots:
     void cleanup();
     void targetIsCreated(Signal::Processing::TargetMarker::ptr target_marker);
     void setupUpdateConsumer(QOpenGLContext* context);
+    void setupRenderTarget();
 
 private slots:
     void handleWindowChanged(QQuickWindow *win);
@@ -36,9 +37,6 @@ private:
     qreal m_t = 0;
     SquircleRenderer *m_renderer = 0;
     Signal::Processing::Chain::ptr chain;
-
-    void setupRenderTarget();
-    void setStftTransform();
 };
 
 #endif // SQUIRCLE_H
