@@ -11,6 +11,7 @@
 #include <math.h> // cos, sin, M_PI
 #include <algorithm> // std::min, std::max
 
+#ifndef GL_ES_VERSION_2_0
 namespace Tools {
     namespace Support {
 
@@ -152,3 +153,4 @@ void DrawWorking::
 
     } // namespace Support
 } // namespace Tools
+#endif
