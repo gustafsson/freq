@@ -92,7 +92,7 @@ void RenderBlock::Renderer::
         glDrawArrays(GL_POINTS, 0, vbo_size);
     } else if (wireFrame) {
 #ifdef GL_ES_VERSION_2_0
-        glDrawElements(GL_LINE_STIPPLE, vbo_size, BLOCK_INDEX_TYPE, 0);
+        glDrawElements(GL_LINE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
 #else
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
             glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
