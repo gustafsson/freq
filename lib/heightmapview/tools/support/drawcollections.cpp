@@ -9,6 +9,8 @@
 #include "tools/rendermodel.h"
 #include "heightmap/render/renderer.h"
 
+#include <QOpenGLShaderProgram>
+
 //#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
 
@@ -22,6 +24,12 @@ DrawCollections::DrawCollections(RenderModel* model)
     :
       model(model)
 {
+}
+
+
+DrawCollections::~DrawCollections()
+{
+    delete m_program;
 }
 
 
@@ -100,28 +108,60 @@ void DrawCollections::
         glViewport(current_viewport[0], current_viewport[1],
                    current_viewport[2], current_viewport[3]);
 
-        glPushMatrixContext mpc( GL_PROJECTION );
-        glLoadIdentity();
-        glOrtho(0,1,0,1,-10,10);
-        glPushMatrixContext mc( GL_MODELVIEW );
-        glLoadIdentity();
-
         glBlendFunc( GL_DST_COLOR, GL_ZERO );
 
         glDisable(GL_DEPTH_TEST);
-
-        glColor4f(1,1,1,1);
         GlTexture t(fbo->getGlTexture(), fbo->getWidth (), fbo->getHeight ());
         GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
 
-        glBegin(GL_TRIANGLE_STRIP);
-            float tx = viewportWidth/(float)fbo->getWidth();
-            float ty = viewportHeight/(float)fbo->getHeight();
-            glTexCoord2f(0,0); glVertex2f(0,0);
-            glTexCoord2f(tx,0); glVertex2f(1,0);
-            glTexCoord2f(0,ty); glVertex2f(0,1);
-            glTexCoord2f(tx,ty); glVertex2f(1,1);
-        glEnd();
+        if (!m_program) {
+            m_program = new QOpenGLShaderProgram();
+            m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                               "attribute highp vec4 vertices;"
+                                               "attribute highp vec2 itex;"
+                                               "uniform mat4 modelviewprojection;"
+                                               "varying highp vec2 ftex;"
+                                               "void main() {"
+                                               "    gl_Position = modelviewprojection * vertices;"
+                                               "    ftex = itex;"
+                                               "}");
+            m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                               "uniform lowp float t;"
+                                               "uniform sampler2D tex;"
+                                               "varying highp vec2 ftex;"
+                                               "void main() {"
+                                               "    gl_FragColor = texture2D(tex, ftex);"
+                                               "}");
+
+            m_program->bindAttributeLocation("vertices", 0);
+            m_program->bindAttributeLocation("itex", 1);
+            m_program->link();
+            m_program->bind();
+            m_program->setUniformValue ("tex", 0);
+            QMatrix4x4 M;
+            M.ortho (0,1,0,1,-10,10);
+            m_program->setUniformValue ("modelviewprojection", M);
+            m_program->release();
+        }
+
+        m_program->bind();
+        m_program->enableAttributeArray(0);
+        m_program->enableAttributeArray(1);
+
+        float tx = viewportWidth/(float)fbo->getWidth();
+        float ty = viewportHeight/(float)fbo->getHeight();
+        float values[] = {
+             0, 0, 0,  0,
+             1, 0, tx, 0,
+             0, 1, 0,  ty,
+             1, 1, tx, ty
+        };
+        m_program->setAttributeArray(0, GL_FLOAT, values, 2, 4*sizeof(float));
+        m_program->setAttributeArray(1, GL_FLOAT, values + 2, 2, 4*sizeof(float));
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        m_program->disableAttributeArray(0);
+        m_program->disableAttributeArray(1);
+        m_program->release();
 
         glEnable(GL_DEPTH_TEST);
 
