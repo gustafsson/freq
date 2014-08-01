@@ -57,7 +57,7 @@ public:
     Texture2Fbo& operator=(const Texture2Fbo&)=delete;
     ~Texture2Fbo();
 
-    void draw();
+    void draw(int vertex_attrib, int tex_attrib);
     float normalization_factor() { return normalization_factor_; }
 
 private:

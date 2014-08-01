@@ -38,6 +38,7 @@ Shader::Shader(GLuint program)
       program(program),
       normalization_location_(-1),
       amplitude_axis_location_(-1),
+      modelViewProjectionMatrix_location_(-1),
       data_size_loc_(-1),
       tex_size_loc_(-1)
 {
@@ -53,6 +54,8 @@ Shader::Shader(GLuint program)
     normalization_location_ = glGetUniformLocation(program, "normalization");
     GlException_CHECK_ERROR();
     amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis");
+    GlException_CHECK_ERROR();
+    modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix");
     GlException_SAFE_CALL( glUniform1i(mytex, 0) ); // mytex corresponds to GL_TEXTURE0
     GlException_SAFE_CALL( glUseProgram(0) );
 }
@@ -67,7 +70,7 @@ Shader::~Shader()
 
 void Shader::Shader::
         setParams(int data_width, int data_height, int tex_width, int tex_height,
-               float normalization_factor, int amplitude_axis)
+               float normalization_factor, int amplitude_axis, const glProjection& M)
 {
     EXCEPTION_ASSERT( program );
 
@@ -80,15 +83,17 @@ void Shader::Shader::
         glUniform1f(normalization_location_, normalization_factor);
     if ( 0 <= amplitude_axis_location_)
         glUniform1i(amplitude_axis_location_, amplitude_axis);
+    if ( 0 <= modelViewProjectionMatrix_location_)
+        glUniformMatrix4fv (modelViewProjectionMatrix_location_, 1, false, (M.projection * M.modelview).v ());
     GlException_SAFE_CALL( glUseProgram(0) );
 }
 
 
 Shaders::Shaders():
     load_shaders_([](){initUpdateShaders();return 0;}()),
-    chunktoblock_shader_(ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock.frag")),
-    chunktoblock_maxwidth_shader_(ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxwidth.frag")),
-    chunktoblock_maxheight_shader_(ShaderResource::loadGLSLProgram("", ":/shaders/chunktoblock_maxheight.frag"))
+    chunktoblock_shader_(ShaderResource::loadGLSLProgram(":/shaders/chunktoblock.vert", ":/shaders/chunktoblock.frag")),
+    chunktoblock_maxwidth_shader_(ShaderResource::loadGLSLProgram(":/shaders/chunktoblock.vert", ":/shaders/chunktoblock_maxwidth.frag")),
+    chunktoblock_maxheight_shader_(ShaderResource::loadGLSLProgram(":/shaders/chunktoblock.vert", ":/shaders/chunktoblock_maxheight.frag"))
 {
 }
 
@@ -123,9 +128,9 @@ GlTexture& ShaderTexture::
 }
 
 unsigned ShaderTexture::
-        getProgram (float normalization_factor, int amplitude_axis)
+        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M)
 {
-    shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis);
+    shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M);
     return shader_->program;
 }
 
@@ -280,11 +285,13 @@ Pbo2Texture::Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, int chunk_pbo)
 
 
 Pbo2Texture::ScopeMap Pbo2Texture::
-        map (float normalization_factor, int amplitude_axis)
+        map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib)
 {
     Pbo2Texture::ScopeMap r;
-    auto p = shader_.getProgram (normalization_factor, amplitude_axis);
-    glUseProgram(p);
+    unsigned program = shader_.getProgram (normalization_factor, amplitude_axis, M);
+    vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
+    tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
+    glUseProgram(program);
     shader_.getTexture ().bindTexture2D ();
 
     return r;

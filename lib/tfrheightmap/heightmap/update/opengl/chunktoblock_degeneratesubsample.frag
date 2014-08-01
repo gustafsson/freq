@@ -1,5 +1,6 @@
 // GLSL fragment shader
 
+varying vec4 qt_TexCoord0;
 uniform sampler2D mytex;
 uniform float normalization;
 uniform int amplitude_axis;
@@ -10,13 +11,13 @@ void main()
 {
     float a = 0.0;
 
-    float xstep = gl_TexCoord[0].p;
+    float xstep = qt_TexCoord0.p;
     if (xstep < 0.5 / data_size.x)
     {
         // Translate normalized index to data index (integers)
-        vec2 uv = floor(gl_TexCoord[0].st * data_size);
+        vec2 uv = floor(qt_TexCoord0.st * data_size);
         // Compute neighbouring indices as well, and their distance
-        vec2 f = gl_TexCoord[0].st * data_size - uv;
+        vec2 f = qt_TexCoord0.st * data_size - uv;
         vec4 u = min(vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0), data_size.x);
         vec4 v = min(vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0), data_size.y);
 
@@ -46,10 +47,10 @@ void main()
     else
     {
         // Translate normalized index to data index (integers)
-        vec2 xrange = (gl_TexCoord[0].xx + gl_TexCoord[0].p*vec2(-1.0,1.0)) * data_size.x;
+        vec2 xrange = (qt_TexCoord0.xx + qt_TexCoord0.p*vec2(-1.0,1.0)) * data_size.x;
         xrange = clamp(floor(xrange), 0.0, data_size.x);
-        float iy = floor(gl_TexCoord[0].y * data_size.y);
-        float fy = gl_TexCoord[0].y * data_size.y - iy;
+        float iy = floor(qt_TexCoord0.y * data_size.y);
+        float fy = qt_TexCoord0.y * data_size.y - iy;
         vec2 y = clamp(vec2(iy, iy + 1.0), 0.0, data_size.y-1.0);
 
         // Assume the primary resolution has the highest resolution and only implement max along that.

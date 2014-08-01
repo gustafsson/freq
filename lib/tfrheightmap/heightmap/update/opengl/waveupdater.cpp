@@ -94,10 +94,11 @@ void WaveUpdater::
     for (auto& f : buffers_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture ());
+        glProjection M;
+        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture (), M);
 
         for (auto& b : f.second)
-            wave2fbo[b]->draw();
+            wave2fbo[b]->draw (M);
 
         // suppress warning caused by RAII
         (void)fbo_mapping;

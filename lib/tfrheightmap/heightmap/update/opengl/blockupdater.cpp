@@ -140,7 +140,8 @@ void BlockUpdater::
     for (auto& f : chunks_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture ());
+        glProjection M;
+        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture (), M);
 
         for (auto& c : f.second)
         {
@@ -155,11 +156,13 @@ void BlockUpdater::
             }
 
             auto& vbo = vbos[p];
+            int vertex_attrib, tex_attrib;
             auto tex_mapping = pbo2texture[c]->map(
                         vbo->normalization_factor(),
-                        vp->amplitude_axis ());
+                        vp->amplitude_axis (),
+                        M, vertex_attrib, tex_attrib);
 
-            vbo->draw();
+            vbo->draw(vertex_attrib, tex_attrib);
             (void)tex_mapping; // suppress warning caused by RAII
         }
 

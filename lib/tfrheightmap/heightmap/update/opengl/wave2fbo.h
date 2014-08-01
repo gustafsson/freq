@@ -3,6 +3,7 @@
 
 #include "signal/buffer.h"
 #include "zero_on_move.h"
+#include "glprojection.h"
 
 namespace Heightmap {
 namespace Update {
@@ -21,7 +22,7 @@ public:
     Wave2Fbo& operator=(const Wave2Fbo&)=delete;
     ~Wave2Fbo();
 
-    void draw();
+    void draw(const glProjection& glprojection);
 
 private:
     Signal::pMonoBuffer b_;

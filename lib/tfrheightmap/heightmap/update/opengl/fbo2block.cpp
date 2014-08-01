@@ -4,7 +4,7 @@
 #include "heightmap/render/blocktextures.h"
 #include "GlException.h"
 #include "log.h"
-
+#include "gluperspective.h"
 #include "gl.h"
 
 const bool draw_straight_onto_block = false;
@@ -58,7 +58,7 @@ Fbo2Block::
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (Region br, GlTexture::ptr blockTexture)
+        begin (Region br, GlTexture::ptr blockTexture, glProjection& M)
 {
     EXCEPTION_ASSERT(!this->blockTexture);
     EXCEPTION_ASSERT(blockTexture);
@@ -103,11 +103,10 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     // Setup matrices
     glViewport (0, 0, w, h);
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho (br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
-    glMatrixMode (GL_MODELVIEW);
-    glLoadIdentity ();
+    glhOrtho (M.projection.v (), br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
+    M.modelview = GLmatrix::identity();
+    int vp[]{0,0,w,h};
+    M.viewport = vp;
 
     GlException_CHECK_ERROR ();
 

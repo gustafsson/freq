@@ -1,5 +1,6 @@
 // GLSL fragment shader
 
+varying vec2 qt_TexCoord0;
 uniform sampler2D mytex;
 uniform float normalization;
 uniform int amplitude_axis;
@@ -9,8 +10,8 @@ uniform vec2 tex_size;
 void main()
 {
     float a = 0.0;
-    float stepx = fwidth(gl_TexCoord[0].s)*data_size.x;
-    vec2 uvd = gl_TexCoord[0].st * data_size;
+    float stepx = fwidth(qt_TexCoord0.s)*data_size.x;
+    vec2 uvd = qt_TexCoord0.st * data_size;
 
     if (stepx < 1.0)
         stepx = 1.0;
