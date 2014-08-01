@@ -143,6 +143,10 @@ void ShaderTexture::
 
     // Either through chunk_vbo_ or p
     EXCEPTION_ASSERT((chunk_pbo_!=0) == (p==0));
+#ifdef GL_ES_VERSION_2_0
+    // PBO is not supported on OpenGL ES
+    EXCEPTION_ASSERT_EQUALS(chunk_pbo_, 0);
+#endif
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::prepTexture %u x %u <> %d")
                       % data_width % data_height % gl_max_texture_size());
@@ -169,11 +173,16 @@ void ShaderTexture::
         INFO TaskTimer tt("glTexSubImage2D %d x %d (1)", tex_width, tex_height);
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RED, GL_RED, GL_FLOAT, 0));
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+
+#ifndef GL_ES_VERSION_2_0
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+#endif
 
         glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, data_width, data_height, GL_RED, GL_FLOAT, p);
 
+#ifndef GL_ES_VERSION_2_0
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+#endif
       }
     else if (data_width > gl_max_texture_size())
       {
@@ -194,11 +203,15 @@ void ShaderTexture::
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RED, GL_RED, GL_FLOAT, 0));
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+#ifndef GL_ES_VERSION_2_0
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+#endif
 
+#ifndef GL_ES_VERSION_2_0
         if (0 == chunk_pbo_)
           {
             // GL_UNPACK_ROW_LENGTH with a very large data_width doesn't play well with PBO
+            // and GL_UNPACK_ROW_LENGTH is not supported on OpenGL ES
             TaskTimer tt("GL_UNPACK_ROW_LENGTH");
             GlException_SAFE_CALL( glPixelStorei(GL_UNPACK_ROW_LENGTH, data_width) );
 
@@ -213,6 +226,7 @@ void ShaderTexture::
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
           }
         else
+#endif
           {
             for (int h=0; h<data_height; ++h)
               {
@@ -226,8 +240,9 @@ void ShaderTexture::
               }
           }
 
+#ifndef GL_ES_VERSION_2_0
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-
+#endif
         // Clear remaining
         int i = s-1;
         int w = std::min(tex_width, data_width - (tex_width-1)*i);
@@ -254,7 +269,9 @@ void ShaderTexture::
         INFO TaskTimer tt("glTexSubImage2D %d x %d (3)", tex_width, tex_height);
         chunk_texture_.reset (new GlTexture( tex_width, tex_height, GL_RED, GL_RED, GL_FLOAT, 0));
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+#ifndef GL_ES_VERSION_2_0
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+#endif
 
         for (int i=0; i<s; ++i)
           {
@@ -265,7 +282,9 @@ void ShaderTexture::
             glTexSubImage2D (GL_TEXTURE_2D, 0, x, 0, w, h, GL_RED, GL_FLOAT, p + n);
           }
 
+#ifndef GL_ES_VERSION_2_0
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+#endif
       }
 
     GlException_CHECK_ERROR();
@@ -281,6 +300,18 @@ Pbo2Texture::Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, int chunk_pbo)
     int data_height = transpose ? chunk->nSamples () : chunk->nScales ();
 
     shader_.prepareShader (data_width, data_height, chunk_pbo);
+}
+
+
+Pbo2Texture::Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, float* p)
+    :
+      shader_(shaders)
+{
+    bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
+    int data_width  = transpose ? chunk->nScales ()  : chunk->nSamples ();
+    int data_height = transpose ? chunk->nSamples () : chunk->nScales ();
+
+    shader_.prepareShader (data_width, data_height, p);
 }
 
 

@@ -54,6 +54,7 @@ WaveUpdater::
 void WaveUpdater::
         processJobs( queue<UpdateQueue::Job>& jobs )
 {
+#ifndef GL_ES_VERSION_2_0
     // Select subset to work on, must consume jobs in order
     vector<UpdateQueue::Job> myjobs;
     while (!jobs.empty ())
@@ -112,6 +113,7 @@ void WaveUpdater::
 
         j.promise.set_value ();
     }
+#endif
 }
 
 } // namespace OpenGL

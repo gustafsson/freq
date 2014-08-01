@@ -6,6 +6,8 @@
 
 #include <future>
 
+// PBOs are not supported on OpenGL ES (< 3.0)
+#ifndef GL_ES_VERSION_2_0
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -38,5 +40,6 @@ private:
 } // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
+#endif
 
 #endif // HEIGHTMAP_UPDATE_OPENGL_SOURCE2PBO_H

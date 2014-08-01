@@ -88,6 +88,7 @@ public:
     };
 
     Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, int pbo);
+    Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, float *p);
 
     ScopeMap map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib);
 

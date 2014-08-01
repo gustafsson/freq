@@ -7,7 +7,11 @@
 #include "gluperspective.h"
 #include "gl.h"
 
+#ifdef GL_ES_VERSION_2_0
+const bool draw_straight_onto_block = true;
+#else
 const bool draw_straight_onto_block = false;
+#endif
 
 namespace Heightmap {
 namespace Update {
@@ -21,6 +25,7 @@ void grabToTexture(GlTexture::ptr t)
 }
 
 
+#ifndef GL_ES_VERSION_2_0
 void copyTexture(unsigned copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
 {
     // Assumes dst and src have the same size and the same pixel format
@@ -37,13 +42,14 @@ void copyTexture(unsigned copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
     glDrawBuffer (GL_COLOR_ATTACHMENT0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+#endif
 
 
 Fbo2Block::Fbo2Block ()
 {
     if (!draw_straight_onto_block)
     {
-        glGenFramebuffersEXT(1, &copyfbo);
+        glGenFramebuffers(1, &copyfbo);
         fboTexture = Render::BlockTextures(4,4,1).get1 ();
     }
 }
@@ -73,6 +79,9 @@ Fbo2Block::ScopeBinding Fbo2Block::
     }
     else
     {
+#ifdef GL_ES_VERSION_2_0
+        EXCEPTION_ASSERT(false);
+#else
         int oldw = fboTexture->getWidth ();
         int oldh = fboTexture->getHeight ();
         if (oldw != w || oldh != h)
@@ -84,6 +93,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
         }
 
         copyTexture (copyfbo, fboTexture, blockTexture);
+#endif
     }
 
     if (!fbo)

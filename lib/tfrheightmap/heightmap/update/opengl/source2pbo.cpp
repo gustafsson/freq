@@ -3,6 +3,7 @@
 #include "tasktimer.h"
 #include "gl.h"
 
+#ifndef GL_ES_VERSION_2_0
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -35,6 +36,7 @@ Source2Pbo::~Source2Pbo()
     if (chunk_pbo_)
         glDeleteBuffers (1, &chunk_pbo_);
 }
+
 
 std::packaged_task<void()> Source2Pbo::
         transferData(float *p)
@@ -91,3 +93,4 @@ void Source2Pbo::
 } // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
+#endif

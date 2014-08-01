@@ -5,6 +5,7 @@
 #include "zero_on_move.h"
 #include "glprojection.h"
 
+#ifndef GL_ES_VERSION_2_0
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -33,5 +34,6 @@ private:
 } // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
+#endif
 
 #endif // HEIGHTMAP_UPDATE_OPENGL_WAVE2FBO_H

@@ -4,6 +4,7 @@
 #include "cpumemorystorage.h"
 #include "tasktimer.h"
 
+#ifndef GL_ES_VERSION_2_0
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -93,3 +94,4 @@ void Wave2Fbo::
 } // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
+#endif

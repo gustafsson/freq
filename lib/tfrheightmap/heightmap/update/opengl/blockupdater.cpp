@@ -81,6 +81,7 @@ void BlockUpdater::
     }
 
     // Begin chunk transfer to gpu right away
+#ifndef GL_ES_VERSION_2_0
     unordered_map<Tfr::pChunk,lazy<Source2Pbo>> source2pbo;
     for (const UpdateQueue::Job& j : myjobs)
     {
@@ -91,6 +92,7 @@ void BlockUpdater::
 
         source2pbo[job->chunk] = move(sp);
     }
+#endif
 
     // Begin transfer of vbo data to gpu
     unordered_map<Texture2Fbo::Params, lazy<Texture2Fbo>> vbos;
@@ -131,10 +133,21 @@ void BlockUpdater::
 
     // Prepare to draw with transferred chunk
     unordered_map<Tfr::pChunk, lazy<Pbo2Texture>> pbo2texture;
+#ifdef GL_ES_VERSION_2_0
+    for (const UpdateQueue::Job& j : myjobs)
+    {
+        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
+
+        pbo2texture[job->chunk] = Pbo2Texture(p->shaders,
+                                            job->chunk,
+                                            job->p);
+    }
+#else
     for (auto& sp : source2pbo)
         pbo2texture[sp.first] = Pbo2Texture(p->shaders,
                                             sp.first,
                                             sp.second->getPboWhenReady());
+#endif
 
     // Draw from all chunks to each block
     for (auto& f : chunks_per_block)
@@ -170,7 +183,9 @@ void BlockUpdater::
         (void)fbo_mapping;
     }
 
+#ifndef GL_ES_VERSION_2_0
     source2pbo.clear ();
+#endif
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
 }
