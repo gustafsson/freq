@@ -36,6 +36,8 @@ GlFrameBuffer::
     }
     catch(...)
     {
+        TaskInfo("GlFrameBuffer exception\n%s", boost::current_exception_diagnostic_information ().c_str());
+
         if (rboId_) glDeleteRenderbuffers(1, &rboId_);
         if (fboId_) glDeleteFramebuffers(1, &fboId_);
 
@@ -114,23 +116,14 @@ GlFrameBuffer::ScopeBinding GlFrameBuffer::
 void GlFrameBuffer::
         bindFrameBuffer()
 {
-    GlException_CHECK_ERROR();
-
-    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_);
-
+    GlException_SAFE_CALL( glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_) );
     GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
-
-    GlException_CHECK_ERROR();
 }
 
 void GlFrameBuffer::
         unbindFrameBuffer()
 {
-    GlException_CHECK_ERROR();
-
     GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo_));
-
-    GlException_CHECK_ERROR();
 }
 
 
@@ -169,34 +162,34 @@ void GlFrameBuffer::
         texture_height_ = height;
     }
 
-    GlException_CHECK_ERROR();
-
     if (enable_depth_component_) {
         if (!rboId_)
-            glGenRenderbuffers(1, &rboId_);
+            GlException_SAFE_CALL( glGenRenderbuffers(1, &rboId_) );
 
-        glBindRenderbuffer(GL_RENDERBUFFER, rboId_);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, rboId_) );
+        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height) );
+        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, 0) );
     }
 
     {
         if (!fboId_)
-            glGenFramebuffers(1, &fboId_);
+            GlException_SAFE_CALL( glGenFramebuffers(1, &fboId_) );
 
         bindFrameBuffer ();
 
-        glFramebufferTexture2D(   GL_FRAMEBUFFER,
+        GlException_SAFE_CALL( glFramebufferTexture2D(
+                                  GL_FRAMEBUFFER,
                                   GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D,
                                   textureid_,
-                                  0);
+                                  0) );
 
         if (enable_depth_component_)
-            glFramebufferRenderbuffer(   GL_FRAMEBUFFER,
+            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+                                         GL_FRAMEBUFFER,
                                          GL_DEPTH_ATTACHMENT,
                                          GL_RENDERBUFFER,
-                                         rboId_);
+                                         rboId_));
 
         int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
