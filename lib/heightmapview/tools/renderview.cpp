@@ -131,17 +131,13 @@ RenderView::
 void RenderView::
         setStates()
 {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glShadeModel(GL_SMOOTH);
-
     tvector<4,float> a = model->render_settings.clear_color;
     glClearColor(a[0], a[1], a[2], a[3]);
-    glClearDepth(1.0f);
+#ifdef GL_ES_VERSION_2_0
+    glClearDepthf(1.0f);
+#else
+    glClearDepth(1.0);
+#endif
     glDepthMask(true);
 
     glEnable(GL_DEPTH_TEST);
@@ -149,18 +145,20 @@ void RenderView::
     glFrontFace( model->render_settings.left_handed_axes ? GL_CCW : GL_CW );
     glCullFace( GL_BACK );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+#ifndef GL_ES_VERSION_2_0
+    glShadeModel(GL_SMOOTH);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
-    {   // Antialiasing
-        glEnable(GL_LINE_SMOOTH);
-        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        glEnable(GL_POLYGON_SMOOTH);
-        glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
-        glDisable(GL_POLYGON_SMOOTH);
+    // Antialiasing
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+    glDisable(GL_POLYGON_SMOOTH);
+#endif
 
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glEnable(GL_BLEND);
-    }
+    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    glEnable(GL_BLEND);
 
     GlException_CHECK_ERROR();
 }
@@ -172,9 +170,10 @@ void RenderView::
     //glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+#ifndef GL_ES_VERSION_2_0
     glDisable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_TEXTURE_2D);
     glDisable(GL_LIGHT0);
     glDisable(GL_NORMALIZE);
 
@@ -182,6 +181,7 @@ void RenderView::
     float defaultMaterialSpecular[] = {0.0f, 0.0f, 0.0f, 1.0f};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, defaultMaterialSpecular);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0.0f);
+#endif
 }
 
 
@@ -391,17 +391,14 @@ void RenderView::
 
     Support::ChainInfo ci(model->chain());
     bool isWorking = ci.hasWork () || update_queue_has_work;
+#ifndef GL_ES_VERSION_2_0
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (gl_projection.projection.v ());
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (gl_projection.modelview.v ());
 
     if (isWorking || isRecording || dead_workers) {
         Support::DrawWorking::drawWorking( gl_projection.viewport[2], gl_projection.viewport[3], n_workers, dead_workers );
     }
+#endif
 
     {
         static bool hadwork = false;
