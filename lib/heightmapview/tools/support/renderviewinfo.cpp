@@ -224,12 +224,16 @@ Heightmap::Position RenderViewInfo::
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
+#ifdef GL_ES_VERSION_2_0
+        EXCEPTION_ASSERTX(false, "Not supported");
+#else
         glGetFloatv(GL_MODELVIEW_MATRIX, other_m);
         glGetFloatv(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
         vp = other_vp;
+#endif
     }
 
     GLvector::T objX1, objY1, objZ1;
@@ -297,12 +301,16 @@ Heightmap::Position RenderViewInfo::
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
+#ifdef GL_ES_VERSION_2_0
+        EXCEPTION_ASSERTX(false, "Not supported");
+#else
         glGetFloatv(GL_MODELVIEW_MATRIX, other_m);
         glGetFloatv(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
         vp = other_vp;
+#endif
     }
 
     GLvector::T objX1, objY1, objZ1;
