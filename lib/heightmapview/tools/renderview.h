@@ -6,6 +6,7 @@
 #include "rendermodel.h"
 //#include "tools/commands/viewstate.h"
 #include "glprojection.h"
+#include "support/drawcollections.h"
 
 // gpumisc
 #include "timer.h"
@@ -137,6 +138,7 @@ namespace Tools
         unsigned rect_y_;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
+        Support::DrawCollections drawCollections;
     };
 } // namespace Tools
 

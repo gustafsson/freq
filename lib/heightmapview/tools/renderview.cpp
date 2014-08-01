@@ -26,7 +26,6 @@
 //#include "tools/applicationerrorlogcontroller.h"
 #include "tools/support/chaininfo.h"
 #include "signal/processing/workers.h"
-#include "tools/support/drawcollections.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -76,7 +75,8 @@ RenderView::
 //            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
-            rect_y_(0)
+            rect_y_(0),
+            drawCollections(model)
 {
     // Validate rotation and set orthoview accordingly
     if (model->camera.r[0]<0) model->camera.r[0]=0;
@@ -360,7 +360,7 @@ void RenderView::
             collection.write ()->next_frame(); // Discard needed blocks before this row
         }
 
-        Support::DrawCollections(model).drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
+        drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
 
         float last_ysize = model->render_settings.last_ysize;
         gl_projection.modelview *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
