@@ -34,7 +34,6 @@ INCLUDEPATH += \
     $$SAWEROOT/src \
 
 LIBS += \
-    -framework GLUT \
 #    -framework OpenGL \
     -L../../lib/justmisc -ljustmisc \
     -L../../lib/backtrace -lbacktrace \
@@ -44,6 +43,8 @@ LIBS += \
     -L../../lib/heightmap -lheightmap \
     -L../../lib/tfrheightmap -ltfrheightmap \
     -L../../lib/heightmapview -lheightmapview \
+
+!macx-ios*: LIBS += -framework GLUT
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew

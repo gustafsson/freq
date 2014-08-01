@@ -15,6 +15,17 @@ usecuda {
     DEFINES += THREADCHECKER_NO_CHECK
 }
 
+macx* {
+    # Apply warn_on before disabling specific warnings
+    warn_on {
+        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
+        CONFIG -= warn_on
+    }
+
+    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
+    QMAKE_CXXFLAGS += -Wno-unused-parameter
+}
+
 macx {
     macosx105 {
         QMAKE_LFLAGS += -isysroot /Developer/SDKs/MacOSX10.5.sdk
@@ -29,15 +40,6 @@ macx {
     #QMAKE_CXXFLAGS += -Wfatal-errors
     #QMAKE_CFLAGS += -Wfatal-errors
     #DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
-
-    # Apply warn_on before disabling spcific warnings
-    warn_on {
-        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
-        CONFIG -= warn_on
-    }
-
-    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
-    QMAKE_CXXFLAGS += -Wno-unused-parameter
 
     CCNAME = $$system(basename $$QMAKE_CC)
     equals(CCNAME, clang) {
