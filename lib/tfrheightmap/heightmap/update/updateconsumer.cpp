@@ -79,7 +79,7 @@ UpdateConsumer::
 void UpdateConsumer::
         threadFinished()
 {
-    TaskInfo("UpdateConsumer::threadFinished");
+    TaskInfo ti("UpdateConsumer::threadFinished");
 
     try {
         EXCEPTION_ASSERTX(isInterruptionRequested (), "Thread quit unexpectedly");

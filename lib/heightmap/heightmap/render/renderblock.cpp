@@ -111,6 +111,7 @@ void RenderBlock::Renderer::
 RenderBlock::
         RenderBlock(RenderSettings* render_settings)
     :
+      _initialized( NotInitialized ),
         render_settings( render_settings ),
         _color_texture_colors( (RenderSettings::ColorMode)-1 ),
         _shader_prog(0),
@@ -174,7 +175,13 @@ void RenderBlock::
     _color_texture_colors = (RenderSettings::ColorMode)-1;
 }
 
-
+#ifdef DARWIN_NO_CARBON
+void RenderBlock::
+        checkExtensions ()
+{
+    return;
+}
+#else
 void RenderBlock::
         checkExtensions ()
 {
@@ -310,6 +317,7 @@ void RenderBlock::
             return;
     }
 }
+#endif
 
 
 void RenderBlock::

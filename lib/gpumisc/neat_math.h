@@ -164,6 +164,7 @@ lpo2s(register unsigned int x)
 }
 
 
+#if defined(_MSC_VER) || !defined(DARWIN_NO_CARBON)
 static inline uint32_t log2(uint32_t x) {
   uint32_t y;
 #ifdef _MSC_VER
@@ -172,6 +173,10 @@ static inline uint32_t log2(uint32_t x) {
       bsr eax, x
       mov y, eax
   }
+//#elif defined(DARWIN_NO_CARBON)
+ // Use <cmath> instead
+//  y = 0;
+//  while(x>>=1) y++;
 #else
   asm ( "\tbsr %1, %0\n"
       : "=r"(y)
@@ -180,6 +185,7 @@ static inline uint32_t log2(uint32_t x) {
 #endif
   return y;
 }
+#endif
 
 
 // Quadratic interpolation

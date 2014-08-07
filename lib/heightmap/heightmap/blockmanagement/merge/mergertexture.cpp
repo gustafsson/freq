@@ -85,14 +85,14 @@ void MergerTexture::
 
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
-    glGenTextures(1, &tex_);
-    glBindTexture(GL_TEXTURE_2D, tex_);
+    GlException_SAFE_CALL(glGenTextures(1, &tex_));
+    GlException_SAFE_CALL(glBindTexture(GL_TEXTURE_2D, tex_));
 #ifdef GL_ES_VERSION_2_0
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
+    GlException_SAFE_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_UNSIGNED_BYTE, 0));
 #else
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
+    GlException_SAFE_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0));
 #endif
-    glBindTexture(GL_TEXTURE_2D, 0);
+    GlException_SAFE_CALL(glBindTexture(GL_TEXTURE_2D, 0));
 
     fbo_.reset (new GlFrameBuffer(tex_, block_layout_.texels_per_row(), block_layout_.texels_per_column ()));
 

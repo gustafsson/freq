@@ -7,6 +7,7 @@
 #include "gl.h"
 #include "GlException.h"
 #include "tasktimer.h"
+#include "log.h"
 
 #include <QResource>
 
@@ -44,20 +45,26 @@ Shader::Shader(GLuint program)
 {
     EXCEPTION_ASSERT( program );
 
+    glBindAttribLocation ( program, 0, "qt_Vertex");
+    glBindAttribLocation ( program, 1, "qt_MultiTexCoord0");
+    glLinkProgram (program);
+
+    int vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
+    int tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
+
+    int mytex = -1;
+
     GlException_SAFE_CALL( glUseProgram(program) );
-    int mytex = glGetUniformLocation(program, "mytex");
-    GlException_CHECK_ERROR();
-    data_size_loc_ = glGetUniformLocation(program, "data_size");
-    GlException_CHECK_ERROR();
-    tex_size_loc_ = glGetUniformLocation(program, "tex_size");
-    GlException_CHECK_ERROR();
-    normalization_location_ = glGetUniformLocation(program, "normalization");
-    GlException_CHECK_ERROR();
-    amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis");
-    GlException_CHECK_ERROR();
-    modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix");
+    GlException_SAFE_CALL( mytex = glGetUniformLocation(program, "mytex") );
+    GlException_SAFE_CALL( data_size_loc_ = glGetUniformLocation(program, "data_size") );
+    GlException_SAFE_CALL( tex_size_loc_ = glGetUniformLocation(program, "tex_size") );
+    GlException_SAFE_CALL( normalization_location_ = glGetUniformLocation(program, "normalization") );
+    GlException_SAFE_CALL( amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis") );
+    GlException_SAFE_CALL( modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix") );
     GlException_SAFE_CALL( glUniform1i(mytex, 0) ); // mytex corresponds to GL_TEXTURE0
     GlException_SAFE_CALL( glUseProgram(0) );
+    EXCEPTION_ASSERT_EQUALS(vertex_attrib, 0);
+    EXCEPTION_ASSERT_EQUALS(tex_attrib, 1);
 }
 
 
@@ -198,6 +205,16 @@ void ShaderTexture::
         EXCEPTION_ASSERT_LESS_OR_EQUAL(N,M);
 
         // Would run out of OpenGL memory if this happens...
+        if (tex_height > gl_max_texture_size())
+        {
+            // Less or equal failed: Got 'tex_height' = 2758, and 'gl_max_texture_size()' = 2048.
+            Log("data_width = %g") % data_width;
+            Log("data_height = %g") % data_height;
+            Log("tex_width = %g") % tex_width;
+            Log("tex_height = %g") % tex_height;
+            Log("s = %g") % s;
+        }
+
         EXCEPTION_ASSERT_LESS_OR_EQUAL(tex_height, gl_max_texture_size());
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);

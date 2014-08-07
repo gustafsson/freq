@@ -1,17 +1,16 @@
 // GLSL fragment shader
-
-varying vec2 qt_TexCoord0;
-uniform sampler2D mytex;
-uniform float normalization;
-uniform int amplitude_axis;
-uniform vec2 data_size;
-uniform vec2 tex_size;
+varying lowp vec2 qt_TexCoord0;
+uniform highp sampler2D mytex;
+uniform highp float normalization;
+uniform lowp int amplitude_axis;
+uniform lowp vec2 data_size;
+uniform lowp vec2 tex_size;
 
 void main()
 {
-    float a = 0.0;
-    float stepx = fwidth(qt_TexCoord0.s)*data_size.x;
-    vec2 uvd = qt_TexCoord0.st * data_size;
+    mediump float a = 0.0;
+    mediump float stepx = fwidth(qt_TexCoord0.s)*data_size.x;
+    mediump vec2 uvd = qt_TexCoord0.st * data_size;
 
     if (stepx < 1.0)
         stepx = 1.0;
@@ -19,9 +18,9 @@ void main()
     // fetch an integer number of samples centered around uv.x
     // multiples of 0.5 are represented exactly for small floats
     stepx = 0.5*floor(stepx-0.5);
-    for (float x=-stepx; x<=stepx; ++x)
+    for (mediump float x=-stepx; x<=stepx; ++x)
     {
-        vec2 uv = vec2(uvd.x + x, uvd.y);
+        mediump vec2 uv = vec2(uvd.x + x, uvd.y);
 
         // Compute degenerate texel index (float)
         uv.x = uv.x + floor( uv.y/(tex_size.y-1.0) )*data_size.x;
@@ -31,7 +30,7 @@ void main()
         // interpolate the right texels
         uv = (uv + 0.5) / tex_size;
 
-        float r = texture2D(mytex, vec2(uv.x, uv.y)).r;
+        mediump float r = texture2D(mytex, vec2(uv.x, uv.y)).r;
         a = max(a, r);
     }
 

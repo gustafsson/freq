@@ -1,6 +1,5 @@
-uniform sampler2D qt_Texture0;
-varying vec2 qt_TexCoord0;
-uniform float a;
+uniform highp sampler2D qt_Texture0;
+varying mediump vec2 qt_TexCoord0;
 
 void main(void)
 {

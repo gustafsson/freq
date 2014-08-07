@@ -175,7 +175,7 @@ void GlFrameBuffer::
         if (!fboId_)
             GlException_SAFE_CALL( glGenFramebuffers(1, &fboId_) );
 
-        bindFrameBuffer ();
+        auto fbo_raii = getScopeBinding();
 
         GlException_SAFE_CALL( glFramebufferTexture2D(
                                   GL_FRAMEBUFFER,
@@ -200,8 +200,6 @@ void GlFrameBuffer::
           }
 
         EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE, status );
-
-        unbindFrameBuffer ();
     }
 
     //glFlush();

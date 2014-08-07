@@ -28,9 +28,7 @@ string attachShader(GLuint prg, GLenum type, const char *name)
     TIME_COMPILESHADER TaskTimer tt("Compiling shader %s", name);
     try {
         GLuint shader;
-        FILE * fp=0;
-        int size, compiled;
-        char * src;
+        int compiled;
 
         shader = glCreateShader(type);
 
@@ -38,13 +36,21 @@ string attachShader(GLuint prg, GLenum type, const char *name)
         EXCEPTION_ASSERTX( qr.isValid(), string("Couldn't find shader resource ") + name);
         EXCEPTION_ASSERTX( 0 != qr.size(), string("Shader resource empty ") + name);
 
-        size = qr.size();
-        src = (char*)qr.data();
-        glShaderSource(shader, 1, (const char**)&src, (const GLint*)&size);
+        string src;
+#ifdef GL_ES_VERSION_2_0
+        src += "#extension GL_OES_standard_derivatives : enable\n";
+#else
+        src += "#define lowp\n"
+              "#define mediump\n"
+              "#define highp\n";
+#endif
+        src.append ((char*)qr.data(), qr.size ());
+        const char* p = &src[0];
+        const GLint sz = src.size ();
+
+        glShaderSource(shader, 1, &p, &sz);
         glCompileShader(shader);
         glGetShaderiv(shader, GL_COMPILE_STATUS, (GLint*)&compiled);
-
-        if (fp) free(src);
 
         char shaderInfoLog[2048];
         glGetShaderInfoLog(shader, sizeof(shaderInfoLog), 0, shaderInfoLog);
