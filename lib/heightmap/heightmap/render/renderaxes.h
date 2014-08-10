@@ -16,14 +16,14 @@ class RenderAxes
 {
 public:
     RenderAxes(
-            RenderSettings& render_settings,
+            const RenderSettings& render_settings,
             const glProjection* gl_projection,
             FreqAxis display_scale);
 
     void drawAxes( float T );
 
 private:
-    RenderSettings& render_settings;
+    const RenderSettings& render_settings;
     const glProjection* gl_projection;
     FreqAxis display_scale;
 };

@@ -244,14 +244,14 @@ void RenderView::
     if (!model->chain ())
         return;
 
+    model->render_block->init();
+    if (!model->render_block->isInitialized())
+        return;
+
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
         emit prePaint();
     }
-
-    model->render_block->init();
-    if (!model->render_block->isInitialized())
-        return;
 
     float elapsed_ms = -1;
 
@@ -314,12 +314,11 @@ void RenderView::
     Signal::OperationDesc::Extent x = model->recompute_extent ();
     { // Render
 		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
-        float length = x.interval.get ().count() / x.sample_rate.get ();
 
         if (onlyComputeBlocksForRenderView)
-        foreach( const Heightmap::Collection::ptr& collection, collections )
         {
-            collection.write ()->next_frame(); // Discard needed blocks before this row
+            for ( const Heightmap::Collection::ptr& collection : collections )
+                collection.write ()->next_frame(); // Discard needed blocks before this row
         }
 
         drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
@@ -328,8 +327,10 @@ void RenderView::
         gl_projection.modelview *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
         {
+            float length = model->tfr_mapping ()->length();
             TIME_PAINTGL_DETAILS TaskTimer tt("Draw axes (%g)", length);
 
+            // setRotationForAxes messes with render_settings, this should be covered by RenderAxes
             bool draw_piano = model->render_settings.draw_piano;
             bool draw_hz = model->render_settings.draw_hz;
             bool draw_t = model->render_settings.draw_t;
@@ -344,6 +345,7 @@ void RenderView::
                     &drawAxes_rotation,
                     display_scale
                     ).drawAxes( length );
+            model->render_settings.last_axes_length = length;
 
             model->render_settings.draw_piano = draw_piano;
             model->render_settings.draw_hz = draw_hz;
@@ -379,11 +381,10 @@ void RenderView::
     if (!onlyComputeBlocksForRenderView)
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-        foreach( const Heightmap::Collection::ptr& collection, collections )
-        {
+
+        for ( const Heightmap::Collection::ptr& collection : collections )
             // Start looking for which blocks that are requested for the next frame.
             collection.write ()->next_frame();
-        }
     }
 
     } catch (...) {

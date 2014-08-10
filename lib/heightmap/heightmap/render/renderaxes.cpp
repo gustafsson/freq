@@ -23,7 +23,7 @@ namespace Render {
 
 RenderAxes::
         RenderAxes(
-                RenderSettings& render_settings,
+                const RenderSettings& render_settings,
                 const glProjection* gl_projection,
                 FreqAxis display_scale)
     :
@@ -57,7 +57,6 @@ void RenderAxes::
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf (gl_projection->modelview.v ());
 
-    render_settings.last_axes_length = T;
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
