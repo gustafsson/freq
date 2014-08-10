@@ -185,7 +185,14 @@ void QtMicrophone::
 bool QtMicrophone::
         isStopped() const
 {
-    return audio_->state () != QAudio::ActiveState;
+    switch(audio_->state ())
+    {
+    case QAudio::StoppedState:
+    case QAudio::SuspendedState:
+        return true;
+    default:
+        return false;
+    }
 }
 
 
