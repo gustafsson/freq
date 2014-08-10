@@ -152,7 +152,7 @@ void ShaderTexture::
     EXCEPTION_ASSERT((chunk_pbo_!=0) == (p==0));
 #ifdef GL_ES_VERSION_2_0
     // PBO is not supported on OpenGL ES
-    EXCEPTION_ASSERT_EQUALS(chunk_pbo_, 0);
+    EXCEPTION_ASSERT_EQUALS(chunk_pbo_, 0u);
 #endif
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::prepTexture %u x %u <> %d")

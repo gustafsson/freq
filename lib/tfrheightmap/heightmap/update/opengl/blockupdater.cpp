@@ -82,6 +82,7 @@ void BlockUpdater::
 
     // Begin chunk transfer to gpu right away
 #ifndef GL_ES_VERSION_2_0
+    // PBOs are not supported on OpenGL ES (< 3.0)
     unordered_map<Tfr::pChunk,lazy<Source2Pbo>> source2pbo;
     for (const UpdateQueue::Job& j : myjobs)
     {

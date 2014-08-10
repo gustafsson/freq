@@ -28,7 +28,7 @@ private:
     GlTexture::ptr blockTexture;
     GlTexture::ptr fboTexture;
     std::unique_ptr<GlFrameBuffer> fbo;
-    unsigned copyfbo;
+    unsigned copyfbo = 0;
 };
 
 

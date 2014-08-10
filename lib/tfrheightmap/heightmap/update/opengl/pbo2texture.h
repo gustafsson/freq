@@ -57,7 +57,7 @@ private:
     void prepareShader (int data_width, int data_height, unsigned chunk_pbo, float* data);
 
     int data_width, data_height, tex_width, tex_height;
-    std::shared_ptr<GlTexture> chunk_texture_;
+    GlTexture::ptr chunk_texture_;
     Shaders& shaders_;
     Shader* shader_;
 };
