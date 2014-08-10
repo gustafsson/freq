@@ -92,10 +92,14 @@ MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
         extent() const
 {
     auto data = recorder_.raw ()->data ();
+    float fs = data.raw ()->sample_rate;;
+    float L = recorder_.read ()->length();
+
     MicrophoneRecorderDesc::Extent x;
-    x.interval = data.read ()->samples.spannedInterval ();
+    x.interval = Signal::Interval(0, fs*L);
     x.number_of_channels = data.raw ()->num_channels;
-    x.sample_rate = data.raw ()->sample_rate;
+    x.sample_rate = fs;
+
     return x;
 }
 

@@ -249,6 +249,9 @@ void RenderModel::
 Signal::OperationDesc::Extent RenderModel::
         recompute_extent()
 {
+    if (!chain_)
+        return Signal::OperationDesc::Extent();
+
     Signal::OperationDesc::Extent extent = chain_.read ()->extent(target_marker_);
     extent.interval           = extent.interval          .get_value_or (Signal::Interval());
     extent.number_of_channels = extent.number_of_channels.get_value_or (1);
