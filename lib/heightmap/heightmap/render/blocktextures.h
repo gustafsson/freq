@@ -22,6 +22,8 @@ public:
     typedef shared_state<BlockTextures> ptr;
 
     explicit BlockTextures(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    BlockTextures(const BlockTextures&)=delete;
+    BlockTextures&operator=(const BlockTextures&)=delete;
 
     /**
      * @brief setCapacityHint

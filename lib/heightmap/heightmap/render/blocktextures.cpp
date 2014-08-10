@@ -52,14 +52,14 @@ void BlockTextures::
                 pick.push_back (p);
 
         int discarded = textures.size () - pick.size ();
-        INFO Log("BlockTextures: discarding %d textures") % discarded;
+        INFO Log("BlockTextures: discarding %d textures, was=%d, target=%d") % discarded % textures.size () % target_capacity;
 
         textures.swap (pick);
         return;
     }
 
     int new_textures = target_capacity - textures.size ();
-    INFO Log("BlockTextures: allocating %d new textures") % new_textures;
+    INFO Log("BlockTextures: allocating %d new textures (had %d)") % new_textures % textures.size ();
     GLuint t[new_textures];
     glGenTextures (new_textures, t);
     textures.reserve (target_capacity);
@@ -108,17 +108,12 @@ void BlockTextures::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-    // Not compatible with GlFrameBuffer
-    //static bool hasTextureFloat = 0 != strstr( (const char*)glGetString(GL_EXTENSIONS), "GL_ARB_texture_float" );
-    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D,0,hasTextureFloat?GL_LUMINANCE32F_ARB:GL_LUMINANCE,w, h,0, hasTextureFloat?GL_LUMINANCE:GL_RED, GL_FLOAT, 0) );
-
     // Compatible with GlFrameBuffer
 #ifdef GL_ES_VERSION_2_0
-    GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, 0) );
+    // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
+    GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, 1, GL_R16F_EXT, w, h));
 #else
-    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
-    //GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RED, GL_FLOAT, 0) );
 #endif
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -129,7 +124,7 @@ unsigned BlockTextures::
         allocated_bytes_per_element()
 {
 #ifdef GL_ES_VERSION_2_0
-    return 4; // GL_RED, upper guess, could be 2
+    return 2; // GL_R16F_EXT
 #else
     return 2; // GL_R16F
 #endif

@@ -79,7 +79,7 @@ void BlockInitializer::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        auto bt = Render::BlockTextures (bl.texels_per_row (), bl.texels_per_column ());
+        Render::BlockTextures bt(bl.texels_per_row (), bl.texels_per_column ());
         pBlock block = BlockFactory (bl, vp).createBlock(r, bt.get1 ());
         block_initializer.initBlock (block);
         cache->insert (block);

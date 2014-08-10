@@ -3,6 +3,7 @@
 #include "heightmap/blockquery.h"
 #include "mergekernel.h"
 #include "heightmap/render/shaderresource.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 #include "computationkernel.h"
@@ -69,9 +70,6 @@ MergerTexture::
     if (program_) glDeleteProgram(program_);
     program_ = 0;
 
-    if (tex_) glDeleteTextures (1, &tex_);
-    tex_ = 0;
-
     if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 }
@@ -85,16 +83,10 @@ void MergerTexture::
 
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
-    GlException_SAFE_CALL(glGenTextures(1, &tex_));
-    GlException_SAFE_CALL(glBindTexture(GL_TEXTURE_2D, tex_));
-#ifdef GL_ES_VERSION_2_0
-    GlException_SAFE_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_UNSIGNED_BYTE, 0));
-#else
-    GlException_SAFE_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout_.texels_per_row(), block_layout_.texels_per_column (), 0, GL_RED, GL_FLOAT, 0));
-#endif
-    GlException_SAFE_CALL(glBindTexture(GL_TEXTURE_2D, 0));
-
-    fbo_.reset (new GlFrameBuffer(tex_, block_layout_.texels_per_row(), block_layout_.texels_per_column ()));
+    int w = block_layout_.texels_per_row();
+    int h = block_layout_.texels_per_column ();
+    tex_ = Render::BlockTextures(w, h, 1).get1 ();
+    fbo_.reset (new GlFrameBuffer(tex_->getOpenGlTextureId (), w, h));
 
     glGenBuffers (1, &vbo_);
 
