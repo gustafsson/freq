@@ -126,7 +126,7 @@ void TimelineController::
     // update() on the main render view only since this connection makes
     // the timeline updated as well. Some user input events only need to
     // repaint the timeline view.
-    connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+    connect(view->_render_view, SIGNAL(painting()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
     connect(view, SIGNAL(hideMe()), SLOT(hideTimeline()));
 
@@ -146,13 +146,13 @@ void TimelineController::
 
     if (!visible)
     {
-        disconnect(view->_render_view, SIGNAL(postPaint()), view, SLOT(paintInGraphicsView()));
-        disconnect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+        disconnect(view->_render_view, SIGNAL(painting()), view, SLOT(paintInGraphicsView()));
+        disconnect(view->_render_view, SIGNAL(painting()), view, SLOT(update()));
     }
     else
     {
-        connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(paintInGraphicsView()));
-        connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+        connect(view->_render_view, SIGNAL(painting()), view, SLOT(paintInGraphicsView()));
+        connect(view->_render_view, SIGNAL(painting()), view, SLOT(update()));
     }
 
     if (view->tool_selector)

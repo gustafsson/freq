@@ -290,43 +290,8 @@ void RenderView::
 
     try
     {
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre check errors");
-        GlException_CHECK_ERROR();
-    }
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL pre sync");
-        ComputationSynchronize();
-    }
-
-    if (0) {
-        TIME_PAINTGL_DETAILS TaskTimer tt("Validating computation context with stft");
-        // Make sure our cuda context is still alive by invoking
-        // a tiny kernel. This will throw an CudaException otherwise,
-        // thus resulting in restarting the cuda context.
-
-        // If we don't ensure the context is alive before starting to
-        // use various GPU resources the application will crash, for
-        // instance when another RenderView is closed and releases
-        // the context.
-        Tfr::StftDesc a;
-        a.set_approximate_chunk_size(4);
-        Signal::pMonoBuffer b(new Signal::MonoBuffer(0,a.chunk_size(),1));
-        (Tfr::Stft(a))(b);
-    }
-
     // TODO move to rendercontroller
     bool isRecording = false;
-
-//    if (0 == "stop after 31 seconds")
-//    {
-//        float length = model->project()->length();
-//        static unsigned frame_counter = 0;
-//        TaskInfo("frame_counter = %u", ++frame_counter);
-//        if (length > 30) for (static bool once=true; once; once=false)
-//            QTimer::singleShot(1000, model->project()->mainWindow(), SLOT(close()));
-//    }
-
 //    Tools::RecordModel* r = model->project ()->tools ().record_model ();
 //    if(r && r->recording && !r->recording.write ()->isStopped ())
 //    {
@@ -338,13 +303,7 @@ void RenderView::
     if (update_queue_has_work)
         redraw (); // won't redraw right away, but enqueue an update
 
-
-    // Set up camera position
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("Set up camera position");
-
-        setupCamera();
-    }
+    setupCamera();
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
@@ -417,7 +376,6 @@ void RenderView::
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
 
-
     if (!onlyComputeBlocksForRenderView)
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
@@ -428,16 +386,6 @@ void RenderView::
         }
     }
 
-
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post check errors");
-        GlException_CHECK_ERROR();
-    }
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("paintGL post sync");
-        ComputationCheckError();
-    }
-
     } catch (...) {
         Heightmap::UncaughtException::handle_exception(boost::current_exception ());
     }
@@ -446,11 +394,6 @@ void RenderView::
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit painting");
         emit painting();
-    }
-
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("emit postPaint");
-        emit postPaint();
     }
 }
 

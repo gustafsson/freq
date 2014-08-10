@@ -104,15 +104,9 @@ namespace Tools
         void painting();
 
         /**
-         * @brief postPaint. Use 'Qt::DirectConnection'
-         */
-        void postPaint();
-
-        /**
          * @brief finishedWorkSection. Use 'Qt::AutoConnection'
          */
         void finishedWorkSection();
-
 
         /**
          * @brief transformChanged is emitted through emitTransformChanged.
