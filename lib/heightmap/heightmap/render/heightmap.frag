@@ -1,6 +1,6 @@
-varying mediump float vertex_height;
-varying lowp float shadow;
-varying lowp vec2 texCoord;
+varying highp float vertex_height;
+varying mediump float shadow;
+varying highp vec2 texCoord;
 
 uniform highp sampler2D tex;
 uniform mediump sampler2D tex_color;

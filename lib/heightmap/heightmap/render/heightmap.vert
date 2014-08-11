@@ -1,8 +1,8 @@
 // GLSL vertex shader
 attribute highp vec4 qt_Vertex;
-varying mediump float vertex_height;
-varying lowp float shadow;
-varying lowp vec2 texCoord;
+varying highp float vertex_height;
+varying mediump float shadow;
+varying highp vec2 texCoord;
 
 uniform highp sampler2D tex;
 uniform mediump float flatness;
