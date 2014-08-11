@@ -56,8 +56,8 @@ MergerTexture::
     :
       cache_(cache),
       vbo_(0),
-      block_layout_(block_layout),
       tex_(0),
+      block_layout_(block_layout),
       disable_merge_(disable_merge),
       program_(0)
 {
@@ -217,6 +217,11 @@ void MergerTexture::
         for( const auto& c : cache_clone )
         {
             const pBlock& bl = c.second;
+            unsigned age = block->frame_number_last_used - bl->frame_number_last_used;
+            if (age > 1)  {
+                // Don't bother merging with blocks that aren't up-to-date
+                continue;
+            }
 
             const Region& r2 = bl->getRegion ();
             // If r2 doesn't overlap r at all

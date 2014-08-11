@@ -247,13 +247,13 @@ void Collection::
         }
     }
 
+    for (const pBlock& block : blocks_to_init)
+        block->frame_number_last_used = _frame_counter;
+
     block_initializer_->initBlocks(blocks_to_init);
 
     for (const pBlock& block : blocks_to_init)
-    {
-        block->frame_number_last_used = _frame_counter;
         cache_->insert (block);
-    }
 }
 
 
@@ -303,10 +303,6 @@ int Collection::
 
     int discarded_blocks = to_remove_.size () - keep.size ();
     to_remove_.swap (keep); keep.clear ();
-
-    if (n_to_release > 0 || discarded_blocks > 0 || to_remove_.size () > 0 || i > 0)
-        Log("n_to_release = %d. Removed %d blocks (%d can't be removed right now, cache %d), i = %d")
-                % n_to_release % discarded_blocks % to_remove_.size () % cache_->size () % i;
 
     block_textures_->setCapacityHint( max_cache_size );
 
