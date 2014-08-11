@@ -1,16 +1,16 @@
 // GLSL fragment shader
-varying lowp vec2 qt_TexCoord0;
+varying highp vec2 qt_TexCoord0;
 uniform highp sampler2D mytex;
 uniform highp float normalization;
 uniform lowp int amplitude_axis;
-uniform lowp vec2 data_size;
-uniform lowp vec2 tex_size;
+uniform highp vec2 data_size;
+uniform highp vec2 tex_size;
 
 void main()
 {
     mediump float a = 0.0;
-    mediump float stepx = fwidth(qt_TexCoord0.s)*data_size.x;
-    mediump vec2 uvd = qt_TexCoord0.st * data_size;
+    highp float stepx = fwidth(qt_TexCoord0.s)*data_size.x;
+    highp vec2 uvd = qt_TexCoord0.st * data_size;
 
     if (stepx < 1.0)
         stepx = 1.0;
@@ -18,9 +18,10 @@ void main()
     // fetch an integer number of samples centered around uv.x
     // multiples of 0.5 are represented exactly for small floats
     stepx = 0.5*floor(stepx-0.5);
-    for (mediump float x=-stepx; x<=stepx; ++x)
+    highp float x;
+    for (x=-stepx; x<=stepx; ++x)
     {
-        mediump vec2 uv = vec2(uvd.x + x, uvd.y);
+        highp vec2 uv = vec2(uvd.x + x, uvd.y);
 
         // Compute degenerate texel index (float)
         uv.x = uv.x + floor( uv.y/(tex_size.y-1.0) )*data_size.x;
