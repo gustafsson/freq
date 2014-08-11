@@ -268,15 +268,11 @@ int Collection::
 
     Blocks::GarbageCollector gc(cache_);
     unsigned F = gc.countBlocksUsedThisFrame(_frame_counter);
-    block_textures_->setCapacityHint( F );
     unsigned max_cache_size = 4*F;
+    unsigned n_to_release = cache_->size() <= max_cache_size ? 0 : cache_->size() - max_cache_size;
 
-    if (cache_->size() <= max_cache_size)
-        return 0;
-
-    unsigned n_to_release = cache_->size() - max_cache_size;
     int i = 0;
-    for (pBlock b : gc.releaseNOldest( _frame_counter, n_to_release))
+    if (n_to_release) for (const pBlock& b : gc.getNOldest( _frame_counter, n_to_release))
     {
         removeBlock (b);
         ++i;
@@ -284,7 +280,7 @@ int Collection::
 
     if (aggressive)
     {
-        for (pBlock b : Blocks::GarbageCollector(cache_).releaseAllNotUsedInThisFrame (_frame_counter))
+        for (const pBlock& b : Blocks::GarbageCollector(cache_).getAllNotUsedInThisFrame (_frame_counter))
         {
             removeBlock (b);
             ++i;
@@ -292,12 +288,7 @@ int Collection::
     }
     else
     {
-        for (pBlock b : Blocks::GarbageCollector(cache_).runUntilComplete (_frame_counter))
-        {
-            removeBlock (b);
-            ++i;
-        }
-//        while( pBlock released = Blocks::GarbageCollector(cache_).runOnce (_frame_counter))
+//        if (const pBlock& released = Blocks::GarbageCollector(cache_).getOldestBlock (_frame_counter))
 //        {
 //            removeBlock (released);
 //            ++i;
@@ -306,12 +297,20 @@ int Collection::
 
     std::set<pBlock> keep;
 
-    for (pBlock b : to_remove_)
+    for (const pBlock& b : to_remove_)
         if (!b.unique ())
             keep.insert (b);
 
-    to_remove_.swap (keep);
-    return i;
+    int discarded_blocks = to_remove_.size () - keep.size ();
+    to_remove_.swap (keep); keep.clear ();
+
+    if (n_to_release > 0 || discarded_blocks > 0 || to_remove_.size () > 0 || i > 0)
+        Log("n_to_release = %d. Removed %d blocks (%d can't be removed right now, cache %d), i = %d")
+                % n_to_release % discarded_blocks % to_remove_.size () % cache_->size () % i;
+
+    block_textures_->setCapacityHint( max_cache_size );
+
+    return discarded_blocks;
 }
 
 
@@ -347,9 +346,8 @@ void Collection::
         discardOutside(Signal::Interval I)
 {
     std::list<pBlock> discarded = Blocks::ClearInterval(cache_).discardOutside (I);
-    for (pBlock b : discarded) {
+    for (pBlock b : discarded)
         removeBlock (b);
-    }
 }
 
 
@@ -396,7 +394,10 @@ void Collection::
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
     if (_prev_length > length)
+    {
+        Log ("collection: _prev_length %g > length %g") % _prev_length % length;
         discardOutside( Signal::Interval(0, length*block_layout_.targetSampleRate ()) );
+    }
 
     _prev_length = length;
 }

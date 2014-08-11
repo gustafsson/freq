@@ -14,10 +14,9 @@ public:
     GarbageCollector(BlockCache::const_ptr cache);
 
     unsigned countBlocksUsedThisFrame(unsigned frame_counter);
-    pBlock runOnce(unsigned frame_counter);
-    std::vector<pBlock> runUntilComplete(unsigned frame_counter);
-    std::vector<pBlock> releaseNOldest(unsigned frame_counter, unsigned N);
-    std::vector<pBlock> releaseAllNotUsedInThisFrame(unsigned frame_counter);
+    pBlock getOldestBlock(unsigned frame_counter);
+    std::vector<pBlock> getNOldest(unsigned frame_counter, unsigned N);
+    std::vector<pBlock> getAllNotUsedInThisFrame(unsigned frame_counter);
 
 private:
     BlockCache::const_ptr cache_;

@@ -14,6 +14,9 @@
 //#define TIME_PAINTGL_DRAW
 #define TIME_PAINTGL_DRAW if(0)
 
+//#define DRAW_INFO
+#define DRAW_INFO if(0)
+
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
@@ -175,7 +178,7 @@ void DrawCollections::
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    TIME_PAINTGL_DRAW
+    DRAW_INFO
     {
         unsigned collections_n = 0;
         for (i=0; i < N; ++i)

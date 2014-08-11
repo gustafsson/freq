@@ -33,11 +33,11 @@ GlTexture::GlTexture(unsigned short width, unsigned short height,
     reset(width, height, pixelFormat, internalFormat, type, data);
 }
 
-GlTexture::GlTexture(unsigned int textureId, int width, int height)
+GlTexture::GlTexture(unsigned int textureId, int width, int height, bool adopt)
     :	width( width ),
         height( height ),
         textureId( textureId ),
-        ownTextureId( 0 )
+        ownTextureId( adopt ? textureId : 0 )
 {
     EXCEPTION_ASSERT_LESS(0u, textureId);
     EXCEPTION_ASSERT_LESS(0, width);
