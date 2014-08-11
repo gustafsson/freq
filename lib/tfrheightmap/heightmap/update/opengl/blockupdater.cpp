@@ -88,7 +88,7 @@ void BlockUpdater::
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-        Source2Pbo sp(job->chunk);
+        Source2Pbo sp(job->chunk, job->type==TfrBlockUpdater::Job::Data_F32);
         memcpythread.addTask (sp.transferData(job->p));
 
         source2pbo[job->chunk] = move(sp);
@@ -141,13 +141,15 @@ void BlockUpdater::
 
         pbo2texture[job->chunk] = Pbo2Texture(p->shaders,
                                             job->chunk,
-                                            job->p);
+                                            job->p,
+                                            job->type == TfrBlockUpdater::Job::Data_F32);
     }
 #else
     for (auto& sp : source2pbo)
         pbo2texture[sp.first] = Pbo2Texture(p->shaders,
                                             sp.first,
-                                            sp.second->getPboWhenReady());
+                                            sp.second->getPboWhenReady(),
+                                            sp.second->f32());
 #endif
 
     // Draw from all chunks to each block

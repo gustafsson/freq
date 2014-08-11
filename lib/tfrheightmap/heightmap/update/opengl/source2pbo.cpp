@@ -9,11 +9,12 @@ namespace Update {
 namespace OpenGL {
 
 Source2Pbo::Source2Pbo(
-        Tfr::pChunk chunk
+        Tfr::pChunk chunk, bool f32
         )
     :
         chunk_(chunk->transform_data),
-        n(chunk->nScales () * chunk->nSamples ()),
+        n(chunk->transform_data->numberOfElements () * (f32?sizeof(float):sizeof(int16_t))),
+        f32_(f32),
         mapped_chunk_data_(0),
         chunk_pbo_(0)
 {
@@ -39,19 +40,19 @@ Source2Pbo::~Source2Pbo()
 
 
 std::packaged_task<void()> Source2Pbo::
-        transferData(float *p)
+        transferData(void *p)
 {
     // http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
-    mapped_chunk_data_ = (float*)glMapBuffer (GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    mapped_chunk_data_ = (void*)glMapBuffer (GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    float *c = mapped_chunk_data_;
+    void *c = mapped_chunk_data_;
     int n = this->n;
     auto t = std::packaged_task<void()>([c, p, n](){
 //        Timer t;
-        memcpy(c, p, n*sizeof(float));
+        memcpy(c, p, n);
 //        TaskInfo("memcpy %s with %s/s", DataStorageVoid::getMemorySizeText(n*sizeof(float)).c_str (), DataStorageVoid::getMemorySizeText(n*sizeof(float) / t.elapsed ()).c_str ());
     });
 
@@ -83,7 +84,7 @@ void Source2Pbo::
 {
     glGenBuffers (1, &chunk_pbo_); // Generate 1 buffer
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeof(float)*n, 0, GL_STATIC_DRAW);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, n, 0, GL_STATIC_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     GlException_CHECK_ERROR();

@@ -60,6 +60,7 @@ HEADERS += \
     debugstreams.h \
     deprecated.h \
     factor.h \
+    float16.h \
     gl.h \
     GlException.h \
     glframebuffer.h \

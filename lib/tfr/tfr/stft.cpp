@@ -313,13 +313,11 @@ Tfr::pChunk Stft::
     // see class Chunk::first_valid_sample for a definition of these
     //
 
-    // sample_rate = original_sample_rate/(increment*averaging)
     chunk->original_sample_rate = b->sample_rate();
     chunk->sample_rate = chunk->original_sample_rate / (increment*p.averaging());
     chunk->chunk_offset = b->sample_offset() / (increment*p.averaging());
-    //chunk->chunk_offset = (b->sample_offset() + alignment/2 - increment/2) / (increment*p.averaging());
     // (note that "first_valid_sample" only makes sense if the transform is invertible, which it isn't if averaging != 1)
-    chunk->first_valid_sample = ceil((alignment - increment)/increment);
+    chunk->first_valid_sample = p.enable_inverse() ? ceil((alignment - increment)/increment) : 0;
     int nSamples = chunk->nSamples();
     int last_valid_sample = nSamples/p.averaging();
     if ( last_valid_sample >= chunk->first_valid_sample)

@@ -15,16 +15,17 @@ namespace OpenGL {
 class Source2Pbo
 {
 public:
-    Source2Pbo(Tfr::pChunk chunk);
+    Source2Pbo(Tfr::pChunk chunk, bool f32);
     Source2Pbo(Source2Pbo&& b) = default;
     Source2Pbo(Source2Pbo&) = delete;
     Source2Pbo& operator=(Source2Pbo&) = delete;
     ~Source2Pbo();
 
-    std::packaged_task<void()> transferData(float *p);
+    std::packaged_task<void()> transferData(void *p);
 
     // Assumes transferData has been called first, will hang here otherwise.
     unsigned getPboWhenReady() { finishTransfer(); return chunk_pbo_; }
+    bool f32() const { return f32_; }
 
 private:
     void setupPbo();
@@ -32,7 +33,8 @@ private:
 
     const Tfr::ChunkData::ptr chunk_;
     const int n;
-    JustMisc::zero_on_move<float*> mapped_chunk_data_;
+    const bool f32_;
+    JustMisc::zero_on_move<void*> mapped_chunk_data_;
     JustMisc::zero_on_move<unsigned> chunk_pbo_;
     std::future<void> data_transfer;
 };

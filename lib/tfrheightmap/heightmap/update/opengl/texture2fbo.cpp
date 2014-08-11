@@ -47,7 +47,7 @@ Texture2Fbo::Params::
     if (transpose)
       {
          u0 = 0.f / nSamples; // The sample at a_t
-         u1 = (nSamples-1.0f) / nSamples; // The sample at b_t
+         u1 = (nValidSamples-1.0f) / nSamples; // The sample at b_t
       }
     else
       {
