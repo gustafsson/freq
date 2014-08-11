@@ -154,6 +154,7 @@ void BlockUpdater::
     for (auto& f : chunks_per_block)
     {
         const pBlock& block = f.first;
+        INFO Log("blockupdater: updating %s") % block->getRegion ();
         glProjection M;
         auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture (), M);
 
@@ -165,7 +166,7 @@ void BlockUpdater::
             // If something has changed the vbo is out-of-date, skip this
             if (!vbos.count (p))
             {
-                TaskInfo(boost::format("blockupdater: skipping update of block: %s") % block->getRegion ());
+                Log("blockupdater: skipping update of block: %s") % block->getRegion ();
                 continue;
             }
 
