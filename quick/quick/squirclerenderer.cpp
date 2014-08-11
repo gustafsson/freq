@@ -90,7 +90,7 @@ void SquircleRenderer::paint()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     float s = m_viewportSize.width ()/(float)m_viewportSize.height ();
     render_view.model->recompute_extent ();
-    render_view.model->camera.p[0] = -render_view.model->tfr_mapping ()->length() + s*4;
+    render_view.model->camera.q[0] = render_view.model->tfr_mapping ()->length() - s*4;
     render_view.paintGL ();
 }
 
