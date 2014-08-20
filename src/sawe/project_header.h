@@ -49,22 +49,10 @@
 
 
 // Qt
-#include <QAction>
-#include <QApplication>
-#include <QComboBox>
-#include <QDockWidget>
-#include <QHBoxLayout>
-#include <QListWidgetItem>
-#include <QMainWindow>
-#include <QMessageBox>
-#include <QMutex>
-#include <QPointer>
-#include <QReadWriteLock>
-#include <QString>
-#include <QToolButton>
-#include <QTreeWidgetItem>
-#include <QWaitCondition>
-#include <QWheelEvent>
+#include <QtCore> // QWaitCondition etc
+#include <QtGui> // QMouseEvent etc
+#include <QtWidgets> // QApplication etc
+#include <QtOpenGL> // QGLWidget
 
 
 // boost

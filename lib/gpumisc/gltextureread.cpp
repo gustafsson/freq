@@ -5,8 +5,8 @@
 #include "GlException.h"
 #include "glframebuffer.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 // https://www.opengl.org/sdk/docs/man/xhtml/glGetTexImage.xml
 

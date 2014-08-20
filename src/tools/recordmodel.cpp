@@ -81,7 +81,7 @@ RecordModel* RecordModel::
 
 } // namespace Tools
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include "signal/processing/workers.h"
 
 namespace Tools

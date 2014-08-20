@@ -120,7 +120,7 @@ int Bedroom::
 } // namespace Signal
 
 
-#include <QThread>
+#include <QtCore> // QThread
 
 namespace Signal {
 namespace Processing {

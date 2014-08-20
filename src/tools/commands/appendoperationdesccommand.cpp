@@ -47,7 +47,7 @@ std::string AppendOperationDescCommand::
 
 // Unit test
 #include "test/operationmockups.h"
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 namespace Tools {
 namespace Commands {

@@ -1,5 +1,5 @@
 // Include QObject and Boost.Foreach in that order to prevent conflicts with Qt foreach
-#include <QObject>
+#include <QtCore> // QObject
 #include <boost/foreach.hpp>
 
 #include "targetschedule.h"

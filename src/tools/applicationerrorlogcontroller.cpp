@@ -10,15 +10,8 @@
 #include "expectexception.h"
 #include "log.h"
 
-#include <QMutexLocker>
-#include <QStyle>
-#include <QApplication>
-#include <QSettings>
-#include <QTimer>
-#include <QCommonStyle>
-#include <QMainWindow>
-#include <QAction>
-#include <QAbstractEventDispatcher>
+#include <QtCore> // QMutexLocker, QSettings, QTimer, QAbstractEventDispatcher
+#include <QtWidgets> // QApplication, QAction, QCommonStyle, QMainWindow
 
 namespace Tools {
 

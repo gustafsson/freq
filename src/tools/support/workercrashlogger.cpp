@@ -183,7 +183,7 @@ void WorkerCrashLogger::
 } // namespace Support
 } // namespace Tools
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include "timer.h"
 #include "trace_perf.h"
 

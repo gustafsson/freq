@@ -260,8 +260,8 @@ bool MergerTexture::
 #include "log.h"
 #include "cpumemorystorage.h"
 #include "heightmap/render/blocktextures.h"
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace BlockManagement {

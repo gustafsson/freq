@@ -250,8 +250,8 @@ void GlFrameBuffer::
 //////// test //////
 
 #include "expectexception.h"
-#include <QGLWidget>
-#include <QApplication>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 void GlFrameBuffer::
         test()

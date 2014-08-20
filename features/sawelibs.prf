@@ -2,6 +2,7 @@ SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\'
 
 QT += opengl
 QT += network
+QT += widgets
 
 INCLUDEPATH += \
     $$SAWEROOT/lib/gpumisc \

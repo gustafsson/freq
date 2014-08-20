@@ -6,8 +6,7 @@
 
 #include "shared_state.h"
 
-#include <QThread>
-#include <QPointer>
+#include <QtCore> // QObject, QThread, QPointer
 
 #include <boost/exception/all.hpp>
 #include <boost/exception_ptr.hpp>

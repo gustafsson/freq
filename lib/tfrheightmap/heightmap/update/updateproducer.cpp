@@ -116,8 +116,8 @@ Tfr::pChunkFilter UpdateProducerDesc::
 #include "signal/computingengine.h"
 #include "tfr/stft.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace Update {

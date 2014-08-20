@@ -143,11 +143,7 @@ Signal::OperationDesc::ptr OpenWatchedFileController::
 
 } // namespace Tools
 
-#include <QFile>
-#include <QDir>
-#include <QStandardPaths>
-#include <QApplication>
-#include <QThread>
+#include <QtWidgets> // QApplication
 
 namespace Tools {
 

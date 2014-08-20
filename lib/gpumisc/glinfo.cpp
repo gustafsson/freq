@@ -1,7 +1,7 @@
 #include "glinfo.h"
 
 #include <sstream>
-#include <QGLWidget>
+#include <QtOpenGL> // QGLFormat
 
 using namespace std;
 
@@ -81,7 +81,7 @@ string glinfo::
 }
 
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include "exceptionassert.h"
 
 void glinfo::

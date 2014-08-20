@@ -1,5 +1,5 @@
 // Include QObject and Boost.Foreach in that order to prevent conflicts with Qt foreach
-#include <QObject>
+#include <QtCore> // QObject
 #include <boost/foreach.hpp>
 
 #include "workers.h"
@@ -338,7 +338,7 @@ void Workers::
 #include "expectexception.h"
 #include "bedroom.h"
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include <atomic>
 
 namespace Signal {

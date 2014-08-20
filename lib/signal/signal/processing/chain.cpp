@@ -321,7 +321,7 @@ Step::ptr::weak_ptr Chain::
 #include "test/operationmockups.h"
 #include "test/randombuffer.h"
 #include "signal/buffersource.h"
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 namespace Signal {
 namespace Processing {

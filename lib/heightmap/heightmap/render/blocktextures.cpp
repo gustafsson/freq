@@ -147,8 +147,8 @@ GlTexture::ptr BlockTextures::
 } // namespace Render
 } // namespace Heightmap
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 #include "exceptionassert.h"
 #include "trace_perf.h"
 

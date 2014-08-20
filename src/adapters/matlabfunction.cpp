@@ -4,12 +4,9 @@
 #include "tasktimer.h"
 
 // qt
-#include <QFileInfo>
-#include <QTemporaryFile>
-#include <QDir>
-#include <QErrorMessage>
-#include <QSettings>
-#include <QApplication>
+#include <QtCore> // QSettings, QDir, QTemporaryFile, QFileInfo
+#include <QtWidgets> // QApplication, QErrorMessage
+#include <QtOpenGL> // QGLWidget
 
 // boost
 #include <boost/scoped_ptr.hpp>

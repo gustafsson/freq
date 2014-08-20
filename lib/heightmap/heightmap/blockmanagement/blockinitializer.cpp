@@ -47,8 +47,8 @@ void BlockInitializer::
 
 #include "heightmap/render/blocktextures.h"
 
-#include <QGLWidget>
-#include <QApplication>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace BlockManagement {

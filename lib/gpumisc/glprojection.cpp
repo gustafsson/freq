@@ -131,8 +131,8 @@ GLvector::T glProjection::
 #include "tmatrixstring.h"
 #include "exceptionassert.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 
 void glProjection::

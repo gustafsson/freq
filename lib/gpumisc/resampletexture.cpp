@@ -9,8 +9,8 @@
 #include "GlException.h"
 #include "datastoragestring.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 //#define PRINT_TEXTURES
 #define PRINT_TEXTURES if(0)

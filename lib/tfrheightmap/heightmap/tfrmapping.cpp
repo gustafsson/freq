@@ -272,8 +272,8 @@ void TfrMapping::
 
 
 #include "tfr/stftdesc.h"
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap
 {

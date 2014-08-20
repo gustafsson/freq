@@ -1,10 +1,6 @@
 #include "rescalewidget.h"
 
-#include <QPaintEvent>
-#include <QPainter>
-#include <QApplication>
-#include <QBitmap>
-#include <QTimer>
+#include <QtWidgets> // QApplication
 
 #include "sawe/project.h"
 #include "tools/renderview.h"

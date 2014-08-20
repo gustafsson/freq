@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_BEDROOMSIGNALADAPTER_H
 #define SIGNAL_PROCESSING_BEDROOMSIGNALADAPTER_H
 
-#include <QThread>
+#include <QtCore>
 #include "bedroom.h"
 #include "inotifier.h"
 

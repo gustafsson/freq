@@ -11,7 +11,7 @@
 #include "shared_state_traits_backtrace.h"
 
 // QString
-#include <QString>
+#include <QtCore> // QString
 
 namespace Signal {
 

@@ -1,8 +1,6 @@
 #include "rotatewidget.h"
 
-#include <QMouseEvent>
-#include <QPainter>
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 #include "hudglwidget.h"
 #include "sawe/project.h"

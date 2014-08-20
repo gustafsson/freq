@@ -66,8 +66,8 @@ MergeChunk::ptr StftBlockFilterDesc::
 #include "detectgdb.h"
 #include "heightmap/render/blocktextures.h"
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
 namespace TfrMappings {

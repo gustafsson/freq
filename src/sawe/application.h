@@ -5,7 +5,7 @@
 #include "project.h"
 
 // Qt
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 // std
 #include <set>

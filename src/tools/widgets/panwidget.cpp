@@ -1,8 +1,7 @@
 #include "panwidget.h"
 
-#include <QMouseEvent>
-#include <QPainter>
-#include <QApplication>
+#include <QtGui> // QPainter, QMouseEvent
+#include <QtWidgets> // QApplication
 
 #include "hudglwidget.h"
 #include "sawe/project.h"

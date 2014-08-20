@@ -1,4 +1,4 @@
-#include <QObject>
+#include <QtCore>
 #include "graphinvalidator.h"
 
 #include <boost/foreach.hpp>
@@ -51,7 +51,6 @@ void GraphInvalidator::
 } // namespace Signal
 
 
-#include <QThread>
 #include "bedroomnotifier.h"
 
 namespace Signal {

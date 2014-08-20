@@ -10,10 +10,8 @@
 #include "rotatewidget.h"
 
 // Qt
-#include <QLayout>
-#include <QKeyEvent>
-#include <QCursor>
-#include <QApplication>
+#include <QtGui> // QCursor, QKeyEvent
+#include <QtWidgets> // QApplication, QLayout
 
 #include <boost/format.hpp>
 

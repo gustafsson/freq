@@ -14,7 +14,8 @@ CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
 
-QT += opengl
+QT += opengl # to use QGLWidget
+QT += widgets # to use QApplication
 
 DEFINES += GPUMISC_LIBRARY
 

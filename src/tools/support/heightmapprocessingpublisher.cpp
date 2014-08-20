@@ -155,8 +155,8 @@ bool HeightmapProcessingPublisher::
 #include "signal/processing/bedroom.h"
 #include "signal/processing/task.h"
 #include "signal/processing/bedroomnotifier.h"
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 
 namespace Tools {
 namespace Support {

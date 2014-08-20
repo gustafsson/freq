@@ -65,7 +65,7 @@ Signal::UnsignedIntervalType ChainInfo::
 #include "tasktimer.h"
 #include "log.h"
 #include "signal/buffersource.h"
-#include <QApplication>
+#include <QtWidgets> // QApplication
 #include <atomic>
 
 namespace Tools {

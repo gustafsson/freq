@@ -168,7 +168,7 @@ Signal::Intervals Rectangle::
 #include "tfr/transformoperation.h"
 #include "tasktimer.h"
 
-#include <QApplication>
+#include <QtWidgets> // QApplication
 
 namespace Filters {
 

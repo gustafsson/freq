@@ -187,8 +187,7 @@ void Worker::
 } // namespace Processing
 } // namespace Signal
 
-#include <QApplication>
-#include <QTimer>
+#include <QtWidgets> // QApplication, QTimer
 
 #include "detectgdb.h"
 #include "prettifysegfault.h"

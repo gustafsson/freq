@@ -86,8 +86,8 @@ void BlockFactory::
 } // namespace BlockManagement
 } // namespace Heightmap
 
-#include <QApplication>
-#include <QGLWidget>
+#include <QtWidgets> // QApplication
+#include <QtOpenGL> // QGLWidget
 #include "neat_math.h"
 
 namespace Heightmap {
