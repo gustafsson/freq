@@ -13,6 +13,7 @@ win32:CONFIG += debug_and_release
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
+CONFIG += precompile_header_with_all_headers
 
 QT += opengl # to use QGLWidget
 QT += widgets # to use QApplication

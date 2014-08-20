@@ -1,0 +1,4 @@
+CONFIG += precompile_header
+PRECOMPILED_HEADER = lib$${TARGET}.h
+system(cd "$$OUT_PWD"; for a in $$HEADERS; do [ $$PRECOMPILED_HEADER == $a ] || echo \\\x23include \\\"$a\\\"; done > "$$PRECOMPILED_HEADER")
+QMAKE_OBJCXXFLAGS_PRECOMPILE += -std=c++11 -stdlib=libc++ -Wno-c++1y-extensions

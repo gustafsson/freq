@@ -1,4 +1,5 @@
 /// http://www.codeproject.com/debug/debugout.asp?df=100&forumid=2081&exp=0&select=26147
+#pragma once
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -20,7 +21,7 @@ protected:
     {
     	std::stringbuf s;
         output_debug_string((CharT*) s.str().c_str());
-        str(std::basic_string<CharT>());    // Clear the string buffer
+        std::basic_stringbuf<CharT, TraitsT>::str(std::basic_string<CharT>());    // Clear the string buffer
 
         return 0;
     }

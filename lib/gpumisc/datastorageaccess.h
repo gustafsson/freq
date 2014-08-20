@@ -5,6 +5,7 @@
 #define ACCESSCALL
 #endif
 
+#include <ostream>
 //#include <stddef.h> // size_t
 //typedef size_t DataAccessPosition_t;
 typedef int DataAccessPosition_t;

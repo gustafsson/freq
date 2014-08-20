@@ -61,14 +61,14 @@ bool is_running_through_gdb_terminus()
       int ppid = getppid();
 
       /* Child */
-      if (ptrace(PTRACE_ATTACH, ppid, NULL, NULL) == 0)
+      if (ptrace(PTRACE_ATTACH, ppid, NULL, 0) == 0)
         {
           /* Wait for the parent to stop and continue it */
           waitpid(ppid, NULL, 0);
-          ptrace(PTRACE_CONT, ppid, NULL, NULL);
+          ptrace(PTRACE_CONT, ppid, NULL, 0);
 
           /* Detach */
-          ptrace(PTRACE_DETACH, getppid(), NULL, NULL);
+          ptrace(PTRACE_DETACH, getppid(), NULL, 0);
 
           /* We were the tracers, so gdb is not present */
           res = 0;
