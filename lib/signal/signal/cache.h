@@ -55,12 +55,14 @@ public:
     void clear();
 
     /**
-      Insert data into Cache
+      Insert data into Cache, may throw InvalidBufferDimensions.
+      @throw InvalidBufferDimensions if 'fs' and/or 'num_channels' of 'b'
+      does not match what has already been allocated.
       */
     void put( pBuffer b );
 
     /// Get what samples that are described in the containing buffer
-    /// Merely allocated memory doesn't not count in this description.
+    /// Merely allocated memory does not count in this description.
     Intervals samplesDesc() const;
     Interval spannedInterval() const;
     bool empty() const;
@@ -86,6 +88,13 @@ private:
      */
     Intervals _valid_samples;
 
+    /**
+     * @brief allocateCache
+     * @param fs
+     * @param num_channels
+     * @throw InvalidBufferDimensions if fs and/or num_channels doesn't match
+     * what's already been allocated.
+     */
     void allocateCache( Signal::Interval, float fs, int num_channels );
 
     /**
