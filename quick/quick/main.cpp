@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    Log("Enter main");
+    Log("Started app");
 
     PrettifySegfault::setup ();
 
@@ -24,5 +24,7 @@ int main(int argc, char *argv[])
     view.setSource(QUrl("qrc:/main.qml"));
     view.show();
 
-    return app.exec();
+    int r = app.exec();
+    Log("Closing app");
+    return r;
 }
