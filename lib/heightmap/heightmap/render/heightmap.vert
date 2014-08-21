@@ -74,7 +74,7 @@ void main()
     mediump float diffuse   = max(0.0, worldSpaceNormal.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
 
     //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
-    shadow = min( 0.5 + (diffuse+facing)*0.5, 1.0);
+    shadow = mix(1.0, min( 0.5 + (diffuse+facing)*0.5, 1.0), flatness);
 
     vertex_height = height;
 }
