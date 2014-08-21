@@ -48,9 +48,8 @@ void main()
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
     curveColor = mix(clearColor, curveColor, f);
 
-    v = 0.0==vertex_height ? v : vertex_height;
-    mediump float isarithm1 = fract( v * 25.0) < 0.93 ? 1.0 : 0.8;
-    mediump float isarithm2 = fract( v * 5.0) < 0.93 ? 1.0 : 0.8;
+    mediump float isarithm1 = fract( vertex_height * 25.0) < 0.93 ? 1.0 : 0.8;
+    mediump float isarithm2 = fract( vertex_height * 5.0) < 0.93 ? 1.0 : 0.8;
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
 
     curveColor.w = 1.0; //-saturate(fresnel);
