@@ -209,6 +209,8 @@ void ResampleTexture::
         testInContext()
 {
 #ifndef GL_ES_VERSION_2_0
+    glEnable(GL_TEXTURE_2D);
+
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
     {
         // There must be a current OpenGL context

@@ -340,7 +340,6 @@ Pbo2Texture::ScopeMap::
         ~ScopeMap()
 {
     GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
-    GlException_SAFE_CALL( glDisable(GL_TEXTURE_2D) );
     glUseProgram(0);
 }
 

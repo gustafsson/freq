@@ -137,6 +137,7 @@ void RenderView::
     glClearDepthf(1.0f);
 #else
     glClearDepth(1.0);
+    glEnable(GL_TEXTURE_2D);
 #endif
     glDepthMask(true);
 
@@ -170,7 +171,6 @@ void RenderView::
     //glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_TEXTURE_2D);
 #ifndef GL_ES_VERSION_2_0
     glDisable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);

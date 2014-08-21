@@ -33,7 +33,6 @@ void RenderRegion::
 
     UNUSED(glPushAttribContext attribs);
 
-    glDisable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_LIGHTING);

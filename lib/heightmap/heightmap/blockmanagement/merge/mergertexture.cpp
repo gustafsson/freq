@@ -124,7 +124,6 @@ void MergerTexture::
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
-    glEnable (GL_TEXTURE_2D);
 
     struct vertex_format {
         float x, y, u, v;

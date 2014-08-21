@@ -96,14 +96,12 @@ GlTexture::ScopeBinding GlTexture::getScopeBinding()
 
 void GlTexture::bindTexture2D() {
     GlException_CHECK_ERROR();
-    glEnable(GL_TEXTURE_2D);
     glBindTexture( GL_TEXTURE_2D, textureId);
     GlException_CHECK_ERROR();
 }
 
 void GlTexture::unbindTexture2D() {
     glBindTexture( GL_TEXTURE_2D, 0);
-    glDisable(GL_TEXTURE_2D);
 }
 
 void GlTexture::unbindTexture2Dwrap() {
