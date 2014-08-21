@@ -95,6 +95,9 @@ Interval MonoBuffer::
 MonoBuffer& MonoBuffer::
         operator|=(const MonoBuffer& b)
 {
+    const bool clearWithZeros = false;
+
+
     Interval i = getInterval() & b.getInterval();
 
     if (0 == i.count())
@@ -124,11 +127,9 @@ MonoBuffer& MonoBuffer::
         fromGpu = toGpu;
 #endif
 
-    bool clearWithZeros = false;
-
-    if (!toCpu && !toGpu && !fromCpu && !fromGpu && clearWithZeros)
+    if (!toCpu && !toGpu && !fromCpu && !fromGpu)
     {
-        // no data was read (all 0) and no data to overwrite with 0
+        // no data was read and no data to overwrite with
         return *this;
     }
 
