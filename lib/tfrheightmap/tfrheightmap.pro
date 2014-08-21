@@ -15,17 +15,19 @@ QT += opengl
 RESOURCES += \
     heightmap/update/opengl/updateshaders.qrc \
 
+PWD = $$_PRO_FILE_PWD_
+
 SOURCES += \
-    heightmap/*.cpp \
-    heightmap/tfrmappings/*.cpp \
-    heightmap/update/*.cpp \
-    heightmap/update/opengl/*.cpp \
+    $$PWD/heightmap/*.cpp \
+    $$PWD/heightmap/tfrmappings/*.cpp \
+    $$PWD/heightmap/update/*.cpp \
+    $$PWD/heightmap/update/opengl/*.cpp \
 
 HEADERS += \
-    heightmap/*.h \
-    heightmap/tfrmappings/*.h \
-    heightmap/update/*.h \
-    heightmap/update/opengl/*.h \
+    $$PWD/heightmap/*.h \
+    $$PWD/heightmap/tfrmappings/*.h \
+    $$PWD/heightmap/update/*.h \
+    $$PWD/heightmap/update/opengl/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal ../tfr ../justmisc ../heightmap
 win32: INCLUDEPATH += ../sonicawe-winlib
@@ -35,6 +37,7 @@ macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
 
 OTHER_FILES += \
     LICENSE \
+    README.txt \
     *.pro \
 
 win32 { 

@@ -2,15 +2,28 @@
     error("Use \"CONFIG += c++11 buildflags\" instead of \"CONFIG += buildflags\"")
 }
 
+message("buildflags for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
+
 win32:CONFIG += debug_and_release
 CONFIG += warn_on
-CONFIG += openmp
+!macx-ios*:CONFIG += openmp
 CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
 CONFIG(debug, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT
 
 usecuda {
     DEFINES += SAWE_NO_MUTEX
     DEFINES += THREADCHECKER_NO_CHECK
+}
+
+macx* {
+    # Apply warn_on before disabling specific warnings
+    warn_on {
+        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
+        CONFIG -= warn_on
+    }
+
+    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
+    QMAKE_CXXFLAGS += -Wno-unused-parameter
 }
 
 macx {
@@ -27,15 +40,6 @@ macx {
     #QMAKE_CXXFLAGS += -Wfatal-errors
     #QMAKE_CFLAGS += -Wfatal-errors
     #DEFINES += MAC_OS_X_VERSION_MAX_ALLOWED=1070
-
-    # Apply warn_on before disabling spcific warnings
-    warn_on {
-        QMAKE_CXXFLAGS += $$QMAKE_CFLAGS_WARN_ON
-        CONFIG -= warn_on
-    }
-
-    QMAKE_CXXFLAGS += -Wno-c++1y-extensions
-    QMAKE_CXXFLAGS += -Wno-unused-parameter
 
     CCNAME = $$system(basename $$QMAKE_CC)
     equals(CCNAME, clang) {
@@ -93,7 +97,7 @@ win32 {
 }
 
 unix {
-    !macx {
+    !macx* {
         CONFIG(debug, debug|release):QMAKE_CXXFLAGS_DEBUG += -ggdb
         QMAKE_CXX = colorgcc
     }
@@ -121,6 +125,12 @@ profiling {
     # Profiling with gcc, gprof doesn't work with Os X 10.5 Leopard.
     !win32:QMAKE_CXXFLAGS_RELEASE += -pg
     !win32:QMAKE_LFLAGS_RELEASE += -pg
+}
+
+macx-ios* { # ios
+    #SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
+    #INCLUDEPATH += $$SAWEROOT/lib/sonicawe-ios
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../lib/sonicawe-ios
 }
 
 #system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")

@@ -3,7 +3,7 @@
 
 #include "heightmap/tfrmapping.h"
 #include "signal/intervals.h"
-#include "signal/processing/targetneeds.h"
+#include "signal/processing/targetmarker.h"
 
 #include <QObject>
 
@@ -25,7 +25,7 @@ class HeightmapProcessingPublisher: public QObject
     Q_OBJECT
 public:
     HeightmapProcessingPublisher(
-            Signal::Processing::TargetNeeds::ptr target_needs,
+            Signal::Processing::TargetMarker::ptr target_marker,
             Heightmap::TfrMapping::const_ptr tfrmapping,
             float* t_center,
             QObject* parent=0);
@@ -35,7 +35,8 @@ public slots:
     void update();
 
 private:
-    Signal::Processing::TargetNeeds::ptr    target_needs_;
+    std::shared_ptr<Signal::Processing::TargetNeeds> target_needs_;
+    shared_state<Signal::Processing::Dag>   dag_;
     Heightmap::TfrMapping::const_ptr        tfrmapping_;
     float*                                  t_center_;
     Signal::Interval                        last_update_;

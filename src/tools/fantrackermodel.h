@@ -1,7 +1,7 @@
 #ifndef FANTRACKERMODEL_H
 #define FANTRACKERMODEL_H
 
-#include "rendermodel.h"
+#include "tools/rendermodel.h"
 #include "support/fantrackerfilter.h"
 
 namespace Tools {

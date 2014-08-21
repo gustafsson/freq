@@ -4,7 +4,7 @@
 #include "playbackview.h"
 #include "playbackmodel.h"
 #include "selectionmodel.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "playbackmarkersmodel.h"
 #include "support/operation-composite.h"
 #include "tools/support/toolbar.h"

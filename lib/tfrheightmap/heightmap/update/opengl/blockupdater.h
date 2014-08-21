@@ -30,7 +30,7 @@ namespace OpenGL {
  *
  * real chunk (Update::IUpdateJob) -> chunk pbo (DrawableChunk)
  * ------------------------------------------------------------
- * thread: UpdateConsumer gets real chunk, pop IUpdateJob from UpdateQueue.
+ * thread: UpdateConsumer gets real valued chunk, pop IUpdateJob from UpdateQueue.
  * create chunk pbo: ChunkToBlockDegenerateTexture::DrawableChunk::setupPbo,
  *                   called from ChunkToBlockDegenerateTexture::prepareChunk
  * map chunk pbo: mapped_chunk_data_ in ChunkToBlockDegenerateTexture::DrawableChunk::transferData

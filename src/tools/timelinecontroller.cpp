@@ -7,7 +7,7 @@
 // Sonic AWE
 #include "ui/mainwindow.h"
 #include "timelineview.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "sawe/configuration.h"
 
 // Qt
@@ -24,10 +24,12 @@ namespace Tools
 
 
 TimelineController::
-        TimelineController( TimelineView* timeline_view )
+        TimelineController( TimelineView* timeline_view, Sawe::Project* project, GraphicsView* graphicsview )
             :
             model(timeline_view->_render_view->model),
             view(timeline_view),
+            project(project),
+            graphicsview(graphicsview),
             dock(0),
             _movingTimeline( 0 )
 {
@@ -75,7 +77,7 @@ void TimelineController::
 void TimelineController::
         setupGui()
 {
-    Ui::SaweMainWindow* MainWindow = model->project()->mainWindow();
+    Ui::SaweMainWindow* MainWindow = project->mainWindow();
 
     bool create_dock_window = Sawe::Configuration::feature("timeline_dock");
 
@@ -107,11 +109,11 @@ void TimelineController::
         connect(MainWindow->getItems()->actionToggleTimelineWindow, SIGNAL(toggled(bool)), dock, SLOT(setVisible(bool)));
         connect(dock, SIGNAL(visibilityChanged(bool)), MainWindow->getItems()->actionToggleTimelineWindow, SLOT(setChecked(bool)));
     } else {
-        view->tool_selector = view->_render_view->graphicsview->toolSelector( 1, model->project()->commandInvoker() );
+        view->tool_selector = graphicsview->toolSelector( 1, project->commandInvoker() );
         view->tool_selector->setCurrentToolCommand( this );
 
-        view->layoutChanged( view->_render_view->graphicsview->layoutDirection());
-        connect(view->_render_view->graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
+        view->layoutChanged( graphicsview->layoutDirection());
+        connect(graphicsview, SIGNAL(layoutChanged(QBoxLayout::Direction)),
                 view, SLOT(layoutChanged(QBoxLayout::Direction)) );
 
         embeddedVisibilityChanged(MainWindow->getItems()->actionToggleTimelineWindow->isChecked());
@@ -124,7 +126,7 @@ void TimelineController::
     // update() on the main render view only since this connection makes
     // the timeline updated as well. Some user input events only need to
     // repaint the timeline view.
-    connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+    connect(view->_render_view, SIGNAL(painting()), view, SLOT(update()));
     connect(view->_render_view, SIGNAL(destroying()), view, SLOT(close()));
     connect(view, SIGNAL(hideMe()), SLOT(hideTimeline()));
 
@@ -144,13 +146,13 @@ void TimelineController::
 
     if (!visible)
     {
-        disconnect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
-        disconnect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+        disconnect(view->_render_view, SIGNAL(painting()), view, SLOT(paintInGraphicsView()));
+        disconnect(view->_render_view, SIGNAL(painting()), view, SLOT(update()));
     }
     else
     {
-        connect(view->_render_view, SIGNAL(paintingForeground()), view, SLOT(paintInGraphicsView()));
-        connect(view->_render_view, SIGNAL(postPaint()), view, SLOT(update()));
+        connect(view->_render_view, SIGNAL(painting()), view, SLOT(paintInGraphicsView()));
+        connect(view->_render_view, SIGNAL(painting()), view, SLOT(update()));
     }
 
     if (view->tool_selector)
@@ -195,7 +197,8 @@ void TimelineController::
         {
             // Updates both the timeline and the main render view (the timeline
             // is redrawn whenever the main render view is redrawn).
-            view->_render_view->setPosition( current );
+            view->_render_view->model->setPosition( current );
+            view->redraw();
         }
 
         if (moveButton.isDown() && (e->buttons() & Qt::RightButton))
@@ -213,7 +216,7 @@ void TimelineController::
             //moveButton.spacePos(x, y, current[0], current[1]);
             current.time = (current.time - view->_xoffs) * view->_xscale;
 
-            float length = std::max( 1.f, model->project()->length());
+            float length = std::max( 1.f, project->length());
             view->_xoffs = current.time - 0.5f*length/view->_xscale;
 
             view->redraw();

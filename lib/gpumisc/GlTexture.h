@@ -26,6 +26,7 @@ See class comment #GlTexture.
 #endif
 #endif
 
+
 /**
 GlTexture is a wrapper for an OpenGL texture (refered to as just 
 "texture") to manage the texture in an object oriented manner (mainly
@@ -55,7 +56,7 @@ public:
      * @brief GlTexture maps an existing gl texture
      * @param textureId
      */
-    GlTexture(unsigned int textureId);
+    GlTexture(unsigned int textureId, int width, int height, bool adopt=false);
 
     void reset(unsigned short width, unsigned short height, unsigned int pixelFormat=GL_RGBA, unsigned int internalFormat=GL_RGBA, unsigned type=GL_UNSIGNED_BYTE, void* data = 0);
 

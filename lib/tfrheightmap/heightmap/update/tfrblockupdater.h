@@ -16,10 +16,18 @@ public:
         Job(Tfr::pChunk chunk, float normalization_factor, float largest_fs=0);
 
         Tfr::pChunk chunk;
-        float *p;
+        enum Data {
+            Data_F32,
+            Data_F16
+        } const type = Data_F16;
+        void *p;
+
         float normalization_factor;
 
         Signal::Interval getCoveredInterval() const override;
+
+    private:
+        Tfr::ChunkData::ptr memory;
     };
 
     TfrBlockUpdater();

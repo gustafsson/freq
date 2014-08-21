@@ -1,7 +1,7 @@
 #include "commentview.h"
 #include "ui_commentview.h"
 
-#include "renderview.h"
+#include "tools/support/renderviewinfo.h"
 #include "ui/mousecontrol.h"
 
 #include "sawe/project.h"
@@ -20,12 +20,13 @@
 
 namespace Tools {
 
-CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent) :
+CommentView::CommentView(ToolModelP modelp, QGraphicsScene* graphicsscene, RenderView* render_view, Sawe::Project* project, QWidget *parent) :
     QWidget(parent),
     view( render_view ),
     modelp(modelp),
     ui(new Ui::CommentView),
     proxy( 0 ),
+    project(project),
     keep_pos(false),
     z_hidden(false),
     lastz(6),
@@ -70,7 +71,7 @@ CommentView::CommentView(ToolModelP modelp, RenderView* render_view, QWidget *pa
     proxy->setCacheMode(QGraphicsItem::ItemCoordinateCache);
     // ZValue is set in CommentView::updatePosition()
     proxy->setVisible(true);
-    render_view->addItem( proxy );
+    graphicsscene->addItem( proxy );
 
     setCursor(Qt::ArrowCursor);
 }
@@ -265,7 +266,7 @@ void CommentView::
         }
         resizePosition = -QPoint(width(), height()) + QPoint(gp.x(), -gp.y());
 
-        view->model->project()->setModified();
+        project->setModified();
     }
 
     if (visible)
@@ -456,7 +457,7 @@ void CommentView::
         updateText()
 {
     model()->html = html();
-    view->model->project()->setModified();
+    project->setModified();
 }
 
 
@@ -498,7 +499,7 @@ void CommentView::
     {
         clearFocus();
         ui->textEdit->clearFocus();
-        view->setFocus(Qt::MouseFocusReason);
+        proxy->scene ()->setFocus(Qt::MouseFocusReason);
     }
 }
 
@@ -529,6 +530,8 @@ void CommentView::
 {
     bool use_heightmap_value = true;
 
+    Tools::Support::RenderViewInfo r(view);
+
     // moveEvent can't be used when updating the reference position while moving
     if (!proxy->pos().isNull() || model()->screen_pos[0] == UpdateModelPositionFromScreen)
     {
@@ -536,12 +539,12 @@ void CommentView::
         {
             QPointF c = proxy->sceneTransform().map(QPointF(ref_point));
 
-            c = view->widget_coordinates( c );
+            c = r.widget_coordinates( c );
 
             if (use_heightmap_value)
-                model()->pos = view->getHeightmapPos( c );
+                model()->pos = r.getHeightmapPos( c );
             else
-                model()->pos = view->getPlanePos( c );
+                model()->pos = r.getPlanePos( c );
 
             model()->screen_pos[0] = UpdateScreenPositionFromWorld;
         }
@@ -564,7 +567,7 @@ void CommentView::
     }
     else
     {
-        pt = view->getScreenPos( model()->pos, &z, use_heightmap_value );
+        pt = r.getScreenPos( model()->pos, &z, use_heightmap_value );
         lastz = z;
     }
     //TaskInfo("model->pos( %g, %g ) -> ( %g, %g, %g )",
@@ -577,8 +580,8 @@ void CommentView::
     {
         z *= 0.5;
 
-        if (-1 > view->model->_pz)
-            z += -log(-view->model->_pz);
+        if (-1 > view->model->camera.p[2])
+            z += -log(-view->model->camera.p[2]);
 
         if (z < 1)
             z = 1;

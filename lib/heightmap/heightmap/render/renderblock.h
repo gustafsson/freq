@@ -5,6 +5,7 @@
 #include "vbo.h"
 #include "rendersettings.h"
 #include "GlTexture.h"
+#include "glprojection.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
@@ -14,16 +15,23 @@ namespace Render {
 class RenderBlock
 {
 public:
+    typedef std::shared_ptr<RenderBlock> ptr;
+
     class Renderer : boost::noncopyable {
     public:
-        Renderer(RenderBlock* render_block, BlockLayout block_size);
+        Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection);
         ~Renderer();
 
         void renderBlock( pBlock ref );
 
     private:
+        RenderBlock* render_block;
         unsigned vbo_size;
         RenderSettings render_settings;
+        glProjection gl_projection;
+        unsigned uniModelviewprojection = 0;
+        unsigned uniModelview = 0;
+        unsigned uniNormalMatrix = 0;
 
         void draw(unsigned tex_height);
     };
@@ -31,12 +39,21 @@ public:
     RenderBlock(RenderSettings* render_settings);
 
     void        init();
+    bool        isInitialized();
     void        clearCaches();
     void        setSize( unsigned w, unsigned h);
     unsigned    trianglesPerBlock();
 
 private:
     friend class RenderBlock::Renderer;
+
+    enum InitializedLevel {
+        NotInitialized,
+        Initialized,
+        InitializationFailed
+    };
+
+    InitializedLevel _initialized;
 
     RenderSettings* render_settings;
     RenderSettings::ColorMode _color_texture_colors;
@@ -49,8 +66,9 @@ private:
     unsigned _vbo_size;
     pVbo _mesh_position;
 
+    void checkExtensions();
     void beginVboRendering(BlockLayout block_size);
-    static void endVboRendering();
+    void endVboRendering();
     void createMeshIndexBuffer(int w, int h);
     void createMeshPositionVBO(int w, int h);
     void createColorTexture(unsigned N);

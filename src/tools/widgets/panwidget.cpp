@@ -5,15 +5,16 @@
 
 #include "hudglwidget.h"
 #include "sawe/project.h"
-#include "tools/renderview.h"
+#include "tools/support/renderviewinfo.h"
 #include "tools/commands/movecameracommand.h"
 
 namespace Tools {
 namespace Widgets {
 
 
-PanWidget::PanWidget(RenderView *view) :
-    view_(view)
+PanWidget::PanWidget(RenderView *view, Tools::Commands::CommandInvoker* commandInvoker) :
+    view_(view),
+    commandInvoker_(commandInvoker)
 {
     setMinimumSize(70,70);
     setCursor(Qt::OpenHandCursor);
@@ -38,8 +39,9 @@ void PanWidget::
 {
     bool success1, success2;
 
-    Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
-    Heightmap::Position current = view_->getPlanePos( mapToParent(event->pos()), &success2);
+    Tools::Support::RenderViewInfo r(view_);
+    Heightmap::Position last = r.getPlanePos( mapToParent(dragSource_), &success1);
+    Heightmap::Position current = r.getPlanePos( mapToParent(event->pos()), &success2);
 
     if (success1 && success2)
     {
@@ -47,7 +49,7 @@ void PanWidget::
         float ds = current.scale - last.scale;
 
         Tools::Commands::pCommand cmd( new Tools::Commands::MoveCameraCommand(view_->model, -dt, -ds ));
-        view_->model->project()->commandInvoker()->invokeCommand( cmd );
+        commandInvoker_->invokeCommand( cmd );
     }
 
     dragSource_ = event->pos();

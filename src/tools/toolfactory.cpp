@@ -3,7 +3,7 @@
 // Tools
 #include "navigationcontroller.h"
 #include "rendercontroller.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "timelinecontroller.h"
 #include "timelineview.h"
 #include "playbackcontroller.h"
@@ -36,6 +36,7 @@
 #include "support/workercrashlogger.h"
 #include "suggestpurchase.h"
 #include "setuplocktimewarning.h"
+#include "graphicsview.h"
 
 #include "selectioncontroller.h"
 //#include "brushcontroller.h"
@@ -67,7 +68,8 @@ SetupLockTimeWarning warning_with_backtrace_on_lock_time;
 ToolFactory::
         ToolFactory(Sawe::Project* p)
 :   ToolRepo(p),
-    render_model( p ),
+    project(p),
+    render_model(),
     selection_model( p ),
     playback_model( p )
 {
@@ -85,20 +87,14 @@ ToolFactory::
     _render_view = new RenderView(&render_model);
 
     RenderController* render_controller;
-    _objects.push_back( QPointer<QObject>(render_controller=new RenderController(_render_view)));
+    _objects.push_back( QPointer<QObject>(render_controller=new RenderController(_render_view, p)));
 
     _timeline_view = new TimelineView(p, _render_view);
-    _timeline_controller = new TimelineController(_timeline_view);
-
-
-//Use Signal::Processing namespace
-    _selection_controller = new SelectionController(&selection_model, _render_view );
-
+    _timeline_controller = new TimelineController(_timeline_view, p, render_controller->graphicsview );
+    _selection_controller = new SelectionController(&selection_model, _render_view, p, render_controller->tool_selector);
 
     //_navigation_controller = new NavigationController(_render_view);
 
-
-//Use Signal::Processing namespace
     playback_model.selection = &selection_model;
     _playback_view.reset( new PlaybackView(&playback_model, _render_view) );
     _playback_controller = new PlaybackController(p, _playback_view.data(), _render_view);
@@ -202,7 +198,10 @@ ToolFactory::
         _objects.push_back( QPointer<QObject>( new SplashScreen() ));
 
     if (Sawe::Configuration::feature("overlay_navigation"))
-        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController( _render_view ) ));
+        _objects.push_back( QPointer<QObject>( new Widgets::WidgetOverlayController(
+                                                   render_controller->graphicsview->scene(),
+                                                   _render_view, p->commandInvoker (),
+                                                   render_controller->tool_selector) ));
 
     _objects.push_back( QPointer<QObject>( new FilterController( p )));
 
@@ -221,7 +220,7 @@ ToolFactory::
 
 
     _worker_view.reset( new WorkerView(p));
-    _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view ) );
+    _worker_controller.reset( new WorkerController( _worker_view.data(), _render_view, _timeline_view, p ) );
 
     } catch (const std::exception& x) {
         TaskInfo(boost::format("ToolFactory() caught exception\n%s") % boost::diagnostic_information(x));
@@ -285,9 +284,9 @@ ToolFactory::
 
 
 void ToolFactory::
-        addRecording (Adapters::Recorder::ptr recorder)
+        addRecording (Signal::Recorder::ptr recorder)
 {
-    Sawe::Project*p = render_model.project ();
+    Sawe::Project*p = project;
 
     _record_model.reset( RecordModel::createRecorder(
                 p->processing_chain (),
@@ -303,7 +302,7 @@ void ToolFactory::
 ToolFactory::
         ToolFactory()
             :
-            render_model( 0 ),
+            render_model(),
             selection_model( 0 ),
             playback_model( 0 )
 {

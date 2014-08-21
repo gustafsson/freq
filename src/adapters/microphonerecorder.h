@@ -6,7 +6,7 @@
 #include "shared_state.h"
 #include "verifyexecutiontime.h"
 
-#include "adapters/recorder.h"
+#include "signal/recorder.h"
 
 #include <vector>
 #include <sstream>
@@ -20,7 +20,7 @@
 
 namespace Adapters {
 
-class MicrophoneRecorder: public Recorder
+class MicrophoneRecorder: public Signal::Recorder
 {
 public:
     MicrophoneRecorder(int inputDevice/*=-1*/);
@@ -105,51 +105,6 @@ private:
 
         _data->samples.put(wavfile->readFixedLength( wavfile->getInterval() ));
     }
-};
-
-}
-
-
-namespace Adapters {
-
-/**
- * @brief The MicrophoneRecorderOperation class should provide access to recorded data.
- */
-class MicrophoneRecorderOperation: public Signal::Operation
-{
-public:
-    MicrophoneRecorderOperation( Recorder::ptr recorder );
-
-    virtual Signal::pBuffer process(Signal::pBuffer b);
-
-private:
-    Recorder::ptr recorder_;
-};
-
-
-/**
- * @brief The MicrophoneRecorderDesc class should control the behaviour of a recording.
- */
-class MicrophoneRecorderDesc: public Signal::OperationDesc
-{
-public:
-    MicrophoneRecorderDesc( Recorder::ptr, Recorder::IGotDataCallback::ptr invalidator );
-
-    void startRecording();
-    void stopRecording();
-    bool isStopped();
-    bool canRecord();
-    Recorder::ptr recorder() const;
-
-    // OperationDesc
-    virtual Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const;
-    virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const;
-    virtual OperationDesc::ptr copy() const;
-    virtual Signal::Operation::ptr createOperation( Signal::ComputingEngine* engine ) const;
-    virtual Extent extent() const;
-
-private:
-    Recorder::ptr recorder_;
 
 public:
     static void test();

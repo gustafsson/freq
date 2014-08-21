@@ -11,8 +11,17 @@
 
 // OSX does not use glew.h nor <gl/*>
 #ifdef __APPLE__
-#    include <OpenGL/gl.h>
-#    include <OpenGL/glu.h>
+# include <QObject>
+# include <qgl.h>
+//# include <OpenGL/gl.h>
+# ifdef GL_ES_VERSION_2_0
+// assumes EXT_texture_rg which is present in for instance iOS >= 5.0
+#  define GL_RED GL_RED_EXT
+#  define GL_R16F GL_R16F_EXT
+# endif
+inline const char* gluErrorString(int) {
+    return "(gluErrorString not implemented)";
+}
 #else
 #    include <GL/glew.h> // glew.h includes gl.h
 #endif

@@ -4,10 +4,12 @@
 #include "toolfactory.h"
 #include "ui/mainwindow.h"
 #include "rendercontroller.h"
-
+#include "tools/support/drawcollections.h"
+#include "tools/support/toolselector.h"
 // Sonic AWE lib
 #include "sawe/application.h"
 #include "heightmap/render/renderer.h"
+#include "heightmap/render/renderfrustum.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -84,12 +86,7 @@ Heightmap::Position TimelineView::
     int r = devicePixelRatio ();
     GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
 
-    GLvector world_coord = gluUnProject(
-            win_coord,
-            modelview_matrix,
-            projection_matrix,
-            viewport_matrix,
-            success);
+    GLvector world_coord = gl_projection.gluUnProject (win_coord, success);
 
     return Heightmap::Position( world_coord[0], world_coord[2] );
 }
@@ -223,7 +220,7 @@ void TimelineView::
 
     TIME_PAINTGL TaskTimer tt("TimelineView::paintGL");
 
-    _length = std::max( 1.f, _render_view->model->renderer->render_settings.last_axes_length );
+    _length = std::max( 1.f, _render_view->model->render_settings.last_axes_length );
     if (_length < 60*10)
         _barHeight = 0;
     else
@@ -247,7 +244,7 @@ void TimelineView::
             if (_xoffs<0) _xoffs = 0;
             if (_xoffs>_length-_length/_xscale) _xoffs = _length-_length/_xscale;
 
-            if (_render_view->model->renderer->render_settings.left_handed_axes)
+            if (_render_view->model->render_settings.left_handed_axes)
             {
                 glViewport( 0, _height*_barHeight, _width, _height*(1-_barHeight) );
             }
@@ -257,19 +254,19 @@ void TimelineView::
             }
             setupCamera( false );
 
-            glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix);
-            glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix);
-            glGetIntegerv(GL_VIEWPORT, viewport_matrix);
+            glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview.v ());
+            glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection.v ());
+            glGetIntegerv(GL_VIEWPORT, gl_projection.viewport.v);
 
             {
                 glPushMatrixContext mc(GL_MODELVIEW);
 
-                _render_view->drawCollections( _timeline_fbo.get(), 0 );
+                Support::DrawCollections(_render_view->model).drawCollections( gl_projection, _timeline_fbo.get(), 0 );
 
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
-                _render_view->model->renderer->drawFrustum();
+                Heightmap::Render::RenderFrustum(_render_view->gl_projection).drawFrustum();
 
                 emit painting();
             }
@@ -280,7 +277,7 @@ void TimelineView::
             // Draw little bar for entire signal at the bottom of the timeline
             //glPushMatrixContext mc(GL_MODELVIEW);
 
-            if (_render_view->model->renderer->render_settings.left_handed_axes)
+            if (_render_view->model->render_settings.left_handed_axes)
             {
                 glViewport( 0, 0, (GLint)_width, (GLint)_height*_barHeight );
             }
@@ -290,7 +287,7 @@ void TimelineView::
             }
             setupCamera( true );
 
-            _render_view->drawCollections( _timeline_bar_fbo.get(), 0 );
+            Support::DrawCollections(_render_view->model).drawCollections( gl_projection, _timeline_bar_fbo.get(), 0 );
 
             glViewport( 0, 0, (GLint)_width, (GLint)_height );
             setupCamera( true );
@@ -322,7 +319,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            _render_view->model->renderer->drawFrustum();
+            Heightmap::Render::RenderFrustum(_render_view->gl_projection).drawFrustum();
         }
 
         GlException_CHECK_ERROR();
@@ -357,7 +354,7 @@ void TimelineView::
 {
     // Make sure that the camera focus point is within the timeline
     {
-        float t = _render_view->model->renderer->render_settings.camera[0];
+        float t = _render_view->model->camera.q[0];
         float new_t = -1;
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
@@ -378,8 +375,9 @@ void TimelineView::
 
             if (0<=new_t)
             {
-                float f = _render_view->model->renderer->render_settings.camera[2];
-                _render_view->setPosition( Heightmap::Position( new_t, f) );
+                float f = _render_view->model->camera.q[2];
+                _render_view->model->setPosition( Heightmap::Position( new_t, f) );
+                redraw ();
             }
             break;
         }
@@ -390,7 +388,7 @@ void TimelineView::
     glRotatef( 90, 1, 0, 0 );
     glRotatef( 180, 0, 1, 0 );
 
-    if (!_render_view->model->renderer->render_settings.left_handed_axes)
+    if (!_render_view->model->render_settings.left_handed_axes)
     {
         glTranslatef(-0.5f,0,0);
         glScalef(-1,1,1);

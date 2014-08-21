@@ -33,7 +33,7 @@ public:
 	tmatrix( const t *b )
 	{
 		for(int i=0; i<cols; i++)
-			m[i] = &b[i *rows];
+            m[i] = b + i*rows;
 	}
 	tmatrix( const tmatrix &b )
 	{
@@ -55,12 +55,12 @@ public:
 	operator tvector<rows-1, t>();
 
         template<typename t2 >
-        tvector<rows, t> operator*( const tvector<cols, t2> &n ) {
+        tvector<rows, t> operator*( const tvector<cols, t2> &n ) const {
                 return *this * tmatrix<cols,t2,1>( n );
         }
 
         template<int cols2, typename t2 >
-	tmatrix<rows, t, cols2> operator*( const tmatrix<cols, t2, cols2> &n ) {
+    tmatrix<rows, t, cols2> operator*( const tmatrix<cols, t2, cols2> &n ) const {
 		tmatrix<rows,t,cols2> r;
 		for(int a=0; a<cols2; a++)
 		for(int b=0; b<rows; b++)
@@ -68,20 +68,24 @@ public:
 			r[a][b] = r[a][b] + m[c][b]*n[a][c];
 		return r;
 	}
-    tmatrix operator*( const t &v ) {
+    tmatrix operator*( const t &v ) const {
 		tmatrix r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
 			r[a][b] = m[a][b]*v;
 		return r;
 	}
-    tmatrix operator+( const t &v ) {
+    tmatrix operator+( const t &v ) const {
 		tmatrix r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
 			r[a][b] = m[a][b]+v;
 		return r;
 	}
+    template< typename t2 >
+    tmatrix& operator*=( const tmatrix<cols, t2, rows> &n ) {
+        return *this = *this * n;
+    }
     template<typename T2>
     bool operator==( const tmatrix<rows,T2,cols> &v ) const {
         for(int a=0; a<cols; a++)
@@ -94,37 +98,39 @@ public:
     bool operator!=( const tmatrix<rows,T2,cols> &v ) const {
         return !(*this == v);
     }
-    tmatrix<cols,t,rows> transpose() {
+    tmatrix<cols,t,rows> transpose() const {
         tmatrix<cols,t,rows> r;
 		for(int a=0; a<cols; a++)
 		for(int b=0; b<rows; b++)
             r[b][a] = m[a][b];
+        return r;
 	}
-	static tmatrix<4,t,4> rotHead( tvector<3, t> r )
+    static tmatrix<4,t,4> rotFpsHead( tvector<3, t> r )
 	{
 		return
 			rot(tvector<3,t>(0,1,0), DEG_TO_RAD(r[1]))*
 			rot(tvector<3,t>(1,0,0), DEG_TO_RAD(r[0])) *
 			rot(tvector<3,t>(0,0,1), DEG_TO_RAD(r[2]));
 	}
-	static tmatrix<4,t,4> rotHeadAnti( tvector<3, t> r )
-	{
-		return
-			rot(tvector<3,t>(0,1,0), -DEG_TO_RAD(r[1])) *
-			rot(tvector<3,t>(1,0,0), -DEG_TO_RAD(r[0])) *
-			rot(tvector<3,t>(0,0,1), -DEG_TO_RAD(r[2]));
-	}
-	static tmatrix<4,t,4> rot( tvector<3, t> r, t d )
+    static tmatrix<4,t,4> rotFpsHeadAnti( tvector<3, t> r )
+    {
+        return
+            rot(tvector<3,t>(0,1,0), -DEG_TO_RAD(r[1])) *
+            rot(tvector<3,t>(1,0,0), -DEG_TO_RAD(r[0])) *
+            rot(tvector<3,t>(0,0,1), -DEG_TO_RAD(r[2]));
+    }
+    static tmatrix<4,t,4> rot( tvector<3, t> axis, t rad )
 	{
 		t
-			c = cos(d),
-			s = sin(d),
-			i = 1-cos(d),
-			X = r[0],
-			Y = r[1],
-			Z = r[2];
+            c = cos(rad),
+            s = sin(rad),
+            i = 1-cos(rad),
+            X = axis[0],
+            Y = axis[1],
+            Z = axis[2];
 
-		t p[]=
+        // transposed layout
+        t p[]=
 		{
 			i*X*X + c,		i*Y*X + s*Z,		i*Z*X - s*Y,		0,
 			i*X*Y - s*Z,		i*Y*Y + c,			i*Z*Y + s*X,		0,
@@ -133,19 +139,53 @@ public:
 		};
 		return tmatrix<4,t,4>(p);
 	}
-	static tmatrix<4,t,4> move( tvector<3, t> r )
+    static tmatrix<4,t,4> rot( t deg, t x, t y, t z )
+    {
+        // glRotate
+        return rot(tvector<3,t>(x,y,z), DEG_TO_RAD(deg));
+    }
+
+    static tmatrix<4,t,4> translate( tvector<3, t> r )
 	{
-		double p[]=
+        // transposed layout
+        t p[]=
 		{
-			1,0,0, r[0],
-			0,1,0, r[1],
-			0,0,1, r[2],
-			0,0,0, 1
+            1,0,0, 0,
+            0,1,0, 0,
+            0,0,1, 0,
+            r[0], r[1], r[2], 1
 		};
-		return tmatrix<4,t,4>(p);
+        return tmatrix<4,t,4>(p);
 	}
+    static tmatrix<4,t,4> translate( t x, t y, t z )
+    {
+        // glTranslate
+        return translate(tvector<3,t>(x,y,z));
+    }
+
+    static tmatrix<4,t,4> scale( tvector<3, t> r )
+    {
+        // transposed layout
+        t p[]=
+        {
+            r[0],0,   0,    0,
+            0,   r[1],0,    0,
+            0,   0,   r[2], 0,
+            0,   0,   0,    1
+        };
+        return tmatrix<4,t,4>(p);
+    }
+    static tmatrix<4,t,4> scale( t x, t y, t z )
+    {
+        // glScale
+        return scale(tvector<3,t>(x,y,z));
+    }
+
+    t* v() { return m[0].v; }
+    const t* v() const { return m[0].v; }
+
 private:
-	tvector<rows, t> m[cols];
+    tvector<rows, t> m[cols];
 };
 
 template<>

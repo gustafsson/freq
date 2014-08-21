@@ -66,6 +66,8 @@ Worker::
 Worker::
         ~Worker ()
 {
+    while (!thread_->isRunning () && !thread_->isFinished ())
+        wait (1);
     abort ();
     wait (1); // To quit the thread normally if idle (returns within 1 ms if it is ready to quit)
     terminate ();
@@ -281,7 +283,7 @@ public:
 
 
 class DummySchedule: public ISchedule {
-    Task getTask(Signal::ComputingEngine::ptr engine) const override {
+    Task getTask(Signal::ComputingEngine::ptr /*engine*/) const override {
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         return Task(step.write (), step, std::vector<Step::const_ptr>(), Signal::Operation::ptr(), Signal::Interval(), Signal::Interval() );
     }

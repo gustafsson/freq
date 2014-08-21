@@ -1,11 +1,10 @@
 #include "dropnotifyform.h"
 #include "ui_dropnotifyform.h"
 
-
-#include "renderview.h"
-
+#include "tools/renderview.h"
 
 #include "TAni.h"
+
 #include <boost/assert.hpp>
 
 #include <QDesktopServices>

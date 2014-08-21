@@ -1,7 +1,8 @@
 #include "fantrackerview.h"
 #include "ui/mainwindow.h"
-//#include "renderview.h"
-#include "support/paintline.h"
+
+#include "tools/support/paintline.h"
+#include "tools/support/channelcolors.h"
 
 namespace Tools {
 
@@ -23,7 +24,8 @@ void FanTrackerView::
     //float FS = model_->selected_filter()->sample_rate();
     float FS = f->last_fs;
 
-    const std::vector<tvector<4> >& colors = render_view_->channelColors();
+    int N = render_view_->model->tfr_mapping ()->channels();
+    const std::vector<tvector<4> > colors = Support::ChannelColors::compute(N);
 
     for (unsigned C = 0; C < f->track.size (); ++C )
     {

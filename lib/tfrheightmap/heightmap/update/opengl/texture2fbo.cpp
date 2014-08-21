@@ -47,7 +47,7 @@ Texture2Fbo::Params::
     if (transpose)
       {
          u0 = 0.f / nSamples; // The sample at a_t
-         u1 = (nSamples-1.0f) / nSamples; // The sample at b_t
+         u1 = (nValidSamples-1.0f) / nSamples; // The sample at b_t
       }
     else
       {
@@ -164,7 +164,7 @@ Texture2Fbo::~Texture2Fbo()
 
 
 void Texture2Fbo::
-        draw ()
+        draw (int vertex_attrib, int tex_attrib)
 {
     GlException_CHECK_ERROR ();
 
@@ -172,20 +172,20 @@ void Texture2Fbo::
 
     // Setup drawing with VBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glEnableVertexAttribArray (vertex_attrib);
+    glEnableVertexAttribArray (tex_attrib);
+    glVertexAttribPointer (vertex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
+    glVertexAttribPointer (tex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     GlException_CHECK_ERROR();
 
     // Draw with vbo onto block texture with framebuffer rendering
-//    glTranslatef (xxx);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, num_elements_);
 
     // Finish drawing with VBO
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableVertexAttribArray (vertex_attrib);
+    glDisableVertexAttribArray (tex_attrib);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlException_CHECK_ERROR();

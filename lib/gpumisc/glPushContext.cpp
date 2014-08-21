@@ -1,4 +1,5 @@
 #include "glPushContext.h"
+#ifndef GL_ES_VERSION_2_0
 
 #include "GlException.h"
 
@@ -16,3 +17,4 @@ glPushMatrixContext::~glPushMatrixContext() {
     glMatrixMode( GL_MODELVIEW );
 }
 
+#endif // GL_ES_VERSION_2_0

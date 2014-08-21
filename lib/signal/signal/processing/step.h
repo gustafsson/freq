@@ -34,6 +34,7 @@ public:
     };
 
     // To be appended to exceptions while using Step
+    struct crashed_step_tag {};
     typedef boost::error_info<struct crashed_step_tag, Step::ptr> crashed_step;
 
     Step(Signal::OperationDesc::ptr operation_desc);
@@ -50,6 +51,12 @@ public:
      * deprecateCache returns which intervals in the cache that was affected by 'deprecated_input'
      */
     Signal::Intervals           deprecateCache(Signal::Intervals deprecated_input);
+    /**
+     * @brief purge discards samples from the cache, freeing up memory
+     * @param still_needed describes which samples to keep
+     * @return how many samples that were released
+     */
+    size_t                      purge(Signal::Intervals still_needed) const;
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 

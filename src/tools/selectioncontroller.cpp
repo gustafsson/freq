@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 
 // Sonic AWE
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
@@ -33,13 +33,15 @@
 namespace Tools
 {
     SelectionController::
-            SelectionController( SelectionModel* model, RenderView* render_view )
+            SelectionController( SelectionModel* model, RenderView* render_view, Sawe::Project* project, Tools::Support::ToolSelector* tool_selector )
                 :
                 _model(model),
                 _render_view(render_view),
+                _project(project),
+                renderview_tool_selector(tool_selector),
                 //_worker(&render_view->model->project()->worker),
                 selectionComboBox_(0),
-                tool_selector_( new Support::ToolSelector(render_view->model->project()->commandInvoker(), this)),
+                tool_selector_( new Support::ToolSelector(project->commandInvoker(), this)),
                 deselect_action_(0),
                 selecting(false)
     {
@@ -117,7 +119,7 @@ namespace Tools
 
         toolfactory();
 
-        _render_view->tool_selector->default_tool = this;
+        renderview_tool_selector->default_tool = this;
 
 #ifdef TARGET_hast
         ui->actionActionRemove_selection->setVisible(false);
@@ -140,7 +142,7 @@ namespace Tools
         ellipse_controller_ = new Selections::EllipseController( ellipse_view_.data(), this );
 #endif
 */
-        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, render_view()->model->project() ));
+        rectangle_model_.reset( new Selections::RectangleModel(      render_view()->model, _project ));
         rectangle_view_.reset( new Selections::RectangleView(        rectangle_model_.data() ));
         rectangle_controller_ = new Selections::RectangleController( rectangle_view_.data(), this );
 /*
@@ -154,7 +156,6 @@ namespace Tools
         peak_controller_ = new Selections::PeakController(  peak_view_.data(), this );
 #endif
 */
-        connect( render_view()->model, SIGNAL(modelChanged(Tools::ToolModel*)), SLOT(renderModelChanged(Tools::ToolModel*)) );
     }
 
 
@@ -162,9 +163,9 @@ namespace Tools
             renderModelChanged(Tools::ToolModel* m)
     {
         Tools::RenderModel* renderModel = dynamic_cast<Tools::RenderModel*>( m );
-        bool ortho1D = 0==renderModel->_rx;
-        bool frequencySelection = fmod( renderModel->effective_ry() + 90, 180.f ) == 0.f;
-        bool timeSelection = fmod( renderModel->effective_ry(), 180.f ) == 0.f;
+        bool ortho1D = 0==renderModel->camera.r[0];
+        bool frequencySelection = fmod( renderModel->camera.effective_ry() + 90, 180.f ) == 0.f;
+        bool timeSelection = fmod( renderModel->camera.effective_ry(), 180.f ) == 0.f;
         Ui::MainWindow* ui = model()->project()->mainWindow()->getItems();
 
         ui->actionEllipseSelection->setEnabled( !ortho1D );
@@ -277,9 +278,9 @@ namespace Tools
             setCurrentSelection( Signal::OperationDesc::ptr() );
 
         if (active)
-            _render_view->toolSelector()->setCurrentToolCommand( this );
+            renderview_tool_selector->setCurrentToolCommand( this );
         else
-            _render_view->toolSelector()->setCurrentTool( this, active );
+            renderview_tool_selector->setCurrentTool( this, active );
     }
 
 

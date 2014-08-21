@@ -1,6 +1,6 @@
 #include "transforminfoform.h"
 #include "ui_transforminfoform.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -212,7 +212,7 @@ void TransformInfoForm::
         addRow("Bins", QString("%1").arg(cwt->nBins()));
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->render_settings.y_scale));
         setEditText( ui->minHzEdit, QString("%1").arg(cwt->get_wanted_min_hz(fs)) );
         //setEditText( ui->maxHzEdit, QString("%1").arg(cwt->get_max_hz(fs)) );
     }
@@ -223,9 +223,9 @@ void TransformInfoForm::
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
-        addRow("Rendered height", QString("%1 px").arg(renderview->height()));
-        addRow("Rendered width", QString("%1 px").arg(renderview->width()));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
+        addRow("Rendered height", QString("%1 px").arg(renderview->gl_projection.viewport[3]));
+        addRow("Rendered width", QString("%1 px").arg(renderview->gl_projection.viewport[2]));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->render_settings.y_scale));
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
@@ -239,7 +239,7 @@ void TransformInfoForm::
         addRow("Type", "Cepstrum");
 
         addRow("Window size", QString("%1").arg(cepstrum->chunk_size()));
-        addRow("Amplification factor", QString("%1").arg(renderview->model->renderer->render_settings.y_scale));
+        addRow("Amplification factor", QString("%1").arg(renderview->model->render_settings.y_scale));
         addRow("Lowest fundamental", QString("%1").arg( 2*fs / cepstrum->chunk_size()));
 
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/cepstrum->chunk_size(),0,'f',2) );

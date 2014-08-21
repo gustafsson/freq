@@ -251,8 +251,8 @@ void StftDesc::
 {
     if (1 > value)
         value = 1;
-    if (10 < value)
-        value = 10;
+    if (100 < value)
+        value = 100;
 
     _averaging = value;
 }
@@ -261,7 +261,7 @@ void StftDesc::
 bool StftDesc::
         enable_inverse() const
 {
-    return _enable_inverse;
+    return _averaging > 1 ? false : _enable_inverse;
 }
 
 
@@ -572,7 +572,7 @@ void StftDesc::
                 EXCEPTION_ASSERT_EQUALS( expectedOutput, inverse->getInterval () );
                 EXCEPTION_ASSERT_EQUALS( expectedOutput, c->getInterval () );
 
-                // don't use c->getCoveredInterval if d.enable_inverse ()
+                // if d.enable_inverse () then c->getCoveredInterval doesn't make sense
                 if (d.overlap ()>0) {
                     EXCEPTION_ASSERT( !(Signal::Intervals(expectedOutput) - c->getCoveredInterval ()));
                 }
@@ -581,12 +581,8 @@ void StftDesc::
             } else {
                 EXCEPTION_ASSERT_EQUALS( expectedOutput, c->getCoveredInterval () );
 
-                // don't use c->getInterval if !d.enable_inverse ()
-                if (d.overlap ()==0) {
-                    EXCEPTION_ASSERT( !(Signal::Intervals(expectedOutput) - c->getInterval ()));
-                } else {
-                    EXCEPTION_ASSERT( !(Signal::Intervals(c->getInterval ()) - expectedOutput));
-                }
+                // if !d.enable_inverse () then c->getInterval doesn't make sense
+                EXCEPTION_ASSERT( Signal::Intervals(c->getInterval ()) - expectedOutput );
             }
         }
     }

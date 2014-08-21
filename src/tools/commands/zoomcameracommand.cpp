@@ -32,15 +32,15 @@ void ZoomCameraCommand::
 {
     if (dt) if (!zoom( dt, ScaleX ))
     {
-        float L = model->project()->length();
-        float d = std::min( 0.5f * fabsf(dt), fabsf(model->_qx - L/2));
-        model->_qx += model->_qx>L*.5f ? -d : d;
+        float L = model->tfr_mapping().read ()->length();
+        float d = std::min( 0.5f * fabsf(dt), fabsf(model->camera.q[0] - L/2));
+        model->camera.q[0] += model->camera.q[0]>L*.5f ? -d : d;
     }
 
     if (ds) if (!zoom( ds, ScaleZ ))
     {
-        float d = std::min( 0.5f * fabsf(ds), fabsf(model->_qz - .5f));
-        model->_qz += model->_qz>.5f ? -d : d;
+        float d = std::min( 0.5f * fabsf(ds), fabsf(model->camera.q[2] - .5f));
+        model->camera.q[2] += model->camera.q[2]>.5f ? -d : d;
     }
 
     if (dz) zoom( dz, Zoom );
@@ -50,8 +50,8 @@ void ZoomCameraCommand::
 bool ZoomCameraCommand::
         zoom(float delta, ZoomMode mode)
 {
-    float L = model->project()->length();
-    float fs = model->project()->extent().sample_rate.get();
+    float L = model->tfr_mapping ().read ()->length();
+    float fs = model->tfr_mapping ().read ()->targetSampleRate();
     float min_xscale = 4.f/std::max(L,10/fs);
     float max_xscale = 0.05f*fs;
 
@@ -80,10 +80,10 @@ bool ZoomCameraCommand::
     {
         switch(mode)
         {
-        case ScaleX: if (model->xscale == min_xscale)
+        case ScaleX: if (model->camera.xscale == min_xscale)
                 return false;
             break;
-        case ScaleZ: if (model->zscale == min_yscale)
+        case ScaleZ: if (model->camera.zscale == min_yscale)
                 return false;
             break;
         default:
@@ -94,8 +94,8 @@ bool ZoomCameraCommand::
     switch(mode)
     {
     case Zoom: doZoom( delta, 0, 0, 0 ); break;
-    case ScaleX: doZoom( delta, &model->xscale, &min_xscale, &max_xscale); break;
-    case ScaleZ: doZoom( delta, &model->zscale, &min_yscale, &max_yscale ); break;
+    case ScaleX: doZoom( delta, &model->camera.xscale, &min_xscale, &max_xscale); break;
+    case ScaleZ: doZoom( delta, &model->camera.zscale, &min_yscale, &max_yscale ); break;
     }
 
     return true;
@@ -128,10 +128,10 @@ void ZoomCameraCommand::
     }
     else
     {
-        model->_pz *= (1+d);
+        model->camera.p[2] *= (1+d);
 
-        if (model->_pz<-100) model->_pz = -100;
-        if (model->_pz>-.1) model->_pz = -.1;
+        if (model->camera.p[2]<-100) model->camera.p[2] = -100;
+        if (model->camera.p[2]>-.1) model->camera.p[2] = -.1;
     }
 }
 

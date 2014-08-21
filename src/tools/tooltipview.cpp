@@ -63,7 +63,7 @@ void TooltipView::
     Support::ToolGlBrush tgb(enabled);
     glColor4f( 0.7, 0.2, 0.2, enabled ? .5 : 0.2);
 
-    float sz = -0.01/render_view_->model->xscale*render_view_->model->_pz;
+    float sz = -0.01/render_view_->model->camera.xscale*render_view_->model->camera.p[2];
     float x1 = p.time - sz;
     float x2 = p.time + sz;
     float y = 1.5;

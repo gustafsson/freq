@@ -24,6 +24,7 @@
 #include "tfr/cepstrum.h"
 #include "tfr/transformoperation.h"
 #include "graphicsview.h"
+#include "graphicsscene.h"
 #include "sawe/application.h"
 #include "signal/buffersource.h"
 #include "signal/reroutechannels.h"
@@ -63,8 +64,10 @@ namespace Tools
 {
 
 RenderController::
-        RenderController( QPointer<RenderView> view )
+        RenderController( QPointer<RenderView> view, Sawe::Project* project )
             :
+            tool_selector(0),
+            graphicsview(0),
             transform(0),
             hz_scale(0),
             amplitude_scale(0),
@@ -74,6 +77,7 @@ RenderController::
             tf_resolution_action(0),
             linearScale(0),
             view(view),
+            project(project),
             toolbar_render(0),
             logScale(0),
             cepstraScale(0),
@@ -85,13 +89,13 @@ RenderController::
 
     connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
 
-    model()->init(model()->project ()->processing_chain (), rvu);
+    model()->init(project->processing_chain (), rvu);
 
     // 'this' is parent
     auto hpp = new Support::HeightmapProcessingPublisher(
-                view->model->target_marker ()->target_needs (),
+                view->model->target_marker (),
                 view->model->tfr_mapping (),
-                &view->model->_qx,
+                &view->model->camera.q[0],
                 this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
     connect(view, SIGNAL(painting()), hpp, SLOT(update()));
@@ -140,7 +144,7 @@ void RenderController::
 {
     view->redraw();
 
-    model()->project()->setModified();
+    project->setModified();
 }
 
 
@@ -154,7 +158,7 @@ void RenderController::
 void RenderController::
         receiveSetRainbowColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Rainbow;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;
     stateChanged();
 }
 
@@ -162,7 +166,7 @@ void RenderController::
 void RenderController::
         receiveSetGrayscaleColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Grayscale;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Grayscale;
     stateChanged();
 }
 
@@ -170,7 +174,7 @@ void RenderController::
 void RenderController::
         receiveSetBlackGrayscaleColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_BlackGrayscale;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_BlackGrayscale;
     stateChanged();
 }
 
@@ -178,7 +182,7 @@ void RenderController::
 void RenderController::
         receiveSetColorscaleColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_FixedColor;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_FixedColor;
     stateChanged();
 }
 
@@ -186,7 +190,7 @@ void RenderController::
 void RenderController::
         receiveSetGreenRedColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_GreenRed;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_GreenRed;
     stateChanged();
 }
 
@@ -194,7 +198,7 @@ void RenderController::
 void RenderController::
         receiveSetGreenWhiteColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_GreenWhite;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_GreenWhite;
     stateChanged();
 }
 
@@ -202,7 +206,7 @@ void RenderController::
 void RenderController::
         receiveSetGreenColors()
 {
-    model()->renderer->render_settings.color_mode = Heightmap::RenderSettings::ColorMode_Green;
+    model()->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Green;
     stateChanged();
 }
 
@@ -210,7 +214,7 @@ void RenderController::
 void RenderController::
         receiveToogleHeightlines(bool value)
 {
-    model()->renderer->render_settings.draw_contour_plot = value;
+    model()->render_settings.draw_contour_plot = value;
     stateChanged();
 }
 
@@ -218,9 +222,9 @@ void RenderController::
 void RenderController::
         receiveToggleOrientation(bool value)
 {
-    model()->renderer->render_settings.left_handed_axes = !value;
+    model()->render_settings.left_handed_axes = !value;
 
-    view->graphicsview->setLayoutDirection( value
+    graphicsview->setLayoutDirection( value
                                             ? QBoxLayout::RightToLeft
                                             : QBoxLayout::TopToBottom );
 
@@ -231,7 +235,7 @@ void RenderController::
 void RenderController::
         receiveTogglePiano(bool value)
 {
-    model()->renderer->render_settings.draw_piano = value;
+    model()->render_settings.draw_piano = value;
 
     ::Ui::MainWindow* ui = getItems();
 
@@ -244,7 +248,7 @@ void RenderController::
 void RenderController::
         receiveToggleHz(bool value)
 {
-    model()->renderer->render_settings.draw_hz = value;
+    model()->render_settings.draw_hz = value;
 
     ::Ui::MainWindow* ui = getItems();
 
@@ -257,7 +261,7 @@ void RenderController::
 void RenderController::
         receiveToggleTAxis(bool value)
 {
-    model()->renderer->render_settings.draw_t = value;
+    model()->render_settings.draw_t = value;
 
     ::Ui::MainWindow* ui = getItems();
 
@@ -270,7 +274,7 @@ void RenderController::
 void RenderController::
     receiveToggleCursorMarker(bool value)
 {
-    model()->renderer->render_settings.draw_cursor_marker = value;
+    model()->render_settings.draw_cursor_marker = value;
     stateChanged();
 }
 
@@ -291,24 +295,24 @@ void RenderController::
         tf_resolution->setValue ( chunk_size );
     }
 
-    this->yscale->setValue( model()->renderer->render_settings.y_scale );
+    this->yscale->setValue( model()->render_settings.y_scale );
 
     // keep buttons in sync
     ::Ui::MainWindow* ui = getItems();
-    if (model()->renderer->render_settings.draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
-    if (model()->renderer->render_settings.draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
-    switch( model()->renderer->render_settings.color_mode )
+    if (model()->render_settings.draw_piano)  hzmarker->setCheckedAction( ui->actionToggle_piano_grid );
+    if (model()->render_settings.draw_hz)  hzmarker->setCheckedAction( ui->actionToggle_hz_grid );
+    switch( model()->render_settings.color_mode )
     {
-    case Heightmap::RenderSettings::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_rainbow_colors); break;
-    case Heightmap::RenderSettings::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
-    case Heightmap::RenderSettings::ColorMode_BlackGrayscale: color->setCheckedAction(ui->actionSet_blackgrayscale); break;
-    case Heightmap::RenderSettings::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
-    case Heightmap::RenderSettings::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
-    case Heightmap::RenderSettings::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
-    case Heightmap::RenderSettings::ColorMode_Green: color->setCheckedAction(ui->actionSet_green_colors); break;
+    case Heightmap::Render::RenderSettings::ColorMode_Rainbow: color->setCheckedAction(ui->actionSet_rainbow_colors); break;
+    case Heightmap::Render::RenderSettings::ColorMode_Grayscale: color->setCheckedAction(ui->actionSet_grayscale); break;
+    case Heightmap::Render::RenderSettings::ColorMode_BlackGrayscale: color->setCheckedAction(ui->actionSet_blackgrayscale); break;
+    case Heightmap::Render::RenderSettings::ColorMode_FixedColor: color->setCheckedAction(ui->actionSet_colorscale); break;
+    case Heightmap::Render::RenderSettings::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
+    case Heightmap::Render::RenderSettings::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
+    case Heightmap::Render::RenderSettings::ColorMode_Green: color->setCheckedAction(ui->actionSet_green_colors); break;
     }
-    ui->actionSet_contour_plot->setChecked(model()->renderer->render_settings.draw_contour_plot);
-    ui->actionToggleOrientation->setChecked(!model()->renderer->render_settings.left_handed_axes);
+    ui->actionSet_contour_plot->setChecked(model()->render_settings.draw_contour_plot);
+    ui->actionToggleOrientation->setChecked(!model()->render_settings.left_handed_axes);
 }
 
 
@@ -317,22 +321,22 @@ void RenderController::
 {
     // Keep in sync with transformChanged()
     //float f = 2.f * value / yscale->maximum() - 1.f;
-    model()->renderer->render_settings.y_scale = value; //exp( 8.f*f*f * (f>0?1:-1));
+    model()->render_settings.y_scale = value; //exp( 8.f*f*f * (f>0?1:-1));
 
     stateChanged();
 
-    yscale->setToolTip(QString("Intensity level %1").arg(model()->renderer->render_settings.y_scale));
+    yscale->setToolTip(QString("Intensity level %1").arg(model()->render_settings.y_scale));
 }
 
 
 void RenderController::
         receiveSetYBottom( qreal value )
 {
-    model()->renderer->render_settings.y_offset = value;
+    model()->render_settings.y_offset = value;
 
     stateChanged();
 
-    ybottom->setToolTip(QString("Offset %1").arg(model()->renderer->render_settings.y_offset));
+    ybottom->setToolTip(QString("Offset %1").arg(model()->render_settings.y_offset));
 }
 
 
@@ -368,7 +372,7 @@ void RenderController::
 {
     {
         // don't bother about proper timesteps
-        auto& log_scale = model()->renderer->render_settings.log_scale;
+        auto& log_scale = model()->render_settings.log_scale;
         log_scale.TimeStep (0.05f);
         if (log_scale != &log_scale)
             view->redraw ();
@@ -504,9 +508,7 @@ void RenderController::
     }
 
     if (!Signal::Processing::Step::sleepWhileTasks (step.read(), 1))
-        Log("%s didn't finish in %g ms, changing anyway to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
-    else
-        Log("%s finished in %g ms, changing to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
+        Log("RenderController: %s didn't finish in %g ms, changing anyway to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
 
     // then change the tfr_mapping
     model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );
@@ -531,8 +533,8 @@ Tfr::TransformDesc::ptr RenderController::
 float RenderController::
         headSampleRate()
 {
-    return model()->project ()->extent ().sample_rate.get_value_or (1);
-//    return model()->project()->head->head_source()->sample_rate();
+    return project->extent ().sample_rate.get_value_or (1);
+//    return project->head->head_source()->sample_rate();
 }
 
 
@@ -548,7 +550,7 @@ float RenderController::
 ::Ui::MainWindow* RenderController::
         getItems()
 {
-    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(project->mainWindow());
     return main->getItems();
 }
 
@@ -595,35 +597,6 @@ void RenderController::
     Tfr::TransformDesc::ptr transform_desc = model()->transform_descs ()->getParam<Tfr::Cwt>().copy();
 
     setBlockFilter(mcdp, transform_desc);
-}
-
-
-#ifdef USE_CUDA
-void RenderController::
-        receiveSetTransform_Cwt_reassign()
-{
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(&model()->collections, model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Weighted;
-
-    Signal::PostSink* ps = setBlockFilter( cwtblock );
-
-    ps->filter( Signal::pOperation(new Filters::Reassign()));
-}
-#endif
-
-
-void RenderController::
-        receiveSetTransform_Cwt_ridge()
-{
-    EXCEPTION_ASSERTX(false, "Use Signal::Processing namespace");
-/*
-    Heightmap::CwtToBlock* cwtblock = new Heightmap::CwtToBlock(model()->tfr_map (), model()->renderer.get());
-    cwtblock->complex_info = Heightmap::ComplexInfo_Amplitude_Non_Weighted;
-
-    Signal::PostSink* ps = setBlockFilter( cwtblock );
-
-    ps->filter( Signal::pOperation(new Filters::Ridge()));
-*/
 }
 
 
@@ -745,7 +718,7 @@ void RenderController::
 void RenderController::
         receiveLinearAmplitude()
 {
-    model()->renderer->render_settings.log_scale = 0;
+    model()->render_settings.log_scale = 0;
 //    model()->amplitude_axis( Heightmap::AmplitudeAxis_Linear );
 //    view->emitAxisChanged();
     stateChanged();
@@ -755,7 +728,7 @@ void RenderController::
 void RenderController::
         receiveLogAmplitude()
 {
-    model()->renderer->render_settings.log_scale = 1;
+    model()->render_settings.log_scale = 1;
 //    model()->amplitude_axis( Heightmap::AmplitudeAxis_Logarithmic );
 //    view->emitAxisChanged();
     stateChanged();
@@ -782,7 +755,7 @@ RenderModel *RenderController::
 void RenderController::
         setupGui()
 {
-    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(model()->project()->mainWindow());
+    ::Ui::SaweMainWindow* main = dynamic_cast< ::Ui::SaweMainWindow*>(project->mainWindow());
     toolbar_render = new Support::ToolBar(main);
     toolbar_render->setObjectName(QString::fromUtf8("toolBarRenderController"));
     toolbar_render->setWindowTitle("tool bar");
@@ -816,6 +789,9 @@ void RenderController::
     }
 
     connect(ui->actionResetGraphics, SIGNAL(triggered()), view, SLOT(clearCaches()));
+    connect( project->commandInvoker(), SIGNAL(projectChanged(const Command*)), view, SLOT(redraw()));
+    connect( Sawe::Application::global_ptr(), SIGNAL(clearCachesSignal()), view, SLOT(clearCaches()) );
+    view->model->render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
 
 
     // ComboBoxAction* color
@@ -875,8 +851,6 @@ void RenderController::
     {   connect(ui->actionTransform_Cwt, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt()));
         connect(ui->actionTransform_Stft, SIGNAL(triggered()), SLOT(receiveSetTransform_Stft()));
 //        connect(ui->actionTransform_Cwt_phase, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_phase()));
-//        connect(ui->actionTransform_Cwt_reassign, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_reassign()));
-//        connect(ui->actionTransform_Cwt_ridge, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_ridge()));
 //        connect(ui->actionTransform_Cwt_weight, SIGNAL(triggered()), SLOT(receiveSetTransform_Cwt_weight()));
         connect(ui->actionTransform_Cepstrum, SIGNAL(triggered()), SLOT(receiveSetTransform_Cepstrum()));
 
@@ -1079,14 +1053,14 @@ void RenderController::
     view->glwidget = new QGLWidget( 0, Sawe::Application::shared_glwidget(), Qt::WindowFlags(0) );
     view->glwidget->setObjectName( QString("glwidget %1").arg((size_t)this));
     view->glwidget->makeCurrent();
-    model()->renderer->render_settings.dpifactor = model()->project ()->mainWindow ()->devicePixelRatio ();
+    model()->render_settings.dpifactor = project->mainWindow ()->devicePixelRatio ();
 
-    view->graphicsview = new GraphicsView(view);
-    view->graphicsview->setViewport(view->glwidget);
+    GraphicsScene* scene = new GraphicsScene(view);
+    connect(this->view.data (), SIGNAL(redrawSignal()), scene, SLOT(redraw()));
+    graphicsview = new GraphicsView(scene);
+    graphicsview->setViewport(view->glwidget);
     view->glwidget->makeCurrent(); // setViewport makes the glwidget loose context, take it back
-    view->tool_selector = view->graphicsview->toolSelector(0, model()->project()->commandInvoker());
-
-    model()->block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
+    this->tool_selector = graphicsview->toolSelector(0, project->commandInvoker());
 
     // UpdateConsumer takes view->glwidget as parent, could use multiple updateconsumers ...
     int n_update_consumers = 1;
@@ -1097,7 +1071,7 @@ void RenderController::
     }
 
     main->centralWidget()->layout()->setMargin(0);
-    main->centralWidget()->layout()->addWidget(view->graphicsview);
+    main->centralWidget()->layout()->addWidget(graphicsview);
     main->centralWidget()->setFocus ();
 
     view->emitTransformChanged();
@@ -1210,7 +1184,7 @@ void RenderController::
     Signal::RerouteChannels* channels = model()->renderSignalTarget->channels();
     unsigned N = channels->source()->num_channels();
 */
-    unsigned  N = model()->project ()->extent().number_of_channels.get_value_or (0);
+    unsigned  N = project->extent().number_of_channels.get_value_or (0);
     if (model()->tfr_mapping ().read ()->channels() != (int)N)
         model()->recompute_extent ();
     for (unsigned i=0; i<N; ++i)
@@ -1263,7 +1237,7 @@ bool RenderController::
     // determine if we're interested or not
     if (e->type() == QEvent::FocusIn || e->type() == QEvent::FocusOut)
     {
-        if (model()->project()->mainWindow() == o)
+        if (project->mainWindow() == o)
         {
             if (e->type() == QEvent::FocusIn)
                 windowGotFocus();
@@ -1282,7 +1256,7 @@ void RenderController::
 {
 /*
     // Use Signal::Processing namespace
-    model()->project()->worker.min_fps( 20 );
+    project->worker.min_fps( 20 );
 */
 }
 
@@ -1292,7 +1266,7 @@ void RenderController::
 {
 /*
     // Use Signal::Processing namespace
-    model()->project()->worker.min_fps( 4 );
+    project->worker.min_fps( 4 );
 */
 }
 

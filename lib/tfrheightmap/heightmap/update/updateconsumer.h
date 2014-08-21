@@ -5,6 +5,8 @@
 #include <QThread>
 
 class QGLWidget;
+class QOpenGLContext;
+class QOffscreenSurface;
 
 namespace Heightmap {
 namespace Update {
@@ -18,6 +20,7 @@ class UpdateConsumer: public QThread
     Q_OBJECT
 public:
     UpdateConsumer(QGLWidget* parent_and_shared_gl_context, UpdateQueue::ptr update_queue);
+    UpdateConsumer(QOpenGLContext* shared_opengl_context, UpdateQueue::ptr update_queue, QObject* parent);
     ~UpdateConsumer();
 
 signals:
@@ -27,10 +30,12 @@ private slots:
     void threadFinished();
 
 private:
-    QGLWidget*   shared_gl_context;
+    QOffscreenSurface* surface = 0;
+    QOpenGLContext* shared_opengl_context = 0;
     UpdateQueue::ptr update_queue;
 
     void        run();
+    void        work();
 
 public:
     static void test();

@@ -6,6 +6,7 @@
 #include "TAni.h"
 
 namespace Heightmap {
+namespace Render {
 
 class RenderSettings
 {
@@ -27,7 +28,6 @@ public:
     bool draw_t;
     bool draw_cursor_marker;
     int draw_axis_at0;
-    GLvector camera, cameraRotation;
     GLvector cursor;
 
     bool draw_contour_plot;
@@ -46,8 +46,10 @@ public:
     bool drawcrosseswhen0;
     double dpifactor;
     bool axes_border;
+    float redundancy;
 };
 
+} // namespace Render
 } // namespace Heightmap
 
 #endif // HEIGHTMAP_RENDERSETTINGS_H

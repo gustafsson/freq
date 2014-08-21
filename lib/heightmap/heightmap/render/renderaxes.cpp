@@ -4,12 +4,15 @@
 // gpumisc
 #include "tasktimer.h"
 #include "glPushContext.h"
+#include "gl.h"
 
 // glut
 #ifndef __APPLE__
 #   include <GL/glut.h>
 #else
+# ifndef GL_ES_VERSION_2_0
 #   include <GLUT/glut.h>
+# endif
 #endif
 
 //#define TIME_RENDERER
@@ -20,14 +23,12 @@ namespace Render {
 
 RenderAxes::
         RenderAxes(
-                RenderSettings& render_settings,
-                glProjection* gl_projection,
-                Render::FrustumClip* frustum_clip,
+                const RenderSettings& render_settings,
+                const glProjection* gl_projection,
                 FreqAxis display_scale)
     :
       render_settings(render_settings),
       gl_projection(gl_projection),
-      frustum_clip(frustum_clip),
       display_scale(display_scale)
 {
     // Using glut for drawing fonts, so glutInit must be called.
@@ -43,14 +44,19 @@ RenderAxes::
         glutInit(&c,0);
         c = 1;
 #endif
-}
+    }
 }
 
 
 void RenderAxes::
         drawAxes( float T )
 {
-    render_settings.last_axes_length = T;
+#ifndef GL_ES_VERSION_2_0
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf (gl_projection->projection.v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf (gl_projection->modelview.v ());
+
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -59,23 +65,19 @@ void RenderAxes::
     // 2 clip entire sound to frustum
     // 3 decide upon scale
     // 4 draw axis
-    glProjection* g = gl_projection;
-    const int* viewport_matrix = g->viewport_matrix ();
-    unsigned screen_width = viewport_matrix[2];
-    unsigned screen_height = viewport_matrix[3];
+    const glProjection* g = gl_projection;
+    unsigned screen_width = g->viewport[2];
+    unsigned screen_height = g->viewport[3];
 
     float borderw = 12.5*1.1;
     float borderh = 12.5*1.1;
 
     float scale = render_settings.dpifactor;
-//    scale *= 2;
-
-    g->setZoom (scale);
     borderw *= scale;
     borderh *= scale;
 
     float w = borderw/screen_width, h=borderh/screen_height;
-    frustum_clip->update(w, h);
+    Render::FrustumClip frustum_clip(*g, w, h);
 
     if (render_settings.axes_border) { // 1 gray draw overlay
         glPushMatrixContext push_model(GL_MODELVIEW);
@@ -119,7 +121,7 @@ void RenderAxes::
     }
 
     // 2 clip entire sound to frustum
-    clippedFrustum.clear();
+    std::vector<GLvector> clippedFrustum;
 
     GLvector closest_i;
     {   //float T = collection->worker->source()->length();
@@ -131,7 +133,7 @@ void RenderAxes::
             GLvector( T, 0, 0),
         };
 
-        clippedFrustum = frustum_clip->clipFrustum (corner, closest_i);
+        clippedFrustum = frustum_clip.clipFrustum (corner, &closest_i);
     }
 
 
@@ -172,6 +174,7 @@ void RenderAxes::
         // decide if this side is a t or f axis
         GLvector::T timePerPixel, scalePerPixel;
         g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
+        timePerPixel *= scale; scalePerPixel *= scale;
 
         bool taxis = fabsf(v0[0]*scalePerPixel) > fabsf(v0[2]*timePerPixel);
 
@@ -180,6 +183,8 @@ void RenderAxes::
         GLvector::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
         g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
         g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
+        timePerPixel1 *= scale; scalePerPixel1 *= scale;
+        timePerPixel2 *= scale; scalePerPixel2 *= scale;
 
         double dscale = 0.001;
         double hzDelta1= fabs(fa.getFrequencyT( p1[2] + v0[2]*dscale ) - fa.getFrequencyT( p1[2] ));
@@ -201,6 +206,7 @@ void RenderAxes::
 
         GLvector::T timePerPixel_closest, scalePerPixel_closest;
         g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
+        timePerPixel_closest *= scale; scalePerPixel_closest *= scale;
 
         if (render_settings.draw_axis_at0==-1)
         {
@@ -218,12 +224,14 @@ void RenderAxes::
         {
             GLvector::T timePerPixel, scalePerPixel;
             g->computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+            timePerPixel *= scale; scalePerPixel *= scale;
+
             double ppp=0.4;
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
-            double ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
-            double SF = scalePerPixel * 750;
+            GLvector::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
+            GLvector::T SF = scalePerPixel * 750;
             double drawScaleT = std::min(ST, 50*timePerPixel_closest*750);
             double drawScaleF = std::min(SF, 50*scalePerPixel_closest*750);
 
@@ -324,7 +332,7 @@ void RenderAxes::
                     tmarkanyways = 2;
                 }
             }
-            else if(render_settings.draw_cursor_marker)
+            else if(render_settings.draw_cursor_marker && fa.axis_scale != AxisScale_Unknown)
             {
                 float w = (render_settings.cursor[2] - pp[2])/(p[2] - pp[2]);
 
@@ -444,7 +452,7 @@ void RenderAxes::
                         }
                     }
                 }
-            } else {
+            } else if (fa.axis_scale != AxisScale_Unknown) {
                 if (0 == ((unsigned)floor(f/fc + .5))%fupdatedetail || fmarkanyways==2)
                 {
                     int size = 1;
@@ -520,6 +528,7 @@ void RenderAxes::
         {
             GLvector::T timePerPixel, scalePerPixel;
             g->computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
+            timePerPixel *= scale; scalePerPixel *= scale;
 
             double ST = timePerPixel * 750;
             // double SF = scalePerPixel * 750;
@@ -620,7 +629,7 @@ void RenderAxes::
                         glBegin(GL_TRIANGLE_FAN);
                             if (blackKeyP)
                             {
-                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3fv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
                                 glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
                             }
                             glVertex3f(pp[0] - xscale*ST*(0.f), 0, pp[2]);
@@ -628,11 +637,11 @@ void RenderAxes::
                             glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
                             if (blackKeyN)
                             {
-                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3dv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                                glVertex3fv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3fv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
                             }
                             if (blackKeyP)
-                                glVertex3dv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                                glVertex3fv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
                             else
                                 glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
                         glEnd();
@@ -707,32 +716,8 @@ void RenderAxes::
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
-
-    g->setZoom (1);
+#endif // GL_ES_VERSION_2_0
 }
-
-
-std::vector<GLvector> RenderAxes::
-        getClippedFrustum()
-{
-    return clippedFrustum;
-}
-
-
-//void Renderer::
-//        frustumMinMaxT( float& min_t, float& max_t )
-//{
-//    max_t = 0;
-//    min_t = FLT_MAX;
-
-//    for ( GLvector v : clippedFrustum)
-//    {
-//        if (max_t < v[0])
-//            max_t = v[0];
-//        if (min_t > v[0])
-//            min_t = v[0];
-//    }
-//}
 
 
 } // namespace Render

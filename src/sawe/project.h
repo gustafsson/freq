@@ -6,6 +6,7 @@
 #include "tools/toolfactory.h"
 #include "tools/commands/commandinvoker.h"
 #include "signal/processing/chain.h"
+#include "sawedll.h"
 
 // boost
 #include <boost/scoped_ptr.hpp>

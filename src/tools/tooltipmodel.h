@@ -24,7 +24,7 @@ class TooltipModel: public ToolModel
 {
 public:
     TooltipModel();
-    void setPtrs(RenderView *render_view, CommentController* comments);
+    void setPtrs(RenderView *render_view, CommentController* comments, Sawe::Project* project);
 
     const Heightmap::Position& comment_pos();
 
@@ -58,13 +58,14 @@ private:
         virtual float operator()( float t, float hz, bool* is_valid_value ) = 0;
         virtual float nextFrequency( float hz ) = 0;
 
-        static boost::shared_ptr<FetchData> createFetchData( RenderView*, float );
+        static boost::shared_ptr<FetchData> createFetchData( RenderView*, Sawe::Project*, float );
     };
 
     class FetchDataTransform;
     class FetchDataHeightmap;
 
     CommentController* comments_;
+    Sawe::Project* project_;
     RenderView *render_view_;
     unsigned fetched_heightmap_values;
     ToolModelP comment_model;

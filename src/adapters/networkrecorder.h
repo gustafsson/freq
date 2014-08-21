@@ -1,7 +1,7 @@
 #ifndef NETWORKRECORDER_H
 #define NETWORKRECORDER_H
 
-#include "recorder.h"
+#include "signal/recorder.h"
 
 #include <QUrl>
 #include <QTcpSocket>
@@ -21,7 +21,7 @@ namespace Adapters {
 
   NetworkRecorder only supports data in signed 16-bit integers.
   */
-class NetworkRecorder: public QObject, public Recorder
+class NetworkRecorder: public QObject, public Signal::Recorder
 {
     Q_OBJECT
 public:

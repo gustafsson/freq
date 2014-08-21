@@ -23,6 +23,8 @@ GraphicsView::
     :   QGraphicsView(scene)
 //        ,pressed_control_(false)
 {
+    EXCEPTION_ASSERT(scene);
+
     setWindowTitle(tr("Sonic AWE"));
     //setRenderHints(QPainter::SmoothPixmapTransform);
     //setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);

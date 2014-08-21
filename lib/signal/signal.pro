@@ -13,15 +13,17 @@ CONFIG += precompile_header_with_all_headers
 
 QT += opengl
 
+PWD = $$_PRO_FILE_PWD_
+
 SOURCES += \
-    signal/*.cpp \
-    signal/processing/*.cpp \
-    test/*.cpp \
+    $$PWD/signal/*.cpp \
+    $$PWD/signal/processing/*.cpp \
+    $$PWD/test/*.cpp \
 
 HEADERS += \
-    signal/*.h \
-    signal/processing/*.h \
-    test/*.h \
+    $$PWD/signal/*.h \
+    $$PWD/signal/processing/*.h \
+    $$PWD/test/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc
 win32: INCLUDEPATH += ../sonicawe-winlib

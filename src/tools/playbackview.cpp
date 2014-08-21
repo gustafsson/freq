@@ -1,7 +1,7 @@
 #include "playbackview.h"
 
 #include "playbackmodel.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 #include "selectionmodel.h"
 #include "adapters/playback.h"
 #include "filters/ellipse.h"
@@ -111,9 +111,9 @@ void PlaybackView::
     if (follow_play_marker && 0<_playbackMarker)
     {
         Tools::RenderView& r = *_render_view;
-        if (r.model->_qx != _playbackMarker)
+        if (r.model->camera.q[0] != _playbackMarker)
         {
-            r.model->_qx = _playbackMarker;
+            r.model->camera.q[0] = _playbackMarker;
 
             r.redraw();
         }

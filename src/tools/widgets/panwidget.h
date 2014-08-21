@@ -2,6 +2,7 @@
 #define TOOLS_WIDGETS_PANWIDGET_H
 
 #include <QWidget>
+#include "tools/commands/commandinvoker.h"
 
 namespace Tools {
 class RenderView;
@@ -11,7 +12,7 @@ class PanWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit PanWidget(RenderView* view);
+    explicit PanWidget(RenderView* view, Tools::Commands::CommandInvoker* commandInvoker);
     
 protected:
     void leaveEvent ( QEvent * event );
@@ -25,6 +26,7 @@ private:
     void recreatePolygon ();
 
     RenderView* view_;
+    Tools::Commands::CommandInvoker* commandInvoker_;
     QPainterPath path_;
     QPoint dragSource_;
 };

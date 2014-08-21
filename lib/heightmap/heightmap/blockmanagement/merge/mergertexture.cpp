@@ -3,6 +3,7 @@
 #include "heightmap/blockquery.h"
 #include "mergekernel.h"
 #include "heightmap/render/shaderresource.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 #include "computationkernel.h"
@@ -11,6 +12,8 @@
 #include "datastoragestring.h"
 #include "GlException.h"
 #include "glPushContext.h"
+#include "glprojection.h"
+#include "gluperspective.h"
 
 #include <QGLContext>
 
@@ -22,6 +25,28 @@
 
 using namespace Signal;
 
+void printUniformInfo(int program)
+{
+    int n_uniforms = 0;
+    int len_uniform = 0;
+    glGetProgramiv (program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &len_uniform);
+    glGetProgramiv (program, GL_ACTIVE_UNIFORMS, &n_uniforms);
+    char name[len_uniform];
+    Log("Found %d uniforms in program") % n_uniforms;
+    for (int i=0; i<n_uniforms; i++) {
+        GLint size;
+        GLenum type;
+        glGetActiveUniform(program,
+            i,
+            len_uniform,
+            0,
+            &size,
+            &type,
+            name);
+        Log("%d: %s, size=%d, type=%d") % i % ((char*)name) % size % type;
+    }
+}
+
 namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
@@ -30,44 +55,49 @@ MergerTexture::
         MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
     :
       cache_(cache),
-      block_layout_(block_layout),
+      vbo_(0),
       tex_(0),
+      block_layout_(block_layout),
       disable_merge_(disable_merge),
       program_(0)
 {
-    EXCEPTION_ASSERT(QGLContext::currentContext ());
-
-    glGenTextures(1, &tex_);
-    glBindTexture(GL_TEXTURE_2D, tex_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, block_layout.texels_per_row(), block_layout.texels_per_column (), 0, GL_RED, GL_FLOAT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    fbo_.reset (new GlFrameBuffer(tex_));
-
-    glGenBuffers (1, &vbo_);
-
-//    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 }
 
 
 MergerTexture::
         ~MergerTexture()
 {
-    if (program_)
-        glDeleteProgram(program_);
+    if (program_) glDeleteProgram(program_);
     program_ = 0;
 
-    glDeleteTextures (1, &tex_);
-    tex_ = 0;
-
-    glDeleteBuffers (1, &vbo_);
+    if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 }
 
 
 void MergerTexture::
+        init()
+{
+    if (tex_)
+        return;
+
+    EXCEPTION_ASSERT(QGLContext::currentContext ());
+
+    int w = block_layout_.texels_per_row();
+    int h = block_layout_.texels_per_column ();
+    tex_ = Render::BlockTextures(w, h, 1).get1 ();
+    fbo_.reset (new GlFrameBuffer(tex_->getOpenGlTextureId (), w, h));
+
+    glGenBuffers (1, &vbo_);
+
+    //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
+    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
+}
+
+void MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    init ();
     INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: fillBlocksFromOthers %s blocks") % blocks.size ());
 
     GlException_CHECK_ERROR();
@@ -82,16 +112,10 @@ void MergerTexture::
     auto fboBinding = fbo_->getScopeBinding ();
 
     glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
-    glMatrixMode (GL_PROJECTION);
-    glPushMatrix ();
-    glMatrixMode (GL_MODELVIEW);
-    glPushMatrix ();
 
-    glPushAttribContext pa(GL_ENABLE_BIT);
     glDisable (GL_DEPTH_TEST);
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
-    glEnable (GL_TEXTURE_2D);
 
     struct vertex_format {
         float x, y, u, v;
@@ -107,13 +131,17 @@ void MergerTexture::
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    int qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
+    int qt_MultiTexCoord0 = glGetAttribLocation (program_, "qt_MultiTexCoord0");
+    int qt_Texture0 = glGetUniformLocation(program_, "qt_Texture0");
 
-    glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
+    glEnableVertexAttribArray (qt_Vertex);
+    glEnableVertexAttribArray (qt_MultiTexCoord0);
+    glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
+    glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     glUseProgram (program_);
+    glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 
     cache_clone = cache_->clone();
 
@@ -124,14 +152,13 @@ void MergerTexture::
 
     glUseProgram (0);
 
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableVertexAttribArray (qt_MultiTexCoord0);
+    glDisableVertexAttribArray (qt_Vertex);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glMatrixMode (GL_PROJECTION);
-    glPopMatrix ();
-    glMatrixMode (GL_MODELVIEW);
-    glPopMatrix ();
+    glEnable (GL_DEPTH_TEST);
+    glEnable (GL_BLEND);
+    glEnable (GL_CULL_FACE);
 
     glViewport(viewport[0], viewport[1], viewport[2], viewport[3] );
     glClearColor (v[0],v[1],v[2],v[3]);
@@ -154,10 +181,11 @@ void MergerTexture::
 
     glClear( GL_COLOR_BUFFER_BIT );
 
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho(r.a.time, r.b.time, r.a.scale, r.b.scale, -10,10);
-    glMatrixMode ( GL_MODELVIEW );
+    GLmatrix projection;
+    glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
+
+    int uniProjection = glGetUniformLocation (program_, "qt_ProjectionMatrix");
+    glUniformMatrix4fv (uniProjection, 1, false, projection.v ());
 
     if (!disable_merge_)
     {
@@ -189,6 +217,11 @@ void MergerTexture::
         for( const auto& c : cache_clone )
         {
             const pBlock& bl = c.second;
+            unsigned age = block->frame_number_last_used - bl->frame_number_last_used;
+            if (age > 1)  {
+                // Don't bother merging with blocks that aren't up-to-date
+                continue;
+            }
 
             const Region& r2 = bl->getRegion ();
             // If r2 doesn't overlap r at all
@@ -241,9 +274,12 @@ bool MergerTexture::
     VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
 
     Region ri = inBlock.getRegion ();
-    glLoadIdentity();
-    glTranslatef (ri.a.time, ri.a.scale, 0);
-    glScalef (ri.time (), ri.scale (), 1.f);
+    GLmatrix modelview = GLmatrix::identity ();
+    modelview *= GLmatrix::translate (ri.a.time, ri.a.scale, 0);
+    modelview *= GLmatrix::scale (ri.time (), ri.scale (), 1.f);
+
+    int uniModelView = glGetUniformLocation (program_, "qt_ModelViewMatrix");
+    glUniformMatrix4fv (uniModelView, 1, false, modelview.v ());
 
     glBindTexture( GL_TEXTURE_2D, inBlock.texture ()->getOpenGlTextureId ());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
@@ -306,7 +342,7 @@ void MergerTexture::
                             0, 0, 0, 0,
                             0, 0, 0, 0};
 
-        data = GlTextureRead(tex->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
@@ -332,7 +368,7 @@ void MergerTexture::
                               0,   0,   0,   0,
                               0,   0,   0,   0,
                               a/2, b/2, c/2, 0};
-        data = GlTextureRead(tex->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
@@ -359,7 +395,7 @@ void MergerTexture::
                               0, 0,    9.5,  11.5,
                               0, 0,   13.5,  v16};
 
-        data = GlTextureRead(tex->getOpenGlTextureId ()).readFloat (0, GL_RED);
+        data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);

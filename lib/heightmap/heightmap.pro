@@ -16,17 +16,19 @@ QT += opengl
 RESOURCES += \
     heightmap/render/shaders.qrc \
 
+PWD = $$_PRO_FILE_PWD_
+
 SOURCES += \
-    heightmap/*.cpp \
-    heightmap/blockmanagement/*.cpp \
-    heightmap/blockmanagement/merge/*.cpp \
-    heightmap/render/*.cpp \
+    $$PWD/heightmap/*.cpp \
+    $$PWD/heightmap/blockmanagement/*.cpp \
+    $$PWD/heightmap/blockmanagement/merge/*.cpp \
+    $$PWD/heightmap/render/*.cpp \
 
 HEADERS += \
-    heightmap/*.h \
-    heightmap/blockmanagement/*.h \
-    heightmap/blockmanagement/merge/*.h \
-    heightmap/render/*.h \
+    $$PWD/heightmap/*.h \
+    $$PWD/heightmap/blockmanagement/*.h \
+    $$PWD/heightmap/blockmanagement/merge/*.h \
+    $$PWD/heightmap/render/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal
 win32: INCLUDEPATH += ../sonicawe-winlib

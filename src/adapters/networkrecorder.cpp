@@ -42,7 +42,7 @@ void NetworkRecorder::
         startRecording()
 {
     _offset = actual_number_of_samples()/sample_rate();
-    _start_recording = boost::posix_time::microsec_clock::local_time();
+    _start_recording.restart ();
 
     tcpSocket.connectToHost(url.host(),url.port(12345),QTcpSocket::ReadOnly);
 }
@@ -122,7 +122,7 @@ int NetworkRecorder::
         p[i] = shortdata[i]/(float)SHRT_MAX;
 
     // add data
-    _last_update = boost::posix_time::microsec_clock::local_time();
+    _last_update.restart ();
     data.write ()->samples.put( b );
 
     // notify listeners that we've got new data
@@ -141,7 +141,7 @@ void NetworkRecorder::
     if (time()>length())
     {
         _offset = actual_number_of_samples()/sample_rate();
-        _start_recording = boost::posix_time::microsec_clock::local_time();
+        _start_recording.restart ();
         TaskInfo("%g > %g. Resetting clock from %g s", time(), length(), _offset);
     }
 

@@ -2,7 +2,9 @@
 
 #ifndef _MSC_VER
 #include <sys/types.h>
+#ifndef DARWIN_NO_CARBON // not ios
 #include <sys/ptrace.h>
+#endif
 #include <sys/wait.h>
 #else
 #include <Windows.h> // IsDebuggerPresent
@@ -43,6 +45,7 @@ bool is_running_through_gdb_xorl()
 }
 
 
+#ifndef DARWIN_NO_CARBON // not ios
 // http://stackoverflow.com/a/3599394/1513411
 bool is_running_through_gdb_terminus()
 {
@@ -87,6 +90,12 @@ bool is_running_through_gdb_terminus()
     }
   return res;
 }
+#else
+bool is_running_through_gdb_terminus()
+{
+    return false;
+}
+#endif
 
 
 bool DetectGdb::

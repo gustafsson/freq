@@ -1,7 +1,6 @@
 #include "recorder.h"
-#include "sawe/configuration.h"
 
-namespace Adapters {
+namespace Signal {
 
 Recorder::Recorder()
     :
@@ -14,8 +13,8 @@ Recorder::Recorder()
 
 Recorder::~Recorder()
 {
-
 }
+
 
 float Recorder::
         time_since_last_update()
@@ -23,8 +22,7 @@ float Recorder::
     if (isStopped())
         return 0;
 
-    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _last_update;
-    float dt = d.total_milliseconds()*0.001f;
+    float dt = _last_update.elapsed ();
     return std::min( dt, this->time() - _offset);
 }
 
@@ -107,9 +105,8 @@ float Recorder::
 float Recorder::
         time() const
 {
-    boost::posix_time::time_duration d = boost::posix_time::microsec_clock::local_time() - _start_recording;
-    float dt = d.total_milliseconds()*0.001f;
+    float dt = _start_recording.elapsed ();
     return dt + _offset;
 }
 
-} // namespace Adapters
+} // namespace Signal

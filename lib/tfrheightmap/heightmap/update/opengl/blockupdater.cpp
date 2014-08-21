@@ -81,16 +81,19 @@ void BlockUpdater::
     }
 
     // Begin chunk transfer to gpu right away
+#ifndef GL_ES_VERSION_2_0
+    // PBOs are not supported on OpenGL ES (< 3.0)
     unordered_map<Tfr::pChunk,lazy<Source2Pbo>> source2pbo;
     for (const UpdateQueue::Job& j : myjobs)
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-        Source2Pbo sp(job->chunk);
+        Source2Pbo sp(job->chunk, job->type==TfrBlockUpdater::Job::Data_F32);
         memcpythread.addTask (sp.transferData(job->p));
 
         source2pbo[job->chunk] = move(sp);
     }
+#endif
 
     // Begin transfer of vbo data to gpu
     unordered_map<Texture2Fbo::Params, lazy<Texture2Fbo>> vbos;
@@ -131,16 +134,31 @@ void BlockUpdater::
 
     // Prepare to draw with transferred chunk
     unordered_map<Tfr::pChunk, lazy<Pbo2Texture>> pbo2texture;
+#ifdef GL_ES_VERSION_2_0
+    for (const UpdateQueue::Job& j : myjobs)
+    {
+        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
+
+        pbo2texture[job->chunk] = Pbo2Texture(p->shaders,
+                                            job->chunk,
+                                            job->p,
+                                            job->type == TfrBlockUpdater::Job::Data_F32);
+    }
+#else
     for (auto& sp : source2pbo)
         pbo2texture[sp.first] = Pbo2Texture(p->shaders,
                                             sp.first,
-                                            sp.second->getPboWhenReady());
+                                            sp.second->getPboWhenReady(),
+                                            sp.second->f32());
+#endif
 
     // Draw from all chunks to each block
     for (auto& f : chunks_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture ());
+        INFO Log("blockupdater: updating %s") % block->getRegion ();
+        glProjection M;
+        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture (), M);
 
         for (auto& c : f.second)
         {
@@ -150,16 +168,18 @@ void BlockUpdater::
             // If something has changed the vbo is out-of-date, skip this
             if (!vbos.count (p))
             {
-                TaskInfo(boost::format("blockupdater: skipping update of block: %s") % block->getRegion ());
+                Log("blockupdater: skipping update of block: %s") % block->getRegion ();
                 continue;
             }
 
             auto& vbo = vbos[p];
+            int vertex_attrib, tex_attrib;
             auto tex_mapping = pbo2texture[c]->map(
                         vbo->normalization_factor(),
-                        vp->amplitude_axis ());
+                        vp->amplitude_axis (),
+                        M, vertex_attrib, tex_attrib);
 
-            vbo->draw();
+            vbo->draw(vertex_attrib, tex_attrib);
             (void)tex_mapping; // suppress warning caused by RAII
         }
 
@@ -167,7 +187,9 @@ void BlockUpdater::
         (void)fbo_mapping;
     }
 
+#ifndef GL_ES_VERSION_2_0
     source2pbo.clear ();
+#endif
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
 }

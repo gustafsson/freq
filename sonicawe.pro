@@ -9,6 +9,7 @@ SUBDIRS = \
     lib/tfr \
     lib/heightmap \
     lib/tfrheightmap \
+    lib/heightmapview \
     src
 
 cache()

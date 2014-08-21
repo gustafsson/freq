@@ -7,7 +7,7 @@ namespace Support {
 Tfr::TransformDesc::ptr TransformDescs::
         cloneType(const std::type_info& i) const
 {
-    foreach (Tfr::TransformDesc::ptr p, descriptions_)
+    for (Tfr::TransformDesc::ptr p : descriptions_)
         if (typeid(*p.get()) == i)
             return p->copy ();
     return Tfr::TransformDesc::ptr();

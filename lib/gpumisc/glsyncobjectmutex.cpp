@@ -1,5 +1,8 @@
 #include "glsyncobjectmutex.h"
 #include "gl.h"
+
+#ifndef GL_ES_VERSION_2_0
+
 #include "tasktimer.h"
 #include "log.h"
 #include "GlException.h"
@@ -281,3 +284,5 @@ void GlSyncObjectMutex::
         throw;
     }
 }
+
+#endif // GL_ES_VERSION_2_0

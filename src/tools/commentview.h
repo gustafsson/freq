@@ -2,8 +2,10 @@
 #define COMMENTVIEW_H
 
 #include "commentmodel.h"
+#include "sawe/project.h"
 
 #include <QWidget>
+#include <QGraphicsScene>
 
 namespace Ui { class CommentView; }
 
@@ -16,7 +18,7 @@ class CommentView : public QWidget
     Q_OBJECT
 
 public:
-    CommentView(ToolModelP modelp, RenderView* render_view, QWidget *parent=0);
+    CommentView(ToolModelP modelp, QGraphicsScene* graphicsscene, RenderView* render_view, Sawe::Project* project, QWidget *parent=0);
     ~CommentView();
 
     std::string html();
@@ -59,6 +61,7 @@ private:
 
     QGraphicsProxyWidget* proxy;
     QWidget* containerWidget;
+    Sawe::Project* project;
 
     QPoint ref_point;
     QPolygonF poly;

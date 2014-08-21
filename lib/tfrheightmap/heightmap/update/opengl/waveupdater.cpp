@@ -54,6 +54,7 @@ WaveUpdater::
 void WaveUpdater::
         processJobs( queue<UpdateQueue::Job>& jobs )
 {
+#ifndef GL_ES_VERSION_2_0
     // Select subset to work on, must consume jobs in order
     vector<UpdateQueue::Job> myjobs;
     while (!jobs.empty ())
@@ -94,10 +95,11 @@ void WaveUpdater::
     for (auto& f : buffers_per_block)
     {
         const pBlock& block = f.first;
-        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture ());
+        glProjection M;
+        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture (), M);
 
         for (auto& b : f.second)
-            wave2fbo[b]->draw();
+            wave2fbo[b]->draw (M);
 
         // suppress warning caused by RAII
         (void)fbo_mapping;
@@ -111,6 +113,7 @@ void WaveUpdater::
 
         j.promise.set_value ();
     }
+#endif
 }
 
 } // namespace OpenGL

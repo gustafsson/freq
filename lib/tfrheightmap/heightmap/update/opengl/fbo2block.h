@@ -4,6 +4,7 @@
 #include "heightmap/position.h"
 #include "glframebuffer.h"
 #include "GlTexture.h"
+#include "glprojection.h"
 
 namespace Heightmap {
 namespace Update {
@@ -19,7 +20,7 @@ public:
     Fbo2Block& operator=(const Fbo2Block&) = delete;
     ~Fbo2Block();
 
-    ScopeBinding begin (Region br, GlTexture::ptr fboTexture);
+    ScopeBinding begin (Region br, GlTexture::ptr fboTexture, glProjection& M);
 
 private:
     void end();
@@ -27,7 +28,7 @@ private:
     GlTexture::ptr blockTexture;
     GlTexture::ptr fboTexture;
     std::unique_ptr<GlFrameBuffer> fbo;
-    unsigned copyfbo;
+    unsigned copyfbo = 0;
 };
 
 

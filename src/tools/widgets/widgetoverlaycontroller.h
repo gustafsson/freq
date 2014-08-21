@@ -2,6 +2,7 @@
 #define TOOLS_WIDGETS_WIDGETOVERLAYCONTROLLER_H
 
 #include "overlaywidget.h"
+#include "tools/commands/commandinvoker.h"
 
 #include <QList>
 #include <QMouseEvent>
@@ -12,7 +13,12 @@ namespace Widgets {
 class WidgetOverlayController: public OverlayWidget
 {
 public:
-    WidgetOverlayController(RenderView* view);
+    WidgetOverlayController(
+            QGraphicsScene* scene,
+            RenderView* view,
+            Tools::Commands::CommandInvoker* commandInvoker,
+            Tools::Support::ToolSelector* tool_selector);
+
     ~WidgetOverlayController();
 
     void enterEvent ( QEvent * );
@@ -36,6 +42,7 @@ private:
 
     QWidget *pan_, *rescale_, *rotate_, *proxy_mousepress_;
     RenderView* view_;
+    Tools::Commands::CommandInvoker* commandInvoker_;
     QMouseEvent child_event_;
     QPoint lastMousePos_;
 };

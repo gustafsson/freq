@@ -4,28 +4,44 @@
 #include "heightmap/render/blocktextures.h"
 #include "GlException.h"
 #include "log.h"
-
+#include "gluperspective.h"
 #include "gl.h"
 
+#ifdef GL_ES_VERSION_2_0
+const bool draw_straight_onto_block = true;
+#else
 const bool draw_straight_onto_block = false;
+#endif
 
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
-void grabToTexture(GlTexture::ptr t)
+#ifdef GL_ES_VERSION_2_0
+void grabToTexture(GlTexture::ptr dst, GlTexture::ptr src)
 {
-    glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
+    GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(dst->getOpenGlTextureId (), src->getOpenGlTextureId (), 0, 1) );
+}
+#else
+void grabToTexture(GlTexture::ptr dst)
+{
+    glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
+    GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ()) );
     glBindTexture(GL_TEXTURE_2D, 0);
 }
+#endif
 
 
-void copyTexture(unsigned copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
+void copyTexture(unsigned& copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
 {
+#ifdef GL_ES_VERSION_2_0
+    GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(dst->getOpenGlTextureId (), src->getOpenGlTextureId (), 0, 1) );
+#else
     // Assumes dst and src have the same size and the same pixel format
     int w = dst->getWidth ();
     int h = dst->getHeight ();
+    if (!copyfbo)
+        glGenFramebuffers(1, &copyfbo);
     glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
     glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
@@ -36,16 +52,12 @@ void copyTexture(unsigned copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
     glDrawBuffer (GL_COLOR_ATTACHMENT0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
 }
 
 
 Fbo2Block::Fbo2Block ()
 {
-    if (!draw_straight_onto_block)
-    {
-        glGenFramebuffersEXT(1, &copyfbo);
-        fboTexture = Render::BlockTextures(4,4,1).get1 ();
-    }
 }
 
 
@@ -53,12 +65,14 @@ Fbo2Block::
         ~Fbo2Block()
 {
     end();
-    glDeleteFramebuffers(1, &copyfbo);
+
+    if (copyfbo)
+        glDeleteFramebuffers(1, &copyfbo);
 }
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (Region br, GlTexture::ptr blockTexture)
+        begin (Region br, GlTexture::ptr blockTexture, glProjection& M)
 {
     EXCEPTION_ASSERT(!this->blockTexture);
     EXCEPTION_ASSERT(blockTexture);
@@ -73,21 +87,20 @@ Fbo2Block::ScopeBinding Fbo2Block::
     }
     else
     {
-        int oldw = fboTexture->getWidth ();
-        int oldh = fboTexture->getHeight ();
+        int oldw = fboTexture ? fboTexture->getWidth () : -1;
+        int oldh = fboTexture ? fboTexture->getHeight () : -1;
         if (oldw != w || oldh != h)
         {
-            int id = fboTexture->getOpenGlTextureId ();
-            Render::BlockTextures::setupTexture (id, w, h);
-            fboTexture.reset (new GlTexture(id));
             fbo.reset ();
+            fboTexture.reset ();
+            fboTexture = Render::BlockTextures(w,h,1).get1 ();
         }
 
         copyTexture (copyfbo, fboTexture, blockTexture);
     }
 
     if (!fbo)
-        fbo.reset (new GlFrameBuffer(fboTexture->getOpenGlTextureId ()));
+        fbo.reset (new GlFrameBuffer(*fboTexture));
 
     GlException_CHECK_ERROR ();
 
@@ -103,11 +116,10 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     // Setup matrices
     glViewport (0, 0, w, h);
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho (br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
-    glMatrixMode (GL_MODELVIEW);
-    glLoadIdentity ();
+    glhOrtho (M.projection.v (), br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
+    M.modelview = GLmatrix::identity();
+    int vp[]{0,0,w,h};
+    M.viewport = vp;
 
     GlException_CHECK_ERROR ();
 
@@ -135,8 +147,13 @@ void Fbo2Block::
     }
     else
     {
+#ifdef GL_ES_VERSION_2_0
+        fbo->unbindFrameBuffer();
+        grabToTexture (blockTexture, fboTexture);
+#else
         grabToTexture (blockTexture);
         fbo->unbindFrameBuffer();
+#endif
     }
 
     blockTexture.reset ();

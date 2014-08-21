@@ -1,6 +1,4 @@
 #include "rendermodel.h"
-#include "sawe/project.h"
-#include "sawe/configuration.h"
 
 #include "heightmap/collection.h"
 #include "heightmap/render/renderer.h"
@@ -28,25 +26,17 @@ private:
 };
 
 RenderModel::
-        RenderModel(Sawe::Project* p)
+        RenderModel()
         :
-        //renderSignalTarget(new Signal::Target(&p->layers, "Heightmap", true, true)),
-        _qx(0), _qy(0), _qz(0),
-        _px(0), _py(0), _pz(0),
-        _rx(0), _ry(0), _rz(0),
-        xscale(0),
-        zscale(0),
-        orthoview(1),
-        _project(p),
         transform_descs_(new Support::TransformDescs),
         stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
-
 {
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
-    renderer.reset( new Heightmap::Render::Renderer() );
-    renderer->render_settings.drawcrosseswhen0 = Sawe::Configuration::version().empty();
+    render_block.reset( new Heightmap::Render::RenderBlock(&render_settings));
+
+    block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
 
     resetCameraSettings();
 //    setTestCamera();
@@ -67,7 +57,7 @@ RenderModel::
         TaskInfo("!!! block_update_queue unique");
     block_update_queue.reset ();
 
-    renderer.reset();
+    render_block.reset();
 
     if (!tfr_map_)
         TaskInfo("!!! Lost tfr_map");
@@ -88,35 +78,36 @@ void RenderModel::
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
 
-    recompute_extent ();
+    Signal::OperationDesc::Extent x = recompute_extent ();
+
+    Heightmap::FreqAxis fa;
+    fa.setLinear( x.sample_rate.get () );
+    display_scale( fa );
 }
 
 
 void RenderModel::
         resetCameraSettings()
 {
-    _qx = 0;
-    _qy = 0;
-    _qz = .5f;
-    _px = 0;
-    _py = 0;
-    _pz = -10.f;
-    _rx = 91;
-    _ry = 180;
-    _rz = 0;
-    xscale = -_pz*0.1f;
-    zscale = -_pz*0.75f;
+    camera.q = GLvector(0,0,.5f);
+    camera.p = GLvector(0,0,-10.f);
+    camera.r = GLvector(91,180,0);
+    camera.xscale = -camera.p[2]*0.1f;
+    camera.zscale = -camera.p[2]*0.75f;
 
-#ifdef TARGET_hast
-    _pz = -6;
-    xscale = 0.1f;
-
-    float L = _project->worker.length();
+    float L = tfr_mapping ().read ()->length();
     if (L)
     {
-        xscale = 14/L;
-        _qx = 0.5*L;
+        camera.xscale = 10/L;
+        camera.q[0] = 0.5*L;
     }
+
+#ifdef TARGET_hast
+    camera.p[2] = -6;
+    xscale = 0.1f;
+
+    if (L)
+        camera.xscale = 14/L;
 #endif
 }
 
@@ -132,18 +123,12 @@ void RenderModel::
 void RenderModel::
         setTestCamera()
 {
-    renderer->render_settings.y_scale = 0.01f;
-    _qx = 63.4565;
-    _qy = 0;
-    _qz = 0.37;
-    _px = 0;
-    _py = 0;
-    _pz = -10;
-    _rx = 46.2;
-    _ry = 253.186;
-    _rz = 0;
+    render_settings.y_scale = 0.01f;
+    camera.q = GLvector(63.4565,0,0.37);
+    camera.p = GLvector(0,0,-10);
+    camera.r = GLvector(46.2, 253.186, 0);
 
-    orthoview.reset( _rx >= 90 );
+    camera.orthoview.reset( camera.r[0] >= 90 );
 }
 
 
@@ -151,6 +136,13 @@ Heightmap::TfrMapping::Collections RenderModel::
         collections()
 {
     return tfr_map_.read ()->collections();
+}
+
+
+Signal::Processing::Chain::ptr RenderModel::
+        chain()
+{
+    return chain_;
 }
 
 
@@ -254,11 +246,18 @@ void RenderModel::
 }
 
 
-void RenderModel::
+Signal::OperationDesc::Extent RenderModel::
         recompute_extent()
 {
+    if (!chain_)
+        return Signal::OperationDesc::Extent();
+
     Signal::OperationDesc::Extent extent = chain_.read ()->extent(target_marker_);
-    set_extent(extent);
+    extent.interval           = extent.interval          .get_value_or (Signal::Interval());
+    extent.number_of_channels = extent.number_of_channels.get_value_or (1);
+    extent.sample_rate        = extent.sample_rate       .get_value_or (1);
+    set_extent (extent);
+    return extent;
 }
 
 
@@ -312,11 +311,28 @@ Heightmap::TfrMappings::StftBlockFilterParams::ptr RenderModel::
 }
 
 
-float RenderModel::
-        effective_ry()
+void RenderModel::
+        setPosition( Heightmap::Position pos )
 {
-    return fmod(fmod(_ry,360)+360, 360) * (1-orthoview) + (90*(int)((fmod(fmod(_ry,360)+360, 360)+45)/90))*orthoview;
+    float l = tfr_mapping()->length();
+    float x = pos.time;
+    if (x<0) x=0;
+    if (x>l) x=l;
+
+    float z = pos.scale;
+    if (z<0) z=0;
+
+    if (z>1) z=1;
+
+    camera.q[0] = x;
+    camera.q[2] = z;
 }
 
+
+Heightmap::Position RenderModel::
+        position() const
+{
+    return Heightmap::Position(camera.q[0], camera.q[2]);
+}
 
 } // namespace Tools

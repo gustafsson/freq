@@ -15,7 +15,8 @@ class OverlayWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit OverlayWidget(RenderView *parent);
+    // QWidget* sceneSection = tool_selector->parentTool()
+    explicit OverlayWidget(QGraphicsScene *parent, QWidget* sceneSection);
 
     QRect sceneRect();
 

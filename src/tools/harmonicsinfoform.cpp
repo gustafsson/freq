@@ -3,7 +3,7 @@
 
 #include "tooltipcontroller.h"
 #include "tooltipview.h"
-#include "renderview.h"
+#include "tools/renderview.h"
 
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"
@@ -192,7 +192,10 @@ void HarmonicsInfoForm::
     {
         harmonicscontroller->setCurrentView( cvud->view() );
         if (0==rebuilding)
-            render_view->setPosition( cvud->view()->model()->pos() );
+        {
+            render_view->model->setPosition( cvud->view()->model()->pos() );
+            render_view->redraw ();
+        }
     }
 }
 

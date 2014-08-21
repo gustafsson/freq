@@ -27,12 +27,14 @@ void RotateCameraCommand::
 {
     float rs = 0.2;
 
-    model->_ry += (1-model->orthoview)*rs * dx;
-    model->_rx += rs * dy;
-    if (model->_rx<0) { model->_rx=0; model->orthoview=1; }
-    if (model->_rx>90) { model->_rx=90; model->orthoview=1; }
-    if (0<model->orthoview && model->_rx<90 && model->_rx>=45) { model->orthoview=0; }
-    if (0<model->orthoview && model->_rx<45 && model->_rx>0) { model->orthoview=0; }
+    GLvector& r = model->camera.r;
+
+    r[1] += (1-model->camera.orthoview)*rs * dx;
+    r[0] += rs * dy;
+    if (r[0]<0) { r[0]=0; model->camera.orthoview=1; }
+    if (r[0]>90) { r[0]=90; model->camera.orthoview=1; }
+    if (0<model->camera.orthoview && r[0]<90 && r[0]>=45) { model->camera.orthoview=0; }
+    if (0<model->camera.orthoview && r[0]<45 && r[0]>0) { model->camera.orthoview=0; }
 }
 
 

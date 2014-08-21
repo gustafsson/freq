@@ -1,6 +1,7 @@
 #include "heightmapprocessingpublisher.h"
 #include "heightmap/collection.h"
 #include "signal/processing/step.h"
+#include "signal/processing/purge.h"
 
 #include "tasktimer.h"
 
@@ -14,13 +15,14 @@ namespace Tools {
 namespace Support {
 
 HeightmapProcessingPublisher::HeightmapProcessingPublisher(
-          TargetNeeds::ptr target_needs,
+          TargetMarker::ptr target_marker,
           Heightmap::TfrMapping::const_ptr tfrmapping,
           float* t_center,
           QObject* parent)
     :
       QObject(parent),
-      target_needs_(target_needs),
+      target_needs_(target_marker->target_needs ()),
+      dag_(target_marker->dag ()),
       tfrmapping_(tfrmapping),
       t_center_(t_center),
       last_update_(Interval::Interval_ALL),
@@ -133,6 +135,9 @@ void HeightmapProcessingPublisher::
                              % not_started);
         }
     }
+
+
+    Purge(dag_).purge (target_needs_);
 }
 
 
@@ -179,11 +184,13 @@ void HeightmapProcessingPublisher::
         Bedroom::ptr bedroom(new Bedroom);
         BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
         TargetNeeds::ptr target_needs(new TargetNeeds(step, notifier));
+        Dag::ptr dag(new Dag); dag->appendStep(step);
+        TargetMarker::ptr target_marker(new TargetMarker(target_needs, dag));
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::TfrMapping::ptr tfrmapping(new Heightmap::TfrMapping(block_layout,1));
         float t_center = 10;
-        HeightmapProcessingPublisher hpp(target_needs, tfrmapping, &t_center);
+        HeightmapProcessingPublisher hpp(target_marker, tfrmapping, &t_center);
 
         Heightmap::Collection::ptr collection = tfrmapping->collections()[0];
 

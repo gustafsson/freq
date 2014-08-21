@@ -64,10 +64,13 @@ public:
 
 
     /**
-     * @brief The ChunkFilterNoInverse class describes that the inverse shall never
+     * @brief The ChunkFilter::NoInverseTag class describes that the inverse shall never
      * be computed from the transformed data in 'ChunkFilter::operator ()'.
      *
      * Inherit from this class as well as from ChunkFilter.
+     *
+     *   class MyChunkFilter: public Tfr::ChunkFilter, public Tfr::ChunkFilter::NoInverseTag
+     *   { ... };
      */
     class NoInverseTag
     {

@@ -38,7 +38,7 @@ void seghandle_userspace() {
         printSignalInfo(last_caught_signal, false);
 }
 
-
+#ifndef DARWIN_NO_CARBON // not ios
 void seghandle(int sig, __siginfo*, void* unused)
 {    
   nested_signal_handling = is_doing_signal_handling;
@@ -84,7 +84,6 @@ void seghandle(int sig, __siginfo*, void* unused)
   is_doing_signal_handling = false;
 }
 
-
 void setup_signal_survivor(int sig)
 {
   struct sigaction sa;
@@ -94,6 +93,7 @@ void setup_signal_survivor(int sig)
   bool sigsegv_handler = sigaction(sig, &sa, NULL) != -1;
   EXCEPTION_ASSERTX(sigsegv_handler, "failed to setup SIGSEGV handler");
 }
+#endif
 #endif
 
 void handler(int sig)
@@ -335,6 +335,7 @@ void PrettifySegfault::
         setup ()
 {
 #ifndef _MSC_VER
+    #ifndef DARWIN_NO_CARBON // not ios
     // subscribe to everything SIGSEGV and friends
     for (int i=1; i<=SIGUSR2; ++i)
     {
@@ -352,6 +353,7 @@ void PrettifySegfault::
             break;
         }
     }
+    #endif
 #else
     SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
 #endif

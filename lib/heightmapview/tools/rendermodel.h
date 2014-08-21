@@ -1,29 +1,28 @@
 #ifndef RENDERMODEL_H
 #define RENDERMODEL_H
 
-#include "tfr/freqaxis.h"
 #include "heightmap/amplitudeaxis.h"
-#include "heightmap/render/renderer.h"
+#include "heightmap/render/renderblock.h"
+#include "heightmap/render/rendersettings.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
 #include "heightmap/update/updatequeue.h"
-#include "sawe/toolmodel.h"
-#include "tfr/transform.h"
-#include "support/transformdescs.h"
 #include "signal/processing/chain.h"
 #include "signal/processing/targetmarker.h"
+#include "tfr/transform.h"
+#include "tfr/freqaxis.h"
+
+#include "support/transformdescs.h"
+#include "support/rendercamera.h"
 #include "support/renderoperation.h"
 
 // gpumisc
 #include "TAni.h"
+#include "tasktimer.h"
 
 // boost
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/version.hpp>
-
-namespace Sawe {
-    class Project;
-}
 
 namespace Heightmap
 {
@@ -37,10 +36,10 @@ namespace Tools
      *
      * TODO call set_extent when it's changed
      */
-    class RenderModel: public ToolModel
+    class RenderModel
     {
     public:
-        RenderModel(Sawe::Project* p);
+        RenderModel();
         ~RenderModel();
 
         void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt);
@@ -48,6 +47,7 @@ namespace Tools
         void resetBlockCaches();
 
         Heightmap::TfrMapping::Collections collections();
+        Signal::Processing::Chain::ptr chain();
 
         void block_layout(Heightmap::BlockLayout);
 
@@ -64,7 +64,7 @@ namespace Tools
         Tfr::TransformDesc::ptr transform_desc();
         void set_transform_desc(Tfr::TransformDesc::ptr t);
 
-        void recompute_extent();
+        Signal::OperationDesc::Extent recompute_extent();
         void set_extent(Signal::OperationDesc::Extent extent);
 
         Signal::OperationDesc::ptr renderOperationDesc();
@@ -77,25 +77,17 @@ namespace Tools
 
         Heightmap::Update::UpdateQueue::ptr block_update_queue;
 
-        //Signal::pTarget renderSignalTarget;
-        boost::shared_ptr<Heightmap::Render::Renderer> renderer;
+        Heightmap::Render::RenderSettings render_settings;
+        Heightmap::Render::RenderBlock::ptr render_block;
+        Tools::Support::RenderCamera camera;
 
-        Sawe::Project* project() { return _project; }
-
-        // TODO remove position and use renderer->render_settings.camera instead
-        float _qx, _qy, _qz; // camera focus point, i.e (10, 0, 0.5)
-        float _px, _py, _pz, // camera position relative center, i.e (0, 0, -6)
-            _rx, _ry, _rz; // rotation around center
-        float effective_ry(); // take orthoview into account
-        float xscale;
-        float zscale;
-        floatAni orthoview;
+        void setPosition( Heightmap::Position pos );
+        Heightmap::Position position() const;
 
     private:
         friend class RenderView; // todo remove
         friend class RenderController; // todo remove
         friend class TimelineController; // todo remove
-        Sawe::Project* _project; // project should probably be a member of RenderController instead
         Support::TransformDescs::ptr transform_descs_;
         Heightmap::TfrMapping::ptr tfr_map_;
         Signal::OperationDesc::ptr render_operation_desc_;
@@ -104,9 +96,20 @@ namespace Tools
         Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_block_filter_params_;
 
         friend class boost::serialization::access;
-        RenderModel() { EXCEPTION_ASSERT( false ); } // required for serialization to compile, is never called
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
+            float _qx = camera.q[0],
+                  _qy = camera.q[1],
+                  _qz = camera.q[2];
+            float _px  = camera.p[0],
+                  _py = camera.p[1],
+                  _pz = camera.p[2],
+                _rx = camera.r[0],
+                _ry = camera.r[1],
+                _rz = camera.r[2];
+            float xscale = camera.xscale;
+            float zscale = camera.zscale;
+
             ar
                     & BOOST_SERIALIZATION_NVP(_qx)
                     & BOOST_SERIALIZATION_NVP(_qy)
@@ -119,27 +122,39 @@ namespace Tools
                     & BOOST_SERIALIZATION_NVP(_rz)
                     & BOOST_SERIALIZATION_NVP(xscale)
                     & BOOST_SERIALIZATION_NVP(zscale)
-                    & boost::serialization::make_nvp("color_mode", renderer->render_settings.color_mode)
-                    & boost::serialization::make_nvp("y_scale", renderer->render_settings.y_scale);
+                    & boost::serialization::make_nvp("color_mode", render_settings.color_mode)
+                    & boost::serialization::make_nvp("y_scale", render_settings.y_scale);
 
             if (typename Archive::is_loading())
-                orthoview.reset( _rx >= 90 );
+                camera.orthoview.reset( _rx >= 90 );
+
+            camera.q[0] = _qx;
+            camera.q[1] = _qy;
+            camera.q[2] = _qz;
+            camera.p[0] = _px;
+            camera.p[1] = _py;
+            camera.p[2] = _pz;
+            camera.r[0] = _rx;
+            camera.r[1] = _ry;
+            camera.r[2] = _rz;
+            camera.xscale = xscale;
+            camera.zscale = zscale;
 
             if (version <= 0)
-                ar & boost::serialization::make_nvp("draw_height_lines", renderer->render_settings.draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_height_lines", render_settings.draw_contour_plot);
             else
-                ar & boost::serialization::make_nvp("draw_contour_plot", renderer->render_settings.draw_contour_plot);
+                ar & boost::serialization::make_nvp("draw_contour_plot", render_settings.draw_contour_plot);
 
             ar
-                    & boost::serialization::make_nvp("draw_piano", renderer->render_settings.draw_piano)
-                    & boost::serialization::make_nvp("draw_hz", renderer->render_settings.draw_hz)
-                    & boost::serialization::make_nvp("left_handed_axes", renderer->render_settings.left_handed_axes);
+                    & boost::serialization::make_nvp("draw_piano", render_settings.draw_piano)
+                    & boost::serialization::make_nvp("draw_hz", render_settings.draw_hz)
+                    & boost::serialization::make_nvp("left_handed_axes", render_settings.left_handed_axes);
 
             if (version >= 2)
             {
-                float redundancy = renderer->redundancy();
+                float redundancy = render_settings.redundancy;
                 ar & BOOST_SERIALIZATION_NVP(redundancy);
-                renderer->redundancy(redundancy);
+                render_settings.redundancy = redundancy;
             }
         }
 

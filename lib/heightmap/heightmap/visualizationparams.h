@@ -23,8 +23,8 @@ public:
  * define how waveform data turns into pixels on a heightmap.
  *
  * All methods are thread-safe without risking to wait for a long lock.
- * VolatilePtr is private to guarantee that the transient locks created
- * internally are the only locks on VisualizationParams.
+ * shared_state<details> is private to guarantee that the transient locks
+ * created internally are the only locks on VisualizationParams.
  */
 class VisualizationParams {
 public:

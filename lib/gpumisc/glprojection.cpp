@@ -7,63 +7,35 @@
 glProjection::
         glProjection()
 {
-    memset(modelview_matrix_, 0, sizeof(modelview_matrix_));
-    memset(projection_matrix_, 0, sizeof(projection_matrix_));
-    memset(viewport_matrix_, 0, sizeof(viewport_matrix_));
-
-    update();
-}
-
-
-void glProjection::
-        update()
-{
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix_);
-    glGetDoublev(GL_PROJECTION_MATRIX, projection_matrix_);
-    glGetIntegerv(GL_VIEWPORT, viewport_matrix_);
-}
-
-
-void glProjection::
-        setZoom(float zoom)
-{
-    this->zoom = zoom;
-}
-
-
-float glProjection::
-        getZoom()
-{
-    return zoom;
 }
 
 
 GLvector glProjection::
-        gluProject(GLvector obj, bool *r)
+        gluProject(GLvector obj, bool *r) const
 {
-    return ::gluProject(obj, modelview_matrix_, projection_matrix_, viewport_matrix_, r);
+    return ::gluProject(obj, modelview.v (), projection.v (), viewport.v, r);
 }
 
 
 GLvector glProjection::
-        gluUnProject(GLvector win, bool *r)
+        gluUnProject(GLvector win, bool *r) const
 {
-    return ::gluUnProject(win, modelview_matrix_, projection_matrix_, viewport_matrix_, r);
+    return ::gluUnProject(win, modelview.v (), projection.v (), viewport.v, r);
 }
 
 
 void glProjection::
-        computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel )
+        computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel ) const
 {
     // Find units per pixel at point 'p' with glUnProject
     GLvector screen = gluProject( p );
     GLvector screenX=screen, screenY=screen;
-    if (screen[0] > viewport_matrix_[0] + viewport_matrix_[2]/2)
+    if (screen[0] > viewport[0] + viewport[2]/2)
         screenX[0]--;
     else
         screenX[0]++;
 
-    if (screen[1] > viewport_matrix_[1] + viewport_matrix_[3]/2)
+    if (screen[1] > viewport[1] + viewport[3]/2)
         screenY[1]--;
     else
         screenY[1]++;
@@ -113,18 +85,15 @@ void glProjection::
     // pixel that represents the closest point in ref
     timePerPixel = sqrt(timePerPixel_x*timePerPixel_x + timePerPixel_y*timePerPixel_y);
     scalePerPixel = sqrt(scalePerPixel_x*scalePerPixel_x + scalePerPixel_y*scalePerPixel_y);
-
-    scalePerPixel *= zoom;
-    timePerPixel *= zoom;
 }
 
 
 GLvector::T glProjection::
-        computePixelDistance( GLvector p1, GLvector p2 )
+        computePixelDistance( GLvector p1, GLvector p2 ) const
 {
     GLvector screen1 = gluProject( p1 );
     GLvector screen2 = gluProject( p2 );
-    return (screen2-screen1).length() * zoom;
+    return (screen2-screen1).length();
 }
 
 
@@ -150,15 +119,17 @@ void glProjection::
         glViewport (0,0,100,100);
         glProjection g;
 
-        tmatrix<4, double> modelview = g.modelview_matrix ();
-        tmatrix<4, double> projection = g.projection_matrix ();
-        tvector<4, int> viewport = g.viewport_matrix ();
+#ifndef GL_ES_VERSION_2_0
+        glGetFloatv(GL_MODELVIEW_MATRIX, g.modelview.v ());
+        glGetFloatv(GL_PROJECTION_MATRIX, g.projection.v ());
+        glGetIntegerv(GL_VIEWPORT, g.viewport.v);
 
         double id4[]{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
         double vp[]{0,0,100,100};
 
-        EXCEPTION_ASSERT_EQUALS(modelview, (tmatrix<4, double>(id4)));
-        EXCEPTION_ASSERT_EQUALS(projection, (tmatrix<4, double>(id4)));
-        EXCEPTION_ASSERT_EQUALS(viewport, (tvector<4, double>(vp)));
+        EXCEPTION_ASSERT_EQUALS(g.modelview, (tmatrix<4, double>(id4)));
+        EXCEPTION_ASSERT_EQUALS(g.projection, (tmatrix<4, double>(id4)));
+        EXCEPTION_ASSERT_EQUALS(g.viewport, (tvector<4, double>(vp)));
+#endif
     }
 }

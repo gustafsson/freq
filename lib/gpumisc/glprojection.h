@@ -2,6 +2,7 @@
 #define GLPROJECTION_H
 
 #include "GLvector.h"
+#include "tmatrix.h"
 
 /**
  * @brief The glProjection class should describe how OpenGL object space is
@@ -12,26 +13,14 @@ class glProjection
 public:
     glProjection();
 
-    void update();
+    GLmatrix          modelview;
+    GLmatrix          projection;
+    tvector<4,int>    viewport;
 
-    // scales computeUnitsPerPixel
-    void setZoom(float zoom);
-    float getZoom();
-
-    const double* modelview_matrix() const { return modelview_matrix_; }
-    const double* projection_matrix() const { return projection_matrix_; }
-    const int* viewport_matrix() const { return viewport_matrix_; }
-
-    GLvector gluProject(GLvector obj, bool *r=0);
-    GLvector gluUnProject(GLvector win, bool *r=0);
-    void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel );
-    GLvector::T computePixelDistance( GLvector p1, GLvector p2 );
-
-private:
-    float                           zoom;
-    double                          modelview_matrix_[16];
-    double                          projection_matrix_[16];
-    int                             viewport_matrix_[4];
+    GLvector gluProject(GLvector obj, bool *r=0) const;
+    GLvector gluUnProject(GLvector win, bool *r=0) const;
+    void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel ) const;
+    GLvector::T computePixelDistance( GLvector p1, GLvector p2 ) const;
 
 public:
     static void test();

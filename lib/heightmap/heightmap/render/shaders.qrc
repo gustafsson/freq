@@ -5,5 +5,7 @@
         <file>heightmap.vert</file>
         <file>noop.vert</file>
         <file>mergertexture.frag</file>
+        <file>mergertexture.vert</file>
+        <file>mergertexture0.frag</file>
     </qresource>
 </RCC>

@@ -1,6 +1,7 @@
 #include "tooltipmodel.h"
 
 #include "sawe/project.h"
+#include "tools/support/renderviewinfo.h"
 #include "tfr/cwt.h"
 #include "tfr/stft.h"
 #include "tfr/cwtfilter.h"
@@ -39,6 +40,7 @@ TooltipModel::TooltipModel()
         comment(0),
         automarking(TooltipModel::ManualMarkers),
         comments_(0),
+        project_(0),
         render_view_(0),
         fetched_heightmap_values(0),
         last_fetched_scale_(-1)
@@ -47,10 +49,11 @@ TooltipModel::TooltipModel()
 
 
 void TooltipModel::
-        setPtrs(RenderView *render_view, CommentController* comments)
+        setPtrs(RenderView *render_view, CommentController* comments, Sawe::Project* project)
 {
     render_view_ = render_view;
     comments_ = comments;
+    project_ = project;
     comment = comments_->findView( this->comment_model );
 }
 
@@ -300,10 +303,10 @@ std::string TooltipModel::
 class TooltipModel::FetchDataTransform: public TooltipModel::FetchData
 {
 public:
-    FetchDataTransform( RenderModel* m, const Tfr::StftDesc* stft, float t )
+    FetchDataTransform( Sawe::Project* project, const Tfr::StftDesc* stft, float t )
     {
-        Signal::Processing::Step::ptr s = m->project ()->default_target ()->step().lock();
-        Signal::OperationDesc::Extent x = m->project ()->processing_chain ().read ()->extent(m->project ()->default_target ());
+        Signal::Processing::Step::ptr s = project->default_target ()->step().lock();
+        Signal::OperationDesc::Extent x = project->processing_chain ().read ()->extent(project->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
 //        Signal::pOperation o = m->renderSignalTarget->source();
@@ -334,10 +337,10 @@ public:
         fa = chunk->freqAxis;
     }
 
-    FetchDataTransform( RenderModel* m, const Tfr::CepstrumDesc* cepstrum, float t )
+    FetchDataTransform( Sawe::Project* project, const Tfr::CepstrumDesc* cepstrum, float t )
     {
-        Signal::Processing::Step::ptr s = m->project ()->default_target ()->step().lock();
-        Signal::OperationDesc::Extent x = m->project ()->processing_chain ().read ()->extent(m->project ()->default_target ());
+        Signal::Processing::Step::ptr s = project->default_target ()->step().lock();
+        Signal::OperationDesc::Extent x = project->processing_chain ().read ()->extent(project->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
 //        Signal::pOperation o = m->renderSignalTarget->source();
@@ -367,10 +370,10 @@ public:
         fa = chunk->freqAxis;
     }
 
-    FetchDataTransform( RenderModel* m, const Tfr::Cwt* cwt, float t )
+    FetchDataTransform( Sawe::Project* project, const Tfr::Cwt* cwt, float t )
     {
-        Signal::Processing::Step::ptr s = m->project ()->default_target ()->step().lock();
-        Signal::OperationDesc::Extent x = m->project ()->processing_chain ().read ()->extent(m->project ()->default_target ());
+        Signal::Processing::Step::ptr s = project->default_target ()->step().lock();
+        Signal::OperationDesc::Extent x = project->processing_chain ().read ()->extent(project->default_target ());
         float fs = x.sample_rate.get_value_or (1);
 
 //        Signal::pOperation o = m->renderSignalTarget->source();
@@ -478,7 +481,7 @@ public:
         Heightmap::Position p(t, 0);
         p.scale = render_view_->model->display_scale().getFrequencyScalar( hz );
         // Use quadratic interpolation to fetch estimates at given scale
-        float value = render_view_->getHeightmapValue( p, &ref_, 0, true, is_valid_value );
+        float value = Tools::Support::RenderViewInfo(render_view_).getHeightmapValue( p, &ref_, 0, true, is_valid_value );
         value*=value;
         return value;
     }
@@ -495,16 +498,16 @@ private:
 
 
 boost::shared_ptr<TooltipModel::FetchData> TooltipModel::FetchData::
-        createFetchData( RenderView* view, float t )
+        createFetchData( RenderView* view, Sawe::Project* project, float t )
 {
     boost::shared_ptr<FetchData> r;
     const Tfr::TransformDesc::ptr transform = view->model->transform_desc();
     if (const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(transform.get ()))
-        r.reset( new FetchDataTransform( view->model, cepstrum, t ) );
+        r.reset( new FetchDataTransform( project, cepstrum, t ) );
     else if (const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(transform.get ()))
-        r.reset( new FetchDataTransform( view->model, stft, t ) );
+        r.reset( new FetchDataTransform( project, stft, t ) );
     else if (const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(transform.get ()))
-        r.reset( new FetchDataTransform( view->model, cwt, t ) );
+        r.reset( new FetchDataTransform( project, cwt, t ) );
     else
     {
         return r;
@@ -525,7 +528,7 @@ unsigned TooltipModel::
     fetched_heightmap_values = 0;
 
     const Heightmap::FreqAxis& display_scale = render_view_->model->display_scale();
-    boost::shared_ptr<FetchData> fetcher = FetchData::createFetchData( render_view_, pos.time );
+    boost::shared_ptr<FetchData> fetcher = FetchData::createFetchData( render_view_, project_, pos.time );
     if (!fetcher)
         return 0;
 
@@ -564,7 +567,7 @@ float TooltipModel::
     boost::shared_ptr<FetchData> myfetcher;
     if (0==fetcher)
     {
-        myfetcher = FetchData::createFetchData( render_view_, pos.time );
+        myfetcher = FetchData::createFetchData( render_view_, project_, pos.time );
         fetcher = myfetcher.get();
     }
 

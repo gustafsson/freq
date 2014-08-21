@@ -3,6 +3,7 @@
 
 #include "heightmap/blockcache.h"
 #include "heightmap/block.h"
+#include "GlTexture.h"
 
 class GlFrameBuffer;
 
@@ -33,12 +34,13 @@ private:
     BlockCache::const_ptr cache_;
     std::shared_ptr<GlFrameBuffer> fbo_;
     unsigned vbo_;
+    GlTexture::ptr tex_;
     BlockLayout block_layout_;
-    unsigned tex_;
     const bool disable_merge_;
     BlockCache::cache_t cache_clone;
     unsigned program_;
 
+    void init();
     void fillBlockFromOthersInternal( pBlock block );
 
     /**

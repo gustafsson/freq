@@ -3,7 +3,9 @@
 
 #include "signal/buffer.h"
 #include "zero_on_move.h"
+#include "glprojection.h"
 
+#ifndef GL_ES_VERSION_2_0
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -21,7 +23,7 @@ public:
     Wave2Fbo& operator=(const Wave2Fbo&)=delete;
     ~Wave2Fbo();
 
-    void draw();
+    void draw(const glProjection& glprojection);
 
 private:
     Signal::pMonoBuffer b_;
@@ -32,5 +34,6 @@ private:
 } // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
+#endif
 
 #endif // HEIGHTMAP_UPDATE_OPENGL_WAVE2FBO_H

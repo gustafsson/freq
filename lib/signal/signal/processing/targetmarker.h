@@ -27,6 +27,7 @@ public:
 
     std::shared_ptr<TargetNeeds> target_needs() const;
     shared_state<Step>::weak_ptr step() const;
+    shared_state<Dag> dag() const;
 
 private:
     std::shared_ptr<TargetNeeds> target_needs_;

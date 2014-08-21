@@ -4,81 +4,97 @@
 #include "gl.h"
 #include "glPushContext.h"
 
+#include <QOpenGLShaderProgram>
+
 namespace Heightmap {
 namespace Render {
 
-RenderRegion::RenderRegion(Region r)
+RenderRegion::RenderRegion(glProjection gl_projection)
     :
-      r(r)
+      gl_projection_(gl_projection)
 {
 }
 
 
+RenderRegion::~RenderRegion()
+{
+    delete program_;
+}
+
+
 void RenderRegion::
-        render(bool drawcross)
+        render(Region r, bool drawcross)
 {
     // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
     //float y = _frustum_clip.projectionPlane[1]*.05;
     float y = 0.05f;
 
-    UNUSED(glPushMatrixContext mc)( GL_MODELVIEW );
+    if (!program_) {
+        program_ = new QOpenGLShaderProgram();
+        program_->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                           "attribute highp vec4 vertices;"
+                                           "uniform highp mat4 modelviewproj;"
+                                           "void main() {"
+                                           "    gl_Position = modelviewproj*vertices;"
+                                           "}");
+        program_->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           "uniform lowp vec4 color;"
+                                           "void main() {"
+                                           "    gl_FragColor = color;"
+                                           "}");
 
-    glTranslatef(r.a.time, 0, r.a.scale);
-    glScalef(r.time(), 1, r.scale());
+        program_->bindAttributeLocation("vertices", 0);
+        program_->link();
+    }
 
-    UNUSED(glPushAttribContext attribs);
+    program_->bind();
 
-    glDisable(GL_TEXTURE_2D);
+    program_->enableAttributeArray(0);
+
+    float cross_values[] = {
+        0, 0, 0,
+        1, 0, 1,
+        1, 0, 0,
+        0, 0, 1,
+        0, 0, 0,
+        1, 0, 0,
+        1, 0, 1,
+        0, 0, 1 };
+
+    float nocross_values[] = {
+        0, 0, 0,
+        1, 0, 0,
+        1, 0, 1,
+        0, 0, 1,
+        0, 0, 0
+    };
+
+    float* values = drawcross ? cross_values : nocross_values;
+    int n_values = drawcross ? 8 : 5;
+
+    program_->setAttributeArray(0, GL_FLOAT, values, 3);
+
+    GLmatrix modelview = gl_projection_.modelview;
+    modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
+    modelview *= GLmatrix::scale (r.time(), 1, r.scale());
+
     glEnable(GL_BLEND);
-    glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_LIGHTING);
     glBindTexture(GL_TEXTURE_2D, 0);
     glLineWidth(2);
 
-    if (drawcross)
-    {
-        glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
-        glBegin(GL_LINE_STRIP);
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( 1, 0, 1 );
-            glVertex3f( 1, 0, 0 );
-            glVertex3f( 0, 0, 1 );
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( 1, 0, 0 );
-            glVertex3f( 1, 0, 1 );
-            glVertex3f( 0, 0, 1 );
-        glEnd();
-        glColor4f( 0.2f, 0.8f, 0.8f, 0.5f );
-        glBegin(GL_LINE_STRIP);
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 1, y, 1 );
-            glVertex3f( 1, y, 0 );
-            glVertex3f( 0, y, 1 );
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 1, y, 0 );
-            glVertex3f( 1, y, 1 );
-            glVertex3f( 0, y, 1 );
-        glEnd();
-    }
-    else
-    {
-        glColor4f( 0.8f, 0.2f, 0.2f, 0.5f );
-        glBegin(GL_LINE_LOOP);
-            glVertex3f( 0, 0, 0 );
-            glVertex3f( 1, 0, 0 );
-            glVertex3f( 1, 0, 1 );
-            glVertex3f( 0, 0, 1 );
-        glEnd();
-        glColor4f( 0.2f, 0.8f, 0.8f, 0.5f );
-        glBegin(GL_LINE_LOOP);
-            glVertex3f( 0, y, 0 );
-            glVertex3f( 1, y, 0 );
-            glVertex3f( 1, y, 1 );
-            glVertex3f( 0, y, 1 );
-        glEnd();
-    }
-}
+    program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
+    program_->setUniformValue("modelviewproj",
+                              QMatrix4x4((gl_projection_.projection*modelview).transpose ().v ()));
+    glDrawArrays(GL_LINE_STRIP, 0, n_values);
 
+    program_->setUniformValue("color", 0.2, 0.8, 0.8, 0.5);
+    program_->setUniformValue("modelviewproj",
+                              QMatrix4x4((gl_projection_.projection*GLmatrix::translate (0,y,0)*modelview).transpose ().v ()));
+    glDrawArrays(GL_LINE_STRIP, 0, n_values);
+
+    program_->disableAttributeArray(0);
+    program_->release();
+}
 
 } // namespace Render
 } // namespace Heightmap

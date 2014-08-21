@@ -9,12 +9,11 @@ namespace Render {
 
 
 RenderInfo::
-        RenderInfo(glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, FrustumClip* frustum_clip, float redundancy)
+        RenderInfo(const glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy)
     :
       gl_projection(gl_projection),
       bl(bl),
       vp(vp),
-      frustum_clip(frustum_clip),
       redundancy(redundancy)
 {
 }
@@ -78,7 +77,8 @@ bool RenderInfo::
 {
     const Position p[2] = { r.a, r.b };
 
-    float y[]={0, float(frustum_clip->projectionPlane[1]*.5)};
+    Render::FrustumClip frustum_clip(*gl_projection);
+    float y[]={0, float(frustum_clip.getCamera()[1]*.5)};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
         GLvector corner[]=
@@ -90,7 +90,7 @@ bool RenderInfo::
         };
 
         GLvector closest_i;
-        std::vector<GLvector> clippedCorners = frustum_clip->clipFrustum(corner, closest_i); // about 10 us
+        std::vector<GLvector> clippedCorners = frustum_clip.clipFrustum(corner, &closest_i); // about 10 us
         if (clippedCorners.empty ())
             continue;
 

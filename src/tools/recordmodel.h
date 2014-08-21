@@ -3,7 +3,7 @@
 
 #include "signal/operation.h"
 #include "signal/processing/chain.h"
-#include "adapters/recorder.h"
+#include "signal/recorder.h"
 
 #include <QObject>
 
@@ -30,13 +30,13 @@ public:
      * @return a new RecordModel if it could be created, or null if it failed.
      */
     static RecordModel* createRecorder( Signal::Processing::Chain::ptr chain, Signal::Processing::TargetMarker::ptr at,
-                                 Adapters::Recorder::ptr recorder, Sawe::Project* project, RenderView* render_view );
+                                 Signal::Recorder::ptr recorder, Sawe::Project* project, RenderView* render_view );
     ~RecordModel();
 
 //    static bool canCreateRecordModel( Sawe::Project* project );
 
 
-    Adapters::Recorder::ptr recording;
+    Signal::Recorder::ptr recording;
     Signal::Processing::IInvalidator::ptr invalidator;
     Sawe::Project* project;
     RenderView* render_view;
@@ -47,7 +47,7 @@ signals:
     void markNewlyRecordedData(Signal::Interval what);
 
 private:
-    RecordModel( Sawe::Project* project, RenderView* render_view, Adapters::Recorder::ptr recording );
+    RecordModel( Sawe::Project* project, RenderView* render_view, Signal::Recorder::ptr recording );
 
     Signal::OperationDesc::ptr recorder_desc;
 

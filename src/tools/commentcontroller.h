@@ -3,21 +3,24 @@
 
 #include <QWidget>
 #include <QPointer>
+#include <QGraphicsScene>
 #include "sawe/toolmodel.h"
 #include "heightmap/position.h"
+#include "sawe/project.h"
 
 namespace Tools
 {
     class RenderView;
     class CommentView;
     class CommentModel;
+    class GraphicsView;
 
 
 class CommentController: public ToolController
 {
     Q_OBJECT
 public:
-    CommentController(RenderView* view);
+    CommentController(QGraphicsScene* graphicsscene, RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector, GraphicsView* graphicsview);
     ~CommentController();
 
     virtual void createView( ToolModelP model, ToolRepo* repo, Sawe::Project* p );
@@ -42,7 +45,11 @@ private:
 
     void setupGui();
 
+    QGraphicsScene* graphicsscene_;
     RenderView* view_;
+    Sawe::Project* project_;
+    Support::ToolSelector* tool_selector_;
+    GraphicsView* graphicsview_;
 
     CommentView* comment_;
     QList<QPointer<CommentView> > comments_;

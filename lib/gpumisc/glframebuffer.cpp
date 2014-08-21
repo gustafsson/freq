@@ -36,42 +36,48 @@ GlFrameBuffer::
     }
     catch(...)
     {
-        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
-        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+        TaskInfo("GlFrameBuffer exception\n%s", boost::current_exception_diagnostic_information ().c_str());
+
+        if (rboId_) glDeleteRenderbuffers(1, &rboId_);
+        if (fboId_) glDeleteFramebuffers(1, &fboId_);
 
         throw;
     }
 }
 
 GlFrameBuffer::
-        GlFrameBuffer(unsigned textureid)
+        GlFrameBuffer(unsigned textureid, int width, int height)
     :
     fboId_(0),
     rboId_(0),
     own_texture_(0),
     textureid_(textureid),
-    enable_depth_component_(false)
+    enable_depth_component_(false),
+    texture_width_(width),
+    texture_height_(height)
 {
     init();
 
     try
     {
-        glBindTexture (GL_TEXTURE_2D, textureid_);
-        GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texture_width_) );
-        GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texture_height_) );
-        glBindTexture (GL_TEXTURE_2D, 0);
-
         recreate(texture_width_, texture_height_);
     }
     catch(...)
     {
         TaskInfo("GlFrameBuffer() caught exception");
-        if (rboId_) glDeleteRenderbuffersEXT(1, &rboId_);
-        if (fboId_) glDeleteFramebuffersEXT(1, &fboId_);
+        if (rboId_) glDeleteRenderbuffers(1, &rboId_);
+        if (fboId_) glDeleteFramebuffers(1, &fboId_);
         unbindFrameBuffer ();
 
         throw;
     }
+}
+
+GlFrameBuffer::
+        GlFrameBuffer(const GlTexture& texture)
+    :
+      GlFrameBuffer(texture.getOpenGlTextureId (), texture.getWidth (), texture.getHeight ())
+{
 }
 
 GlFrameBuffer::
@@ -88,10 +94,10 @@ GlFrameBuffer::
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e);
 
     DEBUG_INFO TaskInfo("glDeleteRenderbuffersEXT");
-    glDeleteRenderbuffersEXT(1, &rboId_);
+    glDeleteRenderbuffers(1, &rboId_);
 
     DEBUG_INFO TaskInfo("glDeleteFramebuffersEXT");
-    glDeleteFramebuffersEXT(1, &fboId_);
+    glDeleteFramebuffers(1, &fboId_);
 
     GLenum e2 = glGetError();
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e2);
@@ -110,36 +116,20 @@ GlFrameBuffer::ScopeBinding GlFrameBuffer::
 void GlFrameBuffer::
         bindFrameBuffer()
 {
-    GlException_CHECK_ERROR();
-
-    glGetIntegerv (GL_DRAW_FRAMEBUFFER_BINDING, &prev_fbo_draw_);
-    glGetIntegerv (GL_READ_FRAMEBUFFER_BINDING, &prev_fbo_read_);
-
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId_));
-
-    GlException_CHECK_ERROR();
+    GlException_SAFE_CALL( glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_) );
+    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
 }
 
 void GlFrameBuffer::
         unbindFrameBuffer()
 {
-    GlException_CHECK_ERROR();
-
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, prev_fbo_draw_));
-    GlException_SAFE_CALL( glBindFramebufferEXT(GL_READ_FRAMEBUFFER, prev_fbo_read_));
-
-    GlException_CHECK_ERROR();
+    GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo_));
 }
 
 
 void GlFrameBuffer::
         recreate(int width, int height)
 {
-    glBindTexture (GL_TEXTURE_2D, textureid_);
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &texture_width_) );
-    GlException_SAFE_CALL( glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &texture_height_) );
-    glBindTexture (GL_TEXTURE_2D, 0);
-
     const char* action = "Resizing";
     if (0==width)
     {
@@ -162,8 +152,8 @@ void GlFrameBuffer::
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
 
-    // if (rboId_) { glDeleteRenderbuffersEXT(1, &rboId_); rboId_ = 0; }
-    // if (fboId_) { glDeleteFramebuffersEXT(1, &fboId_); fboId_ = 0; }
+    // if (rboId_) { glDeleteRenderbuffers(1, &rboId_); rboId_ = 0; }
+    // if (fboId_) { glDeleteFramebuffers(1, &fboId_); fboId_ = 0; }
 
     if (width != texture_width_ || height != texture_height_) {
         EXCEPTION_ASSERT(own_texture_);
@@ -172,46 +162,44 @@ void GlFrameBuffer::
         texture_height_ = height;
     }
 
-    GlException_CHECK_ERROR();
-
     if (enable_depth_component_) {
         if (!rboId_)
-            glGenRenderbuffersEXT(1, &rboId_);
+            GlException_SAFE_CALL( glGenRenderbuffers(1, &rboId_) );
 
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboId_);
-        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, width, height);
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, rboId_) );
+        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height) );
+        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, 0) );
     }
 
     {
         if (!fboId_)
-            glGenFramebuffersEXT(1, &fboId_);
+            GlException_SAFE_CALL( glGenFramebuffers(1, &fboId_) );
 
-        bindFrameBuffer ();
+        auto fbo_raii = getScopeBinding();
 
-        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-                                  GL_COLOR_ATTACHMENT0_EXT,
+        GlException_SAFE_CALL( glFramebufferTexture2D(
+                                  GL_FRAMEBUFFER,
+                                  GL_COLOR_ATTACHMENT0,
                                   GL_TEXTURE_2D,
                                   textureid_,
-                                  0);
+                                  0) );
 
         if (enable_depth_component_)
-            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
-                                         GL_DEPTH_ATTACHMENT_EXT,
-                                         GL_RENDERBUFFER_EXT,
-                                         rboId_);
+            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+                                         GL_FRAMEBUFFER,
+                                         GL_DEPTH_ATTACHMENT,
+                                         GL_RENDERBUFFER,
+                                         rboId_));
 
-        int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
-        if (GL_FRAMEBUFFER_UNSUPPORTED_EXT == status)
+        if (GL_FRAMEBUFFER_UNSUPPORTED == status)
           {
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
-                    "Got GL_FRAMEBUFFER_UNSUPPORTED_EXT. See GlFrameBuffer::test for supported formats")) << Backtrace::make ());
+                    "Got GL_FRAMEBUFFER_UNSUPPORTED. See GlFrameBuffer::test for supported formats")) << Backtrace::make ());
           }
 
-        EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE_EXT, status );
-
-        unbindFrameBuffer ();
+        EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE, status );
     }
 
     //glFlush();
@@ -236,11 +224,11 @@ void GlFrameBuffer::
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
                     "Couldn't initialize \"glew\"")) << Backtrace::make ());
 
-        if (!glewIsSupported( "GL_EXT_framebuffer_object" )) {
+        if (!glewIsSupported( "GL_framebuffer_object" )) {
             BOOST_THROW_EXCEPTION(GlFrameBufferException() << errinfo_format(boost::format(
                     "Failed to get minimal extensions\n"
                     "Sonic AWE requires:\n"
-                    "  GL_EXT_framebuffer_object\n")) << Backtrace::make ());
+                    "  GL_framebuffer_object\n")) << Backtrace::make ());
         }
     }
 #endif
@@ -267,23 +255,31 @@ void GlFrameBuffer::
     // buffer in an object oriented manner
     {
         GlTexture sum1(4, 4, GL_RGBA, GL_RGBA, GL_FLOAT);
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
         GlTexture sum2(4, 4, GL_LUMINANCE, GL_LUMINANCE32F_ARB, GL_FLOAT);
         GlTexture sum3(4, 4, GL_RED, GL_LUMINANCE32F_ARB, GL_FLOAT);
+#endif
         GlTexture sum4(4, 4, GL_LUMINANCE, GL_LUMINANCE, GL_FLOAT);
         GlTexture sum5(4, 4, GL_RED, GL_LUMINANCE, GL_FLOAT);
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
         GlTexture sum6(4, 4, GL_RGBA, GL_LUMINANCE32F_ARB, GL_FLOAT);
+#endif
         GlTexture sum7(4, 4, GL_RGBA, GL_LUMINANCE, GL_FLOAT);
         GlTexture sum8(4, 4, GL_RED, GL_RGBA, GL_FLOAT);
         GlTexture sum9(4, 4, GL_LUMINANCE, GL_RGBA, GL_FLOAT);
 
-        {GlFrameBuffer fb(sum1.getOpenGlTextureId ());}
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum2.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum3.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum4.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum5.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum6.getOpenGlTextureId ()));
-        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum7.getOpenGlTextureId ()));
-        {GlFrameBuffer fb(sum8.getOpenGlTextureId ());}
-        {GlFrameBuffer fb(sum9.getOpenGlTextureId ());}
+        {GlFrameBuffer fb(sum1.getOpenGlTextureId (), 4,4);}
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum2.getOpenGlTextureId (), 4,4));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum3.getOpenGlTextureId (), 4,4));
+#endif
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum4.getOpenGlTextureId (), 4,4));
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum5.getOpenGlTextureId (), 4,4));
+#ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum6.getOpenGlTextureId (), 4,4));
+#endif
+        EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum7.getOpenGlTextureId (), 4,4));
+        {GlFrameBuffer fb(sum8.getOpenGlTextureId (), 4,4);}
+        {GlFrameBuffer fb(sum9.getOpenGlTextureId (), 4,4);}
     }
 }

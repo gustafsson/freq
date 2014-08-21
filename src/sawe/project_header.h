@@ -18,7 +18,6 @@
 // Sonic AWE
 #include "heightmap/collection.h"
 #include "heightmap/render/renderer.h"
-#include "sawe/project.h"
 #include "tfr/chunkfilter.h"
 #include "tools/rendercontroller.h"
 #include "ui/mainwindow.h"

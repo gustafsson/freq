@@ -3,7 +3,7 @@
 #include <QtWidgets> // QApplication
 
 #include "sawe/project.h"
-#include "tools/renderview.h"
+#include "tools/support/renderviewinfo.h"
 #include "tools/commands/zoomcameracommand.h"
 #include "gl.h"
 
@@ -15,9 +15,10 @@ namespace Tools {
 namespace Widgets {
 
 RescaleWidget::
-        RescaleWidget (RenderView*v)
+        RescaleWidget (RenderView*v, Tools::Commands::CommandInvoker* commandInvoker)
     :   HudGlWidget(v),
         view_(v),
+        commandInvoker_(commandInvoker),
         scalex_(1.f),
         scaley_(1.f),
         image_(":/icons/muchdifferent.png"),
@@ -188,8 +189,9 @@ void RescaleWidget::
 {
     bool success1, success2;
 
-    Heightmap::Position last = view_->getPlanePos( mapToParent(dragSource_), &success1);
-    Heightmap::Position current = view_->getPlanePos( mapToParent(lastPos_), &success2);
+    Tools::Support::RenderViewInfo r(view_);
+    Heightmap::Position last = r.getPlanePos( mapToParent(dragSource_), &success1);
+    Heightmap::Position current = r.getPlanePos( mapToParent(lastPos_), &success2);
 
     QPointF d = lastPos_ - dragSource_;
     float dx = d.x() / width();
@@ -204,11 +206,11 @@ void RescaleWidget::
     if (success1 && success2)
     {
         float r = DIRECT_RESCALING ? 4 : .1;
-        float dt = r*(current.time - last.time)*view_->model->xscale/view_->model->_pz;
-        float ds = r*(current.scale - last.scale)*view_->model->zscale/view_->model->_pz;
+        float dt = r*(current.time - last.time)*view_->model->camera.xscale/view_->model->camera.p[2];
+        float ds = r*(current.scale - last.scale)*view_->model->camera.zscale/view_->model->camera.p[2];
 
         Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(view_->model, dt, ds, 0.f ));
-        view_->model->project()->commandInvoker()->invokeCommand( cmd );
+        commandInvoker_->invokeCommand( cmd );
     }
 
     //dragSource_ = event->pos();

@@ -3,6 +3,7 @@
 
 #include "hudglwidget.h"
 #include "tools/support/drawimage.h"
+#include "tools/commands/commandinvoker.h"
 
 namespace Tools {
 class RenderView;
@@ -11,7 +12,7 @@ namespace Widgets {
 class RescaleWidget : public HudGlWidget
 {
 public:
-    explicit RescaleWidget (RenderView*);
+    explicit RescaleWidget (RenderView*, Tools::Commands::CommandInvoker* commandInvoker);
 
 protected:
     void timerEvent ( QTimerEvent * e );
@@ -31,6 +32,7 @@ protected:
 
 private:
     RenderView* view_;
+    Tools::Commands::CommandInvoker* commandInvoker_;
     QPainterPath path_;
     float scalex_;
     float scaley_;

@@ -1,5 +1,6 @@
 #include "renderblock.h"
 #include "shaderresource.h"
+#include "heightmap/uncaughtexception.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -8,6 +9,9 @@
 #include "tasktimer.h"
 #include "glPushContext.h"
 #include "unused.h"
+#include "gluinvertmatrix.h"
+
+#include <QSettings>
 
 //#define BLOCK_INDEX_TYPE GL_UNSIGNED_SHORT
 //#define BLOCKindexType GLushort
@@ -28,19 +32,24 @@ namespace Heightmap {
 namespace Render {
 
 
-RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size)
+RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection)
     :
+      render_block(render_block),
       vbo_size(render_block->_vbo_size),
-      render_settings(*render_block->render_settings)
+      render_settings(*render_block->render_settings),
+      gl_projection(gl_projection)
 {
     render_block->beginVboRendering(block_size);
+    uniModelviewprojection = glGetUniformLocation (render_block->_shader_prog, "ModelViewProjectionMatrix");
+    uniModelview = glGetUniformLocation (render_block->_shader_prog, "ModelViewMatrix");
+    uniNormalMatrix = glGetUniformLocation (render_block->_shader_prog, "NormalMatrix");
 }
 
 
 RenderBlock::Renderer::~Renderer()
 {
     try {
-        RenderBlock::endVboRendering();
+        render_block->endVboRendering();
     } catch (...) {
         TaskInfo(boost::format("!!! ~RenderBlock::Renderer: endVboRendering failed\n%s") % boost::current_exception_diagnostic_information());
     }
@@ -53,12 +62,15 @@ void RenderBlock::Renderer::
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
     Region r = block->getRegion ();
-    glPushMatrixContext mc( GL_MODELVIEW );
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
 
-    glTranslatef(r.a.time, 0, r.a.scale);
-    glScalef(r.time(), 1, r.scale());
+    GLmatrix modelview = gl_projection.modelview;
+    modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
+    modelview *= GLmatrix::scale (r.time(), 1, r.scale());
+    glUniformMatrix4fv (uniModelviewprojection, 1, false, (gl_projection.projection*modelview).v ());
+    glUniformMatrix4fv (uniModelview, 1, false, modelview.v ());
+    glUniformMatrix4fv (uniNormalMatrix, 1, false, invert(modelview).transpose ().v ());
 
     draw( block->texture ()->getOpenGlTextureId () );
 
@@ -79,9 +91,13 @@ void RenderBlock::Renderer::
     if (drawPoints) {
         glDrawArrays(GL_POINTS, 0, vbo_size);
     } else if (wireFrame) {
+#ifdef GL_ES_VERSION_2_0
+        glDrawElements(GL_LINE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+#else
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
             glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
     } else {
         glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
     }
@@ -95,6 +111,7 @@ void RenderBlock::Renderer::
 RenderBlock::
         RenderBlock(RenderSettings* render_settings)
     :
+      _initialized( NotInitialized ),
         render_settings( render_settings ),
         _color_texture_colors( (RenderSettings::ColorMode)-1 ),
         _shader_prog(0),
@@ -108,6 +125,16 @@ RenderBlock::
 void RenderBlock::
         init()
 {
+    if (NotInitialized != _initialized)
+        return;
+
+    // assume failure unless we reach the end of this method
+    _initialized = InitializationFailed;
+
+    TaskTimer tt("Initializing OpenGL");
+
+    checkExtensions();
+
     initShaders();
 
     // load shader
@@ -116,14 +143,29 @@ void RenderBlock::
     else
         _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
 
-    if (0 == _shader_prog)
-        return;
+    // default, expected to be overwritten
+    setSize (2, 2);
+
+    //drawBlocks(Render::RenderSet::references_t());
+
+    GlException_CHECK_ERROR();
+
+    _initialized = Initialized;
+}
+
+
+bool RenderBlock::
+        isInitialized()
+{
+    return Initialized == _initialized;
 }
 
 
 void RenderBlock::
         clearCaches()
 {
+    _initialized = NotInitialized;
+
     _mesh_width = 0;
     _mesh_height = 0;
     _mesh_position.reset();
@@ -132,6 +174,150 @@ void RenderBlock::
     _colorTexture.reset();
     _color_texture_colors = (RenderSettings::ColorMode)-1;
 }
+
+#ifdef DARWIN_NO_CARBON
+void RenderBlock::
+        checkExtensions ()
+{
+    return;
+}
+#else
+void RenderBlock::
+        checkExtensions ()
+{
+    GlException_CHECK_ERROR();
+
+#ifdef USE_CUDA
+    int cudaDevices=0;
+    CudaException_SAFE_CALL( cudaGetDeviceCount( &cudaDevices) );
+    if (0 == cudaDevices ) {
+        Sawe::NonblockingMessageBox::show(
+                QMessageBox::Critical,
+                "Couldn't find any \"cuda capable\" device",
+                "This version of Sonic AWE requires a graphics card that supports CUDA and no such graphics card was found.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this." );
+
+        // fail
+        return;
+    }
+#endif
+
+#ifndef __APPLE__ // glewInit is not needed on Mac
+    if (0 != glewInit() ) {
+        Sawe::NonblockingMessageBox::show(
+                QMessageBox::Critical,
+                "Couldn't properly setup graphics",
+                "Sonic AWE failed to setup required graphics hardware.\n\n"
+                "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.",
+
+                "Couldn't initialize \"glew\"");
+
+        // fail
+        return;
+    }
+#endif
+
+    // verify necessary OpenGL extensions
+    const char* glversion = (const char*)glGetString(GL_VERSION);
+    string glversionstring(glversion);
+    stringstream versionreader(glversionstring);
+    int gl_major=0, gl_minor=0;
+    char dummy;
+    versionreader >> gl_major >> dummy >> gl_minor;
+
+    //TaskInfo("OpenGL version %d.%d (%s)", gl_major, gl_minor, glversion);
+
+    if ((1 > gl_major )
+        || ( 1 == gl_major && 4 > gl_minor ))
+    {
+        try {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                    "Couldn't properly setup graphics\n"
+                    "Sonic AWE requires a graphics driver that supports OpenGL 2.0 and no such graphics driver was found.\n\n"
+                    "If you think this messge is an error, please file this as a bug report at muchdifferent.com to help us fix this."
+            ));
+        } catch(...) {
+            Heightmap::UncaughtException::handle_exception(boost::current_exception ());
+        }
+
+        // fail
+        return;
+    }
+
+    const char* exstensions[] = {
+        "GL_ARB_vertex_buffer_object",
+        "GL_ARB_pixel_buffer_object",
+        "",
+        "GL_ARB_texture_float"
+    };
+
+    bool required_extension = true;
+    const char* all_extensions = (const char*)glGetString(GL_EXTENSIONS);
+    //TaskInfo("Checking extensions %s", all_extensions);
+    for (unsigned i=0; i < sizeof(exstensions)/sizeof(exstensions[0]); ++i)
+    {
+        if (0 == strlen(exstensions[i]))
+        {
+            required_extension = false;
+            continue;
+        }
+
+
+        bool hasExtension = 0 != strstr(all_extensions, exstensions[i]);
+        if (!hasExtension)
+            TaskInfo("%s %s extension %s",
+                     hasExtension?"Found":"Couldn't find",
+                     required_extension?"required":"preferred",
+                     exstensions[i]);
+
+        if (hasExtension)
+            continue;
+
+        std::stringstream err;
+        std::stringstream details;
+
+        err << "Sonic AWE can't properly setup graphics. ";
+        if (required_extension)
+        {
+            err << "Sonic AWE requires features that couldn't be found on your graphics card.";
+            details << "Sonic AWE requires a graphics card that supports '" << exstensions[i] << "'";
+        }
+        else
+        {
+            bool warn_expected_opengl = QSettings().value("warn_expected_opengl", true).toBool();
+            if (!warn_expected_opengl)
+                continue;
+             QSettings().setValue("warn_expected_opengl", false);
+
+            err << "Sonic AWE works better with features that couldn't be found on your graphics card. "
+                << "However, Sonic AWE might still run. Click OK to try.";
+            details << "Sonic AWE works better with a graphics card that supports '" << exstensions[i] << "'";
+        }
+
+        err << endl << endl << "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.";
+
+        try {
+            BOOST_THROW_EXCEPTION(std::logic_error(
+                                      str(boost::format(
+                      "Couldn't properly setup graphics\n"
+                      "required_extension = %s\n"
+                      "err = %s\n"
+                      "details = %s\n")
+                          % required_extension
+                          % err.str()
+                          % details.str()
+            )));
+        } catch(...) {
+            try {
+            Heightmap::UncaughtException::handle_exception(boost::current_exception ());
+            } catch (...) {}
+        }
+
+        if (required_extension)
+            return;
+    }
+}
+#endif
 
 
 void RenderBlock::
@@ -151,7 +337,7 @@ void RenderBlock::
     // TODO check if this takes any time
     {   // Set default uniform variables parameters for the vertex and pixel shader
         TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
-        GLuint uniVertText0,
+        GLint uniVertText0,
                 uniVertText2,
                 uniColorTextureFactor,
                 uniFixedColor,
@@ -253,8 +439,9 @@ void RenderBlock::
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    glVertexPointer(4, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+    GLint qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
+    glEnableVertexAttribArray (qt_Vertex);
+    glVertexAttribPointer (qt_Vertex, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
 
@@ -273,7 +460,8 @@ void RenderBlock::
     GlTexture::unbindTexture2D();
     glActiveTexture(GL_TEXTURE0);
 
-    glDisableClientState(GL_VERTEX_ARRAY);
+    int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
+    glDisableVertexAttribArray (qt_Vertex);
     glUseProgram(0);
 
     GlException_CHECK_ERROR();
@@ -283,6 +471,10 @@ void RenderBlock::
 void RenderBlock::
         setSize( unsigned w, unsigned h)
 {
+    // edge dropout to eliminate visible glitches
+    if (w>2) w+=2;
+    if (h>2) h+=2;
+
     if (w == _mesh_width && h ==_mesh_height)
         return;
 
@@ -306,11 +498,7 @@ void RenderBlock::
 
     // create index buffer
     if (_mesh_index_buffer)
-        glDeleteBuffersARB(1, &_mesh_index_buffer);
-
-    // edge dropout to eliminate visible glitches
-    if (w>2) w+=2;
-    if (h>2) h+=2;
+        glDeleteBuffers(1, &_mesh_index_buffer);
 
     _mesh_width = w;
     _mesh_height = h;
@@ -347,6 +535,10 @@ void RenderBlock::
 void RenderBlock::
         createMeshPositionVBO(int w, int h)
 {
+    // edge dropout to eliminate visible glitches
+    if (w>2) w -= 2;
+    if (h>2) h -= 2;
+
     int y1 = 0, x1 = 0, y2 = h, x2 = w;
 
     // edge dropout to eliminate visible glitches

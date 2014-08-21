@@ -11,7 +11,7 @@ namespace Tools {
 namespace Widgets {
 
 
-OverlayWidget::OverlayWidget(RenderView *scene)
+OverlayWidget::OverlayWidget(QGraphicsScene *scene, QWidget* sceneSection)
     :   scene_(scene)
 {
     // Qt::WA_NoBackground messes up caches, mimic Qt::WA_NoBackground
@@ -33,7 +33,7 @@ OverlayWidget::OverlayWidget(RenderView *scene)
 
     scene->addItem( proxy_ );
 
-    sceneSection_ = scene->toolSelector()->parentTool();
+    sceneSection_ = sceneSection;
     sceneSection_->installEventFilter( this );
     setMouseTracking( true ); // setCursor with mask doesn't work with QGraphicsProxyWidget
 }

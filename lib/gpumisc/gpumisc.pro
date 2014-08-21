@@ -31,11 +31,14 @@ SOURCES += \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
+    gluinvertmatrix.cpp \
     glprojection.cpp \
     glPushContext.cpp \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
+    gluperspective.cpp \
+    gluproject_ios.cpp \
     gluunproject.cpp \
     log.cpp \
     mappedvbovoid.cpp \
@@ -59,6 +62,7 @@ HEADERS += \
     debugstreams.h \
     deprecated.h \
     factor.h \
+    float16.h \
     gl.h \
     GlException.h \
     glframebuffer.h \
@@ -70,6 +74,9 @@ HEADERS += \
     gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
+    gluinvertmatrix.h \
+    gluperspective.h \
+    gluproject_ios.h \
     gluunproject.h \
     gpumisc_global.h \
     HasSingleton.h \
@@ -80,6 +87,7 @@ HEADERS += \
     msc_stdc.h \
     neat_math.h \
     operate.h \
+    printmatrix.h \
     redirectstdout.h \
     redirectStream.h \
     releaseaftercontext.h \

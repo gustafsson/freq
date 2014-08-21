@@ -1,5 +1,6 @@
 // GLSL fragment shader
 
+varying vec2 qt_TexCoord0;
 uniform sampler2D mytex;
 uniform float normalization;
 uniform int amplitude_axis;
@@ -9,9 +10,9 @@ uniform vec2 tex_size;
 void main()
 {
     // Translate normalized index to data index (integers)
-    vec2 uv = floor(gl_TexCoord[0].st * data_size);
+    vec2 uv = floor(qt_TexCoord0.st * data_size);
     // Compute neighbouring indices as well, and their distance
-    vec2 f = gl_TexCoord[0].st * data_size - uv;
+    vec2 f = qt_TexCoord0.st * data_size - uv;
     vec4 u = vec4(uv.x, uv.x+1.0, uv.x, uv.x+1.0);
     vec4 v = vec4(uv.y, uv.y, uv.y+1.0, uv.y+1.0);
 
