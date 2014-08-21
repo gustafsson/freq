@@ -133,7 +133,7 @@ size_t Cache::
     int C = num_channels ();
     size_t purged = 0;
 
-    for (auto itr = _cache.begin (); itr != _cache.end () && 2 < _cache.size ();)
+    for (auto itr = _cache.begin (); itr != _cache.end () && 4 < _cache.size ();)
     {
         Signal::Interval b = (**itr).getInterval();
         if (b & still_needed)
