@@ -260,12 +260,6 @@ void Collection::
 int Collection::
         runGarbageCollection(bool aggressive)
 {
-    {
-        // Make sure this global block covering everything is available to provide a background color
-        pBlock b = getBlock(entireHeightmap ());
-        b->frame_number_last_used = _frame_counter;
-    }
-
     Blocks::GarbageCollector gc(cache_);
     unsigned F = gc.countBlocksUsedThisFrame(_frame_counter);
     unsigned max_cache_size = 4*F;
