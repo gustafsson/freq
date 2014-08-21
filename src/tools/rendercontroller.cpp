@@ -93,7 +93,7 @@ RenderController::
 
     // 'this' is parent
     auto hpp = new Support::HeightmapProcessingPublisher(
-                view->model->target_marker ()->target_needs (),
+                view->model->target_marker (),
                 view->model->tfr_mapping (),
                 &view->model->camera.q[0],
                 this);

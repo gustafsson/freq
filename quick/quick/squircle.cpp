@@ -87,7 +87,7 @@ void Squircle::
 
     // 'this' is parent
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
-                render_model.target_marker ()->target_needs (),
+                render_model.target_marker (),
                 render_model.tfr_mapping (),
                 &render_model.camera.q[0], this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));

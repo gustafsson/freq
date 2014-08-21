@@ -1,6 +1,7 @@
 #include "cache.h"
 
 #include "tasktimer.h"
+#include "log.h"
 #include "exceptionassert.h"
 #include "neat_math.h"
 #include "backtrace.h"
@@ -126,6 +127,32 @@ void Cache::
 }
 
 
+size_t Cache::
+        purge(Signal::Intervals still_needed)
+{
+    int C = num_channels ();
+    size_t purged = 0;
+
+    for (auto itr = _cache.begin (); itr != _cache.end () && 2 < _cache.size ();)
+    {
+        Signal::Interval b = (**itr).getInterval();
+        if (b & still_needed)
+        {
+            itr++;
+            continue;
+        }
+        else
+        {
+            Log("Discarding %s, only need %s") % b % still_needed;
+            purged += b.count ();
+            itr = _cache.erase (itr);
+        }
+    }
+
+    return purged * C;
+}
+
+
 void Cache::
         clear()
 {
@@ -188,7 +215,7 @@ pBuffer Cache::
 
     pBuffer b = *itr;
     Interval bI = b->getInterval ();
-    EXCEPTION_ASSERT_DBG( bI.contains (I.first) );
+    EXCEPTION_ASSERTX_DBG( bI.contains (I.first), boost::format("bI = %s, I = %s") % bI % I );
 
     // If all of b is ok, return b
     if ( _valid_samples.contains (bI) )

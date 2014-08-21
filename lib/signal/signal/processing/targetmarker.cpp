@@ -72,6 +72,13 @@ Step::ptr::weak_ptr TargetMarker::
     return target_needs_->step();
 }
 
+
+shared_state<Dag> TargetMarker::
+        dag() const
+{
+    return dag_;
+}
+
 } // namespace Processing
 } // namespace Signal
 

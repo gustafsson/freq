@@ -109,6 +109,13 @@ Intervals Step::
 }
 
 
+size_t Step::
+        purge(Signal::Intervals still_needed) const
+{
+    return cache_->purge(still_needed);
+}
+
+
 Intervals Step::
         not_started() const
 {
