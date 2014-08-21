@@ -36,7 +36,7 @@ private:
     template<typename T>
     Tfr::TransformDesc::ptr getParamPtr() {
         for (Tfr::TransformDesc::ptr p : descriptions_)
-            if (dynamic_cast<volatile T*>(p.get()))
+            if (dynamic_cast<T*>(p.get()))
                 return p;
 
         Tfr::TransformDesc::ptr p(new T());

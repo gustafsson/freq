@@ -68,7 +68,8 @@ Signal::pBuffer TransformOperationOperation::
             // If chunk_filter_ has the NoInverseTag it shouldn't compute the inverse
             EXCEPTION_ASSERTX( !ci.inverse, vartype(*chunk_filter_) );
 
-            r.reset ( new Signal::Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
+            if (!r)
+                r.reset ( new Signal::Buffer(ci.chunk->getCoveredInterval (), b->sample_rate (), b->number_of_channels ()));
           }
 
       }
@@ -104,7 +105,7 @@ Signal::Operation::ptr TransformOperationDesc::
         c->transformDesc (transformDesc_);
         f = c->createChunkFilter (engine);
     }
-    bool no_inverse_tag = 0!=dynamic_cast<volatile ChunkFilter::NoInverseTag*>(f.get ());
+    bool no_inverse_tag = 0!=dynamic_cast<ChunkFilter::NoInverseTag*>(f.get ());
 
     if (!f)
         return Signal::Operation::ptr();
