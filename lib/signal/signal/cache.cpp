@@ -42,7 +42,12 @@ void Cache::
 
     Timer t;
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
-        **itr |= b;
+    {
+        Buffer& t = **itr;
+        if (t.getInterval ().first >= b.getInterval ().last)
+            break;
+        t |= b;
+    }
 
     _valid_samples |= b.getInterval();
 
