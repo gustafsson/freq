@@ -251,8 +251,8 @@ void StftDesc::
 {
     if (1 > value)
         value = 1;
-    if (10 < value)
-        value = 10;
+    if (100 < value)
+        value = 100;
 
     _averaging = value;
 }
