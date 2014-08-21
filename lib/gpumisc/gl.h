@@ -11,9 +11,7 @@
 
 // OSX does not use glew.h nor <gl/*>
 #ifdef __APPLE__
-# include <QObject>
-# include <qgl.h>
-//# include <OpenGL/gl.h>
+# include <QtGui> // include <QtGui/qopengl.h> by including the QtGui framework
 # ifdef GL_ES_VERSION_2_0
 // assumes EXT_texture_rg which is present in for instance iOS >= 5.0
 #  define GL_RED GL_RED_EXT
