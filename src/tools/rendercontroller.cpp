@@ -508,9 +508,7 @@ void RenderController::
     }
 
     if (!Signal::Processing::Step::sleepWhileTasks (step.read(), 1))
-        Log("%s didn't finish in %g ms, changing anyway to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
-    else
-        Log("%s finished in %g ms, changing to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
+        Log("RenderController: %s didn't finish in %g ms, changing anyway to %s") % oldTransform_name % t.elapsed () % vartype(*currentTransform ());
 
     // then change the tfr_mapping
     model()->tfr_mapping ().write ()->transform_desc( currentTransform()->copy() );

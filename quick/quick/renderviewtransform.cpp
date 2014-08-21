@@ -69,9 +69,7 @@ void RenderViewTransform::
     }
 
     if (!Signal::Processing::Step::sleepWhileTasks (step.read(), 1))
-        Log("didn't finish in %g ms, changing anyway to %s") % t.elapsed () % vartype(*kernel.raw ()->transformDesc ());
-    else
-        Log("finished in %g ms, changing to %s") % t.elapsed () % vartype(*kernel.raw ()->transformDesc ());
+        Log("RenderViewTransform: didn't finish in %g ms, changing anyway to %s") % t.elapsed () % vartype(*kernel.raw ()->transformDesc ());
 
     // then change the tfr_mapping
     render_model.tfr_mapping ()->transform_desc( kernel.raw ()->transformDesc ()->copy() );
