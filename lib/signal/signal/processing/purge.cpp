@@ -19,10 +19,10 @@ size_t recursive_purge(const Graph& g, const GraphVertex& v, Signal::Intervals o
 {
     size_t purged = 0;
     Step::ptr step = g[v];
-    purged += step->purge(out_of_date);
+    purged += step.raw ()->purge(out_of_date);
 
     Signal::Intervals required_input;
-    Signal::OperationDesc::ptr operation_desc = step->operation_desc();
+    Signal::OperationDesc::ptr operation_desc = step.raw ()->operation_desc();
 
     if (operation_desc)
     {
