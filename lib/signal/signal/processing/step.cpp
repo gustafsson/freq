@@ -116,6 +116,13 @@ size_t Step::
 }
 
 
+size_t Step::
+        cache_size() const
+{
+    return cache_.read ()->cache_size();
+}
+
+
 Intervals Step::
         not_started() const
 {

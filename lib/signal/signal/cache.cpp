@@ -153,6 +153,18 @@ size_t Cache::
 }
 
 
+size_t Cache::
+        cache_size() const
+{
+    size_t sz = 0;
+
+    for (pBuffer const& b : _cache)
+        sz += b->number_of_samples();
+
+    return sz * num_channels () * sizeof(Signal::TimeSeriesData::element_type);
+}
+
+
 void Cache::
         clear()
 {

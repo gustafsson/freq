@@ -287,6 +287,7 @@ class DataStorage: public DataStorageVoid
 {
 public:
     typedef boost::shared_ptr<DataStorage<T> > ptr;
+    typedef T element_type;
 
     DataStorage(DataAccessPosition_t size_x)
         :DataStorageVoid(DataStorageSize(size_x), sizeof(T))

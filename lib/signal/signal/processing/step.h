@@ -56,7 +56,8 @@ public:
      * @param still_needed describes which samples to keep
      * @return how many samples that were released
      */
-    size_t                      purge(Signal::Intervals still_needed) const;
+    size_t                      purge(Signal::Intervals still_needed) const; // Safe to call without lock
+    size_t                      cache_size() const; // Safe to call without lock
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 

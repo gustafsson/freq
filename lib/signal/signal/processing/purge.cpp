@@ -1,6 +1,4 @@
 #include "purge.h"
-#include "log.h"
-#include "datastorage.h"
 
 #include <boost/foreach.hpp>
 
@@ -46,7 +44,7 @@ size_t recursive_purge(const Graph& g, const GraphVertex& v, Signal::Intervals o
 }
 
 
-void Purge::
+size_t Purge::
         purge(TargetNeeds::ptr needs)
 {
     Dag::ptr dag = this->dag.lock ();
@@ -54,13 +52,33 @@ void Purge::
     Signal::Intervals out_of_date = needs->out_of_date();
 
     if (!dag || !step)
-        return;
+        return 0;
 
     auto rdag = dag.read ();
 
-    size_t purged = recursive_purge(rdag->g(), rdag->getVertex(step), out_of_date);
-    if (0 < purged)
-        Log("Purged %s from the cache") % DataStorageVoid::getMemorySizeText (purged*sizeof(float));
+    return recursive_purge(rdag->g(), rdag->getVertex(step), out_of_date);
+}
+
+
+size_t Purge::
+        cache_size()
+{
+    Dag::ptr dag = this->dag.lock ();
+    if (!dag)
+        return 0;
+
+    auto rdag = dag.read ();
+    const Signal::Processing::Graph& g = rdag->g();
+
+    size_t sz = 0;
+
+    BOOST_FOREACH( GraphVertex u, vertices(g))
+    {
+        Step::ptr step = g[u];
+        sz += step.raw ()->cache_size ();
+    }
+
+    return sz;
 }
 
 } // namespace Processing

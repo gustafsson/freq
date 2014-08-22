@@ -4,6 +4,7 @@
 #include "signal/processing/purge.h"
 
 #include "tasktimer.h"
+#include "log.h"
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -137,7 +138,16 @@ void HeightmapProcessingPublisher::
     }
 
 
-    Purge(dag_).purge (target_needs_);
+    size_t purged = Purge(dag_).purge (target_needs_);
+    if (0 < purged)
+    {
+        purged *= sizeof(Signal::TimeSeriesData::element_type);
+        size_t sz = Purge(dag_).cache_size ();
+
+        Log("Purged %s from the %s cache")
+                % DataStorageVoid::getMemorySizeText (purged)
+                % DataStorageVoid::getMemorySizeText (purged + sz);
+    }
 }
 
 

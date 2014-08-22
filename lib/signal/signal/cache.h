@@ -69,6 +69,7 @@ public:
 
     void invalidate_samples(const Intervals& I);
     size_t purge(Signal::Intervals still_needed);
+    size_t cache_size() const;
 
     /// Return true if the entire interval I is up to date and can be read from this.
     bool hasInterval(const Interval& I);
