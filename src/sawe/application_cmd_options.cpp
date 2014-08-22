@@ -70,7 +70,7 @@ void Application::
     auto td = render_model.transform_descs ().write ();
     Tfr::Cwt& cwt = td->getParam<Tfr::Cwt>();
     //Signal::pOperation source = render_model.renderSignalTarget->post_sink()->source();
-    Signal::OperationDesc::Extent extent = p->processing_chain().read ()->extent(p->default_target ());
+    Signal::OperationDesc::Extent extent = p->processing_chain()->extent(p->default_target ());
     Signal::IntervalType number_of_samples = extent.interval.get_value_or (Signal::Interval());
     float sample_rate = extent.sample_rate.get_value_or (1);
     unsigned samples_per_chunk_hint = Sawe::Configuration::samples_per_chunk_hint();

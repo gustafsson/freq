@@ -55,7 +55,7 @@ Project::
     // Instead attempt unnesting of dependencies.
     {
         TaskInfo ti("Closing signal processing chain");
-        processing_chain_.write ()->close();
+        processing_chain_->close();
     }
 
     {
@@ -447,7 +447,7 @@ Signal::OperationDesc::Extent Project::
     Signal::OperationDesc::Extent x;
 
     if (areToolsInitialized())
-        x = processing_chain_.read ()->extent(this->default_target ());
+        x = processing_chain_->extent(this->default_target ());
 
     if (!x.interval.is_initialized ())
         x.interval = Signal::Interval();

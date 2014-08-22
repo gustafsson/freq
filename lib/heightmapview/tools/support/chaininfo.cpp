@@ -1,6 +1,8 @@
 #include "chaininfo.h"
 #include "signal/processing/workers.h"
 
+#include <boost/foreach.hpp>
+
 //#define UNITTEST_STEPS
 #define UNITTEST_STEPS if(0)
 
@@ -10,7 +12,7 @@ namespace Tools {
 namespace Support {
 
 ChainInfo::
-        ChainInfo(shared_state<const Chain> chain)
+        ChainInfo(Chain::const_ptr chain)
     :
       chain_(chain)
 {
@@ -27,7 +29,7 @@ bool ChainInfo::
 int ChainInfo::
         n_workers()
 {
-    Workers::ptr workers = chain_.read ()->workers();
+    Workers::ptr workers = chain_->workers();
     return workers.read ()->n_workers();
 }
 
@@ -35,7 +37,7 @@ int ChainInfo::
 int ChainInfo::
         dead_workers()
 {
-    auto workers = chain_.read ()->workers().read ();
+    auto workers = chain_->workers().read ();
     return workers->workers().size() - workers->n_workers();
 }
 
@@ -45,7 +47,7 @@ Signal::UnsignedIntervalType ChainInfo::
 {
     Signal::Intervals I;
 
-    Targets::ptr targets = chain_.read ()->targets();
+    Targets::ptr targets = chain_->targets();
     const std::vector<TargetNeeds::ptr>& T = targets->getTargets();
     for (auto i=T.begin(); i!=T.end(); i++)
     {
@@ -122,9 +124,9 @@ void ChainInfo::
         Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
-        TargetMarker::ptr at = cp.write ()->addTarget(transparent);
+        TargetMarker::ptr at = cp->addTarget(transparent);
         TargetNeeds::ptr n = at->target_needs();
-        cp.write ()->addOperationAt(buffersource,at);
+        cp->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
         n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
@@ -140,9 +142,9 @@ void ChainInfo::
         Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
-        TargetMarker::ptr at = cp.write ()->addTarget(Signal::OperationDesc::ptr(new RequiredIntervalCrash));
+        TargetMarker::ptr at = cp->addTarget(Signal::OperationDesc::ptr(new RequiredIntervalCrash));
         TargetNeeds::ptr n = at->target_needs();
-        cp.write ()->addOperationAt(buffersource,at);
+        cp->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
         n->updateNeeds(Signal::Interval(0,10));
@@ -159,9 +161,9 @@ void ChainInfo::
         Chain::ptr cp = Chain::createDefaultChain ();
         ChainInfo c(cp);
 
-        TargetMarker::ptr at = cp.write ()->addTarget(Signal::OperationDesc::ptr(new ProcessCrashOperationDesc));
+        TargetMarker::ptr at = cp->addTarget(Signal::OperationDesc::ptr(new ProcessCrashOperationDesc));
         TargetNeeds::ptr n = at->target_needs();
-        cp.write ()->addOperationAt(buffersource,at);
+        cp->addOperationAt(buffersource,at);
         EXCEPTION_ASSERT( !c.hasWork () );
         n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );

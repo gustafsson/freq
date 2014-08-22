@@ -215,6 +215,13 @@ Targets::ptr Chain::
 }
 
 
+shared_state<const Dag> Chain::
+        dag() const
+{
+    return dag_;
+}
+
+
 void Chain::
         resetDefaultWorkers()
 {
@@ -372,22 +379,22 @@ void Chain::
         Signal::OperationDesc::ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
         TargetMarker::ptr null;
-        TargetMarker::ptr target = chain.write ()->addTarget(target_desc, null);
+        TargetMarker::ptr target = chain->addTarget(target_desc, null);
 
         // Should be able to add and remove an operation multiple times
-        chain.write ()->addOperationAt(source_desc, target);
-        chain.write ()->removeOperationsAt(target);
-        chain.write ()->addOperationAt(source_desc, target);
-        chain.write ()->extent(target); // will fail unless indices are reordered
+        chain->addOperationAt(source_desc, target);
+        chain->removeOperationsAt(target);
+        chain->addOperationAt(source_desc, target);
+        chain->extent(target); // will fail unless indices are reordered
         EXCEPTION_ASSERT_EQUALS (chain->dag_.read ()->g().num_edges(), 1u);
         EXCEPTION_ASSERT_EQUALS (chain->dag_.read ()->g().num_vertices(), 2u);
-        chain.write ()->removeOperationsAt(target);
+        chain->removeOperationsAt(target);
 
 
         // Should create an invalidator when adding an operation
-        IInvalidator::ptr invalidator = chain.write ()->addOperationAt(source_desc, target);
+        IInvalidator::ptr invalidator = chain->addOperationAt(source_desc, target);
 
-        EXCEPTION_ASSERT_EQUALS (chain.read ()->extent(target).interval, Signal::Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS (chain->extent(target).interval, Signal::Interval(3,5));
 
         TargetNeeds::ptr needs = target->target_needs();
         needs->updateNeeds(Signal::Interval(4,6));
@@ -395,14 +402,14 @@ void Chain::
         //target->sleep();
 
         // This will remove the step used by invalidator
-        chain.write ()->removeOperationsAt(target);
+        chain->removeOperationsAt(target);
 
         // So using invalidator should not do anything (would throw an
         // exception if OperationDescChainMock::affectedInterval was called)
         invalidator->deprecateCache(Signal::Interval(9,11));
 
         usleep(4000);
-        chain.read ()->workers()->rethrow_any_worker_exception();
+        chain->workers()->rethrow_any_worker_exception();
 
         chain = Chain::ptr ();
         EXCEPTION_ASSERT_LESS(t.elapsed (), 0.03);

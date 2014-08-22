@@ -187,10 +187,10 @@ void Rectangle::
         Signal::OperationDesc::ptr buffersource(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
         Tfr::ChunkFilterDesc::ptr cfd(new Rectangle(1,2,4,4,false));
         Signal::OperationDesc::ptr rectangledesc(new TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::ptr at = cp.write ()->addTarget(transparent);
+        Signal::Processing::TargetMarker::ptr at = cp->addTarget(transparent);
         Signal::Processing::TargetNeeds::ptr n = at->target_needs();
-        cp.write ()->addOperationAt(buffersource,at);
-        cp.write ()->addOperationAt(rectangledesc,at);
+        cp->addOperationAt(buffersource,at);
+        cp->addOperationAt(rectangledesc,at);
         n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( n->sleep (200) );
     }

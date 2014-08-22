@@ -73,7 +73,7 @@ void RenderModel::
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
     render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::ptr(), rt));
-    target_marker_ = chain.write ()->addTarget(render_operation_desc_);
+    target_marker_ = chain->addTarget(render_operation_desc_);
     rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
@@ -252,7 +252,7 @@ Signal::OperationDesc::Extent RenderModel::
     if (!chain_)
         return Signal::OperationDesc::Extent();
 
-    Signal::OperationDesc::Extent extent = chain_.read ()->extent(target_marker_);
+    Signal::OperationDesc::Extent extent = chain_->extent(target_marker_);
     extent.interval           = extent.interval          .get_value_or (Signal::Interval());
     extent.number_of_channels = extent.number_of_channels.get_value_or (1);
     extent.sample_rate        = extent.sample_rate       .get_value_or (1);

@@ -15,7 +15,7 @@ namespace Support {
 class ChainInfo
 {
 public:
-    ChainInfo(shared_state<const Signal::Processing::Chain> chain);
+    ChainInfo(Signal::Processing::Chain::const_ptr chain);
 
     bool hasWork();
     int n_workers();
@@ -24,7 +24,7 @@ public:
     Signal::UnsignedIntervalType out_of_date_sum();
 
 private:
-    shared_state<const Signal::Processing::Chain> chain_;
+    Signal::Processing::Chain::const_ptr chain_;
 
 public:
     static void test();

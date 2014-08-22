@@ -61,7 +61,7 @@ RecordModel* RecordModel::
     Signal::Recorder::IGotDataCallback::ptr callback(new GotDataCallback());
 
     Signal::OperationDesc::ptr desc( new Signal::MicrophoneRecorderDesc(recorder, callback) );
-    Signal::Processing::IInvalidator::ptr i = chain.write ()->addOperationAt(desc, at);
+    Signal::Processing::IInvalidator::ptr i = chain->addOperationAt(desc, at);
 
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
@@ -142,7 +142,7 @@ void RecordModel::
         Tools::RenderView* r = (Tools::RenderView*)2;
 
 
-        Signal::Processing::TargetMarker::ptr target_marker = chain.write ()->addTarget(target_desc);
+        Signal::Processing::TargetMarker::ptr target_marker = chain->addTarget(target_desc);
         Signal::Processing::Step::ptr step = target_marker->step().lock();
 
         RecordModel* record_model = RecordModel::createRecorder(
@@ -160,12 +160,12 @@ void RecordModel::
         Signal::Processing::TargetNeeds::ptr needs = target_marker->target_needs();
         needs->updateNeeds(Signal::Intervals(10,20));
 
-        Signal::OperationDesc::Extent x = chain.read ()->extent(target_marker);
+        Signal::OperationDesc::Extent x = chain->extent(target_marker);
         EXCEPTION_ASSERT_EQUALS(x.interval.get_value_or (Signal::Interval(-1,0)), Signal::Interval());
 
         // Wait for the chain workers to finish fulfilling the target needs
         if (!needs->sleep(1000)) {
-            auto w = chain.read ()->workers().write();
+            auto w = chain->workers().write();
             Signal::Processing::Workers::print(w->clean_dead_workers());
             EXCEPTION_ASSERT( false );
         }
@@ -177,7 +177,7 @@ void RecordModel::
         // Wait for the recorder to produce data within 1 second
         EXCEPTION_ASSERT(semaphore.tryAcquire (1, 1000));
 
-        x = chain.read ()->extent(target_marker);
+        x = chain->extent(target_marker);
         EXCEPTION_ASSERT_LESS(400u, x.interval.get_value_or (Signal::Interval()).count());
     }
 }

@@ -27,7 +27,8 @@ class Workers;
 class Chain
 {
 public:
-    typedef shared_state<Chain> ptr;
+    typedef std::shared_ptr<Chain> ptr;
+    typedef std::shared_ptr<const Chain> const_ptr;
 
     static Chain::ptr createDefaultChain();
 
@@ -66,6 +67,7 @@ public:
 
     shared_state<Workers> workers() const;
     Targets::ptr targets() const;
+    shared_state<const Dag> dag() const;
 
     void resetDefaultWorkers();
     // Add jumping around with targets later.

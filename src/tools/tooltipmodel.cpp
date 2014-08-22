@@ -306,7 +306,7 @@ public:
     FetchDataTransform( Sawe::Project* project, const Tfr::StftDesc* stft, float t )
     {
         Signal::Processing::Step::ptr s = project->default_target ()->step().lock();
-        Signal::OperationDesc::Extent x = project->processing_chain ().read ()->extent(project->default_target ());
+        Signal::OperationDesc::Extent x = project->processing_chain ()->extent(project->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
 //        Signal::pOperation o = m->renderSignalTarget->source();
@@ -340,7 +340,7 @@ public:
     FetchDataTransform( Sawe::Project* project, const Tfr::CepstrumDesc* cepstrum, float t )
     {
         Signal::Processing::Step::ptr s = project->default_target ()->step().lock();
-        Signal::OperationDesc::Extent x = project->processing_chain ().read ()->extent(project->default_target ());
+        Signal::OperationDesc::Extent x = project->processing_chain ()->extent(project->default_target ());
         float sample_rate = x.sample_rate.get_value_or (1);
 
 //        Signal::pOperation o = m->renderSignalTarget->source();
@@ -373,7 +373,7 @@ public:
     FetchDataTransform( Sawe::Project* project, const Tfr::Cwt* cwt, float t )
     {
         Signal::Processing::Step::ptr s = project->default_target ()->step().lock();
-        Signal::OperationDesc::Extent x = project->processing_chain ().read ()->extent(project->default_target ());
+        Signal::OperationDesc::Extent x = project->processing_chain ()->extent(project->default_target ());
         float fs = x.sample_rate.get_value_or (1);
 
 //        Signal::pOperation o = m->renderSignalTarget->source();
