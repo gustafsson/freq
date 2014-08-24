@@ -125,7 +125,8 @@ QtMicrophone::
     // Set up the desired format, for example:
     format.setSampleRate (44100);
 //    format.setSampleType (QAudioFormat::Float);
-    format.setChannelCount (2);
+    format.setChannelCount (1);
+//    format.setChannelCount (2);
 
     QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
     if (!info.isFormatSupported(format))

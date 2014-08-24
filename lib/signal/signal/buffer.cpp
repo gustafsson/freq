@@ -145,6 +145,7 @@ MonoBuffer& MonoBuffer::
 #endif
             CpuMemoryStorage::WriteAll<1>(write);
     }
+
     if (i == b.getInterval())
     {
         read = b.waveform_data();
