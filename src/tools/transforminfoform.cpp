@@ -149,6 +149,7 @@ void TransformInfoForm::
         return;
 
     Tfr::TransformDesc::ptr f = renderview->model->transform_desc();
+    const Tfr::Cwt* cwt_settings = &renderview->model->transform_descs ()->getParam<Tfr::Cwt>();
     const Tfr::Cwt* cwt = dynamic_cast<const Tfr::Cwt*>(f.get ());
     const Tfr::StftDesc* stft = dynamic_cast<const Tfr::StftDesc*>(f.get ());
     const Tfr::CepstrumDesc* cepstrum = dynamic_cast<const Tfr::CepstrumDesc*>(f.get ());
@@ -180,8 +181,8 @@ void TransformInfoForm::
     {
         bool cwt = false, stft = false, cepstrum = false;
 #endif
-    ui->minHzLabel->setVisible(cwt);
-    ui->minHzEdit->setVisible(cwt);
+    ui->minHzLabel->setVisible(cwt || (stft && cwt_settings));
+    ui->minHzEdit->setVisible(cwt || (stft && cwt_settings));
     ui->maxHzLabel->setVisible(false);
     ui->maxHzEdit->setVisible(false);
     ui->binResolutionLabel->setVisible(stft);
@@ -213,7 +214,7 @@ void TransformInfoForm::
         addRow("Max hz", QString("%1").arg(cwt->get_max_hz(fs)));
         addRow("Actual min hz", QString("%1").arg(cwt->get_min_hz(fs)));
         addRow("Amplification factor", QString("%1").arg(renderview->model->render_settings.y_scale));
-        setEditText( ui->minHzEdit, QString("%1").arg(cwt->get_wanted_min_hz(fs)) );
+        setEditText( ui->minHzEdit, QString("%1").arg(cwt_settings->get_wanted_min_hz(fs)) );
         //setEditText( ui->maxHzEdit, QString("%1").arg(cwt->get_max_hz(fs)) );
     }
     else if (stft)
@@ -230,6 +231,7 @@ void TransformInfoForm::
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );
         setEditText( ui->overlapEdit, QString("%1").arg(stft->overlap()) );
         setEditText( ui->averagingEdit, QString("%1").arg(stft->averaging()) );
+        if (cwt_settings) setEditText( ui->minHzEdit, QString("%1").arg(cwt_settings->get_wanted_min_hz(fs)) );
         Tfr::StftDesc::WindowType windowtype = stft->windowType();
         if (windowtype != ui->windowTypeComboBox->itemData(ui->windowTypeComboBox->currentIndex()).toInt() && !ui->windowTypeComboBox->hasFocus())
             ui->windowTypeComboBox->setCurrentIndex(ui->windowTypeComboBox->findData((int)windowtype));
