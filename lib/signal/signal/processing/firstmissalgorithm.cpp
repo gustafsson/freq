@@ -54,7 +54,7 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            missing_input |= g[v].read ()->out_of_date ();
+            missing_input |= ~Step::cache (g[v])->samplesDesc();
           }
 
         Interval required_input = try_create_task(u, g, missing_input);
@@ -63,16 +63,17 @@ public:
         BOOST_FOREACH(GraphEdge e, out_edges(u, g))
           {
             GraphVertex v = target(e,g);
-            Intervals not_started = g[v].read ()->not_started ();
-            DEBUGINFO_TASK if (not_started & required_input)
+            DEBUGINFO_TASK
             {
-                TaskInfo(format("FirstMissing: %s needs %s from %s to create a task. %s is not started.")
+                Intervals not_started = g[v].read ()->not_started ();
+                if (not_started & required_input)
+                    TaskInfo(format("FirstMissing: %s needs %s from %s to create a task. %s is not started.")
                                      % Step::operation_desc (g[u])->toString ().toStdString ()
                                      % required_input
                                      % Step::operation_desc (g[v])->toString ().toStdString ()
                                      % not_started);
             }
-            needed[v] |= not_started & required_input;
+            needed[v] |= required_input;
           }
       }
 
@@ -101,9 +102,21 @@ public:
             // params.preferred_size is just a preferred update size, not a required update size.
             // Accept whatever requiredInterval sets as expected_output
             Signal::Interval wanted_output = I.fetchInterval(params.preferred_size, params.center);
+
+            // if it's less than 2*params.preferred_size left to finish, take that instead
             Signal::Interval wanted_output2 = I.fetchInterval(clamped_add(params.preferred_size,params.preferred_size), params.center);
             if (wanted_output.count () > wanted_output2.count ()/2)
                 wanted_output = wanted_output2;
+
+            // if the sources have some things available but not the whole wanted_output, take that instead
+            Signal::Intervals not_wanted_output;
+            for (auto i : missing_input) not_wanted_output |= o->affectedInterval (i);
+            Signal::Interval wanted_output3 = (I - not_wanted_output).fetchInterval(params.preferred_size, params.center);
+            if (wanted_output3 && wanted_output3.count () < wanted_output.count ())
+              {
+                wanted_output = wanted_output3;
+              }
+
             Signal::Interval expected_output;
             Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);
             if (!expected_output)
@@ -273,14 +286,14 @@ void FirstMissAlgorithm::
         EXCEPTION_ASSERT_EQUALS(t1.expected_output(), Interval(20,30));
         EXCEPTION_ASSERT_EQUALS(t2.expected_output(), Interval(10, 20));
 
-        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), Signal::Intervals::Intervals_ALL);
-        EXCEPTION_ASSERT_EQUALS(~Signal::Intervals(10,30), step.read ()->not_started());
+        EXCEPTION_ASSERT_EQUALS(Step::cache (step)->samplesDesc(), Signal::Intervals());
+        EXCEPTION_ASSERT_EQUALS(Signal::Intervals(10,30), ~step.read ()->not_started());
 
         // Verify that the output objects can be used
         t1.run();
         t2.run();
-        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), step.read ()->not_started());
-        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals(10,30));
+        EXCEPTION_ASSERT_EQUALS(Step::cache (step)->samplesDesc(), ~step.read ()->not_started());
+        EXCEPTION_ASSERT_EQUALS(Step::cache (step)->samplesDesc(), Signal::Intervals(10,30));
     }
 
     // It should let missing_in_target override out_of_date in the given vertex

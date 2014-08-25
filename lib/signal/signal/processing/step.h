@@ -55,14 +55,21 @@ public:
      * deprecateCache returns which intervals in the cache that was affected by 'deprecated_input'
      */
     Signal::Intervals           deprecateCache(Signal::Intervals deprecated_input);
+
     /**
      * @brief purge discards samples from the cache, freeing up memory
      * @param still_needed describes which samples to keep
      * @return how many samples that were released
      */
     size_t                      purge(Signal::Intervals still_needed);
-    Signal::Intervals           not_started() const;
-    Signal::Intervals           out_of_date() const; // not_started | currently_processing
+
+    /**
+     * @brief not_started describes which samples stuff might be in the cache or in the middle of being processed
+     * The cache isn't updated until a new interval is finished. When deprecateCache is called
+     * it affects the currently processing samples as well.
+     * @return
+     */
+    Signal::Intervals           not_started() const; // ~cache->samplesDesc() & ~currently_processing;
 
     static Signal::OperationDesc::ptr operation_desc(const_ptr step);
 
@@ -90,7 +97,6 @@ private:
 
     Signal::OperationDesc::ptr  died_;
     shared_state<Signal::Cache> cache_;
-    Signal::Intervals           not_started_;
     int                         task_counter_ = 0;
 
     RunningTaskMap              running_tasks;

@@ -155,7 +155,7 @@ void RecordModel::
         EXCEPTION_ASSERT_EQUALS(record_model->project, p);
         EXCEPTION_ASSERT_EQUALS(record_model->render_view, r);
 
-        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals());
+        EXCEPTION_ASSERT_EQUALS(Signal::Processing::Step::cache (step)->samplesDesc(), Signal::Intervals());
 
         Signal::Processing::TargetNeeds::ptr needs = target_marker->target_needs();
         needs->updateNeeds(Signal::Intervals(10,20));
@@ -169,7 +169,7 @@ void RecordModel::
             Signal::Processing::Workers::print(w->clean_dead_workers());
             EXCEPTION_ASSERT( false );
         }
-        EXCEPTION_ASSERT_EQUALS(step.read ()->out_of_date(), ~Signal::Intervals(10,20));
+        EXCEPTION_ASSERT_EQUALS(Signal::Processing::Step::cache (step)->samplesDesc(), Signal::Intervals(10,20));
 
         semaphore.acquire (semaphore.available ());
         record_model->recording.write ()->startRecording ();

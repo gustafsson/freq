@@ -145,7 +145,7 @@ Signal::Intervals TargetNeeds::
     Signal::Intervals out_of_date;
     Step::ptr step = step_.lock ();
     if (step)
-        out_of_date = step.read ()->out_of_date();
+        out_of_date = ~Step::cache (step)->samplesDesc();
 
     Signal::Intervals needed = this->needed ();
     DEBUG_INFO Log("TargetNeeds::out_of_date: %s = %s & %s")
@@ -180,12 +180,12 @@ bool TargetNeeds::
     {
         auto step = pstep.read ();
 
-        if (!(needed() & step->out_of_date ()))
+        if (!(needed() & ~Step::cache (pstep)->samplesDesc()))
             return true;
 
         Step::sleepWhileTasks (step, left(t, sleep_ms));
 
-        if (!(needed() & step->out_of_date ()))
+        if (!(needed() & ~Step::cache (pstep)->samplesDesc()))
             return true;
 
         step.unlock ();
@@ -225,11 +225,11 @@ void TargetNeeds::
         int taskid = step.write ()->registerTask(initial_valid.spannedInterval ());
         (void)taskid; // discard
 
-        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( Step::cache (step)->samplesDesc(), Interval() );
         EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
         EXCEPTION_ASSERT_EQUALS( target_needs->out_of_date(), Interval() );
         target_needs->updateNeeds(Interval(-15,5));
-        EXCEPTION_ASSERT_EQUALS( step.read ()->out_of_date(), Interval::Interval_ALL );
+        EXCEPTION_ASSERT_EQUALS( Step::cache (step)->samplesDesc(), Interval() );
         EXCEPTION_ASSERT_EQUALS( step.read ()->not_started(), ~initial_valid );
         EXCEPTION_ASSERT_EQUALS( target_needs->out_of_date(), Interval(-15,5) );
         EXCEPTION_ASSERT_EQUALS( target_needs->not_started(), Interval(-15,0) );

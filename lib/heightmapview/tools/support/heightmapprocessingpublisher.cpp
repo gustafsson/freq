@@ -131,12 +131,11 @@ void HeightmapProcessingPublisher::
             Intervals not_started = target_needs_->not_started();
             auto stepp = step.read ();
             TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
-                             % stepp->out_of_date()
+                             % ~Step::cache (step)->samplesDesc()
                              % stepp->not_started()
                              % not_started);
         }
     }
-
 
     size_t purged = Purge(dag_).purge (target_needs_);
     if (0 < purged)

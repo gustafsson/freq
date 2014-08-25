@@ -21,7 +21,6 @@ namespace Processing {
 Step::Step(OperationDesc::ptr operation_desc)
     :
         cache_(new Cache),
-        not_started_(Intervals::Intervals_ALL),
         operation_desc_(operation_desc)
 {
 }
@@ -56,7 +55,7 @@ void Step::
         operation_desc_ = died_;
     died_.reset ();
     cache_->clear ();
-    not_started_ = Signal::Intervals::Intervals_ALL;
+    running_tasks.clear ();
 }
 
 
@@ -101,10 +100,13 @@ Intervals Step::
     DEBUGINFO TaskInfo(format("Step::deprecateCache %2% | %3% on %1%")
               % operation_name()
               % deprecated
-              % not_started_);
+              % not_started());
 
-    not_started_ |= deprecated;
     cache_->invalidate_samples(deprecated);
+
+    Signal::Intervals not_deprecated = ~deprecated;
+    for (RunningTaskMap::value_type& v : running_tasks)
+        v.second = (not_deprecated & v.second).fetchFirstInterval ();
 
     return deprecated;
 }
@@ -116,7 +118,8 @@ size_t Step::
     auto cache = cache_.write ();
     int C = cache->num_channels ();
     Signal::Intervals P = cache->purge (still_needed);
-    Log("Discarding %s, only need %s for %s") % P % still_needed % operation_name();
+    if (P)
+        Log("Discarding %s, only need %s for %s") % P % still_needed % operation_name();
     return P.count () * C;
 }
 
@@ -124,17 +127,7 @@ size_t Step::
 Intervals Step::
         not_started() const
 {
-    return not_started_;
-}
-
-
-Intervals Step::
-        out_of_date() const
-{
-    Intervals c = currently_processing();
-    //DEBUGINFO TaskInfo(boost::format("Step::out_of_date: %s = %s | %s in %s")
-    //         % (not_started_ | c) % not_started_ % c % operation_name());
-    return not_started_ | c;
+    return ~cache_.read ()->samplesDesc() & ~currently_processing();
 }
 
 
@@ -158,7 +151,6 @@ int Step::
     int taskid = task_counter_;
 
     running_tasks[taskid] = expected_output;
-    not_started_ -= expected_output;
     return taskid;
 }
 
@@ -166,61 +158,31 @@ int Step::
 void Step::
         finishTask(Step::ptr step, int taskid, pBuffer result)
 {
-    Interval result_interval;
-    if (result)
-        result_interval = result->getInterval ();
-
     TASKINFO TaskInfo ti(format("Step::finishTask %2% on %1%")
               % step.raw ()->operation_name()
-              % result_interval);
+              % result->getInterval ());
 
-    if (result) {
+    auto self = step.write ();
+    Interval expected_output = self->running_tasks[ taskid ];
+    self->running_tasks.erase ( taskid );
+    self.unlock ();
+
+    if (!expected_output)
+        result.reset ();
+
+    if (result)
+    {
+        if (expected_output != result->getInterval ())
+        {
+            pBuffer b(new Buffer(expected_output, result->sample_rate (), result->number_of_channels ()));
+            *b |= *result;
+            result.swap (b);
+        }
+
         // Result must have the same number of channels and sample rate as previous cache.
         // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
         step.raw ()->cache_->put (result);
     }
-
-    auto self = step.write ();
-    int matched_task = self->running_tasks.count (taskid);
-    if (1 != matched_task) {
-        Log("C = %d, taskid = %x on %s") % matched_task % taskid % step.raw ()->operation_name ();
-        EXCEPTION_ASSERT_EQUALS( 1, matched_task );
-    }
-
-    Intervals expected_output = self->running_tasks[ taskid ];
-
-    Intervals update_miss = expected_output - result_interval;
-    self->not_started_ |= update_miss;
-
-    if (!result) {
-        TASKINFO TaskInfo(format("The task was cancelled. Restoring %1% for %2%")
-                 % update_miss
-                 % step.raw ()->operation_name());
-    } else {
-        if (update_miss) {
-            TaskInfo(format("These samples were supposed to be updated by the task but missed: %1% by %2%")
-                     % update_miss
-                     % step.raw ()->operation_name());
-        }
-        if (result_interval - expected_output) {
-            // These samples were not supposed to be updated by the task but were calculated anyway
-            TaskInfo(format("Unexpected extras: %1% = (%2%) - (%3%) from %4%")
-                     % (result_interval - expected_output)
-                     % result_interval
-                     % expected_output
-                     % step.raw ()->operation_name());
-
-            // The samples are still marked as invalid. Would need to remove the
-            // extra calculated samples from not_started_ but that would fail
-            // in a situation where deprecatedCache is called after the task has
-            // been created. So not_started_ can't be modified here (unless calls
-            // to deprecatedCache were tracked).
-        }
-    }
-
-    self->running_tasks.erase ( taskid );
-
-    self.unlock ();
 
     step.raw ()->wait_for_tasks_.notify_all ();
 }
@@ -298,9 +260,9 @@ void Step::
         // It should contain information about what's out_of_date and what's currently being updated.
         int taskid = s->registerTask(b->getInterval ());
         EXCEPTION_ASSERT_EQUALS(s->not_started (), ~Intervals(b->getInterval ()));
-        EXCEPTION_ASSERT_EQUALS(s->out_of_date(), Intervals::Intervals_ALL);
+        EXCEPTION_ASSERT_EQUALS(Step::cache (s)->samplesDesc(), Intervals());
         Step::finishTask(s, taskid, b);
-        EXCEPTION_ASSERT_EQUALS(s->out_of_date(), ~Intervals(b->getInterval ()));
+        EXCEPTION_ASSERT_EQUALS(Step::cache (s)->samplesDesc(), Intervals(b->getInterval ()));
 
         EXCEPTION_ASSERT( *b == *Step::cache (s)->read(b->getInterval ()) );
     }
