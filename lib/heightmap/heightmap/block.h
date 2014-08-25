@@ -32,11 +32,16 @@ namespace Heightmap {
         Block( const Block&)=delete;
         Block& operator=( const Block&)=delete;
 
-        // TODO move this value to a complementary class
         unsigned frame_number_last_used;
 
         // OpenGL data to render
         pGlTexture texture() const { return texture_; }
+
+        // The block must exist for one whole frame before it can receive
+        // updates from another thread. This prevents the texture from being
+        // corrupted by having two threads writing to it at the same time.
+        bool isTextureReady() const { return texture_ready_; }
+        void setTextureReady() { texture_ready_ = true; }
 
         // POD properties
         const BlockLayout block_layout() const { return block_layout_; }
@@ -60,6 +65,7 @@ namespace Heightmap {
 
         const VisualizationParams::const_ptr visualization_params_;
         const pGlTexture texture_;
+        bool texture_ready_ = false;
 
     public:
         static void test();

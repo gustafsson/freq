@@ -104,6 +104,10 @@ void Collection::
     for (const BlockCache::cache_t::value_type& b : cache)
     {
         Block* block = b.second.get();
+
+         // if this block was newly created, wait until the next frame before it can receive updates
+        block->setTextureReady ();
+
         if (block->frame_number_last_used == _frame_counter)
         {
             // Mark these blocks and surrounding blocks as in-use

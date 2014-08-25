@@ -24,12 +24,11 @@ BlockInitializer::
       visualization_params_(vp),
       cache_(c)
 {
-#ifdef DO_MERGE
-    merger_.reset( new Merge::MergerTexture(cache_, bl) );
-#else
     bool disable_merge = true;
-    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
+#ifdef DO_MERGE
+    disable_merge = false;
 #endif
+    merger_.reset( new Merge::MergerTexture(cache_, bl, disable_merge) );
 }
 
 

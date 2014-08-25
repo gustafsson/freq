@@ -44,6 +44,9 @@ vector<pBlock> BlockQuery::
     {
         const pBlock& pb = c.second;
 
+        if (!pb->isTextureReady ())
+            continue;
+
         if (only_visible) {
             unsigned framediff = frame_counter - pb->frame_number_last_used;
             if (framediff != 0 && framediff != 1)
