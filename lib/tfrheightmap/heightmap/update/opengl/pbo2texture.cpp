@@ -326,7 +326,7 @@ void ShaderTexture::
                   {
                     int w = std::min(tex_width, data_width - (tex_width-1)*i);
                     int y = h + i*data_height;
-                    int n = i*(tex_width-1) + h*data_width;
+                    int n = i*(tex_width-1) + h*stride;
                     glTexSubImage2D (GL_TEXTURE_2D, 0, 0, y, w, 1, format, type, pc + n*element_size);
                   }
               }
@@ -360,7 +360,7 @@ void ShaderTexture::
             int h = std::min(tex_height, data_height - (tex_height-1)*i);
             int w = data_width;
             int x = i*data_width;
-            int n = data_width*i*(tex_height-1);
+            int n = stride*i*(tex_height-1);
             glTexSubImage2D (GL_TEXTURE_2D, 0, x, 0, w, h, format, type, pc + n*element_size);
           }
 
