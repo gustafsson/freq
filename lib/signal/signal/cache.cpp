@@ -72,7 +72,7 @@ void Cache::
 
     double T=t.elapsed ();
     if (T>10e-3)
-        TaskInfo(boost::format("!!! It took %s to put(%s) into cache") % TaskTimer::timeToString(T) % b.getInterval ());
+        Log("!!! It took %s to put(%s) into cache") % TaskTimer::timeToString(T) % b.getInterval ();
 }
 
 
@@ -121,8 +121,6 @@ void Cache::
             }
         }
 
-        //TaskTimer tt(boost::format("Allocating cache %s") % Interval(I.first, I.first+chunkSize));
-
         pBuffer n;
         if (!_discarded.empty ())
         {
@@ -133,7 +131,10 @@ void Cache::
         }
 
         if (!n || n->number_of_channels () != unsigned(num_channels) || n->number_of_samples () != chunkSize)
+        {
+            //Log("Allocating new cache slot %s for %s") % Interval(I.first, I.first+chunkSize) % J;
             n.reset ( new Buffer( I.first, chunkSize, fs, num_channels) );
+        }
 
         for (int i=0; i<num_channels; i++)
         {
@@ -241,7 +242,7 @@ void Cache::
 
     double T=t.elapsed ();
     if (T > 10e-3 && T/r->number_of_samples ()>10e-6)
-        TaskInfo(boost::format("!!! It took %s to read(%s) from cache") % TaskTimer::timeToString(T) % r->number_of_samples ());
+        Log("!!! It took %s to read(%s) from cache") % TaskTimer::timeToString(T) % r->number_of_samples ();
 }
 
 
