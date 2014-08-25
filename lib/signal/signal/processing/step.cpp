@@ -104,22 +104,20 @@ Intervals Step::
               % not_started_);
 
     not_started_ |= deprecated;
+    cache_->invalidate_samples(deprecated);
 
     return deprecated;
 }
 
 
 size_t Step::
-        purge(Signal::Intervals still_needed) const
+        purge(Signal::Intervals still_needed)
 {
-    return cache_->purge(still_needed);
-}
-
-
-size_t Step::
-        cache_size() const
-{
-    return cache_.read ()->cache_size();
+    auto cache = cache_.write ();
+    int C = cache->num_channels ();
+    Signal::Intervals P = cache->purge (still_needed);
+    Log("Discarding %s, only need %s for %s") % P % still_needed % operation_name();
+    return P.count () * C;
 }
 
 

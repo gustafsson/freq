@@ -126,11 +126,22 @@ void Task::
         TIME_TASK TaskTimer tt(boost::format("expect  %s")
                                % expected_output());
         input_buffer = get_input();
+        if (!input_buffer)
+        {
+            cancel();
+            return;
+        }
     }
 
     {
-        TIME_TASK TaskTimer tt(boost::format("process %s") % input_buffer->getInterval ());
+        TIME_TASK TaskTimer tt(boost::format("process %s")
+                               % input_buffer->getInterval ());
         output_buffer = o->process (input_buffer);
+        if (!output_buffer)
+        {
+            cancel();
+            return;
+        }
         finish(output_buffer);
     }
 }
@@ -192,11 +203,7 @@ void Task::
 void Task::
         cancel()
 {
-    if (step_)
-    {
-        Step::finishTask(step_, task_id_, Signal::pBuffer());
-        step_.reset();
-    }
+    finish(Signal::pBuffer());
 }
 
 } // namespace Processing
@@ -235,7 +242,7 @@ void Task::
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();
-        Signal::pBuffer r = Step::readFixedLengthFromCache(step, to_read);
+        Signal::pBuffer r = Step::cache (step)->read(to_read);
         EXCEPTION_ASSERT_EQUALS(b->sample_rate (), r->sample_rate ());
         EXCEPTION_ASSERT_EQUALS(b->number_of_channels (), r->number_of_channels ());
 
