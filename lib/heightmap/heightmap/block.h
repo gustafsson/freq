@@ -35,6 +35,9 @@ namespace Heightmap {
         unsigned frame_number_last_used;
 
         // OpenGL data to render
+        // Probably need to double-buffer this so that drawing FROM this
+        // does not collide with drawing TO this texture. But how, all draw
+        // calls are asynchronous ...
         pGlTexture texture() const { return texture_; }
 
         // The block must exist for one whole frame before it can receive
