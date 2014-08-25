@@ -4,6 +4,8 @@
 #include "demangle.h"
 #include "neat_math.h"
 
+#include <boost/format.hpp>
+
 namespace Tfr {
 
 StftDesc::
@@ -371,13 +373,11 @@ int StftDesc::
 std::string StftDesc::
         toString() const
 {
-    std::stringstream ss;
-    ss << vartype(*this) << ", "
-       << "window_size=" << chunk_size()
-       << ", redundant=" << (compute_redundant()?"C2C":"R2C")
-       << ", overlap=" << overlap()
-       << ", window_type=" << windowTypeName();
-    return ss.str();
+    return (boost::format("Stft %d %s (%d%% %s)")
+            % chunk_size()
+            % windowTypeName()
+            % (overlap()*100)
+            % (compute_redundant()?"C2C":"R2C")).str();
 }
 
 
