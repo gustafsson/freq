@@ -7,7 +7,7 @@ message("buildflags for $$_PRO_FILE_PWD_ with $$QMAKESPEC")
 win32:CONFIG += debug_and_release
 CONFIG += warn_on
 !macx-ios*:CONFIG += openmp
-CONFIG(debug, debug|release): QMAKE_CXXFLAGS += -D_DEBUG
+CONFIG(debug, debug|release): DEFINES += _DEBUG
 CONFIG(debug, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT
 
 usecuda {
