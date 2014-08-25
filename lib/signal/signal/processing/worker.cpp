@@ -1,6 +1,7 @@
 #include "worker.h"
 #include "task.h"
 #include "tasktimer.h"
+#include "log.h"
 #include "demangle.h"
 
 //#define UNITTEST_STEPS
@@ -72,7 +73,7 @@ Worker::
     wait (1); // To quit the thread normally if idle (returns within 1 ms if it is ready to quit)
     terminate ();
     if (!wait (100))
-        TaskInfo("Worker didn't respond to quitting");
+        Log("Worker didn't respond to quitting");
 }
 
 
@@ -124,7 +125,7 @@ void Worker::
         return;
       }
 
-    DEBUGINFO TaskInfo("worker: wakeup");
+    DEBUGINFO Log("worker: wakeup");
 
     try
       {
@@ -152,7 +153,7 @@ void Worker::
 void Worker::
         finished()
   {
-    DEBUGINFO TaskInfo("worker: finished");
+    DEBUGINFO Log("worker: finished");
     moveToThread (0); // important. otherwise 'thread_' will try to delete 'this', but 'this' owns 'thread_' -> crash.
     emit finished(*exception_.read (), computing_engine_);
   }
@@ -178,7 +179,7 @@ void Worker::
           }
         else
           {
-            DEBUGINFO TaskInfo("worker: back to sleep");
+            DEBUGINFO Log("worker: back to sleep");
             // Wait for a new wakeup call
             break;
           }
