@@ -44,9 +44,14 @@ private:
     void fillBlockFromOthersInternal( pBlock block );
 
     /**
-      Add block information from another block. Returns whether any information was merged.
+      Add block information from another block
       */
-    bool mergeBlock( const Block& inBlock );
+    void mergeBlock( const Region& ri, int texture );
+
+    /**
+     * @brief clearBlock is an alternative to glClear
+     */
+    void clearBlock( const Region& ri );
 
 public:
     static void test();

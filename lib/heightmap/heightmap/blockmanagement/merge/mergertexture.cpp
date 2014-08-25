@@ -1,4 +1,4 @@
-#include "mergertexture.h"
+﻿#include "mergertexture.h"
 
 #include "heightmap/blockquery.h"
 #include "mergekernel.h"
@@ -16,6 +16,10 @@
 #include "gluperspective.h"
 
 #include <QGLContext>
+
+#ifdef GL_ES_VERSION_2_0
+#define DRAW_STRAIGHT_ONTO_BLOCK
+#endif
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -78,17 +82,29 @@ MergerTexture::
 void MergerTexture::
         init()
 {
-    if (tex_)
+    if (vbo_)
         return;
 
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
-    int w = block_layout_.texels_per_row();
-    int h = block_layout_.texels_per_column ();
-    tex_ = Render::BlockTextures(w, h, 1).get1 ();
-    fbo_.reset (new GlFrameBuffer(tex_->getOpenGlTextureId (), w, h));
+#ifndef DRAW_STRAIGHT_ONTO_BLOCK
+        int w = block_layout_.texels_per_row();
+        int h = block_layout_.texels_per_column ();
+        tex_ = Render::BlockTextures(w, h, 1).get1 ();
+        fbo_.reset (new GlFrameBuffer(*tex_));
+#endif
 
     glGenBuffers (1, &vbo_);
+    float vertices[] = {
+        0, 0, 0, 0,
+        0, 1, 0, 1,
+        1, 0, 1, 0,
+        1, 1, 1, 1,
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
     program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
@@ -102,14 +118,7 @@ void MergerTexture::
 
     GlException_CHECK_ERROR();
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    float v[4];
-    glGetFloatv(GL_COLOR_CLEAR_VALUE, v);
     glClearColor (0,0,0,1);
-
-    auto fboBinding = fbo_->getScopeBinding ();
 
     glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
 
@@ -121,15 +130,7 @@ void MergerTexture::
         float x, y, u, v;
     };
 
-    float vertices[] = {
-        0, 0, 0, 0,
-        0, 1, 0, 1,
-        1, 0, 1, 0,
-        1, 1, 1, 1,
-    };
-
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
     int qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
     int qt_MultiTexCoord0 = glGetAttribLocation (program_, "qt_MultiTexCoord0");
@@ -144,6 +145,11 @@ void MergerTexture::
     glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 
     cache_clone = cache_->clone();
+
+#ifndef DRAW_STRAIGHT_ONTO_BLOCK
+    auto fboBinding = fbo_->getScopeBinding ();
+    (void)fboBinding; // raii
+#endif
 
     for (pBlock b : blocks)
         fillBlockFromOthersInternal (b);
@@ -160,15 +166,7 @@ void MergerTexture::
     glEnable (GL_BLEND);
     glEnable (GL_CULL_FACE);
 
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3] );
-    glClearColor (v[0],v[1],v[2],v[3]);
-
-    (void)fboBinding; // RAII
     GlException_CHECK_ERROR();
-
-    // Flush all these drawing commands onto the device queue before the
-    // updater starts issuing drawing commands onto the device.
-    glFlush ();
 }
 
 
@@ -179,13 +177,19 @@ void MergerTexture::
 
     Region r = block->getRegion ();
 
-    glClear( GL_COLOR_BUFFER_BIT );
-
     GLmatrix projection;
     glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
 
     int uniProjection = glGetUniformLocation (program_, "qt_ProjectionMatrix");
     glUniformMatrix4fv (uniProjection, 1, false, projection.v ());
+
+#ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    GlFrameBuffer fbo(*block->texture ());
+    auto fboBinding = fbo.getScopeBinding ();
+    (void)fboBinding; // raii
+#endif
+
+    glClear( GL_COLOR_BUFFER_BIT );
 
     if (!disable_merge_)
     {
@@ -254,26 +258,39 @@ void MergerTexture::
 
         // Merge everything in order from largest to smallest
         for( pBlock bl : tomerge )
-            mergeBlock( *bl );
+            mergeBlock( bl->getRegion (), bl->texture ()->getOpenGlTextureId () );
     }
 
+#ifndef DRAW_STRAIGHT_ONTO_BLOCK
     {
         VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getRegion ());
 
         GlTexture::ptr t = block->texture ();
-        glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ());
-        glBindTexture(GL_TEXTURE_2D, 0);
+        #ifdef GL_ES_VERSION_2_0
+            GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(t->getOpenGlTextureId (), fbo_->getGlTexture (), 0, 1) );
+        #else
+            glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
+            GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ()) );
+            glBindTexture(GL_TEXTURE_2D, 0);
+        #endif
     }
+#endif
 }
 
 
-bool MergerTexture::
-        mergeBlock( const Block& inBlock )
+void MergerTexture::
+        clearBlock( const Region& ri )
 {
-    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling from %s") % inBlock.getRegion ());
+    // Read from unbound texture, i.e paint zero
+    mergeBlock(ri,0);
+}
 
-    Region ri = inBlock.getRegion ();
+
+void MergerTexture::
+        mergeBlock( const Region& ri, int texture )
+{
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling %d from %s") % texture % ri);
+
     GLmatrix modelview = GLmatrix::identity ();
     modelview *= GLmatrix::translate (ri.a.time, ri.a.scale, 0);
     modelview *= GLmatrix::scale (ri.time (), ri.scale (), 1.f);
@@ -281,11 +298,9 @@ bool MergerTexture::
     int uniModelView = glGetUniformLocation (program_, "qt_ModelViewMatrix");
     glUniformMatrix4fv (uniModelView, 1, false, modelview.v ());
 
-    glBindTexture( GL_TEXTURE_2D, inBlock.texture ()->getOpenGlTextureId ());
+    glBindTexture( GL_TEXTURE_2D, texture);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    return true;
 }
 
 } // namespace Merge
