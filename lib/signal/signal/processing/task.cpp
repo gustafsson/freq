@@ -108,7 +108,7 @@ void Task::
 void Task::
         run_private()
 {
-    Signal::OperationDesc::ptr od = step_.raw ()->operation_desc ();
+    Signal::OperationDesc::ptr od = Step::operation_desc (step_);
     if (!od)
     {
         cancel ();
@@ -139,7 +139,7 @@ void Task::
 Signal::pBuffer Task::
         get_input() const
 {
-    Signal::OperationDesc::ptr operation_desc = step_.raw ()->operation_desc ();
+    Signal::OperationDesc::ptr operation_desc = Step::operation_desc (step_);
 
     // Sum all sources
     std::vector<Signal::pBuffer> buffers;
@@ -151,30 +151,24 @@ Signal::pBuffer Task::
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
-        Signal::pBuffer b = Step::readFixedLengthFromCache(children_[i], required_input_);
-        if (b) {
-            num_channels = std::max(num_channels, b->number_of_channels ());
-            sample_rate = std::max(sample_rate, b->sample_rate ());
-            buffers.push_back ( b );
+        auto cache = Step::cache (children_[i]).read();
+        if (!cache->samplesDesc().contains(required_input_))
+        {
+            // The cache has been invalidated since this task was created, abort task.
+            return Signal::pBuffer();
         }
+        Signal::pBuffer b = cache->read(required_input_);
+        num_channels = std::max(num_channels, b->number_of_channels ());
+        sample_rate = std::max(sample_rate, b->sample_rate ());
+        buffers.push_back ( b );
     }
 
-    if (0==num_channels || 0.f==sample_rate) {
-        // Undefined signal. Shouldn't have created this task.
-        Log("required_input = %s") % required_input_;
-        if (children_.empty ()) {
-            EXCEPTION_ASSERT(x.sample_rate.is_initialized ());
-            EXCEPTION_ASSERT(x.number_of_channels.is_initialized ());
-        } else {
-            EXCEPTION_ASSERT_LESS(0u, buffers.size ());
-        }
-        EXCEPTION_ASSERT_LESS(0u, num_channels);
-        EXCEPTION_ASSERT_LESS(0u, sample_rate);
-    }
+    if (buffers.size () == 1)
+        return buffers[0];
 
     Signal::pBuffer input_buffer(new Signal::Buffer(required_input_, sample_rate, num_channels));
 
-    BOOST_FOREACH( Signal::pBuffer b, buffers )
+    for ( Signal::pBuffer b : buffers )
     {
         for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
             *input_buffer->getChannel (c) += *b->getChannel(c);

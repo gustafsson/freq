@@ -162,7 +162,7 @@ public:
     void discover_vertex(GraphVertex u, const Graph & g)
     {
         Step::ptr step( g[u] );
-        Signal::OperationDesc::ptr o = step.raw ()->operation_desc();
+        Signal::OperationDesc::ptr o = Step::operation_desc(step);
         Signal::OperationDesc::Extent x = o.read ()->extent ();
 
         // TODO This doesn't really work with merged paths

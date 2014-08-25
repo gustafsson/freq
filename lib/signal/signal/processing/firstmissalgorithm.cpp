@@ -67,9 +67,9 @@ public:
             DEBUGINFO_TASK if (not_started & required_input)
             {
                 TaskInfo(format("FirstMissing: %s needs %s from %s to create a task. %s is not started.")
-                                     % g[u].raw()->operation_desc()->toString ().toStdString ()
+                                     % Step::operation_desc (g[u])->toString ().toStdString ()
                                      % required_input
-                                     % g[v].raw()->operation_desc()->toString ().toStdString ()
+                                     % Step::operation_desc (g[v])->toString ().toStdString ()
                                      % not_started);
             }
             needed[v] |= not_started & required_input;
@@ -82,7 +82,8 @@ public:
         // No other thread is allowed to reach the same conclusion about what needs to be done.
         // So the lock has to be kept from checking what's needed all the way until the task has
         // been registered in step->running_tasks.
-        auto step = g[u].write (); // lock while studying what's needed.
+        auto step_ptr = g[u];
+        auto step = step_ptr.write (); // lock while studying what's needed.
 
         try
           {
@@ -95,7 +96,7 @@ public:
                 return Signal::Interval();
               }
 
-            Signal::OperationDesc::const_ptr o = step->operation_desc();
+            Signal::OperationDesc::const_ptr o = Step::operation_desc (step_ptr);
 
             // params.preferred_size is just a preferred update size, not a required update size.
             // Accept whatever requiredInterval sets as expected_output
@@ -215,7 +216,7 @@ Task FirstMissAlgorithm::
     DEBUGINFO std::unique_lock<std::mutex> l(debuginfo_firstmissingalgorithm);
 
     DEBUGINFO TaskTimer tt(boost::format("FirstMissAlgorithm %s %p") % (engine?vartype(*engine):"Signal::ComputingEngine*") % engine.get ());
-    DEBUGINFO TaskInfo(boost::format("needed = %s in %s") % needed % straight_g[straight_target]->operation_desc()->toString().toStdString());
+    DEBUGINFO TaskInfo(boost::format("needed = %s in %s") % needed % Step::operation_desc (straight_g[straight_target])->toString().toStdString());
     Graph g; ReverseGraph::reverse_graph (straight_g, g);
     GraphVertex target = ReverseGraph::find_first_vertex (g, straight_g[straight_target]);
 

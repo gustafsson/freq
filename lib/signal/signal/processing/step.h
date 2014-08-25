@@ -30,7 +30,11 @@ public:
     struct shared_state_traits : shared_state_traits_backtrace {
         virtual double timeout () { return 4*shared_state_traits_default::timeout (); }
         virtual double verify_lock_time() { return timeout()/4.0f; }
+#if defined SHARED_STATE_NO_TIMEOUT
+        typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
+#else
         typedef shared_state_mutex_noshared shared_state_mutex;
+#endif
     };
 
     // To be appended to exceptions while using Step
@@ -56,12 +60,11 @@ public:
      * @param still_needed describes which samples to keep
      * @return how many samples that were released
      */
-    size_t                      purge(Signal::Intervals still_needed) const; // Safe to call without lock
-    size_t                      cache_size() const; // Safe to call without lock
+    size_t                      purge(Signal::Intervals still_needed);
     Signal::Intervals           not_started() const;
     Signal::Intervals           out_of_date() const; // not_started | currently_processing
 
-    Signal::OperationDesc::ptr  operation_desc() const; // Safe to call without lock
+    static Signal::OperationDesc::ptr operation_desc(const_ptr step);
 
     int                         registerTask(Signal::Interval expected_output);
     static void                 finishTask(Step::ptr, int taskid, Signal::pBuffer result);
@@ -75,13 +78,12 @@ public:
     static bool                 sleepWhileTasks(Step::ptr::read_ptr&& step, int sleep_ms);
 
     /**
-     * @brief readFixedLengthFromCache should read a buffer from the cache.
-     * @param I
-     * @return If no task has finished yet, a null buffer. Otherwise the data
-     *         that is stored in the cache for given interval. Cache misses are
-     *         returned as 0 values.
+     * @brief cache returns a read-only cache. This can be used to query cache
+     * contents but not to update the cache. The cache is modified through
+     * purge() and finishTask ()
+     * @return
      */
-    static Signal::pBuffer      readFixedLengthFromCache(Step::const_ptr, Signal::Interval I);
+    static shared_state<const Signal::Cache> cache(const_ptr step);
 
 private:
     typedef std::map<int, Signal::Interval> RunningTaskMap;

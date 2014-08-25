@@ -141,9 +141,9 @@ Intervals Step::
 
 
 OperationDesc::ptr Step::
-        operation_desc () const
+        operation_desc (const_ptr step)
 {
-    return operation_desc_;
+    return step.raw ()->operation_desc_;
 }
 
 
@@ -260,10 +260,10 @@ bool Step::
 }
 
 
-pBuffer Step::
-        readFixedLengthFromCache(Step::const_ptr ptr, Interval I)
+shared_state<const Signal::Cache> Step::
+        cache(const_ptr step)
 {
-    return ptr.raw ()->cache_.read ()->read (I);
+    return step.raw ()->cache_;
 }
 
 } // namespace Processing
@@ -304,24 +304,24 @@ void Step::
         Step::finishTask(s, taskid, b);
         EXCEPTION_ASSERT_EQUALS(s->out_of_date(), ~Intervals(b->getInterval ()));
 
-        EXCEPTION_ASSERT( *b == *Step::readFixedLengthFromCache (s, b->getInterval ()) );
+        EXCEPTION_ASSERT( *b == *Step::cache (s)->read(b->getInterval ()) );
     }
 
     // A crashed signal processing step should behave as a transparent operation.
     {
         OperationDesc::ptr silence(new Signal::OperationSetSilent(Signal::Interval(2,3)));
-        Step s(silence);
-        EXCEPTION_ASSERT(!s.get_crashed ());
-        EXCEPTION_ASSERT(s.operation_desc ());
-        EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
-        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
-        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
-        s.mark_as_crashed_and_get_invalidator ();
-        EXCEPTION_ASSERT(s.get_crashed ());
-        EXCEPTION_ASSERT(s.operation_desc ());
-        EXCEPTION_ASSERT(s.operation_desc ().read ()->createOperation (0));
-        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperationDesc*>(s.operation_desc ().raw ()));
-        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(s.operation_desc ().read ()->createOperation (0).get ()));
+        Step::ptr s(new Step(silence));
+        EXCEPTION_ASSERT(!s->get_crashed ());
+        EXCEPTION_ASSERT(Step::operation_desc (s));
+        EXCEPTION_ASSERT(Step::operation_desc (s).read ()->createOperation (0));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperationDesc*>(Step::operation_desc (s).raw ()));
+        EXCEPTION_ASSERT(!dynamic_cast<Test::TransparentOperation*>(Step::operation_desc (s).read ()->createOperation (0).get ()));
+        s->mark_as_crashed_and_get_invalidator ();
+        EXCEPTION_ASSERT(s->get_crashed ());
+        EXCEPTION_ASSERT(Step::operation_desc (s));
+        EXCEPTION_ASSERT(Step::operation_desc (s).read ()->createOperation (0));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperationDesc*>(Step::operation_desc (s).raw ()));
+        EXCEPTION_ASSERT(dynamic_cast<Test::TransparentOperation*>(Step::operation_desc (s).read ()->createOperation (0).get ()));
     }
 }
 
