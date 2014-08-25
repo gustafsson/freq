@@ -180,12 +180,12 @@ bool TargetNeeds::
     {
         auto step = pstep.read ();
 
-        if (!(needed() & ~Step::cache (pstep)->samplesDesc()))
+        if (Step::cache (pstep)->contains(needed()))
             return true;
 
         Step::sleepWhileTasks (step, left(t, sleep_ms));
 
-        if (!(needed() & ~Step::cache (pstep)->samplesDesc()))
+        if (Step::cache (pstep)->contains(needed()))
             return true;
 
         step.unlock ();

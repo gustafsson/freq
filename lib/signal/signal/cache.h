@@ -66,6 +66,11 @@ public:
     Intervals samplesDesc() const;
     Interval spannedInterval() const;
     Intervals allocated() const;
+    /**
+     * @brief contains checks if all of I is covered by the cache
+     * @return samplesDesc().contains(I)
+     */
+    bool contains(const Signal::Intervals& I) const;
     bool empty() const;
 
     void invalidate_samples(const Intervals& I);

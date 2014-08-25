@@ -329,6 +329,13 @@ Intervals Cache::
 
 
 bool Cache::
+        contains(const Signal::Intervals& I) const
+{
+    return _valid_samples.contains (I);
+}
+
+
+bool Cache::
         empty() const
 {
     return !_valid_samples;

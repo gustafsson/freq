@@ -163,7 +163,7 @@ Signal::pBuffer Task::
     for (size_t i=0;i<children_.size(); ++i)
     {
         auto cache = Step::cache (children_[i]).read();
-        if (!cache->samplesDesc().contains(required_input_))
+        if (!cache->contains(required_input_))
         {
             // The cache has been invalidated since this task was created, abort task.
             return Signal::pBuffer();
