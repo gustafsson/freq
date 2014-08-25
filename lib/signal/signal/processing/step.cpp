@@ -166,11 +166,11 @@ void Step::
               % result->getInterval ();
 
     auto self = step.write ();
-    Intervals expected_output = self->running_tasks[ taskid ];
+    Intervals valid_output = self->running_tasks[ taskid ];
     self->running_tasks.erase ( taskid );
     self.unlock ();
 
-    if (!expected_output)
+    if (!valid_output)
         result.reset ();
 
     if (result)
@@ -178,10 +178,13 @@ void Step::
         // Result must have the same number of channels and sample rate as previous cache.
         // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
 
-        if (expected_output == result->getInterval ())
+        TASKINFO if (valid_output - step.raw ()->cache_->allocated())
+            Log("Step allocating for %s") % step.raw ()->operation_name ();
+
+        if (valid_output == result->getInterval ())
             step.raw ()->cache_->put (result);
         else
-            for (auto i : expected_output)
+            for (auto i : valid_output)
               {
                 pBuffer b(new Buffer(i, result->sample_rate (), result->number_of_channels ()));
                 *b |= *result;
