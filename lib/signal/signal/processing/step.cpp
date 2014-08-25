@@ -12,6 +12,9 @@
 //#define TASKINFO
 #define TASKINFO if(0)
 
+//#define FINISHTASKINFO
+#define FINISHTASKINFO if(0)
+
 using namespace boost;
 
 namespace Signal {
@@ -39,7 +42,7 @@ Signal::Processing::IInvalidator::ptr Step::
     if (died_)
         return Signal::Processing::IInvalidator::ptr();
 
-    DEBUGINFO TaskInfo ti(boost::format("Marking step \"%s\" as crashed") % operation_name());
+    DEBUGINFO Log("Step marking \"%s\" as crashed") % operation_name();
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::ptr(new Test::TransparentOperationDesc);
@@ -97,10 +100,10 @@ Intervals Step::
         deprecated = A;
     }
 
-    DEBUGINFO TaskInfo(format("Step::deprecateCache %2% | %3% on %1%")
+    DEBUGINFO Log("Step deprecateCache %2% | %3% on %1%")
               % operation_name()
               % deprecated
-              % not_started());
+              % not_started();
 
     cache_->invalidate_samples(deprecated);
 
@@ -119,7 +122,7 @@ size_t Step::
     int C = cache->num_channels ();
     Signal::Intervals P = cache->purge (still_needed);
     if (P)
-        Log("Discarding %s, only need %s for %s") % P % still_needed % operation_name();
+        Log("Step discarding %s, only need %s for %s") % P % still_needed % operation_name();
     return P.count () * C;
 }
 
@@ -141,9 +144,9 @@ OperationDesc::ptr Step::
 int Step::
         registerTask(Interval expected_output)
 {
-    TASKINFO TaskInfo ti(format("Step::registerTask %2% on %1%")
+    TASKINFO Log("Step registerTask %2% on %1%")
               % operation_name()
-              % expected_output);
+              % expected_output;
 
     ++task_counter_;
     if (0 == task_counter_)
@@ -158,9 +161,9 @@ int Step::
 void Step::
         finishTask(Step::ptr step, int taskid, pBuffer result)
 {
-    TASKINFO TaskInfo ti(format("Step::finishTask %2% on %1%")
+    FINISHTASKINFO Log("Step finishTask %2% on %1%")
               % step.raw ()->operation_name()
-              % result->getInterval ());
+              % result->getInterval ();
 
     auto self = step.write ();
     Interval expected_output = self->running_tasks[ taskid ];
