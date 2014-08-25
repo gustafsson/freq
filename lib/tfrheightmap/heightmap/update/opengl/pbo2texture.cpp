@@ -335,21 +335,6 @@ void ShaderTexture::
 #ifndef GL_ES_VERSION_2_0
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
-        // Clear remaining
-        int i = s-1;
-        int w = std::min(tex_width, data_width - (tex_width-1)*i);
-        int leftcols = tex_width - w;
-
-        if (leftcols > 0)
-          {
-            int leftdata = leftcols*data_height;
-#ifdef GL_ES_VERSION_2_0
-            std::vector<uint16_t> zeros(leftdata);
-#else
-            std::vector<float> zeros(leftdata);
-#endif
-            glTexSubImage2D (GL_TEXTURE_2D, 0, w, i*data_height, leftcols, data_height, format, type, &zeros[0]);
-          }
       }
     else
       {
