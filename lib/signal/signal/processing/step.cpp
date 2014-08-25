@@ -109,7 +109,7 @@ Intervals Step::
 
     Signal::Intervals not_deprecated = ~deprecated;
     for (RunningTaskMap::value_type& v : running_tasks)
-        v.second = (not_deprecated & v.second).fetchFirstInterval ();
+        v.second &= not_deprecated;
 
     return deprecated;
 }
@@ -166,7 +166,7 @@ void Step::
               % result->getInterval ();
 
     auto self = step.write ();
-    Interval expected_output = self->running_tasks[ taskid ];
+    Intervals expected_output = self->running_tasks[ taskid ];
     self->running_tasks.erase ( taskid );
     self.unlock ();
 
@@ -174,18 +174,21 @@ void Step::
         result.reset ();
 
     if (result)
-    {
-        if (expected_output != result->getInterval ())
-        {
-            pBuffer b(new Buffer(expected_output, result->sample_rate (), result->number_of_channels ()));
-            *b |= *result;
-            result.swap (b);
-        }
-
+      {
         // Result must have the same number of channels and sample rate as previous cache.
         // Call deprecateCache(Interval::Interval_ALL) to erase the cache when chainging number of channels or sample rate.
-        step.raw ()->cache_->put (result);
-    }
+
+        if (expected_output == result->getInterval ())
+            step.raw ()->cache_->put (result);
+        else
+            for (auto i : expected_output)
+              {
+                pBuffer b(new Buffer(i, result->sample_rate (), result->number_of_channels ()));
+                *b |= *result;
+                step.raw ()->cache_->put (result);
+              }
+
+      }
 
     step.raw ()->wait_for_tasks_.notify_all ();
 }

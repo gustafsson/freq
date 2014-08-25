@@ -93,7 +93,7 @@ public:
     static shared_state<const Signal::Cache> cache(const_ptr step);
 
 private:
-    typedef std::map<int, Signal::Interval> RunningTaskMap;
+    typedef std::map<int, Signal::Intervals> RunningTaskMap;
 
     Signal::OperationDesc::ptr  died_;
     shared_state<Signal::Cache> cache_;
