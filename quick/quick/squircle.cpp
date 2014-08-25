@@ -7,9 +7,11 @@
 #include "renderviewtransform.h"
 #include "renderviewaxes.h"
 #include "log.h"
+
 #include <QQuickWindow>
 #include <QTimer>
 #include <QOpenGLContext>
+#include <QtOpenGL>
 
 class GotDataCallback: public Signal::Recorder::IGotDataCallback
 {

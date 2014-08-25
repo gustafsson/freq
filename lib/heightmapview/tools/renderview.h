@@ -129,7 +129,7 @@ namespace Tools
         void setupCamera();
         GLmatrix setRotationForAxes();
 
-        unsigned rect_y_;
+        int rect_y_;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
         Support::DrawCollections drawCollections;

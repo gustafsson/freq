@@ -217,11 +217,15 @@ void RenderView::
 void RenderView::
         resizeGL( QRect rect, int device_height )
 {
+    tvector<4,int> vp(rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height());
+    if (vp == gl_projection.viewport && rect.y() == rect_y_)
+        return;
+
     TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device_height;
     EXCEPTION_ASSERT_LESS(0 , rect.height ());
 
-    glViewport( rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height() );
-    glGetIntegerv( GL_VIEWPORT, gl_projection.viewport.v);
+    gl_projection.viewport = vp;
+    glViewport( vp[0], vp[1], vp[2], vp[3] );
     rect_y_ = rect.y();
 
     gl_projection.modelview = GLmatrix::identity ();
@@ -291,7 +295,7 @@ void RenderView::
     try
     {
     // TODO move to rendercontroller
-    bool isRecording = false;
+//    bool isRecording = false;
 //    Tools::RecordModel* r = model->project ()->tools ().record_model ();
 //    if(r && r->recording && !r->recording.write ()->isStopped ())
 //    {
@@ -359,7 +363,7 @@ void RenderView::
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
 
-    if (isWorking || isRecording || dead_workers) {
+    if (isWorking || dead_workers) {
         Support::DrawWorking::drawWorking( gl_projection.viewport[2], gl_projection.viewport[3], n_workers, dead_workers );
     }
 #endif

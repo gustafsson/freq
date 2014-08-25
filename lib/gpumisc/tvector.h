@@ -124,6 +124,8 @@ public:
 template<>
 inline tvector<2, int>::tvector( const int& x, const int& y ) { v[0] = x, v[1] = y; }
 template<>
+inline tvector<4, int>::tvector( const int& x, const int& y, const int& z, const int& w ) { v[0] = x, v[1] = y; v[2] = z; v[3] = w; }
+template<>
 inline tvector<2, unsigned>::tvector( const unsigned& x, const unsigned& y ) { v[0] = x, v[1] = y; }
 template<>
 inline tvector<1, double>::tvector( const double& x ) { v[0] = x; }
