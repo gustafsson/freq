@@ -12,6 +12,7 @@ using namespace std;
 std::function<void(double, double, void*, const std::type_info&)> shared_state_traits_backtrace::default_warning =
         [](double T, double V, void*, const std::type_info& i)
         {
+#ifndef _DEBUG
             auto bt = Backtrace::make ();
             std::string tn = demangle(i);
 
@@ -19,6 +20,7 @@ std::function<void(double, double, void*, const std::type_info&)> shared_state_t
                 TaskInfo(boost::format("!!! Warning: Lock of %s was held for %s > %s. %s") %
                          tn % TaskTimer::timeToString (T) % TaskTimer::timeToString (V) % bt.value ().to_string ());
             });
+#endif
         };
 
 
