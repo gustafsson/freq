@@ -12,6 +12,24 @@ using namespace boost;
 
 namespace Signal {
 
+static Buffer zeros(Signal::Interval I, float fs, int C)
+{
+    Buffer b(I,fs,C);
+
+    // DataStorage clears data on read access of uninitialized data
+    for (int i=0; i<C; i++)
+        CpuMemoryStorage::ReadOnly<1>(b.getChannel (i)->waveform_data ());
+
+    return b;
+}
+
+
+static pBuffer zerosp(Signal::Interval I, float fs, int C)
+{
+    return pBuffer(new Buffer(zeros(I, fs, C)));
+}
+
+
 Cache::
         Cache( )
 {
@@ -59,8 +77,9 @@ void Cache::
 
 
 void Cache::
-        allocateCache( Interval I, float fs, int num_channels )
+        allocateCache( const Interval& J, float fs, int num_channels )
 {
+    Interval I = J;
     int N = this->num_channels ();
     float F = this->sample_rate ();
     if (empty()) {
@@ -208,12 +227,17 @@ void Cache::
     Timer t;
 
     Intervals sid(r->getInterval ());
-    while(sid)
+    while (sid)
     {
-        pBuffer p = readAtLeastFirstSample( sid.fetchFirstInterval() );
+        Interval s = sid.fetchFirstInterval ();
+        pBuffer p = readAtLeastFirstSample( s );
         *r |= *p; // Fill buffer
         sid -= p->getInterval();
     }
+
+    // set remaining samples to zero
+    for (Interval i : sid)
+        *r |= zeros(i, sample_rate(), num_channels ());
 
     double T=t.elapsed ();
     if (T > 10e-3 && T/r->number_of_samples ()>10e-6)
@@ -229,16 +253,10 @@ pBuffer Cache::
     Interval validFetch = (I & _valid_samples).fetchFirstInterval();
 
     if (!validFetch)
-    {
-        // return zeros
-        return pBuffer(new Buffer(I, sample_rate(), num_channels ()));
-    }
+        return zerosp(I, sample_rate(), num_channels ());
 
     if (validFetch.first > I.first)
-    {
-        // return zeros
-        return pBuffer( new Buffer(Interval(I.first, validFetch.first), sample_rate(), num_channels()) );
-    }
+        return zerosp(Interval(I.first, validFetch.first), sample_rate(), num_channels());
 
     // Find the cache chunk for sample I.first
     std::vector<pBuffer>::const_iterator itr = findBuffer(I.first);

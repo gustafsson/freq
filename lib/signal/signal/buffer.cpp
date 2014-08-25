@@ -315,6 +315,13 @@ Buffer::
 
 
 Buffer::
+        Buffer(Buffer&& b)
+{
+    channels_.swap(b.channels_);
+}
+
+
+Buffer::
         ~Buffer()
 {}
 

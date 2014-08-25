@@ -96,7 +96,7 @@ private:
      * @throw InvalidBufferDimensions if fs and/or num_channels doesn't match
      * what's already been allocated.
      */
-    void allocateCache( Signal::Interval, float fs, int num_channels );
+    void allocateCache( const Signal::Interval&, float fs, int num_channels );
 
     /**
      * @brief findBuffer finds the buffer containing 'sample'.

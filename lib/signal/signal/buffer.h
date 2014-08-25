@@ -73,6 +73,7 @@ public:
            IntervalType number_of_samples,
            float sample_rate,
            int number_of_channels);
+    Buffer(Buffer&& b);
     explicit Buffer(pMonoBuffer b);
     Buffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
     ~Buffer();
