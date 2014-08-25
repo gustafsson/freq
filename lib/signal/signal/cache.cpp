@@ -102,9 +102,20 @@ void Cache::
             }
         }
 
-//        TaskTimer tt(boost::format("Allocating cache %s") % Interval(I.first, I.first+chunkSize));
+        //TaskTimer tt(boost::format("Allocating cache %s") % Interval(I.first, I.first+chunkSize));
 
-        pBuffer n( new Buffer( I.first, chunkSize, fs, num_channels) );
+        pBuffer n;
+        if (!_discarded.empty ())
+        {
+            n = _discarded.back ();
+            _discarded.pop_back ();
+            n->set_sample_offset (I.first);
+            n->set_sample_rate (fs);
+        }
+
+        if (!n || n->number_of_channels () != unsigned(num_channels) || n->number_of_samples () != chunkSize)
+            n.reset ( new Buffer( I.first, chunkSize, fs, num_channels) );
+
         for (int i=0; i<num_channels; i++)
         {
             // Force allocation here, don't delay it.
@@ -127,29 +138,32 @@ void Cache::
 }
 
 
-size_t Cache::
+Signal::Intervals Cache::
         purge(Signal::Intervals still_needed)
 {
-    int C = num_channels ();
-    size_t purged = 0;
+    Signal::Intervals purged;
 
-    for (auto itr = _cache.begin (); itr != _cache.end () && 4 < _cache.size ();)
+    for (auto itr = _cache.begin (); itr != _cache.end ();)
     {
-        Signal::Interval b = (**itr).getInterval();
-        if (b & still_needed)
+        pBuffer b = *itr;
+        Signal::Interval i = b->getInterval();
+        if (i & still_needed)
         {
             itr++;
             continue;
         }
         else
         {
-            Log("Discarding %s, only need %s") % b % still_needed;
-            purged += b.count ();
+            invalidate_samples (i);
+            purged |= i;
             itr = _cache.erase (itr);
+
+            if (_discarded.size ()<2)
+                _discarded.push_back (b);
         }
     }
 
-    return purged * C;
+    return purged;
 }
 
 
@@ -168,7 +182,8 @@ size_t Cache::
 void Cache::
         clear()
 {
-    _cache.clear();
+    _cache.clear ();
+    _discarded.clear ();
     _valid_samples = Intervals();
 }
 
@@ -277,6 +292,16 @@ Interval Cache::
         spannedInterval() const
 {
     return _valid_samples.spannedInterval ();
+}
+
+
+Intervals Cache::
+        allocated() const
+{
+    Intervals I;
+    for (pBuffer b : _cache)
+        I |= b->getInterval ();
+    return I;
 }
 
 

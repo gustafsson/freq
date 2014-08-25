@@ -65,14 +65,12 @@ public:
     /// Merely allocated memory does not count in this description.
     Intervals samplesDesc() const;
     Interval spannedInterval() const;
+    Intervals allocated() const;
     bool empty() const;
 
     void invalidate_samples(const Intervals& I);
-    size_t purge(Signal::Intervals still_needed);
+    Signal::Intervals purge(Signal::Intervals still_needed);
     size_t cache_size() const;
-
-    /// Return true if the entire interval I is up to date and can be read from this.
-    bool hasInterval(const Interval& I);
 
     /**
      * @brief num_channels is defined as 0 if _cache is empty.
@@ -82,6 +80,7 @@ public:
 
 private:
     std::vector<pBuffer> _cache;
+    std::vector<pBuffer> _discarded;
 
     /**
      * @brief _valid_samples explains the samples that can be fetched from
