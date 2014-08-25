@@ -94,10 +94,10 @@ void GraphInvalidator::
 
         // test
         GraphInvalidator graphInvalidator(dag, notifier, step);
-        Signal::Intervals deprected(40,50);
-        graphInvalidator.deprecateCache (deprected);
+        Signal::Intervals deprecated(40,50);
+        graphInvalidator.deprecateCache (deprecated);
 
-        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid | deprected);
+        EXCEPTION_ASSERT_EQUALS(step.read ()->not_started(), ~initial_valid | deprecated);
         sleeper.wait (1);
         EXCEPTION_ASSERT_EQUALS(bedroom->sleepers (), 0);
         EXCEPTION_ASSERT(sleeper.isFinished ());
