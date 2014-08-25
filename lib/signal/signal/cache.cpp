@@ -178,8 +178,8 @@ Signal::Intervals Cache::
             purged |= i;
             itr = _cache.erase (itr);
 
-            if (!b->getChannel (0)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
-                Log("purging non-allocated buffer %s") % i;
+            //if (!b->getChannel (0)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
+            //    Log("purging non-allocated buffer %s") % i;
 
             if (_discarded.size ()<2)
                 _discarded.push_back (b);
