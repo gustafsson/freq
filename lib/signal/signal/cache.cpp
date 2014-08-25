@@ -158,6 +158,9 @@ Signal::Intervals Cache::
             purged |= i;
             itr = _cache.erase (itr);
 
+            if (!b->getChannel (0)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
+                Log("purging non-allocated buffer") % i;
+
             if (_discarded.size ()<2)
                 _discarded.push_back (b);
         }
@@ -173,9 +176,11 @@ size_t Cache::
     size_t sz = 0;
 
     for (pBuffer const& b : _cache)
-        sz += b->number_of_samples();
+        for (unsigned c=0; c<b->number_of_channels (); c++)
+            if (b->getChannel (c)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
+                sz += b->getChannel (c)->number_of_samples ();
 
-    return sz * num_channels () * sizeof(Signal::TimeSeriesData::element_type);
+    return sz * sizeof(Signal::TimeSeriesData::element_type);
 }
 
 
