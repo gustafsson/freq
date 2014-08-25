@@ -632,6 +632,7 @@ Intervals  operator |  (const Interval& a, const Interval& b)  { return a|Interv
 
 #include "timer.h"
 #include "exceptionassert.h"
+#include "trace_perf.h"
 #include <boost/format.hpp>
 
 using namespace boost;
@@ -643,23 +644,18 @@ void Intervals::
 {
     // It should be fast
     {
+        TRACE_PERF("It should be fast 1");
         const int N = 1000;
         Intervals I;
-        Timer t;
-        for (int i=0; i<N; ++i) {
+        for (int i=0; i<N; ++i)
             I |= Interval(i,i+1);
-        }
-        double T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.0000015);
+
         EXCEPTION_ASSERT_EQUALS(I, Intervals(0,N));
 
+        trace_perf_.reset ("It should be fast 2");
         I = Intervals(0,N);
-        t.restart ();
-        for (int i=0; i<N; ++i) {
+        for (int i=0; i<N; ++i)
             (I & Interval(i,i+1));
-        }
-        T = t.elapsed ()/N;
-        EXCEPTION_ASSERT_LESS(T,0.000004);
     }
 
     // It should have neat string representations
