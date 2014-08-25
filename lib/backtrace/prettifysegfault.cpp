@@ -142,7 +142,7 @@ void printSignalInfo(int sig, bool noaction)
         return;
 
     case SIGWINCH:
-        TaskInfo("Got SIGWINCH, could reload OpenGL resources here");
+        TaskInfo("Got SIGWINCH");
         fflush(stdout);
         return;
 #endif
@@ -341,6 +341,7 @@ void PrettifySegfault::
     {
         switch(i)
         {
+        case SIGWINCH:
         case SIGCHLD:
             break;
         case SIGILL:
