@@ -192,6 +192,9 @@ Signal::pBuffer Task::
 void Task::
         finish(Signal::pBuffer b)
 {
+    if (b)
+        EXCEPTION_ASSERT_EQUALS(expected_output_, b->getInterval ());
+
     if (step_)
     {
         Step::finishTask(step_, task_id_, b);
