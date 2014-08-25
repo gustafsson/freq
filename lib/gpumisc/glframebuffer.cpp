@@ -191,6 +191,7 @@ void GlFrameBuffer::
                                          GL_RENDERBUFFER,
                                          rboId_));
 
+#ifdef _DEBUG
         int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
         if (GL_FRAMEBUFFER_UNSUPPORTED == status)
@@ -200,9 +201,8 @@ void GlFrameBuffer::
           }
 
         EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE, status );
+#endif
     }
-
-    //glFlush();
 
     DEBUG_INFO TaskInfo("fbo = %u", fboId_ );
     DEBUG_INFO TaskInfo("rbo = %u", fboId_ );
@@ -269,6 +269,7 @@ void GlFrameBuffer::
         GlTexture sum9(4, 4, GL_LUMINANCE, GL_RGBA, GL_FLOAT);
 
         {GlFrameBuffer fb(sum1.getOpenGlTextureId (), 4,4);}
+#ifdef _DEBUG
 #ifndef GL_ES_VERSION_2_0 // OpenGL ES doesn't have GL_LUMINANCE32F_ARB
         EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum2.getOpenGlTextureId (), 4,4));
         EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum3.getOpenGlTextureId (), 4,4));
@@ -279,6 +280,7 @@ void GlFrameBuffer::
         EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum6.getOpenGlTextureId (), 4,4));
 #endif
         EXPECT_EXCEPTION(GlFrameBufferException, GlFrameBuffer fb(sum7.getOpenGlTextureId (), 4,4));
+#endif
         {GlFrameBuffer fb(sum8.getOpenGlTextureId (), 4,4);}
         {GlFrameBuffer fb(sum9.getOpenGlTextureId (), 4,4);}
     }
