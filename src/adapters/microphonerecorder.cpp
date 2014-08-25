@@ -183,6 +183,9 @@ MicrophoneRecorder::~MicrophoneRecorder()
 
 void MicrophoneRecorder::startRecording()
 {
+    if (!stopping.valid ())
+        return;
+
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::startRecording()");
     init();
 
@@ -221,33 +224,39 @@ void MicrophoneRecorder::startRecording()
 void MicrophoneRecorder::stopRecording()
 {
     TIME_MICROPHONERECORDER TaskInfo ti("MicrophoneRecorder::stopRecording()");
-    if (_stream_record) {
-        try
-        {
-        TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName().c_str());
+    if (_stream_record)
+    {
+        decltype(_stream_record) sr;
+        sr.swap (_stream_record);
 
-        //stop could hang the ui (codaset #24)
-        //_stream_record->isStopped()? void(): _stream_record->stop();
+        stopping = std::async (std::launch::async,
+            [](decltype(_stream_record) sr, std::string deviceName)
+            {
+                try
+                {
+                TIME_MICROPHONERECORDER TaskInfo ti("Trying to stop recording on %s", deviceName.c_str());
 
-        // using abort instead of stop means that the recording thread will continue for a
-        // while after abort has returned.
-        _stream_record->isStopped()? void(): _stream_record->abort();
+                //stop could hang the ui (codaset #24)
+                //_stream_record->isStopped()? void(): _stream_record->stop();
 
-        _stream_record->close();
-        _stream_record.reset();
-        }
-        catch (const portaudio::PaException& x)
-        {
-            TaskInfo("stopRecording error: %s %s (%d)\nMessage: %s",
-                     vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
-            _has_input_device = false;
-        }
-        catch (const portaudio::PaCppException& x)
-        {
-            TaskInfo("stopRecording error: %s (%d)\nMessage: %s",
-                     vartype(x).c_str(), x.specifier(), x.what());
-            _has_input_device = false;
-        }
+                // using abort instead of stop means that the recording thread will continue for a
+                // while after abort has returned.
+                sr->isStopped()? void(): sr->abort();
+
+                sr->close();
+                sr.reset();
+                }
+                catch (const portaudio::PaException& x)
+                {
+                    TaskInfo("stopRecording error: %s %s (%d)\nMessage: %s",
+                             vartype(x).c_str(), x.paErrorText(), x.paError(), x.what());
+                }
+                catch (const portaudio::PaCppException& x)
+                {
+                    TaskInfo("stopRecording error: %s (%d)\nMessage: %s",
+                             vartype(x).c_str(), x.specifier(), x.what());
+                }
+            }, std::move(sr), deviceName());
     }
 }
 

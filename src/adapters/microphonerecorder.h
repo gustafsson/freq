@@ -11,6 +11,7 @@
 #include <vector>
 #include <sstream>
 #include <stdio.h>
+#include <future>
 
 #include <portaudiocpp/PortAudioCpp.hxx>
 
@@ -52,7 +53,8 @@ private:
     Signal::pBuffer _receive_buffer;
 
     portaudio::AutoSystem _autoSys;
-    boost::scoped_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
+    std::shared_ptr<portaudio::MemFunCallbackStream<MicrophoneRecorder> > _stream_record;
+    std::future<void> stopping;
 
     int writeBuffer(const void *inputBuffer,
                      void * /*outputBuffer*/,
