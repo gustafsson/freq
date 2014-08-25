@@ -74,24 +74,20 @@ void Renderer::
     if (!render_block->isInitialized ())
         return;
 
-    setupGlStates(scaley);
-
+    Render::RenderSet::references_t R = getRenderSet(L);
     float yscalelimit = render_settings.drawcrosseswhen0 ? 0.0004f : 0.f;
     bool draw = render_settings.y_scale > yscalelimit;
+    if (draw)
+        createMissingBlocks(R);
+
+    setupGlStates(scaley);
 
     if (draw)
-    {
-        Render::RenderSet::references_t R = getRenderSet(L);
-        createMissingBlocks(R);
         drawBlocks(R);
-
-        DISPLAY_REFERENCES drawReferences(R, false);
-    }
     else
-    {
-        Render::RenderSet::references_t R = getRenderSet(L);
         drawReferences(R);
-    }
+
+    if (draw) DISPLAY_REFERENCES drawReferences(R, false);
 
     GlException_CHECK_ERROR();
 }
@@ -120,6 +116,12 @@ void Renderer::
 
     render_settings.last_ysize = scaley;
     render_settings.drawn_blocks = 0;
+
+    const auto& v = gl_projection.viewport;
+    glViewport (v[0], v[1], v[2], v[3]);
+
+    const auto& c = render_settings.clear_color;
+    glClearColor (c[0], c[1], c[2], c[3]);
 }
 
 
