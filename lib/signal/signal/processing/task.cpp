@@ -94,8 +94,8 @@ void Task::
 
         try {
             Signal::Processing::IInvalidator::ptr i = step_.write ()->mark_as_crashed_and_get_invalidator();
-            EXCEPTION_ASSERT(i);
-            i->deprecateCache (Signal::Intervals::Intervals_ALL);
+            if (i)
+                i->deprecateCache (Signal::Intervals::Intervals_ALL);
         } catch(const std::exception& y) {
             x << unexpected_exception_info(boost::current_exception());
         }
