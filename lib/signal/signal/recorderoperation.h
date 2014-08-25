@@ -31,8 +31,8 @@ public:
 
     void startRecording();
     void stopRecording();
-    bool isStopped();
-    bool canRecord();
+    bool isStopped() const;
+    bool canRecord() const;
     Recorder::ptr recorder() const;
 
     // OperationDesc

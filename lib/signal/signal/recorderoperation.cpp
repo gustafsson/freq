@@ -41,14 +41,14 @@ void MicrophoneRecorderDesc::
 
 
 bool MicrophoneRecorderDesc::
-        isStopped()
+        isStopped() const
 {
     return recorder_.write ()->isStopped ();
 }
 
 
 bool MicrophoneRecorderDesc::
-        canRecord()
+        canRecord() const
 {
     return recorder_.write ()->canRecord ();
 }
@@ -57,9 +57,20 @@ bool MicrophoneRecorderDesc::
 Signal::Interval MicrophoneRecorderDesc::
         requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const
 {
+    Signal::Interval i = I;
+
+    if (!isStopped())
+    {
+        // don't read past end while recording
+        auto data = recorder_.raw ()->data ();
+        auto last = data.read ()->samples.spannedInterval().last;
+        i &= Signal::Interval(Signal::Interval::IntervalType_MIN, last);
+    }
+
     if (expectedOutput)
-        *expectedOutput = I;
-    return I;
+        *expectedOutput = i;
+
+    return i;
 }
 
 

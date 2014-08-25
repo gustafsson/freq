@@ -106,6 +106,13 @@ public:
                 wanted_output = wanted_output2;
             Signal::Interval expected_output;
             Signal::Interval required_input = o->requiredInterval (wanted_output, &expected_output);
+            if (!expected_output)
+              {
+                // Can't compute the requested output. Not because something in
+                // particular is missing from the sourcs, the operation isn't
+                // just ready yet. The worker threads should wait for a wakeup.
+                return Signal::Interval();
+              }
 
             DEBUGINFO TaskInfo tt(format("Missing %s = %s & %s in %s for %s")
                                    % I % needed[u] % step->not_started ()
