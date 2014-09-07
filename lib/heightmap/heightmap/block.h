@@ -28,7 +28,7 @@ namespace Heightmap {
     class Block {
     public:
         typedef std::shared_ptr<GlTexture> pGlTexture;
-        Block( Reference, BlockLayout, VisualizationParams::const_ptr, pGlTexture t);
+        Block( Reference, BlockLayout, VisualizationParams::const_ptr);
         Block( const Block&)=delete;
         Block& operator=( const Block&)=delete;
 
@@ -67,7 +67,8 @@ namespace Heightmap {
         const float sample_rate_;
 
         const VisualizationParams::const_ptr visualization_params_;
-        const pGlTexture texture_;
+        pGlTexture new_texture_;
+        pGlTexture texture_;
         bool texture_ready_ = false;
 
     public:

@@ -338,13 +338,12 @@ void MergerTexture::
 
         Reference ref;
         BlockLayout bl(4,4,4);
+        Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (), bl.texels_per_column ());
         VisualizationParams::ptr vp(new VisualizationParams);
 
-        Render::BlockTextures::Scoped block_textures_raii(4,4);
-
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        GlTexture::ptr tex = Render::BlockTextures::get1 ();
-        pBlock block(new Block(ref,bl,vp,tex));
+        pBlock block(new Block(ref,bl,vp));
+        GlTexture::ptr tex = block->texture ();
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
 
@@ -365,8 +364,8 @@ void MergerTexture::
                               0, 0, 0, 0,
                              .5, 0, 0, .5};
 
-            GlTexture::ptr tex = Render::BlockTextures::get1 ();
-            pBlock block(new Block(ref.parentHorizontal (),bl,vp,tex));
+            pBlock block(new Block(ref.parentHorizontal (),bl,vp));
+            GlTexture::ptr tex = block->texture ();
             auto ts = tex->getScopeBinding ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
@@ -391,8 +390,8 @@ void MergerTexture::
                               9, 10, 11, 12,
                               13, 14, 15, .16};
 
-            GlTexture::ptr tex = Render::BlockTextures::get1 ();
-            pBlock block(new Block(ref.right (),bl,vp,tex));
+            pBlock block(new Block(ref.right (),bl,vp));
+            GlTexture::ptr tex = block->texture ();
             auto ts = tex->getScopeBinding ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 

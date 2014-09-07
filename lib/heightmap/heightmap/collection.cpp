@@ -218,24 +218,14 @@ void Collection::
 
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks %d new", missing.size());
 
-    std::vector<GlTexture::ptr> missing_textures = Render::BlockTextures::getTextures (missing.size());
-
     std::vector<pBlock> blocks_to_init;
     blocks_to_init.reserve (missing.size());
 
     for (const Reference& ref : missing )
     {
-        if (missing_textures.empty ()) {
-            failed_allocation_ = true;
-            return;
-        }
-
-        pBlock block = block_factory_->createBlock (ref, missing_textures.back ());
+        pBlock block = block_factory_->createBlock (ref);
         if (block)
-        {
-            missing_textures.pop_back ();
             blocks_to_init.push_back (block);
-        }
     }
 
     for (const pBlock& block : blocks_to_init)

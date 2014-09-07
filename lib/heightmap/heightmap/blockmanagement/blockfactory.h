@@ -21,19 +21,13 @@ public:
     /**
       Creates a new block.
       */
-    pBlock              createBlock( const Reference& ref, GlTexture::ptr tex );
+    pBlock              createBlock( const Reference& ref );
 
     Signal::Intervals   recently_created();
 
     void                next_frame();
 
 private:
-    /**
-      Creates a new block.
-      */
-    pBlock              createBlockInternal( const Reference& ref, GlTexture::ptr tex );
-
-
     /**
      * @brief setDummyValues fills a block with dummy values, used for testing.
      * @param block

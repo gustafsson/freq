@@ -1,5 +1,6 @@
 #include "block.h"
 #include "GlTexture.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 #include "log.h"
@@ -12,7 +13,7 @@ namespace Heightmap {
 
 
 Block::
-        Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params, std::shared_ptr<GlTexture> texture)
+        Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
     :
     frame_number_last_used(0),
     ref_(ref),
@@ -21,7 +22,7 @@ Block::
     region_( RegionFactory(block_layout)(ref) ),
     sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
-    texture_(texture)
+    texture_(Render::BlockTextures::get1())
 {
     if (texture_)
     {

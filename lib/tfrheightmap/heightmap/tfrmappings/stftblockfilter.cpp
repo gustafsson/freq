@@ -116,8 +116,7 @@ void StftBlockFilter::
         }();
 
         Render::BlockTextures::Scoped bt(4,4,1);
-        GlTexture::ptr tex = Render::BlockTextures::get1 ();;
-        pBlock block( new Block(ref, bl, vp, tex));
+        pBlock block( new Block(ref, bl, vp));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;

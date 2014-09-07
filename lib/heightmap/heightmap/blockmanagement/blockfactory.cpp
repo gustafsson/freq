@@ -32,15 +32,14 @@ BlockFactory::
 
 
 pBlock BlockFactory::
-        createBlock( const Reference& ref, GlTexture::ptr tex )
+        createBlock( const Reference& ref )
 {
     TIME_BLOCKFACTORY TaskTimer tt(format("New block %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
     pBlock block( new Block(
                      ref,
                      block_layout_,
-                     visualization_params_,
-                      tex) );
+                     visualization_params_) );
 
     recently_created_ |= block->getInterval ();
 
@@ -96,9 +95,17 @@ namespace BlockManagement {
 void BlockFactory::
         test()
 {
+    std::string name = "BlockFactory";
+    int argc = 1;
+    char * argv = &name[0];
+    QApplication a(argc,&argv);
+    QGLWidget w;
+    w.makeCurrent ();
+
     // It should create new blocks to make them ready for receiving heightmap data and rendering.
     {
         BlockLayout bl(4,4,4);
+        Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (), bl.texels_per_column ());
         VisualizationParams::const_ptr vp(new VisualizationParams);
         BlockCache::ptr cache(new BlockCache);
 
@@ -110,14 +117,14 @@ void BlockFactory::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        pBlock block = BlockFactory(bl, vp).createBlock(r, GlTexture::ptr());
+        pBlock block = BlockFactory(bl, vp).createBlock(r);
         cache->insert (block);
 
         EXCEPTION_ASSERT(block);
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom (), GlTexture::ptr());
+        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom ());
         cache->insert (block3);
 
         EXCEPTION_ASSERT(block3);
