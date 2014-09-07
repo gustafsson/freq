@@ -111,6 +111,7 @@ public:
     virtual Signal::OperationDesc::Extent   extent() const;
     virtual void                            transformDesc(pTransformDesc d);
     virtual ChunkFilterDesc::ptr            copy() const;
+    virtual QString                         toString() const;
 
     pTransformDesc                          transformDesc() const;
 

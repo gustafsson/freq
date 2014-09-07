@@ -49,14 +49,16 @@ void UpdateProducer::
         return;
     }
 
-    DEBUG_INFO TaskTimer tt(boost::format("Channel %d. %s updating %s") % pchunk.channel % vartype(*merge_chunk_.get ()) % chunk_interval);
+    DEBUG_INFO TaskTimer tt(boost::format("updateproducer: channel %d. %s updating %s, %s")
+                            % pchunk.channel % pchunk.t->transformDesc ()->toString ()
+                            % chunk_interval % vartype(*merge_chunk_.get ()));
     std::vector<std::future<void>> F;
 
     for (Update::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk, intersecting_blocks))
     {
         // Use same or different intersecting_blocks
 //        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);
-        job->getCoveredInterval ();
+//        job->getCoveredInterval ();
 
         auto f = update_queue_->push( job, intersecting_blocks );
         F.push_back (std::move(f));
@@ -108,6 +110,13 @@ Tfr::pChunkFilter UpdateProducerDesc::
         return Tfr::pChunkFilter();
 
     return Tfr::pChunkFilter( new UpdateProducer(update_queue_, tfrmap_, merge_chunk));
+}
+
+
+QString UpdateProducerDesc::
+        toString() const
+{
+    return ("View " + transformDesc()->toString ()).c_str();
 }
 
 } // namespace Update

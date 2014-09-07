@@ -56,6 +56,7 @@ public:
 
 
     void setMergeChunkDesc( MergeChunkDesc::ptr mcdp ) { merge_chunk_desc_ = mcdp; }
+    QString toString() const;
 
 private:
     UpdateQueue::ptr update_queue_;

@@ -141,7 +141,7 @@ TransformOperationDesc::Extent TransformOperationDesc::
 QString TransformOperationDesc::
         toString() const
 {
-    return (vartype(*chunk_filter_.get ()) + " on " + transformDesc_->toString ()).c_str();
+    return chunk_filter_.read ()->toString();
 }
 
 
