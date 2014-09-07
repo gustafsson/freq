@@ -58,6 +58,8 @@ void copyTexture(unsigned& copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
 
 Fbo2Block::Fbo2Block ()
 {
+    if (!draw_straight_onto_block)
+        fboTexture = Render::BlockTextures::get1 ();
 }
 
 
@@ -87,15 +89,6 @@ Fbo2Block::ScopeBinding Fbo2Block::
     }
     else
     {
-        int oldw = fboTexture ? fboTexture->getWidth () : -1;
-        int oldh = fboTexture ? fboTexture->getHeight () : -1;
-        if (oldw != w || oldh != h)
-        {
-            fbo.reset ();
-            fboTexture.reset ();
-            fboTexture = Render::BlockTextures(w,h,1).get1 ();
-        }
-
         copyTexture (copyfbo, fboTexture, blockTexture);
     }
 

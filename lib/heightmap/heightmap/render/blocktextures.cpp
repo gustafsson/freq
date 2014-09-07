@@ -9,7 +9,149 @@
 namespace Heightmap {
 namespace Render {
 
-BlockTextures::BlockTextures(unsigned width, unsigned height, unsigned initialCapacity)
+class BlockTexturesImpl
+{
+public:
+    explicit BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    BlockTexturesImpl(const BlockTexturesImpl&)=delete;
+    BlockTexturesImpl&operator=(const BlockTexturesImpl&)=delete;
+
+    void setCapacityHint(unsigned c);
+    std::vector<GlTexture::ptr> getUnusedTextures(unsigned count) const;
+    GlTexture::ptr get1();
+
+    int getCapacity() const;
+    int getUseCount() const;
+    unsigned getWidth() const { return width_; }
+    unsigned getHeight() const { return height_; }
+
+    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static unsigned allocated_bytes_per_element();
+
+private:
+    std::vector<GlTexture::ptr> textures;
+    const unsigned width_, height_;
+
+    void setCapacity (unsigned target_capacity);
+
+public:
+    static void test();
+};
+
+
+shared_state<BlockTexturesImpl> global_block_textures_impl;
+
+
+bool BlockTextures::
+        isInitialized()
+{
+    return (bool)global_block_textures_impl;
+}
+
+
+void BlockTextures::
+        init(unsigned width, unsigned height, unsigned initialCapacity)
+{
+    EXCEPTION_ASSERT(!isInitialized ());
+
+    global_block_textures_impl.reset(new BlockTexturesImpl(width,height,initialCapacity));
+}
+
+
+void BlockTextures::
+        destroy()
+{
+    global_block_textures_impl.reset();
+}
+
+
+void BlockTextures::
+        setCapacityHint(unsigned c)
+{
+    global_block_textures_impl->setCapacityHint(c);
+}
+
+
+void BlockTextures::
+        gc()
+{
+    auto w = global_block_textures_impl.write ();
+    w->setCapacityHint(2*w->getUseCount());
+}
+
+
+std::vector<GlTexture::ptr> BlockTextures::
+        getTextures(unsigned count)
+{
+    auto w = global_block_textures_impl.write ();
+    std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(count);
+
+    if (count > missing_textures.size ())
+    {
+        size_t need_more = count - missing_textures.size ();
+        w->setCapacityHint (w->getCapacity () + need_more);
+
+        auto T = w->getUnusedTextures(need_more);
+        EXCEPTION_ASSERT_EQUALS(T.size(), need_more);
+
+        missing_textures.reserve (count);
+        for (GlTexture::ptr& t : T)
+            missing_textures.push_back (t);
+    }
+
+    return missing_textures;
+}
+
+
+GlTexture::ptr BlockTextures::
+        get1()
+{
+    return global_block_textures_impl->get1();
+}
+
+
+int BlockTextures::
+        getCapacity()
+{
+    return global_block_textures_impl.read ()->getCapacity();
+}
+
+
+unsigned BlockTextures::
+        getWidth()
+{
+    return global_block_textures_impl.read ()->getWidth();
+}
+
+
+unsigned BlockTextures::
+        getHeight()
+{
+    return global_block_textures_impl.read ()->getHeight();
+}
+
+void BlockTextures::
+        setupTexture(unsigned name, unsigned width, unsigned height)
+{
+    BlockTexturesImpl::setupTexture (name,width,height);
+}
+
+
+unsigned BlockTextures::
+        allocated_bytes_per_element()
+{
+    return BlockTexturesImpl::allocated_bytes_per_element ();
+}
+
+
+void BlockTextures::
+        test()
+{
+    BlockTexturesImpl::test ();
+}
+
+
+BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity)
     :
       width_(width),
       height_(height)
@@ -19,7 +161,7 @@ BlockTextures::BlockTextures(unsigned width, unsigned height, unsigned initialCa
 }
 
 
-void BlockTextures::
+void BlockTexturesImpl::
         setCapacityHint (unsigned c)
 {
     if (c < textures.size () && textures.size () < 3*c)
@@ -33,7 +175,7 @@ void BlockTextures::
 }
 
 
-void BlockTextures::
+void BlockTexturesImpl::
         setCapacity (unsigned target_capacity)
 {
     if (target_capacity < textures.size ())
@@ -73,7 +215,7 @@ void BlockTextures::
 }
 
 
-std::vector<GlTexture::ptr> BlockTextures::
+std::vector<GlTexture::ptr> BlockTexturesImpl::
         getUnusedTextures(unsigned count) const
 {
     std::vector<GlTexture::ptr> pick;
@@ -92,14 +234,25 @@ std::vector<GlTexture::ptr> BlockTextures::
 }
 
 
-int BlockTextures::
+int BlockTexturesImpl::
         getCapacity() const
 {
     return textures.size ();
 }
 
 
-void BlockTextures::
+int BlockTexturesImpl::
+        getUseCount() const
+{
+    int c = 0;
+    for (const GlTexture::ptr& p : textures)
+        if (!p.unique ())
+            c++;
+    return c;
+}
+
+
+void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h)
 {
     glBindTexture(GL_TEXTURE_2D, name);
@@ -120,7 +273,7 @@ void BlockTextures::
 }
 
 
-unsigned BlockTextures::
+unsigned BlockTexturesImpl::
         allocated_bytes_per_element()
 {
 #ifdef GL_ES_VERSION_2_0
@@ -131,7 +284,7 @@ unsigned BlockTextures::
 }
 
 
-GlTexture::ptr BlockTextures::
+GlTexture::ptr BlockTexturesImpl::
         get1()
 {
     auto v = getUnusedTextures(1);
@@ -158,7 +311,7 @@ GlTexture::ptr BlockTextures::
 namespace Heightmap {
 namespace Render {
 
-void BlockTextures::
+void BlockTexturesImpl::
         test()
 {
     std::string name = "BlockTextures";
@@ -173,7 +326,7 @@ void BlockTextures::
     {
         GlException_CHECK_ERROR();
 
-        BlockTextures block_textures(512,512);
+        BlockTexturesImpl block_textures(512,512);
 
         int c = block_textures.getCapacity ();
 

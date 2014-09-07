@@ -44,7 +44,6 @@ Collection::
     cache_( new BlockCache ),
     block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
     block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
-    block_textures_(new Render::BlockTextures(block_layout.texels_per_row (), block_layout.texels_per_column ())),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -219,19 +218,7 @@ void Collection::
 
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt("Collection::createMissingBlocks %d new", missing.size());
 
-    auto w = block_textures_.write ();
-    std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(missing.size());
-    int need_more = missing.size() - missing_textures.size ();
-    if (need_more)
-    {
-        // Only grow capacity here, possibly shrink when running garbage collection after each frame
-        w->setCapacityHint (w->getCapacity () + need_more);
-    }
-
-    auto T = w->getUnusedTextures(need_more);
-    w.unlock ();
-    for (GlTexture::ptr& t : T)
-        missing_textures.push_back (t);
+    std::vector<GlTexture::ptr> missing_textures = Render::BlockTextures::getTextures (missing.size());
 
     std::vector<pBlock> blocks_to_init;
     blocks_to_init.reserve (missing.size());
@@ -302,7 +289,7 @@ int Collection::
     int discarded_blocks = to_remove_.size () - keep.size ();
     to_remove_.swap (keep); keep.clear ();
 
-    block_textures_->setCapacityHint( max_cache_size );
+    Render::BlockTextures::gc();
 
     return discarded_blocks;
 }
@@ -410,7 +397,6 @@ void Collection::
         block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
         block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
     }
-    block_textures_.reset(new Render::BlockTextures(v.texels_per_row (), v.texels_per_column ()));
 
     _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
     length(_prev_length);

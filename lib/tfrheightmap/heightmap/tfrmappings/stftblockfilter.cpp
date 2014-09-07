@@ -115,7 +115,8 @@ void StftBlockFilter::
             return ref;
         }();
 
-        GlTexture::ptr tex = Render::BlockTextures(4,4,1).get1 ();;
+        Render::BlockTextures::Scoped bt(4,4,1);
+        GlTexture::ptr tex = Render::BlockTextures::get1 ();;
         pBlock block( new Block(ref, bl, vp, tex));
 
         // Create some data to plot into the block

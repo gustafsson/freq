@@ -10,20 +10,36 @@ namespace Heightmap {
 namespace Render {
 
 /**
+ * This is a singleton.
+ *
  * @brief The BlockTextures class should keep track of all OpenGL textures that
  * have been allocated for painting block textures and provide already
  * allocated textures fast.
  *
  * It should provide already allocated textures fast.
+ *
+ * The memory is a shared global resource. Thus the instance of BlockTextures
+ * is also a shared and global singleton.
  */
 class BlockTextures
 {
 public:
-    typedef shared_state<BlockTextures> ptr;
+    static bool isInitialized();
+    static void init(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    static void destroy();
 
-    explicit BlockTextures(unsigned width, unsigned height, unsigned initialCapacity = 0);
-    BlockTextures(const BlockTextures&)=delete;
-    BlockTextures&operator=(const BlockTextures&)=delete;
+    /**
+     * @brief Scoped provides a scoped initialization, useful in test environments.
+     */
+    struct Scoped {
+        Scoped(unsigned width, unsigned height, unsigned initialCapacity = 0) {
+            init(width,height,initialCapacity);
+        }
+
+        ~Scoped() { destroy(); }
+    };
+
+    static void testInit(unsigned width, unsigned height, unsigned initialCapacity = 0);
 
     /**
      * @brief setCapacityHint
@@ -32,29 +48,34 @@ public:
      *
      * @param c
      */
-    void setCapacityHint(unsigned c);
+    static void setCapacityHint(unsigned c);
 
     /**
-     * @brief getUnusedTexture
-     * @return up to 'count' textures if there are any unused ones.
+     * @brief gc, calls setCapacityHint('number of currently used textures')
+     */
+    static void gc();
+
+    /**
+     * @brief getTextures
+     * @returns 'count' textures
      *
      * To free up unused textures, delete the previously obtained copies.
      */
-    std::vector<GlTexture::ptr> getUnusedTextures(unsigned count) const;
+    static std::vector<GlTexture::ptr> getTextures(unsigned count);
 
     /**
      * @brief get1
      * @return
      */
-    GlTexture::ptr get1();
+    static GlTexture::ptr get1();
 
     /**
      * @brief getCapacity
      * @return
      */
-    int getCapacity() const;
-    unsigned getWidth() const { return width_; }
-    unsigned getHeight() const { return height_; }
+    static int getCapacity();
+    static unsigned getWidth();
+    static unsigned getHeight();
 
     /**
      * @brief setupTexture
@@ -69,13 +90,11 @@ public:
      */
     static unsigned allocated_bytes_per_element();
 
-private:
-    std::vector<GlTexture::ptr> textures;
-    const unsigned width_, height_;
-
-    void setCapacity (unsigned target_capacity);
 public:
     static void test();
+
+private:
+    BlockTextures(); // don't instantiate
 };
 
 } // namespace Render

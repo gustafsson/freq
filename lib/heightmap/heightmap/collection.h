@@ -173,7 +173,6 @@ private:
     std::set<pBlock> to_remove_;
     std::unique_ptr<BlockManagement::BlockFactory> block_factory_;
     std::unique_ptr<BlockManagement::BlockInitializer> block_initializer_;
-    Render::BlockTextures::ptr block_textures_;
 
     bool
         _is_visible;

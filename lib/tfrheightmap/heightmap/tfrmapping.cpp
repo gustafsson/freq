@@ -62,6 +62,9 @@ TfrMapping::
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column ());
 
+    if (!Heightmap::Render::BlockTextures::isInitialized ())
+        Heightmap::Render::BlockTextures::init (block_layout.texels_per_row (), block_layout.texels_per_column ()),
+
     this->channels (channels);
 }
 
@@ -97,6 +100,10 @@ void TfrMapping::
                 bl.texels_per_row(),
                 bl.texels_per_column ());
 
+    EXCEPTION_ASSERT_EQUALS(bl.texels_per_row (), block_layout_.texels_per_row ());
+    EXCEPTION_ASSERT_EQUALS(bl.texels_per_column (), block_layout_.texels_per_column ());
+    // if this fails, BlockTextures would have to change size, but block_layout may then
+    // be different in different windows.
     block_layout_ = bl;
 
     updateCollections();

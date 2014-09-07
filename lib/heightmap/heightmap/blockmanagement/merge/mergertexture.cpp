@@ -88,9 +88,7 @@ void MergerTexture::
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
 #ifndef DRAW_STRAIGHT_ONTO_BLOCK
-        int w = block_layout_.texels_per_row();
-        int h = block_layout_.texels_per_column ();
-        tex_ = Render::BlockTextures(w, h, 1).get1 ();
+        tex_ = Render::BlockTextures::get1 ();
         fbo_.reset (new GlFrameBuffer(*tex_));
 #endif
 
@@ -342,10 +340,10 @@ void MergerTexture::
         BlockLayout bl(4,4,4);
         VisualizationParams::ptr vp(new VisualizationParams);
 
-        Render::BlockTextures block_textures(4,4);
+        Render::BlockTextures::Scoped block_textures_raii(4,4);
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        GlTexture::ptr tex = block_textures.get1 ();
+        GlTexture::ptr tex = Render::BlockTextures::get1 ();
         pBlock block(new Block(ref,bl,vp,tex));
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -367,7 +365,7 @@ void MergerTexture::
                               0, 0, 0, 0,
                              .5, 0, 0, .5};
 
-            GlTexture::ptr tex = block_textures.get1 ();
+            GlTexture::ptr tex = Render::BlockTextures::get1 ();
             pBlock block(new Block(ref.parentHorizontal (),bl,vp,tex));
             auto ts = tex->getScopeBinding ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
@@ -393,7 +391,7 @@ void MergerTexture::
                               9, 10, 11, 12,
                               13, 14, 15, .16};
 
-            GlTexture::ptr tex = block_textures.get1 ();
+            GlTexture::ptr tex = Render::BlockTextures::get1 ();
             pBlock block(new Block(ref.right (),bl,vp,tex));
             auto ts = tex->getScopeBinding ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
