@@ -118,7 +118,7 @@ public:
 
 
     Signal::Intervals needed_samples() const;
-    Signal::Intervals recently_created() const;
+    Signal::Intervals recently_created();
 
 
     /**
@@ -173,6 +173,9 @@ private:
     std::set<pBlock> to_remove_;
     std::unique_ptr<BlockManagement::BlockFactory> block_factory_;
     std::unique_ptr<BlockManagement::BlockInitializer> block_initializer_;
+
+    Signal::Intervals
+        recently_created_;
 
     bool
         _is_visible;

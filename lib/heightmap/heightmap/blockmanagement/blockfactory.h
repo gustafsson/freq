@@ -23,10 +23,6 @@ public:
       */
     pBlock              createBlock( const Reference& ref );
 
-    Signal::Intervals   recently_created();
-
-    void                next_frame();
-
 private:
     /**
      * @brief setDummyValues fills a block with dummy values, used for testing.
@@ -34,14 +30,8 @@ private:
      */
     void                setDummyValues( pBlock block );
 
-
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
-    size_t _free_memory;
-
-
-    Signal::Intervals recently_created_;
-    unsigned created_count_;
 
 public:
     static void test();

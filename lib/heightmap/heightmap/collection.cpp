@@ -91,21 +91,32 @@ void Collection::
 void Collection::
         next_frame()
 {
+    glFlush();
+
     BlockCache::cache_t cache = cache_->clone ();
 
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")
             % __FUNCTION__ % cache.size ());
-
-    block_factory_->next_frame();
 
     boost::unordered_set<Reference> blocksToPoke;
 
     for (const BlockCache::cache_t::value_type& b : cache)
     {
         Block* block = b.second.get();
+        bool was_ready = block->isTextureReady ();
 
-         // if this block was newly created, wait until the next frame before it can receive updates
+        // Mark that any old texture has been finished drawing with, so that it
+        // can be reused now (i.e there has been a glFlush between the draw
+        // commands and now)
         block->setTextureReady ();
+
+        // if this block was newly created, wait until the next frame when all
+        // draw calls to it have been glFlushed. After the flush the block can
+        // receive updates from the update thread (for threading, set that the
+        // block can receive updates through setTextureReady before setting
+        // recently_created_ which info is used by HeightmapProcessingPublisher)
+        if (!was_ready)
+            recently_created_ |= block->getInterval ();
 
         if (block->frame_number_last_used == _frame_counter)
         {
@@ -433,9 +444,11 @@ Intervals Collection::
 
 
 Signal::Intervals Collection::
-        recently_created() const
+        recently_created()
 {
-    return block_factory_->recently_created();
+    Signal::Intervals I = recently_created_;
+    recently_created_.clear ();
+    return I;
 }
 
 

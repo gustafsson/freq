@@ -60,7 +60,7 @@ void HeightmapProcessingPublisher::
 
     for ( auto cp : C )
     {
-        auto c = cp.read();
+        auto c = cp.write ();
         things_to_add |= c->recently_created();
         needed_samples |= c->needed_samples();
     }

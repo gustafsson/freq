@@ -22,10 +22,7 @@ BlockFactory::
         BlockFactory(BlockLayout bl, VisualizationParams::const_ptr vp)
     :
       block_layout_(bl),
-      visualization_params_(vp),
-      _free_memory(availableMemoryForSingleAllocation()),
-      recently_created_(Signal::Intervals::Intervals_ALL),
-      created_count_(0)
+      visualization_params_(vp)
 {
     EXCEPTION_ASSERT(visualization_params_);
 }
@@ -41,27 +38,9 @@ pBlock BlockFactory::
                      block_layout_,
                      visualization_params_) );
 
-    recently_created_ |= block->getInterval ();
-
     //setDummyValues(block);
 
     return block;
-}
-
-
-Signal::Intervals BlockFactory::
-        recently_created()
-{
-    Signal::Intervals r = recently_created_;
-    recently_created_.clear ();
-    return r;
-}
-
-
-void BlockFactory::
-        next_frame()
-{
-    created_count_ = 0;
 }
 
 
