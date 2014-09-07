@@ -228,8 +228,8 @@ void RenderView::
     glViewport( vp[0], vp[1], vp[2], vp[3] );
     rect_y_ = rect.y();
 
-    gl_projection.modelview = GLmatrix::identity ();
-    glhPerspectivef (gl_projection.projection.v (), 45.0f, rect.width ()/(float)rect.height (), 0.01f, 1000.0f);
+    gl_projection.modelview = matrixd::identity ();
+    glhPerspective (gl_projection.projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
 }
 
 
@@ -257,7 +257,7 @@ void RenderView::
         emit prePaint();
     }
 
-    float elapsed_ms = -1;
+    double elapsed_ms = -1;
 
     TIME_PAINTGL_DETAILS if (_render_timer)
 	    elapsed_ms = _render_timer->elapsedTime()*1000.f;
@@ -327,11 +327,11 @@ void RenderView::
 
         drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
 
-        float last_ysize = model->render_settings.last_ysize;
-        gl_projection.modelview *= GLmatrix::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
+        double last_ysize = model->render_settings.last_ysize;
+        gl_projection.modelview *= matrixd::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
 
         {
-            float length = model->tfr_mapping ()->length();
+            double length = model->tfr_mapping ()->length();
             TIME_PAINTGL_DETAILS TaskTimer tt("Draw axes (%g)", length);
 
             // setRotationForAxes messes with render_settings, this should be covered by RenderAxes
@@ -438,66 +438,66 @@ void RenderView::
     if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
         redraw();
 
-    gl_projection.modelview = GLmatrix::identity ();
-    gl_projection.modelview *= GLmatrix::translate ( model->camera.p );
-    gl_projection.modelview *= GLmatrix::rot ( model->camera.r[0], 1, 0, 0 );
-    gl_projection.modelview *= GLmatrix::rot ( model->camera.effective_ry(), 0, 1, 0 );
-    gl_projection.modelview *= GLmatrix::rot ( model->camera.r[2], 0, 0, 1 );
+    gl_projection.modelview = matrixd::identity ();
+    gl_projection.modelview *= matrixd::translate ( model->camera.p );
+    gl_projection.modelview *= matrixd::rot ( model->camera.r[0], 1, 0, 0 );
+    gl_projection.modelview *= matrixd::rot ( model->camera.effective_ry(), 0, 1, 0 );
+    gl_projection.modelview *= matrixd::rot ( model->camera.r[2], 0, 0, 1 );
 
     if (model->render_settings.left_handed_axes)
-        gl_projection.modelview *= GLmatrix::scale (-1,1,1);
+        gl_projection.modelview *= matrixd::scale (-1,1,1);
     else
-        gl_projection.modelview *= GLmatrix::rot (-90,0,1,0);
+        gl_projection.modelview *= matrixd::rot (-90,0,1,0);
 
-    gl_projection.modelview *= GLmatrix::scale (model->camera.xscale, 1, model->camera.zscale);
+    gl_projection.modelview *= matrixd::scale (model->camera.xscale, 1, model->camera.zscale);
 
-    float a = model->camera.effective_ry();
-    float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
-    float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
-    float dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
-    float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
+    double a = model->camera.effective_ry();
+    double dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
+    double dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
+    double dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
+    double dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
-    float limit = 5, middle=45;
+    double limit = 5, middle=45;
     if (model->camera.r[0] < limit)
     {
-        float f = 1 - model->camera.r[0] / limit;
+        double f = 1 - model->camera.r[0] / limit;
         if (dyx<middle || dyx2<middle)
-            gl_projection.modelview *= GLmatrix::scale (1,1,1-0.99999*f);
+            gl_projection.modelview *= matrixd::scale (1,1,1-0.99999*f);
         if (dyz<middle || dyz2<middle)
-            gl_projection.modelview *= GLmatrix::scale (1-0.99999*f,1,1);
+            gl_projection.modelview *= matrixd::scale (1-0.99999*f,1,1);
     }
 
-    gl_projection.modelview *= GLmatrix::translate ( -model->camera.q );
+    gl_projection.modelview *= matrixd::translate ( -model->camera.q );
 
     model->camera.orthoview.TimeStep(.08);
 }
 
 
-GLmatrix RenderView::
+matrixd RenderView::
         setRotationForAxes()
 {
-    GLmatrix M = GLmatrix::identity ();
-    float a = model->camera.effective_ry();
-    float dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
-    float dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
-    float dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
-    float dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
+    matrixd M = matrixd::identity ();
+    double a = model->camera.effective_ry();
+    double dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
+    double dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
+    double dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
+    double dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
-    float limit = 5, middle=45;
+    double limit = 5, middle=45;
     model->render_settings.draw_axis_at0 = 0;
     if (model->camera.r[0] < limit)
     {
-        float f = 1 - model->camera.r[0] / limit;
+        double f = 1 - model->camera.r[0] / limit;
 
         if (dyx<middle)
-            M *= GLmatrix::rot (f*-90, 1-dyx/middle,0,0);
+            M *= matrixd::rot (f*-90, 1-dyx/middle,0,0);
         if (dyx2<middle)
-            M *= GLmatrix::rot (f*90, 1-dyx2/middle,0,0);
+            M *= matrixd::rot (f*90, 1-dyx2/middle,0,0);
 
         if (dyz<middle)
-            M *= GLmatrix::rot (f*-90,0,0,1-dyz/middle);
+            M *= matrixd::rot (f*-90,0,0,1-dyz/middle);
         if (dyz2<middle)
-            M *= GLmatrix::rot (f*90,0,0,1-dyz2/middle);
+            M *= matrixd::rot (f*90,0,0,1-dyz2/middle);
 
         if (dyx<middle || dyx2<middle)
         {

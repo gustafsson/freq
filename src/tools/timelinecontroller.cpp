@@ -216,8 +216,8 @@ void TimelineController::
             //moveButton.spacePos(x, y, current[0], current[1]);
             current.time = (current.time - view->_xoffs) * view->_xscale;
 
-            float length = std::max( 1.f, project->length());
-            view->_xoffs = current.time - 0.5f*length/view->_xscale;
+            double length = std::max( 1.0, project->length());
+            view->_xoffs = current.time - 0.5*length/view->_xscale;
 
             view->redraw();
         }

@@ -15,8 +15,8 @@ public:
     void drawFrustum();
 
 private:
-    GLvector camera;
-    std::vector<GLvector> clippedFrustum;
+    vectord camera;
+    std::vector<vectord> clippedFrustum;
 };
 
 } // namespace Render

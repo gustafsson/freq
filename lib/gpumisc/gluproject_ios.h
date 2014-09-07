@@ -13,40 +13,40 @@
 //#include <OpenGLES/ES1/gl.h>
 //#include <OpenGLES/ES1/glext.h>
 
-GLmatrix
-gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar);
+matrixd
+gluPerspective(double fovy, double aspect, double zNear, double zFar);
 
-GLmatrix
-gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
-    GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
-    GLfloat upz);
+matrixd
+gluLookAt(double eyex, double eyey, double eyez, double centerx,
+    double centery, double centerz, double upx, double upy,
+    double upz);
 
 GLint
-gluProject(GLfloat objx, GLfloat objy, GLfloat objz,
-     const GLfloat modelMatrix[16],
-     const GLfloat projMatrix[16],
+gluProject(double objx, double objy, double objz,
+     const double modelMatrix[16],
+     const double projMatrix[16],
      const GLint viewport[4],
-     GLfloat *winx, GLfloat *winy, GLfloat *winz);
+     double *winx, double *winy, double *winz);
 
 GLint
-gluUnProject(GLfloat winx, GLfloat winy, GLfloat winz,
-    const GLfloat modelMatrix[16],
-    const GLfloat projMatrix[16],
+gluUnProject(double winx, double winy, double winz,
+    const double modelMatrix[16],
+    const double projMatrix[16],
     const GLint viewport[4],
-    GLfloat *objx, GLfloat *objy, GLfloat *objz);
+    double *objx, double *objy, double *objz);
 
 
 GLint
-gluUnProject4(GLfloat winx, GLfloat winy, GLfloat winz, GLfloat clipw,
-     const GLfloat modelMatrix[16],
-     const GLfloat projMatrix[16],
+gluUnProject4(double winx, double winy, double winz, double clipw,
+     const double modelMatrix[16],
+     const double projMatrix[16],
      const GLint viewport[4],
      GLclampf nearVal, GLclampf farVal,
-     GLfloat *objx, GLfloat *objy, GLfloat *objz,
-     GLfloat *objw);
+     double *objx, double *objy, double *objz,
+     double *objw);
 
-GLmatrix
-gluPickMatrix(GLfloat x, GLfloat y, GLfloat deltax, GLfloat deltay,
+matrixd
+gluPickMatrix(double x, double y, double deltax, double deltay,
      GLint viewport[4]);
 
 #endif // GLUPROJECT_IOS_H

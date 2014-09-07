@@ -84,9 +84,9 @@ Heightmap::Position TimelineView::
     pos.setY( height - 1 - pos.y() );
 
     int r = devicePixelRatio ();
-    GLvector win_coord( r*pos.x(), r*pos.y(), 0.1);
+    vectord win_coord( r*pos.x(), r*pos.y(), 0.1);
 
-    GLvector world_coord = gl_projection.gluUnProject (win_coord, success);
+    vectord world_coord = gl_projection.gluUnProject (win_coord, success);
 
     return Heightmap::Position( world_coord[0], world_coord[2] );
 }
@@ -254,8 +254,8 @@ void TimelineView::
             }
             setupCamera( false );
 
-            glGetFloatv(GL_MODELVIEW_MATRIX, gl_projection.modelview.v ());
-            glGetFloatv(GL_PROJECTION_MATRIX, gl_projection.projection.v ());
+            glGetDoublev(GL_MODELVIEW_MATRIX, gl_projection.modelview.v ());
+            glGetDoublev(GL_PROJECTION_MATRIX, gl_projection.projection.v ());
             glGetIntegerv(GL_VIEWPORT, gl_projection.viewport.v);
 
             {

@@ -6,10 +6,10 @@ namespace Heightmap {
 class Position {
 public:
     // TODO rename to normalized frequency or something...
-    float time, scale;
+    double time; float scale;
 
     Position() : time(0), scale(0) {}
-    Position(float time, float scale) : time(time), scale(scale) {}
+    Position(double time, float scale) : time(time), scale(scale) {}
 
     bool operator== (Position const&b) { return time==b.time && scale==b.scale; }
     bool operator!= (Position const&b) { return !(*this==b); }

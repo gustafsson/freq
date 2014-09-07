@@ -18,7 +18,7 @@ namespace GeometricAlgebra
  * @return The distance measured in units along 'normal', so a negative
  * distance means obj is in front of the plane.
  */
-GLvector::baseT distanceToPlane( GLvector obj, const GLvector& plane, const GLvector& normal );
+vectord::baseT distanceToPlane( vectord obj, const vectord& plane, const vectord& normal );
 
 
 /**
@@ -28,7 +28,7 @@ GLvector::baseT distanceToPlane( GLvector obj, const GLvector& plane, const GLve
  * @param target Minimize '|r-target|', where 'r' is a point in the polygon.
  * @return 'r'. If the polygon 'l' is empty, returns target.
  */
-GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &target);
+vectord closestPointOnPoly( const std::vector<vectord>& l, const vectord &target);
 
 
 /**
@@ -40,7 +40,7 @@ GLvector closestPointOnPoly( const std::vector<GLvector>& l, const GLvector &tar
  * The normal does not need to be normalized.
  * @return A point in the plane. Perpendicular line and normal leads to division by 0.
  */
-GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, const tvector<4,GLfloat>& plane );
+vectord planeIntersection( vectord const& pt1, vectord const& pt2, double &s, const tvector<4,double>& plane );
 
 
 /**
@@ -49,8 +49,8 @@ GLvector planeIntersection( GLvector const& pt1, GLvector const& pt2, float &s, 
  * @param p0,n Defines the plane.
  * @return The polygon on the frontside of the plane.
  */
-std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, const GLvector& p0, const GLvector& n );
-std::vector<GLvector> clipPlane( const std::vector<GLvector>& p, const tvector<4,GLfloat>& plane );
+std::vector<vectord> clipPlane( const std::vector<vectord>& p, const vectord& p0, const vectord& n );
+std::vector<vectord> clipPlane( const std::vector<vectord>& p, const tvector<4,double>& plane );
 
 void test();
 

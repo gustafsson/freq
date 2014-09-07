@@ -78,25 +78,25 @@ bool RenderInfo::
     const Position p[2] = { r.a, r.b };
 
     Render::FrustumClip frustum_clip(*gl_projection);
-    float y[]={0, float(frustum_clip.getCamera()[1]*.5)};
+    double y[]={0, frustum_clip.getCamera()[1]*.5};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
-        GLvector corner[]=
+        vectord corner[]=
         {
-            GLvector( p[0].time, y[i], p[0].scale),
-            GLvector( p[0].time, y[i], p[1].scale),
-            GLvector( p[1].time, y[i], p[1].scale),
-            GLvector( p[1].time, y[i], p[0].scale)
+            vectord( p[0].time, y[i], p[0].scale),
+            vectord( p[0].time, y[i], p[1].scale),
+            vectord( p[1].time, y[i], p[1].scale),
+            vectord( p[1].time, y[i], p[0].scale)
         };
 
-        GLvector closest_i;
-        std::vector<GLvector> clippedCorners = frustum_clip.clipFrustum(corner, &closest_i); // about 10 us
+        vectord closest_i;
+        std::vector<vectord> clippedCorners = frustum_clip.clipFrustum(corner, &closest_i); // about 10 us
         if (clippedCorners.empty ())
             continue;
 
-        GLvector timePoint = closest_i;
-        GLvector scalePoint = closest_i;
-        for (GLvector v : clippedCorners)
+        vectord timePoint = closest_i;
+        vectord scalePoint = closest_i;
+        for (vectord v : clippedCorners)
         {
             if (fabsf(v[0]-closest_i[0]) > fabsf(timePoint[0]-closest_i[0]))
                 timePoint = v;
@@ -110,15 +110,15 @@ bool RenderInfo::
         timePoint = closest_i + (timePoint-closest_i)*0.01f;
         scalePoint = closest_i + (scalePoint-closest_i)*0.01f;
 
-        GLvector::T timeLength = fabsf (closest_i[0] - timePoint[0]);
-        GLvector::T scaleLength = fabsf (closest_i[2] - scalePoint[2]);
+        vectord::T timeLength = fabsf (closest_i[0] - timePoint[0]);
+        vectord::T scaleLength = fabsf (closest_i[2] - scalePoint[2]);
 
         if (timeLength==0 || scaleLength==0)
             continue;
 
         // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-        GLvector::T pixelsPerTime = gl_projection->computePixelDistance (closest_i, timePoint) / timeLength;
-        GLvector::T pixelsPerScale = gl_projection->computePixelDistance (closest_i, scalePoint) / scaleLength;
+        vectord::T pixelsPerTime = gl_projection->computePixelDistance (closest_i, timePoint) / timeLength;
+        vectord::T pixelsPerScale = gl_projection->computePixelDistance (closest_i, scalePoint) / scaleLength;
         timePixels = pixelsPerTime * r.time ();
         scalePixels = pixelsPerScale * r.scale ();
 

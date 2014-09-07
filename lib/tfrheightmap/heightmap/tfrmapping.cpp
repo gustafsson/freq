@@ -198,7 +198,7 @@ void TfrMapping::
 //}
 
 
-float TfrMapping::
+double TfrMapping::
         length() const
 {
     return length_;
@@ -206,7 +206,7 @@ float TfrMapping::
 
 
 void TfrMapping::
-        length(float L)
+        length(double L)
 {
     if (L == length_)
         return;

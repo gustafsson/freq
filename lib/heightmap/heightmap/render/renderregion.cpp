@@ -74,9 +74,9 @@ void RenderRegion::
 
     program_->setAttributeArray(0, GL_FLOAT, values, 3);
 
-    GLmatrix modelview = gl_projection_.modelview;
-    modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
-    modelview *= GLmatrix::scale (r.time(), 1, r.scale());
+    matrixd modelview = gl_projection_.modelview;
+    modelview *= matrixd::translate (r.a.time, 0, r.a.scale);
+    modelview *= matrixd::scale (r.time(), 1, r.scale());
 
     glEnable(GL_BLEND);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -84,12 +84,12 @@ void RenderRegion::
 
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
     program_->setUniformValue("modelviewproj",
-                              QMatrix4x4((gl_projection_.projection*modelview).transpose ().v ()));
+                              QMatrix4x4(GLmatrixf(gl_projection_.projection*modelview).transpose ().v ()));
     glDrawArrays(GL_LINE_STRIP, 0, n_values);
 
     program_->setUniformValue("color", 0.2, 0.8, 0.8, 0.5);
     program_->setUniformValue("modelviewproj",
-                              QMatrix4x4((gl_projection_.projection*GLmatrix::translate (0,y,0)*modelview).transpose ().v ()));
+                              QMatrix4x4(GLmatrixf(gl_projection_.projection*matrixd::translate (0,y,0)*modelview).transpose ().v ()));
     glDrawArrays(GL_LINE_STRIP, 0, n_values);
 
     program_->disableAttributeArray(0);

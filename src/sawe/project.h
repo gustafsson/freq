@@ -168,7 +168,7 @@ public:
     Signal::Processing::Chain::ptr processing_chain() { return processing_chain_; }
     Signal::Processing::TargetMarker::ptr default_target();
     Signal::OperationDesc::Extent extent();
-    float length();
+    double length();
 
 private:
     Project(); // used by deserialization

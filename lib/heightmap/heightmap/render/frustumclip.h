@@ -12,17 +12,17 @@ class FrustumClip
 public:
     FrustumClip(const glProjection& gl_projection, float border_width=0, float border_height=0);
 
-    const GLvector& getCamera() const { return camera; }
+    const vectord& getCamera() const { return camera; }
 
-    std::vector<GLvector> clipFrustum( GLvector corner[4], GLvector* closest_i=0 ) const;
-    std::vector<GLvector> clipFrustum( std::vector<GLvector> l, GLvector* closest_i=0 ) const;
-    std::vector<GLvector> visibleXZ();
+    std::vector<vectord> clipFrustum( vectord corner[4], vectord* closest_i=0 ) const;
+    std::vector<vectord> clipFrustum( std::vector<vectord> l, vectord* closest_i=0 ) const;
+    std::vector<vectord> visibleXZ();
 
 private:
-    GLvector camera;
-    tvector<4,GLfloat> right, left, top, bottom, far, near;
+    vectord camera;
+    tvector<4,double> right, left, top, bottom, far, near;
 
-    void update(const glProjection& gl_projection, float w, float h);
+    void update(const glProjection& gl_projection, double w, double h);
 };
 
 } // namespace Render

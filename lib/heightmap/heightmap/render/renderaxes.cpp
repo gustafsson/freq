@@ -53,9 +53,9 @@ void RenderAxes::
 {
 #ifndef GL_ES_VERSION_2_0
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (gl_projection->projection.v ());
+    glLoadMatrixf (GLmatrixf(gl_projection->projection).v ());
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (gl_projection->modelview.v ());
+    glLoadMatrixf (GLmatrixf(gl_projection->modelview).v ());
 
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
@@ -121,16 +121,16 @@ void RenderAxes::
     }
 
     // 2 clip entire sound to frustum
-    std::vector<GLvector> clippedFrustum;
+    std::vector<vectord> clippedFrustum;
 
-    GLvector closest_i;
+    vectord closest_i;
     {   //float T = collection->worker->source()->length();
-        GLvector corner[4]=
+        vectord corner[4]=
         {
-            GLvector( 0, 0, 0),
-            GLvector( 0, 0, 1),
-            GLvector( T, 0, 1),
-            GLvector( T, 0, 0),
+            vectord( 0, 0, 0),
+            vectord( 0, 0, 1),
+            vectord( T, 0, 1),
+            vectord( T, 0, 0),
         };
 
         clippedFrustum = frustum_clip.clipFrustum (corner, &closest_i);
@@ -138,7 +138,7 @@ void RenderAxes::
 
 
     // 3 find inside
-    GLvector inside;
+    vectord inside;
     {
         for (unsigned i=0; i<clippedFrustum.size(); i++)
             inside = inside + clippedFrustum[i];
@@ -149,7 +149,7 @@ void RenderAxes::
 
 
     // 4 render and decide upon scale
-    GLvector x(1,0,0), z(0,0,1);
+    vectord x(1,0,0), z(0,0,1);
 
     glDepthMask(false);
     glDisable(GL_DEPTH_TEST);
@@ -167,12 +167,12 @@ void RenderAxes::
     {
         glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
-        GLvector p1 = clippedFrustum[i]; // starting point of side
-        GLvector p2 = clippedFrustum[j]; // end point of side
-        GLvector v0 = p2-p1;
+        vectord p1 = clippedFrustum[i]; // starting point of side
+        vectord p2 = clippedFrustum[j]; // end point of side
+        vectord v0 = p2-p1;
 
         // decide if this side is a t or f axis
-        GLvector::T timePerPixel, scalePerPixel;
+        vectord::T timePerPixel, scalePerPixel;
         g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
         timePerPixel *= scale; scalePerPixel *= scale;
 
@@ -180,7 +180,7 @@ void RenderAxes::
 
 
         // decide in which direction to traverse this edge
-        GLvector::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
+        vectord::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
         g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
         g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
         timePerPixel1 *= scale; scalePerPixel1 *= scale;
@@ -192,19 +192,19 @@ void RenderAxes::
 
         if ((taxis && timePerPixel1 > timePerPixel2) || (!taxis && hzDelta1 > hzDelta2))
         {
-            GLvector flip = p1;
+            vectord flip = p1;
             p1 = p2;
             p2 = flip;
         }
 
-        GLvector p = p1; // starting point
-        GLvector v = p2-p1;
+        vectord p = p1; // starting point
+        vectord v = p2-p1;
 
         if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
 
-        GLvector::T timePerPixel_closest, scalePerPixel_closest;
+        vectord::T timePerPixel_closest, scalePerPixel_closest;
         g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
         timePerPixel_closest *= scale; scalePerPixel_closest *= scale;
 
@@ -215,14 +215,14 @@ void RenderAxes::
         }
 
         // need initial f value
-        GLvector pp = p;
+        vectord pp = p;
         double f = fa.getFrequencyT( p[2] );
 
         if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
             (render_settings.draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
         for (double u=-1; true; )
         {
-            GLvector::T timePerPixel, scalePerPixel;
+            vectord::T timePerPixel, scalePerPixel;
             g->computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
             timePerPixel *= scale; scalePerPixel *= scale;
 
@@ -230,8 +230,8 @@ void RenderAxes::
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
             scalePerPixel = scalePerPixel * ppp + scalePerPixel_closest * (1.0-ppp);
 
-            GLvector::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
-            GLvector::T SF = scalePerPixel * 750;
+            vectord::T ST = timePerPixel * 750; // ST = time units per 750 pixels, 750 pixels is a fairly common window size
+            vectord::T SF = scalePerPixel * 750;
             double drawScaleT = std::min(ST, 50*timePerPixel_closest*750);
             double drawScaleF = std::min(SF, 50*scalePerPixel_closest*750);
 
@@ -372,7 +372,7 @@ void RenderAxes::
             p[c2] = p1[c2] + v[c2]*u;
 
 
-            GLvector np = p;
+            vectord np = p;
             nf = f;
             int nt = t;
 
@@ -526,7 +526,7 @@ void RenderAxes::
 
         if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p[0]==0:true))
         {
-            GLvector::T timePerPixel, scalePerPixel;
+            vectord::T timePerPixel, scalePerPixel;
             g->computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
             timePerPixel *= scale; scalePerPixel *= scale;
 
@@ -585,9 +585,9 @@ void RenderAxes::
                 float u = (ff - p1[2])/v[2];
                 float un = (ff+wN - p1[2])/v[2];
                 float up = (ff-wP - p1[2])/v[2];
-                GLvector pt = p1+v*u;
-                GLvector pn = p1+v*un;
-                GLvector pp = p1+v*up;
+                vectord pt = p1+v*u;
+                vectord pn = p1+v*un;
+                vectord pp = p1+v*up;
 
                 glPushMatrixContext push_model( GL_MODELVIEW );
 
@@ -618,10 +618,10 @@ void RenderAxes::
                     if (blackKey)
                     {
                         glBegin(GL_TRIANGLE_STRIP);
-                            glVertex3f(pp[0] - xscale*ST*(1.f), 0, pp[2]);
-                            glVertex3f(pp[0] - xscale*ST*(blackw), 0, pp[2]);
-                            glVertex3f(pn[0] - xscale*ST*(1.f), 0, pn[2]);
-                            glVertex3f(pn[0] - xscale*ST*(blackw), 0, pn[2]);
+                            glVertex3d(pp[0] - xscale*ST*(1.f), 0, pp[2]);
+                            glVertex3d(pp[0] - xscale*ST*(blackw), 0, pp[2]);
+                            glVertex3d(pn[0] - xscale*ST*(1.f), 0, pn[2]);
+                            glVertex3d(pn[0] - xscale*ST*(blackw), 0, pn[2]);
                         glEnd();
                     }
                     else
@@ -629,21 +629,21 @@ void RenderAxes::
                         glBegin(GL_TRIANGLE_FAN);
                             if (blackKeyP)
                             {
-                                glVertex3fv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
+                                glVertex3dv((pp*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
                             }
-                            glVertex3f(pp[0] - xscale*ST*(0.f), 0, pp[2]);
-                            glVertex3f(pn[0] - xscale*ST*(0.f), 0, pn[2]);
-                            glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
+                            glVertex3d(pp[0] - xscale*ST*(0.f), 0, pp[2]);
+                            glVertex3d(pn[0] - xscale*ST*(0.f), 0, pn[2]);
+                            glVertex3d(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
                             if (blackKeyN)
                             {
-                                glVertex3fv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3fv((pn*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                                glVertex3dv((pn*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v);
+                                glVertex3dv((pn*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0)).v);
                             }
                             if (blackKeyP)
-                                glVertex3fv((pp*0.5 + pt*0.5 - GLvector(xscale*ST*(1.f), 0, 0)).v);
+                                glVertex3dv((pp*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0)).v);
                             else
-                                glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
+                                glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
                         glEnd();
                     }
                 }
@@ -651,14 +651,14 @@ void RenderAxes::
                 // outline
                 glColor4f(0,0,0,0.8);
                     glBegin(GL_LINES );
-                        glVertex3f(pn[0] - xscale*ST, 0, pn[2]);
-                        glVertex3f(pp[0] - xscale*ST, 0, pp[2]);
+                        glVertex3d(pn[0] - xscale*ST, 0, pn[2]);
+                        glVertex3d(pp[0] - xscale*ST, 0, pp[2]);
                     glEnd();
                     glBegin(GL_LINE_STRIP);
-                        glVertex3f(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glVertex3f(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]);
-                        glVertex3f(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]);
-                        glVertex3f(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
+                        glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
+                        glVertex3d(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]);
+                        glVertex3d(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]);
+                        glVertex3d(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
                     glEnd();
 
                 glColor4f(0,0,0,0.8);

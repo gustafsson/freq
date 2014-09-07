@@ -76,11 +76,11 @@ void RectangleView::
 void RectangleView::
         drawSelectionRectangle2()
 {
-    float l = model_->project ()->length();
+    double l = model_->project ()->length();
     glDepthMask(false);
     glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
-    float
-            x1 = std::max(0.f, std::min(model_->a.time,  model_->b.time)),
+    double
+            x1 = std::max(0.0, std::min(model_->a.time,  model_->b.time)),
             z1 = std::max(0.f, std::min(model_->a.scale, model_->b.scale)),
             x2 = std::min(l,   std::max(model_->a.time,  model_->b.time)),
             z2 = std::min(1.f, std::max(model_->a.scale, model_->b.scale));

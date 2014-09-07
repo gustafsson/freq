@@ -94,7 +94,7 @@ void Shader::Shader::
     if ( 0 <= amplitude_axis_location_)
         glUniform1i(amplitude_axis_location_, amplitude_axis);
     if ( 0 <= modelViewProjectionMatrix_location_)
-        glUniformMatrix4fv (modelViewProjectionMatrix_location_, 1, false, (M.projection * M.modelview).v ());
+        glUniformMatrix4fv (modelViewProjectionMatrix_location_, 1, false, GLmatrixf(M.projection * M.modelview).v ());
     GlException_SAFE_CALL( glUseProgram(0) );
 }
 

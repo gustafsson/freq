@@ -7,22 +7,22 @@
 //matrix will receive the calculated perspective matrix.
 //You would have to upload to your shader
 // or use glLoadMatrixf if you aren't using shaders.
-void glhPerspectivef(float *matrix, float fovyInDegrees, float aspectRatio,
-                      float znear, float zfar)
+void glhPerspective(double *matrix, double fovyInDegrees, double aspectRatio,
+                      double znear, double zfar)
 {
-    float ymax, xmax;
+    double ymax, xmax;
     ymax = znear * tanf(fovyInDegrees * M_PI / 360.0);
     //ymin = -ymax;
     //xmin = -ymax * aspectRatio;
     xmax = ymax * aspectRatio;
-    glhFrustumf(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
+    glhFrustum(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
 
-void glhFrustumf(float *matrix, float left, float right, float bottom, float top,
-                  float znear, float zfar)
+void glhFrustum(double *matrix, double left, double right, double bottom, double top,
+                  double znear, double zfar)
 {
-    float temp, temp2, temp3, temp4;
+    double temp, temp2, temp3, temp4;
     temp = 2.0 * znear;
     temp2 = right - left;
     temp3 = top - bottom;
@@ -46,18 +46,18 @@ void glhFrustumf(float *matrix, float left, float right, float bottom, float top
 }
 
 
-void glhOrtho(float *matrix, float left, float right, float bottom, float top,
-                  float near, float far)
+void glhOrtho(double *matrix, double left, double right, double bottom, double top,
+                  double near, double far)
 {
-    float a = 2.0f / (right - left);
-    float b = 2.0f / (top - bottom);
-    float c = -2.0f / (far - near);
+    double a = 2.0f / (right - left);
+    double b = 2.0f / (top - bottom);
+    double c = -2.0f / (far - near);
 
-    float tx = - (right + left)/(right - left);
-    float ty = - (top + bottom)/(top - bottom);
-    float tz = - (far + near)/(far - near);
+    double tx = - (right + left)/(right - left);
+    double ty = - (top + bottom)/(top - bottom);
+    double tz = - (far + near)/(far - near);
 
-    float ortho[16] = {
+    double ortho[16] = {
         a, 0, 0, 0,
         0, b, 0, 0,
         0, 0, c, 0,

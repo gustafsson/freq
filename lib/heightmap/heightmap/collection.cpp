@@ -381,9 +381,9 @@ VisualizationParams::const_ptr Collection::
 
 
 void Collection::
-        length(float length)
+        length(double length)
 {
-    _max_sample_size.time = 2.f*std::max(1.f, length)/block_layout_.texels_per_row ();
+    _max_sample_size.time = 2.f*std::max(1., length)/block_layout_.texels_per_row ();
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval

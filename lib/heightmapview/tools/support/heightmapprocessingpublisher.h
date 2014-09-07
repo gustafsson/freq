@@ -27,7 +27,7 @@ public:
     HeightmapProcessingPublisher(
             Signal::Processing::TargetMarker::ptr target_marker,
             Heightmap::TfrMapping::const_ptr tfrmapping,
-            float* t_center,
+            double* t_center,
             QObject* parent=0);
 
 public slots:
@@ -38,7 +38,7 @@ private:
     std::shared_ptr<Signal::Processing::TargetNeeds> target_needs_;
     shared_state<Signal::Processing::Dag>   dag_;
     Heightmap::TfrMapping::const_ptr        tfrmapping_;
-    float*                                  t_center_;
+    double*                                 t_center_;
     Signal::Interval                        last_update_;
     bool                                    failed_allocation_;
 

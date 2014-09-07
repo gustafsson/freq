@@ -13,14 +13,14 @@ class glProjection
 public:
     glProjection();
 
-    GLmatrix          modelview;
-    GLmatrix          projection;
+    matrixd           modelview;
+    matrixd           projection;
     tvector<4,int>    viewport;
 
-    GLvector gluProject(GLvector obj, bool *r=0) const;
-    GLvector gluUnProject(GLvector win, bool *r=0) const;
-    void computeUnitsPerPixel( GLvector p, GLvector::T& timePerPixel, GLvector::T& scalePerPixel ) const;
-    GLvector::T computePixelDistance( GLvector p1, GLvector p2 ) const;
+    vectord gluProject(vectord obj, bool *r=0) const;
+    vectord gluUnProject(vectord win, bool *r=0) const;
+    void computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const;
+    vectord::T computePixelDistance( vectord p1, vectord p2 ) const;
 
 public:
     static void test();

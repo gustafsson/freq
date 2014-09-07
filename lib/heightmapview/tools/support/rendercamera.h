@@ -12,7 +12,7 @@ class RenderCamera
 public:
     RenderCamera();
 
-    GLvector q, // camera focus point, i.e (10, 0, 0.5)
+    vectord  q, // camera focus point, i.e (10, 0, 0.5)
              p, // camera position relative focus point, i.e (0, 0, -6)
              r; // rotation around focus point
 

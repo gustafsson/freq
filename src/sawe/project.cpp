@@ -459,11 +459,11 @@ Signal::OperationDesc::Extent Project::
 }
 
 
-float Project::
+double Project::
         length()
 {
     Signal::OperationDesc::Extent x = extent();
-    return x.interval.get ().count() / x.sample_rate.get ();
+    return x.interval.get ().count() / (double)x.sample_rate.get ();
 }
 
 

@@ -177,11 +177,11 @@ void MergerTexture::
 
     Region r = block->getRegion ();
 
-    GLmatrix projection;
+    matrixd projection;
     glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
 
     int uniProjection = glGetUniformLocation (program_, "qt_ProjectionMatrix");
-    glUniformMatrix4fv (uniProjection, 1, false, projection.v ());
+    glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
     GlFrameBuffer fbo(*block->texture ());
@@ -291,12 +291,12 @@ void MergerTexture::
 {
     VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Filling %d from %s") % texture % ri);
 
-    GLmatrix modelview = GLmatrix::identity ();
-    modelview *= GLmatrix::translate (ri.a.time, ri.a.scale, 0);
-    modelview *= GLmatrix::scale (ri.time (), ri.scale (), 1.f);
+    matrixd modelview = matrixd::identity ();
+    modelview *= matrixd::translate (ri.a.time, ri.a.scale, 0);
+    modelview *= matrixd::scale (ri.time (), ri.scale (), 1.f);
 
     int uniModelView = glGetUniformLocation (program_, "qt_ModelViewMatrix");
-    glUniformMatrix4fv (uniModelView, 1, false, modelview.v ());
+    glUniformMatrix4fv (uniModelView, 1, false, GLmatrixf(modelview).v ());
 
     glBindTexture( GL_TEXTURE_2D, texture);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it

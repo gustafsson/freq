@@ -89,9 +89,9 @@ void RenderModel::
 void RenderModel::
         resetCameraSettings()
 {
-    camera.q = GLvector(0,0,.5f);
-    camera.p = GLvector(0,0,-10.f);
-    camera.r = GLvector(91,180,0);
+    camera.q = vectord(0,0,.5f);
+    camera.p = vectord(0,0,-10.f);
+    camera.r = vectord(91,180,0);
     camera.xscale = -camera.p[2]*0.1f;
     camera.zscale = -camera.p[2]*0.75f;
 
@@ -124,9 +124,9 @@ void RenderModel::
         setTestCamera()
 {
     render_settings.y_scale = 0.01f;
-    camera.q = GLvector(63.4565,0,0.37);
-    camera.p = GLvector(0,0,-10);
-    camera.r = GLvector(46.2, 253.186, 0);
+    camera.q = vectord(63.4565,0,0.37);
+    camera.p = vectord(0,0,-10);
+    camera.r = vectord(46.2, 253.186, 0);
 
     camera.orthoview.reset( camera.r[0] >= 90 );
 }

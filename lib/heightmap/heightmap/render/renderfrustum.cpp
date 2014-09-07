@@ -24,8 +24,8 @@ void RenderFrustum::
     if (clippedFrustum.empty())
         return;
 
-    GLvector closest = clippedFrustum.front();
-    for ( std::vector<GLvector>::const_iterator i = clippedFrustum.begin();
+    vectord closest = clippedFrustum.front();
+    for ( std::vector<vectord>::const_iterator i = clippedFrustum.begin();
             i!=clippedFrustum.end();
             i++)
     {

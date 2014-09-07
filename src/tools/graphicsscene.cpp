@@ -176,7 +176,7 @@ void GraphicsScene::
 {
     Tools::Support::RenderViewInfo r(renderview_);
     Heightmap::Position cursorPos = r.getPlanePos( renderview_->glwidget->mapFromGlobal(QCursor::pos()) );
-    renderview_->model->render_settings.cursor = GLvector(cursorPos.time, 0, cursorPos.scale);
+    renderview_->model->render_settings.cursor = vectord(cursorPos.time, 0, cursorPos.scale);
 }
 
 

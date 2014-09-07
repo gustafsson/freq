@@ -127,7 +127,7 @@ namespace Tools
 
     private:
         void setupCamera();
-        GLmatrix setRotationForAxes();
+        matrixd setRotationForAxes();
 
         int rect_y_;
         boost::scoped_ptr<TaskTimer> _render_timer;

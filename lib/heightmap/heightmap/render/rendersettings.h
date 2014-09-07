@@ -28,7 +28,7 @@ public:
     bool draw_t;
     bool draw_cursor_marker;
     int draw_axis_at0;
-    GLvector cursor;
+    vectord cursor;
 
     bool draw_contour_plot;
     ColorMode color_mode;

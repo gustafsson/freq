@@ -27,7 +27,7 @@ void RotateCameraCommand::
 {
     float rs = 0.2;
 
-    GLvector& r = model->camera.r;
+    vectord& r = model->camera.r;
 
     r[1] += (1-model->camera.orthoview)*rs * dx;
     r[0] += rs * dy;

@@ -35,10 +35,17 @@ public:
 		for(int i=0; i<cols; i++)
             m[i] = b + i*rows;
 	}
-	tmatrix( const tmatrix &b )
+    tmatrix( const tmatrix &b )
+    {
+        for(int i=0; i<cols; i++)
+            m[i] = b[i];
+    }
+    template<class t2,
+             class = typename std::enable_if <std::is_convertible<t2, t>::value>::type>
+    explicit tmatrix( const tmatrix<rows,t2,cols> &b )
 	{
 		for(int i=0; i<cols; i++)
-			m[i] = b[i];
+            m[i] = tvector<rows,t>(b[i]);
 	}
 	static tmatrix identity()
 	{

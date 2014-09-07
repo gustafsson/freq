@@ -53,8 +53,8 @@ public:
     Tfr::TransformDesc::ptr transform_desc() const;
     void transform_desc(Tfr::TransformDesc::ptr);
 
-    float length() const;
-    void length(float L);
+    double length() const;
+    void length(double L);
 
     int channels() const;
     void channels(int value);
@@ -69,7 +69,7 @@ private:
     Collections                 collections_;
     BlockLayout                 block_layout_;
     VisualizationParams::ptr    visualization_params_;
-    float                       length_;
+    double                      length_;
 
 public:
     static void test();

@@ -12,7 +12,7 @@
 /*
 ** Make m an identity matrix
 */
-static void __gluMakeIdentityf(GLfloat m[16])
+static void __gluMakeIdentityf(double m[16])
 {
     m[0+4*0] = 1; m[0+4*1] = 0; m[0+4*2] = 0; m[0+4*3] = 0;
     m[1+4*0] = 0; m[1+4*1] = 1; m[1+4*2] = 0; m[1+4*3] = 0;
@@ -22,17 +22,17 @@ static void __gluMakeIdentityf(GLfloat m[16])
 
 #define __glPi 3.14159265358979323846
 
-GLmatrix
-gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
+matrixd
+gluPerspective(double fovy, double aspect, double zNear, double zFar)
 {
-    GLfloat m[4][4];
-    float sine, cotangent, deltaZ;
-    float radians = fovy / 2 * __glPi / 180;
+    double m[4][4];
+    double sine, cotangent, deltaZ;
+    double radians = fovy / 2 * __glPi / 180;
 
     deltaZ = zFar - zNear;
     sine = sin(radians);
     if ((deltaZ == 0) || (sine == 0) || (aspect == 0)) {
-        return GLmatrix::identity ();
+        return matrixd::identity ();
     }
     cotangent = cos(radians) / sine;
 
@@ -44,12 +44,12 @@ gluPerspective(GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar)
     m[3][2] = -2 * zNear * zFar / deltaZ;
     m[3][3] = 0;
 
-    return GLmatrix(&m[0][0]);
+    return matrixd(&m[0][0]);
 }
 
-static void normalize(float v[3])
+static void normalize(double v[3])
 {
-    float r;
+    double r;
 
     r = sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
     if (r == 0.0) return;
@@ -59,20 +59,20 @@ static void normalize(float v[3])
     v[2] /= r;
 }
 
-static void cross(float v1[3], float v2[3], float result[3])
+static void cross(double v1[3], double v2[3], double result[3])
 {
     result[0] = v1[1]*v2[2] - v1[2]*v2[1];
     result[1] = v1[2]*v2[0] - v1[0]*v2[2];
     result[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-GLmatrix
-gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
-   GLfloat centery, GLfloat centerz, GLfloat upx, GLfloat upy,
-   GLfloat upz)
+matrixd
+gluLookAt(double eyex, double eyey, double eyez, double centerx,
+   double centery, double centerz, double upx, double upy,
+   double upz)
 {
-    float forward[3], side[3], up[3];
-    GLfloat m[4][4];
+    double forward[3], side[3], up[3];
+    double m[4][4];
 
     forward[0] = centerx - eyex;
     forward[1] = centery - eyey;
@@ -104,22 +104,22 @@ gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat centerx,
     m[1][2] = -forward[1];
     m[2][2] = -forward[2];
 
-    GLmatrix M(&m[0][0]);
+    matrixd M(&m[0][0]);
     M.translate (-eyex, -eyey, -eyez);
     return M;
 }
 
-static void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4],
-        GLfloat out[4])
+static void __gluMultMatrixVecf(const double matrix[16], const double in[4],
+        double out[4])
 {
     int i;
 
     for (i=0; i<4; i++) {
- out[i] =
-     in[0] * matrix[0*4+i] +
-     in[1] * matrix[1*4+i] +
-     in[2] * matrix[2*4+i] +
-     in[3] * matrix[3*4+i];
+     out[i] =
+         in[0] * matrix[0*4+i] +
+         in[1] * matrix[1*4+i] +
+         in[2] * matrix[2*4+i] +
+         in[3] * matrix[3*4+i];
     }
 }
 
@@ -127,9 +127,9 @@ static void __gluMultMatrixVecf(const GLfloat matrix[16], const GLfloat in[4],
 ** Invert 4x4 matrix.
 ** Contributed by David Moore (See Mesa bug #6748)
 */
-static int __gluInvertMatrixf(const GLfloat m[16], GLfloat invOut[16])
+static int __gluInvertMatrixf(const double m[16], double invOut[16])
 {
-    float inv[16], det;
+    double inv[16], det;
     int i;
 
     inv[0] =   m[5]*m[10]*m[15] - m[5]*m[11]*m[14] - m[9]*m[6]*m[15]
@@ -177,8 +177,8 @@ static int __gluInvertMatrixf(const GLfloat m[16], GLfloat invOut[16])
     return GL_TRUE;
 }
 
-static void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
-    GLfloat r[16])
+static void __gluMultMatricesf(const double a[16], const double b[16],
+    double r[16])
 {
     int i, j;
 
@@ -194,14 +194,14 @@ static void __gluMultMatricesf(const GLfloat a[16], const GLfloat b[16],
 }
 
 GLint
-gluProject(GLfloat objx, GLfloat objy, GLfloat objz,
-       const GLfloat modelMatrix[16],
-       const GLfloat projMatrix[16],
-              const GLint viewport[4],
-       GLfloat *winx, GLfloat *winy, GLfloat *winz)
+gluProject(double objx, double objy, double objz,
+       const double modelMatrix[16],
+       const double projMatrix[16],
+       const GLint viewport[4],
+       double *winx, double *winy, double *winz)
 {
-    float in[4];
-    float out[4];
+    double in[4];
+    double out[4];
 
     in[0]=objx;
     in[1]=objy;
@@ -229,15 +229,15 @@ gluProject(GLfloat objx, GLfloat objy, GLfloat objz,
 }
 
 GLint
-gluUnProject(GLfloat winx, GLfloat winy, GLfloat winz,
-  const GLfloat modelMatrix[16],
-  const GLfloat projMatrix[16],
-                const GLint viewport[4],
-         GLfloat *objx, GLfloat *objy, GLfloat *objz)
+gluUnProject(double winx, double winy, double winz,
+          const double modelMatrix[16],
+          const double projMatrix[16],
+          const GLint viewport[4],
+          double *objx, double *objy, double *objz)
 {
-    float finalMatrix[16];
-    float in[4];
-    float out[4];
+    double finalMatrix[16];
+    double in[4];
+    double out[4];
 
     __gluMultMatricesf(modelMatrix, projMatrix, finalMatrix);
     if (!__gluInvertMatrixf(finalMatrix, finalMatrix)) return(GL_FALSE);
@@ -268,17 +268,17 @@ gluUnProject(GLfloat winx, GLfloat winy, GLfloat winz,
 }
 
 GLint
-gluUnProject4(GLfloat winx, GLfloat winy, GLfloat winz, GLfloat clipw,
-       const GLfloat modelMatrix[16],
-       const GLfloat projMatrix[16],
+gluUnProject4(double winx, double winy, double winz, double clipw,
+       const double modelMatrix[16],
+       const double projMatrix[16],
        const GLint viewport[4],
        GLclampf nearVal, GLclampf farVal,
-       GLfloat *objx, GLfloat *objy, GLfloat *objz,
-       GLfloat *objw)
+       double *objx, double *objy, double *objz,
+       double *objw)
 {
-    float finalMatrix[16];
-    float in[4];
-    float out[4];
+    double finalMatrix[16];
+    double in[4];
+    double out[4];
 
     __gluMultMatricesf(modelMatrix, projMatrix, finalMatrix);
     if (!__gluInvertMatrixf(finalMatrix, finalMatrix)) return(GL_FALSE);
@@ -307,16 +307,16 @@ gluUnProject4(GLfloat winx, GLfloat winy, GLfloat winz, GLfloat clipw,
     return(GL_TRUE);
 }
 
-GLmatrix
-gluPickMatrix(GLfloat x, GLfloat y, GLfloat deltax, GLfloat deltay,
+matrixd
+gluPickMatrix(double x, double y, double deltax, double deltay,
     GLint viewport[4])
 {
     if (deltax <= 0 || deltay <= 0) {
-        return GLmatrix::identity ();
+        return matrixd::identity ();
     }
 
     /* Translate and scale the picked region to the entire window */
-    GLmatrix M = GLmatrix::identity ();
+    matrixd M = matrixd::identity ();
     M.translate ((viewport[2] - 2 * (x - viewport[0])) / deltax,
             (viewport[3] - 2 * (y - viewport[1])) / deltay, 0);
     M.scale (viewport[2] / deltax, viewport[3] / deltay, 1.0);

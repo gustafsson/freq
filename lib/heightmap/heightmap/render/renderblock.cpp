@@ -65,12 +65,12 @@ void RenderBlock::Renderer::
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
 
-    GLmatrix modelview = gl_projection.modelview;
-    modelview *= GLmatrix::translate (r.a.time, 0, r.a.scale);
-    modelview *= GLmatrix::scale (r.time(), 1, r.scale());
-    glUniformMatrix4fv (uniModelviewprojection, 1, false, (gl_projection.projection*modelview).v ());
-    glUniformMatrix4fv (uniModelview, 1, false, modelview.v ());
-    glUniformMatrix4fv (uniNormalMatrix, 1, false, invert(modelview).transpose ().v ());
+    matrixd modelview = gl_projection.modelview;
+    modelview *= matrixd::translate (r.a.time, 0, r.a.scale);
+    modelview *= matrixd::scale (r.time(), 1, r.scale());
+    glUniformMatrix4fv (uniModelviewprojection, 1, false, GLmatrixf(gl_projection.projection*modelview).v ());
+    glUniformMatrix4fv (uniModelview, 1, false, GLmatrixf(modelview).v ());
+    glUniformMatrix4fv (uniNormalMatrix, 1, false, GLmatrixf(invert(modelview)).transpose ().v ());
 
     draw( block->texture ()->getOpenGlTextureId () );
 

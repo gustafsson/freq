@@ -44,8 +44,8 @@ Signal::OperationDesc::ptr RectangleModel::
     float FS = project_->extent ().sample_rate.get ();
     Signal::IntervalType L = project_->length ()*FS;
     Signal::IntervalType
-            a_index = std::max(0.f, a.time)*FS,
-            b_index = std::max(0.f, b.time)*FS;
+            a_index = std::max(0.0, a.time)*FS,
+            b_index = std::max(0.0, b.time)*FS;
 
     Signal::OperationDesc::ptr filter;
 

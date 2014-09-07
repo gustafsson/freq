@@ -260,10 +260,10 @@ bool gluInvertMatrix(const double m[16], double invOut[16])
     return true;
 }
 
-GLmatrix invert(GLmatrix in)
+matrixd invert(matrixd in)
 {
-    GLmatrix r;
+    matrixd r;
     if (!gluInvertMatrix (in.v (), r.v ()))
-        r = GLmatrix::identity ();
+        r = matrixd::identity ();
     return r;
 }

@@ -56,7 +56,7 @@ void RecordView::
 */
 //        float limit = model_->project->worker.length();
 
-        float limit = model_->project->length ();
+        double limit = model_->project->length ();
         limit -= 1/model_->render_view->model->camera.xscale;
         if (limit<0) limit = 0;
 

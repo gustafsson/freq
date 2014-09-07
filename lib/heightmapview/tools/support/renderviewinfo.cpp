@@ -165,22 +165,22 @@ QPointF RenderViewInfo::
     if ((1 != model->camera.orthoview || model->camera.r[0]!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->render_settings.y_scale * last_ysize;
 
-    GLvector win = view->gl_projection.gluProject (GLvector(pos.time, objY, pos.scale));
-    GLvector::T winX = win[0], winY = win[1]; // winZ = win[2];
+    vectord win = view->gl_projection.gluProject (vectord(pos.time, objY, pos.scale));
+    vectord::T winX = win[0], winY = win[1]; // winZ = win[2];
 
     if (dist)
     {
         GLint const* const& vp = view->gl_projection.viewport.v;
         float z0 = .1, z1=.2;
-        GLvector projectionPlane = view->gl_projection.gluUnProject ( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
-        GLvector projectionNormal = view->gl_projection.gluUnProject( GLvector( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
+        vectord projectionPlane = view->gl_projection.gluUnProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
+        vectord projectionNormal = view->gl_projection.gluUnProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
 
-        GLvector p;
+        vectord p;
         p[0] = pos.time;
         p[1] = 0;//objY;
         p[2] = pos.scale;
 
-        GLvector d = p-projectionPlane;
+        vectord d = p-projectionPlane;
         projectionNormal[0] *= model->camera.xscale;
         projectionNormal[2] *= last_ysize;
         d[0] *= model->camera.xscale;
@@ -218,17 +218,17 @@ Heightmap::Position RenderViewInfo::
     pos.setX( widget_pos.x() + view->rect().left() );
     pos.setY( view->rect().height() - 1 - widget_pos.y() + view->rect().top() );
 
-    const GLvector::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
+    const vectord::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
     const GLint* vp = view->gl_projection.viewport.v;
-    GLvector::T other_m[16], other_proj[16];
+    vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
 #ifdef GL_ES_VERSION_2_0
         EXCEPTION_ASSERTX(false, "Not supported");
 #else
-        glGetFloatv(GL_MODELVIEW_MATRIX, other_m);
-        glGetFloatv(GL_PROJECTION_MATRIX, other_proj);
+        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
+        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
@@ -236,12 +236,12 @@ Heightmap::Position RenderViewInfo::
 #endif
     }
 
-    GLvector::T objX1, objY1, objZ1;
+    vectord::T objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
                 m, proj, vp,
                 &objX1, &objY1, &objZ1);
 
-    GLvector::T objX2, objY2, objZ2;
+    vectord::T objX2, objY2, objZ2;
     gluUnProject( pos.x(), pos.y(), 0.2,
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
@@ -295,17 +295,17 @@ Heightmap::Position RenderViewInfo::
     pos.setX( pos.x() + view->rect().left() );
     pos.setY( view->rect().height() - 1 - pos.y() + view->rect().top() );
 
-    const GLvector::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
+    const vectord::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
     const GLint* vp = view->gl_projection.viewport.v;
-    GLvector::T other_m[16], other_proj[16];
+    vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
 #ifdef GL_ES_VERSION_2_0
         EXCEPTION_ASSERTX(false, "Not supported");
 #else
-        glGetFloatv(GL_MODELVIEW_MATRIX, other_m);
-        glGetFloatv(GL_PROJECTION_MATRIX, other_proj);
+        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
+        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
@@ -313,12 +313,12 @@ Heightmap::Position RenderViewInfo::
 #endif
     }
 
-    GLvector::T objX1, objY1, objZ1;
+    vectord::T objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), 0.1,
                 m, proj, vp,
                 &objX1, &objY1, &objZ1);
 
-    GLvector::T objX2, objY2, objZ2;
+    vectord::T objX2, objY2, objZ2;
     gluUnProject( pos.x(), pos.y(), 0.2,
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);

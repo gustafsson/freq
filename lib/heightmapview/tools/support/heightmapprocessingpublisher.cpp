@@ -18,7 +18,7 @@ namespace Support {
 HeightmapProcessingPublisher::HeightmapProcessingPublisher(
           TargetMarker::ptr target_marker,
           Heightmap::TfrMapping::const_ptr tfrmapping,
-          float* t_center,
+          double* t_center,
           QObject* parent)
     :
       QObject(parent),
@@ -198,7 +198,7 @@ void HeightmapProcessingPublisher::
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::TfrMapping::ptr tfrmapping(new Heightmap::TfrMapping(block_layout,1));
-        float t_center = 10;
+        double t_center = 10;
         HeightmapProcessingPublisher hpp(target_marker, tfrmapping, &t_center);
 
         Heightmap::Collection::ptr collection = tfrmapping->collections()[0];

@@ -6,7 +6,7 @@
 #define GLU_TRUE 1
 //#endif
 
-GLvector gluProject(GLvector obj, const GLvector::T* model, const GLvector::T* proj, const GLint *view, bool *r)
+vectord gluProject(vectord obj, const vectord::T* model, const vectord::T* proj, const GLint *view, bool *r)
 {
 //    //gluProject does this, (win - screenspace).dot() < 1e18
 //    tmatrix<4, double> modelmatrix(model);
@@ -21,7 +21,7 @@ GLvector gluProject(GLvector obj, const GLvector::T* model, const GLvector::T* p
 //        *r = 0 != proj4[3];
 //    return screenspace;
 
-    GLvector win;
+    vectord win;
     bool s = (GLU_TRUE == ::gluProject(obj[0], obj[1], obj[2], model, proj, view, &win[0], &win[1], &win[2]));
     if (r)
         *r = s;
@@ -30,10 +30,10 @@ GLvector gluProject(GLvector obj, const GLvector::T* model, const GLvector::T* p
 }
 
 
-GLvector gluUnProject(GLvector win, const GLvector::T* model, const GLvector::T* proj, const GLint *view, bool *r)
+vectord gluUnProject(vectord win, const vectord::T* model, const vectord::T* proj, const GLint *view, bool *r)
 {
-    GLvector::T obj0=0, obj1=0, obj2=0;
+    vectord::T obj0=0, obj1=0, obj2=0;
     bool s = (GLU_TRUE == ::gluUnProject(win[0], win[1], win[2], model, proj, view, &obj0, &obj1, &obj2));
     if(r) *r=s;
-    return GLvector(obj0, obj1, obj2);
+    return vectord(obj0, obj1, obj2);
 }

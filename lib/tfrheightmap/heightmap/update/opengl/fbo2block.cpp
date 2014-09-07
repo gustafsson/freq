@@ -117,7 +117,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
     // Setup matrices
     glViewport (0, 0, w, h);
     glhOrtho (M.projection.v (), br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
-    M.modelview = GLmatrix::identity();
+    M.modelview = matrixd::identity();
     int vp[]{0,0,w,h};
     M.viewport = vp;
 

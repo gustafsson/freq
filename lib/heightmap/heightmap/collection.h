@@ -159,7 +159,7 @@ public:
     BlockLayout block_layout() const;
     VisualizationParams::const_ptr visualization_params() const;
 
-    void length(float length);
+    void length(double length);
     void block_layout(BlockLayout block_layout);
     void visualization_params(VisualizationParams::const_ptr visualization_params);
 
@@ -181,7 +181,7 @@ private:
     unsigned
         _frame_counter;
 
-    float
+    double
         _prev_length;
 
     Position

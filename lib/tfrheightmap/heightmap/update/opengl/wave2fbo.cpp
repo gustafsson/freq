@@ -61,9 +61,9 @@ void Wave2Fbo::
         draw(const glProjection& M)
 {
     glMatrixMode (GL_PROJECTION);
-    glLoadMatrixf (M.projection.v ());
+    glLoadMatrixf (GLmatrixf(M.projection).v ());
     glMatrixMode (GL_MODELVIEW);
-    glLoadMatrixf (M.modelview.v ());
+    glLoadMatrixf (GLmatrixf(M.modelview).v ());
     //int uniModelViewProjectionMatrix = glGetUniformLocation (program_, "qt_ModelViewProjectionMatrix");
     //glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, M.projection * M.modelview);
 
