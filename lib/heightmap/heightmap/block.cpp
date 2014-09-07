@@ -32,6 +32,44 @@ Block::
 }
 
 
+Block::pGlTexture Block::
+        texture() const
+{
+    return texture_;
+}
+
+
+Block::pGlTexture Block::
+        sourceTexture() const
+{
+    return new_texture_ ?: texture_;
+}
+
+
+void Block::
+        setTexture(Block::pGlTexture t)
+{
+    new_texture_ = t;
+}
+
+
+bool Block::
+        isTextureReady() const
+{
+    return texture_ready_;
+}
+
+
+void Block::
+        setTextureReady()
+{
+    texture_ready_ = true;
+
+    Block::pGlTexture t;
+    t.swap (new_texture_);
+    if (t)
+        texture_ = t;
+}
 
 
 void Block::

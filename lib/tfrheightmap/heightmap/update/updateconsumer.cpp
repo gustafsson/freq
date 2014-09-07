@@ -27,15 +27,20 @@ namespace Heightmap {
 namespace Update {
 
 UpdateConsumer::
-        UpdateConsumer(QGLWidget* shared_opengl_widget, UpdateQueue::ptr update_queue)
+        UpdateConsumer(QGLWidget* shared_opengl_widget,
+                       UpdateQueue::ptr update_queue)
     :
-      UpdateConsumer( shared_opengl_widget->context ()->contextHandle (), update_queue,  shared_opengl_widget)
+      UpdateConsumer( shared_opengl_widget->context ()->contextHandle (),
+                      update_queue,
+                      shared_opengl_widget)
 {
 }
 
 
 UpdateConsumer::
-        UpdateConsumer(QOpenGLContext* shared_opengl_context, UpdateQueue::ptr update_queue, QObject* parent)
+        UpdateConsumer(QOpenGLContext* shared_opengl_context,
+                       UpdateQueue::ptr update_queue,
+                       QObject* parent)
     :
       QThread(parent),
       shared_opengl_context(shared_opengl_context),
@@ -51,7 +56,7 @@ UpdateConsumer::
     surface->setFormat (shared_opengl_context->format ());
     surface->create ();
 
-    // Start the worker thread as a background thread
+    // Start this worker thread as a background thread
     start (LowPriority);
 }
 
@@ -169,7 +174,6 @@ void UpdateConsumer::
                 emit didUpdate ();
               }
 
-            glFlush();
 
             INFO Log("UpdateConsumer did %d jobs in %s")
                      % num_jobs % TaskTimer::timeToString (t.elapsed ());

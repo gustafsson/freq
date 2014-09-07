@@ -1,5 +1,6 @@
 #include "waveupdater.h"
 #include "heightmap/update/waveformblockupdater.h"
+#include "heightmap/render/blocktextures.h"
 #include "fbo2block.h"
 #include "wave2fbo.h"
 #include "lazy.h"
@@ -92,11 +93,13 @@ void WaveUpdater::
     }
 
     // Draw from all chunks to each block
+    std::map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto& f : buffers_per_block)
     {
         const pBlock& block = f.first;
         glProjection M;
-        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->texture (), M);
+        textures[block] = Heightmap::Render::BlockTextures::get1 ();
+        auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto& b : f.second)
             wave2fbo[b]->draw (M);
@@ -113,6 +116,11 @@ void WaveUpdater::
 
         j.promise.set_value ();
     }
+
+    if (!textures.empty())
+        glFlush();
+    for (const auto& v : textures)
+        v.first->setTexture(v.second);
 #endif
 }
 

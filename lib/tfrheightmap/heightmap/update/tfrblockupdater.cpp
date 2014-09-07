@@ -165,7 +165,7 @@ TfrBlockUpdater::~TfrBlockUpdater()
 void TfrBlockUpdater::
         processJobs( std::queue<UpdateQueue::Job>& jobs )
 {
-    return p->processJobs(jobs);
+    p->processJobs(jobs);
 }
 
 } // namespace Update

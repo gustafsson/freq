@@ -38,13 +38,17 @@ namespace Heightmap {
         // Probably need to double-buffer this so that drawing FROM this
         // does not collide with drawing TO this texture. But how, all draw
         // calls are asynchronous ...
-        pGlTexture texture() const { return texture_; }
+        pGlTexture texture() const;
+        // OpenGL data to use as source when updating with new content
+        pGlTexture sourceTexture() const;
+        // Call after glFlush to 't'
+        void setTexture(pGlTexture t);
 
         // The block must exist for one whole frame before it can receive
         // updates from another thread. This prevents the texture from being
         // corrupted by having two threads writing to it at the same time.
-        bool isTextureReady() const { return texture_ready_; }
-        void setTextureReady() { texture_ready_ = true; }
+        bool isTextureReady() const;
+        void setTextureReady();
 
         // POD properties
         const BlockLayout block_layout() const { return block_layout_; }

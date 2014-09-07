@@ -8,9 +8,9 @@
 #include "gl.h"
 
 #ifdef GL_ES_VERSION_2_0
-const bool draw_straight_onto_block = true;
+const bool copy_to_new_fbo_for_each_draw = true;
 #else
-const bool draw_straight_onto_block = false;
+const bool copy_to_new_fbo_for_each_draw = false;
 #endif
 
 namespace Heightmap {
@@ -58,8 +58,11 @@ void copyTexture(unsigned& copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
 
 Fbo2Block::Fbo2Block ()
 {
-    if (!draw_straight_onto_block)
+    if (!copy_to_new_fbo_for_each_draw)
+    {
         fboTexture = Render::BlockTextures::get1 ();
+        fbo.reset (new GlFrameBuffer(*fboTexture));
+    }
 }
 
 
@@ -74,26 +77,23 @@ Fbo2Block::
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (Region br, GlTexture::ptr blockTexture, glProjection& M)
+        begin (Region br, GlTexture::ptr oldTexture, GlTexture::ptr targetTexture, glProjection& M)
 {
-    EXCEPTION_ASSERT(!this->blockTexture);
-    EXCEPTION_ASSERT(blockTexture);
+    EXCEPTION_ASSERT(!this->targetTexture);
+    EXCEPTION_ASSERT(targetTexture);
 
-    int w = blockTexture->getWidth ();
-    int h = blockTexture->getHeight ();
-    this->blockTexture = blockTexture;
+    int w = targetTexture->getWidth ();
+    int h = targetTexture->getHeight ();
+    this->targetTexture = targetTexture;
 
-    if (draw_straight_onto_block)
+    if (copy_to_new_fbo_for_each_draw)
     {
-        fboTexture = blockTexture;
+        fboTexture = targetTexture;
+        copyTexture (copyfbo, fboTexture, oldTexture);
+        fbo.reset (new GlFrameBuffer(*fboTexture));
     }
     else
-    {
-        copyTexture (copyfbo, fboTexture, blockTexture);
-    }
-
-    if (!fbo)
-        fbo.reset (new GlFrameBuffer(*fboTexture));
+        copyTexture (copyfbo, fboTexture, oldTexture);
 
     GlException_CHECK_ERROR ();
 
@@ -129,10 +129,10 @@ Fbo2Block::ScopeBinding Fbo2Block::
 void Fbo2Block::
         end()
 {
-    if (!blockTexture)
+    if (!targetTexture)
         return;
 
-    if (draw_straight_onto_block)
+    if (copy_to_new_fbo_for_each_draw)
     {
         fbo->unbindFrameBuffer();
         fbo.reset ();
@@ -142,14 +142,14 @@ void Fbo2Block::
     {
 #ifdef GL_ES_VERSION_2_0
         fbo->unbindFrameBuffer();
-        grabToTexture (blockTexture, fboTexture);
+        grabToTexture (targetTexture, fboTexture);
 #else
-        grabToTexture (blockTexture);
+        grabToTexture (targetTexture);
         fbo->unbindFrameBuffer();
 #endif
     }
 
-    blockTexture.reset ();
+    targetTexture.reset ();
 }
 
 
