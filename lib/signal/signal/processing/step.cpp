@@ -77,7 +77,8 @@ Intervals Step::
 
     for (RunningTaskMap::value_type ti : running_tasks)
     {
-        I |= ti.second;
+        // to be used with not_started() to determine what to start new tasks on
+        I |= ti.valid_output;
     }
 
     return I;
@@ -109,7 +110,7 @@ Intervals Step::
 
     Signal::Intervals not_deprecated = ~deprecated;
     for (RunningTaskMap::value_type& v : running_tasks)
-        v.second &= not_deprecated;
+        v.valid_output &= not_deprecated;
 
     return deprecated;
 }
@@ -142,18 +143,40 @@ OperationDesc::ptr Step::
 
 
 int Step::
-        registerTask(Interval expected_output)
+        registerTask(Step::ptr::write_ptr&& step, Signal::Interval expected_output)
+{
+    return registerTask (step, expected_output);
+}
+
+
+int Step::
+        registerTask(Step::ptr::write_ptr& step, Interval expected_output)
 {
     TASKINFO Log("Step registerTask %2% on %1%")
-              % operation_name()
+              % step->operation_name()
               % expected_output;
 
-    ++task_counter_;
-    if (0 == task_counter_)
-        ++task_counter_;
-    int taskid = task_counter_;
+    ++step->task_counter_;
+    if (0 == step->task_counter_)
+        ++step->task_counter_;
+    int taskid = step->task_counter_;
 
-    running_tasks[taskid] = expected_output;
+    step->running_tasks.emplace_back(taskid,expected_output);
+
+    // enforce ordering of tasks, wait for previous tasks to finish if they affect the same output
+    auto ready = [&](){
+        for (RunningTaskMap::value_type& v : step->running_tasks)
+        {
+            if (v.id == taskid)
+                break;
+            if (v.expected_output & expected_output)
+                return false;
+        }
+        return true;
+    };
+
+    step->wait_for_tasks_.wait(step, ready);
+
     return taskid;
 }
 
@@ -166,8 +189,16 @@ void Step::
               % result->getInterval ();
 
     auto self = step.write ();
-    Intervals valid_output = self->running_tasks[ taskid ];
-    self->running_tasks.erase ( taskid );
+
+    Intervals valid_output;
+    for(auto i = self->running_tasks.begin(); i != self->running_tasks.end(); i++)
+        if (i->id == taskid)
+        {
+            valid_output = i->valid_output;
+            self->running_tasks.erase ( i );
+            break;
+        }
+
     self.unlock ();
 
     if (!valid_output)
@@ -190,7 +221,6 @@ void Step::
                 *b |= *result;
                 step.raw ()->cache_->put (result);
               }
-
       }
 
     step.raw ()->wait_for_tasks_.notify_all ();
@@ -206,16 +236,14 @@ bool Step::
     // Wait in a while-loop to cope with spurious wakeups
     if (sleep_ms < 0)
     {
-        while (!step->running_tasks.empty ())
-            step->wait_for_tasks_.wait(step);
+        step->wait_for_tasks_.wait(step, [&](){return step->running_tasks.empty ();});
     }
     else
     {
         std::chrono::milliseconds ms(sleep_ms);
 
-        while (!step->running_tasks.empty ())
-            if (std::cv_status::timeout == step->wait_for_tasks_.wait_for (step, ms))
-                return false;
+        if (std::cv_status::timeout == step->wait_for_tasks_.wait_for (step, ms, [&](){return step->running_tasks.empty ();}))
+            return false;
     }
 
     return step->running_tasks.empty ();
@@ -267,7 +295,7 @@ void Step::
         Step::ptr s = ws.lock ();
 
         // It should contain information about what's out_of_date and what's currently being updated.
-        int taskid = s->registerTask(b->getInterval ());
+        int taskid = Step::registerTask(s.write (),b->getInterval ());
         EXCEPTION_ASSERT_EQUALS(s->not_started (), ~Intervals(b->getInterval ()));
         EXCEPTION_ASSERT_EQUALS(Step::cache (s)->samplesDesc(), Intervals());
         Step::finishTask(s, taskid, b);

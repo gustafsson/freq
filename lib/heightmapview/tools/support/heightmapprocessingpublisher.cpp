@@ -227,8 +227,7 @@ void HeightmapProcessingPublisher::
 
         EXCEPTION_ASSERT(!hpp.isHeightmapDone ());
 
-        Task task(step.write (),
-                  Step::ptr (),
+        Task task(step,
                   std::vector<Step::const_ptr>(),
                   Operation::ptr(),
                   Interval(0,2), Interval());

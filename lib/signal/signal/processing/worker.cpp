@@ -286,7 +286,7 @@ public:
 class DummySchedule: public ISchedule {
     Task getTask(Signal::ComputingEngine::ptr /*engine*/) const override {
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
-        return Task(step.write (), step, std::vector<Step::const_ptr>(), Signal::Operation::ptr(), Signal::Interval(), Signal::Interval() );
+        return Task(step, std::vector<Step::const_ptr>(), Signal::Operation::ptr(), Signal::Interval(), Signal::Interval() );
     }
 };
 

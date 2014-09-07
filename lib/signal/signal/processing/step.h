@@ -73,7 +73,15 @@ public:
 
     static Signal::OperationDesc::ptr operation_desc(const_ptr step);
 
-    int                         registerTask(Signal::Interval expected_output);
+    /**
+     * @brief registerTask registers an interval as a work in progress
+     * @param expected_output which result that will be produced and given to finishTask
+     * @return a task id to be given to finishTask
+     *
+     * registerTask will block until there are no other tasks running for the same expected_output
+     */
+    static int                  registerTask(Step::ptr::write_ptr&, Signal::Interval expected_output);
+    static int                  registerTask(Step::ptr::write_ptr&&, Signal::Interval expected_output);
     static void                 finishTask(Step::ptr, int taskid, Signal::pBuffer result);
 
     /**
@@ -93,7 +101,15 @@ public:
     static shared_state<const Signal::Cache> cache(const_ptr step);
 
 private:
-    typedef std::map<int, Signal::Intervals> RunningTaskMap;
+    struct TaskInfo {
+        const int id;
+        const Signal::Interval expected_output;
+        Signal::Intervals valid_output;
+
+        TaskInfo(int id, Signal::Interval i) : id(id), expected_output(i), valid_output(i) {}
+    };
+
+    typedef std::list<TaskInfo> RunningTaskMap;
 
     Signal::OperationDesc::ptr  died_;
     shared_state<Signal::Cache> cache_;

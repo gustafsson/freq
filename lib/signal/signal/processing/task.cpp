@@ -12,6 +12,9 @@
 //#define TIME_TASK
 #define TIME_TASK if(0)
 
+//#define INFO_TASK_INTERVALS
+#define INFO_TASK_INTERVALS if(0)
+
 namespace Signal {
 namespace Processing {
 
@@ -22,15 +25,31 @@ Task::Task()
 
 
 Task::
-        Task(const shared_state<Step>::write_ptr& step,
+        Task(shared_state<Step>::write_ptr& step,
              Step::ptr stepp,
              std::vector<Step::const_ptr> children,
              Signal::Operation::ptr operation,
              Signal::Interval expected_output,
              Signal::Interval required_input)
     :
-      task_id_(step->registerTask (expected_output)),
+      task_id_(Step::registerTask (step,expected_output)),
       step_(stepp),
+      children_(children),
+      operation_(operation),
+      expected_output_(expected_output),
+      required_input_(required_input)
+{
+}
+
+
+Task::Task (Step::ptr step,
+      std::vector<Step::const_ptr> children,
+      Signal::Operation::ptr operation,
+      Signal::Interval expected_output,
+      Signal::Interval required_input)
+    :
+      task_id_(Step::registerTask (step.write (),expected_output)),
+      step_(step),
       children_(children),
       operation_(operation),
       expected_output_(expected_output),
@@ -123,7 +142,7 @@ void Task::
     Signal::pBuffer input_buffer, output_buffer;
 
     {
-        TIME_TASK TaskTimer tt(boost::format("expect  %s")
+        INFO_TASK_INTERVALS TaskTimer tt(boost::format("expect  %s")
                                % expected_output());
         input_buffer = get_input();
         if (!input_buffer)
@@ -134,7 +153,7 @@ void Task::
     }
 
     {
-        TIME_TASK TaskTimer tt(boost::format("process %s")
+        INFO_TASK_INTERVALS TaskTimer tt(boost::format("process %s")
                                % input_buffer->getInterval ());
         output_buffer = o->process (input_buffer);
         if (!output_buffer)
@@ -241,7 +260,7 @@ void Task::
         }
 
         // perform a signal processing task
-        Task t(step.write (), step, children, o, expected_output, required_input);
+        Task t(step, children, o, expected_output, required_input);
         t.run ();
 
         Signal::Interval to_read = Signal::Intervals(expected_output).enlarge (2).spannedInterval ();

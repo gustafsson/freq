@@ -222,7 +222,7 @@ void TargetNeeds::
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );
 
         Signal::Intervals initial_valid(0,60);
-        int taskid = step.write ()->registerTask(initial_valid.spannedInterval ());
+        int taskid = Step::registerTask(step.write (), initial_valid.spannedInterval ());
         (void)taskid; // discard
 
         EXCEPTION_ASSERT_EQUALS( Step::cache (step)->samplesDesc(), Interval() );
@@ -242,7 +242,7 @@ void TargetNeeds::
         BedroomNotifier::ptr notifier(new BedroomNotifier(bedroom));
         Step::ptr step(new Step(Signal::OperationDesc::ptr()));
         // Validate a bit Signal::Interval(0,10) of the step
-        int taskid = step.write ()->registerTask(Signal::Interval(0,10));
+        int taskid = Step::registerTask(step.write (), Signal::Interval(0,10));
         Step::finishTask(step, taskid, pBuffer(new Buffer(Interval(0,10),1,1)));
 
         TargetNeeds::ptr target_needs( new TargetNeeds(step, notifier) );

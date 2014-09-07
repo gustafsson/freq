@@ -112,12 +112,11 @@ public:
             Workers::ptr,
             Signal::ComputingEngine::ptr) const
     {
-        Step::ptr step(new Step(Signal::OperationDesc::ptr()));
-        return Task(step.write(), step,
-                                  std::vector<Step::const_ptr>(),
-                                  Signal::Operation::ptr(),
-                                  needed.spannedInterval (),
-                                  Signal::Interval());
+        return Task(Step::ptr(new Step(Signal::OperationDesc::ptr())),
+                    std::vector<Step::const_ptr>(),
+                    Signal::Operation::ptr(),
+                    needed.spannedInterval (),
+                    Signal::Interval());
     }
 };
 
