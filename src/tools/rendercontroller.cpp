@@ -343,11 +343,23 @@ void RenderController::
 void RenderController::
         receiveSetTimeFrequencyResolution( qreal value )
 {
-    bool isCwt = dynamic_cast<const Tfr::Cwt*>(currentTransform().get ());
+    Tfr::TransformDesc::ptr t0 = currentTransform(), t1;
+    bool isCwt = dynamic_cast<const Tfr::Cwt*>(t0.get ());
     if (isCwt)
-        model()->transform_descs ()->getParam<Tfr::Cwt>().scales_per_octave ( value );
+    {
+        auto& t = model()->transform_descs ()->getParam<Tfr::Cwt>();
+        t.scales_per_octave ( value );
+        t1 = t.copy();
+    }
     else
-        model()->transform_descs ()->getParam<Tfr::StftDesc>().set_approximate_chunk_size( value );
+    {
+        auto& t = model()->transform_descs ()->getParam<Tfr::StftDesc>();
+        t.set_approximate_chunk_size( value );
+        t1 = t.copy();
+    }
+
+    if (t0 && *t1 == *t0)
+        return;
 
     stateChanged();
 
