@@ -80,6 +80,8 @@ public:
 
     Signal::Interval try_create_task(GraphVertex u, const Graph & g, Signal::Intervals missing_input)
       {
+        // TODO could be more greedy, example: change parameters during recording
+
         // No other thread is allowed to reach the same conclusion about what needs to be done.
         // So the lock has to be kept from checking what's needed all the way until the task has
         // been registered in step->running_tasks.
