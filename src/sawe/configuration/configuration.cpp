@@ -43,7 +43,7 @@ Configuration::
             channel_( 0 ),
             scales_per_octave_( 27.f+2.f/3 ), // this gives an stft window size of 4096 samples (with default cwt settings) due to the combined slider in RenderController::receiveSetTimeFrequencyResolution
             wavelet_time_support_( 3 ),
-            wavelet_scale_support_( 3 ),
+            wavelet_scale_support_( 6 ),
             samples_per_chunk_hint_( 1 ),
             samples_per_block_( 1<<8 ),
             scales_per_block_( 1<<8 ),
