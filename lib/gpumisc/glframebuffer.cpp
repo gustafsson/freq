@@ -9,6 +9,8 @@
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)
 
+using boost::format;
+
 class GlFrameBufferException: virtual public boost::exception, virtual public std::exception {};
 
 GlFrameBuffer::
@@ -56,6 +58,10 @@ GlFrameBuffer::
     texture_width_(width),
     texture_height_(height)
 {
+    EXCEPTION_ASSERT_LESS(0, textureid);
+    EXCEPTION_ASSERT_LESS(0, width);
+    EXCEPTION_ASSERT_LESS(0, height);
+
     init();
 
     try
@@ -156,7 +162,8 @@ void GlFrameBuffer::
     // if (fboId_) { glDeleteFramebuffers(1, &fboId_); fboId_ = 0; }
 
     if (width != texture_width_ || height != texture_height_) {
-        EXCEPTION_ASSERT(own_texture_);
+        EXCEPTION_ASSERTX(own_texture_, format("glframebuffer: old(%g, %g), new(%g, %g)")
+                          % texture_width_ % texture_height_ % width % height);
         own_texture_->reset(width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
         texture_width_ = width;
         texture_height_ = height;
