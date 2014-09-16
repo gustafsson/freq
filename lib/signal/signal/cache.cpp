@@ -14,13 +14,7 @@ namespace Signal {
 
 static Buffer zeros(Signal::Interval I, float fs, int C)
 {
-    Buffer b(I,fs,C);
-
-    // DataStorage clears data on read access of uninitialized data
-    for (int i=0; i<C; i++)
-        CpuMemoryStorage::ReadOnly<1>(b.getChannel (i)->waveform_data ());
-
-    return b;
+    return Buffer(I,fs,C);
 }
 
 
@@ -231,6 +225,12 @@ void Cache::
     Timer t;
 
     Intervals sid(r->getInterval ());
+
+    // Make sure 'r' is allocated if it will receive any data
+    if (r->getInterval () & _valid_samples)
+        for (unsigned c=0; c<r->number_of_channels (); c++)
+            CpuMemoryStorage::WriteAll<1>(r->getChannel (c)->waveform_data ());
+
     while (sid)
     {
         Interval s = sid.fetchFirstInterval ();
@@ -238,10 +238,6 @@ void Cache::
         *r |= *p; // Fill buffer
         sid -= p->getInterval();
     }
-
-    // set remaining samples to zero
-    for (Interval i : sid)
-        *r |= zeros(i, sample_rate(), num_channels ());
 
     double T=t.elapsed ();
     if (T > 10e-3 && T/r->number_of_samples ()>10e-6)
@@ -273,15 +269,13 @@ pBuffer Cache::
 
     // If all of b is ok, return b
     if ( _valid_samples.contains (bI) )
-    {
-        // TODO: if COW chunks could be created with an offset we could return all
-        // of b that is valid instead of just a copy of the portion that matches I.
-        // Would result in less copying by returning more data right away.
         return b;
-    }
 
     validFetch &= bI;
 
+    // TODO: if COW chunks could be created with an offset we could return all
+    // of b that is valid instead of just a copy of the portion that matches I.
+    // Would result in less copying by returning more data right away.
     pBuffer n = pBuffer(new Buffer(validFetch, b->sample_rate(), b->number_of_channels ()));
     *n |= *b;
     return n;
