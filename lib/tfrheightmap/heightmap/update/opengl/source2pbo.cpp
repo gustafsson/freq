@@ -35,7 +35,7 @@ Source2Pbo::~Source2Pbo()
 {
     if (mapped_chunk_data_)
     {
-        Log("~Source2Pbo is waiting for data_transfer before releasing gl resources");
+        Log("~Source2Pbo: is waiting for data_transfer before releasing gl resources");
         finishTransfer();
     }
 
@@ -57,7 +57,7 @@ std::packaged_task<void()> Source2Pbo::
     if (t.elapsed () > 0.001)
         Log("Source2Pbo: It took %s to map chunk_pbo") % TaskTimer::timeToString (t.elapsed ());
 
-    EXCEPTION_ASSERTX(mapped_chunk_data_, boost::format("Source2Pbo: failed glMapBuffer %s ") % DataStorageVoid::getMemorySizeText (n));
+    EXCEPTION_ASSERTX(mapped_chunk_data_, boost::format("Source2Pbo: failed glMapBuffer %s") % DataStorageVoid::getMemorySizeText (n));
 
     void *c = mapped_chunk_data_;
     int n = this->n;
@@ -77,20 +77,16 @@ void Source2Pbo::
 {
     if (mapped_chunk_data_)
     {
-        if (!data_transfer.valid ())
+        if (data_transfer.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready)
         {
-            TaskTimer tt("data_transfer.wait () %d", n);
+            TaskTimer tt(boost::format("Source2pbo: waiting to transfer %s") % DataStorageVoid::getMemorySizeText (n,0));
             data_transfer.wait ();
         }
 
-        Timer t;
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
         glUnmapBuffer (GL_PIXEL_UNPACK_BUFFER);
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         mapped_chunk_data_ = 0;
-
-        if (t.elapsed () > 0.001)
-            Log("Source2Pbo: It took %s to map chunk_pbo") % TaskTimer::timeToString (t.elapsed ());
     }
 }
 
