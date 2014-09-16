@@ -10,8 +10,7 @@
 #ifdef GL_ES_VERSION_2_0
 const bool copy_to_new_fbo_for_each_draw = true;
 #else
-const bool copy_to_new_fbo_for_each_draw = true;
-const bool blit_to_fbo = true;
+const bool copy_to_new_fbo_for_each_draw = false;
 #endif
 
 namespace Heightmap {
@@ -107,11 +106,8 @@ Fbo2Block::ScopeBinding Fbo2Block::
     texture2texture(oldTexture, fboTexture);
     fbo->bindFrameBuffer();
 #else
-    if (!blit_to_fbo)
-        texture2texture(oldTexture, fboTexture, copyfbo);
     fbo->bindFrameBuffer();
-    if (blit_to_fbo)
-        blitTexture(oldTexture, copyfbo);
+    blitTexture(oldTexture, copyfbo);
 #endif
 
     ScopeBinding fboBinding = ScopeBinding(*this, &Fbo2Block::end);
