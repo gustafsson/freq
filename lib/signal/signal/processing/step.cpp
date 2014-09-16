@@ -42,7 +42,7 @@ Signal::Processing::IInvalidator::ptr Step::
     if (died_)
         return Signal::Processing::IInvalidator::ptr();
 
-    DEBUGINFO Log("Step marking \"%s\" as crashed") % operation_name();
+    DEBUGINFO Log("Step: marking \"%s\" as crashed") % operation_name();
 
     died_ = operation_desc_;
     operation_desc_ = Signal::OperationDesc::ptr(new Test::TransparentOperationDesc);
@@ -101,7 +101,7 @@ Intervals Step::
         deprecated = A;
     }
 
-    DEBUGINFO Log("Step deprecateCache %2% | %3% on %1%")
+    DEBUGINFO Log("Step: deprecateCache %2% | %3% on %1%")
               % operation_name()
               % deprecated
               % not_started();
@@ -123,7 +123,7 @@ size_t Step::
     int C = cache->num_channels ();
     Signal::Intervals P = cache->purge (still_needed);
     if (P)
-        Log("Step discarding %s, only need %s for %s") % P % still_needed % operation_name();
+        Log("Step: discarding %s, only need %s for %s") % P % still_needed % operation_name();
     return P.count () * C;
 }
 
@@ -230,7 +230,7 @@ void Step::
 bool Step::
         sleepWhileTasks(Step::ptr::read_ptr& step, int sleep_ms)
 {
-    DEBUGINFO TaskTimer tt(boost::format("sleepWhileTasks %d") % step->running_tasks.size ());
+    DEBUGINFO TaskTimer tt(boost::format("Step: sleepWhileTasks %d") % step->running_tasks.size ());
 
     // The caller keeps a lock that is released while waiting
     // Wait in a while-loop to cope with spurious wakeups
