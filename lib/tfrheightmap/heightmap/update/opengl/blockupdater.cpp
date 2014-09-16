@@ -50,9 +50,8 @@ public:
 BlockUpdater::
         BlockUpdater()
     :
-//      memcpythread(thread::hardware_concurrency ())
       p(new BlockUpdaterPrivate),
-      memcpythread(2, "BlockUpdater")
+      memcpythread(1, "BlockUpdater")
 {
 }
 
