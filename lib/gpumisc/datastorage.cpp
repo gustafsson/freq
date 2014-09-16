@@ -290,38 +290,38 @@ void DataStorageVoid::
 
 
 /*static*/ std::string DataStorageVoid::
-       getMemorySizeText( unsigned long long size, char decimals, char type )
+       getMemorySizeText( unsigned long long size, char decimals )
 {
-    if (type != 'g' && type != 'f')
-        type = 'g';
-
-    float value = (float)size;
+    double value = size;
     std::string unit;
     if (size>>40 > 4) {
         unit = "TB";
-        value = size/(float)(((unsigned long long )1)<<40);
+        value = size/double(((unsigned long long )1)<<40);
 
     } else if (size>>30 > 5) {
         unit = "GB";
-        value = size/(float)(1<<30);
+        value = size/double(1<<30);
 
     } else if (size>>20 > 5) {
         unit = "MB";
-        value = size/(float)(1<<20);
+        value = size/double(1<<20);
 
     } else if (size>>10 > 5) {
         unit = "KB";
-        value = size/(float)(1<<10);
+        value = size/double(1<<10);
 
     } else {
         return (boost::format("%u B") % size).str();
     }
 
+    // Not more than 2 decimals
+    value = int(value*100 + .5)/100.;
+
     std::string format;
     if (decimals < 0)
-        format = (boost::format("%%%c %s") % type % unit).str();
+        format = (boost::format("%%g %s") % unit).str();
     else
-        format = (boost::format("%%.%u%c %s") % decimals % type % unit).str();
+        format = (boost::format("%%.%df %s") % int(decimals) % unit).str();
 
     return (boost::format(format) % value).str();
 }

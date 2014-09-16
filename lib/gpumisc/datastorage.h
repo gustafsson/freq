@@ -142,7 +142,7 @@ public:
     DataStorageVoid& operator=( const DataStorageVoid& );
 
 
-    static std::string getMemorySizeText( unsigned long long size, char decimals=-1, char type='g' );
+    static std::string getMemorySizeText( unsigned long long size, char decimals=-1 );
 
 
 protected:
