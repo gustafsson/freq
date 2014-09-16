@@ -2,8 +2,13 @@
 #include "GlException.h"
 #include "tasktimer.h"
 #include "gl.h"
+#include "log.h"
 
 #ifndef GL_ES_VERSION_2_0
+
+//#define LOG_TRANSFER_RATE
+#define LOG_TRANSFER_RATE if(0)
+
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -30,7 +35,7 @@ Source2Pbo::~Source2Pbo()
 {
     if (mapped_chunk_data_)
     {
-        TaskInfo("~Source2Pbo is waiting for data_transfer before releasing gl resources");
+        Log("~Source2Pbo is waiting for data_transfer before releasing gl resources");
         finishTransfer();
     }
 
@@ -44,22 +49,26 @@ std::packaged_task<void()> Source2Pbo::
 {
     // http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
 
+    Timer t;
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
     mapped_chunk_data_ = (void*)glMapBuffer (GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    if (t.elapsed () > 0.001)
+        Log("Source2Pbo: It took %s to map chunk_pbo") % TaskTimer::timeToString (t.elapsed ());
 
     EXCEPTION_ASSERTX(mapped_chunk_data_, boost::format("Source2Pbo: failed glMapBuffer %s ") % DataStorageVoid::getMemorySizeText (n));
 
     void *c = mapped_chunk_data_;
     int n = this->n;
-    auto t = std::packaged_task<void()>([c, p, n](){
-//        Timer t;
+    auto task = std::packaged_task<void()>([c, p, n](){
+        Timer t;
         memcpy(c, p, n);
-//        TaskInfo("memcpy %s with %s/s", DataStorageVoid::getMemorySizeText(n*sizeof(float)).c_str (), DataStorageVoid::getMemorySizeText(n*sizeof(float) / t.elapsed ()).c_str ());
+        LOG_TRANSFER_RATE Log("Source2Pbo: memcpy %s with %s/s") % DataStorageVoid::getMemorySizeText(n*sizeof(float)) % DataStorageVoid::getMemorySizeText(n*sizeof(float) / t.elapsed ());
     });
 
-    data_transfer = t.get_future();
-    return t;
+    data_transfer = task.get_future();
+    return task;
 }
 
 
@@ -73,10 +82,15 @@ void Source2Pbo::
             TaskTimer tt("data_transfer.wait () %d", n);
             data_transfer.wait ();
         }
+
+        Timer t;
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
         glUnmapBuffer (GL_PIXEL_UNPACK_BUFFER);
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         mapped_chunk_data_ = 0;
+
+        if (t.elapsed () > 0.001)
+            Log("Source2Pbo: It took %s to map chunk_pbo") % TaskTimer::timeToString (t.elapsed ());
     }
 }
 
@@ -86,7 +100,7 @@ void Source2Pbo::
 {
     glGenBuffers (1, &chunk_pbo_); // Generate 1 buffer
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, n, 0, GL_STATIC_DRAW);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, n, 0, GL_STREAM_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     GlException_CHECK_ERROR();
