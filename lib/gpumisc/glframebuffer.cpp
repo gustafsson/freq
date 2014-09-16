@@ -58,7 +58,7 @@ GlFrameBuffer::
     texture_width_(width),
     texture_height_(height)
 {
-    EXCEPTION_ASSERT_LESS(0, textureid);
+    EXCEPTION_ASSERT_LESS(0u, textureid);
     EXCEPTION_ASSERT_LESS(0, width);
     EXCEPTION_ASSERT_LESS(0, height);
 
