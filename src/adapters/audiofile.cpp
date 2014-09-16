@@ -440,6 +440,9 @@ Signal::pBuffer AudiofileOperation::
     {
         // This only happens if something goes wrong during reading, i.e if the file is being changed
         *b |= *p;
+        // Set to zero where reading failed
+        for (auto i : b->getInterval () - p->getInterval ())
+            *b |= Signal::Buffer(i, p->sample_rate (), p->number_of_channels ());
         return b;
     }
 }
