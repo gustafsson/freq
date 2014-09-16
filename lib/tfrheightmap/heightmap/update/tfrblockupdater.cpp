@@ -113,7 +113,7 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor, float l
                 float v = 0;
                 int i = (y + offs_y)*org_width;
                 for (int j = 0; j<stepx; ++j)
-                    v = std::max(v, fp[std::min(org_width-1, i + offs_x + x*stepx + j)]);
+                    v = std::max(v, fp[i + std::min(org_width-1, offs_x + x*stepx + j)]);
                 fp[y*data_width + x] = v;
               }
 
