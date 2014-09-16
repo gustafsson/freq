@@ -62,10 +62,10 @@ void Cache::
     Timer t;
     for( std::vector<pBuffer>::iterator itr = findBuffer(b.getInterval().first); itr!=_cache.end(); itr++ )
     {
-        Buffer& t = **itr;
-        if (t.getInterval ().first >= b.getInterval ().last)
+        Buffer& c = **itr;
+        if (c.getInterval ().first >= b.getInterval ().last)
             break;
-        t |= b;
+        c |= b;
     }
 
     _valid_samples |= b.getInterval();
@@ -126,13 +126,16 @@ void Cache::
         {
             n = _discarded.back ();
             _discarded.pop_back ();
+            // Log("Cache: Reusing previously discarded %s as %s for %s") % n->getInterval () % Interval(I.first, I.first+chunkSize) % J;
             n->set_sample_offset (I.first);
             n->set_sample_rate (fs);
+            for (unsigned c=0; c<n->number_of_channels (); c++)
+                n->getChannel (c)->waveform_data ()->DiscardAllData(true);
         }
 
         if (!n || n->number_of_channels () != unsigned(num_channels) || n->number_of_samples () != chunkSize)
         {
-            //Log("Allocating new cache slot %s for %s") % Interval(I.first, I.first+chunkSize) % J;
+            // Log("Cache: Allocating new cache slot %s for %s") % Interval(I.first, I.first+chunkSize) % J;
             n.reset ( new Buffer( I.first, chunkSize, fs, num_channels) );
         }
 

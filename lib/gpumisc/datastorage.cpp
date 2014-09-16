@@ -215,15 +215,17 @@ void DataStorageVoid::
 
 
 void DataStorageVoid::
-        DiscardAllData()
+        DiscardAllData(bool keep_allocated_data)
 {
+    validContent_.clear();
+    if (keep_allocated_data)
+        return;
+
     TIME_DataStorageImplementation
             TaskTimer tt("%s.DiscardAllData %p #%d ( %u, %u, %u ), elemsize %u",
                          vartype(*this).c_str(), this, storage_.size(),
                          size().width, size().height, size().depth,
                          bytesPerElement());
-
-    validContent_.clear();
 
     while (!storage_.empty())
     {

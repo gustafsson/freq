@@ -123,8 +123,10 @@ public:
 
     /**
       Discards all memory allocated by 'this' instance.
+      If keep_allocated_data is true HasValidContent will return false for all
+      storages but AccessStorage will reuse previous memory allocations.
       */
-    void DiscardAllData();
+    void DiscardAllData(bool keep_allocated_data=false);
 
 
     /**
