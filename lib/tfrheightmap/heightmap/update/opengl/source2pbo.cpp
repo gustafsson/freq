@@ -48,7 +48,7 @@ std::packaged_task<void()> Source2Pbo::
     mapped_chunk_data_ = (void*)glMapBuffer (GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-    EXCEPTION_ASSERTX(mapped_chunk_data_, boost::format("Source2Pbo: failed glMapBuffer %s ") % DataStorage::getMemorySizeText (n));
+    EXCEPTION_ASSERTX(mapped_chunk_data_, boost::format("Source2Pbo: failed glMapBuffer %s ") % DataStorageVoid::getMemorySizeText (n));
 
     void *c = mapped_chunk_data_;
     int n = this->n;
