@@ -74,7 +74,8 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor, float l
     data_height = org_height = chunk->transform_data->size ().height;
     data_width = org_width = chunk->transform_data->size ().width;
 
-    if (0 < largest_fs)
+    // Not needed and not implemented for Tfr::Chunk::Order_column_major
+    if (0 < largest_fs && chunk->order == Tfr::Chunk::Order_row_major)
         stepx = chunk->sample_rate / largest_fs / 4;
     if (stepx < 1)
         stepx = 1;
@@ -107,6 +108,9 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor, float l
 
     bool resample = stepx > 1 || offs_y > 0 || offs_x > 0;
     if (resample)
+    {
+        EXCEPTION_ASSERT_NOTEQUALS(chunk->order, Tfr::Chunk::Order_column_major);
+
         for (int y=0; y<data_height; ++y)
             for (int x=0; x<data_width; ++x)
               {
@@ -116,7 +120,7 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor, float l
                     v = std::max(v, fp[i + std::min(org_width-1, offs_x + x*stepx + j)]);
                 fp[y*data_width + x] = v;
               }
-
+    }
 
     // want linear interpolation which is not supported on gl_es with R32F but it is supported on iOS with R16F
     // besides, float16 if twice as fast to transfer and work with, and it has enough precision
