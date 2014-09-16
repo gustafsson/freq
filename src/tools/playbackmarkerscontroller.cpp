@@ -91,7 +91,7 @@ void PlaybackMarkersController::
 {
     e->accept();
 
-    Support::RenderViewInfo r(render_view_);
+    Support::RenderViewInfo r(render_view_->model);
 
     bool success;
     Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
@@ -148,7 +148,7 @@ void PlaybackMarkersController::
 void PlaybackMarkersController::
         mouseMoveEvent ( QMouseEvent * e )
 {
-    Support::RenderViewInfo r(render_view_);
+    Support::RenderViewInfo r(render_view_->model);
     bool success;
     Heightmap::Position click = r.getPlanePos( e->localPos(), &success);
     if (!success)

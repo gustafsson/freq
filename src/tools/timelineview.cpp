@@ -266,7 +266,7 @@ void TimelineView::
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
-                Heightmap::Render::RenderFrustum(_render_view->gl_projection).drawFrustum();
+                Heightmap::Render::RenderFrustum(_render_view->model->gl_projection).drawFrustum();
 
                 emit painting();
             }
@@ -319,7 +319,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            Heightmap::Render::RenderFrustum(_render_view->gl_projection).drawFrustum();
+            Heightmap::Render::RenderFrustum(_render_view->model->gl_projection).drawFrustum();
         }
 
         GlException_CHECK_ERROR();

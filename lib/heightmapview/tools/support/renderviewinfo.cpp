@@ -10,11 +10,20 @@
 namespace Tools {
 namespace Support {
 
-RenderViewInfo::RenderViewInfo(Tools::RenderView* renderview)
+RenderViewInfo::RenderViewInfo(Tools::RenderModel* model)
     :
-      view(renderview),
-      model(renderview->model)
+      model(model),
+      gl_projection(&model->gl_projection)
 {
+}
+
+
+QRectF RenderViewInfo::
+        rect()
+{
+    // can't translate from bottom-relative offset (viewport) to top-relative offset (widget), assume offset is 0
+    int y_offset = 0;
+    return QRectF(gl_projection->viewport[0], y_offset, gl_projection->viewport[2], gl_projection->viewport[3]);
 }
 
 
@@ -139,7 +148,7 @@ float RenderViewInfo::
 Heightmap::Reference RenderViewInfo::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    return findRefAtCurrentZoomLevel(p, &view->gl_projection);
+    return findRefAtCurrentZoomLevel(p, gl_projection);
 }
 
 
@@ -165,15 +174,15 @@ QPointF RenderViewInfo::
     if ((1 != model->camera.orthoview || model->camera.r[0]!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->render_settings.y_scale * last_ysize;
 
-    vectord win = view->gl_projection.gluProject (vectord(pos.time, objY, pos.scale));
+    vectord win = gl_projection->gluProject (vectord(pos.time, objY, pos.scale));
     vectord::T winX = win[0], winY = win[1]; // winZ = win[2];
 
     if (dist)
     {
-        GLint const* const& vp = view->gl_projection.viewport.v;
+        GLint const* const& vp = gl_projection->viewport.v;
         float z0 = .1, z1=.2;
-        vectord projectionPlane = view->gl_projection.gluUnProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
-        vectord projectionNormal = view->gl_projection.gluUnProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
+        vectord projectionPlane = gl_projection->gluUnProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
+        vectord projectionNormal = gl_projection->gluUnProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
 
         vectord p;
         p[0] = pos.time;
@@ -192,7 +201,7 @@ QPointF RenderViewInfo::
     }
 
     int r = model->render_settings.dpifactor;
-    return QPointF( winX, view->rect().height() - 1 - winY ) /= r;
+    return QPointF( winX, rect().height() - 1 - winY ) /= r;
 }
 
 
@@ -200,7 +209,7 @@ QPointF RenderViewInfo::
         getWidgetPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     QPointF pt = getScreenPos(pos, dist, use_heightmap_value);
-    pt -= view->rect().topLeft();
+    pt -= rect().topLeft();
     return pt;
 }
 
@@ -215,11 +224,11 @@ Heightmap::Position RenderViewInfo::
     widget_pos *= model->render_settings.dpifactor;
 
     QPointF pos;
-    pos.setX( widget_pos.x() + view->rect().left() );
-    pos.setY( view->rect().height() - 1 - widget_pos.y() + view->rect().top() );
+    pos.setX( widget_pos.x() + rect().left() );
+    pos.setY( rect().height() - 1 - widget_pos.y() + rect().top() );
 
-    const vectord::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
-    const GLint* vp = view->gl_projection.viewport.v;
+    const vectord::T* m = gl_projection->modelview.v (), *proj = gl_projection->projection.v ();
+    const GLint* vp = gl_projection->viewport.v;
     vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
@@ -292,11 +301,11 @@ Heightmap::Position RenderViewInfo::
 {
     pos *= model->render_settings.dpifactor;
 
-    pos.setX( pos.x() + view->rect().left() );
-    pos.setY( view->rect().height() - 1 - pos.y() + view->rect().top() );
+    pos.setX( pos.x() + rect().left() );
+    pos.setY( rect().height() - 1 - pos.y() + rect().top() );
 
-    const vectord::T* m = view->gl_projection.modelview.v (), *proj = view->gl_projection.projection.v ();
-    const GLint* vp = view->gl_projection.viewport.v;
+    const vectord::T* m = gl_projection->modelview.v (), *proj = gl_projection->projection.v ();
+    const GLint* vp = gl_projection->viewport.v;
     vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
@@ -355,14 +364,14 @@ Heightmap::Position RenderViewInfo::
 QPointF RenderViewInfo::
         widget_coordinates( QPointF window_coordinates )
 {
-    return window_coordinates - view->rect().topLeft();
+    return window_coordinates - rect().topLeft();
 }
 
 
 QPointF RenderViewInfo::
         window_coordinates( QPointF widget_coordinates )
 {
-    return widget_coordinates + view->rect().topLeft();
+    return widget_coordinates + rect().topLeft();
 }
 
 

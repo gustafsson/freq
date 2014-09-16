@@ -530,7 +530,7 @@ void CommentView::
 {
     bool use_heightmap_value = true;
 
-    Tools::Support::RenderViewInfo r(view);
+    Tools::Support::RenderViewInfo r(view->model);
 
     // moveEvent can't be used when updating the reference position while moving
     if (!proxy->pos().isNull() || model()->screen_pos[0] == UpdateModelPositionFromScreen)

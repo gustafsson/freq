@@ -174,7 +174,7 @@ void GraphicsScene::
 void GraphicsScene::
         updateMousePosInWorldCoordinates()
 {
-    Tools::Support::RenderViewInfo r(renderview_);
+    Tools::Support::RenderViewInfo r(renderview_->model);
     Heightmap::Position cursorPos = r.getPlanePos( renderview_->glwidget->mapFromGlobal(QCursor::pos()) );
     renderview_->model->render_settings.cursor = vectord(cursorPos.time, 0, cursorPos.scale);
 }

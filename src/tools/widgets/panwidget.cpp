@@ -39,7 +39,7 @@ void PanWidget::
 {
     bool success1, success2;
 
-    Tools::Support::RenderViewInfo r(view_);
+    Tools::Support::RenderViewInfo r(view_->model);
     Heightmap::Position last = r.getPlanePos( mapToParent(dragSource_), &success1);
     Heightmap::Position current = r.getPlanePos( mapToParent(event->pos()), &success2);
 

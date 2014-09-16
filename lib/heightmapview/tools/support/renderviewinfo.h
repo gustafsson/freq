@@ -16,7 +16,7 @@ namespace Support {
 class RenderViewInfo
 {
 public:
-    RenderViewInfo(Tools::RenderView* renderview);
+    RenderViewInfo(Tools::RenderModel* model);
 
     QPointF getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value = true );
     QPointF getWidgetPos( Heightmap::Position pos, double* dist, bool use_heightmap_value = true );
@@ -37,8 +37,11 @@ public:
     float length();
 
 private:
-    Tools::RenderView* view;
     Tools::RenderModel* model;
+    glProjection* gl_projection;
+
+    // TODO move rect_y_ from RenderView to RenderModel so that rect() can be created
+    QRectF rect();
 };
 
 } // namespace Support

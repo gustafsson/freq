@@ -217,6 +217,8 @@ void RenderView::
 void RenderView::
         resizeGL( QRect rect, int device_height )
 {
+    glProjection& gl_projection = model->gl_projection;
+
     tvector<4,int> vp(rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height());
     if (vp == gl_projection.viewport && rect.y() == rect_y_)
         return;
@@ -236,7 +238,7 @@ void RenderView::
 QRect RenderView::
         rect()
 {
-    const int* viewport = gl_projection.viewport.v;
+    const int* viewport = model->gl_projection.viewport.v;
 
     return QRect(viewport[0],rect_y_,viewport[2],viewport[3]);
 }
@@ -308,6 +310,7 @@ void RenderView::
         redraw (); // won't redraw right away, but enqueue an update
 
     setupCamera();
+    glProjection& gl_projection = model->gl_projection;
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
@@ -317,7 +320,7 @@ void RenderView::
     bool onlyComputeBlocksForRenderView = false;
     Signal::OperationDesc::Extent x = model->recompute_extent ();
     { // Render
-		TIME_PAINTGL_DETAILS TaskTimer tt("Render");
+        TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
         if (onlyComputeBlocksForRenderView)
         {
@@ -435,6 +438,8 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
+    glProjection& gl_projection = model->gl_projection;
+
     if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
         redraw();
 

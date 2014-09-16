@@ -91,7 +91,7 @@ namespace Tools { namespace Selections
         if (e->button() == selection_button_)
         {
             view_->visible = true;
-            Tools::Support::RenderViewInfo r(selection_controller_->render_view());
+            Tools::Support::RenderViewInfo r(selection_controller_->render_view()->model);
 
             bool success;
             selectionStart = r.getPlanePos( e->localPos (), &success);
@@ -130,7 +130,7 @@ namespace Tools { namespace Selections
     {
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Tools::Support::RenderViewInfo r(selection_controller_->render_view());
+            Tools::Support::RenderViewInfo r(selection_controller_->render_view()->model);
 
             bool success;
             Heightmap::Position p = r.getPlanePos( e->localPos (), &success);

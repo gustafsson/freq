@@ -51,8 +51,6 @@ namespace Tools
 
         QGLWidget *glwidget;
 
-        glProjection gl_projection;
-
         /**
          * @brief rect describes the viewport in QWidget pixels
          * gl_projection->viewport and rect() describe the same area. However,
@@ -129,6 +127,7 @@ namespace Tools
         void setupCamera();
         matrixd setRotationForAxes();
 
+        // TODO move rect_y_ to RenderModel
         int rect_y_;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;

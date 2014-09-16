@@ -481,8 +481,8 @@ public:
         Heightmap::Position p(t, 0);
         p.scale = render_view_->model->display_scale().getFrequencyScalar( hz );
         // Use quadratic interpolation to fetch estimates at given scale
-        float value = Tools::Support::RenderViewInfo(render_view_).getHeightmapValue( p, &ref_, 0, true, is_valid_value );
-        value*=value;
+        float value = Tools::Support::RenderViewInfo(render_view_->model).getHeightmapValue( p, &ref_, 0, true, is_valid_value );
+        value *= value;
         return value;
     }
 

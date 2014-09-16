@@ -224,8 +224,8 @@ void TransformInfoForm::
         addRow("Max hz", QString("%1").arg(fs/2));
         addRow("Min hz", QString("%1").arg(0));
         //addRow("Hz/bin", QString("%1").arg(fs/stft->chunk_size()));
-        addRow("Rendered height", QString("%1 px").arg(renderview->gl_projection.viewport[3]));
-        addRow("Rendered width", QString("%1 px").arg(renderview->gl_projection.viewport[2]));
+        addRow("Rendered height", QString("%1 px").arg(renderview->model->gl_projection.viewport[3]));
+        addRow("Rendered width", QString("%1 px").arg(renderview->model->gl_projection.viewport[2]));
         addRow("Amplification factor", QString("%1").arg(renderview->model->render_settings.y_scale));
         setEditText( ui->binResolutionEdit, QString("%1").arg(fs/stft->chunk_size(),0,'f',2) );
         setEditText( ui->windowSizeEdit, QString("%1").arg(stft->chunk_size()) );

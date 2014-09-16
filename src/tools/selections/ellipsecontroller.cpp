@@ -73,7 +73,7 @@ namespace Tools { namespace Selections
     {
         if (e->button() == selection_button_)
         {
-            Tools::Support::RenderViewInfo r(selection_controller_->render_view());
+            Tools::Support::RenderViewInfo r(selection_controller_->render_view()->model);
             bool success;
             selectionStart = r.getPlanePos( e->localPos (), &success);
             if (!success)
@@ -103,7 +103,7 @@ namespace Tools { namespace Selections
     {
         if (e->buttons().testFlag( selection_button_ ))
         {
-            Tools::Support::RenderViewInfo r (selection_controller_->render_view());
+            Tools::Support::RenderViewInfo r (selection_controller_->render_view()->model);
 
         //    TaskTimer tt("moving");
             bool success;
