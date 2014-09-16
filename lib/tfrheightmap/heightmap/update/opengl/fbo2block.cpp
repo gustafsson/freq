@@ -10,50 +10,57 @@
 #ifdef GL_ES_VERSION_2_0
 const bool copy_to_new_fbo_for_each_draw = true;
 #else
-const bool copy_to_new_fbo_for_each_draw = false;
+const bool copy_to_new_fbo_for_each_draw = true;
+const bool blit_to_fbo = true;
 #endif
 
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
+
 #ifdef GL_ES_VERSION_2_0
-void grabToTexture(GlTexture::ptr dst, GlTexture::ptr src)
+void texture2texture(GlTexture::ptr src, GlTexture::ptr dst)
 {
     GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(dst->getOpenGlTextureId (), src->getOpenGlTextureId (), 0, 1) );
 }
 #else
-void grabToTexture(GlTexture::ptr dst)
+void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
 {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
     GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ()) );
     glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
-#endif
 
-
-void copyTexture(unsigned& copyfbo, GlTexture::ptr dst, GlTexture::ptr src)
+void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
 {
-#ifdef GL_ES_VERSION_2_0
-    GlException_SAFE_CALL( glCopyTextureLevelsAPPLE(dst->getOpenGlTextureId (), src->getOpenGlTextureId (), 0, 1) );
-#else
+    // opengles doesn't have GL_READ_FRAMEBUFFER/GL_WRITE_FRAMEBUFFER
+
     // Assumes dst and src have the same size and the same pixel format
-    int w = dst->getWidth ();
-    int h = dst->getHeight ();
+    int w = src->getWidth ();
+    int h = src->getHeight ();
     if (!copyfbo)
         glGenFramebuffers(1, &copyfbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, copyfbo);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
     glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
-                           GL_TEXTURE_2D, dst->getOpenGlTextureId (), 0);
-    glDrawBuffer (GL_COLOR_ATTACHMENT1);
     glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    glDrawBuffer (GL_COLOR_ATTACHMENT0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-#endif
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
+
+void texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo)
+{
+    // Assumes dst and src have the same size and the same pixel format
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
+    fbo2Texture(copyfbo, dst);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+}
+#endif
 
 
 Fbo2Block::Fbo2Block ()
@@ -63,6 +70,8 @@ Fbo2Block::Fbo2Block ()
         fboTexture = Render::BlockTextures::get1 ();
         fbo.reset (new GlFrameBuffer(*fboTexture));
     }
+
+    glGenFramebuffers(1, &copyfbo);
 }
 
 
@@ -89,15 +98,22 @@ Fbo2Block::ScopeBinding Fbo2Block::
     if (copy_to_new_fbo_for_each_draw)
     {
         fboTexture = targetTexture;
-        copyTexture (copyfbo, fboTexture, oldTexture);
         fbo.reset (new GlFrameBuffer(*fboTexture));
     }
-    else
-        copyTexture (copyfbo, fboTexture, oldTexture);
 
     GlException_CHECK_ERROR ();
 
+#ifdef GL_ES_VERSION_2_0
+    texture2texture(oldTexture, fboTexture);
     fbo->bindFrameBuffer();
+#else
+    if (!blit_to_fbo)
+        texture2texture(oldTexture, fboTexture, copyfbo);
+    fbo->bindFrameBuffer();
+    if (blit_to_fbo)
+        blitTexture(oldTexture, copyfbo);
+#endif
+
     ScopeBinding fboBinding = ScopeBinding(*this, &Fbo2Block::end);
 
     // Juggle texture coordinates so that border texels are centered on the border
@@ -132,20 +148,20 @@ void Fbo2Block::
     if (!targetTexture)
         return;
 
+    fbo->unbindFrameBuffer();
+
     if (copy_to_new_fbo_for_each_draw)
     {
-        fbo->unbindFrameBuffer();
+        // The fbo was created with targetTexture as color attachment
         fbo.reset ();
         fboTexture.reset ();
     }
     else
     {
 #ifdef GL_ES_VERSION_2_0
-        fbo->unbindFrameBuffer();
-        grabToTexture (targetTexture, fboTexture);
+        texture2texture (fboTexture, targetTexture);
 #else
-        grabToTexture (targetTexture);
-        fbo->unbindFrameBuffer();
+        fbo2Texture(fbo->getOpenGlFboId(), targetTexture);
 #endif
     }
 

@@ -49,6 +49,7 @@ Block::pGlTexture Block::
 void Block::
         setTexture(Block::pGlTexture t)
 {
+    // Keep texture_ until it has been flushed
     new_texture_ = t;
 }
 
@@ -68,7 +69,7 @@ void Block::
     Block::pGlTexture t;
     t.swap (new_texture_);
     if (t)
-        texture_ = t;
+        texture_ = t; // release old texture_
 }
 
 
