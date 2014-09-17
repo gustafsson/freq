@@ -28,9 +28,6 @@ void TouchNavigation::
     QPointF point1(x1,y1), point2(x2,y2);
     Heightmap::Position hpos1, hpos2;
 
-    Log("%d (%g, %g)->(%g, %g), %d (%g, %g), %d (%g, %g)")
-            % press1 % x1 % y1 % hpos1.time % hpos1.scale % press2 % x2 % y2 % press3 % x3 % y3;
-
     Tools::Support::RenderCamera& c = render_model->camera;
     vectord& q = c.q;
     vectord& r = c.r;
@@ -50,6 +47,8 @@ void TouchNavigation::
         double dscale1 = hpos1.scale - hstart1.scale;
         q[0] -= dtime1/2;
         q[2] -= dscale1/2;
+
+        Log("(%g, %g)->(%g, %g): q[0] %g. q[2] %g") % x1 % y1 % hpos1.time % hpos1.scale % q[0] % q[2];
     }
     else if (press1 && press2 && !press3 && prevPress1 && prevPress2)
     {
@@ -92,6 +91,9 @@ void TouchNavigation::
 
             r[1] += (dx1 + dx2)/6;
             r[0] += (dy1 + dy2)/6;
+
+            Log("(%g, %g)  (%g, %g): r[0] %g. r[1] %g")
+                    % x1 % y1 % x2 % y2 % r[0] % r[1];
             break;
         }
         case Scale:
@@ -119,14 +121,14 @@ void TouchNavigation::
             double dscale1 = hpos1.scale - hstart1.scale;
             q[0] -= dtime1/2;
             q[2] -= dscale1/2;
+
+            Log("(%g, %g)  (%g, %g): xscale %g. zscale %g. q(%g, %g")
+                    % x1 % y1 % x2 % y2 % c.xscale % c.zscale % q[0] % q[2] ;
             break;
         }
         default:
             break;
         }
-
-        Log("r[0] %g. r[1] %g. xscale %g. zscale %g")
-                % r[0] % r[1] % c.xscale % c.zscale;
     }
     else if (prevPress1 || prevPress2)
     {
