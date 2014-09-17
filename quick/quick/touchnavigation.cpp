@@ -98,7 +98,7 @@ void TouchNavigation::
         }
         case Scale:
         {
-            QTransform T; T.rotate (r[1]);
+            QTransform T; T.rotate (c.effective_ry ());
 
             QPointF rpoint1 = T.map (point1);
             QPointF rpoint2 = T.map (point2);
