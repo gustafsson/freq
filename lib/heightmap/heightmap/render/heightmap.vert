@@ -50,6 +50,12 @@ void main()
     heighty1 = heightValue(heighty1);
     heighty2 = heightValue(heighty2);
 
+    mediump vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
+
+    // transform to homogeneous clip space
+    gl_Position      = ModelViewProjectionMatrix * pos;
+    vertex_height = height;
+
     mediump vec2 slope       = vec2(heightx2-heightx1, heighty2-heighty1);
 
     // calculate surface normal from slope for shading
@@ -57,11 +63,6 @@ void main()
     worldSpaceNormal.xyz = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
                                    vec3(tex2.x-tex1.x,  slope.x, 0.0));
     worldSpaceNormal.w = 1.0;
-
-    mediump vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
-
-    // transform to homogeneous clip space
-    gl_Position      = ModelViewProjectionMatrix * pos;
 
     mediump vec3 eyeSpacePos      = (ModelViewMatrix * pos).xyz;
     mediump vec3 eyeSpaceNormal   = (NormalMatrix * worldSpaceNormal).xyz;
@@ -75,6 +76,4 @@ void main()
 
     //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
     shadow = mix(1.0, min( 0.5 + (diffuse+facing)*0.5, 1.0), flatness);
-
-    vertex_height = height;
 }
