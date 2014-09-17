@@ -3,6 +3,7 @@
 
 #include "updatequeue.h"
 #include "tfr/chunk.h"
+#include "gl.h"
 
 namespace Heightmap {
 namespace Update {
