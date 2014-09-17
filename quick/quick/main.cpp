@@ -11,6 +11,8 @@
 int main(int argc, char *argv[])
 {
     Log("Started app");
+    for (int i=0; i<argc; i++)
+        Log("argv[%d] = %s") % i % argv[i];
 
     PrettifySegfault::setup ();
 
