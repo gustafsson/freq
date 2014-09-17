@@ -7,6 +7,7 @@
 #include "renderviewtransform.h"
 #include "renderviewaxes.h"
 #include "log.h"
+#include "touchnavigation.h"
 
 #include <QQuickWindow>
 #include <QTimer>
@@ -36,7 +37,8 @@ private:
 
 Squircle::Squircle() :
       m_t(0),
-      m_renderer(0)
+      m_renderer(0),
+      touchnavigation(new TouchNavigation(this, &render_model))
 {
     connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
 
@@ -126,7 +128,13 @@ void Squircle::sync()
 
         m_renderer = new SquircleRenderer(&render_model);
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
+
+        connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
+                touchnavigation, SLOT(mouseMove(qreal,qreal,bool)));
+        connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
+                touchnavigation, SLOT(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)));
     }
+
 
     m_renderer->setViewportSize(window()->size() * window()->devicePixelRatio());
 //    m_renderer->setT(m_t);

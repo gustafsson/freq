@@ -36,6 +36,7 @@ private:
 
     qreal m_t = 0;
     SquircleRenderer *m_renderer = 0;
+    class TouchNavigation* touchnavigation;
     Signal::Processing::Chain::ptr chain;
 };
 

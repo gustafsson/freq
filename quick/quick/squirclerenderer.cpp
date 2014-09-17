@@ -88,9 +88,14 @@ void SquircleRenderer::paint()
     render_view.setStates ();
     glUseProgram (0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    float s = m_viewportSize.width ()/(float)m_viewportSize.height ();
+    double s = m_viewportSize.width ()/(float)m_viewportSize.height ()/render_view.model->camera.xscale;
     render_view.model->recompute_extent ();
-    render_view.model->camera.q[0] = render_view.model->tfr_mapping ()->length() - s*4;
+    double L = render_view.model->tfr_mapping ()->length() - s*4;
+    double& q0 = render_view.model->camera.q[0];
+    static double lq0 = q0;
+    if (q0 > L || q0 == lq0)
+        q0 = lq0 = L;
+
     render_view.paintGL ();
 }
 
