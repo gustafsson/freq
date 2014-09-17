@@ -10,6 +10,7 @@
 #include "glPushContext.h"
 #include "unused.h"
 #include "gluinvertmatrix.h"
+#include "float16.h"
 
 #include <QSettings>
 
@@ -692,7 +693,11 @@ void RenderBlock::
     for (unsigned i=0; i<N; ++i) {
         texture[i] = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
     }
-    _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0]));
+
+    std::vector<uint16_t> texture16(N*4);
+    for (unsigned i=0; i<texture16.size (); i++)
+        texture16[i] = Float16Compressor::compress ((&texture[0][0])[i]);
+    _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_HALF_FLOAT, &texture16[0]));
 
     render_settings->clear_color = getWavelengthColorCompute( -1.f, _color_texture_colors );
 }

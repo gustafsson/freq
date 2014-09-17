@@ -16,6 +16,7 @@
 // assumes EXT_texture_rg which is present in for instance iOS >= 5.0
 #  define GL_RED GL_RED_EXT
 #  define GL_R16F GL_R16F_EXT
+#  define GL_HALF_FLOAT GL_HALF_FLOAT_OES
 # endif
 inline const char* gluErrorString(int) {
     return "(gluErrorString not implemented)";
