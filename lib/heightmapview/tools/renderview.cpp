@@ -317,15 +317,19 @@ void RenderView::
         emit updatedCamera();
     }
 
+#ifdef GL_ES_VERSION_2_0
+    bool onlyComputeBlocksForRenderView = true;
+#else
     bool onlyComputeBlocksForRenderView = false;
+#endif
     Signal::OperationDesc::Extent x = model->recompute_extent ();
     { // Render
         TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
         if (onlyComputeBlocksForRenderView)
         {
-            for ( const Heightmap::Collection::ptr& collection : collections )
-                collection.write ()->next_frame(); // Discard needed blocks before this row
+            for ( auto c : collections )
+                c->next_frame(); // Discard needed blocks before this row
         }
 
         drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
@@ -389,9 +393,9 @@ void RenderView::
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
 
-        for ( const Heightmap::Collection::ptr& collection : collections )
+        for ( auto c : collections )
             // Start looking for which blocks that are requested for the next frame.
-            collection.write ()->next_frame();
+            c->next_frame();
     }
 
     } catch (...) {
