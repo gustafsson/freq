@@ -8,9 +8,9 @@
 #include "gl.h"
 
 #ifdef GL_ES_VERSION_2_0
-const bool copy_to_new_fbo_for_each_draw = true;
+const bool copy_to_new_fbo_for_each_draw = false; // true doensn't work
 #else
-const bool copy_to_new_fbo_for_each_draw = false;
+const bool copy_to_new_fbo_for_each_draw = false; // true does work, faster? dunno
 #endif
 
 namespace Heightmap {
