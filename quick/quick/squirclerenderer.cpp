@@ -1,7 +1,8 @@
 #include "squirclerenderer.h"
 #include "signal/processing/chain.h"
+#include "signal/processing/workers.h"
 #include "log.h"
-
+#include <boost/exception/exception.hpp>
 #include <QTimer>
 
 SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
@@ -85,6 +86,14 @@ void SquircleRenderer::paint2()
 
 void SquircleRenderer::paint()
 {
+    // Use WorkerCrashLogger from Sonic AWE instead
+    try {
+        auto c = this->render_view.model->chain ();
+        if (c) c->workers()->rethrow_any_worker_exception();
+    } catch(const boost::exception&x) {
+        Log("%s") % boost::diagnostic_information(x);
+    }
+
     render_view.setStates ();
     glUseProgram (0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
