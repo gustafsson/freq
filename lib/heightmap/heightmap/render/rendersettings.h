@@ -41,7 +41,7 @@ public:
     float last_axes_length;
     unsigned drawn_blocks;
     bool left_handed_axes;
-    bool vertex_texture;
+    bool shadow_shader;
     bool draw_flat;
     bool drawcrosseswhen0;
     double dpifactor;

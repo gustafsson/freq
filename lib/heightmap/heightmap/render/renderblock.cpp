@@ -139,7 +139,7 @@ void RenderBlock::
     initShaders();
 
     // load shader
-    if (render_settings->vertex_texture)
+    if (render_settings->shadow_shader)
         _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
     else
         _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");

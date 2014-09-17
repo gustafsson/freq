@@ -20,7 +20,7 @@ RenderSettings::RenderSettings()
         last_axes_length( 0 ),
         drawn_blocks(0),
         left_handed_axes(true),
-        vertex_texture(true),
+        shadow_shader(true),
         draw_flat(true),
         drawcrosseswhen0( false ),
         dpifactor( 1 ),

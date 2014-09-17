@@ -175,6 +175,7 @@ void Squircle::targetIsCreated (Signal::Processing::TargetMarker::ptr target_mar
     RenderViewAxes(render_model).logFreqScale ();
     RenderViewAxes(render_model).logYScale ();
     RenderViewAxes(render_model).cameraOnFront ();
+    render_model.render_settings.shadow_shader = false;
 }
 
 

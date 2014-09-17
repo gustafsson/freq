@@ -1,23 +1,48 @@
 // GLSL vertex shader
-varying float vertex_height;
-varying float shadow;
+attribute highp vec4 qt_Vertex;
+varying highp float vertex_height;
+varying mediump float shadow;
+varying highp vec2 texCoord;
 
-uniform vec2 scale_tex;
-uniform float yScale;
-uniform vec2 offset_tex;
+uniform highp sampler2D tex;
+uniform mediump float flatness;
+uniform mediump float yScale;
+uniform mediump float yOffset;
+uniform mediump vec3 logScale;
+uniform mediump vec2 scale_tex;
+uniform mediump vec2 offset_tex;
+uniform highp mat4 ModelViewProjectionMatrix;
+uniform mediump mat4 ModelViewMatrix;
+uniform mediump mat4 NormalMatrix;
+
+mediump float heightValue(mediump float v) {
+    // the linear case is straightforward
+    mediump float h = mix(v*yScale + yOffset,
+                  log(v) * logScale.y + logScale.z,
+                  logScale.x);
+
+    h *= flatness;
+
+    return v == 0.0 ? 0.0 : max(0.01, h);
+}
 
 void main()
 {
     // We want linear interpolation all the way out to the edge
-    vec2 vertex = clamp(gl_Vertex.xz, 0.0, 1.0);
-    vec2 tex = vertex*scale_tex + offset_tex;
-    gl_TexCoord[0].xy = tex;
-    vec4 vert_new = gl_Vertex;
-    vert_new.y*=yScale;
+    mediump vec2 vertex = clamp(qt_Vertex.xz, 0.0, 1.0);
+    mediump vec2 tex0 = vertex*scale_tex + offset_tex;
 
-    // calculate position and transform to homogeneous clip space
-    gl_Position      = gl_ModelViewProjectionMatrix * vert_new;
+    texCoord = tex0;
 
-    shadow = .5;
-    vertex_height = .0;
+    mediump float height       = texture2D(tex, tex0).x;
+
+    height = heightValue(height);
+
+    mediump vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
+
+    // transform to homogeneous clip space
+    gl_Position      = ModelViewProjectionMatrix * pos;
+    vertex_height = height;
+
+    shadow = 1.0;
 }
