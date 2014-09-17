@@ -14,6 +14,9 @@ class TouchNavigation : public QObject
 public:
     TouchNavigation(QObject* parent, Tools::RenderModel* render_model);
 
+signals:
+    void refresh();
+
 public slots:
     void touch(qreal x1, qreal y1, bool p1, qreal x2, qreal y2, bool p2, qreal x3, qreal y3, bool p3);
     void mouseMove(qreal x1, qreal y1, bool p1);

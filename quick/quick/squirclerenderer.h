@@ -19,6 +19,9 @@ public:
     void setT(qreal t) { m_t = t; }
     void setViewportSize(const QSize &size);
 
+signals:
+    void redrawSignal();
+
 public slots:
     void paint2();
     void paint();

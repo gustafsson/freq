@@ -10,6 +10,7 @@ SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
       render_view(render_model),
       m_t(0), m_program(0)
 {
+    connect(&render_view, SIGNAL(redrawSignal()), this, SIGNAL(redrawSignal()));
 }
 
 

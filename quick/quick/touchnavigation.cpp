@@ -157,4 +157,6 @@ void TouchNavigation::
     prevPress2 = press2;
     prev1 = point1;
     prev2 = point2;
+
+    emit refresh ();
 }
