@@ -79,7 +79,7 @@ void RenderViewAxes::
 void RenderViewAxes::
         cameraOnFront()
 {
-    render_model.camera.r[0] = 15;
+    render_model.camera.r[0] = 20;
     render_model.camera.r[1] = 99;
     render_model.camera.orthoview = 0;
 }
