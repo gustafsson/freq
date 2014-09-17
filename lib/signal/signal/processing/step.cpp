@@ -15,6 +15,9 @@
 //#define FINISHTASKINFO
 #define FINISHTASKINFO if(0)
 
+//#define LOG_PURGED_CACHES
+#define LOG_PURGED_CACHES if(0)
+
 using namespace boost;
 
 namespace Signal {
@@ -123,7 +126,7 @@ size_t Step::
     int C = cache->num_channels ();
     Signal::Intervals P = cache->purge (still_needed);
     if (P)
-        Log("Step: discarding %s, only need %s for %s") % P % still_needed % operation_name();
+        LOG_PURGED_CACHES Log("Step: discarding %s, only need %s for %s") % P % still_needed % operation_name();
     return P.count () * C;
 }
 

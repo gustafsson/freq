@@ -9,6 +9,9 @@
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
 
+//#define LOG_PURGED_CACHES
+#define LOG_PURGED_CACHES if(0)
+
 using namespace Signal;
 using namespace Processing;
 
@@ -143,7 +146,7 @@ void HeightmapProcessingPublisher::
         purged *= sizeof(Signal::TimeSeriesData::element_type);
         size_t sz = Purge(dag_).cache_size ();
 
-        Log("Purged %s from the %s cache")
+        LOG_PURGED_CACHES Log("Purged %s from the %s cache")
                 % DataStorageVoid::getMemorySizeText (purged)
                 % DataStorageVoid::getMemorySizeText (purged + sz);
     }
