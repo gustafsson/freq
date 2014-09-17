@@ -50,6 +50,17 @@ void Cache::
 {
     bp->release_extra_resources();
 
+    if (this->num_channels () != int(bp->number_of_channels ()) || this->sample_rate () != bp->sample_rate ())
+    {
+        if (_valid_samples.empty ()) {
+            _cache.clear ();
+            _discarded.clear ();
+        } else {
+            EXCEPTION_ASSERT_EQUALS(num_channels (), int(bp->number_of_channels ()));
+            EXCEPTION_ASSERT_EQUALS(sample_rate (), bp->sample_rate ());
+        }
+    }
+
     const Buffer& b = *bp;
     allocateCache(b.getInterval(), b.sample_rate(), b.number_of_channels ());
 
