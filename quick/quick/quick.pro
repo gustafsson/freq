@@ -1,5 +1,5 @@
 TEMPLATE = app
-
+TARGET = Freq
 QT += qml quick widgets multimedia
 
 CONFIG += c++11
@@ -8,6 +8,10 @@ SOURCES += *.cpp
 HEADERS += *.h
 
 RESOURCES += qml.qrc
+!win32:ICON = freq.icns
+win32:RC_ICONS = freq.ico
+BUNDLE_DATA.files = $$system("ls $$_PRO_FILE_PWD_/iOS_BundleData/*.png")
+QMAKE_BUNDLE_DATA += BUNDLE_DATA
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
