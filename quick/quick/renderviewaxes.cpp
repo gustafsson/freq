@@ -63,3 +63,23 @@ void RenderViewAxes::
     render_model.render_settings.log_scale.reset (0);
     render_model.render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_FixedColor;
 }
+
+
+void RenderViewAxes::
+        logYScale()
+{
+    render_model.render_settings.y_offset = -0.6;
+    render_model.render_settings.y_scale = 0.5;
+    render_model.render_settings.last_ysize = 2;
+    render_model.render_settings.log_scale = 1;
+    render_model.render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;
+}
+
+
+void RenderViewAxes::
+        cameraOnFront()
+{
+    render_model.camera.r[0] = 15;
+    render_model.camera.r[1] = 99;
+    render_model.camera.orthoview = 0;
+}

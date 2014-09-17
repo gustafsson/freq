@@ -85,6 +85,8 @@ void Squircle::
     connect(rvup, SIGNAL(redraw()), this->window (), SLOT(update())); // render_view, SLOT(redraw()));
 
     render_model.init(chain, rvu);
+    render_model.render_settings.dpifactor = window()->devicePixelRatio ();
+
     targetIsCreated(render_model.target_marker ());
 
     // 'this' is parent
@@ -163,7 +165,8 @@ void Squircle::targetIsCreated (Signal::Processing::TargetMarker::ptr target_mar
     rec->startRecording();
 
     RenderViewAxes(render_model).logFreqScale ();
-    RenderViewAxes(render_model).linearYScale ();
+    RenderViewAxes(render_model).logYScale ();
+    RenderViewAxes(render_model).cameraOnFront ();
 }
 
 

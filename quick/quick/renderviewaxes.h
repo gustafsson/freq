@@ -11,6 +11,8 @@ public:
     void linearFreqScale();
     void logFreqScale();
     void linearYScale();
+    void logYScale();
+    void cameraOnFront();
 
 private:
     Tools::RenderModel& render_model;
