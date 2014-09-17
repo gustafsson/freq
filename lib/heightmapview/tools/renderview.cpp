@@ -474,7 +474,10 @@ void RenderView::
 
     gl_projection.modelview *= matrixd::translate ( -model->camera.q );
 
-    model->camera.orthoview.TimeStep(.08);
+    if (model->camera.orthoview.TimeStep(.08))
+        redraw ();
+    if (model->render_settings.log_scale.TimeStep (0.05f))
+        redraw ();
 }
 
 

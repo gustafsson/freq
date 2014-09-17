@@ -382,14 +382,6 @@ void RenderController::tfresolutionDecrease()
 void RenderController::
         updateTransformDesc()
 {
-    {
-        // don't bother about proper timesteps
-        auto& log_scale = model()->render_settings.log_scale;
-        log_scale.TimeStep (0.05f);
-        if (log_scale != &log_scale)
-            view->redraw ();
-    }
-
     Tfr::TransformDesc::ptr t = currentTransform();
     Tfr::TransformDesc::ptr newuseroptions;
 
