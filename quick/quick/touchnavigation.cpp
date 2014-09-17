@@ -76,14 +76,6 @@ void TouchNavigation::
                     mode = Rotate;
         }
 
-        qreal dx1 = point1.x () - prev1.x ();
-        qreal dy1 = point1.y () - prev1.y ();
-        qreal dx2 = point2.x () - prev2.x ();
-        qreal dy2 = point2.y () - prev2.y ();
-
-        if (point1.x () > point2.x ()) std::swap(dx1,dx2);
-        if (point1.y () > point2.y ()) std::swap(dy1,dy2);
-
         auto clamp =
                 [](qreal min, qreal max, qreal v) {
                     return std::min(max, std::max(min, v));
@@ -92,21 +84,43 @@ void TouchNavigation::
         switch (mode)
         {
         case Rotate:
-            r[1] += (dx1 + dx2)/10;
-            r[0] += (dy1 + dy2)/10;
-            break;
-        case Scale:
-            c.xscale *= clamp(0.95, 1.05, 1 - (dx1 - dx2)/100);
-            c.zscale *= clamp(0.95, 1.05, 1 - (dy1 - dy2)/100);
+        {
+            qreal dx1 = point1.x () - prev1.x ();
+            qreal dy1 = point1.y () - prev1.y ();
+            qreal dx2 = point2.x () - prev2.x ();
+            qreal dy2 = point2.y () - prev2.y ();
 
-            {
-                // Also pan
-                double dtime1 = hpos1.time - hstart1.time;
-                double dscale1 = hpos1.scale - hstart1.scale;
-                q[0] -= dtime1/2;
-                q[2] -= dscale1/2;
-            }
+            r[1] += (dx1 + dx2)/6;
+            r[0] += (dy1 + dy2)/6;
             break;
+        }
+        case Scale:
+        {
+            QTransform T; T.rotate (r[1]);
+
+            QPointF rpoint1 = T.map (point1);
+            QPointF rpoint2 = T.map (point2);
+            QPointF rprev1 = T.map (prev1);
+            QPointF rprev2 = T.map (prev2);
+
+            qreal dx1 = rpoint1.x () - rprev1.x ();
+            qreal dy1 = rpoint1.y () - rprev1.y ();
+            qreal dx2 = rpoint2.x () - rprev2.x ();
+            qreal dy2 = rpoint2.y () - rprev2.y ();
+
+            if (rpoint1.x () > rpoint2.x ()) std::swap(dx1,dx2);
+            if (rpoint1.y () > rpoint2.y ()) std::swap(dy1,dy2);
+
+            c.xscale *= clamp(0.95, 1.05, 1 - (dx1-dx2)/100);
+            c.zscale *= clamp(0.95, 1.05, 1 - (dy1-dy2)/100);
+
+            // Also pan
+            double dtime1 = hpos1.time - hstart1.time;
+            double dscale1 = hpos1.scale - hstart1.scale;
+            q[0] -= dtime1/2;
+            q[2] -= dscale1/2;
+            break;
+        }
         default:
             break;
         }
