@@ -6,6 +6,7 @@
 #include "heightmap/render/renderset.h"
 #include "tools/renderview.h"
 #include "heightmap/collection.h"
+#include "gluunproject.h"
 
 namespace Tools {
 namespace Support {
@@ -229,29 +230,31 @@ Heightmap::Position RenderViewInfo::
 
     const vectord::T* m = gl_projection->modelview.v (), *proj = gl_projection->projection.v ();
     const GLint* vp = gl_projection->viewport.v;
+#ifdef GL_ES_VERSION_2_0
+    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is not supported on OpenGL ES");
+#else
     vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
-#ifdef GL_ES_VERSION_2_0
-        EXCEPTION_ASSERTX(false, "Not supported");
-#else
         glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
         glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
         vp = other_vp;
-#endif
     }
+#endif
+
+    vectord win = gluProject(model->camera.q, m, proj, vp);
 
     vectord::T objX1, objY1, objZ1;
-    gluUnProject( pos.x(), pos.y(), 0.1,
+    gluUnProject( pos.x(), pos.y(), win[2],
                 m, proj, vp,
                 &objX1, &objY1, &objZ1);
 
     vectord::T objX2, objY2, objZ2;
-    gluUnProject( pos.x(), pos.y(), 0.2,
+    gluUnProject( pos.x(), pos.y(), win[2]*0.999999,
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
 
@@ -306,29 +309,30 @@ Heightmap::Position RenderViewInfo::
 
     const vectord::T* m = gl_projection->modelview.v (), *proj = gl_projection->projection.v ();
     const GLint* vp = gl_projection->viewport.v;
+#ifdef GL_ES_VERSION_2_0
+    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is not supported on OpenGL ES");
+#else
     vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
     if (!useRenderViewContext)
     {
-#ifdef GL_ES_VERSION_2_0
-        EXCEPTION_ASSERTX(false, "Not supported");
-#else
         glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
         glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
         glGetIntegerv(GL_VIEWPORT, other_vp);
         m = other_m;
         proj = other_proj;
         vp = other_vp;
-#endif
     }
+#endif
 
+    vectord win = gluProject(model->camera.q, m, proj, vp);
     vectord::T objX1, objY1, objZ1;
-    gluUnProject( pos.x(), pos.y(), 0.1,
+    gluUnProject( pos.x(), pos.y(), win[2],
                 m, proj, vp,
                 &objX1, &objY1, &objZ1);
 
     vectord::T objX2, objY2, objZ2;
-    gluUnProject( pos.x(), pos.y(), 0.2,
+    gluUnProject( pos.x(), pos.y(), win[2]*0.999999,
                 m, proj, vp,
                 &objX2, &objY2, &objZ2);
 
