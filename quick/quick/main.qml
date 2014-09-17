@@ -62,7 +62,7 @@ Item {
         id: label
         color: "black"
         wrapMode: Text.WordWrap
-        text: "The background here is a squircle rendered with raw OpenGL using the 'beforeRender()' signal in QQuickWindow. This text label and its border is rendered using QML"
+        text: "Scroll with one finger, rotate with two fingers together, zoom with two fingers in different directinos. http://freq.consulting"
         anchors.right: parent.right
         anchors.left: parent.left
         anchors.bottom: parent.bottom
