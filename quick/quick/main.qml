@@ -62,7 +62,7 @@ Item {
         id: label
         color: "black"
         wrapMode: Text.WordWrap
-        text: "Scroll with one finger, rotate with two fingers together, zoom with two fingers in different directinos. http://freq.consulting"
+        text: "Scroll with one finger, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
         anchors.right: parent.right
         anchors.left: parent.left
         anchors.bottom: parent.bottom
