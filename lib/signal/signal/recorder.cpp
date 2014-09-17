@@ -90,7 +90,7 @@ Signal::pBuffer Recorder::
 
 
 float Recorder::
-        length() const
+        length()
 {
     if (isStopped ())
     {
@@ -103,10 +103,17 @@ float Recorder::
 
 
 float Recorder::
-        time() const
+        time()
 {
+    const auto data = _data;
+    float L = data->samples.spannedInterval().last / data.raw ()->sample_rate;
     float dt = _start_recording.elapsed ();
-    return dt + _offset;
+    float T = dt + _offset;
+    if (T > L) {
+        // dropped samples
+        _offset -= T-L, T = L;
+    }
+    return T;
 }
 
 } // namespace Signal

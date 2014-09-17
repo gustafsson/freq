@@ -65,7 +65,7 @@ public:
     virtual bool isStopped() const = 0;
     virtual bool canRecord() = 0;
     virtual std::string name() = 0;
-    virtual float length() const;
+    virtual float length();
 
     float time_since_last_update();
     void setDataCallback( IGotDataCallback::ptr invalidator );
@@ -87,7 +87,7 @@ protected:
     IGotDataCallback::ptr _invalidator;
     std::exception_ptr _exception;
 
-    virtual float time() const;
+    virtual float time();
 
     Signal::IntervalType actual_number_of_samples() const;
 };

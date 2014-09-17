@@ -104,7 +104,7 @@ MicrophoneRecorderDesc::Extent MicrophoneRecorderDesc::
 {
     auto data = recorder_.raw ()->data ();
     float fs = data.raw ()->sample_rate;;
-    float L = recorder_.read ()->length();
+    float L = recorder_->length();
 
     MicrophoneRecorderDesc::Extent x;
     x.interval = Signal::Interval(0, fs*L);
