@@ -109,6 +109,12 @@ void Renderer::
         mesh_fraction_width = mesh_fraction_height = 1 << (int)(render_settings.redundancy*.5f);
         // mesh resolution equal to texel resolution if mesh_fraction_width == 1 and mesh_fraction_height == 1
 
+#ifdef GL_ES_VERSION_2_0
+        // too many vertices
+        mesh_fraction_width*=4;
+        mesh_fraction_height*=4;
+#endif
+
         render_block->setSize (
                  block_size.texels_per_row ()/mesh_fraction_width,
                  block_size.texels_per_column ()/mesh_fraction_height );
