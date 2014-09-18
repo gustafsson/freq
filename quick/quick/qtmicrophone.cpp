@@ -4,7 +4,6 @@
 #include "heightmap/uncaughtexception.h"
 
 #include <QAudioInput>
-#include <QTimer>
 
 GotData::GotData(
         shared_state<Signal::Recorder::Data> data,

@@ -1,5 +1,7 @@
 #include "squircle.h"
 #include "qtmicrophone.h"
+#include "flacfile.h"
+
 #include "signal/recorderoperation.h"
 #include "heightmap/update/updateconsumer.h"
 #include "tools/support/heightmapprocessingpublisher.h"
@@ -40,6 +42,8 @@ Squircle::Squircle() :
       m_renderer(0),
       touchnavigation(new TouchNavigation(this, &render_model))
 {
+    QDesktopServices::setUrlHandler ( "file", this, "urlRequest");
+
     connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
 
     chain = Signal::Processing::Chain::createDefaultChain ();
@@ -89,7 +93,7 @@ void Squircle::
     render_model.init(chain, rvu);
     render_model.render_settings.dpifactor = window()->devicePixelRatio ();
 
-    targetIsCreated(render_model.target_marker ());
+    targetIsCreated();
 
     // 'this' is parent
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
@@ -102,6 +106,17 @@ void Squircle::
 //    connect(render_view, SIGNAL(painting()), hpp, SLOT(update()));
 
     RenderViewTransform(render_model).receiveSetTransform_Stft ();
+}
+
+
+void Squircle::urlRequest(QUrl url)
+{
+    Log("squircle: url request %s") % url.toString ().toStdString ();
+
+    this->url = url;
+
+    if (render_model.target_marker ())
+        openUrl (url);
 }
 
 
@@ -154,25 +169,65 @@ void Squircle::cleanup()
 }
 
 
-void Squircle::targetIsCreated (Signal::Processing::TargetMarker::ptr target_marker)
+void Squircle::purgeTarget()
 {
-    if (QThread::currentThread () != this->thread ())
-    {
-        // Dispatch
-        qRegisterMetaType<Signal::Processing::TargetMarker::ptr>("Signal::Processing::TargetMarker::ptr");
-        QMetaObject::invokeMethod (this, "targetIsCreated", Q_ARG(Signal::Processing::TargetMarker::ptr, target_marker));
-        return;
-    }
+    render_model.chain ()->removeOperationsAt(render_model.target_marker ());
+}
 
-    Signal::Recorder::ptr rec(new QtMicrophone);
-    GotDataCallback* cb;
-    Signal::Recorder::IGotDataCallback::ptr callback(cb = new GotDataCallback());
+
+void Squircle::openRecording()
+{
+    purgeTarget();
+
+    rec.reset(new QtMicrophone);
+    GotDataCallback* cb = new GotDataCallback();
+    Signal::Recorder::IGotDataCallback::ptr callback(cb);
     Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec, callback));
     Signal::Processing::IInvalidator::ptr i = chain->addOperationAt(desc, render_model.target_marker ());
     cb->setInvalidator (i);
     cb->setRecordModel (this);
 
     rec->startRecording();
+}
+
+
+void Squircle::openUrl(QUrl url)
+{
+    purgeTarget();
+
+    while (!rec.unique ())
+    {
+        // Waiting for recorder to finish
+        QThread::msleep (10);
+    }
+    rec.reset ();
+
+    Signal::OperationDesc::ptr desc(new FlacFile(url));
+//    Signal::OperationDesc::ptr desc(new QtAudiofile(url));
+
+    if (!desc->extent().sample_rate.is_initialized ()) {
+        QFile::remove (url.toLocalFile ());
+    } else {
+        chain->addOperationAt(desc, render_model.target_marker ());
+    }
+
+    RenderViewAxes(render_model).cameraOnFront ();
+}
+
+
+void Squircle::targetIsCreated ()
+{
+    if (QThread::currentThread () != this->thread ())
+    {
+        // Dispatch
+        QMetaObject::invokeMethod (this, "targetIsCreated");
+        return;
+    }
+
+    if (!url.isEmpty ())
+        openUrl(url);
+    else
+        openRecording();
 
     RenderViewAxes(render_model).logFreqScale ();
     RenderViewAxes(render_model).logYScale ();

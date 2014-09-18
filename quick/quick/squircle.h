@@ -6,6 +6,7 @@
 #include "signal/processing/chain.h"
 #include "tools/rendermodel.h"
 #include "tools/renderview.h"
+#include "signal/recorder.h"
 
 class Squircle : public QQuickItem
 {
@@ -24,20 +25,27 @@ signals:
 public slots:
     void sync();
     void cleanup();
-    void targetIsCreated(Signal::Processing::TargetMarker::ptr target_marker);
+    void targetIsCreated();
     void setupUpdateConsumer(QOpenGLContext* context);
     void setupRenderTarget();
+    void urlRequest(QUrl url);
 
 private slots:
     void handleWindowChanged(QQuickWindow *win);
 
 private:
+    void openUrl(QUrl url);
+    void openRecording();
+    void purgeTarget();
+
     Tools::RenderModel render_model;
 
     qreal m_t = 0;
     SquircleRenderer *m_renderer = 0;
     class TouchNavigation* touchnavigation;
     Signal::Processing::Chain::ptr chain;
+    QUrl url;
+    Signal::Recorder::ptr rec;
 };
 
 #endif // SQUIRCLE_H

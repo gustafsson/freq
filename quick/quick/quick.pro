@@ -41,6 +41,8 @@ INCLUDEPATH += \
 
 LIBS += \
 #    -framework OpenGL \
+    -F$$SAWEROOT/dep/ios \
+    -framework flac \
     -L../../lib/justmisc -ljustmisc \
     -L../../lib/backtrace -lbacktrace \
     -L../../lib/gpumisc -lgpumisc \
