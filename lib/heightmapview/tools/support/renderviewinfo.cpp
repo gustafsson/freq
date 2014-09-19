@@ -14,7 +14,7 @@ namespace Support {
 RenderViewInfo::RenderViewInfo(Tools::RenderModel* model)
     :
       model(model),
-      gl_projection(&model->gl_projection)
+      gl_projection(model->gl_projection)
 {
 }
 
@@ -149,12 +149,12 @@ float RenderViewInfo::
 Heightmap::Reference RenderViewInfo::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    return findRefAtCurrentZoomLevel(p, gl_projection);
+    return findRefAtCurrentZoomLevel(p, gl_projection.get ());
 }
 
 
 Heightmap::Reference RenderViewInfo::
-        findRefAtCurrentZoomLevel(Heightmap::Position p, glProjection* gl_projection)
+        findRefAtCurrentZoomLevel(Heightmap::Position p, const glProjection* gl_projection)
 {
     // "collection" isn't needed to compute this, but its convenient
     auto collection = model->collections()[0];

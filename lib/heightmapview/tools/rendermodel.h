@@ -80,7 +80,7 @@ namespace Tools
         Heightmap::Render::RenderSettings render_settings;
         Heightmap::Render::RenderBlock::ptr render_block;
         Tools::Support::RenderCamera camera;
-        glProjection gl_projection;
+        std::shared_ptr<const glProjection> gl_projection;
 
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;

@@ -217,7 +217,7 @@ void RenderView::
 void RenderView::
         resizeGL( QRect rect, int device_height )
 {
-    glProjection& gl_projection = model->gl_projection;
+    glProjection gl_projection = *model->gl_projection;
 
     tvector<4,int> vp(rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height());
     if (vp == gl_projection.viewport && rect.y() == rect_y_)
@@ -232,13 +232,15 @@ void RenderView::
 
     gl_projection.modelview = matrixd::identity ();
     glhPerspective (gl_projection.projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
+
+    model->gl_projection.reset (new glProjection(gl_projection));
 }
 
 
 QRect RenderView::
         rect()
 {
-    const int* viewport = model->gl_projection.viewport.v;
+    const int* viewport = model->gl_projection->viewport.v;
 
     return QRect(viewport[0],rect_y_,viewport[2],viewport[3]);
 }
@@ -310,7 +312,7 @@ void RenderView::
         redraw (); // won't redraw right away, but enqueue an update
 
     setupCamera();
-    glProjection& gl_projection = model->gl_projection;
+    auto gl_projection = *model->gl_projection;
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
@@ -442,7 +444,7 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
-    glProjection& gl_projection = model->gl_projection;
+    glProjection gl_projection = *model->gl_projection;
 
     if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
         redraw();
@@ -478,6 +480,7 @@ void RenderView::
 
     gl_projection.modelview *= matrixd::translate ( -model->camera.q );
 
+    model->gl_projection.reset (new glProjection(gl_projection));
     if (model->camera.orthoview.TimeStep(.08))
         redraw ();
     if (model->render_settings.log_scale.TimeStep (0.05f))

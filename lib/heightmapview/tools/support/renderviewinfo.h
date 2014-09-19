@@ -32,13 +32,13 @@ public:
       given. It will not be valid if 'p' lies outside the spectrogram.
       */
     Heightmap::Reference findRefAtCurrentZoomLevel(Heightmap::Position p);
-    Heightmap::Reference findRefAtCurrentZoomLevel(Heightmap::Position p, glProjection* gl_projection);
+    Heightmap::Reference findRefAtCurrentZoomLevel(Heightmap::Position p, const glProjection* gl_projection);
 
     float length();
 
 private:
     Tools::RenderModel* model;
-    glProjection* gl_projection;
+    std::shared_ptr<const glProjection> gl_projection;
 
     // TODO move rect_y_ from RenderView to RenderModel so that rect() can be created
     QRectF rect();

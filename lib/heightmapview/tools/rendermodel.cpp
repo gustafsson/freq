@@ -28,6 +28,7 @@ private:
 RenderModel::
         RenderModel()
         :
+        gl_projection(new glProjection),
         transform_descs_(new Support::TransformDescs),
         stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
 {
