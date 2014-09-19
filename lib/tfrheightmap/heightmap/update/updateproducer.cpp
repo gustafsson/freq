@@ -35,6 +35,9 @@ void UpdateProducer::
         operator()( Tfr::ChunkAndInverse& pchunk )
 {
     Heightmap::TfrMapping::Collections C = tfrmap_.read ()->collections();
+    if (pchunk.channel >= (int)C.size())
+        return; // ignore, this happens when loading a new file while old things are still being processed
+
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
@@ -83,9 +86,9 @@ void UpdateProducer::
 
 
 void UpdateProducer::
-        set_number_of_channels(unsigned C)
+        set_number_of_channels(unsigned)
 {
-    EXCEPTION_ASSERT_EQUALS((int)C, tfrmap_.read ()->channels());
+    // whatever
 }
 
 
