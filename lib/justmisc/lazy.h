@@ -14,8 +14,8 @@ public:
     lazy() {}
     lazy(T&& t) : t(t) {}
     lazy(lazy&&b) : t(b.t) {b.t=0;}
-    lazy(lazy&b)=delete;
-    lazy& operator=(lazy&b)=delete;
+    lazy(const lazy&b)=delete;
+    lazy& operator=(const lazy&b)=delete;
     lazy& operator=(T&& v) { delete t; t = new T(std::move(v)); return *this; }
     ~lazy() { delete t; }
 

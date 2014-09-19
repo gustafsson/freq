@@ -245,8 +245,7 @@ bool Step::
     {
         std::chrono::milliseconds ms(sleep_ms);
 
-        if (std::cv_status::timeout == step->wait_for_tasks_.wait_for (step, ms, [&](){return step->running_tasks.empty ();}))
-            return false;
+        step->wait_for_tasks_.wait_for (step, ms, [&](){return step->running_tasks.empty ();});
     }
 
     return step->running_tasks.empty ();

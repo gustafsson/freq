@@ -18,6 +18,10 @@
 
 #include <stdio.h>
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 #if defined(__GNUC__)
     #include <unistd.h>
 #else
@@ -32,6 +36,9 @@ static bool was_started_through_gdb_ = DetectGdb::is_running_through_gdb ();
 // gdb apparently opens FD(s) 3,4,5 (whereas a typical program uses only stdin=0, stdout=1, stderr=2)
 bool is_running_through_gdb_xorl()
 {
+#ifdef TARGET_OS_IPHONE
+    return false;
+#else
     bool gdb = false;
     FILE *fd = fopen("/tmp", "r");
 
@@ -42,6 +49,7 @@ bool is_running_through_gdb_xorl()
 
     fclose(fd);
     return gdb;
+#endif
 }
 
 
