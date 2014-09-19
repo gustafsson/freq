@@ -99,7 +99,7 @@ void Squircle::
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
                 render_model.target_marker (),
                 render_model.tfr_mapping (),
-                &render_model.camera.q[0], this);
+                render_model.camera, this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
 
     connect(window(), SIGNAL(afterRendering()), hpp, SLOT(update()));

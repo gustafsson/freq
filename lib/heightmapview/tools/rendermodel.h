@@ -46,7 +46,7 @@ namespace Tools
         void resetCameraSettings();
         void resetBlockCaches();
 
-        Heightmap::TfrMapping::Collections collections();
+        Heightmap::TfrMapping::Collections collections() const;
         Signal::Processing::Chain::ptr chain();
 
         void block_layout(Heightmap::BlockLayout);
@@ -57,11 +57,10 @@ namespace Tools
         Heightmap::AmplitudeAxis amplitude_axis();
         void amplitude_axis(Heightmap::AmplitudeAxis);
 
-        Heightmap::TfrMapping::ptr tfr_mapping();
-        Support::TransformDescs::ptr transform_descs();
+        Heightmap::TfrMapping::ptr tfr_mapping() const;
+        Support::TransformDescs::ptr transform_descs() const;
 
-
-        Tfr::TransformDesc::ptr transform_desc();
+        Tfr::TransformDesc::ptr transform_desc() const;
         void set_transform_desc(Tfr::TransformDesc::ptr t);
 
         Signal::OperationDesc::Extent recompute_extent();
@@ -79,8 +78,8 @@ namespace Tools
 
         Heightmap::Render::RenderSettings render_settings;
         Heightmap::Render::RenderBlock::ptr render_block;
-        Tools::Support::RenderCamera camera;
-        std::shared_ptr<const glProjection> gl_projection;
+        shared_state<Tools::Support::RenderCamera> camera;
+        shared_state<glProjection> gl_projection;
 
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
@@ -99,17 +98,18 @@ namespace Tools
         friend class boost::serialization::access;
         template<class Archive> void serialize(Archive& ar, const unsigned int version) {
             TaskInfo ti("RenderModel::serialize");
-            float _qx = camera.q[0],
-                  _qy = camera.q[1],
-                  _qz = camera.q[2];
-            float _px  = camera.p[0],
-                  _py = camera.p[1],
-                  _pz = camera.p[2],
-                _rx = camera.r[0],
-                _ry = camera.r[1],
-                _rz = camera.r[2];
-            float xscale = camera.xscale;
-            float zscale = camera.zscale;
+            auto camera = this->camera.write ();
+            float _qx = camera->q[0],
+                  _qy = camera->q[1],
+                  _qz = camera->q[2];
+            float _px  = camera->p[0],
+                  _py = camera->p[1],
+                  _pz = camera->p[2],
+                _rx = camera->r[0],
+                _ry = camera->r[1],
+                _rz = camera->r[2];
+            float xscale = camera->xscale;
+            float zscale = camera->zscale;
 
             ar
                     & BOOST_SERIALIZATION_NVP(_qx)
@@ -127,19 +127,19 @@ namespace Tools
                     & boost::serialization::make_nvp("y_scale", render_settings.y_scale);
 
             if (typename Archive::is_loading())
-                camera.orthoview.reset( _rx >= 90 );
+                camera->orthoview.reset( _rx >= 90 );
 
-            camera.q[0] = _qx;
-            camera.q[1] = _qy;
-            camera.q[2] = _qz;
-            camera.p[0] = _px;
-            camera.p[1] = _py;
-            camera.p[2] = _pz;
-            camera.r[0] = _rx;
-            camera.r[1] = _ry;
-            camera.r[2] = _rz;
-            camera.xscale = xscale;
-            camera.zscale = zscale;
+            camera->q[0] = _qx;
+            camera->q[1] = _qy;
+            camera->q[2] = _qz;
+            camera->p[0] = _px;
+            camera->p[1] = _py;
+            camera->p[2] = _pz;
+            camera->r[0] = _rx;
+            camera->r[1] = _ry;
+            camera->r[2] = _rz;
+            camera->xscale = xscale;
+            camera->zscale = zscale;
 
             if (version <= 0)
                 ar & boost::serialization::make_nvp("draw_height_lines", render_settings.draw_contour_plot);

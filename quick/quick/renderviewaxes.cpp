@@ -80,7 +80,9 @@ void RenderViewAxes::
         cameraOnFront()
 {
     render_model.resetCameraSettings ();
-    render_model.camera.r[0] = 20;
-    render_model.camera.r[1] = 99;
-    render_model.camera.orthoview = 0;
+    auto c = render_model.camera.write ();
+    c->r[0] = 20;
+    c->r[1] = 99;
+    c->orthoview = 0;
 }
+

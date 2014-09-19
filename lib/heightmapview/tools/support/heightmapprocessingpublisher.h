@@ -4,7 +4,7 @@
 #include "heightmap/tfrmapping.h"
 #include "signal/intervals.h"
 #include "signal/processing/targetmarker.h"
-
+#include "tools/support/rendercamera.h"
 #include <QObject>
 
 namespace Tools {
@@ -27,7 +27,7 @@ public:
     HeightmapProcessingPublisher(
             Signal::Processing::TargetMarker::ptr target_marker,
             Heightmap::TfrMapping::const_ptr tfrmapping,
-            double* t_center,
+            shared_state<Tools::Support::RenderCamera> camera,
             QObject* parent=0);
 
 public slots:
@@ -38,7 +38,7 @@ private:
     std::shared_ptr<Signal::Processing::TargetNeeds> target_needs_;
     shared_state<Signal::Processing::Dag>   dag_;
     Heightmap::TfrMapping::const_ptr        tfrmapping_;
-    double*                                 t_center_;
+    shared_state<Tools::Support::RenderCamera> camera_;
     Signal::Interval                        last_update_;
     bool                                    failed_allocation_;
 

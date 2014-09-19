@@ -28,7 +28,7 @@ void TouchNavigation::
     QPointF point1(x1,y1), point2(x2,y2);
     Heightmap::Position hpos1, hpos2;
 
-    Tools::Support::RenderCamera& c = render_model->camera;
+    auto c = *render_model->camera.read();
     vectord& q = c.q;
     vectord& r = c.r;
 
@@ -148,6 +148,7 @@ void TouchNavigation::
     if (c.xscale < 0.01) c.xscale = 0.01; // don't zoom out too much
     if (c.xscale > 5) c.xscale = 5; // don't zoom in too much
     render_model->camera.orthoview = r[0] == 90;
+    *render_model->camera.write () = c;
 
     if (!prevPress1 && press1)
         hstart1 = hpos1, start1 = point1;

@@ -11,10 +11,10 @@
 namespace Tools {
 namespace Support {
 
-RenderViewInfo::RenderViewInfo(Tools::RenderModel* model)
+RenderViewInfo::RenderViewInfo(const Tools::RenderModel* model)
     :
       model(model),
-      gl_projection(model->gl_projection)
+      gl_projection(*model->gl_projection.read ())
 {
 }
 
@@ -24,7 +24,7 @@ QRectF RenderViewInfo::
 {
     // can't translate from bottom-relative offset (viewport) to top-relative offset (widget), assume offset is 0
     int y_offset = 0;
-    return QRectF(gl_projection->viewport[0], y_offset, gl_projection->viewport[2], gl_projection->viewport[3]);
+    return QRectF(gl_projection.viewport[0], y_offset, gl_projection.viewport[2], gl_projection.viewport[3]);
 }
 
 
@@ -149,7 +149,7 @@ float RenderViewInfo::
 Heightmap::Reference RenderViewInfo::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    return findRefAtCurrentZoomLevel(p, gl_projection.get ());
+    return findRefAtCurrentZoomLevel(p, &gl_projection);
 }
 
 
@@ -171,19 +171,20 @@ QPointF RenderViewInfo::
         getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
     GLdouble objY = 0;
+    const auto c = *model->camera.read ();
     float last_ysize = model->render_settings.last_ysize;
-    if ((1 != model->camera.orthoview || model->camera.r[0]!=90) && use_heightmap_value)
+    if ((1 != c.orthoview || c.r[0]!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->render_settings.y_scale * last_ysize;
 
-    vectord win = gl_projection->gluProject (vectord(pos.time, objY, pos.scale));
+    vectord win = gl_projection.gluProject (vectord(pos.time, objY, pos.scale));
     vectord::T winX = win[0], winY = win[1]; // winZ = win[2];
 
     if (dist)
     {
-        GLint const* const& vp = gl_projection->viewport.v;
+        GLint const* const& vp = gl_projection.viewport.v;
         float z0 = .1, z1=.2;
-        vectord projectionPlane = gl_projection->gluUnProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
-        vectord projectionNormal = gl_projection->gluUnProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
+        vectord projectionPlane = gl_projection.gluUnProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
+        vectord projectionNormal = gl_projection.gluUnProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
 
         vectord p;
         p[0] = pos.time;
@@ -191,9 +192,9 @@ QPointF RenderViewInfo::
         p[2] = pos.scale;
 
         vectord d = p-projectionPlane;
-        projectionNormal[0] *= model->camera.xscale;
+        projectionNormal[0] *= c.xscale;
         projectionNormal[2] *= last_ysize;
-        d[0] *= model->camera.xscale;
+        d[0] *= c.xscale;
         d[2] *= last_ysize;
 
         projectionNormal = projectionNormal.Normalized();
@@ -218,7 +219,8 @@ QPointF RenderViewInfo::
 Heightmap::Position RenderViewInfo::
         getHeightmapPos( QPointF widget_pos, bool useRenderViewContext )
 {
-    if (1 == model->camera.orthoview)
+    const auto c = *model->camera.read ();
+    if (1 == c.orthoview)
         return getPlanePos(widget_pos, 0, useRenderViewContext);
 
     TaskTimer tt("RenderViewInfo::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
@@ -228,8 +230,8 @@ Heightmap::Position RenderViewInfo::
     pos.setX( widget_pos.x() + rect().left() );
     pos.setY( rect().height() - 1 - widget_pos.y() + rect().top() );
 
-    const vectord::T* m = gl_projection->modelview.v (), *proj = gl_projection->projection.v ();
-    const GLint* vp = gl_projection->viewport.v;
+    const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
+    const GLint* vp = gl_projection.viewport.v;
 #ifdef GL_ES_VERSION_2_0
     EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is not supported on OpenGL ES");
 #else
@@ -246,7 +248,7 @@ Heightmap::Position RenderViewInfo::
     }
 #endif
 
-    vectord win = gluProject(model->camera.q, m, proj, vp);
+    vectord win = gluProject(c.q, m, proj, vp);
 
     vectord::T objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), win[2],
@@ -274,8 +276,8 @@ Heightmap::Position RenderViewInfo::
         q.scale = objZ1 + s * (objZ2-objZ1);
 
         Heightmap::Position d(
-                (q.time-p.time)*model->camera.xscale,
-                (q.scale-p.scale)*model->camera.zscale);
+                (q.time-p.time)*c.xscale,
+                (q.scale-p.scale)*c.zscale);
 
         QPointF r = getWidgetPos( q, 0 );
         d.time = r.x() - widget_pos.x();
@@ -302,13 +304,15 @@ Heightmap::Position RenderViewInfo::
 Heightmap::Position RenderViewInfo::
         getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
 {
+    const auto c = *model->camera.read ();
+
     pos *= model->render_settings.dpifactor;
 
     pos.setX( pos.x() + rect().left() );
     pos.setY( rect().height() - 1 - pos.y() + rect().top() );
 
-    const vectord::T* m = gl_projection->modelview.v (), *proj = gl_projection->projection.v ();
-    const GLint* vp = gl_projection->viewport.v;
+    const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
+    const GLint* vp = gl_projection.viewport.v;
 #ifdef GL_ES_VERSION_2_0
     EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is not supported on OpenGL ES");
 #else
@@ -325,7 +329,7 @@ Heightmap::Position RenderViewInfo::
     }
 #endif
 
-    vectord win = gluProject(model->camera.q, m, proj, vp);
+    vectord win = gluProject(c.q, m, proj, vp);
     vectord::T objX1, objY1, objZ1;
     gluUnProject( pos.x(), pos.y(), win[2],
                 m, proj, vp,
@@ -354,9 +358,9 @@ Heightmap::Position RenderViewInfo::
         if( s < 0)
             if (success) *success=false;
 
-        float L = sqrt((objX1-objX2)*(objX1-objX2)*model->camera.xscale*model->camera.xscale
+        float L = sqrt((objX1-objX2)*(objX1-objX2)*c.xscale*c.xscale
                        +(objY1-objY2)*(objY1-objY2)
-                       +(objZ1-objZ2)*(objZ1-objZ2)*model->camera.zscale*model->camera.zscale);
+                       +(objZ1-objZ2)*(objZ1-objZ2)*c.zscale*c.zscale);
         if (objY1-objY2 < sin(minAngle *(M_PI/180)) * L )
             if (success) *success=false;
     }

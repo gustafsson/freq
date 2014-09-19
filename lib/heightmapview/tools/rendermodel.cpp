@@ -28,6 +28,7 @@ private:
 RenderModel::
         RenderModel()
         :
+        camera(new Tools::Support::RenderCamera),
         gl_projection(new glProjection),
         transform_descs_(new Support::TransformDescs),
         stft_block_filter_params_(new Heightmap::TfrMappings::StftBlockFilterParams)
@@ -90,25 +91,26 @@ void RenderModel::
 void RenderModel::
         resetCameraSettings()
 {
-    camera.q = vectord(0,0,.5f);
-    camera.p = vectord(0,0,-10.f);
-    camera.r = vectord(91,180,0);
-    camera.xscale = -camera.p[2]*0.1f;
-    camera.zscale = -camera.p[2]*0.75f;
+    auto camera = this->camera.write ();
+    camera->q = vectord(0,0,.5f);
+    camera->p = vectord(0,0,-10.f);
+    camera->r = vectord(91,180,0);
+    camera->xscale = -camera->p[2]*0.1f;
+    camera->zscale = -camera->p[2]*0.75f;
 
     float L = tfr_mapping ().read ()->length();
     if (L)
     {
-        camera.xscale = 10/L;
-        camera.q[0] = 0.5*L;
+        camera->xscale = 10/L;
+        camera->q[0] = 0.5*L;
     }
 
 #ifdef TARGET_hast
-    camera.p[2] = -6;
+    camera->p[2] = -6;
     xscale = 0.1f;
 
     if (L)
-        camera.xscale = 14/L;
+        camera->xscale = 14/L;
 #endif
 }
 
@@ -124,17 +126,18 @@ void RenderModel::
 void RenderModel::
         setTestCamera()
 {
+    auto c = camera.write();
     render_settings.y_scale = 0.01f;
-    camera.q = vectord(63.4565,0,0.37);
-    camera.p = vectord(0,0,-10);
-    camera.r = vectord(46.2, 253.186, 0);
+    c->q = vectord(63.4565,0,0.37);
+    c->p = vectord(0,0,-10);
+    c->r = vectord(46.2, 253.186, 0);
 
-    camera.orthoview.reset( camera.r[0] >= 90 );
+    c->orthoview.reset( c->r[0] >= 90 );
 }
 
 
 Heightmap::TfrMapping::Collections RenderModel::
-        collections()
+        collections() const
 {
     return tfr_map_.read ()->collections();
 }
@@ -201,21 +204,21 @@ void RenderModel::
 
 
 Heightmap::TfrMapping::ptr RenderModel::
-        tfr_mapping()
+        tfr_mapping() const
 {
     return tfr_map_;
 }
 
 
 Support::TransformDescs::ptr RenderModel::
-        transform_descs()
+        transform_descs() const
 {
     return transform_descs_;
 }
 
 
 Tfr::TransformDesc::ptr RenderModel::
-        transform_desc()
+        transform_desc() const
 {
     auto o = render_operation_desc_.read ();
     const Support::RenderOperationDesc* rod = dynamic_cast<const Support::RenderOperationDesc*>(&*o);
@@ -325,15 +328,17 @@ void RenderModel::
 
     if (z>1) z=1;
 
-    camera.q[0] = x;
-    camera.q[2] = z;
+    auto c = camera.write ();
+    c->q[0] = x;
+    c->q[2] = z;
 }
 
 
 Heightmap::Position RenderModel::
         position() const
 {
-    return Heightmap::Position(camera.q[0], camera.q[2]);
+    auto c = camera.read ();
+    return Heightmap::Position(c->q[0], c->q[2]);
 }
 
 } // namespace Tools

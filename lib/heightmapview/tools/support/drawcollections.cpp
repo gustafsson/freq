@@ -200,7 +200,7 @@ void DrawCollections::
 {
     model->render_settings.fixed_color = channel_colors[i];
     glDisable(GL_BLEND);
-    if (0 != model->camera.r[0])
+    if (0 != model->camera->r[0])
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections
     else
         glEnable( GL_DEPTH_TEST );

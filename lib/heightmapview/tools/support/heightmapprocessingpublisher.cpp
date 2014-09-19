@@ -21,14 +21,14 @@ namespace Support {
 HeightmapProcessingPublisher::HeightmapProcessingPublisher(
           TargetMarker::ptr target_marker,
           Heightmap::TfrMapping::const_ptr tfrmapping,
-          double* t_center,
+          shared_state<Tools::Support::RenderCamera> camera,
           QObject* parent)
     :
       QObject(parent),
       target_needs_(target_marker->target_needs ()),
       dag_(target_marker->dag ()),
       tfrmapping_(tfrmapping),
-      t_center_(t_center),
+      camera_(camera),
       last_update_(Interval::Interval_ALL),
       failed_allocation_(false)
 {
@@ -59,7 +59,8 @@ void HeightmapProcessingPublisher::
         C = tm->collections();
     }
 
-    IntervalType center = std::round(*t_center_ * fs);
+    float t_center = camera_.read ()->q[0];
+    IntervalType center = std::round(t_center * fs);
 
     for ( auto cp : C )
     {
@@ -201,8 +202,9 @@ void HeightmapProcessingPublisher::
 
         Heightmap::BlockLayout block_layout(10,10,1);
         Heightmap::TfrMapping::ptr tfrmapping(new Heightmap::TfrMapping(block_layout,1));
-        double t_center = 10;
-        HeightmapProcessingPublisher hpp(target_marker, tfrmapping, &t_center);
+        shared_state<Tools::Support::RenderCamera> camera(new Tools::Support::RenderCamera);
+        camera->q[0] = 10;
+        HeightmapProcessingPublisher hpp(target_marker, tfrmapping, camera);
 
         Heightmap::Collection::ptr collection = tfrmapping->collections()[0];
 

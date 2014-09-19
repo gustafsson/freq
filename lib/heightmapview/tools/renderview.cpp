@@ -79,8 +79,9 @@ RenderView::
             drawCollections(model)
 {
     // Validate rotation and set orthoview accordingly
-    if (model->camera.r[0]<0) model->camera.r[0]=0;
-    if (model->camera.r[0]>=90) { model->camera.r[0]=90; model->camera.orthoview.reset(1); } else model->camera.orthoview.reset(0);
+    auto c = model->camera.write ();
+    if (c->r[0]<0) c->r[0]=0;
+    if (c->r[0]>=90) { c->r[0]=90; c->orthoview.reset(1); } else c->orthoview.reset(0);
 
     connect( this, SIGNAL(finishedWorkSection()), SLOT(finishedWorkSectionSlot()), Qt::QueuedConnection );
 //    connect( viewstate.data (), SIGNAL(viewChanged(const ViewCommand*)), SLOT(redraw()));
@@ -217,23 +218,21 @@ void RenderView::
 void RenderView::
         resizeGL( QRect rect, int device_height )
 {
-    glProjection gl_projection = *model->gl_projection;
+    auto gl_projection = model->gl_projection.write ();
 
     tvector<4,int> vp(rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height());
-    if (vp == gl_projection.viewport && rect.y() == rect_y_)
+    if (vp == gl_projection->viewport && rect.y() == rect_y_)
         return;
 
     TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device_height;
     EXCEPTION_ASSERT_LESS(0 , rect.height ());
 
-    gl_projection.viewport = vp;
+    gl_projection->viewport = vp;
     glViewport( vp[0], vp[1], vp[2], vp[3] );
     rect_y_ = rect.y();
 
-    gl_projection.modelview = matrixd::identity ();
-    glhPerspective (gl_projection.projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
-
-    model->gl_projection.reset (new glProjection(gl_projection));
+    gl_projection->modelview = matrixd::identity ();
+    glhPerspective (gl_projection->projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
 }
 
 
@@ -312,7 +311,7 @@ void RenderView::
         redraw (); // won't redraw right away, but enqueue an update
 
     setupCamera();
-    auto gl_projection = *model->gl_projection;
+    glProjection gl_projection = *model->gl_projection.read ();
 
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit updatedCamera");
@@ -334,7 +333,8 @@ void RenderView::
                 c->next_frame(); // Discard needed blocks before this row
         }
 
-        drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), model->camera.r[0]>=45 ? 1 - model->camera.orthoview : 1 );
+        const auto c = *model->camera.read ();
+        drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), c.r[0]>=45 ? 1 - c.orthoview : 1 );
 
         double last_ysize = model->render_settings.last_ysize;
         gl_projection.modelview *= matrixd::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
@@ -444,44 +444,45 @@ void RenderView::
 void RenderView::
         setupCamera()
 {
-    glProjection gl_projection = *model->gl_projection;
+    const auto c = *model->camera.read ();
+    glProjection gl_projection = *model->gl_projection.read ();
 
-    if (model->camera.orthoview != 1 && model->camera.orthoview != 0)
+    if (c.orthoview != 1 && c.orthoview != 0)
         redraw();
 
     gl_projection.modelview = matrixd::identity ();
-    gl_projection.modelview *= matrixd::translate ( model->camera.p );
-    gl_projection.modelview *= matrixd::rot ( model->camera.r[0], 1, 0, 0 );
-    gl_projection.modelview *= matrixd::rot ( model->camera.effective_ry(), 0, 1, 0 );
-    gl_projection.modelview *= matrixd::rot ( model->camera.r[2], 0, 0, 1 );
+    gl_projection.modelview *= matrixd::translate ( c.p );
+    gl_projection.modelview *= matrixd::rot ( c.r[0], 1, 0, 0 );
+    gl_projection.modelview *= matrixd::rot ( c.effective_ry(), 0, 1, 0 );
+    gl_projection.modelview *= matrixd::rot ( c.r[2], 0, 0, 1 );
 
     if (model->render_settings.left_handed_axes)
         gl_projection.modelview *= matrixd::scale (-1,1,1);
     else
         gl_projection.modelview *= matrixd::rot (-90,0,1,0);
 
-    gl_projection.modelview *= matrixd::scale (model->camera.xscale, 1, model->camera.zscale);
+    gl_projection.modelview *= matrixd::scale (c.xscale, 1, c.zscale);
 
-    double a = model->camera.effective_ry();
+    double a = c.effective_ry();
     double dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
     double dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
     double dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
     double dyz = fabsf(fabsf(fmodf(a + 90, 360)) - 180);
 
     double limit = 5, middle=45;
-    if (model->camera.r[0] < limit)
+    if (c.r[0] < limit)
     {
-        double f = 1 - model->camera.r[0] / limit;
+        double f = 1 - c.r[0] / limit;
         if (dyx<middle || dyx2<middle)
             gl_projection.modelview *= matrixd::scale (1,1,1-0.99999*f);
         if (dyz<middle || dyz2<middle)
             gl_projection.modelview *= matrixd::scale (1-0.99999*f,1,1);
     }
 
-    gl_projection.modelview *= matrixd::translate ( -model->camera.q );
+    gl_projection.modelview *= matrixd::translate ( -c.q );
 
-    model->gl_projection.reset (new glProjection(gl_projection));
-    if (model->camera.orthoview.TimeStep(.08))
+    *model->gl_projection.write () = gl_projection;
+    if (model->camera->orthoview.TimeStep(.08))
         redraw ();
     if (model->render_settings.log_scale.TimeStep (0.05f))
         redraw ();
@@ -491,8 +492,9 @@ void RenderView::
 matrixd RenderView::
         setRotationForAxes()
 {
+    const auto c = *model->camera.read ();
     matrixd M = matrixd::identity ();
-    double a = model->camera.effective_ry();
+    double a = c.effective_ry();
     double dyx2 = fabsf(fabsf(fmodf(a + 180, 360)) - 180);
     double dyx = fabsf(fabsf(fmodf(a + 0, 360)) - 180);
     double dyz2 = fabsf(fabsf(fmodf(a - 90, 360)) - 180);
@@ -500,9 +502,9 @@ matrixd RenderView::
 
     double limit = 5, middle=45;
     model->render_settings.draw_axis_at0 = 0;
-    if (model->camera.r[0] < limit)
+    if (c.r[0] < limit)
     {
-        double f = 1 - model->camera.r[0] / limit;
+        double f = 1 - c.r[0] / limit;
 
         if (dyx<middle)
             M *= matrixd::rot (f*-90, 1-dyx/middle,0,0);

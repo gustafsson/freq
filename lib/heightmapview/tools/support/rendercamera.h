@@ -20,7 +20,7 @@ public:
     float zscale;
     floatAni orthoview;
 
-    float effective_ry(); // take orthoview into account
+    float effective_ry() const; // take orthoview into account
 };
 
 } // namespace Support

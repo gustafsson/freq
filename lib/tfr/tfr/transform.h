@@ -166,6 +166,7 @@ public:
      */
     virtual Signal::Interval affectedInterval( const Signal::Interval& I ) const = 0;
 
+
     /**
       Returns a string representation of this transform. Mainly used for debugging.
       */
