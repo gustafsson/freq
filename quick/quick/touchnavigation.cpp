@@ -61,17 +61,17 @@ void TouchNavigation::
             qreal ax1 = std::abs (sx1), ax2 = std::abs (sx2);
             qreal ay1 = std::abs (sy1), ay2 = std::abs (sy2);
 
-            int t = 5;
+            int threshold = 15;
             // If one of the points have moved above a threshold, Scale
-            if (ax1 > t || ax2 > t || ay1 > t || ay2 > t)
+            if (ax1 > threshold || ax2 > threshold || ay1 > threshold || ay2 > threshold)
                 mode = Scale;
 
             // If both are moved and they have the same sign, Rotate
             if ((sx1 > 0) == (sx2 > 0))
-                if ((ax1 > t && ax2 > t/2) || (ax1 > t/2 && ax2 > t))
+                if ((ax1 > threshold && ax2 > threshold/2) || (ax1 > threshold/2 && ax2 > threshold))
                     mode = Rotate;
             if ((sy1 > 0) == (sy2 > 0))
-                if ((ay1 > t && ay2 > t/2) || (ay1 > t/2 && ay2 > t))
+                if ((ay1 > threshold && ay2 > threshold/2) || (ay1 > threshold/2 && ay2 > threshold))
                     mode = Rotate;
         }
 
