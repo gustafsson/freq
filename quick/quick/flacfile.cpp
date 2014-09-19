@@ -70,8 +70,8 @@ FLAC__StreamDecoderWriteStatus write_callback(const FLAC__StreamDecoder *decoder
     IntervalType l = f->data->spannedInterval ().last;
     pBuffer B(new Buffer(l, frame->header.blocksize, f->sample_rate, f->channels));
 
-    long long n = 1ll << (f->bps-1);
-    float a = -n, b = n - 1;
+    float n = 1ll << f->bps;
+    float a = -n/2;
 
     for (c = 0; c < f->channels; c++)
     {
@@ -81,7 +81,7 @@ FLAC__StreamDecoderWriteStatus write_callback(const FLAC__StreamDecoder *decoder
         for (i = 0; i < frame->header.blocksize; i++)
         {
             FLAC__int32 v = buffer[c][i];
-            p[i] = (v-a)/(b-a)*2.f - 1.f;
+            p[i] = -1.f + 2.f * (v-a)/n;
         }
 
         //Log ("p[%d] = %g") % f->data->spannedInterval ().last % p[0];
