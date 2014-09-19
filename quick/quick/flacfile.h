@@ -5,10 +5,14 @@
 #include "signal/cache.h"
 #include <QUrl>
 
+struct FlacFormat;
 class FlacFile: public Signal::OperationDesc
 {
 public:
     FlacFile(QUrl url);
+    FlacFile(const FlacFile&) = delete;
+    FlacFile& operator=(const FlacFile&) = delete;
+    ~FlacFile();
 
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const override;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const override;
@@ -20,7 +24,9 @@ public:
 
 private:
     QUrl url;
-    Signal::Cache data;
+    void *decoderp;
+
+    FlacFormat* fmt;
 };
 
 #endif // FLACFILE_H
