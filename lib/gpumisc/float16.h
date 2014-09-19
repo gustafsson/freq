@@ -13,7 +13,7 @@ class Float16Compressor
         uint32_t ui;
     };
 
-    static int const shift = 13;
+    static int const shift = 14;
     static int const shiftSign = 16;
 
     static int32_t const infN = 0x7F800000; // flt32 infinity
