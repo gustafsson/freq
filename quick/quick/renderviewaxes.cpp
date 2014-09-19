@@ -86,3 +86,13 @@ void RenderViewAxes::
     c->orthoview = 0;
 }
 
+
+void RenderViewAxes::
+        logZScale()
+{
+    Heightmap::FreqAxis f;
+    float fs = render_model.tfr_mapping ()->targetSampleRate();
+    f.setLogarithmic (fs/1000,fs);
+    render_model.tfr_mapping ()->display_scale(f);
+}
+

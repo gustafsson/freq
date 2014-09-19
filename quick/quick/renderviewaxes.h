@@ -13,6 +13,7 @@ public:
     void linearYScale();
     void logYScale();
     void cameraOnFront();
+    void logZScale();
 
 private:
     Tools::RenderModel& render_model;

@@ -244,6 +244,7 @@ void Squircle::targetIsCreated ()
     RenderViewAxes(render_model).logFreqScale ();
     RenderViewAxes(render_model).logYScale ();
     RenderViewAxes(render_model).cameraOnFront ();
+    RenderViewAxes(render_model).logZScale ();
     render_model.render_settings.shadow_shader = false;
 }
 
