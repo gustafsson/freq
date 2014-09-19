@@ -113,6 +113,16 @@ void Squircle::urlRequest(QUrl url)
 {
     Log("squircle: url request %s") % url.toString ().toStdString ();
 
+    QFileInfo fi(url.toLocalFile ());
+    for (auto info : fi.dir ().entryInfoList())
+    {
+        if (info == fi || !info.isFile ())
+            continue;
+
+        Log("squircle: removing old file %s") % info.fileName ().toStdString ();
+        fi.dir ().remove (info.fileName ());
+    }
+
     this->url = url;
 
     if (render_model.target_marker ())
@@ -183,6 +193,7 @@ void Squircle::openRecording()
     GotDataCallback* cb = new GotDataCallback();
     Signal::Recorder::IGotDataCallback::ptr callback(cb);
     Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec, callback));
+    render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
     Signal::Processing::IInvalidator::ptr i = chain->addOperationAt(desc, render_model.target_marker ());
     cb->setInvalidator (i);
     cb->setRecordModel (this);
@@ -208,6 +219,7 @@ void Squircle::openUrl(QUrl url)
     if (!desc->extent().sample_rate.is_initialized ()) {
         QFile::remove (url.toLocalFile ());
     } else {
+        render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
         chain->addOperationAt(desc, render_model.target_marker ());
     }
 
