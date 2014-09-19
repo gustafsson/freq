@@ -44,7 +44,7 @@ void makefloat(const char* data, qint64 len, std::vector<float>& f)
     float minval = std::numeric_limits<T>::min ();
     float maxval = std::numeric_limits<T>::max ();
     for (qint64 i=0; i < tlen; i++)
-        f[i] = -1 + 2.f*(p[i] - minval)/(maxval - minval);
+        f[i] = -1.f + 2.f*(p[i] - minval)/(1.f + maxval - minval);
 }
 
 qint64 GotData::
@@ -97,13 +97,18 @@ void GotData::
 
     // Transpose
     unsigned C = buffer->number_of_channels ();
+    unsigned last_non_zero = 0;
     for (unsigned i=0; i<C; ++i)
     {
         Signal::pMonoBuffer b = buffer->getChannel (i);
         float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
+
         for (unsigned j=0; j<I.count (); ++j)
         {
-            p[j] = in[j*C + i];
+            float v = in[j*C + i];
+            if (v!=0.f)
+                last_non_zero = j;
+            p[j] = v;
 //            p[j] = 0;
 //            p[j] = -1 + 2*(rand()/(float)RAND_MAX);
         }
@@ -111,7 +116,14 @@ void GotData::
 
     // Publish
     buffer->set_sample_offset (I.first);
-    data.write ()->samples.put( buffer );
+    {
+        auto dw = data.write ();
+        dw->samples.put( buffer );
+
+        // Ignore zero-samples at the end of the buffer
+        dw->samples.invalidate_samples( Signal::Interval(I.first + last_non_zero, Signal::Interval::IntervalType_MAX));
+    }
+
     if (invalidator) invalidator.write ()->markNewlyRecordedData( I );
 }
 
