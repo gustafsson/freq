@@ -68,9 +68,9 @@ void RenderViewAxes::
 void RenderViewAxes::
         logYScale()
 {
-    render_model.render_settings.y_offset = -0.6;
+    render_model.render_settings.y_offset = -0.4;
     render_model.render_settings.y_scale = 0.5;
-    render_model.render_settings.last_ysize = 2;
+    render_model.render_settings.last_ysize = 1;
     render_model.render_settings.log_scale = 1;
     render_model.render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;
 }
