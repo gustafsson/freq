@@ -27,6 +27,7 @@ SOURCES += \
     datastoragestring.cpp \
     debugbuf.cpp \
     factor.cpp \
+    float16.cpp \
     geometricalgebra.cpp \
     GlException.cpp \
     glframebuffer.cpp \

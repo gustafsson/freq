@@ -11,6 +11,7 @@
 #include "gltextureread.h"
 #include "neat_math.h"
 #include "resampletexture.h"
+#include "float16.h"
 
 // common backtrace tools
 #include "timer.h"
@@ -51,6 +52,7 @@ int UnitTest::
         RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
         RUNTEST(ResampleTexture);
+        RUNTEST(Float16Compressor);
 
     } catch (const ExceptionAssert& x) {
         if (rethrow_exceptions)

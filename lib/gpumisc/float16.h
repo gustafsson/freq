@@ -4,6 +4,11 @@
 #ifndef THE__FLOAT_16_H_
 #define THE__FLOAT_16_H_
 
+/**
+ * @brief The Float16Compressor class should convert float values to 16 bit representations and back.
+ *
+ * The 16 bit representation should be compatible with OpenGL.
+ */
 class Float16Compressor
 {
     union Bits
@@ -13,7 +18,7 @@ class Float16Compressor
         uint32_t ui;
     };
 
-    static int const shift = 14;
+    static int const shift = 13;
     static int const shiftSign = 16;
 
     static int32_t const infN = 0x7F800000; // flt32 infinity
@@ -37,6 +42,8 @@ class Float16Compressor
     static int32_t const minD = minC - subC - 1;
 
 public:
+    static float max_float16() { Bits b; b.si = maxN; return b.f; }
+    static float min_float16() { Bits b; b.si = minN; return b.f; }
 
     static uint16_t compress(float value)
     {
@@ -74,6 +81,8 @@ public:
         v.si |= sign;
         return v.f;
     }
+
+    static void test();
 };
 
 #endif // THE__FLOAT_16_H_
