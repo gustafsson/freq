@@ -27,8 +27,6 @@ public:
 #endif
         void *p;
 
-        float normalization_factor;
-
         Signal::Interval getCoveredInterval() const override;
 
     private:

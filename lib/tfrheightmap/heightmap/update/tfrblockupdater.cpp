@@ -2,9 +2,10 @@
 
 #include "tfr/chunk.h"
 #include "opengl/blockupdater.h"
+
 #include "float16.h"
 #include "cpumemorystorage.h"
-
+#include "tasktimer.h"
 #include "neat_math.h"
 
 namespace Heightmap {
@@ -34,23 +35,32 @@ private:
 };
 
 
-float* computeNorm(Tfr::ChunkElement* cp, int n) {
+float* computeNorm(Tfr::ChunkElement* cp, int n, float normalization_factor) {
+    //TaskTimer tt("tfrblockupdater: norming %s", DataStorageVoid::getMemorySizeText (n*2*sizeof(float)).c_str ());
     float *p = (float*)cp; // Overwrite 'cp'
     // This takes a while, simply because p is large so that a lot of memory has to be copied.
     // This has to be computed in sequence, no parallelization allowed.
-    for (int i = 0; i<n; ++i)
-        p[i] = norm(cp[i]); // Compute norm here and square root in shader.
+    for (int i = 0; i<n; ++i) {
+        // Compute norm here and square root in shader.
+        p[i] = norm(cp[i])*normalization_factor*normalization_factor;
+    }
     return p;
 }
 
 
 uint16_t* compress(float* inp, int w, int h, int &out_stride)
 {
+    //TaskTimer tt("tfrblockupdater: compressing %s", DataStorageVoid::getMemorySizeText (w*h*sizeof(float)).c_str ());
     uint16_t* p = (uint16_t*)(inp);
     int stride = (w+1)/2*2; // end each row on a multiple of 4 bytes
+    float minv = 0; // doing proper compress with support for denormalized numbers (use min_float16 otherwise)
+    float maxv = Float16Compressor::max_float16 ();
     for (int y=0; y<h; y++)
         for (int x=0; x<w; x++)
-            p[y*stride + x] = Float16Compressor::compress (inp[y*w+x]);
+        {
+            float v = inp[y*w+x];
+            p[y*stride + x] = Float16Compressor::compress (v >= minv ? v <= maxv ? v : maxv : minv);
+        }
     out_stride = stride;
     return p;
 }
@@ -60,13 +70,12 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor, float l
     :
       chunk(chunk),
       p(0),
-      normalization_factor(normalization_factor),
       memory(chunk->transform_data)
 {
     Tfr::ChunkElement *cp = chunk->transform_data->getCpuMemory ();
     int n = chunk->transform_data->numberOfElements ();
     // Compute the norm of the complex elements in the chunk prior to resampling and interpolating
-    float* fp = computeNorm(cp, n);
+    float* fp = computeNorm(cp, n, normalization_factor);
 
     int data_height, data_width, data_stride, org_height, org_width;
     int stepx = 1;
