@@ -53,7 +53,7 @@ FreqAxis StftDesc::
 float StftDesc::
         displayedTimeResolution( float FS, float /*hz*/ ) const
 {
-    return 0.125f*chunk_size() / FS;
+    return increment() / FS;
 }
 
 

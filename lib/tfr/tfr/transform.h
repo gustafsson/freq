@@ -101,8 +101,8 @@ public:
 
 
     /**
-      At what time resolution (1/sample rate) it is meaningful to display the
-      computed Chunks.
+      At what time resolution (distance in time between samples) it is
+      meaningful to display the computed Chunks.
       */
     virtual float displayedTimeResolution( float FS, float hz ) const = 0;
 

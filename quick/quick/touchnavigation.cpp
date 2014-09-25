@@ -1,6 +1,10 @@
 #include "touchnavigation.h"
 #include "tools/support/renderviewinfo.h"
 #include "log.h"
+#include "tfr/stftdesc.h"
+
+//#define LOG_NAVIGATION
+#define LOG_NAVIGATION if(0)
 
 using Tools::Support::RenderViewInfo;
 
@@ -48,7 +52,7 @@ void TouchNavigation::
         q[0] -= dtime1/2;
         q[2] -= dscale1/2;
 
-        Log("(%g, %g)->(%g, %g): q[0] %g. q[2] %g") % x1 % y1 % hpos1.time % hpos1.scale % q[0] % q[2];
+        LOG_NAVIGATION Log("touchnavigation: (%g, %g)->(%g, %g): q[0] %g. q[2] %g") % x1 % y1 % hpos1.time % hpos1.scale % q[0] % q[2];
     }
     else if (press1 && press2 && !press3 && prevPress1 && prevPress2)
     {
@@ -92,7 +96,7 @@ void TouchNavigation::
             r[1] += (dx1 + dx2)/6;
             r[0] += (dy1 + dy2)/6;
 
-            Log("(%g, %g)  (%g, %g): r[0] %g. r[1] %g")
+            LOG_NAVIGATION Log("touchnavigation: (%g, %g)  (%g, %g): r[0] %g. r[1] %g")
                     % x1 % y1 % x2 % y2 % r[0] % r[1];
             break;
         }
@@ -122,7 +126,7 @@ void TouchNavigation::
             q[0] -= dtime1/2;
             q[2] -= dscale1/2;
 
-            Log("(%g, %g)  (%g, %g): xscale %g. zscale %g. q(%g, %g")
+            LOG_NAVIGATION Log("touchnavigation: (%g, %g)  (%g, %g): xscale %g. zscale %g. q(%g, %g")
                     % x1 % y1 % x2 % y2 % c.xscale % c.zscale % q[0] % q[2] ;
             break;
         }
@@ -137,18 +141,73 @@ void TouchNavigation::
         mode = Undefined;
     }
 
-    if (q[0] < 0) q[0] = 0;
+
+    // limit camera position along scale and limit rotation
     if (q[2] < 0) q[2] = 0;
     if (q[2] > 1) q[2] = 1;
     if (r[0] < 0) r[0] = 0;
     if (r[0] > 90) r[0] = 90;
-    if (c.zscale < 5) c.zscale = 5; // don't zoom out too much
-    if (c.zscale > 100) c.zscale = 100; // don't zoom in too much
 
-    if (c.xscale < 0.01) c.xscale = 0.01; // don't zoom out too much
-    if (c.xscale > 5) c.xscale = 5; // don't zoom in too much
-    render_model->camera.orthoview = r[0] == 90;
+    // read info about current view
+    auto tm = render_model->tfr_mapping ().read ();
+    float fs = tm->targetSampleRate();
+    double L = tm->length();
+    float ds = 0.1;
+    float hz = tm->display_scale().getFrequency(float(q[2])),
+          hz2 = tm->display_scale().getFrequency(float(q[2] < 0.5 ? q[2] + ds : q[2] - ds));
+    tm.unlock ();
+
+    // limit camera position along time
+    if (q[0] < 0) q[0] = 0;
+    if (q[0] > L) q[0] = L;
+
+    // limit zoom-in and zoome-out
+    float z = -c.p[2];
+    c.zscale = std::max(c.zscale, 0.5f*z); // don't zoom out too much
+    c.zscale = std::min(c.zscale, z*100); // don't zoom in too much
+
+    c.xscale = std::max(c.xscale, 0.5f*float(z/L)); // don't zoom out too much
+    c.xscale = std::min(c.xscale, z*100); // don't zoom in too much
+    c.orthoview = r[0] == 90;
+
+    // update the camera atomically
     *render_model->camera.write () = c;
+
+    // read info about current transform
+    Tfr::TransformDesc::ptr t = render_model->transform_desc();
+    float time_res = 1/t->displayedTimeResolution(fs,hz); // samples per 1 time at camera focus
+    float s = t->freqAxis(fs).getFrequencyScalarNotClamped(hz);
+    float s2 = t->freqAxis(fs).getFrequencyScalarNotClamped(hz2);
+    float bin_res = std::fabs (s2-s)/ds; // bins per 1 scale at camera focus
+
+    // compute wanted and current current ratio of time resolution versus frequency resolution
+    float ratio = c.zscale/c.xscale; // samples/bins
+    float current_ratio = bin_res/time_res;
+
+    Tfr::TransformDesc::ptr newt = t->copy ();
+    if (Tfr::StftDesc* stft = dynamic_cast<Tfr::StftDesc*>(newt.get ()))
+    {
+        int w = stft->chunk_size ();
+        float k = std::sqrt(ratio/current_ratio);
+        stft->set_approximate_chunk_size(w*k);
+        if (*newt != *t)
+        {
+            LOG_NAVIGATION Log("touchnavigation: stft window size %g -> %g") % w % stft->chunk_size ();
+            render_model->set_transform_desc (newt);
+        }
+    }
+//        else if (Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(newt.get ()))
+//        {
+//            float s = stft->scales_per_octave ();
+//            float k = std::sqrt(ratio/current_ratio);
+//            cwt->scales_per_octave(s/k);
+//            if (*newt != *t)
+//                render_model->set_transform_desc (newt);
+//        }
+    else
+    {
+        Log("touchnavigation: not stft");
+    }
 
     if (!prevPress1 && press1)
         hstart1 = hpos1, start1 = point1;
