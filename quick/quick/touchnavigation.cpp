@@ -6,6 +6,9 @@
 //#define LOG_NAVIGATION
 #define LOG_NAVIGATION if(0)
 
+#define LOG_TRANSFORM
+//#define LOG_TRANSFORM if(0)
+
 using Tools::Support::RenderViewInfo;
 
 TouchNavigation::TouchNavigation(QObject* parent, Tools::RenderModel* render_model)
@@ -181,7 +184,7 @@ void TouchNavigation::
     float bin_res = std::fabs (s2-s)/ds; // bins per 1 scale at camera focus
 
     // compute wanted and current current ratio of time resolution versus frequency resolution
-    float ratio = c.zscale/c.xscale; // samples/bins
+    float ratio = c.zscale/c.xscale; // bins/samples
     float current_ratio = bin_res/time_res;
 
     Tfr::TransformDesc::ptr newt = t->copy ();
@@ -190,11 +193,6 @@ void TouchNavigation::
         int w = stft->chunk_size ();
         float k = std::sqrt(ratio/current_ratio);
         stft->set_approximate_chunk_size(w*k);
-        if (*newt != *t)
-        {
-            LOG_NAVIGATION Log("touchnavigation: stft window size %g -> %g") % w % stft->chunk_size ();
-            render_model->set_transform_desc (newt);
-        }
     }
 //        else if (Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(newt.get ()))
 //        {
@@ -207,6 +205,12 @@ void TouchNavigation::
     else
     {
         Log("touchnavigation: not stft");
+    }
+
+    if (*newt != *t)
+    {
+        LOG_TRANSFORM Log("touchnavigation: %s") % newt->toString ();
+        render_model->set_transform_desc (newt);
     }
 
     if (!prevPress1 && press1)
