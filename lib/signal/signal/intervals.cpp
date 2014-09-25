@@ -467,9 +467,8 @@ Intervals Intervals::
 Interval Intervals::
         spannedInterval() const
 {
-    if (empty()) {
-        return Interval( 0, 0 );
-    }
+    if (empty())
+        return Interval();
 
     return Interval( base::front().first, base::back().last );
 }

@@ -90,39 +90,55 @@ void GotData::
     if (!buffer || buffer->number_of_samples () != number_of_samples)
         buffer.reset (new Signal::Buffer(0, number_of_samples, data.raw()->sample_rate, data.raw()->num_channels));
 
-    // What data did we get
-    Signal::Interval I;
-    I.first = data->samples.spannedInterval().last;
-    I.last = I.first + number_of_samples;
-
-    // Transpose
+    // get pointers to intermediate buffers
+    unsigned k = 0;
     unsigned C = buffer->number_of_channels ();
-    unsigned last_non_zero = 0;
+    float* P[C], v[C];
+    bool prev_nonzero = true;
+
     for (unsigned i=0; i<C; ++i)
     {
         Signal::pMonoBuffer b = buffer->getChannel (i);
-        float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
-
-        for (unsigned j=0; j<I.count (); ++j)
-        {
-            float v = in[j*C + i];
-            if (v!=0.f)
-                last_non_zero = j;
-            p[j] = v;
-//            p[j] = 0;
-//            p[j] = -1 + 2*(rand()/(float)RAND_MAX);
-        }
+        P[i] = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
     }
+
+    // transpose and skip zeros
+    for (unsigned j=0; j<number_of_samples; ++j)
+    {
+        bool nonzero = false;
+        for (unsigned i=0; i<C; ++i)
+        {
+            v[i] = in[j*C + i];
+            if (v[i] != 0.f)
+                nonzero = true;
+        }
+
+        if (k==1 && !nonzero)
+            k = 0;
+
+        if (nonzero || prev_nonzero)
+        {
+            for (unsigned i=0; i<C; ++i)
+                P[i][k] = v[i];
+            k++;
+        }
+
+        prev_nonzero = nonzero;
+    }
+
+    if (k<=1)
+        return;
 
     // Publish
-    buffer->set_sample_offset (I.first);
-    {
-        auto dw = data.write ();
-        dw->samples.put( buffer );
+    auto dw = data.write ();
+    Signal::IntervalType start = dw->samples.spannedInterval().last;
+    buffer->set_sample_offset (start);
+    dw->samples.put( buffer ); // copy
 
-        // Ignore zero-samples at the end of the buffer
-        dw->samples.invalidate_samples( Signal::Interval(I.first + last_non_zero, Signal::Interval::IntervalType_MAX));
-    }
+    // Ignore samples not written to
+    Signal::Interval I(start, start+k);
+    dw->samples.invalidate_samples( Signal::Interval(I.last, Signal::Interval::IntervalType_MAX));
+    dw.unlock ();
 
     if (invalidator) invalidator.write ()->markNewlyRecordedData( I );
 }
