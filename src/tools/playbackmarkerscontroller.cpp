@@ -55,7 +55,7 @@ void PlaybackMarkersController::
         model()->setCurrentMaker( itr );
     }
 
-    render_view_->model->setPosition( Heightmap::Position( *itr, render_view_->model->camera.q[2]) );
+    render_view_->model->setPosition( Heightmap::Position( *itr, render_view_->model->camera->q[2]) );
     render_view_->redraw();
 }
 
@@ -81,7 +81,7 @@ void PlaybackMarkersController::
 //        pos = render_view_->model->project()->worker.length();
     }
 
-    render_view_->model->setPosition( Heightmap::Position( pos, render_view_->model->camera.q[2]) );
+    render_view_->model->setPosition( Heightmap::Position( pos, render_view_->model->camera->q[2]) );
     render_view_->redraw();
 }
 

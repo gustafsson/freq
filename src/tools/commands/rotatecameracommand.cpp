@@ -27,14 +27,15 @@ void RotateCameraCommand::
 {
     float rs = 0.2;
 
-    vectord& r = model->camera.r;
+    auto c = model->camera.write ();
+    vectord& r = c->r;
 
-    r[1] += (1-model->camera.orthoview)*rs * dx;
+    r[1] += (1-c->orthoview)*rs * dx;
     r[0] += rs * dy;
-    if (r[0]<0) { r[0]=0; model->camera.orthoview=1; }
-    if (r[0]>90) { r[0]=90; model->camera.orthoview=1; }
-    if (0<model->camera.orthoview && r[0]<90 && r[0]>=45) { model->camera.orthoview=0; }
-    if (0<model->camera.orthoview && r[0]<45 && r[0]>0) { model->camera.orthoview=0; }
+    if (r[0]<0) { r[0]=0; c->orthoview=1; }
+    if (r[0]>90) { r[0]=90; c->orthoview=1; }
+    if (0<c->orthoview && r[0]<90 && r[0]>=45) { c->orthoview=0; }
+    if (0<c->orthoview && r[0]<45 && r[0]>0) { c->orthoview=0; }
 }
 
 

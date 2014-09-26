@@ -57,10 +57,11 @@ void RecordView::
 //        float limit = model_->project->worker.length();
 
         double limit = model_->project->length ();
-        limit -= 1/model_->render_view->model->camera.xscale;
+        const Tools::Support::RenderCamera c = *model_->render_view->model->camera.read ();
+        limit -= 1/c.xscale;
         if (limit<0) limit = 0;
 
-        if (model_->render_view->model->camera.q[0] >= prev_limit_) {
+        if (c.q[0] >= prev_limit_) {
             // -- Following Record Marker --
             // Snap just before end so that project->worker.center starts working on
             // data that has been fetched. If center=length worker will start
@@ -68,7 +69,7 @@ void RecordView::
             // set to zero after the end. This abrupt change creates a false
             // dirac peek in the transform (false because it will soon be
             // invalid by newly recorded data).
-            model_->render_view->model->camera.q[0] = std::max(model_->render_view->model->camera.q[0], limit);
+            model_->render_view->model->camera->q[0] = std::max(c.q[0], limit);
 
             bool ismicrophonerecorder = (0 != dynamic_cast<Adapters::MicrophoneRecorder*>(model_->recording.raw ()));
             if ( ismicrophonerecorder && model_->recording.write ()->time_since_last_update() > 5 )

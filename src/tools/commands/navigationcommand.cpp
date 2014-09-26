@@ -65,16 +65,16 @@ void NavigationState::
         storeState()
 {
     _is_set = true;
-    camera = model->camera;
-    camera.orthoview.reset (&model->camera.orthoview);
+    camera = *model->camera.read ();
+    camera.orthoview.reset (&model->camera->orthoview);
 }
 
 
 void NavigationState::
         restoreState()
 {
-    model->camera = camera;
-    model->camera.orthoview.reset (&camera.orthoview);
+    *model->camera.write () = camera;
+    model->camera->orthoview.reset (&camera.orthoview);
 }
 
 

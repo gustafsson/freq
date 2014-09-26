@@ -23,6 +23,7 @@ namespace Tools
 {
 
 using Support::RenderViewInfo;
+using Support::RenderCamera;
 
 NavigationController::
         NavigationController(RenderView* view, Sawe::Project* project, Support::ToolSelector* tool_selector)
@@ -68,7 +69,7 @@ void NavigationController::
 void NavigationController::
         moveUp()
 {
-    moveCamera(0, 0.1f/_view->model->camera.zscale);
+    moveCamera(0, 0.1f/_view->model->camera->zscale);
     _view->redraw();
 }
 
@@ -76,7 +77,7 @@ void NavigationController::
 void NavigationController::
         moveDown()
 {
-    moveCamera(0, -0.1f/_view->model->camera.zscale);
+    moveCamera(0, -0.1f/_view->model->camera->zscale);
     _view->redraw();
 }
 
@@ -84,7 +85,7 @@ void NavigationController::
 void NavigationController::
         moveLeft()
 {
-    moveCamera(-0.1f/_view->model->camera.xscale, 0);
+    moveCamera(-0.1f/_view->model->camera->xscale, 0);
     _view->redraw();
 }
 
@@ -92,7 +93,7 @@ void NavigationController::
 void NavigationController::
         moveRight()
 {
-    moveCamera(0.1f/_view->model->camera.xscale, 0);
+    moveCamera(0.1f/_view->model->camera->xscale, 0);
     _view->redraw();
 }
 
@@ -257,9 +258,10 @@ void NavigationController::
             Heightmap::Position current = RenderViewInfo(_view->model).getPlanePos( e->pos(), &success2);
             if (success1 && success2)
             {
+                const RenderCamera c = *_view->model->camera.read ();
                 if (e->modifiers().testFlag(Qt::ControlModifier))
-                    zoomCamera( 4*(current.time - last.time)*_view->model->camera.xscale / _view->model->camera.p[2],
-                                4*(current.scale - last.scale)*_view->model->camera.zscale / _view->model->camera.p[2],
+                    zoomCamera( 4*(current.time - last.time)*c.xscale / c.p[2],
+                                4*(current.scale - last.scale)*c.zscale / c.p[2],
                                 0 );
                 else
                     moveCamera( last.time - current.time, last.scale - current.scale);
@@ -332,8 +334,9 @@ void NavigationController::
         Heightmap::Position current = r.getPlanePos( e->localPos (), &success2);
         if (success1 && success2)
         {
-            zoomCamera( 4*(current.time - last.time)*_view->model->camera.xscale/_view->model->camera.p[2],
-                        4*(current.scale - last.scale)*_view->model->camera.zscale/_view->model->camera.p[2],
+            const RenderCamera c = *_view->model->camera.read ();
+            zoomCamera( 4*(current.time - last.time)*c.xscale/c.p[2],
+                        4*(current.scale - last.scale)*c.zscale/c.p[2],
                         0 );
         }
     }

@@ -163,9 +163,10 @@ namespace Tools
             renderModelChanged(Tools::ToolModel* m)
     {
         Tools::RenderModel* renderModel = dynamic_cast<Tools::RenderModel*>( m );
-        bool ortho1D = 0==renderModel->camera.r[0];
-        bool frequencySelection = fmod( renderModel->camera.effective_ry() + 90, 180.f ) == 0.f;
-        bool timeSelection = fmod( renderModel->camera.effective_ry(), 180.f ) == 0.f;
+        const Tools::Support::RenderCamera c = *renderModel->camera.read ();
+        bool ortho1D = 0==c.r[0];
+        bool frequencySelection = fmod( c.effective_ry() + 90, 180.f ) == 0.f;
+        bool timeSelection = fmod( c.effective_ry(), 180.f ) == 0.f;
         Ui::MainWindow* ui = model()->project()->mainWindow()->getItems();
 
         ui->actionEllipseSelection->setEnabled( !ortho1D );

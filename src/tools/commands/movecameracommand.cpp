@@ -28,7 +28,7 @@ void MoveCameraCommand::
 {
     double l = model->tfr_mapping().read ()->length();
 
-    vectord& q = model->camera.q;
+    vectord q = model->camera.read ()->q;
     q[0] += dt;
     q[2] += ds;
 
@@ -36,6 +36,7 @@ void MoveCameraCommand::
     if (q[2]<0) q[2]=0;
     if (q[2]>1) q[2]=1;
     if (q[0]>l) q[0]=l;
+    model->camera.write ()->q = q;
 }
 
 

@@ -205,9 +205,10 @@ void RescaleWidget::
 
     if (success1 && success2)
     {
+        const Tools::Support::RenderCamera c = *view_->model->camera.read ();
         float r = DIRECT_RESCALING ? 4 : .1;
-        float dt = r*(current.time - last.time)*view_->model->camera.xscale/view_->model->camera.p[2];
-        float ds = r*(current.scale - last.scale)*view_->model->camera.zscale/view_->model->camera.p[2];
+        float dt = r*(current.time - last.time)*c.xscale/c.p[2];
+        float ds = r*(current.scale - last.scale)*c.zscale/c.p[2];
 
         Tools::Commands::pCommand cmd( new Tools::Commands::ZoomCameraCommand(view_->model, dt, ds, 0.f ));
         commandInvoker_->invokeCommand( cmd );

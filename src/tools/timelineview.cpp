@@ -266,7 +266,7 @@ void TimelineView::
                 // TODO what should be rendered in the timelineview?
                 // Not arbitrary tools but
                 // _project->tools().selection_view.drawSelection();
-                Heightmap::Render::RenderFrustum(_render_view->model->gl_projection).drawFrustum();
+                Heightmap::Render::RenderFrustum(*_render_view->model->gl_projection.read ()).drawFrustum();
 
                 emit painting();
             }
@@ -319,7 +319,7 @@ void TimelineView::
                 glVertex3f(x4,1,1);
             glEnd();
 
-            Heightmap::Render::RenderFrustum(_render_view->model->gl_projection).drawFrustum();
+            Heightmap::Render::RenderFrustum(*_render_view->model->gl_projection.read ()).drawFrustum();
         }
 
         GlException_CHECK_ERROR();
@@ -354,7 +354,7 @@ void TimelineView::
 {
     // Make sure that the camera focus point is within the timeline
     {
-        float t = _render_view->model->camera.q[0];
+        float t = _render_view->model->camera.read ()->q[0];
         float new_t = -1;
 
         switch(0) // Both 1 and 2 might feel annoying, don't do them :)
@@ -375,7 +375,7 @@ void TimelineView::
 
             if (0<=new_t)
             {
-                float f = _render_view->model->camera.q[2];
+                float f = _render_view->model->camera.read ()->q[2];
                 _render_view->model->setPosition( Heightmap::Position( new_t, f) );
                 redraw ();
             }

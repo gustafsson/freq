@@ -82,7 +82,7 @@ void CommentController::
     view->model()->pos = p;
 
     // keep in sync with CommentView::updatePosition()
-    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera.p[2]);
+    view->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera->p[2]);
 
     view->setHtml( text );
     view->show();
@@ -204,7 +204,7 @@ void CommentController::
         comment_->model()->screen_pos[0] = UpdateModelPositionFromScreen;
 
         // keep in sync with CommentView::updatePosition()
-        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera.p[2]);
+        comment_->model()->scroll_scale = 0.5f*sqrt(-view_->model->camera->p[2]);
 
         comment_->setEditFocus(true);
         comment_ = 0;

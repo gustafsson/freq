@@ -24,8 +24,8 @@ private:
         ScaleZ
     };
 
-    bool zoom(float delta, ZoomMode mode);
-    void doZoom(float delta, float* scale, float* min_scale, float* max_scale);
+    bool zoom(Tools::Support::RenderCamera&, float delta, ZoomMode mode);
+    static void doZoom(float delta, float* scale, float* min_scale, float* max_scale, double& p2);
 };
 
 } // namespace Commands

@@ -580,8 +580,9 @@ void CommentView::
     {
         z *= 0.5;
 
-        if (-1 > view->model->camera.p[2])
-            z += -log(-view->model->camera.p[2]);
+        const Tools::Support::RenderCamera c = *view->model->camera.read ();
+        if (-1 > c.p[2])
+            z += -log(-c.p[2]);
 
         if (z < 1)
             z = 1;

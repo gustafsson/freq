@@ -111,9 +111,11 @@ void PlaybackView::
     if (follow_play_marker && 0<_playbackMarker)
     {
         Tools::RenderView& r = *_render_view;
-        if (r.model->camera.q[0] != _playbackMarker)
+        auto c = r.model->camera.write ();
+        if (c->q[0] != _playbackMarker)
         {
-            r.model->camera.q[0] = _playbackMarker;
+            c->q[0] = _playbackMarker;
+            c.unlock ();
 
             r.redraw();
         }

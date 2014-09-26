@@ -95,7 +95,7 @@ RenderController::
     auto hpp = new Support::HeightmapProcessingPublisher(
                 view->model->target_marker (),
                 view->model->tfr_mapping (),
-                &view->model->camera.q[0],
+                view->model->camera,
                 this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
     connect(view, SIGNAL(painting()), hpp, SLOT(update()));

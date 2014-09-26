@@ -30,25 +30,29 @@ std::string ZoomCameraCommand::
 void ZoomCameraCommand::
         executeFirst()
 {
-    if (dt) if (!zoom( dt, ScaleX ))
+    Tools::Support::RenderCamera c = *model->camera.read ();
+
+    if (dt) if (!zoom( c, dt, ScaleX ))
     {
         float L = model->tfr_mapping().read ()->length();
-        float d = std::min( 0.5f * fabsf(dt), fabsf(model->camera.q[0] - L/2));
-        model->camera.q[0] += model->camera.q[0]>L*.5f ? -d : d;
+        float d = std::min( 0.5f * fabsf(dt), fabsf(c.q[0] - L/2));
+        c.q[0] += c.q[0]>L*.5f ? -d : d;
     }
 
-    if (ds) if (!zoom( ds, ScaleZ ))
+    if (ds) if (!zoom( c, ds, ScaleZ ))
     {
-        float d = std::min( 0.5f * fabsf(ds), fabsf(model->camera.q[2] - .5f));
-        model->camera.q[2] += model->camera.q[2]>.5f ? -d : d;
+        float d = std::min( 0.5f * fabsf(ds), fabsf(c.q[2] - .5f));
+        c.q[2] += c.q[2]>.5f ? -d : d;
     }
 
-    if (dz) zoom( dz, Zoom );
+    if (dz) zoom( c, dz, Zoom );
+
+    *model->camera.write () = c;
 }
 
 
 bool ZoomCameraCommand::
-        zoom(float delta, ZoomMode mode)
+        zoom(Tools::Support::RenderCamera& c, float delta, ZoomMode mode)
 {
     float L = model->tfr_mapping ().read ()->length();
     float fs = model->tfr_mapping ().read ()->targetSampleRate();
@@ -80,10 +84,10 @@ bool ZoomCameraCommand::
     {
         switch(mode)
         {
-        case ScaleX: if (model->camera.xscale == min_xscale)
+        case ScaleX: if (c.xscale == min_xscale)
                 return false;
             break;
-        case ScaleZ: if (model->camera.zscale == min_yscale)
+        case ScaleZ: if (c.zscale == min_yscale)
                 return false;
             break;
         default:
@@ -93,9 +97,9 @@ bool ZoomCameraCommand::
 
     switch(mode)
     {
-    case Zoom: doZoom( delta, 0, 0, 0 ); break;
-    case ScaleX: doZoom( delta, &model->camera.xscale, &min_xscale, &max_xscale); break;
-    case ScaleZ: doZoom( delta, &model->camera.zscale, &min_yscale, &max_yscale ); break;
+    case Zoom: doZoom( delta, 0, 0, 0, c.p[2] ); break;
+    case ScaleX: doZoom( delta, &c.xscale, &min_xscale, &max_xscale, c.p[2]); break;
+    case ScaleZ: doZoom( delta, &c.zscale, &min_yscale, &max_yscale, c.p[2]); break;
     }
 
     return true;
@@ -103,7 +107,7 @@ bool ZoomCameraCommand::
 
 
 void ZoomCameraCommand::
-        doZoom(float d, float* scale, float* min_scale, float* max_scale)
+        doZoom(float d, float* scale, float* min_scale, float* max_scale, double& p2)
 {
     //TaskTimer("NavigationController wheelEvent %s %d", vartype(*e).c_str(), e->isAccepted()).suppressTiming();
     if (d>0.1)
@@ -128,10 +132,10 @@ void ZoomCameraCommand::
     }
     else
     {
-        model->camera.p[2] *= (1+d);
+        p2 *= (1+d);
 
-        if (model->camera.p[2]<-100) model->camera.p[2] = -100;
-        if (model->camera.p[2]>-.1) model->camera.p[2] = -.1;
+        if (p2<-100) p2 = -100;
+        if (p2>-.1) p2 = -.1;
     }
 }
 
