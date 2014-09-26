@@ -84,14 +84,14 @@ std::string NetworkRecorder::
 
 
 float NetworkRecorder::
-        length() const
+        length()
 {
     return std::min( Recorder::length(), time() );
 }
 
 
 float NetworkRecorder::
-        time() const
+        time()
 {
     switch(tcpSocket.state())
     {
