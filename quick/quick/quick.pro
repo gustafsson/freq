@@ -7,6 +7,11 @@ CONFIG += c++11
 SOURCES += *.cpp
 HEADERS += *.h
 
+# http://stackoverflow.com/questions/22783381/qaudiodecoder-no-service-found
+# decoding with QAudioDecoder is only supported on windows (mediafoundation backend) and linux (gstreamer backend)
+QTPLUGIN += qtaudio_coreaudio
+QTPLUGIN += qtmedia_audioengine
+
 RESOURCES += qml.qrc
 !win32:ICON = freq.icns
 win32:RC_ICONS = freq.ico

@@ -1,6 +1,7 @@
 #include "squircle.h"
 #include "qtmicrophone.h"
 #include "flacfile.h"
+#include "qtaudiofile.h"
 
 #include "signal/recorderoperation.h"
 #include "heightmap/update/updateconsumer.h"
@@ -113,6 +114,8 @@ void Squircle::urlRequest(QUrl url)
 {
     Log("squircle: url request %s") % url.toString ().toStdString ();
 
+#ifdef Q_OS_IOS
+    // cleanup old files
     QFileInfo fi(url.toLocalFile ());
     for (auto info : fi.dir ().entryInfoList())
     {
@@ -122,6 +125,7 @@ void Squircle::urlRequest(QUrl url)
         Log("squircle: removing old file %s") % info.fileName ().toStdString ();
         fi.dir ().remove (info.fileName ());
     }
+#endif
 
     this->url = url;
 
@@ -155,6 +159,8 @@ void Squircle::sync()
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()), Qt::DirectConnection);
 
+        connect(this, SIGNAL(droppedUrl(QUrl)),
+                this, SLOT(urlRequest(QUrl)));
         connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
                 touchnavigation, SLOT(mouseMove(qreal,qreal,bool)));
         connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
@@ -202,8 +208,32 @@ void Squircle::openRecording()
 }
 
 
+Signal::OperationDesc::ptr parseFile(QUrl url)
+{
+    Signal::OperationDesc::ptr d;
+    try {
+        d.reset(new FlacFile(url));
+        if (d->extent().sample_rate.is_initialized ())
+            return d;
+    } catch(...) {}
+
+    try {
+        d.reset(new QtAudiofile(url));
+        if (d->extent().sample_rate.is_initialized ())
+            return d;
+    } catch(...) {}
+
+    return Signal::OperationDesc::ptr();
+}
+
+
 void Squircle::openUrl(QUrl url)
 {
+    // first see if this was a valid file
+    Signal::OperationDesc::ptr desc = parseFile(url);
+    if (!desc)
+        return;
+
     purgeTarget();
 
     while (!rec.unique ())
@@ -213,15 +243,8 @@ void Squircle::openUrl(QUrl url)
     }
     rec.reset ();
 
-    Signal::OperationDesc::ptr desc(new FlacFile(url));
-//    Signal::OperationDesc::ptr desc(new QtAudiofile(url));
-
-    if (!desc->extent().sample_rate.is_initialized ()) {
-        QFile::remove (url.toLocalFile ());
-    } else {
-        render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
-        chain->addOperationAt(desc, render_model.target_marker ());
-    }
+    render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
+    chain->addOperationAt(desc, render_model.target_marker ());
 
     RenderViewAxes(render_model).cameraOnFront ();
 }

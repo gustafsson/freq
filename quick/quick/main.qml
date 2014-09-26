@@ -13,6 +13,7 @@ Item {
 
         signal touch(real x1, real y1, bool p1, real x2, real y2, bool p2, real x3, real y3, bool p3)
         signal mouseMove(real x1, real y1, bool p1)
+        signal droppedUrl(url p)
 
         SequentialAnimation on t {
             NumberAnimation { to: 1; duration: 2500; easing.type: Easing.InQuad }
@@ -46,6 +47,24 @@ Item {
             return squircle.touch(point1.sceneX, point1.sceneY, point1.pressed,
                                   point2.sceneX, point2.sceneY, point2.pressed,
                                   point3.sceneX, point3.sceneY, point3.pressed)
+        }
+    }
+
+    DropArea {
+        id: dropArea;
+        anchors.fill: parent;
+        onEntered: {
+            drag.accept (Qt.CopyAction);
+        }
+        onDropped: {
+            if (drop.hasUrls && 1===drop.urls.length)
+            {
+                squircle.droppedUrl(drop.urls[0]);
+                drop.accept (Qt.CopyAction);
+            }
+        }
+        onExited: {
+            console.log ("onExited");
         }
     }
 

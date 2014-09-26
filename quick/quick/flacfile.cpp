@@ -174,9 +174,11 @@ FlacFile::FlacFile(QUrl url)
                 write_callback, metadata_callback, error_callback, /*client_data=*/fmt);
 
     if(init_status != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
-        Log("flacfile: ERROR initializing decoder %s") % FLAC__StreamDecoderInitStatusString[init_status];
+        Log("flacfile: ERROR initializing decoder %s when reading %s")
+                % FLAC__StreamDecoderInitStatusString[init_status]
+                % url.toLocalFile ().toStdString ();
         FLAC__stream_decoder_delete(decoder);
-        decoder = 0;
+        decoderp = 0;
         return;
     }
 
@@ -189,10 +191,10 @@ FlacFile::FlacFile(QUrl url)
 FlacFile::
         ~FlacFile()
 {
+    if (FLAC__StreamDecoder *decoder = (FLAC__StreamDecoder*)decoderp)
+        FLAC__stream_decoder_delete(decoder);
+
     delete fmt;
-    FLAC__StreamDecoder *decoder = (FLAC__StreamDecoder*)decoderp;
-    FLAC__stream_decoder_delete(decoder);
-    QFile::remove (url.toLocalFile ());
 }
 
 
