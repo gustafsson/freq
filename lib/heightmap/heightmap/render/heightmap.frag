@@ -13,12 +13,12 @@ uniform lowp vec4 fixedColor;
 uniform lowp vec4 clearColor;
 
 mediump float heightValue(mediump float v) {
-    // the linear case is straightforward
-    mediump float h = mix(v*yScale + yOffset,
-                  log(v) * logScale.y + logScale.z,
-                  logScale.x);
+    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
+    mediump float h = mix(v*yScale + yOffset,       // linear
+                  log(v) * logScale.y + logScale.z, // log
+                  logScale.x);                      // choose
 
-    return v == 0.0 ? 0.0 : max(0.01, h);
+    return v == 0.0 ? 0.0 : max(0.0, h);
 }
 
 void main()

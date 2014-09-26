@@ -82,9 +82,9 @@ void main()
     }
 
     if (0==amplitude_axis)
-        a = normalization*25.0*sqrt(a);
+        a = 25.0*sqrt(a*normalization);
     if (1==amplitude_axis) {
-        a = 0.5*0.019 * log2(a*normalization*normalization) + 0.3333;
+        a = 0.5*0.019 * log2(a*normalization) + 0.3333;
         a = a < 0.0 ? 0.0 : a;
     }
 

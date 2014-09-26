@@ -40,9 +40,10 @@ float* computeNorm(Tfr::ChunkElement* cp, int n, float normalization_factor) {
     float *p = (float*)cp; // Overwrite 'cp'
     // This takes a while, simply because p is large so that a lot of memory has to be copied.
     // This has to be computed in sequence, no parallelization allowed.
-    for (int i = 0; i<n; ++i) {
-        // Compute norm here and square root in shader.
-        p[i] = norm(cp[i])*normalization_factor*normalization_factor;
+    for (int i=0; i<n; ++i) {
+        // Compute norm here and square root in shader, apply the normalization and then again in the shader together
+        // with the square root of p[i] so that in effect normalization is only applied once in total.
+        p[i] = norm(cp[i])*normalization_factor;
     }
     return p;
 }
@@ -66,12 +67,16 @@ uint16_t* compress(float* inp, int w, int h, int &out_stride)
 }
 
 
-TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float normalization_factor, float largest_fs)
+TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
     :
       chunk(chunk),
       p(0),
+      normalization_factor(nf),
       memory(chunk->transform_data)
 {
+    // map to better fit range of float16 (it doesn't harm float32 either)
+    normalization_factor *= 100.f;
+
     Tfr::ChunkElement *cp = chunk->transform_data->getCpuMemory ();
     int n = chunk->transform_data->numberOfElements ();
     // Compute the norm of the complex elements in the chunk prior to resampling and interpolating

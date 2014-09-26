@@ -113,7 +113,7 @@ void BlockUpdater::
             if (vbos.count (p))
                 continue;
 
-            vbos[p] = Texture2Fbo(p);
+            vbos[p] = Texture2Fbo(p, job->normalization_factor);
         }
     }
 

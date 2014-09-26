@@ -51,7 +51,7 @@ public:
         int data_width, data_height;
     };
 
-    Texture2Fbo(const Params& p, float normalization_factor=1);
+    Texture2Fbo(const Params& p, float normalization_factor);
     Texture2Fbo(Texture2Fbo&&)=default;
     Texture2Fbo(const Texture2Fbo&)=delete;
     Texture2Fbo& operator=(const Texture2Fbo&)=delete;
