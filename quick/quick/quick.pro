@@ -9,8 +9,7 @@ HEADERS += *.h
 
 # http://stackoverflow.com/questions/22783381/qaudiodecoder-no-service-found
 # decoding with QAudioDecoder is only supported on windows (mediafoundation backend) and linux (gstreamer backend)
-QTPLUGIN += qtaudio_coreaudio
-QTPLUGIN += qtmedia_audioengine
+!macx-ios*: QTPLUGIN += qtaudio_coreaudio qtmedia_audioengine # redundant from QT += multimedia
 
 RESOURCES += qml.qrc
 !win32:ICON = freq.icns
