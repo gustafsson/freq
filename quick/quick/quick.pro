@@ -40,9 +40,6 @@ INCLUDEPATH += \
     $$SAWEROOT/src \
 
 LIBS += \
-#    -framework OpenGL \
-    -F$$SAWEROOT/dep/ios \
-    -framework flac \
     -L../../lib/justmisc -ljustmisc \
     -L../../lib/backtrace -lbacktrace \
     -L../../lib/gpumisc -lgpumisc \
@@ -52,7 +49,8 @@ LIBS += \
     -L../../lib/tfrheightmap -ltfrheightmap \
     -L../../lib/heightmapview -lheightmapview \
 
-!macx-ios*: LIBS += -framework GLUT
+macx-ios*: LIBS += -F$$SAWEROOT/3rdparty/ios/framework -framework flac
+!macx-ios*: LIBS += -framework GLUT -L/usr/local/lib -lFLAC
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew
