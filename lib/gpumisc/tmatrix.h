@@ -1,6 +1,7 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <ostream>
 #include "tvector.h"
 
 #define DEG_TO_RAD(x) ((x)*(M_PI/180.))
@@ -230,4 +231,15 @@ template<>
 inline tmatrix<4,float,1>::operator tvector<3, float>()
 {
 	return tvector<3, float>(&m[0][0]);
+}
+
+template<class st, int rows, typename t, int cols=rows>
+std::basic_ostream<st>& operator<<(std::basic_ostream<st>& o, const tmatrix<rows,t,cols>& M) {
+    for (int i=0; i<4; i++)
+    {
+        for (int j=0; j<4; j++)
+            o << M[i][j] << " ";
+        o << std::endl;
+    }
+    return o;
 }
