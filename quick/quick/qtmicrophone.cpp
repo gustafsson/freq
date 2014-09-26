@@ -126,7 +126,7 @@ void GotData::
         prev_nonzero = nonzero;
     }
 
-    if (k<=1)
+    if (k<=10)
         return;
 
     // Publish
