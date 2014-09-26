@@ -96,8 +96,13 @@ void TouchNavigation::
             qreal dx2 = point2.x () - prev2.x ();
             qreal dy2 = point2.y () - prev2.y ();
 
+#ifdef Q_OS_IOS
             r[1] += (dx1 + dx2)/6;
             r[0] += (dy1 + dy2)/6;
+#else
+            r[1] += (dx1 + dx2)/2;
+            r[0] += (dy1 + dy2)/2;
+#endif
 
             LOG_NAVIGATION Log("touchnavigation: (%g, %g)  (%g, %g): r[0] %g. r[1] %g")
                     % x1 % y1 % x2 % y2 % r[0] % r[1];
