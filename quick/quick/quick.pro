@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = Freq
+TARGET = Frek
 QT += qml quick widgets multimedia
 
 CONFIG += c++11
