@@ -179,11 +179,10 @@ QtMicrophone::
     // as it would invoke GotData::writeData which uses invalidator which
     // in turn uses the dag. But the Dag is locked by the caller of this
     // destructor.
-    audio_->reset();
 
-    // Release resources
-    audio_.reset ();
-    device_.reset ();
+    // Waiting for recorder to finish
+    audio_->stop();
+    audio_->reset();
 }
 
 
