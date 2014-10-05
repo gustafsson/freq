@@ -34,6 +34,8 @@
 			</array>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
 		</dict>
 		<dict>
 			<key>LSItemContentTypes</key>
@@ -42,6 +44,8 @@
 			</array>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
 		</dict>
 	</array>
 </dict>
