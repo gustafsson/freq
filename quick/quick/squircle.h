@@ -6,21 +6,30 @@
 #include "signal/processing/chain.h"
 #include "tools/rendermodel.h"
 #include "tools/renderview.h"
-#include "signal/recorder.h"
+#include "chain.h"
 
 class Squircle : public QQuickItem
 {
     Q_OBJECT
-    Q_PROPERTY(qreal t READ t WRITE setT NOTIFY tChanged)
+    Q_PROPERTY(qreal timepos READ timepos WRITE setTimepos NOTIFY timeposChanged)
+    Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
+    //Q_PROPERTY(QString Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
 
 public:
     Squircle();
 
-    qreal t() const { return m_t; }
-    void setT(qreal t);
+    qreal timepos() const;
+    void setTimepos(qreal t);
+
+    Chain* chain() const { return chain_item_; }
+    void setChain(Chain* c);// { chain_item_=c; }
 
 signals:
-    void tChanged();
+    void timeposChanged();
+    void chainChanged();
+    void touch(qreal x1, qreal y1, bool p1, qreal x2, qreal y2, bool p2, qreal x3, qreal y3, bool p3);
+    void mouseMove(qreal x1, qreal y1, bool p1);
+    void refresh();
 
 public slots:
     void sync();
@@ -28,24 +37,19 @@ public slots:
     void targetIsCreated();
     void setupUpdateConsumer(QOpenGLContext* context);
     void setupRenderTarget();
-    void urlRequest(QUrl url);
 
 private slots:
     void handleWindowChanged(QQuickWindow *win);
 
-private:
-    void openUrl(QUrl url);
-    void openRecording();
-    void purgeTarget();
+protected:
+    void componentComplete() override;
 
+private:
     Tools::RenderModel render_model;
 
-    qreal m_t = 0;
+    Chain* chain_item_ = 0;
     SquircleRenderer *m_renderer = 0;
-    class TouchNavigation* touchnavigation;
-    Signal::Processing::Chain::ptr chain;
-    QUrl url;
-    Signal::Recorder::ptr rec;
+    class TouchNavigation* touchnavigation = 0;
 };
 
 #endif // SQUIRCLE_H

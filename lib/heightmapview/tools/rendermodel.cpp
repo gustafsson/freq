@@ -70,12 +70,12 @@ RenderModel::
 
 
 void RenderModel::
-        init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt)
+        init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt, Signal::Processing::TargetMarker::ptr target_marker)
 {
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
     render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::ptr(), rt));
-    target_marker_ = chain->addTarget(render_operation_desc_);
+    target_marker_ = chain->addTarget(render_operation_desc_,target_marker);
     rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;

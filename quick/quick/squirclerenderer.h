@@ -17,10 +17,11 @@ public:
     ~SquircleRenderer();
 
     void setT(qreal t) { m_t = t; }
-    void setViewportSize(const QSize &size);
+    void setViewport(const QRectF &rect, double window_height, double ratio);
 
 signals:
     void redrawSignal();
+    void repositionSignal();
 
 public slots:
     void paint2();
@@ -29,7 +30,8 @@ public slots:
 private:
     Tools::RenderView render_view;
 
-    QSize m_viewportSize;
+    QRect m_viewport;
+    int m_window_height;
     qreal m_t;
     QOpenGLShaderProgram *m_program;
 };

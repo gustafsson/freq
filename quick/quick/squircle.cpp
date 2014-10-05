@@ -1,9 +1,5 @@
 #include "squircle.h"
-#include "qtmicrophone.h"
-#include "flacfile.h"
-#include "qtaudiofile.h"
 
-#include "signal/recorderoperation.h"
 #include "heightmap/update/updateconsumer.h"
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/renderviewupdateadapter.h"
@@ -17,37 +13,11 @@
 #include <QOpenGLContext>
 #include <QtOpenGL>
 
-class GotDataCallback: public Signal::Recorder::IGotDataCallback
-{
-public:
-    void setInvalidator(Signal::Processing::IInvalidator::ptr i) { i_ = i; }
-    void setRecordModel(Squircle* model) { model_ = model; }
-
-    virtual void markNewlyRecordedData(Signal::Interval what)
-    {
-        if (i_)
-            i_->deprecateCache(what);
-
-        if (QQuickWindow* window = model_ ? model_->window () : 0)
-            window->update();
-    }
-
-private:
-    Signal::Processing::IInvalidator::ptr i_;
-    Squircle* model_ = 0;
-};
-
-
 Squircle::Squircle() :
-      m_t(0),
       m_renderer(0),
       touchnavigation(new TouchNavigation(this, &render_model))
 {
-    QDesktopServices::setUrlHandler ( "file", this, "urlRequest");
-
     connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
-
-    chain = Signal::Processing::Chain::createDefaultChain ();
 }
 
 
@@ -84,6 +54,8 @@ void Squircle::
         return;
     }
 
+    EXCEPTION_ASSERT(chain_item_);
+
     // requires a window that can be updated
     Tools::Support::RenderViewUpdateAdapter* rvup;
     Tools::Support::RenderOperationDesc::RenderTarget::ptr rvu(
@@ -91,7 +63,7 @@ void Squircle::
     rvup->moveToThread (this->thread ());
     connect(rvup, SIGNAL(redraw()), this->window (), SLOT(update())); // render_view, SLOT(redraw()));
 
-    render_model.init(chain, rvu);
+    render_model.init(chain_item_->chain (), rvu, chain_item_->target_marker ());
     render_model.render_settings.dpifactor = window()->devicePixelRatio ();
 
     targetIsCreated();
@@ -110,38 +82,23 @@ void Squircle::
 }
 
 
-void Squircle::urlRequest(QUrl url)
-{
-    Log("squircle: url request %s") % url.toString ().toStdString ();
-
-#ifdef Q_OS_IOS
-    // cleanup old files
-    QFileInfo fi(url.toLocalFile ());
-    for (auto info : fi.dir ().entryInfoList())
-    {
-        if (info == fi || !info.isFile ())
-            continue;
-
-        Log("squircle: removing old file %s") % info.fileName ().toStdString ();
-        fi.dir ().remove (info.fileName ());
-    }
-#endif
-
-    this->url = url;
-
-    if (render_model.target_marker ())
-        openUrl (url);
-}
-
-
 void Squircle::handleWindowChanged(QQuickWindow *win)
 {
     if (win) {
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
+        connect(this, SIGNAL(refresh()), win, SLOT(update()));
 
         win->setClearBeforeRendering(false);
     }
+}
+
+
+void Squircle::
+        setChain(Chain* c)
+{
+    Log("squircle.cpp: setchain %p") % (void*)c;
+    chain_item_ = c;
 }
 
 
@@ -158,19 +115,21 @@ void Squircle::sync()
         m_renderer = new SquircleRenderer(&render_model);
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()), Qt::DirectConnection);
-
-        connect(this, SIGNAL(droppedUrl(QUrl)),
-                this, SLOT(urlRequest(QUrl)));
-        connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
-                touchnavigation, SLOT(mouseMove(qreal,qreal,bool)));
-        connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
-                touchnavigation, SLOT(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)));
-        connect(touchnavigation, SIGNAL(refresh()), window(), SLOT(update()));
+        connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(timeposChanged()));
     }
 
-
-    m_renderer->setViewportSize(window()->size() * window()->devicePixelRatio());
 //    m_renderer->setT(m_t);
+
+    QPointF topleft = this->mapToScene (QPointF());
+    QPointF bottomright = this->mapToScene (boundingRect().bottomRight ());
+
+    if (0) Log("squircle: sync x1=%g, y1=%g, x2=%g, y2=%g, w=%g, h=%g")
+            % topleft.x () % topleft.y ()
+            % bottomright.x () % bottomright.y ()
+            % width () % height();
+
+    m_renderer->setViewport(QRectF(topleft, bottomright),
+                            window ()->height (), window()->devicePixelRatio());
 }
 
 
@@ -185,68 +144,18 @@ void Squircle::cleanup()
 }
 
 
-void Squircle::purgeTarget()
+void Squircle::componentComplete()
 {
-    render_model.chain ()->removeOperationsAt(render_model.target_marker ());
-}
+    QQuickItem::componentComplete();
 
+    Log("squircle: componentComplete");
 
-void Squircle::openRecording()
-{
-    purgeTarget();
-
-    rec.reset(new QtMicrophone);
-    GotDataCallback* cb = new GotDataCallback();
-    Signal::Recorder::IGotDataCallback::ptr callback(cb);
-    Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec, callback));
-    render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
-    Signal::Processing::IInvalidator::ptr i = chain->addOperationAt(desc, render_model.target_marker ());
-    cb->setInvalidator (i);
-    cb->setRecordModel (this);
-
-    rec->startRecording();
-}
-
-
-Signal::OperationDesc::ptr parseFile(QUrl url)
-{
-    Signal::OperationDesc::ptr d;
-    try {
-        d.reset(new FlacFile(url));
-        if (d->extent().sample_rate.is_initialized ())
-            return d;
-    } catch(...) {}
-
-    try {
-        d.reset(new QtAudiofile(url));
-        if (d->extent().sample_rate.is_initialized ())
-            return d;
-    } catch(...) {}
-
-    return Signal::OperationDesc::ptr();
-}
-
-
-void Squircle::openUrl(QUrl url)
-{
-    // first see if this was a valid file
-    Signal::OperationDesc::ptr desc = parseFile(url);
-    if (!desc)
-        return;
-
-    purgeTarget();
-
-    while (!rec.unique ())
-    {
-        // Waiting for recorder to finish
-        QThread::msleep (10);
-    }
-    rec.reset ();
-
-    render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
-    chain->addOperationAt(desc, render_model.target_marker ());
-
-    RenderViewAxes(render_model).cameraOnFront ();
+    connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
+            touchnavigation, SLOT(mouseMove(qreal,qreal,bool)));
+    connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
+            touchnavigation, SLOT(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)));
+    connect(touchnavigation, SIGNAL(refresh()), this, SIGNAL(refresh()));
+    connect(touchnavigation, SIGNAL(refresh()), this, SIGNAL(timeposChanged()));
 }
 
 
@@ -259,11 +168,6 @@ void Squircle::targetIsCreated ()
         return;
     }
 
-    if (!url.isEmpty ())
-        openUrl(url);
-    else
-        openRecording();
-
     RenderViewAxes(render_model).logFreqScale ();
     RenderViewAxes(render_model).logYScale ();
     RenderViewAxes(render_model).cameraOnFront ();
@@ -272,12 +176,21 @@ void Squircle::targetIsCreated ()
 }
 
 
-void Squircle::setT(qreal t)
+qreal Squircle::timepos() const
 {
-    if (t == m_t)
+    return render_model.camera->q[0];
+}
+
+
+void Squircle::setTimepos (qreal t)
+{
+    Log("squircle.cpp: t=%g") % t;
+
+    auto c = render_model.camera.write ();
+    if (t == c->q[0])
         return;
-    m_t = t;
-    emit tChanged();
+    c->q[0] = t;
+//    emit timeposChanged();
     if (window())
         window()->update();
 }

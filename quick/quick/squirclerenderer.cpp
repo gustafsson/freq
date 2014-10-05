@@ -21,10 +21,11 @@ SquircleRenderer::~SquircleRenderer()
 
 
 void SquircleRenderer::
-        setViewportSize(const QSize &size)
+        setViewport(const QRectF &rect, double window_height, double ratio)
 {
-    m_viewportSize = size;
-    render_view.resizeGL (QRect(QPoint(0,0),m_viewportSize), m_viewportSize.height ());
+    m_viewport = QRectF(rect.topLeft ()*ratio, rect.bottomRight ()*ratio).toRect ();
+    m_window_height = window_height*ratio;
+    render_view.resizeGL (m_viewport, m_window_height);
     render_view.initializeGL ();
 }
 
@@ -68,7 +69,7 @@ void SquircleRenderer::paint2()
     m_program->setAttributeArray(0, GL_FLOAT, values, 2);
     m_program->setUniformValue("t", (float) m_t);
 
-    glViewport(0, 0, m_viewportSize.width(), m_viewportSize.height());
+    glViewport(m_viewport.x(), m_window_height - m_viewport.y() - m_viewport.height(), m_viewport.width(), m_viewport.height());
 
     glDisable(GL_DEPTH_TEST);
 
@@ -96,18 +97,25 @@ void SquircleRenderer::paint()
     }
 
     render_view.setStates ();
-    glUseProgram (0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     const auto c = *render_view.model->camera.read ();
-    double s = 4*m_viewportSize.width ()
-            /(float)m_viewportSize.height ()
-            /c.xscale
-            *sin(DEG_TO_RAD(c.r[0]));
     render_view.model->recompute_extent ();
-    double L = render_view.model->tfr_mapping ()->length() - s;
-    static double lq0 = c.q[0];
-    if (c.q[0] > L || c.q[0] == lq0)
-        render_view.model->camera->q[0] = lq0 = L;
+    double sL = render_view.model->tfr_mapping ()->length();
+
+    if (c.q[0] > sL-0.01) {
+        render_view.model->camera->q[0] = sL;
+        emit repositionSignal();
+    }
+
+    // neat if no other viewport tries to modify this camera position by the same
+    // algorithm
+    //    double s = 4*m_viewport.width ()
+    //            /(float)m_viewport.height ()
+    //            /c.xscale
+    //            *sin(DEG_TO_RAD(c.r[0]));
+    //    double L = sL - s;
+    //    static double lq0 = c.q[0];
+    //    if (c.q[0] > L-0.1*s || c.q[0] == lq0)
+    //        render_view.model->camera->q[0] = lq0 = L;
 
     render_view.paintGL ();
 }

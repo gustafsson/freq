@@ -42,7 +42,7 @@ namespace Tools
         RenderModel();
         ~RenderModel();
 
-        void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt);
+        void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt, Signal::Processing::TargetMarker::ptr target_marker = Signal::Processing::TargetMarker::ptr());
         void resetCameraSettings();
         void resetBlockCaches();
 

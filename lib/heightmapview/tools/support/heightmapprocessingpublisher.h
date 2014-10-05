@@ -24,6 +24,13 @@ class HeightmapProcessingPublisher: public QObject
 {
     Q_OBJECT
 public:
+    /**
+     * @brief HeightmapProcessingPublisher
+     * @param target_marker, which target to update needs for
+     * @param tfrmapping, to find used heightmap blocks
+     * @param camera, to prioritize from focus point
+     * @param parent, qt parent
+     */
     HeightmapProcessingPublisher(
             Signal::Processing::TargetMarker::ptr target_marker,
             Heightmap::TfrMapping::const_ptr tfrmapping,

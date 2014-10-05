@@ -1,6 +1,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "squircle.h"
+#include "chain.h"
+#include "openurl.h"
 #include "prettifysegfault.h"
 #include "log.h"
 
@@ -19,6 +21,8 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     qmlRegisterType<Squircle>("OpenGLUnderQML", 1, 0, "Squircle");
+    qmlRegisterType<Chain>("OpenGLUnderQML", 1, 0, "Chain");
+    qmlRegisterType<OpenUrl>("OpenGLUnderQML", 1, 0, "OpenUrl");
 
     QQuickView view;
     view.setResizeMode(QQuickView::SizeRootObjectToView);
