@@ -37,7 +37,12 @@ Chain::ptr Chain::
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
 
     // Add worker threads to occupy all kernels
-    for (int i=0; i<QThread::idealThreadCount (); i++) {
+    int reserved_threads = 0;
+    reserved_threads++; // OpenGL rendering
+    reserved_threads++; // null worker
+    reserved_threads++; // OpenGL texture update
+    reserved_threads++; // OpenGL uploading (mapped buffer object)
+    for (int i=0; i<std::max(1,QThread::idealThreadCount ()-reserved_threads); i++) {
         workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     }
 
