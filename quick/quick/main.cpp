@@ -1,4 +1,5 @@
 #include <boost/noncopyable.hpp>
+#include <boost/exception/all.hpp>
 
 #include "squircle.h"
 #include "chain.h"
@@ -10,6 +11,32 @@
 #include <QGuiApplication>
 #include <QQuickView>
 
+/**
+ * @brief The MyGuiApplication class should log uncaught exceptions during
+ * event processing.
+ */
+class MyGuiApplication: public QGuiApplication
+{
+public:
+    MyGuiApplication(int argc, char**argv)
+        :
+          QGuiApplication(argc,argv)
+    {}
+
+    bool notify(QObject *o, QEvent *e) override
+    {
+        try {
+            return QGuiApplication::notify (o,e);
+        } catch (...) {
+            Log("main.cpp: notify(%s,%d)\n%s")
+                    % o->objectName ().toStdString () % int(e->type ())
+                    % boost::current_exception_diagnostic_information ();
+            quit ();
+            return false;
+        }
+    }
+};
+
 int main(int argc, char *argv[])
 {
     Log("Started app");
@@ -18,7 +45,7 @@ int main(int argc, char *argv[])
 
     PrettifySegfault::setup ();
 
-    QGuiApplication app(argc, argv);
+    MyGuiApplication app(argc, argv);
 
     qmlRegisterType<Squircle>("OpenGLUnderQML", 1, 0, "Squircle");
     qmlRegisterType<Chain>("OpenGLUnderQML", 1, 0, "Chain");
