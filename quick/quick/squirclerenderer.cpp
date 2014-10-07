@@ -23,6 +23,7 @@ SquircleRenderer::~SquircleRenderer()
 void SquircleRenderer::
         setViewport(const QRectF &rect, double window_height, double ratio)
 {
+    render_view.model->render_settings.dpifactor = ratio;
     m_viewport = QRectF(rect.topLeft ()*ratio, rect.bottomRight ()*ratio).toRect ();
     m_window_height = window_height*ratio;
     render_view.resizeGL (m_viewport, m_window_height);
@@ -101,7 +102,7 @@ void SquircleRenderer::paint()
     render_view.model->recompute_extent ();
     double sL = render_view.model->tfr_mapping ()->length();
 
-    if (c.q[0] > sL-0.01) {
+    if (c.q[0] > sL-0.1) {
         render_view.model->camera->q[0] = sL;
         emit repositionSignal();
     }

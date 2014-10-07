@@ -127,8 +127,6 @@ namespace Tools
         void setupCamera();
         matrixd setRotationForAxes();
 
-        // TODO move rect_y_ to RenderModel
-        int rect_y_;
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
         Support::DrawCollections drawCollections;

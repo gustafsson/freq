@@ -1,9 +1,11 @@
 #include "renderviewtransform.h"
 
 #include "heightmap/tfrmappings/stftblockfilter.h"
+#include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/update/updateproducer.h"
 #include "tfr/stftdesc.h"
+#include "tfr/waveformrepresentation.h"
 #include "tfr/transformoperation.h"
 #include "signal/operationwrapper.h"
 #include "timer.h"
@@ -32,6 +34,19 @@ void RenderViewTransform::
 
     // Get a copy of the transform to use
     setBlockFilter(mcdp, stft.copy());
+}
+
+
+void RenderViewTransform::
+        receiveSetTransform_Waveform()
+{
+    Tfr::WaveformRepresentationDesc& dw = render_model.transform_descs()->getParam<Tfr::WaveformRepresentationDesc>();
+
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
+
+    // Get a copy of the transform to use
+    setBlockFilter(mcdp, dw.copy());
 }
 
 

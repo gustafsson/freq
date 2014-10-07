@@ -9,6 +9,20 @@ ApplicationWindow {
     width: 320
     height: 480
 
+    Chain {
+        id: chain
+        // common chain, the app only opens one source file at a time
+        //
+        // property: Chain::ptr chain
+        // property: Target::ptr target, this is where modifications common for all targets is applied, such
+        // as cropping
+
+        // There might be multiple render targets (Squircle) but all showing the same point in time, open the
+        // same file twice to shoe different points in time simultaneously
+
+        // The filters selected in one squircle can be applied on another squircle
+    }
+
     ColumnLayout {
         objectName: "row layout"
         anchors.fill: parent
@@ -20,15 +34,17 @@ ApplicationWindow {
             timepos: heightmap2.timepos
             Layout.fillWidth: true
             Layout.fillHeight: true
+            height: 5
         }
         Heightmap {
             id: heightmap2
             objectName: "heightmap2"
             chain: chain
             timepos: heightmap1.timepos
-//            displayedtransform: "waveform"
+            displayedTransform: "waveform"
             Layout.fillWidth: true
             Layout.fillHeight: true
+            height: 1
         }
     }
     /*RowLayout {
@@ -87,19 +103,5 @@ ApplicationWindow {
                 running: true
             }
         }
-    }
-
-    Chain {
-        id: chain
-        // common chain, the app only opens one source file at a time
-        //
-        // property: Chain::ptr chain
-        // property: Target::ptr target, this is where modifications common for all targets is applied, such
-        // as cropping
-
-        // There might be multiple render targets (Squircle) but all showing the same point in time, open the
-        // same file twice to shoe different points in time simultaneously
-
-        // The filters selected in one squircle can be applied on another squircle
     }
 }

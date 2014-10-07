@@ -9,12 +9,18 @@
 #include "signal/processing/targetneeds.h"
 #include "tools/rendermodel.h"
 
+/**
+ * @brief The RenderViewTransform class
+ *
+ * use Tools::WaveformController?
+ */
 class RenderViewTransform
 {
 public:
     RenderViewTransform(Tools::RenderModel& render_model);
 
     void receiveSetTransform_Stft();
+    void receiveSetTransform_Waveform();
 
 private:
     Tools::RenderModel& render_model;

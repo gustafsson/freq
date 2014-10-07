@@ -4,6 +4,7 @@
 #include "squircle.h"
 #include "chain.h"
 #include "openurl.h"
+#include "touchnavigation.h"
 #include "prettifysegfault.h"
 #include "log.h"
 
@@ -50,15 +51,20 @@ int main(int argc, char *argv[])
     app.setOrganizationName("Frekk Consulting");\
     app.setOrganizationDomain("frekk.consulting");\
     app.setApplicationName(QFileInfo(app.applicationFilePath()).baseName());\
+    app.setApplicationDisplayName ("Frekk");
+    app.setApplicationName ("Frekk");
 
     qmlRegisterType<Squircle>("OpenGLUnderQML", 1, 0, "Squircle");
     qmlRegisterType<Chain>("OpenGLUnderQML", 1, 0, "Chain");
     qmlRegisterType<OpenUrl>("OpenGLUnderQML", 1, 0, "OpenUrl");
+    qmlRegisterType<TouchNavigation>("OpenGLUnderQML", 1, 0, "TouchNavigation");
 
     int r = 1;
     QWindow* window;
+    QQmlEngine* engine;
+
     QQuickView view;
-    QQmlApplicationEngine engine;
+    QQmlApplicationEngine appengine;
     QUrl qml {"qrc:/main.qml"};
 
     bool use_qquickview = false;
@@ -69,15 +75,16 @@ int main(int argc, char *argv[])
 
         view.setResizeMode(QQuickView::SizeRootObjectToView);
         view.setSource(qml);
-        view.connect(view.engine(), SIGNAL(quit()), &app, SLOT(quit()));
         window = &view;
+        engine = view.engine ();
     }
     else
     {
-        engine.load (qml);
+        appengine.load (qml);
 
-        QObject* root = engine.rootObjects().at(0);
+        QObject* root = appengine.rootObjects().count () > 0 ? appengine.rootObjects().at(0) : 0;
         window = dynamic_cast<QWindow*>(root);
+        engine = &appengine;
 
         if (!window)
             Log("main: root element is not ApplicationWindow, use QQuickView instead");
@@ -85,6 +92,9 @@ int main(int argc, char *argv[])
 
     if (window)
     {
+        Log("main: window type %d") % window->type ();
+
+        // http://qt-project.org/wiki/How_to_use_OpenGL_Core_Profile_with_Qt
         bool enableLegacyOpenGL = true;
         if (!enableLegacyOpenGL) {
             QSurfaceFormat f = window->format();
@@ -93,6 +103,7 @@ int main(int argc, char *argv[])
             window->setFormat(f);
         }
 
+        QObject::connect(engine, SIGNAL(quit()), &app, SLOT(quit()));
         window->show();
         r = app.exec();
     }

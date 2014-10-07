@@ -9,8 +9,7 @@ public:
     RenderViewAxes(Tools::RenderModel& render_model);
 
     void linearFreqScale();
-    void logFreqScale();
-    void linearYScale();
+    void waveformScale();
     void logYScale();
     void cameraOnFront();
     void logZScale();

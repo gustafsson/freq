@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = Frek
+TARGET = Frekk
 QT += qml quick widgets multimedia
 
 CONFIG += c++11
@@ -22,7 +22,6 @@ QMAKE_INFO_PLIST = $$_PRO_FILE_PWD_/ios/Info.plist
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 
-#INCLUDEPATH += /Users/johan/dev/sonicawe/lib/sonicawe-ios
 # how to find a feature in a shadow build?
 #PWD = $$_PRO_FILE_PWD_
 SAWEROOT = $$_PRO_FILE_PWD_/../..

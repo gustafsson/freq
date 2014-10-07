@@ -75,7 +75,6 @@ RenderView::
 //            viewstate(new Tools::Commands::ViewState(model->project()->commandInvoker())),
             model(model),
             glwidget(0),
-            rect_y_(0),
             drawCollections(model)
 {
     // Validate rotation and set orthoview accordingly
@@ -221,7 +220,8 @@ void RenderView::
     auto gl_projection = model->gl_projection.write ();
 
     tvector<4,int> vp(rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height());
-    if (vp == gl_projection->viewport && rect.y() == rect_y_)
+    bool sameshape = vp == gl_projection->viewport && model->render_settings.device_pixel_height == device_height;
+    if (sameshape)
         return;
 
     TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device_height;
@@ -229,7 +229,7 @@ void RenderView::
 
     gl_projection->viewport = vp;
     glViewport( vp[0], vp[1], vp[2], vp[3] );
-    rect_y_ = rect.y();
+    model->render_settings.device_pixel_height = device_height;
 
     gl_projection->modelview = matrixd::identity ();
     glhPerspective (gl_projection->projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
@@ -241,7 +241,9 @@ QRect RenderView::
 {
     const int* viewport = model->gl_projection->viewport.v;
 
-    return QRect(viewport[0],rect_y_,viewport[2],viewport[3]);
+    int device_height = model->render_settings.device_pixel_height;
+    int y_offset = device_height - viewport[1] - viewport[3];
+    return QRect(viewport[0],y_offset,viewport[2],viewport[3]);
 }
 
 

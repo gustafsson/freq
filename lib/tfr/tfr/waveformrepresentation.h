@@ -5,6 +5,10 @@
 
 namespace Tfr {
 
+/**
+ * @brief The WaveformRepresentationDesc class is used with
+ * Heightmap::TfrMappings::WaveformBlockFilterDesc
+ */
 class WaveformRepresentationDesc: public DummyTransformDesc
 {
 public:

@@ -1,7 +1,10 @@
 #include "touchnavigation.h"
+#include "squircle.h"
 #include "tools/support/renderviewinfo.h"
 #include "log.h"
+#include "demangle.h"
 #include "tfr/stftdesc.h"
+#include "tfr/waveformrepresentation.h"
 
 //#define LOG_NAVIGATION
 #define LOG_NAVIGATION if(0)
@@ -11,28 +14,87 @@
 
 using Tools::Support::RenderViewInfo;
 
-TouchNavigation::TouchNavigation(QObject* parent, Tools::RenderModel* render_model)
+TouchNavigation::TouchNavigation(QQuickItem* parent)
     :
-      QObject(parent),
-      render_model(render_model)
+      QQuickItem(parent)
 {
+    if(parent)
+        itemChange(QQuickItem::ItemParentHasChanged,ItemChangeData(parent));
+}
+
+
+void TouchNavigation::componentComplete()
+{
+    QQuickItem::componentComplete();
+
+    Log("touchnavigation: componentComplete");
+
+    // qml signals
+    connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
+            this, SLOT(onMouseMove(qreal,qreal,bool)));
+    connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
+            this, SLOT(onTouch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)));
+}
+
+
+void TouchNavigation::itemChange(ItemChange change, const ItemChangeData & value)
+{
+    switch(change)
+    {
+        case QQuickItem::ItemParentHasChanged:
+        {
+            render_model = 0;
+            disconnect(this, SIGNAL(refresh()));
+
+            if (value.item) {
+                if (!dynamic_cast<Squircle*>(value.item)) {
+                    Log("touchnavigation: parent type should be Squircle, was %s %s")
+                            % vartype(*value.item) % value.item->objectName ().toStdString ();
+                } else {
+                    Squircle* squircle = dynamic_cast<Squircle*>(value.item);
+                    render_model = squircle->renderModel ();
+                    connect(this, SIGNAL(refresh()), squircle, SIGNAL(refresh()));
+                    connect(this, SIGNAL(refresh()), squircle, SIGNAL(timeposChanged()));
+                }
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
 }
 
 
 void TouchNavigation::
-        mouseMove(qreal x1, qreal y1, bool p1)
+        onMouseMove(qreal x1, qreal y1, bool p1)
 {
-    touch(x1,y1,p1,0,0,0,0,0,0);
+    onTouch(x1,y1,p1,0,0,0,0,0,0);
 }
 
 
 void TouchNavigation::
-        touch(qreal x1, qreal y1, bool press1, qreal x2, qreal y2, bool press2, qreal x3, qreal y3, bool press3)
+        onTouch(qreal x1, qreal y1, bool press1, qreal x2, qreal y2, bool press2, qreal x3, qreal y3, bool press3)
 {
+    LOG_NAVIGATION Log("touchnavigation: %d %d %d") % press1 % press2 % press3;
+
+    if (!render_model)
+    {
+        Log("touchnavigation: doesn't have a render_model");
+        return;
+    }
+
     if (press3)
         press1 = press2 = press3 = false;
 
     QPointF point1(x1,y1), point2(x2,y2);
+//    point1 = mapToScene (point1);
+//    point2 = mapToScene (point2);
+//    x1 = point1.x ();
+//    y1 = point1.y ();
+//    x2 = point2.x ();
+//    y2 = point2.y ();
+
     Heightmap::Position hpos1, hpos2;
 
     auto c = *render_model->camera.read();
@@ -129,10 +191,10 @@ void TouchNavigation::
             c.zscale *= clamp(0.95, 1.05, 1 - (dy1-dy2)/100);
 
             // Also pan
-            double dtime1 = hpos1.time - hstart1.time;
-            double dscale1 = hpos1.scale - hstart1.scale;
-            q[0] -= dtime1/2;
-            q[2] -= dscale1/2;
+            //double dtime1 = hpos1.time - hstart1.time;
+            //double dscale1 = hpos1.scale - hstart1.scale;
+            //q[0] -= dtime1/2;
+            //q[2] -= dscale1/2;
 
             LOG_NAVIGATION Log("touchnavigation: (%g, %g)  (%g, %g): xscale %g. zscale %g. q(%g, %g")
                     % x1 % y1 % x2 % y2 % c.xscale % c.zscale % q[0] % q[2] ;
@@ -144,6 +206,7 @@ void TouchNavigation::
     }
     else if (prevPress1 || prevPress2)
     {
+        LOG_NAVIGATION Log("touchnavigation: start over");
         // was rescaling or panning but isn't rescaling nor panning anymore, start over
         press1 = press2 = false;
         mode = Undefined;
@@ -174,7 +237,7 @@ void TouchNavigation::
     c.zscale = std::max(c.zscale, 0.5f*z); // don't zoom out too much
     c.zscale = std::min(c.zscale, z*100); // don't zoom in too much
 
-    c.xscale = std::max(c.xscale, 0.5f*float(z/L)); // don't zoom out too much
+    c.xscale = std::max(c.xscale, 0.5f*float(z/std::max(1.,L))); // don't zoom out too much
     c.xscale = std::min(c.xscale, z*100); // don't zoom in too much
     c.orthoview = r[0] == 90;
 
@@ -207,9 +270,13 @@ void TouchNavigation::
 //            if (*newt != *t)
 //                render_model->set_transform_desc (newt);
 //        }
+    else if (dynamic_cast<Tfr::WaveformRepresentationDesc*>(newt.get ()))
+    {
+        // do nothing
+    }
     else
     {
-        Log("touchnavigation: not stft");
+        Log("touchnavigation: unknown transform");
     }
 
     if (*newt != *t)

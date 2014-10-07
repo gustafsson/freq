@@ -45,6 +45,7 @@ public:
     bool draw_flat;
     bool drawcrosseswhen0;
     double dpifactor;
+    int device_pixel_height;
     bool axes_border;
     float redundancy;
 };

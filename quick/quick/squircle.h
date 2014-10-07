@@ -13,7 +13,7 @@ class Squircle : public QQuickItem
     Q_OBJECT
     Q_PROPERTY(qreal timepos READ timepos WRITE setTimepos NOTIFY timeposChanged)
     Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
-    //Q_PROPERTY(QString Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
+    Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
 
 public:
     Squircle();
@@ -22,19 +22,22 @@ public:
     void setTimepos(qreal t);
 
     Chain* chain() const { return chain_item_; }
-    void setChain(Chain* c);// { chain_item_=c; }
+    void setChain(Chain* c) { chain_item_=c; }
+
+    QString displayedTransform() const { return displayed_transform_; }
+    void setDisplayedTransform(QString c);
+
+    Tools::RenderModel* renderModel() { return &render_model; }
 
 signals:
     void timeposChanged();
     void chainChanged();
-    void touch(qreal x1, qreal y1, bool p1, qreal x2, qreal y2, bool p2, qreal x3, qreal y3, bool p3);
-    void mouseMove(qreal x1, qreal y1, bool p1);
+    void displayedTransformChanged();
     void refresh();
 
 public slots:
     void sync();
     void cleanup();
-    void targetIsCreated();
     void setupUpdateConsumer(QOpenGLContext* context);
     void setupRenderTarget();
 
@@ -46,10 +49,10 @@ protected:
 
 private:
     Tools::RenderModel render_model;
+    QString displayed_transform_ = "stft";
 
     Chain* chain_item_ = 0;
     SquircleRenderer *m_renderer = 0;
-    class TouchNavigation* touchnavigation = 0;
 };
 
 #endif // SQUIRCLE_H

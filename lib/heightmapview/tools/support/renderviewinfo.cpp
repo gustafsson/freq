@@ -23,7 +23,8 @@ QRectF RenderViewInfo::
         rect()
 {
     // can't translate from bottom-relative offset (viewport) to top-relative offset (widget), assume offset is 0
-    int y_offset = 0;
+    int device_height = model->render_settings.device_pixel_height;
+    int y_offset = device_height - gl_projection.viewport[1] - gl_projection.viewport[3];
     return QRectF(gl_projection.viewport[0], y_offset, gl_projection.viewport[2], gl_projection.viewport[3]);
 }
 
@@ -228,7 +229,7 @@ Heightmap::Position RenderViewInfo::
 
     QPointF pos;
     pos.setX( widget_pos.x() + rect().left() );
-    pos.setY( rect().height() - 1 - widget_pos.y() + rect().top() );
+    pos.setY( rect().height() - 1 - widget_pos.y() - rect().top() );
 
     const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
     const GLint* vp = gl_projection.viewport.v;
@@ -309,7 +310,7 @@ Heightmap::Position RenderViewInfo::
     pos *= model->render_settings.dpifactor;
 
     pos.setX( pos.x() + rect().left() );
-    pos.setY( rect().height() - 1 - pos.y() + rect().top() );
+    pos.setY( rect().height() - 1 - pos.y() - rect().top() );
 
     const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
     const GLint* vp = gl_projection.viewport.v;

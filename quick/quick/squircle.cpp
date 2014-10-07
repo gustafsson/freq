@@ -14,8 +14,7 @@
 #include <QtOpenGL>
 
 Squircle::Squircle() :
-      m_renderer(0),
-      touchnavigation(new TouchNavigation(this, &render_model))
+      m_renderer(0)
 {
     connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
 }
@@ -66,8 +65,6 @@ void Squircle::
     render_model.init(chain_item_->chain (), rvu, chain_item_->target_marker ());
     render_model.render_settings.dpifactor = window()->devicePixelRatio ();
 
-    targetIsCreated();
-
     // 'this' is parent
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
                 render_model.target_marker (),
@@ -78,7 +75,12 @@ void Squircle::
     connect(window(), SIGNAL(afterRendering()), hpp, SLOT(update()));
 //    connect(render_view, SIGNAL(painting()), hpp, SLOT(update()));
 
-    RenderViewTransform(render_model).receiveSetTransform_Stft ();
+    RenderViewAxes(render_model).logYScale ();
+    RenderViewAxes(render_model).cameraOnFront ();
+    RenderViewAxes(render_model).logZScale ();
+    render_model.render_settings.shadow_shader = true;
+
+    setDisplayedTransform(displayedTransform());
 }
 
 
@@ -89,16 +91,34 @@ void Squircle::handleWindowChanged(QQuickWindow *win)
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
 
-        win->setClearBeforeRendering(false);
+        // wait until componentComplete to change properties
+
+        QMetaObject::invokeMethod (win, "update", Qt::QueuedConnection);
     }
 }
 
 
 void Squircle::
-        setChain(Chain* c)
+        setDisplayedTransform(QString c)
 {
-    Log("squircle.cpp: setchain %p") % (void*)c;
-    chain_item_ = c;
+    if (m_renderer) {
+        if (c == "stft")
+            RenderViewTransform(render_model).receiveSetTransform_Stft ();
+        else if (c == "waveform")
+        {
+            RenderViewTransform(render_model).receiveSetTransform_Waveform ();
+            RenderViewAxes(render_model).waveformScale ();
+            render_model.resetCameraSettings ();
+        }
+        else
+            Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
+    }
+
+    if (displayed_transform_ == c)
+        return;
+
+    displayed_transform_ = c;
+    emit displayedTransformChanged();
 }
 
 
@@ -110,12 +130,13 @@ void Squircle::sync()
 
     if (!m_renderer) {
         setupUpdateConsumer(QOpenGLContext::currentContext());
-        setupRenderTarget();
 
         m_renderer = new SquircleRenderer(&render_model);
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(timeposChanged()));
+
+        setupRenderTarget();
     }
 
 //    m_renderer->setT(m_t);
@@ -155,29 +176,6 @@ void Squircle::componentComplete()
     window ()->setColor (c);
     window ()->setClearBeforeRendering (false);
 
-    connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
-            touchnavigation, SLOT(mouseMove(qreal,qreal,bool)));
-    connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
-            touchnavigation, SLOT(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)));
-    connect(touchnavigation, SIGNAL(refresh()), this, SIGNAL(refresh()));
-    connect(touchnavigation, SIGNAL(refresh()), this, SIGNAL(timeposChanged()));
-}
-
-
-void Squircle::targetIsCreated ()
-{
-    if (QThread::currentThread () != this->thread ())
-    {
-        // Dispatch
-        QMetaObject::invokeMethod (this, "targetIsCreated");
-        return;
-    }
-
-    RenderViewAxes(render_model).logFreqScale ();
-    RenderViewAxes(render_model).logYScale ();
-    RenderViewAxes(render_model).cameraOnFront ();
-    RenderViewAxes(render_model).logZScale ();
-    render_model.render_settings.shadow_shader = true;
 }
 
 
@@ -189,13 +187,11 @@ qreal Squircle::timepos() const
 
 void Squircle::setTimepos (qreal t)
 {
-    Log("squircle.cpp: t=%g") % t;
-
     auto c = render_model.camera.write ();
     if (t == c->q[0])
         return;
     c->q[0] = t;
-//    emit timeposChanged();
+
     if (window())
         window()->update();
 }
