@@ -5,6 +5,11 @@ import QtQuick.Layouts 1.1
 
 ApplicationWindow {
     objectName: "root item "
+    statusBar: StatusBar {
+            RowLayout {
+                Label { text: heightmap1.displayedTransformDetails }
+            }
+        }
 
     width: 320
     height: 480

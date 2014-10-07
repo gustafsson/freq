@@ -114,11 +114,23 @@ void Squircle::
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
     }
 
+    emit displayedTransformDetailsChanged();
+
     if (displayed_transform_ == c)
         return;
 
     displayed_transform_ = c;
     emit displayedTransformChanged();
+}
+
+
+QString Squircle::
+        displayedTransformDetails() const
+{
+    Log("gimmie details");
+    if (auto t = render_model.transform_desc ())
+        return QString::fromStdString (t->toString ());
+    return "[no transform]";
 }
 
 

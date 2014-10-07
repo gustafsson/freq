@@ -283,6 +283,8 @@ void TouchNavigation::
     {
         LOG_TRANSFORM Log("touchnavigation: %s") % newt->toString ();
         render_model->set_transform_desc (newt);
+        Squircle* squircle = dynamic_cast<Squircle*>(parent ());
+        emit squircle->displayedTransformDetailsChanged();
     }
 
     if (!prevPress1 && press1)

@@ -220,7 +220,10 @@ Support::TransformDescs::ptr RenderModel::
 Tfr::TransformDesc::ptr RenderModel::
         transform_desc() const
 {
-    auto o = render_operation_desc_.read ();
+    auto r = render_operation_desc_;
+    if (!r) return Tfr::TransformDesc::ptr();
+
+    auto o = r.read ();
     const Support::RenderOperationDesc* rod = dynamic_cast<const Support::RenderOperationDesc*>(&*o);
 
     return rod

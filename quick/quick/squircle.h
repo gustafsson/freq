@@ -14,6 +14,7 @@ class Squircle : public QQuickItem
     Q_PROPERTY(qreal timepos READ timepos WRITE setTimepos NOTIFY timeposChanged)
     Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
     Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
+    Q_PROPERTY(QString displayedTransformDetails READ displayedTransformDetails NOTIFY displayedTransformDetailsChanged)
 
 public:
     Squircle();
@@ -26,6 +27,7 @@ public:
 
     QString displayedTransform() const { return displayed_transform_; }
     void setDisplayedTransform(QString c);
+    QString displayedTransformDetails() const;
 
     Tools::RenderModel* renderModel() { return &render_model; }
 
@@ -33,6 +35,7 @@ signals:
     void timeposChanged();
     void chainChanged();
     void displayedTransformChanged();
+    void displayedTransformDetailsChanged();
     void refresh();
 
 public slots:
