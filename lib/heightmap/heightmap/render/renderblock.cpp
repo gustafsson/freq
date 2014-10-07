@@ -676,6 +676,7 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, RenderSettin
 
     tvector<4,float> rgb = mix(spectrum[i1], spectrum[i3], s) + mix(spectrum[i2], spectrum[i4], t);
     rgb = rgb * 0.5;
+    rgb[3] = 1.0;
     //TaskInfo("%g %g %g: %g %g %g %g", f, t, s, rgb[0], rgb[1], rgb[2], rgb[3]);
     return rgb;
 }

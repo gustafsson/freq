@@ -12,7 +12,7 @@ RenderSettings::RenderSettings()
         draw_contour_plot(false),
         color_mode( ColorMode_Rainbow ),
         fixed_color( 1,0,0,1 ),
-        clear_color( 1,1,1,0 ),
+        clear_color( 1,1,1,1 ),
         y_scale( 1 ),
         y_offset( 0 ),
         log_scale( 0 ),

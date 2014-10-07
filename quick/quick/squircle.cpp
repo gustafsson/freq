@@ -149,6 +149,11 @@ void Squircle::componentComplete()
     QQuickItem::componentComplete();
 
     Log("squircle: componentComplete");
+    auto v = render_model.render_settings.clear_color;
+    auto f = [](float v) { return (unsigned char)(v<0.f?0:v>1.f?255:v*255); };
+    QColor c(f(v[0]), f(v[1]), f(v[2]), f(v[3]));
+    window ()->setColor (c);
+    window ()->setClearBeforeRendering (false);
 
     connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),
             touchnavigation, SLOT(mouseMove(qreal,qreal,bool)));

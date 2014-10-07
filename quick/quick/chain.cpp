@@ -85,6 +85,8 @@ void Chain::clearOpenGlBackground()
     // created on window()->beforeSynchronizing and destroyed on window()->sceneGraphInvalidated (as in
     // Squircle/SquircleRenderer)
     glUseProgram (0);
+    QColor c = this->window ()->color ();
+    glClearColor (c.redF (), c.greenF (), c.blueF (), c.alphaF ());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

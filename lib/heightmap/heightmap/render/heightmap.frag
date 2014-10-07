@@ -52,6 +52,6 @@ void main()
     mediump float isarithm2 = fract( vertex_height * 5.0) < 0.93 ? 1.0 : 0.8;
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
 
-    curveColor.w = 1.0; //-saturate(fresnel);
+//    curveColor.w = 1.0; //-saturate(fresnel);
     gl_FragColor = curveColor;
 }
