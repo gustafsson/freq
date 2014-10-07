@@ -140,7 +140,8 @@ void GotData::
     dw->samples.invalidate_samples( Signal::Interval(I.last, Signal::Interval::IntervalType_MAX));
     dw.unlock ();
 
-    if (invalidator) invalidator.write ()->markNewlyRecordedData( I );
+    Signal::Recorder::IGotDataCallback::ptr inv = invalidator;
+    if (inv) inv.write ()->markNewlyRecordedData( I );
 }
 
 
@@ -181,8 +182,9 @@ QtMicrophone::
     // destructor.
 
     // Waiting for recorder to finish
-    audio_->stop();
+    audio_->suspend();
     audio_->reset();
+    audio_->stop();
 }
 
 
