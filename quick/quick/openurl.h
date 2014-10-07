@@ -19,6 +19,7 @@ signals:
     void chainChanged();
 
 private slots:
+    // bound to qml signal openUrl(QUrl)
     void openUrl(QUrl url);
 
 protected:

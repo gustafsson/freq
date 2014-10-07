@@ -80,27 +80,36 @@ ApplicationWindow {
     }
 
     Text {
+        visible: true
+        id: text
         color: "black"
         wrapMode: Text.WordWrap
-        text: "Scroll with one finger, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
+        text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
         anchors.right: parent.right
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 20
 
+        SequentialAnimation on opacity {
+            running: true
+            NumberAnimation { to: 1; duration: 15000; easing.type: Easing.InQuad }
+            NumberAnimation { to: 0; duration: 5000; easing.type: Easing.OutQuad }
+        }
+
         Rectangle {
-            color: Qt.rgba(1, 1, 1, 0.7)
+            color: Qt.rgba(1, 1, 1, 1)
             radius: 10
             border.width: 1
-            border.color: "white"
+            border.color: "black"
             anchors.fill: parent
             anchors.margins: -10
+            z: -1
 
             SequentialAnimation on radius {
-                NumberAnimation { to: 20; duration: 2500; easing.type: Easing.InQuad }
-                NumberAnimation { to: 10; duration: 2500; easing.type: Easing.OutQuad }
+                running: false // super annoying
+                NumberAnimation { to: 20; duration: 1000; easing.type: Easing.InQuad }
+                NumberAnimation { to: 10; duration: 1000; easing.type: Easing.OutQuad }
                 loops: Animation.Infinite
-                running: true
             }
         }
     }
