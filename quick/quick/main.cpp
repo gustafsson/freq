@@ -7,9 +7,10 @@
 #include "prettifysegfault.h"
 #include "log.h"
 
-
 #include <QGuiApplication>
 #include <QQuickView>
+#include <QQmlEngine>
+#include <QQmlApplicationEngine>
 
 /**
  * @brief The MyGuiApplication class should log uncaught exceptions during
@@ -46,18 +47,56 @@ int main(int argc, char *argv[])
     PrettifySegfault::setup ();
 
     MyGuiApplication app(argc, argv);
+    app.setOrganizationName("Frekk Consulting");\
+    app.setOrganizationDomain("frekk.consulting");\
+    app.setApplicationName(QFileInfo(app.applicationFilePath()).baseName());\
 
     qmlRegisterType<Squircle>("OpenGLUnderQML", 1, 0, "Squircle");
     qmlRegisterType<Chain>("OpenGLUnderQML", 1, 0, "Chain");
     qmlRegisterType<OpenUrl>("OpenGLUnderQML", 1, 0, "OpenUrl");
 
+    int r = 1;
+    QWindow* window;
     QQuickView view;
-    view.setResizeMode(QQuickView::SizeRootObjectToView);
-//    view.setSource(QUrl("qrc:///scenegraph/openglunderqml/main.qml"));
-    view.setSource(QUrl("qrc:/main.qml"));
-    view.show();
+    QQmlApplicationEngine engine;
+    QUrl qml {"qrc:/main.qml"};
 
-    int r = app.exec();
+    bool use_qquickview = false;
+    if (use_qquickview)
+    {
+        // QQuickView doesn't create an OS X application window with an icon
+        // for maximizing to fullscreen
+
+        view.setResizeMode(QQuickView::SizeRootObjectToView);
+        view.setSource(qml);
+        view.connect(view.engine(), SIGNAL(quit()), &app, SLOT(quit()));
+        window = &view;
+    }
+    else
+    {
+        engine.load (qml);
+
+        QObject* root = engine.rootObjects().at(0);
+        window = dynamic_cast<QWindow*>(root);
+
+        if (!window)
+            Log("main: root element is not ApplicationWindow, use QQuickView instead");
+    }
+
+    if (window)
+    {
+        bool enableLegacyOpenGL = true;
+        if (!enableLegacyOpenGL) {
+            QSurfaceFormat f = window->format();
+            f.setProfile(QSurfaceFormat::CoreProfile);
+            f.setVersion(4, 4);
+            window->setFormat(f);
+        }
+
+        window->show();
+        r = app.exec();
+    }
+
     Log("Closing app");
     return r;
 }
