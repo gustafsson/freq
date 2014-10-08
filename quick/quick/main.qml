@@ -48,7 +48,8 @@ ApplicationWindow {
             displayedTransform: "waveform"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            height: heightmap2.isIOS ? 0 : 1
+            visible: !heightmap2.isIOS
+            height: 1
         }
     }
     /*RowLayout {
@@ -95,6 +96,36 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            id: opacity_text
+            visible: true
+            color: "black"
+            wrapMode: Text.WordWrap
+            text: heightmap1.displayedTransformDetails
+
+            onTextChanged: {opacity_animation.restart();}
+
+            SequentialAnimation on opacity {
+                id: opacity_animation
+                NumberAnimation { to: 1; duration: 100; easing.type: Easing.InQuad }
+                NumberAnimation { to: 1; duration: 5000; easing.type: Easing.InQuad }
+                NumberAnimation { to: 0; duration: 1000; easing.type: Easing.OutQuad }
+            }
+
+            Rectangle {
+                color: Qt.rgba(1, 1, 1, 1)
+                radius: 10
+                border.width: 1
+                border.color: "black"
+                anchors.fill: parent
+                anchors.margins: -10
+                z: -1
+            }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
             visible: true
             id: text
             color: "black"
@@ -103,12 +134,12 @@ ApplicationWindow {
 
             SequentialAnimation on opacity {
                 running: true
-                NumberAnimation { to: 1; duration: 1500; easing.type: Easing.InQuad }
-                NumberAnimation { to: 0; duration: 500; easing.type: Easing.OutQuad }
+                NumberAnimation { to: 1; duration: 15000; easing.type: Easing.InQuad }
+                NumberAnimation { to: 0; duration: 5000; easing.type: Easing.OutQuad }
             }
             SequentialAnimation on visible {
                 running: true
-                NumberAnimation { to: 1; duration: 2000 }
+                NumberAnimation { to: 1; duration: 20000 }
                 NumberAnimation { to: 0; duration: 0 }
             }
 
@@ -127,36 +158,6 @@ ApplicationWindow {
                     NumberAnimation { to: 10; duration: 1000; easing.type: Easing.OutQuad }
                     loops: Animation.Infinite
                 }
-            }
-        }
-
-        Text {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            id: opacity_text
-            visible: true
-            color: "black"
-            wrapMode: Text.WordWrap
-            text: heightmap1.displayedTransformDetails
-
-            onTextChanged: {opacity_animation.start();}
-
-            SequentialAnimation on opacity {
-                id: opacity_animation
-                NumberAnimation { to: 1; duration: 100; easing.type: Easing.InQuad }
-                NumberAnimation { to: 1; duration: 5000; easing.type: Easing.InQuad }
-                NumberAnimation { to: 0; duration: 1000; easing.type: Easing.OutQuad }
-            }
-
-            Rectangle {
-                color: Qt.rgba(1, 1, 1, 1)
-                radius: 10
-                border.width: 1
-                border.color: "black"
-                anchors.fill: parent
-                anchors.margins: -10
-                z: -1
             }
         }
     }

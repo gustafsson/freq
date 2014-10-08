@@ -12,20 +12,7 @@ OpenUrl::OpenUrl(QQuickItem *parent) :
 {
     LOG_CALLS Log("OpenUrl::OpenUrl");
 
-#ifdef Q_OS_IOS
-    // cleanup old files
-    QFileInfo fi(url.toLocalFile ());
-    for (auto info : fi.dir ().entryInfoList())
-    {
-        if (info == fi || !info.isFile ())
-            continue;
-
-        Log("openurl: removing old file %s") % info.fileName ().toStdString ();
-        fi.dir ().remove (info.fileName ());
-    }
-#endif
-
-    QDesktopServices::setUrlHandler ( "file", this, "urlRequest");
+    QDesktopServices::setUrlHandler ( "file", this, "openUrl");
 }
 
 
@@ -69,6 +56,19 @@ Signal::OperationDesc::ptr parseFile(QUrl url)
 void OpenUrl::
         openUrl(QUrl url)
 {
+#ifdef Q_OS_IOS
+    // cleanup old files
+    QFileInfo fi(url.toLocalFile ());
+    for (auto info : fi.dir ().entryInfoList())
+    {
+        if (info == fi || !info.isFile ())
+            continue;
+
+        Log("openurl: removing old file %s") % info.fileName ().toStdString ();
+        fi.dir ().remove (info.fileName ());
+    }
+#endif
+
     LOG_CALLS Log("OpenUrl::openUrl %s") % url.toString ().toStdString ();
 
     // first see if this was a valid file

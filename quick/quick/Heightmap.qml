@@ -2,6 +2,7 @@ import QtQuick 2.0
 import OpenGLUnderQML 1.0
 
 Squircle {
+    id: squircle
     TouchNavigation {
         anchors.fill: parent
 
@@ -32,9 +33,9 @@ Squircle {
 
         MultiPointTouchArea {
             anchors.fill: parent
-            minimumTouchPoints: 2 // MouseArea handles single touch
+            minimumTouchPoints: squircle.isIOS ? 1 : 2 // MouseArea handles single touch on desktops
             maximumTouchPoints: 2 // an extra just to check that it isn't used
-            mouseEnabled: false
+            mouseEnabled: squircle.isIOS
 
             touchPoints: [
                 TouchPoint { id: point1 },
@@ -43,7 +44,7 @@ Squircle {
             ]
 
             onGestureStarted: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": touch gestures " + gesture.touchPoints.length);
+//                console.log(("" + new Date()) + parent.parent.objectName + ": touch gestures " + gesture.touchPoints.length);
 //                if (gesture.touchPoints.length===2)
 //                gesture.grab();
             }
@@ -61,7 +62,7 @@ Squircle {
             }
 
             onTouchUpdated: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": touch updated " + touchPoints.length);
+//                console.log(("" + new Date()) + parent.parent.objectName + ": touch updated " + touchPoints.length);
 
                 if (point3.pressed)
                 {

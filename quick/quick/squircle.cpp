@@ -104,12 +104,14 @@ void Squircle::
     if (m_renderer) {
         if (c == "stft")
             RenderViewTransform(render_model).receiveSetTransform_Stft ();
+#ifndef GL_ES_VERSION_2_0
         else if (c == "waveform")
         {
             RenderViewTransform(render_model).receiveSetTransform_Waveform ();
             RenderViewAxes(render_model).waveformScale ();
             render_model.resetCameraSettings ();
         }
+#endif
         else
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
     }
@@ -134,13 +136,25 @@ QString Squircle::
 }
 
 
+bool Squircle::
+        isIOS() const
+{
+#ifdef Q_OS_IOS
+    return true;
+#else
+    return false;
+#endif
+}
+
+
 void Squircle::sync()
 {
-    // Note: The QQuickWindow::beforeSynchronizing() signal is emitted on the rendering
-    // thread while the GUI thread is blocked, so it is safe to simply copy the value
-    // without any additional protection.
+    if (!isVisible () && m_renderer) {
+        delete m_renderer;
+        m_renderer = 0;
+    }
 
-    if (!m_renderer) {
+    if (isVisible () && !m_renderer) {
         setupUpdateConsumer(QOpenGLContext::currentContext());
 
         m_renderer = new SquircleRenderer(&render_model);
@@ -151,6 +165,12 @@ void Squircle::sync()
         setupRenderTarget();
     }
 
+    if (!m_renderer)
+        return;
+
+    // Note: The QQuickWindow::beforeSynchronizing() signal is emitted on the rendering
+    // thread while the GUI thread is blocked, so it is safe to simply copy the value
+    // without any additional protection.
 //    m_renderer->setT(m_t);
 
     QPointF topleft = this->mapToScene (QPointF());

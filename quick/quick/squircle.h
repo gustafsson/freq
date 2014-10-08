@@ -15,6 +15,7 @@ class Squircle : public QQuickItem
     Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
     Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
     Q_PROPERTY(QString displayedTransformDetails READ displayedTransformDetails NOTIFY displayedTransformDetailsChanged)
+    Q_PROPERTY(bool isIOS READ isIOS CONSTANT)
 
 public:
     Squircle();
@@ -28,6 +29,8 @@ public:
     QString displayedTransform() const { return displayed_transform_; }
     void setDisplayedTransform(QString c);
     QString displayedTransformDetails() const;
+
+    bool isIOS() const;
 
     Tools::RenderModel* renderModel() { return &render_model; }
 
