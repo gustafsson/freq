@@ -129,7 +129,6 @@ void Squircle::
 QString Squircle::
         displayedTransformDetails() const
 {
-    Log("gimmie details");
     if (auto t = render_model.transform_desc ())
         return QString::fromStdString (t->toString ());
     return "[no transform]";

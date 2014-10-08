@@ -11,6 +11,7 @@
 #include "demangle.h"
 #include "timer.h"
 #include "tasktimer.h"
+#include "log.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -149,6 +150,7 @@ void Chain::
 
     BOOST_FOREACH(Step::ptr s, steps_to_remove) {
         GraphInvalidator::deprecateCache (*dag, s, Signal::Interval::Interval_ALL);
+        Log("chain: removing %s") % Step::operation_desc (s)->toString().toStdString();
         dag->removeStep (s);
     }
 
