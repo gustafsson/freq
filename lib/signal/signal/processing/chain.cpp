@@ -96,9 +96,36 @@ bool Chain::
 
 
 TargetMarker::ptr Chain::
-        addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+        addTarget(Signal::OperationDesc::ptr desc)
 {
-    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at);
+    Step::ptr step(new Step(desc));
+    dag_->appendStep (step);
+
+    TargetNeeds::ptr target_needs = targets_->addTarget(step);
+
+    TargetMarker::ptr marker(new TargetMarker {target_needs, dag_});
+
+    return marker;
+}
+
+
+TargetMarker::ptr Chain::
+        addTargetBefore(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+{
+    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at, true);
+
+    TargetNeeds::ptr target_needs = targets_->addTarget(step);
+
+    TargetMarker::ptr marker(new TargetMarker {target_needs, dag_});
+
+    return marker;
+}
+
+
+TargetMarker::ptr Chain::
+        addTargetAfter(Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+{
+    Step::ptr::weak_ptr step = createBranchStep(*dag_.write (), desc, at, false);
 
     TargetNeeds::ptr target_needs = targets_->addTarget(step);
 
@@ -284,17 +311,16 @@ Chain::
 
 
 Step::ptr::weak_ptr Chain::
-        createBranchStep(Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at)
+        createBranchStep(Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at, bool addbefore)
 {
-    GraphVertex vertex = NullVertex ();
-    if (at) {
-        Step::ptr target_step = at->step().lock();
-        EXCEPTION_ASSERTX (target_step, "target step has been removed");
+    Step::ptr target_step = at->step().lock();
+    EXCEPTION_ASSERTX (target_step, "target step has been removed");
 
-        vertex = dag.getVertex (target_step);
-        if (!vertex)
-            return Step::ptr::weak_ptr();
+    GraphVertex vertex = dag.getVertex (target_step);
+    if (!vertex)
+        return Step::ptr::weak_ptr();
 
+    if (addbefore) {
         BOOST_FOREACH(const GraphEdge& e, in_edges(vertex, dag.g ())) {
             // Pick one of the sources on random and append to that one
             vertex = source(e, dag.g ());
@@ -385,8 +411,7 @@ void Chain::
         Signal::OperationDesc::ptr target_desc(new OperationDescChainMock);
         Signal::OperationDesc::ptr source_desc(new Signal::BufferSource(Test::RandomBuffer::smallBuffer ()));
 
-        TargetMarker::ptr null;
-        TargetMarker::ptr target = chain->addTarget(target_desc, null);
+        TargetMarker::ptr target = chain->addTarget(target_desc);
 
         // Should be able to add and remove an operation multiple times
         chain->addOperationAt(source_desc, target);

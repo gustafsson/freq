@@ -75,7 +75,10 @@ void RenderModel::
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
     render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::ptr(), rt));
-    target_marker_ = chain->addTarget(render_operation_desc_,target_marker);
+    if (target_marker)
+        target_marker_ = chain->addTargetAfter(render_operation_desc_,target_marker);
+    else
+        target_marker_ = chain->addTarget(render_operation_desc_);
     rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;

@@ -49,7 +49,9 @@ public:
      * @param at
      * @return A marker to keep track of the target. The Target is removed from the Dag when TargetMarker is deleted.
      */
-    TargetMarker::ptr addTarget(Signal::OperationDesc::ptr desc, TargetMarker::ptr at=TargetMarker::ptr());
+    TargetMarker::ptr addTarget(Signal::OperationDesc::ptr desc);
+    TargetMarker::ptr addTargetBefore(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    TargetMarker::ptr addTargetAfter(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
 
     /**
      * @brief addOperation
@@ -81,7 +83,7 @@ private:
 
     Chain(Dag::ptr, Targets::ptr targets, shared_state<Workers> workers, Bedroom::ptr bedroom, INotifier::ptr notifier);
 
-    Step::ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
+    Step::ptr::weak_ptr createBranchStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at, bool addbefore);
     Step::ptr::weak_ptr insertStep (Dag& dag, Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
 
 public:
