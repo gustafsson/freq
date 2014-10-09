@@ -40,6 +40,44 @@ ApplicationWindow {
             Layout.fillHeight: true
             height: 5
         }
+
+        Rectangle {
+            id: divider
+            Layout.fillWidth: true
+            height: 2
+            opacity: 0.0
+            color: "black"
+
+            Drag.active: dragArea.drag.active
+
+            onYChanged: {
+                heightmap1.height = y+height/2
+                heightmap2.y = y+height/2
+                heightmap2.height = parent.height-y-height/2
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.topMargin: -30
+                anchors.bottomMargin: -30
+                opacity: 0.0
+
+                MouseArea {
+                    id: dragArea
+                    anchors.fill: parent
+
+                    drag.target: divider
+                    drag.axis: Drag.YAxis
+                    drag.minimumY: 10
+                    drag.maximumY: divider.parent.height-10
+                    hoverEnabled: true
+
+                    onEntered: {cursorShape = Qt.SizeVerCursor;divider.opacity=0.5;}
+                    onExited: {cursorShape = Qt.ArrowCursor;divider.opacity=0.0;}
+                }
+            }
+        }
+
         Heightmap {
             id: heightmap2
             objectName: "heightmap2"
