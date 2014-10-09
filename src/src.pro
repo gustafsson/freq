@@ -46,7 +46,6 @@ PWD = $$_PRO_FILE_PWD_
 
 SOURCES += \
     $$PWD/adapters/*.cpp \
-    $$PWD/filters/*.cpp \
     $$PWD/sawe/*.cpp \
     $$PWD/test/*.cpp \
     $$PWD/tools/*.cpp \
@@ -62,7 +61,6 @@ win32:SOURCES += sonicawe.rc \
 
 HEADERS += \
     $$PWD/adapters/*.h \
-    $$PWD/filters/*.h \
     $$PWD/sawe/*.h \
     $$PWD/test/*.h \
     $$PWD/tools/*.h \
