@@ -45,7 +45,6 @@ public:
     GraphVertex appendStep(Step::ptr step, GraphVertex gv=NullVertex ());
     GraphVertex insertStep(Step::ptr step, GraphVertex gv=NullVertex ());
     void removeStep(Step::ptr step);
-    void removeOperation(OperationDesc::ptr op);
     std::vector<Step::ptr> sourceSteps(Step::ptr step) const;
     std::vector<Step::ptr> targetSteps(Step::ptr step) const;
 

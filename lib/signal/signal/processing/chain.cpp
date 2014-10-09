@@ -188,7 +188,20 @@ void Chain::
 void Chain::
         removeOperation(Signal::OperationDesc::ptr operation)
 {
-    dag_->removeOperation (operation);
+    auto dag = dag_.write ();
+
+    const Graph& g = dag->g();
+    std::set<Step::ptr> S;
+    BOOST_FOREACH(GraphVertex u, vertices(g)) {
+        if (Step::operation_desc(g[u]) == operation)
+            S.insert (g[u]);
+    }
+
+    for(Step::ptr step:S)
+    {
+        GraphInvalidator::deprecateCache(*dag, step, Signal::Interval::Interval_ALL);
+        dag->removeStep(step);
+    }
 }
 
 

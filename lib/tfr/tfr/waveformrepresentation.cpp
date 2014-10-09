@@ -92,6 +92,7 @@ Signal::pMonoBuffer WaveformRepresentation::
         inverse( pChunk chunk )
 {
     EXCEPTION_ASSERTX(false, "waveformrepresentation: apparently missing ChunkFilter::NoInverseTag");
+    return Signal::pMonoBuffer();
 }
 
 } // namespace Tfr
