@@ -373,11 +373,11 @@ int StftDesc::
 std::string StftDesc::
         toString() const
 {
-    return (boost::format("Stft %d %s (%d%% %s)")
+    return (boost::format("Stft %d %s (%d%% overlap%s)")
             % chunk_size()
             % windowTypeName()
             % (overlap()*100)
-            % (compute_redundant()?"C2C":"R2C")).str();
+            % (compute_redundant()?" C2C":"")).str(); // R2C is default, don't print
 }
 
 

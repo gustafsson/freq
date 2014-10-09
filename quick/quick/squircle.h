@@ -12,6 +12,7 @@ class Squircle : public QQuickItem
 {
     Q_OBJECT
     Q_PROPERTY(qreal timepos READ timepos WRITE setTimepos NOTIFY timeposChanged)
+    Q_PROPERTY(qreal xscale READ xscale WRITE setXscale NOTIFY timeposChanged)
     Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
     Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
     Q_PROPERTY(QString displayedTransformDetails READ displayedTransformDetails NOTIFY displayedTransformDetailsChanged)
@@ -21,7 +22,10 @@ public:
     Squircle();
 
     qreal timepos() const;
-    void setTimepos(qreal t);
+    void setTimepos(qreal v);
+
+    qreal xscale() const;
+    void setXscale(qreal v);
 
     Chain* chain() const { return chain_item_; }
     void setChain(Chain* c) { chain_item_=c; }
@@ -40,6 +44,10 @@ signals:
     void displayedTransformChanged();
     void displayedTransformDetailsChanged();
     void refresh();
+
+    // use Qt::DirectConnection to ensure that objects created are placed on the same thread
+    void rendererChanged(SquircleRenderer* renderer);
+
 
 public slots:
     void sync();

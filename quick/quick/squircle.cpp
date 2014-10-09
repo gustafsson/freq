@@ -110,6 +110,7 @@ void Squircle::
             RenderViewTransform(render_model).receiveSetTransform_Waveform ();
             RenderViewAxes(render_model).waveformScale ();
             render_model.resetCameraSettings ();
+            render_model.camera->xscale = 10;
         }
 #endif
         else
@@ -160,6 +161,8 @@ void Squircle::sync()
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(timeposChanged()));
+
+        emit rendererChanged(m_renderer);
 
         setupRenderTarget();
     }
@@ -212,16 +215,34 @@ void Squircle::componentComplete()
 
 qreal Squircle::timepos() const
 {
-    return render_model.camera->q[0];
+    return render_model.camera.read ()->q[0];
 }
 
 
-void Squircle::setTimepos (qreal t)
+void Squircle::setTimepos (qreal v)
 {
     auto c = render_model.camera.write ();
-    if (t == c->q[0])
+    if (v == c->q[0])
         return;
-    c->q[0] = t;
+    c->q[0] = v;
+
+    if (window())
+        window()->update();
+}
+
+
+qreal Squircle::xscale() const
+{
+    return render_model.camera.read ()->xscale;
+}
+
+
+void Squircle::setXscale(qreal v)
+{
+    auto c = render_model.camera.write ();
+    if (v == c->xscale)
+        return;
+    c->xscale = v;
 
     if (window())
         window()->update();

@@ -95,7 +95,7 @@ private:
     /**
     OpenGL render buffer to bind to the depth buffer in the frame buffer.
     */
-    unsigned int rboId_;
+    unsigned int depth_stencil_buffer_;
 
     /**
     Used by (un)bindFrameBuffer to restore the state after binding.

@@ -185,6 +185,13 @@ void Chain::
 }
 
 
+void Chain::
+        removeOperation(Signal::OperationDesc::ptr operation)
+{
+    dag_->removeOperation (operation);
+}
+
+
 class find_extent: public default_bfs_visitor {
 public:
     find_extent(Signal::OperationDesc::Extent* extent)

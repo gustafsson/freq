@@ -37,6 +37,7 @@ INCLUDEPATH += \
     $$SAWEROOT/lib/justmisc \
     $$SAWEROOT/lib/signal \
     $$SAWEROOT/lib/tfr \
+    $$SAWEROOT/lib/filters \
     $$SAWEROOT/lib/heightmap \
     $$SAWEROOT/lib/tfrheightmap \
     $$SAWEROOT/lib/heightmapview \
@@ -48,6 +49,7 @@ LIBS += \
     -L../../lib/gpumisc -lgpumisc \
     -L../../lib/signal -lsignal \
     -L../../lib/tfr -ltfr \
+    -L../../lib/filters -lfilters \
     -L../../lib/heightmap -lheightmap \
     -L../../lib/tfrheightmap -ltfrheightmap \
     -L../../lib/heightmapview -lheightmapview \

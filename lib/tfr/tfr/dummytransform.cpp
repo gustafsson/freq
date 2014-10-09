@@ -6,6 +6,7 @@
 #include "exceptionassert.h"
 #include "neat_math.h"
 #include "demangle.h"
+#include "log.h"
 
 namespace Tfr {
 

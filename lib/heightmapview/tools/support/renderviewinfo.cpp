@@ -229,7 +229,7 @@ Heightmap::Position RenderViewInfo::
 
     QPointF pos;
     pos.setX( widget_pos.x() + rect().left() );
-    pos.setY( rect().height() - 1 - widget_pos.y() - rect().top() );
+    pos.setY( model->render_settings.device_pixel_height - 1 - widget_pos.y() - rect().top() );
 
     const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
     const GLint* vp = gl_projection.viewport.v;
@@ -303,14 +303,15 @@ Heightmap::Position RenderViewInfo::
 }
 
 Heightmap::Position RenderViewInfo::
-        getPlanePos( QPointF pos, bool* success, bool useRenderViewContext )
+        getPlanePos( QPointF widget_pos, bool* success, bool useRenderViewContext )
 {
     const auto c = *model->camera.read ();
 
-    pos *= model->render_settings.dpifactor;
+    widget_pos *= model->render_settings.dpifactor;
 
-    pos.setX( pos.x() + rect().left() );
-    pos.setY( rect().height() - 1 - pos.y() - rect().top() );
+    QPointF pos;
+    pos.setX( widget_pos.x() + rect().left() );
+    pos.setY( model->render_settings.device_pixel_height - 1 - widget_pos.y() - rect().top() );
 
     const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
     const GLint* vp = gl_projection.viewport.v;

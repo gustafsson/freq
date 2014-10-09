@@ -19,6 +19,8 @@ public:
     void setT(qreal t) { m_t = t; }
     void setViewport(const QRectF &rect, double window_height, double ratio);
 
+    Tools::RenderView* renderView() { return &render_view; }
+
 signals:
     void redrawSignal();
     void repositionSignal();
@@ -32,7 +34,7 @@ private:
 
     QRect m_viewport;
     int m_window_height;
-    qreal m_t;
+    qreal m_t, prevL=0;
     QOpenGLShaderProgram *m_program;
 };
 

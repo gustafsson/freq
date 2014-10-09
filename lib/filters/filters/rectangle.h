@@ -28,6 +28,8 @@ private:
 class Rectangle: public Tfr::CwtChunkFilterDesc, public Filters::Selection
 {
 public:
+    // s1, s2 in samples
+    // f1, f1 in Hz
     Rectangle(float s1, float f1, float s2, float f2, bool save_inside=false);
 
     // ChunkFilterDesc

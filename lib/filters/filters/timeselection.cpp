@@ -1,7 +1,7 @@
 #include "timeselection.h"
 
 #include "signal/operation-basic.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 
 using namespace Signal;
 using namespace Tools::Support;

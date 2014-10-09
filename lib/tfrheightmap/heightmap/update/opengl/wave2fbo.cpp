@@ -81,7 +81,8 @@ void Wave2Fbo::
     // Draw waveform
     glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f(.5f, 0.f, 0.f, 0.001f);
+//    glColor4f(.5f, 0.f, 0.f, 0.001f);
+    glColor4f(1.0f, 0.f, 0.f, 1.0f);
     glDrawArrays(GL_LINE_STRIP, 0, N);
     glDisable (GL_BLEND);
 

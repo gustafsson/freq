@@ -139,6 +139,21 @@ void Dag::
 }
 
 
+void Dag::
+        removeOperation(OperationDesc::ptr op)
+{
+    EXCEPTION_ASSERT(op);
+
+    std::set<Step::ptr> S;
+    for (auto m : map)
+        if (Step::operation_desc(m.first) == op)
+            S.insert (m.first);
+
+    for (auto s : S)
+        removeStep(s);
+}
+
+
 std::vector<Step::ptr> Dag::
         sourceSteps(Step::ptr step) const
 {

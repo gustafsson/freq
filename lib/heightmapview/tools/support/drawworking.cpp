@@ -123,9 +123,16 @@ void DrawWorking::
     glLoadIdentity();
     glScalef(60, 60, 1);
 
-    glDepthFunc(GL_LESS);
+    glDisable (GL_DEPTH_TEST);
+    glDepthMask (GL_FALSE);
 
-    glEnable(GL_BLEND); // which glBlendFunc is assumed here?
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(1, 1, 1, 0.5);
+    drawRoundRect(0.55, 0.55, 0.55);
+    glColor4f(0.5, 0.5, 0.5, 0.4);
+    drawRoundRect(0.5, 0.5, 0.5);
 
     {
         glPushMatrixContext mc(GL_MODELVIEW);
@@ -143,12 +150,9 @@ void DrawWorking::
         }
     }
 
-    glColor4f(0.5, 0.5, 0.5, 0.4);
-    drawRoundRect(0.5, 0.5, 0.5);
-    glColor4f(1, 1, 1, 0.5);
-    drawRoundRect(0.55, 0.55, 0.55);
 
-    glDepthFunc(GL_LEQUAL);
+    glEnable (GL_DEPTH_TEST);
+    glDepthMask (GL_TRUE);
 }
 
     } // namespace Support

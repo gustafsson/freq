@@ -9,8 +9,8 @@
 //#define LOG_NAVIGATION
 #define LOG_NAVIGATION if(0)
 
-#define LOG_TRANSFORM
-//#define LOG_TRANSFORM if(0)
+//#define LOG_TRANSFORM
+#define LOG_TRANSFORM if(0)
 
 using Tools::Support::RenderViewInfo;
 
@@ -18,8 +18,36 @@ TouchNavigation::TouchNavigation(QQuickItem* parent)
     :
       QQuickItem(parent)
 {
-    if(parent)
-        itemChange(QQuickItem::ItemParentHasChanged,ItemChangeData(parent));
+    connect(&timer,SIGNAL(timeout()),this,SLOT(startSelection()));
+    timer.setSingleShot (true);
+}
+
+
+void TouchNavigation::
+        setSquircle(Squircle*s)
+{
+    squircle_=s;
+    emit squircleChanged ();
+
+    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(refresh()));
+    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(timeposChanged()));
+}
+
+
+void TouchNavigation::
+        setSelection(Selection*s)
+{
+    Log("touchnavigation: setSelection");
+
+    selection_=s;
+    emit selectionChanged ();
+}
+
+
+Tools::RenderModel* TouchNavigation::
+        render_model()
+{
+    return squircle_ ? squircle_->renderModel () : 0;
 }
 
 
@@ -37,35 +65,6 @@ void TouchNavigation::componentComplete()
 }
 
 
-void TouchNavigation::itemChange(ItemChange change, const ItemChangeData & value)
-{
-    switch(change)
-    {
-        case QQuickItem::ItemParentHasChanged:
-        {
-            render_model = 0;
-            disconnect(this, SIGNAL(refresh()));
-
-            if (value.item) {
-                if (!dynamic_cast<Squircle*>(value.item)) {
-                    Log("touchnavigation: parent type should be Squircle, was %s %s")
-                            % vartype(*value.item) % value.item->objectName ().toStdString ();
-                } else {
-                    Squircle* squircle = dynamic_cast<Squircle*>(value.item);
-                    render_model = squircle->renderModel ();
-                    connect(this, SIGNAL(refresh()), squircle, SIGNAL(refresh()));
-                    connect(this, SIGNAL(refresh()), squircle, SIGNAL(timeposChanged()));
-                }
-            }
-            break;
-        }
-
-        default:
-            break;
-    }
-}
-
-
 void TouchNavigation::
         onMouseMove(qreal x1, qreal y1, bool p1)
 {
@@ -76,9 +75,19 @@ void TouchNavigation::
 void TouchNavigation::
         onTouch(qreal x1, qreal y1, bool press1, qreal x2, qreal y2, bool press2, qreal x3, qreal y3, bool press3)
 {
-    LOG_NAVIGATION Log("touchnavigation: %d %d %d") % press1 % press2 % press3;
+    LOG_NAVIGATION {
+        if (!press2 && !press3)
+            Log("touchnavigation: %d (%g %g)")
+                % press1 % x1 % y1;
+        else if (!press3)
+            Log("touchnavigation: %d %d (%g %g) (%g %g)")
+                % press1 % press2 % x1 % y1 % x2 % y2;
+        else
+            Log("touchnavigation: %d %d %d (%g %g) (%g %g) (%g %g)")
+                % press1 % press2 % press3 % x1 % y1 % x2 % y2 % x3 % y3;
+    }
 
-    if (!render_model)
+    if (!render_model())
     {
         Log("touchnavigation: doesn't have a render_model");
         return;
@@ -97,27 +106,51 @@ void TouchNavigation::
 
     Heightmap::Position hpos1, hpos2;
 
-    auto c = *render_model->camera.read();
+    auto c = *render_model()->camera.read();
     vectord& q = c.q;
     vectord& r = c.r;
 
     if (press1 && !press2)
-        hpos1 = RenderViewInfo(render_model).getPlanePos (point1);
+        hpos1 = RenderViewInfo(render_model()).getPlanePos (point1);
     else if (press1 && press2)
-        hpos1 = RenderViewInfo(render_model).getPlanePos ((point1+point2)/2);
+        hpos1 = RenderViewInfo(render_model()).getPlanePos ((point1+point2)/2);
+
+    if (selection_) {
+        if (!prevPress1 && press1 && !press2 && !press3) {
+            // this might be a press and hold
+            timer.start (600);
+        } else if (is_hold && press1) {
+            // is hold-selecting
+            Heightmap::FreqAxis f = render_model()->tfr_mapping ().read ()->display_scale();
+            selection_->setT2 (hpos1.time);
+            selection_->setF2 (f.getFrequency(hpos1.scale));
+        } else {
+            if (timer.isActive ())
+                // moved or used more touch points, abort
+                timer.stop ();
+
+            if (is_hold)
+            {
+                is_hold = false;
+                emit isHoldChanged();
+            }
+        }
+    }
 
     if (press1 && !press2 && prevPress1 && !prevPress2)
     {
-        // pan is based on the idea that a touched position should still point
-        // at the same position when its moving, hence the delta here is not how much the point
-        // has moved since the last step but how wrong the current position is compared to the
-        // starting position
-        double dtime1 = hpos1.time - hstart1.time;
-        double dscale1 = hpos1.scale - hstart1.scale;
-        q[0] -= dtime1/2;
-        q[2] -= dscale1/2;
+        if (!is_hold) { // shouldn't navigate while hold-selecting
+            // pan is based on the idea that a touched position should still point
+            // at the same position when its moving, hence the delta here is not how much the point
+            // has moved since the last step but how wrong the current position is compared to the
+            // starting position
+            double dtime1 = hpos1.time - hstart1.time;
+            double dscale1 = hpos1.scale - hstart1.scale;
+            q[0] -= dtime1/2;
+            q[2] -= dscale1/2;
 
-        LOG_NAVIGATION Log("touchnavigation: (%g, %g)->(%g, %g): q[0] %g. q[2] %g") % x1 % y1 % hpos1.time % hpos1.scale % q[0] % q[2];
+            LOG_NAVIGATION Log("touchnavigation: (%g, %g)->(%g, %g): q[0] %g. q[2] %g") % x1 % y1 % hpos1.time % hpos1.scale % q[0] % q[2];
+        }
     }
     else if (press1 && press2 && !press3 && prevPress1 && prevPress2)
     {
@@ -220,7 +253,7 @@ void TouchNavigation::
     if (r[0] > 90) r[0] = 90;
 
     // read info about current view
-    auto tm = render_model->tfr_mapping ().read ();
+    auto tm = render_model()->tfr_mapping ().read ();
     float fs = tm->targetSampleRate();
     double L = tm->length();
     float ds = 0.1;
@@ -242,10 +275,10 @@ void TouchNavigation::
     c.orthoview = r[0] == 90;
 
     // update the camera atomically
-    *render_model->camera.write () = c;
+    *render_model()->camera.write () = c;
 
     // read info about current transform
-    Tfr::TransformDesc::ptr t = render_model->transform_desc();
+    Tfr::TransformDesc::ptr t = render_model()->transform_desc();
     float time_res = 1/t->displayedTimeResolution(fs,hz); // samples per 1 time at camera focus
     float s = t->freqAxis(fs).getFrequencyScalarNotClamped(hz);
     float s2 = t->freqAxis(fs).getFrequencyScalarNotClamped(hz2);
@@ -268,7 +301,7 @@ void TouchNavigation::
 //            float k = std::sqrt(ratio/current_ratio);
 //            cwt->scales_per_octave(s/k);
 //            if (*newt != *t)
-//                render_model->set_transform_desc (newt);
+//                render_model()->set_transform_desc (newt);
 //        }
     else if (dynamic_cast<Tfr::WaveformRepresentationDesc*>(newt.get ()))
     {
@@ -282,9 +315,8 @@ void TouchNavigation::
     if (*newt != *t)
     {
         LOG_TRANSFORM Log("touchnavigation: %s") % newt->toString ();
-        render_model->set_transform_desc (newt);
-        Squircle* squircle = dynamic_cast<Squircle*>(parent ());
-        emit squircle->displayedTransformDetailsChanged();
+        render_model()->set_transform_desc (newt);
+        emit squircle_->displayedTransformDetailsChanged();
     }
 
     if (!prevPress1 && press1)
@@ -297,4 +329,49 @@ void TouchNavigation::
     prev2 = point2;
 
     emit refresh ();
+}
+
+
+void TouchNavigation::
+        startSelection()
+{
+    if (selection_) {
+        Heightmap::FreqAxis f = render_model()->tfr_mapping ().read ()->display_scale();
+        // figure out the resolution where clicked
+        vectord p(hstart1.time, 0, hstart1.scale);
+        vectord::T timePerPixel;
+        vectord::T scalePerPixel;
+        glProjection gl_projection = *render_model ()->gl_projection.read ();
+        gl_projection.computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+
+        float dt1 = std::fabs(hstart1.time - selection_->t1 ());
+        float dt2 = std::fabs(hstart1.time - selection_->t2 ());
+        float ds1 = std::fabs(hstart1.scale - f.getFrequencyScalar (selection_->f1 ()));
+        float ds2 = std::fabs(hstart1.scale - f.getFrequencyScalar (selection_->f2 ()));
+
+        int wh = std::min(gl_projection.viewport[2], gl_projection.viewport[3]);
+        int threshold = wh/8;
+
+        if (selection_->valid () && std::min(dt1,dt2) < timePerPixel*threshold && std::min(ds1,ds2) < scalePerPixel*threshold)
+        {
+            // continue on previous selection
+            if (dt2>dt1)
+                selection_->setT1 (selection_->t2 ());
+            if (ds2>ds1)
+                selection_->setF1 (selection_->f2 ());
+        }
+        else
+        {
+            // start over, new degenerate selection
+            selection_->setT1 (hstart1.time);
+            selection_->setF1 (f.getFrequency (hstart1.scale));
+        }
+
+        selection_->setT2 (hstart1.time);
+        selection_->setF2 (f.getFrequency (hstart1.scale));
+
+        is_hold = true;
+        emit isHoldChanged();
+        emit refresh ();
+    }
 }

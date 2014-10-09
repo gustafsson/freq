@@ -5,6 +5,8 @@
 #include "chain.h"
 #include "openurl.h"
 #include "touchnavigation.h"
+#include "selection.h"
+
 #include "prettifysegfault.h"
 #include "log.h"
 
@@ -58,6 +60,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<Chain>("OpenGLUnderQML", 1, 0, "Chain");
     qmlRegisterType<OpenUrl>("OpenGLUnderQML", 1, 0, "OpenUrl");
     qmlRegisterType<TouchNavigation>("OpenGLUnderQML", 1, 0, "TouchNavigation");
+    qmlRegisterType<Selection>("OpenGLUnderQML", 1, 0, "Selection");
 
     int r = 1;
     QWindow* window;

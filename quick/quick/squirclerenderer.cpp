@@ -102,8 +102,9 @@ void SquircleRenderer::paint()
     render_view.model->recompute_extent ();
     double sL = render_view.model->tfr_mapping ()->length();
 
-    if (c.q[0] > sL-0.1) {
+    if (c.q[0] == prevL) {
         render_view.model->camera->q[0] = sL;
+        prevL = sL;
         emit repositionSignal();
     }
 

@@ -25,7 +25,7 @@ GlFrameBuffer::
         GlFrameBuffer(int width, int height)
             :
             fboId_(0),
-            rboId_(0),
+            depth_stencil_buffer_(0),
             own_texture_(new GlTexture),
             textureid_(own_texture_->getOpenGlTextureId ()),
             enable_depth_component_(true)
@@ -40,7 +40,7 @@ GlFrameBuffer::
     {
         TaskInfo("GlFrameBuffer exception\n%s", boost::current_exception_diagnostic_information ().c_str());
 
-        if (rboId_) glDeleteRenderbuffers(1, &rboId_);
+        if (depth_stencil_buffer_) glDeleteRenderbuffers(1, &depth_stencil_buffer_);
         if (fboId_) glDeleteFramebuffers(1, &fboId_);
 
         throw;
@@ -51,7 +51,7 @@ GlFrameBuffer::
         GlFrameBuffer(unsigned textureid, int width, int height)
     :
     fboId_(0),
-    rboId_(0),
+    depth_stencil_buffer_(0),
     own_texture_(0),
     textureid_(textureid),
     enable_depth_component_(false),
@@ -71,7 +71,7 @@ GlFrameBuffer::
     catch(...)
     {
         TaskInfo("GlFrameBuffer() caught exception");
-        if (rboId_) glDeleteRenderbuffers(1, &rboId_);
+        if (depth_stencil_buffer_) glDeleteRenderbuffers(1, &depth_stencil_buffer_);
         if (fboId_) glDeleteFramebuffers(1, &fboId_);
         unbindFrameBuffer ();
 
@@ -100,7 +100,7 @@ GlFrameBuffer::
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e);
 
     DEBUG_INFO TaskInfo("glDeleteRenderbuffersEXT");
-    glDeleteRenderbuffers(1, &rboId_);
+    glDeleteRenderbuffers(1, &depth_stencil_buffer_);
 
     DEBUG_INFO TaskInfo("glDeleteFramebuffersEXT");
     glDeleteFramebuffers(1, &fboId_);
@@ -153,7 +153,7 @@ void GlFrameBuffer::
             throw std::logic_error("Can't call GlFrameBuffer when no valid viewport is active");
     }
 
-    if (width == texture_width_ && height == texture_height_ && (enable_depth_component_?rboId_:true) && fboId_)
+    if (width == texture_width_ && height == texture_height_ && (enable_depth_component_?depth_stencil_buffer_:true) && fboId_)
         return;
 
     DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
@@ -170,11 +170,16 @@ void GlFrameBuffer::
     }
 
     if (enable_depth_component_) {
-        if (!rboId_)
-            GlException_SAFE_CALL( glGenRenderbuffers(1, &rboId_) );
+        if (!depth_stencil_buffer_)
+            GlException_SAFE_CALL( glGenRenderbuffers(1, &depth_stencil_buffer_) );
 
-        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, rboId_) );
+        GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, depth_stencil_buffer_) );
+#ifndef GL_ES_VERSION_2_0
+        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height) );
+#else
         GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height) );
+        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, width, height) );
+#endif
         GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, 0) );
     }
 
@@ -192,11 +197,30 @@ void GlFrameBuffer::
                                   0) );
 
         if (enable_depth_component_)
+        {
+#ifndef GL_ES_VERSION_2_0
+            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+                                         GL_FRAMEBUFFER,
+                                         GL_DEPTH_STENCIL_ATTACHMENT,
+                                         GL_RENDERBUFFER,
+                                         depth_stencil_buffer_));
+#else
             GlException_SAFE_CALL( glFramebufferRenderbuffer(
                                          GL_FRAMEBUFFER,
                                          GL_DEPTH_ATTACHMENT,
                                          GL_RENDERBUFFER,
-                                         rboId_));
+                                         depth_stencil_buffer_));
+            GlException_SAFE_CALL( glFramebufferRenderbuffer(
+                                         GL_FRAMEBUFFER,
+                                         GL_STENCIL_ATTACHMENT,
+                                         GL_RENDERBUFFER,
+                                         depth_stencil_buffer_));
+#endif
+//            glGenRenderbuffers(1, &depthStencilRenderbuffer);
+//            glBindRenderbuffer(GL_RENDERBUFFER, depthStencilRenderbuffer);
+//            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_stencil_buffer_);
+//            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth_stencil_buffer_);
+        }
 
 #ifdef _DEBUG
         int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -209,6 +233,7 @@ void GlFrameBuffer::
 
         EXCEPTION_ASSERT_EQUALS( GL_FRAMEBUFFER_COMPLETE, status );
 #endif
+        (void)fbo_raii; // RAII
     }
 
     DEBUG_INFO TaskInfo("fbo = %u", fboId_ );

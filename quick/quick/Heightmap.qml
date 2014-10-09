@@ -3,11 +3,17 @@ import OpenGLUnderQML 1.0
 
 Squircle {
     id: squircle
+    property Selection selection
+
     TouchNavigation {
         anchors.fill: parent
+        squircle: squircle
+        selection: squircle.selection
 
         signal touch(real x1, real y1, bool p1, real x2, real y2, bool p2, real x3, real y3, bool p3)
         signal mouseMove(real x1, real y1, bool p1)
+
+        onIsHoldChanged: mousearea.cursorShape = isHold ? Qt.IBeamCursor : Qt.ArrowCursor
 
         MouseArea {
             id: mousearea
@@ -18,17 +24,19 @@ Squircle {
             onPressed: {
                 console.log(("" + new Date()) + parent.parent.objectName + ": mouse press");
                 mousearea.cursorShape = Qt.ClosedHandCursor;
-                parent.mouseMove(mouseX, mouseY, pressed)
+                parent.mouseMove(mouseX, mouseY, pressed);
             }
-            onPositionChanged: parent.mouseMove(mouseX, mouseY, pressed)
+            onPositionChanged: {
+                parent.mouseMove(mouseX, mouseY, pressed);
+            }
             onReleased: {
                 mousearea.cursorShape = Qt.ArrowCursor;
-                parent.mouseMove(mouseX, mouseY, false)
+                parent.mouseMove(mouseX, mouseY, false);
             }
 
-            onPressAndHold: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": mouse long touch");
-            }
+//            onPressAndHold: {
+//                console.log(("" + new Date()) + parent.parent.objectName + ": mouse long touch");
+//            }
         }
 
         MultiPointTouchArea {
@@ -66,9 +74,9 @@ Squircle {
 
                 if (point3.pressed)
                 {
-                    parent.touch(point1.sceneX, point1.sceneY, point1.pressed,
-                                  point2.sceneX, point2.sceneY, false,
-                                  point3.sceneX, point3.sceneY, false)
+                    parent.touch(point1.x, point1.y, point1.pressed,
+                                  point2.x, point2.y, false,
+                                  point3.x, point3.y, false)
                     return;
                 }
                 if (mousearea.pressed)
@@ -79,9 +87,9 @@ Squircle {
                 else
                     mousearea.cursorShape = Qt.ArrowCursor;
 
-                parent.touch(point1.sceneX, point1.sceneY, point1.pressed,
-                              point2.sceneX, point2.sceneY, point2.pressed,
-                              point3.sceneX, point3.sceneY, point3.pressed)
+                parent.touch(point1.x, point1.y, point1.pressed,
+                              point2.x, point2.y, point2.pressed,
+                              point3.x, point3.y, point3.pressed)
             }
         }
     }

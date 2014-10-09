@@ -30,12 +30,15 @@ ApplicationWindow {
     ColumnLayout {
         objectName: "row layout"
         anchors.fill: parent
+        spacing: 0
 
         Heightmap {
             id: heightmap1
             objectName: "heightmap1"
             chain: chain
+            selection: selection
             timepos: heightmap2.timepos
+            xscale: heightmap2.xscale/5
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 5
@@ -83,6 +86,7 @@ ApplicationWindow {
             objectName: "heightmap2"
             chain: chain
             timepos: heightmap1.timepos
+            xscale: 5*heightmap1.xscale
             displayedTransform: "waveform"
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -123,46 +127,15 @@ ApplicationWindow {
     }
 
     ColumnLayout {
-        anchors.right: parent.right
         anchors.left: parent.left
-        anchors.bottom: parent.bottom
+        anchors.top : parent.top
+        anchors.right : parent.right
         anchors.margins: 20
 
         spacing: 30
 
         Text {
             Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            id: opacity_text
-            visible: true
-            color: "black"
-            wrapMode: Text.WordWrap
-            text: heightmap1.displayedTransformDetails
-
-            onTextChanged: {opacity_animation.restart();}
-
-            SequentialAnimation on opacity {
-                id: opacity_animation
-                NumberAnimation { to: 1; duration: 100; easing.type: Easing.InQuad }
-                NumberAnimation { to: 1; duration: 5000; easing.type: Easing.InQuad }
-                NumberAnimation { to: 0; duration: 1000; easing.type: Easing.OutQuad }
-            }
-
-            Rectangle {
-                color: Qt.rgba(1, 1, 1, 1)
-                radius: 10
-                border.width: 1
-                border.color: "black"
-                anchors.fill: parent
-                anchors.margins: -10
-                z: -1
-            }
-        }
-
-        Text {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
 
             visible: true
             id: text
@@ -198,5 +171,40 @@ ApplicationWindow {
                 }
             }
         }
+
+        Text {
+            Layout.fillWidth: true
+
+            id: opacity_text
+            visible: true
+            color: "black"
+            wrapMode: Text.WordWrap
+            text: "Transform: " + heightmap1.displayedTransformDetails
+
+            onTextChanged: {opacity_animation.restart();}
+
+            SequentialAnimation on opacity {
+                id: opacity_animation
+                NumberAnimation { to: 1; duration: 100; easing.type: Easing.InQuad }
+                NumberAnimation { to: 1; duration: 5000; easing.type: Easing.InQuad }
+                NumberAnimation { to: 0; duration: 1000; easing.type: Easing.OutQuad }
+            }
+
+            Rectangle {
+                color: Qt.rgba(1, 1, 1, 1)
+                radius: 10
+                border.width: 1
+                border.color: "black"
+                anchors.fill: parent
+                anchors.margins: -10
+                z: -1
+            }
+        }
+    }
+
+    Selection {
+        id: selection
+        filteredHeightmap: heightmap2
+        renderOnHeightmap: heightmap1
     }
 }

@@ -65,6 +65,7 @@ public:
      */
     IInvalidator::ptr addOperationAt(Signal::OperationDesc::ptr desc, TargetMarker::ptr at);
     void removeOperationsAt(TargetMarker::ptr at);
+    void removeOperation(Signal::OperationDesc::ptr operation);
     Signal::OperationDesc::Extent extent(TargetMarker::ptr at) const;
 
     shared_state<Workers> workers() const;

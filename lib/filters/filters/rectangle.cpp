@@ -6,6 +6,7 @@
 // gpumisc
 #include "computationkernel.h"
 #include "tasktimer.h"
+#include "log.h"
 
 // std
 #include <iomanip>
@@ -77,8 +78,9 @@ Signal::OperationDesc::Extent Rectangle::
         extent() const
 {
     Signal::OperationDesc::Extent x;
-    if (_save_inside)
-        x.interval = Signal::Interval(_s1, _s2);
+    // if this should crop while at it, need to modify "_s2 -= _s1; _s1 = 0;" as well
+    //if (_save_inside)
+    //    x.interval = Signal::Interval(_s1, _s2);
     return x;
 }
 
