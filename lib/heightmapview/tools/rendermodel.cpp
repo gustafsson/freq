@@ -248,6 +248,9 @@ void RenderModel::
         rod->transform_desc (t);
         o.unlock ();
 
+        // and change the tfr_mapping
+        tfr_map_->transform_desc( t->copy() );
+
         Signal::Processing::IInvalidator::ptr i =
                 render_operation_desc_.raw ()->getInvalidator ();
         if (i)
