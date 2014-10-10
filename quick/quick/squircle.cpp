@@ -156,7 +156,7 @@ void Squircle::sync()
         m_renderer = new SquircleRenderer(&render_model);
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()));
-        connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(timeposChanged()));
+        connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(cameraChanged()));
 
         emit rendererChanged(m_renderer);
 
@@ -228,6 +228,24 @@ void Squircle::setTimepos (qreal v)
 }
 
 
+qreal Squircle::scalepos() const
+{
+    return render_model.camera.read ()->q[2];
+}
+
+
+void Squircle::setScalepos(qreal v)
+{
+    auto c = render_model.camera.write ();
+    if (v == c->q[2])
+        return;
+    c->q[2] = v;
+
+    if (window())
+        window()->update();
+}
+
+
 qreal Squircle::xscale() const
 {
     return render_model.camera.read ()->xscale;
@@ -240,6 +258,24 @@ void Squircle::setXscale(qreal v)
     if (v == c->xscale)
         return;
     c->xscale = v;
+
+    if (window())
+        window()->update();
+}
+
+
+qreal Squircle::xangle() const
+{
+    return render_model.camera.read ()->r[0];
+}
+
+
+void Squircle::setXangle(qreal v)
+{
+    auto c = render_model.camera.write ();
+    if (v == c->r[0])
+        return;
+    c->r[0] = v;
 
     if (window())
         window()->update();

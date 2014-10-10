@@ -31,7 +31,7 @@ void TouchNavigation::
     squircle_=s;
     emit squircleChanged ();
 
-    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(timeposChanged()));
+    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(cameraChanged()));
     connect(this, SIGNAL(refresh()), squircle_, SIGNAL(refresh()));
 }
 

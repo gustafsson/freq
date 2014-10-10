@@ -232,7 +232,8 @@ void RenderView::
     model->render_settings.device_pixel_height = device_height;
 
     gl_projection->modelview = matrixd::identity ();
-    glhPerspective (gl_projection->projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
+//    glhPerspective (gl_projection->projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
+    glhPerspectiveFovX (gl_projection->projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);
 }
 
 

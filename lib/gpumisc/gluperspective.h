@@ -3,6 +3,8 @@
 
 void glhPerspective(double *matrix, double fovyInDegrees, double aspectRatio,
                       double znear, double zfar);
+void glhPerspectiveFovX(double *matrix, double fovxInDegrees, double aspectRatio,
+                      double znear, double zfar);
 void glhFrustum(double *matrix, double left, double right, double bottom, double top,
                   double znear, double zfar);
 void glhOrtho(double *matrix, double left, double right, double bottom, double top,

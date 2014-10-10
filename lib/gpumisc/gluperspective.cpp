@@ -19,6 +19,18 @@ void glhPerspective(double *matrix, double fovyInDegrees, double aspectRatio,
 }
 
 
+void glhPerspectiveFovX(double *matrix, double fovxInDegrees, double aspectRatio,
+                      double znear, double zfar)
+{
+    double ymax, xmax;
+    xmax = znear * tanf(fovxInDegrees * M_PI / 360.0);
+    //ymin = -ymax;
+    //xmin = -ymax * aspectRatio;
+    ymax = xmax / aspectRatio;
+    glhFrustum(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
+}
+
+
 void glhFrustum(double *matrix, double left, double right, double bottom, double top,
                   double znear, double zfar)
 {

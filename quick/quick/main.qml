@@ -38,7 +38,7 @@ ApplicationWindow {
             chain: chain
             selection: selection
             timepos: heightmap2.timepos
-            xscale: heightmap2.xscale/5
+            xscale: heightmap2.xscale
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 5
@@ -86,11 +86,16 @@ ApplicationWindow {
             objectName: "heightmap2"
             chain: chain
             timepos: heightmap1.timepos
-            xscale: 5*heightmap1.xscale
+            xscale: heightmap1.xscale
             displayedTransform: "waveform"
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 1
+
+            onCameraChanged: {
+                scalepos = 0.5;
+                xangle = 90.0;
+            }
         }
     }
     /*RowLayout {
