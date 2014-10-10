@@ -29,13 +29,9 @@ Wave2Fbo::
 
     glGenBuffers (1, &vbo_); // Generate 1 buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData (GL_ARRAY_BUFFER, sizeof(vertex_format_xy)*(N + 4), 0, GL_STATIC_DRAW);
-#ifndef GL_ES_VERSION_2_0
-    vertex_format_xy* d = (vertex_format_xy*)glMapBuffer (GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-#else
-    vertex_format_xy* d = (vertex_format_xy*)glMapBufferOES (GL_ARRAY_BUFFER, GL_WRITE_ONLY_OES);
-#endif
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    auto dv = std::vector<vertex_format_xy>(N+4);
+    vertex_format_xy* d = &dv[0];
 
     float* p = CpuMemoryStorage::ReadOnly<1>(b_->waveform_data()).ptr ();
     for (int i=0; i<N; i++)
@@ -46,13 +42,7 @@ Wave2Fbo::
     d[N+2] = vertex_format_xy{ t0, 1 };
     d[N+3] = vertex_format_xy{ t1, 1 };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-#ifndef GL_ES_VERSION_2_0
-    glUnmapBuffer (GL_ARRAY_BUFFER);
-#else
-    glUnmapBufferOES (GL_ARRAY_BUFFER);
-#endif
-    d = 0;
+    glBufferData (GL_ARRAY_BUFFER, sizeof(vertex_format_xy)*(N + 4), d, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlException_CHECK_ERROR();
