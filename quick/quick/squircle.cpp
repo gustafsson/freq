@@ -35,10 +35,8 @@ void Squircle::
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)
     {
-        auto uc = new Heightmap::Update::UpdateConsumer(context, render_model.block_update_queue, 0);
-        uc->moveToThread (this->thread ());
-        uc->setParent (this);
-        connect(uc, SIGNAL(didUpdate()), this->window (), SLOT(update())); //render_view, SLOT(redraw()));
+        auto uc = new Heightmap::Update::UpdateConsumer(context, render_model.block_update_queue, this);
+        connect(uc, SIGNAL(didUpdate()), this->window (), SLOT(update()));
     }
 }
 

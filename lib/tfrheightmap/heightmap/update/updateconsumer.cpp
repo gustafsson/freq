@@ -145,6 +145,8 @@ void UpdateConsumer::
 
     while (!isInterruptionRequested ())
       {
+        QCoreApplication::processEvents();
+
         try
           {
             unique_ptr<TaskTimer> tt;
