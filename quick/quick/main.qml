@@ -90,7 +90,6 @@ ApplicationWindow {
             displayedTransform: "waveform"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: !heightmap2.isIOS
             height: 1
         }
     }

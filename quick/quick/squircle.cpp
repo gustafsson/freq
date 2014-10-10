@@ -104,7 +104,6 @@ void Squircle::
     if (m_renderer) {
         if (c == "stft")
             RenderViewTransform(render_model).receiveSetTransform_Stft ();
-#ifndef GL_ES_VERSION_2_0
         else if (c == "waveform")
         {
             RenderViewTransform(render_model).receiveSetTransform_Waveform ();
@@ -112,7 +111,6 @@ void Squircle::
             render_model.resetCameraSettings ();
             render_model.camera->xscale = 10;
         }
-#endif
         else
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
     }
