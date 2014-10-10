@@ -3,8 +3,10 @@
 #include "GlException.h"
 #include "cpumemorystorage.h"
 #include "tasktimer.h"
+#include "log.h"
 
-#ifndef GL_ES_VERSION_2_0
+#include <QOpenGLShaderProgram>
+
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -28,7 +30,11 @@ Wave2Fbo::
     glGenBuffers (1, &vbo_); // Generate 1 buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData (GL_ARRAY_BUFFER, sizeof(vertex_format_xy)*(N + 4), 0, GL_STATIC_DRAW);
+#ifndef GL_ES_VERSION_2_0
     vertex_format_xy* d = (vertex_format_xy*)glMapBuffer (GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+#else
+    vertex_format_xy* d = (vertex_format_xy*)glMapBufferOES (GL_ARRAY_BUFFER, GL_WRITE_ONLY_OES);
+#endif
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     float* p = CpuMemoryStorage::ReadOnly<1>(b_->waveform_data()).ptr ();
@@ -41,7 +47,11 @@ Wave2Fbo::
     d[N+3] = vertex_format_xy{ t1, 1 };
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+#ifndef GL_ES_VERSION_2_0
     glUnmapBuffer (GL_ARRAY_BUFFER);
+#else
+    glUnmapBufferOES (GL_ARRAY_BUFFER);
+#endif
     d = 0;
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -58,12 +68,40 @@ Wave2Fbo::
 
 
 void Wave2Fbo::
-        draw(const glProjection& M)
+        draw(const glProjection& p)
 {
-    glMatrixMode (GL_PROJECTION);
-    glLoadMatrixf (GLmatrixf(M.projection).v ());
-    glMatrixMode (GL_MODELVIEW);
-    glLoadMatrixf (GLmatrixf(M.modelview).v ());
+    if (!m_program) {
+        m_program = new QOpenGLShaderProgram();
+        m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                           "attribute highp vec4 vertices;"
+                                           "uniform highp mat4 ModelViewProjectionMatrix;"
+                                           "void main() {"
+                                           "    gl_Position = ModelViewProjectionMatrix*vertices;"
+                                           "}");
+        m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           "uniform lowp vec4 rgba;"
+                                           "void main() {"
+                                           "    gl_FragColor = rgba;"
+                                           "}");
+
+        m_program->bindAttributeLocation("vertices", 0);
+        if (!m_program->link())
+            Log("wave2fbo: invalid shader\n%s")
+                    % m_program->log ().toStdString ();
+    }
+
+    if (!m_program->isLinked ())
+        return;
+
+    m_program->bind();
+
+    m_program->enableAttributeArray(0);
+
+    matrixd modelview = p.modelview;
+    QMatrix4x4 modelviewprojection {GLmatrixf(p.projection*modelview).transpose ().v ()};
+    m_program->setUniformValue("ModelViewProjectionMatrix", modelviewprojection);
+    m_program->setUniformValue("rgba", QVector4D(0.0,0.0,0.0,0.5));
+
     //int uniModelViewProjectionMatrix = glGetUniformLocation (program_, "qt_ModelViewProjectionMatrix");
     //glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, M.projection * M.modelview);
 
@@ -71,22 +109,21 @@ void Wave2Fbo::
 
     GlException_CHECK_ERROR();
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, 0);
+    glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     // Draw clear rectangle
-    glColor4f(0.f, 0.f, 0.f, 1.0f);
+    m_program->setUniformValue("rgba", QVector4D(0.0,0.0,0.0,1.0));
     glDrawArrays(GL_TRIANGLE_STRIP, N, 4);
 
     // Draw waveform
     glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //    glColor4f(.5f, 0.f, 0.f, 0.001f);
-    glColor4f(1.0f, 0.f, 0.f, 1.0f);
+    m_program->setUniformValue("rgba", QVector4D(1.0,0.0,0.0,1.0));
     glDrawArrays(GL_LINE_STRIP, 0, N);
     glDisable (GL_BLEND);
 
-    glDisableClientState(GL_VERTEX_ARRAY);
+    m_program->disableAttributeArray (0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     GlException_CHECK_ERROR();
 }
@@ -95,4 +132,3 @@ void Wave2Fbo::
 } // namespace OpenGL
 } // namespace Update
 } // namespace Heightmap
-#endif
