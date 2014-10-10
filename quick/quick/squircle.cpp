@@ -181,6 +181,7 @@ void Squircle::sync()
             % bottomright.x () % bottomright.y ()
             % width () % height();
 
+    RenderViewAxes(render_model).logZScale ();
     m_renderer->setViewport(QRectF(topleft, bottomright),
                             window ()->height (), window()->devicePixelRatio());
 }

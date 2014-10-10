@@ -71,7 +71,7 @@ void RenderViewAxes::
 {
     Heightmap::FreqAxis f;
     float fs = render_model.tfr_mapping ()->targetSampleRate();
-    f.setLogarithmic (fs/1000,fs);
+    f.setLogarithmic (fs/1000,fs/2);
     render_model.tfr_mapping ()->display_scale(f);
 
 /*
