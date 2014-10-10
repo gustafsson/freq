@@ -26,11 +26,13 @@ TouchNavigation::TouchNavigation(QQuickItem* parent)
 void TouchNavigation::
         setSquircle(Squircle*s)
 {
+    disconnect (this, SIGNAL(refresh()));
+
     squircle_=s;
     emit squircleChanged ();
 
-    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(refresh()));
     connect(this, SIGNAL(refresh()), squircle_, SIGNAL(timeposChanged()));
+    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(refresh()));
 }
 
 

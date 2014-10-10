@@ -157,7 +157,7 @@ void Squircle::sync()
 
         m_renderer = new SquircleRenderer(&render_model);
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
-        connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()), Qt::DirectConnection);
+        connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()));
         connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(timeposChanged()));
 
         emit rendererChanged(m_renderer);

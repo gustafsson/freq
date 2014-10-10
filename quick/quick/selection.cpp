@@ -24,6 +24,11 @@ void Selection::
 void Selection::
         setFilteredHeightmap(Squircle*s)
 {
+    auto olsselection = selection_.lock ();
+    if (olsselection && filter_heightmap_) {
+        Processing::Chain::ptr chain = filter_heightmap_->chain ()->chain ();
+        chain->removeOperation(olsselection);
+    }
     filter_heightmap_=s;
     emit filteredHeightmapChanged ();
 }
@@ -84,11 +89,13 @@ void Selection::
         emit validChanged ();
     }
 
+    if (!filter_heightmap_)
+        return;
+
+    OperationDesc::ptr selection = selection_.lock ();
     Processing::Chain::ptr chain = filter_heightmap_->chain ()->chain ();
 
-    auto olsselection = selection_.lock ();
-
-    if (filter_heightmap_ && valid_)
+    if (valid_)
     {
         Processing::TargetMarker::ptr target = filter_heightmap_->renderModel ()->target_marker ();
         Signal::OperationDesc::Extent x = chain->extent(target);
@@ -97,23 +104,36 @@ void Selection::
         {
             float fs = x.sample_rate.get ();
 
-            ChunkFilterDesc::ptr cfd {new Filters::Rectangle(
-                            std::min(t1_,t2_)*fs,
-                            std::min(f1_,f2_),
-                            std::max(t1_,t2_)*fs,
-                            std::max(f1_,f2_),
-                            true)};
+            if (!selection)
+            {
+                ChunkFilterDesc::ptr cfd{new Filters::Rectangle(0, 0, 0, 0, true)};
+                selection.reset (new TransformOperationDesc(cfd));
 
-            OperationDesc::ptr selection {new TransformOperationDesc(cfd)};
+                selection_ = selection;
+                chain->addOperationAt(selection, target);
+            }
 
-            chain->addOperationAt(selection, target);
+            {
+                // convoluted: inline lock (selection), typecast, get new lock (chunk_filter) and
+                // unlock (selection.write() out of scope)
+                auto cf = ((TransformOperationDesc*)selection.write ().get ())->chunk_filter ();
 
-            selection_ = selection;
+                Filters::Rectangle* r = dynamic_cast<Filters::Rectangle*>(cf.get ());
+                r->_s1 = std::min(t1_,t2_)*fs;
+                r->_f1 = std::min(f1_,f2_);
+                r->_s2 = std::max(t1_,t2_)*fs;
+                r->_f2 = std::max(f1_,f2_);
+                r->_save_inside = true;
+            }
+
+            auto I = selection->getInvalidator();
+            I->deprecateCache(Signal::Interval::Interval_ALL);
         }
     }
-
-    if (olsselection)
-        chain->removeOperation(olsselection);
+    else if (selection)
+    {
+        chain->removeOperation(selection);
+    }
 }
 
 void Selection::
