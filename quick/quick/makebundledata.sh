@@ -3,21 +3,23 @@
 set -e
 flatten="-background #f1f3ff -flatten"
 mkdir -p iOS_BundleData
+src=../f.png
+
 cd iOS_BundleData
 rm -f *.png
 s=57
-convert ../fq.png $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon.png
-convert ../fq.png $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon@2x.png
+convert $src $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon.png
+convert $src $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon@2x.png
 for s in 60 72 76; do
-	convert ../fq.png $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon-${s}.png
-	convert ../fq.png $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon-${s}@2x.png
+	convert $src $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon-${s}.png
+	convert $src $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon-${s}@2x.png
 done
 s=29
-convert ../fq.png $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon-Small.png
-convert ../fq.png $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon-Small@2x.png
+convert $src $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon-Small.png
+convert $src $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon-Small@2x.png
 for s in 40 50; do
-	convert ../fq.png $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon-${s}.png
-	convert ../fq.png $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon-${s}@2x.png
+	convert $src $flatten -gravity center -resize ${s}x${s} -extent ${s}x${s} Icon-${s}.png
+	convert $src $flatten -resize 200% -gravity center -resize $(($s*2))x$(($s*2)) -extent $(($s*2))x$(($s*2)) Icon-${s}@2x.png
 done
 
 convert ../freq.png $flatten -gravity center -resize 320x480\> -extent 320x480 Default.png
