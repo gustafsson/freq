@@ -155,6 +155,7 @@ void Squircle::sync()
         setupUpdateConsumer(QOpenGLContext::currentContext());
 
         m_renderer = new SquircleRenderer(&render_model);
+        m_renderer->setObjectName (objectName () + " renderer");
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()));
         connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(cameraChanged()));
@@ -172,7 +173,7 @@ void Squircle::sync()
     // without any additional protection.
 //    m_renderer->setT(m_t);
 
-    QPointF topleft = this->mapToScene (QPointF());
+    QPointF topleft = this->mapToScene (boundingRect().topLeft ());
     QPointF bottomright = this->mapToScene (boundingRect().bottomRight ());
 
     if (0) Log("squircle: sync x1=%g, y1=%g, x2=%g, y2=%g, w=%g, h=%g")

@@ -47,22 +47,29 @@ ApplicationWindow {
         Rectangle {
             id: divider
             Layout.fillWidth: true
-            height: 2
+            height: 0
             opacity: 0.0
             color: "black"
-
-            Drag.active: dragArea.drag.active
+            z: 1
 
             onYChanged: {
-                heightmap1.height = y+height/2
-                heightmap2.y = y+height/2
-                heightmap2.height = parent.height-y-height/2
+                heightmap1.height = y
+                heightmap2.y = y
+                heightmap2.height = parent.height-y
+            }
+
+            Rectangle {
+                height: 2
+                anchors.fill: parent
+                anchors.topMargin: -height/2
+                anchors.bottomMargin: anchors.topMargin
+                color: "black"
             }
 
             Rectangle {
                 anchors.fill: parent
-                anchors.topMargin: -30
-                anchors.bottomMargin: -30
+                anchors.topMargin: heightmap1.isIOS ? -50 : -5
+                anchors.bottomMargin: anchors.topMargin
                 opacity: 0.0
 
                 MouseArea {
@@ -71,12 +78,14 @@ ApplicationWindow {
 
                     drag.target: divider
                     drag.axis: Drag.YAxis
-                    drag.minimumY: 10
-                    drag.maximumY: divider.parent.height-10
-                    hoverEnabled: true
+                    drag.minimumY: -divider.height/2
+                    drag.maximumY: divider.parent.height - drag.minimumY - divider.height
+                    drag.threshold: 0
 
-                    onEntered: {cursorShape = Qt.SizeVerCursor;divider.opacity=0.5;}
-                    onExited: {cursorShape = Qt.ArrowCursor;divider.opacity=0.0;}
+                    hoverEnabled: true
+                    cursorShape: Qt.SizeVerCursor
+                    onEntered: divider.opacity=0.5
+                    onExited: divider.opacity=0.0
                 }
             }
         }

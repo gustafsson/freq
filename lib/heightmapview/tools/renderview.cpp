@@ -225,7 +225,8 @@ void RenderView::
         return;
 
     TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device_height;
-    EXCEPTION_ASSERT_LESS(0 , rect.height ());
+    EXCEPTION_ASSERT_LESS (0, rect.height ());
+    EXCEPTION_ASSERT_LESS (0, rect.width ());
 
     gl_projection->viewport = vp;
     glViewport( vp[0], vp[1], vp[2], vp[3] );

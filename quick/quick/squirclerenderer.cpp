@@ -26,7 +26,8 @@ void SquircleRenderer::
     render_view.model->render_settings.dpifactor = ratio;
     m_viewport = QRectF(rect.topLeft ()*ratio, rect.bottomRight ()*ratio).toRect ();
     m_window_height = window_height*ratio;
-    render_view.resizeGL (m_viewport, m_window_height);
+    if (m_viewport.height ()>0 && m_viewport.width ()>0)
+        render_view.resizeGL (m_viewport, m_window_height);
     render_view.initializeGL ();
 }
 
@@ -89,6 +90,9 @@ void SquircleRenderer::paint2()
 
 void SquircleRenderer::paint()
 {
+    if (m_viewport.height ()==0 || m_viewport.width ()==0)
+        return;
+
     // Use WorkerCrashLogger from Sonic AWE instead
     try {
         auto c = this->render_view.model->chain ();
