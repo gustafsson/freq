@@ -29,7 +29,7 @@ convert ../freq.png $flatten -gravity center -resize 768x1004\> -extent 768x1004
 convert ../freq.png $flatten -resize 200% -gravity center -resize 1536x2008\> -extent 1536x2008 Default-Portrait@2x~ipad.png
 convert ../freq.png $flatten -gravity center -resize 1024x748\> -extent 1024x748 Default-Landscape.png
 convert ../freq.png $flatten -resize 200%  -gravity center -resize 2048x1496\> -extent 2048x1496 Default-Landscape@2x~ipad.png
-convert ../freq.png $flatten -gravity center -resize 768x1024\> -extent 768x1024 Default-Portrait-1024.png
-convert ../freq.png $flatten -resize 200%  -gravity center -resize 1536x2048\> -extent 1536x2048 Default-Portrait-1024@2x~ipad.png
-convert ../freq.png $flatten -gravity center -resize 1024x768\> -extent 1024x768 Default-Landscape-768.png
-convert ../freq.png $flatten -resize 200%  -gravity center -resize 2048x1536\> -extent 2048x1536 Default-Landscape-768@2x~ipad.png
+convert ../freq.png $flatten -gravity center -resize 768x1024\> -extent 768x1024 Default-Portrait-1024h.png
+convert ../freq.png $flatten -resize 200%  -gravity center -resize 1536x2048\> -extent 1536x2048 Default-Portrait-1024h@2x~ipad.png
+convert ../freq.png $flatten -gravity center -resize 1024x768\> -extent 1024x768 Default-Landscape-768h.png
+convert ../freq.png $flatten -resize 200%  -gravity center -resize 2048x1536\> -extent 2048x1536 Default-Landscape-768h@2x~ipad.png
