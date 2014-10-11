@@ -5,6 +5,8 @@ Squircle {
     id: squircle
     property Selection selection
 
+    OptimalTimeFrequencyResolution { squircle: squircle }
+
     TouchNavigation {
         anchors.fill: parent
         squircle: squircle

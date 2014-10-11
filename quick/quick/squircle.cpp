@@ -16,7 +16,7 @@
 Squircle::Squircle() :
       m_renderer(0)
 {
-    connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
+    connect (this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
 }
 
 
@@ -87,6 +87,7 @@ void Squircle::handleWindowChanged(QQuickWindow *win)
     if (win) {
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
+        connect(this, SIGNAL(cameraChanged()), SIGNAL(refresh()));
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
 
         // wait until componentComplete to change properties
@@ -219,12 +220,12 @@ qreal Squircle::timepos() const
 void Squircle::setTimepos (qreal v)
 {
     auto c = render_model.camera.write ();
-    if (v == c->q[0])
+    if (v == qreal(c->q[0]))
         return;
     c->q[0] = v;
+    c.unlock ();
 
-    if (window())
-        window()->update();
+    emit cameraChanged ();
 }
 
 
@@ -237,12 +238,12 @@ qreal Squircle::scalepos() const
 void Squircle::setScalepos(qreal v)
 {
     auto c = render_model.camera.write ();
-    if (v == c->q[2])
+    if (v == qreal(c->q[2]))
         return;
     c->q[2] = v;
+    c.unlock ();
 
-    if (window())
-        window()->update();
+    emit cameraChanged ();
 }
 
 
@@ -255,12 +256,12 @@ qreal Squircle::xscale() const
 void Squircle::setXscale(qreal v)
 {
     auto c = render_model.camera.write ();
-    if (v == c->xscale)
+    if (v == qreal(c->xscale))
         return;
     c->xscale = v;
+    c.unlock ();
 
-    if (window())
-        window()->update();
+    emit cameraChanged ();
 }
 
 
@@ -273,10 +274,10 @@ qreal Squircle::xangle() const
 void Squircle::setXangle(qreal v)
 {
     auto c = render_model.camera.write ();
-    if (v == c->r[0])
+    if (v == qreal(c->r[0]))
         return;
     c->r[0] = v;
+    c.unlock ();
 
-    if (window())
-        window()->update();
+    emit cameraChanged ();
 }
