@@ -34,6 +34,7 @@ class WaveUpdaterPrivate
 {
 public:
     Fbo2Block fbo2block;
+    Wave2Fbo wave2fbo;
 };
 
 
@@ -69,14 +70,6 @@ void WaveUpdater::
             break;
     }
 
-    // Prepare Wave2Fbo
-    unordered_map<Signal::pMonoBuffer,lazy<Wave2Fbo>> wave2fbo;
-    for (const UpdateQueue::Job& j : myjobs)
-    {
-        auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
-        wave2fbo[job->b] = Wave2Fbo(job->b);
-    }
-
     // Remap block -> buffer (instead of buffer -> blocks) because we want to draw all
     // buffers to each block, instead of each buffer to all blocks.
     //
@@ -101,7 +94,7 @@ void WaveUpdater::
         auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto& b : f.second)
-            wave2fbo[b]->draw (M);
+            p->wave2fbo.draw (M,b);
 
         // suppress warning caused by RAII
         (void)fbo_mapping;

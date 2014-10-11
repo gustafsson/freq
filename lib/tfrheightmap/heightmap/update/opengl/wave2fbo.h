@@ -17,19 +17,22 @@ namespace OpenGL {
 class Wave2Fbo
 {
 public:
-    Wave2Fbo(Signal::pMonoBuffer b);
+    Wave2Fbo();
     Wave2Fbo(Wave2Fbo&&)=default;
     Wave2Fbo(const Wave2Fbo&)=delete;
     Wave2Fbo& operator=(const Wave2Fbo&)=delete;
     ~Wave2Fbo();
 
-    void draw(const glProjection& glprojection);
+    void draw(const glProjection& glprojection, Signal::pMonoBuffer b);
 
 private:
+    struct vertex_format_xy {
+        float x, y;
+    };
+
     QOpenGLShaderProgram*               m_program = 0;
-    Signal::pMonoBuffer                 b_;
     JustMisc::zero_on_move<unsigned>    vbo_;
-    const int                           N;
+    std::vector<vertex_format_xy>       dv;
 };
 
 } // namespace OpenGL

@@ -71,7 +71,7 @@ void MonoBuffer::
 }
 
 
-float MonoBuffer::
+double MonoBuffer::
         start() const
 {
     return (sample_offset_/sample_rate_).asFloat();

@@ -35,7 +35,7 @@ public:
     void                    set_sample_rate(float fs) { sample_rate_ = fs; }
     void                    set_sample_offset(UnsignedF offset) { sample_offset_ = offset; }
 
-    float                   start() const;
+    double                   start() const;
     float                   length() const;
     Interval                getInterval() const;
 
