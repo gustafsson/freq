@@ -283,6 +283,8 @@ Tfr::pChunk Stft::
                            p.chunk_size(), b->getInterval().toString().c_str(), p.compute_redundant()?"true":"false");
 
     DataStorage<float>::ptr windowedInput = prepareWindow( b->waveform_data() );
+    if (!windowedInput)
+        return Tfr::pChunk();
 
     // @see compute_redundant()
     Tfr::pChunk chunk;
@@ -768,7 +770,7 @@ DataStorage<float>::ptr Stft::
         return source;
 
     if (source->size().width < p.chunk_size())
-        throw std::logic_error("Stft not enough data for window function");
+        return DataStorage<float>::ptr();
 
     unsigned increment = p.increment();
     unsigned windowCount = 1 + (source->size().width-p.chunk_size()) / increment; // round down

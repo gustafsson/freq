@@ -58,6 +58,11 @@ public:
 
       But a Transform is required to return something valid for any input
       size.
+
+      Note: operator() must check that the given interval is valid and may return
+            an empty chunk if it isn't. This may typically happen if settings
+            are changed after the call to requiredInterval but before the call
+            to operator()
       */
     virtual pChunk operator()( Signal::pMonoBuffer b ) = 0;
 

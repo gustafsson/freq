@@ -50,6 +50,8 @@ Signal::pBuffer TransformOperationOperation::
         ci.t = transform_;
         ci.input = b->getChannel (c);
         ci.chunk = (*ci.t)( ci.input );
+        if (!ci.chunk)
+            return pBuffer();
 
         (*chunk_filter_)( ci );
         if (ci.abort)
