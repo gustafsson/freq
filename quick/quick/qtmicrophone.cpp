@@ -5,6 +5,8 @@
 
 #include <QAudioInput>
 
+#define SKIP_ZEROS
+
 GotData::GotData(
         shared_state<Signal::Recorder::Data> data,
         Signal::Recorder::IGotDataCallback::ptr& invalidator,
@@ -105,7 +107,11 @@ void GotData::
     // transpose and skip zeros
     for (unsigned j=0; j<number_of_samples; ++j)
     {
+#ifdef SKIP_ZEROS
         bool nonzero = false;
+#else
+        bool nonzero = true;
+#endif
         for (unsigned i=0; i<C; ++i)
         {
             v[i] = in[j*C + i];
