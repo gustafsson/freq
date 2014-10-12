@@ -21,27 +21,6 @@ Squircle::Squircle() :
 
 
 void Squircle::
-        setupUpdateConsumer(QOpenGLContext* context)
-{
-    if (QThread::currentThread () != this->thread ())
-    {
-        // Dispatch
-        qRegisterMetaType<QOpenGLContext*>("QOpenGLContext*");
-        QMetaObject::invokeMethod (this, "setupUpdateConsumer", Q_ARG(QOpenGLContext*, context));
-        return;
-    }
-
-    // UpdateConsumer shares opengl context with render_view, could use multiple updateconsumers ...
-    int n_update_consumers = 1;
-    for (int i=0; i<n_update_consumers; i++)
-    {
-        auto uc = new Heightmap::Update::UpdateConsumer(context, render_model.block_update_queue, this);
-        connect(uc, SIGNAL(didUpdate()), this->window (), SLOT(update()));
-    }
-}
-
-
-void Squircle::
         setupRenderTarget()
 {
     if (QThread::currentThread () != this->thread ())
@@ -60,7 +39,7 @@ void Squircle::
     rvup->moveToThread (this->thread ());
     connect(rvup, SIGNAL(redraw()), this->window (), SLOT(update())); // render_view, SLOT(redraw()));
 
-    render_model.init(chain_item_->chain (), rvu, chain_item_->target_marker ());
+    render_model.init(chain_item_->chain (), chain_item_->update_queue (), rvu, chain_item_->target_marker ());
     render_model.render_settings.dpifactor = window()->devicePixelRatio ();
 
     // 'this' is parent
@@ -152,8 +131,6 @@ void Squircle::sync()
     }
 
     if (isVisible () && !m_renderer) {
-        setupUpdateConsumer(QOpenGLContext::currentContext());
-
         m_renderer = new SquircleRenderer(&render_model);
         m_renderer->setObjectName (objectName () + " renderer");
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);

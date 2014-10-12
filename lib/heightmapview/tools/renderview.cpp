@@ -309,7 +309,7 @@ void RenderView::
 //        isRecording = true;
 //    }
 
-    bool update_queue_has_work = !model->block_update_queue->empty ();
+    bool update_queue_has_work = !model->update_queue()->empty ();
 
     if (update_queue_has_work)
         redraw (); // won't redraw right away, but enqueue an update

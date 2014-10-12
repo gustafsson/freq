@@ -38,8 +38,6 @@ RenderModel::
 
     render_block.reset( new Heightmap::Render::RenderBlock(&render_settings));
 
-    block_update_queue.reset (new Heightmap::Update::UpdateQueue::ptr::element_type());
-
     resetCameraSettings();
 //    setTestCamera();
 }
@@ -52,12 +50,7 @@ RenderModel::
     target_marker_.reset ();
     render_operation_desc_.reset ();
 
-    // Need to make sure that this thread really quits here, before the block cache is deleted.
-    if (!block_update_queue)
-        TaskInfo("!!! Lost block_update_queue");
-    if (block_update_queue && !block_update_queue.unique ())
-        TaskInfo("!!! block_update_queue unique");
-    block_update_queue.reset ();
+    update_queue_.reset ();
 
     render_block.reset();
 
@@ -70,7 +63,10 @@ RenderModel::
 
 
 void RenderModel::
-        init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt, Signal::Processing::TargetMarker::ptr target_marker)
+        init(Signal::Processing::Chain::ptr chain,
+             Heightmap::Update::UpdateQueue::ptr update_queue,
+             Support::RenderOperationDesc::RenderTarget::ptr rt,
+             Signal::Processing::TargetMarker::ptr target_marker)
 {
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
@@ -82,6 +78,7 @@ void RenderModel::
     rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
                                                new TargetInvalidator(target_marker_->target_needs ())));
     chain_ = chain;
+    update_queue_ = update_queue;
 
     Signal::OperationDesc::Extent x = recompute_extent ();
 
@@ -153,6 +150,13 @@ Signal::Processing::Chain::ptr RenderModel::
 }
 
 
+Heightmap::Update::UpdateQueue::ptr RenderModel::
+        update_queue()
+{
+    return update_queue_;
+}
+
+
 void RenderModel::
         block_layout(Heightmap::BlockLayout bs)
 {
@@ -171,8 +175,8 @@ void RenderModel::
         display_scale(Heightmap::FreqAxis x)
 {
     if (x != display_scale ())
-        if (block_update_queue)
-            block_update_queue->clear();
+        if (update_queue_)
+            update_queue_->clear();
 
     tfr_map_.write ()->display_scale( x );
 
@@ -194,8 +198,8 @@ void RenderModel::
         amplitude_axis(Heightmap::AmplitudeAxis x)
 {
     if (x != amplitude_axis ())
-        if (block_update_queue)
-            block_update_queue->clear();
+        if (update_queue_)
+            update_queue_->clear();
 
     tfr_map_.write ()->amplitude_axis( x );
 

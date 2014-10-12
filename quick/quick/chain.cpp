@@ -2,6 +2,7 @@
 #include "log.h"
 #include "qtmicrophone.h"
 #include "signal/recorderoperation.h"
+#include "heightmap/update/updateconsumer.h"
 
 #include <QtQuick>
 
@@ -65,10 +66,24 @@ Chain::Chain(QQuickItem *parent) :
 {
     chain_ = Processing::Chain::createDefaultChain ();
     target_marker_ = chain_->addTarget(OperationDesc::ptr(new NoopOperation));
+    update_queue_.reset (new Heightmap::Update::UpdateQueue);
+
     Log("chain.cpp: Created chain %p") % (void*)this;
     openRecording();
 
     connect(this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
+}
+
+
+Chain::
+        ~Chain()
+{
+    // Need to make sure that this thread really quits here, before the block cache is deleted.
+    if (!update_queue_)
+        Log("!!! chain: Lost block_update_queue");
+    if (update_queue_ && !update_queue_.unique ())
+        Log("!!! chain: block_update_queue not unique");
+    update_queue_.reset ();
 }
 
 
@@ -81,6 +96,9 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 
 void Chain::clearOpenGlBackground()
 {
+    if (!update_consumer_)
+        setupUpdateConsumer(QOpenGLContext::currentContext());
+
     // ok as a long as stateless with respect to opengl resources, otherwise this needs a rendering object that is
     // created on window()->beforeSynchronizing and destroyed on window()->sceneGraphInvalidated (as in
     // Squircle/SquircleRenderer)
@@ -102,4 +120,20 @@ void Chain::openRecording()
     cb->setInvalidator (i);
 
     rec->startRecording();
+}
+
+
+void Chain::setupUpdateConsumer(QOpenGLContext* context)
+{
+    if (QThread::currentThread () != this->thread ())
+    {
+        // Dispatch
+        qRegisterMetaType<QOpenGLContext*>("QOpenGLContext*");
+        QMetaObject::invokeMethod (this, "setupUpdateConsumer", Q_ARG(QOpenGLContext*, context));
+        return;
+    }
+
+    // UpdateConsumer shares OpenGL context and is owned by this
+    update_consumer_ = new Heightmap::Update::UpdateConsumer(context, update_queue_, this);
+    connect(update_consumer_.data (), SIGNAL(didUpdate()), this->window (), SLOT(update()));
 }

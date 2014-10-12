@@ -52,6 +52,8 @@ Signal::pBuffer TransformOperationOperation::
         ci.chunk = (*ci.t)( ci.input );
 
         (*chunk_filter_)( ci );
+        if (ci.abort)
+            return pBuffer();
 
         if (!no_inverse_tag_)
           {

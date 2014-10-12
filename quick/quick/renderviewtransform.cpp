@@ -56,7 +56,7 @@ void RenderViewTransform::
     // Wire it up to a FilterDesc
     Heightmap::Update::UpdateProducerDesc* cbfd;
     Tfr::ChunkFilterDesc::ptr kernel(cbfd
-            = new Heightmap::Update::UpdateProducerDesc(render_model.block_update_queue, render_model.tfr_mapping ()));
+            = new Heightmap::Update::UpdateProducerDesc(render_model.update_queue(), render_model.tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -80,7 +80,7 @@ void RenderViewTransform::
     Timer t;
     for (int i=0; i<sleep_ms && !Signal::Processing::Step::sleepWhileTasks (step.read(), 1); i++)
     {
-        render_model.block_update_queue->clear ();
+        render_model.update_queue()->clear ();
     }
 
     if (!Signal::Processing::Step::sleepWhileTasks (step.read(), 1))

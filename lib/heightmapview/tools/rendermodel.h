@@ -42,12 +42,17 @@ namespace Tools
         RenderModel();
         ~RenderModel();
 
-        void init(Signal::Processing::Chain::ptr chain, Support::RenderOperationDesc::RenderTarget::ptr rt, Signal::Processing::TargetMarker::ptr target_marker = Signal::Processing::TargetMarker::ptr());
+        void init(Signal::Processing::Chain::ptr chain,
+                  Heightmap::Update::UpdateQueue::ptr update_queue,
+                  Support::RenderOperationDesc::RenderTarget::ptr rt,
+                  Signal::Processing::TargetMarker::ptr target_marker = Signal::Processing::TargetMarker::ptr());
+
         void resetCameraSettings();
         void resetBlockCaches();
 
         Heightmap::TfrMapping::Collections collections() const;
         Signal::Processing::Chain::ptr chain();
+        Heightmap::Update::UpdateQueue::ptr update_queue();
 
         void block_layout(Heightmap::BlockLayout);
 
@@ -74,8 +79,6 @@ namespace Tools
 
         Heightmap::TfrMappings::StftBlockFilterParams::ptr get_stft_block_filter_params();
 
-        Heightmap::Update::UpdateQueue::ptr block_update_queue;
-
         Heightmap::Render::RenderSettings render_settings;
         Heightmap::Render::RenderBlock::ptr render_block;
         shared_state<Tools::Support::RenderCamera> camera;
@@ -93,6 +96,7 @@ namespace Tools
         Signal::OperationDesc::ptr render_operation_desc_;
         Signal::Processing::TargetMarker::ptr target_marker_;
         Signal::Processing::Chain::ptr chain_;
+        Heightmap::Update::UpdateQueue::ptr update_queue_;
         Heightmap::TfrMappings::StftBlockFilterParams::ptr stft_block_filter_params_;
 
         friend class boost::serialization::access;

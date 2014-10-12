@@ -60,7 +60,6 @@ signals:
 public slots:
     void sync();
     void cleanup();
-    void setupUpdateConsumer(QOpenGLContext* context);
     void setupRenderTarget();
 
 private slots:

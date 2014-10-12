@@ -50,6 +50,12 @@ struct ChunkAndInverse
      * Which channel the monobuffer comes from.
      */
     int channel;
+
+
+    /**
+      * If this was aborted.
+      */
+    bool abort = false;
 };
 
 

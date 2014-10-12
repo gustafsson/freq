@@ -77,6 +77,7 @@ void UpdateProducer::
     }
     catch (const std::logic_error&)
     {
+        pchunk.abort = true;
         // The queue may be emptied before the task has been processed
         //Log("Discarded job: %s") % chunk_interval;
     }
