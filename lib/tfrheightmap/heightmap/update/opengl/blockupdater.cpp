@@ -7,6 +7,7 @@
 #include "pbo2texture.h"
 #include "source2pbo.h"
 #include "texture2fbo.h"
+#include "texturepool.h"
 
 #include "tasktimer.h"
 #include "timer.h"
@@ -20,6 +21,11 @@
 
 //#define INFO
 #define INFO if(0)
+
+#ifndef GL_ES_VERSION_2_0
+// the current implementation of PBOs doesn't reuse allocated memory
+// #define USE_PBO
+#endif
 
 using namespace std;
 using namespace JustMisc;
@@ -39,12 +45,33 @@ namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
+int gl_max_texture_size() {
+    static int v = 0;
+    if (0 == v)
+    {
+        glGetIntegerv (GL_MAX_TEXTURE_SIZE, &v);
+//#ifndef GL_ES_VERSION_2_0
+//        // GL_MAX_TEXTURE_SIZE-1 seems to be the largest allowed texture in practice...
+//        v = lpo2s (v); // power of 2 is slightly faster
+//#endif
+    }
+    return v;
+}
 
 class BlockUpdaterPrivate
 {
 public:
     Shaders shaders;
     Fbo2Block fbo2block;
+
+    TexturePool texturePool
+    {
+        gl_max_texture_size(),
+        std::min(gl_max_texture_size(),1024),
+        TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
+            ? TexturePool::Float32
+            : TexturePool::Float16
+    };
 };
 
 BlockUpdater::
@@ -53,6 +80,7 @@ BlockUpdater::
       p(new BlockUpdaterPrivate),
       memcpythread(1, "BlockUpdater")
 {
+    p->texturePool.resize (2);
 }
 
 
@@ -72,6 +100,11 @@ void BlockUpdater::
         UpdateQueue::Job& j = jobs.front ();
         if (dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ()))
         {
+            if (myjobs.size () == p->texturePool.size()) {
+                processJobs(myjobs);
+                myjobs.clear ();
+            }
+
             myjobs.push_back (std::move(j)); // Steal it
             jobs.pop ();
         }
@@ -79,7 +112,15 @@ void BlockUpdater::
             break;
     }
 
-#ifndef GL_ES_VERSION_2_0
+    if (!myjobs.empty ())
+        processJobs (myjobs);
+}
+
+
+void BlockUpdater::
+        processJobs( vector<UpdateQueue::Job>& myjobs )
+{
+#ifdef USE_PBO
     // Begin chunk transfer to gpu right away
     // PBOs are not supported on OpenGL ES (< 3.0)
     unordered_map<Tfr::pChunk,lazy<Source2Pbo>> source2pbo;
@@ -133,19 +174,21 @@ void BlockUpdater::
 
     // Prepare to draw with transferred chunk
     unordered_map<Tfr::pChunk, lazy<Pbo2Texture>> pbo2texture;
-#ifdef GL_ES_VERSION_2_0
+#ifndef USE_PBO
     for (const UpdateQueue::Job& j : myjobs)
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
         pbo2texture[job->chunk] = Pbo2Texture(p->shaders,
-                                            job->chunk,
-                                            job->p,
-                                            job->type == TfrBlockUpdater::Job::Data_F32);
+                                              p->texturePool.get1 (),
+                                              job->chunk,
+                                              job->p,
+                                              job->type == TfrBlockUpdater::Job::Data_F32);
     }
 #else
     for (auto& sp : source2pbo)
         pbo2texture[sp.first] = Pbo2Texture(p->shaders,
+                                            p->texturePool.get1 (),
                                             sp.first,
                                             sp.second->getPboWhenReady(),
                                             sp.second->f32());
@@ -188,7 +231,7 @@ void BlockUpdater::
         (void)fbo_mapping;
     }
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef USE_PBO
     source2pbo.clear ();
 #endif
     for (UpdateQueue::Job& j : myjobs)

@@ -45,7 +45,7 @@ public:
 
 class ShaderTexture {
 public:
-    ShaderTexture(Shaders& shaders_);
+    ShaderTexture(Shaders& shaders_, GlTexture::ptr chunk_texture);
 
     void prepareShader (int data_width, int data_height, unsigned chunk_pbo, bool f32);
     void prepareShader (int data_width, int data_height, void* data, bool f32);
@@ -56,8 +56,9 @@ public:
 private:
     void prepareShader (int data_width, int data_height, unsigned chunk_pbo, void* data, bool f32);
 
-    int data_width, data_height, tex_width, tex_height;
-    GlTexture::ptr chunk_texture_;
+    int data_width, data_height;
+    int const tex_width, tex_height;
+    GlTexture::ptr const chunk_texture_;
     Shaders& shaders_;
     Shader* shader_;
 };
@@ -87,8 +88,8 @@ public:
         ~ScopeMap();
     };
 
-    Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, int pbo, bool f32);
-    Pbo2Texture(Shaders& shaders, Tfr::pChunk chunk, void *p, bool f32);
+    Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pChunk chunk, int pbo, bool f32);
+    Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pChunk chunk, void *p, bool f32);
 
     ScopeMap map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib);
 

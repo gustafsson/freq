@@ -21,9 +21,9 @@ public:
             Data_F32,
             Data_F16
 #ifdef GL_ES_VERSION_2_0
-        } const type = Data_F16;
+        } static const type = Data_F16;
 #else
-        } const type = Data_F32;
+        } static const type = Data_F32;
 #endif
         void *p;
 

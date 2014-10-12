@@ -81,6 +81,7 @@ private:
     BlockUpdaterPrivate* p;
     JustMisc::thread_pool memcpythread;
 
+    void processJobs( std::vector<UpdateQueue::Job>& myjobs );
 public:
     static void test();
 };
