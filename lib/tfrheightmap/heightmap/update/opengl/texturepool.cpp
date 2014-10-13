@@ -65,7 +65,7 @@ void TexturePool::
         if (!t)
             t = newTexture();
 
-    Log("texturepool: %d %dx%d using %s") % n % width_ % height_
+    Log("texturepool: %dx%dx%d using %s") % width_ % height_ % n
             % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8)*n);
 }
 
