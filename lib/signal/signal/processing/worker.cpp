@@ -462,7 +462,7 @@ void Worker::
 
         QEventLoop e;
         connect (&t, SIGNAL(timeout()), &e, SLOT(quit()));
-        connect (&worker, SIGNAL(oneTaskDone()), &e, SLOT(quit()));
+        connect (&worker, SIGNAL(oneTaskDone()), &e, SLOT(quit()), Qt::DirectConnection);
 
         worker.wakeup ();
         t.start();
