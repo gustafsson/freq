@@ -18,7 +18,8 @@ public:
         ColorMode_FixedColor,
         ColorMode_GreenRed,
         ColorMode_GreenWhite,
-        ColorMode_Green
+        ColorMode_Green,
+        ColorMode_WhiteBlackGray
     };
 
     RenderSettings();

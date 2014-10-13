@@ -388,6 +388,7 @@ void RenderBlock::
         case RenderSettings::ColorMode_GreenRed:
         case RenderSettings::ColorMode_GreenWhite:
         case RenderSettings::ColorMode_Green:
+        case RenderSettings::ColorMode_WhiteBlackGray:
             glUniform1f(uniColorTextureFactor, 1.f);
             break;
         default:
@@ -616,6 +617,13 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, RenderSettin
         spectrum[5] = tvector<4,float>( 0, 1, 0, 0 );
         spectrum[6] = tvector<4,float>( 0, 1, 0, 0 );
         count = 6;
+        break;
+    case RenderSettings::ColorMode_WhiteBlackGray:
+        if (wavelengthScalar<0)
+            return tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[1] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
+        count = 1;
         break;
     case RenderSettings::ColorMode_Grayscale:
         break;

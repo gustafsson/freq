@@ -30,11 +30,10 @@ void RenderViewAxes::
 void RenderViewAxes::
         waveformScale()
 {
-
     render_model.render_settings.y_offset = 0.0;
-    render_model.render_settings.y_scale = 10.5;
-    render_model.render_settings.log_scale.reset (1);
-    render_model.render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_FixedColor;
+    render_model.render_settings.y_scale = 150.0;
+    render_model.render_settings.log_scale.reset (0);
+    render_model.render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_WhiteBlackGray;
     render_model.camera->orthoview.reset(1);
 
     Heightmap::FreqAxis fa;
