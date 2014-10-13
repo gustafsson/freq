@@ -69,6 +69,10 @@ qint64 GotData::
             if (format.sampleType () == QAudioFormat::SignedInt) makefloat<qint16>(in, len, f);
             if (format.sampleType () == QAudioFormat::UnSignedInt) makefloat<quint16>(in, len, f);
             break;
+        case 32:
+            if (format.sampleType () == QAudioFormat::SignedInt) makefloat<qint32>(in, len, f);
+            if (format.sampleType () == QAudioFormat::UnSignedInt) makefloat<quint32>(in, len, f);
+            break;
         default:
             Log("Unknown sample size %d") % format.sampleSize ();
             return 0;
@@ -115,7 +119,7 @@ void GotData::
         for (unsigned i=0; i<C; ++i)
         {
             v[i] = in[j*C + i];
-            if (v[i] != 0.f)
+            if (fabs(v[i]) > 1.f/512.f)
                 nonzero = true;
         }
 
@@ -151,20 +155,38 @@ void GotData::
 }
 
 
+template<class T> T max(const QList<T>& V) {
+    T v = std::numeric_limits<T>::min ();
+    for (const auto& t : V) v = std::max(v,t);
+    return v;
+}
+
+
+template<class T> T logclosest(const QList<T>& V, T v) {
+    T r = std::numeric_limits<T>::max ();
+    for (const auto& t : V)
+        if (fabs(log(t)-log(v)) < fabs(log(v)-log(r)))
+            r = t;
+    return r;
+}
+
+
 QtMicrophone::
         QtMicrophone()
 {
     qRegisterMetaType<QAudio::State>("QAudio::State");
-    QAudioFormat format;
-    // Set up the desired format, for example:
-    format.setSampleRate (44100);
-//    format.setSampleType (QAudioFormat::Float);
-    format.setChannelCount (1);
-//    format.setChannelCount (2);
-
     QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
+    QAudioFormat format = info.preferredFormat ();
+    format.setSampleRate (logclosest(info.supportedSampleRates (),44100));
+//    format.setSampleType (QAudioFormat::Float);
+    format.setSampleSize (std::min(32,max(info.supportedSampleSizes ())));
+    format.setChannelCount (1);
+
     if (!info.isFormatSupported(format))
         format = info.nearestFormat(format);
+
+    Log("qtmicrophone: fs = %d, bits = %d, %d channels")
+            % format.sampleRate () % format.sampleSize () % format.channelCount ();
 
     audio_.reset (new QAudioInput(info, format));
     audio_->setBufferSize (1<<14); // buffer_size/sample_rate = latency
