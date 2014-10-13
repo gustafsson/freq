@@ -1,6 +1,10 @@
 #include "cpumemorystorage.h"
+#include "timer.h"
+#include "largememorybank.h"
 
 #include <string.h> // memset, memcpy
+
+#define LOG_SLOW_ALLOCATION false
 
 CpuMemoryStorage::
         CpuMemoryStorage(DataStorageVoid* p, bool, bool)
@@ -12,7 +16,19 @@ CpuMemoryStorage::
     CpuMemoryStorage* q = p->FindStorage<CpuMemoryStorage>();
     EXCEPTION_ASSERT( q == this );
 
-    data = new char[ p->numberOfBytes() ];
+    if (LOG_SLOW_ALLOCATION) {
+        Timer t;
+        data_N = p->numberOfBytes();
+        data = lmb_malloc (data_N);
+        double T = t.elapsed ();
+        static size_t C = 0;
+        C++;
+        if (1e-4 < T)
+            Log("cpu: allocated #%d of %s in %s") % C % DataStorageVoid::getMemorySizeText (data_N) % TaskTimer::timeToString (T);
+    } else {
+        data_N = p->numberOfBytes();
+        data = lmb_malloc (data_N);
+    }
 }
 
 
@@ -21,6 +37,7 @@ CpuMemoryStorage::
     :
     DataStorageImplementation( p ),
     data( data ),
+    data_N( 0 ), // not allocated through LargeMemoryBank
     borrowsData( !adoptData )
 {
     CpuMemoryStorage* q = p->AccessStorage<CpuMemoryStorage>( false, true ); // Mark borrowed memory as up to date
@@ -31,8 +48,19 @@ CpuMemoryStorage::
 CpuMemoryStorage::
         ~CpuMemoryStorage()
 {
-    if (!borrowsData)
-        delete [](char*)data;
+    if (!borrowsData) {
+        if (LOG_SLOW_ALLOCATION) {
+            Timer t;
+            lmb_free (data, data_N);
+            double T = t.elapsed ();
+            static size_t C = 0;
+            C++;
+            if (1e-4 < T)
+                Log("cpu: released #%d of %s in %s") % C % DataStorageVoid::getMemorySizeText (data_N) % TaskTimer::timeToString (T);
+        } else {
+            lmb_free (data, data_N);
+        }
+    }
 }
 
 

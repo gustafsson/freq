@@ -2,6 +2,7 @@
 #include "tfr/stftdesc.h"
 #include "tfr/waveformrepresentation.h"
 #include "log.h"
+#include "largememorybank.h"
 
 //#define LOG_TRANSFORM
 #define LOG_TRANSFORM if(0)
@@ -78,8 +79,10 @@ void OptimalTimeFrequencyResolution::
 
     if (*newt != *t)
     {
-        LOG_TRANSFORM Log("squircle: %s") % newt->toString ();
+        LOG_TRANSFORM Log("OptimalTimeFrequencyResolution: %s") % newt->toString ();
         render_model.set_transform_desc (newt);
         emit squircle_->displayedTransformDetailsChanged();
+
+        lmb_gc (16 << 20); // 16 MB, could use a lower value if it should be more aggressive
     }
 }

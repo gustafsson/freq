@@ -81,6 +81,7 @@ private:
     virtual bool allowCow();
 
     void* data;
+    size_t data_N;
 
     bool borrowsData;
 };
