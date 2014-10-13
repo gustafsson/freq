@@ -4,6 +4,7 @@
 
 #include "targetschedule.h"
 #include "tasktimer.h"
+#include "log.h"
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
@@ -33,43 +34,60 @@ Task TargetSchedule::
     // Lock the graph from writing during getTask
     auto dag = g.read();
 
-    TargetState targetstate = prioritizedTarget();
-    TargetNeeds::State& state = targetstate.second;
-    Step::ptr& step = targetstate.first;
-    if (!step) {
-        DEBUGINFO TaskInfo("No target needs anything right now");
-        return Task();
+    auto T = this->targets->getTargets();
+
+    while (!T.empty())
+    {
+        TargetState targetstate = prioritizedTarget(T);
+        TargetNeeds::State& state = targetstate.second;
+        Step::ptr& step = targetstate.first;
+        if (!step) {
+            DEBUGINFO TaskInfo("No target needs anything right now");
+            return Task();
+        }
+
+        DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % state.needed_samples % state.work_center);
+
+        GraphVertex vertex = dag->getVertex(step);
+        EXCEPTION_ASSERT(vertex);
+
+        Task task = algorithm.read ()->getTask(
+                dag->g(),
+                vertex,
+                state.needed_samples,
+                state.work_center,
+                state.preferred_update_size,
+                Workers::ptr(),
+                engine);
+
+        if (!task) {
+            for (auto i = T.begin(); i!=T.end();)
+            {
+                if ((*i)->step ().lock () == step)
+                    i = T.erase(i);
+                else
+                    i++;
+            }
+        }
+        else
+        {
+            DEBUGINFO Log("task->expected_output() = %s") % task.expected_output();
+            return task;
+        }
     }
 
-    DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % state.needed_samples % state.work_center);
-
-    GraphVertex vertex = dag->getVertex(step);
-    EXCEPTION_ASSERT(vertex);
-
-    Task task = algorithm.read ()->getTask(
-            dag->g(),
-            vertex,
-            state.needed_samples,
-            state.work_center,
-            state.preferred_update_size,
-            Workers::ptr(),
-            engine);
-
-    DEBUGINFO if (task)
-        TaskInfo(boost::format("task->expected_output() = %s") % task.expected_output());
-
-    return task;
+    return Task();
 }
 
 
 TargetSchedule::TargetState TargetSchedule::
-        prioritizedTarget() const
+        prioritizedTarget(const Targets::TargetNeedsCollection& T)
 {
     TargetState r;
 
     r.second.last_request = neg_infin;
 
-    for (const TargetNeeds::ptr& t: targets->getTargets())
+    for (const TargetNeeds::ptr& t: T)
     {
         auto step = t->step ().lock ();
         if (!step)
@@ -82,11 +100,18 @@ TargetSchedule::TargetState TargetSchedule::
         TargetNeeds::State state = t->state ();
         state.needed_samples &= step_needed;
 
+        DEBUGINFO Log("targetschedule: %s needs %s") % Step::operation_desc (step)->toString().toStdString() % state.needed_samples;
+
         if (r.second.last_request < state.last_request && state.needed_samples)
         {
             r.first = step;
             r.second = state;
         }
+    }
+
+    DEBUGINFO {
+        if (r.first) Log("targetschedule: looking at %s") % Step::operation_desc (r.first)->toString().toStdString();
+        else Log("targetschedule: nothing of interest");
     }
 
     return r;

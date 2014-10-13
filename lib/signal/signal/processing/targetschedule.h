@@ -25,7 +25,7 @@ private:
     IScheduleAlgorithm::ptr algorithm;
 
     typedef std::pair<Step::ptr, TargetNeeds::State> TargetState;
-    TargetState prioritizedTarget() const;
+    static TargetState prioritizedTarget(const Targets::TargetNeedsCollection& T);
 
 public:
     static void test();
