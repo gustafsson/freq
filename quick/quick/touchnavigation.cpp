@@ -238,9 +238,15 @@ void TouchNavigation::
         mode = Undefined;
     }
 
+    // match zmin/zmax with OptimalTimeFrequencyResolution
+    auto viewport = render_model()->gl_projection.read ()->viewport;
+    float aspect = viewport[2]/(float)viewport[3];
+    float zmin = std::min(0.5,0.4/(c.zscale/-c.p[2]*aspect));
+    float zmax = 1-zmin;
+
     // limit camera position along scale and limit rotation
-    if (q[2] < 0) q[2] = 0;
-    if (q[2] > 1) q[2] = 1;
+    if (q[2] < zmin) q[2] = zmin;
+    if (q[2] > zmax) q[2] = zmax;
     if (r[0] < 0) r[0] = 0;
     if (r[0] > 90) r[0] = 90;
 

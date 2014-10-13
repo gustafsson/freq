@@ -35,11 +35,19 @@ void OptimalTimeFrequencyResolution::
     const auto c = *render_model.camera.read();
     const vectord& q = c.q;
 
+    // match zmin/zmax with TouchNavigation
+    auto viewport = render_model.gl_projection.read ()->viewport;
+    float aspect = viewport[2]/(float)viewport[3];
+    float zmin = std::min(0.5,0.4/(c.zscale/-c.p[2]*aspect));
+    float zmax = 1.0-zmin;
+    float zfocus = (q[2]-zmin)/(zmax-zmin);
+    if (zmin==zmax) zfocus=0.5;
+
     auto tm = render_model.tfr_mapping ().read ();
     float ds = 0.1;
     float fs = tm->targetSampleRate();
-    float hz = tm->display_scale().getFrequency(float(q[2])),
-          hz2 = tm->display_scale().getFrequency(float(q[2] < 0.5 ? q[2] + ds : q[2] - ds));
+    float hz = tm->display_scale().getFrequency(float(zfocus)),
+          hz2 = tm->display_scale().getFrequency(float(zfocus < 0.5 ? zfocus + ds : zfocus - ds));
     tm.unlock ();
 
     // read info about current transform
