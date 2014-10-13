@@ -25,7 +25,7 @@
 class MyGuiApplication: public QGuiApplication
 {
 public:
-    MyGuiApplication(int argc, char**argv)
+    MyGuiApplication(int& argc, char**argv)
         :
           QGuiApplication(argc,argv)
     {}
