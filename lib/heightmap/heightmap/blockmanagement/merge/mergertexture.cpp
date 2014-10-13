@@ -154,13 +154,6 @@ void MergerTexture::
             fillBlockFromOthersInternal (b);
     }
 
-    for (pBlock b : blocks)
-    {
-        glBindTexture (GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId());
-        glGenerateMipmap (GL_TEXTURE_2D);
-        glBindTexture (GL_TEXTURE_2D, 0);
-    }
-
     cache_clone.clear ();
 
     glUseProgram (0);
@@ -170,8 +163,14 @@ void MergerTexture::
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glEnable (GL_DEPTH_TEST);
-    glEnable (GL_BLEND);
     glEnable (GL_CULL_FACE);
+
+    for (pBlock b : blocks)
+    {
+        glBindTexture (GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId());
+        glGenerateMipmap (GL_TEXTURE_2D);
+        glBindTexture (GL_TEXTURE_2D, 0);
+    }
 
     GlException_CHECK_ERROR();
 }
