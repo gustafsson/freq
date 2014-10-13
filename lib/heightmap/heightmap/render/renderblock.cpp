@@ -332,6 +332,7 @@ void RenderBlock::
     glActiveTexture(GL_TEXTURE2);
     _colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
+    glDisable (GL_BLEND);
 
     glUseProgram(_shader_prog);
 
@@ -619,8 +620,6 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, RenderSettin
         count = 6;
         break;
     case RenderSettings::ColorMode_WhiteBlackGray:
-        if (wavelengthScalar<0)
-            return tvector<4,float>( 1, 1, 1, 0 );
         spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
         spectrum[1] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
         count = 1;
