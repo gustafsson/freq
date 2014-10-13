@@ -144,7 +144,10 @@ Signal::Interval StftDesc::
             preload = chunk_size/2,
             postload = chunk_size - preload; // don't assume chunk_size is even
 
-        return Signal::Interval(first + preload, last - postload);
+            Signal::Interval J(first + preload,last - postload);
+            if (J.first>I.first) J.first = Signal::Interval::IntervalType_MIN;
+            if (J.last<I.last) J.last = Signal::Interval::IntervalType_MAX;
+            return J;
         }
 }
 

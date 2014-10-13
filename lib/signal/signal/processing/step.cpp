@@ -18,6 +18,9 @@
 //#define LOG_PURGED_CACHES
 #define LOG_PURGED_CACHES if(0)
 
+//#define LOG_NOT_STARTED
+#define LOG_NOT_STARTED if(0)
+
 using namespace boost;
 
 namespace Signal {
@@ -134,7 +137,9 @@ size_t Step::
 Intervals Step::
         not_started() const
 {
-    return ~cache_.read ()->samplesDesc() & ~currently_processing();
+    Intervals I = ~cache_.read ()->samplesDesc() & ~currently_processing();
+    LOG_NOT_STARTED Log("Step: %s not started on %s") % I % operation_name();
+    return I;
 }
 
 
@@ -189,7 +194,7 @@ void Step::
 {
     FINISHTASKINFO Log("Step finishTask %2% on %1%")
               % step.raw ()->operation_name()
-              % result->getInterval ();
+              % (result ? result->getInterval () : Signal::Interval());
 
     auto self = step.write ();
 
