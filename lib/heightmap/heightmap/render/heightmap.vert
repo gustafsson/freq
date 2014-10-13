@@ -36,19 +36,19 @@ void main()
     texCoord = tex0;
 
     mediump vec2 tex1 = max(tex0 - offset_tex*2.0, offset_tex);
-    mediump vec2 tex2 = min(tex0 + offset_tex*2.0, 1.0-offset_tex);
+//    mediump vec2 tex2 = min(tex0 + offset_tex*2.0, 1.0-offset_tex);
 
     mediump float height       = texture2D(tex, tex0).x;
     mediump float heightx1     = texture2D(tex, vec2(tex1.x, tex0.y)).x;
-    mediump float heightx2     = texture2D(tex, vec2(tex2.x, tex0.y)).x;
+//    mediump float heightx2     = texture2D(tex, vec2(tex2.x, tex0.y)).x;
     mediump float heighty1     = texture2D(tex, vec2(tex0.x, tex1.y)).x;
-    mediump float heighty2     = texture2D(tex, vec2(tex0.x, tex2.y)).x;
+//    mediump float heighty2     = texture2D(tex, vec2(tex0.x, tex2.y)).x;
 
     height = heightValue(height);
     heightx1 = heightValue(heightx1);
-    heightx2 = heightValue(heightx2);
+//    heightx2 = heightValue(heightx2);
     heighty1 = heightValue(heighty1);
-    heighty2 = heightValue(heighty2);
+//    heighty2 = heightValue(heighty2);
 
 //    height = texture2DLod(tex, texCoord, 0.0).x;
 
@@ -58,12 +58,15 @@ void main()
     gl_Position      = ModelViewProjectionMatrix * pos;
     vertex_height = height;
 
-    highp vec2 slope       = vec2(heightx2-heightx1, heighty2-heighty1);
+//    highp vec2 slope       = vec2(heightx2-heightx1, heighty2-heighty1);
+//    worldSpaceNormal.xyz = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
+//                                   vec3(tex2.x-tex1.x,  slope.x, 0.0));
+    highp vec2 slope       = vec2(height-heightx1, height-heighty1);
 
     // calculate surface normal from slope for shading
-    highp vec4 worldSpaceNormal;
-    worldSpaceNormal.xyz = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
-                                   vec3(tex2.x-tex1.x,  slope.x, 0.0));
+    lowp vec4 worldSpaceNormal;
+    worldSpaceNormal.xyz = cross( vec3(0.0,            slope.y, tex0.y-tex1.y),
+                                   vec3(tex0.x-tex1.x,  slope.x, 0.0));
     worldSpaceNormal.w = 1.0;
 
     highp vec3 eyeSpacePos      = (ModelViewMatrix * pos).xyz;
@@ -77,5 +80,5 @@ void main()
     highp float diffuse   = max(0.0, worldSpaceNormal.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
 
     //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
-    shadow = mix(1.0, min( 0.5 + (diffuse+facing)*0.5, 1.0), flatness);
+    shadow = mix(1.0, min( 0.75 + (diffuse+facing)*0.25, 1.0), flatness);
 }
