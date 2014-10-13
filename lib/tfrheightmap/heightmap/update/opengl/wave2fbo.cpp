@@ -73,7 +73,6 @@ void Wave2Fbo::
     modelview *= matrixd::scale (1.0/b->sample_rate (), 0.5, 1);
     QMatrix4x4 modelviewprojection {GLmatrixf(P.projection*modelview).transpose ().v ()};
     m_program->setUniformValue("ModelViewProjectionMatrix", modelviewprojection);
-    m_program->setUniformValue("rgba", QVector4D(0.0,0.0,0.0,0.5));
 
     GlException_CHECK_ERROR();
     glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -84,8 +83,8 @@ void Wave2Fbo::
     vertex_format_xy* d = &dv[0];
     int N = dv.size ();
     int S = b->number_of_samples ();
-    d[0] = vertex_format_xy{ 0, 0 };
-    d[1] = vertex_format_xy{ float(S), 0 };
+    d[0] = vertex_format_xy{ 0, -1 };
+    d[1] = vertex_format_xy{ float(S), -1 };
     d[2] = vertex_format_xy{ 0, 1 };
     d[3] = vertex_format_xy{ float(S), 1 };
     glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(vertex_format_xy)*4, d);
