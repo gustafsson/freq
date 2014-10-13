@@ -16,6 +16,8 @@
 #include <QQmlEngine>
 #include <QQmlApplicationEngine>
 
+//#define USE_QUICKVIEW
+
 /**
  * @brief The MyGuiApplication class should log uncaught exceptions during
  * event processing.
@@ -51,9 +53,9 @@ int main(int argc, char *argv[])
     PrettifySegfault::setup ();
 
     MyGuiApplication app(argc, argv);
-    app.setOrganizationName("Frekk Consulting");\
-    app.setOrganizationDomain("frekk.consulting");\
-    app.setApplicationName(QFileInfo(app.applicationFilePath()).baseName());\
+    app.setOrganizationName("Frekk Consulting");
+    app.setOrganizationDomain("frekk.consulting");
+    app.setApplicationName(QFileInfo(app.applicationFilePath()).baseName());
     app.setApplicationDisplayName ("Frekk");
     app.setApplicationName ("Frekk");
 
@@ -68,32 +70,26 @@ int main(int argc, char *argv[])
     QWindow* window;
     QQmlEngine* engine;
 
+#ifdef USE_QUICKVIEW
     QQuickView view;
+    // QQuickView doesn't create an OS X application window with an icon
+    // for maximizing to fullscreen
+
+    view.setResizeMode(QQuickView::SizeRootObjectToView);
+    view.setSource(QUrl("qrc:///Main.qml"));
+    window = &view;
+    engine = view.engine ();
+#else
     QQmlApplicationEngine appengine;
-    QUrl qml {"qrc:/main.qml"};
+    appengine.load (QUrl("qrc:///app.qml"));
 
-    bool use_qquickview = false;
-    if (use_qquickview)
-    {
-        // QQuickView doesn't create an OS X application window with an icon
-        // for maximizing to fullscreen
+    QObject* root = appengine.rootObjects().count () > 0 ? appengine.rootObjects().at(0) : 0;
+    window = dynamic_cast<QWindow*>(root);
+    engine = &appengine;
 
-        view.setResizeMode(QQuickView::SizeRootObjectToView);
-        view.setSource(qml);
-        window = &view;
-        engine = view.engine ();
-    }
-    else
-    {
-        appengine.load (qml);
-
-        QObject* root = appengine.rootObjects().count () > 0 ? appengine.rootObjects().at(0) : 0;
-        window = dynamic_cast<QWindow*>(root);
-        engine = &appengine;
-
-        if (!window)
-            Log("main: root element is not ApplicationWindow, use QQuickView instead");
-    }
+    if (!window)
+        Log("main: root element is not ApplicationWindow, use QQuickView instead");
+#endif
 
     if (window)
     {

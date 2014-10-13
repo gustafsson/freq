@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
-        <file>main.qml</file>
+        <file>Main.qml</file>
         <file>Heightmap.qml</file>
+        <file>app.qml</file>
     </qresource>
 </RCC>

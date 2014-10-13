@@ -64,12 +64,20 @@ void Squircle::
 void Squircle::handleWindowChanged(QQuickWindow *win)
 {
     if (win) {
+        disconnect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()));
+        disconnect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()));
+        disconnect(this, SIGNAL(cameraChanged()), this, SIGNAL(refresh()));
+        disconnect(this, SIGNAL(refresh()), win, SLOT(update()));
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
         connect(this, SIGNAL(cameraChanged()), SIGNAL(refresh()));
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
 
-        // wait until componentComplete to change properties
+        auto v = render_model.render_settings.clear_color;
+        auto f = [](float v) { return (unsigned char)(v<0.f?0:v>1.f?255:v*255); };
+        QColor c(f(v[0]), f(v[1]), f(v[2]), f(v[3]));
+        win->setColor (c);
+        win->setClearBeforeRendering (false);
 
         QMetaObject::invokeMethod (win, "update", Qt::QueuedConnection);
     }
@@ -180,12 +188,8 @@ void Squircle::componentComplete()
     QQuickItem::componentComplete();
 
     Log("squircle: componentComplete");
-    auto v = render_model.render_settings.clear_color;
-    auto f = [](float v) { return (unsigned char)(v<0.f?0:v>1.f?255:v*255); };
-    QColor c(f(v[0]), f(v[1]), f(v[2]), f(v[3]));
-    window ()->setColor (c);
-    window ()->setClearBeforeRendering (false);
-
+    if (window ())
+        handleWindowChanged(window ());
 }
 
 

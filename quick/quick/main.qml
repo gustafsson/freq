@@ -3,12 +3,8 @@ import QtQuick.Controls 1.2
 import OpenGLUnderQML 1.0
 import QtQuick.Layouts 1.1
 
-ApplicationWindow {
+Item {
     objectName: "root item "
-    statusBar: StatusBar {
-            visible: false
-            RowLayout { Label { text: heightmap1.displayedTransformDetails } }
-        }
 
     width: 320
     height: 480
@@ -107,13 +103,6 @@ ApplicationWindow {
             }
         }
     }
-    /*RowLayout {
-        spacing: 2
-        anchors.fill: parent
-        Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; color: "red" }
-        Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; color: "green" }
-        Rectangle { color: "blue"; width: 50; height: 20 }
-    }*/
 
     DropArea {
         id: dropArea
