@@ -32,7 +32,12 @@ void main()
     //float v = max(max(v4.x, v4.y), max(v4.z, v4.w));
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
-    mediump float v = texture2D(tex, texCoord).x;
+    mediump float v = texture2D(tex, texCoord, 0.0).x;
+    mediump float mean2 = texture2D(tex, texCoord, 5.0).x;
+    mediump float mean4 = texture2D(tex, texCoord, 6.0).x;
+    v = max((v - mean4)/mean4, (v - mean2)/mean2);
+    v = (1.0 + v)*100.0;
+    v = max(0.0, v);
     v = heightValue(v);
 
     mediump vec4 curveColor = fixedColor; // colorscale or grayscale

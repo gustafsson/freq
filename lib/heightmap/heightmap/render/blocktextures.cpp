@@ -2,9 +2,16 @@
 #include "gl.h"
 #include "GlException.h"
 #include "log.h"
+#include "neat_math.h"
+#include "tasktimer.h"
+#include "shared_state_traits_backtrace.h"
+#include "datastorage.h"
 
 //#define INFO
 #define INFO if(0)
+
+#define INFO_DISCARDED
+//#define INFO_DISCARDED if(0)
 
 namespace Heightmap {
 namespace Render {
@@ -12,6 +19,10 @@ namespace Render {
 class BlockTexturesImpl
 {
 public:
+    struct shared_state_traits: shared_state_traits_backtrace {
+        double timeout() { return 10.0; } // might take a long time if allocating a lot of textures
+    };
+
     explicit BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity = 0);
     BlockTexturesImpl(const BlockTexturesImpl&)=delete;
     BlockTexturesImpl&operator=(const BlockTexturesImpl&)=delete;
@@ -76,7 +87,8 @@ void BlockTextures::
         gc()
 {
     auto w = global_block_textures_impl.write ();
-    w->setCapacityHint(2*w->getUseCount());
+    int c = w->getUseCount();
+    w->setCapacityHint(std::min(c*2, c+32));
 }
 
 
@@ -171,7 +183,7 @@ void BlockTexturesImpl::
     }
 
     // not ok, adjust
-    setCapacity(c*2);
+    setCapacity(std::min(c*2, c+32)); // don't create more than 32 margin textures
 }
 
 
@@ -194,14 +206,19 @@ void BlockTexturesImpl::
                 pick.push_back (p);
 
         int discarded = textures.size () - pick.size ();
-        INFO Log("BlockTextures: discarding %d textures, was=%d, target=%d") % discarded % textures.size () % target_capacity;
+        INFO_DISCARDED Log("BlockTextures: discarding %d textures, was=%d, target=%d") % discarded % textures.size () % target_capacity;
 
         textures.swap (pick);
         return;
     }
 
     int new_textures = target_capacity - textures.size ();
-    INFO Log("BlockTextures: allocating %d new textures (had %d)") % new_textures % textures.size ();
+    int mipmapfactor = 2;
+    INFO Log("BlockTextures: allocating %d new textures (had %d of which %d were used). %s")
+            % new_textures % textures.size () % getUseCount()
+            % DataStorageVoid::getMemorySizeText (
+                textures.size ()*allocated_bytes_per_element()*width_*height_*mipmapfactor);
+
     GLuint t[new_textures];
     glGenTextures (new_textures, t);
     textures.reserve (target_capacity);
@@ -257,18 +274,20 @@ void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h)
 {
     glBindTexture(GL_TEXTURE_2D, name);
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
     // Compatible with GlFrameBuffer
 #ifdef GL_ES_VERSION_2_0
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
-    GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, 1, GL_R16F_EXT, w, h));
+    int mipmaplevels = std::max(1,std::min(7,(int)log2(std::max(w,h))-1));
+    GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
 #else
+//    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
 #endif
+
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }

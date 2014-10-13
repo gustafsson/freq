@@ -14,6 +14,7 @@
 #include "log.h"
 #include "neat_math.h"
 #include "lazy.h"
+#include "GlException.h"
 
 #include <thread>
 #include <future>
@@ -190,18 +191,18 @@ void BlockUpdater::
 
     // Draw from all chunks to each block
     std::map<Heightmap::pBlock,GlTexture::ptr> textures;
-    for (auto& f : chunks_per_block)
+    for (auto& block_with_chunks : chunks_per_block)
     {
-        const pBlock& block = f.first;
+        const pBlock& block = block_with_chunks.first;
         INFO Log("blockupdater: updating %s") % block->getRegion ();
         glProjection M;
         textures[block] = Heightmap::Render::BlockTextures::get1 ();
         auto fbo_mapping = p->fbo2block.begin (block->getRegion (), block->sourceTexture (), textures[block], M);
 
-        for (auto& c : f.second)
+        for (auto& chunk : block_with_chunks.second)
         {
             auto vp = block->visualization_params();
-            Texture2Fbo::Params p(c, vp->display_scale (), block->block_layout ());
+            Texture2Fbo::Params p(chunk, vp->display_scale (), block->block_layout ());
 
             // If something has changed the vbo is out-of-date, skip this
             if (!vbos.count (p))
@@ -212,7 +213,7 @@ void BlockUpdater::
 
             auto& vbo = vbos[p];
             int vertex_attrib, tex_attrib;
-            auto tex_mapping = pbo2texture[c]->map(
+            auto tex_mapping = pbo2texture[chunk]->map(
                         vbo->normalization_factor(),
                         vp->amplitude_axis (),
                         M, vertex_attrib, tex_attrib);
@@ -230,6 +231,13 @@ void BlockUpdater::
 #endif
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
+
+    for (const auto& v : textures)
+    {
+        glBindTexture (GL_TEXTURE_2D, v.second->getOpenGlTextureId());
+        glGenerateMipmap (GL_TEXTURE_2D);
+        glBindTexture (GL_TEXTURE_2D, 0);
+    }
 
     if (!textures.empty ())
         glFlush();

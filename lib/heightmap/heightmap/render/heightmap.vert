@@ -50,6 +50,8 @@ void main()
     heighty1 = heightValue(heighty1);
     heighty2 = heightValue(heighty2);
 
+//    height = texture2DLod(tex, texCoord, 0.0).x;
+
     highp vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
 
     // transform to homogeneous clip space

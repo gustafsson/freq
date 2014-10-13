@@ -144,13 +144,22 @@ void MergerTexture::
 
     cache_clone = cache_->clone();
 
-#ifndef DRAW_STRAIGHT_ONTO_BLOCK
-    auto fboBinding = fbo_->getScopeBinding ();
-    (void)fboBinding; // raii
-#endif
+    {
+    #ifndef DRAW_STRAIGHT_ONTO_BLOCK
+        auto fboBinding = fbo_->getScopeBinding ();
+        (void)fboBinding; // raii
+    #endif
+
+        for (pBlock b : blocks)
+            fillBlockFromOthersInternal (b);
+    }
 
     for (pBlock b : blocks)
-        fillBlockFromOthersInternal (b);
+    {
+        glBindTexture (GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId());
+        glGenerateMipmap (GL_TEXTURE_2D);
+        glBindTexture (GL_TEXTURE_2D, 0);
+    }
 
     cache_clone.clear ();
 
