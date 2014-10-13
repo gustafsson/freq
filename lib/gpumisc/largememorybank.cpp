@@ -30,7 +30,7 @@ public:
         void* p = new char[n];
         blocks.push_back (nfo{p,n,true});
         T += n;
-        if (0) Log("cpu: allocated %s, total %s in %d blocks")
+        if (T > 100*N) Log("cpu: allocated %s, total %s in %d blocks")
                 % DataStorageVoid::getMemorySizeText (n)
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ();

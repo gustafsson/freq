@@ -7,8 +7,8 @@
 #include "shared_state_traits_backtrace.h"
 #include "datastorage.h"
 
-//#define INFO
-#define INFO if(0)
+#define INFO
+//#define INFO if(0)
 
 #define INFO_DISCARDED
 //#define INFO_DISCARDED if(0)
