@@ -177,8 +177,7 @@ void GlFrameBuffer::
 #ifndef GL_ES_VERSION_2_0
         GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height) );
 #else
-        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height) );
-        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, width, height) );
+        GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height) );
 #endif
         GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, 0) );
     }
