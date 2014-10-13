@@ -48,13 +48,7 @@ namespace OpenGL {
 int gl_max_texture_size() {
     static int v = 0;
     if (0 == v)
-    {
         glGetIntegerv (GL_MAX_TEXTURE_SIZE, &v);
-//#ifndef GL_ES_VERSION_2_0
-//        // GL_MAX_TEXTURE_SIZE-1 seems to be the largest allowed texture in practice...
-//        v = lpo2s (v); // power of 2 is slightly faster
-//#endif
-    }
     return v;
 }
 
