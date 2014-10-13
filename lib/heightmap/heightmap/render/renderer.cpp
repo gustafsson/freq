@@ -111,8 +111,8 @@ void Renderer::
 
 #ifdef GL_ES_VERSION_2_0
         // too many vertices
-//        mesh_fraction_width*=4;
-//        mesh_fraction_height*=4;
+        mesh_fraction_width*=4;
+        mesh_fraction_height*=4;
 #endif
 
         render_block->setSize (
