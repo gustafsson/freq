@@ -132,8 +132,6 @@ void RenderBlock::
     // assume failure unless we reach the end of this method
     _initialized = InitializationFailed;
 
-    TaskTimer tt("Initializing OpenGL");
-
     checkExtensions();
 
     initShaders();
@@ -186,6 +184,8 @@ void RenderBlock::
 void RenderBlock::
         checkExtensions ()
 {
+    TaskTimer tt("RenderBlock: checkExtensions");
+
     GlException_CHECK_ERROR();
 
 #ifdef USE_CUDA

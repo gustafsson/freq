@@ -22,6 +22,7 @@ class Squircle : public QQuickItem
 
 public:
     Squircle();
+    ~Squircle();
 
     qreal timepos() const;
     void setTimepos(qreal v);

@@ -92,10 +92,11 @@ int main(int argc, char *argv[])
 
     if (window)
     {
-        Log("main: window type %d") % window->type ();
-
         // http://qt-project.org/wiki/How_to_use_OpenGL_Core_Profile_with_Qt
         bool enableLegacyOpenGL = true;
+#ifdef Q_OS_IOS
+//        enableLegacyOpenGL = false;
+#endif
         if (!enableLegacyOpenGL) {
             QSurfaceFormat f = window->format();
             f.setProfile(QSurfaceFormat::CoreProfile);

@@ -34,8 +34,6 @@ void TouchNavigation::
 void TouchNavigation::
         setSelection(Selection*s)
 {
-    Log("touchnavigation: setSelection");
-
     selection_=s;
     emit selectionChanged ();
 }
@@ -51,8 +49,6 @@ Tools::RenderModel* TouchNavigation::
 void TouchNavigation::componentComplete()
 {
     QQuickItem::componentComplete();
-
-    Log("touchnavigation: componentComplete");
 
     // qml signals
     connect(this, SIGNAL(mouseMove(qreal,qreal,bool)),

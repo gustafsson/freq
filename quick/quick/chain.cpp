@@ -64,8 +64,6 @@ public:
 Chain::Chain(QQuickItem *parent) :
     QQuickItem(parent)
 {
-    Log("chain.cpp: Creating chain %p") % (void*)this;
-
     chain_ = Processing::Chain::createDefaultChain ();
     target_marker_ = chain_->addTarget(OperationDesc::ptr(new NoopOperation));
     update_queue_.reset (new Heightmap::Update::UpdateQueue);

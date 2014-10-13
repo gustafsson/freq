@@ -20,6 +20,12 @@ Squircle::Squircle() :
 }
 
 
+Squircle::~Squircle()
+{
+    cleanup();
+}
+
+
 void Squircle::
         setupRenderTarget()
 {
@@ -173,9 +179,9 @@ void Squircle::sync()
 
 void Squircle::cleanup()
 {
-    Log("cleanup %d ") % QGLContext::currentContext ();
-
     if (m_renderer) {
+        Log("squircle: cleanup");
+
         delete m_renderer;
         m_renderer = 0;
     }
@@ -186,7 +192,6 @@ void Squircle::componentComplete()
 {
     QQuickItem::componentComplete();
 
-    Log("squircle: componentComplete");
     if (window ())
         handleWindowChanged(window ());
 }

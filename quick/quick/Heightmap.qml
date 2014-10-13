@@ -24,7 +24,7 @@ Squircle {
 //            enabled: false // visible but disable; mousearea.cursorShape has effect
 
             onPressed: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": mouse press");
+//                console.log(("" + new Date()) + parent.parent.objectName + ": mouse press");
                 mousearea.cursorShape = Qt.ClosedHandCursor;
                 parent.mouseMove(mouseX, mouseY, pressed);
             }
@@ -60,15 +60,15 @@ Squircle {
             }
 
             onCanceled: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": touch canceled " + touchPoints.length);
+//                console.log(("" + new Date()) + parent.parent.objectName + ": touch canceled " + touchPoints.length);
             }
 
             onPressed: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": touch pressed " + touchPoints.length);
+//                console.log(("" + new Date()) + parent.parent.objectName + ": touch pressed " + touchPoints.length);
             }
 
             onReleased: {
-                console.log(("" + new Date()) + parent.parent.objectName + ": touch released " + touchPoints.length);
+//                console.log(("" + new Date()) + parent.parent.objectName + ": touch released " + touchPoints.length);
             }
 
             onTouchUpdated: {
