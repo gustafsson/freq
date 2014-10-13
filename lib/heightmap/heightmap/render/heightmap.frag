@@ -36,7 +36,7 @@ void main()
     mediump float mean2 = texture2D(tex, texCoord, 5.0).x;
     mediump float mean4 = texture2D(tex, texCoord, 6.0).x;
     v = max((v - mean4)/mean4, (v - mean2)/mean2);
-    v = (1.0 + v)*100.0;
+    v = (1.0 + v)*200.0;
     v = max(0.0, v);
     v = heightValue(v);
 
