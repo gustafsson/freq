@@ -332,7 +332,6 @@ void RenderBlock::
     glActiveTexture(GL_TEXTURE2);
     _colorTexture->bindTexture2D();
     glActiveTexture(GL_TEXTURE0);
-    glDisable (GL_BLEND);
 
     glUseProgram(_shader_prog);
 
@@ -401,7 +400,7 @@ void RenderBlock::
         glUniform1f(uniContourPlot, render_settings->draw_contour_plot ? 1.f : 0.f );
 
         uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
-        float v = render_settings->draw_flat ? 0 : 2*render_settings->last_ysize; // as glScalef in setupGlStates
+        float v = render_settings->draw_flat ? 0 : render_settings->last_ysize;
         glUniform1f(uniFlatness, v);
 
         uniYScale = glGetUniformLocation(_shader_prog, "yScale");
