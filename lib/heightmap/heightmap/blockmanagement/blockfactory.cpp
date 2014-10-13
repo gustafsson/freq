@@ -40,6 +40,9 @@ pBlock BlockFactory::
 
     //setDummyValues(block);
 
+    if (!block->texture ())
+        return pBlock();
+
     return block;
 }
 
