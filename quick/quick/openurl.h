@@ -20,7 +20,7 @@ signals:
 
 private slots:
     // bound to qml signal openUrl(QUrl)
-    void openUrl(QUrl url);
+    void onOpenUrl(QUrl url);
 
 protected:
     void componentComplete() override;

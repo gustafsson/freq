@@ -12,7 +12,7 @@ OpenUrl::OpenUrl(QQuickItem *parent) :
 {
     LOG_CALLS Log("OpenUrl::OpenUrl");
 
-    QDesktopServices::setUrlHandler ( "file", this, "openUrl");
+    QDesktopServices::setUrlHandler ( "file", this, "onOpenUrl");
 }
 
 
@@ -21,7 +21,7 @@ void OpenUrl::
 {
     QQuickItem::componentComplete();
 
-    connect(this, SIGNAL(openUrl(QUrl)), this, SLOT(openUrl(QUrl)));
+    connect(this, SIGNAL(openUrl(QUrl)), this, SLOT(onOpenUrl(QUrl)));
     LOG_CALLS Log("OpenUrl::componentComplete");
 }
 
@@ -54,7 +54,7 @@ Signal::OperationDesc::ptr parseFile(QUrl url)
 
 
 void OpenUrl::
-        openUrl(QUrl url)
+        onOpenUrl(QUrl url)
 {
 #ifdef Q_OS_IOS
     // cleanup old files
@@ -69,7 +69,7 @@ void OpenUrl::
     }
 #endif
 
-    LOG_CALLS Log("OpenUrl::openUrl %s") % url.toString ().toStdString ();
+    LOG_CALLS Log("OpenUrl::onOpenUrl %s") % url.toString ().toStdString ();
 
     // first see if this was a valid file
     Signal::OperationDesc::ptr desc = parseFile(url);
