@@ -84,9 +84,9 @@ void Wave2Fbo::
     int N = dv.size ();
     int S = b->number_of_samples ();
     d[0] = vertex_format_xy{ 0, -1 };
-    d[1] = vertex_format_xy{ float(S), -1 };
+    d[1] = vertex_format_xy{ float(S-1), -1 };
     d[2] = vertex_format_xy{ 0, 1 };
-    d[3] = vertex_format_xy{ float(S), 1 };
+    d[3] = vertex_format_xy{ float(S-1), 1 };
     glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(vertex_format_xy)*4, d);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
