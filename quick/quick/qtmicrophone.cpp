@@ -5,7 +5,7 @@
 
 #include <QAudioInput>
 
-#define SKIP_ZEROS
+//#define SKIP_ZEROS
 
 GotData::GotData(
         shared_state<Signal::Recorder::Data> data,
