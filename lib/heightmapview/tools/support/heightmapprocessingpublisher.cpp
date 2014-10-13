@@ -210,7 +210,7 @@ void HeightmapProcessingPublisher::
 
 //        OperationDesc::Extent x;
 //        x.interval = Interval(-10,20);
-        tfrmapping->length(30);
+        tfrmapping->lengthSamples(30 * block_layout.sample_rate ());
         hpp.setLastUpdatedInterval (Signal::Interval(0,5));
 
         EXCEPTION_ASSERT(hpp.isHeightmapDone ());

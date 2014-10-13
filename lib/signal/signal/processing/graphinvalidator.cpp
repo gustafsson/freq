@@ -1,8 +1,6 @@
 #include <QtCore>
 #include "graphinvalidator.h"
 
-#include <boost/foreach.hpp>
-
 namespace Signal {
 namespace Processing {
 

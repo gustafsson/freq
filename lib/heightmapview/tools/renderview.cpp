@@ -327,7 +327,7 @@ void RenderView::
 #else
     bool onlyComputeBlocksForRenderView = false;
 #endif
-    Signal::OperationDesc::Extent x = model->recompute_extent ();
+    model->recompute_extent ();
     { // Render
         TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 

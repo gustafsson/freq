@@ -68,7 +68,7 @@ namespace Tools
         Tfr::TransformDesc::ptr transform_desc() const;
         void set_transform_desc(Tfr::TransformDesc::ptr t);
 
-        Signal::OperationDesc::Extent recompute_extent();
+        void recompute_extent(); // read extent values from tfr_mapping
         void set_extent(Signal::OperationDesc::Extent extent);
 
         Signal::OperationDesc::ptr renderOperationDesc();
@@ -165,6 +165,7 @@ namespace Tools
 
 
         void setTestCamera();
+        void deprecateCache(Signal::Intervals I = Signal::Intervals::Intervals_ALL);
     };
 } // namespace Tools
 

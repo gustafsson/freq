@@ -193,7 +193,7 @@ void UpdateProducer::
         MergeChunk::ptr merge_chunk( merge_chunk_mock = new MergeChunkMock );
         BlockLayout bl(4, 4, SampleRate(4));
         Heightmap::TfrMapping::ptr tfrmap(new Heightmap::TfrMapping(bl, ChannelCount(1)));
-        tfrmap.write ()->length( 1 );
+        tfrmap.write ()->lengthSamples( 1*bl.sample_rate () );
         UpdateQueue::ptr update_queue(new UpdateQueue::ptr::element_type);
         UpdateProducer cbf( update_queue, tfrmap, merge_chunk );
 

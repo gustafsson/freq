@@ -11,8 +11,8 @@ RenderViewAxes::RenderViewAxes(Tools::RenderModel& render_model)
 void RenderViewAxes::
         linearFreqScale()
 {
-    auto x = render_model.recompute_extent ();
-    float fs = x.sample_rate.get();
+    render_model.recompute_extent ();
+    float fs = render_model.tfr_mapping()->targetSampleRate();
 
     Heightmap::FreqAxis fa;
     fa.setLinear( fs );
@@ -30,7 +30,6 @@ void RenderViewAxes::
 void RenderViewAxes::
         waveformScale()
 {
-    linearFreqScale ();
 
     render_model.render_settings.y_offset = 0.0;
     render_model.render_settings.y_scale = 10.5;
@@ -70,9 +69,10 @@ void RenderViewAxes::
         logZScale()
 {
     Heightmap::FreqAxis f;
+    render_model.recompute_extent ();
     float fs = render_model.tfr_mapping ()->targetSampleRate();
     f.setLogarithmic (fs/1000,fs/2);
-    render_model.tfr_mapping ()->display_scale(f);
+    render_model.display_scale (f);
 
 /*
     auto x = render_model.recompute_extent ();

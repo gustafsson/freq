@@ -54,7 +54,8 @@ public:
     void transform_desc(Tfr::TransformDesc::ptr);
 
     double length() const;
-    void length(double L);
+    Signal::IntervalType lengthSamples() const;
+    void lengthSamples(Signal::IntervalType L);
 
     int channels() const;
     void channels(int value);
@@ -69,7 +70,7 @@ private:
     Collections                 collections_;
     BlockLayout                 block_layout_;
     VisualizationParams::ptr    visualization_params_;
-    double                      length_;
+    Signal::IntervalType        length_samples_;
 
 public:
     static void test();

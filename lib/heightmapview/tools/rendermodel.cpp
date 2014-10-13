@@ -71,19 +71,22 @@ void RenderModel::
     // specify wrapped filter with set_filter
     Support::RenderOperationDesc*rod;
     render_operation_desc_.reset(rod=new Support::RenderOperationDesc(Signal::OperationDesc::ptr(), rt));
+
     if (target_marker)
         target_marker_ = chain->addTargetAfter(render_operation_desc_,target_marker);
     else
         target_marker_ = chain->addTarget(render_operation_desc_);
+
     rod->setInvalidator(Signal::Processing::IInvalidator::ptr(
-                                               new TargetInvalidator(target_marker_->target_needs ())));
+            new TargetInvalidator(target_marker_->target_needs ())));
+
     chain_ = chain;
     update_queue_ = update_queue;
 
-    Signal::OperationDesc::Extent x = recompute_extent ();
+    recompute_extent ();
 
     Heightmap::FreqAxis fa;
-    fa.setLinear( x.sample_rate.get () );
+    fa.setLinear( tfr_map_->targetSampleRate() );
     display_scale( fa );
 }
 
@@ -136,6 +139,15 @@ void RenderModel::
 }
 
 
+void RenderModel::
+        deprecateCache(Signal::Intervals I)
+{
+    if (render_operation_desc_)
+        if (auto i = render_operation_desc_.raw ()->getInvalidator ())
+            i->deprecateCache(I);
+}
+
+
 Heightmap::TfrMapping::Collections RenderModel::
         collections() const
 {
@@ -180,10 +192,7 @@ void RenderModel::
 
     tfr_map_.write ()->display_scale( x );
 
-    Signal::Processing::IInvalidator::ptr i =
-            render_operation_desc_.raw ()->getInvalidator ();
-    if (i)
-        i->deprecateCache(Signal::Interval::Interval_ALL);
+    deprecateCache();
 }
 
 
@@ -203,10 +212,7 @@ void RenderModel::
 
     tfr_map_.write ()->amplitude_axis( x );
 
-    Signal::Processing::IInvalidator::ptr i =
-            render_operation_desc_.raw ()->getInvalidator ();
-    if (i)
-        i->deprecateCache(Signal::Interval::Interval_ALL);
+    deprecateCache ();
 }
 
 
@@ -243,6 +249,8 @@ void RenderModel::
         set_transform_desc(Tfr::TransformDesc::ptr t)
 {
     {
+        EXCEPTION_ASSERT(render_operation_desc_);
+
         auto o = render_operation_desc_.write ();
         Support::RenderOperationDesc* rod = dynamic_cast<Support::RenderOperationDesc*>(&*o);
 
@@ -255,26 +263,20 @@ void RenderModel::
         // and change the tfr_mapping
         tfr_map_->transform_desc( t->copy() );
 
-        Signal::Processing::IInvalidator::ptr i =
-                render_operation_desc_.raw ()->getInvalidator ();
-        if (i)
-            i->deprecateCache(Signal::Interval::Interval_ALL);
+        deprecateCache();
     }
 }
 
 
-Signal::OperationDesc::Extent RenderModel::
+void RenderModel::
         recompute_extent()
 {
-    if (!chain_)
-        return Signal::OperationDesc::Extent();
+    Signal::OperationDesc::Extent extent;
 
-    Signal::OperationDesc::Extent extent = chain_->extent(target_marker_);
-    extent.interval           = extent.interval          .get_value_or (Signal::Interval());
-    extent.number_of_channels = extent.number_of_channels.get_value_or (1);
-    extent.sample_rate        = extent.sample_rate       .get_value_or (1);
+    if (chain_)
+        extent = chain_->extent(target_marker_);
+
     set_extent (extent);
-    return extent;
 }
 
 
@@ -282,9 +284,34 @@ void RenderModel::
         set_extent(Signal::OperationDesc::Extent extent)
 {
     auto w = tfr_map_.write ();
-    w->targetSampleRate( extent.sample_rate.get_value_or (1) );
-    w->length( extent.interval.get_value_or (Signal::Interval()).count() / w->targetSampleRate() );
-    w->channels( extent.number_of_channels.get_value_or (1) );
+
+    //
+    Signal::OperationDesc::Extent prevextent;
+    prevextent.sample_rate = w->targetSampleRate();
+    prevextent.number_of_channels = w->channels();
+    prevextent.interval = Signal::Interval(0, w->lengthSamples());
+
+    extent.sample_rate = extent.sample_rate.get_value_or (1);
+    extent.interval = extent.interval.get_value_or (Signal::Interval());
+    extent.number_of_channels = extent.number_of_channels.get_value_or (1);
+
+    w->targetSampleRate( extent.sample_rate.get() );
+    w->lengthSamples( extent.interval.get().last );
+    w->channels( extent.number_of_channels.get () );
+    w.unlock ();
+
+    Signal::Intervals deprecate;
+    if (prevextent.sample_rate.get () != extent.sample_rate.get () ||
+            prevextent.number_of_channels.get () != prevextent.number_of_channels.get ())
+    {
+        deprecate = Signal::Interval::Interval_ALL;
+    } else if (prevextent.interval.get () != extent.interval.get ()) {
+        // should deprecate new or modified samples through OperationDesc::getInvalidator
+    } else {
+        // nothing changed, ok
+    }
+
+    deprecateCache(deprecate);
 }
 
 
@@ -298,6 +325,8 @@ Signal::Processing::TargetMarker::ptr RenderModel::
 void RenderModel::
         set_filter(Signal::OperationDesc::ptr o)
 {
+    EXCEPTION_ASSERT(render_operation_desc_);
+
     auto wo = render_operation_desc_.write ();
     Signal::OperationDescWrapper* w =
             dynamic_cast<Signal::OperationDescWrapper*>(&*wo);
@@ -305,16 +334,16 @@ void RenderModel::
     w->setWrappedOperationDesc (o);
     wo.unlock ();
 
-    Signal::Processing::IInvalidator::ptr i =
-            render_operation_desc_.raw ()->getInvalidator ();
-    if (i)
-        i->deprecateCache(Signal::Interval::Interval_ALL);
+    deprecateCache();
 }
 
 
 Signal::OperationDesc::ptr RenderModel::
         get_filter()
 {
+    if (!render_operation_desc_)
+        return Signal::OperationDesc::ptr();
+
     auto ow = render_operation_desc_.read ();
     const Signal::OperationDescWrapper* w = dynamic_cast<const Signal::OperationDescWrapper*>(&*ow);
     return w->getWrappedOperationDesc ();

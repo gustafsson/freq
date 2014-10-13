@@ -55,7 +55,7 @@ TfrMapping::
     :
       block_layout_(block_layout),
       visualization_params_(new VisualizationParams),
-      length_( 0 )
+      length_samples_( 0 )
 {
     LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
                 block_layout_.targetSampleRate (),
@@ -208,20 +208,27 @@ void TfrMapping::
 double TfrMapping::
         length() const
 {
-    return length_;
+    return length_samples_ / targetSampleRate();
+}
+
+
+Signal::IntervalType TfrMapping::
+        lengthSamples() const
+{
+    return length_samples_;
 }
 
 
 void TfrMapping::
-        length(double L)
+        lengthSamples(Signal::IntervalType L)
 {
-    if (L == length_)
+    if (L == length_samples_)
         return;
 
-    length_ = L;
+    length_samples_ = L;
 
     for (unsigned c=0; c<collections_.size(); ++c)
-        collections_[c].write ()->length( length_ );
+        collections_[c].write ()->length( length() );
 }
 
 
@@ -251,7 +258,7 @@ void TfrMapping::
     for (pCollection& c : new_collections)
     {
         c = Heightmap::Collection::ptr( new Heightmap::Collection(block_layout_, visualization_params_));
-        c->length( length_ );
+        c->length( length_samples_ );
     }
 
     collections_ = new_collections;
