@@ -20,6 +20,21 @@ namespace Render {
  *
  * The memory is a shared global resource. Thus the instance of BlockTextures
  * is also a shared and global singleton.
+ *
+ * The maximum number of textures needed is:
+ * N = ceil(window_width*2/blocksize/redundancy)*ceil(window_height*2/blocksize/redundancy)*cache_multiplier
+ * Where cache_multiplier is 4 when computing max_cache_size in Collection::runGarbageCollection. It is needed
+ * in order to not discard everything as soon as a small change is made back and forth.
+ *
+ * The factor 2 comes from block texel density should be at least as high as the pixel density but not more than
+ * 2 times the pixel density when a block with a lower resolution can be used instead.
+ *
+ * With redundancy=1, window_width = 2048, window_height = 1536, blocksize = 256 blir N = 768. The memory required
+ * is S=N*blocksize*blocksize*sizeof(half_float)*2, with 2 for mipmaps, which gives S = 192 MB.
+ *
+ * Regardless of blocksize, for a given window size, the amount of texture memory needed is at least:
+ * S = window_width*window_height*4*sizeof(half_float)*2*cache_multiplier.
+ * Which for the given example yields S = 192 MB, again.
  */
 class BlockTextures
 {
