@@ -41,7 +41,7 @@ SOURCES += \
     gluperspective.cpp \
     gluproject_ios.cpp \
     gluunproject.cpp \
-    largememorybank.cpp \
+    largememorypool.cpp \
     log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
@@ -83,7 +83,7 @@ HEADERS += \
     gpumisc_global.h \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
-    largememorybank.h \
+    largememorypool.h \
     log.h \
     mappedvbo.h \
     mappedvbovoid.h \

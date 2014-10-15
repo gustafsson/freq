@@ -2,7 +2,7 @@
 #include "tfr/stftdesc.h"
 #include "tfr/waveformrepresentation.h"
 #include "log.h"
-#include "largememorybank.h"
+#include "largememorypool.h"
 
 //#define LOG_TRANSFORM
 #define LOG_TRANSFORM if(0)
@@ -91,6 +91,6 @@ void OptimalTimeFrequencyResolution::
         render_model.set_transform_desc (newt);
         emit squircle_->displayedTransformDetailsChanged();
 
-        lmb_gc (16 << 20); // 16 MB, could use a lower value if it should be more aggressive
+        lmp_gc (16 << 20); // 16 MB, could use a lower value if it should be more aggressive
     }
 }

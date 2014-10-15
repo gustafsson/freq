@@ -1,12 +1,12 @@
-#include "largememorybank.h"
+#include "largememorypool.h"
 #include "neat_math.h"
 #include <mutex>
 
 // custom memory allocator for a few (<20) large (>1 MB) arrays
-class LargeMemoryBank {
+class LargeMemoryPool {
 public:
-    LargeMemoryBank(size_t N) : N(N), N_threshold(N/10) {
-        Log("LargeMemoryBank: N=%s, N_threshold=%s") % N % N_threshold;
+    LargeMemoryPool(size_t N) : N(N), N_threshold(N/10) {
+        Log("LargeMemoryPool: N=%s, N_threshold=%s") % N % N_threshold;
     }
 
     const size_t N;
@@ -84,21 +84,21 @@ public:
 };
 
 
-LargeMemoryBank bank {1 << 20};
+LargeMemoryPool pool {1 << 20};
 
-void* lmb_malloc(size_t n) {
-    if (n<=bank.N_threshold)
+void* lmp_malloc(size_t n) {
+    if (n<=pool.N_threshold)
         return new char[n];
-    return bank.getBlock (n);
+    return pool.getBlock (n);
 }
 
-void lmb_free(void* p, size_t n) {
-    if (n<=bank.N_threshold)
+void lmp_free(void* p, size_t n) {
+    if (n<=pool.N_threshold)
         delete [](char*)p;
     else
-        bank.releaseBlock (p);
+        pool.releaseBlock (p);
 }
 
-void lmb_gc(size_t threshold) {
-    bank.cleanPool (threshold);
+void lmp_gc(size_t threshold) {
+    pool.cleanPool (threshold);
 }
