@@ -7,11 +7,8 @@
 #include "gluperspective.h"
 #include "gl.h"
 
-#ifdef GL_ES_VERSION_2_0
-const bool copy_to_new_fbo_for_each_draw = false; // true doensn't work
-#else
-const bool copy_to_new_fbo_for_each_draw = false; // true does work, faster? dunno
-#endif
+// both true and false work on gl as well as gles, but which is faster? dunno
+const bool copy_to_new_fbo_for_each_draw = false;
 
 namespace Heightmap {
 namespace Update {
@@ -110,8 +107,6 @@ Fbo2Block::ScopeBinding Fbo2Block::
     blitTexture(oldTexture, copyfbo);
 #endif
 
-    ScopeBinding fboBinding = ScopeBinding(*this, &Fbo2Block::end);
-
     // Juggle texture coordinates so that border texels are centered on the border
     float dt = br.time (), ds = br.scale ();
     br.a.time -= 0.5*dt / w;
@@ -133,7 +128,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
     glDisable (GL_BLEND);
     glDisable (GL_CULL_FACE);
 
-    return fboBinding;
+    return ScopeBinding(*this, &Fbo2Block::end);
 }
 
 

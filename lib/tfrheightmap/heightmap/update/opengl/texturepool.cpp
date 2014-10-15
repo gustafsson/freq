@@ -35,7 +35,10 @@ void setupTexture(unsigned name, unsigned w, unsigned h, bool f32)
     if (f32)
         setupTextureFloat32(name,w,h);
     else
-        Render::BlockTextures::setupTexture(name,w,h);
+        Render::BlockTextures::setupTexture(name,w,h,false);
+
+    // if it should use mipmaps, they should downsample along the w axis only. i.e GL_TEXTURE_1D_ARRAY
+    //glGenerateMipmap (GL_TEXTURE_1D_ARRAY);
 }
 
 

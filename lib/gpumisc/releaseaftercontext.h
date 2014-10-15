@@ -16,9 +16,16 @@ public:
 
     ~ReleaseAfterContext()
     {
-        (obj_.*releaseCall_)();
+        release();
     }
 
+
+    void release() {
+        if (releaseCall_) {
+            (obj_.*releaseCall_)();
+            releaseCall_ = 0;
+        }
+    }
 
 private:
     T& obj_;

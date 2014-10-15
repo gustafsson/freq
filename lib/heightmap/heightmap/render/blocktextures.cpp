@@ -36,7 +36,7 @@ public:
     unsigned getWidth() const { return width_; }
     unsigned getHeight() const { return height_; }
 
-    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps=true);
     static unsigned allocated_bytes_per_element();
 
 private:
@@ -143,9 +143,9 @@ unsigned BlockTextures::
 }
 
 void BlockTextures::
-        setupTexture(unsigned name, unsigned width, unsigned height)
+        setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps)
 {
-    BlockTexturesImpl::setupTexture (name,width,height);
+    BlockTexturesImpl::setupTexture (name,width,height,mipmaps);
 }
 
 
@@ -271,13 +271,14 @@ int BlockTexturesImpl::
 
 
 void BlockTexturesImpl::
-        setupTexture(unsigned name, unsigned w, unsigned h)
+        setupTexture(unsigned name, unsigned w, unsigned h, bool mipmaps)
 {
     glBindTexture(GL_TEXTURE_2D, name);
     // Compatible with GlFrameBuffer
 #ifdef GL_ES_VERSION_2_0
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     int mipmaplevels = std::max(1,std::min(7,(int)log2(std::max(w,h))-1));
+    if (!mipmaps) mipmaplevels = 1;
     GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
 #else
 //    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
@@ -287,7 +288,7 @@ void BlockTexturesImpl::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -222,8 +222,7 @@ void BlockUpdater::
             (void)tex_mapping; // suppress warning caused by RAII
         }
 
-        // suppress warning caused by RAII
-        (void)fbo_mapping;
+        fbo_mapping.release ();
     }
 
 #ifdef USE_PBO
@@ -231,13 +230,6 @@ void BlockUpdater::
 #endif
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
-
-    for (const auto& v : textures)
-    {
-        glBindTexture (GL_TEXTURE_2D, v.second->getOpenGlTextureId());
-        glGenerateMipmap (GL_TEXTURE_2D);
-        glBindTexture (GL_TEXTURE_2D, 0);
-    }
 
     if (!textures.empty ())
         glFlush();

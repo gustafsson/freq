@@ -83,7 +83,7 @@ public:
      * @param width
      * @param height
      */
-    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps=true);
 
     /**
      * @brief allocated_bytes_per_element
