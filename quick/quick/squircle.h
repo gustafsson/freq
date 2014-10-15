@@ -37,7 +37,7 @@ public:
     void setXangle(qreal v);
 
     Chain* chain() const { return chain_item_; }
-    void setChain(Chain* c) { chain_item_=c; }
+    void setChain(Chain* c);
 
     QString displayedTransform() const { return displayed_transform_; }
     void setDisplayedTransform(QString c);

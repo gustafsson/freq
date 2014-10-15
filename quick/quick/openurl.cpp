@@ -30,7 +30,10 @@ void OpenUrl::
         setChain(Chain* c)
 {
     LOG_CALLS Log("OpenUrl::setChain");
+    if (c==chain_)
+        return;
     chain_=c;
+    emit chainChanged();
 }
 
 

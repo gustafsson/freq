@@ -267,3 +267,13 @@ void Squircle::setXangle(qreal v)
 
     emit cameraChanged ();
 }
+
+
+void Squircle::
+        setChain(Chain* c)
+{
+    if (c==chain_item_)
+        return;
+    chain_item_=c;
+    emit chainChanged();
+}

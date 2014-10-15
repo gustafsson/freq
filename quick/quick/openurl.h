@@ -13,7 +13,7 @@ public:
     explicit OpenUrl(QQuickItem *parent = 0);
 
     Chain* chain() const { return chain_; }
-    void setChain(Chain* c) ;//{ chain_=c; }
+    void setChain(Chain* c);
 
 signals:
     void chainChanged();
