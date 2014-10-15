@@ -40,18 +40,14 @@ void main()
     v = max(0.0, v);
     v = heightValue(v);
 
-    mediump vec4 curveColor = fixedColor; // colorscale or grayscale
-
-    mediump float f = v;
-
-    // rainbow
-    curveColor = mix(curveColor, texture2D(tex_color, vec2(f,0)), colorTextureFactor);
-    mediump float g = max(0.0, 1.0-f);
-    f = mix(f, 1.0 - g*g*g, colorTextureFactor);
+    // rainbow, colorscale or grayscale
+    mediump vec4 curveColor = mix(fixedColor, texture2D(tex_color, vec2(v,0)), colorTextureFactor);
+    mediump float g = max(0.0, 1.0-v);
+    v = mix(v, 1.0 - g*g*g, colorTextureFactor);
 
     //float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
-    curveColor = mix(clearColor, curveColor, f);
+    curveColor = mix(clearColor, curveColor, v);
 
     mediump float isarithm1 = fract( vertex_height * 25.0) < 0.93 ? 1.0 : 0.8;
     mediump float isarithm2 = fract( vertex_height * 5.0) < 0.93 ? 1.0 : 0.8;
