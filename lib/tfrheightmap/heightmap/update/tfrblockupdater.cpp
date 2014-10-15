@@ -97,20 +97,23 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
     int offs_y = 0, offs_x = 0;
     switch (chunk->order)
     {
-    case Tfr::Chunk::Order_row_major:
+    case Tfr::Chunk::Order_row_major: // i.e Cwt
         org_width = chunk->nSamples ();
         org_height = chunk->nScales ();
         data_width = int_div_ceil (chunk->n_valid_samples, stepx);
         data_height = org_height;
-        offs_x = chunk->first_valid_sample;
+        offs_x = chunk->first_valid_sample; // != 0
         break;
 
-    case Tfr::Chunk::Order_column_major:
+    case Tfr::Chunk::Order_column_major: // i.e Stft
         org_width = chunk->nScales ();
         org_height = chunk->nSamples ();
         data_width = org_width;
         data_height = int_div_ceil (chunk->n_valid_samples, stepx);
-        offs_y = chunk->first_valid_sample;
+        offs_y = chunk->first_valid_sample; // = 0
+
+        if (1<<(int)log2(data_width-1) == data_width - 1) // if data_width=(2^n)+1, discard the nyquist freq
+            data_width--;
 
 //        data_height = int_div_ceil (org_height, stepx);
 //        offs_y = 0;
@@ -121,6 +124,12 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
     }
 
     bool resample = stepx > 1 || offs_y > 0 || offs_x > 0;
+    if (!resample && data_width + 1 == org_width)
+    {
+        for (int y=1; y<data_height; ++y)
+            for (int x=0; x<data_width; ++x)
+                fp[y*data_width + x] = fp[y*org_width + x];
+    }
     if (resample)
     {
         EXCEPTION_ASSERT_NOTEQUALS(chunk->order, Tfr::Chunk::Order_column_major);
