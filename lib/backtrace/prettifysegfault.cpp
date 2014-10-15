@@ -6,6 +6,7 @@
 #include "exceptionassert.h"
 
 #include <signal.h>
+#include <iostream>
 
 #ifdef _MSC_VER
 #include <Windows.h>
