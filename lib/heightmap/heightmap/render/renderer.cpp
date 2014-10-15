@@ -143,7 +143,7 @@ Render::RenderSet::references_t Renderer::
     LOG_REFERENCES_TO_RENDER {
         TaskInfo("Rendering %d blocks", R.size());
         for ( auto const& r : R)
-            TaskInfo(boost::format("%s") % ReferenceInfo(r, bl, vp));
+            TaskInfo(boost::format("%s") % ReferenceInfo(r.first, bl, vp));
     }
 
     return R;
@@ -175,20 +175,21 @@ void Renderer::
 
         Render::RenderBlock::Renderer block_renderer(render_block, bl, gl_projection);
 
-        for (const Reference& r : R)
+        for (const auto& v : R)
         {
+            const Reference& r = v.first;
             auto i = cache.find(r);
             if (i != cache.end())
             {
                 pBlock block = i->second;
-                block_renderer.renderBlock(block);
+                block_renderer.renderBlock(block, v.second);
                 block->frame_number_last_used = frame_number;
                 render_settings.drawn_blocks++;
             }
             else
             {
                 // Indicate unavailable blocks by not drawing the surface but only a wireframe.
-                failed.insert(r);
+                failed.insert(v);
             }
         }
 
@@ -211,8 +212,8 @@ void Renderer::
 
     Render::RenderRegion rr(gl_projection);
 
-    for (const Reference& r : R)
-        rr.render(region(r), drawcross);
+    for (const auto& r : R)
+        rr.render(region(r.first), drawcross);
 }
 
 

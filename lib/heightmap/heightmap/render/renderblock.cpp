@@ -11,6 +11,8 @@
 #include "unused.h"
 #include "gluinvertmatrix.h"
 #include "float16.h"
+#include "log.h"
+#include "neat_math.h"
 
 #include <QSettings>
 
@@ -21,6 +23,12 @@
 
 //#define TIME_RENDERER_BLOCKS
 #define TIME_RENDERER_BLOCKS if(0)
+
+//#define LOG_DIVS
+#define LOG_DIVS if(0)
+
+#define DRAW_POINTS false
+#define DRAW_WIREFRAME false
 
 using namespace std;
 
@@ -36,8 +44,6 @@ namespace Render {
 RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection)
     :
       render_block(render_block),
-      vbo_size(render_block->_vbo_size),
-      render_settings(*render_block->render_settings),
       gl_projection(gl_projection)
 {
     render_block->beginVboRendering(block_size);
@@ -58,7 +64,7 @@ RenderBlock::Renderer::~Renderer()
 
 
 void RenderBlock::Renderer::
-        renderBlock( pBlock block )
+        renderBlock( pBlock block, LevelOfDetail lod )
 {
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
@@ -73,37 +79,43 @@ void RenderBlock::Renderer::
     glUniformMatrix4fv (uniModelview, 1, false, GLmatrixf(modelview).v ());
     glUniformMatrix4fv (uniNormalMatrix, 1, false, GLmatrixf(invert(modelview)).transpose ().v ());
 
-    draw( block->texture ()->getOpenGlTextureId () );
+    int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
+    int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
+
+    LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getRegion ()
+            % lod.t () % lod.s() % subdivx % subdivy;
+
+    pVbo vbo = render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
+
+    draw( block->texture ()->getOpenGlTextureId (), vbo);
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
 
 void RenderBlock::Renderer::
-        draw(unsigned tex_height)
+        draw(unsigned tex_height, const pVbo& vbo)
 {
     GlException_CHECK_ERROR();
 
-    glBindTexture(GL_TEXTURE_2D, tex_height);
+    glBindTexture (GL_TEXTURE_2D, tex_height);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *vbo);
 
-    const bool wireFrame = false;
-    const bool drawPoints = false;
+    size_t n = vbo->size () / sizeof(BLOCKindexType);
 
-    if (drawPoints) {
-        glDrawArrays(GL_POINTS, 0, vbo_size);
-    } else if (wireFrame) {
+    if (DRAW_POINTS) {
+        glDrawArrays(GL_POINTS, 0, n);
+    } else if (DRAW_WIREFRAME) {
 #ifdef GL_ES_VERSION_2_0
-        glDrawElements(GL_LINE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+        glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
 #else
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+            glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, vbo_size, BLOCK_INDEX_TYPE, 0);
+        glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
     }
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 
     GlException_CHECK_ERROR();
 }
@@ -116,10 +128,16 @@ RenderBlock::
         render_settings( render_settings ),
         _color_texture_colors( (RenderSettings::ColorMode)-1 ),
         _shader_prog(0),
-      _mesh_index_buffer(0),
       _mesh_width(0),
       _mesh_height(0)
 {
+}
+
+
+RenderBlock::
+        ~RenderBlock()
+{
+
 }
 
 
@@ -232,7 +250,7 @@ void RenderBlock::
         || ( 1 == gl_major && 4 > gl_minor ))
     {
         try {
-            BOOST_THROW_EXCEPTION(std::logic_error(
+            BOOST_THROW_EXCEPTION(logic_error(
                     "Couldn't properly setup graphics\n"
                     "Sonic AWE requires a graphics driver that supports OpenGL 2.0 and no such graphics driver was found.\n\n"
                     "If you think this messge is an error, please file this as a bug report at muchdifferent.com to help us fix this."
@@ -274,8 +292,8 @@ void RenderBlock::
         if (hasExtension)
             continue;
 
-        std::stringstream err;
-        std::stringstream details;
+        stringstream err;
+        stringstream details;
 
         err << "Sonic AWE can't properly setup graphics. ";
         if (required_extension)
@@ -288,7 +306,7 @@ void RenderBlock::
             bool warn_expected_opengl = QSettings().value("warn_expected_opengl", true).toBool();
             if (!warn_expected_opengl)
                 continue;
-             QSettings().setValue("warn_expected_opengl", false);
+            QSettings().setValue("warn_expected_opengl", false);
 
             err << "Sonic AWE works better with features that couldn't be found on your graphics card. "
                 << "However, Sonic AWE might still run. Click OK to try.";
@@ -298,7 +316,7 @@ void RenderBlock::
         err << endl << endl << "If you think this messge is an error, please file this as a bug report at bugs.muchdifferent.com to help us fix this.";
 
         try {
-            BOOST_THROW_EXCEPTION(std::logic_error(
+            BOOST_THROW_EXCEPTION(logic_error(
                                       str(boost::format(
                       "Couldn't properly setup graphics\n"
                       "required_extension = %s\n"
@@ -445,8 +463,6 @@ void RenderBlock::
     glEnableVertexAttribArray (qt_Vertex);
     glVertexAttribPointer (qt_Vertex, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
-
     GlException_CHECK_ERROR();
 }
 
@@ -456,11 +472,12 @@ void RenderBlock::
 {
     GlException_CHECK_ERROR();
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glActiveTexture(GL_TEXTURE2);
-    GlTexture::unbindTexture2D();
-    glActiveTexture(GL_TEXTURE0);
+    glBindBuffer (GL_ARRAY_BUFFER, 0);
+    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+    glActiveTexture (GL_TEXTURE2);
+    glBindTexture (GL_TEXTURE_2D, 0);
+    glActiveTexture (GL_TEXTURE0);
+    glBindTexture (GL_TEXTURE_2D, 0);
 
     int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
     glDisableVertexAttribArray (qt_Vertex);
@@ -473,14 +490,26 @@ void RenderBlock::
 void RenderBlock::
         setSize( unsigned w, unsigned h)
 {
-    // edge dropout to eliminate visible glitches
-    if (w>2) w+=2;
-    if (h>2) h+=2;
-
-    if (w == _mesh_width && h ==_mesh_height)
+    if (w == _mesh_width && h == _mesh_height)
         return;
 
-    createMeshIndexBuffer(w, h);
+    _mesh_width = w;
+    _mesh_height = h;
+
+    // edge dropout to eliminate visible glitches
+    if (w > 2 && h > 2)
+    {
+        for (int y=0;y<subdivs;y++)
+            for (int x=0;x<subdivs;x++)
+                createMeshIndexBuffer(w, h, _mesh_index_buffer[y*subdivs+x], 1<<x, 1<<y);
+    }
+    else
+    {
+        createMeshIndexBuffer(w, h, _mesh_index_buffer[0], 1, 1);
+        for (int i=1;i<subdivs*subdivs;i++)
+            _mesh_index_buffer[i] = _mesh_index_buffer[0];
+    }
+
     createMeshPositionVBO(w, h);
 }
 
@@ -494,40 +523,39 @@ unsigned RenderBlock::
 
 // create index buffer for rendering quad mesh
 void RenderBlock::
-        createMeshIndexBuffer(int w, int h)
+        createMeshIndexBuffer(int w, int h, pVbo& vbo, int stepx, int stepy)
 {
     GlException_CHECK_ERROR();
 
-    // create index buffer
-    if (_mesh_index_buffer)
-        glDeleteBuffers(1, &_mesh_index_buffer);
+    if (h>2) h+=2;
+    if (w>2) w+=2;
+    int n_vertices = (int_div_ceil (w+stepx-1, stepx)*2 + 4)*
+                      int_div_ceil (h-1, stepy);
 
-    _mesh_width = w;
-    _mesh_height = h;
-
-    _vbo_size = ((w*2)+4)*(h-1);
-
-    std::vector<BLOCKindexType> indicesdata(_vbo_size);
+    vector<BLOCKindexType> indicesdata(n_vertices);
     BLOCKindexType *indices = &indicesdata[0];
-    if (indices) for(int y=0; y<h-1; y++) {
+
+    for(int y=0; y<h-1; y+=stepy) {
+        int y2 = min(y + stepy,h-1);
+
         *indices++ = y*w;
-        for(int x=0; x<w; x++) {
+
+        for(int x=0; x<w+stepx-1; x+=stepx) {
+            if (x>=w) x=w-1;
             *indices++ = y*w+x;
-            *indices++ = (y+1)*w+x;
+            *indices++ = y2*w+x;
         }
+
         // start new strip with degenerate triangle
-        *indices++ = (y+1)*w+(w-1);
-        *indices++ = (y+1)*w;
-        *indices++ = (y+1)*w;
+        *indices++ = y2*w+(w-1);
+        *indices++ = y2*w;
+        *indices++ = y2*w;
     }
 
-    glGenBuffers(1, &_mesh_index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh_index_buffer);
+    EXCEPTION_ASSERT_EQUALS(indices-&indicesdata[0], n_vertices);
 
     // fill with indices for rendering mesh as triangle strips
-    GlException_SAFE_CALL( glBufferData(GL_ELEMENT_ARRAY_BUFFER, _vbo_size*sizeof(BLOCKindexType), &indicesdata[0], GL_STATIC_DRAW) );
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    vbo.reset (new Vbo(n_vertices*sizeof(BLOCKindexType), GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, &indicesdata[0]));
 
     GlException_CHECK_ERROR();
 }
@@ -537,17 +565,13 @@ void RenderBlock::
 void RenderBlock::
         createMeshPositionVBO(int w, int h)
 {
-    // edge dropout to eliminate visible glitches
-    if (w>2) w -= 2;
-    if (h>2) h -= 2;
-
     int y1 = 0, x1 = 0, y2 = h, x2 = w;
 
     // edge dropout to eliminate visible glitches
     if (w>2) x1--, x2++;
     if (h>2) y1--, y2++;
 
-    std::vector<float> posdata( (x2-x1)*(y2-y1)*4 );
+    vector<float> posdata( (x2-x1)*(y2-y1)*4 );
     float *pos = &posdata[0];
 
     for(int y=y1; y<y2; y++) {
@@ -696,12 +720,12 @@ void RenderBlock::
 
     _color_texture_colors = render_settings->color_mode;
 
-    std::vector<tvector<4,float> > texture(N);
+    vector<tvector<4,float> > texture(N);
     for (unsigned i=0; i<N; ++i) {
         texture[i] = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
     }
 
-    std::vector<uint16_t> texture16(N*4);
+    vector<uint16_t> texture16(N*4);
     for (unsigned i=0; i<texture16.size (); i++)
         texture16[i] = Float16Compressor::compress ((&texture[0][0])[i]);
     _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_HALF_FLOAT, &texture16[0]));

@@ -12,14 +12,21 @@ RenderSet::references_t& operator|=(RenderSet::references_t& A, const RenderSet:
 }
 
 
-RenderSet::references_t& operator|=(RenderSet::references_t& A, const Heightmap::Reference& r) {
+RenderSet::references_t& operator|=(RenderSet::references_t& A, const RenderSet::references_t::value_type& r) {
     A.insert(r);
     return A;
 }
 
 
+RenderSet::references_t RenderSet::
+        makeSet(Reference r, LevelOfDetail lod)
+{
+    return RenderSet::references_t{RenderSet::references_t::value_type(r,lod)};
+}
+
+
 RenderSet::
-        RenderSet(RenderInfoI* render_info, float L)
+        RenderSet(RenderInfo* render_info, float L)
     :
       render_info(render_info),
       L(L)
@@ -31,11 +38,11 @@ RenderSet::references_t RenderSet::
         computeRenderSet(Reference entireHeightmap)
 {
     if (0.f == L)
-        return references_t{entireHeightmap};
+        return makeSet (entireHeightmap);
 
     references_t R = computeChildrenRenderSet( entireHeightmap );
     if (R.empty()) {
-        R |= entireHeightmap;
+        R |= makeSet (entireHeightmap);
     }
     return R;
 }
@@ -55,27 +62,26 @@ Reference RenderSet::
 
     while (true)
     {
-        RenderInfoI::LevelOfDetal lod = render_info->testLod(ref);
+        LevelOfDetail lod = render_info->testLod(ref);
 
         Region r = render_info->region(ref);
 
-        switch(lod)
+        if (lod.need_s ())
         {
-        case RenderInfoI::Lod_NeedBetterF:
             if ((r.a.scale+r.b.scale)/2 > p.scale)
                 ref = ref.bottom();
             else
                 ref = ref.top();
-            break;
-
-        case RenderInfoI::Lod_NeedBetterT:
+        }
+        else if (lod.need_t ())
+        {
             if ((r.a.time+r.b.time)/2 > p.time)
                 ref = ref.left();
             else
                 ref = ref.right();
-            break;
-
-        default:
+        }
+        else
+        {
             return ref;
         }
     }
@@ -87,23 +93,20 @@ RenderSet::references_t RenderSet::
 {
     references_t R;
 
-    RenderInfo::LevelOfDetal lod = render_info->testLod (ref );
-    switch(lod) {
-    case RenderInfo::Lod_NeedBetterF:
+    LevelOfDetail lod = render_info->testLod (ref );
+    if (lod.need_s ())
+    {
         R |= computeChildrenRenderSet( ref.bottom() );
         R |= computeChildrenRenderSet( ref.top() );
-        break;
-    case RenderInfo::Lod_NeedBetterT:
+    } else if (lod.need_t ()) {
         R |= computeChildrenRenderSet( ref.left() );
         if ( render_info->region(ref.right ()).a.time < L) {
             R |= computeChildrenRenderSet( ref.right() );
         }
-        break;
-    case RenderInfo::Lod_Ok:
-        R |= ref;
-        break;
-    case RenderInfo::Lod_Invalid: // ref is not within the current view frustum
-        break;
+    } else if (lod.ok ()) {
+        R |= references_t::value_type(ref,lod);
+    } else {
+        // ref is not within the current view frustum
     }
 
     return R;
@@ -115,7 +118,7 @@ void RenderSet::
 {
     {
         // The RenderSet class should compute which references that cover the
-        // visible heightmap with sufficient resolution, as judged by RenderInfoI.
+        // visible heightmap with sufficient resolution, as judged by RenderInfo.
     }
 }
 

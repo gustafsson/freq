@@ -203,7 +203,7 @@ pBlock Collection::
     if (block)
         return block;
 
-    createMissingBlocks(Render::RenderSet::references_t{ref});
+    createMissingBlocks(Render::RenderSet::makeSet (ref));
 
     return cache_->find( ref );
 }
@@ -216,8 +216,8 @@ void Collection::
 
     {
         BlockCache::cache_t cache = this->cache ()->clone ();
-        for (const Reference& r : R)
-            if (cache.find(r) == cache.end())
+        for (const auto& r : R)
+            if (cache.find(r.first) == cache.end())
                 missing.insert (r);
     }
 
@@ -232,9 +232,9 @@ void Collection::
     std::vector<pBlock> blocks_to_init;
     blocks_to_init.reserve (missing.size());
 
-    for (const Reference& ref : missing )
+    for (const auto& ref : missing )
     {
-        pBlock block = block_factory_->createBlock (ref);
+        pBlock block = block_factory_->createBlock (ref.first);
         if (block)
             blocks_to_init.push_back (block);
     }

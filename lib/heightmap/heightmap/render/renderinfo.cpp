@@ -9,6 +9,32 @@ namespace Heightmap {
 namespace Render {
 
 
+LevelOfDetail::
+        LevelOfDetail(bool valid)
+    :
+      LevelOfDetail(valid?1:-1, valid?1:-1, true, true)
+{}
+
+
+LevelOfDetail::
+        LevelOfDetail(double pixels_per_data_point_t, double pixels_per_data_point_s,
+              bool max_t, bool max_s)
+    :
+      pixels_per_data_point_t(pixels_per_data_point_t),
+      pixels_per_data_point_s(pixels_per_data_point_s),
+      max_t(max_t),
+      max_s(max_s)
+{
+}
+
+
+bool LevelOfDetail::
+        valid() const
+{
+    return pixels_per_data_point_t>=0 && pixels_per_data_point_s>=0;
+}
+
+
 RenderInfo::
         RenderInfo(const glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy)
     :
@@ -20,13 +46,13 @@ RenderInfo::
 }
 
 
-RenderInfo::LevelOfDetal RenderInfo::
+LevelOfDetail RenderInfo::
         testLod( Reference ref ) const
 {
     float timePixels, scalePixels;
     Region r = RegionFactory ( bl )(ref);
     if (!computePixelsPerUnit( r, timePixels, scalePixels ))
-        return Lod_Invalid;
+        return false;
 
     if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
         fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
@@ -36,21 +62,14 @@ RenderInfo::LevelOfDetal RenderInfo::
     GLdouble needBetterF = scalePixels / (redundancy*bl.texels_per_column ()),
              needBetterT = timePixels / (redundancy*bl.texels_per_row ());
 
-    if (!ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
-        !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS))
-        needBetterF = 0;
+    bool max_f =
+            !ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
+            !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS);
 
-    if (!ReferenceInfo(ref.left(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighT))
-        needBetterT = 0;
+    bool max_t =
+            !ReferenceInfo(ref.left(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighT);
 
-    if ( needBetterF > needBetterT && needBetterF > 1 )
-        return Lod_NeedBetterF;
-
-    else if ( needBetterT > 1 )
-        return Lod_NeedBetterT;
-
-    else
-        return Lod_Ok;
+    return LevelOfDetail(needBetterT, needBetterF, max_t, max_f);
 }
 
 

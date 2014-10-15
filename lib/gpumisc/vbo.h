@@ -26,7 +26,7 @@ public:
     virtual ~Vbo();
     operator GLuint() const;
 
-    size_t size() { return _sz; }
+    size_t size() const { return _sz; }
 
 #ifdef USE_CUDA
     void registerWithCuda();

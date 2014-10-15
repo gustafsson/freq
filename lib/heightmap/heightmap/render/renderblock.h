@@ -6,6 +6,7 @@
 #include "rendersettings.h"
 #include "GlTexture.h"
 #include "glprojection.h"
+#include "renderinfo.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
@@ -20,21 +21,23 @@ public:
         Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection);
         ~Renderer();
 
-        void renderBlock( pBlock ref );
+        void renderBlock( pBlock ref, LevelOfDetail lod);
 
     private:
         RenderBlock* render_block;
-        unsigned vbo_size;
-        RenderSettings render_settings;
         glProjection gl_projection;
         unsigned uniModelviewprojection = 0;
         unsigned uniModelview = 0;
         unsigned uniNormalMatrix = 0;
+        pVbo prev_vbo;
 
-        void draw(unsigned tex_height);
+        void draw(unsigned tex_height, const pVbo& vbo);
     };
 
     RenderBlock(RenderSettings* render_settings);
+    RenderBlock(const RenderBlock&)=delete;
+    RenderBlock& operator=(const RenderBlock&)=delete;
+    ~RenderBlock();
 
     void        init();
     bool        isInitialized();
@@ -58,16 +61,18 @@ private:
     boost::shared_ptr<GlTexture> _colorTexture;
 
     unsigned _shader_prog;
-    unsigned _mesh_index_buffer;
     unsigned _mesh_width;
     unsigned _mesh_height;
-    unsigned _vbo_size;
     pVbo _mesh_position;
+
+    // 1 << (subdivs-1) = max density of pixels per vertex
+    static const int subdivs = 3;
+    pVbo _mesh_index_buffer[subdivs*subdivs];
 
     void checkExtensions();
     void beginVboRendering(BlockLayout block_size);
     void endVboRendering();
-    void createMeshIndexBuffer(int w, int h);
+    static void createMeshIndexBuffer(int w, int h, pVbo& vbo, int stepx=1, int stepy=1);
     void createMeshPositionVBO(int w, int h);
     void createColorTexture(unsigned N);
 };
