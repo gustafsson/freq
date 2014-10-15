@@ -33,11 +33,27 @@ void main()
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
     mediump float v = texture2D(tex, texCoord, 0.0).x;
-    mediump float mean2 = texture2D(tex, texCoord, 5.0).x;
-    mediump float mean4 = texture2D(tex, texCoord, 6.0).x;
-    v = max((v - mean4)/mean4, (v - mean2)/mean2);
-    v = (1.0 + v)*200.0;
-    v = max(0.0, v);
+    mediump float f = 1.2;
+    mediump float base = f*v;
+    // wan't median value in mipmap6, 1<<6 -> 64x64 texels
+    // know mean value in 1<<(1-5), assuming sharp peaks are way more common than sharp valleys the mean is
+    // an approximation. However, the mean next to a peak is high so use a smaller local mean.
+    base = min(base, texture2D(tex, texCoord, 1.0).x);
+    base = min(base, texture2D(tex, texCoord, 2.0).x);
+    base = min(base, texture2D(tex, texCoord, 3.0).x);
+    base = min(base, texture2D(tex, texCoord, 4.0).x);
+    base = min(base, texture2D(tex, texCoord, 5.0).x);
+    base = min(base, texture2D(tex, texCoord, 6.0).x);
+    base /= f*f;
+    // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
+
+    // normalize, 100 is needed for scale
+    v = (v - base)/base*100.0;
+
+    // up until here, 'v' doesn't depend on any render settings (uniforms) and could be
+    // precomputed instead (apart from varying projections causing different mipmap
+    // resolutions, but let's disregard that)
+
     v = heightValue(v);
 
     // rainbow, colorscale or grayscale
