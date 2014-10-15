@@ -2,7 +2,6 @@
 #define RENDERMODEL_H
 
 #include "heightmap/amplitudeaxis.h"
-#include "heightmap/render/renderblock.h"
 #include "heightmap/render/rendersettings.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/tfrmappings/stftblockfilter.h"
@@ -19,6 +18,7 @@
 // gpumisc
 #include "TAni.h"
 #include "tasktimer.h"
+#include "glprojection.h"
 
 // boost
 #include <boost/serialization/nvp.hpp>
@@ -80,7 +80,6 @@ namespace Tools
         Heightmap::TfrMappings::StftBlockFilterParams::ptr get_stft_block_filter_params();
 
         Heightmap::Render::RenderSettings render_settings;
-        Heightmap::Render::RenderBlock::ptr render_block;
         shared_state<Tools::Support::RenderCamera> camera;
         shared_state<glProjection> gl_projection;
 

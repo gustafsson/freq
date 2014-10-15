@@ -36,8 +36,6 @@ RenderModel::
     Heightmap::BlockLayout bl(1<<8,1<<8,1);
     tfr_map_.reset (new Heightmap::TfrMapping(bl, 0));
 
-    render_block.reset( new Heightmap::Render::RenderBlock(&render_settings));
-
     resetCameraSettings();
 //    setTestCamera();
 }
@@ -51,8 +49,6 @@ RenderModel::
     render_operation_desc_.reset ();
 
     update_queue_.reset ();
-
-    render_block.reset();
 
     if (!tfr_map_)
         TaskInfo("!!! Lost tfr_map");

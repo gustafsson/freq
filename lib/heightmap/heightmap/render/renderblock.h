@@ -15,8 +15,6 @@ namespace Render {
 class RenderBlock
 {
 public:
-    typedef std::shared_ptr<RenderBlock> ptr;
-
     class Renderer : boost::noncopyable {
     public:
         Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection);

@@ -255,10 +255,6 @@ void RenderView::
     if (!model->chain ())
         return;
 
-    model->render_block->init();
-    if (!model->render_block->isInitialized())
-        return;
-
     {
         TIME_PAINTGL_DETAILS TaskTimer tt("emit prePaint");
         emit prePaint();
@@ -423,15 +419,7 @@ void RenderView::
     for ( const auto& collection : model->collections() )
         collection->clear();
 
-    if (model->render_block)
-    {
-        // model->renderer might be 0 if we're about to close the application
-        // and don't bother recreating renderer if initialization has previously failed
-
-        model->render_block->clearCaches();
-
-        redraw();
-    }
+    // should rather delete this instance and recreate it
 }
 
 

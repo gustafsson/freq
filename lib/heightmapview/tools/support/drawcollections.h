@@ -3,6 +3,7 @@
 
 #include "glframebuffer.h"
 #include "glprojection.h"
+#include "heightmap/render/renderblock.h"
 
 class QOpenGLShaderProgram;
 namespace Tools {
@@ -24,6 +25,7 @@ private:
     RenderModel* model;
     std::vector<tvector<4> > channel_colors;
     QOpenGLShaderProgram* m_program = 0;
+    Heightmap::Render::RenderBlock render_block;
 
     void drawCollection(const glProjection& gl_projection, int channel, float yscale);
 };

@@ -25,7 +25,8 @@ namespace Support {
 
 DrawCollections::DrawCollections(RenderModel* model)
     :
-      model(model)
+      model(model),
+      render_block(&model->render_settings)
 {
 }
 
@@ -41,6 +42,10 @@ void DrawCollections::
 {
     TIME_PAINTGL_DRAW TaskTimer tt2("Drawing...");
     GlException_CHECK_ERROR();
+
+    render_block.init();
+    if (!render_block.isInitialized())
+        return;
 
     unsigned N = model->collections().size();
     if (N != channel_colors.size ())
@@ -185,12 +190,12 @@ void DrawCollections::
             collections_n += collections[i].read ()->isVisible();
 
         TaskInfo("Drew %u channels*%u block%s*%u triangles (%u triangles in total) in viewport(%d, %d).",
-        collections_n,
-        model->render_settings.drawn_blocks,
-        model->render_settings.drawn_blocks==1?"":"s",
-        model->render_block->trianglesPerBlock(),
-        collections_n*model->render_settings.drawn_blocks*model->render_block->trianglesPerBlock(),
-        current_viewport[2], current_viewport[3]);
+                collections_n,
+                model->render_settings.drawn_blocks,
+                model->render_settings.drawn_blocks==1?"":"s",
+                render_block.trianglesPerBlock(),
+                collections_n*model->render_settings.drawn_blocks*render_block.trianglesPerBlock(),
+                current_viewport[2], current_viewport[3]);
     }
 }
 
@@ -209,7 +214,7 @@ void DrawCollections::
     Heightmap::Render::Renderer renderer(model->collections()[i],
                                          model->render_settings,
                                          gl_projection,
-                                         model->render_block.get());
+                                         &render_block);
     renderer.draw( yscale, L ); // 0.6 ms
 
     glDisable( GL_CULL_FACE );

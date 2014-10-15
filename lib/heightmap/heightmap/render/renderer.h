@@ -17,6 +17,11 @@ class GlTexture;
 namespace Heightmap {
 namespace Render {
 
+/**
+ * @brief The Renderer class is a shallow class.
+ *
+ * It doesn't produce/own/maintain/create/release any state.
+ */
 class Renderer
 {
 public:
