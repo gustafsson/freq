@@ -62,6 +62,7 @@ void Squircle::
     RenderViewAxes(render_model).cameraOnFront ();
     RenderViewAxes(render_model).logZScale ();
     render_model.render_settings.shadow_shader = true;
+    render_model.camera->xscale = 10;
 
     setDisplayedTransform(displayedTransform());
 }
@@ -101,7 +102,6 @@ void Squircle::
             RenderViewTransform(render_model).receiveSetTransform_Waveform ();
             RenderViewAxes(render_model).waveformScale ();
             render_model.resetCameraSettings ();
-            render_model.camera->xscale = 10;
         }
         else
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
