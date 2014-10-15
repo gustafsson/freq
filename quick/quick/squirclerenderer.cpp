@@ -5,6 +5,9 @@
 #include <boost/exception/exception.hpp>
 #include <QTimer>
 
+//#define LOG_FRAME
+#define LOG_FRAME if(0)
+
 SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
     :
       render_view(render_model),
@@ -92,6 +95,11 @@ void SquircleRenderer::paint()
 {
     if (m_viewport.height ()==0 || m_viewport.width ()==0)
         return;
+
+    LOG_FRAME Log("painting %s %gx%g")
+            % objectName ().toStdString ()
+            % m_viewport.width ()
+            % m_viewport.height ();
 
     // Use WorkerCrashLogger from Sonic AWE instead
     try {

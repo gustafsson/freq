@@ -3,6 +3,7 @@
 #include "heightmap/position.h"
 #include "heightmap/referenceinfo.h"
 #include "heightmap/render/frustumclip.h"
+#include "log.h"
 
 namespace Heightmap {
 namespace Render {
@@ -68,9 +69,9 @@ Region RenderInfo::
 
 
 /**
-  @arg ref See timePixels and scalePixels
-  @arg timePixels Estimated longest line of pixels along time axis within ref measured in pixels
-  @arg scalePixels Estimated longest line of pixels along scale axis within ref measured in pixels
+  @arg r Region to study. Only the point in 'r' closest to the camera will be considered.
+  @arg timePixels Resolution in pixels per 'r.time()' time units
+  @arg scalePixels Resolution in pixels per 'r.scale()' scale unit
   */
 bool RenderInfo::
         computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const
@@ -89,38 +90,29 @@ bool RenderInfo::
             vectord( p[1].time, y[i], p[0].scale)
         };
 
+        // the resolution needed from the whole block is determinded by the
+        // resolution needed from the point of the block that is closest to
+        // the camera, start by finding that point
         vectord closest_i;
         std::vector<vectord> clippedCorners = frustum_clip.clipFrustum(corner, &closest_i); // about 10 us
         if (clippedCorners.empty ())
             continue;
 
-        vectord timePoint = closest_i;
-        vectord scalePoint = closest_i;
-        for (vectord v : clippedCorners)
-        {
-            if (fabsf(v[0]-closest_i[0]) > fabsf(timePoint[0]-closest_i[0]))
-                timePoint = v;
-            if (fabsf(v[2]-closest_i[2]) > fabsf(scalePoint[2]-closest_i[2]))
-                scalePoint = v;
-        }
-
-        timePoint[2] = closest_i[2];
-        scalePoint[0] = closest_i[0];
-
-        timePoint = closest_i + (timePoint-closest_i)*0.01f;
-        scalePoint = closest_i + (scalePoint-closest_i)*0.01f;
-
-        vectord::T timeLength = fabsf (closest_i[0] - timePoint[0]);
-        vectord::T scaleLength = fabsf (closest_i[2] - scalePoint[2]);
-
-        if (timeLength==0 || scaleLength==0)
-            continue;
+        // use a small delta to estimate the resolution at closest_i
+        vectord::T deltaTime = 0.001*r.time (),
+                   deltaScale = 0.001*r.scale ();
+        vectord timePoint = closest_i + vectord(deltaTime,0,0);
+        vectord scalePoint = closest_i + vectord(0,0,deltaScale);
 
         // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-        vectord::T pixelsPerTime = gl_projection->computePixelDistance (closest_i, timePoint) / timeLength;
-        vectord::T pixelsPerScale = gl_projection->computePixelDistance (closest_i, scalePoint) / scaleLength;
+        vectord::T pixelsPerTime = gl_projection->computePixelDistance (closest_i, timePoint) / deltaTime;
+        vectord::T pixelsPerScale = gl_projection->computePixelDistance (closest_i, scalePoint) / deltaScale;
         timePixels = pixelsPerTime * r.time ();
         scalePixels = pixelsPerScale * r.scale ();
+
+        // fail if 'r' doesn't even cover a pixel
+        if (scalePixels < 0.5 || timePixels < 0.5)
+            continue;
 
         return true;
     }
