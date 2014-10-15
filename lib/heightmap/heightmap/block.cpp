@@ -68,8 +68,18 @@ void Block::
 
     Block::pGlTexture t;
     t.swap (new_texture_);
-    if (t)
-        texture_ = t; // release old texture_
+    if (t) {
+        // hold on to the texture until the next frame to prevent the other thread from
+        // replacing its contents right away
+        // release previous texture_hold_ by overwriting it
+        texture_hold_ = texture_;
+
+        // use the new_texture_
+        texture_ = t;
+
+        auto bind = texture_->getScopeBinding ();
+        glGenerateMipmap (GL_TEXTURE_2D);
+    }
 }
 
 

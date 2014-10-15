@@ -73,6 +73,7 @@ namespace Heightmap {
         const VisualizationParams::const_ptr visualization_params_;
         pGlTexture new_texture_;
         pGlTexture texture_;
+        pGlTexture texture_hold_; // @see setTextureReady
         bool texture_ready_ = false;
 
     public:
