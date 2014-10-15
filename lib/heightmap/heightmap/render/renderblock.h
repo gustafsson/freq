@@ -66,7 +66,7 @@ private:
     pVbo _mesh_position;
 
     // 1 << (subdivs-1) = max density of pixels per vertex
-    static const int subdivs = 3;
+    static const int subdivs = 4;
     pVbo _mesh_index_buffer[subdivs*subdivs];
 
     void checkExtensions();
