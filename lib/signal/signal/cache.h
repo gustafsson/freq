@@ -19,6 +19,15 @@ class Cache
 public:
     class InvalidBufferDimensions: virtual public boost::exception, virtual public std::exception {};
 
+    // chunkSize 1 << ...
+    // 22 -> 1.8 ms
+    // 21 -> 1.5 ms
+    // 20 -> 1.2 ms -> 4 MB cache chunks
+    // 19 -> 1.2 ms
+    // 18 -> 1.2 ms
+    // 10 -> 1.2 ms
+    static const IntervalType chunkSize = 1<<20;
+
     Cache( );
     Cache( const Cache& b);
     Cache& operator=( const Cache& b);

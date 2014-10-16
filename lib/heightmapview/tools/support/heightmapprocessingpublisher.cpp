@@ -93,7 +93,7 @@ void HeightmapProcessingPublisher::
     //
     // (case b): during a recording it is, generally, more important to render
     // newly recorded data than to redraw everything else.
-    UnsignedIntervalType update_size = Interval::IntervalType_MAX;
+    UnsignedIntervalType update_size = Signal::Cache::chunkSize/2; // Interval::IntervalType_MAX;
     for ( auto c : C ) for ( auto a : c.raw()->cache()->clone () )
     {
         const Heightmap::Block& b = *a.second;

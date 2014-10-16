@@ -102,14 +102,6 @@ void Cache::
                                    F % fs) << Backtrace::make ());
     }
 
-    // chunkSize 1 << ...
-    // 22 -> 1.8 ms
-    // 21 -> 1.5 ms
-    // 20 -> 1.2 ms -> 4 MB cache chunks
-    // 19 -> 1.2 ms
-    // 18 -> 1.2 ms
-    // 10 -> 1.2 ms
-    const IntervalType chunkSize = 1<<20;
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 
