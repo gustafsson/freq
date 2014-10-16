@@ -112,7 +112,7 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
         data_height = int_div_ceil (chunk->n_valid_samples, stepx);
         offs_y = chunk->first_valid_sample; // = 0
 
-        if (1<<(int)log2(data_width-1) == data_width - 1) // if data_width=(2^n)+1, discard the nyquist freq
+        if (1<<log2(uint32_t(data_width-1)) == data_width - 1) // if data_width=(2^n)+1, discard the nyquist freq
             data_width--;
 
 //        data_height = int_div_ceil (org_height, stepx);

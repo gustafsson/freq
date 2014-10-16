@@ -185,6 +185,10 @@ static inline uint32_t log2(uint32_t x) {
 #endif
   return y;
 }
+#else
+static inline uint32_t log2(uint32_t x) {
+    return log2(double(x));
+}
 #endif
 
 
