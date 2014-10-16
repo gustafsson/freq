@@ -68,20 +68,26 @@ bool ReferenceInfo::
 bool ReferenceInfo::
         boundsCheck(BoundsCheck c) const
 {
-    const FreqAxis& cfa = visualization_params_->display_scale();
+    FreqAxis cfa = visualization_params_->display_scale();
     float ahz = cfa.getFrequency(r.a.scale);
     float bhz = cfa.getFrequency(r.b.scale);
 
     if (c & ReferenceInfo::BoundsCheck_HighS)
     {
-        float scaledelta = (r.scale())/block_layout_.texels_per_column ();
+        // Check the frequency resolution, if it is low enough we're out-of-bounds
+
+        // Assuming that the frequency resolution is either not-growing or not-shrinking,
+        // it is enough to check the end-points as they will be extrema.
+        float scaledelta = r.scale()/block_layout_.texels_per_column ();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
         float scalara = displayedFrequencyResolution(ahz, a2hz);
         float scalarb = displayedFrequencyResolution(bhz, b2hz);
 
-        if (fabsf(scalara) < 0.5f && fabsf(scalarb) < 0.5f )
+        // if the number of data points between two adjacent texels in this region is less than one
+        // then there are no more details to be seen by zooming in, we are thus out-of-bounds
+        if (fabsf(scalara) <= 1.0f && fabsf(scalarb) <= 1.0f )
             return false;
     }
 
