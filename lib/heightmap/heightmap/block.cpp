@@ -66,12 +66,14 @@ void Block::
 {
     texture_ready_ = true;
 
+    // release previously replaced texture, see below
+    texture_hold_.reset ();
+
     Block::pGlTexture t;
     t.swap (new_texture_);
     if (t) {
-        // hold on to the texture until the next frame to prevent the other thread from
+        // hold on to the old texture until the next frame to prevent the other thread from
         // replacing its contents right away
-        // release previous texture_hold_ by overwriting it
         texture_hold_ = texture_;
 
         // use the new_texture_
