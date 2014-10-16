@@ -6,7 +6,6 @@
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
 #include "workers.h"
-#include "signal/intervals.h"
 
 // backtrace
 #include "demangle.h"
@@ -372,9 +371,9 @@ Step::ptr::weak_ptr Chain::
     return step;
 }
 
-
 } // namespace Processing
 } // namespace Signal
+
 
 #include "test/operationmockups.h"
 #include "test/randombuffer.h"
@@ -444,7 +443,7 @@ void Chain::
         // Should create an invalidator when adding an operation
         IInvalidator::ptr invalidator = chain->addOperationAt(source_desc, target);
 
-        EXCEPTION_ASSERT_EQUALS (chain->extent(target).interval, Signal::Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS (chain->extent(target).interval.get_value_or (Signal::Interval()), Signal::Interval(3,5));
 
         TargetNeeds::ptr needs = target->target_needs();
         needs->updateNeeds(Signal::Interval(4,6));
