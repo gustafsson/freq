@@ -6,6 +6,7 @@
 #include "tasktimer.h"
 #include "shared_state_traits_backtrace.h"
 #include "datastorage.h"
+#include "shared_state.h"
 
 #define INFO
 //#define INFO if(0)
@@ -126,6 +127,13 @@ int BlockTextures::
         getCapacity()
 {
     return global_block_textures_impl.read ()->getCapacity();
+}
+
+
+int BlockTextures::
+        getUseCount()
+{
+    return global_block_textures_impl.read ()->getUseCount();
 }
 
 

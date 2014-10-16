@@ -8,8 +8,6 @@
 
 #include "support/renderoperation.h"
 
-#include "GlTexture.h"
-
 namespace Tools
 {
 

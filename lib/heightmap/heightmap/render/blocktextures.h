@@ -2,7 +2,6 @@
 #define HEIGHTMAP_RENDER_BLOCKTEXTURES_H
 
 #include "GlTexture.h"
-#include "shared_state.h"
 #include <memory>
 #include <vector>
 
@@ -89,6 +88,7 @@ public:
      * @return
      */
     static int getCapacity();
+    static int getUseCount();
     static unsigned getWidth();
     static unsigned getHeight();
 

@@ -31,6 +31,9 @@
 //#define VERBOSE_EACH_FRAME_COLLECTION
 #define VERBOSE_EACH_FRAME_COLLECTION if(0)
 
+//#define LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS
+#define LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS if(0)
+
 using namespace Signal;
 using namespace boost;
 
@@ -129,7 +132,7 @@ void Collection::
 
     for (const Reference& r : blocksToPoke)
     {
-        // poke blocks that are likely to be needed soon
+        // poke blocks that are still allocated and likely to be needed again soon
 
         // poke children
         blocksToPoke2.insert (r.left());
@@ -291,6 +294,13 @@ int Collection::
     to_remove_.swap (keep); keep.clear ();
 
     Render::BlockTextures::gc();
+    LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS if (0<discarded_blocks)
+        Log("collection: discarded_blocks %d, has %d blocks in cache of which %d were used/poked. %d of %d textures used")
+                % discarded_blocks
+                % cache_->size()
+                % F
+                % Render::BlockTextures::getUseCount ()
+                % Render::BlockTextures::getCapacity ();
 
     return discarded_blocks;
 }
