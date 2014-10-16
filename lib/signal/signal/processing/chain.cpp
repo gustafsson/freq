@@ -6,12 +6,12 @@
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
 #include "workers.h"
+#include "signal/intervals.h"
 
 // backtrace
 #include "demangle.h"
 #include "timer.h"
 #include "tasktimer.h"
-#include "log.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
@@ -34,16 +34,14 @@ Chain::ptr Chain::
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
     Workers::ptr workers(new Workers(targetSchedule, bedroom));
 
-    // Add the 'single instance engine' thread.
+    // Add the 'single instance engine' thread (the 'null worker')
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
 
     // Add worker threads to occupy all kernels
     int reserved_threads = 0;
     reserved_threads++; // OpenGL rendering
     reserved_threads++; // null worker
-    reserved_threads++; // OpenGL texture update
-    reserved_threads++; // OpenGL uploading (mapped buffer object)
-    for (int i=0; i<std::max(1,QThread::idealThreadCount ()-reserved_threads); i++) {
+    for (int i=0; i<std::max(2,QThread::idealThreadCount ()-reserved_threads); i++) {
         workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     }
 
@@ -177,7 +175,7 @@ void Chain::
 
     BOOST_FOREACH(Step::ptr s, steps_to_remove) {
         GraphInvalidator::deprecateCache (*dag, s, Signal::Interval::Interval_ALL);
-        Log("chain: removing %s") % Step::operation_desc (s)->toString().toStdString();
+        TaskInfo("chain: removing %s", Step::operation_desc (s)->toString().toStdString().c_str());
         dag->removeStep (s);
     }
 
