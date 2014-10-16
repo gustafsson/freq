@@ -15,6 +15,7 @@ RenderSettings::RenderSettings()
         clear_color( 1,1,1,1 ),
         y_scale( 1 ),
         y_offset( 0 ),
+        y_normalize( true ),
         log_scale( 0 ),
         last_ysize( 1 ),
         last_axes_length( 0 ),

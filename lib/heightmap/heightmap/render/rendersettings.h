@@ -37,6 +37,13 @@ public:
     tvector<4, float> clear_color;
     float y_scale;
     float y_offset;
+
+    /**
+     * @brief y_normalize
+     * y_scale and y_offset still apply even if y_normalize=true, but the value
+     * on which they are applied is affected.
+     */
+    float y_normalize;
     TAni<> log_scale;
     float last_ysize;
     float last_axes_length;

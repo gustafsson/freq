@@ -8,6 +8,7 @@ uniform mediump float colorTextureFactor;
 uniform lowp float contourPlot;
 uniform mediump float yScale;
 uniform mediump float yOffset;
+uniform lowp float yNormalize;
 uniform mediump vec3 logScale;
 uniform lowp vec4 fixedColor;
 uniform lowp vec4 clearColor;
@@ -48,7 +49,7 @@ void main()
     // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
     // normalize, 100 is needed for scale
-    v = (v - base)/base*100.0;
+    v = mix(v, (v - base)/base*100.0, yNormalize);
 
     // up until here, 'v' doesn't depend on any render settings (uniforms) and could be
     // precomputed instead (apart from varying projections causing different mipmap

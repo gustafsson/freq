@@ -365,6 +365,7 @@ void RenderBlock::
                 uniFlatness,
                 uniYScale,
                 uniYOffset,
+                uniYNormalize,
                 uniLogScale,
                 uniScaleTex,
                 uniOffsTex;
@@ -426,6 +427,9 @@ void RenderBlock::
 
         uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
         glUniform1f(uniYOffset, render_settings->y_offset);
+
+        uniYNormalize = glGetUniformLocation(_shader_prog, "yNormalize");
+        glUniform1f(uniYNormalize, render_settings->y_normalize);
 
         // yOffset specifies 'b' which says which 'v' that should render as 0
         // yOffset=-1 => v>1 => fragColor>0

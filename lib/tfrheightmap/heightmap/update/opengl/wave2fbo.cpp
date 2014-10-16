@@ -91,8 +91,7 @@ void Wave2Fbo::
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // Draw waveform
-    glEnable (GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
+    glDisable (GL_BLEND); // doesn't have alpha channel
     glLineWidth(1);
     m_program->setUniformValue("rgba", QVector4D(0.25,0.0,0.0,1.0));
 
@@ -113,7 +112,6 @@ void Wave2Fbo::
         glDrawArrays(GL_LINE_STRIP, 0, j);
     }
 
-    glDisable (GL_BLEND);
     m_program->disableAttributeArray (0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     GlException_CHECK_ERROR();
