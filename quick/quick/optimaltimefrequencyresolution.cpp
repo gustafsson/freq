@@ -32,6 +32,10 @@ void OptimalTimeFrequencyResolution::
         return;
 
     Tools::RenderModel& render_model = *squircle_->renderModel ();
+    Tfr::TransformDesc::ptr t = render_model.transform_desc();
+    if (!t)
+        return; // not initialized
+
     const auto c = *render_model.camera.read();
     const vectord& q = c.q;
 
@@ -51,7 +55,6 @@ void OptimalTimeFrequencyResolution::
     tm.unlock ();
 
     // read info about current transform
-    Tfr::TransformDesc::ptr t = render_model.transform_desc();
     float time_res = 1/t->displayedTimeResolution(fs,hz); // samples per 1 time at camera focus
     float s = t->freqAxis(fs).getFrequencyScalarNotClamped(hz);
     float s2 = t->freqAxis(fs).getFrequencyScalarNotClamped(hz2);
