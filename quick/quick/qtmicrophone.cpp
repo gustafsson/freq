@@ -119,7 +119,7 @@ void GotData::
         for (unsigned i=0; i<C; ++i)
         {
             v[i] = in[j*C + i];
-            if (fabs(v[i]) > 1.f/512.f)
+            if (fabs(v[i]) > 1.f/1024.f)
                 nonzero = true;
         }
 
