@@ -254,7 +254,7 @@ int Collection::
 {
     Blocks::GarbageCollector gc(cache_);
     unsigned F = gc.countBlocksUsedThisFrame(_frame_counter);
-    unsigned max_cache_size = 4*F;
+    unsigned max_cache_size = 2*F;
     unsigned n_to_release = cache_->size() <= max_cache_size ? 0 : cache_->size() - max_cache_size;
 
     int i = 0;
