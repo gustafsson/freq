@@ -58,7 +58,7 @@ void main()
     gl_Position      = ModelViewProjectionMatrix * pos;
     vertex_height = height;
 
-    lowp vec4 worldSpaceNormal;
+    highp vec4 worldSpaceNormal;
     // calculate surface normal from slope for shading
     highp vec2 slope       = vec2(heightx2-heightx1, heighty2-heighty1);
     worldSpaceNormal.xyz = cross( vec3(0.0,            slope.y, tex2.y-tex1.y),
@@ -79,5 +79,5 @@ void main()
     highp float diffuse   = max(0.0, worldSpaceNormal.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
 
     //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
-    shadow = mix(1.0, min( 0.75 + (diffuse+facing)*0.25, 1.0), flatness);
+    shadow = mix(1.0, min( 0.7 + (diffuse+facing)*0.3, 1.0), flatness);
 }
