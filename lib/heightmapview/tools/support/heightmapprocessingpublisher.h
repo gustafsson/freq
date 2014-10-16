@@ -35,6 +35,7 @@ public:
             Signal::Processing::TargetMarker::ptr target_marker,
             Heightmap::TfrMapping::const_ptr tfrmapping,
             shared_state<Tools::Support::RenderCamera> camera,
+            double prio,
             QObject* parent=0);
 
 public slots:
@@ -46,6 +47,7 @@ private:
     shared_state<Signal::Processing::Dag>   dag_;
     Heightmap::TfrMapping::const_ptr        tfrmapping_;
     shared_state<Tools::Support::RenderCamera> camera_;
+    double                                  prio_;
     Signal::Interval                        last_update_;
     bool                                    failed_allocation_;
 

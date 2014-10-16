@@ -85,7 +85,7 @@ TargetSchedule::TargetState TargetSchedule::
 {
     TargetState r;
 
-    r.second.last_request = neg_infin;
+    double missing = 0;
 
     for (const TargetNeeds::ptr& t: T)
     {
@@ -102,7 +102,7 @@ TargetSchedule::TargetState TargetSchedule::
 
         DEBUGINFO Log("targetschedule: %s needs %s") % Step::operation_desc (step)->toString().toStdString() % state.needed_samples;
 
-        if (r.second.last_request < state.last_request && state.needed_samples)
+        if (state.needed_samples.count ()*exp(state.prio) > missing)
         {
             r.first = step;
             r.second = state;

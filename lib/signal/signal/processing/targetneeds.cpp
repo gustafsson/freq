@@ -5,12 +5,8 @@
 #include "tasktimer.h"
 #include "log.h"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)
-
-using namespace boost::posix_time;
 
 namespace Signal {
 namespace Processing {
@@ -40,18 +36,17 @@ void TargetNeeds::
         const Signal::Intervals& needed_samples,
         Signal::IntervalType center,
         Signal::IntervalType preferred_update_size,
-        int prio
+        double prio
         )
 {
     EXCEPTION_ASSERT_LESS( 0, preferred_update_size );
 
     auto state = state_.write ();
     Intervals new_samples = needed_samples - state->needed_samples;
-    ptime now = microsec_clock::local_time();
-    state->last_request = now + time_duration(0,0,prio);
     state->needed_samples = needed_samples;
     state->work_center = center;
     state->preferred_update_size = preferred_update_size;
+    state->prio = prio;
 
     state.unlock ();
 
@@ -89,13 +84,6 @@ Step::ptr::weak_ptr TargetNeeds::
         step() const
 {
     return step_;
-}
-
-
-boost::posix_time::ptime TargetNeeds::
-        last_request() const
-{
-    return state_->last_request;
 }
 
 

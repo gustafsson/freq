@@ -22,6 +22,7 @@ HeightmapProcessingPublisher::HeightmapProcessingPublisher(
           TargetMarker::ptr target_marker,
           Heightmap::TfrMapping::const_ptr tfrmapping,
           shared_state<Tools::Support::RenderCamera> camera,
+          double prio,
           QObject* parent)
     :
       QObject(parent),
@@ -29,6 +30,7 @@ HeightmapProcessingPublisher::HeightmapProcessingPublisher(
       dag_(target_marker->dag ()),
       tfrmapping_(tfrmapping),
       camera_(camera),
+      prio_(prio),
       last_update_(Interval::Interval_ALL),
       failed_allocation_(false)
 {
@@ -122,7 +124,7 @@ void HeightmapProcessingPublisher::
                 needed_samples,
                 center,
                 update_size,
-                0
+                prio_
             );
 
     failed_allocation_ = false;
@@ -204,7 +206,7 @@ void HeightmapProcessingPublisher::
         Heightmap::TfrMapping::ptr tfrmapping(new Heightmap::TfrMapping(block_layout,1));
         shared_state<Tools::Support::RenderCamera> camera(new Tools::Support::RenderCamera);
         camera->q[0] = 10;
-        HeightmapProcessingPublisher hpp(target_marker, tfrmapping, camera);
+        HeightmapProcessingPublisher hpp(target_marker, tfrmapping, camera, 0);
 
         Heightmap::Collection::ptr collection = tfrmapping->collections()[0];
 

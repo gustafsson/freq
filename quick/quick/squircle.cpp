@@ -48,11 +48,13 @@ void Squircle::
     render_model.init(chain_item_->chain (), chain_item_->update_queue (), rvu, chain_item_->target_marker ());
     render_model.render_settings.dpifactor = window()->devicePixelRatio ();
 
+    double prio = displayedTransform() == "waveform" ? 2 : 0;
+
     // 'this' is parent
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
                 render_model.target_marker (),
                 render_model.tfr_mapping (),
-                render_model.camera, this);
+                render_model.camera, prio, this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
 
     connect(window(), SIGNAL(afterRendering()), hpp, SLOT(update()));

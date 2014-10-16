@@ -28,10 +28,10 @@ public:
             typedef shared_state_mutex_notimeout_noshared shared_state_mutex;
         };
 
-        boost::posix_time::ptime last_request;
         Signal::IntervalType work_center;
         Signal::IntervalType preferred_update_size;
         Signal::Intervals needed_samples;
+        double prio;
     };
 
     TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
@@ -53,7 +53,7 @@ public:
             const Signal::Intervals& needed_samples,
             Signal::IntervalType center=Signal::Interval::IntervalType_MIN,
             Signal::IntervalType preferred_update_size=Signal::Interval::IntervalType_MAX,
-            int prio=0 );
+            double prio=0 );
 
     /**
      * @brief deprecateCache invalidates
@@ -74,7 +74,6 @@ public:
      * @return
      */
     shared_state<Step>::weak_ptr step() const;
-    boost::posix_time::ptime last_request() const;
     Signal::IntervalType work_center() const;
     Signal::IntervalType preferred_update_size() const;
     Signal::Intervals out_of_date() const;
