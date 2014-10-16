@@ -50,7 +50,7 @@ void Wave2Fbo::
         m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
                                            "uniform lowp vec4 rgba;"
                                            "void main() {"
-                                           "    gl_FragColor = rgba;"
+                                           "    gl_FragColor = rgba*100.0;"
                                            "}");
 
         m_program->bindAttributeLocation("vertices", 0);
