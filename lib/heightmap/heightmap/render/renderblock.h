@@ -66,6 +66,8 @@ private:
     pVbo _mesh_position;
 
     // 1 << (subdivs-1) = max density of pixels per vertex
+    // subdivs = 4 -> 8 barely noticeable
+    // subdivs = 5 -> 16 noticeable
     static const int subdivs = 4;
     pVbo _mesh_index_buffer[subdivs*subdivs];
 

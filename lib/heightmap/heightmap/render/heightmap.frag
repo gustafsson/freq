@@ -44,7 +44,7 @@ void main()
     base = min(base, texture2D(tex, texCoord, 4.0).x);
     base = min(base, texture2D(tex, texCoord, 5.0).x);
     base = min(base, texture2D(tex, texCoord, 6.0).x);
-    base /= f*f;
+    base *= 0.7; // 1/f^2, f=1.2
     // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
     // normalize, 100 is needed for scale
