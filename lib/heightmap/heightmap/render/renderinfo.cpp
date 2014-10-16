@@ -54,22 +54,17 @@ LevelOfDetail RenderInfo::
     if (!computePixelsPerUnit( r, timePixels, scalePixels ))
         return false;
 
-    if(0) if (-10==ref.log2_samples_size[0] && -8==ref.log2_samples_size[1]) {
-        fprintf(stdout, "Ref (%d,%d)\t%g\t%g\n", ref.block_index[0], ref.block_index[1], timePixels,scalePixels);
-        fflush(stdout);
-    }
+    GLdouble needBetterT = timePixels / (redundancy*bl.texels_per_row ()),
+             needBetterS = scalePixels / (redundancy*bl.texels_per_column ());
 
-    GLdouble needBetterF = scalePixels / (redundancy*bl.texels_per_column ()),
-             needBetterT = timePixels / (redundancy*bl.texels_per_row ());
-
-    bool max_f =
+    bool max_s =
             !ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
             !ReferenceInfo(ref.bottom(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS);
 
     bool max_t =
             !ReferenceInfo(ref.left(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighT);
 
-    return LevelOfDetail(needBetterT, needBetterF, max_t, max_f);
+    return LevelOfDetail(needBetterT, needBetterS, max_t, max_s);
 }
 
 

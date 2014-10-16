@@ -93,10 +93,18 @@ bool ReferenceInfo::
 
     if (c & ReferenceInfo::BoundsCheck_HighT)
     {
+        // ["time units" / "1 data point"]
         float atres = displayedTimeResolution (ahz);
         float btres = displayedTimeResolution (bhz);
-        float tdelta = 2*r.time()/block_layout_.texels_per_row ();
-        if (btres > tdelta && atres > tdelta)
+
+        // ["time units" / "1 texel"].
+        float tdelta = r.time()/block_layout_.texels_per_row ();
+
+        // [data points / texel]
+        atres = tdelta/atres;
+        btres = tdelta/btres;
+
+        if (fabsf(atres) <= 1.0f && fabsf(btres) <= 1.0f )
             return false;
     }
 

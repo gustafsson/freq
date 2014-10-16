@@ -32,8 +32,8 @@ public:
      * even more needed need_t returns false.
      * @return true if a higher resolution is needed
      */
-    bool need_t() const { return t() >= s() && t() > 1 && !max_t; }
-    bool need_s() const { return s() >= t() && s() > 1 && !max_s; }
+    bool need_t() const { return (t() >= s() || max_s) && t() > 1 && !max_t; }
+    bool need_s() const { return (s() >= t() || max_t) && s() > 1 && !max_s; }
 
     /**
      * @brief ok calculates if this reference has a high enough time and scale

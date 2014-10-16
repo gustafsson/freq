@@ -1,6 +1,9 @@
 #include "renderset.h"
 #include "heightmap/reference_hash.h"
+#include "tasktimer.h"
 
+//#define LOG_TRAVERSAL
+#define LOG_TRAVERSAL if(0)
 
 namespace Heightmap {
 namespace Render {
@@ -96,9 +99,15 @@ RenderSet::references_t RenderSet::
     LevelOfDetail lod = render_info->testLod (ref );
     if (lod.need_s ())
     {
+        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s need_s, s=%g, t=%g")
+                    % render_info->region (ref) % lod.s () % lod.t ());
+
         R |= computeChildrenRenderSet( ref.bottom() );
         R |= computeChildrenRenderSet( ref.top() );
     } else if (lod.need_t ()) {
+        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s need_t, s=%s, t=%g")
+                    % render_info->region (ref) % lod.s () % lod.t ());
+
         R |= computeChildrenRenderSet( ref.left() );
         if ( render_info->region(ref.right ()).a.time < L) {
             R |= computeChildrenRenderSet( ref.right() );
@@ -106,6 +115,8 @@ RenderSet::references_t RenderSet::
     } else if (lod.ok ()) {
         R |= references_t::value_type(ref,lod);
     } else {
+        LOG_TRAVERSAL TaskInfo ti(boost::format("renderset %s invalid, s=%s, t=%g")
+                    % render_info->region (ref) % lod.s () % lod.t ());
         // ref is not within the current view frustum
     }
 

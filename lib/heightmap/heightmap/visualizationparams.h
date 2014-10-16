@@ -14,6 +14,7 @@ public:
     typedef std::shared_ptr<DetailInfo> ptr;
 
     virtual bool operator==(const DetailInfo&) const = 0;
+
     /**
      * @brief displayedTimeResolution describes the time resolution in ["time units" / "1 data point"].
      * @param FS
