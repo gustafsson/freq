@@ -30,7 +30,7 @@ mediump float heightValue(mediump float v) {
 void main()
 {
     // We want linear interpolation all the way out to the edge
-    mediump vec2 vertex = clamp(qt_Vertex.xz, 0.0, 1.0);
+    mediump vec2 vertex = qt_Vertex.xz;
     mediump vec2 tex0 = vertex*scale_tex + offset_tex;
 
     texCoord = tex0;
@@ -51,12 +51,16 @@ void main()
     heighty2 = heightValue(heighty2);
 
 //    height = texture2DLod(tex, texCoord, 0.0).x;
+    vertex_height = height;
+
+    // edge dropout to eliminate visible glitches between blocks
+    if (vertex.x<0.0 || vertex.y<0.0 || vertex.x>=1.0 || vertex.y>=1.0)
+        height = 0.0;
 
     highp vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
 
     // transform to homogeneous clip space
     gl_Position      = ModelViewProjectionMatrix * pos;
-    vertex_height = height;
 
     highp vec4 worldSpaceNormal;
     // calculate surface normal from slope for shading
