@@ -85,7 +85,7 @@ TargetSchedule::TargetState TargetSchedule::
 {
     TargetState r;
 
-    double missing = 0;
+    double most_urgent = 0;
 
     for (const TargetNeeds::ptr& t: T)
     {
@@ -98,12 +98,16 @@ TargetSchedule::TargetState TargetSchedule::
             continue;
 
         TargetNeeds::State state = t->state ();
+        double needed = state.needed_samples.count ();
         state.needed_samples &= step_needed;
+        double missing = state.needed_samples.count ();
 
         DEBUGINFO Log("targetschedule: %s needs %s") % Step::operation_desc (step)->toString().toStdString() % state.needed_samples;
 
-        if (state.needed_samples.count ()*exp(state.prio) > missing)
+        double urgency = missing/needed*exp(state.prio);
+        if (urgency > most_urgent)
         {
+            most_urgent = urgency;
             r.first = step;
             r.second = state;
         }
