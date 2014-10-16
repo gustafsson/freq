@@ -9,6 +9,7 @@ CONFIG += warn_on
 !macx-ios*:CONFIG += openmp
 CONFIG(debug, debug|release): DEFINES += _DEBUG
 CONFIG(debug, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT
+CONFIG(release, debug|release): DEFINES += SHARED_STATE_NO_TIMEOUT
 
 usecuda {
     DEFINES += SAWE_NO_MUTEX
