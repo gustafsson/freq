@@ -91,6 +91,7 @@ void RenderRegion::
     program_->setUniformValue("modelviewproj",
                               QMatrix4x4(GLmatrixf(gl_projection_.projection*matrixd::translate (0,y,0)*modelview).transpose ().v ()));
     glDrawArrays(GL_LINE_STRIP, 0, n_values);
+    glLineWidth(1);
 
     program_->disableAttributeArray(0);
     program_->release();

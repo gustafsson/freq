@@ -93,6 +93,7 @@ void Wave2Fbo::
     // Draw waveform
     glEnable (GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
+    glLineWidth(1);
     m_program->setUniformValue("rgba", QVector4D(0.25,0.0,0.0,1.0));
 
     float* p = CpuMemoryStorage::ReadOnly<1>(b->waveform_data()).ptr ();
