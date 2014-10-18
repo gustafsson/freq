@@ -54,7 +54,7 @@ void Squircle::
     render_model.init(chain_item_->chain (), chain_item_->update_queue (), rvu, chain_item_->target_marker ());
     render_model.render_settings.dpifactor = window()->devicePixelRatio ();
 
-    double prio = displayedTransform() == "waveform" ? 2 : 0;
+    double prio = displayedTransform() == "waveform" ? 0 : 0;
 
     // 'this' is parent
     auto hpp = new Tools::Support::HeightmapProcessingPublisher(
