@@ -271,6 +271,24 @@ void Squircle::setXangle(qreal v)
 }
 
 
+qreal Squircle::yangle() const
+{
+    return render_model.camera.read ()->r[1];
+}
+
+
+void Squircle::setYangle(qreal v)
+{
+    auto c = render_model.camera.write ();
+    if (v == qreal(c->r[1]))
+        return;
+    c->r[1] = v;
+    c.unlock ();
+
+    emit cameraChanged ();
+}
+
+
 void Squircle::
         setChain(Chain* c)
 {

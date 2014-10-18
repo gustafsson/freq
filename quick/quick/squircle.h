@@ -15,6 +15,7 @@ class Squircle : public QQuickItem
     Q_PROPERTY(qreal scalepos READ scalepos WRITE setScalepos NOTIFY cameraChanged)
     Q_PROPERTY(qreal xscale READ xscale WRITE setXscale NOTIFY cameraChanged)
     Q_PROPERTY(qreal xangle READ xangle WRITE setXangle NOTIFY cameraChanged)
+    Q_PROPERTY(qreal yangle READ yangle WRITE setYangle NOTIFY cameraChanged)
     Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
     Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
     Q_PROPERTY(QString displayedTransformDetails READ displayedTransformDetails NOTIFY displayedTransformDetailsChanged)
@@ -35,6 +36,9 @@ public:
 
     qreal xangle() const;
     void setXangle(qreal v);
+
+    qreal yangle() const;
+    void setYangle(qreal v);
 
     Chain* chain() const { return chain_item_; }
     void setChain(Chain* c);

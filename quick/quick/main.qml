@@ -54,8 +54,10 @@ Item {
             height: 1
 
             onCameraChanged: {
+                // forth orthogonal view of waveform
                 scalepos = 0.5;
                 xangle = 90.0;
+                yangle = 180.0;
             }
         }
     }
