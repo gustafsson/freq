@@ -252,8 +252,11 @@ void MergerTexture::
             // If r2 has the same time extent (but more scale details, would be smallest_larger otherwise)
             else if (r2.a.time == r.a.time && r2.b.time == r.b.time)
                 tomerge.insert (bl);
-                // If r covers all of r2
+            // If r covers all of r2
             else if (r.a.scale <= r2.a.scale && r.b.scale >= r2.b.scale && r.a.time <= r2.a.time && r.b.time >= r2.b.time)
+                tomerge.insert (bl);
+            // If any part of r overlaps any part of r2
+            else if (r.a.scale < r2.b.scale && r.b.scale > r2.a.scale && r.a.time < r2.b.time && r.b.time > r2.a.time)
                 tomerge.insert (bl);
         }
 
