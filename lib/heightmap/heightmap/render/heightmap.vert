@@ -27,40 +27,17 @@ mediump float heightValue(mediump float v) {
 }
 
 
-void main()
-{
-    // We want linear interpolation all the way out to the edge
-    mediump vec2 vertex = qt_Vertex.xz;
-    mediump vec2 tex0 = vertex*scale_tex + offset_tex;
-
-    texCoord = tex0;
-
+mediump float computeShadow(highp vec4 pos, mediump vec2 tex0) {
     mediump vec2 tex1 = max(tex0 - offset_tex*2.0, offset_tex);
     mediump vec2 tex2 = min(tex0 + offset_tex*2.0, 1.0-offset_tex);
-
-    mediump float height       = texture2D(tex, tex0).x;
     mediump float heightx1     = texture2D(tex, vec2(tex1.x, tex0.y)).x;
     mediump float heightx2     = texture2D(tex, vec2(tex2.x, tex0.y)).x;
     mediump float heighty1     = texture2D(tex, vec2(tex0.x, tex1.y)).x;
     mediump float heighty2     = texture2D(tex, vec2(tex0.x, tex2.y)).x;
-
-    height = heightValue(height);
     heightx1 = heightValue(heightx1);
     heightx2 = heightValue(heightx2);
     heighty1 = heightValue(heighty1);
     heighty2 = heightValue(heighty2);
-
-//    height = texture2DLod(tex, texCoord, 0.0).x;
-    vertex_height = height;
-
-    // edge dropout to eliminate visible glitches between blocks
-    if (vertex.x<0.0 || vertex.y<0.0 || vertex.x>=1.0 || vertex.y>=1.0)
-        height = 0.0;
-
-    highp vec4 pos         = vec4(vertex.x, height, vertex.y, 1.0);
-
-    // transform to homogeneous clip space
-    gl_Position      = ModelViewProjectionMatrix * pos;
 
     highp vec4 worldSpaceNormal;
     // calculate surface normal from slope for shading
@@ -83,5 +60,31 @@ void main()
     highp float diffuse   = max(0.0, worldSpaceNormal.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
 
     //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
-    shadow = mix(1.0, min( 0.7 + (diffuse+facing)*0.3, 1.0), flatness);
+    return mix(1.0, min( 0.7 + (diffuse+facing)*0.3, 1.0), flatness);
+}
+
+
+void main()
+{
+    // We want linear interpolation all the way out to the edge
+    mediump vec2 tex0 = qt_Vertex.xy*scale_tex + offset_tex;
+
+    texCoord = tex0;
+
+    vertex_height = texture2D(tex, tex0).x;
+    //    height = texture2DLod(tex, texCoord, 0.0).x;
+    vertex_height = heightValue(vertex_height);
+
+
+    highp vec4 pos = qt_Vertex.xzyw; // swizzle
+    pos.y = vertex_height; // and set vertex height from texture
+
+    shadow = computeShadow(pos, tex0);
+
+    // edge dropout to eliminate visible glitches between blocks
+    if (pos.x<0.0 || pos.z<0.0 || pos.x>1.0 || pos.z>1.0)
+        pos.y *= 0.0;
+
+    // transform to homogeneous clip space
+    gl_Position      = ModelViewProjectionMatrix * pos;
 }

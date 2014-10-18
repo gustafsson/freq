@@ -465,7 +465,7 @@ void RenderBlock::
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     GLint qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
     glEnableVertexAttribArray (qt_Vertex);
-    glVertexAttribPointer (qt_Vertex, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     GlException_CHECK_ERROR();
 }
@@ -575,7 +575,7 @@ void RenderBlock::
     if (w>2) x1--, x2++;
     if (h>2) y1--, y2++;
 
-    vector<float> posdata( (x2-x1)*(y2-y1)*4 );
+    vector<float> posdata( (x2-x1)*(y2-y1)*2 );
     float *pos = &posdata[0];
 
     for(int y=y1; y<y2; y++) {
@@ -583,13 +583,11 @@ void RenderBlock::
             float u = x / (float) (w-1);
             float v = y / (float) (h-1);
             *pos++ = u;
-            *pos++ = 0.0f;
             *pos++ = v;
-            *pos++ = 1.0f;
         }
     }
 
-    _mesh_position.reset( new Vbo( (w+2)*(h+2)*4*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW, &posdata[0] ));
+    _mesh_position.reset( new Vbo( (w+2)*(h+2)*2*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW, &posdata[0] ));
 }
 
 
