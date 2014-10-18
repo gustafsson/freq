@@ -11,11 +11,12 @@
 class Squircle : public QQuickItem
 {
     Q_OBJECT
-    Q_PROPERTY(qreal timepos READ timepos WRITE setTimepos NOTIFY cameraChanged)
-    Q_PROPERTY(qreal scalepos READ scalepos WRITE setScalepos NOTIFY cameraChanged)
-    Q_PROPERTY(qreal xscale READ xscale WRITE setXscale NOTIFY cameraChanged)
-    Q_PROPERTY(qreal xangle READ xangle WRITE setXangle NOTIFY cameraChanged)
-    Q_PROPERTY(qreal yangle READ yangle WRITE setYangle NOTIFY cameraChanged)
+    Q_PROPERTY(qreal timepos READ timepos WRITE setTimepos NOTIFY timeposChanged)
+    Q_PROPERTY(qreal scalepos READ scalepos WRITE setScalepos NOTIFY scaleposChanged)
+    Q_PROPERTY(qreal timezoom READ timezoom WRITE setTimezoom NOTIFY timezoomChanged)
+    Q_PROPERTY(qreal scalezoom READ scalezoom WRITE setScalezoom NOTIFY scalezoomChanged)
+    Q_PROPERTY(qreal xangle READ xangle WRITE setXangle NOTIFY xangleChanged)
+    Q_PROPERTY(qreal yangle READ yangle WRITE setYangle NOTIFY yangleChanged)
     Q_PROPERTY(Chain* chain READ chain WRITE setChain NOTIFY chainChanged)
     Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
     Q_PROPERTY(QString displayedTransformDetails READ displayedTransformDetails NOTIFY displayedTransformDetailsChanged)
@@ -31,8 +32,11 @@ public:
     qreal scalepos() const;
     void setScalepos(qreal v);
 
-    qreal xscale() const;
-    void setXscale(qreal v);
+    qreal timezoom() const;
+    void setTimezoom(qreal v);
+
+    qreal scalezoom() const;
+    void setScalezoom(qreal v);
 
     qreal xangle() const;
     void setXangle(qreal v);
@@ -52,10 +56,16 @@ public:
     Tools::RenderModel* renderModel() { return &render_model; }
 
 signals:
-    void cameraChanged();
+    void timeposChanged();
+    void scaleposChanged();
+    void timezoomChanged();
+    void scalezoomChanged();
+    void xangleChanged();
+    void yangleChanged();
     void chainChanged();
     void displayedTransformChanged();
     void displayedTransformDetailsChanged();
+
     void refresh();
 
     // use Qt::DirectConnection to ensure that objects created are placed on the same thread

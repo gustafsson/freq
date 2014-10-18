@@ -28,7 +28,8 @@ public:
     bool isHold() const { return is_hold; }
 
 signals:
-    void refresh();
+    void touchNavigation();
+
     void squircleChanged();
     void selectionChanged();
     void isHoldChanged();
@@ -39,12 +40,16 @@ public slots:
 
 protected slots:
     void startSelection();
+    void followRecording();
+    void handleWindowChanged(QQuickWindow *win);
+    void noHoldMaxT();
 
 protected:
     void componentComplete() override;
 
 private:
     Tools::RenderModel* render_model();
+    double max_t();
 
     Squircle* squircle_ = 0;
     Selection* selection_ = 0;
@@ -54,6 +59,7 @@ private:
     QPointF start1, start2;
     QTimer timer;
     bool is_hold = false; // use mode instead?
+    bool hold_max_t = true;
 
     enum Mode {
         Undefined,

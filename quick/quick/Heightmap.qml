@@ -5,6 +5,8 @@ Squircle {
     id: squircle
     property Selection selection
 
+    signal touchNavigation()
+
     OptimalTimeFrequencyResolution { squircle: squircle }
 
     TouchNavigation {
@@ -16,6 +18,8 @@ Squircle {
         signal mouseMove(real x1, real y1, bool p1)
 
         onIsHoldChanged: mousearea.cursorShape = isHold ? Qt.IBeamCursor : Qt.ArrowCursor
+
+        onTouchNavigation: squircle.touchNavigation()
 
         MouseArea {
             id: mousearea

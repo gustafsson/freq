@@ -23,6 +23,12 @@ Item {
         // The filters selected in one squircle can be applied on another squircle
     }
 
+    Item {
+        id: sharedCamera
+        property real timepos
+        property real timezoom
+    }
+
     ColumnLayout {
         objectName: "row layout"
         anchors.fill: parent
@@ -33,11 +39,16 @@ Item {
             objectName: "heightmap1"
             chain: chain
             selection: selection
-            timepos: heightmap2.timepos
-            xscale: heightmap2.xscale
+            timepos: sharedCamera.timepos
+            timezoom: sharedCamera.timezoom
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 5
+
+            onTouchNavigation: {
+                sharedCamera.timepos = timepos;
+                sharedCamera.timezoom = timezoom;
+            }
         }
 
         LayoutSplitter {}
@@ -46,18 +57,21 @@ Item {
             id: heightmap2
             objectName: "heightmap2"
             chain: chain
-            timepos: heightmap1.timepos
-            xscale: heightmap1.xscale
+            timepos: sharedCamera.timepos
+            timezoom: sharedCamera.timezoom
             displayedTransform: "waveform"
             Layout.fillWidth: true
             Layout.fillHeight: true
             height: 1
 
-            onCameraChanged: {
-                // forth orthogonal view of waveform
+            onTouchNavigation: {
+                // force orthogonal view of waveform
                 scalepos = 0.5;
                 xangle = 90.0;
                 yangle = 180.0;
+
+                sharedCamera.timepos = timepos;
+                sharedCamera.timezoom = timezoom;
             }
         }
     }

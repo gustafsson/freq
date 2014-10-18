@@ -4,6 +4,8 @@
 #include "log.h"
 #include "demangle.h"
 
+#include <QQuickWindow>
+
 //#define LOG_NAVIGATION
 #define LOG_NAVIGATION if(0)
 
@@ -13,6 +15,8 @@ TouchNavigation::TouchNavigation(QQuickItem* parent)
     :
       QQuickItem(parent)
 {
+    connect (this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
+
     connect(&timer,SIGNAL(timeout()),this,SLOT(startSelection()));
     timer.setSingleShot (true);
 }
@@ -21,13 +25,10 @@ TouchNavigation::TouchNavigation(QQuickItem* parent)
 void TouchNavigation::
         setSquircle(Squircle*s)
 {
-    disconnect (this, SIGNAL(refresh()));
-
     squircle_=s;
     emit squircleChanged ();
 
-    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(cameraChanged()));
-    connect(this, SIGNAL(refresh()), squircle_, SIGNAL(refresh()));
+    connect(squircle_, SIGNAL(timeposChanged()), this, SLOT(noHoldMaxT()));
 }
 
 
@@ -46,6 +47,19 @@ Tools::RenderModel* TouchNavigation::
 }
 
 
+double TouchNavigation::max_t ()
+{
+    double sL = render_model()->tfr_mapping ().read ()->length();
+    tvector<4,int> viewport = render_model ()->gl_projection.read ()->viewport;
+    auto c = *render_model ()->camera.read ();
+//    double aspect = viewport[2]/(float)viewport[3];
+    double aspect = 1.;
+    double s = -c.p[2]*aspect/c.xscale * sin(DEG_TO_RAD(c.r[0]));
+    double L = sL - s*0.25;
+    return L;
+}
+
+
 void TouchNavigation::componentComplete()
 {
     QQuickItem::componentComplete();
@@ -55,6 +69,13 @@ void TouchNavigation::componentComplete()
             this, SLOT(onMouseMove(qreal,qreal,bool)));
     connect(this, SIGNAL(touch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)),
             this, SLOT(onTouch(qreal,qreal,bool,qreal,qreal,bool,qreal,qreal,bool)));
+}
+
+
+void TouchNavigation::handleWindowChanged(QQuickWindow *win)
+{
+    if (win)
+        connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(followRecording()));
 }
 
 
@@ -251,9 +272,10 @@ void TouchNavigation::
     if (r[0] > 90) r[0] = 90;
 
     // read info about current view
-    auto tm = render_model()->tfr_mapping ().read ();
-    double L = tm->length();
-    tm.unlock ();
+    double L = max_t();
+
+    if (press1 && !press2)
+        hold_max_t = q[0] > L;
 
     // limit camera position along time
     if (q[0] < 0) q[0] = 0;
@@ -280,7 +302,7 @@ void TouchNavigation::
     prev1 = point1;
     prev2 = point2;
 
-    emit refresh ();
+    emit touchNavigation ();
 }
 
 
@@ -324,6 +346,27 @@ void TouchNavigation::
 
         is_hold = true;
         emit isHoldChanged();
-        emit refresh ();
+        emit touchNavigation ();
     }
+}
+
+
+void TouchNavigation::
+        followRecording()
+{
+    if (hold_max_t) {
+//        double L = render_model()->tfr_mapping ().read ()->length();
+        double L = max_t();
+        if (L != render_model()->camera->q[0]) {
+            render_model()->camera->q[0] = L;
+            emit touchNavigation();
+        }
+    }
+}
+
+
+void TouchNavigation::
+        noHoldMaxT()
+{
+    hold_max_t = false;
 }

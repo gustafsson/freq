@@ -110,26 +110,6 @@ void SquircleRenderer::paint()
     }
 
     render_view.setStates ();
-    const auto c = *render_view.model->camera.read ();
-    render_view.model->recompute_extent ();
-    double sL = render_view.model->tfr_mapping ()->length();
-
-    if (c.q[0] == prevL) {
-        render_view.model->camera->q[0] = sL;
-        prevL = sL;
-        emit repositionSignal();
-    }
-
-    // neat if no other viewport tries to modify this camera position by the same
-    // algorithm
-    //    double s = 4*m_viewport.width ()
-    //            /(float)m_viewport.height ()
-    //            /c.xscale
-    //            *sin(DEG_TO_RAD(c.r[0]));
-    //    double L = sL - s;
-    //    static double lq0 = c.q[0];
-    //    if (c.q[0] > L-0.1*s || c.q[0] == lq0)
-    //        render_view.model->camera->q[0] = lq0 = L;
 
     render_view.paintGL ();
 }

@@ -17,6 +17,12 @@ Squircle::Squircle() :
       m_renderer(0)
 {
     connect (this, SIGNAL(windowChanged(QQuickWindow*)), this, SLOT(handleWindowChanged(QQuickWindow*)));
+    connect (this, SIGNAL(timeposChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(scaleposChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(timezoomChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(scalezoomChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(xangleChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(yangleChanged()), this, SIGNAL(refresh()));
 }
 
 
@@ -75,11 +81,9 @@ void Squircle::handleWindowChanged(QQuickWindow *win)
     if (win) {
         disconnect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()));
         disconnect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()));
-        disconnect(this, SIGNAL(cameraChanged()), this, SIGNAL(refresh()));
         disconnect(this, SIGNAL(refresh()), win, SLOT(update()));
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
-        connect(this, SIGNAL(cameraChanged()), SIGNAL(refresh()));
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
 
         auto v = render_model.render_settings.clear_color;
@@ -151,7 +155,6 @@ void Squircle::sync()
         m_renderer->setObjectName (objectName () + " renderer");
         connect(window(), SIGNAL(beforeRendering()), m_renderer, SLOT(paint()), Qt::DirectConnection);
         connect(m_renderer, SIGNAL(redrawSignal()), window(), SLOT(update()));
-        connect(m_renderer, SIGNAL(repositionSignal()), this, SIGNAL(cameraChanged()));
 
         emit rendererChanged(m_renderer);
 
@@ -213,7 +216,7 @@ void Squircle::setTimepos (qreal v)
     c->q[0] = v;
     c.unlock ();
 
-    emit cameraChanged ();
+    emit timeposChanged ();
 }
 
 
@@ -231,17 +234,17 @@ void Squircle::setScalepos(qreal v)
     c->q[2] = v;
     c.unlock ();
 
-    emit cameraChanged ();
+    emit scaleposChanged ();
 }
 
 
-qreal Squircle::xscale() const
+qreal Squircle::timezoom() const
 {
     return render_model.camera.read ()->xscale;
 }
 
 
-void Squircle::setXscale(qreal v)
+void Squircle::setTimezoom(qreal v)
 {
     auto c = render_model.camera.write ();
     if (v == qreal(c->xscale))
@@ -249,7 +252,25 @@ void Squircle::setXscale(qreal v)
     c->xscale = v;
     c.unlock ();
 
-    emit cameraChanged ();
+    emit timezoomChanged ();
+}
+
+
+qreal Squircle::scalezoom() const
+{
+    return render_model.camera.read ()->zscale;
+}
+
+
+void Squircle::setScalezoom(qreal v)
+{
+    auto c = render_model.camera.write ();
+    if (v == qreal(c->zscale))
+        return;
+    c->zscale = v;
+    c.unlock ();
+
+    emit scalezoomChanged ();
 }
 
 
@@ -267,7 +288,7 @@ void Squircle::setXangle(qreal v)
     c->r[0] = v;
     c.unlock ();
 
-    emit cameraChanged ();
+    emit xangleChanged ();
 }
 
 
@@ -285,7 +306,7 @@ void Squircle::setYangle(qreal v)
     c->r[1] = v;
     c.unlock ();
 
-    emit cameraChanged ();
+    emit yangleChanged ();
 }
 
 

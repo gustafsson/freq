@@ -16,12 +16,17 @@ OptimalTimeFrequencyResolution::OptimalTimeFrequencyResolution(QQuickItem *paren
 void OptimalTimeFrequencyResolution::
         setSquircle(Squircle* s)
 {
-    if (squircle_)
-        disconnect (squircle_, SIGNAL(cameraChanged()), this, SLOT(onCameraChanged()));
+    if (squircle_) {
+        disconnect (squircle_, SIGNAL(scaleposChanged()), this, SLOT(onCameraChanged()));
+        disconnect (squircle_, SIGNAL(timezoomChanged()), this, SLOT(onCameraChanged()));
+        disconnect (squircle_, SIGNAL(scalezoomChanged()), this, SLOT(onCameraChanged()));
+    }
 
     this->squircle_ = s;
 
-    connect (squircle_, SIGNAL(cameraChanged()), this, SLOT(onCameraChanged()));
+    connect (squircle_, SIGNAL(scaleposChanged()), this, SLOT(onCameraChanged()));
+    connect (squircle_, SIGNAL(timezoomChanged()), this, SLOT(onCameraChanged()));
+    connect (squircle_, SIGNAL(scalezoomChanged()), this, SLOT(onCameraChanged()));
 }
 
 

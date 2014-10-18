@@ -23,7 +23,6 @@ public:
 
 signals:
     void redrawSignal();
-    void repositionSignal();
 
 public slots:
     void paint2();
