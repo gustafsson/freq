@@ -85,6 +85,8 @@ void Squircle::handleWindowChanged(QQuickWindow *win)
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
+        win->screen ()->setOrientationUpdateMask (Qt::ScreenOrientations(~0));
+        connect (win->screen (), SIGNAL(orientationChanged(Qt::ScreenOrientation)), this, SIGNAL(refresh()));
 
         auto v = render_model.render_settings.clear_color;
         auto f = [](float v) { return (unsigned char)(v<0.f?0:v>1.f?255:v*255); };
