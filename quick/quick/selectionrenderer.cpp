@@ -22,15 +22,53 @@ void SelectionRenderer::
     this->f1 = f1;
     this->t2 = t2;
     this->f2 = f2;
+    this->I.clear ();
+}
+
+
+void SelectionRenderer::
+        setSelection(Signal::Intervals I)
+{
+    this->I = I;
+    this->t2 = this->t1;
+    this->f2 = this->f1;
+}
+
+
+void SelectionRenderer::
+        setRgba(float r, float g, float b, float a)
+{
+    this->r = r;
+    this->g = g;
+    this->b = b;
+    this->a = a;
 }
 
 
 void SelectionRenderer::
         painting()
 {
-    if (t1==t2 || f1==f2)
-        return;
+    if (t1!=t2 && f1!=f2)
+    {
+        Heightmap::FreqAxis f = model->tfr_mapping ().read ()->display_scale();
+        float s1 = f.getFrequencyScalar (f1);
+        float s2 = f.getFrequencyScalar (f2);
 
+        paint(t1, t2, s1, s2);
+    }
+
+    if (I)
+    {
+        float fs = model->tfr_mapping ().read ()->targetSampleRate();
+        for (auto i: I)
+            paint(i.first/fs, i.last/fs, 0, 1);
+    }
+}
+
+
+void SelectionRenderer::
+        paint(float t1, float t2, float s1, float s2)
+{
     if (!m_program) {
         m_program = new QOpenGLShaderProgram();
         m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
@@ -60,9 +98,6 @@ void SelectionRenderer::
 
     float h1 = -100;
     float h2 = 100;
-    Heightmap::FreqAxis f = model->tfr_mapping ().read ()->display_scale();
-    float s1 = f.getFrequencyScalar (f1);
-    float s2 = f.getFrequencyScalar (f2);
 
     float values[] = {
         0, 0, 0, // counter clock-wise front sides, but culling isn't enabled
@@ -96,11 +131,10 @@ void SelectionRenderer::
     modelview *= matrixd::scale (t2-t1,h2-h1,s2-s1);
     QMatrix4x4 modelviewprojection {GLmatrixf(p.projection*modelview).transpose ().v ()};
     m_program->setUniformValue("ModelViewProjectionMatrix", modelviewprojection);
-    m_program->setUniformValue("rgba", QVector4D(0.0,0.0,0.0,0.5));
+    m_program->setUniformValue("rgba", QVector4D(r,g,b,a));
 
     // don't write to the depth buffer
     glDepthMask(GL_FALSE);
-    glEnable (GL_STENCIL_TEST); // must enable testing for glStencilOp(INVERT) to take effect
 
     // write to the stencil buffer but not to the color buffer
     glStencilMask(0xFF);
@@ -108,6 +142,7 @@ void SelectionRenderer::
 
     // set the stencil buffer to 1 where objects in the current scene are inside the selection box
     glClear (GL_STENCIL_BUFFER_BIT);
+    glEnable (GL_STENCIL_TEST); // must enable testing for glStencilOp(INVERT) to take effect
     glStencilOp(GL_KEEP, GL_KEEP, GL_INVERT);
     glStencilFunc(GL_ALWAYS, 1, 1);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, N); // <- draw call

@@ -99,4 +99,8 @@ Squircle {
             }
         }
     }
+
+    ShowProcessing {
+        heightmap: parent
+    }
 }

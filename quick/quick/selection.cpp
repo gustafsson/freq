@@ -16,9 +16,11 @@ Selection::Selection(QQuickItem *parent) :
 void Selection::
         setRenderOnHeightmap(Squircle*s)
 {
+    if (render_on_heightmap_) disconnect(render_on_heightmap_,SIGNAL(rendererChanged(SquircleRenderer*)),this,SLOT(onRendererChanged(SquircleRenderer*)));
+
     render_on_heightmap_=s;
-    emit renderOnHeightmapChanged ();
     connect(s,SIGNAL(rendererChanged(SquircleRenderer*)),SLOT(onRendererChanged(SquircleRenderer*)), Qt::DirectConnection);
+    emit renderOnHeightmapChanged ();
 }
 
 void Selection::
@@ -139,7 +141,7 @@ void Selection::
 void Selection::
         onRendererChanged(SquircleRenderer* renderer)
 {
-    // SquircleRenderer owns renderer
+    // SquircleRenderer owns selection_renderer_
     selection_renderer_ = new SelectionRenderer(renderer);
     selection_renderer_->setSelection (t1_, f1_, t2_, f2_);
 }

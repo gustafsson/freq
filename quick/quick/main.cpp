@@ -7,6 +7,7 @@
 #include "touchnavigation.h"
 #include "selection.h"
 #include "optimaltimefrequencyresolution.h"
+#include "showprocessing.h"
 
 #include "prettifysegfault.h"
 #include "log.h"
@@ -64,6 +65,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<TouchNavigation>("OpenGLUnderQML", 1, 0, "TouchNavigation");
     qmlRegisterType<Selection>("OpenGLUnderQML", 1, 0, "Selection");
     qmlRegisterType<OptimalTimeFrequencyResolution>("OpenGLUnderQML", 1, 0, "OptimalTimeFrequencyResolution");
+    qmlRegisterType<ShowProcessing>("OpenGLUnderQML", 1, 0, "ShowProcessing");
 
     int r = 1;
     QWindow* window;
