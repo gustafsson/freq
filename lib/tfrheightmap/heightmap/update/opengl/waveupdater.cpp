@@ -109,13 +109,6 @@ void WaveUpdater::
         j.promise.set_value ();
     }
 
-    for (const auto& v : textures)
-    {
-        glBindTexture (GL_TEXTURE_2D, v.second->getOpenGlTextureId());
-        glGenerateMipmap (GL_TEXTURE_2D);
-        glBindTexture (GL_TEXTURE_2D, 0);
-    }
-
     if (!textures.empty())
         glFlush();
     for (const auto& v : textures)
