@@ -66,9 +66,11 @@ private:
     pVbo _mesh_position;
 
     // 1 << (subdivs-1) = max density of pixels per vertex
-    // subdivs = 4 -> 8 barely noticeable
-    // subdivs = 5 -> 16 noticeable
+#ifdef GL_ES_VERSION_2_0
     static const int subdivs = 4;
+#else
+    static const int subdivs = 2;
+#endif
     pVbo _mesh_index_buffer[subdivs*subdivs];
 
     void checkExtensions();
