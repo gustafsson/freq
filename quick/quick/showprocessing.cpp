@@ -37,7 +37,7 @@ void ShowProcessing::
         onWindowChanged(QQuickWindow *win)
 {
     if (win)
-        connect(win, SIGNAL(beforeSynchronizing()), SLOT(sync()));
+        connect(win, SIGNAL(beforeSynchronizing()), SLOT(sync()), Qt::DirectConnection);
 }
 
 

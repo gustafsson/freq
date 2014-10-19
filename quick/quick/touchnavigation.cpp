@@ -75,7 +75,7 @@ void TouchNavigation::componentComplete()
 void TouchNavigation::handleWindowChanged(QQuickWindow *win)
 {
     if (win)
-        connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(followRecording()));
+        connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(followRecording()), Qt::DirectConnection);
 }
 
 
