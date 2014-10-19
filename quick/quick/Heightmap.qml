@@ -7,8 +7,6 @@ Squircle {
 
     signal touchNavigation()
 
-    OptimalTimeFrequencyResolution { squircle: squircle }
-
     TouchNavigation {
         anchors.fill: parent
         squircle: squircle

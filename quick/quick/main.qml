@@ -184,4 +184,6 @@ Item {
         filteredHeightmap: heightmap2
         renderOnHeightmap: heightmap1
     }
+
+    OptimalTimeFrequencyResolution { squircle: heightmap1 }
 }

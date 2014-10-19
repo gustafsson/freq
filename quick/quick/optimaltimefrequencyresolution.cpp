@@ -20,6 +20,7 @@ void OptimalTimeFrequencyResolution::
         disconnect (squircle_, SIGNAL(scaleposChanged()), this, SLOT(onCameraChanged()));
         disconnect (squircle_, SIGNAL(timezoomChanged()), this, SLOT(onCameraChanged()));
         disconnect (squircle_, SIGNAL(scalezoomChanged()), this, SLOT(onCameraChanged()));
+        disconnect (squircle_, SIGNAL(touchNavigation()), this, SLOT(onCameraChanged()));
     }
 
     this->squircle_ = s;
@@ -27,6 +28,7 @@ void OptimalTimeFrequencyResolution::
     connect (squircle_, SIGNAL(scaleposChanged()), this, SLOT(onCameraChanged()));
     connect (squircle_, SIGNAL(timezoomChanged()), this, SLOT(onCameraChanged()));
     connect (squircle_, SIGNAL(scalezoomChanged()), this, SLOT(onCameraChanged()));
+    connect (squircle_, SIGNAL(touchNavigation()), this, SLOT(onCameraChanged()));
 }
 
 
