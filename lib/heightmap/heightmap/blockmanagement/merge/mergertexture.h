@@ -26,9 +26,10 @@ public:
     /**
      * @brief fillBlockFromOthers fills a block with data from other blocks.
      * @param block
+     * @return Intervals that couldn't be merged with details from other blocks.
      */
-    void fillBlockFromOthers( pBlock block ) { fillBlocksFromOthers(std::vector<pBlock>{block}); }
-    void fillBlocksFromOthers( const std::vector<pBlock>& blocks );
+    Signal::Intervals fillBlockFromOthers( pBlock block ) { return fillBlocksFromOthers(std::vector<pBlock>{block}); }
+    Signal::Intervals fillBlocksFromOthers( const std::vector<pBlock>& blocks );
 
 private:
     BlockCache::const_ptr cache_;
@@ -40,8 +41,16 @@ private:
     BlockCache::cache_t cache_clone;
     unsigned program_;
 
+    // glsl uniforms
+    int qt_Vertex = 0,
+        qt_MultiTexCoord0 = 0,
+        qt_Texture0 = 0,
+        invtexsize = 0,
+        uniProjection = 0,
+        uniModelView = 0;
+
     void init();
-    void fillBlockFromOthersInternal( pBlock block );
+    Signal::Intervals fillBlockFromOthersInternal( pBlock block );
 
     /**
       Add block information from another block

@@ -50,6 +50,7 @@ private:
     double                                  prio_;
     Signal::Interval                        last_update_;
     bool                                    failed_allocation_;
+    Signal::Intervals                       last_valid_;
 
     bool isHeightmapDone() const;
     bool failedAllocation() const;

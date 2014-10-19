@@ -49,8 +49,7 @@ void HeightmapProcessingPublisher::
 {
     TIME_PAINTGL_DETAILS TaskTimer tt("Find things to work on");
 
-    //Intervals invalid_samples;
-    Intervals things_to_add;
+    Intervals missing_data;
     Intervals needed_samples;
     float fs, L;
     Heightmap::TfrMapping::Collections C;
@@ -64,22 +63,32 @@ void HeightmapProcessingPublisher::
     float t_center = camera_.read ()->q[0];
     IntervalType center = std::round(t_center * fs);
 
+    Signal::Intervals recently_created;
     for ( auto cp : C )
     {
         auto c = cp.write ();
-        things_to_add |= c->recently_created();
+        missing_data |= c->missing_data();
+        recently_created |= c->recently_created();
         needed_samples |= c->needed_samples();
     }
 
-    target_needs_->deprecateCache (things_to_add);
+    // new blocks based on invalid data contain invalid data
+    missing_data |= ~last_valid_ & recently_created;
+
+    target_needs_->deprecateCache (missing_data);
 
     Interval target_interval(0, std::round(L*fs));
     needed_samples &= target_interval;
 
+    last_valid_ = needed_samples;
+    if (auto step = target_needs_->step ().lock ())
+        last_valid_ &= Step::cache (step)->samplesDesc();
+
+
     Intervals to_compute;
     if (auto step = target_needs_->step ().lock ())
         to_compute = step.read ()->not_started();
-    to_compute |= things_to_add;
+    to_compute |= missing_data ;
     to_compute &= needed_samples;
 
 
@@ -116,7 +125,7 @@ void HeightmapProcessingPublisher::
             "RenderView needed_samples = %s, "
             "things_to_add = %s, center = %d, size = %d")
             % needed_samples
-            % things_to_add
+            % missing_data
             % center
             % update_size);
 

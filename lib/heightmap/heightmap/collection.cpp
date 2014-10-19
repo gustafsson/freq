@@ -101,6 +101,9 @@ void Collection::
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")
             % __FUNCTION__ % cache.size ());
 
+    missing_data_ = missing_data_next_;
+    missing_data_next_.clear ();
+
     boost::unordered_set<Reference> blocksToPoke;
 
     for (const BlockCache::cache_t::value_type& b : cache)
@@ -245,7 +248,7 @@ void Collection::
     for (const pBlock& block : blocks_to_init)
         block->frame_number_last_used = _frame_counter;
 
-    block_initializer_->initBlocks(blocks_to_init);
+    missing_data_next_ |= block_initializer_->initBlocks(blocks_to_init);
 
     for (const pBlock& block : blocks_to_init)
         cache_->insert (block);
@@ -458,6 +461,15 @@ Signal::Intervals Collection::
 {
     Signal::Intervals I = recently_created_;
     recently_created_.clear ();
+    return I;
+}
+
+
+Signal::Intervals Collection::
+        missing_data()
+{
+    Signal::Intervals I = missing_data_;
+    missing_data_.clear ();
     return I;
 }
 

@@ -11,11 +11,11 @@ public:
     Position() : time(0), scale(0) {}
     Position(double time, float scale) : time(time), scale(scale) {}
 
-    bool operator== (Position const&b) { return time==b.time && scale==b.scale; }
-    bool operator!= (Position const&b) { return !(*this==b); }
+    bool operator== (Position const&b) const { return time==b.time && scale==b.scale; }
+    bool operator!= (Position const&b) const { return !(*this==b); }
 
     template< class ostream_t > inline
-    friend ostream_t& operator<<(ostream_t& os, const Position& p) {
+    friend ostream_t& operator<<(ostream_t& os, Position const& p) {
         return os << p.time << ":" << p.scale;
     }
 };
@@ -27,14 +27,14 @@ public:
 
     Region(Position a, Position b) : a(a), b(b) {}
 
-    bool operator== (Region const&r) { return a==r.a && b==r.b; }
-    bool operator!= (Region const&r) { return !(*this==r); }
+    bool operator== (Region const&r) const { return a==r.a && b==r.b; }
+    bool operator!= (Region const&r) const { return !(*this==r); }
 
     float time() const { return b.time - a.time; }
     float scale() const { return b.scale - a.scale; }
 
     template< class ostream_t > inline
-    friend ostream_t& operator<<(ostream_t& os, const Region& r) {
+    friend ostream_t& operator<<(ostream_t& os, Region const& r) {
         return os << "(t=" << r.a.time << ":" << r.b.time << " s=" << r.a.scale << ":" << r.b.scale << ")";
     }
 };

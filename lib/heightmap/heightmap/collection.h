@@ -119,6 +119,7 @@ public:
 
     Signal::Intervals needed_samples() const;
     Signal::Intervals recently_created();
+    Signal::Intervals missing_data();
 
 
     /**
@@ -175,7 +176,8 @@ private:
     std::unique_ptr<BlockManagement::BlockInitializer> block_initializer_;
 
     Signal::Intervals
-        recently_created_;
+        recently_created_,
+        missing_data_, missing_data_next_; // "double buffered", waiting for glFlush
 
     bool
         _is_visible;

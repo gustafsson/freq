@@ -32,13 +32,13 @@ BlockInitializer::
 }
 
 
-void BlockInitializer::
+Signal::Intervals BlockInitializer::
         initBlocks( const std::vector<pBlock>& blocks )
 {
     TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % blocks.size ());
     //TIME_GETBLOCK TaskTimer tt(format("BlockInitializer: initBlock %s") % ReferenceInfo(block->reference (), block_layout_, visualization_params_));
 
-    merger_->fillBlocksFromOthers (blocks);
+    return merger_->fillBlocksFromOthers (blocks);
 }
 
 } // namespace BlockManagement
