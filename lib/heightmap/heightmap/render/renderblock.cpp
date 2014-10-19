@@ -460,6 +460,9 @@ void RenderBlock::
 
         uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
         glUniform2f(uniOffsTex, .5f/w, .5f/h);
+
+        uniOffsTex = glGetUniformLocation(_shader_prog, "texSize");
+        glUniform2f(uniOffsTex, w, h);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);

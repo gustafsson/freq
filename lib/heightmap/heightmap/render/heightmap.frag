@@ -12,6 +12,8 @@ uniform lowp float yNormalize;
 uniform mediump vec3 logScale;
 uniform lowp vec4 fixedColor;
 uniform lowp vec4 clearColor;
+uniform mediump vec2 texSize;
+
 
 mediump float heightValue(mediump float v) {
     v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
@@ -21,6 +23,23 @@ mediump float heightValue(mediump float v) {
 
     return v == 0.0 ? 0.0 : max(0.0, h);
 }
+
+
+// https://www.opengl.org/discussion_boards/showthread.php/177520-Mipmap-level-calculation-using-dFdx-dFdy
+mediump float mip_map_level(in vec2 texture_coordinate)
+{
+    // The OpenGL Graphics System: A Specification 4.2
+    //  - chapter 3.9.11, equation 3.21
+
+    mediump vec2  dx_vtc        = dFdx(texture_coordinate);
+    mediump vec2  dy_vtc        = dFdy(texture_coordinate);
+    mediump float delta_max_sqr = max(dot(dx_vtc, dx_vtc), dot(dy_vtc, dy_vtc));
+
+
+    //return max(0.0, 0.5 * log2(delta_max_sqr) - 1.0); // == log2(sqrt(delta_max_sqr));
+    return 0.5 * log2(delta_max_sqr); // == log2(sqrt(delta_max_sqr));
+}
+
 
 void main()
 {
@@ -33,18 +52,20 @@ void main()
     //float v = max(max(v4.x, v4.y), max(v4.z, v4.w));
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
+    // 0<l when magnifying
+    mediump float l = max(0.0, -mip_map_level(texCoord*texSize));
     mediump float v = texture2D(tex, texCoord, 0.0).x;
     mediump float f = 1.2;
     mediump float base = f*v;
     // wan't median value in mipmap6, 1<<6 -> 64x64 texels
     // know mean value in 1<<(1-5), assuming sharp peaks are way more common than sharp valleys the mean is
     // an approximation. However, the mean next to a peak is high so use a smaller local mean.
-    base = min(base, texture2D(tex, texCoord, 1.0).x);
-    base = min(base, texture2D(tex, texCoord, 2.0).x);
-    base = min(base, texture2D(tex, texCoord, 3.0).x);
-    base = min(base, texture2D(tex, texCoord, 4.0).x);
-    base = min(base, texture2D(tex, texCoord, 5.0).x);
-    base = min(base, texture2D(tex, texCoord, 6.0).x);
+    base = min(base, texture2D(tex, texCoord, 1.0+l).x);
+    base = min(base, texture2D(tex, texCoord, 2.0+l).x);
+    base = min(base, texture2D(tex, texCoord, 3.0+l).x);
+    base = min(base, texture2D(tex, texCoord, 4.0+l).x);
+    base = min(base, texture2D(tex, texCoord, 5.0+l).x);
+    base = min(base, texture2D(tex, texCoord, 6.0+l).x);
     base *= 0.7; // 1/f^2, f=1.2
     // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
