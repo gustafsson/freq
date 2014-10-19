@@ -24,12 +24,14 @@ void ShowProcessing::
 void ShowProcessing::
         onRendererChanged(SquircleRenderer* renderer)
 {
+#ifdef _DEBUG
     // SquircleRenderer owns selection_renderer_
     selection_renderer_1 = new SelectionRenderer(renderer);
-    selection_renderer_1->setRgba (0.4, 0.0, 0.0, 0.5);
+    selection_renderer_1->setRgba (0.0, 0.0, 0.0, 0.2);
 
     selection_renderer_2 = new SelectionRenderer(renderer);
-    selection_renderer_2->setRgba (0.0, 0.8, 0.0, 0.5);
+    selection_renderer_2->setRgba (0.0, 0.0, 0.0, 0.1);
+#endif
 }
 
 
