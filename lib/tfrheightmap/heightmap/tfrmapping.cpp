@@ -168,6 +168,28 @@ void TfrMapping::
                 block_layout_.texels_per_column (),
                 v);
 
+    Heightmap::FreqAxis fa = display_scale ();
+    switch(fa.axis_scale) {
+    case AxisScale_Waveform:
+        fa.setWaveform (-1,1);
+        break;
+    case AxisScale_Linear:
+        fa.setLinear (v);
+        break;
+    case AxisScale_Logarithmic:
+    {
+        float q = fa.min_hz / fa.max_hz ();
+        fa.setLogarithmic (q*v/2,v/2);
+        break;
+    }
+    case AxisScale_Quefrency:
+        fa.setQuefrency (v, fa.max_frequency_scalar*2);
+        break;
+    default:
+        break;
+    }
+    display_scale( fa );
+
     updateCollections();
 }
 

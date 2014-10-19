@@ -78,10 +78,6 @@ void RenderModel::
     update_queue_ = update_queue;
 
     recompute_extent ();
-
-    Heightmap::FreqAxis fa;
-    fa.setLinear( tfr_map_->targetSampleRate() );
-    display_scale( fa );
 }
 
 
