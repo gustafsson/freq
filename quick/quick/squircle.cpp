@@ -23,6 +23,11 @@ Squircle::Squircle() :
     connect (this, SIGNAL(scalezoomChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(xangleChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(yangleChanged()), this, SIGNAL(refresh()));
+
+    RenderViewAxes(render_model).logYScale ();
+    RenderViewAxes(render_model).cameraOnFront ();
+    RenderViewAxes(render_model).logZScale ();
+    render_model.render_settings.shadow_shader = true;
 }
 
 
@@ -66,12 +71,6 @@ void Squircle::
     connect(window(), SIGNAL(afterRendering()), hpp, SLOT(update()));
 //    connect(render_view, SIGNAL(painting()), hpp, SLOT(update()));
 
-    RenderViewAxes(render_model).logYScale ();
-    RenderViewAxes(render_model).cameraOnFront ();
-    RenderViewAxes(render_model).logZScale ();
-    render_model.render_settings.shadow_shader = true;
-    render_model.camera->xscale = 10;
-
     setDisplayedTransform(displayedTransform());
 }
 
@@ -109,7 +108,6 @@ void Squircle::
         {
             RenderViewTransform(render_model).receiveSetTransform_Waveform ();
             RenderViewAxes(render_model).waveformScale ();
-            render_model.resetCameraSettings ();
         }
         else
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();

@@ -19,7 +19,7 @@ Squircle {
 
         onIsHoldChanged: mousearea.cursorShape = isHold ? Qt.IBeamCursor : Qt.ArrowCursor
 
-        onTouchNavigation: squircle.touchNavigation()
+        onTouchNavigation: { squircle.touchNavigation(); squircle.refresh(); }
 
         MouseArea {
             id: mousearea

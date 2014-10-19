@@ -27,7 +27,7 @@ void RenderRegion::
 {
     // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
     //float y = _frustum_clip.projectionPlane[1]*.05;
-    float y = 0.05f;
+    float y = 0.5f;
 
     if (!program_) {
         program_ = new QOpenGLShaderProgram();

@@ -25,8 +25,8 @@ Item {
 
     Item {
         id: sharedCamera
-        property real timepos
-        property real timezoom
+        property real timepos: 0
+        property real timezoom: 1
     }
 
     ColumnLayout {
@@ -57,6 +57,9 @@ Item {
             id: heightmap2
             objectName: "heightmap2"
             chain: chain
+            scalepos: 0.5
+            xangle: 90.0
+            yangle: 180.0
             timepos: sharedCamera.timepos
             timezoom: sharedCamera.timezoom
             displayedTransform: "waveform"
