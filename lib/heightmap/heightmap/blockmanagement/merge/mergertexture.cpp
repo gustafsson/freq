@@ -303,27 +303,6 @@ Signal::Intervals MergerTexture::
 
     if (!disable_merge_)
     {
-        class isRegionLarger{
-        public:
-            bool operator()(const pBlock& a, const pBlock& b) const {
-                const Region ra = a->getDataRegion ();
-                const Region rb = b->getDataRegion ();
-                float va = ra.time ()*ra.scale ();
-                float vb = rb.time ()*rb.scale ();
-                if (va != vb)
-                    return va > vb;
-                if (ra.time () != rb.time())
-                    return ra.time () > rb.time();
-                if (ra.scale () != rb.scale())
-                    return ra.scale () > rb.scale();
-
-                // They have the same size, order by position
-                if (ra.a.time != rb.a.time)
-                    return ra.a.time > rb.a.time;
-                return ra.a.scale > rb.a.scale;
-            }
-        };
-
         // Largest first
         RegionBlockVector largeblocks;
         RegionBlockVector smallblocks;
@@ -357,6 +336,9 @@ Signal::Intervals MergerTexture::
         for (auto v: missing_details_region)
         {
             Region r2 = v.first;
+            if (r2.b.time <= 0 || r2.b.scale <= 0 || r2.a.scale >= 1)
+                continue;
+
             double d = 0.5/v.second->sample_rate();
             missing_details |= Signal::Interval((r2.a.time-d)*fs, (r2.b.time+d)*fs+1);
         }
