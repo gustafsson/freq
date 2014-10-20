@@ -176,7 +176,7 @@ Signal::Interval ReferenceInfo::
 
     long double FS = block_layout_.targetSampleRate();
 
-    Signal::Interval i( floor(data.a.time * FS), ceil(data.b.time * FS) );
+    Signal::Interval i( std::max(0.l,floor(data.a.time * FS)), std::max(0.l,ceil(data.b.time * FS)) );
     return i;
 }
 
