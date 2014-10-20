@@ -24,6 +24,8 @@ signals:
 
 public slots:
     void onCameraChanged();
+    void onChainChanged();
+    void onTitleChanged();
 
 private:
     Squircle* squircle_ = 0;

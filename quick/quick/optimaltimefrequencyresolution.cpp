@@ -4,6 +4,7 @@
 #include "log.h"
 #include "largememorypool.h"
 #include "tfr/cwt.h"
+#include "renderviewaxes.h"
 
 //#define LOG_TRANSFORM
 #define LOG_TRANSFORM if(0)
@@ -28,10 +29,16 @@ void OptimalTimeFrequencyResolution::
 
     this->squircle_ = s;
 
+    if (!squircle_)
+        return;
+
     connect (squircle_, SIGNAL(scaleposChanged()), this, SLOT(onCameraChanged()));
     connect (squircle_, SIGNAL(timezoomChanged()), this, SLOT(onCameraChanged()));
     connect (squircle_, SIGNAL(scalezoomChanged()), this, SLOT(onCameraChanged()));
     connect (squircle_, SIGNAL(touchNavigation()), this, SLOT(onCameraChanged()));
+
+    connect (squircle_, SIGNAL(chainChanged()), SLOT(onChainChanged()));
+    onChainChanged ();
 }
 
 
@@ -109,7 +116,7 @@ void OptimalTimeFrequencyResolution::
     }
     else
     {
-        Log("touchnavigation: unknown transform");
+        Log("OptimalTimeFrequencyResolution: unknown transform");
     }
 
     if (*newt != *t)
@@ -120,4 +127,43 @@ void OptimalTimeFrequencyResolution::
 
         lmp_gc (16 << 20); // 16 MB, could use a lower value if it should be more aggressive
     }
+}
+
+
+void OptimalTimeFrequencyResolution::
+        onChainChanged()
+{
+    if (squircle_ && squircle_->chain ())
+        connect(squircle_->chain (), SIGNAL(titleChanged()), SLOT(onTitleChanged()));
+    onTitleChanged ();
+}
+
+
+void OptimalTimeFrequencyResolution::
+        onTitleChanged()
+{
+    if (!squircle_)
+        return;
+
+    auto rm = squircle_->renderModel ();
+    rm->recompute_extent ();
+    rm->resetCameraSettings ();
+
+    auto viewport = rm->gl_projection.read ()->viewport;
+    float aspect = viewport[2]/(float)viewport[3];
+
+    RenderViewAxes(*rm).cameraOnFront();
+
+    double L = rm->tfr_mapping ().read ()->length();
+
+    if (L)
+    {
+        const auto c = rm->camera.write();
+        c->xscale = -c->p[2]/L*0.8;
+        c->zscale = -c->p[2]/aspect*0.8;
+        c->q[0] = 0.5*L;
+        c->q[2] = 0.5;
+    }
+
+    onCameraChanged();
 }

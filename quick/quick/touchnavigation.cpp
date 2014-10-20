@@ -29,6 +29,7 @@ void TouchNavigation::
     emit squircleChanged ();
 
     connect(squircle_, SIGNAL(timeposChanged()), this, SLOT(noHoldMaxT()));
+    connect(squircle_->chain (), SIGNAL(titleChanged()), this, SLOT(noHoldMaxT()));
 }
 
 
