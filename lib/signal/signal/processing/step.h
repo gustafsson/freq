@@ -61,7 +61,7 @@ public:
      * @param still_needed describes which samples to keep
      * @return how many samples that were released
      */
-    size_t                      purge(Signal::Intervals still_needed);
+    size_t                      purge(Signal::Intervals still_needed, bool aggressive);
 
     /**
      * @brief not_started describes which samples stuff might be in the cache or in the middle of being processed

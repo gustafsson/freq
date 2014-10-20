@@ -13,12 +13,12 @@ Purge::
 }
 
 
-size_t recursive_purge(const Graph& g, const GraphVertex& v, Signal::Intervals out_of_date, bool purge_vertex=false)
+size_t recursive_purge(const Graph& g, const GraphVertex& v, Signal::Intervals out_of_date, bool aggressive, bool purge_vertex=false)
 {
     size_t purged = 0;
     Step::ptr step = g[v];
     if (purge_vertex)
-        purged += step->purge(out_of_date);
+        purged += step->purge(out_of_date, aggressive);
 
     Signal::Intervals required_input;
     Signal::OperationDesc::ptr operation_desc = Step::operation_desc(step);
@@ -42,14 +42,14 @@ size_t recursive_purge(const Graph& g, const GraphVertex& v, Signal::Intervals o
     }
 
     BOOST_FOREACH(GraphEdge e, in_edges(v, g))
-        purged += recursive_purge(g, source(e,g), required_input, true);
+        purged += recursive_purge(g, source(e,g), required_input, aggressive, true);
 
     return purged;
 }
 
 
 size_t Purge::
-        purge(TargetNeeds::ptr needs)
+        purge(TargetNeeds::ptr needs, bool aggressive)
 {
     Dag::ptr dag = this->dag.lock ();
     Step::ptr step = needs->step ().lock ();
@@ -59,7 +59,7 @@ size_t Purge::
         return 0;
 
     auto rdag = dag.read ();
-    return recursive_purge(rdag->g(), rdag->getVertex(step), out_of_date);
+    return recursive_purge(rdag->g(), rdag->getVertex(step), out_of_date, aggressive);
 }
 
 

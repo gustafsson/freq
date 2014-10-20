@@ -16,7 +16,7 @@ class Purge
 public:
     Purge(Dag::ptr::weak_ptr dag);
     
-    size_t purge(TargetNeeds::ptr needs);
+    size_t purge(TargetNeeds::ptr needs, bool aggressive);
     size_t cache_size();
 
 private:

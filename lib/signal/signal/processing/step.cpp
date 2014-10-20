@@ -123,11 +123,11 @@ Intervals Step::
 
 
 size_t Step::
-        purge(Signal::Intervals still_needed)
+        purge(Signal::Intervals still_needed, bool aggressive)
 {
     auto cache = cache_.write ();
     int C = cache->num_channels ();
-    Signal::Intervals P = cache->purge (still_needed);
+    Signal::Intervals P = cache->purge (still_needed, aggressive);
     if (P)
         LOG_PURGED_CACHES Log("Step: discarding %s, only need %s for %s") % P % still_needed % operation_name();
     return P.count () * C;

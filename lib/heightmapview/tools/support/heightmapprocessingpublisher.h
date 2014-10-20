@@ -41,6 +41,10 @@ public:
 public slots:
     void setLastUpdatedInterval( Signal::Interval last_update );
     void update();
+    void aggressivePurge();
+
+protected:
+    void timerEvent (QTimerEvent *) override;
 
 private:
     std::shared_ptr<Signal::Processing::TargetNeeds> target_needs_;
@@ -51,6 +55,7 @@ private:
     Signal::Interval                        last_update_;
     bool                                    failed_allocation_;
     Signal::Intervals                       last_valid_;
+    int                                     aggressive_purge_timer_ = 0;
 
     bool isHeightmapDone() const;
     bool failedAllocation() const;

@@ -5,6 +5,7 @@
 
 #include "tasktimer.h"
 #include "log.h"
+#include "largememorypool.h"
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -152,7 +153,7 @@ void HeightmapProcessingPublisher::
         }
     }
 
-    size_t purged = Purge(dag_).purge (target_needs_);
+    size_t purged = Purge(dag_).purge (target_needs_,false);
     if (0 < purged)
     {
         purged *= sizeof(Signal::TimeSeriesData::element_type);
@@ -162,6 +163,57 @@ void HeightmapProcessingPublisher::
                 % DataStorageVoid::getMemorySizeText (purged)
                 % DataStorageVoid::getMemorySizeText (purged + sz);
     }
+
+    if (target_needs_->out_of_date().empty ())
+    {
+        // release all unused memory when left idle for a whole minute
+        if (!aggressive_purge_timer_) {
+            aggressive_purge_timer_ = startTimer(60000); // 60 seconds
+        }
+    }
+    else
+    {
+        if (aggressive_purge_timer_) {
+            killTimer (aggressive_purge_timer_);
+            aggressive_purge_timer_ = 0;
+        }
+    }
+}
+
+
+void HeightmapProcessingPublisher::
+        timerEvent (QTimerEvent *e)
+{
+    EXCEPTION_ASSERT_EQUALS(e->timerId (), aggressive_purge_timer_);
+
+    killTimer (aggressive_purge_timer_); // only run once
+    aggressive_purge_timer_ = 0;
+
+    aggressivePurge();
+}
+
+
+void HeightmapProcessingPublisher::
+        aggressivePurge()
+{
+    Log ("HeightmapProcessingPublisher: Aggressive purge");
+
+    size_t purged = Purge(dag_).purge (target_needs_, true);
+    if (0 < purged)
+    {
+        purged *= sizeof(Signal::TimeSeriesData::element_type);
+        size_t sz = Purge(dag_).cache_size ();
+
+        Log("HeightmapProcessingPublisher: Aggressively purged %s from the %s cache")
+                % DataStorageVoid::getMemorySizeText (purged)
+                % DataStorageVoid::getMemorySizeText (purged + sz);
+    }
+
+    auto C = tfrmapping_->collections();
+    for ( auto cp : C )
+        cp->runGarbageCollection(true);
+
+    lmp_gc ();
 }
 
 

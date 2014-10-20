@@ -83,7 +83,7 @@ public:
     bool empty() const;
 
     void invalidate_samples(const Intervals& I);
-    Signal::Intervals purge(Signal::Intervals still_needed);
+    Signal::Intervals purge(Signal::Intervals still_needed, bool aggressive);
     size_t cache_size() const;
 
     /**

@@ -29,6 +29,7 @@ public:
     BlockTexturesImpl&operator=(const BlockTexturesImpl&)=delete;
 
     void setCapacityHint(unsigned c);
+    void setCapacity (unsigned target_capacity);
     std::vector<GlTexture::ptr> getUnusedTextures(unsigned count) const;
     GlTexture::ptr get1();
 
@@ -43,8 +44,6 @@ public:
 private:
     std::vector<GlTexture::ptr> textures;
     const unsigned width_, height_;
-
-    void setCapacity (unsigned target_capacity);
 
 public:
     static void test();
@@ -85,11 +84,14 @@ void BlockTextures::
 
 
 void BlockTextures::
-        gc()
+        gc(bool aggressive)
 {
     auto w = global_block_textures_impl.write ();
     int c = w->getUseCount();
-    w->setCapacityHint(std::min(c*2, c+32));
+    if (aggressive)
+        w->setCapacity(c); // don't create more than 32 margin textures
+    else
+        w->setCapacityHint(std::min(c*2, c+32));
 }
 
 

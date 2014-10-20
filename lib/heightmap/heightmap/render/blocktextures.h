@@ -67,7 +67,7 @@ public:
     /**
      * @brief gc, calls setCapacityHint('number of currently used textures')
      */
-    static void gc();
+    static void gc(bool aggressive);
 
     /**
      * @brief getTextures

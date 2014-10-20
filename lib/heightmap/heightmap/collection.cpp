@@ -297,7 +297,7 @@ int Collection::
     int discarded_blocks = to_remove_.size () - keep.size ();
     to_remove_.swap (keep); keep.clear ();
 
-    Render::BlockTextures::gc();
+    Render::BlockTextures::gc(aggressive);
     LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS if (0<discarded_blocks)
         Log("collection: discarded_blocks %d, has %d blocks in cache of which %d were used/poked. %d of %d textures used")
                 % discarded_blocks

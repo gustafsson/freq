@@ -159,7 +159,7 @@ void Cache::
 
 
 Signal::Intervals Cache::
-        purge(Signal::Intervals still_needed)
+        purge(Signal::Intervals still_needed, bool aggressive)
 {
     Signal::Intervals purged;
 
@@ -185,6 +185,9 @@ Signal::Intervals Cache::
                 _discarded.push_back (b);
         }
     }
+
+    if (aggressive)
+        _discarded.clear ();
 
     return purged;
 }
