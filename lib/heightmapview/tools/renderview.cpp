@@ -317,19 +317,15 @@ void RenderView::
         emit updatedCamera();
     }
 
-#ifdef GL_ES_VERSION_2_0
-    bool onlyComputeBlocksForRenderView = true;
-#else
-    bool onlyComputeBlocksForRenderView = false;
-#endif
     model->recompute_extent ();
     { // Render
         TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
-        if (onlyComputeBlocksForRenderView)
+        for ( auto c : collections )
         {
-            for ( auto c : collections )
-                c->next_frame(); // Discard needed blocks before this row
+            // Release blocks that weren't used since last next_frame
+            // Update blocks with textures from updateconsumer
+            c->next_frame();
         }
 
         const auto c = *model->camera.read ();
@@ -389,15 +385,6 @@ void RenderView::
 #if defined(TARGET_reader)
     Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
 #endif
-
-    if (!onlyComputeBlocksForRenderView)
-    {
-        TIME_PAINTGL_DETAILS TaskTimer tt("collection->next_frame");
-
-        for ( auto c : collections )
-            // Start looking for which blocks that are requested for the next frame.
-            c->next_frame();
-    }
 
     } catch (...) {
         Heightmap::UncaughtException::handle_exception(boost::current_exception ());
