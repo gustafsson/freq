@@ -105,7 +105,7 @@ void OptimalTimeFrequencyResolution::
     {
         float spo = cwt->scales_per_octave ();
         float k = std::sqrt(ratio/current_ratio);
-        cwt->scales_per_octave (spo*k, fs);
+        cwt->scales_per_octave (std::min(40.f,spo*k), fs);
     }
     else
     {
