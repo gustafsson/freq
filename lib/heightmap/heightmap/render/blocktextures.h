@@ -92,6 +92,10 @@ public:
     static unsigned getWidth();
     static unsigned getHeight();
 
+    /**
+     * @brief mipmaps should match how the number of mipmap levels being used
+     * in heightmap.frag.
+     */
     static const int mipmaps=5;
 
     /**

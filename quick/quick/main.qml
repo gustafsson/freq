@@ -175,7 +175,7 @@ Item {
         anchors.bottom: parent.bottom
 
         wrapMode: Text.WordWrap
-        text: chain.title
+        text: "  " + chain.title + "  "
 
         Component.onCompleted: {
             heightmap1.touchNavigation.connect(touchNavigation)
