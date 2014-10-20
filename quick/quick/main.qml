@@ -206,5 +206,15 @@ Item {
         id: optimalres
         squircle: heightmap1
         paused: false
+
+        focus: true
+        Keys.onPressed: {
+            if (event.key === Qt.Key_Space ) {
+                showAll();
+                event.accepted = true;
+            }
+        }
+
+        onUpdateSharedCamera: heightmap1.touchNavigation()
     }
 }

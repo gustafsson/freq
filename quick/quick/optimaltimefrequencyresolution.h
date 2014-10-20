@@ -22,10 +22,14 @@ signals:
     void squircleChanged();
     void pausedChanged();
 
+    void updateSharedCamera();
+    void showAll();
+
 public slots:
     void onCameraChanged();
     void onChainChanged();
     void onTitleChanged();
+    void onShowAll();
 
 private:
     Squircle* squircle_ = 0;

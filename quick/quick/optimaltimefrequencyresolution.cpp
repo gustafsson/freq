@@ -14,6 +14,7 @@ OptimalTimeFrequencyResolution::OptimalTimeFrequencyResolution(QQuickItem *paren
 {
     connect (this, SIGNAL(squircleChanged()), SLOT(onCameraChanged()));
     connect (this, SIGNAL(pausedChanged()), SLOT(onCameraChanged()));
+    connect (this, SIGNAL(showAll()), SLOT(onShowAll()));
 }
 
 
@@ -147,12 +148,22 @@ void OptimalTimeFrequencyResolution::
 
     auto rm = squircle_->renderModel ();
     rm->recompute_extent ();
-    rm->resetCameraSettings ();
-
-    auto viewport = rm->gl_projection.read ()->viewport;
-    float aspect = viewport[2]/(float)viewport[3];
 
     RenderViewAxes(*rm).cameraOnFront();
+
+    onShowAll();
+}
+
+
+void OptimalTimeFrequencyResolution::
+        onShowAll()
+{
+    if (!squircle_)
+        return;
+
+    auto rm = squircle_->renderModel ();
+    auto viewport = rm->gl_projection.read ()->viewport;
+    float aspect = viewport[2]/(float)viewport[3];
 
     double L = rm->tfr_mapping ().read ()->length();
 
@@ -163,6 +174,9 @@ void OptimalTimeFrequencyResolution::
         squircle_->setScalezoom (-c.p[2]/aspect*0.8);
         squircle_->setTimepos (0.5*L);
         squircle_->setScalepos (0.5);
+
+        emit updateSharedCamera();
+        // this whole procedure really doesn't belong in this class
     }
 
     onCameraChanged();
