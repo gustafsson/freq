@@ -211,8 +211,13 @@ Signal::pBuffer Task::
 void Task::
         finish(Signal::pBuffer b)
 {
-    if (b)
-        EXCEPTION_ASSERT_EQUALS(expected_output_, b->getInterval ());
+    if (b) {
+        if (expected_output_ != b->getInterval ()) {
+            // something was apparently changed before work could get started
+            // but after the task was created, it's not an issue. Step handles
+            // asynchronous invalidation.
+        }
+    }
 
     if (step_)
     {
