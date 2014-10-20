@@ -110,6 +110,7 @@ Item {
         anchors.margins: 20
 
         spacing: 30
+        opacity: 0.75
 
         Text {
             Layout.fillWidth: true
@@ -150,7 +151,20 @@ Item {
         }
 
         TransformSettings {
+            Layout.fillWidth: true
+            id: transformsettings
             heightmap: heightmap1
+        }
+
+        Rectangle {
+            color: Qt.rgba(1, 1, 1, 1)
+            radius: 5
+            border.width: 1
+            border.color: "black"
+            anchors.fill: transformsettings
+            anchors.margins: -5
+            z: -1
+            Layout.maximumHeight: 0
         }
     }
 

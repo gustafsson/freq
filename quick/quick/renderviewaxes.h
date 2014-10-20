@@ -13,7 +13,7 @@ public:
     void logYScale();
     void linearYScale();
     void cameraOnFront();
-    void logZScale();
+    void logFreqAxis();
 
 private:
     Tools::RenderModel& render_model;

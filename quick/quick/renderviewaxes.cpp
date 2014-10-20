@@ -77,7 +77,7 @@ void RenderViewAxes::
 
 
 void RenderViewAxes::
-        logZScale()
+        logFreqAxis()
 {
     Heightmap::FreqAxis f;
     render_model.recompute_extent ();

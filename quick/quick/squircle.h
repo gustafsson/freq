@@ -21,6 +21,7 @@ class Squircle : public QQuickItem
     Q_PROPERTY(QString displayedTransform READ displayedTransform WRITE setDisplayedTransform NOTIFY displayedTransformChanged)
     Q_PROPERTY(QString displayedTransformDetails READ displayedTransformDetails NOTIFY displayedTransformDetailsChanged)
     Q_PROPERTY(QString displayedHeight READ displayedHeight WRITE setDisplayedHeight NOTIFY displayedHeightChanged)
+    Q_PROPERTY(QString freqAxis READ freqAxis WRITE setFreqAxis NOTIFY freqAxisChanged)
     Q_PROPERTY(float equalizeColors READ equalizeColors WRITE setEqualizeColors NOTIFY equalizeColorsChanged)
     Q_PROPERTY(bool isIOS READ isIOS CONSTANT)
 
@@ -56,6 +57,9 @@ public:
     QString displayedHeight() const { return displayed_height_; }
     void setDisplayedHeight(QString c);
 
+    QString freqAxis() const { return freq_axis_; }
+    void setFreqAxis(QString c);
+
     float equalizeColors();
     void setEqualizeColors(float);
 
@@ -74,6 +78,7 @@ signals:
     void displayedTransformChanged();
     void displayedTransformDetailsChanged();
     void displayedHeightChanged();
+    void freqAxisChanged();
     void equalizeColorsChanged();
 
     void refresh();
@@ -97,6 +102,7 @@ private:
     Tools::RenderModel render_model;
     QString displayed_transform_ = "stft";
     QString displayed_height_ = "log";
+    QString freq_axis_ = "log";
 
     Chain* chain_item_ = 0;
     SquircleRenderer *m_renderer = 0;

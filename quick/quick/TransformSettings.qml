@@ -3,10 +3,10 @@ import QtQuick.Controls 1.2
 import OpenGLUnderQML 1.0
 import QtQuick.Layouts 1.1
 
-ColumnLayout {
+Flow {
     property Squircle heightmap
 
-    Layout.fillWidth: true
+    spacing: 10
 
     Component.onCompleted: heightmap.touchNavigation.connect(touchNavigation)
 
@@ -46,20 +46,9 @@ ColumnLayout {
         NumberAnimation { to: 0; duration: 1000; easing.type: Easing.OutQuad }
     }
 
-    Rectangle {
-        color: Qt.rgba(1, 1, 1, 1)
-        radius: 5
-        border.width: 1
-        border.color: "black"
-        anchors.fill: parent
-        anchors.margins: -5
-        z: -1
-        Layout.maximumHeight: 0
-    }
-
     ComboBox {
         visible: transformCheckbox.checked
-        Layout.fillWidth: true
+        width: 150
         currentIndex: 1
         model: ListModel {
             ListElement { text: "Waveform"; name: "waveform" }
@@ -71,7 +60,7 @@ ColumnLayout {
 
     ComboBox {
         visible: transformCheckbox.checked
-        Layout.fillWidth: true
+        width: 150
         currentIndex: 1
         model: ListModel {
             ListElement { text: "Linear height"; name: "linear" }
@@ -80,9 +69,20 @@ ColumnLayout {
         onCurrentIndexChanged: if (heightmap) heightmap.displayedHeight = model.get(currentIndex).name
     }
 
+    ComboBox {
+        visible: transformCheckbox.checked
+        width: 150
+        currentIndex: 1
+        model: ListModel {
+            ListElement { text: "Linear frequency"; name: "linear" }
+            ListElement { text: "Logarithmic frequency"; name: "log" }
+        }
+
+        onCurrentIndexChanged: if (heightmap) heightmap.freqAxis = model.get(currentIndex).name
+    }
+
     CheckBox {
         visible: transformCheckbox.checked
-        Layout.fillWidth: true
         text: qsTr("Equalize colors")
         checked: true
         onCheckedChanged: { if (checked) settrue.start(); else setfalse.start(); }
@@ -93,13 +93,13 @@ ColumnLayout {
         SequentialAnimation on smoothValue {
             running: false
             id: setfalse
-            NumberAnimation { to: 0; duration: 1000; easing.type: Easing.InQuad }
+            NumberAnimation { to: 0; duration: 1000; easing.type: Easing.InOutCubic }
         }
 
         SequentialAnimation on smoothValue {
             running: false
             id: settrue
-            NumberAnimation { to: 1; duration: 1000; easing.type: Easing.InQuad }
+            NumberAnimation { to: 1; duration: 1000; easing.type: Easing.InOutCubic }
         }
     }
 

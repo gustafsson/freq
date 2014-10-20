@@ -24,11 +24,12 @@ Squircle::Squircle() :
     connect (this, SIGNAL(xangleChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(yangleChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(displayedHeightChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(freqAxisChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(equalizeColorsChanged ()), this, SIGNAL(refresh()));
 
     RenderViewAxes(render_model).logYScale ();
     RenderViewAxes(render_model).cameraOnFront ();
-    RenderViewAxes(render_model).logZScale ();
+    RenderViewAxes(render_model).logFreqAxis ();
     render_model.render_settings.shadow_shader = true;
 }
 
@@ -107,7 +108,7 @@ void Squircle::
         if (c == "stft")
         {
             RenderViewTransform(render_model).receiveSetTransform_Stft ();
-            RenderViewAxes(render_model).logZScale ();
+            RenderViewAxes(render_model).logFreqAxis ();
         }
         else if (c == "waveform")
         {
@@ -117,13 +118,17 @@ void Squircle::
         else if (c == "wavelet")
         {
             RenderViewTransform(render_model).receiveSetTransform_Cwt ();
-            RenderViewAxes(render_model).logZScale ();
+            RenderViewAxes(render_model).logFreqAxis ();
         }
         else
+        {
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
+            return;
+        }
     }
 
     setDisplayedHeight(displayedHeight());
+    setFreqAxis(freqAxis ());
 
     emit displayedTransformDetailsChanged();
 
@@ -151,7 +156,10 @@ void Squircle::
             RenderViewAxes(render_model).linearYScale ();
         }
         else
+        {
             Log("squircle: unrecognized height string: \"%s\"") % c.toStdString ();
+            return;
+        }
     }
 
     if (displayed_height_ == c)
@@ -159,6 +167,36 @@ void Squircle::
 
     displayed_height_ = c;
     emit displayedHeightChanged ();
+}
+
+
+void Squircle::
+        setFreqAxis(QString c)
+{
+    if (m_renderer) {
+        if (displayed_transform_ == "waveform") {
+            // ignore
+        }
+        else if (c == "log")
+        {
+            RenderViewAxes(render_model).logFreqAxis ();
+        }
+        else if (c == "linear")
+        {
+            RenderViewAxes(render_model).linearFreqScale ();
+        }
+        else
+        {
+            Log("squircle: unrecognized freq axis string: \"%s\"") % c.toStdString ();
+            return;
+        }
+    }
+
+    if (freq_axis_ == c)
+        return;
+
+    freq_axis_ = c;
+    emit freqAxisChanged ();
 }
 
 
