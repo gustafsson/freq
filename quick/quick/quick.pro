@@ -17,7 +17,7 @@ win32:RC_ICONS = freq.ico
 # app icons, http://qt-project.org/forums/viewthread/34652
 BUNDLE_DATA.files = $$system("ls $$_PRO_FILE_PWD_/iOS_BundleData/*.png")
 QMAKE_BUNDLE_DATA += BUNDLE_DATA
-QMAKE_INFO_PLIST = $$_PRO_FILE_PWD_/ios/Info.plist
+macx-ios*:QMAKE_INFO_PLIST = $$_PRO_FILE_PWD_/ios/Info.plist
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
