@@ -85,6 +85,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
         begin (Region br, GlTexture::ptr oldTexture, GlTexture::ptr targetTexture, glProjection& M)
 {
     EXCEPTION_ASSERT(!this->targetTexture);
+    EXCEPTION_ASSERT(oldTexture);
     EXCEPTION_ASSERT(targetTexture);
 
     int w = targetTexture->getWidth ();
