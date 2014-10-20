@@ -35,8 +35,7 @@ Flow {
     }
 
     onOpacityChanged: {
-        if (opacity==0.0) visible=false;
-        if (opacity==1.0) visible=true;
+        visible=opacity!=0.0;
     }
 
     SequentialAnimation on opacity {

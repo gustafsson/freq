@@ -165,6 +165,8 @@ Item {
             anchors.margins: -5
             z: -1
             Layout.maximumHeight: 0
+            opacity: transformsettings.opacity
+            visible: transformsettings.visible
         }
     }
 
