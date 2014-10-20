@@ -98,13 +98,11 @@ std::vector<pBlock> GarbageCollector::
 
     for (BlockCache::cache_t::const_iterator itr = C.begin(); itr!=C.end(); itr++ )
     {
-        EXCEPTION_ASSERT_LESS_OR_EQUAL(4, itr->second.use_count ());
-        if (itr->second.use_count () == 4) // recent, cache, C and itr->second
-        {
-            if (frame_counter != itr->second->frame_number_last_used )
-                R.push_back (itr->second);
-        }
+        if (frame_counter != itr->second->frame_number_last_used)
+            R.push_back (itr->second);
     }
+
+    Log("Found %d blocks not used this frame") % R.size ();
 
     return R;
 }

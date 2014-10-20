@@ -16,6 +16,12 @@ public:
     unsigned countBlocksUsedThisFrame(unsigned frame_counter);
     pBlock getOldestBlock(unsigned frame_counter);
     std::vector<pBlock> getNOldest(unsigned frame_counter, unsigned N);
+
+    /**
+     * @brief getAllNotUsedInThisFrame finds unused blocks
+     * @param frame_counter
+     * @return all blocks whose 'frame_number_last_used' doesn't match frame_counter.
+     */
     std::vector<pBlock> getAllNotUsedInThisFrame(unsigned frame_counter);
 
 private:
