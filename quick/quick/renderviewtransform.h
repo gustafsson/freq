@@ -19,8 +19,9 @@ class RenderViewTransform
 public:
     RenderViewTransform(Tools::RenderModel& render_model);
 
-    void receiveSetTransform_Stft();
     void receiveSetTransform_Waveform();
+    void receiveSetTransform_Stft();
+    void receiveSetTransform_Cwt();
 
 private:
     Tools::RenderModel& render_model;

@@ -103,11 +103,19 @@ void Squircle::
 {
     if (m_renderer) {
         if (c == "stft")
+        {
             RenderViewTransform(render_model).receiveSetTransform_Stft ();
+            RenderViewAxes(render_model).logZScale ();
+        }
         else if (c == "waveform")
         {
             RenderViewTransform(render_model).receiveSetTransform_Waveform ();
             RenderViewAxes(render_model).waveformScale ();
+        }
+        else if (c == "wavelet")
+        {
+            RenderViewTransform(render_model).receiveSetTransform_Cwt ();
+            RenderViewAxes(render_model).logZScale ();
         }
         else
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();

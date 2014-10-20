@@ -3,6 +3,7 @@
 #include "tfr/waveformrepresentation.h"
 #include "log.h"
 #include "largememorypool.h"
+#include "tfr/cwt.h"
 
 //#define LOG_TRANSFORM
 #define LOG_TRANSFORM if(0)
@@ -99,6 +100,12 @@ void OptimalTimeFrequencyResolution::
     else if (dynamic_cast<Tfr::WaveformRepresentationDesc*>(newt.get ()))
     {
         // do nothing
+    }
+    else if (Tfr::Cwt* cwt = dynamic_cast<Tfr::Cwt*>(newt.get ()))
+    {
+        float spo = cwt->scales_per_octave ();
+        float k = std::sqrt(ratio/current_ratio);
+        cwt->scales_per_octave (spo*k, fs);
     }
     else
     {

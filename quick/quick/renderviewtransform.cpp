@@ -1,10 +1,12 @@
 #include "renderviewtransform.h"
 
 #include "heightmap/tfrmappings/stftblockfilter.h"
+#include "heightmap/tfrmappings/cwtblockfilter.h"
 #include "heightmap/tfrmappings/waveformblockfilter.h"
 #include "heightmap/tfrmapping.h"
 #include "heightmap/update/updateproducer.h"
 #include "tfr/stftdesc.h"
+#include "tfr/cwt.h"
 #include "tfr/waveformrepresentation.h"
 #include "tfr/transformoperation.h"
 #include "signal/operationwrapper.h"
@@ -17,6 +19,19 @@ RenderViewTransform::RenderViewTransform(Tools::RenderModel& render_model)
       render_model(render_model)
 {
 
+}
+
+
+void RenderViewTransform::
+        receiveSetTransform_Waveform()
+{
+    Tfr::WaveformRepresentationDesc& dw = render_model.transform_descs()->getParam<Tfr::WaveformRepresentationDesc>();
+
+    // Setup the kernel that will take the transform data and create an image
+    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
+
+    // Get a copy of the transform to use
+    setBlockFilter(mcdp, dw.copy());
 }
 
 
@@ -38,15 +53,18 @@ void RenderViewTransform::
 
 
 void RenderViewTransform::
-        receiveSetTransform_Waveform()
+        receiveSetTransform_Cwt()
 {
-    Tfr::WaveformRepresentationDesc& dw = render_model.transform_descs()->getParam<Tfr::WaveformRepresentationDesc>();
+    Tfr::Cwt& cwt = render_model.transform_descs()->getParam<Tfr::Cwt>();
 
     // Setup the kernel that will take the transform data and create an image
-    Heightmap::MergeChunkDesc::ptr mcdp(new Heightmap::TfrMappings::WaveformBlockFilterDesc);
+    Heightmap::MergeChunkDesc::ptr mcdp(
+                new Heightmap::TfrMappings::CwtBlockFilterDesc(
+                    Heightmap::ComplexInfo_Amplitude_Non_Weighted)
+                );
 
     // Get a copy of the transform to use
-    setBlockFilter(mcdp, dw.copy());
+    setBlockFilter(mcdp, cwt.copy());
 }
 
 
