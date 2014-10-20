@@ -8,9 +8,7 @@ ColumnLayout {
 
     Layout.fillWidth: true
 
-    Component.onCompleted: {
-        heightmap.touchNavigation.connect(touchNavigation)
-    }
+    Component.onCompleted: heightmap.touchNavigation.connect(touchNavigation)
 
     signal touchNavigation()
     onTouchNavigation: opacity_animation.restart()
