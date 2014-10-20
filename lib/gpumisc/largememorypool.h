@@ -18,9 +18,9 @@ void* lmp_malloc(size_t n);
 void lmp_free(void* p, size_t n); // need 'n' to know if the memory pool should be used or not
 
 /**
- * @brief lmp_gc runs garbage collection
- * @param threshold keep all allocated arrays smaller than or equal to this threshold measured in bytes
+ * @brief lmp_gc runs garbage collection and releases all unused memory blocks
+ * @param threshold keep all allocated arrays smaller than this threshold measured in bytes
  */
-void lmp_gc(size_t threshold);
+void lmp_gc(size_t threshold=0);
 
 #endif // LARGEMEMORYPOOL_H
