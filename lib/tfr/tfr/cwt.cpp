@@ -1266,6 +1266,7 @@ size_t Cwt::
 std::string Cwt::
         toString() const
 {
+#ifdef _DEBUG
     std::stringstream ss;
     ss << "Tfr::Cwt"
        << ", number_of_octaves=" << _number_of_octaves
@@ -1273,6 +1274,11 @@ std::string Cwt::
        << ", wavelet_time_suppport=" << _wavelet_time_suppport
        << ", wavelet_scale_suppport=" << _wavelet_scale_suppport;
     return ss.str();
+#else
+    std::stringstream ss;
+    ss << "Wavelet " << _scales_per_octave << " scales/octave";
+    return ss.str();
+#endif
 }
 
 
