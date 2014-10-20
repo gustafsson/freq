@@ -71,7 +71,7 @@ void Squircle::
     connect(window(), SIGNAL(afterRendering()), hpp, SLOT(update()));
 //    connect(render_view, SIGNAL(painting()), hpp, SLOT(update()));
 
-    setDisplayedTransform(displayedTransform());
+    setDisplayedTransform (displayedTransform());
 }
 
 
@@ -121,6 +121,8 @@ void Squircle::
             Log("squircle: unrecognized transform string: \"%s\"") % c.toStdString ();
     }
 
+    setDisplayedHeight(displayedHeight());
+
     emit displayedTransformDetailsChanged();
 
     if (displayed_transform_ == c)
@@ -128,6 +130,47 @@ void Squircle::
 
     displayed_transform_ = c;
     emit displayedTransformChanged();
+}
+
+
+void Squircle::
+        setDisplayedHeight(QString c)
+{
+    if (m_renderer) {
+        if (displayed_transform_ == "waveform") {
+            // ignore
+        }
+        else if (c == "log")
+        {
+            RenderViewAxes(render_model).logYScale ();
+        }
+        else if (c == "linear")
+        {
+            RenderViewAxes(render_model).linearYScale ();
+        }
+        else
+            Log("squircle: unrecognized height string: \"%s\"") % c.toStdString ();
+    }
+
+    if (displayed_height_ == c)
+        return;
+
+    displayed_height_ = c;
+    emit displayedHeightChanged ();
+}
+
+
+float Squircle::
+        equalizeColors()
+{
+    return render_model.render_settings.y_normalize;
+}
+
+
+void Squircle::
+        setEqualizeColors(float v)
+{
+    render_model.render_settings.y_normalize = v;
 }
 
 

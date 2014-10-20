@@ -11,6 +11,7 @@ public:
     void linearFreqScale();
     void waveformScale();
     void logYScale();
+    void linearYScale();
     void cameraOnFront();
     void logZScale();
 

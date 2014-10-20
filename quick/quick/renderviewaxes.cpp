@@ -55,6 +55,17 @@ void RenderViewAxes::
 
 
 void RenderViewAxes::
+        linearYScale()
+{
+    render_model.render_settings.y_offset = 0.0;
+    render_model.render_settings.y_scale = 0.7;
+    render_model.render_settings.last_ysize = 1;
+    render_model.render_settings.log_scale = 0;
+    render_model.render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;
+}
+
+
+void RenderViewAxes::
         cameraOnFront()
 {
     render_model.resetCameraSettings ();
