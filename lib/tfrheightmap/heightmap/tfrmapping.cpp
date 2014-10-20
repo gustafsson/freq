@@ -57,10 +57,12 @@ TfrMapping::
       visualization_params_(new VisualizationParams),
       length_samples_( 0 )
 {
-    LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks",
+    LOGINFO TaskInfo ti("TfrMapping. Fs=%g. %d x %d blocks. mipmaps=%d. %d channels",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
-                block_layout_.texels_per_column ());
+                block_layout_.texels_per_column (),
+                block_layout_.mipmaps (),
+                channels);
 
     if (!Heightmap::Render::BlockTextures::isInitialized ())
         Heightmap::Render::BlockTextures::init (block_layout.texels_per_row (), block_layout.texels_per_column ()),
@@ -72,10 +74,11 @@ TfrMapping::
 TfrMapping::
         ~TfrMapping()
 {
-    LOGINFO TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. %d channels",
+    LOGINFO TaskInfo ti("~TfrMapping. Fs=%g. %d x %d blocks. mipmaps=%d. %d channels",
                 block_layout_.targetSampleRate (),
                 block_layout_.texels_per_row(),
                 block_layout_.texels_per_column (),
+                block_layout_.mipmaps (),
                 channels ());
 
     collections_.clear();
@@ -104,7 +107,35 @@ void TfrMapping::
     EXCEPTION_ASSERT_EQUALS(bl.texels_per_column (), block_layout_.texels_per_column ());
     // if this fails, BlockTextures would have to change size, but block_layout may then
     // be different in different windows.
+
+    float oldfs = block_layout_.sample_rate ();
     block_layout_ = bl;
+    float fs = block_layout_.sample_rate ();
+
+    if (oldfs != fs)
+    {
+        Heightmap::FreqAxis fa = display_scale ();
+        switch(fa.axis_scale) {
+        case AxisScale_Waveform:
+            fa.setWaveform (-1,1);
+            break;
+        case AxisScale_Linear:
+            fa.setLinear (fs);
+            break;
+        case AxisScale_Logarithmic:
+        {
+            float q = fa.min_hz / fa.max_hz ();
+            fa.setLogarithmic (q*fs/2,fs/2);
+            break;
+        }
+        case AxisScale_Quefrency:
+            fa.setQuefrency (fs, fa.max_frequency_scalar*2);
+            break;
+        default:
+            break;
+        }
+        display_scale( fa );
+    }
 
     updateCollections();
 }
@@ -163,34 +194,10 @@ void TfrMapping::
 
     LOGINFO TaskInfo ti("Target sample rate: %g", v);
 
-    block_layout_ = BlockLayout(
+    block_layout(BlockLayout(
                 block_layout_.texels_per_row (),
                 block_layout_.texels_per_column (),
-                v);
-
-    Heightmap::FreqAxis fa = display_scale ();
-    switch(fa.axis_scale) {
-    case AxisScale_Waveform:
-        fa.setWaveform (-1,1);
-        break;
-    case AxisScale_Linear:
-        fa.setLinear (v);
-        break;
-    case AxisScale_Logarithmic:
-    {
-        float q = fa.min_hz / fa.max_hz ();
-        fa.setLogarithmic (q*v/2,v/2);
-        break;
-    }
-    case AxisScale_Quefrency:
-        fa.setQuefrency (v, fa.max_frequency_scalar*2);
-        break;
-    default:
-        break;
-    }
-    display_scale( fa );
-
-    updateCollections();
+                v, block_layout_.mipmaps ()));
 }
 
 

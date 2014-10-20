@@ -6,11 +6,12 @@
 namespace Heightmap {
 
 BlockLayout::
-        BlockLayout(int texels_per_row, int texels_per_column, SampleRate fs)
+        BlockLayout(int texels_per_row, int texels_per_column, SampleRate fs, int mipmaps)
     :
         texels_per_column_( texels_per_column ),
         texels_per_row_( texels_per_row ),
-        sample_rate_(fs)
+        sample_rate_( fs ),
+        mipmaps_( mipmaps )
 {
     EXCEPTION_ASSERT_LESS( 1, texels_per_row );
     EXCEPTION_ASSERT_LESS( 1, texels_per_column );
@@ -23,7 +24,8 @@ bool BlockLayout::
 {
     return texels_per_column_ == b.texels_per_column_ &&
            texels_per_row_ == b.texels_per_row_ &&
-           sample_rate_ == b.sample_rate_;
+           sample_rate_ == b.sample_rate_ &&
+           mipmaps_ == b.mipmaps_;
 }
 
 

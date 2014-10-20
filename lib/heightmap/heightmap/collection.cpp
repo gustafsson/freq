@@ -196,7 +196,7 @@ Reference Collection::
         entireHeightmap() const
 {
     Reference r;
-    r.log2_samples_size = Reference::Scale( floor_log2( _max_sample_size.time ), floor_log2( _max_sample_size.scale ));
+    r.log2_samples_size = Reference::Scale( ceil(log2(_max_sample_size.time )), ceil(log2( _max_sample_size.scale )));
     r.block_index = Reference::Index(0,0);
     return r;
 }
@@ -384,7 +384,9 @@ VisualizationParams::const_ptr Collection::
 void Collection::
         length(double length)
 {
-    _max_sample_size.time = 2.f*std::max(1., length)/block_layout_.texels_per_row ();
+    double m = (block_layout_.texels_per_row ()-block_layout_.visible_texels_per_row ())
+             /double(block_layout_.texels_per_row ());
+    _max_sample_size.time = std::max(1., length) * (1+m);
 
     // If the signal has gotten shorter, make sure to discard all blocks that
     // go outside the new shorter interval
@@ -412,7 +414,7 @@ void Collection::
         block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
     }
 
-    _max_sample_size.scale = 1.f/block_layout_.texels_per_column ();
+    _max_sample_size.scale = 1.f;
     length(_prev_length);
     clear();
 }

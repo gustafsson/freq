@@ -71,7 +71,7 @@ public:
     RenderInfo(const glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy);
 
     LevelOfDetail       testLod (Reference ref) const;
-    Region              region (Reference ref) const;
+    Region              region (Reference ref, bool render_region=true) const;
 
 private:
     const glProjection* gl_projection;

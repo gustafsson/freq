@@ -76,9 +76,9 @@ bool RenderInfo::
 
 
 Region RenderInfo::
-        region(Reference ref) const
+        region(Reference ref, bool render_region) const
 {
-    return RegionFactory(bl)(ref);
+    return RegionFactory(bl)(ref, render_region);
 }
 
 

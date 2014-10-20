@@ -19,7 +19,8 @@ Block::
     ref_(ref),
     block_layout_(block_layout),
     block_interval_( ReferenceInfo(ref, block_layout, visualization_params).getInterval() ),
-    region_( RegionFactory(block_layout)(ref) ),
+    data_region_( RegionFactory(block_layout)(ref,false) ),
+    render_region_( RegionFactory(block_layout)(ref,true) ),
     sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
     texture_(Render::BlockTextures::get1())

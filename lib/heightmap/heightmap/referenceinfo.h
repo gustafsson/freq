@@ -16,7 +16,7 @@ class RegionFactory {
 public:
     RegionFactory(const BlockLayout& block_size);
 
-    Region operator()(const Reference& ref) const;
+    Region operator()(const Reference& ref, bool render_region=true) const;
 
 private:
     const BlockLayout block_size_;

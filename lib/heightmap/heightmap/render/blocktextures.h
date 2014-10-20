@@ -92,6 +92,8 @@ public:
     static unsigned getWidth();
     static unsigned getHeight();
 
+    static const int mipmaps=5;
+
     /**
      * @brief setupTexture
      * @param name

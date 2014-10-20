@@ -284,9 +284,9 @@ Signal::Intervals MergerTexture::
 {
     Signal::Intervals missing_details;
 
-    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getDataRegion ());
 
-    Region r = block->getRegion ();
+    Region r = block->getDataRegion ();
 
     matrixd projection;
     glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
@@ -306,8 +306,8 @@ Signal::Intervals MergerTexture::
         class isRegionLarger{
         public:
             bool operator()(const pBlock& a, const pBlock& b) const {
-                const Region ra = a->getRegion ();
-                const Region rb = b->getRegion ();
+                const Region ra = a->getDataRegion ();
+                const Region rb = b->getDataRegion ();
                 float va = ra.time ()*ra.scale ();
                 float vb = rb.time ()*rb.scale ();
                 if (va != vb)
@@ -331,7 +331,7 @@ Signal::Intervals MergerTexture::
         for (const auto& c : cache_clone)
         {
             const pBlock& bl = c.second;
-            const Region& r2 = bl->getRegion ();
+            const Region& r2 = bl->getDataRegion ();
 
             // If r2 doesn't overlap r at all
             if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
@@ -364,19 +364,19 @@ Signal::Intervals MergerTexture::
         for (auto v : largeblocks)
         {
             auto bl = v.second;
-            mergeBlock( bl->getRegion (), bl->texture ()->getOpenGlTextureId () );
+            mergeBlock( bl->getDataRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
         for (auto v : smallblocks)
         {
             auto bl = v.second;
-            mergeBlock( bl->getRegion (), bl->texture ()->getOpenGlTextureId () );
+            mergeBlock( bl->getDataRegion (), bl->texture ()->getOpenGlTextureId () );
         }
     }
 
 #ifndef DRAW_STRAIGHT_ONTO_BLOCK
     {
-        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getRegion ());
+        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getDataRegion ());
 
         GlTexture::ptr t = block->texture ();
         #ifdef GL_ES_VERSION_2_0

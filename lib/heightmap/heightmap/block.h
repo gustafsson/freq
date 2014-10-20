@@ -54,7 +54,8 @@ namespace Heightmap {
         const BlockLayout block_layout() const { return block_layout_; }
         Reference reference() const { return ref_; }
         Signal::Interval getInterval() const { return block_interval_; }
-        Region getRegion() const { return region_; }
+        Region getDataRegion() const { return data_region_; }
+        Region getRenderRegion() const { return render_region_; }
         float sample_rate() const { return sample_rate_; }
 
         // Helper
@@ -67,7 +68,7 @@ namespace Heightmap {
         const Reference ref_;
         const BlockLayout block_layout_;
         const Signal::Interval block_interval_;
-        const Region region_;
+        const Region data_region_, render_region_;
         const float sample_rate_;
 
         const VisualizationParams::const_ptr visualization_params_;

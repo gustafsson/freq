@@ -109,7 +109,7 @@ RenderSet::references_t RenderSet::
                     % render_info->region (ref) % lod.s () % lod.t ());
 
         R |= computeChildrenRenderSet( ref.left() );
-        if ( render_info->region(ref.right ()).a.time < L) {
+        if ( render_info->region(ref.right (),false).a.time < L) {
             R |= computeChildrenRenderSet( ref.right() );
         }
     } else if (lod.ok ()) {

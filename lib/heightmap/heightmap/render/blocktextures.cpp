@@ -285,7 +285,7 @@ void BlockTexturesImpl::
     // Compatible with GlFrameBuffer
 #ifdef GL_ES_VERSION_2_0
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
-    int mipmaplevels = std::max(1,std::min(7,(int)log2(std::max(w,h))-1));
+    int mipmaplevels = std::max(1,std::min(1+BlockTextures::mipmaps,(int)log2(std::max(w,h))-1));
     if (!mipmaps) mipmaplevels = 1;
     GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
 #else

@@ -1,4 +1,5 @@
 #include "referenceinfo.h"
+#include "exceptionassert.h"
 
 #include <sstream>
 
@@ -16,16 +17,33 @@ RegionFactory::
 
 
 Region RegionFactory::
-        operator()(const Reference& ref) const
+        operator()(const Reference& ref, bool render_region) const
 {
     Position a, b;
     // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
-    Position blockSize( block_size_.texels_per_row () * ldexpf(1.f,ref.log2_samples_size[0]),
-                        block_size_.texels_per_column () * ldexpf(1.f,ref.log2_samples_size[1]));
+    Position blockSize( ldexp (1. , ref.log2_samples_size[0]),
+                        ldexpf(1.f, ref.log2_samples_size[1]));
     a.time = blockSize.time * ref.block_index[0];
     a.scale = blockSize.scale * ref.block_index[1];
     b.time = a.time + blockSize.time;
     b.scale = a.scale + blockSize.scale;
+
+    if (!render_region)
+    {
+        float dt = ldexpf(.5f, block_size_.mipmaps ())/block_size_.visible_texels_per_row ();
+        float ds = ldexpf(.5f, block_size_.mipmaps ())/block_size_.visible_texels_per_column ();
+        dt *= b.time-a.time;
+        ds *= b.scale-a.scale;
+
+        if (0==block_size_.mipmaps ())
+            dt = ds = 0.f;
+
+        Region r(a,b);
+        a.time -= dt;
+        a.scale -= ds;
+        b.time += dt;
+        b.scale += ds;
+    }
 
     return Region(a,b);
 }
@@ -52,7 +70,7 @@ Region ReferenceInfo::
 long double ReferenceInfo::
         sample_rate() const
 {
-    return ldexp(1.0, -reference_.log2_samples_size[0]) - 1/(long double)r.time();
+    return ldexp(1.0, -reference_.log2_samples_size[0])*block_layout_.visible_texels_per_row () - 1/(long double)r.time();
 }
 
 
@@ -78,7 +96,7 @@ bool ReferenceInfo::
 
         // Assuming that the frequency resolution is either not-growing or not-shrinking,
         // it is enough to check the end-points as they will be extrema.
-        float scaledelta = r.scale()/block_layout_.texels_per_column ();
+        float scaledelta = r.scale()/block_layout_.visible_texels_per_column ();
         float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
         float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
 
@@ -98,7 +116,7 @@ bool ReferenceInfo::
         float btres = displayedTimeResolution (bhz);
 
         // ["time units" / "1 texel"].
-        float tdelta = r.time()/block_layout_.texels_per_row ();
+        float tdelta = r.time()/block_layout_.visible_texels_per_row ();
 
         // [data points / texel]
         atres = tdelta/atres;
@@ -151,23 +169,14 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    int samplesPerBlock = block_layout_.texels_per_row ();
-    long double blockSize = samplesPerBlock * ldexp(1.f,reference_.log2_samples_size[0]);
+    Region data(RegionFactory(block_layout_)(reference_,false));
     long double elementSize = 1.0 / sample_rate();
-    long double blockLocalSize = samplesPerBlock * elementSize;
-
-    // where the first element starts
-    long double startTime = blockSize * reference_.block_index[0] - elementSize*.5f;
-
-    // where the last element ends
-    long double endTime = startTime + blockLocalSize;
+    data.a.time -= elementSize*.5;
+    data.b.time += elementSize*.5;
 
     long double FS = block_layout_.targetSampleRate();
-    Signal::Interval i( max(0.L, floor(startTime * FS)), ceil(endTime * FS) );
 
-    //Position a, b;
-    //getArea( a, b );
-    //Signal::SamplesIntervalDescriptor::Interval i = { a.time * FS, b.time * FS };
+    Signal::Interval i( floor(data.a.time * FS), ceil(data.b.time * FS) );
     return i;
 }
 
@@ -175,6 +184,8 @@ Signal::Interval ReferenceInfo::
 Signal::Interval ReferenceInfo::
         spannedElementsInterval(const Signal::Interval& I, Signal::Interval& spannedBlockSamples) const
 {
+    EXCEPTION_ASSERTX (false, "not implemented");
+
     unsigned samples_per_block = block_layout_.texels_per_row ();
     long double blockSize = samples_per_block * ldexp(1.,reference_.log2_samples_size[0]);
     long double FS = block_layout_.targetSampleRate();

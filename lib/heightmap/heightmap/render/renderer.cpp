@@ -116,8 +116,8 @@ void Renderer::
 #endif
 
         render_block->setSize (
-                 block_size.texels_per_row ()/mesh_fraction_width,
-                 block_size.texels_per_column ()/mesh_fraction_height );
+                 block_size.visible_texels_per_row ()/mesh_fraction_width,
+                 block_size.visible_texels_per_column ()/mesh_fraction_height );
     }
 
     render_settings.last_ysize = scaley;

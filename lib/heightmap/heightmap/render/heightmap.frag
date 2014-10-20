@@ -65,7 +65,7 @@ void main()
     base = min(base, texture2D(tex, texCoord, 3.0+l).x);
     base = min(base, texture2D(tex, texCoord, 4.0+l).x);
     base = min(base, texture2D(tex, texCoord, 5.0+l).x);
-    base = min(base, texture2D(tex, texCoord, 6.0+l).x);
+//    base = min(base, texture2D(tex, texCoord, 6.0+l).x);
     base *= 0.7; // 1/f^2, f=1.2
     // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
