@@ -111,8 +111,8 @@ void HeightmapProcessingPublisher::
         const Heightmap::Block& b = *a.second;
         Interval i = b.getInterval();
 
-        // If this block overlaps data to be computed
-        if (i & to_compute)
+        // If this block overlaps data to be computed and is a currently visible block
+        if (i & to_compute && b.frame_number_last_used == c.read()->frame_number())
             update_size = std::min(update_size, i.count ());
     }
 
