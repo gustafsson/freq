@@ -188,7 +188,8 @@ unsigned Collection::
 void Collection::
         poke(pBlock b)
 {
-    b->frame_number_last_used = _frame_counter;
+    if (b->frame_number_last_used != _frame_counter)
+        b->frame_number_last_used = _frame_counter - 1;
 }
 
 
