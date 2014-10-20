@@ -23,6 +23,8 @@ Squircle::Squircle() :
     connect (this, SIGNAL(scalezoomChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(xangleChanged()), this, SIGNAL(refresh()));
     connect (this, SIGNAL(yangleChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(displayedHeightChanged()), this, SIGNAL(refresh()));
+    connect (this, SIGNAL(equalizeColorsChanged ()), this, SIGNAL(refresh()));
 
     RenderViewAxes(render_model).logYScale ();
     RenderViewAxes(render_model).cameraOnFront ();
@@ -171,6 +173,7 @@ void Squircle::
         setEqualizeColors(float v)
 {
     render_model.render_settings.y_normalize = v;
+    emit equalizeColorsChanged ();
 }
 
 
