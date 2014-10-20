@@ -9,9 +9,10 @@ ApplicationWindow {
 
     width: 320
     height: 480
-    title: "Freq"
+    title: main.title + " - Freq"
 
     Main {
+        id: main
         anchors.fill: parent;
     }
 }

@@ -9,6 +9,8 @@ Item {
     width: 320
     height: 480
 
+    property string title: chain.title
+
     Chain {
         id: chain
         // common chain, the app only opens one source file at a time
