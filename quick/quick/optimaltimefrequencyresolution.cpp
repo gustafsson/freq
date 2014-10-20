@@ -158,11 +158,11 @@ void OptimalTimeFrequencyResolution::
 
     if (L)
     {
-        const auto c = rm->camera.write();
-        c->xscale = -c->p[2]/L*0.8;
-        c->zscale = -c->p[2]/aspect*0.8;
-        c->q[0] = 0.5*L;
-        c->q[2] = 0.5;
+        const auto c = *rm->camera.read();
+        squircle_->setTimezoom (-c.p[2]/L*0.8);
+        squircle_->setScalezoom (-c.p[2]/aspect*0.8);
+        squircle_->setTimepos (0.5*L);
+        squircle_->setScalepos (0.5);
     }
 
     onCameraChanged();
