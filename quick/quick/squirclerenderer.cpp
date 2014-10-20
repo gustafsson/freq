@@ -1,6 +1,7 @@
 #include "squirclerenderer.h"
 #include "signal/processing/chain.h"
 #include "signal/processing/workers.h"
+#include "heightmap/collection.h"
 #include "log.h"
 #include <boost/exception/exception.hpp>
 #include <QTimer>
@@ -93,7 +94,11 @@ void SquircleRenderer::paint2()
 void SquircleRenderer::paint()
 {
     if (m_viewport.height ()==0 || m_viewport.width ()==0)
+    {
+        for ( auto c : renderView ()->model->tfr_mapping ()->collections() )
+            c->next_frame(); // increment frame_number and keep garbage collection running
         return;
+    }
 
     LOG_FRAME Log("painting %s %gx%g")
             % objectName ().toStdString ()
