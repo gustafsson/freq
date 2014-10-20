@@ -112,7 +112,7 @@ void RenderModel::
         resetBlockCaches()
 {
     for (auto c : collections())
-        c->cache()->clear();
+        Heightmap::Collection::cache (c)->clear();
 }
 
 

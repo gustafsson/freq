@@ -41,7 +41,7 @@ void UpdateProducer::
     EXCEPTION_ASSERT_LESS(pchunk.channel, (int)C.size());
     EXCEPTION_ASSERT_LESS_OR_EQUAL(0, pchunk.channel);
 
-    BlockCache::ptr cache = C[pchunk.channel].raw ()->cache();
+    BlockCache::ptr cache = Collection::cache (C[pchunk.channel]);
     Signal::Interval chunk_interval = pchunk.chunk->getCoveredInterval();
     std::vector<pBlock> intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( chunk_interval, false, 0);
 

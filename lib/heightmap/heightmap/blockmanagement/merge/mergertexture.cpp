@@ -159,6 +159,7 @@ MergerTexture::
       disable_merge_(disable_merge),
       program_(0)
 {
+    EXCEPTION_ASSERT(cache_);
 }
 
 

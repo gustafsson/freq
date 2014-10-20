@@ -150,7 +150,7 @@ public:
     unsigned long cacheByteSize() const;
     unsigned    cacheCount() const;
     void        printCacheSize() const;
-    BlockCache::ptr cache() const; // thread-safe
+    static BlockCache::ptr cache(Collection::ptr C);
     void        discardOutside(Signal::Interval I);
     bool        failed_allocation();
 

@@ -171,7 +171,7 @@ void Renderer::
         collection.unlock ();
 
         // Copy the block list
-        auto cache = this->collection.raw ()->cache ()->clone ();
+        auto cache = Collection::cache (this->collection)->clone ();
 
         Render::RenderBlock::Renderer block_renderer(render_block, bl, gl_projection);
 

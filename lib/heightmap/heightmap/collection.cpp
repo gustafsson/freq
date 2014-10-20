@@ -221,7 +221,7 @@ void Collection::
     Render::RenderSet::references_t missing;
 
     {
-        BlockCache::cache_t cache = this->cache ()->clone ();
+        BlockCache::cache_t cache = cache_->clone ();
         for (const auto& r : R)
             if (cache.find(r.first) == cache.end())
                 missing.insert (r);
@@ -331,9 +331,9 @@ void Collection::
 
 
 BlockCache::ptr Collection::
-        cache() const
+        cache(Collection::ptr C)
 {
-    return cache_;
+    return C.raw ()->cache_;
 }
 
 

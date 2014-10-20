@@ -32,11 +32,11 @@ public:
     Signal::Intervals fillBlocksFromOthers( const std::vector<pBlock>& blocks );
 
 private:
-    BlockCache::const_ptr cache_;
+    const BlockCache::const_ptr cache_;
     std::shared_ptr<GlFrameBuffer> fbo_;
     unsigned vbo_;
     GlTexture::ptr tex_;
-    BlockLayout block_layout_;
+    const BlockLayout block_layout_;
     const bool disable_merge_;
     BlockCache::cache_t cache_clone;
     unsigned program_;
