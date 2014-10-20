@@ -52,7 +52,7 @@ public:
         std::vector<nfo> newblocks;
         newblocks.reserve (blocks.size ()*3/4);
         for (auto i : blocks)
-            if (i.used || i.N <= threshold)
+            if (i.used || i.N < threshold)
             {
                 if (i.used) {
                     used_size += i.N;
