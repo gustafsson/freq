@@ -31,7 +31,6 @@ void SquircleRenderer::
     m_window_height = window_height*ratio;
     if (m_viewport.height ()>0 && m_viewport.width ()>0)
         render_view.resizeGL (m_viewport, m_window_height);
-    render_view.initializeGL ();
 }
 
 
@@ -108,6 +107,8 @@ void SquircleRenderer::paint()
     } catch(const boost::exception&x) {
         Log("%s") % boost::diagnostic_information(x);
     }
+
+    render_view.initializeGL ();
 
     render_view.setStates ();
 
