@@ -153,7 +153,7 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    collection.raw ()->createMissingBlocks (R);
+    collection->createMissingBlocks (R);
 }
 
 
