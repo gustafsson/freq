@@ -283,10 +283,10 @@ void TouchNavigation::
 
     // limit zoom-in and zoome-out
     float z = -c.p[2];
-    c.zscale = std::max(c.zscale, 0.5f*z); // don't zoom out too much
+    c.zscale = std::max(c.zscale, 0.8f*0.5f*z/aspect); // don't zoom out too much
     c.zscale = std::min(c.zscale, z*100); // don't zoom in too much
 
-    c.xscale = std::max(c.xscale, 0.5f*float(z/std::max(1.,L))); // don't zoom out too much
+    c.xscale = std::max(c.xscale, 0.8f*0.5f*float(z/std::max(1.,L))); // don't zoom out too much
     c.xscale = std::min(c.xscale, z*100); // don't zoom in too much
     c.orthoview = r[0] == 90;
 
