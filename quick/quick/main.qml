@@ -115,21 +115,15 @@ Item {
         Text {
             Layout.fillWidth: true
 
-            visible: true
             id: text
             color: "black"
             wrapMode: Text.WordWrap
             text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
 
             SequentialAnimation on opacity {
-                running: true
-                NumberAnimation { to: 1; duration: 15000; easing.type: Easing.InQuad }
-                NumberAnimation { to: 0; duration: 5000; easing.type: Easing.OutQuad }
-            }
-            SequentialAnimation on visible {
-                running: true
-                NumberAnimation { to: 1; duration: 20000 }
-                NumberAnimation { to: 0; duration: 0 }
+                PauseAnimation { duration: 15000 }
+                NumberAnimation { to: 0; duration: 5000; easing.type: Easing.InQuart }
+                ScriptAction { script: text.visible=false; }
             }
 
             Rectangle {
