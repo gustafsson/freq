@@ -26,7 +26,7 @@ mediump float heightValue(mediump float v) {
 
 
 // https://www.opengl.org/discussion_boards/showthread.php/177520-Mipmap-level-calculation-using-dFdx-dFdy
-mediump float mip_map_level(in vec2 texture_coordinate)
+mediump float mip_map_level(mediump vec2 texture_coordinate)
 {
     // The OpenGL Graphics System: A Specification 4.2
     //  - chapter 3.9.11, equation 3.21
