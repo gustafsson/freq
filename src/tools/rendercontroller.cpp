@@ -28,7 +28,7 @@
 #include "sawe/application.h"
 #include "signal/buffersource.h"
 #include "signal/reroutechannels.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "tools/support/renderoperation.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "tools/support/heightmapprocessingpublisher.h"
@@ -89,13 +89,15 @@ RenderController::
 
     connect(rvup, SIGNAL(redraw()), view, SLOT(redraw()));
 
-    model()->init(project->processing_chain (), rvu);
+    update_queue.reset (new Heightmap::Update::UpdateQueue);
+    model()->init(project->processing_chain (), this->update_queue, rvu);
 
     // 'this' is parent
     auto hpp = new Support::HeightmapProcessingPublisher(
                 view->model->target_marker (),
                 view->model->tfr_mapping (),
                 view->model->camera,
+                0,
                 this);
     connect(rvup, SIGNAL(setLastUpdatedInterval(Signal::Interval)), hpp, SLOT(setLastUpdatedInterval(Signal::Interval)));
     connect(view, SIGNAL(painting()), hpp, SLOT(update()));
@@ -310,6 +312,7 @@ void RenderController::
     case Heightmap::Render::RenderSettings::ColorMode_GreenRed: color->setCheckedAction(ui->actionSet_greenred_colors); break;
     case Heightmap::Render::RenderSettings::ColorMode_GreenWhite: color->setCheckedAction(ui->actionSet_greenwhite_colors); break;
     case Heightmap::Render::RenderSettings::ColorMode_Green: color->setCheckedAction(ui->actionSet_green_colors); break;
+    default: EXCEPTION_ASSERTX(false,"Not implemented");
     }
     ui->actionSet_contour_plot->setChecked(model()->render_settings.draw_contour_plot);
     ui->actionToggleOrientation->setChecked(!model()->render_settings.left_handed_axes);
@@ -405,7 +408,7 @@ void RenderController::
 
         if (*newuseroptions != *useroptions)
           {
-            model()->block_update_queue->clear();
+            update_queue->clear();
             tfr_map->transform_desc( newuseroptions );
           }
     }
@@ -441,7 +444,7 @@ void RenderController::
     // Wire it up to a FilterDesc
     Heightmap::Update::UpdateProducerDesc* cbfd;
     Tfr::ChunkFilterDesc::ptr kernel(cbfd
-            = new Heightmap::Update::UpdateProducerDesc(model()->block_update_queue, model()->tfr_mapping ()));
+            = new Heightmap::Update::UpdateProducerDesc(update_queue, model()->tfr_mapping ()));
     cbfd->setMergeChunkDesc( mcdp );
     kernel.write ()->transformDesc(transform_desc);
     setBlockFilter( kernel );
@@ -508,7 +511,7 @@ void RenderController::
     Timer t;
     for (int i=0; i<sleep_ms && !Signal::Processing::Step::sleepWhileTasks (step.read(), 1); i++)
     {
-        model ()->block_update_queue->clear ();
+        update_queue->clear ();
     }
 
     if (!Signal::Processing::Step::sleepWhileTasks (step.read(), 1))
@@ -1070,7 +1073,7 @@ void RenderController::
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)
     {
-        auto uc = new Heightmap::Update::UpdateConsumer(view->glwidget, model()->block_update_queue);
+        auto uc = new Heightmap::Update::UpdateConsumer(view->glwidget, update_queue);
         connect(uc, SIGNAL(didUpdate()), view.data (), SLOT(redraw()));
     }
 

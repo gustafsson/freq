@@ -15,7 +15,7 @@
 #include "tools/commentmodel.h"
 #include "tools/tooltipmodel.h"
 //#include "tools/selections/support/splinefilter.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 
 // GpuMisc
 #include "demangle.h"

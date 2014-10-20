@@ -62,6 +62,7 @@ LIBS += -lsndfile \
     -L$$SAWEROOT/lib/gpumisc -lgpumisc \
     -L$$SAWEROOT/lib/signal -lsignal \
     -L$$SAWEROOT/lib/tfr -ltfr \
+    -L$$SAWEROOT/lib/filters -lfilters \
     -L$$SAWEROOT/lib/heightmap -lheightmap \
     -L$$SAWEROOT/lib/tfrheightmap -ltfrheightmap \
     -L$$SAWEROOT/lib/heightmapview -lheightmapview \

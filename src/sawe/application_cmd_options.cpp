@@ -87,7 +87,7 @@ void Application::
 
         Tfr::ChunkFilterDesc::ptr cfd(new Adapters::CsvDesc(QString("sonicawe-%1.csv").arg(get_csv).toStdString()));
         Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTarget(o, p->default_target ());
+        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTargetBefore(o, p->default_target ());
         Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_csv*total_samples_per_chunk, (get_csv+1)*total_samples_per_chunk );
@@ -107,7 +107,7 @@ void Application::
 
         Tfr::ChunkFilterDesc::ptr cfd(new Adapters::Hdf5ChunkDesc(QString("sonicawe-%1.h5").arg(get_hdf).toStdString()));
         Signal::OperationDesc::ptr o(new Tfr::TransformOperationDesc(cfd));
-        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTarget(o, p->default_target ());
+        Signal::Processing::TargetMarker::ptr t = p->processing_chain ()->addTargetBefore(o, p->default_target ());
         Signal::Processing::TargetNeeds::ptr needs = t->target_needs ();
 
         Signal::Interval I( get_hdf*total_samples_per_chunk, (get_hdf+1)*total_samples_per_chunk );

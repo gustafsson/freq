@@ -10,7 +10,7 @@
 #include "adapters/microphonerecorder.h"
 #include "adapters/networkrecorder.h"
 #include "tools/toolfactory.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "tools/commands/commandinvoker.h"
 #include "ui/mainwindow.h"
 #include "ui_mainwindow.h"

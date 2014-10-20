@@ -88,17 +88,17 @@ void AppendOperationDescCommand::
         EXCEPTION_ASSERT( !chain->extent (target).interval.is_initialized() );
 
         aodc1.execute ();
-        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval.get_value_or (Signal::Interval()), Interval(3,5));
 
         aodc1.undo ();
         EXCEPTION_ASSERT( !chain->extent (target).interval.is_initialized() );
 
         aodc1.execute ();
         aodc2.execute ();
-        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval.get_value_or (Signal::Interval()), Interval(3,5));
 
         aodc2.undo ();
-        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval, Interval(3,5));
+        EXCEPTION_ASSERT_EQUALS( chain->extent (target).interval.get_value_or (Signal::Interval()), Interval(3,5));
 
         aodc1.undo ();
         EXCEPTION_ASSERT( !chain->extent (target).interval.is_initialized() );

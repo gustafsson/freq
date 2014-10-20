@@ -7,7 +7,7 @@
 #include "sawe/project.h"
 #include "ui_mainwindow.h"
 #include "ui/mainwindow.h"
-#include "support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "support/toolbar.h"
 #include "commands/changeselectioncommand.h"
 #include "sawe/configuration.h"

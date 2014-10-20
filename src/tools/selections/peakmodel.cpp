@@ -3,7 +3,7 @@
 // tools
 #include "tools/renderview.h"
 #include "tools/support/brushpaintkernel.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 
 // Sonic AWE
 #include "tfr/cwt.h"

@@ -135,6 +135,8 @@ namespace Tools
         Widgets::ValueSlider* ybottom;
         Widgets::ValueSlider* tf_resolution;
 
+        Heightmap::Update::UpdateQueue::ptr update_queue;
+
         void setupGui();
         void windowLostFocus();
         void windowGotFocus();

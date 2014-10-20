@@ -1,6 +1,6 @@
 #include "ellipsemodel.h"
 #include "filters/ellipse.h"
-#include "tools/support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "tools/rendermodel.h"
 #include "tfr/transformoperation.h"
 

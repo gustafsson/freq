@@ -6,7 +6,7 @@
 #include "selectionmodel.h"
 #include "tools/renderview.h"
 #include "playbackmarkersmodel.h"
-#include "support/operation-composite.h"
+#include "filters/support/operation-composite.h"
 #include "tools/support/toolbar.h"
 
 // Sonic AWE
@@ -193,7 +193,7 @@ void PlaybackController::
         model()->adapter_playback.reset(new Signal::SinkDesc(playbacksink));
 
         Signal::OperationDesc::ptr desc(model()->adapter_playback);
-        model()->target_marker = project_->processing_chain ()->addTarget(desc, project_->default_target ());
+        model()->target_marker = project_->processing_chain ()->addTargetBefore (desc, project_->default_target ());
 
         if (filterdesc)
             project_->processing_chain ()->addOperationAt(filterdesc, model()->target_marker);
