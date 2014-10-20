@@ -53,11 +53,11 @@ int main(int argc, char *argv[])
     PrettifySegfault::setup ();
 
     MyGuiApplication app(argc, argv);
-    app.setOrganizationName("Frekk Consulting");
-    app.setOrganizationDomain("frekk.consulting");
+    app.setOrganizationName("Freq Consulting");
+    app.setOrganizationDomain("freq.consulting");
     app.setApplicationName(QFileInfo(app.applicationFilePath()).baseName());
-    app.setApplicationDisplayName ("Frekk");
-    app.setApplicationName ("Frekk");
+    app.setApplicationDisplayName ("Freq");
+    app.setApplicationName ("Freq");
 
     qmlRegisterType<Squircle>("OpenGLUnderQML", 1, 0, "Squircle");
     qmlRegisterType<Chain>("OpenGLUnderQML", 1, 0, "Chain");

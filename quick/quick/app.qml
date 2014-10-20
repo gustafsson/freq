@@ -9,6 +9,7 @@ ApplicationWindow {
 
     width: 320
     height: 480
+    title: "Freq"
 
     Main {
         anchors.fill: parent;
