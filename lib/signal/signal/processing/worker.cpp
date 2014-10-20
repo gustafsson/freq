@@ -162,7 +162,9 @@ void Worker::
 void Worker::
         loop_while_tasks()
   {
-    while (!QThread::currentThread ()->isInterruptionRequested ())
+    // the only events sent to this thread are wakeup() or termination events,
+    // in order to not pile up a never ending queue make sure to process events as they come
+    while (!QThread::currentThread ()->isInterruptionRequested () && !QCoreApplication::hasPendingEvents ())
       {
         Task task;
 
