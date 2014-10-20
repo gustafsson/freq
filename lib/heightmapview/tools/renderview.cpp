@@ -90,8 +90,6 @@ RenderView::
 RenderView::
         ~RenderView()
 {
-    TaskTimer tt("%s", __FUNCTION__);
-
     emit destroying();
 
     _render_timer.reset();

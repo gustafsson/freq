@@ -42,17 +42,6 @@ RenderModel::
 RenderModel::
         ~RenderModel()
 {
-    TaskInfo ti(__FUNCTION__);
-    target_marker_.reset ();
-    render_operation_desc_.reset ();
-
-    update_queue_.reset ();
-
-    if (!tfr_map_)
-        TaskInfo("!!! Lost tfr_map");
-    if (tfr_map_ && !tfr_map_.unique ())
-        TaskInfo("!!! tfr_map not unique");
-    tfr_map_.reset ();
 }
 
 

@@ -277,8 +277,6 @@ void Squircle::sync()
 void Squircle::cleanup()
 {
     if (m_renderer) {
-        Log("squircle: cleanup");
-
         delete m_renderer;
         m_renderer = 0;
     }
