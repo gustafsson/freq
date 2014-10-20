@@ -152,11 +152,26 @@ Item {
         Text {
             Layout.fillWidth: true
 
-            id: opacity_text
             visible: true
             color: "black"
             wrapMode: Text.WordWrap
-            text: "Transform: " + heightmap1.displayedTransformDetails
+
+            CheckBox {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+
+                text: qsTr("")
+                checked: false
+                onCheckedChanged: {
+                    optimalres.paused = checked;
+                    opacity_animation.restart();
+                    if(checked)
+                        opacity_animation.stop();
+                }
+            }
+
+            text: "     " + heightmap1.displayedTransformDetails
 
             onTextChanged: {opacity_animation.restart();}
 
@@ -185,5 +200,9 @@ Item {
         renderOnHeightmap: heightmap1
     }
 
-    OptimalTimeFrequencyResolution { squircle: heightmap1 }
+    OptimalTimeFrequencyResolution {
+        id: optimalres
+        squircle: heightmap1
+        paused: false
+    }
 }

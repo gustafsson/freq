@@ -10,6 +10,8 @@
 OptimalTimeFrequencyResolution::OptimalTimeFrequencyResolution(QQuickItem *parent) :
     QQuickItem(parent)
 {
+    connect (this, SIGNAL(squircleChanged()), SLOT(onCameraChanged()));
+    connect (this, SIGNAL(pausedChanged()), SLOT(onCameraChanged()));
 }
 
 
@@ -33,9 +35,17 @@ void OptimalTimeFrequencyResolution::
 
 
 void OptimalTimeFrequencyResolution::
+        setPaused(bool v)
+{
+    this->paused_ = v;
+    emit pausedChanged ();
+}
+
+
+void OptimalTimeFrequencyResolution::
         onCameraChanged()
 {
-    if (!squircle_)
+    if (!squircle_ || paused_)
         return;
 
     Tools::RenderModel& render_model = *squircle_->renderModel ();
