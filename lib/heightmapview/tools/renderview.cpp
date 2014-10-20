@@ -229,7 +229,6 @@ void RenderView::
     EXCEPTION_ASSERT_LESS (0, rect.width ());
 
     gl_projection->viewport = vp;
-    glViewport( vp[0], vp[1], vp[2], vp[3] );
     model->render_settings.device_pixel_height = device_height;
 
     gl_projection->modelview = matrixd::identity ();

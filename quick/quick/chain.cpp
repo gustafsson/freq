@@ -103,6 +103,37 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 }
 
 
+void setStates(tvector<4,float> a)
+{
+    glClearColor(a[0], a[1], a[2], a[3]);
+#ifdef GL_ES_VERSION_2_0
+    glClearDepthf(1.0f);
+#else
+    glClearDepth(1.0);
+    glEnable(GL_TEXTURE_2D);
+#endif
+    glDepthMask(true);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+#ifndef GL_ES_VERSION_2_0
+    glShadeModel(GL_SMOOTH);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+    // Antialiasing
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+    glDisable(GL_POLYGON_SMOOTH);
+#endif
+
+    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    glEnable(GL_BLEND);
+}
+
+
 void Chain::clearOpenGlBackground()
 {
     if (!update_consumer_)
@@ -113,7 +144,7 @@ void Chain::clearOpenGlBackground()
     // Squircle/SquircleRenderer)
     glUseProgram (0);
     QColor c = this->window ()->color ();
-    glClearColor (c.redF (), c.greenF (), c.blueF (), c.alphaF ());
+    setStates(tvector<4,float>(c.redF (),c.greenF (),c.blueF (),c.alphaF ()));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
