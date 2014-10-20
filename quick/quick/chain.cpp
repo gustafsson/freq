@@ -86,6 +86,16 @@ Chain::
 }
 
 
+void Chain::
+        setTitle(QString v)
+{
+    if (title_==v)
+        return;
+    title_ = v;
+    emit titleChanged();
+}
+
+
 void Chain::handleWindowChanged(QQuickWindow* win)
 {
     if (win)
@@ -119,6 +129,8 @@ void Chain::openRecording()
     cb->setInvalidator (i);
 
     rec->startRecording();
+
+    setTitle (rec->name().c_str());
 }
 
 

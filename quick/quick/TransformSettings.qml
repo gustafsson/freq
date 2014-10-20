@@ -50,11 +50,11 @@ ColumnLayout {
 
     Rectangle {
         color: Qt.rgba(1, 1, 1, 1)
-        radius: 10
+        radius: 5
         border.width: 1
         border.color: "black"
         anchors.fill: parent
-        anchors.margins: -10
+        anchors.margins: -5
         z: -1
         Layout.maximumHeight: 0
     }

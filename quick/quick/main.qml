@@ -133,11 +133,11 @@ Item {
 
             Rectangle {
                 color: Qt.rgba(1, 1, 1, 1)
-                radius: 10
+                radius: 5
                 border.width: 1
                 border.color: "black"
                 anchors.fill: parent
-                anchors.margins: -10
+                anchors.margins: -5
                 z: -1
 
                 SequentialAnimation on radius {
@@ -151,6 +151,36 @@ Item {
 
         TransformSettings {
             heightmap: heightmap1
+        }
+    }
+
+    Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+
+        wrapMode: Text.WordWrap
+        text: chain.title
+
+        Component.onCompleted: {
+            heightmap1.touchNavigation.connect(touchNavigation)
+        }
+
+        signal touchNavigation()
+        onTouchNavigation: opacity_animation.restart()
+
+        SequentialAnimation on opacity {
+            id: opacity_animation
+            NumberAnimation { to: 1; duration: 100; easing.type: Easing.InQuad }
+            PauseAnimation { duration: 5000 }
+            NumberAnimation { to: 0; duration: 1000; easing.type: Easing.OutQuad }
+        }
+
+        Rectangle {
+            color: Qt.rgba(1, 1, 1, 1)
+            radius: 10
+            anchors.fill: parent
+            anchors.margins: -3
+            z: -1
         }
     }
 

@@ -83,4 +83,5 @@ void OpenUrl::
     chain_->chain ()->removeOperationsAt(chain_->target_marker ());
 
     chain_->chain ()->addOperationAt(desc, chain_->target_marker ());
+    chain_->setTitle (url.fileName ());
 }

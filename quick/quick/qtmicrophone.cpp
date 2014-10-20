@@ -263,5 +263,5 @@ bool QtMicrophone::
 std::string QtMicrophone::
         name()
 {
-    return "QtMicrophone";
+    return "Microphone";
 }
