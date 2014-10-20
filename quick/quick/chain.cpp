@@ -12,20 +12,15 @@ class GotDataCallback: public Signal::Recorder::IGotDataCallback
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::ptr i) { i_ = i; }
-//    void setRecordModel(Squircle* model) { model_ = model; }
 
     virtual void markNewlyRecordedData(Signal::Interval what)
     {
         if (i_)
             i_->deprecateCache(what);
-
-//        if (QQuickWindow* window = model_ ? model_->window () : 0)
-//            window->update();
     }
 
 private:
     Signal::Processing::IInvalidator::ptr i_;
-//    Squircle* model_ = 0;
 };
 
 
@@ -151,11 +146,10 @@ void Chain::clearOpenGlBackground()
 
 void Chain::openRecording()
 {
-    rec.reset(new QtMicrophone);
+    Signal::Recorder::ptr rec(new QtMicrophone);
     GotDataCallback* cb = new GotDataCallback();
     Signal::Recorder::IGotDataCallback::ptr callback(cb);
     Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec, callback));
-//    render_model.tfr_mapping ()->channels(desc->extent().number_of_channels.get());
     Signal::Processing::IInvalidator::ptr i = chain_->addOperationAt(desc, target_marker_);
     cb->setInvalidator (i);
 

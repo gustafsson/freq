@@ -4,7 +4,6 @@
 #include <QQuickItem>
 #include <QOpenGLContext>
 #include "signal/processing/chain.h"
-#include "signal/recorder.h"
 #include "heightmap/update/updatequeue.h"
 
 class Chain : public QQuickItem
@@ -34,7 +33,6 @@ private:
     void openRecording();
 
     QString title_;
-    Signal::Recorder::ptr rec;
     Signal::Processing::Chain::ptr chain_;
     Signal::Processing::TargetMarker::ptr target_marker_;
     Heightmap::Update::UpdateQueue::ptr update_queue_;
