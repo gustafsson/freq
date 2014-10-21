@@ -189,8 +189,8 @@ QtMicrophone::
             % format.sampleRate () % format.sampleSize () % format.channelCount ();
 
     audio_.reset (new QAudioInput(info, format));
-    audio_->setBufferSize (1<<14); // buffer_size/sample_rate = latency
-    audio_->setBufferSize (512); // buffer_size/sample_rate = latency
+    audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
+//    audio_->setBufferSize (1<<9); // 512, buffer_size/sample_rate = latency -> 12 ms
 
     auto e = audio_->error ();
     if (e != QAudio::NoError)
