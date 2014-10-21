@@ -10,7 +10,6 @@
 
 #include <QQuickWindow>
 #include <QTimer>
-#include <QOpenGLContext>
 #include <QtOpenGL>
 
 Squircle::Squircle() :

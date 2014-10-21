@@ -8,6 +8,8 @@
 #include "datastorage.h"
 #include "shared_state.h"
 
+#include <QOpenGLContextGroup>
+
 #define INFO
 //#define INFO if(0)
 
@@ -50,13 +52,23 @@ public:
 };
 
 
-shared_state<BlockTexturesImpl> global_block_textures_impl;
+unsigned g_width=0, g_height=0;
+std::map<void*,shared_state<BlockTexturesImpl>> gbti_map;
+
+shared_state<BlockTexturesImpl>& global_block_textures_impl() {
+    void* p = QOpenGLContextGroup::currentContextGroup ();
+    shared_state<BlockTexturesImpl>& v = gbti_map[p];
+
+    if (!v) v.reset(new BlockTexturesImpl(g_width,g_height));
+
+    return v;
+}
 
 
 bool BlockTextures::
         isInitialized()
 {
-    return (bool)global_block_textures_impl;
+    return 0!=g_width && 0!=g_height;
 }
 
 
@@ -65,28 +77,31 @@ void BlockTextures::
 {
     EXCEPTION_ASSERT(!isInitialized ());
 
-    global_block_textures_impl.reset(new BlockTexturesImpl(width,height,initialCapacity));
+    g_width = width;
+    g_height = height;
+    (void)initialCapacity;
 }
 
 
 void BlockTextures::
         destroy()
 {
-    global_block_textures_impl.reset();
+    void* p = QOpenGLContextGroup::currentContextGroup ();
+    gbti_map.erase (p);
 }
 
 
 void BlockTextures::
         setCapacityHint(unsigned c)
 {
-    global_block_textures_impl->setCapacityHint(c);
+    global_block_textures_impl()->setCapacityHint(c);
 }
 
 
 void BlockTextures::
         gc(bool aggressive)
 {
-    auto w = global_block_textures_impl.write ();
+    auto w = global_block_textures_impl().write ();
     int c = w->getUseCount();
     if (aggressive)
         w->setCapacity(c); // don't create more than 32 margin textures
@@ -98,7 +113,7 @@ void BlockTextures::
 std::vector<GlTexture::ptr> BlockTextures::
         getTextures(unsigned count)
 {
-    auto w = global_block_textures_impl.write ();
+    auto w = global_block_textures_impl().write ();
     std::vector<GlTexture::ptr> missing_textures = w->getUnusedTextures(count);
 
     if (count > missing_textures.size ())
@@ -121,35 +136,35 @@ std::vector<GlTexture::ptr> BlockTextures::
 GlTexture::ptr BlockTextures::
         get1()
 {
-    return global_block_textures_impl->get1();
+    return global_block_textures_impl()->get1();
 }
 
 
 int BlockTextures::
         getCapacity()
 {
-    return global_block_textures_impl.read ()->getCapacity();
+    return global_block_textures_impl().read ()->getCapacity();
 }
 
 
 int BlockTextures::
         getUseCount()
 {
-    return global_block_textures_impl.read ()->getUseCount();
+    return global_block_textures_impl().read ()->getUseCount();
 }
 
 
 unsigned BlockTextures::
         getWidth()
 {
-    return global_block_textures_impl.read ()->getWidth();
+    return global_block_textures_impl().read ()->getWidth();
 }
 
 
 unsigned BlockTextures::
         getHeight()
 {
-    return global_block_textures_impl.read ()->getHeight();
+    return global_block_textures_impl().read ()->getHeight();
 }
 
 void BlockTextures::
