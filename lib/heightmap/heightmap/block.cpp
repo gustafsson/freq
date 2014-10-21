@@ -43,7 +43,8 @@ Block::pGlTexture Block::
 Block::pGlTexture Block::
         sourceTexture() const
 {
-    return new_texture_ ?: texture_;
+    Block::pGlTexture t = new_texture_;
+    return t ? t: texture_;
 }
 
 
