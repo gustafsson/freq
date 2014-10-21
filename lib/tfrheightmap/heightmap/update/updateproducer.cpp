@@ -47,7 +47,7 @@ void UpdateProducer::
 
     if (intersecting_blocks.empty ())
     {
-        Log("Discarding chunk since there are no longer any intersecting_blocks with %s")
+        DEBUG_INFO Log("Discarding chunk since there are no longer any intersecting_blocks with %s")
                  % chunk_interval;
         return;
     }
