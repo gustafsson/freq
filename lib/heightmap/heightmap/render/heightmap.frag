@@ -52,20 +52,20 @@ void main()
     //float v = max(max(v4.x, v4.y), max(v4.z, v4.w));
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
-    // 0<l when magnifying
-    mediump float l = max(0.0, -mip_map_level(texCoord*texSize));
-    mediump float v = texture2D(tex, texCoord, 0.0).x;
+    // 0>l when magnifying
+    // 0<l when minifying
+    mediump float l = mip_map_level(texCoord*texSize);
+    mediump float v = texture2D(tex, texCoord, -l).x;
     mediump float f = 1.2;
     mediump float base = f*v;
     // wan't median value in mipmap6, 1<<6 -> 64x64 texels
     // know mean value in 1<<(1-5), assuming sharp peaks are way more common than sharp valleys the mean is
     // an approximation. However, the mean next to a peak is high so use a smaller local mean.
-    base = min(base, texture2D(tex, texCoord, 1.0+l).x);
-    base = min(base, texture2D(tex, texCoord, 2.0+l).x);
-    base = min(base, texture2D(tex, texCoord, 3.0+l).x);
-    base = min(base, texture2D(tex, texCoord, 4.0+l).x);
-    base = min(base, texture2D(tex, texCoord, 5.0+l).x);
-//    base = min(base, texture2D(tex, texCoord, 6.0+l).x);
+    base = min(base, texture2D(tex, texCoord, 1.0-l).x);
+    base = min(base, texture2D(tex, texCoord, 2.0-l).x);
+    base = min(base, texture2D(tex, texCoord, 3.0-l).x);
+    base = min(base, texture2D(tex, texCoord, 4.0-l).x);
+    base = min(base, texture2D(tex, texCoord, 5.0-l).x);
     base *= 0.7; // 1/f^2, f=1.2
     // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
