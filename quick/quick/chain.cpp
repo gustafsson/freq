@@ -72,12 +72,8 @@ Chain::Chain(QQuickItem *parent) :
 Chain::
         ~Chain()
 {
-    // Need to make sure that this thread really quits here, before the block cache is deleted.
-    if (!update_queue_)
-        Log("!!! chain: Lost block_update_queue");
-    if (update_queue_ && !update_queue_.unique ())
-        Log("!!! chain: block_update_queue not unique");
-    update_queue_.reset ();
+    update_queue_->abort_on_empty();
+    update_queue_->clear ();
 }
 
 

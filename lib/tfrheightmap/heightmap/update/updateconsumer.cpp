@@ -65,19 +65,10 @@ UpdateConsumer::
 UpdateConsumer::
         ~UpdateConsumer()
 {
-    TaskInfo ti ("~UpdateConsumer");
-
     requestInterruption ();
     update_queue->abort_on_empty ();
     update_queue->clear ();
-
-    if (QThread::isRunning ())
-      {
-        TaskTimer ti("Waiting");
-        QThread::wait ();
-      }
-    else
-        QThread::wait ();
+    QThread::wait ();
 }
 
 
