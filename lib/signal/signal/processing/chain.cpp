@@ -63,9 +63,6 @@ bool Chain::
     if (!workers_)
         return true;
 
-    TaskTimer tt("Chain::close(%d)", timeout);
-    // Targets::TargetNeedsCollection T = targets_.read ()->getTargets();
-
     // Ask workers to not start anything new
     workers_.read ()->remove_all_engines(0);
 
@@ -73,7 +70,13 @@ bool Chain::
     bedroom_->close();
 
     // Wait 1.0 s for workers to finish
-    bool r = workers_.read ()->remove_all_engines(timeout);
+    bool r = workers_.read ()->remove_all_engines(timeout/10);
+
+    if (!r) {
+        TaskTimer tt("Chain::close(%d)", timeout);
+        r = workers_.read ()->remove_all_engines(timeout*9/10);
+        if (!r) TaskInfo("Failed to remove all engines");
+    }
 
     // Suppress output
     workers_.write ()->clean_dead_workers();
