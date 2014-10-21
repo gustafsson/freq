@@ -134,7 +134,7 @@ Item {
                 border.width: 1
                 border.color: "black"
                 anchors.fill: parent
-                anchors.margins: -5
+                anchors.margins: -7
                 z: -1
 
                 SequentialAnimation on radius {
@@ -158,7 +158,7 @@ Item {
             border.width: 1
             border.color: "black"
             anchors.fill: transformsettings
-            anchors.margins: -5
+            anchors.margins: -7
             z: -1
             Layout.maximumHeight: 0
             opacity: transformsettings.opacity
