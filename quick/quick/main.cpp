@@ -17,7 +17,9 @@
 #include <QQmlEngine>
 #include <QQmlApplicationEngine>
 
-//#define USE_QUICKVIEW
+#ifdef Q_OS_IOS
+#define USE_QUICKVIEW
+#endif
 
 /**
  * @brief The MyGuiApplication class should log uncaught exceptions during
