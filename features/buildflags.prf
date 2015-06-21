@@ -60,6 +60,26 @@ macx {
 #        QMAKE_CXXFLAGS -= -gdwarf-2
 #        QMAKE_CXXFLAGS += -gdwarf-4
 #    }
+
+    equals(CCNAME, clang) {
+        # C++11 doesn't work for 10.7 in Xcode 6.3 (OS X 10.10), but it does work for 10.7 with older versions of Xcode.
+        QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
+
+        QMAKE_CFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
+        QMAKE_CXXFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
+        QMAKE_OBJECTIVE_CFLAGS -= -isysroot $$QMAKE_MAC_SDK_PATH
+        QMAKE_LFLAGS -= -Wl,-syslibroot,$$QMAKE_MAC_SDK_PATH
+
+        QMAKE_CFLAGS -= -mmacosx-version-min=10.7
+        QMAKE_CXXFLAGS -= -mmacosx-version-min=10.7
+        QMAKE_OBJECTIVE_CFLAGS -= -mmacosx-version-min=10.7
+        QMAKE_LFLAGS -= -mmacosx-version-min=10.7
+
+        QMAKE_CFLAGS += -mmacosx-version-min=10.9
+        QMAKE_CXXFLAGS += -mmacosx-version-min=10.9
+        QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.9
+        QMAKE_LFLAGS += -mmacosx-version-min=10.9
+    }
 }
 
 win32 {
@@ -132,6 +152,10 @@ macx-ios* { # ios
     #SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
     #INCLUDEPATH += $$SAWEROOT/lib/sonicawe-ios
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
+
+    #QMAKE_LFLAGS += "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk"
+    QMAKE_CXXFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
+    QMAKE_CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
 }
 
 #system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")
