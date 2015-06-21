@@ -173,12 +173,18 @@ struct shared_state_traits: public shared_state_traits_default {};
 
 template<class T>
 struct shared_state_details_helper {
+    // The first template function "test" is used to detect if
+    // "typename C::shared_state_traits" exists.
+    // SFINAE skips this declaration if the subtype does not exist and instead
+    // lets the second template declare "test".
     template<typename C>
     static typename C::shared_state_traits test(typename C::shared_state_traits*);
 
     template<typename C> // worst match
     static shared_state_traits<C> test(...);
 
+    // shared_state_details_helper::type represents the return type of the
+    // template function "test"
     typedef decltype(test<T>(0)) type;
 };
 

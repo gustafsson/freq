@@ -2,7 +2,7 @@
 #include "exceptionassert.h"
 #include "demangle.h"
 #include "timer.h"
-#include "tasktimer.h"
+
 
 #include <boost/exception_ptr.hpp>
 
@@ -245,7 +245,7 @@ string Backtrace::
     // 'atos' should be invoked through 'xcrun atos', but that crashes every
     // now and then, and takes much more time to execute.
     //string cmd = str(format("xcrun atos -p %1% %2%") % id % addrs);
-    string cmd = str(format("atos -d -p %1% %2%") % id % addrs);
+    string cmd = str(format("atos -p %1% %2%") % id % addrs);
 
     string op = exec_get_output(cmd);
     found_pretty = !op.empty();
@@ -366,12 +366,13 @@ void Backtrace::
                     EXCEPTION_ASSERTX( s.find ("backtrace.cpp (350): Backtrace::test") != string::npos, s );
 #else
                 EXCEPTION_ASSERTX( s.find ("throwfunction()") != string::npos, s );
-                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(312)") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("Backtrace::test()") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("start") != string::npos, s );
 
-                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:312)") != string::npos, s );
     #ifdef _DEBUG
+                // The backtrace.cpp file and line numbers will be removed by optimization
+                EXCEPTION_ASSERTX( s.find ("backtrace.cpp(312)") != string::npos, s );
+                EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:312)") != string::npos, s );
                 // The call to throwfunction will be removed by optimization
                 EXCEPTION_ASSERTX( s.find ("main") != string::npos, s );
                 EXCEPTION_ASSERTX( s.find ("(backtrace.cpp:352)") != string::npos, s );
