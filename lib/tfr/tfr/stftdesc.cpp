@@ -449,7 +449,7 @@ void StftDesc::
     // It should describe how an stft transform behaves.
     {
         StftDesc d;
-        EXCEPTION_ASSERT_EQUALS( d.displayedTimeResolution(4,1), 0.125f*d.chunk_size() / 4 );
+        EXCEPTION_ASSERT_EQUALS( d.displayedTimeResolution(4,1), d.chunk_size() / 4 );
         EXCEPTION_ASSERT_EQUALS( d.freqAxis(4), [](){ FreqAxis f; f.setLinear(4, 1024); return f; }());
         EXCEPTION_ASSERT_EQUALS( d.next_good_size (1,4), 2048u );
         EXCEPTION_ASSERT_EQUALS( d.prev_good_size (1,4), 2048u );
