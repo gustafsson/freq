@@ -25,7 +25,7 @@ QML_IMPORT_PATH =
 # how to find a feature in a shadow build?
 #PWD = $$_PRO_FILE_PWD_
 SAWEROOT = $$_PRO_FILE_PWD_/../..
-CONFIG += buildflags
+CONFIG += tmpdir buildflags
 #QMAKEFEATURES = $$_PRO_FILE_PWD_/../../features
 
 QT += opengl
