@@ -9,10 +9,7 @@
 
 #include "tasktimer.h"
 
-#include <H5Ipublic.h>
-#include <H5Tpublic.h>
-//typedef int hid_t; // from H5Ipublic
-
+#include <hdf5.h>
 #include <string.h>
 
 #include <boost/scoped_ptr.hpp>
