@@ -56,8 +56,15 @@ void Cache::
             _cache.clear ();
             _discarded.clear ();
         } else {
-            EXCEPTION_ASSERT_EQUALS(num_channels (), int(bp->number_of_channels ()));
-            EXCEPTION_ASSERT_EQUALS(sample_rate (), bp->sample_rate ());
+            if (num_channels () != int(bp->number_of_channels ()))
+                BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                                      (boost::format("Expected %d channels, got %d") %
+                                                num_channels () % bp->number_of_channels ()) << Backtrace::make ());
+
+            if (sample_rate () != bp->sample_rate ()) // Not fuzzy compare, must be identical.
+                BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
+                                      (boost::format("Expected fs=%g, got %g") %
+                                       sample_rate () % bp->sample_rate ()) << Backtrace::make ());
         }
     }
 
