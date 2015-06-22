@@ -88,6 +88,8 @@ void BlockTextures::
 {
     void* p = QOpenGLContextGroup::currentContextGroup ();
     gbti_map.erase (p);
+    g_width = 0;
+    g_height = 0;
 }
 
 
