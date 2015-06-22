@@ -5,6 +5,8 @@
 #include "tasktimer.h"
 #include "glPushContext.h"
 #include "gl.h"
+#include "GLvector.h"
+#include "gluperspective.h"
 
 // glut
 #ifndef __APPLE__
@@ -48,6 +50,9 @@ RenderAxes::
 }
 
 
+// Step 1: Figure out which characters to draw.
+// Step 2: Draw them.
+// Step 3: Replace glut with a library for vector fonts (i.e: freetype-gl).
 void RenderAxes::
         drawAxes( float T )
 {
@@ -84,7 +89,8 @@ void RenderAxes::
         glPushMatrixContext push_proj(GL_PROJECTION);
 
         glLoadIdentity();
-        gluOrtho2D( 0, 1, 0, 1 );
+        matrixd ortho;
+        glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -176,7 +182,7 @@ void RenderAxes::
         g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
         timePerPixel *= scale; scalePerPixel *= scale;
 
-        bool taxis = fabsf(v0[0]*scalePerPixel) > fabsf(v0[2]*timePerPixel);
+        bool taxis = std::abs(v0[0]*scalePerPixel) > std::abs(v0[2]*timePerPixel);
 
 
         // decide in which direction to traverse this edge
@@ -274,7 +280,7 @@ void RenderAxes::
             p[0] = t*DT;
 
             //int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0) && ((unsigned)(p[0]/DT +.5)%(tmultiple*tupdatedetail)!=0));
-            int tmarkanyways = (bool)(fabsf(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0));
+            int tmarkanyways = (bool)(std::abs(5*DT*tupdatedetail) > (ST / time_axis_density) && ((unsigned)(p[0]/DT + 0.5)%(tsubmultiple*tupdatedetail)==0));
             if (tmarkanyways)
                 st--;
 
@@ -301,8 +307,8 @@ void RenderAxes::
             double np1 = fa.getFrequencyScalarNotClampedT( f + fc);
             double np2 = fa.getFrequencyScalarNotClampedT( f - fc);
             int fmarkanyways = false;
-            fmarkanyways |= 0.9*fabsf(np1 - p[2]) > DF && 0.9*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
-            fmarkanyways |= 4.5*fabsf(np1 - p[2]) > DF && 4.5*fabsf(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
+            fmarkanyways |= 0.9*std::abs(np1 - p[2]) > DF && 0.9*std::abs(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%1==0);
+            fmarkanyways |= 4.5*std::abs(np1 - p[2]) > DF && 4.5*std::abs(np2 - p[2]) > DF && ((unsigned)(f / fc + .5)%5==0);
             if (fmarkanyways)
                 sf--;
 
