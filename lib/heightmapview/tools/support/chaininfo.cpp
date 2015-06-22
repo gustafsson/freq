@@ -110,7 +110,7 @@ void ChainInfo::
         ChainInfo c(cp);
 
         EXCEPTION_ASSERT( !c.hasWork () );
-        EXCEPTION_ASSERT_EQUALS( QThread::idealThreadCount () + 1, c.n_workers () );
+        EXCEPTION_ASSERT_EQUALS( QThread::idealThreadCount () - 1, c.n_workers () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
     }
 
