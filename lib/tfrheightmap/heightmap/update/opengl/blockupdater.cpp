@@ -194,10 +194,10 @@ void BlockUpdater::
     for (auto& block_with_chunks : chunks_per_block)
     {
         const pBlock& block = block_with_chunks.first;
-        INFO Log("blockupdater: updating %s") % block->getRenderRegion ();
+        INFO Log("blockupdater: updating %s") % block->getVisibleRegion ();
         glProjection M;
         textures[block] = Heightmap::Render::BlockTextures::get1 ();
-        auto fbo_mapping = p->fbo2block.begin (block->getDataRegion (), block->sourceTexture (), textures[block], M);
+        auto fbo_mapping = p->fbo2block.begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto& chunk : block_with_chunks.second)
         {
@@ -207,7 +207,7 @@ void BlockUpdater::
             // If something has changed the vbo is out-of-date, skip this
             if (!vbos.count (p))
             {
-                Log("blockupdater: skipping update of block: %s") % block->getRenderRegion ();
+                Log("blockupdater: skipping update of block: %s") % block->getVisibleRegion ();
                 continue;
             }
 

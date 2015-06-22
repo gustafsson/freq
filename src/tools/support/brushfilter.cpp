@@ -142,7 +142,7 @@ void MultiplyBrush::
     ResampleArea cwtArea( time1, scale1, time2, scale2 );
     foreach (BrushImages::value_type const& v, imgs)
     {
-        Heightmap::Region r = Heightmap::RegionFactory( block_layout_ )( v.first );
+        Heightmap::Region r = Heightmap::RegionFactory( block_layout_ ).getVisible ( v.first );
 
         ResampleArea imgarea( r.a.time, r.a.scale, r.b.time, r.b.scale );
 

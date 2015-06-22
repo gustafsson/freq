@@ -81,7 +81,7 @@ void Collection::
         RegionFactory rr(block_layout_);
         for (const BlockCache::cache_t::value_type& b : C)
         {
-            TaskInfo(format("%s") % rr(b.first));
+            TaskInfo(format("%s") % rr.getVisible (b.first));
         }
 
         TaskInfo("of which recent count %u", C.size ());
@@ -385,8 +385,7 @@ VisualizationParams::const_ptr Collection::
 void Collection::
         length(double length)
 {
-    double m = (block_layout_.texels_per_row ()-block_layout_.visible_texels_per_row ())
-             /double(block_layout_.texels_per_row ());
+    double m = block_layout_.margin () / double(block_layout_.texels_per_row ());
     _max_sample_size.time = std::max(1., length) * (1+m);
 
     // If the signal has gotten shorter, make sure to discard all blocks that

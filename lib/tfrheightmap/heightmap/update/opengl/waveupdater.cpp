@@ -91,7 +91,7 @@ void WaveUpdater::
         const pBlock& block = f.first;
         glProjection M;
         textures[block] = Heightmap::Render::BlockTextures::get1 ();
-        auto fbo_mapping = p->fbo2block.begin (block->getDataRegion (), block->sourceTexture (), textures[block], M);
+        auto fbo_mapping = p->fbo2block.begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto& b : f.second)
             p->wave2fbo.draw (M,b);

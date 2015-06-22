@@ -50,7 +50,7 @@ LevelOfDetail RenderInfo::
         testLod( Reference ref ) const
 {
     float timePixels, scalePixels;
-    Region r = RegionFactory ( bl )(ref);
+    Region r = RegionFactory ( bl ).getVisible (ref);
     if (!computePixelsPerUnit( r, timePixels, scalePixels ))
         return false;
 
@@ -76,9 +76,9 @@ bool RenderInfo::
 
 
 Region RenderInfo::
-        region(Reference ref, bool render_region) const
+        visible_region(Reference ref) const
 {
-    return RegionFactory(bl)(ref, render_region);
+    return RegionFactory(bl).getVisible (ref);
 }
 
 

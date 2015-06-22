@@ -113,7 +113,7 @@ void PeakModel::
     c = &*write_ptr;
 
     Heightmap::BlockLayout block_size = c->block_layout();
-    Heightmap::Region r = Heightmap::RegionFactory(block_size)(ref);
+    Heightmap::Region r = Heightmap::RegionFactory(block_size).getVisible (ref);
     unsigned h = block_size.texels_per_column ();
     unsigned w = block_size.texels_per_row ();
     unsigned y0 = (pos.scale-r.a.scale)/r.scale()*(h-1) + .5f;
@@ -426,7 +426,7 @@ void PeakModel::
                              PropagationState prevState, float prevVal
                              )
 {
-    Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ())(ref);
+    Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ()).getVisible (ref);
     if (r.b.scale > 1 || r.a.scale >= 1)
         return;
 
@@ -597,7 +597,7 @@ void PeakModel::
             ref = ref.sibblingTop();
             y -= h;
 
-            Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ())(ref);
+            Heightmap::Region r = Heightmap::RegionFactory(c->block_layout ()).getVisible (ref);
             if (r.a.scale >= 1 || r.b.scale > 1 )
             {
                 this->classifictions.clear();

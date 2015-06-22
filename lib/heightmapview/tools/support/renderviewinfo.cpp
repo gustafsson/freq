@@ -53,11 +53,11 @@ float RenderViewInfo::
     }
 
     Heightmap::RegionFactory rr(model->tfr_mapping ().read ()->block_layout ());
-    Heightmap::Region r = rr(*ref);
+    Heightmap::Region r = rr.getVisible (*ref);
 
     ref->block_index[0] = pos.time / r.time();
     ref->block_index[1] = pos.scale / r.scale();
-    r = rr(*ref);
+    r = rr.getVisible (*ref);
 
     Heightmap::Collection::ptr collection = model->collections()[0];
     Heightmap::pBlock block = collection.raw ()->getBlock( *ref );

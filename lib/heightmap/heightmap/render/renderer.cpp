@@ -115,9 +115,11 @@ void Renderer::
 //        mesh_fraction_height*=4;
 #endif
 
+        // Match each vertex to each texel. The width measured in texels is 'visible_texels_per_row'
+        // but the border texels are half texels so the total number of texels is 'visible_texels_per_row+1'
         render_block->setSize (
-                 block_size.visible_texels_per_row ()/mesh_fraction_width,
-                 block_size.visible_texels_per_column ()/mesh_fraction_height );
+                 (block_size.visible_texels_per_row ()+1)/mesh_fraction_width,
+                 (block_size.visible_texels_per_column ()+1)/mesh_fraction_height );
     }
 
     render_settings.last_ysize = scaley;
@@ -213,7 +215,7 @@ void Renderer::
     Render::RenderRegion rr(gl_projection);
 
     for (const auto& r : R)
-        rr.render(region(r.first), drawcross);
+        rr.render(region.getVisible (r.first), drawcross);
 }
 
 

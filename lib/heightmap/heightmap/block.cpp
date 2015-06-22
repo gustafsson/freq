@@ -19,8 +19,9 @@ Block::
     ref_(ref),
     block_layout_(block_layout),
     block_interval_( ReferenceInfo(ref, block_layout, visualization_params).getInterval() ),
-    data_region_( RegionFactory(block_layout)(ref,false) ),
-    render_region_( RegionFactory(block_layout)(ref,true) ),
+    //clipping_region_( RegionFactory(block_layout).getClipping (ref) ),
+    overlapping_region_( RegionFactory(block_layout).getOverlapping (ref) ),
+    visible_region_( RegionFactory(block_layout).getVisible (ref) ),
     sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
     texture_(Render::BlockTextures::get1())

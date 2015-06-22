@@ -38,7 +38,7 @@ std::list<pBlock> ClearInterval::
         {
             // TODO this update into an existing texture might collide with updateconsumer
 #ifndef GL_ES_VERSION_2_0
-            Region ir = block->getDataRegion ();
+            Region ir = block->getOverlappingRegion ();
             ResampleTexture rt(*block->texture ());
             ResampleTexture::Area A(ir.a.time, ir.a.scale, ir.b.time, ir.b.scale);
             GlFrameBuffer::ScopeBinding sb = rt.enable(A);

@@ -104,7 +104,8 @@ void testRegionBlockOperator() {
         ref.block_index[1] = 1;
 
         BlockLayout bl(128,128,100);
-        RegionFactory f(bl);
+        RegionFactory rf(bl);
+        auto f = [&rf](Reference r) { return rf.getVisible (r); };
         RegionBlockVector V = {RegionBlock(f(ref),pBlock())};
 
         V -= f(ref.left ());
@@ -285,9 +286,9 @@ Signal::Intervals MergerTexture::
 {
     Signal::Intervals missing_details;
 
-    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getDataRegion ());
+    VERBOSE_COLLECTION TaskTimer tt(boost::format("MergerTexture: Stubbing new block %s") % block->getVisibleRegion ());
 
-    Region r = block->getDataRegion ();
+    Region r = block->getOverlappingRegion ();
 
     matrixd projection;
     glhOrtho (projection.v (), r.a.time, r.b.time, r.a.scale, r.b.scale, -10, 10);
@@ -311,7 +312,7 @@ Signal::Intervals MergerTexture::
         for (const auto& c : cache_clone)
         {
             const pBlock& bl = c.second;
-            const Region& r2 = bl->getDataRegion ();
+            const Region& r2 = bl->getOverlappingRegion ();
 
             // If r2 doesn't overlap r at all
             if (r2.a.scale >= r.b.scale || r2.b.scale <= r.a.scale )
@@ -347,19 +348,19 @@ Signal::Intervals MergerTexture::
         for (auto v : largeblocks)
         {
             auto bl = v.second;
-            mergeBlock( bl->getDataRegion (), bl->texture ()->getOpenGlTextureId () );
+            mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
         for (auto v : smallblocks)
         {
             auto bl = v.second;
-            mergeBlock( bl->getDataRegion (), bl->texture ()->getOpenGlTextureId () );
+            mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
     }
 
 #ifndef DRAW_STRAIGHT_ONTO_BLOCK
     {
-        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getDataRegion ());
+        VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getOverlappingRegion ());
 
         GlTexture::ptr t = block->texture ();
         #ifdef GL_ES_VERSION_2_0
@@ -449,6 +450,7 @@ void MergerTexture::
         pBlock block(new Block(ref,bl,vp));
         GlTexture::ptr tex = block->texture ();
 
+        Log("Source overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
         MergerTexture(cache, bl).fillBlockFromOthers(block);
 
         DataStorage<float>::ptr data;
@@ -463,12 +465,14 @@ void MergerTexture::
         COMPARE_DATASTORAGE(expected1, sizeof(expected1), data);
 
         {
-            float srcdata[]={ 1, 0, 0, .5,
+            float srcdata[]={ 1, 0, 0, 0,
+                              0, 2, 0, 0,
                               0, 0, 0, 0,
-                              0, 0, 0, 0,
-                             .5, 0, 0, .5};
+                              0.5, 0, 0, 0};
 
             pBlock block(new Block(ref.parentHorizontal (),bl,vp));
+            //pBlock block(new Block(ref,bl,vp));
+            //Log("Inserting overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
             GlTexture::ptr tex = block->texture ();
             auto ts = tex->getScopeBinding ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
@@ -479,19 +483,21 @@ void MergerTexture::
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
         clearCache(cache);
-        float a = 1.0, b = 0.75,  c = 0.25;
-        float expected2[]={   a,   b,   c,   0,
+        float expected2[]={   1,  .5,   0,   0,
+                              0,   1,   2,   1,
                               0,   0,   0,   0,
-                              0,   0,   0,   0,
-                              a/2, b/2, c/2, 0};
+                             .5, .25,   0,   0};
         data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
+        //DataStorage<float>::ptr expected2ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected2);
+        //PRINT_DATASTORAGE(expected2ptr, "");
+        //PRINT_DATASTORAGE(data, "");
         COMPARE_DATASTORAGE(expected2, sizeof(expected2), data);
 
         {
             float srcdata[]={ 1, 2, 3, 4,
                               5, 6, 7, 8,
-                              9, 10, 11, 12,
+                              9, 1.0, 11, 12,
                               13, 14, 15, .16};
 
             pBlock block(new Block(ref.right (),bl,vp));
@@ -504,15 +510,18 @@ void MergerTexture::
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
-        float v16 = 7.57812476837;
-        //float v32 = 7.58;
-        float expected3[]={   0, 0,    1.5,  3.5,
-                              0, 0,    5.5,  7.5,
-                              0, 0,    9.5,  11.5,
-                              0, 0,   13.5,  v16};
+        float expected3[]={   0, 0,    3,  4,
+                              0, 0,    7,  8,
+                              0, 0,   11,  12,
+                              0, 0,   15,  15};
 
         data = GlTextureRead(*tex).readFloat (0, GL_RED);
         //data = block->block_data ()->cpu_copy;
+
+        //DataStorage<float>::ptr expected3ptr = CpuMemoryStorage::BorrowPtr(DataStorageSize(4,4), expected3);
+        //PRINT_DATASTORAGE(expected3ptr, "");
+        //PRINT_DATASTORAGE(data, "");
+
         COMPARE_DATASTORAGE(expected3, sizeof(expected3), data);
         clearCache(cache);
 

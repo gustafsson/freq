@@ -16,6 +16,8 @@ BlockLayout::
     EXCEPTION_ASSERT_LESS( 1, texels_per_row );
     EXCEPTION_ASSERT_LESS( 1, texels_per_column );
     EXCEPTION_ASSERT_LESS( 0, fs );
+    EXCEPTION_ASSERT_LESS( 0, fs );
+    EXCEPTION_ASSERT_LESS_OR_EQUAL( 0, mipmaps );
 }
 
 
@@ -70,7 +72,11 @@ void BlockLayout::
 
     // It should be immutable POD
     {
-        // Implemented by no setters, only getters
+        // "immutable" is implemented by no setters, only getters
+        // "POD" implies that two instances from the same parameters are bitwise identical
+        BlockLayout b1(12, 34, 5);
+        BlockLayout b2(12, 34, 5);
+        EXCEPTION_ASSERT_EQUALS(0, memcmp (&b1, &b2, sizeof(BlockLayout )));
     }
 }
 

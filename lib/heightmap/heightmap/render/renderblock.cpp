@@ -68,7 +68,7 @@ void RenderBlock::Renderer::
 {
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 
-    Region r = block->getRenderRegion ();
+    Region r = block->getVisibleRegion ();
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
 
@@ -82,7 +82,7 @@ void RenderBlock::Renderer::
     int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
     int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
 
-    LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getRenderRegion ()
+    LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
             % lod.t () % lod.s() % subdivx % subdivy;
 
     pVbo vbo = render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
@@ -456,13 +456,13 @@ void RenderBlock::
                 vh = block_size.visible_texels_per_column (),
                 w = block_size.texels_per_row (),
                 h = block_size.texels_per_column (),
-                m = block_size.mipmaps ()==0?0:ldexpf(0.5f,block_size.mipmaps ());
+                m = block_size.margin ();
 
         uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
-        glUniform2f(uniScaleTex, (vw-1.f)/w, (vh-1.f)/h);
+        glUniform2f(uniScaleTex, vw/w, vh/h);
 
         uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
-        glUniform2f(uniOffsTex, (.5f + m)/w, (.5f + m)/h);
+        glUniform2f(uniOffsTex, m/w, m/h);
 
         uniOffsTex = glGetUniformLocation(_shader_prog, "texSize");
         glUniform2f(uniOffsTex, w, h);

@@ -17,7 +17,34 @@ RegionFactory::
 
 
 Region RegionFactory::
-        operator()(const Reference& ref, bool render_region) const
+        getOverlapping(const Reference& ref) const
+{
+    const Region texelCenter = getVisible (ref);
+    Position a = texelCenter.a, b = texelCenter.b;
+
+    // Compute the size of a texel
+    float dt = (b.time-a.time) / (block_size_.visible_texels_per_row ());
+    float ds = (b.scale-a.scale) / (block_size_.visible_texels_per_column ());
+
+    // Remove the margin
+    float m = block_size_.margin ();
+    a.time -= dt*m;
+    a.scale -= ds*m;
+    b.time += dt*m;
+    b.scale += ds*m;
+
+//    // At {dt,ds}*0.5 to point at the center of texels
+//    a.time += dt*0.5;
+//    a.scale += ds*0.5;
+//    b.time -= dt*0.5;
+//    b.scale -= ds*0.5;
+
+    return Region(a,b);
+}
+
+
+Region RegionFactory::
+        getVisible(const Reference& ref) const
 {
     Position a, b;
     // For integers 'i': "2 to the power of 'i'" == powf(2.f, i) == ldexpf(1.f, i)
@@ -27,23 +54,6 @@ Region RegionFactory::
     a.scale = blockSize.scale * ref.block_index[1];
     b.time = a.time + blockSize.time;
     b.scale = a.scale + blockSize.scale;
-
-    if (!render_region)
-    {
-        float dt = ldexpf(.5f, block_size_.mipmaps ())/block_size_.visible_texels_per_row ();
-        float ds = ldexpf(.5f, block_size_.mipmaps ())/block_size_.visible_texels_per_column ();
-        dt *= b.time-a.time;
-        ds *= b.scale-a.scale;
-
-        if (0==block_size_.mipmaps ())
-            dt = ds = 0.f;
-
-        Region r(a,b);
-        a.time -= dt;
-        a.scale -= ds;
-        b.time += dt;
-        b.scale += ds;
-    }
 
     return Region(a,b);
 }
@@ -55,30 +65,23 @@ ReferenceInfo::
       block_layout_(block_layout),
       visualization_params_(visualization_params),
       reference_(reference),
-      r(RegionFactory(block_layout)(reference_))
+      visible_region_(RegionFactory(block_layout).getVisible (reference_))
 {
-}
-
-
-Region ReferenceInfo::
-        region() const
-{
-    return r;
 }
 
 
 long double ReferenceInfo::
         sample_rate() const
 {
-    return ldexp(1.0, -reference_.log2_samples_size[0])*block_layout_.visible_texels_per_row () - 1/(long double)r.time();
+    return block_layout_.visible_texels_per_row () / visible_region_.time ();
 }
 
 
 bool ReferenceInfo::
         containsPoint(Position p) const
 {
-    return r.a.time <= p.time && p.time <= r.b.time &&
-            r.a.scale <= p.scale && p.scale <= r.b.scale;
+    return visible_region_.a.time <= p.time && p.time <= visible_region_.b.time &&
+            visible_region_.a.scale <= p.scale && p.scale <= visible_region_.b.scale;
 }
 
 
@@ -87,8 +90,8 @@ bool ReferenceInfo::
         boundsCheck(BoundsCheck c) const
 {
     FreqAxis cfa = visualization_params_->display_scale();
-    float ahz = cfa.getFrequency(r.a.scale);
-    float bhz = cfa.getFrequency(r.b.scale);
+    float ahz = cfa.getFrequency(visible_region_.a.scale);
+    float bhz = cfa.getFrequency(visible_region_.b.scale);
 
     if (c & ReferenceInfo::BoundsCheck_HighS)
     {
@@ -96,9 +99,9 @@ bool ReferenceInfo::
 
         // Assuming that the frequency resolution is either not-growing or not-shrinking,
         // it is enough to check the end-points as they will be extrema.
-        float scaledelta = r.scale()/block_layout_.visible_texels_per_column ();
-        float a2hz = cfa.getFrequency(r.a.scale + scaledelta);
-        float b2hz = cfa.getFrequency(r.b.scale - scaledelta);
+        float scaledelta = visible_region_.scale()/block_layout_.visible_texels_per_column ();
+        float a2hz = cfa.getFrequency(visible_region_.a.scale + scaledelta);
+        float b2hz = cfa.getFrequency(visible_region_.b.scale - scaledelta);
 
         float scalara = displayedFrequencyResolution(ahz, a2hz);
         float scalarb = displayedFrequencyResolution(bhz, b2hz);
@@ -116,7 +119,7 @@ bool ReferenceInfo::
         float btres = displayedTimeResolution (bhz);
 
         // ["time units" / "1 texel"].
-        float tdelta = r.time()/block_layout_.visible_texels_per_row ();
+        float tdelta = visible_region_.time()/block_layout_.visible_texels_per_row ();
 
         // [data points / texel]
         atres = tdelta/atres;
@@ -149,8 +152,8 @@ std::string ReferenceInfo::
         toString() const
 {
     stringstream ss;
-    ss      << "T[" << r.a.time << ":" << r.b.time << ") "
-            << "F[" << r.a.scale << ":" << r.b.scale << ") "
+    ss      << "T[" << visible_region_.a.time << ":" << visible_region_.b.time << ") "
+            << "F[" << visible_region_.a.scale << ":" << visible_region_.b.scale << ") "
             << "S" << getInterval();
     return ss.str();
 }
@@ -169,14 +172,11 @@ Signal::Interval ReferenceInfo::
     // between two adjacent blocks. Thus the interval of samples that affect
     // this block overlap slightly into the samples that are needed for the
     // next block.
-    Region data(RegionFactory(block_layout_)(reference_,false));
-    long double elementSize = 1.0 / sample_rate();
-    data.a.time -= elementSize*.5;
-    data.b.time += elementSize*.5;
+    Region overlapping = RegionFactory(block_layout_).getOverlapping (reference_);
 
     long double FS = block_layout_.targetSampleRate();
 
-    Signal::Interval i( std::max(0.l,floor(data.a.time * FS)), std::max(0.l,ceil(data.b.time * FS)) );
+    Signal::Interval i( std::max(0.l,floor(overlapping.a.time * FS)), std::max(0.l,ceil(overlapping.b.time * FS)) );
     return i;
 }
 
