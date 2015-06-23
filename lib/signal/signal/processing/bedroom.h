@@ -73,7 +73,7 @@ public:
 
         std::set<Bed*> beds;
         Counter sleepers;
-        Counter skip_sleep_marker;
+        const Counter skip_sleep_marker;
         bool is_closed;
     };
 

@@ -3,6 +3,7 @@
 #include "exceptionassert.h"
 #include "expectexception.h"
 #include "timer.h"
+#include "log.h"
 
 #include <boost/foreach.hpp>
 
@@ -61,9 +62,10 @@ bool Bedroom::Bed::
     if (ULONG_MAX == ms_timeout)
         while (!skip_sleep_)
             data->work.wait ( data_.mutex() );
-    else
-        while (r && !skip_sleep_)
-            r = std::cv_status::no_timeout == data->work.wait_for (data_.mutex(), std::chrono::milliseconds(ms_timeout));
+    else {
+        data->work.wait_for(data_.mutex(), std::chrono::milliseconds(ms_timeout), [this](){return (bool)skip_sleep_;});
+        r = (bool)skip_sleep_;
+    }
 
     skip_sleep_.reset();
 
@@ -147,21 +149,21 @@ private:
 
 class SleepingBeautyMock: public QThread {
 public:
-    SleepingBeautyMock(Bedroom::ptr bedroom, int sleep_ms) : bedroom_(bedroom), sleep_ms_(sleep_ms) {}
+    SleepingBeautyMock(Bedroom::ptr bedroom, int timeout_ms) : bedroom_(bedroom), timeout_ms_(timeout_ms) {}
 
     void run() {
         Bedroom::Bed bed = bedroom_->getBed();
 
-        while (!bed.sleep (sleep_ms_))
-            ++sleep_count_;
+        while (!bed.sleep (timeout_ms_))
+            ++timeout_count_;
     }
 
-    int sleep_count() { return sleep_count_; }
+    int timeoutCount() { return timeout_count_; }
 
 private:
     Bedroom::ptr bedroom_;
-    int sleep_ms_;
-    int sleep_count_ = 0;
+    int timeout_ms_;
+    int timeout_count_ = 0;
 };
 
 
@@ -213,23 +215,59 @@ void Bedroom::
         Timer t;
         bool woken_up_by_wakeup_call = b.getBed ().sleep (2);
 
+        // The thread was sleeping in its bed for 2 ms. So the elapsed 'Timer'
+        // time should be more than 2 ms but less than 3 ms.
         EXCEPTION_ASSERT_LESS(t.elapsed (), 3e-3);
         EXCEPTION_ASSERT_LESS(2e-3, t.elapsed ());
         EXCEPTION_ASSERT(!woken_up_by_wakeup_call); // timeout
     }
 
     // It should just sleep until the given timeout has elapsed
+    for (int i=0; i<40; i++)
     {
+        //TaskTimer tt("It should just sleep until the given timeout has elapsed");
         Bedroom::ptr bedroom(new Bedroom);
-        SleepingBeautyMock sbm(bedroom, 2);
+        SleepingBeautyMock sbm(bedroom, 1);
 
+        EXCEPTION_ASSERT_EQUALS(0,bedroom->sleepers ());
         sbm.start ();
-        EXCEPTION_ASSERT( !sbm.wait (7) );
-        bedroom->wakeup();
-        EXCEPTION_ASSERT( sbm.wait (2) );
 
-        EXCEPTION_ASSERT(sbm.isFinished ());
-        EXCEPTION_ASSERT_EQUALS( sbm.sleep_count (), 3 );
+        // wait for the thread to go to sleep and then timeout
+        for (int j=0; j<100 && 0==sbm.timeoutCount (); j++)
+            EXCEPTION_ASSERT( !sbm.wait (1) );
+
+        // wakeup
+        bedroom->wakeup();
+
+        // the thread should finish soon
+        EXCEPTION_ASSERT( sbm.wait (128) );
+        EXCEPTION_ASSERT_EQUALS(0,bedroom->sleepers ());
+    }
+
+    // It should just sleep until the given timeout has elapsed
+    for (int i=0; i<40; i++)
+    {
+        //TaskTimer tt("It should just sleep until the given timeout has elapsed");
+        Bedroom::ptr bedroom(new Bedroom);
+        SleepingBeautyMock sbm(bedroom, 1000);
+
+        EXCEPTION_ASSERT_EQUALS(0,bedroom->sleepers ());
+        sbm.start ();
+
+        // wait for the thread to go to sleep
+        for (int j=0; j<100 && 0==bedroom->sleepers (); j++)
+            EXCEPTION_ASSERT( !sbm.wait (1) );
+        EXCEPTION_ASSERT_EQUALS(1,bedroom->sleepers ());
+
+        // wakeup
+        bedroom->wakeup();
+
+        // the thread should finish soon
+        EXCEPTION_ASSERT( sbm.wait (128) );
+        EXCEPTION_ASSERT_EQUALS(0,bedroom->sleepers ());
+
+        // with such a long timeout the number of timeouts should be 0
+        EXCEPTION_ASSERT_EQUALS(0,sbm.timeoutCount ());
     }
 }
 
