@@ -35,13 +35,13 @@ void ZoomCameraCommand::
     if (dt) if (!zoom( c, dt, ScaleX ))
     {
         float L = model->tfr_mapping().read ()->length();
-        float d = std::min( 0.5f * fabsf(dt), fabsf(c.q[0] - L/2));
+        float d = std::min( 0.5 * fabsf(dt), fabs(c.q[0] - L/2));
         c.q[0] += c.q[0]>L*.5f ? -d : d;
     }
 
     if (ds) if (!zoom( c, ds, ScaleZ ))
     {
-        float d = std::min( 0.5f * fabsf(ds), fabsf(c.q[2] - .5f));
+        float d = std::min( 0.5 * fabsf(ds), fabs(c.q[2] - .5f));
         c.q[2] += c.q[2]>.5f ? -d : d;
     }
 
