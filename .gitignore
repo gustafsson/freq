@@ -50,3 +50,5 @@ image_works
 *.autosave
 /.qmake.cache
 /.qmake.stash
+sonicawe.sublime-project
+sonicawe.sublime-workspace
