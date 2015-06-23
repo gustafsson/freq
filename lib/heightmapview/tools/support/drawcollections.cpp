@@ -48,8 +48,9 @@ void DrawCollections::
         return;
 
     unsigned N = model->collections().size();
-    if (N != channel_colors.size ())
-        channel_colors = Support::ChannelColors::compute(N);
+    bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
+    if (N - !fixed_color != channel_colors.size ())
+        channel_colors = Support::ChannelColors::compute(N - !fixed_color);
     TIME_PAINTGL_DETAILS ComputationCheckError();
 
     // When rendering to fbo, draw to the entire fbo, then update the current
@@ -203,7 +204,9 @@ void DrawCollections::
 void DrawCollections::
         drawCollection(const glProjection& gl_projection, int i, float yscale )
 {
-    model->render_settings.fixed_color = channel_colors[i];
+    bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
+    if (fixed_color || 0<i)
+        model->render_settings.fixed_color = channel_colors[fixed_color ? i : std::max(0,i-1)];
     glDisable(GL_BLEND);
     if (0 != model->camera->r[0])
         glEnable( GL_CULL_FACE ); // enabled only while drawing collections

@@ -1,4 +1,5 @@
 #include "channelcolors.h"
+#include "log.h"
 
 #include <QColor>
 
@@ -22,11 +23,17 @@ std::vector<tvector<4> > ChannelColors::
     }
 
     // R, G and B sum up to the same constant = N/2 if N > 1
-    for (unsigned i=0; i<N; ++i)
-        channel_colors[i] = channel_colors[i] * (N/2.f);
+//    for (unsigned i=0; i<N; ++i)
+//        channel_colors[i] = channel_colors[i]; * (N/2.f);
 
     if (1==N) // There is a grayscale mode to use for this
         channel_colors[0] = tvector<4>(0,0,0,1);
+
+    for (unsigned i=0; i<N; ++i)
+    {
+        auto c = channel_colors[i];
+        Log("color[%d] = %g %g %g %g") % i % c[0] % c[1] % c[2] % c[3];
+    }
 
     return channel_colors;
 }

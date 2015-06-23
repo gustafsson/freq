@@ -78,6 +78,7 @@ void main()
     // precomputed instead (apart from varying projections causing different mipmap
     // resolutions, but let's disregard that)
 
+//    v = mix(clamp(v*0.005,0.0,1.0),heightValue(v),colorTextureFactor);
     v = heightValue(v);
 
     // rainbow, colorscale or grayscale
