@@ -55,15 +55,11 @@ void DrawCollections::
 
     // When rendering to fbo, draw to the entire fbo, then update the current
     // viewport.
-    GLint current_viewport[4];
-    glGetIntegerv(GL_VIEWPORT, current_viewport);
-    GLint viewportWidth = current_viewport[2],
-          viewportHeight = current_viewport[3];
-
+    const auto vp = gl_projection.viewport;
 
     TIME_PAINTGL_DETAILS TaskTimer tt("Viewport (%u, %u, %u, %u)",
-        current_viewport[0], current_viewport[1],
-        current_viewport[2], current_viewport[3]);
+        vp[0], vp[1],
+        vp[2], vp[3]);
 
     unsigned i=0;
 
@@ -93,12 +89,13 @@ void DrawCollections::
             // drawCollections is called for several different viewports each frame.
             // GlFrameBuffer will query the current viewport to determine the size
             // of the fbo for this iteration.
-            if (viewportWidth > fbo->getWidth ()
-                || viewportHeight > fbo->getHeight()
-                || viewportWidth*2 < fbo->getWidth()
-                || viewportHeight*2 < fbo->getHeight())
+            if (vp[2] > fbo->getWidth ()
+                || vp[3] > fbo->getHeight()
+                || vp[2]*2 < fbo->getWidth()
+                || vp[3]*2 < fbo->getHeight())
             {
-                fbo->recreate(viewportWidth*1.5, viewportHeight*1.5);
+                TaskInfo("new fbo");
+                fbo->recreate(vp[2]*1.5, vp[3]*1.5);
             }
 
             hasValidatedFboSize = true;
@@ -108,14 +105,16 @@ void DrawCollections::
 
         {
             GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
-            glViewport(0, 0, viewportWidth, viewportHeight);
+            glViewport(0, 0, vp[2], vp[3]);
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            auto gl_projection2 = gl_projection;
+            gl_projection2.viewport = tvector<4,int>(0, 0, vp[2], vp[3]);
 
             drawCollection(gl_projection, i, yscale);
         }
 
-        glViewport(current_viewport[0], current_viewport[1],
-                   current_viewport[2], current_viewport[3]);
+        glViewport(vp[0], vp[1],
+                   vp[2], vp[3]);
 
         glBlendFunc( GL_DST_COLOR, GL_ZERO );
 
@@ -157,8 +156,8 @@ void DrawCollections::
         m_program->enableAttributeArray(0);
         m_program->enableAttributeArray(1);
 
-        float tx = viewportWidth/(float)fbo->getWidth();
-        float ty = viewportHeight/(float)fbo->getHeight();
+        float tx = vp[2]/(float)fbo->getWidth();
+        float ty = vp[3]/(float)fbo->getHeight();
         float values[] = {
              0, 0, 0,  0,
              1, 0, tx, 0,
@@ -196,7 +195,7 @@ void DrawCollections::
                 model->render_settings.drawn_blocks==1?"":"s",
                 render_block.trianglesPerBlock(),
                 collections_n*model->render_settings.drawn_blocks*render_block.trianglesPerBlock(),
-                current_viewport[2], current_viewport[3]);
+                vp[2], vp[3]);
     }
 }
 
