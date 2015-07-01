@@ -1,4 +1,4 @@
-About modules, subtree, "git add", copying source.
+About submodules, subtree, "git add" and copying source.
 
 
 submodules (.gitmodules, .git/modules, git submodule)
@@ -13,9 +13,15 @@ Neat for stand-alone projects that are being actively developed together with th
 How to use "git subtree":
 http://blogs.atlassian.com/2013/05/alternatives-to-git-submodule-git-subtree/
 
+git remote add -f lib-backtrace https://github.com/gustafsson/backtrace.git
+git subtree add --prefix lib/backtrace lib-backtrace master
+
 Notably the command to update the sub-project at a later date becomes:
 git fetch 3rdparty-freetype-gl master
-git subtree pull --prefix 3rdparty/freetype-gl 3rdparty-freetype-gl master --squash
+git subtree pull --prefix lib/backtrace lib-backtrace master
+
+And contributing back to upstream is:
+git subtree push --prefix=lib/backtrace lib-backtrace master
 
 
 git add "contents of another repository in a subfolder"
