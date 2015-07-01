@@ -1,3 +1,0 @@
-warnings on locks that are held too long should cause a low overhead
-0.03
---- unit 0.1 ms
