@@ -1,12 +1,12 @@
-[submodule "lib/sonicawe-winlib"]
-	path = lib/sonicawe-winlib
-	url = git@bitbucket.org:MuchDifferent/sonicawe-winlib.git
-[submodule "lib/sonicawe-maclib"]
-	path = lib/sonicawe-maclib
-	url = git@bitbucket.org:MuchDifferent/sonicawe-maclib.git
-[submodule "lib/sonicawe-ubuntulib"]
-	path = lib/sonicawe-ubuntulib
-	url = git@bitbucket.org:MuchDifferent/sonicawe-ubuntulib.git
+[submodule "3rdparty/ios"]
+	path = 3rdparty/ios
+	url = git@github.org:gustafsson/freq-ios.git
+[submodule "3rdparty/windows"]
+	path = 3rdparty/windows
+	url = git@github.org:gustafsson/freq-windows.git
+[submodule "3rdparty/ubuntu"]
+	path = 3rdparty/ubuntu
+	url = git@github.org:gustafsson/freq-ubuntu.git
 [submodule "tests/integration"]
 	path = tests/integration
-	url = git@bitbucket.org:MuchDifferent/sonicawe-integration-tests.git
+	url = git@github.org:gustafsson/freq-integration.git
