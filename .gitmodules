@@ -10,3 +10,6 @@
 [submodule "tests/integration"]
 	path = tests/integration
 	url = git@github.org:gustafsson/freq-integration.git
+[submodule "3rdparty/freetype-gl"]
+	path = 3rdparty/freetype-gl
+	url = git@github.com:rougier/freetype-gl.git
