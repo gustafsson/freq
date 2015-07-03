@@ -91,7 +91,8 @@ void Squircle::handleWindowChanged(QQuickWindow *win)
 
         auto v = render_model.render_settings.clear_color;
         auto f = [](float v) { return (unsigned char)(v<0.f?0:v>1.f?255:v*255); };
-        QColor c(f(v[0]), f(v[1]), f(v[2]), f(v[3]));
+        auto f254 = [](float v) { return (unsigned char)(v<0.f?0:v>1.f?254:v*254); };
+        QColor c(f254(v[0]), f(v[1]), f(v[2]), f(v[3]));
         win->setColor (c);
         win->setClearBeforeRendering (false);
 
