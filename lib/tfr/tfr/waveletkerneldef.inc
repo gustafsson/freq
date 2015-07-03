@@ -1,3 +1,6 @@
+#ifndef WAVELETKERNELDEF_H
+#define WAVELETKERNELDEF_H
+
 #include "waveletkernel.h"
 
 #include "resample.h"
@@ -104,3 +107,5 @@ inline RESAMPLE_CALL void inverse_elem( int x, T* in_wavelet, float* out_inverse
 
     out_inverse_waveform[x] = a;
 }
+
+#endif /* WAVELETKERNELDEF_H */

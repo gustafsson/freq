@@ -9,6 +9,7 @@ win32:CONFIG += debug_and_release
 CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
+CONFIG += precompile_header_with_all_headers
 
 QT += opengl
 
@@ -27,7 +28,11 @@ HEADERS += \
     $$PWD/heightmap/*.h \
     $$PWD/heightmap/tfrmappings/*.h \
     $$PWD/heightmap/update/*.h \
+    $$PWD/heightmap/update/blockkerneldef.inc \
     $$PWD/heightmap/update/opengl/*.h \
+
+PCH_HEADERS = $$HEADERS
+PCH_HEADERS -= $$PWD/heightmap/update/blockkerneldef.inc
 
 INCLUDEPATH += ../backtrace ../gpumisc ../signal ../tfr ../justmisc ../heightmap
 win32: INCLUDEPATH += ../sonicawe-winlib

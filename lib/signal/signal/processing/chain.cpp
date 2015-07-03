@@ -14,6 +14,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/graph/breadth_first_search.hpp>
+#include <boost/optional/optional_io.hpp>
 
 using namespace boost;
 

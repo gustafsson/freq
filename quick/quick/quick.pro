@@ -26,6 +26,7 @@ QML_IMPORT_PATH =
 #PWD = $$_PRO_FILE_PWD_
 SAWEROOT = $$_PRO_FILE_PWD_/../..
 CONFIG += tmpdir buildflags
+CONFIG += precompile_header_with_all_headers
 #QMAKEFEATURES = $$_PRO_FILE_PWD_/../../features
 
 QT += opengl

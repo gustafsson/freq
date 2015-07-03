@@ -1,7 +1,7 @@
 #ifndef USE_CUDA
 #include "resamplecpu.h"
 
-#include "waveletkerneldef.h"
+#include "waveletkerneldef.inc"
 
 #include "tasktimer.h"
 

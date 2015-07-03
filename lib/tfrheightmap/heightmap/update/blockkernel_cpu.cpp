@@ -20,7 +20,7 @@ operator()( std::complex<float> w, DataPos const& /*dataPosition*/ )
 }
 
 
-#include "blockkerneldef.h"
+#include "blockkerneldef.inc"
 
 // that's it, blockkerneldef contains the definitions
 #endif // USE_CUDA

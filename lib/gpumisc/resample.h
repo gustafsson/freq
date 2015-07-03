@@ -312,16 +312,16 @@ static void resample2d_fetcher(
         )
 {
     // make sure validInputs is smaller than input size
-    validInputs.right = min(validInputs.right, input->size().width);
-    validInputs.bottom = min(validInputs.bottom, input->size().height);
-    validInputs.left = min(validInputs.right, validInputs.left);
-    validInputs.top = min(validInputs.bottom, validInputs.top);
+    validInputs.right = fmin(validInputs.right, input->size().width);
+    validInputs.bottom = fmin(validInputs.bottom, input->size().height);
+    validInputs.left = fmin(validInputs.right, validInputs.left);
+    validInputs.top = fmin(validInputs.bottom, validInputs.top);
 
     // make sure validOutputs is smaller than output size
-    validOutputs.right = min(validOutputs.right, output->size().width);
-    validOutputs.bottom = min(validOutputs.bottom, output->size().height);
-    validOutputs.left = min(validOutputs.right, validOutputs.left);
-    validOutputs.top = min(validOutputs.bottom, validOutputs.top);
+    validOutputs.right = fmin(validOutputs.right, output->size().width);
+    validOutputs.bottom = fmin(validOutputs.bottom, output->size().height);
+    validOutputs.left = fmin(validOutputs.right, validOutputs.left);
+    validOutputs.top = fmin(validOutputs.bottom, validOutputs.top);
 
     resample2d_reader(
             input,

@@ -466,6 +466,7 @@ public:
 using namespace std;
 
 
+inline
 template<typename AxisConverter>
 void blockResampleChunkAxis( Tfr::ChunkData::ptr inputp,
                  DataStorage<float>::ptr output,
@@ -594,7 +595,7 @@ void blockResampleChunkAxis( Tfr::ChunkData::ptr inputp,
 }
 
 
-
+inline
 void blockResampleChunk( Tfr::ChunkData::ptr input,
                   BlockData::ptr output,
                  ValidInterval validInputs, // validInputs is the first and last-1 valid samples in x
@@ -639,6 +640,7 @@ void blockResampleChunk( Tfr::ChunkData::ptr input,
 }
 
 
+inline
 template<typename AxisConverter>
 void resampleStftAxis( Tfr::ChunkData::ptr inputp,
                    size_t nScales, size_t nSamples,
@@ -707,7 +709,7 @@ void resampleStftAxis( Tfr::ChunkData::ptr inputp,
 }
 
 
-
+inline
 void resampleStft( Tfr::ChunkData::ptr input,
                    size_t nScales, size_t nSamples,
                    BlockData::ptr output,
