@@ -89,6 +89,7 @@ void Squircle::handleWindowChanged(QQuickWindow *win)
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
 
+        win->setColor (QColor(254,255,255,255));
         win->setClearBeforeRendering(false);
     }
 }
