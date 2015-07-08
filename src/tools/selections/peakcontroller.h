@@ -1,12 +1,18 @@
-#if 0
 #ifndef PEAKCONTROLLER_H
 #define PEAKCONTROLLER_H
+
+#include <QWidget>
+
+class PeakController: public QWidget
+{
+    Q_OBJECT
+};
+
+#if 0
 
 #include "peakview.h"
 #include "tools/selectioncontroller.h"
 #include "heightmap/position.h"
-
-#include <QWidget>
 
 namespace Tools { namespace Selections
 {

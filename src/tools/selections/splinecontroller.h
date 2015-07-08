@@ -1,12 +1,18 @@
-#if 0
 #ifndef SPLINECONTROLLER_H
 #define SPLINECONTROLLER_H
+
+#include <QWidget>
+
+class SplineController: public QWidget
+{
+    Q_OBJECT
+};
+
+#if 0
 
 #include "splineview.h"
 #include "tools/selectioncontroller.h"
 #include "heightmap/position.h"
-
-#include <QWidget>
 
 namespace Tools { namespace Selections
 {
