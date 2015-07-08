@@ -25,8 +25,6 @@ using namespace std;
 typedef error_info<struct failed_condition,const boost::exception_ptr> failed_condition_type;
 typedef error_info<struct failed_to_parse_backtrace_string,const std::string> failed_to_parse_backtrace_string_type;
 
-void *bt_array[256];
-size_t array_size;
 void printSignalInfo(int sig);
 
 #ifdef __APPLE__
@@ -53,6 +51,9 @@ void Backtrace::
     fflush(stdout);
 
 #ifndef _MSC_VER
+    static void *bt_array[256];
+    static int array_size;
+
     // GCC supports malloc-free backtrace which is kind of neat
     // It does require the stack to grow though as this is a function call.
 
@@ -221,7 +222,7 @@ string Backtrace::
     if (!pretty_print_.empty ())
         return pretty_print_;
 
-    char** msg = backtrace_symbols(&frames_[0], frames_.size());
+    char** msg = backtrace_symbols(&frames_[0], (int)frames_.size());
     if (0 == msg)
         return "Couldn't get backtrace symbol names for pretty print";
 

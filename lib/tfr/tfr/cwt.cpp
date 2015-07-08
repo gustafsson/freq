@@ -22,6 +22,7 @@
 // std
 #include <cmath>
 #include <float.h>
+#include <limits>
 
 // boost
 #include <boost/lambda/lambda.hpp>
@@ -106,7 +107,7 @@ pChunk Cwt::
     Signal::BufferSource bs( buffer );
 
     Signal::IntervalType offset = buffer->sample_offset().asInteger();
-    unsigned std_samples = wavelet_time_support_samples();
+    int std_samples = wavelet_time_support_samples();
     //unsigned std_samples0 = time_support_bin0( buffer->sample_rate() );
     Signal::IntervalType first_valid_sample = std_samples;
 
@@ -116,7 +117,7 @@ pChunk Cwt::
 
     EXCEPTION_ASSERT( std_samples + first_valid_sample < buffer->number_of_samples());
 
-    unsigned valid_samples = buffer->number_of_samples() - std_samples - first_valid_sample;
+    unsigned valid_samples = (unsigned)(buffer->number_of_samples() - std_samples - first_valid_sample);
     // Align valid_samples with chunks (round downwards)
     unsigned alignment = chunk_alignment();
     valid_samples = align_down(valid_samples, alignment);
@@ -198,11 +199,11 @@ pChunk Cwt::
 
         // Move next_j forward one step so that it points to the first 'j'
         // that is not needed in this chunk part
-        next_j = std::min(n_j, next_j+1);
+        next_j = min(n_j, next_j+1);
 
         // Include next_j in this chunk so that parts can be interpolated
         // between in filters
-        unsigned stop_j = std::min(n_j, next_j+1);
+        unsigned stop_j = min(n_j, next_j+1);
         unsigned nScales_value = nScales();
         EXCEPTION_ASSERT( stop_j <= nScales_value);
 
@@ -210,7 +211,7 @@ pChunk Cwt::
         float nf = j_to_nf(stop_j-1);
         DEBUG_CWT TaskTimer("c=%u, nf=%g, 2^c=%u, n_scales=%u", c, nf, 1<<c, n_scales).suppressTiming();
 
-        unsigned sub_std_samples = wavelet_time_support_samples( nf );
+        int sub_std_samples = wavelet_time_support_samples( nf );
         EXCEPTION_ASSERT( sub_std_samples <= std_samples );
 
         DEBUG_CWT TaskTimer("sub_std_samples=%u", sub_std_samples).suppressTiming();
@@ -265,8 +266,8 @@ pChunk Cwt::
 
             TIME_CWTPART TaskTimer t2("Doing fft");
             ft = Fft()( data );
-            unsigned c = ft->getInterval().count();
-            unsigned c2 = data->number_of_samples();
+            size_t c = ft->getInterval().count();
+            size_t c2 = data->number_of_samples();
             EXCEPTION_ASSERT( c == c2 );
             ComputationSynchronize();
         }
@@ -280,7 +281,7 @@ pChunk Cwt::
         // However, to do proper merging we want to guarantee that all
         // chunkparts describe the exact same region. Thus we discard the extra
         // samples we added when padding to a power of 2
-        chunkpart->first_valid_sample = (offset + first_valid_sample - subinterval.first) >> c;
+        chunkpart->first_valid_sample = int((offset + first_valid_sample - subinterval.first) >> c);
         chunkpart->n_valid_samples = valid_samples >> c;
 
         DEBUG_CWT {
@@ -369,8 +370,8 @@ pChunk Cwt::
     }
 #endif
 
-    clearFft();
-    return wt;
+    //clearFft();
+    //return wt;
 }
 
 
@@ -418,12 +419,12 @@ Signal::Interval Cwt::
 
     unsigned time_support = cwt.wavelet_time_support_samples();
     firstSample -= time_support;
-    Signal::UnsignedIntervalType c = I.count ();
+    auto c = I.count ();
     if (c > ((unsigned)-1)/8)
         c = ((unsigned)-1)/8;
-    if (c < 2)
+    else if (c < 2)
         c = 2;
-    unsigned numberOfSamples = cwt.next_good_size( c-1 );
+    unsigned numberOfSamples = cwt.next_good_size( (int)c-1 );
 
     // hack to make it work without subsampling
     #ifdef CWT_NOBINS
@@ -582,7 +583,7 @@ pChunk Cwt::
 
         EXCEPTION_ASSERT( time_support + intermediate_wt->first_valid_sample < ft->getInterval().count() );
 
-        intermediate_wt->n_valid_samples = ft->getInterval().count() - time_support - intermediate_wt->first_valid_sample;
+        intermediate_wt->n_valid_samples = (int)(ft->getInterval().count() - time_support - intermediate_wt->first_valid_sample);
 
         StftDesc stft;
         stft.set_exact_chunk_size(n.width);
@@ -658,7 +659,7 @@ Signal::pMonoBuffer Cwt::
     if (cwtchunkpart)
         return inverse(cwtchunkpart);
 
-    throw std::invalid_argument("Doesn't recognize chunk of type " + demangle( typeid(*pchunk.get())));
+    throw invalid_argument("Doesn't recognize chunk of type " + demangle( typeid(*pchunk.get())));
 }
 
 
@@ -919,14 +920,14 @@ float Cwt::
 unsigned Cwt::
         wavelet_time_support_samples() const
 {
-    return std::max(1u, wavelet_time_support_samples( get_min_nf() ));
+    return max(1u, wavelet_time_support_samples( get_min_nf() ));
 }
 
 
 unsigned Cwt::
         wavelet_time_support_samples( float nf ) const
 {
-    unsigned support_samples = std::ceil(morlet_sigma_samples( nf ) * _wavelet_time_suppport);
+    unsigned support_samples = ceil(morlet_sigma_samples( nf ) * _wavelet_time_suppport);
     unsigned c = find_bin( nf_to_j(nf) );
     // Make 2*support_samples align to chunk_alignment for the lowest frequency
     unsigned half_chunkpart_alignment = chunkpart_alignment( c )/2;
@@ -946,8 +947,8 @@ unsigned Cwt::
         r = wavelet_time_support_samples();
         EXCEPTION_ASSERT( ((2*r) % alignment) == 0 );
     }
-    current_valid_samples_per_chunk = std::max((unsigned)(_least_meaningful_fraction_of_r*r), current_valid_samples_per_chunk);
-    current_valid_samples_per_chunk = std::max(_least_meaningful_samples_per_chunk, current_valid_samples_per_chunk);
+    current_valid_samples_per_chunk = max((unsigned)(_least_meaningful_fraction_of_r*r), current_valid_samples_per_chunk);
+    current_valid_samples_per_chunk = max(_least_meaningful_samples_per_chunk, current_valid_samples_per_chunk);
     current_valid_samples_per_chunk = align_up(current_valid_samples_per_chunk, alignment);
     unsigned T = r + current_valid_samples_per_chunk + r;
     if (AdjustToBin0)
@@ -991,7 +992,7 @@ unsigned Cwt::
         L = align_down(nL, alignment);
         if (current_valid_samples_per_chunk >= L || alignment > L)
         {
-            L = std::max(alignment, align_up(nL, alignment));
+            L = max(alignment, align_up(nL, alignment));
             T = L + 2*r;
             if (testPo2)
                 nT = align_up( spo2g(T), chunkpart_alignment( 0 ));
@@ -1096,7 +1097,7 @@ unsigned Cwt::
                 return smallest_L;
 
             unsigned L = T - 2*r;
-            L = std::max(alignment, align_down(L, alignment));
+            L = max(alignment, align_down(L, alignment));
 
             size_t required = required_gpu_bytes(L);
 
@@ -1225,11 +1226,11 @@ size_t Cwt::
 
         // Move next_j forward one step so that it points to the first 'j'
         // that is not needed in this chunk part
-        next_j = std::min(n_j, next_j+1);
+        next_j = min(n_j, next_j+1);
 
         // Include next_j in this chunk so that parts can be interpolated
         // between in filters
-        unsigned stop_j = std::min(n_j, next_j+1);
+        unsigned stop_j = min(n_j, next_j+1);
 
         unsigned n_scales = stop_j - prev_j;
         float nf = j_to_nf(stop_j-1);
@@ -1263,11 +1264,11 @@ size_t Cwt::
 }
 
 
-std::string Cwt::
+string Cwt::
         toString() const
 {
 #ifdef _DEBUG
-    std::stringstream ss;
+    stringstream ss;
     ss << "Tfr::Cwt"
        << ", number_of_octaves=" << _number_of_octaves
        << ", scales_per_octave=" << _scales_per_octave
@@ -1275,7 +1276,7 @@ std::string Cwt::
        << ", wavelet_scale_suppport=" << _wavelet_scale_suppport;
     return ss.str();
 #else
-    std::stringstream ss;
+    stringstream ss;
     ss << "Wavelet " << _scales_per_octave << " scales/octave";
     return ss.str();
 #endif

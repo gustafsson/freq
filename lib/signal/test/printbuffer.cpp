@@ -15,14 +15,14 @@ std::string PrintBuffer::
     std::stringstream ss;
     ss << b->getInterval () << ", " << b->number_of_channels () << " channels" << std::endl;
 
-    for (unsigned c=0; c<b->number_of_channels(); ++c) {
+    for (int c=0; c<b->number_of_channels(); ++c) {
         ss << "[" << c << "] = { ";
         float *p = b->getChannel (c)->waveform_data()->getCpuMemory ();
 
         if (b->number_of_samples ())
             ss << p[0];
 
-        for (unsigned j=1; j<b->number_of_samples (); ++j)
+        for (DataAccessPosition_t j=1; j<b->number_of_samples (); ++j)
             ss << ", " << p[j];
 
         ss << " }" << std::endl;
@@ -38,7 +38,7 @@ std::string PrintBuffer::
     std::stringstream ss;
     ss << b->getInterval () << ", " << b->number_of_channels () << " channels" << std::endl;
 
-    for (unsigned c=0; c<b->number_of_channels(); ++c) {
+    for (int c=0; c<b->number_of_channels(); ++c) {
         Statistics<float> s(b->getChannel (c)->waveform_data(), false, true);
         ss << "[" << c << "]: max = " << *s.getMax () << ", min = " << *s.getMin ()
            << ", mean = " << s.getMean () << ", std = " << s.getStd () << std::endl;

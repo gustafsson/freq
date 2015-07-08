@@ -133,11 +133,11 @@ void Cache::
             // Log("Cache: Reusing previously discarded %s as %s for %s") % n->getInterval () % Interval(I.first, I.first+chunkSize) % J;
             n->set_sample_offset (I.first);
             n->set_sample_rate (fs);
-            for (unsigned c=0; c<n->number_of_channels (); c++)
+            for (int c=0; c<n->number_of_channels (); c++)
                 n->getChannel (c)->waveform_data ()->DiscardAllData(true);
         }
 
-        if (!n || n->number_of_channels () != unsigned(num_channels) || n->number_of_samples () != chunkSize)
+        if (!n || n->number_of_channels () != num_channels || n->number_of_samples () != chunkSize)
         {
             // Log("Cache: Allocating new cache slot %s for %s") % Interval(I.first, I.first+chunkSize) % J;
             n.reset ( new Buffer( I.first, chunkSize, fs, num_channels) );
@@ -206,7 +206,7 @@ size_t Cache::
     size_t sz = 0;
 
     for (pBuffer const& b : _cache)
-        for (unsigned c=0; c<b->number_of_channels (); c++)
+        for (int c=0; c<b->number_of_channels (); c++)
             if (b->getChannel (c)->waveform_data ()->HasValidContent<CpuMemoryStorage>())
                 sz += b->getChannel (c)->number_of_samples ();
 
@@ -241,7 +241,7 @@ void Cache::
 
     // Make sure 'r' is allocated if it will receive any data
     if (r->getInterval () & _valid_samples)
-        for (unsigned c=0; c<r->number_of_channels (); c++)
+        for (int c=0; c<r->number_of_channels (); c++)
             CpuMemoryStorage::WriteAll<1>(r->getChannel (c)->waveform_data ());
 
     while (sid)

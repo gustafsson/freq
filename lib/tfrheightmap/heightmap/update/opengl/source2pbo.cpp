@@ -18,7 +18,7 @@ Source2Pbo::Source2Pbo(
         )
     :
         chunk_(chunk->transform_data),
-        n(chunk->transform_data->numberOfElements () * (f32?sizeof(float):sizeof(int16_t))),
+        n(DataAccessPosition_t(chunk->transform_data->numberOfElements () * (f32?sizeof(float):sizeof(int16_t)))),
         f32_(f32),
         mapped_chunk_data_(0),
         chunk_pbo_(0)

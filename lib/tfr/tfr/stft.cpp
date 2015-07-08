@@ -150,7 +150,7 @@ unsigned Fft::
 {
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
     maxsize /= 3*sizeof(ChunkElement);
-    return std::min(maxsize, (size_t)fft->sChunkSizeG(current_valid_samples_per_chunk));
+    return (unsigned)std::min(maxsize, (size_t)fft->sChunkSizeG(current_valid_samples_per_chunk));
 }
 
 
@@ -159,7 +159,7 @@ unsigned Fft::
 {
     size_t maxsize = std::min( (size_t)(64<<20), (size_t)availableMemoryForSingleAllocation() );
     maxsize /= 3*sizeof(ChunkElement);
-    return std::min(maxsize, (size_t)fft->lChunkSizeS(current_valid_samples_per_chunk));
+    return (unsigned)std::min(maxsize, (size_t)fft->lChunkSizeS(current_valid_samples_per_chunk));
 }
 
 
@@ -229,7 +229,7 @@ Signal::pMonoBuffer Fft::
         fft->computeC2R( chunk->transform_data, r->waveform_data() );
     }
 
-    unsigned original_sample_count = chunk->original_sample_rate/chunk->sample_rate + .5f;
+    int original_sample_count = chunk->original_sample_rate/chunk->sample_rate + .5f;
     if ( r->number_of_samples() != original_sample_count )
         r = Signal::BufferSource(r).readFixedLength( Signal::Interval(0, original_sample_count ))->getChannel (0);
 
@@ -434,7 +434,7 @@ Signal::pMonoBuffer Stft::
 
     const int chunk_window_size = stftchunk->window_size();
     const int actualSize = stftchunk->nActualScales();
-    int nwindows = chunk->transform_data->numberOfElements() / actualSize;
+    int nwindows = int(chunk->transform_data->numberOfElements() / actualSize);
 
     TIME_STFT ComputationSynchronize();
 
@@ -474,7 +474,7 @@ Signal::pMonoBuffer Stft::
     DataStorage<float>::ptr signal = reduceWindow( windowedOutput, stftchunk );
 
 
-    Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, (DataAccessPosition_t)signal->numberOfElements(), chunk->original_sample_rate));
     *b->waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
 
 
@@ -527,7 +527,7 @@ Signal::pMonoBuffer Stft::
     DataStorage<float>::ptr signal = reduceWindow( windowedOutput, stftchunk );
 
 
-    Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    Signal::pMonoBuffer b(new Signal::MonoBuffer(stftchunk->getInterval().first, (DataAccessPosition_t)signal->numberOfElements(), chunk->original_sample_rate));
     *b->waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
 
 
@@ -578,7 +578,7 @@ Tfr::ComplexBuffer::ptr Stft::
     Tfr::ChunkData::ptr signal = reduceWindow( complexWindowedOutput, stftchunk );
 
 
-    Tfr::ComplexBuffer::ptr b(new Tfr::ComplexBuffer(stftchunk->getInterval().first, signal->numberOfElements(), chunk->original_sample_rate));
+    Tfr::ComplexBuffer::ptr b(new Tfr::ComplexBuffer(stftchunk->getInterval().first, (DataAccessPosition_t)signal->numberOfElements(), chunk->original_sample_rate));
     *b->complex_waveform_data() = *signal; // this will not copy any data thanks to COW optimizations
 
 
@@ -600,7 +600,7 @@ void Stft::
         compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction )
 {
     int window_size = p.chunk_size();
-    DataStorageSize size( window_size, input->numberOfElements()/window_size);
+    DataStorageSize size( window_size, DataAccessPosition_t(input->numberOfElements()/window_size));
     TIME_STFT TaskTimer ti("Stft::compute %s, size = %d, %d",
                            direction == FftDirection_Forward ? "forward" : "inverse",
                            size.width, size.height);

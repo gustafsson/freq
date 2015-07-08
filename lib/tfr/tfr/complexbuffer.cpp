@@ -9,12 +9,12 @@
 namespace Tfr
 {
 
-ComplexBuffer::ComplexBuffer(UnsignedF first_sample, unsigned long numberOfSamples, float FS, unsigned numberOfChannels)
+ComplexBuffer::ComplexBuffer(UnsignedF first_sample, DataAccessPosition_t numberOfSamples, float FS, int numberOfChannels)
 :   sample_offset(first_sample),
     sample_rate(FS)
 {
     if (numberOfSamples)
-        _complex_waveform_data.reset( new DataStorage<std::complex<float> >( DataStorageSize (numberOfSamples, numberOfChannels, 1)));
+        _complex_waveform_data.reset( new DataStorage<std::complex<float> >( DataStorageSize ((DataAccessPosition_t)numberOfSamples, numberOfChannels, 1)));
 }
 
 
@@ -75,7 +75,7 @@ DataStorage<float>::ptr ComplexBuffer::
 Signal::pMonoBuffer ComplexBuffer::
         get_real()
 {
-    Signal::IntervalType length = number_of_samples();
+    DataAccessPosition_t length = number_of_samples();
     Signal::pMonoBuffer buffer( new Signal::MonoBuffer( sample_offset, length, sample_rate ));
 
     DataStorage<float>::ptr real_waveform = buffer->waveform_data();

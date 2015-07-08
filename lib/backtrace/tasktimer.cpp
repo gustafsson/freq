@@ -266,7 +266,7 @@ bool TaskTimer::printIndentation() {
             stringstream ss;
 
             int width = 1;
-            int N = thread_info_map.size ();
+            size_t N = thread_info_map.size ();
             int number = t.threadNumber;
 
             while ((N/=10) > 1)

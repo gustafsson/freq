@@ -288,7 +288,7 @@ void Step::
     {
         // Create an OperationDesc
         pBuffer b(new Buffer(Interval(60,70), 40, 7));
-        for (unsigned c=0; c<b->number_of_channels (); ++c)
+        for (int c=0; c<b->number_of_channels (); ++c)
         {
             float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
             for (int i=0; i<b->number_of_samples (); ++i)

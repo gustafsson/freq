@@ -8,6 +8,8 @@
 #include "demangle.h"
 #include "log.h"
 
+using namespace std;
+
 namespace Tfr {
 
 TransformDesc::ptr DummyTransformDesc::
@@ -41,14 +43,14 @@ FreqAxis DummyTransformDesc::
 unsigned DummyTransformDesc::
         next_good_size( unsigned current_valid_samples_per_chunk, float ) const
 {
-    return std::max(1u, current_valid_samples_per_chunk)*2;
+    return max(1u, current_valid_samples_per_chunk)*2;
 }
 
 
 unsigned DummyTransformDesc::
         prev_good_size( unsigned current_valid_samples_per_chunk, float ) const
 {
-    return std::max(1u, current_valid_samples_per_chunk/2);
+    return max(1u, current_valid_samples_per_chunk/2);
 }
 
 
@@ -68,7 +70,7 @@ Signal::Interval DummyTransformDesc::
 }
 
 
-std::string DummyTransformDesc::
+string DummyTransformDesc::
         toString() const
 {
     return vartype(*this);
@@ -108,7 +110,7 @@ pChunk DummyTransform::
 
     c->chunk_offset = b->sample_offset ();
     c->first_valid_sample = 0;
-    c->n_valid_samples = b->number_of_samples ();
+    c->n_valid_samples = (int)b->number_of_samples ();
     c->original_sample_rate = b->sample_rate ();
     c->sample_rate = b->sample_rate ();
     c->transform_data.reset (new Tfr::ChunkData(b->waveform_data ()->size ()));
@@ -160,7 +162,7 @@ void DummyTransform::
 
         DummyTransform t;
 
-        Signal::pBuffer b = Test::RandomBuffer::smallBuffer(std::hash<std::string>()("DummyTransform"));
+        Signal::pBuffer b = Test::RandomBuffer::smallBuffer((int)hash<string>()("DummyTransform"));
         pChunk c = t(b->getChannel (0));
         EXCEPTION_ASSERT(c);
 

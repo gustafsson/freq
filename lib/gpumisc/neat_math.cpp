@@ -73,9 +73,12 @@ void neat_math::
         Timer t;
 
         // integer division, rounded off upwards
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10,3), 4u );
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9,3), 3u );
-        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8,3), 3u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10,3), 4 );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9,3), 3 );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8,3), 3 );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(10lu,3), 4u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(9lu,3), 3u );
+        EXCEPTION_ASSERT_EQUALS( int_div_ceil(8lu,3), 3u );
 
         double T = t.elapsed();
         EXCEPTION_ASSERT_LESS (T, gdb ? 2e-3 : 20e-6);

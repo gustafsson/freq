@@ -16,9 +16,9 @@ public:
 
 
     ComplexBuffer(UnsignedF firstSample,
-           unsigned long numberOfSamples,
-           float FS,
-           unsigned numberOfChannels=1);
+                  DataAccessPosition_t numberOfSamples,
+                  float FS,
+                  int numberOfChannels=1);
 
     /**
         Create a complex waveform out of a real waveform.
@@ -42,7 +42,7 @@ public:
     /**
         Overloaded from buffer
     */
-    int number_of_samples() const { return _complex_waveform_data->size().width; }
+    DataAccessPosition_t number_of_samples() const { return _complex_waveform_data->size().width; }
 
 
     UnsignedF       sample_offset;
