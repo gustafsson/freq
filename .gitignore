@@ -24,6 +24,9 @@ qtc-gdbmacros
 *.xcworkspace/
 *.pbxproj
 xcshareddata/
+qt_makeqmake.mak
+qt_preprocess.mak
+*.pro/
 Info.plist
 build
 tmp
