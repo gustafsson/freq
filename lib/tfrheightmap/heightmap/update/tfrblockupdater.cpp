@@ -85,8 +85,8 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
     int data_height, data_width, data_stride, org_height, org_width;
     int stepx = 1;
 
-    data_height = org_height = chunk->transform_data->size ().height;
-    data_width = org_width = chunk->transform_data->size ().width;
+    //int data_height = org_height = chunk->transform_data->size ().height;
+    //int data_width = org_width = chunk->transform_data->size ().width;
 
     // Not needed and not implemented for Tfr::Chunk::Order_column_major
     if (0 < largest_fs && chunk->order == Tfr::Chunk::Order_row_major)
@@ -107,7 +107,7 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
 
     case Tfr::Chunk::Order_column_major: // i.e Stft
         org_width = chunk->nScales ();
-        org_height = chunk->nSamples ();
+        //org_height = chunk->nSamples ();
         data_width = org_width;
         data_height = int_div_ceil (chunk->n_valid_samples, stepx);
         offs_y = chunk->first_valid_sample; // = 0

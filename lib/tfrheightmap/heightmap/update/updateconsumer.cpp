@@ -19,7 +19,7 @@
 #include <numeric>
 
 //#define INFO
-#define INFO if(0)
+#define INFO if((0))
 
 using namespace std;
 

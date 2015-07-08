@@ -239,7 +239,7 @@ pChunk Cwt::
         UNUSED( unsigned sub_length_org ) = sub_length;
 #endif
 
-        sub_std_samples += extra/2;
+        //sub_std_samples += extra/2;
         sub_start -= extra/2;
         sub_length += extra;
 

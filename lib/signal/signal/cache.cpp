@@ -91,24 +91,20 @@ void Cache::
 void Cache::
         allocateCache( const Interval& J, float fs, int num_channels )
 {
-    Interval I = J;
-    int N = this->num_channels ();
-    float F = this->sample_rate ();
-    if (empty()) {
-        N = num_channels;
-        F = fs;
-    } else {
-        if (N != num_channels)
+    if (!empty())
+    {
+        if (this->num_channels () != num_channels)
             BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
                                   (boost::format("Expected %d channels, got %d") %
-                                            N % num_channels) << Backtrace::make ());
+                                            this->num_channels () % num_channels) << Backtrace::make ());
 
-        if (F != fs) // Not fuzzy compare, must be identical.
+        if (sample_rate () != fs) // Not fuzzy compare, must be identical.
             BOOST_THROW_EXCEPTION(InvalidBufferDimensions() << errinfo_format
                                   (boost::format("Expected fs=%g, got %g") %
-                                   F % fs) << Backtrace::make ());
+                                   sample_rate () % fs) << Backtrace::make ());
     }
 
+    Interval I = J;
     I.first = align_down(I.first, chunkSize);
     I.last = align_up(I.last, chunkSize);
 
