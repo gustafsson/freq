@@ -85,6 +85,7 @@ void GraphicsScene::
         renderview_->paintGL();
 
         renderview_->defaultStates();
+        glFlush();
 
         }
         GlException_CHECK_ERROR();
