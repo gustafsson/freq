@@ -2,6 +2,7 @@
 #include "clearkernel.h"
 #include "resampletexture.h"
 #include "gl.h"
+#include "log.h"
 
 namespace Heightmap {
 namespace Blocks {
@@ -17,6 +18,8 @@ ClearInterval::
 std::list<pBlock> ClearInterval::
         discardOutside(Signal::Interval& I)
 {
+    Log("ClearInterval::discardOutside") % I;
+
     std::list<pBlock> discarded;
 
     BlockCache::cache_t C = cache_->clone();
@@ -36,7 +39,7 @@ std::list<pBlock> ClearInterval::
         }
         else
         {
-            // TODO this update into an existing texture might collide with updateconsumer
+#if 0 // this update into an existing texture might collide with updateconsumer
 #ifndef GL_ES_VERSION_2_0
             Region ir = block->getOverlappingRegion ();
             ResampleTexture rt(*block->texture ());
@@ -53,6 +56,7 @@ std::list<pBlock> ClearInterval::
             if (A.x1<A.x2)
                 rt.drawColoredArea (A, 0.f);
             (void)sb; // RAII
+#endif
 #endif
         }
     }
