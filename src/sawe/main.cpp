@@ -341,8 +341,8 @@ int main(int argc, char *argv[])
 
             Tfr::Cwt cwt;
 
-            unsigned firstSample = 44100*2;
-            unsigned chunk_alignment = cwt.chunk_alignment();
+            size_t firstSample = 44100*2;
+            size_t chunk_alignment = cwt.chunk_alignment();
             firstSample = int_div_ceil(firstSample, chunk_alignment)*chunk_alignment;
             unsigned time_support = cwt.wavelet_time_support_samples();
 
