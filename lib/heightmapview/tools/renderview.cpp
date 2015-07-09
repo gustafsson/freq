@@ -38,6 +38,7 @@
 #include "gltextureread.h"
 #include "log.h"
 #include "gluperspective.h"
+#include "tvectorstring.h"
 
 #ifdef USE_CUDA
 // cuda
@@ -425,6 +426,8 @@ void RenderView::
 
     if (c.orthoview != 1 && c.orthoview != 0)
         redraw();
+
+    TIME_PAINTGL_DETAILS Log("Pos: %s, rot: %s") % c.p % c.r;
 
     gl_projection.modelview = matrixd::identity ();
     gl_projection.modelview *= matrixd::translate ( c.p );

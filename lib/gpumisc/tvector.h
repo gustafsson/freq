@@ -7,6 +7,9 @@ hmm, I'm going to need a matrix class for rotating vectors quite soon...
 
 #include <cmath>
 
+/**
+  See tvectorstring.h
+*/
 template<int N, typename type=float, typename baseType = type>
 class tvector
 {
