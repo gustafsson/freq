@@ -5,6 +5,7 @@
 #include <QOpenGLShaderProgram>
 #include "tools/rendermodel.h"
 #include "tools/renderview.h"
+#include "timer.h"
 
 /**
  * @brief The SquircleRenderer is created when there is an OpenGL context and performs rendering.
@@ -35,6 +36,7 @@ private:
     int m_window_height;
     qreal m_t, prevL=0;
     QOpenGLShaderProgram *m_program;
+    Timer prevFrame;
 };
 
 #endif // SQUIRCLERENDERER_H
