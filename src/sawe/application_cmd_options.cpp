@@ -12,7 +12,7 @@
 
 // adapters
 #include "adapters/csv.h"
-#include "adapters/hdf5.h"
+#include "adapters/hdf5adapter.h"
 #include "adapters/playback.h"
 
 // gpumisc

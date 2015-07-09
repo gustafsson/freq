@@ -20,7 +20,13 @@ Makefile.Debug
 Makefile.Release
 selected_tone.m
 qtc-gdbmacros
-*.xcodeproj
+*.xcodeproj/
+*.xcworkspace/
+*.pbxproj
+xcshareddata/
+qt_makeqmake.mak
+qt_preprocess.mak
+*.pro/
 Info.plist
 build
 tmp

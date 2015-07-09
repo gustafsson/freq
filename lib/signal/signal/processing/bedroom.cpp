@@ -110,7 +110,7 @@ Bedroom::Bed Bedroom::
 }
 
 
-int Bedroom::
+long Bedroom::
         sleepers()
 {
     // Remove 1 to compensate for the instance used by 'this'

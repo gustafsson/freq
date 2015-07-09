@@ -98,7 +98,7 @@ FLAC__StreamDecoderWriteStatus write_callback(const FLAC__StreamDecoder *decoder
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
 
-    if (!f->block || f->block->number_of_samples() < frame->header.blocksize)
+    if (!f->block || (unsigned)f->block->number_of_samples() < frame->header.blocksize)
         f->block.reset(new Buffer(0, frame->header.blocksize, f->sample_rate, f->channels));
 
     float n = 1ll << f->bps;

@@ -1,8 +1,14 @@
-#if 0
 #ifndef SELECTIONVIEWINFO_H
 #define SELECTIONVIEWINFO_H
-
 #include <QDockWidget>
+
+class SelectionViewInfo : public QDockWidget
+{
+    Q_OBJECT
+};
+
+#if 0
+
 #include <QPointer>
 
 #include "signal/processing/targetmarker.h"

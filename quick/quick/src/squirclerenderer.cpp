@@ -100,10 +100,11 @@ void SquircleRenderer::paint()
         return;
     }
 
-    LOG_FRAME Log("painting %s %gx%g")
+    LOG_FRAME Log("painting %s %gx%g. Last frame %s ms")
             % objectName ().toStdString ()
             % m_viewport.width ()
-            % m_viewport.height ();
+            % m_viewport.height ()
+            % (1e3*prevFrame.elapsedAndRestart ());
 
     // Use WorkerCrashLogger from Sonic AWE instead
     try {

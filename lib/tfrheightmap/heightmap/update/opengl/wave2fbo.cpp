@@ -81,7 +81,7 @@ void Wave2Fbo::
     m_program->setUniformValue("rgba", QVector4D(0.0,0.0,0.0,1.0));
 
     vertex_format_xy* d = &dv[0];
-    int N = dv.size ();
+    int N = (int)dv.size ();
     int S = b->number_of_samples ();
     d[0] = vertex_format_xy{ 0, -1 };
     d[1] = vertex_format_xy{ float(S-1), -1 };

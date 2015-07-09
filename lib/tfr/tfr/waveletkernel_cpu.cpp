@@ -110,7 +110,7 @@ void wtInverse( Tfr::ChunkData::ptr in_waveletp, DataStorage<float>::ptr out_inv
 }
 
 
-void wtClamp( Tfr::ChunkData::ptr in_wtp, size_t sample_offset, Tfr::ChunkData::ptr out_clamped_wtp )
+void wtClamp( Tfr::ChunkData::ptr in_wtp, int sample_offset, Tfr::ChunkData::ptr out_clamped_wtp )
 {
     CpuMemoryReadOnly<Tfr::ChunkElement, 2> in_wt = CpuMemoryStorage::ReadOnly<2>( in_wtp );
     CpuMemoryWriteOnly<Tfr::ChunkElement, 2> out_clamped_wt = CpuMemoryStorage::WriteAll<2>( out_clamped_wtp );

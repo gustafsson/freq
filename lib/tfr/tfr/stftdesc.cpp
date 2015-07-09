@@ -182,8 +182,8 @@ int StftDesc::
     unsigned slices = 1;
     if (slices * _window_size*multiple*sizeof(Tfr::ChunkElement) > free)
     {
-        unsigned max_size = free / (slices*multiple*sizeof(Tfr::ChunkElement));
-        _window_size = Fft().lChunkSizeS(max_size+1, 4);
+        size_t max_size = free / (slices*multiple*sizeof(Tfr::ChunkElement));
+        _window_size = Fft().lChunkSizeS((unsigned)max_size+1, 4);
     }
 
     _window_size = std::max(4, _window_size);

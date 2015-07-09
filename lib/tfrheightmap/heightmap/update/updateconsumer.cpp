@@ -19,7 +19,7 @@
 #include <numeric>
 
 //#define INFO
-#define INFO if(0)
+#define INFO if((0))
 
 using namespace std;
 
@@ -151,12 +151,12 @@ void UpdateConsumer::
             // Force a push_front to the std::queue
             Container(jobqueue).push_front (std::move(j));
 
-            unsigned num_jobs = jobqueue.size ();
+            size_t num_jobs = jobqueue.size ();
             Timer t;
 
             while (!jobqueue.empty ())
             {
-                unsigned s = jobqueue.size ();
+                size_t s = jobqueue.size ();
                 block_updater.processJobs (jobqueue);
                 waveform_updater.processJobs (jobqueue);
                 EXCEPTION_ASSERT_LESS(jobqueue.size (), s);

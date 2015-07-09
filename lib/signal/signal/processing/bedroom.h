@@ -86,7 +86,7 @@ public:
 
     Bed getBed();
 
-    int sleepers();
+    long sleepers();
 
 private:
     shared_state<Data> data_;

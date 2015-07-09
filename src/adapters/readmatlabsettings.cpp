@@ -1,6 +1,6 @@
 #include "readmatlabsettings.h"
 
-#include "hdf5.h"
+#include "hdf5adapter.h"
 
 // gpumisc
 #include "demangle.h"

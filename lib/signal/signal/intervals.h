@@ -121,7 +121,7 @@ public:
     Intervals               enlarge( IntervalType dt ) const;
     Intervals               shrink( IntervalType dt ) const;
     UnsignedIntervalType    count() const;
-    int                     numSubIntervals() const { return base::size(); }
+    size_t                  numSubIntervals() const { return base::size(); }
     bool                    testSample( IntervalType const &p) const;
 
     std::string             toString() const;

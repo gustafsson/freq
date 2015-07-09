@@ -31,14 +31,14 @@ Signal::pBuffer NormalizeOperation::
     Interval J = b->getInterval ();
     Interval I = Signal::Intervals(J).shrink (normalizationRadius).spannedInterval ();
 
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    for (int c=0; c<b->number_of_channels (); ++c)
        normalizedata( b->getChannel (c)->waveform_data(), normalizationRadius );
 
     // normalizedata moved the data (and made the last 2*normalizationRadius elements invalid)
     Signal::IntervalType sample_offset = J.first + normalizationRadius;
 
     pBuffer r( new Buffer(I.first, I.count(), b->sample_rate(), b->number_of_channels ()));
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    for (int c=0; c<b->number_of_channels (); ++c)
     {
         MonoBuffer mb(sample_offset, b->getChannel (c)->waveform_data (), b->sample_rate ());
         *r->getChannel (c) |= mb;
@@ -135,7 +135,7 @@ void Normalize::
         Signal::pBuffer b3 = o->process(b2);
         EXCEPTION_ASSERT_EQUALS(expectedOutput, b3->getInterval ());
 
-        for (unsigned c=0; c<b->number_of_channels (); c++)
+        for (int c=0; c<b->number_of_channels (); c++)
         {
             float* p1 = b->getChannel (c)->waveform_data ()->getCpuMemory ();
             float* p2 = b3->getChannel (c)->waveform_data ()->getCpuMemory ();

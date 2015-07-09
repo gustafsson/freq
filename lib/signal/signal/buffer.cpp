@@ -24,15 +24,17 @@ MonoBuffer::
 :   sample_offset_(I.first),
     sample_rate_(fs)
 {
+    DataAccessPosition_t numberOfSamples = (DataAccessPosition_t)I.count ();
+    EXCEPTION_ASSERT(I.count () == (UnsignedIntervalType)numberOfSamples);
     EXCEPTION_ASSERT( 0 < I.count ());
     EXCEPTION_ASSERT( 0 < fs );
 
-    time_series_.reset( new TimeSeriesData(DataStorageSize( I.count ())));
+    time_series_.reset( new TimeSeriesData(numberOfSamples));
 }
 
 
 MonoBuffer::
-        MonoBuffer(UnsignedF first_sample, IntervalType numberOfSamples, float fs)
+        MonoBuffer(UnsignedF first_sample, DataAccessPosition_t numberOfSamples, float fs)
 :   sample_offset_(first_sample),
     sample_rate_(fs)
 {
@@ -103,8 +105,8 @@ MonoBuffer& MonoBuffer::
     if (0 == i.count())
         return *this;
 
-    unsigned offs_write = i.first - sample_offset().asInteger();
-    unsigned offs_read = i.first - b.sample_offset().asInteger();
+    IntervalType offs_write = i.first - sample_offset().asInteger();
+    IntervalType offs_read = i.first - b.sample_offset().asInteger();
 
     TIME_BUFFER TaskTimer tt("%s %s = %s & %s",
                   __FUNCTION__ ,
@@ -189,11 +191,11 @@ MonoBuffer& MonoBuffer::
     if (!write) {
         if (clearWithZeros) {
             write = CpuMemoryStorage::BorrowPtr(
-                DataStorageSize(i.count()),
+                DataStorageSize((DataAccessPosition_t)i.count()),
                 CpuMemoryStorage::ReadWrite<1>( time_series_ ).ptr() + offs_write, false);
         } else {
             write = CpuMemoryStorage::BorrowPtr(
-                DataStorageSize(i.count()),
+                DataStorageSize((DataAccessPosition_t)i.count()),
                 CpuMemoryStorage::WriteAll<1>( time_series_ ).ptr() + offs_write, false);
         }
     }
@@ -208,7 +210,7 @@ MonoBuffer& MonoBuffer::
 
     if (!read)
         read = CpuMemoryStorage::BorrowPtr(
-            DataStorageSize(i.count()),
+            DataStorageSize((DataAccessPosition_t)i.count()),
             CpuMemoryStorage::ReadOnly<1>( b.time_series_ ).ptr() + offs_read, false);
 
     // Let DataStorage manage all memcpying
@@ -227,9 +229,9 @@ MonoBuffer& MonoBuffer::
     if (0 == i.count())
         return *this;
 
-    unsigned offs_write = i.first - sample_offset().asInteger();
-    unsigned offs_read = i.first - b.sample_offset().asInteger();
-    unsigned length = i.count();
+    IntervalType offs_write = i.first - sample_offset().asInteger();
+    IntervalType offs_read = i.first - b.sample_offset().asInteger();
+    UnsignedIntervalType length = i.count();
 
     float* write = time_series_->getCpuMemory();
     float const* read = b.time_series_->getCpuMemory();
@@ -237,7 +239,7 @@ MonoBuffer& MonoBuffer::
     write += offs_write;
     read += offs_read;
 
-    for (unsigned n=0; n<length; n++)
+    for (UnsignedIntervalType n=0; n<length; n++)
         write[n] += read[n];
 
     return *this;
@@ -275,7 +277,7 @@ Buffer::
 
 Buffer::
         Buffer(UnsignedF first_sample,
-       IntervalType number_of_samples,
+       DataAccessPosition_t number_of_samples,
        float sample_rate,
        int number_of_channels)
 {
@@ -304,7 +306,7 @@ Buffer::
     channels_.resize (sz.height);
 
     float* p = ptr->getCpuMemory ();
-    for (unsigned i=0; i<number_of_channels (); ++i)
+    for (int i=0; i<number_of_channels (); ++i)
     {
         pTimeSeriesData qtr(new TimeSeriesData(sz.width));
         float* q = qtr->getCpuMemory();
@@ -329,7 +331,7 @@ Buffer::
 void Buffer::
         release_extra_resources()
 {
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
         channels_[i]->release_extra_resources();
 }
 
@@ -337,7 +339,7 @@ void Buffer::
 void Buffer::
         set_sample_rate(float fs)
 {
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
         channels_[i]->set_sample_rate(fs);
 }
 
@@ -345,7 +347,7 @@ void Buffer::
 void Buffer::
         set_sample_offset(UnsignedF offset)
 {
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
         channels_[i]->set_sample_offset(offset);
 }
 
@@ -358,7 +360,7 @@ pTimeSeriesData Buffer::
 
     pTimeSeriesData r( new TimeSeriesData(number_of_samples(), number_of_channels()));
     float* p = r->getCpuMemory ();
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
     {
         float* q = getChannel(i)->waveform_data ()->getCpuMemory ();
         memcpy(p + i*number_of_samples (), q, number_of_samples()*sizeof(float));
@@ -371,7 +373,7 @@ Buffer& Buffer::
         operator|=(const Buffer& b)
 {
     EXCEPTION_ASSERT( b.number_of_channels () == number_of_channels ());
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
         *channels_[i] |= *b.getChannel (i);
     return *this;
 }
@@ -381,7 +383,7 @@ Buffer& Buffer::
         operator+=(const Buffer& b)
 {
     EXCEPTION_ASSERT( b.number_of_channels () == number_of_channels ());
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
         *channels_[i] += *b.getChannel (i);
     return *this;
 }
@@ -393,7 +395,7 @@ bool Buffer::
     if (b.number_of_channels () != number_of_channels ())
         return false;
 
-    for (unsigned i=0; i<number_of_channels(); ++i)
+    for (int i=0; i<number_of_channels(); ++i)
         if (*channels_[i] != *b.getChannel (i))
             return false;
 
@@ -405,7 +407,7 @@ void Buffer::
         test()
 {
     pBuffer b(new Buffer(Interval(20,30), 40, 7));
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    for (int c=0; c<b->number_of_channels (); ++c)
     {
         float *p = b->getChannel (c)->waveform_data ()->getCpuMemory ();
         for (int i=0; i<b->number_of_samples (); ++i)

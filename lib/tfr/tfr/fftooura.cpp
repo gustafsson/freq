@@ -216,8 +216,8 @@ void FftOoura::
 
     int denseWidth = n.width/2+1;
     int redundantWidth = n.width;
-    int batchcount1 = output->numberOfElements()/redundantWidth,
-             batchcount2 = input->numberOfElements()/denseWidth;
+    int batchcount1 = (int)(output->numberOfElements()/redundantWidth),
+             batchcount2 = (int)(input->numberOfElements()/denseWidth);
 
     EXCEPTION_ASSERT( batchcount1 == batchcount2 );
     EXCEPTION_ASSERT( (denseWidth-1)*2 == redundantWidth );

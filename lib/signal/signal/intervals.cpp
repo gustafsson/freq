@@ -443,7 +443,7 @@ Interval Intervals::
 
         EXCEPTION_ASSERT(center>=f.first);
 
-        unsigned int_div_ceil = ( center-f.first + dt - 1 ) / dt;
+        IntervalType int_div_ceil = ( center-f.first + dt - 1 ) / dt;
         IntervalType start = f.first + dt*int_div_ceil;
 
         if (f.last <= start ) {

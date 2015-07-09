@@ -54,7 +54,7 @@ void MappedVboVoid::
     EXCEPTION_ASSERT( !_is_mapped );
 
     DataStorageSize sizeInBytes = datap->sizeInBytes();
-    EXCEPTION_ASSERT( datap->numberOfBytes() == _vbo->size() );
+    EXCEPTION_ASSERT_EQUALS( datap->numberOfBytes(), _vbo->size() );
 
 #ifdef USE_CUDA
     void* g_data=0;

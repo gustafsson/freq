@@ -94,8 +94,6 @@ void Collection::
 void Collection::
         next_frame()
 {
-    glFlush();
-
     BlockCache::cache_t cache = cache_->clone ();
 
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")

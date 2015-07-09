@@ -31,6 +31,10 @@ NEAT_MATH_CALL size_t int_div_ceil( const size_t& x, const unsigned& y ) {
     return (x+y-1)/y;
 }
 
+NEAT_MATH_CALL int int_div_ceil( const int& x, const unsigned& y ) {
+    return (x+y-1)/y;
+}
+
 template<typename T>
 NEAT_MATH_CALL T absint(T i) {
     EXCEPTION_ASSERT( i != std::numeric_limits<T>::min() );

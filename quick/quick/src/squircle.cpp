@@ -264,7 +264,7 @@ void Squircle::sync()
     QPointF topleft = this->mapToScene (boundingRect().topLeft ());
     QPointF bottomright = this->mapToScene (boundingRect().bottomRight ());
 
-    if (0) Log("squircle: sync x1=%g, y1=%g, x2=%g, y2=%g, w=%g, h=%g")
+    if (/* DISABLES CODE */ (0)) Log("squircle: sync x1=%g, y1=%g, x2=%g, y2=%g, w=%g, h=%g")
             % topleft.x () % topleft.y ()
             % bottomright.x () % bottomright.y ()
             % width () % height();

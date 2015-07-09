@@ -342,9 +342,9 @@ void test ()
             consta.try_read ();
         }
 
-        N = 1000;
         trace_perf_.reset ("shared_state should fail fast with timeout=0");
 #ifndef SHARED_STATE_NO_TIMEOUT
+        N = 1000;
         for (int i=0; i<N; i++) {
             EXPECT_EXCEPTION(lock_failed, a.write ());
         }

@@ -23,11 +23,11 @@ class SignalDll MonoBuffer : public boost::noncopyable {
 public:
     MonoBuffer(Interval I, float sample_rate);
     MonoBuffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
-    MonoBuffer(UnsignedF first_sample, IntervalType number_of_samples, float sample_rate);
+    MonoBuffer(UnsignedF first_sample, DataAccessPosition_t number_of_samples, float sample_rate);
     ~MonoBuffer();
 
     pTimeSeriesData         waveform_data() const { return time_series_; }
-    IntervalType            number_of_samples() const { return time_series_->size().width; }
+    DataAccessPosition_t    number_of_samples() const { return time_series_->size().width; }
     void                    release_extra_resources();
 
     UnsignedF               sample_offset() const { return sample_offset_; }
@@ -70,7 +70,7 @@ class SignalDll Buffer : public boost::noncopyable {
 public:
     Buffer(Interval I, float sample_rate, int number_of_channels);
     Buffer(UnsignedF first_sample,
-           IntervalType number_of_samples,
+           DataAccessPosition_t number_of_samples,
            float sample_rate,
            int number_of_channels);
     Buffer(Buffer&& b);
@@ -78,9 +78,8 @@ public:
     Buffer(UnsignedF first_sample, pTimeSeriesData ptr, float sample_rate);
     ~Buffer();
 
-    IntervalType    number_of_samples() const { return getChannel(0)->number_of_samples (); }
-    // TODO change type to int
-    unsigned        number_of_channels() const { return channels_.size(); }
+    DataAccessPosition_t number_of_samples() const { return getChannel(0)->number_of_samples (); }
+    int             number_of_channels() const { return (int)channels_.size(); }
     void            release_extra_resources();
 
     UnsignedF       sample_offset() const { return getChannel(0)->sample_offset(); }

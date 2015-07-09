@@ -43,7 +43,7 @@ Signal::pBuffer TransformOperationOperation::
     chunk_filter_->set_number_of_channels(b->number_of_channels ());
 
     pBuffer r;
-    for (unsigned c=0; c<b->number_of_channels (); ++c)
+    for (int c=0; c<b->number_of_channels (); ++c)
       {
         ChunkAndInverse ci;
         ci.channel = c;

@@ -92,7 +92,7 @@ void GotData::
        writeData(const float* in, quint64 len)
 {
     // Prepare buffer
-    Signal::IntervalType number_of_samples = len / data.raw()->num_channels;
+    DataAccessPosition_t number_of_samples = DataAccessPosition_t(len / data.raw()->num_channels);
     if (!buffer || buffer->number_of_samples () != number_of_samples)
         buffer.reset (new Signal::Buffer(0, number_of_samples, data.raw()->sample_rate, data.raw()->num_channels));
 
@@ -109,7 +109,7 @@ void GotData::
     }
 
     // transpose and skip zeros
-    for (unsigned j=0; j<number_of_samples; ++j)
+    for (DataAccessPosition_t j=0; j<number_of_samples; ++j)
     {
 #ifdef SKIP_ZEROS
         bool nonzero = false;

@@ -177,7 +177,7 @@ Signal::pBuffer Task::
 
     Signal::OperationDesc::Extent x = operation_desc.read ()->extent ();
 
-    unsigned num_channels = x.number_of_channels.get_value_or (0);
+    int num_channels = x.number_of_channels.get_value_or (0);
     float sample_rate = x.sample_rate.get_value_or (0.f);
     for (size_t i=0;i<children_.size(); ++i)
     {
@@ -200,7 +200,7 @@ Signal::pBuffer Task::
 
     for ( Signal::pBuffer b : buffers )
     {
-        for (unsigned c=0; c<num_channels && c<b->number_of_channels (); ++c)
+        for (int c=0; c<num_channels && c<b->number_of_channels (); ++c)
             *input_buffer->getChannel (c) += *b->getChannel(c);
     }
 

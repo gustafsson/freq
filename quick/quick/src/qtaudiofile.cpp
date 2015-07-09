@@ -13,14 +13,14 @@ void transpose(const pBuffer& out, const void* vin)
 {
     const T* in = (const T*)vin;
     int C = out->number_of_channels ();
-    int L = out->number_of_samples ();
+    DataAccessPosition_t L = out->number_of_samples ();
 
     for (int c=0; c<C; c++)
     {
         pMonoBuffer m = out->getChannel (c);
         float* p = CpuMemoryStorage::WriteAll<1>(m->waveform_data()).ptr ();
 
-        for (int s=0; s<L; s++)
+        for (DataAccessPosition_t s=0; s<L; s++)
             p[s] = in[s*C+c];
     }
 }

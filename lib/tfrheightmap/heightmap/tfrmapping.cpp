@@ -264,7 +264,7 @@ void TfrMapping::
 int TfrMapping::
         channels() const
 {
-    return collections_.size ();
+    return (int)collections_.size ();
 }
 
 

@@ -47,8 +47,8 @@
 #include <vector>
 
 
-// Qt
-#include <QtCore> // QWaitCondition etc
+// Qt frameworks
+#include <QtCore> // Qt QWaitCondition etc
 #include <QtGui> // QMouseEvent etc
 #include <QtWidgets> // QApplication etc
 #include <QtOpenGL> // QGLWidget

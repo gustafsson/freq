@@ -271,9 +271,9 @@ vector<string> performance_traces::
         db.push_back (sourcefilename + ".db" + perm);
     }
 
-    int n = db.size();
+    size_t n = db.size();
     if (!hostname.empty ())
-        for (int i=0; i<n; i++)
+        for (size_t i=0; i<n; i++)
             db.push_back (hostname + "/" + db[i]);
 
     vector<string> dbfiles;
