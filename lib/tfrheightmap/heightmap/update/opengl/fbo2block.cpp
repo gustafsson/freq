@@ -7,9 +7,6 @@
 #include "gluperspective.h"
 #include "gl.h"
 
-// both true and false work on gl as well as gles, but which is faster? dunno
-const bool copy_to_new_fbo_for_each_draw = false;
-
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -32,13 +29,11 @@ void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
 
 void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
 {
-    // opengles doesn't have GL_READ_FRAMEBUFFER/GL_WRITE_FRAMEBUFFER
+    // OpenGL ES doesn't have GL_READ_FRAMEBUFFER/GL_DRAW_FRAMEBUFFER
 
     // Assumes dst and src have the same size and the same pixel format
     int w = src->getWidth ();
     int h = src->getHeight ();
-    if (!copyfbo)
-        glGenFramebuffers(1, &copyfbo);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
     glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
@@ -47,27 +42,24 @@ void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
 
-void texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo)
-{
-    // Assumes dst and src have the same size and the same pixel format
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
-    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
-    fbo2Texture(copyfbo, dst);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-}
+//void texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo)
+//{
+//    // Assumes dst and src have the same size and the same pixel format
+//    glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
+//    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+//                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
+//    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+//    fbo2Texture(copyfbo, dst);
+//}
 #endif
 
 
 Fbo2Block::Fbo2Block ()
 {
-    if (!copy_to_new_fbo_for_each_draw)
-    {
-        fboTexture = Render::BlockTextures::get1 ();
-        fbo.reset (new GlFrameBuffer(*fboTexture));
-    }
-
-    glGenFramebuffers(1, &copyfbo);
+    glGenFramebuffers(1, &drawFbo);
+#ifndef GL_ES_VERSION_2_0
+    glGenFramebuffers(1, &readFbo);
+#endif
 }
 
 
@@ -76,36 +68,38 @@ Fbo2Block::
 {
     end();
 
-    if (copyfbo)
-        glDeleteFramebuffers(1, &copyfbo);
+#ifndef GL_ES_VERSION_2_0
+    glDeleteFramebuffers(1, &readFbo);
+#endif
+    glDeleteFramebuffers(1, &drawFbo);
 }
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (Region br, GlTexture::ptr oldTexture, GlTexture::ptr targetTexture, glProjection& M)
+        begin (Region br, GlTexture::ptr srcTexture, GlTexture::ptr drawTexture, glProjection& M)
 {
-    EXCEPTION_ASSERT(!this->targetTexture);
-    EXCEPTION_ASSERT(oldTexture);
-    EXCEPTION_ASSERT(targetTexture);
+    EXCEPTION_ASSERT(!this->drawTexture);
+    EXCEPTION_ASSERT(srcTexture);
+    EXCEPTION_ASSERT(drawTexture);
 
-    int w = targetTexture->getWidth ();
-    int h = targetTexture->getHeight ();
-    this->targetTexture = targetTexture;
-
-    if (copy_to_new_fbo_for_each_draw)
-    {
-        fboTexture = targetTexture;
-        fbo.reset (new GlFrameBuffer(*fboTexture));
-    }
+    int w = drawTexture->getWidth ();
+    int h = drawTexture->getHeight ();
+    this->drawTexture = drawTexture;
 
     GlException_CHECK_ERROR ();
 
 #ifdef GL_ES_VERSION_2_0
-    texture2texture(oldTexture, fboTexture);
-    fbo->bindFrameBuffer();
-#else
-    fbo->bindFrameBuffer();
-    blitTexture(oldTexture, copyfbo);
+    texture2texture(srcTexture, drawTexture);
+    glBindFramebuffer(GL_FRAMEBUFFER, drawfbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+#endif
+
+#ifndef GL_ES_VERSION_2_0
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+    blitTexture(srcTexture, readFbo);
 #endif
 
     // Juggle texture coordinates so that border texels are centered on the border
@@ -137,27 +131,20 @@ Fbo2Block::ScopeBinding Fbo2Block::
 void Fbo2Block::
         end()
 {
-    if (!targetTexture)
+    if (!drawTexture)
         return;
 
-    fbo->unbindFrameBuffer();
-
-    if (copy_to_new_fbo_for_each_draw)
-    {
-        // The fbo was created with targetTexture as color attachment
-        fbo.reset ();
-        fboTexture.reset ();
-    }
-    else
-    {
 #ifdef GL_ES_VERSION_2_0
-        texture2texture (fboTexture, targetTexture);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #else
-        fbo2Texture(fbo->getOpenGlFboId(), targetTexture);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
-    }
 
-    targetTexture.reset ();
+    drawTexture.reset ();
 }
 
 

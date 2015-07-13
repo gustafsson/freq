@@ -20,15 +20,13 @@ public:
     Fbo2Block& operator=(const Fbo2Block&) = delete;
     ~Fbo2Block();
 
-    ScopeBinding begin (Region br, GlTexture::ptr oldTexture, GlTexture::ptr targetTexture, glProjection& M);
+    ScopeBinding begin (Region br, GlTexture::ptr srcTexture, GlTexture::ptr drawTexture, glProjection& M);
 
 private:
     void end();
 
-    GlTexture::ptr targetTexture;
-    GlTexture::ptr fboTexture;
-    std::unique_ptr<GlFrameBuffer> fbo;
-    unsigned copyfbo = 0;
+    GlTexture::ptr drawTexture;
+    unsigned readFbo = 0, drawFbo = 0;
 };
 
 
