@@ -10,11 +10,11 @@
 
 #include <QOpenGLContextGroup>
 
-#define INFO
-//#define INFO if(0)
+//#define INFO
+#define INFO if(0)
 
-#define INFO_DISCARDED
-//#define INFO_DISCARDED if(0)
+//#define INFO_DISCARDED
+#define INFO_DISCARDED if(0)
 
 namespace Heightmap {
 namespace Render {
@@ -207,7 +207,7 @@ void BlockTexturesImpl::
         setCapacityHint (unsigned c)
 {
     size_t S = textures.size ();
-    unsigned C = 32; // 8 MB
+    unsigned C = 64; // 16 MB
     unsigned lower_bound = c; // need at least this many
     unsigned preferred = align_down(c,C)+C; // create margin textures
     unsigned upper_bound = align_down(c,C)+2*C; // but more than this is unnecessary
@@ -393,10 +393,10 @@ void BlockTexturesImpl::
 
         TRACE_PERF("It should provide already allocated textures fast");
         c = block_textures.getCapacity ();
-        EXCEPTION_ASSERT_EQUALS(c,32);
+        EXCEPTION_ASSERT_EQUALS(c,64);
 
-        t = block_textures.getUnusedTextures (23);
-        EXCEPTION_ASSERT_EQUALS(t.size (),23u);
+        t = block_textures.getUnusedTextures (55);
+        EXCEPTION_ASSERT_EQUALS(t.size (),55u);
 
         auto t1 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t1.size (),9u);
