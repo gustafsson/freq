@@ -105,10 +105,11 @@ void BlockTextures::
 {
     auto w = global_block_textures_impl().write ();
     int c = w->getUseCount();
+
     if (aggressive)
-        w->setCapacity(c); // don't create more than 32 margin textures
+        w->setCapacity(c);
     else
-        w->setCapacityHint(std::min(c*2, c+32));
+        w->setCapacityHint(c);
 }
 
 
@@ -121,6 +122,8 @@ std::vector<GlTexture::ptr> BlockTextures::
     if (count > missing_textures.size ())
     {
         size_t need_more = count - missing_textures.size ();
+        INFO Log("getTextures: %d, had %d of %d readily available, allocating an additional %d textures")
+                % count % missing_textures.size () % w->getCapacity () % need_more;
         w->setCapacityHint (w->getCapacity () + need_more);
 
         auto T = w->getUnusedTextures(need_more);
@@ -203,14 +206,17 @@ BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height, unsigned i
 void BlockTexturesImpl::
         setCapacityHint (unsigned c)
 {
-    if (c < textures.size () && textures.size () < 3*c)
-    {
-        // ok
-        return;
-    }
+    size_t S = textures.size ();
+    unsigned C = 32; // 8 MB
+    unsigned lower_bound = c; // need at least this many
+    unsigned preferred = align_down(c,C)+C; // create margin textures
+    unsigned upper_bound = align_down(c,C)+2*C; // but more than this is unnecessary
 
-    // not ok, adjust
-    setCapacity(std::min(c*2, c+32)); // don't create more than 32 margin textures
+    if (lower_bound <= S && S <= upper_bound)
+        return;
+
+    INFO Log("hint: %d, textures.size (): %d") % c % textures.size ();
+    setCapacity(preferred);
 }
 
 
@@ -339,7 +345,7 @@ GlTexture::ptr BlockTexturesImpl::
     if (!v.empty ())
         return v[0];
 
-    setCapacity (getCapacity ()+1);
+    setCapacityHint (getCapacity ()+1);
     v = getUnusedTextures(1);
     if (!v.empty ())
         return v[0];
@@ -387,10 +393,10 @@ void BlockTexturesImpl::
 
         TRACE_PERF("It should provide already allocated textures fast");
         c = block_textures.getCapacity ();
-        EXCEPTION_ASSERT_EQUALS(c,20);
+        EXCEPTION_ASSERT_EQUALS(c,32);
 
-        t = block_textures.getUnusedTextures (11);
-        EXCEPTION_ASSERT_EQUALS(t.size (),11u);
+        t = block_textures.getUnusedTextures (23);
+        EXCEPTION_ASSERT_EQUALS(t.size (),23u);
 
         auto t1 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t1.size (),9u);
@@ -398,8 +404,7 @@ void BlockTexturesImpl::
         auto t2 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t2.size (),0u);
 
-        t.resize (5);
-
+        t1.resize (3); // shrink from 9 to 3, making 6 textures unused
         t2 = block_textures.getUnusedTextures (11);
         EXCEPTION_ASSERT_EQUALS(t2.size (),6u);
 
