@@ -82,6 +82,7 @@ BlockUpdater::
 BlockUpdater::
         ~BlockUpdater()
 {
+    delete p;
 }
 
 
