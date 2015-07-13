@@ -220,7 +220,7 @@ void BlockUpdater::
                         M, vertex_attrib, tex_attrib);
 
             vbo->draw(vertex_attrib, tex_attrib);
-            (void)tex_mapping; // suppress warning caused by RAII
+            (void)tex_mapping; // RAII
         }
 
         fbo_mapping.release ();

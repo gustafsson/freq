@@ -76,7 +76,7 @@ Fbo2Block::
 
 
 Fbo2Block::ScopeBinding Fbo2Block::
-        begin (Region br, GlTexture::ptr srcTexture, GlTexture::ptr drawTexture, glProjection& M)
+        begin (Region overlapping, GlTexture::ptr srcTexture, GlTexture::ptr drawTexture, glProjection& M)
 {
     EXCEPTION_ASSERT(!this->drawTexture);
     EXCEPTION_ASSERT(srcTexture);
@@ -89,8 +89,9 @@ Fbo2Block::ScopeBinding Fbo2Block::
     GlException_CHECK_ERROR ();
 
 #ifdef GL_ES_VERSION_2_0
-    texture2texture(srcTexture, drawTexture);
-    glBindFramebuffer(GL_FRAMEBUFFER, drawfbo);
+    if (srcTexture!=drawTexture)
+        texture2texture(srcTexture, drawTexture);
+    glBindFramebuffer(GL_FRAMEBUFFER, drawFbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
 #endif
@@ -99,19 +100,13 @@ Fbo2Block::ScopeBinding Fbo2Block::
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
-    blitTexture(srcTexture, readFbo);
+    if (srcTexture!=drawTexture)
+        blitTexture(srcTexture, readFbo);
 #endif
-
-    // Juggle texture coordinates so that border texels are centered on the border
-    float dt = br.time (), ds = br.scale ();
-    br.a.time -= 0.5*dt / w;
-    br.b.time += 0.5*dt / w;
-    br.a.scale -= 0.5*ds / h;
-    br.b.scale += 0.5*ds / h;
 
     // Setup matrices
     glViewport (0, 0, w, h);
-    glhOrtho (M.projection.v (), br.a.time, br.b.time, br.a.scale, br.b.scale, -10,10);
+    glhOrtho (M.projection.v (), overlapping.a.time, overlapping.b.time, overlapping.a.scale, overlapping.b.scale, -10,10);
     M.modelview = matrixd::identity();
     int vp[]{0,0,w,h};
     M.viewport = vp;
