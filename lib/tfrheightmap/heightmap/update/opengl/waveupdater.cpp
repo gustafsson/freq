@@ -104,8 +104,12 @@ void WaveUpdater::
             block->updater ()->queueUpdate (block, fc);
         }
 
+#ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
         block->updater ()->processUpdates (false);
+#endif
     }
+
+    glFlush();
 
     for (UpdateQueue::Job& j : myjobs) {
         INFO {

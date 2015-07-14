@@ -5,9 +5,6 @@
 
 #include <unordered_map>
 
-//#define INFO
-#define INFO if(0)
-
 using namespace std;
 
 namespace Heightmap {
@@ -37,15 +34,12 @@ void BlockUpdater::
     if (q.empty ())
         return;
 
-    INFO Log("blockupdater2: updating %d jobs") % q.size ();
-
     map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto i = q.begin (); i != q.end ();)
     {
         const pBlock& block = i->first;
         DrawFunc& draw = i->second;
 
-        INFO Log("blockupdater2: updating %s") % block->getVisibleRegion ();
         glProjection M;
         if (isMainThread)
             textures[block] = block->sourceTexture ();
@@ -74,8 +68,6 @@ void BlockUpdater::
     // if any new updates arrived during processing push them to the back of the queue
     for (auto a : q)
         w->push_back (std::move(a));
-
-    INFO Log("blockupdater2: queue has %d jobs") % w->size ();
 }
 
 

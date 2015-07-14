@@ -189,6 +189,7 @@ void BlockUpdater::
                                             sp.second->f32()));
 #endif
 
+    glFlush();
 
     // Draw from all chunks to each block
     for (auto& block_with_chunks : chunks_per_block)
@@ -209,7 +210,6 @@ void BlockUpdater::
 
             auto f =
                     [
-                        block,
                         shader = pbo2texture[chunk],
                         vbo = vbos[p],
                         amplitude_axis = vp->amplitude_axis ()
@@ -230,12 +230,15 @@ void BlockUpdater::
             block->updater ()->queueUpdate (block, f);
         }
 
+#ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
         block->updater ()->processUpdates (false);
+#endif
     }
 
 #ifdef USE_PBO
     source2pbo.clear ();
 #endif
+
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
 }

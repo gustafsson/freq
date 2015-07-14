@@ -70,7 +70,9 @@ void Block::
         setTextureReady()
 {
     texture_ready_ = true;
-//    updater_->processUpdates (true);
+#ifndef PAINT_BLOCKS_FROM_UPDATE_THREAD
+    updater_->processUpdates (true);
+#endif
 
     // release previously replaced texture, see below
     texture_hold_.reset ();

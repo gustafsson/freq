@@ -136,6 +136,10 @@ void Fbo2Block::
 #endif
 
     drawTexture.reset ();
+
+    glEnable (GL_DEPTH_TEST);
+    glEnable (GL_BLEND);
+    glEnable (GL_CULL_FACE);
 }
 
 
