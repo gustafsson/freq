@@ -1,6 +1,5 @@
 #include "fbo2block.h"
 #include "heightmap/uncaughtexception.h"
-#include "heightmap/update/updatequeue.h"
 #include "heightmap/render/blocktextures.h"
 #include "GlException.h"
 #include "log.h"
@@ -8,9 +7,7 @@
 #include "gl.h"
 
 namespace Heightmap {
-namespace Update {
-namespace OpenGL {
-
+namespace BlockManagement {
 
 #ifdef GL_ES_VERSION_2_0
 void texture2texture(GlTexture::ptr src, GlTexture::ptr dst)
@@ -122,7 +119,6 @@ Fbo2Block::ScopeBinding Fbo2Block::
 }
 
 
-
 void Fbo2Block::
         end()
 {
@@ -143,6 +139,5 @@ void Fbo2Block::
 }
 
 
-} // namespace OpenGL
-} // namespace Update
+} // namespace BlockManagement
 } // namespace Heightmap

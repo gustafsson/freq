@@ -6,13 +6,10 @@
 // gpumisc
 #include "datastorage.h"
 
-#ifndef SAWE_NO_MUTEX
-#include <QMutex>
-#endif
-
 class GlTexture;
 
 namespace Heightmap {
+    namespace BlockManagement { class BlockUpdater; }
 
     // FEATURE it would probably look awesome if new blocks weren't displayed
     // instantaneously but rather faded in from 0 or from their previous value.
@@ -28,6 +25,7 @@ namespace Heightmap {
     class Block {
     public:
         typedef std::shared_ptr<GlTexture> pGlTexture;
+
         Block( Reference, BlockLayout, VisualizationParams::const_ptr);
         Block( const Block&)=delete;
         Block& operator=( const Block&)=delete;
@@ -49,6 +47,8 @@ namespace Heightmap {
         // corrupted by having two threads writing to it at the same time.
         bool isTextureReady() const;
         void setTextureReady();
+
+        Heightmap::BlockManagement::BlockUpdater* updater();
 
         // POD properties
         const BlockLayout block_layout() const { return block_layout_; }
@@ -76,6 +76,7 @@ namespace Heightmap {
         pGlTexture texture_;
         pGlTexture texture_hold_; // @see setTextureReady
         bool texture_ready_ = false;
+        std::shared_ptr<Heightmap::BlockManagement::BlockUpdater> updater_;
 
     public:
         static void test();

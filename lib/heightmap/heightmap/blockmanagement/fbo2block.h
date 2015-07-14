@@ -1,5 +1,5 @@
-#ifndef HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
-#define HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
+#ifndef HEIGHTMAP_BLOCKMANAGEMENT_FBO2BLOCK_H
+#define HEIGHTMAP_BLOCKMANAGEMENT_FBO2BLOCK_H
 
 #include "heightmap/position.h"
 #include "glframebuffer.h"
@@ -7,8 +7,7 @@
 #include "glprojection.h"
 
 namespace Heightmap {
-namespace Update {
-namespace OpenGL {
+namespace BlockManagement {
 
 class Fbo2Block {
 public:
@@ -43,8 +42,7 @@ private:
 };
 
 
-} // namespace OpenGL
-} // namespace Update
+} // namespace BlockManagement
 } // namespace Heightmap
 
-#endif // HEIGHTMAP_UPDATE_OPENGL_FBO2BLOCK_H
+#endif // HEIGHTMAP_BLOCKMANAGEMENT_FBO2BLOCK_H

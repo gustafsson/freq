@@ -1,7 +1,7 @@
 #include "waveupdater.h"
 #include "heightmap/update/waveformblockupdater.h"
+#include "heightmap/blockmanagement/blockupdater.h"
 #include "heightmap/render/blocktextures.h"
-#include "fbo2block.h"
 #include "wave2fbo.h"
 #include "lazy.h"
 #include "log.h"
@@ -33,7 +33,6 @@ namespace OpenGL {
 class WaveUpdaterPrivate
 {
 public:
-    Fbo2Block fbo2block;
     Wave2Fbo wave2fbo;
 };
 
@@ -85,19 +84,27 @@ void WaveUpdater::
     }
 
     // Draw from all chunks to each block
-    std::map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto& f : buffers_per_block)
     {
         const pBlock& block = f.first;
-        glProjection M;
-        textures[block] = Heightmap::Render::BlockTextures::get1 ();
-        auto fbo_mapping = p->fbo2block.begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto& b : f.second)
-            p->wave2fbo.draw (M,b);
+        {
+            auto fc =
+                [
+                    wave2fbo = &p->wave2fbo,
+                    b
+                ]
+                (const glProjection& M)
+                {
+                    wave2fbo->draw (M,b);
+                    return true;
+                };
 
-        // suppress warning caused by RAII
-        (void)fbo_mapping;
+            block->updater ()->queueUpdate (block, fc);
+        }
+
+        block->updater ()->processUpdates (false);
     }
 
     for (UpdateQueue::Job& j : myjobs) {
@@ -108,11 +115,6 @@ void WaveUpdater::
 
         j.promise.set_value ();
     }
-
-    if (!textures.empty())
-        glFlush();
-    for (const auto& v : textures)
-        v.first->setTexture(v.second);
 }
 
 } // namespace OpenGL

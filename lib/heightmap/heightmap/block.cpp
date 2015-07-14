@@ -1,6 +1,7 @@
 #include "block.h"
 #include "GlTexture.h"
 #include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/blockupdater.h"
 
 #include "tasktimer.h"
 #include "log.h"
@@ -24,7 +25,8 @@ Block::
     visible_region_( RegionFactory(block_layout).getVisible (ref) ),
     sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
-    texture_(Render::BlockTextures::get1())
+    texture_(Render::BlockTextures::get1()),
+    updater_(new BlockManagement::BlockUpdater)
 {
     if (texture_)
     {
@@ -68,6 +70,7 @@ void Block::
         setTextureReady()
 {
     texture_ready_ = true;
+//    updater_->processUpdates (true);
 
     // release previously replaced texture, see below
     texture_hold_.reset ();
@@ -85,6 +88,13 @@ void Block::
         auto bind = texture_->getScopeBinding ();
         glGenerateMipmap (GL_TEXTURE_2D);
     }
+}
+
+
+Heightmap::BlockManagement::BlockUpdater* Block::
+        updater()
+{
+    return updater_.get();
 }
 
 

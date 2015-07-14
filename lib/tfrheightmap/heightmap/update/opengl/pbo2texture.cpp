@@ -119,7 +119,7 @@ void ShaderTexture::
 
 
 GlTexture& ShaderTexture::
-        getTexture ()
+        getTexture () const
 {
     EXCEPTION_ASSERT(chunk_texture_);
 
@@ -128,7 +128,7 @@ GlTexture& ShaderTexture::
 
 
 unsigned ShaderTexture::
-        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M)
+        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M) const
 {
     shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M);
     return shader_->program;
@@ -335,7 +335,7 @@ Pbo2Texture::Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pC
 
 
 Pbo2Texture::ScopeMap Pbo2Texture::
-        map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib)
+        map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
     Pbo2Texture::ScopeMap r;
     unsigned program = shader_.getProgram (normalization_factor, amplitude_axis, M);

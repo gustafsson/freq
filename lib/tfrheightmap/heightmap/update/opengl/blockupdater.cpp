@@ -2,8 +2,8 @@
 #include "heightmap/update/tfrblockupdater.h"
 #include "tfr/chunk.h"
 #include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/blockupdater.h"
 
-#include "fbo2block.h"
 #include "pbo2texture.h"
 #include "source2pbo.h"
 #include "texture2fbo.h"
@@ -57,7 +57,6 @@ class BlockUpdaterPrivate
 {
 public:
     Shaders shaders;
-    Fbo2Block fbo2block;
 
     TexturePool texturePool
     {
@@ -132,7 +131,7 @@ void BlockUpdater::
 #endif
 
     // Begin transfer of vbo data to gpu
-    unordered_map<Texture2Fbo::Params, lazy<Texture2Fbo>> vbos;
+    unordered_map<Texture2Fbo::Params, shared_ptr<Texture2Fbo>> vbos;
     for (const UpdateQueue::Job& j : myjobs)
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
@@ -150,7 +149,7 @@ void BlockUpdater::
             if (vbos.count (p))
                 continue;
 
-            vbos[p] = Texture2Fbo(p, job->normalization_factor);
+            vbos[p].reset(new Texture2Fbo(p, job->normalization_factor));
         }
     }
 
@@ -169,36 +168,32 @@ void BlockUpdater::
     }
 
     // Prepare to draw with transferred chunk
-    unordered_map<Tfr::pChunk, lazy<Pbo2Texture>> pbo2texture;
+    unordered_map<Tfr::pChunk, shared_ptr<Pbo2Texture>> pbo2texture;
 #ifndef USE_PBO
     for (const UpdateQueue::Job& j : myjobs)
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-        pbo2texture[job->chunk] = Pbo2Texture(p->shaders,
+        pbo2texture[job->chunk].reset(new Pbo2Texture(p->shaders,
                                               p->texturePool.get1 (),
                                               job->chunk,
                                               job->p,
-                                              job->type == TfrBlockUpdater::Job::Data_F32);
+                                              job->type == TfrBlockUpdater::Job::Data_F32));
     }
 #else
     for (auto& sp : source2pbo)
-        pbo2texture[sp.first] = Pbo2Texture(p->shaders,
+        pbo2texture[sp.first].reset(new Pbo2Texture(p->shaders,
                                             p->texturePool.get1 (),
                                             sp.first,
                                             sp.second->getPboWhenReady(),
-                                            sp.second->f32());
+                                            sp.second->f32()));
 #endif
 
+
     // Draw from all chunks to each block
-    std::map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto& block_with_chunks : chunks_per_block)
     {
         const pBlock& block = block_with_chunks.first;
-        INFO Log("blockupdater: updating %s") % block->getVisibleRegion ();
-        glProjection M;
-        textures[block] = Heightmap::Render::BlockTextures::get1 ();
-        auto fbo_mapping = p->fbo2block.begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto& chunk : block_with_chunks.second)
         {
@@ -212,18 +207,30 @@ void BlockUpdater::
                 continue;
             }
 
-            auto& vbo = vbos[p];
-            int vertex_attrib, tex_attrib;
-            auto tex_mapping = pbo2texture[chunk]->map(
-                        vbo->normalization_factor(),
-                        vp->amplitude_axis (),
-                        M, vertex_attrib, tex_attrib);
+            auto f =
+                    [
+                        block,
+                        shader = pbo2texture[chunk],
+                        vbo = vbos[p],
+                        amplitude_axis = vp->amplitude_axis ()
+                    ]
+                    (const glProjection& M)
+                    {
+                        int vertex_attrib, tex_attrib;
+                        auto tex_mapping = shader->map(
+                                    vbo->normalization_factor(),
+                                    amplitude_axis,
+                                    M, vertex_attrib, tex_attrib);
 
-            vbo->draw(vertex_attrib, tex_attrib);
-            (void)tex_mapping; // RAII
+                        vbo->draw(vertex_attrib, tex_attrib);
+                        (void)tex_mapping; // RAII
+                        return true;
+                    };
+
+            block->updater ()->queueUpdate (block, f);
         }
 
-        fbo_mapping.release ();
+        block->updater ()->processUpdates (false);
     }
 
 #ifdef USE_PBO
@@ -231,11 +238,6 @@ void BlockUpdater::
 #endif
     for (UpdateQueue::Job& j : myjobs)
         j.promise.set_value ();
-
-    if (!textures.empty ())
-        glFlush();
-    for (const auto& v : textures)
-        v.first->setTexture(v.second);
 }
 
 } // namespace OpenGL

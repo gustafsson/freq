@@ -164,7 +164,7 @@ Texture2Fbo::~Texture2Fbo()
 
 
 void Texture2Fbo::
-        draw (int vertex_attrib, int tex_attrib)
+        draw (int vertex_attrib, int tex_attrib) const
 {
     GlException_CHECK_ERROR ();
 
