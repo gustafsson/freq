@@ -4,8 +4,10 @@ QT += qml quick widgets multimedia
 
 CONFIG += c++11
 
-SOURCES += src/*.cpp
-HEADERS += src/*.h
+PWD = $$_PRO_FILE_PWD_
+
+SOURCES += $$PWD/src/*.cpp
+HEADERS += $$PWD/src/*.h
 
 # http://stackoverflow.com/questions/22783381/qaudiodecoder-no-service-found
 # decoding with QAudioDecoder is only supported on windows (mediafoundation backend) and linux (gstreamer backend)
