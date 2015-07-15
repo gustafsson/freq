@@ -55,18 +55,29 @@ public:
             Log("LargeMemoryPool: released %d blocks") % r;
     }
 
-    void cleanPool(size_t threshold) {
+    void cleanPool(bool aggressive) {
         std::unique_lock<std::mutex> l(m);
         size_t C = 0, used_count = 0, used_size = 0;
         std::vector<nfo> newblocks;
         newblocks.reserve (blocks.size ()*3/4);
+        std::map<size_t,int> N_unused;
+        std::map<size_t,int> N_unused2;
+
         for (auto i : blocks)
-            if (i.used || i.N < threshold)
+            N_unused[i.N] += !i.used;
+
+        for (auto i : blocks)
+        {
+            N_unused2[i.N] += !i.used;
+
+            if (i.used)
             {
-                if (i.used) {
-                    used_size += i.N;
-                    used_count ++;
-                }
+                used_size += i.N;
+                used_count ++;
+                newblocks.push_back (i);
+            }
+            else if (!aggressive && N_unused2[i.N]*2 > N_unused[i.N])
+            {
                 newblocks.push_back (i);
             }
             else
@@ -74,14 +85,14 @@ public:
                 C += i.N;
                 delete [](char*)i.p;
             }
+        }
 
         blocks.swap (newblocks);
         T -= C;
         if (0 < C)
-            Log("LargeMemoryPool: released %s in %d blocks smaller than %s. New total %s in %d blocks. Used: %s in %d blocks")
+            Log("LargeMemoryPool: released %s in %d blocks. New total %s in %d blocks. Used: %s in %d blocks")
                 % DataStorageVoid::getMemorySizeText (C)
                 % (newblocks.size() - blocks.size ())
-                % DataStorageVoid::getMemorySizeText (threshold)
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ()
                 % DataStorageVoid::getMemorySizeText (used_size)
@@ -109,6 +120,6 @@ void lmp_free(void* p, size_t n) {
         pool.releaseBlock (p);
 }
 
-void lmp_gc(size_t threshold) {
-    pool.cleanPool (threshold);
+void lmp_gc(bool aggressive) {
+    pool.cleanPool (aggressive);
 }

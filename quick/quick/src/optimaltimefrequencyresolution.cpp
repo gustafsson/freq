@@ -126,7 +126,7 @@ void OptimalTimeFrequencyResolution::
         render_model.set_transform_desc (newt);
         emit squircle_->displayedTransformDetailsChanged();
 
-        lmp_gc (16 << 20); // 16 MB, could use a lower value if it should be more aggressive
+        lmp_gc ();
     }
 }
 
