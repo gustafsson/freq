@@ -5,8 +5,6 @@
 #include "heightmap/block.h"
 #include "GlTexture.h"
 
-class GlFrameBuffer;
-
 namespace Heightmap {
 namespace BlockManagement {
 namespace Merge {
@@ -33,7 +31,7 @@ public:
 
 private:
     const BlockCache::const_ptr cache_;
-    std::shared_ptr<GlFrameBuffer> fbo_;
+    unsigned fbo_;
     unsigned vbo_;
     GlTexture::ptr tex_;
     const BlockLayout block_layout_;
