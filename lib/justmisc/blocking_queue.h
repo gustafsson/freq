@@ -75,6 +75,21 @@ public:
         return t;
     }
 
+    /**
+     * @brief pop0 does not block but returns T() if the queue is empty.
+     * @return
+     */
+    T pop0() {
+        std::unique_lock<std::mutex> l(m);
+
+        if (q.empty ())
+            return T();
+
+        T t( std::move(q.front()) );
+        q.pop ();
+        return t;
+    }
+
     void push(const T& t) {
         std::unique_lock<std::mutex> l(m);
         q.push (t);
