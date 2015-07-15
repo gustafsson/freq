@@ -7,7 +7,10 @@
 #define LOG_ALLOCATION_SUMMARY
 //#define LOG_ALLOCATION_SUMMARY if(0)
 
-std::map<size_t,size_t> allocation_summary;
+using namespace std;
+
+map<size_t,size_t> request_summary;
+map<size_t,size_t> allocation_summary;
 
 // custom memory allocator for a few (<20) large (>1 MB) arrays
 class LargeMemoryPool {
@@ -23,17 +26,34 @@ public:
 
         LOG_ALLOCATION_SUMMARY
         {
-            TaskInfo ti("Total number of allocations of each size (rounded up to nearest power of 2)");
+            TaskInfo ti("Block counts #in use / #allocated / #allocations / #requests of each size (rounded up to nearest power of 2)");
 
-            for (decltype(allocation_summary)::value_type v : allocation_summary)
-                Log("%s: %llu") % DataStorageVoid::getMemorySizeText (v.first) % v.second;
+            map<size_t,size_t> inuse;
+            map<size_t,size_t> allocated;
+
+            for (auto& i : blocks)
+            {
+                inuse[i.N]+=i.used;
+                allocated[i.N]++;
+            }
+
+            for (pair<size_t,size_t> v : allocation_summary)
+            {
+                size_t n = v.first;
+                size_t i = inuse.count (n) ? inuse[n] : 0;
+                size_t a = allocated.count (n) ? allocated[n] : 0;
+                Log("%s: %llu / %llu / %llu / %llu")
+                        % DataStorageVoid::getMemorySizeText (n)
+                        % i % a
+                        % v.second
+                        % request_summary[n];
+            }
         }
     }
 
 
     void* getBlock(size_t n) {
-        std::unique_lock<std::mutex> l(m);
-//        n = std::max(N,n);
+        unique_lock<mutex> l(m);
         n = spo2g (n-1);
 
         for (auto& i : blocks)
@@ -44,6 +64,8 @@ public:
                 return i.p;
             }
         }
+
+        LOG_ALLOCATION_SUMMARY allocation_summary[n]++;
 
         Timer t;
         void* p = new char[n];
@@ -60,7 +82,7 @@ public:
 
 
     void releaseBlock(void* p) {
-        std::unique_lock<std::mutex> l(m);
+        unique_lock<mutex> l(m);
         int r = 0;
         for (auto& i : blocks)
         {
@@ -75,12 +97,12 @@ public:
 
     void cleanPool(bool aggressive) {
         Timer t;
-        std::unique_lock<std::mutex> l(m);
+        unique_lock<mutex> l(m);
         size_t C = 0, used_count = 0, used_size = 0;
-        std::vector<nfo> newblocks;
+        vector<nfo> newblocks;
         newblocks.reserve (blocks.size ()*3/4);
-        std::map<size_t,int> N_unused;
-        std::map<size_t,int> N_unused2;
+        map<size_t,int> N_unused;
+        map<size_t,int> N_unused2;
 
         for (auto i : blocks)
             N_unused[i.N] += !i.used;
@@ -124,16 +146,16 @@ public:
     size_t T = 0;
 
 private:
-    std::mutex m;
+    mutex m;
     struct nfo { void* p; size_t N; bool used; };
-    std::vector<nfo> blocks;
+    vector<nfo> blocks;
 };
 
 
 LargeMemoryPool pool {1 << 10};
 
 void* lmp_malloc(size_t n) {
-    LOG_ALLOCATION_SUMMARY allocation_summary[spo2g (n-1)]++;
+    LOG_ALLOCATION_SUMMARY request_summary[spo2g (n-1)]++;
 
     if (n<=pool.N_threshold)
         return new char[n];
