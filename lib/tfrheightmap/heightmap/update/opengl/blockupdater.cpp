@@ -160,6 +160,27 @@ void BlockUpdater::
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
+        auto sz = job->chunk->transform_data->size ();
+        int w = std::min(gl_max_texture_size(), (int)spo2g(sz.width));
+        int h = std::min(gl_max_texture_size(), (int)spo2g(sz.height));
+        int tw = w*int_div_ceil (sz.height,h);
+        int th = h*int_div_ceil (sz.width,w);
+        EXCEPTION_ASSERT_LESS_OR_EQUAL(tw, gl_max_texture_size());
+        EXCEPTION_ASSERT_LESS_OR_EQUAL(th, gl_max_texture_size());
+
+        // Resize texture pool if it's too small or way too big.
+        if (!(tw <= p->texturePool.width () && p->texturePool.width () <= 4*tw &&
+              th <= p->texturePool.height () && p->texturePool.height () <= 4*th))
+        {
+            p->texturePool = TexturePool {
+                tw,
+                th,
+                TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
+                    ? TexturePool::Float32
+                    : TexturePool::Float16
+            };
+        }
+
         pbo2texture[job->chunk].reset(new Pbo2Texture(p->shaders,
                                               p->texturePool.get1 (),
                                               job->chunk,
