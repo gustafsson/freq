@@ -34,11 +34,16 @@ void BlockUpdater::
     if (q.empty ())
         return;
 
+    // draw multiple updates to a block together
+    map<pBlock, list<DrawFunc>> p;
+    for (auto i = q.begin (); i != q.end (); i++)
+        p[i->first].push_back(move(i->second));
+
+    list<pair<pBlock, DrawFunc>> q_failed;
     map<Heightmap::pBlock,GlTexture::ptr> textures;
-    for (auto i = q.begin (); i != q.end ();)
+    for (auto i = p.begin (); i != p.end (); i++)
     {
         const pBlock& block = i->first;
-        DrawFunc& draw = i->second;
 
         glProjection M;
         if (isMainThread)
@@ -48,11 +53,14 @@ void BlockUpdater::
 
         auto fbo_mapping = fbo2block->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
-        draw(M);
-        if (draw.get_future().get())
-            i = q.erase (i);
-        else
-            i++;
+        for (auto j = i->second.begin (); j != i->second.end (); j++)
+        {
+            DrawFunc& draw = *j;
+
+            draw(M);
+            if (!draw.get_future().get())
+                q_failed.push_back (pair<pBlock, DrawFunc>(block,move(*j)));
+        }
 
         fbo_mapping.release ();
     }
@@ -62,10 +70,10 @@ void BlockUpdater::
 
     // reinsert failed draw attempts
     auto w = queue_.write ();
-    w->swap (q);
+    w->swap (q_failed);
 
     // if any new updates arrived during processing push them to the back of the queue
-    for (auto& a : q)
+    for (auto& a : q_failed)
         w->push_back (std::move(a));
 }
 
