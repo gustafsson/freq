@@ -44,6 +44,8 @@ public:
 
 private:
     shared_state<std::list<std::pair<pBlock, DrawFunc>>> queue_;
+    // keep DrawFunc in q_success_ until next processUpdates to not release resources before glFlush between frames
+    std::list<std::pair<pBlock, DrawFunc>> q_success_;
     Heightmap::BlockManagement::Fbo2Block* fbo2block;
 };
 

@@ -39,6 +39,7 @@ void BlockUpdater::
     for (auto i = q.begin (); i != q.end (); i++)
         p[i->first].push_back(move(i->second));
 
+    q_success_.clear ();
     list<pair<pBlock, DrawFunc>> q_failed;
     map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto i = p.begin (); i != p.end (); i++)
@@ -58,8 +59,8 @@ void BlockUpdater::
             DrawFunc& draw = *j;
 
             draw(M);
-            if (!draw.get_future().get())
-                q_failed.push_back (pair<pBlock, DrawFunc>(block,move(*j)));
+            (draw.get_future().get() ? q_success_ : q_failed)
+               .push_back (pair<pBlock, DrawFunc>(block,move(*j)));
         }
 
         fbo_mapping.release ();
