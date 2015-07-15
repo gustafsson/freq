@@ -5,11 +5,16 @@
 // custom memory allocator for a few (<20) large (>1 MB) arrays
 class LargeMemoryPool {
 public:
-    LargeMemoryPool(size_t N) : N(N), N_threshold(N/10) {
-        Log("LargeMemoryPool: N=%s, N_threshold=%s") % N % N_threshold;
+    LargeMemoryPool(size_t N_threshold) : N_threshold(N_threshold) {
+        Log("LargeMemoryPool: N_threshold=%s") % N_threshold;
     }
 
-    const size_t N;
+    ~LargeMemoryPool() {
+        Log("~LargeMemoryPool: %s in %d blocks still allocated")
+                % DataStorageVoid::getMemorySizeText (T)
+                % blocks.size ();
+    }
+
     const size_t N_threshold;
     size_t T = 0;
 
@@ -30,7 +35,7 @@ public:
         void* p = new char[n];
         blocks.push_back (nfo{p,n,true});
         T += n;
-        if (T > 100*N) Log("cpu: allocated %s, total %s in %d blocks")
+        if (T > 1000*N_threshold) Log("LargeMemoryPool: allocated %s, total %s in %d blocks")
                 % DataStorageVoid::getMemorySizeText (n)
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ();
@@ -39,11 +44,15 @@ public:
 
     void releaseBlock(void* p) {
         std::unique_lock<std::mutex> l(m);
+        int r = 0;
         for (auto& i : blocks)
         {
             if (i.p == p)
-                i.used = false;
+                i.used = false, r++;
         }
+
+        if (r!=1)
+            Log("LargeMemoryPool: released %d blocks") % r;
     }
 
     void cleanPool(size_t threshold) {
@@ -69,9 +78,10 @@ public:
         blocks.swap (newblocks);
         T -= C;
         if (0 < C)
-            Log("cpu: clean pool %s in %d blocks, new total %s in %d blocks. Used: %s in %d blocks")
+            Log("LargeMemoryPool: released %s in %d blocks smaller than %s. New total %s in %d blocks. Used: %s in %d blocks")
                 % DataStorageVoid::getMemorySizeText (C)
                 % (newblocks.size() - blocks.size ())
+                % DataStorageVoid::getMemorySizeText (threshold)
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ()
                 % DataStorageVoid::getMemorySizeText (used_size)
@@ -84,7 +94,7 @@ public:
 };
 
 
-LargeMemoryPool pool {1 << 20};
+LargeMemoryPool pool {1 << 17};
 
 void* lmp_malloc(size_t n) {
     if (n<=pool.N_threshold)
