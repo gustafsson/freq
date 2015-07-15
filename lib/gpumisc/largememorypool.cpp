@@ -125,7 +125,7 @@ private:
 };
 
 
-LargeMemoryPool pool {1 << 17};
+LargeMemoryPool pool {1 << 10};
 
 void* lmp_malloc(size_t n) {
     LOG_ALLOCATION_SUMMARY allocation_summary[spo2g (n-1)]++;
