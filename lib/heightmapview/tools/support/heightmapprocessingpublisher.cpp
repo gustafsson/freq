@@ -213,7 +213,7 @@ void HeightmapProcessingPublisher::
     for ( auto cp : C )
         cp->runGarbageCollection(true);
 
-    lmp_gc ();
+    lmp_gc (true);
 }
 
 
