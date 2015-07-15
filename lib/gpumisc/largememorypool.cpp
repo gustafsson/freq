@@ -1,6 +1,12 @@
 #include "largememorypool.h"
 #include "neat_math.h"
+#include "tasktimer.h"
 #include <mutex>
+
+#define LOG_ALLOCATION_SUMMARY
+//#define LOG_ALLOCATION_SUMMARY if(0)
+
+std::map<size_t,size_t> allocation_summary;
 
 // custom memory allocator for a few (<20) large (>1 MB) arrays
 class LargeMemoryPool {
@@ -13,10 +19,16 @@ public:
         Log("~LargeMemoryPool: %s in %d blocks still allocated")
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ();
+
+        LOG_ALLOCATION_SUMMARY
+        {
+            TaskInfo ti("Total number of allocations of each size (rounded up to nearest power of 2)");
+
+            for (decltype(allocation_summary)::value_type v : allocation_summary)
+                Log("%s: %llu") % DataStorageVoid::getMemorySizeText (v.first) % v.second;
+        }
     }
 
-    const size_t N_threshold;
-    size_t T = 0;
 
     void* getBlock(size_t n) {
         std::unique_lock<std::mutex> l(m);
@@ -35,12 +47,14 @@ public:
         void* p = new char[n];
         blocks.push_back (nfo{p,n,true});
         T += n;
-        if (T > 1000*N_threshold) Log("LargeMemoryPool: allocated %s, total %s in %d blocks")
+        if (n >= 1 << 23 && T >= 1 << 30) // allocating >=8 MB when the total is >=100 MB
+            Log("LargeMemoryPool: allocated %s, total %s in %d blocks")
                 % DataStorageVoid::getMemorySizeText (n)
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ();
         return p;
     }
+
 
     void releaseBlock(void* p) {
         std::unique_lock<std::mutex> l(m);
@@ -54,6 +68,7 @@ public:
         if (r!=1)
             Log("LargeMemoryPool: released %d blocks") % r;
     }
+
 
     void cleanPool(bool aggressive) {
         std::unique_lock<std::mutex> l(m);
@@ -99,6 +114,11 @@ public:
                 % used_count;
     }
 
+
+    const size_t N_threshold;
+    size_t T = 0;
+
+private:
     std::mutex m;
     struct nfo { void* p; size_t N; bool used; };
     std::vector<nfo> blocks;
@@ -108,6 +128,8 @@ public:
 LargeMemoryPool pool {1 << 17};
 
 void* lmp_malloc(size_t n) {
+    LOG_ALLOCATION_SUMMARY allocation_summary[spo2g (n-1)]++;
+
     if (n<=pool.N_threshold)
         return new char[n];
     return pool.getBlock (n);
