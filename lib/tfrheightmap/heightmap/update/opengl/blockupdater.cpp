@@ -25,7 +25,7 @@
 
 #ifndef GL_ES_VERSION_2_0
 // the current implementation of PBOs doesn't reuse allocated memory
-// #define USE_PBO
+ #define USE_PBO
 #endif
 
 using namespace std;
@@ -160,7 +160,13 @@ void BlockUpdater::
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-        auto sz = job->chunk->transform_data->size ();
+        auto chunk = job->chunk;
+#else
+    for (auto& sp : source2pbo)
+    {
+        auto chunk = sp.first;
+#endif
+        auto sz = chunk->transform_data->size ();
         int w = std::min(gl_max_texture_size(), (int)spo2g(sz.width));
         int h = std::min(gl_max_texture_size(), (int)spo2g(sz.height));
         int tw = w*int_div_ceil (sz.height,h);
@@ -181,20 +187,20 @@ void BlockUpdater::
             };
         }
 
+#ifndef USE_PBO
         pbo2texture[job->chunk].reset(new Pbo2Texture(p->shaders,
                                               p->texturePool.get1 (),
-                                              job->chunk,
+                                              chunk,
                                               job->p,
                                               job->type == TfrBlockUpdater::Job::Data_F32));
-    }
 #else
-    for (auto& sp : source2pbo)
         pbo2texture[sp.first].reset(new Pbo2Texture(p->shaders,
                                             p->texturePool.get1 (),
-                                            sp.first,
+                                            chunk,
                                             sp.second->getPboWhenReady(),
                                             sp.second->f32()));
 #endif
+    }
 
     glFlush();
 
