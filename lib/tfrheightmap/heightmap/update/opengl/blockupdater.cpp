@@ -208,7 +208,7 @@ void BlockUpdater::
                 continue;
             }
 
-            auto f =
+            packaged_task<bool(const glProjection& M)> f(
                     [
                         shader = pbo2texture[chunk],
                         vbo = vbos[p],
@@ -225,9 +225,9 @@ void BlockUpdater::
                         vbo->draw(vertex_attrib, tex_attrib);
                         (void)tex_mapping; // RAII
                         return true;
-                    };
+                    });
 
-            block->updater ()->queueUpdate (block, f);
+            block->updater ()->queueUpdate (block, move(f));
         }
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD

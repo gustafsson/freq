@@ -56,68 +56,41 @@ void WaveUpdater::
         processJobs( queue<UpdateQueue::Job>& jobs )
 {
     // Select subset to work on, must consume jobs in order
-    vector<UpdateQueue::Job> myjobs;
     while (!jobs.empty ())
     {
         UpdateQueue::Job& j = jobs.front ();
-        if (dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ()))
-        {
-            myjobs.push_back (move(j)); // Steal it
-            jobs.pop ();
-        }
-        else
-            break;
-    }
-
-    // Remap block -> buffer (instead of buffer -> blocks) because we want to draw all
-    // buffers to each block, instead of each buffer to all blocks.
-    //
-    // The chunks must be drawn in order, thus a "vector<Tfr::pMonoBuffer>" is required
-    // to preserve ordering.
-    unordered_map<pBlock, vector<Signal::pMonoBuffer>> buffers_per_block;
-    for (const UpdateQueue::Job& j : myjobs)
-    {
         auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
+        if (!job)
+            break;
 
         for (pBlock block : j.intersecting_blocks)
-            buffers_per_block[block].push_back(job->b);
-    }
-
-    // Draw from all chunks to each block
-    for (auto& f : buffers_per_block)
-    {
-        const pBlock& block = f.first;
-
-        for (auto& b : f.second)
         {
-            auto fc =
+            packaged_task<bool(const glProjection& M)> f{
                 [
                     wave2fbo = &p->wave2fbo,
-                    b
+                    b = job->b
                 ]
-                (const glProjection& M)
+                (const glProjection& M) mutable
                 {
                     wave2fbo->draw (M,b);
-                    return true;
-                };
 
-            block->updater ()->queueUpdate (block, fc);
-        }
+                    return true;
+                }};
+
+            block->updater ()->queueUpdate (block, move(f));
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
-        block->updater ()->processUpdates (false);
+            block->updater ()->processUpdates (false);
 #endif
-    }
+        }
 
-    glFlush();
-
-    for (UpdateQueue::Job& j : myjobs) {
         INFO {
             auto job = dynamic_cast<const WaveformBlockUpdater::Job*>(j.updatejob.get ());
             Log("WaveUpdater finished %s") % job->b->getInterval();
         }
 
         j.promise.set_value ();
+        jobs.pop ();
     }
 }
 

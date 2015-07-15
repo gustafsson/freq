@@ -48,15 +48,14 @@ void BlockUpdater::
 
         auto fbo_mapping = fbo2block->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
-        if (draw(M))
+        draw(M);
+        if (draw.get_future().get())
             i = q.erase (i);
         else
             i++;
 
         fbo_mapping.release ();
     }
-
-    glFlush();
 
     for (const auto& v : textures)
         v.first->setTexture(v.second);
@@ -66,7 +65,7 @@ void BlockUpdater::
     w->swap (q);
 
     // if any new updates arrived during processing push them to the back of the queue
-    for (auto a : q)
+    for (auto& a : q)
         w->push_back (std::move(a));
 }
 

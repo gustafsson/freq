@@ -4,7 +4,8 @@
 #include "glprojection.h"
 #include "shared_state.h"
 
-#include <functional>
+#include <future>
+
 #include <list>
 #include <boost/shared_ptr.hpp>
 
@@ -22,7 +23,7 @@ class BlockUpdater
 {
 public:
     typedef std::shared_ptr<BlockUpdater> Ptr;
-    typedef std::function<bool(const glProjection& M)> DrawFunc;
+    typedef std::packaged_task<bool(const glProjection& M)> DrawFunc;
     typedef boost::shared_ptr<Heightmap::Block> pBlock;
 
     BlockUpdater();
