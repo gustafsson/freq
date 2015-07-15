@@ -173,9 +173,6 @@ void Collection::
     runGarbageCollection(false);
 
     _frame_counter++;
-
-    if (tt.elapsedTime ()>0.1)
-        Log("!!! next_frame took a long time");
 }
 
 
