@@ -131,14 +131,14 @@ void BlockUpdater::
 #endif
 
     // Begin transfer of vbo data to gpu
-    unordered_map<Texture2Fbo::Params, shared_ptr<Texture2Fbo>> vbos;
+    unordered_map<Texture2Fbo::Params, shared_ptr<Texture2Fbo>> vbos_p;
+    unordered_map<pBlock, shared_ptr<Texture2Fbo>> vbos;
     for (const UpdateQueue::Job& j : myjobs)
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-        if (!j.intersecting_blocks.empty ())
+        for (pBlock block : j.intersecting_blocks)
         {
-            pBlock block = j.intersecting_blocks.front ();
             auto vp = block->visualization_params();
 
             Texture2Fbo::Params p(job->chunk,
@@ -146,25 +146,11 @@ void BlockUpdater::
                                   block->block_layout ());
 
             // Most vbo's will look the same, only create as many as needed.
-            if (vbos.count (p))
-                continue;
+            if (0==vbos_p.count (p))
+                vbos_p[p].reset(new Texture2Fbo(p, job->normalization_factor));
 
-            vbos[p].reset(new Texture2Fbo(p, job->normalization_factor));
+            vbos[block] = vbos_p[p];
         }
-    }
-
-    // Remap block -> chunks (instead of chunk -> blocks) because we want to draw all
-    // chunks to each block, instead of each chunk to all blocks.
-    //
-    // The chunks must be drawn in order, thus a "vector<Tfr::pChunk>" is required
-    // to preserve ordering.
-    unordered_map<pBlock, vector<Tfr::pChunk>> chunks_per_block;
-    for (const UpdateQueue::Job& j : myjobs)
-    {
-        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
-
-        for (pBlock block : j.intersecting_blocks)
-            chunks_per_block[block].push_back(job->chunk);
     }
 
     // Prepare to draw with transferred chunk
@@ -191,28 +177,18 @@ void BlockUpdater::
 
     glFlush();
 
-    // Draw from all chunks to each block
-    for (auto& block_with_chunks : chunks_per_block)
+    // Draw to each block
+    for (const UpdateQueue::Job& j : myjobs)
     {
-        const pBlock& block = block_with_chunks.first;
+        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
-        for (auto& chunk : block_with_chunks.second)
+        for (pBlock block : j.intersecting_blocks)
         {
-            auto vp = block->visualization_params();
-            Texture2Fbo::Params p(chunk, vp->display_scale (), block->block_layout ());
-
-            // If something has changed the vbo is out-of-date, skip this
-            if (!vbos.count (p))
-            {
-                Log("blockupdater: skipping update of block: %s") % block->getVisibleRegion ();
-                continue;
-            }
-
             packaged_task<bool(const glProjection& M)> f(
                     [
-                        shader = pbo2texture[chunk],
-                        vbo = vbos[p],
-                        amplitude_axis = vp->amplitude_axis ()
+                        shader = pbo2texture[job->chunk],
+                        vbo = vbos[block],
+                        amplitude_axis = block->visualization_params()->amplitude_axis ()
                     ]
                     (const glProjection& M)
                     {
@@ -228,11 +204,11 @@ void BlockUpdater::
                     });
 
             block->updater ()->queueUpdate (block, move(f));
-        }
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
-        block->updater ()->processUpdates (false);
+            block->updater ()->processUpdates (false);
 #endif
+        }
     }
 
 #ifdef USE_PBO
