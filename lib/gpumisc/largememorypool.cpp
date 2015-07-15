@@ -1,6 +1,7 @@
 #include "largememorypool.h"
 #include "neat_math.h"
 #include "tasktimer.h"
+#include "timer.h"
 #include <mutex>
 
 #define LOG_ALLOCATION_SUMMARY
@@ -44,14 +45,16 @@ public:
             }
         }
 
+        Timer t;
         void* p = new char[n];
         blocks.push_back (nfo{p,n,true});
         T += n;
-        if (n >= 1 << 23 && T >= 1 << 30) // allocating >=8 MB when the total is >=100 MB
-            Log("LargeMemoryPool: allocated %s, total %s in %d blocks")
+        if (t.elapsed () > 10e-3 || (n >= 1 << 23 && T >= 1 << 30)) // allocating >=8 MB when the total is >=100 MB
+            Log("LargeMemoryPool: allocated %s, total %s in %d blocks in %s")
                 % DataStorageVoid::getMemorySizeText (n)
                 % DataStorageVoid::getMemorySizeText (T)
-                % blocks.size ();
+                % blocks.size ()
+                % TaskTimer::timeToString (t.elapsed ());
         return p;
     }
 
@@ -71,6 +74,7 @@ public:
 
 
     void cleanPool(bool aggressive) {
+        Timer t;
         std::unique_lock<std::mutex> l(m);
         size_t C = 0, used_count = 0, used_size = 0;
         std::vector<nfo> newblocks;
@@ -104,14 +108,15 @@ public:
 
         blocks.swap (newblocks);
         T -= C;
-        if (0 < C)
-            Log("LargeMemoryPool: released %s in %d blocks. New total %s in %d blocks. Used: %s in %d blocks")
+        if (1 << 24 < C || t.elapsed () > 10e-3)
+            Log("LargeMemoryPool: released %s in %d blocks. New total %s in %d blocks. Used: %s in %d blocks. Took %s")
                 % DataStorageVoid::getMemorySizeText (C)
                 % (newblocks.size() - blocks.size ())
                 % DataStorageVoid::getMemorySizeText (T)
                 % blocks.size ()
                 % DataStorageVoid::getMemorySizeText (used_size)
-                % used_count;
+                % used_count
+                % TaskTimer::timeToString (t.elapsed ());
     }
 
 
