@@ -8,8 +8,6 @@
 #include <sstream>
 #include <limits.h>
 
-#include <boost/foreach.hpp>
-
 namespace Signal {
 
 const IntervalType Interval::IntervalType_MIN = std::numeric_limits<IntervalType>::min();
@@ -109,7 +107,7 @@ Intervals::
 Intervals& Intervals::
         operator |= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r, b)
+    for (const Interval& r: b)
         operator |= ( r );
     return *this;
 }
@@ -162,7 +160,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    BOOST_FOREACH (const Interval& r,  b)
+    for (const Interval& r:  b)
         operator-=( r );
     return *this;
 }
@@ -207,8 +205,7 @@ Intervals& Intervals::
 
             // Else, error
             } else {
-                EXCEPTION_ASSERT( false );
-                throw std::logic_error("Shouldn't reach here");
+                EXCEPTION_ASSERTX( false, "Shouldn't reach here" );
             }
         } else {
             break;
@@ -272,16 +269,10 @@ Intervals& Intervals::
     // TODO optimize
     Intervals rebuild;
 
-    BOOST_FOREACH (const Interval& r,  b) {
-        Intervals copy = *this;
-        copy &= r;
-        rebuild |= copy;
-    }
+    for (const Interval& r : b)
+        rebuild |= Intervals{*this} &= r;
 
-    *this = rebuild;
-
-    if (b.empty())
-        clear();
+    this->swap (rebuild);
 
     return *this;
 }
@@ -329,7 +320,7 @@ Intervals& Intervals::
 
             // Else, error
             } else {
-                throw std::logic_error("Shouldn't reach here");
+                EXCEPTION_ASSERTX( false, "Shouldn't reach here" );
             }
             itr++;
         }
@@ -478,7 +469,7 @@ Intervals Intervals::
         enlarge( IntervalType dt ) const
 {
     Intervals I;
-    BOOST_FOREACH (Interval r, *this)
+    for (Interval r: *this)
     {
         if (r.first > Interval::IntervalType_MIN + dt)
             r.first -= dt;
@@ -500,7 +491,7 @@ Intervals Intervals::
         shrink( IntervalType dt ) const
 {
     Intervals I;
-    BOOST_FOREACH (Interval r, *this)
+    for (Interval r: *this)
     {
         if (r.first > Interval::IntervalType_MIN)
         {
@@ -527,7 +518,7 @@ UnsignedIntervalType Intervals::
 {
     UnsignedIntervalType c = 0;
 
-    BOOST_FOREACH (const Interval& r, *this)
+    for (const Interval& r: *this)
     {
         c += r.count();
     }
@@ -562,7 +553,7 @@ std::string Intervals::
     std::stringstream ss;
     ss << "{";
 
-    BOOST_FOREACH (const Interval& r, *this)
+    for (const Interval& r: *this)
     {
         if (r != *begin())
             ss << ", ";
@@ -678,6 +669,14 @@ void Intervals::
         EXCEPTION_ASSERT_EQUALS(str(format("%s") % (Intervals(86325,91136) >>= -265303)), "[351628, 356439)4811#" );
     }
 
+    {
+        Intervals A = ~(Interval(81899, 169903) | Interval(170099, 623701));
+        Intervals B(0, 182701);
+        EXCEPTION_ASSERT_EQUALS(~A & B, Interval(81899, 169903) | Interval(170099, 182701));
+
+        Intervals D = Interval(-6496, 82097) | Interval(169903, 170099);
+        EXCEPTION_ASSERT_EQUALS(D |= ~A & B, Interval(-6496, 182701));
+    }
 }
 
 
