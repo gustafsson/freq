@@ -28,6 +28,21 @@ BlockUpdater::~BlockUpdater()
 void BlockUpdater::
     processUpdates(bool isMainThread)
 {
+    if (!isMainThread) {
+        /**
+          * MergerTexture needs to prepare the block when it is about to be rendered.
+          * Which is a tad late and requires a new FBO and then a swap back to the main FBO.
+          *
+          * Then after a glFlush the update thread can write to the block, but not before
+          * the glFlush as the merged texture might not be ready. updater_->processUpdates
+          * should check this and put the update on hold until showNewTexture has been called,
+          * indicating that a new frame has begun an thus that there has been a glFlush since
+          * MergerTexture.
+          */
+
+        EXCEPTION_ASSERTX(false, "Painting on blocks from the update thread is not implemented");
+    }
+
     list<pair<pBlock, DrawFunc>> q;
     queue_->swap(q);
 
