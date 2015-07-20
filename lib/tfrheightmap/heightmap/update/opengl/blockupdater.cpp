@@ -95,11 +95,6 @@ void BlockUpdater::
         UpdateQueue::Job& j = jobs.front ();
         if (dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ()))
         {
-            if (myjobs.size () == p->texturePool.size()) {
-                processJobs(myjobs);
-                myjobs.clear ();
-            }
-
             myjobs.push_back (std::move(j)); // Steal it
             jobs.pop ();
         }
