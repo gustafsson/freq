@@ -8,9 +8,6 @@
 //#define TIME_BLOCKFACTORY
 #define TIME_BLOCKFACTORY if(0)
 
-//#define INFO_BLOCKFACTORY
-#define INFO_BLOCKFACTORY if(0)
-
 
 using namespace boost;
 using namespace Signal;

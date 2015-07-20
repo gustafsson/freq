@@ -130,6 +130,7 @@ public:
 
         blocks.swap (newblocks);
         T -= C;
+
         if (1 << 24 < C || t.elapsed () > 10e-3)
             Log("LargeMemoryPool: released %s in %d blocks. New total %s in %d blocks. Used: %s in %d blocks. Took %s")
                 % DataStorageVoid::getMemorySizeText (C)
