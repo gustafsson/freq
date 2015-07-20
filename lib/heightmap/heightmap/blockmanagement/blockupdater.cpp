@@ -58,8 +58,7 @@ void BlockUpdater::
         {
             DrawFunc& draw = *j;
 
-            draw(M);
-            (draw.get_future().get() ? q_success_ : q_failed)
+            (draw(M) ? q_success_ : q_failed)
                .push_back (pair<pBlock, DrawFunc>(block,move(*j)));
         }
 

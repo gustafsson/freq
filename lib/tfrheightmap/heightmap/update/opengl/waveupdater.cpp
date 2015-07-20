@@ -63,9 +63,7 @@ void WaveUpdater::
         if (!job)
             break;
 
-        for (pBlock block : j.intersecting_blocks)
-        {
-            packaged_task<bool(const glProjection& M)> f{
+        auto f =
                 [
                     wave2fbo = &p->wave2fbo,
                     b = job->b
@@ -75,9 +73,11 @@ void WaveUpdater::
                     wave2fbo->draw (M,b);
 
                     return true;
-                }};
+                };
 
-            block->updater ()->queueUpdate (block, move(f));
+        for (pBlock block : j.intersecting_blocks)
+        {
+            block->updater ()->queueUpdate (block, f);
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
             block->updater ()->processUpdates (false);

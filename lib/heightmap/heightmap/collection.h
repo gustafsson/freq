@@ -123,10 +123,10 @@ public:
 
 
     /**
-      next_frame garbage collects blocks that have been deleted since the last call.
+      frame_begin garbage collects blocks that have been deleted since the last call.
       increments frame_number()
       */
-    void     next_frame();
+    void     frame_begin();
 
 
     /**

@@ -295,18 +295,14 @@ void RenderView::
 
     try
     {
-    // TODO move to rendercontroller
-//    bool isRecording = false;
-//    Tools::RecordModel* r = model->project ()->tools ().record_model ();
-//    if(r && r->recording && !r->recording.write ()->isStopped ())
-//    {
-//        isRecording = true;
-//    }
+    for ( auto c : collections )
+    {
+        // Release blocks that weren't used since last next_frame
+        // Update blocks with textures from updateconsumer
+        c->frame_begin();
+    }
 
     bool update_queue_has_work = !model->update_queue()->empty ();
-
-    if (update_queue_has_work)
-        redraw (); // won't redraw right away, but enqueue an update
 
     setupCamera();
     glProjection gl_projection = *model->gl_projection.read ();
@@ -319,13 +315,6 @@ void RenderView::
     model->recompute_extent ();
     { // Render
         TIME_PAINTGL_DETAILS TaskTimer tt("Render");
-
-        for ( auto c : collections )
-        {
-            // Release blocks that weren't used since last next_frame
-            // Update blocks with textures from updateconsumer
-            c->next_frame();
-        }
 
         const auto c = *model->camera.read ();
         drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), c.r[0]>=45 ? 1 - c.orthoview : 1 );

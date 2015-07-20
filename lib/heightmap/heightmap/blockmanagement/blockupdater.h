@@ -23,7 +23,7 @@ class BlockUpdater
 {
 public:
     typedef std::shared_ptr<BlockUpdater> Ptr;
-    typedef std::packaged_task<bool(const glProjection& M)> DrawFunc;
+    typedef std::function<bool(const glProjection& M)> DrawFunc;
     typedef boost::shared_ptr<Heightmap::Block> pBlock;
 
     BlockUpdater();

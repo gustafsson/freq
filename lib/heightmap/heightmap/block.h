@@ -45,8 +45,7 @@ namespace Heightmap {
         // The block must exist for one whole frame before it can receive
         // updates from another thread. This prevents the texture from being
         // corrupted by having two threads writing to it at the same time.
-        bool isTextureReady() const;
-        void setTextureReady();
+        void showNewTexture();
 
         Heightmap::BlockManagement::BlockUpdater* updater();
 
@@ -75,7 +74,6 @@ namespace Heightmap {
         pGlTexture new_texture_;
         pGlTexture texture_;
         pGlTexture texture_hold_; // @see setTextureReady
-        bool texture_ready_ = false;
         std::shared_ptr<Heightmap::BlockManagement::BlockUpdater> updater_;
 
     public:

@@ -59,17 +59,9 @@ void Block::
 }
 
 
-bool Block::
-        isTextureReady() const
-{
-    return texture_ready_;
-}
-
-
 void Block::
-        setTextureReady()
+        showNewTexture()
 {
-    texture_ready_ = true;
 #ifndef PAINT_BLOCKS_FROM_UPDATE_THREAD
     updater_->processUpdates (true);
 #endif

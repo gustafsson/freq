@@ -92,14 +92,16 @@ void Collection::
 
 
 void Collection::
-        next_frame()
+        frame_begin()
 {
+    to_remove_.clear ();
+
     BlockCache::cache_t cache = cache_->clone ();
 
     VERBOSE_EACH_FRAME_COLLECTION TaskTimer tt(boost::format("%s(), %u")
             % __FUNCTION__ % cache.size ());
 
-    missing_data_ = missing_data_next_;
+    missing_data_.swap (missing_data_next_);
     missing_data_next_.clear ();
 
     boost::unordered_set<Reference> blocksToPoke;
@@ -107,20 +109,9 @@ void Collection::
     for (const BlockCache::cache_t::value_type& b : cache)
     {
         Block* block = b.second.get();
-        bool was_ready = block->isTextureReady ();
 
-        // Mark that any old texture has been finished drawing with, so that it
-        // can be reused now (i.e there has been a glFlush between the draw
-        // commands and now)
-        block->setTextureReady ();
-
-        // if this block was newly created, wait until the next frame when all
-        // draw calls to it have been glFlushed. After the flush the block can
-        // receive updates from the update thread (for threading, set that the
-        // block can receive updates through setTextureReady before setting
-        // recently_created_ which info is used by HeightmapProcessingPublisher)
-        if (!was_ready)
-            recently_created_ |= block->getInterval ();
+        // Use the most recent texture data
+        block->showNewTexture ();
 
         if (block->frame_number_last_used == _frame_counter)
         {
@@ -241,7 +232,10 @@ void Collection::
     {
         pBlock block = block_factory_->createBlock (ref.first);
         if (block)
+        {
             blocks_to_init.push_back (block);
+            recently_created_ |= block->getInterval ();
+        }
     }
 
     for (const pBlock& block : blocks_to_init)
@@ -257,43 +251,41 @@ void Collection::
 int Collection::
         runGarbageCollection(bool aggressive)
 {
+    // When using the block textures (OpenGL resources) from a separate update
+    // thread the accesses needs to be synchronized. The update thread is
+    // responsible for reference counting the texture until it has been glFlushed
+    // onto the OpenGL driver. Likewise, texture releases we don't need are kept
+    // accross a glFlush (swap between frames) by putting them in 'to_remove_'
+    // which a list of blocks to be removed on 'frame_begin'.
+
     Blocks::GarbageCollector gc(cache_);
     unsigned F = gc.countBlocksUsedThisFrame(_frame_counter);
     unsigned max_cache_size = 2*F;
     unsigned n_to_release = cache_->size() <= max_cache_size ? 0 : cache_->size() - max_cache_size;
 
-    int i = 0;
+    int discarded_blocks = 0;
     if (n_to_release) for (const pBlock& b : gc.getNOldest( _frame_counter, n_to_release))
     {
         removeBlock (b);
-        ++i;
+        ++discarded_blocks;
     }
 
     if (aggressive)
     {
-        for (const pBlock& b : Blocks::GarbageCollector(cache_).getAllNotUsedInThisFrame (_frame_counter))
+        for (const pBlock& b : gc.getAllNotUsedInThisFrame (_frame_counter))
         {
             removeBlock (b);
-            ++i;
+            ++discarded_blocks;
         }
     }
     else
     {
-//        if (const pBlock& released = Blocks::GarbageCollector(cache_).getOldestBlock (_frame_counter))
+//        if (const pBlock& released = gc.getOldestBlock (_frame_counter))
 //        {
 //            removeBlock (released);
 //            ++i;
 //        }
     }
-
-    std::set<pBlock> keep;
-
-    for (const pBlock& b : to_remove_)
-        if (!b.unique ())
-            keep.insert (b);
-
-    int discarded_blocks = to_remove_.size () - keep.size ();
-    to_remove_.swap (keep); keep.clear ();
 
     Render::BlockTextures::gc(aggressive);
     LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS if (0<discarded_blocks)
@@ -459,8 +451,8 @@ Intervals Collection::
 Signal::Intervals Collection::
         recently_created()
 {
-    Signal::Intervals I = recently_created_;
-    recently_created_.clear ();
+    Signal::Intervals I;
+    recently_created_.swap (I);
     return I;
 }
 
@@ -468,8 +460,8 @@ Signal::Intervals Collection::
 Signal::Intervals Collection::
         missing_data()
 {
-    Signal::Intervals I = missing_data_;
-    missing_data_.clear ();
+    Signal::Intervals I;
+    missing_data_.swap (I);
     return I;
 }
 
