@@ -9,7 +9,7 @@
 
 GotData::GotData(
         shared_state<Signal::Recorder::Data> data,
-        Signal::Recorder::IGotDataCallback::ptr& invalidator,
+        Signal::Processing::IInvalidator::ptr& invalidator,
         QAudioFormat format,
         QObject* parent)
     :
@@ -150,8 +150,8 @@ void GotData::
     dw->samples.invalidate_samples( Signal::Interval(I.last, Signal::Interval::IntervalType_MAX));
     dw.unlock ();
 
-    Signal::Recorder::IGotDataCallback::ptr inv = invalidator;
-    if (inv) inv.write ()->markNewlyRecordedData( I );
+    Signal::Processing::IInvalidator::ptr inv = invalidator;
+    if (inv) inv->deprecateCache ( I );
 }
 
 

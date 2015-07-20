@@ -32,19 +32,19 @@ RecordModel::
 }
 
 
-class GotDataCallback: public Signal::Recorder::IGotDataCallback
+class GotDataCallback: public Signal::Processing::IInvalidator
 {
 public:
     void setInvalidator(Signal::Processing::IInvalidator::ptr i) { i_ = i; }
     void setRecordModel(RecordModel* model) { model_ = model; }
 
-    virtual void markNewlyRecordedData(Signal::Interval what)
+    void deprecateCache(Signal::Intervals what) const override
     {
         if (i_)
             i_->deprecateCache(what);
 
         if (model_)
-            emit model_->markNewlyRecordedData(what);
+            emit model_->markNewlyRecordedData(what.spannedInterval());
     }
 
 private:
@@ -58,17 +58,18 @@ RecordModel* RecordModel::
                        Signal::Recorder::ptr recorder,
                        Sawe::Project* project, RenderView* render_view)
 {
-    Signal::Recorder::IGotDataCallback::ptr callback(new GotDataCallback());
+    Signal::Processing::IInvalidator::ptr callback(new GotDataCallback());
 
-    Signal::OperationDesc::ptr desc( new Signal::MicrophoneRecorderDesc(recorder, callback) );
+    Signal::OperationDesc::ptr desc( new Signal::MicrophoneRecorderDesc(recorder) );
+    recorder->setInvalidator(callback);
     Signal::Processing::IInvalidator::ptr i = chain->addOperationAt(desc, at);
 
     RecordModel* record_model = new RecordModel(project, render_view, recorder);
     record_model->recorder_desc = desc;
     record_model->invalidator = i;
 
-    dynamic_cast<GotDataCallback*>(&*callback.write ())->setInvalidator (i);
-    dynamic_cast<GotDataCallback*>(&*callback.write ())->setRecordModel (record_model);
+    dynamic_cast<GotDataCallback*>(callback.get ())->setInvalidator (i);
+    dynamic_cast<GotDataCallback*>(callback.get ())->setRecordModel (record_model);
 
     return record_model;
 }

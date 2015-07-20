@@ -14,7 +14,7 @@ class GotData : public QIODevice
     Q_OBJECT
 public:
     GotData(shared_state<Signal::Recorder::Data> data,
-            Signal::Recorder::IGotDataCallback::ptr& invalidator,
+            Signal::Processing::IInvalidator::ptr& invalidator,
             QAudioFormat format,
             QObject* parent=0);
     ~GotData();
@@ -24,7 +24,7 @@ public:
 
 private:
     shared_state<Signal::Recorder::Data> data;
-    Signal::Recorder::IGotDataCallback::ptr& invalidator;
+    Signal::Processing::IInvalidator::ptr& invalidator;
     QAudioFormat format;
     std::vector<float> f;
     Signal::pBuffer buffer;

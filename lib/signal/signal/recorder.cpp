@@ -28,7 +28,7 @@ float Recorder::
 
 
 void Recorder::
-        setDataCallback( IGotDataCallback::ptr invalidator )
+        setInvalidator( Signal::Processing::IInvalidator::ptr invalidator )
 {
     _invalidator = invalidator;
 }
