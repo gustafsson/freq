@@ -52,12 +52,13 @@ void HeightmapProcessingPublisher::
 
     Intervals missing_data;
     Intervals needed_samples;
-    float fs, L;
+    float fs;
+    IntervalType Ls;
     Heightmap::TfrMapping::Collections C;
     {
         auto tm = tfrmapping_.read ();
         fs = tm->targetSampleRate();
-        L = tm->length();
+        Ls = tm->lengthSamples();
         C = tm->collections();
     }
 
@@ -83,7 +84,7 @@ void HeightmapProcessingPublisher::
 
     target_needs_->deprecateCache (missing_data);
 
-    Interval target_interval(0, std::round(L*fs));
+    Interval target_interval(0, Ls);
     needed_samples &= target_interval;
 
     last_valid_ = needed_samples;

@@ -51,8 +51,8 @@ Tools::RenderModel* TouchNavigation::
 double TouchNavigation::max_t ()
 {
     double sL = render_model()->tfr_mapping ().read ()->length();
-    tvector<4,int> viewport = render_model ()->gl_projection.read ()->viewport;
     auto c = *render_model ()->camera.read ();
+//    tvector<4,int> viewport = render_model ()->gl_projection.read ()->viewport;
 //    double aspect = viewport[2]/(float)viewport[3];
     double aspect = 1.;
     double s = -c.p[2]*aspect/c.xscale * sin(DEG_TO_RAD(c.r[0]));
@@ -76,7 +76,7 @@ void TouchNavigation::componentComplete()
 void TouchNavigation::handleWindowChanged(QQuickWindow *win)
 {
     if (win)
-        connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(followRecording()), Qt::DirectConnection);
+        connect(win, SIGNAL(afterSynchronizing()), this, SLOT(followRecording()), Qt::DirectConnection);
 }
 
 

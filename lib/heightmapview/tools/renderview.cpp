@@ -312,7 +312,6 @@ void RenderView::
         emit updatedCamera();
     }
 
-    model->recompute_extent ();
     { // Render
         TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
