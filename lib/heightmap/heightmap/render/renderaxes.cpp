@@ -56,19 +56,41 @@ RenderAxes::
 void RenderAxes::
         drawAxes( float T )
 {
-#ifndef GL_ES_VERSION_2_0
-    drawGlyphsGlut(getGlyphs(T));
-#endif
+    ae_.ticks.clear ();
+    ae_.phatTicks.clear ();
+    ae_.glyphs.clear ();
+    ae_.vertices.clear ();
+    ae_.orthovertices.clear ();
+
+    getElements(ae_, T);
+    drawElements(ae_);
 }
 
-#ifndef GL_ES_VERSION_2_0
-RenderAxes::AxesElements RenderAxes::
-        getGlyphs( float T )
-{
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (GLmatrixf(gl_projection->projection).v ());
-    glMatrixMode(GL_MODELVIEW);
 
+tvector<4,GLfloat> make4(const tvector<2,GLfloat>& v) {
+    return tvector<4,GLfloat>(v[0], v[1], 0, 1);
+}
+
+tvector<4,GLfloat> make4(const tvector<3,GLfloat>& v) {
+    return tvector<4,GLfloat>(v[0], v[1], v[2], 1);
+}
+
+tvector<4,GLfloat> make4(const tvector<4,GLfloat>& v) {
+    return v;
+}
+
+template<int N> void addVertices(
+        std::vector<RenderAxes::Vertex>& vertices,
+        const tvector<4,GLfloat>& color,
+        const tvector<N,GLfloat>* V, int L)
+{
+    for (int i=0; i<L; i++)
+        vertices.push_back (RenderAxes::Vertex{make4(V[i]),color});
+}
+
+void RenderAxes::
+        getElements( RenderAxes::AxesElements& ae, float T )
+{
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -91,22 +113,7 @@ RenderAxes::AxesElements RenderAxes::
     float w = borderw/screen_width, h=borderh/screen_height;
     Render::FrustumClip frustum_clip(*g, w, h);
 
-    if (render_settings.axes_border) { // 1 gray draw overlay
-        glPushMatrixContext push_model(GL_MODELVIEW);
-        glPushMatrixContext push_proj(GL_PROJECTION);
-
-        glLoadIdentity();
-        matrixd ortho;
-        glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
-        glLoadMatrixd (ortho.v ());
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glDisable(GL_DEPTH_TEST);
-
-
-        glColor4f( 1.0f, 1.0f, 1.0f, .4f );
+    if (render_settings.axes_border || true) { // 1 gray draw overlay
         typedef tvector<2,GLfloat> GLvector2F;
         GLvector2F v[] = {
             GLvector2F(0, 0),
@@ -130,14 +137,7 @@ RenderAxes::AxesElements RenderAxes::
             GLvector2F( 1-w, 1 )
         };
 
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(2, GL_FLOAT, 0, v);
-        glDrawArrays(GL_QUADS, 0, 16);
-        glDisableClientState(GL_VERTEX_ARRAY);
-
-        glEnable(GL_DEPTH_TEST);
-
-        //glDisable(GL_BLEND);
+        addVertices(ae.orthovertices, tvector<4,GLfloat>(1.0f, 1.0f, 1.0f, .4f), v, 16);
     }
 
     // 2 clip entire sound to frustum
@@ -175,16 +175,20 @@ RenderAxes::AxesElements RenderAxes::
     glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixd (gl_projection->projection.v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixd (gl_projection->modelview.v ());
+
     FreqAxis fa = display_scale;
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
-    AxesElements ae;
+
     auto& ticks = ae.ticks;
     auto& phatTicks = ae.phatTicks;
 
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
-        glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
         vectord p1 = clippedFrustum[i]; // starting point of side
         vectord p2 = clippedFrustum[j]; // end point of side
@@ -564,14 +568,15 @@ RenderAxes::AxesElements RenderAxes::
                 vectord pn = p1+v*un;
                 vectord pp = p1+v*up;
 
-                matrixd modelview = gl_projection->modelview;
-
                 float xscale = 0.016000f;
                 float blackw = 0.4f;
 
                 if (sign>0)
-                    modelview *= matrixd::translate ( xscale*ST, 0.f, 0.f );
-                glLoadMatrixd (modelview.v ());
+                {
+                    pp[0] += xscale*ST;
+                    pn[0] += xscale*ST;
+                    pt[0] += xscale*ST;
+                }
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
                 if (render_settings.draw_cursor_marker)
@@ -634,29 +639,22 @@ RenderAxes::AxesElements RenderAxes::
                     }
                 }
 
-                // outline
-                vectord lines[] = {
-                    vectord(pn[0] - xscale*ST, 0, pn[2]),
-                    vectord(pp[0] - xscale*ST, 0, pp[2])
-                };
-                vectord line_strip[] = {
-                    vectord(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]),
-                    vectord(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]),
-                    vectord(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]),
-                    vectord(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2])
-                };
 
-                glEnableClientState(GL_VERTEX_ARRAY);
-                glColor4f(0,0,0,0.8);
-                glVertexPointer(3, GL_DOUBLE, 0, &lines[0]);
-                glDrawArrays(GL_LINES, 0, 2);
-                glVertexPointer(3, GL_DOUBLE, 0, &line_strip[0]);
-                glDrawArrays(GL_LINE_STRIP, 0, 4);
-                glDisableClientState(GL_VERTEX_ARRAY);
+                // outline
+                ticks.push_back (GLvectorF(pn[0] - xscale*ST, 0, pn[2], 1));
+                ticks.push_back (GLvectorF(pp[0] - xscale*ST, 0, pp[2], 1));
+
+                ticks.push_back (GLvectorF(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2], 1));
+                ticks.push_back (GLvectorF(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2], 1));
+                ticks.push_back (GLvectorF(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2], 1));
+                ticks.push_back (GLvectorF(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2], 1));
+                ticks.push_back (GLvectorF(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2], 1));
+                ticks.push_back (GLvectorF(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2], 1));
 
                 if (tone%12 == 0)
                 {
-                    modelview *= matrixd::translate (pp[0], 0, pp[2]);
+                    matrixd modelview = gl_projection->modelview;
+                    modelview *= matrixd::translate ( pp[0], 0, pp[2] );
                     modelview *= matrixd::rot (90,1,0,0);
 
                     //modelview *= matrixd::scale (0.00014f*ST,0.00014f*SF,1.f);
@@ -672,36 +670,85 @@ RenderAxes::AxesElements RenderAxes::
             }
         }
     }
-
-    return std::move(ae);
 }
 
 
 void RenderAxes::
-        drawGlyphsGlut( const RenderAxes::AxesElements& ae)
+        drawElements( const RenderAxes::AxesElements& ae)
 {
-    typedef tvector<2,GLfloat> GLvector2F;
-    std::vector<GLvector2F> quad(4);
-
-    glLoadMatrixd (gl_projection->modelview.v ());
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(false);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glEnableClientState(GL_VERTEX_ARRAY);
+    if (!ae.orthovertices.empty ())
+    {
+        matrixd ortho;
+        glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
+        glMatrixMode(GL_PROJECTION);
+        glLoadMatrixd (ortho.v ());
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glVertexPointer(4, GL_FLOAT, sizeof(Vertex), &ae.orthovertices[0].position[0]);
+        glColorPointer (4, GL_FLOAT, sizeof(Vertex), &ae.orthovertices[0].color[0]);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glDrawArrays(GL_QUADS, 0, ae.orthovertices.size());
+        glDisableClientState(GL_COLOR_ARRAY);
+    }
+
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixd (gl_projection->projection.v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixd (gl_projection->modelview.v ());
+
     if (!ae.phatTicks.empty())
     {
         glLineWidth(2);
         glVertexPointer(4, GL_FLOAT, 0, &ae.phatTicks[0]);
+        glColor4f(0,0,0,0.8);
         glDrawArrays(GL_LINES, 0, ae.phatTicks.size());
         glLineWidth(1);
     }
     if (!ae.ticks.empty())
     {
         glVertexPointer(4, GL_FLOAT, 0, &ae.ticks[0]);
+        glColor4f(0,0,0,0.8);
         glDrawArrays(GL_LINES, 0, ae.ticks.size());
     }
+    if (!ae.vertices.empty ())
+    {
+        glVertexPointer(4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].position[0]);
+        glColorPointer (4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].color[0]);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
+        glDisableClientState(GL_COLOR_ARRAY);
+    }
+
     glDisableClientState(GL_VERTEX_ARRAY);
 
+#ifndef GL_ES_VERSION_2_0
+    drawGlyphsGlut(ae.glyphs);
+#endif
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(true);
+}
+
+
+#ifndef GL_ES_VERSION_2_0
+void RenderAxes::
+        drawGlyphsGlut( const std::vector<Glyph>& glyphs)
+{
+    typedef tvector<2,GLfloat> GLvector2F;
+    std::vector<GLvector2F> quad(4);
+
+    glLoadMatrixd (gl_projection->modelview.v ());
+
     glLineWidth(1);
-    for (const Glyph& g : ae.glyphs) {
+    for (const Glyph& g : glyphs) {
         float w = g.margin*100.;
         float letter_spacing = g.letter_spacing*100.;
         const char* a = g.text.c_str ();
@@ -718,7 +765,6 @@ void RenderAxes::
 
         glLoadMatrixd (modelview.v ());
 
-        glColor4f(1,1,1,0.5);
         float z = 10;
         float q = 20;
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -727,6 +773,7 @@ void RenderAxes::
         quad[2] = GLvector2F(0 - z, 100 + q);
         quad[3] = GLvector2F(w + z, 100 + q);
         glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
+        glColor4f(1,1,1,0.5);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
         glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -738,9 +785,6 @@ void RenderAxes::
             glLoadMatrixd (modelview.v ());
         }
     }
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(true);
 }
 #endif // GL_ES_VERSION_2_0
 

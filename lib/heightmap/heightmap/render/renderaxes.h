@@ -16,14 +16,11 @@ namespace Render {
 class RenderAxes
 {
 public:
-    RenderAxes(
-            const RenderSettings& render_settings,
-            const glProjection* gl_projection,
-            FreqAxis display_scale);
+    struct Vertex {
+        tvector<4,GLfloat> position;
+        tvector<4,GLfloat> color;
+    };
 
-    void drawAxes( float T );
-
-private:
     struct Glyph {
         matrixd modelview;
         std::string text;
@@ -37,14 +34,26 @@ private:
         std::vector<tvector<4,GLfloat>> ticks;
         std::vector<tvector<4,GLfloat>> phatTicks;
         std::vector<Glyph> glyphs;
+        std::vector<Vertex> vertices;
+        std::vector<Vertex> orthovertices;
     };
 
-    AxesElements getGlyphs( float T );
-    void drawGlyphsGlut( const AxesElements& );
+    RenderAxes(
+            const RenderSettings& render_settings,
+            const glProjection* gl_projection,
+            FreqAxis display_scale);
+
+    void drawAxes( float T );
+
+private:
+    void getElements( RenderAxes::AxesElements& ae, float T );
+    void drawElements( const AxesElements& );
+    void drawGlyphsGlut( const std::vector<Glyph>& );
 
     const RenderSettings& render_settings;
     const glProjection* gl_projection;
     FreqAxis display_scale;
+    AxesElements ae_;
 };
 
 } // namespace Render
