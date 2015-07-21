@@ -60,7 +60,6 @@ void RenderAxes::
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixf (GLmatrixf(gl_projection->projection).v ());
     glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (GLmatrixf(gl_projection->modelview).v ());
 
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
@@ -413,18 +412,20 @@ void RenderAxes::
                     (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2]-o, 1.f));
 
                     if (size>1) {
-                        glPushMatrixContext push_model( GL_MODELVIEW );
-
-                        glTranslatef(p[0], 0, p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
-                        glRotatef(angle,0,0,1);
+
+                        matrixd modelview = gl_projection->modelview;
+                        modelview *= matrixd::translate (p[0], 0, p[2]);
+                        modelview *= matrixd::rot (90,1,0,0);
+                        modelview *= matrixd::scale (0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
+                        modelview *= matrixd::rot (angle,0,0,1);
+
                         char a[100];
                         char b[100];
                         sprintf(b,"%%d:%%0%d.%df", 2+(st<-1?-st:0), st<0?-1-st:0);
                         int minutes = (int)(t*DT/60);
                         sprintf(a, b, minutes,t*DT-60*minutes);
+
                         float w=0;
                         float letter_spacing=15;
 
@@ -435,11 +436,13 @@ void RenderAxes::
                         }
 
                         if (!render_settings.left_handed_axes)
-                            glScalef(-1,1,1);
-                        glTranslatef(0,70.f,0);
+                            modelview *= matrixd::scale (-1,1,1);
+                        modelview *= matrixd::translate (0,70.f,0);
                         if (sign<0)
-                            glRotatef(180,0,0,1);
-                        glTranslatef(-.5f*w,-50.f,0);
+                            modelview *= matrixd::rot (180,0,0,1);
+                        modelview *= matrixd::translate (-.5f*w,-50.f,0);
+                        glLoadMatrixd (modelview.v ());
+
                         glColor4f(1,1,1,0.5);
                         float z = 10;
                         float q = 20;
@@ -454,7 +457,8 @@ void RenderAxes::
                         glColor4f(0,0,0,0.8);
                         for (char*c=a;*c!=0; c++) {
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                            glTranslatef(letter_spacing,0,0);
+                            modelview *= matrixd::translate (letter_spacing + glutStrokeWidth( GLUT_STROKE_ROMAN, *c ),0,0);
+                            glLoadMatrixd (modelview.v ());
                         }
                     }
                 }
@@ -479,13 +483,14 @@ void RenderAxes::
 
                     if (size>1)
                     {
-                        glPushMatrixContext push_model( GL_MODELVIEW );
-
-                        glTranslatef(p[0],0,p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
-                        glRotatef(angle,0,0,1);
+
+                        matrixd modelview = gl_projection->modelview;
+                        modelview *= matrixd::translate (p[0],0,p[2]);
+                        modelview *= matrixd::rot (90,1,0,0);
+                        modelview *= matrixd::scale (0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
+                        modelview *= matrixd::rot (angle,0,0,1);
+
                         char a[100];
                         char b[100];
                         sprintf(b,"%%.%df", sf<0?-1-sf:0);
@@ -501,11 +506,13 @@ void RenderAxes::
                             w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                         }
                         if (!render_settings.left_handed_axes)
-                            glScalef(-1,1,1);
-                        glTranslatef(0,70.f,0);
+                            modelview *= matrixd::scale (-1,1,1);
+                        modelview *= matrixd::translate (0,70.f,0);
                         if (sign<0)
-                            glRotatef(180,0,0,1);
-                        glTranslatef(-.5f*w,-50.f,0);
+                            modelview *= matrixd::rot (180,0,0,1);
+                        modelview *= matrixd::translate (-.5f*w,-50.f,0);
+                        glLoadMatrixd (modelview.v ());
+
                         glColor4f(1,1,1,0.5);
                         float z = 10;
                         float q = 20;
@@ -519,7 +526,11 @@ void RenderAxes::
                         glDisableClientState(GL_VERTEX_ARRAY);
                         glColor4f(0,0,0,0.8);
                         for (char*c=a;*c!=0; c++)
+                        {
                             glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                            modelview *= matrixd::translate (letter_spacing + glutStrokeWidth( GLUT_STROKE_ROMAN, *c ),0,0);
+                            glLoadMatrixd (modelview.v ());
+                        }
                     }
                 }
             }
@@ -595,13 +606,14 @@ void RenderAxes::
                 vectord pn = p1+v*un;
                 vectord pp = p1+v*up;
 
-                glPushMatrixContext push_model( GL_MODELVIEW );
+                matrixd modelview = gl_projection->modelview;
 
                 float xscale = 0.016000f;
                 float blackw = 0.4f;
 
                 if (sign>0)
-                    glTranslatef( xscale*ST, 0.f, 0.f );
+                    modelview *= matrixd::translate ( xscale*ST, 0.f, 0.f );
+                glLoadMatrixd (modelview.v ());
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
                 if (render_settings.draw_cursor_marker)
@@ -673,12 +685,11 @@ void RenderAxes::
                 {
                     glLineWidth(1);
 
-                    glPushMatrixContext push_model( GL_MODELVIEW );
-                    glTranslatef(pp[0], 0, pp[2]);
-                    glRotatef(90,1,0,0);
+                    modelview *= matrixd::translate (pp[0], 0, pp[2]);
+                    modelview *= matrixd::rot (90,1,0,0);
 
-                    //glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                    glScalef(0.005 * xscale*ST,0.35 * xscale*(pn[2]-pp[2]),1.f);
+                    //modelview *= matrixd::scale (0.00014f*ST,0.00014f*SF,1.f);
+                    modelview *= matrixd::scale (0.005 * xscale*ST,0.35 * xscale*(pn[2]-pp[2]),1.f);
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
@@ -686,11 +697,12 @@ void RenderAxes::
                     for (char*c=a;*c!=0; c++)
                         w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
                     if (!render_settings.left_handed_axes)
-                        glScalef(-1,1,1);
-                    glTranslatef(-w,0,0);
+                        modelview *= matrixd::scale (-1,1,1);
+                    modelview *= matrixd::translate (-w,0,0);
                     glColor4f(1,1,1,0.5);
                     float z = 10;
                     float q = 20;
+                    glLoadMatrixd (modelview.v ());
                     glBegin(GL_TRIANGLE_STRIP);
                         glVertex2f(0 - z, 0 - q);
                         glVertex2f(w + z, 0 - q);
@@ -704,6 +716,8 @@ void RenderAxes::
             }
         }
     }
+
+    glLoadMatrixd (gl_projection->modelview.v ());
 
     glEnableClientState(GL_VERTEX_ARRAY);
     if (!phatTicks.empty())
