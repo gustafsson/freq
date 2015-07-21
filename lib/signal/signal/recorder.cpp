@@ -116,7 +116,7 @@ float Recorder::
         _offset -= T-L;
         T = L;
     }
-    return T;
+    return T+0.1;
 }
 
 } // namespace Signal
