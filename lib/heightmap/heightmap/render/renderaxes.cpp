@@ -71,18 +71,14 @@ tvector<4,GLfloat> make4(const tvector<2,GLfloat>& v) {
     return tvector<4,GLfloat>(v[0], v[1], 0, 1);
 }
 
-tvector<4,GLfloat> make4(const tvector<3,GLfloat>& v) {
+tvector<4,GLfloat> make4(const vectord& v) {
     return tvector<4,GLfloat>(v[0], v[1], v[2], 1);
 }
 
-tvector<4,GLfloat> make4(const tvector<4,GLfloat>& v) {
-    return v;
-}
-
-template<int N> void addVertices(
+template<int N,typename T> void addVertices(
         std::vector<RenderAxes::Vertex>& vertices,
         const tvector<4,GLfloat>& color,
-        const tvector<N,GLfloat>* V, int L)
+        const tvector<N,T>* V, int L)
 {
     for (int i=0; i<L; i++)
         vertices.push_back (RenderAxes::Vertex{make4(V[i]),color});
@@ -113,7 +109,7 @@ void RenderAxes::
     float w = borderw/screen_width, h=borderh/screen_height;
     Render::FrustumClip frustum_clip(*g, w, h);
 
-    if (render_settings.axes_border || true) { // 1 gray draw overlay
+    if (render_settings.axes_border) { // 1 gray draw overlay
         typedef tvector<2,GLfloat> GLvector2F;
         GLvector2F v[] = {
             GLvector2F(0, 0),
@@ -170,15 +166,6 @@ void RenderAxes::
 
     // 4 render and decide upon scale
     vectord x(1,0,0), z(0,0,1);
-
-    glDepthMask(false);
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd (gl_projection->projection.v ());
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixd (gl_projection->modelview.v ());
 
     FreqAxis fa = display_scale;
     // loop along all sides
@@ -568,14 +555,14 @@ void RenderAxes::
                 vectord pn = p1+v*un;
                 vectord pp = p1+v*up;
 
-                float xscale = 0.016000f;
+                vectord dx { 0.016000*ST, 0, 0 };
                 float blackw = 0.4f;
 
                 if (sign>0)
                 {
-                    pp[0] += xscale*ST;
-                    pn[0] += xscale*ST;
-                    pt[0] += xscale*ST;
+                    pp += dx;
+                    pn += dx;
+                    pt += dx;
                 }
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
@@ -597,59 +584,53 @@ void RenderAxes::
                 {
                     if (blackKey)
                     {
-                        tvector<3,GLfloat> v[] = {
-                            tvector<3,GLfloat>(pp[0] - xscale*ST*(1.f), 0, pp[2]),
-                            tvector<3,GLfloat>(pp[0] - xscale*ST*(blackw), 0, pp[2]),
-                            tvector<3,GLfloat>(pn[0] - xscale*ST*(1.f), 0, pn[2]),
-                            tvector<3,GLfloat>(pn[0] - xscale*ST*(blackw), 0, pn[2])
+                        vectord v[] = {
+                            pp - dx,  // degenerate
+                            pp - dx,
+                            pp - dx*blackw,
+                            pn - dx,
+                            pn - dx*blackw,
+                            pn - dx*blackw
                         };
 
-                        glEnableClientState(GL_VERTEX_ARRAY);
-                        glVertexPointer(3, GL_FLOAT, 0, v);
-                        glColor4fv(keyColor.v);
-                        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-                        glDisableClientState(GL_VERTEX_ARRAY);
+                        addVertices(ae.vertices, keyColor, v, 6);
                     }
                     else
                     {
-                        std::vector<vectord> v;
-                        if (blackKeyP)
-                        {
-                            v.push_back (vectord((pp*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v));
-                            v.push_back (vectord(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]));
-                        }
-                        v.push_back (vectord(pp[0] - xscale*ST*(0.f), 0, pp[2]));
-                        v.push_back (vectord(pn[0] - xscale*ST*(0.f), 0, pn[2]));
-                        v.push_back (vectord(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]));
-                        if (blackKeyN)
-                        {
-                            v.push_back (pn*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0));
-                            v.push_back (pn*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0));
-                        }
-                        if (blackKeyP)
-                            v.push_back (pp*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0));
-                        else
-                            v.push_back (vectord(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]));
+                        vectord v[] = {
+                            vectord (pp - dx*(blackKeyP ? blackw : 1.)), // degenerate
+                            vectord (pp - dx*(blackKeyP ? blackw : 1.)),
+                            vectord (pp),
+                            vectord (pp*0.5 + pt*0.5 - dx*(blackKeyP ? blackw : 1.)),
+                            vectord (pp*0.5 + pt*0.5),
+                            vectord (pp*0.5 + pt*0.5),
+                            vectord (pp*0.5 + pt*0.5 - dx), // backside
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5 - dx),
+                            vectord (pn*0.5 + pt*0.5 - dx),
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5 - dx*(blackKeyN ? blackw : 1.)),
+                            vectord (pn),
+                            vectord (pn - dx*(blackKeyN ? blackw : 1.)),
+                            vectord (pn - dx*(blackKeyN ? blackw : 1.)) // degenerate
+                        };
 
-                        glEnableClientState(GL_VERTEX_ARRAY);
-                        glVertexPointer(3, GL_DOUBLE, 0, &v[0]);
-                        glColor4fv(keyColor.v);
-                        glDrawArrays(GL_TRIANGLE_FAN, 0, v.size ());
-                        glDisableClientState(GL_VERTEX_ARRAY);
+                        addVertices(ae.vertices, keyColor, v, 16);
                     }
                 }
 
 
                 // outline
-                ticks.push_back (GLvectorF(pn[0] - xscale*ST, 0, pn[2], 1));
-                ticks.push_back (GLvectorF(pp[0] - xscale*ST, 0, pp[2], 1));
+                ticks.push_back (make4(pn - dx));
+                ticks.push_back (make4(pp - dx));
 
-                ticks.push_back (GLvectorF(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2], 1));
-                ticks.push_back (GLvectorF(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2], 1));
-                ticks.push_back (GLvectorF(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2], 1));
-                ticks.push_back (GLvectorF(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2], 1));
-                ticks.push_back (GLvectorF(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2], 1));
-                ticks.push_back (GLvectorF(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2], 1));
+                ticks.push_back (make4(pp - dx*(blackKeyP ? blackw : 1.)));
+                ticks.push_back (make4(pp - dx*(blackKey ? blackw : 0.)));
+                ticks.push_back (make4(pp - dx*(blackKey ? blackw : 0.)));
+                ticks.push_back (make4(pn - dx*(blackKey ? blackw : 0.)));
+                ticks.push_back (make4(pn - dx*(blackKey ? blackw : 0.)));
+                ticks.push_back (make4(pn - dx*(blackKeyN ? blackw : 1.)));
 
                 if (tone%12 == 0)
                 {
@@ -658,7 +639,7 @@ void RenderAxes::
                     modelview *= matrixd::rot (90,1,0,0);
 
                     //modelview *= matrixd::scale (0.00014f*ST,0.00014f*SF,1.f);
-                    modelview *= matrixd::scale (0.5 * xscale*ST, 35. * xscale*(pn[2]-pp[2]),1.f);
+                    modelview *= matrixd::scale (0.5 * dx[0], 35. * dx[0]/ST*(pn[2]-pp[2]), 1.);
 
                     if (!render_settings.left_handed_axes)
                         modelview *= matrixd::scale (-1,1,1);
@@ -704,6 +685,14 @@ void RenderAxes::
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixd (gl_projection->modelview.v ());
 
+    if (!ae.vertices.empty ())
+    {
+        glVertexPointer(4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].position[0]);
+        glColorPointer (4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].color[0]);
+        glEnableClientState(GL_COLOR_ARRAY);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
+        glDisableClientState(GL_COLOR_ARRAY);
+    }
     if (!ae.phatTicks.empty())
     {
         glLineWidth(2);
@@ -717,14 +706,6 @@ void RenderAxes::
         glVertexPointer(4, GL_FLOAT, 0, &ae.ticks[0]);
         glColor4f(0,0,0,0.8);
         glDrawArrays(GL_LINES, 0, ae.ticks.size());
-    }
-    if (!ae.vertices.empty ())
-    {
-        glVertexPointer(4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].position[0]);
-        glColorPointer (4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].color[0]);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
-        glDisableClientState(GL_COLOR_ARRAY);
     }
 
     glDisableClientState(GL_VERTEX_ARRAY);
