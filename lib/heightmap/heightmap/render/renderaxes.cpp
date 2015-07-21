@@ -98,6 +98,7 @@ RenderAxes::AxesElements RenderAxes::
         glLoadIdentity();
         matrixd ortho;
         glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
+        glLoadMatrixd (ortho.v ());
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -106,27 +107,33 @@ RenderAxes::AxesElements RenderAxes::
 
 
         glColor4f( 1.0f, 1.0f, 1.0f, .4f );
-        glBegin( GL_QUADS );
-            glVertex2f( 0, 0 );
-            glVertex2f( w, 0 );
-            glVertex2f( w, 1 );
-            glVertex2f( 0, 1 );
+        typedef tvector<2,GLfloat> GLvector2F;
+        GLvector2F v[] = {
+            GLvector2F(0, 0),
+            GLvector2F(w, 0),
+            GLvector2F(w, 1),
+            GLvector2F(0, 1),
 
-            glVertex2f( w, 0 );
-            glVertex2f( 1-w, 0 );
-            glVertex2f( 1-w, h );
-            glVertex2f( w, h );
+            GLvector2F( w, 0 ),
+            GLvector2F( 1-w, 0 ),
+            GLvector2F( 1-w, h ),
+            GLvector2F( w, h ),
 
-            glVertex2f( 1, 0 );
-            glVertex2f( 1, 1 );
-            glVertex2f( 1-w, 1 );
-            glVertex2f( 1-w, 0 );
+            GLvector2F( 1, 0 ),
+            GLvector2F( 1, 1 ),
+            GLvector2F( 1-w, 1 ),
+            GLvector2F( 1-w, 0 ),
 
-            glVertex2f( w, 1 );
-            glVertex2f( w, 1-h );
-            glVertex2f( 1-w, 1-h );
-            glVertex2f( 1-w, 1 );
-        glEnd();
+            GLvector2F( w, 1 ),
+            GLvector2F( w, 1-h ),
+            GLvector2F( 1-w, 1-h ),
+            GLvector2F( 1-w, 1 )
+        };
+
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(2, GL_FLOAT, 0, v);
+        glDrawArrays(GL_QUADS, 0, 16);
+        glDisableClientState(GL_VERTEX_ARRAY);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -583,54 +590,69 @@ RenderAxes::AxesElements RenderAxes::
 
                 if (keyColor[3] != 0)
                 {
-                    glColor4fv(keyColor.v);
                     if (blackKey)
                     {
-                        glBegin(GL_TRIANGLE_STRIP);
-                            glVertex3d(pp[0] - xscale*ST*(1.f), 0, pp[2]);
-                            glVertex3d(pp[0] - xscale*ST*(blackw), 0, pp[2]);
-                            glVertex3d(pn[0] - xscale*ST*(1.f), 0, pn[2]);
-                            glVertex3d(pn[0] - xscale*ST*(blackw), 0, pn[2]);
-                        glEnd();
+                        tvector<3,GLfloat> v[] = {
+                            tvector<3,GLfloat>(pp[0] - xscale*ST*(1.f), 0, pp[2]),
+                            tvector<3,GLfloat>(pp[0] - xscale*ST*(blackw), 0, pp[2]),
+                            tvector<3,GLfloat>(pn[0] - xscale*ST*(1.f), 0, pn[2]),
+                            tvector<3,GLfloat>(pn[0] - xscale*ST*(blackw), 0, pn[2])
+                        };
+
+                        glEnableClientState(GL_VERTEX_ARRAY);
+                        glVertexPointer(3, GL_FLOAT, 0, v);
+                        glColor4fv(keyColor.v);
+                        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                        glDisableClientState(GL_VERTEX_ARRAY);
                     }
                     else
                     {
-                        glBegin(GL_TRIANGLE_FAN);
-                            if (blackKeyP)
-                            {
-                                glVertex3dv((pp*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                            }
-                            glVertex3d(pp[0] - xscale*ST*(0.f), 0, pp[2]);
-                            glVertex3d(pn[0] - xscale*ST*(0.f), 0, pn[2]);
-                            glVertex3d(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
-                            if (blackKeyN)
-                            {
-                                glVertex3dv((pn*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3dv((pn*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0)).v);
-                            }
-                            if (blackKeyP)
-                                glVertex3dv((pp*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0)).v);
-                            else
-                                glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glEnd();
+                        std::vector<vectord> v;
+                        if (blackKeyP)
+                        {
+                            v.push_back (vectord((pp*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v));
+                            v.push_back (vectord(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]));
+                        }
+                        v.push_back (vectord(pp[0] - xscale*ST*(0.f), 0, pp[2]));
+                        v.push_back (vectord(pn[0] - xscale*ST*(0.f), 0, pn[2]));
+                        v.push_back (vectord(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]));
+                        if (blackKeyN)
+                        {
+                            v.push_back (pn*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0));
+                            v.push_back (pn*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0));
+                        }
+                        if (blackKeyP)
+                            v.push_back (pp*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0));
+                        else
+                            v.push_back (vectord(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]));
+
+                        glEnableClientState(GL_VERTEX_ARRAY);
+                        glVertexPointer(3, GL_DOUBLE, 0, &v[0]);
+                        glColor4fv(keyColor.v);
+                        glDrawArrays(GL_TRIANGLE_FAN, 0, v.size ());
+                        glDisableClientState(GL_VERTEX_ARRAY);
                     }
                 }
 
                 // outline
-                glColor4f(0,0,0,0.8);
-                    glBegin(GL_LINES );
-                        glVertex3d(pn[0] - xscale*ST, 0, pn[2]);
-                        glVertex3d(pp[0] - xscale*ST, 0, pp[2]);
-                    glEnd();
-                    glBegin(GL_LINE_STRIP);
-                        glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glVertex3d(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]);
-                        glVertex3d(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]);
-                        glVertex3d(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
-                    glEnd();
+                vectord lines[] = {
+                    vectord(pn[0] - xscale*ST, 0, pn[2]),
+                    vectord(pp[0] - xscale*ST, 0, pp[2])
+                };
+                vectord line_strip[] = {
+                    vectord(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]),
+                    vectord(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]),
+                    vectord(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]),
+                    vectord(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2])
+                };
 
+                glEnableClientState(GL_VERTEX_ARRAY);
                 glColor4f(0,0,0,0.8);
+                glVertexPointer(3, GL_DOUBLE, 0, &lines[0]);
+                glDrawArrays(GL_LINES, 0, 2);
+                glVertexPointer(3, GL_DOUBLE, 0, &line_strip[0]);
+                glDrawArrays(GL_LINE_STRIP, 0, 4);
+                glDisableClientState(GL_VERTEX_ARRAY);
 
                 if (tone%12 == 0)
                 {
