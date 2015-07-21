@@ -160,7 +160,7 @@ void RenderAxes::
             inside = inside + clippedFrustum[i];
 
         // as clippedFrustum is a convex polygon, the mean position of its vertices will be inside
-        inside = inside * (1.f/clippedFrustum.size());
+        inside = inside * (1./clippedFrustum.size());
     }
 
 
@@ -289,7 +289,7 @@ void RenderAxes::
                 st--;
 
             // compute index of next marker along t and f
-            double epsilon = 1.f/10;
+            double epsilon = 1./10;
             double hz1 = fa.getFrequencyT( p[2] - DF * epsilon );
             double hz2 = fa.getFrequencyT( p[2] + DF * epsilon );
             if (hz2-f < f-hz1)  hz1 = f;
@@ -410,11 +410,11 @@ void RenderAxes::
                     if (-1 == tmarkanyways)
                         size = 1;
 
-                    float sign = (v0^z)%(v0^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*SF*.003f*sign;
+                    double sign = (v0^z)%(v0^( p - inside))>0 ? 1 : -1;
+                    double o = size*SF*.003*sign;
 
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2]-o, 1.f));
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0, p[2], 1));
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0, p[2]-o, 1));
 
                     if (size>1) {
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
@@ -422,7 +422,7 @@ void RenderAxes::
                         matrixd modelview = gl_projection->modelview;
                         modelview *= matrixd::translate (p[0], 0, p[2]);
                         modelview *= matrixd::rot (90,1,0,0);
-                        modelview *= matrixd::scale (0.013f*drawScaleT,0.013f*drawScaleF,1.f);
+                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
                         modelview *= matrixd::rot (angle,0,0,1);
 
                         char a[100];
@@ -436,7 +436,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (Glyph{modelview, a, 0.0, 0.15, 0.5f, 0.5f - .7f*(sign<0?-1.f:1.f)});
+                        ae.glyphs.push_back (Glyph{modelview, a, 0.0, 0.15, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             } else if (fa.axis_scale != AxisScale_Unknown) {
@@ -451,11 +451,11 @@ void RenderAxes::
                         size = 1;
 
 
-                    float sign = (v0^x)%(v0^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*ST*.003f*sign;
+                    double sign = (v0^x)%(v0^( p - inside))>0 ? 1 : -1;
+                    double o = size*ST*.003*sign;
 
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0.f, p[2], 1.f));
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0, p[2], 1));
+                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0, p[2], 1));
 
 
                     if (size>1)
@@ -465,7 +465,7 @@ void RenderAxes::
                         matrixd modelview = gl_projection->modelview;
                         modelview *= matrixd::translate (p[0],0,p[2]);
                         modelview *= matrixd::rot (90,1,0,0);
-                        modelview *= matrixd::scale (0.013f*drawScaleT,0.013f*drawScaleF,1.f);
+                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
                         modelview *= matrixd::rot (angle,0,0,1);
 
                         char a[100];
@@ -479,7 +479,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (Glyph{modelview, a, 0.0, 0.05, 0.5f, 0.5f - .7f*(sign<0?-1.f:1.f)});
+                        ae.glyphs.push_back (Glyph{modelview, a, 0.0, 0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             }
@@ -511,14 +511,14 @@ void RenderAxes::
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>fa.min_hz)) F1=fa.min_hz;
             if (!(F2<fa.max_hz())) F2=fa.max_hz();
-            float tva12 = powf(2.f, 1.f/12);
+            double tva12 = powf(2., 1./12);
 
 
             if (0 == F1)
                 F1 = 1;
-            int startTone = log(F1/440.f)/log(tva12) + 45;
-            int endTone = ceil(log(F2/440.f)/log(tva12)) + 45;
-            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+            int startTone = log(F1/440.)/log(tva12) + 45;
+            int endTone = ceil(log(F2/440.)/log(tva12)) + 45;
+            double sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1 : -1;
             if (!render_settings.left_handed_axes)
                 sign *= -1;
 
@@ -638,7 +638,7 @@ void RenderAxes::
                     modelview *= matrixd::translate ( pp[0], 0, pp[2] );
                     modelview *= matrixd::rot (90,1,0,0);
 
-                    //modelview *= matrixd::scale (0.00014f*ST,0.00014f*SF,1.f);
+                    //modelview *= matrixd::scale (0.00014*ST, 0.00014*SF, 1);
                     modelview *= matrixd::scale (0.5 * dx[0], 35. * dx[0]/ST*(pn[2]-pp[2]), 1.);
 
                     if (!render_settings.left_handed_axes)
@@ -730,8 +730,8 @@ void RenderAxes::
 
     glLineWidth(1);
     for (const Glyph& g : glyphs) {
-        float w = g.margin*100.;
-        float letter_spacing = g.letter_spacing*100.;
+        double w = g.margin*100.;
+        double letter_spacing = g.letter_spacing*100.;
         const char* a = g.text.c_str ();
         for (const char*c=a;*c!=0; c++)
         {

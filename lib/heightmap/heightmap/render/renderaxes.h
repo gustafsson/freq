@@ -24,10 +24,10 @@ public:
     struct Glyph {
         matrixd modelview;
         std::string text;
-        float margin;
-        float letter_spacing;
-        float align_x;
-        float align_y;
+        double margin;
+        double letter_spacing;
+        double align_x;
+        double align_y;
     };
 
     struct AxesElements {
