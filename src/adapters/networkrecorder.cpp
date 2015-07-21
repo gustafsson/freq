@@ -127,7 +127,7 @@ int NetworkRecorder::
 
     // notify listeners that we've got new data
     if (_invalidator)
-        _invalidator.write ()->markNewlyRecordedData( Signal::Interval( offset, offset + sampleCount ) );
+        _invalidator->deprecateCache( Signal::Interval( offset, offset + sampleCount ) );
 
     return sampleCount*sizeof(short);
 }
@@ -232,7 +232,7 @@ void NetworkRecorder::
 
     // notify listeners that something happened (most meaningful if state == UnconnectedState)
     if (_invalidator)
-        _invalidator.write ()->markNewlyRecordedData( Signal::Interval() );
+        _invalidator->deprecateCache( Signal::Interval() );
 }
 
 } // namespace Adapters

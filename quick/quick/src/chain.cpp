@@ -8,22 +8,6 @@
 
 using namespace Signal;
 
-class GotDataCallback: public Signal::Recorder::IGotDataCallback
-{
-public:
-    void setInvalidator(Signal::Processing::IInvalidator::ptr i) { i_ = i; }
-
-    virtual void markNewlyRecordedData(Signal::Interval what)
-    {
-        if (i_)
-            i_->deprecateCache(what);
-    }
-
-private:
-    Signal::Processing::IInvalidator::ptr i_;
-};
-
-
 class NoopOperationImpl: public Operation
 {
 public:
@@ -143,12 +127,10 @@ void Chain::clearOpenGlBackground()
 void Chain::openRecording()
 {
     Signal::Recorder::ptr rec(new QtMicrophone);
-    GotDataCallback* cb = new GotDataCallback();
-    Signal::Recorder::IGotDataCallback::ptr callback(cb);
-    Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec, callback));
+    Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec));
     Signal::Processing::IInvalidator::ptr i = chain_->addOperationAt(desc, target_marker_);
-    cb->setInvalidator (i);
 
+    rec->setInvalidator( i );
     rec->startRecording();
 
     setTitle (rec->name().c_str());

@@ -326,7 +326,7 @@ void Worker::
 
         EXCEPTION_ASSERT( worker.isRunning () );
         worker.abort ();
-        worker.wait (1);
+        EXCEPTION_ASSERT( worker.wait (2) );
         EXCEPTION_ASSERT( !worker.isRunning () );
     }
 

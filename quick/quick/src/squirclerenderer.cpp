@@ -96,7 +96,7 @@ void SquircleRenderer::paint()
     if (m_viewport.height ()==0 || m_viewport.width ()==0)
     {
         for ( auto c : renderView ()->model->tfr_mapping ()->collections() )
-            c->next_frame(); // increment frame_number and keep garbage collection running
+            c->frame_begin(); // increment frame_number and keep garbage collection running
         return;
     }
 

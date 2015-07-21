@@ -3,7 +3,6 @@
 #include "demangle.h"
 #include "timer.h"
 
-
 #include <boost/exception_ptr.hpp>
 
 #ifdef __APPLE__

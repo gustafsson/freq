@@ -52,12 +52,13 @@ void HeightmapProcessingPublisher::
 
     Intervals missing_data;
     Intervals needed_samples;
-    float fs, L;
+    float fs;
+    IntervalType Ls;
     Heightmap::TfrMapping::Collections C;
     {
         auto tm = tfrmapping_.read ();
         fs = tm->targetSampleRate();
-        L = tm->length();
+        Ls = tm->lengthSamples();
         C = tm->collections();
     }
 
@@ -74,22 +75,30 @@ void HeightmapProcessingPublisher::
     }
 
     // new blocks based on invalid data contain invalid data
+    auto missing_data_org = missing_data;
     missing_data |= ~last_valid_ & recently_created;
+
+    TIME_PAINTGL_DETAILS if (missing_data || recently_created)
+        Log("target_needs_->deprecateCache: %s\nmissing_data_org: %s, recently_created: %s\nlast_valid_: %s, needed_samples: %s")
+                % missing_data % missing_data_org % recently_created % last_valid_ % needed_samples;
 
     target_needs_->deprecateCache (missing_data);
 
-    Interval target_interval(0, std::round(L*fs));
+    Interval target_interval(0, Ls);
     needed_samples &= target_interval;
 
     last_valid_ = needed_samples;
     if (auto step = target_needs_->step ().lock ())
-        last_valid_ &= Step::cache (step)->samplesDesc();
+    {
+        auto I = Step::cache (step).read ()->samplesDesc();
+        last_valid_ &= I;
+    }
 
 
     Intervals to_compute;
     if (auto step = target_needs_->step ().lock ())
         to_compute = step.read ()->not_started();
-    to_compute |= missing_data ;
+    to_compute |= missing_data;
     to_compute &= needed_samples;
 
 
@@ -145,9 +154,10 @@ void HeightmapProcessingPublisher::
         if (Step::ptr step = target_needs_->step ().lock())
         {
             Intervals not_started = target_needs_->not_started();
+            auto out_of_date = ~Step::cache (step).read ()->samplesDesc();
             auto stepp = step.read ();
             TaskInfo(boost::format("RenderView step->out_of_date = %s, step->not_started = %s, target_needs->not_started = %s")
-                             % ~Step::cache (step)->samplesDesc()
+                             % out_of_date
                              % stepp->not_started()
                              % not_started);
         }
@@ -213,7 +223,7 @@ void HeightmapProcessingPublisher::
     for ( auto cp : C )
         cp->runGarbageCollection(true);
 
-    lmp_gc ();
+    lmp_gc (true);
 }
 
 

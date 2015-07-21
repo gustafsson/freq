@@ -47,7 +47,7 @@ void UpdateProducer::
 
     if (intersecting_blocks.empty ())
     {
-        DEBUG_INFO Log("Discarding chunk since there are no longer any intersecting_blocks with %s")
+        Log("updateproducer: Discarding chunk since there are no longer any intersecting_blocks with %s")
                  % chunk_interval;
         return;
     }
@@ -57,7 +57,9 @@ void UpdateProducer::
                             % chunk_interval % vartype(*merge_chunk_.get ()));
     std::vector<std::future<void>> F;
 
-    for (Update::IUpdateJob::ptr job : merge_chunk_->prepareUpdate (pchunk, intersecting_blocks))
+    auto jobs = merge_chunk_->prepareUpdate (pchunk, intersecting_blocks);
+
+    for (const Update::IUpdateJob::ptr& job : jobs)
     {
         // Use same or different intersecting_blocks
 //        intersecting_blocks = BlockQuery(cache).getIntersectingBlocks( job->getCoveredInterval (), false, 0);

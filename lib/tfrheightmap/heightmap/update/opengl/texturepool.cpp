@@ -5,6 +5,9 @@
 #include "log.h"
 #include "datastorage.h"
 
+//#define INFO
+#define INFO if(0)
+
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -49,6 +52,8 @@ TexturePool::
       height_(height),
       format_(format)
 {
+    INFO Log("New texturepool: %dx%d. %s per texture") % width_ % height_
+            % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8));
 }
 
 
@@ -68,7 +73,7 @@ void TexturePool::
         if (!t)
             t = newTexture();
 
-    Log("texturepool: %dx%dx%d using %s") % width_ % height_ % n
+    INFO Log("texturepool: n=%d, %dx%d using %s") % n % width_ % height_
             % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8)*n);
 }
 
@@ -80,6 +85,9 @@ GlTexture::ptr TexturePool::
     for (GlTexture::ptr& t : pool)
         if (t.unique ())
             return t;
+
+    INFO Log("texturepool: n=%d+1, %dx%d using %s") % pool.size () % width_ % height_
+            % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8)*(pool.size ()+1));
 
     pool.push_back (newTexture());
     return pool.back ();

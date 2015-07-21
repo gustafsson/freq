@@ -18,11 +18,10 @@ Signal::pBuffer MicrophoneRecorderOperation::
 
 
 MicrophoneRecorderDesc::
-        MicrophoneRecorderDesc(Signal::Recorder::ptr recorder, Signal::Recorder::IGotDataCallback::ptr invalidator)
+        MicrophoneRecorderDesc(Signal::Recorder::ptr recorder)
     :
       recorder_(recorder)
 {
-    recorder_.write ()->setDataCallback(invalidator);
 }
 
 

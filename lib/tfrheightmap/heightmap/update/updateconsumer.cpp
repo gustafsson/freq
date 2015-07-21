@@ -142,7 +142,7 @@ void UpdateConsumer::
           {
             unique_ptr<TaskTimer> tt;
             INFO if (update_queue->empty ())
-                tt.reset (new TaskTimer("Waiting for updates"));
+                tt.reset (new TaskTimer("updateconsumer: Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
 
@@ -168,7 +168,7 @@ void UpdateConsumer::
               }
 
 
-            INFO Log("UpdateConsumer did %d jobs in %s")
+            INFO Log("updateconsumer: did %d jobs in %s")
                      % num_jobs % TaskTimer::timeToString (t.elapsed ());
 
 /*            INFO

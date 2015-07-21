@@ -80,9 +80,6 @@ void Squircle::
 void Squircle::handleWindowChanged(QQuickWindow *win)
 {
     if (win) {
-        disconnect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()));
-        disconnect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()));
-        disconnect(this, SIGNAL(refresh()), win, SLOT(update()));
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
@@ -271,6 +268,11 @@ void Squircle::sync()
 
     m_renderer->setViewport(QRectF(topleft, bottomright),
                             window ()->height (), window()->devicePixelRatio());
+
+    // Each Heightmap has its own target and thus its own extent.
+    // Should targets have their own extent when different targets
+    // uses the same source.
+    render_model.recompute_extent ();
 }
 
 

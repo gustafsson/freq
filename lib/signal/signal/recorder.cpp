@@ -1,4 +1,5 @@
 #include "recorder.h"
+#include "log.h"
 
 namespace Signal {
 
@@ -28,7 +29,7 @@ float Recorder::
 
 
 void Recorder::
-        setDataCallback( IGotDataCallback::ptr invalidator )
+        setInvalidator( Signal::Processing::IInvalidator::ptr invalidator )
 {
     _invalidator = invalidator;
 }
@@ -111,9 +112,11 @@ float Recorder::
     float T = dt + _offset;
     if (T > L) {
         // dropped samples
-        _offset -= T-L, T = L;
+        Log ("recorder: dropped %d frames") % (int)((T-L) * data.raw ()->sample_rate + 0.5f);
+        _offset -= T-L;
+        T = L;
     }
-    return T;
+    return T+0.1;
 }
 
 } // namespace Signal

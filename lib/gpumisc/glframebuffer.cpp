@@ -91,6 +91,7 @@ GlFrameBuffer::
 {
     DEBUG_INFO TaskTimer tt("~GlFrameBuffer()");
 
+#ifdef _DEBUG
     GLenum e = glGetError();
     if (e == GL_INVALID_OPERATION)
     {
@@ -98,15 +99,16 @@ GlFrameBuffer::
     }
 
     DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e);
+#endif
 
-    DEBUG_INFO TaskInfo("glDeleteRenderbuffersEXT");
-    glDeleteRenderbuffers(1, &depth_stencil_buffer_);
+    DEBUG_INFO TaskInfo("glDeleteRenderbuffers");
+    if (depth_stencil_buffer_)
+        glDeleteRenderbuffers(1, &depth_stencil_buffer_);
 
-    DEBUG_INFO TaskInfo("glDeleteFramebuffersEXT");
+    DEBUG_INFO TaskInfo("glDeleteFramebuffers");
     glDeleteFramebuffers(1, &fboId_);
 
-    GLenum e2 = glGetError();
-    DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)e2);
+    DEBUG_INFO TaskInfo("glGetError = %u", (unsigned)glGetError());
 
     if (own_texture_)
         delete own_texture_;
@@ -122,7 +124,11 @@ GlFrameBuffer::ScopeBinding GlFrameBuffer::
 void GlFrameBuffer::
         bindFrameBuffer()
 {
+#ifdef _DEBUG
     GlException_SAFE_CALL( glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_) );
+    if (prev_fbo_!=0)
+        Log("GlFrameBuffer: detected an existing binding to FBO %d. This requires a glGet which should be avoided") % prev_fbo_;
+#endif
     GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
 }
 
@@ -236,7 +242,7 @@ void GlFrameBuffer::
     }
 
     DEBUG_INFO TaskInfo("fbo = %u", fboId_ );
-    DEBUG_INFO TaskInfo("rbo = %u", fboId_ );
+    DEBUG_INFO TaskInfo("rbo = %u", depth_stencil_buffer_ );
     DEBUG_INFO TaskInfo("texture = %u", textureid_ );
 
     GlException_CHECK_ERROR();

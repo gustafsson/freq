@@ -82,6 +82,9 @@ void GraphicsScene::
 
         renderview_->resizeGL( rect, h );
 
+        // This changes state. Shouldn't be a part of rendering.
+        renderview_->model->recompute_extent ();
+
         renderview_->paintGL();
 
         renderview_->defaultStates();

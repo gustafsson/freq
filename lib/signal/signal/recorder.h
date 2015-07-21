@@ -5,6 +5,7 @@
 #include "shared_state.h"
 #include "verifyexecutiontime.h"
 #include "timer.h"
+#include "signal/processing/iinvalidator.h"
 
 namespace Signal {
 
@@ -32,18 +33,6 @@ public:
     };
 
 
-    // TODO use Signal::Processing::IInvalidator
-    class IGotDataCallback
-    {
-    public:
-        typedef shared_state<IGotDataCallback> ptr;
-
-        virtual ~IGotDataCallback() {}
-
-        virtual void markNewlyRecordedData(Signal::Interval what)=0;
-    };
-
-
     struct Data
     {
         Data(float sample_rate, unsigned num_channels)
@@ -68,7 +57,7 @@ public:
     virtual float length();
 
     float time_since_last_update();
-    void setDataCallback( IGotDataCallback::ptr invalidator );
+    void setInvalidator( Signal::Processing::IInvalidator::ptr invalidator );
 
     // Data race free and lock free methods
     shared_state<Data> data() { return _data; }
@@ -84,7 +73,7 @@ protected:
     shared_state<Data> _data;
     float _offset;
     Timer _start_recording, _last_update;
-    IGotDataCallback::ptr _invalidator;
+    Signal::Processing::IInvalidator::ptr _invalidator;
     std::exception_ptr _exception;
 
     virtual float time();

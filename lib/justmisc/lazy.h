@@ -21,6 +21,7 @@ public:
 
     operator T() const { return *t; }
     T* operator ->() { return t; }
+    T&& move() { T* t2 = t; t = 0; return std::move(*t2); }
 private:
     T* t = 0;
 };

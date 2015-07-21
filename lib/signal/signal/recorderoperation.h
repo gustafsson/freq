@@ -27,7 +27,7 @@ private:
 class MicrophoneRecorderDesc: public Signal::OperationDesc
 {
 public:
-    MicrophoneRecorderDesc( Recorder::ptr, Recorder::IGotDataCallback::ptr invalidator );
+    MicrophoneRecorderDesc( Recorder::ptr );
 
     void startRecording();
     void stopRecording();

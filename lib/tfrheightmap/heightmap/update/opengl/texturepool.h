@@ -28,12 +28,17 @@ public:
     TexturePool(int width, int height, FloatSize format);
     TexturePool(const TexturePool&)=delete;
     TexturePool& operator=(const TexturePool&)=delete;
+    TexturePool(TexturePool&&)=default;
+    TexturePool& operator=(TexturePool&&)=default;
 
     size_t size();
     void resize(size_t);
 
     // get1 will increase the size of the pool if no textures were available
     GlTexture::ptr get1();
+
+    int width() const { return width_; }
+    int height() const { return height_; }
     FloatSize format() { return format_; }
 
 private:

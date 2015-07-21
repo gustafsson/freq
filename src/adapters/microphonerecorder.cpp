@@ -326,7 +326,7 @@ int MicrophoneRecorder::
     Signal::IntervalType offset = actual_number_of_samples();
 
     float fs = _data.raw ()->sample_rate;
-    unsigned nc = _data.raw ()->num_channels;
+    int nc = _data.raw ()->num_channels;
 
     _last_update.restart ();
 
@@ -340,7 +340,7 @@ int MicrophoneRecorder::
     TIME_MICROPHONERECORDER_WRITEBUFFER TaskTimer tt(boost::format("MicrophoneRecorder: writeBuffer %s, [%g, %g) s")
                                         % I % (I.first/fs) % (I.last/fs));
 
-    for (unsigned i=0; i<nc; ++i)
+    for (int i=0; i<nc; ++i)
     {
         Signal::pMonoBuffer b = _receive_buffer->getChannel (i);
         float* p = CpuMemoryStorage::WriteAll<1>(b->waveform_data()).ptr ();
@@ -379,7 +379,7 @@ int MicrophoneRecorder::
 
     if (_invalidator)
         // Tell someone that there is new data available to read
-        _invalidator.write ()->markNewlyRecordedData( _receive_buffer->getInterval () );
+        _invalidator->deprecateCache ( _receive_buffer->getInterval () );
 
     } catch (...) {
         _exception = std::current_exception ();
@@ -399,13 +399,15 @@ int MicrophoneRecorder::
 
 namespace Adapters {
 
-class GotDataCallback: public Signal::Recorder::IGotDataCallback
+class GotDataCallback: public Signal::Processing::IInvalidator
 {
 public:
-    Signal::Intervals marked_data() const { return marked_data_; }
+    GotDataCallback() : marked_data_(new Signal::Intervals) {}
 
-    virtual void markNewlyRecordedData(Signal::Interval what) {
-        marked_data_ |= what;
+    Signal::Intervals marked_data() const { return *marked_data_.read (); }
+
+    virtual void deprecateCache(Signal::Intervals what) const {
+        *marked_data_.write () |= what;
         semaphore_.release ();
     }
 
@@ -414,8 +416,8 @@ public:
     }
 
 private:
-    QSemaphore semaphore_;
-    Signal::Intervals marked_data_;
+    mutable QSemaphore semaphore_;
+    shared_state<Signal::Intervals> marked_data_;
 };
 
 void MicrophoneRecorder::
@@ -424,9 +426,11 @@ void MicrophoneRecorder::
     // It should control the behaviour of a recording
     {
         int inputDevice = -1;
-        Signal::Recorder::IGotDataCallback::ptr callback(new GotDataCallback);
+        Signal::Processing::IInvalidator::ptr callback(new GotDataCallback);
 
-        Signal::MicrophoneRecorderDesc mrd(Signal::Recorder::ptr(new MicrophoneRecorder(inputDevice)), callback);
+        Signal::Recorder::ptr rec(new MicrophoneRecorder(inputDevice));
+        rec->setInvalidator(callback);
+        Signal::MicrophoneRecorderDesc mrd(rec);
 
         EXCEPTION_ASSERT( mrd.canRecord() );
         EXCEPTION_ASSERT( mrd.isStopped() );
@@ -436,7 +440,7 @@ void MicrophoneRecorder::
         EXCEPTION_ASSERT( !mrd.isStopped() );
 
         Timer t;
-        dynamic_cast<GotDataCallback*>(callback.raw ())->wait (6000);
+        dynamic_cast<GotDataCallback*>(callback.get ())->wait (6000);
         // Re-throw exception if an exception was generated
         mrd.recorder()->read (Signal::Interval (0, 1));
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.200 );
@@ -445,7 +449,7 @@ void MicrophoneRecorder::
 
         EXCEPTION_ASSERT( mrd.isStopped() );
 
-        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(&*callback.read ())->marked_data () != Signal::Intervals());
+        EXCEPTION_ASSERT(dynamic_cast<const GotDataCallback*>(callback.get ())->marked_data () != Signal::Intervals());
         EXCEPTION_ASSERT_LESS( t.elapsed (), 1.300 );
     }
 }

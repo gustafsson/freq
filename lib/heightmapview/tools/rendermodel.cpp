@@ -240,7 +240,8 @@ void RenderModel::
         o.unlock ();
 
         // and change the tfr_mapping
-        tfr_map_->transform_desc( t->copy() );
+        t = t->copy ();
+        tfr_map_->transform_desc( t );
 
         deprecateCache();
     }

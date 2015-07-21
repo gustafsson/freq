@@ -17,9 +17,9 @@
 
 #include <QGLContext>
 
-#ifdef GL_ES_VERSION_2_0
+//#ifdef GL_ES_VERSION_2_0
 #define DRAW_STRAIGHT_ONTO_BLOCK
-#endif
+//#endif
 
 //#define VERBOSE_COLLECTION
 #define VERBOSE_COLLECTION if(0)
@@ -154,6 +154,7 @@ MergerTexture::
         MergerTexture(BlockCache::const_ptr cache, BlockLayout block_layout, bool disable_merge)
     :
       cache_(cache),
+      fbo_(0),
       vbo_(0),
       tex_(0),
       block_layout_(block_layout),
@@ -172,6 +173,9 @@ MergerTexture::
 
     if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
+
+    if (fbo_) glDeleteFramebuffers(1, &fbo_);
+    fbo_ = 0;
 }
 
 
@@ -183,9 +187,14 @@ void MergerTexture::
 
     EXCEPTION_ASSERT(QGLContext::currentContext ());
 
+    glGenFramebuffers(1, &fbo_);
+
 #ifndef DRAW_STRAIGHT_ONTO_BLOCK
-        tex_ = Render::BlockTextures::get1 ();
-        fbo_.reset (new GlFrameBuffer(*tex_));
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
+    tex_ = Render::BlockTextures::get1 ();
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, tex_->getOpenGlTextureId (), 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 #endif
 
     glGenBuffers (1, &vbo_);
@@ -248,13 +257,12 @@ Signal::Intervals MergerTexture::
     Signal::Intervals I;
 
     {
-    #ifndef DRAW_STRAIGHT_ONTO_BLOCK
-        auto fboBinding = fbo_->getScopeBinding ();
-        (void)fboBinding; // raii
-    #endif
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
 
         for (pBlock b : blocks)
             I |= fillBlockFromOthersInternal (b);
+
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
 
     cache_clone.clear ();
@@ -296,9 +304,8 @@ Signal::Intervals MergerTexture::
     glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
-    GlFrameBuffer fbo(*block->texture ());
-    auto fboBinding = fbo.getScopeBinding ();
-    (void)fboBinding; // raii
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId (), 0);
 #endif
 
     glClear( GL_COLOR_BUFFER_BIT );
@@ -358,7 +365,10 @@ Signal::Intervals MergerTexture::
         }
     }
 
-#ifndef DRAW_STRAIGHT_ONTO_BLOCK
+#ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
+#else
     {
         VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getOverlappingRegion ());
 
