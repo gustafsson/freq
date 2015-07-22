@@ -31,8 +31,6 @@ public:
     };
 
     struct AxesElements {
-        std::vector<tvector<4,GLfloat>> ticks;
-        std::vector<tvector<4,GLfloat>> phatTicks;
         std::vector<Glyph> glyphs;
         std::vector<Vertex> vertices;
         std::vector<Vertex> orthovertices;

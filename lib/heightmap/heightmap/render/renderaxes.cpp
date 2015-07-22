@@ -56,8 +56,6 @@ RenderAxes::
 void RenderAxes::
         drawAxes( float T )
 {
-    ae_.ticks.clear ();
-    ae_.phatTicks.clear ();
     ae_.glyphs.clear ();
     ae_.vertices.clear ();
     ae_.orthovertices.clear ();
@@ -80,8 +78,10 @@ template<int N,typename T> void addVertices(
         const tvector<4,GLfloat>& color,
         const tvector<N,T>* V, int L)
 {
+    vertices.push_back (RenderAxes::Vertex{make4(V[0]),color}); // degenerate
     for (int i=0; i<L; i++)
         vertices.push_back (RenderAxes::Vertex{make4(V[i]),color});
+    vertices.push_back (RenderAxes::Vertex{make4(V[L-1]),color}); // degenerate
 }
 
 void RenderAxes::
@@ -170,9 +170,6 @@ void RenderAxes::
     FreqAxis fa = display_scale;
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
-
-    auto& ticks = ae.ticks;
-    auto& phatTicks = ae.phatTicks;
 
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
@@ -411,10 +408,16 @@ void RenderAxes::
                         size = 1;
 
                     double sign = (v0^z)%(v0^( p - inside))>0 ? 1 : -1;
-                    double o = size*SF*.003*sign;
+                    vectord o { 0, 0, size*SF*.008*sign };
+                    vectord ow { ST*0.0005 * size, 0, 0 };
 
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0, p[2], 1));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0, p[2]-o, 1));
+                    vectord v[] = {
+                        p - ow,
+                        p - ow - o,
+                        p + ow,
+                        p + ow - o
+                    };
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1) {
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
@@ -450,13 +453,17 @@ void RenderAxes::
                     if (-1 == fmarkanyways)
                         size = 1;
 
-
                     double sign = (v0^x)%(v0^( p - inside))>0 ? 1 : -1;
-                    double o = size*ST*.003*sign;
+                    vectord o { size*ST*.008*sign, 0, 0 };
+                    vectord ow { 0, 0, SF*0.0005 * size };
 
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0, p[2], 1));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0, p[2], 1));
-
+                    vectord v[] = {
+                        p - ow,
+                        p - ow - o,
+                        p + ow,
+                        p + ow - o
+                    };
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1)
                     {
@@ -497,7 +504,7 @@ void RenderAxes::
             timePerPixel *= scale; scalePerPixel *= scale;
 
             double ST = timePerPixel * 750;
-            // double SF = scalePerPixel * 750;
+            double SF = scalePerPixel * 750;
 
             // from http://en.wikipedia.org/wiki/Piano_key_frequencies
             // F(n) = 440 * pow(pow(2, 1/12),n-49)
@@ -537,7 +544,6 @@ void RenderAxes::
                 switch((toneTest+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
                 bool blackKeyN = false;
                 switch((toneTest+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
-                glLineWidth(1);
                 float wN = ffN-ff, wP = ff-ffP;
                 if (blackKey)
                     wN *= .5, wP *= .5;
@@ -585,20 +591,17 @@ void RenderAxes::
                     if (blackKey)
                     {
                         vectord v[] = {
-                            pp - dx,  // degenerate
                             pp - dx,
                             pp - dx*blackw,
                             pn - dx,
                             pn - dx*blackw,
-                            pn - dx*blackw
                         };
 
-                        addVertices(ae.vertices, keyColor, v, 6);
+                        addVertices(ae.vertices, keyColor, v, 4);
                     }
                     else
                     {
                         vectord v[] = {
-                            vectord (pp - dx*(blackKeyP ? blackw : 1.)), // degenerate
                             vectord (pp - dx*(blackKeyP ? blackw : 1.)),
                             vectord (pp),
                             vectord (pp*0.5 + pt*0.5 - dx*(blackKeyP ? blackw : 1.)),
@@ -612,25 +615,36 @@ void RenderAxes::
                             vectord (pn*0.5 + pt*0.5),
                             vectord (pn*0.5 + pt*0.5 - dx*(blackKeyN ? blackw : 1.)),
                             vectord (pn),
-                            vectord (pn - dx*(blackKeyN ? blackw : 1.)),
-                            vectord (pn - dx*(blackKeyN ? blackw : 1.)) // degenerate
+                            vectord (pn - dx*(blackKeyN ? blackw : 1.))
                         };
 
-                        addVertices(ae.vertices, keyColor, v, 16);
+                        addVertices(ae.vertices, keyColor, v, 14);
                     }
                 }
 
 
                 // outline
-                ticks.push_back (make4(pn - dx));
-                ticks.push_back (make4(pp - dx));
+                vectord lx { 0.0005*ST, 0, 0 };
+                vectord ly { 0, 0, 0.0005*SF };
+                vectord v[] = {
+                    pn - dx - lx,
+                    pn - dx + lx,
+                    pp - dx - lx,
+                    pp - dx + lx
+                };
+                addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
-                ticks.push_back (make4(pp - dx*(blackKeyP ? blackw : 1.)));
-                ticks.push_back (make4(pp - dx*(blackKey ? blackw : 0.)));
-                ticks.push_back (make4(pp - dx*(blackKey ? blackw : 0.)));
-                ticks.push_back (make4(pn - dx*(blackKey ? blackw : 0.)));
-                ticks.push_back (make4(pn - dx*(blackKey ? blackw : 0.)));
-                ticks.push_back (make4(pn - dx*(blackKeyN ? blackw : 1.)));
+                vectord v2[] = {
+                    pp - dx*(blackKeyP ? blackw : 1.) - ly,
+                    pp - dx*(blackKeyP ? blackw : 1.) + ly,
+                    pp - dx*(blackKey ? blackw : 0.) - ly - lx,
+                    pp - dx*(blackKey ? blackw : 0.) + ly + lx,
+                    pn - dx*(blackKey ? blackw : 0.) + ly + lx,
+                    pn - dx*(blackKey ? blackw : 0.) - ly - lx,
+                    pn - dx*(blackKeyN ? blackw : 1.) + ly,
+                    pn - dx*(blackKeyN ? blackw : 1.) - ly
+                };
+                addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v2, 8 );
 
                 if (tone%12 == 0)
                 {
@@ -693,20 +707,7 @@ void RenderAxes::
         glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
         glDisableClientState(GL_COLOR_ARRAY);
     }
-    if (!ae.phatTicks.empty())
-    {
-        glLineWidth(2);
-        glVertexPointer(4, GL_FLOAT, 0, &ae.phatTicks[0]);
-        glColor4f(0,0,0,0.8);
-        glDrawArrays(GL_LINES, 0, ae.phatTicks.size());
-        glLineWidth(1);
-    }
-    if (!ae.ticks.empty())
-    {
-        glVertexPointer(4, GL_FLOAT, 0, &ae.ticks[0]);
-        glColor4f(0,0,0,0.8);
-        glDrawArrays(GL_LINES, 0, ae.ticks.size());
-    }
+
 
     glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -728,7 +729,6 @@ void RenderAxes::
 
     glLoadMatrixd (gl_projection->modelview.v ());
 
-    glLineWidth(1);
     for (const Glyph& g : glyphs) {
         double w = g.margin*100.;
         double letter_spacing = g.letter_spacing*100.;
