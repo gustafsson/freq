@@ -5,6 +5,7 @@
 #include "frustumclip.h"
 #include "heightmap/freqaxis.h"
 #include "tvector.h"
+#include "glyphs.h"
 
 #include "glprojection.h"
 
@@ -21,17 +22,8 @@ public:
         tvector<4,GLfloat> color;
     };
 
-    struct Glyph {
-        matrixd modelview;
-        std::string text;
-        double margin;
-        double letter_spacing;
-        double align_x;
-        double align_y;
-    };
-
     struct AxesElements {
-        std::vector<Glyph> glyphs;
+        std::vector<GlyphData> glyphs;
         std::vector<Vertex> vertices;
         std::vector<Vertex> orthovertices;
     };
@@ -40,19 +32,20 @@ public:
             const RenderSettings& render_settings,
             const glProjection* gl_projection,
             FreqAxis display_scale);
+    ~RenderAxes();
 
     void drawAxes( float T );
 
 private:
     void getElements( RenderAxes::AxesElements& ae, float T );
     void drawElements( const AxesElements& );
-    void drawGlyphsGlut( const std::vector<Glyph>& );
 
     const RenderSettings& render_settings;
     const glProjection* gl_projection;
     FreqAxis display_scale;
     AxesElements ae_;
-    QOpenGLShaderProgram* program_ = 0;
+    QOpenGLShaderProgram* program_;
+    IGlyphs* glyphs_;
 };
 
 } // namespace Render

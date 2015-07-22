@@ -9,15 +9,6 @@
 #include "gluperspective.h"
 #include "log.h"
 
-// glut
-#ifndef __APPLE__
-#   include <GL/glut.h>
-#else
-# ifndef GL_ES_VERSION_2_0
-#   include <GLUT/glut.h>
-# endif
-#endif
-
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
 
@@ -32,28 +23,22 @@ RenderAxes::
     :
       render_settings(render_settings),
       gl_projection(gl_projection),
-      display_scale(display_scale)
+      display_scale(display_scale),
+      program_(0),
+      glyphs_(0)
 {
-    // Using glut for drawing fonts, so glutInit must be called.
-    static int c=0;
-    if (0==c)
-    {
-        // run glutinit once per process
-#ifdef _WIN32
-        c = 1;
-        char* dummy="dummy\0";
-        glutInit(&c,&dummy);
-#elif !defined(__APPLE__)
-        glutInit(&c,0);
-        c = 1;
-#endif
-    }
+    glyphs_ = GlyphFactory::makeIGlyphs ();
 }
 
 
-// Step 1: Figure out which characters to draw.
-// Step 2: Draw them.
-// Step 3: Replace glut with a library for vector fonts (i.e: freetype-gl).
+RenderAxes::
+        ~RenderAxes()
+{
+    delete glyphs_;
+    delete program_;
+}
+
+
 void RenderAxes::
         drawAxes( float T )
 {
@@ -431,7 +416,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (Glyph{modelview, a, 0.0, 0.15, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, 0.15, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             } else if (fa.axis_scale != AxisScale_Unknown) {
@@ -478,7 +463,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (Glyph{modelview, a, 0.0, 0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, 0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             }
@@ -652,7 +637,7 @@ void RenderAxes::
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
-                    ae.glyphs.push_back (Glyph{modelview, a, 0.1, 0., 1., 0.});
+                    ae.glyphs.push_back (GlyphData{modelview, a, 0.1, 0., 1., 0.});
                 }
             }
         }
@@ -741,66 +726,11 @@ void RenderAxes::
     program_->disableAttributeArray (1);
     program_->release();
 
-#ifndef GL_ES_VERSION_2_0
-    drawGlyphsGlut(ae.glyphs);
-#endif
+    glyphs_->drawGlyphs (gl_projection->projection, ae.glyphs);
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
 }
-
-
-#ifndef GL_ES_VERSION_2_0
-void RenderAxes::
-        drawGlyphsGlut( const std::vector<Glyph>& glyphs)
-{
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd (gl_projection->projection.v ());
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixd (gl_projection->modelview.v ());
-
-    typedef tvector<2,GLfloat> GLvector2F;
-    std::vector<GLvector2F> quad(4);
-
-    for (const Glyph& g : glyphs) {
-        double w = g.margin*100.;
-        double letter_spacing = g.letter_spacing*100.;
-        const char* a = g.text.c_str ();
-        for (const char*c=a;*c!=0; c++)
-        {
-            if (c!=a)
-                w+=letter_spacing;
-            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-        }
-
-        matrixd modelview = g.modelview;
-        modelview *= matrixd::scale (0.01,0.01,1.);
-        modelview *= matrixd::translate (-w*g.align_x,-g.align_y*100.,0);
-
-        glLoadMatrixd (modelview.v ());
-
-        float z = 10;
-        float q = 20;
-        glEnableClientState(GL_VERTEX_ARRAY);
-        quad[0] = GLvector2F(0 - z, 0 - q);
-        quad[1] = GLvector2F(w + z, 0 - q);
-        quad[2] = GLvector2F(0 - z, 100 + q);
-        quad[3] = GLvector2F(w + z, 100 + q);
-        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
-        glColor4f(1,1,1,0.5);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
-        glDisableClientState(GL_VERTEX_ARRAY);
-
-        glColor4f(0,0,0,0.8);
-        for (const char*c=a;*c!=0; c++)
-        {
-            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-            modelview *= matrixd::translate (letter_spacing + glutStrokeWidth( GLUT_STROKE_ROMAN, *c ),0,0);
-            glLoadMatrixd (modelview.v ());
-        }
-    }
-}
-#endif // GL_ES_VERSION_2_0
 
 
 } // namespace Render
