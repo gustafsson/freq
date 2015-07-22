@@ -52,6 +52,7 @@ private:
     const glProjection* gl_projection;
     FreqAxis display_scale;
     AxesElements ae_;
+    QOpenGLShaderProgram* program_ = 0;
 };
 
 } // namespace Render

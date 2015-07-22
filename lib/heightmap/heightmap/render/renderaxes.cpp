@@ -7,6 +7,7 @@
 #include "gl.h"
 #include "GLvector.h"
 #include "gluperspective.h"
+#include "log.h"
 
 // glut
 #ifndef __APPLE__
@@ -113,27 +114,18 @@ void RenderAxes::
         typedef tvector<2,GLfloat> GLvector2F;
         GLvector2F v[] = {
             GLvector2F(0, 0),
-            GLvector2F(w, 0),
-            GLvector2F(w, 1),
+            GLvector2F(w, h),
+            GLvector2F(1, 0),
+            GLvector2F(1-w, h),
+            GLvector2F(1, 1),
+            GLvector2F(1-w, 1-h),
             GLvector2F(0, 1),
-
-            GLvector2F( w, 0 ),
-            GLvector2F( 1-w, 0 ),
-            GLvector2F( 1-w, h ),
-            GLvector2F( w, h ),
-
-            GLvector2F( 1, 0 ),
-            GLvector2F( 1, 1 ),
-            GLvector2F( 1-w, 1 ),
-            GLvector2F( 1-w, 0 ),
-
-            GLvector2F( w, 1 ),
-            GLvector2F( w, 1-h ),
-            GLvector2F( 1-w, 1-h ),
-            GLvector2F( 1-w, 1 )
+            GLvector2F(w, 1-h),
+            GLvector2F(0, 0),
+            GLvector2F(w, h),
         };
 
-        addVertices(ae.orthovertices, tvector<4,GLfloat>(1.0f, 1.0f, 1.0f, .4f), v, 16);
+        addVertices(ae.orthovertices, tvector<4,GLfloat>(1.0f, 1.0f, 1.0f, .4f), v, 10);
     }
 
     // 2 clip entire sound to frustum
@@ -671,45 +663,83 @@ void RenderAxes::
 void RenderAxes::
         drawElements( const RenderAxes::AxesElements& ae)
 {
+    if (!program_)
+    {
+        program_ = new QOpenGLShaderProgram();
+        program_->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                          R"vertexshader(
+                                              attribute highp vec4 qt_Vertex;
+                                              attribute highp vec4 colors;
+                                              uniform highp mat4 qt_ModelViewMatrix;
+                                              uniform highp mat4 qt_ProjectionMatrix;
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_Position = qt_ProjectionMatrix * qt_ModelViewMatrix * qt_Vertex;
+                                                  color = colors;
+                                              }
+                                          )vertexshader");
+        program_->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                          R"fragmentshader(
+                                           varying highp vec4 color;
+
+                                           void main() {
+                                               gl_FragColor = color;
+                                           }
+                                           )fragmentshader");
+
+        program_->bindAttributeLocation("qt_Vertex", 0);
+        program_->bindAttributeLocation("colors", 1);
+
+        if (!program_->link())
+            Log("renderaxes: invalid shader\n%s")
+                    % program_->log ().toStdString ();
+    }
+
+    if (!program_->isLinked ())
+        return;
+
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
+    program_->bind();
+
+    program_->enableAttributeArray(0);
+    program_->enableAttributeArray(1);
+
     if (!ae.orthovertices.empty ())
     {
         matrixd ortho;
         glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixd (ortho.v ());
 
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+        program_->setUniformValue("qt_ProjectionMatrix",
+                                  QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
+        program_->setUniformValue("qt_ModelViewMatrix",
+                                  QMatrix4x4(GLmatrixf::identity ().v ()));
 
-        glVertexPointer(4, GL_FLOAT, sizeof(Vertex), &ae.orthovertices[0].position[0]);
-        glColorPointer (4, GL_FLOAT, sizeof(Vertex), &ae.orthovertices[0].color[0]);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glDrawArrays(GL_QUADS, 0, ae.orthovertices.size());
-        glDisableClientState(GL_COLOR_ARRAY);
+        program_->setAttributeArray(0, GL_FLOAT, &ae.orthovertices[0].position[0], 4, sizeof(Vertex));
+        program_->setAttributeArray(1, GL_FLOAT, &ae.orthovertices[0].color[0], 4, sizeof(Vertex));
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
     }
-
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd (gl_projection->projection.v ());
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixd (gl_projection->modelview.v ());
 
     if (!ae.vertices.empty ())
     {
-        glVertexPointer(4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].position[0]);
-        glColorPointer (4, GL_FLOAT, sizeof(Vertex), &ae.vertices[0].color[0]);
-        glEnableClientState(GL_COLOR_ARRAY);
+        program_->setUniformValue("qt_ProjectionMatrix",
+                                  QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
+        program_->setUniformValue("qt_ModelViewMatrix",
+                                  QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
+
+        program_->setAttributeArray(0, GL_FLOAT, &ae.vertices[0].position[0], 4, sizeof(Vertex));
+        program_->setAttributeArray(1, GL_FLOAT, &ae.vertices[0].color[0], 4, sizeof(Vertex));
+
         glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
-        glDisableClientState(GL_COLOR_ARRAY);
     }
 
-
-    glDisableClientState(GL_VERTEX_ARRAY);
+    program_->disableAttributeArray (0);
+    program_->disableAttributeArray (1);
+    program_->release();
 
 #ifndef GL_ES_VERSION_2_0
     drawGlyphsGlut(ae.glyphs);
@@ -724,10 +754,13 @@ void RenderAxes::
 void RenderAxes::
         drawGlyphsGlut( const std::vector<Glyph>& glyphs)
 {
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixd (gl_projection->projection.v ());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixd (gl_projection->modelview.v ());
+
     typedef tvector<2,GLfloat> GLvector2F;
     std::vector<GLvector2F> quad(4);
-
-    glLoadMatrixd (gl_projection->modelview.v ());
 
     for (const Glyph& g : glyphs) {
         double w = g.margin*100.;
