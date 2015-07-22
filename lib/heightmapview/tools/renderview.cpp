@@ -210,6 +210,9 @@ void RenderView::
 {
     if (!_renderview_fbo)
         _renderview_fbo.reset( new GlFrameBuffer );
+
+    if (!_renderaxes)
+        _renderaxes.reset (new Heightmap::Render::RenderAxes );
 }
 
 
@@ -335,11 +338,9 @@ void RenderView::
             drawAxes_rotation.modelview *= setRotationForAxes();
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
-            Heightmap::Render::RenderAxes(
-                    model->render_settings,
-                    &drawAxes_rotation,
-                    display_scale
-                    ).drawAxes( length );
+            _renderaxes->drawAxes(&model->render_settings,
+                               &drawAxes_rotation,
+                               display_scale, length );
             model->render_settings.last_axes_length = length;
 
             model->render_settings.draw_piano = draw_piano;

@@ -10,7 +10,7 @@ GlyphsFreetype::GlyphsFreetype()
 
 
 void GlyphsFreetype::
-        drawGlyphs( const matrixd&, const std::vector<GlyphData>& )
+        drawGlyphs( const glProjection& g,  const std::vector<GlyphData>& )
 {
 
 }

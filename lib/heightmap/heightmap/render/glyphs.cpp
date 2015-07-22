@@ -2,6 +2,7 @@
 
 #include "glyphsfreetype.h"
 #include "glyphsglut.h"
+#include "glyphsfreetypeembedded.h"
 
 namespace Heightmap {
 namespace Render {
@@ -9,8 +10,9 @@ namespace Render {
 IGlyphs* GlyphFactory::
         makeIGlyphs()
 {
-    return new GlyphsGlut;
-//    return new GlyphsFreetype;
+    //    return new GlyphsGlut;
+    //    return new GlyphsFreetype;
+    return new GlyphsFreetypeEmbedded;
 }
 
 } // namespace Render

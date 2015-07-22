@@ -2,6 +2,7 @@
 #define HEIGHTMAP_RENDER_GLYPHS_H
 
 #include "GLvector.h"
+#include "glprojection.h"
 
 namespace Heightmap {
 namespace Render {
@@ -21,7 +22,7 @@ class IGlyphs
 public:
     virtual ~IGlyphs() {}
 
-    virtual void drawGlyphs( const matrixd& projection, const std::vector<GlyphData>& ) = 0;
+    virtual void drawGlyphs( const glProjection& projection, const std::vector<GlyphData>& ) = 0;
 };
 
 

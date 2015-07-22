@@ -11,7 +11,10 @@ class GlyphsFreetype: public IGlyphs
 public:
     GlyphsFreetype();
 
-    void drawGlyphs( const matrixd& projection, const std::vector<GlyphData>& ) override;
+    void drawGlyphs( const glProjection& projection, const std::vector<GlyphData>& ) override;
+
+private:
+    std::unique_ptr<struct GlyphsFreetypePrivate> p;
 };
 
 } // namespace Render

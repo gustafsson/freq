@@ -209,7 +209,12 @@ inline tmatrix<3,float,1>::tmatrix( const tvector<3, float> &b )
 template<>
 inline tmatrix<4,double,1>::tmatrix( const tvector<4, double> &b )
 {
-	m[0] = b;
+    m[0] = b;
+}
+template<>
+inline tmatrix<4,float,1>::tmatrix( const tvector<4, float> &b )
+{
+    m[0] = b;
 }
 template<>
 inline tmatrix<4,double,1>::operator tvector<4, double>&()

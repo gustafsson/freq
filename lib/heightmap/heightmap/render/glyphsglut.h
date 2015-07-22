@@ -11,7 +11,7 @@ class GlyphsGlut: public IGlyphs
 public:
     GlyphsGlut();
 
-    void drawGlyphs( const matrixd& projection, const std::vector<GlyphData>& ) override;
+    void drawGlyphs( const glProjection& gl_projection, const std::vector<GlyphData>& ) override;
 };
 
 } // namespace Render

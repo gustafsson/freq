@@ -34,11 +34,11 @@ GlyphsGlut::GlyphsGlut()
 
 
 void GlyphsGlut::
-        drawGlyphs( const matrixd& projection, const std::vector<GlyphData>& glyphs)
+        drawGlyphs( const glProjection& gl_projection, const std::vector<GlyphData>& glyphs)
 {
 #ifndef GL_ES_VERSION_2_0
     glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd (projection.v ());
+    glLoadMatrixd (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
 
     typedef tvector<2,GLfloat> GLvector2F;

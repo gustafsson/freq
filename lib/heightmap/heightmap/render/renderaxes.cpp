@@ -16,14 +16,8 @@ namespace Heightmap {
 namespace Render {
 
 RenderAxes::
-        RenderAxes(
-                const RenderSettings& render_settings,
-                const glProjection* gl_projection,
-                FreqAxis display_scale)
+        RenderAxes()
     :
-      render_settings(render_settings),
-      gl_projection(gl_projection),
-      display_scale(display_scale),
       program_(0),
       glyphs_(0)
 {
@@ -40,8 +34,14 @@ RenderAxes::
 
 
 void RenderAxes::
-        drawAxes( float T )
+        drawAxes( const RenderSettings* render_settings,
+                  const glProjection* gl_projection,
+                  FreqAxis display_scale, float T )
 {
+    this->render_settings = render_settings;
+    this->gl_projection = gl_projection;
+    this->display_scale = display_scale;
+
     ae_.glyphs.clear ();
     ae_.vertices.clear ();
     ae_.orthovertices.clear ();
@@ -84,6 +84,7 @@ void RenderAxes::
     const glProjection* g = gl_projection;
     unsigned screen_width = g->viewport[2];
     unsigned screen_height = g->viewport[3];
+    auto& render_settings = *this->render_settings;
 
     float borderw = 12.5*1.1;
     float borderh = 12.5*1.1;
@@ -726,7 +727,7 @@ void RenderAxes::
     program_->disableAttributeArray (1);
     program_->release();
 
-    glyphs_->drawGlyphs (gl_projection->projection, ae.glyphs);
+    glyphs_->drawGlyphs (*gl_projection, ae.glyphs);
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);

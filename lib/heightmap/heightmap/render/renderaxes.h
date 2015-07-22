@@ -28,19 +28,18 @@ public:
         std::vector<Vertex> orthovertices;
     };
 
-    RenderAxes(
-            const RenderSettings& render_settings,
-            const glProjection* gl_projection,
-            FreqAxis display_scale);
+    RenderAxes();
     ~RenderAxes();
 
-    void drawAxes( float T );
+    void drawAxes( const RenderSettings* render_settings,
+                   const glProjection* gl_projection,
+                   FreqAxis display_scale, float T );
 
 private:
     void getElements( RenderAxes::AxesElements& ae, float T );
     void drawElements( const AxesElements& );
 
-    const RenderSettings& render_settings;
+    const RenderSettings* render_settings;
     const glProjection* gl_projection;
     FreqAxis display_scale;
     AxesElements ae_;
