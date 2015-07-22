@@ -84,7 +84,7 @@ void GlyphsFreetypeEmbedded::
     std::vector<GLvector2F> quad(4);
 
     size_t gi = 0;
-    float s = 0.045, is = 1/s;
+    float s = 0.043, is = 1/s;
     for (const GlyphData& g : glyphdata) {
         double w = g.margin*is;
         double letter_spacing = g.letter_spacing*is;
