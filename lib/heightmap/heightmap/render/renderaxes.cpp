@@ -417,7 +417,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, 0.15, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             } else if (fa.axis_scale != AxisScale_Unknown) {
@@ -464,7 +464,7 @@ void RenderAxes::
                         if (sign<0)
                             modelview *= matrixd::rot (180,0,0,1);
 
-                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, 0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
+                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             }
@@ -638,7 +638,7 @@ void RenderAxes::
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
-                    ae.glyphs.push_back (GlyphData{modelview, a, 0.1, 0., 1., 0.});
+                    ae.glyphs.push_back (GlyphData{modelview, a, 0.1, -0.05, 1., 0.});
                 }
             }
         }

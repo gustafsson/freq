@@ -15,7 +15,7 @@ public:
     void drawGlyphs( const glProjection& projection, const std::vector<GlyphData>& data) override;
 
 private:
-    float print_at( const wchar_t *text, float letter_spacing=0.f );
+    float print( const wchar_t *text, float letter_spacing=0.f );
     void buildGlyphs(const std::vector<GlyphData>& data);
 
     struct Glyph {

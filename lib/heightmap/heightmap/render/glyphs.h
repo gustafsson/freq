@@ -8,6 +8,7 @@ namespace Heightmap {
 namespace Render {
 
 struct GlyphData {
+    // The affine modelview transformation also sets the font size.
     matrixd modelview;
     std::string text;
     double margin;

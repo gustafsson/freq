@@ -34,53 +34,64 @@ GlyphsGlut::GlyphsGlut()
 
 
 void GlyphsGlut::
-        drawGlyphs( const glProjection& gl_projection, const std::vector<GlyphData>& glyphs)
+        drawGlyphs( const glProjection& gl_projection, const std::vector<GlyphData>& glyphdata)
 {
 #ifndef GL_ES_VERSION_2_0
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixd (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
 
-    typedef tvector<2,GLfloat> GLvector2F;
-    std::vector<GLvector2F> quad(4);
+    typedef tvector<4,GLfloat> v4f;
+    v4f quad[4];
+    int quad_i = 0;
 
-    for (const GlyphData& g : glyphs) {
-        double w = g.margin*100.;
-        double letter_spacing = g.letter_spacing*100.;
+    const float f = 100; // texture detail, how big a glyph is in the
+                         // coordinate system of 'text_buffer_add_text'
+
+    for (const GlyphData& g : glyphdata) {
+        double w = 0;
+        double spacing = g.letter_spacing + 0.1;
         const char* a = g.text.c_str ();
         for (const char*c=a;*c!=0; c++)
         {
-            if (c!=a)
-                w+=letter_spacing;
-            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+            double sw = glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+            if (c==a || c[1]==0)
+                w += sw*(1+spacing*0.5);
+            else
+                w += sw*(1+spacing);
         }
 
         matrixd modelview = g.modelview;
-        modelview *= matrixd::scale (0.01,0.01,1.);
-        modelview *= matrixd::translate (-w*g.align_x,-g.align_y*100.,0);
+        modelview *= matrixd::scale (1/f,1/f,1.);
+        modelview *= matrixd::translate (g.margin*f - w*g.align_x, -g.align_y*f, 0);
 
-        glLoadMatrixd (modelview.v ());
+        float z = .3*f;
+        float q = .3*f;
+        quad[quad_i++] = modelview * v4f(0 - z, 0 - q, 0, 1);
+        quad[quad_i++] = modelview * v4f(w + z, 0 - q, 0, 1);
+        quad[quad_i++] = modelview * v4f(w + z, f + q, 0, 1);
+        quad[quad_i++] = modelview * v4f(0 - z, f + q, 0, 1);
 
-        float z = 10;
-        float q = 20;
+        glLoadIdentity ();
         glEnableClientState(GL_VERTEX_ARRAY);
-        quad[0] = GLvector2F(0 - z, 0 - q);
-        quad[1] = GLvector2F(w + z, 0 - q);
-        quad[2] = GLvector2F(0 - z, 100 + q);
-        quad[3] = GLvector2F(w + z, 100 + q);
-        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
+        glVertexPointer(4, GL_FLOAT, 0, quad);
         glColor4f(1,1,1,0.5);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
+        glDrawArrays(GL_QUADS, 0, quad_i);
         glDisableClientState(GL_VERTEX_ARRAY);
+        quad_i = 0;
 
         glColor4f(0,0,0,0.8);
         for (const char*c=a;*c!=0; c++)
         {
-            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-            modelview *= matrixd::translate (letter_spacing + glutStrokeWidth( GLUT_STROKE_ROMAN, *c ),0,0);
+            double sw = glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
+            if (c!=a)
+                modelview *= matrixd::translate (spacing*0.5*sw, 0, 0);
             glLoadMatrixd (modelview.v ());
+            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+            modelview *= matrixd::translate ((spacing*0.5 + 1)*sw, 0, 0);
         }
     }
+
 #endif // GL_ES_VERSION_2_0
 }
 

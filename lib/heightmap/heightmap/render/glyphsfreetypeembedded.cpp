@@ -22,7 +22,7 @@ namespace Heightmap {
 namespace Render {
 
 float GlyphsFreetypeEmbedded::
-        print_at( const wchar_t *text, float letter_spacing )
+        print( const wchar_t *text, float letter_spacing )
 {
 #ifdef VERA32
     texture_font_t& vera = vera_32;
@@ -33,11 +33,13 @@ float GlyphsFreetypeEmbedded::
     float pen_x = 0, pen_y = 0;
     auto add = [this](float s, float t, float x, float y) {
         tvector<4,GLfloat> v{x,y,0,1};
-        glyphs.push_back (Glyph{s, t, tvector<4,GLfloat>(v)});
+        glyphs.push_back (Glyph{s, t, v});
     };
 
     size_t i, j;
     size_t N = wcslen(text);
+    glyphs.reserve (glyphs.size ()+N*6);
+
     for( i=0; i<N; ++i)
     {
         texture_glyph_t *glyph = 0;
@@ -63,7 +65,7 @@ float GlyphsFreetypeEmbedded::
         add( glyph->s0, glyph->t0, x,   y );
         add( glyph->s1, glyph->t1, x+w, y-h );
         add( glyph->s1, glyph->t0, x+w, y );
-        pen_x += glyph->advance_x + letter_spacing;
+        pen_x += glyph->advance_x * ( 1.f + letter_spacing );
         pen_y += glyph->advance_y;
 
     }
@@ -98,43 +100,47 @@ void GlyphsFreetypeEmbedded::
         buildGlyphs(const std::vector<GlyphData>& glyphdata)
 {
     glyphs.clear ();
-
-    typedef tvector<2,GLfloat> GLvector2F;
-    std::vector<GLvector2F> quad(4);
-
     size_t gi = 0;
+
+    typedef tvector<4,GLfloat> v4f;
+    std::vector<v4f> quad_v( 4*glyphdata.size () );
+    v4f* quad = &quad_v[0];
+    int quad_i = 0;
+
 #ifdef VERA32
-    float s = 0.043, is = 1/s;
+    // texture detail, how big a character is in the text_buffer_add_text coordinate system
+    float f = 32/1.5;
 #else
-    float s = 0.043*2, is = 1/s;
+    float f = 16/1.5;
 #endif
+
     for (const GlyphData& g : glyphdata) {
-        double w = g.margin*is;
-        double letter_spacing = g.letter_spacing*is;
         std::wstring text;
         std::copy(g.text.begin (), g.text.end (), std::inserter(text,text.begin()));
-        w += print_at(text.c_str (), letter_spacing);
+
+        double w = print(text.c_str (), g.letter_spacing);
 
         matrixd modelview = g.modelview;
-        modelview *= matrixd::scale (s,s,1.);
-        modelview *= matrixd::translate (-w*g.align_x,-g.align_y*is,0);
+        modelview *= matrixd::scale (1/f,1/f,1.);
+        modelview *= matrixd::translate (g.margin*f - w*g.align_x, -g.align_y*f, 0);
 
         for (;gi<glyphs.size ();gi++)
-            glyphs[gi].p = tvector<4,GLfloat>(modelview * glyphs[gi].p);
+            glyphs[gi].p = modelview * glyphs[gi].p;
 
-        glLoadMatrixd (modelview.v ());
-        float z = .1*is;
-        float q = .2*is;
-        glEnableClientState(GL_VERTEX_ARRAY);
-        quad[0] = GLvector2F(0 - z, 0 - q);
-        quad[1] = GLvector2F(w + z, 0 - q);
-        quad[2] = GLvector2F(0 - z, is + q);
-        quad[3] = GLvector2F(w + z, is + q);
-        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
-        glColor4f(1,1,1,0.5);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
-        glDisableClientState(GL_VERTEX_ARRAY);
+        float z = .3*f;
+        float q = .3*f;
+        quad[quad_i++] = modelview * v4f(0 - z, 0 - q, 0, 1);
+        quad[quad_i++] = modelview * v4f(w + z, 0 - q, 0, 1);
+        quad[quad_i++] = modelview * v4f(w + z, f + q, 0, 1);
+        quad[quad_i++] = modelview * v4f(0 - z, f + q, 0, 1);
     }
+
+    glLoadIdentity ();
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(4, GL_FLOAT, 0, quad);
+    glColor4f(1,1,1,0.5);
+    glDrawArrays(GL_QUADS, 0, quad_i);
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 
