@@ -2,13 +2,21 @@
   Based on embedded-font.c in freetype-gl demos.
   */
 
+#define VERA32
+
 #include "glyphsfreetypeembedded.h"
-#include "vera32.h"
+#ifdef VERA32
+#include "vera_32.h"
+#else
+#include "vera_16.h"
+#endif
 #include "tvector.h"
 #include "log.h"
 #include "gluperspective.h"
 
 #include <QOpenGLShaderProgram>
+
+//#define vera32 font
 
 namespace Heightmap {
 namespace Render {
@@ -16,6 +24,12 @@ namespace Render {
 float GlyphsFreetypeEmbedded::
         print_at( const wchar_t *text, float letter_spacing )
 {
+#ifdef VERA32
+    texture_font_t& vera = vera_32;
+#else
+    texture_font_t& vera = vera_16;
+#endif
+
     float pen_x = 0, pen_y = 0;
     auto add = [this](float s, float t, float x, float y) {
         tvector<4,GLfloat> v{x,y,0,1};
@@ -27,11 +41,11 @@ float GlyphsFreetypeEmbedded::
     for( i=0; i<N; ++i)
     {
         texture_glyph_t *glyph = 0;
-        for( j=0; j<vera32.glyphs_count; ++j)
+        for( j=0; j<vera.glyphs_count; ++j)
         {
-            if( vera32.glyphs[j].charcode == text[i] )
+            if( vera.glyphs[j].charcode == text[i] )
             {
-                glyph = &vera32.glyphs[j];
+                glyph = &vera.glyphs[j];
                 break;
             }
         }
@@ -69,8 +83,13 @@ GlyphsFreetypeEmbedded::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_ALPHA, vera32.tex_width, vera32.tex_height,
-                  0, GL_ALPHA, GL_UNSIGNED_BYTE, vera32.tex_data );
+#ifdef VERA32
+    texture_font_t& vera = vera_32;
+#else
+    texture_font_t& vera = vera_16;
+#endif
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_ALPHA, vera.tex_width, vera.tex_height,
+                  0, GL_ALPHA, GL_UNSIGNED_BYTE, vera.tex_data );
     glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
@@ -84,7 +103,11 @@ void GlyphsFreetypeEmbedded::
     std::vector<GLvector2F> quad(4);
 
     size_t gi = 0;
+#ifdef VERA32
     float s = 0.043, is = 1/s;
+#else
+    float s = 0.043*2, is = 1/s;
+#endif
     for (const GlyphData& g : glyphdata) {
         double w = g.margin*is;
         double letter_spacing = g.letter_spacing*is;
