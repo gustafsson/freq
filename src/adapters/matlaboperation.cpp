@@ -170,7 +170,7 @@ bool MatlabOperation::
         Intervals J;
         Interval allequal = oldI & newI;
 
-        for (unsigned c=0; c<ready_data->number_of_channels () && c<sent_data->number_of_channels (); c++)
+        for (int c=0; c<ready_data->number_of_channels () && c<sent_data->number_of_channels (); c++)
         {
             float *oldP = sent_data->getChannel (c)->waveform_data()->getCpuMemory();
             float *newP = ready_data->getChannel (c)->waveform_data()->getCpuMemory();

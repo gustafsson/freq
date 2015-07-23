@@ -22,7 +22,10 @@ class GlFrameBuffer;
 // TODO remove
 class QGLWidget;
 
-namespace Heightmap { class Reference; }
+namespace Heightmap {
+    class Reference;
+    namespace Render { class RenderAxes; }
+}
 
 namespace Tools
 {
@@ -129,6 +132,7 @@ namespace Tools
 
         boost::scoped_ptr<TaskTimer> _render_timer;
         boost::scoped_ptr<GlFrameBuffer> _renderview_fbo;
+        boost::scoped_ptr<Heightmap::Render::RenderAxes> _renderaxes;
         Support::DrawCollections drawCollections;
     };
 } // namespace Tools

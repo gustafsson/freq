@@ -4,6 +4,8 @@
 #include "rendersettings.h"
 #include "frustumclip.h"
 #include "heightmap/freqaxis.h"
+#include "tvector.h"
+#include "glyphs.h"
 
 #include "glprojection.h"
 
@@ -15,17 +17,34 @@ namespace Render {
 class RenderAxes
 {
 public:
-    RenderAxes(
-            const RenderSettings& render_settings,
-            const glProjection* gl_projection,
-            FreqAxis display_scale);
+    struct Vertex {
+        tvector<4,GLfloat> position;
+        tvector<4,GLfloat> color;
+    };
 
-    void drawAxes( float T );
+    struct AxesElements {
+        std::vector<GlyphData> glyphs;
+        std::vector<Vertex> vertices;
+        std::vector<Vertex> orthovertices;
+    };
+
+    RenderAxes();
+    ~RenderAxes();
+
+    void drawAxes( const RenderSettings* render_settings,
+                   const glProjection* gl_projection,
+                   FreqAxis display_scale, float T );
 
 private:
-    const RenderSettings& render_settings;
+    void getElements( RenderAxes::AxesElements& ae, float T );
+    void drawElements( const AxesElements& );
+
+    const RenderSettings* render_settings;
     const glProjection* gl_projection;
     FreqAxis display_scale;
+    AxesElements ae_;
+    QOpenGLShaderProgram* program_;
+    IGlyphs* glyphs_;
 };
 
 } // namespace Render

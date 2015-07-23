@@ -7,15 +7,7 @@
 #include "gl.h"
 #include "GLvector.h"
 #include "gluperspective.h"
-
-// glut
-#ifndef __APPLE__
-#   include <GL/glut.h>
-#else
-# ifndef GL_ES_VERSION_2_0
-#   include <GLUT/glut.h>
-# endif
-#endif
+#include "log.h"
 
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
@@ -24,44 +16,63 @@ namespace Heightmap {
 namespace Render {
 
 RenderAxes::
-        RenderAxes(
-                const RenderSettings& render_settings,
-                const glProjection* gl_projection,
-                FreqAxis display_scale)
+        RenderAxes()
     :
-      render_settings(render_settings),
-      gl_projection(gl_projection),
-      display_scale(display_scale)
+      program_(0),
+      glyphs_(0)
 {
-    // Using glut for drawing fonts, so glutInit must be called.
-    static int c=0;
-    if (0==c)
-    {
-        // run glutinit once per process
-#ifdef _WIN32
-        c = 1;
-        char* dummy="dummy\0";
-        glutInit(&c,&dummy);
-#elif !defined(__APPLE__)
-        glutInit(&c,0);
-        c = 1;
-#endif
-    }
+    glyphs_ = GlyphFactory::makeIGlyphs ();
 }
 
 
-// Step 1: Figure out which characters to draw.
-// Step 2: Draw them.
-// Step 3: Replace glut with a library for vector fonts (i.e: freetype-gl).
-void RenderAxes::
-        drawAxes( float T )
+RenderAxes::
+        ~RenderAxes()
 {
-#ifndef GL_ES_VERSION_2_0
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf (GLmatrixf(gl_projection->projection).v ());
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf (GLmatrixf(gl_projection->modelview).v ());
+    delete glyphs_;
+    delete program_;
+}
 
+
+void RenderAxes::
+        drawAxes( const RenderSettings* render_settings,
+                  const glProjection* gl_projection,
+                  FreqAxis display_scale, float T )
+{
+    this->render_settings = render_settings;
+    this->gl_projection = gl_projection;
+    this->display_scale = display_scale;
+
+    ae_.glyphs.clear ();
+    ae_.vertices.clear ();
+    ae_.orthovertices.clear ();
+
+    getElements(ae_, T);
+    drawElements(ae_);
+}
+
+
+tvector<4,GLfloat> make4(const tvector<2,GLfloat>& v) {
+    return tvector<4,GLfloat>(v[0], v[1], 0, 1);
+}
+
+tvector<4,GLfloat> make4(const vectord& v) {
+    return tvector<4,GLfloat>(v[0], v[1], v[2], 1);
+}
+
+template<int N,typename T> void addVertices(
+        std::vector<RenderAxes::Vertex>& vertices,
+        const tvector<4,GLfloat>& color,
+        const tvector<N,T>* V, int L)
+{
+    vertices.push_back (RenderAxes::Vertex{make4(V[0]),color}); // degenerate
+    for (int i=0; i<L; i++)
+        vertices.push_back (RenderAxes::Vertex{make4(V[i]),color});
+    vertices.push_back (RenderAxes::Vertex{make4(V[L-1]),color}); // degenerate
+}
+
+void RenderAxes::
+        getElements( RenderAxes::AxesElements& ae, float T )
+{
     TIME_RENDERER TaskTimer tt("drawAxes(length = %g)", T);
     // Draw overlay borders, on top, below, to the right or to the left
     // default left bottom
@@ -73,6 +84,7 @@ void RenderAxes::
     const glProjection* g = gl_projection;
     unsigned screen_width = g->viewport[2];
     unsigned screen_height = g->viewport[3];
+    auto& render_settings = *this->render_settings;
 
     float borderw = 12.5*1.1;
     float borderh = 12.5*1.1;
@@ -85,45 +97,21 @@ void RenderAxes::
     Render::FrustumClip frustum_clip(*g, w, h);
 
     if (render_settings.axes_border) { // 1 gray draw overlay
-        glPushMatrixContext push_model(GL_MODELVIEW);
-        glPushMatrixContext push_proj(GL_PROJECTION);
+        typedef tvector<2,GLfloat> GLvector2F;
+        GLvector2F v[] = {
+            GLvector2F(0, 0),
+            GLvector2F(w, h),
+            GLvector2F(1, 0),
+            GLvector2F(1-w, h),
+            GLvector2F(1, 1),
+            GLvector2F(1-w, 1-h),
+            GLvector2F(0, 1),
+            GLvector2F(w, 1-h),
+            GLvector2F(0, 0),
+            GLvector2F(w, h),
+        };
 
-        glLoadIdentity();
-        matrixd ortho;
-        glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glDisable(GL_DEPTH_TEST);
-
-
-        glColor4f( 1.0f, 1.0f, 1.0f, .4f );
-        glBegin( GL_QUADS );
-            glVertex2f( 0, 0 );
-            glVertex2f( w, 0 );
-            glVertex2f( w, 1 );
-            glVertex2f( 0, 1 );
-
-            glVertex2f( w, 0 );
-            glVertex2f( 1-w, 0 );
-            glVertex2f( 1-w, h );
-            glVertex2f( w, h );
-
-            glVertex2f( 1, 0 );
-            glVertex2f( 1, 1 );
-            glVertex2f( 1-w, 1 );
-            glVertex2f( 1-w, 0 );
-
-            glVertex2f( w, 1 );
-            glVertex2f( w, 1-h );
-            glVertex2f( 1-w, 1-h );
-            glVertex2f( 1-w, 1 );
-        glEnd();
-
-        glEnable(GL_DEPTH_TEST);
-
-        //glDisable(GL_BLEND);
+        addVertices(ae.orthovertices, tvector<4,GLfloat>(1.0f, 1.0f, 1.0f, .4f), v, 10);
     }
 
     // 2 clip entire sound to frustum
@@ -150,28 +138,19 @@ void RenderAxes::
             inside = inside + clippedFrustum[i];
 
         // as clippedFrustum is a convex polygon, the mean position of its vertices will be inside
-        inside = inside * (1.f/clippedFrustum.size());
+        inside = inside * (1./clippedFrustum.size());
     }
 
 
     // 4 render and decide upon scale
     vectord x(1,0,0), z(0,0,1);
 
-    glDepthMask(false);
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     FreqAxis fa = display_scale;
     // loop along all sides
     typedef tvector<4,GLfloat> GLvectorF;
-    typedef tvector<2,GLfloat> GLvector2F;
-    std::vector<GLvectorF> ticks;
-    std::vector<GLvectorF> phatTicks;
-    std::vector<GLvector2F> quad(4);
 
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
-        glColor4f(0,0,0,0.8);
         unsigned j=(i+1)%clippedFrustum.size();
         vectord p1 = clippedFrustum[i]; // starting point of side
         vectord p2 = clippedFrustum[j]; // end point of side
@@ -285,7 +264,7 @@ void RenderAxes::
                 st--;
 
             // compute index of next marker along t and f
-            double epsilon = 1.f/10;
+            double epsilon = 1./10;
             double hz1 = fa.getFrequencyT( p[2] - DF * epsilon );
             double hz2 = fa.getFrequencyT( p[2] + DF * epsilon );
             if (hz2-f < f-hz1)  hz1 = f;
@@ -406,56 +385,39 @@ void RenderAxes::
                     if (-1 == tmarkanyways)
                         size = 1;
 
-                    float sign = (v0^z)%(v0^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*SF*.003f*sign;
+                    double sign = (v0^z)%(v0^( p - inside))>0 ? 1 : -1;
+                    vectord o { 0, 0, size*SF*.008*sign };
+                    vectord ow { ST*0.0005 * size, 0, 0 };
 
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2]-o, 1.f));
+                    vectord v[] = {
+                        p - ow,
+                        p - ow - o,
+                        p + ow,
+                        p + ow - o
+                    };
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1) {
-                        glPushMatrixContext push_model( GL_MODELVIEW );
-
-                        glTranslatef(p[0], 0, p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
-                        glRotatef(angle,0,0,1);
+
+                        matrixd modelview = gl_projection->modelview;
+                        modelview *= matrixd::translate (p[0], 0, p[2]);
+                        modelview *= matrixd::rot (90,1,0,0);
+                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
+                        modelview *= matrixd::rot (angle,0,0,1);
+
                         char a[100];
                         char b[100];
                         sprintf(b,"%%d:%%0%d.%df", 2+(st<-1?-st:0), st<0?-1-st:0);
                         int minutes = (int)(t*DT/60);
                         sprintf(a, b, minutes,t*DT-60*minutes);
-                        float w=0;
-                        float letter_spacing=15;
-
-                        for (char*c=a;*c!=0; c++) {
-                            if (c!=a)
-                                w+=letter_spacing;
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
 
                         if (!render_settings.left_handed_axes)
-                            glScalef(-1,1,1);
-                        glTranslatef(0,70.f,0);
+                            modelview *= matrixd::scale (-1,1,1);
                         if (sign<0)
-                            glRotatef(180,0,0,1);
-                        glTranslatef(-.5f*w,-50.f,0);
-                        glColor4f(1,1,1,0.5);
-                        float z = 10;
-                        float q = 20;
-                        glEnableClientState(GL_VERTEX_ARRAY);
-                        quad[0] = GLvector2F(0 - z, 0 - q);
-                        quad[1] = GLvector2F(w + z, 0 - q);
-                        quad[2] = GLvector2F(0 - z, 100 + q);
-                        quad[3] = GLvector2F(w + z, 100 + q);
-                        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
-                        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
-                        glDisableClientState(GL_VERTEX_ARRAY);
-                        glColor4f(0,0,0,0.8);
-                        for (char*c=a;*c!=0; c++) {
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
-                            glTranslatef(letter_spacing,0,0);
-                        }
+                            modelview *= matrixd::rot (180,0,0,1);
+
+                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             } else if (fa.axis_scale != AxisScale_Unknown) {
@@ -469,57 +431,40 @@ void RenderAxes::
                     if (-1 == fmarkanyways)
                         size = 1;
 
+                    double sign = (v0^x)%(v0^( p - inside))>0 ? 1 : -1;
+                    vectord o { size*ST*.008*sign, 0, 0 };
+                    vectord ow { 0, 0, SF*0.0005 * size };
 
-                    float sign = (v0^x)%(v0^( p - inside))>0 ? 1.f : -1.f;
-                    float o = size*ST*.003f*sign;
-
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0], 0.f, p[2], 1.f));
-                    (size==1?ticks:phatTicks).push_back(GLvectorF(p[0]-o, 0.f, p[2], 1.f));
-
+                    vectord v[] = {
+                        p - ow,
+                        p - ow - o,
+                        p + ow,
+                        p + ow - o
+                    };
+                    addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
 
                     if (size>1)
                     {
-                        glPushMatrixContext push_model( GL_MODELVIEW );
-
-                        glTranslatef(p[0],0,p[2]);
-                        glRotatef(90,1,0,0);
-                        glScalef(0.00013f*drawScaleT,0.00013f*drawScaleF,1.f);
                         float angle = atan2(v0[2]/SF, v0[0]/ST) * (180*M_1_PI);
-                        glRotatef(angle,0,0,1);
+
+                        matrixd modelview = gl_projection->modelview;
+                        modelview *= matrixd::translate (p[0],0,p[2]);
+                        modelview *= matrixd::rot (90,1,0,0);
+                        modelview *= matrixd::scale (0.013*drawScaleT, 0.013*drawScaleF, 1);
+                        modelview *= matrixd::rot (angle,0,0,1);
+
                         char a[100];
                         char b[100];
                         sprintf(b,"%%.%df", sf<0?-1-sf:0);
                         sprintf(a, b, f);
                         //sprintf(a,"%g", f);
-                        unsigned w=0;
-                        float letter_spacing=5;
 
-                        for (char*c=a;*c!=0; c++)
-                        {
-                            if (c!=a)
-                                w+=letter_spacing;
-                            w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                        }
                         if (!render_settings.left_handed_axes)
-                            glScalef(-1,1,1);
-                        glTranslatef(0,70.f,0);
+                            modelview *= matrixd::scale (-1,1,1);
                         if (sign<0)
-                            glRotatef(180,0,0,1);
-                        glTranslatef(-.5f*w,-50.f,0);
-                        glColor4f(1,1,1,0.5);
-                        float z = 10;
-                        float q = 20;
-                        glEnableClientState(GL_VERTEX_ARRAY);
-                        quad[0] = GLvector2F(0 - z, 0 - q);
-                        quad[1] = GLvector2F(w + z, 0 - q);
-                        quad[2] = GLvector2F(0 - z, 100 + q);
-                        quad[3] = GLvector2F(w + z, 100 + q);
-                        glVertexPointer(2, GL_FLOAT, 0, &quad[0]);
-                        glDrawArrays(GL_TRIANGLE_STRIP, 0, quad.size());
-                        glDisableClientState(GL_VERTEX_ARRAY);
-                        glColor4f(0,0,0,0.8);
-                        for (char*c=a;*c!=0; c++)
-                            glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                            modelview *= matrixd::rot (180,0,0,1);
+
+                        ae.glyphs.push_back (GlyphData{modelview, a, 0.0, -0.05, 0.5, 0.5 - .7*(sign < 0 ? -1 : 1)});
                     }
                 }
             }
@@ -537,7 +482,7 @@ void RenderAxes::
             timePerPixel *= scale; scalePerPixel *= scale;
 
             double ST = timePerPixel * 750;
-            // double SF = scalePerPixel * 750;
+            double SF = scalePerPixel * 750;
 
             // from http://en.wikipedia.org/wiki/Piano_key_frequencies
             // F(n) = 440 * pow(pow(2, 1/12),n-49)
@@ -551,14 +496,14 @@ void RenderAxes::
             if (F2<F1) { unsigned swap = F2; F2=F1; F1=swap; }
             if (!(F1>fa.min_hz)) F1=fa.min_hz;
             if (!(F2<fa.max_hz())) F2=fa.max_hz();
-            float tva12 = powf(2.f, 1.f/12);
+            double tva12 = powf(2., 1./12);
 
 
             if (0 == F1)
                 F1 = 1;
-            int startTone = log(F1/440.f)/log(tva12) + 45;
-            int endTone = ceil(log(F2/440.f)/log(tva12)) + 45;
-            float sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1.f : -1.f;
+            int startTone = log(F1/440.)/log(tva12) + 45;
+            int endTone = ceil(log(F2/440.)/log(tva12)) + 45;
+            double sign = (v^x)%(v^( clippedFrustum[i] - inside))>0 ? 1 : -1;
             if (!render_settings.left_handed_axes)
                 sign *= -1;
 
@@ -577,7 +522,6 @@ void RenderAxes::
                 switch((toneTest+11)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyP = true; }
                 bool blackKeyN = false;
                 switch((toneTest+1)%12) { case 1: case 3: case 6: case 8: case 10: blackKeyN = true; }
-                glLineWidth(1);
                 float wN = ffN-ff, wP = ff-ffP;
                 if (blackKey)
                     wN *= .5, wP *= .5;
@@ -595,13 +539,15 @@ void RenderAxes::
                 vectord pn = p1+v*un;
                 vectord pp = p1+v*up;
 
-                glPushMatrixContext push_model( GL_MODELVIEW );
-
-                float xscale = 0.016000f;
+                vectord dx { 0.016000*ST, 0, 0 };
                 float blackw = 0.4f;
 
                 if (sign>0)
-                    glTranslatef( xscale*ST, 0.f, 0.f );
+                {
+                    pp += dx;
+                    pn += dx;
+                    pt += dx;
+                }
 
                 tvector<4,GLfloat> keyColor(0,0,0, 0.7f * blackKey);
                 if (render_settings.draw_cursor_marker)
@@ -620,109 +566,171 @@ void RenderAxes::
 
                 if (keyColor[3] != 0)
                 {
-                    glColor4fv(keyColor.v);
                     if (blackKey)
                     {
-                        glBegin(GL_TRIANGLE_STRIP);
-                            glVertex3d(pp[0] - xscale*ST*(1.f), 0, pp[2]);
-                            glVertex3d(pp[0] - xscale*ST*(blackw), 0, pp[2]);
-                            glVertex3d(pn[0] - xscale*ST*(1.f), 0, pn[2]);
-                            glVertex3d(pn[0] - xscale*ST*(blackw), 0, pn[2]);
-                        glEnd();
+                        vectord v[] = {
+                            pp - dx,
+                            pp - dx*blackw,
+                            pn - dx,
+                            pn - dx*blackw,
+                        };
+
+                        addVertices(ae.vertices, keyColor, v, 4);
                     }
                     else
                     {
-                        glBegin(GL_TRIANGLE_FAN);
-                            if (blackKeyP)
-                            {
-                                glVertex3dv((pp*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                            }
-                            glVertex3d(pp[0] - xscale*ST*(0.f), 0, pp[2]);
-                            glVertex3d(pn[0] - xscale*ST*(0.f), 0, pn[2]);
-                            glVertex3d(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
-                            if (blackKeyN)
-                            {
-                                glVertex3dv((pn*0.5 + pt*0.5 - vectord(xscale*ST*(blackw), 0, 0)).v);
-                                glVertex3dv((pn*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0)).v);
-                            }
-                            if (blackKeyP)
-                                glVertex3dv((pp*0.5 + pt*0.5 - vectord(xscale*ST*(1.f), 0, 0)).v);
-                            else
-                                glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glEnd();
+                        vectord v[] = {
+                            vectord (pp - dx*(blackKeyP ? blackw : 1.)),
+                            vectord (pp),
+                            vectord (pp*0.5 + pt*0.5 - dx*(blackKeyP ? blackw : 1.)),
+                            vectord (pp*0.5 + pt*0.5),
+                            vectord (pp*0.5 + pt*0.5),
+                            vectord (pp*0.5 + pt*0.5 - dx), // backside
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5 - dx),
+                            vectord (pn*0.5 + pt*0.5 - dx),
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5),
+                            vectord (pn*0.5 + pt*0.5 - dx*(blackKeyN ? blackw : 1.)),
+                            vectord (pn),
+                            vectord (pn - dx*(blackKeyN ? blackw : 1.))
+                        };
+
+                        addVertices(ae.vertices, keyColor, v, 14);
                     }
                 }
 
-                // outline
-                glColor4f(0,0,0,0.8);
-                    glBegin(GL_LINES );
-                        glVertex3d(pn[0] - xscale*ST, 0, pn[2]);
-                        glVertex3d(pp[0] - xscale*ST, 0, pp[2]);
-                    glEnd();
-                    glBegin(GL_LINE_STRIP);
-                        glVertex3d(pp[0] - xscale*ST*(blackKeyP ? blackw : 1.f), 0, pp[2]);
-                        glVertex3d(pp[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pp[2]);
-                        glVertex3d(pn[0] - xscale*ST*(blackKey ? blackw : 0.f), 0, pn[2]);
-                        glVertex3d(pn[0] - xscale*ST*(blackKeyN ? blackw : 1.f), 0, pn[2]);
-                    glEnd();
 
-                glColor4f(0,0,0,0.8);
+                // outline
+                vectord lx { 0.0005*ST, 0, 0 };
+                vectord ly { 0, 0, 0.0005*SF };
+                vectord v[] = {
+                    pn - dx - lx,
+                    pn - dx + lx,
+                    pp - dx - lx,
+                    pp - dx + lx
+                };
+                addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v, 4 );
+
+                vectord v2[] = {
+                    pp - dx*(blackKeyP ? blackw : 1.) - ly,
+                    pp - dx*(blackKeyP ? blackw : 1.) + ly,
+                    pp - dx*(blackKey ? blackw : 0.) - ly - lx,
+                    pp - dx*(blackKey ? blackw : 0.) + ly + lx,
+                    pn - dx*(blackKey ? blackw : 0.) + ly + lx,
+                    pn - dx*(blackKey ? blackw : 0.) - ly - lx,
+                    pn - dx*(blackKeyN ? blackw : 1.) + ly,
+                    pn - dx*(blackKeyN ? blackw : 1.) - ly
+                };
+                addVertices(ae.vertices, tvector<4,GLfloat>(0,0,0,0.8), v2, 8 );
 
                 if (tone%12 == 0)
                 {
-                    glLineWidth(1);
+                    matrixd modelview = gl_projection->modelview;
+                    modelview *= matrixd::translate ( pp[0], 0, pp[2] );
+                    modelview *= matrixd::rot (90,1,0,0);
 
-                    glPushMatrixContext push_model( GL_MODELVIEW );
-                    glTranslatef(pp[0], 0, pp[2]);
-                    glRotatef(90,1,0,0);
+                    //modelview *= matrixd::scale (0.00014*ST, 0.00014*SF, 1);
+                    modelview *= matrixd::scale (0.5 * dx[0], 35. * dx[0]/ST*(pn[2]-pp[2]), 1.);
 
-                    //glScalef(0.00014f*ST,0.00014f*SF,1.f);
-                    glScalef(0.005 * xscale*ST,0.35 * xscale*(pn[2]-pp[2]),1.f);
+                    if (!render_settings.left_handed_axes)
+                        modelview *= matrixd::scale (-1,1,1);
 
                     char a[100];
                     sprintf(a,"C%d", tone/12+1);
-                    float w=10;
-                    for (char*c=a;*c!=0; c++)
-                        w+=glutStrokeWidth( GLUT_STROKE_ROMAN, *c );
-                    if (!render_settings.left_handed_axes)
-                        glScalef(-1,1,1);
-                    glTranslatef(-w,0,0);
-                    glColor4f(1,1,1,0.5);
-                    float z = 10;
-                    float q = 20;
-                    glBegin(GL_TRIANGLE_STRIP);
-                        glVertex2f(0 - z, 0 - q);
-                        glVertex2f(w + z, 0 - q);
-                        glVertex2f(0 - z, 100 + q);
-                        glVertex2f(w + z, 100 + q);
-                    glEnd();
-                    glColor4f(0,0,0,0.9);
-                    for (char*c=a;*c!=0; c++)
-                        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+                    ae.glyphs.push_back (GlyphData{modelview, a, 0.1, -0.05, 1., 0.});
                 }
             }
         }
     }
+}
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    if (!phatTicks.empty())
+
+void RenderAxes::
+        drawElements( const RenderAxes::AxesElements& ae)
+{
+    if (!program_)
     {
-        glLineWidth(2);
-        glVertexPointer(4, GL_FLOAT, 0, &phatTicks[0]);
-        glDrawArrays(GL_LINES, 0, phatTicks.size());
-        glLineWidth(1);
+        program_ = new QOpenGLShaderProgram();
+        program_->addShaderFromSourceCode(QOpenGLShader::Vertex,
+                                          R"vertexshader(
+                                              attribute highp vec4 qt_Vertex;
+                                              attribute highp vec4 colors;
+                                              uniform highp mat4 qt_ModelViewMatrix;
+                                              uniform highp mat4 qt_ProjectionMatrix;
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_Position = qt_ProjectionMatrix * qt_ModelViewMatrix * qt_Vertex;
+                                                  color = colors;
+                                              }
+                                          )vertexshader");
+        program_->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                          R"fragmentshader(
+                                           varying highp vec4 color;
+
+                                           void main() {
+                                               gl_FragColor = color;
+                                           }
+                                           )fragmentshader");
+
+        program_->bindAttributeLocation("qt_Vertex", 0);
+        program_->bindAttributeLocation("colors", 1);
+
+        if (!program_->link())
+            Log("renderaxes: invalid shader\n%s")
+                    % program_->log ().toStdString ();
     }
-    if (!ticks.empty())
+
+    if (!program_->isLinked ())
+        return;
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(false);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    program_->bind();
+
+    program_->enableAttributeArray(0);
+    program_->enableAttributeArray(1);
+
+    if (!ae.orthovertices.empty ())
     {
-        glVertexPointer(4, GL_FLOAT, 0, &ticks[0]);
-        glDrawArrays(GL_LINES, 0, ticks.size());
+        matrixd ortho;
+        glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
+
+        program_->setUniformValue("qt_ProjectionMatrix",
+                                  QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
+        program_->setUniformValue("qt_ModelViewMatrix",
+                                  QMatrix4x4(GLmatrixf::identity ().v ()));
+
+        program_->setAttributeArray(0, GL_FLOAT, &ae.orthovertices[0].position[0], 4, sizeof(Vertex));
+        program_->setAttributeArray(1, GL_FLOAT, &ae.orthovertices[0].color[0], 4, sizeof(Vertex));
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
     }
-    glDisableClientState(GL_VERTEX_ARRAY);
+
+    if (!ae.vertices.empty ())
+    {
+        program_->setUniformValue("qt_ProjectionMatrix",
+                                  QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
+        program_->setUniformValue("qt_ModelViewMatrix",
+                                  QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
+
+        program_->setAttributeArray(0, GL_FLOAT, &ae.vertices[0].position[0], 4, sizeof(Vertex));
+        program_->setAttributeArray(1, GL_FLOAT, &ae.vertices[0].color[0], 4, sizeof(Vertex));
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
+    }
+
+    program_->disableAttributeArray (0);
+    program_->disableAttributeArray (1);
+    program_->release();
+
+    glyphs_->drawGlyphs (*gl_projection, ae.glyphs);
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);
-#endif // GL_ES_VERSION_2_0
 }
 
 

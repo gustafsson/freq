@@ -43,6 +43,7 @@ RESOURCES += \
     ui/icon-resources.qrc \
 
 PWD = $$_PRO_FILE_PWD_
+SAWEROOT = $$_PRO_FILE_PWD_/..
 
 SOURCES += \
     $$PWD/adapters/*.cpp \
@@ -135,6 +136,7 @@ CONFIG += otherfilesvs
 ####################
 # Build settings
 CONFIG += sawelibs
+CONFIG += freetype-gl
 #DEFINES += CUDA_MEMCHECK_TEST
 
 

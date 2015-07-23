@@ -63,8 +63,16 @@ public:
 	operator tvector<rows-1, t>();
 
         template<typename t2 >
-        tvector<rows, t> operator*( const tvector<cols, t2> &n ) const {
-                return *this * tmatrix<cols,t2,1>( n );
+        tvector<rows, t2> operator*( const tvector<cols, t2> &n ) const {
+            tvector<rows, t2> v;
+            for(int a=0; a<rows; a++)
+            {
+                t f = 0;
+                for(int b=0; b<cols; b++)
+                    f += m[b][a]*n[b];
+                v[a] = f;
+            }
+            return v;
         }
 
         template<int cols2, typename t2 >
@@ -209,7 +217,12 @@ inline tmatrix<3,float,1>::tmatrix( const tvector<3, float> &b )
 template<>
 inline tmatrix<4,double,1>::tmatrix( const tvector<4, double> &b )
 {
-	m[0] = b;
+    m[0] = b;
+}
+template<>
+inline tmatrix<4,float,1>::tmatrix( const tvector<4, float> &b )
+{
+    m[0] = b;
 }
 template<>
 inline tmatrix<4,double,1>::operator tvector<4, double>&()

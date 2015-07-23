@@ -149,10 +149,11 @@ void Application::
 {
     TaskInfo ti("Version: %s", Sawe::Configuration::version_string().c_str());
     boost::gregorian::date today = boost::gregorian::day_clock::local_day();
+    auto now = boost::posix_time::microsec_clock::local_time();
     boost::gregorian::date_facet* facet(new boost::gregorian::date_facet("%A %B %d, %Y"));
     std::stringstream ss;
     ss.imbue(std::locale(std::cout.getloc(), facet));
-    ss << "Started on " << today;
+    ss << "Started on " << today << " at " << now;
     TaskInfo(boost::format("%s") % ss.str ());
 
     TaskInfo("Build timestamp for %s: %s, %s. Revision %s",
