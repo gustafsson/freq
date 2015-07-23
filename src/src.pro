@@ -136,6 +136,7 @@ CONFIG += otherfilesvs
 ####################
 # Build settings
 CONFIG += sawelibs
+CONFIG += freetype-gl
 #DEFINES += CUDA_MEMCHECK_TEST
 
 

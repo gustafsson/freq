@@ -10,10 +10,13 @@ class GlyphsFreetype: public IGlyphs
 {
 public:
     GlyphsFreetype();
+    ~GlyphsFreetype();
 
     void drawGlyphs( const glProjection& projection, const std::vector<GlyphData>& ) override;
 
 private:
+    void buildGlyphs(const std::vector<GlyphData>& data);
+
     std::unique_ptr<struct GlyphsFreetypePrivate> p;
 };
 

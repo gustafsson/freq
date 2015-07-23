@@ -1,3 +1,5 @@
+#ifdef USE_GLUT
+
 #include "glyphsglut.h"
 
 
@@ -99,3 +101,4 @@ void GlyphsGlut::
 } // namespace Render
 } // namespace Heightmap
 
+#endif
