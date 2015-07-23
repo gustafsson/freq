@@ -43,6 +43,7 @@ RESOURCES += \
     ui/icon-resources.qrc \
 
 PWD = $$_PRO_FILE_PWD_
+SAWEROOT = $$_PRO_FILE_PWD_/..
 
 SOURCES += \
     $$PWD/adapters/*.cpp \
