@@ -18,9 +18,7 @@
 #  define GL_R16F GL_R16F_EXT
 #  define GL_HALF_FLOAT GL_HALF_FLOAT_OES
 # endif
-inline const char* gluErrorString(int) {
-    return "(gluErrorString not implemented)";
-}
+#include "gluerrorstring.h"
 #else
 #    include <GL/glew.h> // glew.h includes gl.h
 #endif

@@ -32,12 +32,13 @@ SOURCES += \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
-    gluinvertmatrix.cpp \
     glprojection.cpp \
     glPushContext.cpp \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
+    gluerrorstring.cpp \
+    gluinvertmatrix.cpp \
     gluperspective.cpp \
     gluproject_ios.cpp \
     gluunproject.cpp \
@@ -76,6 +77,7 @@ HEADERS += \
     gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
+    gluerrorstring.h \
     gluinvertmatrix.h \
     gluperspective.h \
     gluproject_ios.h \
