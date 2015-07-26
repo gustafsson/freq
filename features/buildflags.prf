@@ -25,6 +25,7 @@ macx* {
 
     QMAKE_CXXFLAGS += -Wno-c++1y-extensions
     QMAKE_CXXFLAGS += -Wno-unused-parameter
+    QMAKE_CXXFLAGS += -Wno-unknown-pragmas
 }
 
 macx {
