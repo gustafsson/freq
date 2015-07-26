@@ -1,4 +1,4 @@
-#ifdef USE_GLUT
+#if defined(USE_GLUT) && defined(LEGACY_OPENGL)
 
 #include "glyphsglut.h"
 
@@ -7,9 +7,7 @@
 #ifndef __APPLE__
 #   include <GL/glut.h>
 #else
-# ifndef GL_ES_VERSION_2_0
 #   include <GLUT/glut.h>
-# endif
 #endif
 
 
@@ -38,7 +36,6 @@ GlyphsGlut::GlyphsGlut()
 void GlyphsGlut::
         drawGlyphs( const glProjection& gl_projection, const std::vector<GlyphData>& glyphdata)
 {
-#ifndef GL_ES_VERSION_2_0
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixd (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
@@ -93,12 +90,10 @@ void GlyphsGlut::
             modelview *= matrixd::translate ((spacing*0.5 + 1)*sw, 0, 0);
         }
     }
-
-#endif // GL_ES_VERSION_2_0
 }
 
 
 } // namespace Render
 } // namespace Heightmap
 
-#endif
+#endif // defined(USE_GLUT) && defined(LEGACY_OPENGL)

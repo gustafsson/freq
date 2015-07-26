@@ -9,7 +9,7 @@
  */
 class ResampleTexture: boost::noncopyable
 {
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 public:
     struct Area
     {
@@ -32,7 +32,7 @@ private:
     GlFrameBuffer fbo;
     unsigned vbo;
     Area destarea;
-#endif
+#endif // LEGACY_OPENGL
 
 public:
     static void test();

@@ -14,6 +14,7 @@ CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
 CONFIG += precompile_header_with_all_headers
+CONFIG += legacy-opengl
 
 QT += opengl # to use QGLWidget
 QT += widgets # to use QApplication
@@ -32,12 +33,13 @@ SOURCES += \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
-    gluinvertmatrix.cpp \
     glprojection.cpp \
     glPushContext.cpp \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
+    gluerrorstring.cpp \
+    gluinvertmatrix.cpp \
     gluperspective.cpp \
     gluproject_ios.cpp \
     gluunproject.cpp \
@@ -76,6 +78,7 @@ HEADERS += \
     gltextureread.h \
     GLvector.h \
     geometricalgebra.h \
+    gluerrorstring.h \
     gluinvertmatrix.h \
     gluperspective.h \
     gluproject_ios.h \

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "gl.h"
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 
 #include <boost/noncopyable.hpp>
 
@@ -25,5 +25,5 @@ public:
    ~glPushAttribContext() { glPopAttrib(); }
 };
 
-#endif // GL_ES_VERSION_2_0
+#endif // LEGACY_OPENGL
 #endif // _GLPUSHCONTEXT_H_

@@ -37,6 +37,7 @@ void RectangleView::
 void RectangleView::
         drawSelectionRectangle()
 {
+#ifdef LEGACY_OPENGL
     float
         x1 = model_->a.time,
         z1 = model_->a.scale,
@@ -70,12 +71,14 @@ void RectangleView::
         glVertex3f( x1, y, z2 );
     glEnd();
     glLineWidth(0.5f);
+#endif // LEGACY_OPENGL
 }
 
 
 void RectangleView::
         drawSelectionRectangle2()
 {
+#ifdef LEGACY_OPENGL
     double l = model_->project ()->length();
     glDepthMask(false);
     glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
@@ -223,6 +226,7 @@ void RectangleView::
     }
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif // LEGACY_OPENGL
 }
 
 

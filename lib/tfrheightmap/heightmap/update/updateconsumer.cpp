@@ -81,7 +81,9 @@ void UpdateConsumer::
         EXCEPTION_ASSERTX(isInterruptionRequested (), "Thread quit unexpectedly");
         EXCEPTION_ASSERTX(update_queue->empty(), "Thread quit with jobs left");
     } catch (...) {
-        Heightmap::UncaughtException::handle_exception(boost::current_exception());
+        try{
+            Heightmap::UncaughtException::handle_exception(boost::current_exception());
+        } catch (...) {}
     }
 }
 
@@ -122,7 +124,10 @@ void UpdateConsumer::
       }
     catch (...)
       {
-        Heightmap::UncaughtException::handle_exception(boost::current_exception());
+        try {
+            Heightmap::UncaughtException::handle_exception(boost::current_exception());
+        } catch (...) {}
+
         requestInterruption ();
       }
 }

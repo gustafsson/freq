@@ -127,6 +127,7 @@ void PlaybackView::
 void PlaybackView::
         drawPlaybackMarker()
 {
+#ifdef LEGACY_OPENGL
     if (0>_playbackMarker)
         return;
 
@@ -165,6 +166,7 @@ void PlaybackView::
         glVertex3f( t, y, z1 );
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif // LEGACY_OPENGL
 }
 
 
@@ -181,7 +183,7 @@ bool PlaybackView::
 //    if (!e || model->playbackTarget->post_sink()->filter() != model->selection->current_selection())
     if (!e)
         return false;
-
+#ifdef LEGACY_OPENGL
     glDepthMask(false);
 
     Heightmap::FreqAxis const& fa =
@@ -218,7 +220,7 @@ bool PlaybackView::
         glVertex3f( t, y, z1 );
     glEnd();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+#endif // LEGACY_OPENGL
     return true;
 }
 

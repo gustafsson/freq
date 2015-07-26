@@ -13,7 +13,9 @@ public:
     ~ToolGlBrush();
 
 private:
+#ifdef LEGACY_OPENGL
     glPushAttribContext ac;
+#endif // LEGACY_OPENGL
 };
 
 } // namespace Support

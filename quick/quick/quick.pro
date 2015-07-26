@@ -1,6 +1,8 @@
 TEMPLATE = app
 TARGET = Freq
 QT += qml quick widgets multimedia
+QT += opengl
+QT += network
 
 CONFIG += c++11
 
@@ -25,15 +27,12 @@ macx-ios*:QMAKE_INFO_PLIST = $$_PRO_FILE_PWD_/ios/Info.plist
 QML_IMPORT_PATH =
 
 # how to find a feature in a shadow build?
-#PWD = $$_PRO_FILE_PWD_
 SAWEROOT = $$_PRO_FILE_PWD_/../..
 CONFIG += tmpdir buildflags
 CONFIG += precompile_header_with_all_headers
 CONFIG += freetype-gl
+CONFIG += legacy-opengl
 #QMAKEFEATURES = $$_PRO_FILE_PWD_/../../features
-
-QT += opengl
-QT += network
 
 INCLUDEPATH += \
     $$SAWEROOT/lib/gpumisc \

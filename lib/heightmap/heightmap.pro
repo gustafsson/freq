@@ -10,7 +10,11 @@ CONFIG += staticlib warn_on
 CONFIG += c++11 buildflags
 CONFIG += tmpdir
 CONFIG += precompile_header_with_all_headers
-CONFIG += freetype-gl
+CONFIG += legacy-opengl
+
+# fonts for RenderAxes
+#CONFIG += freetype-gl # the embedded font works just fine
+#DEFINES += USE_GLUT
 
 QT += opengl
 

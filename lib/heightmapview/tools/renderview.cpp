@@ -130,31 +130,41 @@ RenderView::
 void RenderView::
         setStates()
 {
+    GlException_CHECK_ERROR();
+
     tvector<4,float> a = model->render_settings.clear_color;
     glClearColor(a[0], a[1], a[2], a[3]);
 #ifdef GL_ES_VERSION_2_0
-    glClearDepthf(1.0f);
+    GlException_SAFE_CALL( glClearDepthf(1.0f) );
 #else
-    glClearDepth(1.0);
-    glEnable(GL_TEXTURE_2D);
+    GlException_SAFE_CALL( glClearDepth(1.0) );
 #endif
-    glDepthMask(true);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glFrontFace( model->render_settings.left_handed_axes ? GL_CCW : GL_CW );
-    glCullFace( GL_BACK );
+#ifdef LEGACY_OPENGL
+    GlException_SAFE_CALL( glEnable(GL_TEXTURE_2D) );
+#endif
+
+    GlException_SAFE_CALL( glDepthMask(true) );
+
+    GlException_SAFE_CALL( glEnable(GL_DEPTH_TEST) );
+    GlException_SAFE_CALL( glDepthFunc(GL_LEQUAL) );
+    GlException_SAFE_CALL( glFrontFace( model->render_settings.left_handed_axes ? GL_CCW : GL_CW ) );
+    GlException_SAFE_CALL( glCullFace( GL_BACK ) );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
     glShadeModel(GL_SMOOTH);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+#endif
 
+#ifdef LEGACY_OPENGL
     // Antialiasing
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_POLYGON_SMOOTH);
-    glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
-    glDisable(GL_POLYGON_SMOOTH);
+    // This is not a recommended method for anti-aliasing. Use Multisampling instead.
+    // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
+    //glEnable(GL_LINE_SMOOTH);
+    //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    //glEnable(GL_POLYGON_SMOOTH);
+    //glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+    //glDisable(GL_POLYGON_SMOOTH);
 #endif
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -170,7 +180,7 @@ void RenderView::
     //glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     glDisable(GL_DEPTH_TEST);
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
     glDisable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
     glDisable(GL_LIGHT0);
@@ -209,10 +219,10 @@ void RenderView::
         initializeGL()
 {
     if (!_renderview_fbo)
-        _renderview_fbo.reset( new GlFrameBuffer );
+        GlException_SAFE_CALL( _renderview_fbo.reset( new GlFrameBuffer ) );
 
     if (!_renderaxes)
-        _renderaxes.reset (new Heightmap::Render::RenderAxes );
+        GlException_SAFE_CALL( _renderaxes.reset (new Heightmap::Render::RenderAxes ) );
 }
 
 
@@ -319,7 +329,7 @@ void RenderView::
         TIME_PAINTGL_DETAILS TaskTimer tt("Render");
 
         const auto c = *model->camera.read ();
-        drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), c.r[0]>=45 ? 1 - c.orthoview : 1 );
+        GlException_SAFE_CALL( drawCollections.drawCollections( gl_projection, _renderview_fbo.get(), c.r[0]>=45 ? 1 - c.orthoview : 1 ) );
 
         double last_ysize = model->render_settings.last_ysize;
         gl_projection.modelview *= matrixd::scale (1, last_ysize*1.5 < 1. ? last_ysize*1.5 : 1. , 1); // global effect on all tools
@@ -338,9 +348,10 @@ void RenderView::
             drawAxes_rotation.modelview *= setRotationForAxes();
 
             Heightmap::FreqAxis display_scale = model->tfr_mapping ().read()->display_scale();
-            _renderaxes->drawAxes(&model->render_settings,
+            GlException_SAFE_CALL( _renderaxes->drawAxes(
+                               &model->render_settings,
                                &drawAxes_rotation,
-                               display_scale, length );
+                               display_scale, length ) );
             model->render_settings.last_axes_length = length;
 
             model->render_settings.draw_piano = draw_piano;
@@ -351,12 +362,12 @@ void RenderView::
 
     Support::ChainInfo ci(model->chain());
     bool isWorking = ci.hasWork () || update_queue_has_work;
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
 
     if (isWorking || dead_workers) {
-        Support::DrawWorking::drawWorking( gl_projection.viewport[2], gl_projection.viewport[3], n_workers, dead_workers );
+        GlException_SAFE_CALL( Support::DrawWorking::drawWorking( gl_projection.viewport[2], gl_projection.viewport[3], n_workers, dead_workers ) );
     }
 #endif
 
@@ -371,7 +382,7 @@ void RenderView::
     }
 
 #if defined(TARGET_reader)
-    Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] );
+    GlException_SAFE_CALL( Support::DrawWatermark::drawWatermark( viewport_matrix[2], viewport_matrix[3] ) );
 #endif
 
     } catch (...) {

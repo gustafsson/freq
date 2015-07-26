@@ -7,6 +7,7 @@
 #include "GlTexture.h"
 #include "glprojection.h"
 #include "renderinfo.h"
+#include "shaderresource.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
@@ -60,6 +61,7 @@ private:
     RenderSettings::ColorMode _color_texture_colors;
     boost::shared_ptr<GlTexture> _colorTexture;
 
+    ShaderPtr _shader_progp;
     unsigned _shader_prog;
     unsigned _mesh_width;
     unsigned _mesh_height;

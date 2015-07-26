@@ -17,6 +17,7 @@ class PlotLines : public QObject
 {
     Q_OBJECT
 public:
+#ifdef LEGACY_OPENGL
     explicit PlotLines(RenderView* render_model);
 
     struct Value {
@@ -63,6 +64,7 @@ private:
     void draw(Line& l);
     void recomputeColors();
     unsigned display_list_;
+#endif // LEGACY_OPENGL
 };
 
 } // namespace Support

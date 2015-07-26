@@ -43,8 +43,9 @@ private:
     const glProjection* gl_projection;
     FreqAxis display_scale;
     AxesElements ae_;
-    QOpenGLShaderProgram* program_;
+    std::unique_ptr<QOpenGLShaderProgram> program_;
     IGlyphs* glyphs_;
+    GLuint orthobuffer_=0, vertexbuffer_=0;
 };
 
 } // namespace Render

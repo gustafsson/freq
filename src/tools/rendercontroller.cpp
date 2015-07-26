@@ -324,6 +324,8 @@ void RenderController::
 {
     // Keep in sync with transformChanged()
     //float f = 2.f * value / yscale->maximum() - 1.f;
+    value = std::max(.001,value);
+
     model()->render_settings.y_scale = value; //exp( 8.f*f*f * (f>0?1:-1));
 
     stateChanged();

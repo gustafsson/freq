@@ -1,152 +1,85 @@
 #include "shaderresource.h"
-#include "GlException.h"
 
 #include "exceptionassert.h"
-#include "gl.h"
-#include "demangle.h"
+#include "log.h"
 #include "tasktimer.h"
 
 // Qt
+#include <QOpenGLShaderProgram>
 #include <QResource>
 
-//#define TIME_COMPILESHADER
-#define TIME_COMPILESHADER if(0)
+#define TIME_COMPILESHADER
+//#define TIME_COMPILESHADER if(0)
 
 using namespace std;
 
 namespace Heightmap {
 
-
-// Helpers based on Cuda SDK sample, ocean FFT
-// TODO check license terms of the Cuda SDK
-
-// Attach shader to a program
-string attachShader(GLuint prg, GLenum type, const char *name)
-{
-    stringstream result;
-
-    TIME_COMPILESHADER TaskTimer tt("Compiling shader %s", name);
-    try {
-        GLuint shader;
-        int compiled;
-
-        shader = glCreateShader(type);
-
-        QResource qr(name);
-        EXCEPTION_ASSERTX( qr.isValid(), string("Couldn't find shader resource ") + name);
-        EXCEPTION_ASSERTX( 0 != qr.size(), string("Shader resource empty ") + name);
-
-        string src;
-#ifdef GL_ES_VERSION_2_0
-        src += "#extension GL_OES_standard_derivatives : enable\n";
-#else
-        src += "#define lowp\n"
-              "#define mediump\n"
-              "#define highp\n";
-#endif
-        src.append ((char*)qr.data(), qr.size ());
-        const char* p = &src[0];
-        const GLint sz = src.size ();
-
-        glShaderSource(shader, 1, &p, &sz);
-        glCompileShader(shader);
-        glGetShaderiv(shader, GL_COMPILE_STATUS, (GLint*)&compiled);
-
-        char shaderInfoLog[2048];
-        glGetShaderInfoLog(shader, sizeof(shaderInfoLog), 0, shaderInfoLog);
-
-        bool showShaderLog = !compiled;
-#ifdef _DEBUG
-        QString qshaderInfoLog(shaderInfoLog);
-        showShaderLog |= 0 != qshaderInfoLog.contains("fail", Qt::CaseInsensitive);
-        showShaderLog |= 0 != qshaderInfoLog.contains("warning", Qt::CaseInsensitive);
-        showShaderLog |= strlen(shaderInfoLog)>0;
-#endif
-
-        if (showShaderLog)
-        {
-            result << "Failed to compile shader '" << name << "'"  << endl
-                   << shaderInfoLog << endl;
-        }
-
-        if (compiled)
-        {
-            glAttachShader(prg, shader);
-        }
-
-        glDeleteShader(shader);
-
-    } catch (const exception &x) {
-        TIME_COMPILESHADER TaskInfo("Failed, throwing %s", vartype(x).c_str());
-        throw;
-    }
-
-    return result.str();
-}
-
-
-// Create shader program from vertex shader and fragment shader files
-unsigned ShaderResource::
+ShaderPtr ShaderResource::
         loadGLSLProgram(const char *vertFileName, const char *fragFileName)
 {
-    GLint linked;
-    GLuint program;
-    stringstream resultLog;
+    QString vertShader, fragShader;
+    if (vertFileName!=0 && *vertFileName!=0)
+        vertShader = (const char*)QResource(vertFileName).data ();
+    if (fragFileName!=0 && *fragFileName!=0)
+        fragShader = (const char*)QResource(fragFileName).data ();
 
-    program = glCreateProgram();
-    try {
-        if (strlen(vertFileName))
-            resultLog << attachShader(program, GL_VERTEX_SHADER, vertFileName);
-        if (strlen(fragFileName))
-            resultLog << attachShader(program, GL_FRAGMENT_SHADER, fragFileName);
-
-        glLinkProgram(program);
-        glGetProgramiv(program, GL_LINK_STATUS, &linked);
-
-        char programInfoLog[2048];
-        glGetProgramInfoLog(program, sizeof(programInfoLog), 0, programInfoLog);
-        if (!linked)
-            TaskTimer tt("Failed to link vertex shader \"%s\" with fragment shader \"%s\"\n%s",
-                         vertFileName, fragFileName, programInfoLog);
-
-        bool showProgramLog = !linked;
-#ifdef _DEBUG
-        QString qprogramInfoLog(programInfoLog);
-        showProgramLog |= 0 != qprogramInfoLog.contains("fail", Qt::CaseInsensitive);
-        showProgramLog |= 0 != qprogramInfoLog.contains("warning", Qt::CaseInsensitive);
-        showProgramLog |= strlen(programInfoLog)>0;
-#endif
-
-        if (showProgramLog)
-        {
-            stringstream log;
-            log     << "Failed to link fragment shader (" << fragFileName << ") "
-                    << "with vertex shader (" << vertFileName << ")" << endl
-                    << programInfoLog << endl
-                    << resultLog.str();
-
-            TaskInfo("Couldn't properly setup graphics\n%s", log.str().c_str());
-
-            EXCEPTION_ASSERTX(false, log.str ());
-        }
-
-        glUseProgram(program);
-
-        GLenum glError = glGetError();
-        if (GL_NO_ERROR != glError)
-        {
-            TaskInfo("glUseProgram failed %s", gluErrorString(glError));
-            program = 0;
-        }
-
-        glUseProgram( 0 );
-
-    } catch (...) {
-        glDeleteProgram(program);
-        throw;
-    }
-    return program;
+    return loadGLSLProgramSource(vertShader, fragShader);
 }
 
+ShaderPtr ShaderResource::
+    loadGLSLProgramSource(QString vertShader, QString fragShader)
+{
+#ifndef LEGACY_OPENGL
+    if (vertShader.contains (QRegExp("\\btexture\\s*[;=]")))
+    {
+        EXCEPTION_ASSERTX(false,
+                boost::format("ShaderResource: vertex shader contains illegal identifier ('texture\\s*[;=]')\n%s")
+                        % vertShader.toStdString ());
+    }
+
+    if (fragShader.contains (QRegExp("\\btexture\\s*[;=]")) || fragShader.contains (QRegExp("\\bout_FragColor\\b")))
+    {
+        EXCEPTION_ASSERTX(false,
+                boost::format("ShaderResource: fragment shader contains illegal identifier  ('texture\\s*[;=]' or out_FragColor)\n%s")
+                        % fragShader.toStdString ());
+    }
+
+    vertShader.replace (QRegExp("\\battribute\\b"),"in");
+    vertShader.replace (QRegExp("\\bvarying\\b"),"out");
+    vertShader.replace (QRegExp("\\btexture2D\\b"),"texture");
+    vertShader = "#version 150\n" + vertShader;
+
+    fragShader.replace (QRegExp("\\bvarying\\b"),"in");
+    fragShader.replace (QRegExp("\\bgl_FragColor\\b"),"out_FragColor");
+    fragShader.replace (QRegExp("\\btexture2D\\b"),"texture");
+    fragShader = "#version 150\nout vec4 out_FragColor;\n" + fragShader;
+#endif
+
+    QOpenGLShaderProgram* program = new QOpenGLShaderProgram();
+    if (!vertShader.isEmpty ())
+        program->addShaderFromSourceCode (QOpenGLShader::Vertex, vertShader);
+    if (!fragShader.isEmpty ())
+        program->addShaderFromSourceCode (QOpenGLShader::Fragment, fragShader);
+    program->link();
+
+    QString log = program->log ();
+    EXCEPTION_ASSERTX(program->isLinked (),
+                      boost::format("ShaderResource:\n%s\n\n--- Vertex shader ---\n%s\n\n--- Fragment shader ---\n%s")
+                              % log.toStdString ()
+                              % vertShader.toStdString ()
+                              % fragShader.toStdString ());
+
+    if (log.contains("fail", Qt::CaseInsensitive) ||
+            log.contains("warn", Qt::CaseInsensitive))
+    {
+        Log("ShaderResource:\n%s\n\n--- Vertex shader ---\n%s\n\n--- Fragment shader ---\n%s")
+                % log.toStdString ()
+                % vertShader.toStdString ()
+                % fragShader.toStdString ();
+    }
+
+    return ShaderPtr(program);
+}
 
 } // namespace Heightmap

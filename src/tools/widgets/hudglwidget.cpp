@@ -36,6 +36,7 @@ QRegion HudGlWidget::
 void HudGlWidget::
         painting ()
 {
+#ifdef LEGACY_OPENGL
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
     // Set the viewport to the outer edges of this widget
@@ -56,6 +57,9 @@ void HudGlWidget::
     this->paintWidgetGl2D();
 
     glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
+#else
+    EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
 }
 
 

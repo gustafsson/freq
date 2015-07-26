@@ -26,11 +26,15 @@ signals:
     void redrawSignal();
 
 public slots:
+    void paint3();
     void paint2();
     void paint();
 
 private:
     Tools::RenderView render_view;
+
+    GLuint vertexbuffer = 0;
+    GLuint VertexArrayID = 0;
 
     QRect m_viewport;
     int m_window_height;

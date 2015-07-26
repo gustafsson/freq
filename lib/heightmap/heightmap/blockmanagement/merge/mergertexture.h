@@ -4,6 +4,7 @@
 #include "heightmap/blockcache.h"
 #include "heightmap/block.h"
 #include "GlTexture.h"
+#include "heightmap/render/shaderresource.h"
 
 namespace Heightmap {
 namespace BlockManagement {
@@ -37,6 +38,7 @@ private:
     const BlockLayout block_layout_;
     const bool disable_merge_;
     BlockCache::cache_t cache_clone;
+    ShaderPtr programp_;
     unsigned program_;
 
     // glsl uniforms

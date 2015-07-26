@@ -1,5 +1,6 @@
 #include "renderaxes.h"
 #include "frustumclip.h"
+#include "shaderresource.h"
 
 // gpumisc
 #include "tasktimer.h"
@@ -8,6 +9,7 @@
 #include "GLvector.h"
 #include "gluperspective.h"
 #include "log.h"
+#include "GlException.h"
 
 //#define TIME_RENDERER
 #define TIME_RENDERER if(0)
@@ -18,10 +20,9 @@ namespace Render {
 RenderAxes::
         RenderAxes()
     :
-      program_(0),
       glyphs_(0)
 {
-    glyphs_ = GlyphFactory::makeIGlyphs ();
+    GlException_SAFE_CALL( glyphs_ = GlyphFactory::makeIGlyphs () );
 }
 
 
@@ -29,7 +30,11 @@ RenderAxes::
         ~RenderAxes()
 {
     delete glyphs_;
-    delete program_;
+
+    if (orthobuffer_)
+        glDeleteBuffers (1, &orthobuffer_);
+    if (vertexbuffer_)
+        glDeleteBuffers (1, &vertexbuffer_);
 }
 
 
@@ -47,7 +52,7 @@ void RenderAxes::
     ae_.orthovertices.clear ();
 
     getElements(ae_, T);
-    drawElements(ae_);
+    GlException_SAFE_CALL( drawElements(ae_) );
 }
 
 
@@ -651,8 +656,7 @@ void RenderAxes::
 {
     if (!program_)
     {
-        program_ = new QOpenGLShaderProgram();
-        program_->addShaderFromSourceCode(QOpenGLShader::Vertex,
+        program_ = ShaderResource::loadGLSLProgramSource (
                                           R"vertexshader(
                                               attribute highp vec4 qt_Vertex;
                                               attribute highp vec4 colors;
@@ -661,18 +665,17 @@ void RenderAxes::
                                               varying highp vec4 color;
 
                                               void main() {
-                                                  gl_Position = qt_ProjectionMatrix * qt_ModelViewMatrix * qt_Vertex;
+                                                  gl_Position = qt_ProjectionMatrix * (qt_ModelViewMatrix * qt_Vertex);
                                                   color = colors;
                                               }
-                                          )vertexshader");
-        program_->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                          )vertexshader",
                                           R"fragmentshader(
-                                           varying highp vec4 color;
+                                              varying highp vec4 color;
 
-                                           void main() {
-                                               gl_FragColor = color;
-                                           }
-                                           )fragmentshader");
+                                              void main() {
+                                                  gl_FragColor = color;
+                                              }
+                                          )fragmentshader");
 
         program_->bindAttributeLocation("qt_Vertex", 0);
         program_->bindAttributeLocation("colors", 1);
@@ -696,6 +699,11 @@ void RenderAxes::
 
     if (!ae.orthovertices.empty ())
     {
+        if (!orthobuffer_)
+            GlException_SAFE_CALL( glGenBuffers(1, &orthobuffer_) );
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, orthobuffer_) );
+        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0], GL_STATIC_DRAW) );
+
         matrixd ortho;
         glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
 
@@ -704,21 +712,26 @@ void RenderAxes::
         program_->setUniformValue("qt_ModelViewMatrix",
                                   QMatrix4x4(GLmatrixf::identity ().v ()));
 
-        program_->setAttributeArray(0, GL_FLOAT, &ae.orthovertices[0].position[0], 4, sizeof(Vertex));
-        program_->setAttributeArray(1, GL_FLOAT, &ae.orthovertices[0].color[0], 4, sizeof(Vertex));
+        program_->setAttributeBuffer(0, GL_FLOAT, 0, 4, sizeof(Vertex));
+        program_->setAttributeBuffer(1, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
     }
 
     if (!ae.vertices.empty ())
     {
+        if (!vertexbuffer_)
+            GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer_) );
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
+        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STATIC_DRAW) );
+
         program_->setUniformValue("qt_ProjectionMatrix",
                                   QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
         program_->setUniformValue("qt_ModelViewMatrix",
                                   QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
 
-        program_->setAttributeArray(0, GL_FLOAT, &ae.vertices[0].position[0], 4, sizeof(Vertex));
-        program_->setAttributeArray(1, GL_FLOAT, &ae.vertices[0].color[0], 4, sizeof(Vertex));
+        program_->setAttributeBuffer(0, GL_FLOAT, 0, 4, sizeof(Vertex));
+        program_->setAttributeBuffer(1, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
     }
@@ -727,7 +740,7 @@ void RenderAxes::
     program_->disableAttributeArray (1);
     program_->release();
 
-    glyphs_->drawGlyphs (*gl_projection, ae.glyphs);
+    GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(true);

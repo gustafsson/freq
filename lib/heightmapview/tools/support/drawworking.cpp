@@ -11,9 +11,10 @@
 #include <math.h> // cos, sin, M_PI
 #include <algorithm> // std::min, std::max
 
-#ifndef GL_ES_VERSION_2_0
 namespace Tools {
     namespace Support {
+
+#ifdef LEGACY_OPENGL
 
 // DrawWorking should have a mouse over info that lets the user file a bug report.
 //    switch (QMessageBox::warning( 0,
@@ -102,11 +103,12 @@ static void
     drawCircleSector(width/2.0f, height/2.0f, radius, -M_PI/2.0f, 0);
     drawCircleSector(-width/2.0f, height/2.0f, radius, -M_PI, -M_PI/2.0f);
 }
-
+#endif
 
 void DrawWorking::
         drawWorking(int viewport_width, int viewport_height, int alive, int dead)
 {
+#ifdef LEGACY_OPENGL
     static float computing_rotation = 0.0;
 
     glPushAttribContext push_attribs;
@@ -153,8 +155,8 @@ void DrawWorking::
 
     glEnable (GL_DEPTH_TEST);
     glDepthMask (GL_TRUE);
+#endif // LEGACY_OPENGL
 }
 
     } // namespace Support
 } // namespace Tools
-#endif

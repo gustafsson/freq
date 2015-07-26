@@ -233,8 +233,8 @@ Heightmap::Position RenderViewInfo::
 
     const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
     const GLint* vp = gl_projection.viewport.v;
-#ifdef GL_ES_VERSION_2_0
-    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is not supported on OpenGL ES");
+#ifndef LEGACY_OPENGL
+    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is only supported on legacy OpenGL");
 #else
     vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];
@@ -315,8 +315,8 @@ Heightmap::Position RenderViewInfo::
 
     const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
     const GLint* vp = gl_projection.viewport.v;
-#ifdef GL_ES_VERSION_2_0
-    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is not supported on OpenGL ES");
+#ifndef LEGACY_OPENGL
+    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is only supported on legacy OpenGL");
 #else
     vectord::T other_m[16], other_proj[16];
     GLint other_vp[4];

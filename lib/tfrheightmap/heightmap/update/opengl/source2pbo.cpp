@@ -4,7 +4,7 @@
 #include "gl.h"
 #include "log.h"
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 
 //#define LOG_TRANSFER_RATE
 #define LOG_TRANSFER_RATE if(0)

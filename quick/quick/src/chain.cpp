@@ -3,6 +3,9 @@
 #include "qtmicrophone.h"
 #include "signal/recorderoperation.h"
 #include "heightmap/update/updateconsumer.h"
+#include "heightmap/uncaughtexception.h"
+#include "GlException.h"
+#include "demangle.h"
 
 #include <QtQuick>
 
@@ -78,49 +81,62 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 }
 
 
-void setStates(tvector<4,float> a)
+void setStates()
 {
-    glClearColor(a[0], a[1], a[2], a[3]);
 #ifdef GL_ES_VERSION_2_0
-    glClearDepthf(1.0f);
+    GlException_SAFE_CALL( glClearDepthf(1.0f) );
 #else
-    glClearDepth(1.0);
-    glEnable(GL_TEXTURE_2D);
+    GlException_SAFE_CALL( glClearDepth(1.0) );
 #endif
-    glDepthMask(true);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+#ifdef LEGACY_OPENGL
+    GlException_SAFE_CALL( glEnable(GL_TEXTURE_2D) );
+#endif
+
+    GlException_SAFE_CALL( glDepthMask(true) );
+
+    GlException_SAFE_CALL( glEnable(GL_DEPTH_TEST) );
+    GlException_SAFE_CALL( glDepthFunc(GL_LEQUAL) );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-#ifndef GL_ES_VERSION_2_0
-    glShadeModel(GL_SMOOTH);
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+#ifdef LEGACY_OPENGL
+
+    GlException_SAFE_CALL( glShadeModel(GL_SMOOTH) );
+    GlException_SAFE_CALL( glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST) );
 
     // Antialiasing
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_POLYGON_SMOOTH);
-    glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
-    glDisable(GL_POLYGON_SMOOTH);
+    // This is not a recommended method for anti-aliasing. Use Multisampling instead.
+    // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
+    //GlException_SAFE_CALL( glEnable(GL_LINE_SMOOTH) );
+    //GlException_SAFE_CALL( glHint(GL_LINE_SMOOTH_HINT, GL_NICEST) );
+    //GlException_SAFE_CALL( glEnable(GL_POLYGON_SMOOTH) );
+    //GlException_SAFE_CALL( glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST) );
+    //GlException_SAFE_CALL( glDisable(GL_POLYGON_SMOOTH) );
 #endif
 
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    glEnable(GL_BLEND);
+    GlException_SAFE_CALL( glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ) );
+    GlException_SAFE_CALL( glEnable(GL_BLEND) );
 }
 
 
 void Chain::clearOpenGlBackground()
 {
+#ifndef LEGACY_OPENGL
+    if (!vertexArray_)
+        GlException_SAFE_CALL( glGenVertexArrays(1, &vertexArray_) );
+    GlException_SAFE_CALL( glBindVertexArray(vertexArray_) );
+#endif
+
     if (!update_consumer_)
         setupUpdateConsumer(QOpenGLContext::currentContext());
 
     // ok as a long as stateless with respect to opengl resources, otherwise this needs a rendering object that is
     // created on window()->beforeSynchronizing and destroyed on window()->sceneGraphInvalidated (as in
     // Squircle/SquircleRenderer)
-    glUseProgram (0);
+    GlException_SAFE_CALL( glUseProgram (0) );
+    setStates();
     QColor c = this->window ()->color ();
-    setStates(tvector<4,float>(c.redF (),c.greenF (),c.blueF (),c.alphaF ()));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    GlException_SAFE_CALL( glClearColor(c.redF (), c.greenF (), c.blueF (), c.alphaF ()) );
+    GlException_SAFE_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );
 }
 
 

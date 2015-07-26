@@ -11,6 +11,7 @@ class GlyphsFreetypeEmbedded : public Heightmap::Render::IGlyphs
 {
 public:
     GlyphsFreetypeEmbedded();
+    ~GlyphsFreetypeEmbedded();
 
     void drawGlyphs( const glProjection& projection, const std::vector<GlyphData>& data) override;
 
@@ -19,14 +20,19 @@ private:
     void buildGlyphs(const std::vector<GlyphData>& data);
 
     struct Glyph {
-        float s,t;
         tvector<4,GLfloat> p;
+        float s,t;
     };
 
     std::vector<Glyph> glyphs;
+    std::vector<tvector<4,GLfloat>> quad_v;
     std::unique_ptr<QOpenGLShaderProgram> program_;
 
     GLuint texid;
+    GLuint glyphbuffer_=0;
+    size_t glyphbuffer_size = 0;
+    GLuint vertexbuffer_=0;
+    size_t vertexbuffer_size = 0;
 };
 
 } // namespace Render

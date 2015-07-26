@@ -37,7 +37,7 @@ private:
     Signal::Processing::TargetMarker::ptr target_marker_;
     Heightmap::Update::UpdateQueue::ptr update_queue_;
     QPointer<QObject> update_consumer_=0;
-
+    unsigned vertexArray_ = 0;
 };
 
 #endif // CHAIN_H

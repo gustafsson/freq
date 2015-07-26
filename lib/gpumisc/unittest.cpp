@@ -48,7 +48,9 @@ int UnitTest::
         RUNTEST(GlFrameBuffer);
         RUNTEST(glinfo);
         RUNTEST(glProjection);
+#ifdef LEGACY_OPENGL
         RUNTEST(GlSyncObjectMutex);
+#endif
         RUNTEST(GlTextureRead);
         RUNTEST(neat_math);
         RUNTEST(ResampleTexture);

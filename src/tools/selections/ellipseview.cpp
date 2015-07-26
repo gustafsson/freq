@@ -40,6 +40,7 @@ void EllipseView::
 void EllipseView::
         drawSelectionCircle()
 {
+#ifdef LEGACY_OPENGL
     float
         x = model_->centre.time,
         z = model_->centre.scale,
@@ -67,6 +68,7 @@ void EllipseView::
     }
     glEnd();
     glLineWidth(0.5f);
+#endif // LEGACY_OPENGL
 }
 
 

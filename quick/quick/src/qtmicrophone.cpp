@@ -2,10 +2,13 @@
 #include "log.h"
 #include "cpumemorystorage.h"
 #include "heightmap/uncaughtexception.h"
+#include "neat_math.h"
 
 #include <QAudioInput>
 
 //#define SKIP_ZEROS
+//#define LOG_DATA
+#define LOG_DATA if(0)
 
 GotData::GotData(
         shared_state<Signal::Recorder::Data> data,
@@ -91,6 +94,8 @@ qint64 GotData::
 void GotData::
        writeData(const float* in, quint64 len)
 {
+    LOG_DATA Log("qtmicrophone: got %d samples") % len;
+
     // Prepare buffer
     DataAccessPosition_t number_of_samples = DataAccessPosition_t(len / data.raw()->num_channels);
     if (!buffer || buffer->number_of_samples () != number_of_samples)
@@ -185,12 +190,14 @@ QtMicrophone::
     if (!info.isFormatSupported(format))
         format = info.nearestFormat(format);
 
-    Log("qtmicrophone: fs = %d, bits = %d, %d channels")
-            % format.sampleRate () % format.sampleSize () % format.channelCount ();
-
     audio_.reset (new QAudioInput(info, format));
-    audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
+    audio_->setBufferSize ( lpo2s(format.sampleRate ()/60/2) ); // latency -> 1/120 ms
+//    audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
 //    audio_->setBufferSize (1<<9); // 512, buffer_size/sample_rate = latency -> 12 ms
+
+    Log("qtmicrophone: fs = %d, bits = %d, %d channels, buffer: %d samples")
+            % format.sampleRate () % format.sampleSize ()
+            % format.channelCount () % audio_->bufferSize ();
 
     auto e = audio_->error ();
     if (e != QAudio::NoError)

@@ -144,21 +144,27 @@ void TimelineView::
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+#ifdef LEGACY_OPENGL
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+#endif // LEGACY_OPENGL
 
     {   // Antialiasing
-        glEnable(GL_LINE_SMOOTH);
-        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        glDisable(GL_POLYGON_SMOOTH);
-        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+        // This is not a recommended method for anti-aliasing. Use Multisampling instead.
+        // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
+        //glEnable(GL_LINE_SMOOTH);
+        //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        //glDisable(GL_POLYGON_SMOOTH);
+        //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         glEnable(GL_BLEND);
     }
 
+#ifdef LEGACY_OPENGL
     glShadeModel(GL_SMOOTH);
     glDisable(GL_LIGHTING);
     glDisable(GL_COLOR_MATERIAL);
+#endif // LEGACY_OPENGL
 
     initializeTimeline();
 }
@@ -198,18 +204,21 @@ void TimelineView::
 
     glViewport( x, y, _width = width, _height = height );
 
+#ifdef LEGACY_OPENGL
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0,1,0,1, -10,10);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+#endif // LEGACY_OPENGL
 }
 
 
 void TimelineView::
         paintGL()
 {
+#ifdef LEGACY_OPENGL
     if (!_timeline_fbo || !_timeline_bar_fbo)
     {
         initializeTimeline();
@@ -339,6 +348,7 @@ void TimelineView::
         TaskTimer("TimelineView::paintGL SWALLOWED GLEXCEPTION\n%s", x.what()).suppressTiming();
         Sawe::Application::global_ptr()->clearCaches();
     }
+#endif // LEGACY_OPENGL
 }
 
 
@@ -383,6 +393,7 @@ void TimelineView::
         }
     }
 
+#ifdef LEGACY_OPENGL
     glLoadIdentity();
 
     glRotatef( 90, 1, 0, 0 );
@@ -402,6 +413,7 @@ void TimelineView::
         glScalef(_xscale, 1, 1);
         glTranslatef(-_xoffs, 0, 0);
     }
+#endif // LEGACY_OPENGL
 }
 
 

@@ -136,6 +136,7 @@ bool MatlabOperation::
         }
 
         if (this->plotlines){ // Update plot
+#ifdef LEGACY_OPENGL
             Tools::Support::PlotLines& plotlines = *this->plotlines.get();
 
             if (plot_pts)
@@ -162,6 +163,9 @@ bool MatlabOperation::
                     TaskInfo("Line plot %u now has %u points", id, plotlines.line( id ).data.size());
                 }
             }
+#else
+            EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
         }
 
         Interval oldI = sent_data->getInterval();
@@ -394,8 +398,10 @@ void MatlabOperation::
         //DeprecatedOperation::invalidate_samples( Signal::Intervals::Intervals_ALL );
     }
 
+#ifdef LEGACY_OPENGL
     if (plotlines)
         plotlines->clear();
+#endif
 }
 
 

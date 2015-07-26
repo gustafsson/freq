@@ -35,6 +35,7 @@ struct GlyphsFreetypePrivate {
     // ------------------------------------------------------- global variables ---
     text_buffer_t *text_buffer;
     markup_t markup;
+    ShaderPtr program;
 };
 
 
@@ -61,11 +62,11 @@ GlyphsFreetype::
     fprintf( stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION) );
 #endif
 
-    int program = ShaderResource::loadGLSLProgram(
+    p->program = ShaderResource::loadGLSLProgram(
                 ":/shaders/freetype-gl-text.vert",
                 ":/shaders/freetype-gl-text.frag");
 
-    p->text_buffer = text_buffer_new_with_program( LCD_FILTERING_ON, program );
+    p->text_buffer = text_buffer_new_with_program( LCD_FILTERING_ON, p->program->programId() );
     vec4 black  = {{0.0, 0.0, 0.0, 1.0}};
     p->text_buffer->base_color = black;
 
@@ -113,9 +114,11 @@ void GlyphsFreetype::
     if (!p)
         return;
 
+#ifdef LEGACY_OPENGL
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixd (gl_projection.projection.v ());
     glMatrixMode(GL_MODELVIEW);
+#endif // LEGACY_OPENGL
 
     glEnable( GL_BLEND );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -171,12 +174,14 @@ void GlyphsFreetype::
         quad[quad_i++] = modelview * v4f(0 - z, f + q, 0, 1);
     }
 
+#ifdef LEGACY_OPENGL
     glLoadIdentity ();
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(4, GL_FLOAT, 0, quad);
     glColor4f(1,1,1,0.5);
     glDrawArrays(GL_QUADS, 0, quad_i);
     glDisableClientState(GL_VERTEX_ARRAY);
+#endif // LEGACY_OPENGL
 }
 
 

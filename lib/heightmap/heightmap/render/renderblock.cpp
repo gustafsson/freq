@@ -156,9 +156,11 @@ void RenderBlock::
 
     // load shader
     if (render_settings->shadow_shader)
-        _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
+        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
     else
-        _shader_prog = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
+        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
+
+    _shader_prog = _shader_progp->programId();
 
     // default, expected to be overwritten
     setSize (2, 2);
@@ -186,8 +188,6 @@ void RenderBlock::
     _mesh_width = 0;
     _mesh_height = 0;
     _mesh_position.reset();
-    glDeleteProgram(_shader_prog);
-    _shader_prog = 0;
     _colorTexture.reset();
     _color_texture_colors = (RenderSettings::ColorMode)-1;
 }
@@ -263,6 +263,10 @@ void RenderBlock::
         return;
     }
 
+    // Don't need extensions on OpenGL > 3
+    if (gl_major>=3)
+        return;
+
     const char* exstensions[] = {
         "GL_ARB_vertex_buffer_object",
         "GL_ARB_pixel_buffer_object",
@@ -272,6 +276,11 @@ void RenderBlock::
 
     bool required_extension = true;
     const char* all_extensions = (const char*)glGetString(GL_EXTENSIONS);
+    if (0==all_extensions) {
+        Log("glGetString(GL_EXTENSIONS) failed. Assuimg all necessary extensions are in place");
+        return;
+    }
+
     //TaskInfo("Checking extensions %s", all_extensions);
     for (unsigned i=0; i < sizeof(exstensions)/sizeof(exstensions[0]); ++i)
     {

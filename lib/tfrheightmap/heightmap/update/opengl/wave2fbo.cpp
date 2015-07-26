@@ -4,6 +4,7 @@
 #include "cpumemorystorage.h"
 #include "tasktimer.h"
 #include "log.h"
+#include "heightmap/render/shaderresource.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -40,18 +41,20 @@ void Wave2Fbo::
         draw(const glProjection& P, Signal::pMonoBuffer b)
 {
     if (!m_program) {
-        m_program = new QOpenGLShaderProgram();
-        m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
-                                           "attribute highp vec4 vertices;"
-                                           "uniform highp mat4 ModelViewProjectionMatrix;"
-                                           "void main() {"
-                                           "    gl_Position = ModelViewProjectionMatrix*vertices;"
-                                           "}");
-        m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
-                                           "uniform lowp vec4 rgba;"
-                                           "void main() {"
-                                           "    gl_FragColor = rgba*100.0;"
-                                           "}");
+        m_program = ShaderResource::loadGLSLProgramSource (
+                                           R"vertexshader(
+                                               attribute highp vec4 vertices;
+                                               uniform highp mat4 ModelViewProjectionMatrix;
+                                               void main() {
+                                                   gl_Position = ModelViewProjectionMatrix*vertices;
+                                               }
+                                           )vertexshader",
+                                           R"fragmentshader(
+                                               uniform lowp vec4 rgba;
+                                               void main() {
+                                                   gl_FragColor = rgba*100.0;
+                                               }
+                                           )fragmentshader");
 
         m_program->bindAttributeLocation("vertices", 0);
         if (!m_program->link())

@@ -7,11 +7,13 @@
 #include "tfr/cwt.h"
 #include "configuration.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "application.h"
 
 // gpumisc
 #include "demangle.h"
 #include "computationkernel.h"
 #include "glinfo.h"
+#include "GlException.h"
 
 // std
 #include <sstream>
@@ -89,11 +91,21 @@ Application::
 :   QApplication(argc, argv),
     default_record_device(-1)
 {
-    QGLFormat glformat;
+    QGLFormat glformat = QGLFormat::defaultFormat ();
+#ifndef LEGACY_OPENGL
+    glformat.setProfile( QGLFormat::CoreProfile );
+    glformat.setVersion( 3, 2 );
+#endif
     bool vsync = false;
     glformat.setSwapInterval(vsync ? 1 : 0);
+    QGLFormat::setDefaultFormat (glformat);
     shared_glwidget_ = new QGLWidget(glformat);
     shared_glwidget_->makeCurrent();
+
+#ifndef LEGACY_OPENGL
+    GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
+    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
+#endif
 
     setOrganizationName("MuchDifferent");
     setOrganizationDomain("muchdifferent.com");

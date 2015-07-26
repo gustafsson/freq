@@ -13,6 +13,9 @@
 #include "tvector.h"
 #include "log.h"
 #include "gluperspective.h"
+#include "GlException.h"
+#include "shaderresource.h"
+#include "exceptionassert.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -33,7 +36,7 @@ float GlyphsFreetypeEmbedded::
     float pen_x = 0, pen_y = 0;
     auto add = [this](float s, float t, float x, float y) {
         tvector<4,GLfloat> v{x,y,0,1};
-        glyphs.push_back (Glyph{s, t, v});
+        glyphs.push_back (Glyph{v, s, t});
     };
 
     size_t i, j;
@@ -81,8 +84,8 @@ GlyphsFreetypeEmbedded::
 {
     glGenTextures( 1, &texid );
     glBindTexture( GL_TEXTURE_2D, texid );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 #ifdef VERA32
@@ -90,9 +93,19 @@ GlyphsFreetypeEmbedded::
 #else
     texture_font_t& vera = vera_16;
 #endif
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_ALPHA, vera.tex_width, vera.tex_height,
-                  0, GL_ALPHA, GL_UNSIGNED_BYTE, vera.tex_data );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, vera.tex_width, vera.tex_height,
+                  0, GL_RED, GL_UNSIGNED_BYTE, vera.tex_data );
     glBindTexture( GL_TEXTURE_2D, 0 );
+}
+
+
+GlyphsFreetypeEmbedded::
+        ~GlyphsFreetypeEmbedded()
+{
+    if (glyphbuffer_)
+        glDeleteBuffers (1, &glyphbuffer_);
+    if (vertexbuffer_)
+        glDeleteBuffers (1, &vertexbuffer_);
 }
 
 
@@ -103,9 +116,8 @@ void GlyphsFreetypeEmbedded::
     size_t gi = 0;
 
     typedef tvector<4,GLfloat> v4f;
-    std::vector<v4f> quad_v( 4*glyphdata.size () );
+    quad_v.resize( 6*glyphdata.size () );
     v4f* quad = &quad_v[0];
-    int quad_i = 0;
 
 #ifdef VERA32
     // texture detail, how big a character is in the text_buffer_add_text coordinate system
@@ -129,42 +141,36 @@ void GlyphsFreetypeEmbedded::
 
         float z = .3*f;
         float q = .3*f;
-        quad[quad_i++] = modelview * v4f(0 - z, 0 - q, 0, 1);
-        quad[quad_i++] = modelview * v4f(w + z, 0 - q, 0, 1);
-        quad[quad_i++] = modelview * v4f(w + z, f + q, 0, 1);
-        quad[quad_i++] = modelview * v4f(0 - z, f + q, 0, 1);
+        *quad++ = modelview * v4f(0 - z, 0 - q, 0, 1);
+        *quad++ = modelview * v4f(w + z, 0 - q, 0, 1);
+        *quad++ = modelview * v4f(w + z, f + q, 0, 1);
+        *quad++ = modelview * v4f(0 - z, 0 - q, 0, 1);
+        *quad++ = modelview * v4f(w + z, f + q, 0, 1);
+        *quad++ = modelview * v4f(0 - z, f + q, 0, 1);
     }
-
-    glLoadIdentity ();
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(4, GL_FLOAT, 0, quad);
-    glColor4f(1,1,1,0.5);
-    glDrawArrays(GL_QUADS, 0, quad_i);
-    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 
 void GlyphsFreetypeEmbedded::
         drawGlyphs( const glProjection& gl_projection, const std::vector<GlyphData>& data )
 {
-    if (!program_)
+    if (!vertexbuffer_)
     {
-        program_.reset (new QOpenGLShaderProgram());
-        program_->addShaderFromSourceCode(QOpenGLShader::Vertex,
+        glGenBuffers(1, &vertexbuffer_);
+        glGenBuffers(1, &glyphbuffer_);
+        program_ = ShaderResource::loadGLSLProgramSource (
                                           R"vertexshader(
+                                              attribute highp vec4 qt_ModelViewVertex;
                                               attribute highp vec2 qt_MultiTexCoord0;
-                                              attribute highp vec4 qt_Vertex;
-                                              uniform highp mat4 qt_ModelViewMatrix;
                                               uniform highp mat4 qt_ProjectionMatrix;
                                               varying highp vec2 texcoord;
 
                                               void main() {
-                                                  gl_Position = qt_ProjectionMatrix * qt_ModelViewMatrix * qt_Vertex;
+                                                  gl_Position = qt_ProjectionMatrix * qt_ModelViewVertex;
                                                   texcoord = qt_MultiTexCoord0;
                                               }
 
-                                          )vertexshader");
-        program_->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                          )vertexshader",
                                           R"fragmentshader(
                                               uniform highp sampler2D tex;
                                               uniform highp vec4 qt_Color;
@@ -172,52 +178,78 @@ void GlyphsFreetypeEmbedded::
 
                                               void main() {
                                                   vec4 c = qt_Color;
-                                                  c.a *= texture2D(tex, texcoord).a;
+                                                  c.a *= texture2D(tex, texcoord).r;
                                                   gl_FragColor = c;
                                               }
                                            )fragmentshader");
 
-        program_->bindAttributeLocation("qt_MultiTexCoord0", 0);
-        program_->bindAttributeLocation("qt_Vertex", 1);
+        program_->bindAttributeLocation("qt_ModelViewVertex", 0);
+        program_->bindAttributeLocation("qt_MultiTexCoord0", 1);
 
         if (!program_->link())
             Log("glyphsfreetypeembedded: invalid shader\n%s")
                     % program_->log ().toStdString ();
     }
 
-    if (!program_->isLinked ())
+    if (!program_ || !program_->isLinked ())
         return;
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixd (gl_projection.projection.v ());
-    glMatrixMode(GL_MODELVIEW);
+    buildGlyphs(data);
 
     glEnable( GL_BLEND );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    buildGlyphs(data);
 
     program_->bind();
 
     program_->setUniformValue("tex", 0);
-    program_->setUniformValue("qt_Color", 0, 0, 0, 0.8);
     program_->setUniformValue("qt_ProjectionMatrix",
                               QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
-    program_->setUniformValue("qt_ModelViewMatrix",
-                              QMatrix4x4(GLmatrixf::identity ().v ()));
 
     program_->enableAttributeArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_);
+    if (quad_v.size () > vertexbuffer_size || vertexbuffer_size > quad_v.size ()*4)
+    {
+        glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0], GL_STREAM_DRAW);
+        vertexbuffer_size = quad_v.size ();
+    }
+    else
+    {
+        glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0]);
+    }
+    glBindTexture (GL_TEXTURE_2D, 0 );
+    program_->setUniformValue("qt_Color", 1, 1, 1, 0.5);
+    glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, 0, 0 );
+    glBlendColor (0,0,0,0.5);
+    glBlendFunc (GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA );
+    glDrawArrays (GL_TRIANGLES, 0, quad_v.size());
+    glBlendColor (0,0,0,0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, glyphbuffer_);
+    if (glyphs.size () > glyphbuffer_size || glyphbuffer_size > glyphs.size ()*4)
+    {
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Glyph)*glyphs.size (), &glyphs[0], GL_STREAM_DRAW);
+        glyphbuffer_size = glyphs.size ();
+    }
+    else
+    {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Glyph)*glyphs.size (), &glyphs[0]);
+    }
+
     program_->enableAttributeArray(1);
+    glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(Glyph), 0 );
+    glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof(Glyph), (const void*)sizeof(tvector<4,GLfloat>));
 
-    program_->setAttributeArray(0, GL_FLOAT, &glyphs[0].s, 2, sizeof(Glyph));
-    program_->setAttributeArray(1, GL_FLOAT, &glyphs[0].p[0], 4, sizeof(Glyph));
+    glBindTexture (GL_TEXTURE_2D, texid);
+    program_->setUniformValue("qt_Color", 0, 0, 0, 0.8);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    glDrawArrays (GL_TRIANGLES, 0, glyphs.size());
+    glBindTexture (GL_TEXTURE_2D, 0 );
 
-    glBindTexture( GL_TEXTURE_2D, texid );
-    glDrawArrays(GL_TRIANGLES, 0, glyphs.size());
-    glBindTexture( GL_TEXTURE_2D, 0 );
-
-    program_->disableAttributeArray (0);
     program_->disableAttributeArray (1);
-    program_->release();
+    program_->disableAttributeArray (0);
+    glBindBuffer (GL_ARRAY_BUFFER, 0);
+    GlException_SAFE_CALL( program_->release() );
 }
 
 
