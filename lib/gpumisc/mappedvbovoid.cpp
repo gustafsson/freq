@@ -86,13 +86,15 @@ void MappedVboVoid::
 #else
 
     glBindBuffer(_vbo->vbo_type(), *_vbo);
-#ifdef GL_ES_VERSION_2_0
-    #ifndef GL_WRITE_ONLY
-        #define GL_WRITE_ONLY 0x88B9 // from gl.h
-    #endif
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+//    #ifndef GL_WRITE_ONLY
+//        #define GL_WRITE_ONLY 0x88B9 // from gl.h
+//    #endif
     void* data = glMapBufferOES(_vbo->vbo_type(), GL_WRITE_ONLY);
 //    void* data = glMapBufferRange (_vbo->vbo_type(), 0, _vbo->size (),
 //                                   GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+#elif defined(GL_ES_VERSION_3_0)
+    void* data = glMapBufferRange(_vbo->vbo_type(), 0, _vbo->size (), GL_MAP_WRITE_BIT);
 #else
     void* data = glMapBuffer(_vbo->vbo_type(), GL_WRITE_ONLY);
 #endif
@@ -151,7 +153,7 @@ void MappedVboVoid::
 
         // sync from mem to vbo
         glBindBuffer(_vbo->vbo_type(), *_vbo);
-#ifdef GL_ES_VERSION_2_0
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
         glUnmapBufferOES(_vbo->vbo_type());
 #else
         glUnmapBuffer(_vbo->vbo_type());

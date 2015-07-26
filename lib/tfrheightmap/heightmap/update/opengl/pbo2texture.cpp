@@ -161,7 +161,7 @@ void ShaderTexture::
 
     if (f32)
     {
-        #ifdef GL_ES_VERSION_2_0
+        #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
           format = GL_RED_EXT;
         #else
           format = GL_RED;
@@ -173,7 +173,7 @@ void ShaderTexture::
     }
     else
     {
-        #ifdef GL_ES_VERSION_2_0
+        #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
           format = GL_RED_EXT;
           type = GL_HALF_FLOAT_OES;
         #else

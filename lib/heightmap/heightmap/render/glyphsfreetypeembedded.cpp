@@ -177,7 +177,7 @@ void GlyphsFreetypeEmbedded::
                                               varying highp vec2 texcoord;
 
                                               void main() {
-                                                  vec4 c = qt_Color;
+                                                  highp vec4 c = qt_Color;
                                                   c.a *= texture2D(tex, texcoord).r;
                                                   gl_FragColor = c;
                                               }

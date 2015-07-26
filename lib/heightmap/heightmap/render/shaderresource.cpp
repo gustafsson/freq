@@ -30,7 +30,14 @@ ShaderPtr ShaderResource::
 ShaderPtr ShaderResource::
     loadGLSLProgramSource(QString vertShader, QString fragShader)
 {
-#ifndef LEGACY_OPENGL
+#ifdef GL_ES_VERSION_2_0
+    if (fragShader.contains ("fwidth") || fragShader.contains ("dFdx") || fragShader.contains ("dFdy"))
+    {
+        fragShader = "#extension GL_OES_standard_derivatives : enable\n" + fragShader;
+    }
+#endif
+
+#if !defined(LEGACY_OPENGL) && !defined(GL_ES_VERSION_2_0)
     if (vertShader.contains (QRegExp("\\btexture\\s*[;=]")))
     {
         EXCEPTION_ASSERTX(false,
@@ -53,7 +60,8 @@ ShaderPtr ShaderResource::
     fragShader.replace (QRegExp("\\bvarying\\b"),"in");
     fragShader.replace (QRegExp("\\bgl_FragColor\\b"),"out_FragColor");
     fragShader.replace (QRegExp("\\btexture2D\\b"),"texture");
-    fragShader = "#version 150\nout vec4 out_FragColor;\n" + fragShader;
+    fragShader = "out vec4 out_FragColor;\n" + fragShader;
+    fragShader = "#version 150\n" + fragShader;
 #endif
 
     QOpenGLShaderProgram* program = new QOpenGLShaderProgram();

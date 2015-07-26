@@ -308,7 +308,7 @@ void BlockTexturesImpl::
 {
     glBindTexture(GL_TEXTURE_2D, name);
     // Compatible with GlFrameBuffer
-#ifdef GL_ES_VERSION_2_0
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     int mipmaplevels = std::max(1,std::min(1+BlockTextures::mipmaps,(int)log2(std::max(w,h))-1));
     if (!mipmaps) mipmaplevels = 1;

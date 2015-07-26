@@ -10,7 +10,7 @@
 
 // https://www.opengl.org/sdk/docs/man/xhtml/glGetTexImage.xml
 
-#ifdef GL_ES_VERSION_2_0
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 #define GL_RED GL_RED_EXT
 #endif
 

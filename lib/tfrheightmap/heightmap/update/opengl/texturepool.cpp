@@ -23,7 +23,7 @@ void setupTextureFloat32(unsigned name, unsigned w, unsigned h)
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
     // Compatible with GlFrameBuffer
-#ifdef GL_ES_VERSION_2_0
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, 1, GL_R32F_EXT, w, h));
 #else

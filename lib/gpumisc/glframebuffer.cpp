@@ -181,7 +181,7 @@ void GlFrameBuffer::
             GlException_SAFE_CALL( glGenRenderbuffers(1, &depth_stencil_buffer_) );
 
         GlException_SAFE_CALL( glBindRenderbuffer(GL_RENDERBUFFER, depth_stencil_buffer_) );
-#ifndef GL_ES_VERSION_2_0
+#if !defined(GL_ES_VERSION_2_0) || defined(GL_ES_VERSION_3_0)
         GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height) );
 #else
         GlException_SAFE_CALL( glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height) );

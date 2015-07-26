@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
     if (window)
     {
-#ifndef LEGACY_OPENGL
+#if !defined(LEGACY_OPENGL) && !defined(GL_ES_VERSION_2_0)
         // http://qt-project.org/wiki/How_to_use_OpenGL_Core_Profile_with_Qt
         QSurfaceFormat f = window->format();
         // OS X has either a modern OpenGL (3.2+) with core profile or legacy OpenGL 2.1.
