@@ -31,7 +31,20 @@
 
 static bool was_started_through_gdb_ = DetectGdb::is_running_through_gdb ();
 
-#ifndef _MSC_VER
+
+#ifdef TARGET_OS_IPHONE
+// No implementation for detecting IOS debugger
+bool DetectGdb::
+        is_running_through_gdb()
+{
+    #ifdef _DEBUG
+        return false;
+    #else
+        return true;
+    #endif
+}
+
+#elif !defined(_MSC_VER)
 
 // http://stackoverflow.com/a/10973747/1513411
 // gdb apparently opens FD(s) 3,4,5 (whereas a typical program uses only stdin=0, stdout=1, stderr=2)
@@ -118,18 +131,9 @@ bool is_running_through_gdb_terminus()
 bool DetectGdb::
         is_running_through_gdb()
 {
-#if defined(__APPLE_CPP__) && (TARGET_OS_IPHONE==0)
-    // No implementation for detecting IOS debugger
-    #ifdef _DEBUG
-        return false;
-    #else
-        return true;
-    #endif
-#else
     bool is_attached_in_qt_creator = is_running_through_gdb_xorl();
     bool is_attached_by_system_debugger = is_running_through_gdb_terminus();
     return is_attached_in_qt_creator || is_attached_by_system_debugger;
-#endif
 }
 
 #else
