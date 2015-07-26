@@ -2,4 +2,4 @@
 # So define LEGACY_OPENGL when building libraries for Sonic AWE (which is using QWidget)
 
 # most backwards compatibility
-!macx-ios*: DEFINES += LEGACY_OPENGL
+#!macx-ios*: DEFINES += LEGACY_OPENGL
