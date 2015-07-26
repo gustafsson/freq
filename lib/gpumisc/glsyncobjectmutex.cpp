@@ -1,7 +1,7 @@
 #include "glsyncobjectmutex.h"
 #include "gl.h"
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 
 #include "tasktimer.h"
 #include "log.h"

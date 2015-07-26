@@ -18,7 +18,7 @@
 //#define INFO
 #define INFO if(0)
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 ResampleTexture::Area::
         Area(float x1, float y1, float x2, float y2)
     :
@@ -185,7 +185,7 @@ void ResampleTexture::
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture(), fbo.getWidth (), fbo.getHeight ()).readFloat (), "fbo");
 }
-#endif
+#endif // LEGACY_OPENGL
 
 
 /////////////////// tests ////////////////////////
@@ -208,7 +208,7 @@ void ResampleTexture::
 void ResampleTexture::
         testInContext()
 {
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
     glEnable(GL_TEXTURE_2D);
 
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
@@ -431,5 +431,5 @@ void ResampleTexture::
         data = GlTextureRead(dest).readFloat (0, GL_RED);
         COMPARE_DATASTORAGE(expected7, sizeof(expected7), data);
     }
-#endif
+#endif // LEGACY_OPENGL
 }

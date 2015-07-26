@@ -119,7 +119,7 @@ void glProjection::
         glViewport (0,0,100,100);
         glProjection g;
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         glGetDoublev(GL_MODELVIEW_MATRIX, g.modelview.v ());
         glGetDoublev(GL_PROJECTION_MATRIX, g.projection.v ());
         glGetIntegerv(GL_VIEWPORT, g.viewport.v);

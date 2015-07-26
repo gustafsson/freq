@@ -36,6 +36,7 @@ void PlaybackMarkersView::
 void PlaybackMarkersView::
         drawMarkers()
 {
+#ifdef LEGACY_OPENGL
     float y = 1;
 
     Support::ToolGlBrush tgb(enabled);
@@ -135,6 +136,7 @@ void PlaybackMarkersView::
 
     glEnd();
     glLineWidth(0.5f);
+#endif // LEGACY_OPENGL
 }
 
 

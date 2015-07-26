@@ -182,7 +182,7 @@ void ShaderTexture::
 
         element_size = sizeof(int16_t);
         stride = (data_width+1)/2*2;
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         if (stride != data_width)
             glPixelStorei(GL_UNPACK_ROW_LENGTH,stride);
 #endif
@@ -202,11 +202,11 @@ void ShaderTexture::
         INFO TaskTimer tt("glTexSubImage2D %d x %d (1)", tex_width, tex_height);
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
         GlException_SAFE_CALL( glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, data_width, data_height, format, type, p) );
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
@@ -221,11 +221,11 @@ void ShaderTexture::
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         if (0 == chunk_pbo_)
           {
             // GL_UNPACK_ROW_LENGTH with a very large data_width doesn't play well with PBO
@@ -258,7 +258,7 @@ void ShaderTexture::
               }
           }
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
@@ -272,7 +272,7 @@ void ShaderTexture::
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (3)", tex_width, tex_height);
         GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
 
@@ -285,7 +285,7 @@ void ShaderTexture::
             glTexSubImage2D (GL_TEXTURE_2D, 0, x, 0, w, h, format, type, pc + n*element_size);
           }
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
@@ -302,7 +302,7 @@ void ShaderTexture::
             "sh = %g, sw = %g") % data_width % data_height % tex_width % tex_height % sh % sw;
       }
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
     glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
 #endif
 

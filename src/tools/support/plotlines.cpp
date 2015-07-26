@@ -9,6 +9,8 @@
 
 #include <QColor>
 
+#ifdef LEGACY_OPENGL
+
 using namespace std;
 
 namespace Tools {
@@ -205,3 +207,5 @@ void PlotLines::
 
 } // namespace Support
 } // namespace Tools
+
+#endif // LEGACY_OPENGL

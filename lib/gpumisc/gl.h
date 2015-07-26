@@ -11,6 +11,10 @@
 
 // OSX does not use glew.h nor <gl/*>
 #ifdef __APPLE__
+# define GL_ARB_ES2_compatibility
+# ifndef LEGACY_OPENGL
+#  define __gl_h_ // prevent deprecated OpenGL, use only gl3.h
+# endif
 # include <QtGui> // include <QtGui/qopengl.h> by including the QtGui framework
 # ifdef GL_ES_VERSION_2_0
 // assumes EXT_texture_rg which is present in for instance iOS >= 5.0

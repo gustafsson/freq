@@ -23,7 +23,7 @@
 //#define INFO
 #define INFO if(0)
 
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 // the current implementation of PBOs doesn't reuse allocated memory
  #define USE_PBO
 #endif

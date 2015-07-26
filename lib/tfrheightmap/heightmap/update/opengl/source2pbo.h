@@ -7,7 +7,7 @@
 #include <future>
 
 // PBOs are not supported on OpenGL ES (< 3.0)
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {

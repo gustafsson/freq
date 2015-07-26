@@ -129,6 +129,7 @@ void RescaleWidget::
 {
     if ( 0 == "draw 2D widget region with OpenGL")
     {
+#ifdef LEGACY_OPENGL
         glColor4f (1,0,0,0.5);
         glBegin (GL_TRIANGLE_STRIP);
         glVertex2f (0,0);
@@ -138,6 +139,9 @@ void RescaleWidget::
         glEnd ();
 
         image_.directDraw();
+#else
+        EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif
     }
 }
 

@@ -1,6 +1,8 @@
 #ifndef GLSYNCOBJECTMUTEX_H
 #define GLSYNCOBJECTMUTEX_H
 
+#ifdef LEGACY_OPENGL
+
 /**
  * @brief The GlSyncObjectMutex class should provide a mutex mechanism for
  * OpenGL resources.
@@ -37,5 +39,6 @@ public:
     bool try_lock_shared_for(...) { lock_shared(); return true; }
 };
 
+#endif // LEGACY_OPENGL
 
 #endif // GLSYNCOBJECTMUTEX_H

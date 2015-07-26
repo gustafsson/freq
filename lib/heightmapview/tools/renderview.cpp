@@ -351,7 +351,7 @@ void RenderView::
 
     Support::ChainInfo ci(model->chain());
     bool isWorking = ci.hasWork () || update_queue_has_work;
-#ifndef GL_ES_VERSION_2_0
+#ifdef LEGACY_OPENGL
     int n_workers = ci.n_workers ();
     int dead_workers = ci.dead_workers ();
 

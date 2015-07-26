@@ -7,6 +7,7 @@
 #include "gl.h"
 #include "glPushContext.h"
 #include "backtrace.h"
+#include "exceptionassert.h"
 
 namespace Tools {
 namespace Support {
@@ -103,6 +104,7 @@ setupVbo()
 void DrawImage::
         drawImage(int viewport_width, int viewport_height) const
 {
+#ifdef LEGACY_OPENGL
     glPushAttribContext push_attribs;
 
     glPushMatrixContext push_proj( GL_PROJECTION );
@@ -147,8 +149,10 @@ void DrawImage::
     glEnable(GL_DEPTH_TEST);
 
     GlException_CHECK_ERROR();
+#else
+    EXCEPTION_ASSERTX(false, "not implemented");
+#endif // LEGACY_OPENGL
 }
-
 
 } // namespace Support
 } // namespace Tools

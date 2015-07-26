@@ -60,6 +60,7 @@ void TooltipView::
 void TooltipView::
         drawMarker( Heightmap::Position p )
 {
+#ifdef LEGACY_OPENGL
     Support::ToolGlBrush tgb(enabled);
     glColor4f( 0.7, 0.2, 0.2, enabled ? .5 : 0.2);
 
@@ -84,6 +85,7 @@ void TooltipView::
         glVertex3f( x2, 0, p.scale );
     glEnd();
     glLineWidth(0.5f);
+#endif // LEGACY_OPENGL
 }
 
 

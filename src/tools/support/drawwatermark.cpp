@@ -85,6 +85,7 @@ void DrawWatermark::
 {
     loadImage();
 
+#ifdef LEGACY_OPENGL
     glPushAttribContext push_attribs;
 
     glPushMatrixContext push_proj( GL_PROJECTION );
@@ -121,6 +122,9 @@ void DrawWatermark::
     glEnable(GL_DEPTH_TEST);
 
     GlException_CHECK_ERROR();
+#else
+    EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
+#endif // LEGACY_OPENGL
 }
 
 } // namespace Support
