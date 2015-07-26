@@ -231,5 +231,38 @@ void SquircleRenderer::paint()
 
         GlException_SAFE_CALL( render_view.paintGL () );
 
+    } catch (const ExceptionAssert& x) {
+        char const * const * f = boost::get_error_info<boost::throw_file>(x);
+        int const * l = boost::get_error_info<boost::throw_line>(x);
+        char const * const * c = boost::get_error_info<ExceptionAssert::ExceptionAssert_condition>(x);
+        std::string const * m = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
+
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                (boost::format("%s:%d: %s. %s\n"
+                                  "%s\n"
+                                  " FAILED in %s\n\n")
+                    % (f?*f:0) % (l?*l:-1) % (c?*c:0) % (m?*m:0) % boost::diagnostic_information(x) % __FUNCTION__ ).str().c_str());
+        fflush(stderr);
+        failed = true;
+    } catch (const std::exception& x) {
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                (boost::format("%s\n"
+                                  "%s\n"
+                                  " FAILED in %s\n\n")
+                    % vartype(x) % boost::diagnostic_information(x) % __FUNCTION__ ).str().c_str());
+        fflush(stderr);
+        failed = true;
+    } catch (...) {
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                (boost::format("Not an std::exception\n"
+                                  "%s\n"
+                                  " FAILED in %s\n\n")
+                    % boost::current_exception_diagnostic_information () % __FUNCTION__ ).str().c_str());
+        fflush(stderr);
+        failed = true;
+    }
 }
 
