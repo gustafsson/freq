@@ -1,4 +1,4 @@
-CONFIG += precompile_header
+!macx-ios*:CONFIG += precompile_header
 PRECOMPILED_HEADER = lib$${TARGET}.h
 isEmpty(PCH_HEADERS): PCH_HEADERS = $$HEADERS
 
