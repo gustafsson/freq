@@ -212,4 +212,6 @@ void Tonalize::
 }
 
 }
+#else
+int USE_CUDA_Reassign;
 #endif
