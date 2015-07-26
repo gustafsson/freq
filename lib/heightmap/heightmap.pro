@@ -12,6 +12,10 @@ CONFIG += tmpdir
 CONFIG += precompile_header_with_all_headers
 CONFIG += legacy-opengl
 
+# fonts for RenderAxes
+#CONFIG += freetype-gl # the embedded font works just fine
+#DEFINES += USE_GLUT
+
 QT += opengl
 
 RESOURCES += \
