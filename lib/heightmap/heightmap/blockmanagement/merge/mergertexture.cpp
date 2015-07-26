@@ -158,8 +158,7 @@ MergerTexture::
       vbo_(0),
       tex_(0),
       block_layout_(block_layout),
-      disable_merge_(disable_merge),
-      program_(0)
+      disable_merge_(disable_merge)
 {
     EXCEPTION_ASSERT(cache_);
 }
@@ -168,9 +167,6 @@ MergerTexture::
 MergerTexture::
         ~MergerTexture()
 {
-    if (program_) glDeleteProgram(program_);
-    program_ = 0;
-
     if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 
@@ -211,7 +207,8 @@ void MergerTexture::
 
     //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 //    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
-    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag");
+    GlException_SAFE_CALL( programp_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture.frag") );
+    program_ = programp_->programId();
 
     qt_Vertex = glGetAttribLocation (program_, "qt_Vertex");
     qt_MultiTexCoord0 = glGetAttribLocation (program_, "qt_MultiTexCoord0");
@@ -442,8 +439,19 @@ void MergerTexture::
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv);
+#ifndef LEGACY_OPENGL
+    QGLFormat f = QGLFormat::defaultFormat ();
+    f.setProfile( QGLFormat::CoreProfile );
+    f.setVersion( 3, 2 );
+    QGLFormat::setDefaultFormat (f);
+#endif
     QGLWidget w;
     w.makeCurrent ();
+#ifndef LEGACY_OPENGL
+    GLuint VertexArrayID;
+    GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
+    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
+#endif
 
     testRegionBlockOperator();
 

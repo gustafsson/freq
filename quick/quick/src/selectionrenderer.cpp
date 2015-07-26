@@ -1,5 +1,6 @@
 #include "selectionrenderer.h"
 #include "log.h"
+#include "GlException.h"
 
 SelectionRenderer::SelectionRenderer(SquircleRenderer* parent) :
     QObject(parent)
@@ -11,7 +12,8 @@ SelectionRenderer::SelectionRenderer(SquircleRenderer* parent) :
 
 SelectionRenderer::~SelectionRenderer()
 {
-    delete m_program;
+    if (vertexbuffer)
+        glDeleteBuffers (1, &vertexbuffer);
 }
 
 
@@ -54,14 +56,14 @@ void SelectionRenderer::
         float s1 = f.getFrequencyScalar (f1);
         float s2 = f.getFrequencyScalar (f2);
 
-        paint(t1, t2, s1, s2);
+        GlException_SAFE_CALL( paint(t1, t2, s1, s2) );
     }
 
     if (I)
     {
         float fs = model->tfr_mapping ().read ()->targetSampleRate();
         for (auto i: I)
-            paint(i.first/fs, i.last/fs, 0, 1);
+            GlException_SAFE_CALL( paint(i.first/fs, i.last/fs, 0, 1) );
     }
 }
 
@@ -69,37 +71,7 @@ void SelectionRenderer::
 void SelectionRenderer::
         paint(float t1, float t2, float s1, float s2)
 {
-    if (!m_program) {
-        m_program = new QOpenGLShaderProgram();
-        m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
-                                           "attribute highp vec4 vertices;"
-                                           "uniform highp mat4 ModelViewProjectionMatrix;"
-                                           "void main() {"
-                                           "    gl_Position = ModelViewProjectionMatrix*vertices;"
-                                           "}");
-        m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
-                                           "uniform lowp vec4 rgba;"
-                                           "void main() {"
-                                           "    gl_FragColor = rgba;"
-                                           "}");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        if (!m_program->link())
-            Log("selectionrenderer: invalid shader\n%s")
-                    % m_program->log ().toStdString ();
-    }
-
-    if (!m_program->isLinked ())
-        return;
-
-    m_program->bind();
-
-    m_program->enableAttributeArray(0);
-
-    float h1 = -100;
-    float h2 = 100;
-
-    float values[] = {
+    static float values[] = {
         0, 0, 0, // counter clock-wise front sides, but culling isn't enabled
         0, 1, 0,
         0, 0, 1,
@@ -122,9 +94,47 @@ void SelectionRenderer::
         1, 0, 1,
     };
 
-    const int N = sizeof(values)/sizeof(values[0])/3;
+    static const int N = sizeof(values)/sizeof(values[0])/3;
 
-    m_program->setAttributeArray(0, GL_FLOAT, values, 3);
+    if (!m_program) {
+        GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer) );
+        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(values), values, GL_STATIC_DRAW) );
+
+        m_program = Heightmap::ShaderResource::loadGLSLProgramSource (
+                                           R"vertexshader(
+                                               attribute highp vec4 vertices;
+                                               uniform highp mat4 ModelViewProjectionMatrix;
+                                               void main() {
+                                                   gl_Position = ModelViewProjectionMatrix*vertices;
+                                               }
+                                           )vertexshader",
+
+                                           R"fragmentshader(
+                                               uniform lowp vec4 rgba;
+                                               void main() {
+                                                   gl_FragColor = rgba;
+                                               }
+                                           )fragmentshader");
+
+        m_program->bindAttributeLocation("vertices", 0);
+        if (!m_program->link())
+            Log("selectionrenderer: invalid shader\n%s")
+                    % m_program->log ().toStdString ();
+    }
+
+    if (!m_program->isLinked ())
+        return;
+
+    m_program->bind();
+
+    m_program->enableAttributeArray(0);
+
+    float h1 = -100;
+    float h2 = 100;
+
+    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+    m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3);
     glProjection p = *model->gl_projection.read ();
     matrixd modelview = p.modelview;
     modelview *= matrixd::translate (t1,h1,s1);
@@ -167,6 +177,7 @@ void SelectionRenderer::
     glDepthMask(GL_TRUE);
     glDisable (GL_STENCIL_TEST);
 
+    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
     m_program->disableAttributeArray(0);
     m_program->release();
 }

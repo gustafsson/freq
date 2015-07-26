@@ -6,6 +6,7 @@
 #include "tasktimer.h"
 #include "log.h"
 #include "largememorypool.h"
+#include "GlException.h"
 
 //#define TIME_PAINTGL_DETAILS
 #define TIME_PAINTGL_DETAILS if(0)
@@ -259,8 +260,19 @@ void HeightmapProcessingPublisher::
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv);
+#ifndef LEGACY_OPENGL
+    QGLFormat f = QGLFormat::defaultFormat ();
+    f.setProfile( QGLFormat::CoreProfile );
+    f.setVersion( 3, 2 );
+    QGLFormat::setDefaultFormat (f);
+#endif
     QGLWidget w;
     w.makeCurrent ();
+#ifndef LEGACY_OPENGL
+    GLuint VertexArrayID;
+    GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
+    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
+#endif
 
     // It should update a processing target depending on which things that are
     // missing in a heightmap block cache

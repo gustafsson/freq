@@ -30,7 +30,7 @@ private:
         float x, y;
     };
 
-    QOpenGLShaderProgram*               m_program = 0;
+    std::unique_ptr<QOpenGLShaderProgram> m_program;
     JustMisc::zero_on_move<unsigned>    vbo_;
     std::vector<vertex_format_xy>       dv;
 };

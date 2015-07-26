@@ -50,13 +50,8 @@ void GraphicsScene::
 
     painter->beginNativePainting();
 
-    glMatrixMode(GL_MODELVIEW);
-
     try { {
-        glPushAttribContext attribs;
-        glPushMatrixContext pmcp(GL_PROJECTION);
-        glPushMatrixContext pmcm(GL_MODELVIEW);
-
+        GlException_CHECK_ERROR();
         renderview_->initializeGL();
 
         float dpr = painter->device ()->devicePixelRatio();

@@ -4,6 +4,7 @@
 #include "GlTexture.h"
 #include "tfr/chunk.h"
 #include "glprojection.h"
+#include "heightmap/render/shaderresource.h"
 
 namespace Heightmap {
 namespace Update {
@@ -13,7 +14,7 @@ class Shaders;
 
 class Shader {
 public:
-    Shader(unsigned program);
+    Shader(ShaderPtr&& programp);
     Shader(const Shader&)=delete;
     Shader& operator=(const Shader&)=delete;
     ~Shader();
@@ -29,6 +30,7 @@ private:
     int modelViewProjectionMatrix_location_;
     int data_size_loc_;
     int tex_size_loc_;
+    ShaderPtr programp_;
 };
 
 

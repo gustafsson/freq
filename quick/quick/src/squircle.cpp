@@ -1,6 +1,5 @@
 #include "squircle.h"
 
-#include "heightmap/update/updateconsumer.h"
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "renderviewtransform.h"
@@ -10,7 +9,6 @@
 
 #include <QQuickWindow>
 #include <QTimer>
-#include <QtOpenGL>
 
 Squircle::Squircle() :
       m_renderer(0)

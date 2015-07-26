@@ -19,7 +19,7 @@ void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
-    GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ()) );
+    glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ());
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
@@ -66,9 +66,11 @@ Fbo2Block::
     end();
 
 #ifndef GL_ES_VERSION_2_0
-    glDeleteFramebuffers(1, &readFbo);
+    if (readFbo)
+        glDeleteFramebuffers(1, &readFbo);
 #endif
-    glDeleteFramebuffers(1, &drawFbo);
+    if (drawFbo)
+        glDeleteFramebuffers(1, &drawFbo);
 }
 
 
@@ -91,9 +93,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
     glBindFramebuffer(GL_FRAMEBUFFER, drawFbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
-#endif
-
-#ifndef GL_ES_VERSION_2_0
+#else
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);

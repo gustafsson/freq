@@ -27,7 +27,8 @@ private:
     float t1=0, f1=0, t2=0, f2=0;
     Signal::Intervals I;
     float r=0.0, g=0.0, b=0.0, a=0.5;
-    QOpenGLShaderProgram *m_program = 0;
+    std::unique_ptr<QOpenGLShaderProgram> m_program;
+    GLuint vertexbuffer = 0;
 
     void paint(float t1, float t2, float s1, float s2);
 };

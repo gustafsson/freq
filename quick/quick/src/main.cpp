@@ -95,17 +95,16 @@ int main(int argc, char *argv[])
 
     if (window)
     {
+#ifndef LEGACY_OPENGL
         // http://qt-project.org/wiki/How_to_use_OpenGL_Core_Profile_with_Qt
-        bool enableLegacyOpenGL = true;
-#ifdef Q_OS_IOS
-//        enableLegacyOpenGL = false;
+        QSurfaceFormat f = window->format();
+        // OS X has either a modern OpenGL (3.2+) with core profile or legacy OpenGL 2.1.
+        // There is no compatibility profile and no other versions. Which version of modern
+        // OpenGL you get depends on your hardware and version of OS X. I got 4.1 on 10.10 for instance.
+        f.setProfile(QSurfaceFormat::CoreProfile);
+        f.setVersion(3, 2);
+        window->setFormat(f);
 #endif
-        if (!enableLegacyOpenGL) {
-            QSurfaceFormat f = window->format();
-            f.setProfile(QSurfaceFormat::CoreProfile);
-            f.setVersion(4, 4);
-            window->setFormat(f);
-        }
 
         QObject::connect(engine, SIGNAL(quit()), &app, SLOT(quit()));
         window->show();

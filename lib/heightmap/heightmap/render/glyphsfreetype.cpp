@@ -35,6 +35,7 @@ struct GlyphsFreetypePrivate {
     // ------------------------------------------------------- global variables ---
     text_buffer_t *text_buffer;
     markup_t markup;
+    ShaderPtr program;
 };
 
 
@@ -61,11 +62,11 @@ GlyphsFreetype::
     fprintf( stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION) );
 #endif
 
-    int program = ShaderResource::loadGLSLProgram(
+    p->program = ShaderResource::loadGLSLProgram(
                 ":/shaders/freetype-gl-text.vert",
                 ":/shaders/freetype-gl-text.frag");
 
-    p->text_buffer = text_buffer_new_with_program( LCD_FILTERING_ON, program );
+    p->text_buffer = text_buffer_new_with_program( LCD_FILTERING_ON, p->program->programId() );
     vec4 black  = {{0.0, 0.0, 0.0, 1.0}};
     p->text_buffer->base_color = black;
 

@@ -23,14 +23,15 @@ namespace Heightmap {
 namespace Update {
 namespace OpenGL {
 
-Shader::Shader(GLuint program)
+Shader::Shader(ShaderPtr&& programp)
     :
-      program(program),
+      program(programp->programId()),
       normalization_location_(-1),
       amplitude_axis_location_(-1),
       modelViewProjectionMatrix_location_(-1),
       data_size_loc_(-1),
-      tex_size_loc_(-1)
+      tex_size_loc_(-1),
+      programp_(std::move(programp))
 {
     EXCEPTION_ASSERT( program );
 
