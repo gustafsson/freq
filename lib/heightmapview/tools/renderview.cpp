@@ -219,7 +219,10 @@ void RenderView::
         initializeGL()
 {
     if (!_renderview_fbo)
-        GlException_SAFE_CALL( _renderview_fbo.reset( new GlFrameBuffer ) );
+    {
+        tvector<4,int> viewport = model->gl_projection.read ()->viewport;
+        GlException_SAFE_CALL( _renderview_fbo.reset( new GlFrameBuffer(viewport[2],viewport[3]) ) );
+    }
 
     if (!_renderaxes)
         GlException_SAFE_CALL( _renderaxes.reset (new Heightmap::Render::RenderAxes ) );

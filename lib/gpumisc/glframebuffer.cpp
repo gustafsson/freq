@@ -15,14 +15,6 @@ using boost::format;
 class GlFrameBufferException: virtual public boost::exception, virtual public std::exception {};
 
 GlFrameBuffer::
-        GlFrameBuffer()
-            :
-              GlFrameBuffer(0,0)
-{
-}
-
-
-GlFrameBuffer::
         GlFrameBuffer(int width, int height)
             :
             fboId_(0),
@@ -143,27 +135,10 @@ void GlFrameBuffer::
 void GlFrameBuffer::
         recreate(int width, int height)
 {
-    const char* action = "Resizing";
-    if (0==width)
-    {
-        action = "Creating";
-
-        GLint viewport[4] = {0,0,0,0};
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        width = viewport[2];
-        height = viewport[3];
-
-        GLint max_texture_size;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
-
-        if (width>max_texture_size || height>max_texture_size || width == 0 || height == 0)
-            throw std::logic_error("Can't call GlFrameBuffer when no valid viewport is active");
-    }
-
     if (width == texture_width_ && height == texture_height_ && (enable_depth_component_?depth_stencil_buffer_:true) && fboId_)
         return;
 
-    DEBUG_INFO TaskTimer tt("%s fbo(%u, %u)", action, width, height);
+    DEBUG_INFO TaskTimer tt("glframebuffer: fbo(%u, %u)", width, height);
 
     // if (rboId_) { glDeleteRenderbuffers(1, &rboId_); rboId_ = 0; }
     // if (fboId_) { glDeleteFramebuffers(1, &fboId_); fboId_ = 0; }

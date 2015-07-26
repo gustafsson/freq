@@ -9,8 +9,8 @@
 #include <boost/exception/exception.hpp>
 #include <QTimer>
 
-#define LOG_FRAME
-//#define LOG_FRAME if(0)
+//#define LOG_FRAME
+#define LOG_FRAME if(0)
 
 SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
     :

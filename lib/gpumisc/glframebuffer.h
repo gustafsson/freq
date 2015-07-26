@@ -19,12 +19,10 @@ public:
     typedef ReleaseAfterContext<GlFrameBuffer> TextureBinding;
 
     /**
-    Creates a new OpenGL frame buffer object and allocates memory. Width and
-    height are taken from the current viewport if width is 0.
+    Creates a new OpenGL frame buffer object and allocates memory.
 
     @throws GlException If OpenGL encountered an error.
     */
-    GlFrameBuffer();
     GlFrameBuffer(int width, int height);
     GlFrameBuffer(unsigned textureid, int width, int height);
     GlFrameBuffer(const GlTexture& texture);
@@ -65,15 +63,14 @@ public:
 
     /**
     Recreates the OpenGL frame buffer object and allocates memory for a
-    different size. Width and height are taken from the current viewport if
-    width is 0.
+    different size.
 
     If width and height are equal to current width and height this function
     does nothing.
 
     @throws GlException If OpenGL encountered an error.
       */
-    void recreate(int width=0, int height=0);
+    void recreate(int width, int height);
 
     /**
      The width of the texture being rendered onto.
