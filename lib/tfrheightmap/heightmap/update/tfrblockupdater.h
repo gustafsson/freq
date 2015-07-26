@@ -20,7 +20,7 @@ public:
         enum Data {
             Data_F32,
             Data_F16
-#ifdef GL_ES_VERSION_2_0
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
         } static const type = Data_F16;
 #else
         } static const type = Data_F32;

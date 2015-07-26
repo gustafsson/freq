@@ -74,18 +74,6 @@ public:
     */
     ScopeBinding getScopeBinding();
 
-    /**
-	Binds this texture with glBindTexture and enables 2D texturing 
-	with glEnable.
-	*/
-    void bindTexture2D();
-
-	/**
-    Removes the binding with glBindTexture and disables 2D texturing
-	with glDisable.
-	*/
-    static void unbindTexture2D();
-
 	/**
 	Returns the OpenGL texture id for this texture. To be used with
 	OpenGL functions such as glBindTexture().

@@ -127,9 +127,6 @@ void Renderer::
 
     const auto& v = gl_projection.viewport;
     glViewport (v[0], v[1], v[2], v[3]);
-
-    const auto& c = render_settings.clear_color;
-    glClearColor (c[0], c[1], c[2], c[3]);
 }
 
 

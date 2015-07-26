@@ -173,6 +173,10 @@ void ShaderTexture::
     }
     else
     {
+        #ifdef defined(GL_ES_VERSION_3_0)
+            EXCEPTION_ASSERTX(f32, "shadertexture only works with f32");
+        #endif
+
         #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
           format = GL_RED_EXT;
           type = GL_HALF_FLOAT_OES;
@@ -343,7 +347,7 @@ Pbo2Texture::ScopeMap Pbo2Texture::
     vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
     tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
     glUseProgram(program);
-    shader_.getTexture ().bindTexture2D ();
+    glBindTexture( GL_TEXTURE_2D, shader_.getTexture ().getOpenGlTextureId() );
 
     return r;
 }
@@ -359,7 +363,7 @@ Pbo2Texture::ScopeMap::
 Pbo2Texture::ScopeMap::
         ~ScopeMap()
 {
-    GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
+    glBindTexture( GL_TEXTURE_2D, 0);
     glUseProgram(0);
 }
 

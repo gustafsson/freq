@@ -132,8 +132,9 @@ void RenderView::
 {
     GlException_CHECK_ERROR();
 
-    tvector<4,float> a = model->render_settings.clear_color;
-    glClearColor(a[0], a[1], a[2], a[3]);
+    const auto& v = model->gl_projection->viewport;
+    glViewport (v[0], v[1], v[2], v[3]);
+
 #ifdef GL_ES_VERSION_2_0
     GlException_SAFE_CALL( glClearDepthf(1.0f) );
 #else
@@ -230,21 +231,21 @@ void RenderView::
 
 
 void RenderView::
-        resizeGL( QRect rect, int device_height )
+        resizeGL( const QRect& rect, const QSize& device )
 {
     auto gl_projection = model->gl_projection.write ();
 
-    tvector<4,int> vp(rect.x(), device_height - rect.y() - rect.height(), rect.width(), rect.height());
-    bool sameshape = vp == gl_projection->viewport && model->render_settings.device_pixel_height == device_height;
+    tvector<4,int> vp(rect.x(), device.height () - rect.y() - rect.height(), rect.width(), rect.height());
+    bool sameshape = vp == gl_projection->viewport && model->render_settings.device_pixel_height == device.height ();
     if (sameshape)
         return;
 
-    TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device_height;
+    TIME_PAINTGL_DETAILS Log("RenderView resizeGL (x=%d y=%d w=%d h=%d) %d") % rect.left () % rect.top () % rect.width () % rect.height () % device.height ();
     EXCEPTION_ASSERT_LESS (0, rect.height ());
     EXCEPTION_ASSERT_LESS (0, rect.width ());
 
     gl_projection->viewport = vp;
-    model->render_settings.device_pixel_height = device_height;
+    model->render_settings.device_pixel_height = device.height ();
 
     gl_projection->modelview = matrixd::identity ();
 //    glhPerspective (gl_projection->projection.v (), 45.0, rect.width ()/(double)rect.height (), 0.01, 1000.0);

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QOpenGLShaderProgram>
+
 #include "tools/rendermodel.h"
 #include "tools/renderview.h"
 #include "timer.h"
@@ -18,7 +19,7 @@ public:
     ~SquircleRenderer();
 
     void setT(qreal t) { m_t = t; }
-    void setViewport(const QRectF &rect, double window_height, double ratio);
+    void setViewport(const QRectF &rect, const QSize& window, double ratio);
 
     Tools::RenderView* renderView() { return &render_view; }
 
@@ -34,12 +35,11 @@ private:
     Tools::RenderView render_view;
 
     GLuint vertexbuffer = 0;
-    GLuint VertexArrayID = 0;
 
     QRect m_viewport;
-    int m_window_height;
+    QSize m_window;
     qreal m_t, prevL=0;
-    QOpenGLShaderProgram *m_program;
+    std::unique_ptr<QOpenGLShaderProgram> m_program;
     Timer prevFrame;
 };
 

@@ -16,16 +16,20 @@ namespace OpenGL {
 // compare to Render::BlockTextures::setupTexture
 void setupTextureFloat32(unsigned name, unsigned w, unsigned h)
 {
-    glBindTexture(GL_TEXTURE_2D, name);
+    GlException_SAFE_CALL( glBindTexture(GL_TEXTURE_2D, name) );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
     // Compatible with GlFrameBuffer
-#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+#if defined(GL_ES_VERSION_2_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
-    GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, 1, GL_R32F_EXT, w, h));
+    #ifdef GL_ES_VERSION_3_0
+        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, 1, GL_R32F, w, h));
+    #else
+        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, 1, GL_R32F_EXT, w, h));
+    #endif
 #else
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
 #endif

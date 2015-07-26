@@ -5,6 +5,7 @@
 #include "log.h"
 #include "GlException.h"
 #include "demangle.h"
+#include "heightmap/render/shaderresource.h"
 
 #include <boost/exception/exception.hpp>
 #include <QTimer>
@@ -15,7 +16,7 @@
 SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
     :
       render_view(render_model),
-      m_t(0), m_program(0)
+      m_t(0)
 {
     connect(&render_view, SIGNAL(redrawSignal()), this, SIGNAL(redrawSignal()));
 }
@@ -23,28 +24,24 @@ SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
 
 SquircleRenderer::~SquircleRenderer()
 {
-    delete m_program;
 }
 
 
 void SquircleRenderer::
-        setViewport(const QRectF &rect, double window_height, double ratio)
+        setViewport(const QRectF &rect, const QSize& window, double ratio)
 {
     render_view.model->render_settings.dpifactor = ratio;
     m_viewport = QRectF(rect.topLeft ()*ratio, rect.bottomRight ()*ratio).toRect ();
-    m_window_height = window_height*ratio;
+    m_window = window*ratio;
     if (m_viewport.height ()>0 && m_viewport.width ()>0)
-        render_view.resizeGL (m_viewport, m_window_height);
+        render_view.resizeGL (m_viewport, m_window);
 }
 
 
 void SquircleRenderer::paint3()
 {
-    if (!VertexArrayID)
+    if (!vertexbuffer)
     {
-        GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
-        GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
-
         // An array of 3 vectors which represents 3 vertices
         static const GLfloat g_vertex_buffer_data[] = {
            -1.0f, -1.0f, 0.0f,
@@ -64,22 +61,17 @@ void SquircleRenderer::paint3()
         // Give our vertices to OpenGL.
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW) );
 
-        m_program = new QOpenGLShaderProgram();
-        m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
+        m_program = Heightmap::ShaderResource::loadGLSLProgramSource (
                                            R"vertexshader(
-                                               #version 330 core
-                                               layout(location = 0) in vec3 vertexPosition_modelspace;
+                                               attribute vec3 vertexPosition_modelspace;
                                                void main() {
                                                    gl_Position.xyz = vertexPosition_modelspace;
                                                    gl_Position.w = 1.0;
                                                }
-                                           )vertexshader");
-        m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           )vertexshader",
                                            R"fragmentshader(
-                                               #version 330 core
-                                               out vec4 color;
                                                void main(){
-                                                   color = vec4(1,0,0,1);
+                                                   gl_FragColor = vec4(1,0,0,1);
                                                }
                                             )fragmentshader");
 
@@ -93,7 +85,6 @@ void SquircleRenderer::paint3()
 
     static int frame_count=0;
     Log("frame_count: %d") % ++frame_count;
-    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
 
     GlException_SAFE_CALL( glClearColor (0,1,0,1) );
     GlException_SAFE_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );
@@ -124,9 +115,6 @@ void SquircleRenderer::paint2()
 //            % QOpenGLContext::currentContext ()->format ().minorVersion ();
 
     if (!m_program) {
-        GlException_SAFE_CALL( glGenVertexArrays(1, &VertexArrayID) );
-        GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
-
         static const GLfloat values[] = {
          -1, -1,
          1, -1,
@@ -143,22 +131,18 @@ void SquircleRenderer::paint2()
         // Give our vertices to OpenGL.
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(values), values, GL_STATIC_DRAW) );
 
-        m_program = new QOpenGLShaderProgram();
-        m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
+        m_program = Heightmap::ShaderResource::loadGLSLProgramSource (
                                            R"vertexshader(
-                                               #version 150
-                                               in highp vec4 vertices;
-                                               out highp vec2 coords;
+                                               attribute highp vec4 vertices;
+                                               varying highp vec2 coords;
                                                void main() {
                                                    gl_Position = vertices;
                                                    coords = vertices.xy;
                                                }
-                                           )vertexshader");
-        m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           )vertexshader",
                                            R"fragmentshader(
-                                               #version 150
                                                uniform lowp float t;
-                                               in highp vec2 coords;
+                                               varying highp vec2 coords;
                                                void main() {
                                                    lowp float i = 1. - (pow(abs(coords.x), 4.) + pow(abs(coords.y), 4.));
                                                    i = smoothstep(t - 0.8, t + 0.8, i);
@@ -170,8 +154,6 @@ void SquircleRenderer::paint2()
         m_program->bindAttributeLocation("vertices", 0);
         m_program->link();
     }
-    GlException_SAFE_CALL( glBindVertexArray(VertexArrayID) );
-
     GlException_SAFE_CALL( m_program->bind() );
 
     GlException_SAFE_CALL( m_program->enableAttributeArray(0) );
@@ -180,7 +162,7 @@ void SquircleRenderer::paint2()
     GlException_SAFE_CALL( m_program->setAttributeBuffer(0, GL_FLOAT, 0, 2) );
     GlException_SAFE_CALL( m_program->setUniformValue("t", (float) m_t) );
 
-    GlException_SAFE_CALL( glViewport(m_viewport.x(), m_window_height - m_viewport.y() - m_viewport.height(), m_viewport.width(), m_viewport.height()) );
+    GlException_SAFE_CALL( glViewport(m_viewport.x(), m_window.height () - m_viewport.y() - m_viewport.height(), m_viewport.width(), m_viewport.height()) );
 
     GlException_SAFE_CALL( glDisable(GL_DEPTH_TEST) );
 
@@ -231,6 +213,7 @@ void SquircleRenderer::paint()
 
         GlException_SAFE_CALL( render_view.paintGL () );
 
+        glViewport (0,0,m_window.width (),m_window.height ());
     } catch (const ExceptionAssert& x) {
         char const * const * f = boost::get_error_info<boost::throw_file>(x);
         int const * l = boost::get_error_info<boost::throw_line>(x);

@@ -60,7 +60,7 @@ void GlTexture::
     if (0==width)
         return;
 
-	bindTexture2D();
+    glBindTexture( GL_TEXTURE_2D, textureId);
 
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
@@ -73,7 +73,7 @@ void GlTexture::
     EXCEPTION_ASSERT_LESS(height, gl_max_texture_size);
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, type, data) );
 
-	unbindTexture2D();
+    GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
 }
 
 GlTexture::~GlTexture() {
@@ -90,20 +90,10 @@ GlTexture::~GlTexture() {
 
 GlTexture::ScopeBinding GlTexture::getScopeBinding()
 {
-    bindTexture2D();
+    GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, textureId) );
     return ScopeBinding(*this, &GlTexture::unbindTexture2Dwrap);
 }
 
-void GlTexture::bindTexture2D() {
-    GlException_CHECK_ERROR();
-    glBindTexture( GL_TEXTURE_2D, textureId);
-    GlException_CHECK_ERROR();
-}
-
-void GlTexture::unbindTexture2D() {
-    glBindTexture( GL_TEXTURE_2D, 0);
-}
-
 void GlTexture::unbindTexture2Dwrap() {
-    unbindTexture2D();
+    glBindTexture( GL_TEXTURE_2D, 0);
 }

@@ -357,7 +357,7 @@ void RenderBlock::
 
     createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
     glActiveTexture(GL_TEXTURE2);
-    _colorTexture->bindTexture2D();
+    glBindTexture(GL_TEXTURE_2D, _colorTexture->getOpenGlTextureId ());
     glActiveTexture(GL_TEXTURE0);
 
     glUseProgram(_shader_prog);
@@ -742,10 +742,14 @@ void RenderBlock::
         texture[i] = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
     }
 
+#ifdef GL_ES_VERSION_3_0
+    _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_FLOAT, &texture[0][0]));
+#else
     vector<uint16_t> texture16(N*4);
     for (unsigned i=0; i<texture16.size (); i++)
         texture16[i] = Float16Compressor::compress ((&texture[0][0])[i]);
     _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_HALF_FLOAT, &texture16[0]));
+#endif
 
     render_settings->clear_color = getWavelengthColorCompute( -1.f, _color_texture_colors );
 }

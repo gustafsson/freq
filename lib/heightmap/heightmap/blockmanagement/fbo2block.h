@@ -39,7 +39,10 @@ private:
     void end();
 
     GlTexture::ptr drawTexture;
-    unsigned readFbo = 0, drawFbo = 0;
+#ifndef GL_ES_VERSION_2_0
+    unsigned readFbo = 0; // only used if srcTexture!=drawTexture
+#endif
+    unsigned drawFbo = 0;
 };
 
 
