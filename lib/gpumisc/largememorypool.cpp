@@ -2,6 +2,8 @@
 #include "neat_math.h"
 #include "tasktimer.h"
 #include "timer.h"
+#include "log.h"
+#include "datastorage.h"
 #include <mutex>
 
 #define LOG_ALLOCATION_SUMMARY

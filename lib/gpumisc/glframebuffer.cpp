@@ -5,6 +5,7 @@
 #include "exceptionassert.h"
 #include "tasktimer.h"
 #include "backtrace.h"
+#include "log.h"
 
 //#define DEBUG_INFO
 #define DEBUG_INFO if(0)

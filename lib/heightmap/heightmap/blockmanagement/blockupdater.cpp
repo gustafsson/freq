@@ -2,6 +2,7 @@
 #include "heightmap/block.h"
 #include "log.h"
 #include "fbo2block.h"
+#include "heightmap/render/blocktextures.h"
 
 #include <unordered_map>
 

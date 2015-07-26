@@ -1,6 +1,7 @@
 #include "float16.h"
 #include "trace_perf.h"
 #include "exceptionassert.h"
+#include <cmath>
 
 // 3 to 4 times faster than 'compress' but produces incorrect results for values that don't satisy
 // min_float16() <= fabs(value) && fabs(value) <= max_float16()
