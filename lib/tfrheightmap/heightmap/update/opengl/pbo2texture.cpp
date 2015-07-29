@@ -173,7 +173,7 @@ void ShaderTexture::
     }
     else
     {
-        #ifdef defined(GL_ES_VERSION_3_0)
+        #ifdef GL_ES_VERSION_3_0
             EXCEPTION_ASSERTX(f32, "shadertexture only works with f32");
         #endif
 
