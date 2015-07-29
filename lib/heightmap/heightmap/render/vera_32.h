@@ -31,6 +31,8 @@
  * policies, either expressed or implied, of Nicolas P. Rougier.
  * ===============================================================================
  */
+#if defined(VERA32) && !defined(_VERA_32_H_)
+#define _VERA_32_H_
 #include <stddef.h>
 #ifdef __cplusplus
 extern "C" {
@@ -2221,3 +2223,4 @@ texture_font_t vera_32 = {
 #ifdef __cplusplus
 }
 #endif
+#endif // _VERA_32_H_
