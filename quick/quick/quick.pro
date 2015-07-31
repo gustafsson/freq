@@ -57,10 +57,9 @@ LIBS += \
     -L../../lib/tfrheightmap -ltfrheightmap \
     -L../../lib/heightmapview -lheightmapview \
 
-iphoneos: LIBS += -F$$SAWEROOT/3rdparty/ios/framework -framework flac
-iphonesimulator: LIBS += -F$$SAWEROOT/3rdparty/ios/framework-iphonesimulator -framework flac
-!ios: LIBS += -L/usr/local/lib -lFLAC
-#!ios: LIBS += -framework GLUT
+iphoneos: !iphonesimulator: LIBS += -F$$SAWEROOT/3rdparty/ios/framework -framework flac
+macx: LIBS += -L/usr/local/lib -lFLAC
+#macx: LIBS += -framework GLUT
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports
 macx:exists(/usr/local/include/): INCLUDEPATH += /usr/local/include/ # homebrew

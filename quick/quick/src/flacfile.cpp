@@ -1,4 +1,5 @@
 #include "flacfile.h"
+#ifndef TARGET_IPHONE_SIMULATOR
 #include "cpumemorystorage.h"
 #include "log.h"
 #include <limits>
@@ -258,3 +259,4 @@ bool FlacFile::
     const FlacFile* b = dynamic_cast<const FlacFile*>(&d);
     return b && b->url == url;
 }
+#endif
