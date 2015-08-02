@@ -31,7 +31,7 @@ Chain::ptr Chain::
     Targets::ptr targets(new Targets(notifier));
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
-    ISchedule::ptr targetSchedule(new TargetSchedule(dag, algorithm, targets));
+    ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
     Workers::ptr workers(new Workers(targetSchedule, bedroom));
 
     // Add the 'single instance engine' thread (the 'null worker')
