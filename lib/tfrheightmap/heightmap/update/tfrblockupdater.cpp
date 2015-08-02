@@ -53,7 +53,7 @@ uint16_t* compress(float* inp, int w, int h, int &out_stride)
 {
     //TaskTimer tt("tfrblockupdater: compressing %s", DataStorageVoid::getMemorySizeText (w*h*sizeof(float)).c_str ());
     uint16_t* p = (uint16_t*)(inp);
-    int stride = (w+1)/2*2; // end each row on a multiple of 4 bytes
+    int stride = (w+1)/2*2; // end each row on a multiple of 4 bytes (round w upwards to a multiple of 2)
     float minv = 0; // doing proper compress with support for denormalized numbers (use min_float16 otherwise)
     float maxv = Float16Compressor::max_float16 ();
     for (int y=0; y<h; y++)

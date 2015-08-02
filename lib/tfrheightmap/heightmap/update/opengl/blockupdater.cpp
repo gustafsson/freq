@@ -53,6 +53,12 @@ int gl_max_texture_size() {
     return v;
 }
 
+TexturePool::FloatSize texture_storage() {
+    return TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
+            ? TexturePool::Float32
+            : TexturePool::Float16;
+}
+
 class BlockUpdaterPrivate
 {
 public:
@@ -60,11 +66,9 @@ public:
 
     TexturePool texturePool
     {
-        gl_max_texture_size(),
-        std::min(gl_max_texture_size(),1024),
-        TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
-            ? TexturePool::Float32
-            : TexturePool::Float16
+        4, //gl_max_texture_size(),
+        4, //std::min(gl_max_texture_size(),1024),
+        texture_storage()
     };
 };
 
@@ -176,9 +180,7 @@ void BlockUpdater::
             p->texturePool = TexturePool {
                 tw,
                 th,
-                TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
-                    ? TexturePool::Float32
-                    : TexturePool::Float16
+                texture_storage ()
             };
         }
 

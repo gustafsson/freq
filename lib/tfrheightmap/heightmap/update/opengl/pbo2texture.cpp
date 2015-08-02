@@ -174,7 +174,7 @@ void ShaderTexture::
     else
     {
         #ifdef GL_ES_VERSION_3_0
-            EXCEPTION_ASSERTX(f32, "shadertexture only works with f32");
+            EXCEPTION_ASSERTX(f32, "uploads with glTexSubImage2D only works with f32");
         #endif
 
         #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)

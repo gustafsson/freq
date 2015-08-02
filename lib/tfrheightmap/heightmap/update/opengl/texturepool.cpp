@@ -56,7 +56,7 @@ TexturePool::
       height_(height),
       format_(format)
 {
-    INFO Log("New texturepool: %dx%d. %s per texture") % width_ % height_
+    INFO Log("New texturepool: %dx%d, %d bits. %s per texture") % width_ % height_ % format_
             % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8));
 }
 
