@@ -8,6 +8,7 @@
 #include "source2pbo.h"
 #include "texture2fbo.h"
 #include "texturepool.h"
+#include "thread_pool.h"
 
 #include "tasktimer.h"
 #include "timer.h"
@@ -70,13 +71,21 @@ public:
         4, //std::min(gl_max_texture_size(),1024),
         texture_storage()
     };
+
+#ifdef USE_PBO
+    JustMisc::thread_pool memcpythread;
+
+    BlockUpdaterPrivate()
+        :
+          memcpythread(1, "BlockUpdater")
+    {}
+#endif
 };
 
 BlockUpdater::
         BlockUpdater()
     :
-      p(new BlockUpdaterPrivate),
-      memcpythread(1, "BlockUpdater")
+      p(new BlockUpdaterPrivate)
 {
     p->texturePool.resize (2);
 }
@@ -123,7 +132,7 @@ void BlockUpdater::
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
         Source2Pbo sp(job->chunk, job->type==TfrBlockUpdater::Job::Data_F32);
-        memcpythread.addTask (sp.transferData(job->p));
+        p->memcpythread.addTask (sp.transferData(job->p));
 
         source2pbo[job->chunk] = move(sp);
     }

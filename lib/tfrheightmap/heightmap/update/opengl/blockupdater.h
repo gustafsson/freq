@@ -6,8 +6,6 @@
 #include "../tfrblockupdater.h"
 #include "../iupdatejob.h"
 
-#include "thread_pool.h"
-
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -79,7 +77,6 @@ public:
 
 private:
     BlockUpdaterPrivate* p;
-    JustMisc::thread_pool memcpythread;
 
     void processJobs( std::vector<UpdateQueue::Job>& myjobs );
 public:
