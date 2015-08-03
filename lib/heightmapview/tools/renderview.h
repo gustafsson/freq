@@ -42,7 +42,7 @@ namespace Tools
         void defaultStates();
 
         /// Similiar to QGLWidget::resizeGL()
-        void resizeGL( QRect rect, int device_height );
+        void resizeGL( const QRect& rect, const QSize& device );
 
         /// Similiar to QGLWidget::paintGL()
         void paintGL();

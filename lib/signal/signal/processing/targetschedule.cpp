@@ -20,10 +20,10 @@ TargetSchedule::
     :
       targets(targets),
       g(g),
-      algorithm(algorithm)
+      algorithm(std::move(algorithm))
 {
     BOOST_ASSERT(g);
-    BOOST_ASSERT(algorithm);
+    BOOST_ASSERT(this->algorithm);
 }
 
 
@@ -51,7 +51,7 @@ Task TargetSchedule::
         GraphVertex vertex = dag->getVertex(step);
         EXCEPTION_ASSERT(vertex);
 
-        Task task = algorithm.read ()->getTask(
+        Task task = algorithm->getTask(
                 dag->g(),
                 vertex,
                 state.needed_samples,
@@ -164,7 +164,7 @@ void TargetSchedule::
         Targets::ptr targets(new Targets(notifier));
         Signal::ComputingEngine::ptr engine;
 
-        TargetSchedule targetschedule(dag, algorithm, targets);
+        TargetSchedule targetschedule(dag, std::move(algorithm), targets);
 
         // It should not return a task without a target
         EXCEPTION_ASSERT(!targetschedule.getTask (engine));
@@ -207,7 +207,7 @@ void TargetSchedule::
         targetneeds->updateNeeds(Signal::Interval(),0,10,1);
         targetneeds2->updateNeeds(Signal::Interval(5,6),0,10,0);
 
-        TargetSchedule targetschedule(dag, algorithm, targets);
+        TargetSchedule targetschedule(dag, std::move(algorithm), targets);
         Task task = targetschedule.getTask (engine);
         EXCEPTION_ASSERT(task);
         EXCEPTION_ASSERT_EQUALS(task.expected_output(), Signal::Interval(5,6));

@@ -5,6 +5,7 @@
 #include "log.h"
 #include "gluperspective.h"
 #include "gl.h"
+#include "exceptionassert.h"
 
 namespace Heightmap {
 namespace BlockManagement {

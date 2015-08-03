@@ -6,6 +6,10 @@
 
 #include <QAudioInput>
 
+#ifdef __APPLE__
+    #include <TargetConditionals.h>
+#endif
+
 //#define SKIP_ZEROS
 //#define LOG_DATA
 #define LOG_DATA if(0)
@@ -191,9 +195,16 @@ QtMicrophone::
         format = info.nearestFormat(format);
 
     audio_.reset (new QAudioInput(info, format));
-    audio_->setBufferSize ( lpo2s(format.sampleRate ()/60/2) ); // latency -> 1/120 ms
-//    audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
-//    audio_->setBufferSize (1<<9); // 512, buffer_size/sample_rate = latency -> 12 ms
+#ifdef TARGET_OS_IPHONE
+    audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
+    //    audio_->setBufferSize (1<<9); // 512, buffer_size/sample_rate = latency -> 12 ms
+#else
+    #ifdef _DEBUG
+        audio_->setBufferSize ( lpo2s(format.sampleRate ()/10) ); // latency -> 1/10 s
+    #else
+        audio_->setBufferSize ( lpo2s(format.sampleRate ()/60/2) ); // latency -> 1/120 s
+    #endif
+#endif
 
     Log("qtmicrophone: fs = %d, bits = %d, %d channels, buffer: %d samples")
             % format.sampleRate () % format.sampleSize ()

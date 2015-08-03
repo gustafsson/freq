@@ -1,6 +1,8 @@
 #include "cpumemorystorage.h"
 #include "timer.h"
 #include "largememorypool.h"
+#include "log.h"
+#include "tasktimer.h"
 
 #include <string.h> // memset, memcpy
 

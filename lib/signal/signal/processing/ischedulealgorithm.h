@@ -1,7 +1,7 @@
 #ifndef SIGNAL_PROCESSING_ISCHEDULEALGORITHM_H
 #define SIGNAL_PROCESSING_ISCHEDULEALGORITHM_H
 
-#include "shared_state.h"
+#include <memory>
 #include "task.h"
 #include "dag.h"
 #include "workers.h"
@@ -12,7 +12,7 @@ namespace Processing {
 class IScheduleAlgorithm
 {
 public:
-    typedef shared_state<IScheduleAlgorithm> ptr;
+    typedef std::unique_ptr<IScheduleAlgorithm> ptr;
 
     virtual ~IScheduleAlgorithm() {}
 

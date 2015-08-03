@@ -8,6 +8,7 @@
 #include "source2pbo.h"
 #include "texture2fbo.h"
 #include "texturepool.h"
+#include "thread_pool.h"
 
 #include "tasktimer.h"
 #include "timer.h"
@@ -53,6 +54,12 @@ int gl_max_texture_size() {
     return v;
 }
 
+TexturePool::FloatSize texture_storage() {
+    return TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
+            ? TexturePool::Float32
+            : TexturePool::Float16;
+}
+
 class BlockUpdaterPrivate
 {
 public:
@@ -60,19 +67,25 @@ public:
 
     TexturePool texturePool
     {
-        gl_max_texture_size(),
-        std::min(gl_max_texture_size(),1024),
-        TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
-            ? TexturePool::Float32
-            : TexturePool::Float16
+        4, //gl_max_texture_size(),
+        4, //std::min(gl_max_texture_size(),1024),
+        texture_storage()
     };
+
+#ifdef USE_PBO
+    JustMisc::thread_pool memcpythread;
+
+    BlockUpdaterPrivate()
+        :
+          memcpythread(1, "BlockUpdater")
+    {}
+#endif
 };
 
 BlockUpdater::
         BlockUpdater()
     :
-      p(new BlockUpdaterPrivate),
-      memcpythread(1, "BlockUpdater")
+      p(new BlockUpdaterPrivate)
 {
     p->texturePool.resize (2);
 }
@@ -119,7 +132,7 @@ void BlockUpdater::
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
 
         Source2Pbo sp(job->chunk, job->type==TfrBlockUpdater::Job::Data_F32);
-        memcpythread.addTask (sp.transferData(job->p));
+        p->memcpythread.addTask (sp.transferData(job->p));
 
         source2pbo[job->chunk] = move(sp);
     }
@@ -164,8 +177,8 @@ void BlockUpdater::
         auto sz = chunk->transform_data->size ();
         int w = std::min(gl_max_texture_size(), (int)spo2g(sz.width));
         int h = std::min(gl_max_texture_size(), (int)spo2g(sz.height));
-        int tw = w*int_div_ceil (sz.height,h);
-        int th = h*int_div_ceil (sz.width,w);
+        int tw = w*int_div_ceil (sz.height-1,h);
+        int th = h*int_div_ceil (sz.width-1,w);
         EXCEPTION_ASSERT_LESS_OR_EQUAL(tw, gl_max_texture_size());
         EXCEPTION_ASSERT_LESS_OR_EQUAL(th, gl_max_texture_size());
 
@@ -176,9 +189,7 @@ void BlockUpdater::
             p->texturePool = TexturePool {
                 tw,
                 th,
-                TfrBlockUpdater::Job::type == TfrBlockUpdater::Job::Data_F32
-                    ? TexturePool::Float32
-                    : TexturePool::Float16
+                texture_storage ()
             };
         }
 

@@ -265,7 +265,7 @@ void Squircle::sync()
             % width () % height();
 
     m_renderer->setViewport(QRectF(topleft, bottomright),
-                            window ()->height (), window()->devicePixelRatio());
+                            window ()->size (), window()->devicePixelRatio());
 
     // Each Heightmap has its own target and thus its own extent.
     // Should targets have their own extent when different targets

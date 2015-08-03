@@ -285,4 +285,6 @@ void GlSyncObjectMutex::
     }
 }
 
-#endif // GL_ES_VERSION_2_0
+#else
+int LEGACY_OPENGL_GlSyncObjectMutext;
+#endif // LEGACY_OPENGL

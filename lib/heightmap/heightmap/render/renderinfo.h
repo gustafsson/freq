@@ -80,7 +80,7 @@ private:
     float redundancy;
 
     bool boundsCheck( Reference ref, ReferenceInfo::BoundsCheck) const;
-    bool computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const;
+    bool computePixelsPerUnit( Region r, double& timePixels, double& scalePixels ) const;
 };
 
 } // namespace Render

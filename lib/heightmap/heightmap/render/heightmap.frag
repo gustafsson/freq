@@ -53,26 +53,29 @@ void main()
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
     mediump float v = texture2D(tex, texCoord, 0.0).x;
-    mediump float f = 1.2;
-    mediump float base = f*v;
-    // wan't median value in mipmap6, 1<<6 -> 64x64 texels
-    // know mean value in 1<<(1-5), assuming sharp peaks are way more common than sharp valleys the mean is
-    // an approximation. However, the mean next to a peak is high so use a smaller local mean.
-    mediump float l = mip_map_level(texCoord*texSize);
-    // 0>l when magnifying
-    // 0<l when minifying
-    // If magnifying, bias the mipmap look-up to fetch the actual mipmaps '3.0-l' actually gives third mipmap
-    // If minifying, bias the mipmap to not pick the same mipmap as 'v' was taken from 'max(1.0,...)
-    base = min(base, texture2D(tex, texCoord, max(1.0,1.0-l)).x);
-    base = min(base, texture2D(tex, texCoord, max(1.0,2.0-l)).x);
-    base = min(base, texture2D(tex, texCoord, max(1.0,3.0-l)).x);
-    base = min(base, texture2D(tex, texCoord, max(1.0,4.0-l)).x);
-    base = min(base, texture2D(tex, texCoord, max(1.0,5.0-l)).x);
-    base *= 0.7; // 1/f^2, f=1.2
-    // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
+    if (yNormalize>0.0)
+    {
+        mediump float f = 1.2;
+        mediump float base = f*v;
+        // wan't median value in mipmap6, 1<<6 -> 64x64 texels
+        // know mean value in 1<<(1-5), assuming sharp peaks are way more common than sharp valleys the mean is
+        // an approximation. However, the mean next to a peak is high so use a smaller local mean.
+        // 0>l when magnifying
+        // 0<l when minifying
+        // If magnifying, bias the mipmap look-up to fetch the actual mipmaps '3.0-l' actually gives third mipmap
+        // If minifying, bias the mipmap to not pick the same mipmap as 'v' was taken from 'max(1.0,...)
+        mediump float l = mip_map_level(texCoord*texSize);
+        base = min(base, texture2D(tex, texCoord, max(1.0,1.0-l)).x);
+        base = min(base, texture2D(tex, texCoord, max(1.0,2.0-l)).x);
+        base = min(base, texture2D(tex, texCoord, max(1.0,3.0-l)).x);
+        base = min(base, texture2D(tex, texCoord, max(1.0,4.0-l)).x);
+        base = min(base, texture2D(tex, texCoord, max(1.0,5.0-l)).x);
+        base *= 0.7; // 1/f^2, f=1.2
+        // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
-    // normalize, 100 is needed for scale
-    v = mix(v, (v - base)/base*100.0, yNormalize);
+        // normalize, 100 is needed for scale
+        v = mix(v, (v - base)/base*100.0, yNormalize);
+    }
 
     // up until here, 'v' doesn't depend on any render settings (uniforms) and could be
     // precomputed instead (apart from varying projections causing different mipmap

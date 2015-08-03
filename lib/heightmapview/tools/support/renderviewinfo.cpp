@@ -171,7 +171,7 @@ Heightmap::Reference RenderViewInfo::
 QPointF RenderViewInfo::
         getScreenPos( Heightmap::Position pos, double* dist, bool use_heightmap_value )
 {
-    GLdouble objY = 0;
+    double objY = 0;
     const auto c = *model->camera.read ();
     float last_ysize = model->render_settings.last_ysize;
     if ((1 != c.orthoview || c.r[0]!=90) && use_heightmap_value)

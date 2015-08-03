@@ -83,10 +83,10 @@ Flow {
     CheckBox {
         visible: transformCheckbox.checked
         text: qsTr("Equalize colors")
-        checked: true
+        checked: false
         onCheckedChanged: { if (checked) settrue.start(); else setfalse.start(); }
 
-        property real smoothValue: 1
+        property real smoothValue: 0
         onSmoothValueChanged: heightmap.equalizeColors = smoothValue
 
         SequentialAnimation on smoothValue {

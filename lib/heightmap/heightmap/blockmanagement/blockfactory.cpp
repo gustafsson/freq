@@ -1,6 +1,7 @@
 #include "blockfactory.h"
-#include "tasktimer.h"
+#include "heightmap/render/blocktextures.h"
 
+#include "tasktimer.h"
 #include "GlException.h"
 #include "computationkernel.h"
 #include "gl.h"

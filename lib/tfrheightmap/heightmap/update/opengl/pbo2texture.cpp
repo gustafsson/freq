@@ -161,7 +161,7 @@ void ShaderTexture::
 
     if (f32)
     {
-        #ifdef GL_ES_VERSION_2_0
+        #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
           format = GL_RED_EXT;
         #else
           format = GL_RED;
@@ -173,7 +173,11 @@ void ShaderTexture::
     }
     else
     {
-        #ifdef GL_ES_VERSION_2_0
+        #ifdef GL_ES_VERSION_3_0
+            EXCEPTION_ASSERTX(f32, "uploads with glTexSubImage2D only works with f32");
+        #endif
+
+        #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
           format = GL_RED_EXT;
           type = GL_HALF_FLOAT_OES;
         #else
@@ -295,7 +299,7 @@ void ShaderTexture::
         // Would run out of OpenGL memory if this happens...
         // Should run this mapping several times instead of creating a degenerate texture
 
-        Log("pbo2texture: to large chunk to fit into a texture. Review doing multiple uploads instead\n"
+        Log("pbo2texture: too large chunk to fit into a texture. Review doing multiple uploads instead\n"
             "data_width = %g\n"
             "data_height = %g\n"
             "tex_width = %g\n"
@@ -343,7 +347,7 @@ Pbo2Texture::ScopeMap Pbo2Texture::
     vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
     tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
     glUseProgram(program);
-    shader_.getTexture ().bindTexture2D ();
+    glBindTexture( GL_TEXTURE_2D, shader_.getTexture ().getOpenGlTextureId() );
 
     return r;
 }
@@ -359,7 +363,7 @@ Pbo2Texture::ScopeMap::
 Pbo2Texture::ScopeMap::
         ~ScopeMap()
 {
-    GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
+    glBindTexture( GL_TEXTURE_2D, 0);
     glUseProgram(0);
 }
 

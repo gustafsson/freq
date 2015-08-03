@@ -25,6 +25,8 @@ macx* {
 
     QMAKE_CXXFLAGS += -Wno-c++1y-extensions
     QMAKE_CXXFLAGS += -Wno-unused-parameter
+    QMAKE_CXXFLAGS -= -Wunknown-pragmas
+    QMAKE_CXXFLAGS += -Wno-unknown-pragmas
 }
 
 macx {
@@ -148,15 +150,7 @@ profiling {
     !win32:QMAKE_LFLAGS_RELEASE += -pg
 }
 
-macx-ios* { # ios
-    #SAWEROOT = $$system(echo $$_PRO_FILE_PWD_ | perl -pe \'s|(.*?sonicawe)/.*|\\1|\')
-    #INCLUDEPATH += $$SAWEROOT/lib/sonicawe-ios
-    INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
-
-    #QMAKE_LFLAGS += "-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk"
-    QMAKE_CXXFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
-    QMAKE_CFLAGS += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk
-}
+ios: INCLUDEPATH += $$_PRO_FILE_PWD_/../../3rdparty/ios/include
 
 #system("basename '$$QMAKE_CC' | awk 'gsub(/[-+.]/, \"\") {print \"QMAKE_CC_\" $1}'")
 DEFINES += $$system("basename '$$QMAKE_CC' | sed s/[-+.]//g | awk '{print \"QMAKE_CC_\" $1}'")

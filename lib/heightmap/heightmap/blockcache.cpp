@@ -1,5 +1,6 @@
 #include "blockcache.h"
 #include "reference_hash.h"
+#include "heightmap/render/blocktextures.h"
 
 #include "tasktimer.h"
 

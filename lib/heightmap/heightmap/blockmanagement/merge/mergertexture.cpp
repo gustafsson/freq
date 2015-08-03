@@ -221,6 +221,9 @@ void MergerTexture::
 Signal::Intervals MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    int prev_fbo = 0;
+    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
+
     init ();
     INFO_COLLECTION TaskTimer tt(boost::format("MergerTexture: fillBlocksFromOthers %s blocks") % blocks.size ());
 
@@ -281,6 +284,8 @@ Signal::Intervals MergerTexture::
     }
 
     GlException_CHECK_ERROR();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
 
     return I;
 }

@@ -1,6 +1,8 @@
 #ifndef LARGEMEMORYPOOL_H
 #define LARGEMEMORYPOOL_H
 
+#include <cstddef>
+
 /**
  * @brief lmp_malloc is a custom memory allocator designed for a few (<20) large (>1 MB) arrays
  * @param n size of memory to allocate

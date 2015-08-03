@@ -1,6 +1,8 @@
 #ifndef FLACFILE_H
 #define FLACFILE_H
 
+#include <TargetConditionals.h>
+#ifndef TARGET_IPHONE_SIMULATOR
 #include "signal/operation.h"
 #include "signal/cache.h"
 #include <QUrl>
@@ -29,4 +31,5 @@ private:
     FlacFormat* fmt;
 };
 
+#endif
 #endif // FLACFILE_H

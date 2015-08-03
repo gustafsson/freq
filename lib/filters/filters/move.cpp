@@ -28,4 +28,6 @@ void Move::
 }
 
 } // namespace Filters
+#else
+int USE_CUDA_Move;
 #endif

@@ -49,13 +49,13 @@ RenderInfo::
 LevelOfDetail RenderInfo::
         testLod( Reference ref ) const
 {
-    float timePixels, scalePixels;
+    double timePixels, scalePixels;
     Region r = RegionFactory ( bl ).getVisible (ref);
     if (!computePixelsPerUnit( r, timePixels, scalePixels ))
         return false;
 
-    GLdouble needBetterT = timePixels / (redundancy*bl.texels_per_row ()),
-             needBetterS = scalePixels / (redundancy*bl.texels_per_column ());
+    double needBetterT = timePixels / (redundancy*bl.texels_per_row ()),
+           needBetterS = scalePixels / (redundancy*bl.texels_per_column ());
 
     bool max_s =
             !ReferenceInfo(ref.top(), bl, vp).boundsCheck(ReferenceInfo::BoundsCheck_HighS) &&
@@ -88,7 +88,7 @@ Region RenderInfo::
   @arg scalePixels Resolution in pixels per 'r.scale()' scale unit
   */
 bool RenderInfo::
-        computePixelsPerUnit( Region r, float& timePixels, float& scalePixels ) const
+        computePixelsPerUnit( Region r, double& timePixels, double& scalePixels ) const
 {
     const Position p[2] = { r.a, r.b };
 

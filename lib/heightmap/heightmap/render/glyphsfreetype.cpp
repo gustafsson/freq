@@ -188,4 +188,6 @@ void GlyphsFreetype::
 } // namespace Render
 } // namespace Heightmap
 
+#else
+int USE_FREETYPE_GL_GlyphsFreetype;
 #endif // USE_FREETYPE_GL

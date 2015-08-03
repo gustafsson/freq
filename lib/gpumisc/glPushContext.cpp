@@ -17,4 +17,6 @@ glPushMatrixContext::~glPushMatrixContext() {
     glMatrixMode( GL_MODELVIEW );
 }
 
+#else
+int LEGACY_OPENGL_glPushMatrixContext;
 #endif // LEGACY_OPENGL

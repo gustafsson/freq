@@ -91,8 +91,8 @@ void RenderAxes::
     unsigned screen_height = g->viewport[3];
     auto& render_settings = *this->render_settings;
 
-    float borderw = 12.5*1.1;
-    float borderh = 12.5*1.1;
+    float borderw = 12.5*1.2;
+    float borderh = 12.5*1.3;
 
     float scale = render_settings.dpifactor;
     borderw *= scale;

@@ -1,6 +1,9 @@
 #include "recorder.h"
 #include "log.h"
 
+//#define LOG_DROPPED_FRAMES
+#define LOG_DROPPED_FRAMES if(0)
+
 namespace Signal {
 
 Recorder::Recorder()
@@ -110,7 +113,7 @@ float Recorder::
     float L = data->samples.spannedInterval().last / data.raw ()->sample_rate;
     float dt = _start_recording.elapsed ();
     float T = dt + _offset;
-    if (T > L) {
+    LOG_DROPPED_FRAMES if (T > L) {
         // dropped samples
         Log ("recorder: dropped %d frames") % (int)((T-L) * data.raw ()->sample_rate + 0.5f);
         _offset -= T-L;

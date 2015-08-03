@@ -247,13 +247,13 @@ void BlockTexturesImpl::
 
     int new_textures = target_capacity - textures.size ();
     int mipmapfactor = 2;
-    INFO Log("BlockTextures: allocating %d new textures (had %d of which %d were used). %s")
-            % new_textures % textures.size () % getUseCount()
-            % DataStorageVoid::getMemorySizeText (
-                textures.size ()*allocated_bytes_per_element()*width_*height_*mipmapfactor);
 
     GLuint t[new_textures];
     glGenTextures (new_textures, t);
+    INFO Log("BlockTextures: allocating %d new textures from name %d (had %d of which %d were used). %s")
+            % new_textures % t[0] % textures.size () % getUseCount()
+            % DataStorageVoid::getMemorySizeText (
+                textures.size ()*allocated_bytes_per_element()*width_*height_*mipmapfactor);
     textures.reserve (target_capacity);
 
     for (int i=0; i<new_textures; i++)
@@ -308,14 +308,22 @@ void BlockTexturesImpl::
 {
     glBindTexture(GL_TEXTURE_2D, name);
     // Compatible with GlFrameBuffer
-#ifdef GL_ES_VERSION_2_0
+#if defined(GL_ES_VERSION_2_0)
     // https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_storage.txt
     int mipmaplevels = std::max(1,std::min(1+BlockTextures::mipmaps,(int)log2(std::max(w,h))-1));
-    if (!mipmaps) mipmaplevels = 1;
-    GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
+    if (!mipmaps)
+        mipmaplevels = 1;
+
+    #ifdef GL_ES_VERSION_3_0
+        GlException_SAFE_CALL( glTexStorage2D ( GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h));
+    #else
+        GlException_SAFE_CALL( glTexStorage2DEXT ( GL_TEXTURE_2D, mipmaplevels, GL_R16F_EXT, w, h));
+    #endif
 #else
-//    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE); // GL 1.4
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, w, h, 0, GL_RED, GL_FLOAT, 0) );
+//    GlException_SAFE_CALL( glTexStorage2D (GL_TEXTURE_2D, mipmaplevels, GL_R16F, w, h) ); // GL 4.0
+
 #endif
 
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );

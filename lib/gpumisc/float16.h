@@ -4,6 +4,8 @@
 #ifndef THE__FLOAT_16_H_
 #define THE__FLOAT_16_H_
 
+#include <stdint.h>
+
 /**
  * @brief The Float16Compressor class should convert float values to 16 bit representations and back.
  *

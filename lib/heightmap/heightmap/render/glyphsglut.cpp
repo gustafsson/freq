@@ -96,4 +96,6 @@ void GlyphsGlut::
 } // namespace Render
 } // namespace Heightmap
 
+#else
+int USE_GLUT_GlyphsGlut;
 #endif // defined(USE_GLUT) && defined(LEGACY_OPENGL)

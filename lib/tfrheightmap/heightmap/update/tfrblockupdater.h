@@ -5,6 +5,10 @@
 #include "tfr/chunk.h"
 #include "gl.h"
 
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+#define TFRBLOCK_UPLOAD_HALF_FLOATS
+#endif
+
 namespace Heightmap {
 namespace Update {
 
@@ -20,7 +24,7 @@ public:
         enum Data {
             Data_F32,
             Data_F16
-#ifdef GL_ES_VERSION_2_0
+#ifdef TFRBLOCK_UPLOAD_HALF_FLOATS
         } static const type = Data_F16;
 #else
         } static const type = Data_F32;
