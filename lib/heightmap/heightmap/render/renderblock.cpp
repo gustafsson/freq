@@ -748,7 +748,7 @@ void RenderBlock::
         texture[i] = wb;
     }
 
-    _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA8, GL_UNSIGNED_BYTE, &texture[0][0]));
+    _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, &texture[0][0]));
     render_settings->clear_color = getWavelengthColorCompute( -1.f, _color_texture_colors );
 }
 
