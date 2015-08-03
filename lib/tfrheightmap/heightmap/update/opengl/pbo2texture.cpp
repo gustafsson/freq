@@ -299,7 +299,7 @@ void ShaderTexture::
         // Would run out of OpenGL memory if this happens...
         // Should run this mapping several times instead of creating a degenerate texture
 
-        Log("pbo2texture: to large chunk to fit into a texture. Review doing multiple uploads instead\n"
+        Log("pbo2texture: too large chunk to fit into a texture. Review doing multiple uploads instead\n"
             "data_width = %g\n"
             "data_height = %g\n"
             "tex_width = %g\n"
