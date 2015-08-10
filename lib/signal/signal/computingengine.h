@@ -1,7 +1,7 @@
 #ifndef SIGNAL_COMPUTINGENGINE_H
 #define SIGNAL_COMPUTINGENGINE_H
 
-#include <boost/weak_ptr.hpp>
+#include <memory>
 
 namespace Signal {
 
