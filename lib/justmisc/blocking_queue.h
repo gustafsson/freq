@@ -17,6 +17,12 @@ public:
     typedef T value_type;
     typedef std::queue<T> queue;
 
+    blocking_queue(){}
+    blocking_queue(const blocking_queue&)=delete;
+    blocking_queue& operator=(const blocking_queue&)=delete;
+    blocking_queue(blocking_queue&&)=default;
+    blocking_queue& operator=(blocking_queue&&)=default;
+
     class abort_exception : public std::exception {};
 
     ~blocking_queue() {
@@ -104,6 +110,28 @@ public:
         c.notify_one ();
     }
 
+    /**
+     * Waits for the queue to become empty and returns the size of the queue.
+     */
+    template <class Rep, class Period>
+    int wait_for(const std::chrono::duration<Rep, Period>& d) {
+        std::unique_lock<std::mutex> l(m);
+
+        c.wait_for (l, d, [this](){return q.empty();});
+
+        return q.size ();
+    }
+
+    /**
+     * Waits for the queue to become empty and returns the size of the queue.
+     */
+    int wait() {
+        std::unique_lock<std::mutex> l(m);
+
+        c.wait (l, [this](){return q.empty();});
+
+        return q.size ();
+    }
 private:
     bool abort_on_empty_ = false;
     std::queue<T> q;
