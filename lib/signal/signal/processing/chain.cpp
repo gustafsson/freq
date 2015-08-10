@@ -5,7 +5,7 @@
 #include "reversegraph.h"
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
-#include "workers.h"
+#include "signal/pollworker/pollworkers.h"
 
 // backtrace
 #include "demangle.h"
@@ -32,7 +32,7 @@ Chain::ptr Chain::
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
-    Workers::ptr workers(new Workers(targetSchedule, bedroom));
+    Workers::ptr workers(new PollWorker::PollWorkers(targetSchedule, bedroom));
 
     // Add the 'single instance engine' thread (the 'null worker')
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
@@ -290,7 +290,8 @@ void Chain::
         if (d.second)
             TaskInfo(boost::format("%s crashed") % (d.first.get() ? vartype(*d.first.get()) : "ComputingEngine(null)"));
 
-    Workers::EngineWorkerMap engines = workers->workers_map();
+    PollWorker::PollWorkers::EngineWorkerMap engines =
+            dynamic_cast<PollWorker::PollWorkers*>(workers.get ())->workers_map();
     if (!engines.empty ())
     {
         TaskInfo ti("Couldn't remove all old workers");

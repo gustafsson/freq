@@ -5,6 +5,7 @@
 #include "exceptionassert.h"
 #include "signal/processing/task.h"
 #include "tools/applicationerrorlogcontroller.h"
+#include "signal/pollworker/pollworkers.h"
 
 #include <QTimer>
 
@@ -12,6 +13,7 @@
 #define DEBUG if(0)
 
 using namespace Signal::Processing;
+using namespace Signal::PollWorker;
 
 namespace Tools {
 namespace Support {
@@ -25,6 +27,8 @@ WorkerCrashLogger::
       workers_(workers),
       consume_exceptions_(consume_exceptions)
 {
+    EXCEPTION_ASSERTX(dynamic_cast<Signal::PollWorker::PollWorkers*>(workers.raw ()), "WorkerCrashLogger only supports PollWorkers");
+
     moveToThread (&thread_);
     // Remove responsibility for event processing for this when the the thread finishes
     connect(&thread_, SIGNAL(finished()), SLOT(finished()));
@@ -32,7 +36,7 @@ WorkerCrashLogger::
 
     auto ww = workers.write ();
     // Log any future worker crashes
-    connect(&*ww,
+    connect(dynamic_cast<Signal::PollWorker::PollWorkers*>(ww.get()),
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             SLOT(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
 
@@ -103,11 +107,11 @@ void WorkerCrashLogger::
 {
     DEBUG TaskInfo ti("check_all_previously_crashed_without_consuming");
 
-    Workers::EngineWorkerMap workers_map = workers_.read ()->workers_map();
+    PollWorkers::EngineWorkerMap workers_map = dynamic_cast<const PollWorkers*>(workers_.read ().get ())->workers_map();
 
-    for(Workers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
+    for(PollWorkers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
       {
-        Worker::ptr worker = i->second;
+        PollWorker::ptr worker = i->second;
 
         if (worker && !worker->isRunning ())
           {
@@ -205,9 +209,11 @@ class DummyScheduler: public ISchedule
 void addAndWaitForStop(Workers::ptr workers)
 {
     QEventLoop e;
-    QObject::connect(&*workers.write (),
+    // Log any future worker crashes
+    QObject::connect(dynamic_cast<Signal::PollWorker::PollWorkers*>(workers.write ().get()),
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             &e, SLOT(quit()));
+
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     e.exec ();
 }
@@ -228,7 +234,7 @@ void WorkerCrashLogger::
         //for (int consume=0; consume<2; consume++)
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new Workers(schedule, bedroom));
+        Workers::ptr workers(new PollWorkers(schedule, bedroom));
 
         {
             WorkerCrashLogger wcl(workers);
@@ -262,7 +268,7 @@ void WorkerCrashLogger::
 
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new Workers(schedule, bedroom));
+        Workers::ptr workers(new PollWorkers(schedule, bedroom));
 
         {
             TRACE_PERF("Catch info from a crashed worker as it happens");
@@ -288,7 +294,7 @@ void WorkerCrashLogger::
 
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new Workers(schedule, bedroom));
+        Workers::ptr workers(new PollWorkers(schedule, bedroom));
 
         // Catch info from a previously crashed worker
         addAndWaitForStop(workers);

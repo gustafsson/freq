@@ -1,10 +1,11 @@
-#ifndef SIGNAL_PROCESSING_WORKER_H
-#define SIGNAL_PROCESSING_WORKER_H
+#ifndef SIGNAL_POLLWORKER_WORKER_H
+#define SIGNAL_POLLWORKER_WORKER_H
 
-#include "ischedule.h"
+#include "signal/processing/ischedule.h"
 #include "signal/computingengine.h"
 
 #include "shared_state.h"
+#include "timer.h"
 
 #include <QtCore> // QObject, QThread, QPointer
 
@@ -12,7 +13,7 @@
 #include <boost/exception_ptr.hpp>
 
 namespace Signal {
-namespace Processing {
+namespace PollWorker {
 
 /**
  * @brief The Worker class should run tasks as given by the scheduler.
@@ -27,16 +28,16 @@ namespace Processing {
  *
  * It should announce when tasks are finished.
  */
-class Worker: public QObject
+class PollWorker: public QObject
 {
     Q_OBJECT
 public:
-    typedef QPointer<Worker> ptr;
+    typedef QPointer<PollWorker> ptr;
 
     class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
-    Worker (Signal::ComputingEngine::ptr computing_eninge, ISchedule::ptr schedule, bool wakeuprightaway=true);
-    ~Worker ();
+    PollWorker (Signal::ComputingEngine::ptr computing_eninge, Signal::Processing::ISchedule::ptr schedule, bool wakeuprightaway=true);
+    ~PollWorker ();
 
     void abort();
     void terminate();
@@ -70,12 +71,15 @@ private:
     void loop_while_tasks();
 
     Signal::ComputingEngine::ptr            computing_engine_;
-    ISchedule::ptr                          schedule_;
+    Signal::Processing::ISchedule::ptr      schedule_;
 
     QThread*                                thread_;
     shared_state<std::exception_ptr>        exception_;
     std::exception_ptr                      terminated_exception_;
 
+    Timer                                   timer_;
+    int                                     wakeups_ = 0;
+    double                                  next_tick_ = 10;
 public:
     static void test ();
 };
@@ -84,4 +88,4 @@ public:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_WORKER_H
+#endif // SIGNAL_POLLWORKER_WORKER_H

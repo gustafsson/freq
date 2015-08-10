@@ -1,5 +1,6 @@
-#include "worker.h"
-#include "task.h"
+#include "pollworker.h"
+#include "signal/processing/task.h"
+
 #include "tasktimer.h"
 #include "log.h"
 #include "demangle.h"
@@ -11,7 +12,7 @@
 #define DEBUGINFO if(0)
 
 namespace Signal {
-namespace Processing {
+namespace PollWorker {
 
 class QTerminatableThread : public QThread {
 public:
@@ -22,8 +23,8 @@ public:
 };
 
 
-Worker::
-        Worker (Signal::ComputingEngine::ptr computing_engine, ISchedule::ptr schedule, bool wakeuprightaway)
+PollWorker::
+        PollWorker (Signal::ComputingEngine::ptr computing_engine, Signal::Processing::ISchedule::ptr schedule, bool wakeuprightaway)
     :
       computing_engine_(computing_engine),
       schedule_(schedule),
@@ -41,7 +42,7 @@ Worker::
         // To make caught_exception() non-zero if the thread is terminated even
         // though no exact information about the crash reason is stored. The
         // log file might contain more details.
-        BOOST_THROW_EXCEPTION(Worker::TerminatedException());
+        BOOST_THROW_EXCEPTION(PollWorker::TerminatedException());
     } catch (...) {
         terminated_exception_ = std::current_exception ();
     }
@@ -64,8 +65,8 @@ Worker::
 }
 
 
-Worker::
-        ~Worker ()
+PollWorker::
+        ~PollWorker ()
 {
     while (!thread_->isRunning () && !thread_->isFinished ())
         wait (1);
@@ -77,7 +78,7 @@ Worker::
 }
 
 
-void Worker::
+void PollWorker::
         abort()
 {
     thread_->requestInterruption ();
@@ -85,28 +86,28 @@ void Worker::
 }
 
 
-void Worker::
+void PollWorker::
         terminate()
 {
     thread_->terminate ();
 }
 
 
-bool Worker::
+bool PollWorker::
         isRunning() const
 {
     return thread_->isRunning ();
 }
 
 
-bool Worker::
+bool PollWorker::
         wait(unsigned long time)
 {
     return thread_->wait (time);
 }
 
 
-std::exception_ptr Worker::
+std::exception_ptr PollWorker::
         caught_exception() const
 {
     if (isRunning ())
@@ -115,11 +116,20 @@ std::exception_ptr Worker::
 }
 
 
-void Worker::
+void PollWorker::
         wakeup()
   {
     if (QThread::currentThread () != this->thread ())
       {
+        ++wakeups_;
+        if (timer_.elapsed () > next_tick_)
+        {
+            Log("worker: %g wakeups/s") % (wakeups_ / 10.);
+            wakeups_ = 0;
+            next_tick_ += 10;
+        }
+
+
         // Dispatch
         QMetaObject::invokeMethod (this, "wakeup");
         return;
@@ -150,7 +160,7 @@ void Worker::
   }
 
 
-void Worker::
+void PollWorker::
         finished()
   {
     DEBUGINFO Log("worker: finished");
@@ -159,14 +169,14 @@ void Worker::
   }
 
 
-void Worker::
+void PollWorker::
         loop_while_tasks()
   {
     // the only events sent to this thread are wakeup() or termination events,
     // in order to not pile up a never ending queue make sure to process events as they come
     while (!QThread::currentThread ()->isInterruptionRequested () && !QCoreApplication::hasPendingEvents ())
       {
-        Task task;
+        Signal::Processing::Task task;
 
         {
             DEBUGINFO TaskTimer tt(boost::format("worker: get task %s %s") % vartype(*schedule_.get ()) % (computing_engine_?vartype(*computing_engine_):"(null)") );
@@ -200,8 +210,10 @@ void Worker::
 
 #include <atomic>
 
+using namespace Signal::Processing;
+
 namespace Signal {
-namespace Processing {
+namespace PollWorker {
 
 class GetTaskMock: public ISchedule {
 public:
@@ -293,7 +305,7 @@ class DummySchedule: public ISchedule {
 };
 
 
-void Worker::
+void PollWorker::
         test()
 {
     std::string name = "Worker";
@@ -306,7 +318,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should start and stop automatically");
 
         ISchedule::ptr gettask(new GetTaskMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         QThread::yieldCurrentThread ();
         EXCEPTION_ASSERT( worker.isRunning () );
@@ -317,7 +329,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should run tasks as given by the scheduler");
 
         ISchedule::ptr gettask(new GetTaskMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (1);
 
@@ -335,7 +347,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should run tasks as given by the scheduler");
 
         ISchedule::ptr gettask(new GetTaskMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( !worker.wait (1) );
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
@@ -355,7 +367,7 @@ void Worker::
         PrettifySegfault::EnableDirectPrint (false);
 
         ISchedule::ptr gettask(new GetTaskSegFaultMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (1);
         worker.abort ();
@@ -372,7 +384,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (std::exception) and stop execution (1)");
 
         ISchedule::ptr gettask(new GetTaskExceptionMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         QThread::yieldCurrentThread ();
     }
@@ -382,7 +394,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (std::exception) and stop execution (2)");
 
         ISchedule::ptr gettask(new GetTaskExceptionMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (1);
         worker.abort ();
@@ -407,7 +419,7 @@ void Worker::
 
         ISchedule::ptr gettask(new ImmediateDeadLockMock());
 
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         worker.wait (2);
         worker.abort ();
@@ -424,7 +436,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (1)");
 
         ISchedule::ptr gettask(new DeadLockMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( worker.isRunning () );
         worker.terminate ();
@@ -443,7 +455,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should not hang if it causes a deadlock (2)");
 
         ISchedule::ptr gettask(new DeadLockMock());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask);
 
         EXCEPTION_ASSERT( !worker.wait (1) );
         worker.terminate ();
@@ -456,7 +468,7 @@ void Worker::
         UNITTEST_STEPS TaskTimer tt("It should announce when tasks are finished.");
 
         ISchedule::ptr gettask(new DummySchedule());
-        Worker worker(Signal::ComputingEngine::ptr(), gettask, false);
+        PollWorker worker(Signal::ComputingEngine::ptr(), gettask, false);
 
         QTimer t;
         t.setSingleShot( true );

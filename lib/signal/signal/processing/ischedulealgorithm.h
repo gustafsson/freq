@@ -4,7 +4,6 @@
 #include <memory>
 #include "task.h"
 #include "dag.h"
-#include "workers.h"
 
 namespace Signal {
 namespace Processing {
@@ -22,7 +21,6 @@ public:
             Signal::Intervals needed, //=Intervals::Intervals_ALL,
             Signal::IntervalType center, //=Interval::IntervalType_MIN,
             Signal::IntervalType preferred_size, //=Interval::IntervalType_MAX,
-            Workers::ptr workers, //=Workers::Ptr(),
             Signal::ComputingEngine::ptr worker) const = 0;
 };
 

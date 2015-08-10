@@ -14,8 +14,8 @@
 #include "signal/processing/targets.h"
 #include "signal/processing/targetschedule.h"
 #include "signal/processing/task.h"
-#include "signal/processing/worker.h"
-#include "signal/processing/workers.h"
+#include "signal/pollworker/pollworker.h"
+#include "signal/pollworker/pollworkers.h"
 #include "signal/operationwrapper.h"
 
 // common backtrace tools
@@ -62,8 +62,8 @@ int UnitTest::
         RUNTEST(Signal::Processing::Targets);
         RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
-        RUNTEST(Signal::Processing::Worker);
-        RUNTEST(Signal::Processing::Workers);
+        RUNTEST(Signal::PollWorker::PollWorker);
+        RUNTEST(Signal::PollWorker::PollWorkers);
         RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);
 

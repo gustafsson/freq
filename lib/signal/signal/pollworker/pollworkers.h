@@ -1,18 +1,21 @@
-#ifndef SIGNAL_PROCESSING_WORKERS_H
-#define SIGNAL_PROCESSING_WORKERS_H
+#ifndef SIGNAL_POLLWORKER_WORKERS_H
+#define SIGNAL_POLLWORKER_WORKERS_H
 
-#include "worker.h"
-#include "ischedule.h"
+#include "pollworker.h"
+#include "signal/processing/ischedule.h"
 #include "signal/computingengine.h"
-#include "bedroom.h"
+#include "signal/processing/bedroom.h"
+#include "signal/processing/workers.h"
 
 #include <vector>
 #include <map>
 
 namespace Signal {
 namespace Processing {
-
 class BedroomSignalAdapter;
+}
+namespace PollWorker {
+
 
 /**
  * @brief The Schedule class should start and stop computing engines as they
@@ -26,24 +29,18 @@ class BedroomSignalAdapter;
  * It should wake up sleeping workers when any work is done to see if they can
  * help out on what's left.
  */
-class Workers: public QObject
+class PollWorkers: public QObject, public Signal::Processing::Workers
 {
     Q_OBJECT
 public:
-    typedef shared_state<Workers> ptr;
+    typedef std::map<Signal::ComputingEngine::ptr, PollWorker::ptr> EngineWorkerMap;
 
-    // Appended to exceptions created by clean_dead_workers and thrown by rethrow_one_worker_exception
-    typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::ptr> crashed_engine;
-    typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;
-
-    typedef std::map<Signal::ComputingEngine::ptr, Worker::ptr> EngineWorkerMap;
-
-    Workers(ISchedule::ptr schedule, Bedroom::ptr bedroom);
-    ~Workers();
+    PollWorkers(Signal::Processing::ISchedule::ptr schedule, Signal::Processing::Bedroom::ptr bedroom);
+    ~PollWorkers();
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.
-    Worker::ptr addComputingEngine(Signal::ComputingEngine::ptr ce);
+    void addComputingEngine(Signal::ComputingEngine::ptr ce) override;
 
     /**
      * Prevents the worker for this ComputingEngine to get new work from the
@@ -54,11 +51,10 @@ public:
      * will be removed if its worker has finished (or crashed with an exception)
      * and been cleaned by rethrow_any_worker_exception() or clean_dead_workers().
      */
-    void removeComputingEngine(Signal::ComputingEngine::ptr ce);
+    void removeComputingEngine(Signal::ComputingEngine::ptr ce) override;
 
-    typedef std::vector<Signal::ComputingEngine::ptr> Engines;
-    const Engines& workers() const;
-    size_t n_workers() const;
+    const Engines& workers() const override;
+    size_t n_workers() const override;
     const EngineWorkerMap& workers_map() const;
 
     /**
@@ -66,9 +62,8 @@ public:
      * It is only valid to call this method from the same thread as they were
      * added.
      */
-    typedef std::map<Signal::ComputingEngine::ptr, std::exception_ptr > DeadEngines;
-    DeadEngines clean_dead_workers();
-    void rethrow_any_worker_exception();
+    DeadEngines clean_dead_workers() override;
+    void rethrow_any_worker_exception() override;
 
     /**
      * @brief terminate_workers terminates all worker threads and doesn't
@@ -82,7 +77,7 @@ public:
      *
      * Returns true if all threads were terminated within 'timeout'.
      */
-    bool terminate_workers(int timeout=1000);
+    bool terminate_workers(int timeout=1000) override;
 
     /**
      * @brief remove_all_engines will ask all workers to not start any new
@@ -90,18 +85,16 @@ public:
      *
      * Returns true if all threads finished within 'timeout'.
      */
-    bool remove_all_engines(int timeout=0) const;
+    bool remove_all_engines(int timeout=0) const override;
 
-    bool wait(int timeout=1000);
-
-    static void print(const DeadEngines&);
+    bool wait(int timeout=1000) override;
 
 signals:
     void worker_quit(std::exception_ptr, Signal::ComputingEngine::ptr);
 
 private:
-    ISchedule::ptr schedule_;
-    BedroomSignalAdapter* notifier_;
+    Signal::Processing::ISchedule::ptr schedule_;
+    Signal::Processing::BedroomSignalAdapter* notifier_;
 
     Engines workers_;
 
@@ -116,4 +109,4 @@ public:
 } // namespace Processing
 } // namespace Signal
 
-#endif // SIGNAL_PROCESSING_WORKERS_H
+#endif // SIGNAL_POLLWORKER_WORKERS_H

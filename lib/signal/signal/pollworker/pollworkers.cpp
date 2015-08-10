@@ -2,10 +2,10 @@
 #include <QtCore> // QObject
 #include <boost/foreach.hpp>
 
-#include "workers.h"
-#include "targetschedule.h"
+#include "pollworkers.h"
+#include "signal/processing/targetschedule.h"
 #include "timer.h"
-#include "bedroomsignaladapter.h"
+#include "signal/processing/bedroomsignaladapter.h"
 #include "demangle.h"
 #include "tasktimer.h"
 
@@ -15,12 +15,14 @@
 //#define UNITTEST_STEPS
 #define UNITTEST_STEPS if(0)
 
+using namespace Signal::Processing;
+
 namespace Signal {
-namespace Processing {
+namespace PollWorker {
 
 
-Workers::
-        Workers(ISchedule::ptr schedule, Bedroom::ptr bedroom)
+PollWorkers::
+        PollWorkers(ISchedule::ptr schedule, Bedroom::ptr bedroom)
     :
       schedule_(schedule),
       notifier_(new BedroomSignalAdapter(bedroom, this))
@@ -28,8 +30,8 @@ Workers::
 }
 
 
-Workers::
-        ~Workers()
+PollWorkers::
+        ~PollWorkers()
 {
     try {
         schedule_.reset ();
@@ -57,13 +59,13 @@ Workers::
 }
 
 
-Worker::ptr Workers::
+void PollWorkers::
         addComputingEngine(Signal::ComputingEngine::ptr ce)
 {
     if (workers_map_.find (ce) != workers_map_.end ())
         EXCEPTION_ASSERTX(false, "Engine already added");
 
-    Worker::ptr w(new Worker(ce, schedule_, false));
+    PollWorker::ptr w(new PollWorker(ce, schedule_, false));
     workers_map_[ce] = w;
 
     updateWorkers();
@@ -72,7 +74,7 @@ Worker::ptr Workers::
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
     bool b = connect(notifier_, SIGNAL(wakeup()), &*w, SLOT(wakeup()));
     bool c = connect(&*w, SIGNAL(oneTaskDone()), notifier_, SIGNAL(wakeup()));
-    bool d = connect((Worker*)&*w, SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)), notifier_, SIGNAL(wakeup()));
+    bool d = connect((PollWorker*)&*w, SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)), notifier_, SIGNAL(wakeup()));
 
     EXCEPTION_ASSERT(a);
     EXCEPTION_ASSERT(b);
@@ -80,12 +82,10 @@ Worker::ptr Workers::
     EXCEPTION_ASSERT(d);
 
     w->wakeup ();
-
-    return w;
 }
 
 
-void Workers::
+void PollWorkers::
         removeComputingEngine(Signal::ComputingEngine::ptr ce)
 {
     EngineWorkerMap::iterator worker = workers_map_.find (ce);
@@ -106,27 +106,27 @@ void Workers::
 }
 
 
-const Workers::Engines& Workers::
+const PollWorkers::Engines& PollWorkers::
         workers() const
 {
     return workers_;
 }
 
 
-const Workers::EngineWorkerMap& Workers::
+const PollWorkers::EngineWorkerMap& PollWorkers::
         workers_map() const
 {
     return workers_map_;
 }
 
 
-size_t Workers::
+size_t PollWorkers::
         n_workers() const
 {
     size_t N = 0;
 
     for(EngineWorkerMap::const_iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::ptr worker = i->second;
+        PollWorker::ptr worker = i->second;
 
         if (worker && worker->isRunning ())
             N++;
@@ -136,7 +136,7 @@ size_t Workers::
 }
 
 
-void Workers::
+void PollWorkers::
         updateWorkers()
 {
     Engines engines;
@@ -149,13 +149,13 @@ void Workers::
 }
 
 
-Workers::DeadEngines Workers::
+PollWorkers::DeadEngines PollWorkers::
         clean_dead_workers()
 {
     DeadEngines dead;
 
     for (EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::ptr worker = i->second;
+        PollWorker::ptr worker = i->second;
 
         if (!worker) {
             // The worker has been deleted
@@ -203,11 +203,11 @@ Workers::DeadEngines Workers::
 }
 
 
-void Workers::
+void PollWorkers::
         rethrow_any_worker_exception()
 {
     for (EngineWorkerMap::iterator i=workers_map_.begin (); i != workers_map_.end(); ++i) {
-        Worker::ptr worker = i->second;
+        PollWorker::ptr worker = i->second;
 
         if (worker) {
             std::exception_ptr e = worker->caught_exception ();
@@ -235,7 +235,7 @@ void Workers::
 }
 
 
-bool Workers::
+bool PollWorkers::
         terminate_workers(int timeout)
 {
     TIME_TERMINATE TaskTimer ti("terminate_workers");
@@ -259,7 +259,7 @@ bool Workers::
 }
 
 
-bool Workers::
+bool PollWorkers::
         wait(int timeout)
 {
     TIME_TERMINATE TaskTimer ti("wait(%d)", timeout);
@@ -275,7 +275,7 @@ bool Workers::
 }
 
 
-bool Workers::
+bool PollWorkers::
         remove_all_engines(int timeout) const
 {
     TIME_TERMINATE TaskTimer ti("remove_all_engines");
@@ -296,53 +296,17 @@ bool Workers::
     return ok;
 }
 
-
-void Workers::
-        print(const DeadEngines& engines)
-{
-    if (engines.empty ())
-        return;
-
-    TaskInfo ti("Dead engines");
-
-    BOOST_FOREACH(Workers::DeadEngines::value_type e, engines) {
-        Signal::ComputingEngine::ptr engine = e.first;
-        std::exception_ptr x = e.second;
-        std::string enginename = engine ? vartype(*engine.get ()) : (vartype(engine.get ())+"==0");
-
-        if (x)
-        {
-            std::string details;
-            try {
-                std::rethrow_exception(x);
-            } catch(...) {
-                details = boost::current_exception_diagnostic_information();
-            }
-
-            TaskInfo(boost::format("engine %1% failed.\n%2%")
-                     % enginename
-                     % details);
-        }
-        else
-        {
-            TaskInfo(boost::format("engine %1% stopped")
-                     % enginename);
-        }
-    }
-}
-
-
 } // namespace Processing
 } // namespace Signal
 
 #include "expectexception.h"
-#include "bedroom.h"
+#include "signal/processing/bedroom.h"
 
 #include <QtWidgets> // QApplication
 #include <atomic>
 
 namespace Signal {
-namespace Processing {
+namespace PollWorker {
 
 class GetEmptyTaskMock: public ISchedule {
 public:
@@ -406,7 +370,7 @@ class BusyScheduleMock: public BlockScheduleMock {
 };
 
 
-void Workers::
+void PollWorkers::
         test()
 {
     std::string name = "Workers";
@@ -422,21 +386,22 @@ void Workers::
         for (int j=0;j<100; j++){
             ISchedule::ptr schedule(new GetEmptyTaskMock);
             Bedroom::ptr bedroom(new Bedroom);
-            Workers workers(schedule, bedroom);
+            PollWorkers workers(schedule, bedroom);
             workers.rethrow_any_worker_exception(); // Should do nothing
 
             Timer t;
             int worker_count = 40; // Number of threads to start. Multiplying by 10 multiplies the elapsed time by a factor of 100.
-            std::list<Worker::ptr> workerlist;
-            Worker::ptr w = workers.addComputingEngine(Signal::ComputingEngine::ptr());
-            workerlist.push_back (w);
-            for (int i=1; i<worker_count; ++i) {
-                Worker::ptr w = workers.addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
-                workerlist.push_back (w);
-            }
+            workers.addComputingEngine(Signal::ComputingEngine::ptr());
+            for (int i=1; i<worker_count; ++i)
+                workers.addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+
+            EngineWorkerMap workers_map = workers.workers_map();
+            std::list<PollWorker::ptr> workerlist;
+            for(const EngineWorkerMap::value_type& v : workers_map)
+                workerlist.push_back (v.second);
 
             // Wait until they're done
-            BOOST_FOREACH (Worker::ptr& w, workerlist) { w->abort (); w->wait (); }
+            BOOST_FOREACH (PollWorker::ptr& w, workerlist) { w->abort (); w->wait (); }
             maxwait = std::max(maxwait, t.elapsed ());
 
             int get_task_count = ((const GetEmptyTaskMock*)schedule.get ())->get_task_count;
@@ -457,7 +422,7 @@ void Workers::
                 EXCEPTION_ASSERT(cename);
             }
 
-            Workers::DeadEngines dead = workers.clean_dead_workers ();
+            PollWorkers::DeadEngines dead = workers.clean_dead_workers ();
             Engines engines = workers.workers();
 
             EXCEPTION_ASSERT_EQUALS(engines.size (), 0u);
@@ -486,7 +451,7 @@ void Workers::
                 //TaskInfo ti(boost::format("%s") % vartype(*s));
                 Bedroom::ptr bedroom(new Bedroom);
 
-                Workers workers(s, bedroom);
+                PollWorkers workers(s, bedroom);
                 Bedroom::Bed bed = dynamic_cast<BlockScheduleMock*>(s.get ())->bedroom.getBed();
 
                 workers.addComputingEngine(Signal::ComputingEngine::ptr());
@@ -500,7 +465,7 @@ void Workers::
                 EXCEPTION_ASSERT_EQUALS(true, workers.terminate_workers (0));
 
                 EXCEPTION_ASSERT_EQUALS(workers.n_workers(), 0u);
-                EXPECT_EXCEPTION(Worker::TerminatedException, workers.rethrow_any_worker_exception ());
+                EXPECT_EXCEPTION(PollWorker::TerminatedException, workers.rethrow_any_worker_exception ());
                 workers.clean_dead_workers ();
             }
             float elapsed = t.elapsed ();
