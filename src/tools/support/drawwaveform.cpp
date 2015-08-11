@@ -12,8 +12,10 @@ namespace Tools {
 
 DrawWaveform::
         DrawWaveform()
+#ifdef LEGACY_OPENGL
             :
             _enqueueGcDisplayList( false )
+#endif
 {
 }
 

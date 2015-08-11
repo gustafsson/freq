@@ -17,6 +17,7 @@ public:
 class ComputingCpu: public ComputingEngine {};
 class ComputingCuda: public ComputingEngine {};
 class ComputingOpenCL: public ComputingEngine {};
+class DiscAccessThread: public ComputingEngine {};
 
 } // namespace Signal
 

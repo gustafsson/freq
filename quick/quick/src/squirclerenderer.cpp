@@ -3,6 +3,7 @@
 #include "signal/processing/workers.h"
 #include "heightmap/collection.h"
 #include "log.h"
+#include "tasktimer.h"
 #include "GlException.h"
 #include "demangle.h"
 #include "heightmap/render/shaderresource.h"
@@ -193,11 +194,11 @@ void SquircleRenderer::paint()
             return;
         }
 
-        LOG_FRAME Log("painting %s %gx%g. Last frame %s ms")
+        LOG_FRAME TaskTimer tt(boost::format("painting %s %gx%g. Last frame %s ms")
                 % objectName ().toStdString ()
                 % m_viewport.width ()
                 % m_viewport.height ()
-                % (1e3*prevFrame.elapsedAndRestart ());
+                % (1e3*prevFrame.elapsedAndRestart ()));
 
         // TODO: Use WorkerCrashLogger from Sonic AWE instead
         try {

@@ -477,7 +477,7 @@ Signal::Interval AudiofileDesc::
 Signal::Operation::ptr AudiofileDesc::
         createOperation(Signal::ComputingEngine* engine) const
 {
-    if (0 == engine)
+    if (dynamic_cast<Signal::DiscAccessThread*>(engine))
         return Signal::Operation::ptr(new AudiofileOperation(audiofile_));
 
     return Signal::Operation::ptr();

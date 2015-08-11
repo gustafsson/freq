@@ -36,14 +36,12 @@ Chain::ptr Chain::
     Workers::ptr workers(new Workers(IWorkerFactory::ptr(new CvWorker::CvWorkerFactory(targetSchedule, bedroom))));
 //    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorker::QtEventWorkers(targetSchedule, bedroom))));
 
-    // Add the 'single instance engine' thread (the 'null worker')
-    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
-
     // Add worker threads to occupy all kernels
     int reserved_threads = 0;
     reserved_threads++; // OpenGL rendering
-    reserved_threads++; // null worker
-    for (int i=0; i<std::max(2,QThread::idealThreadCount ()-reserved_threads); i++) {
+    reserved_threads++; // 1 ComputingCpu
+    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+    for (int i=0; i<QThread::idealThreadCount ()-reserved_threads; i++) {
         workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     }
 

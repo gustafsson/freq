@@ -18,6 +18,7 @@
 #include "tools/openwatchedfilecontroller.h"
 #include "tools/support/audiofileopener.h"
 #include "tools/support/csvfileopener.h"
+#include "signal/processing/workers.h"
 
 // Qt
 #include <QFileDialog>
@@ -527,7 +528,9 @@ pProject Project::
     if (!d)
         return pProject();
 
-    return openOperation(d);
+    pProject p = openOperation(d);
+    p->processing_chain ()->workers()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::DiscAccessThread));
+    return p;
 }
 
 

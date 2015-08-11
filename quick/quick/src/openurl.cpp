@@ -2,6 +2,7 @@
 #include "log.h"
 #include "flacfile.h"
 #include "qtaudiofile.h"
+#include "signal/processing/workers.h"
 #include <QDesktopServices>
 
 //#define LOG_CALLS
@@ -86,4 +87,5 @@ void OpenUrl::
 
     chain_->chain ()->addOperationAt(desc, chain_->target_marker ());
     chain_->setTitle (url.fileName ());
+    chain_->chain ()->workers()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::DiscAccessThread));
 }
