@@ -14,8 +14,8 @@
 //#define TIME_TERMINATE
 #define TIME_TERMINATE if(0)
 
-#define UNITTEST_STEPS
-//#define UNITTEST_STEPS if(0)
+//#define UNITTEST_STEPS
+#define UNITTEST_STEPS if(0)
 
 using namespace std;
 using namespace JustMisc;

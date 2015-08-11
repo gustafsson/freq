@@ -4,8 +4,8 @@
 
 #include <thread>
 
-#define UNITTEST_STEPS
-//#define UNITTEST_STEPS if(0)
+//#define UNITTEST_STEPS
+#define UNITTEST_STEPS if(0)
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
