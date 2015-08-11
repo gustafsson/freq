@@ -44,6 +44,7 @@ CvWorker::CvWorker(
 
         LogTickFrequency ltf_wakeups;
         LogTickFrequency ltf_tasks;
+        Timer last_wakeup;
 
         try {
             Bedroom::Bed b = bedroom->getBed ();
@@ -56,6 +57,7 @@ CvWorker::CvWorker(
                 {
                     DEBUGINFO TaskTimer tt(boost::format("taskworker: get task %s %s") % vartype(*schedule.get ()) % (computing_engine?vartype(*computing_engine):"(null)") );
                     task = schedule->getTask(computing_engine);
+                    active_time_since_start_ += work_timer.elapsedAndRestart ();
                 }
 
                 if (task)
@@ -70,9 +72,16 @@ CvWorker::CvWorker(
                 }
                 else
                 {
+                    // when there is nothing to work on, wait until the next frame to check again
+                    static const double cap_wakeup_interval = 1./60;
+                    double force_sleep_interval = cap_wakeup_interval - last_wakeup.elapsed ();
+                    if (force_sleep_interval > 0)
+                        std::this_thread::sleep_for (std::chrono::microseconds((long)(force_sleep_interval*1e6)));
+
                     // wakeup when the dag changes
                     if (!*abort)
                         b.sleep ();
+                    last_wakeup.restart ();
 
                     if (ltf_wakeups.tick(false))
                         Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());

@@ -142,6 +142,7 @@ void UpdateConsumer::
     LogTickFrequency ltf_tasks;
 
     Timer start_timer;
+    Timer last_wakeup;
     double work_time = 0.;
 
     while (!isInterruptionRequested ())
@@ -150,6 +151,12 @@ void UpdateConsumer::
             Log("updateconsumer: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_work.hz () % ltf_tasks.hz () % (100*work_time / start_timer.elapsedAndRestart ());
             work_time = 0;
         }
+
+        // when there is nothing to work on, wait until the next frame to check again
+        static const double cap_wakeup_interval = 1./60;
+        double force_sleep_interval = cap_wakeup_interval - last_wakeup.elapsed ();
+        if (force_sleep_interval > 0)
+            std::this_thread::sleep_for (std::chrono::microseconds((long)(force_sleep_interval*1e6)));
 
         QCoreApplication::processEvents();
 
@@ -160,7 +167,7 @@ void UpdateConsumer::
                 tt.reset (new TaskTimer("updateconsumer: Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
-            Timer work_timer;
+            last_wakeup.restart ();
 
             auto jobqueue = update_queue->clear ();
 
@@ -181,7 +188,7 @@ void UpdateConsumer::
                 EXCEPTION_ASSERT_LESS(jobqueue.size (), s);
             }
 
-            work_time += work_timer.elapsed();
+            work_time += last_wakeup.elapsed();
 
             if (!isInterruptionRequested ())
               {
