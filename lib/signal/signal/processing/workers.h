@@ -54,6 +54,7 @@ public:
 
     const Engines& workers() const;
     size_t n_workers() const;
+    double activity() const;
     const EngineWorkerMap& workers_map() const;
 
     /**

@@ -5,6 +5,8 @@
 #include "signal/processing/ischedule.h"
 #include "signal/processing/bedroom.h"
 #include "signal/processing/worker.h"
+#include "timer.h"
+
 #include <boost/exception/exception.hpp>
 
 #include <thread>
@@ -32,6 +34,7 @@ public:
     bool wait() override;
     bool wait(unsigned long ms) override;
     bool isRunning() override;
+    double activity() override;
     std::exception_ptr caught_exception() override;
 
 private:
@@ -42,6 +45,9 @@ private:
     std::atomic<bool>                   abort_;
     Signal::Processing::Bedroom::ptr    bedroom_;
     std::exception_ptr                  caught_exception_;
+
+    Timer                               timer_start_;
+    double                              active_time_since_start_;
 
 public:
     static void test ();

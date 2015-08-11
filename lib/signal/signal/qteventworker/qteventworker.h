@@ -7,6 +7,7 @@
 
 #include "shared_state.h"
 #include "timer.h"
+#include "logtickfrequency.h"
 
 #include <QtCore> // QObject, QThread, QPointer
 
@@ -44,18 +45,7 @@ public:
     bool wait() override;
     bool wait(unsigned long time_ms) override;
     bool isRunning() override;
-
-    // 'if (caught_exception())' will be true if an exception was caught.
-    //
-    // To examine the exception. Use this pattern:
-    //
-    //     try {
-    //         rethrow_exception(caught_exception ());
-    //     } catch ( std::exception& x ) {
-    //         x.what();
-    //         ... get_error_info<...>(x);
-    //         boost::diagnostic_information(x);
-    //     }
+    double activity() override;
     std::exception_ptr caught_exception() override;
 
 signals:
@@ -78,9 +68,11 @@ private:
     shared_state<std::exception_ptr>        exception_;
     std::exception_ptr                      terminated_exception_;
 
-    Timer                                   timer_;
-    int                                     wakeups_ = 0;
-    double                                  next_tick_ = 10;
+    LogTickFrequency                        ltf_wakeups_;
+    LogTickFrequency                        ltf_tasks_;
+
+    Timer                                   timer_start_;
+    double                                  active_time_since_start_;
 public:
     static void test ();
 };

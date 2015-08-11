@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "log.h"
 #include "gl.h"
+#include "logtickfrequency.h"
 
 #include <QGLWidget>
 #include <QGLContext>
@@ -138,9 +139,12 @@ void UpdateConsumer::
 {
     TfrBlockUpdater block_updater;
     WaveformBlockUpdater waveform_updater;
+    LogTickFrequency ltf_work("updateconsumer");
 
     while (!isInterruptionRequested ())
       {
+        ltf_work.tick();
+
         QCoreApplication::processEvents();
 
         try

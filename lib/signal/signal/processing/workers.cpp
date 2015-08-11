@@ -116,6 +116,22 @@ size_t Workers::
 }
 
 
+double Workers::
+        activity() const
+{
+    double a = 0;
+
+    for(const auto& i : workers_map_) {
+        const Worker::ptr& worker = i.second;
+
+        if (worker)
+            a += worker->activity();
+    }
+
+    return a;
+}
+
+
 bool Workers::
         wait(int timeout) const
 {

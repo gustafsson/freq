@@ -29,7 +29,10 @@ QtEventWorker::
       computing_engine_(computing_engine),
       schedule_(schedule),
       thread_(new QTerminatableThread),
-      exception_(new std::exception_ptr())
+      exception_(new std::exception_ptr()),
+      ltf_wakeups_("qteventworker wakeups"),
+      ltf_tasks_("qteventworker tasks"),
+      active_time_since_start_(0)
 {
     EXCEPTION_ASSERTX(QThread::currentThread ()->eventDispatcher (),
                       "Worker uses a QThread with an event loop. The QEventLoop requires QApplication");
@@ -100,6 +103,13 @@ bool QtEventWorker::
 }
 
 
+double QtEventWorker::
+        activity()
+{
+    return active_time_since_start_ / timer_start_.elapsed ();
+}
+
+
 bool QtEventWorker::
         wait()
 {
@@ -128,19 +138,12 @@ void QtEventWorker::
   {
     if (QThread::currentThread () != this->thread ())
       {
-        ++wakeups_;
-        if (timer_.elapsed () > next_tick_)
-        {
-            Log("worker: %g wakeups/s") % (wakeups_ / 10.);
-            wakeups_ = 0;
-            next_tick_ += 10;
-        }
-
-
         // Dispatch
         QMetaObject::invokeMethod (this, "wakeup");
         return;
       }
+
+    ltf_wakeups_.tick ();
 
     DEBUGINFO Log("worker: wakeup");
 
@@ -183,6 +186,7 @@ void QtEventWorker::
     // in order to not pile up a never ending queue make sure to process events as they come
     while (!QCoreApplication::hasPendingEvents ())
       {
+        Timer work_timer;
         Signal::Processing::Task task;
 
         {
@@ -194,6 +198,8 @@ void QtEventWorker::
           {
             DEBUGINFO TaskTimer tt(boost::format("worker: running task %s") % task.expected_output());
             task.run();
+            active_time_since_start_ += work_timer.elapsed ();
+            ltf_tasks_.tick ();
             emit oneTaskDone();
           }
         else

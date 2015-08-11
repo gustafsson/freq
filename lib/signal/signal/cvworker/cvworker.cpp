@@ -3,6 +3,7 @@
 #include "demangle.h"
 #include "signal/processing/task.h"
 #include "tasktimer.h"
+#include "logtickfrequency.h"
 
 #include <thread>
 
@@ -24,7 +25,8 @@ CvWorker::CvWorker(
         ISchedule::ptr schedule)
     :
       abort_(false),
-      bedroom_(bedroom)
+      bedroom_(bedroom),
+      active_time_since_start_(0)
 {
     atomic<bool>* abort = &this->abort_;
     std::promise<void> p;
@@ -40,11 +42,15 @@ CvWorker::CvWorker(
         }
 #endif
 
+        LogTickFrequency ltf_wakeups("cvworker wakeups");
+        LogTickFrequency ltf_tasks("cvworker tasks");
+
         try {
             Bedroom::Bed b = bedroom->getBed ();
 
             // run loop at least once to simplify testing when aborting a worker right away
             do {
+                Timer work_timer;
                 Signal::Processing::Task task;
 
                 {
@@ -56,13 +62,19 @@ CvWorker::CvWorker(
                 {
                     DEBUGINFO TaskTimer tt(boost::format("taskworker: running task %s") % task.expected_output());
                     task.run();
+                    active_time_since_start_ += work_timer.elapsed ();
                     bedroom->wakeup (); // make idle workers wakeup to check if they can do something, won't affect busy workers
+
+                    ltf_tasks.tick(false);
                 }
                 else
                 {
                     // wakeup when the dag changes
                     if (!*abort)
                         b.sleep ();
+
+                    if (ltf_wakeups.tick(false))
+                        Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
                 }
             } while (!*abort);
 
@@ -129,6 +141,12 @@ bool CvWorker::isRunning()
 {
     wait(0);
     return t.joinable ();
+}
+
+
+double CvWorker::activity()
+{
+    return active_time_since_start_ / timer_start_.elapsed ();
 }
 
 

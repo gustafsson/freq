@@ -62,7 +62,8 @@ private:
         void abort() override {p->abort();}
         bool wait() override {return p->wait();}
         bool wait(unsigned long time_ms) override {return p->wait(time_ms);}
-        bool isRunning()  override {return p->isRunning();}
+        bool isRunning() override {return p->isRunning();}
+        double activity() override {return p->activity();}
         std::exception_ptr caught_exception() override {return p->caught_exception();}
 
         void terminate() {p->terminate ();}
