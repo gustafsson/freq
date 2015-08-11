@@ -67,8 +67,7 @@ UpdateConsumer::
         ~UpdateConsumer()
 {
     requestInterruption ();
-    update_queue->abort_on_empty ();
-    update_queue->clear ();
+    update_queue->close (); // make the thread detect the requestInterruption ()
     QThread::wait ();
 }
 

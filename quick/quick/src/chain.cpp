@@ -59,8 +59,8 @@ Chain::Chain(QQuickItem *parent) :
 Chain::
         ~Chain()
 {
-    update_queue_->abort_on_empty();
-    update_queue_->clear ();
+    chain_->close ();
+    chain_.reset ();
 }
 
 

@@ -26,8 +26,7 @@ public:
     class abort_exception : public std::exception {};
 
     ~blocking_queue() {
-        abort_on_empty ();
-        clear ();
+        close ();
     }
 
     queue clear()
@@ -38,9 +37,11 @@ public:
         return p;
     }
 
-    void abort_on_empty() {
+    // this method is used to abort any blocking pop, clear the queue, and disable any future pops
+    void close() {
         std::unique_lock<std::mutex> l(m);
-        abort_on_empty_ = true;
+        abort_ = true;
+        queue().swap (q);
         l.unlock ();
         c.notify_all ();
     }
@@ -53,9 +54,9 @@ public:
     T pop() {
         std::unique_lock<std::mutex> l(m);
 
-        c.wait (l, [this](){return !q.empty() || abort_on_empty_;});
+        c.wait (l, [this](){return !q.empty() || abort_;});
 
-        if (abort_on_empty_)
+        if (abort_)
             throw abort_exception{};
 
         T t( std::move(q.front()) );
@@ -70,10 +71,10 @@ public:
     T pop_for(const std::chrono::duration<Rep, Period>& d) {
         std::unique_lock<std::mutex> l(m);
 
-        if (!c.wait_for (l, d, [this](){return !q.empty() || abort_on_empty_;}))
+        if (!c.wait_for (l, d, [this](){return !q.empty() || abort_;}))
             return T();
 
-        if (abort_on_empty_)
+        if (abort_)
             throw abort_exception{};
 
         T t( std::move(q.front()) );
@@ -133,7 +134,7 @@ public:
         return q.size ();
     }
 private:
-    bool abort_on_empty_ = false;
+    bool abort_ = false;
     std::queue<T> q;
     std::mutex m;
     std::condition_variable c;

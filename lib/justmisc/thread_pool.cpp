@@ -52,8 +52,8 @@ thread_pool::
 thread_pool::
         ~thread_pool()
 {
-    queue_.abort_on_empty ();
-    queue_.clear (); // Any associated futures to a packaged_task will be notified if the task is destroyed prior to evaluation
+    // Any associated futures to a packaged_task will be notified if the task is destroyed prior to evaluation
+    queue_.close ();
 
     for (thread& t: threads_)
         t.join ();
