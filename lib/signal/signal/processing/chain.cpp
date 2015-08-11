@@ -6,6 +6,7 @@
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
 #include "signal/pollworker/pollworkers.h"
+#include "signal/taskworker/taskworkers.h"
 
 // backtrace
 #include "demangle.h"
@@ -32,7 +33,8 @@ Chain::ptr Chain::
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
-    Workers::ptr workers(new PollWorker::PollWorkers(targetSchedule, bedroom));
+    Workers::ptr workers(new TaskWorker::TaskWorkers(targetSchedule, bedroom));
+//    Workers::ptr workers(new PollWorker::PollWorkers(targetSchedule, bedroom));
 
     // Add the 'single instance engine' thread (the 'null worker')
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
