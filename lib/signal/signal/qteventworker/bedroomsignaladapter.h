@@ -2,11 +2,11 @@
 #define SIGNAL_PROCESSING_BEDROOMSIGNALADAPTER_H
 
 #include <QtCore>
-#include "bedroom.h"
-#include "inotifier.h"
+#include "signal/processing/bedroom.h"
+#include "signal/processing/inotifier.h"
 
 namespace Signal {
-namespace Processing {
+namespace QtEventWorker {
 
 /**
  * @brief The BedroomSignalAdapter class should translate a wakeup signal from
@@ -16,7 +16,7 @@ class BedroomSignalAdapter : public QThread
 {
     Q_OBJECT
 public:
-    explicit BedroomSignalAdapter(Bedroom::ptr bedroom, QObject* parent);
+    explicit BedroomSignalAdapter(Processing::Bedroom::ptr bedroom, QObject* parent);
     ~BedroomSignalAdapter();
 
     /**
@@ -32,7 +32,7 @@ private:
     // QThread
     void run ();
 
-    Bedroom::ptr bedroom_;
+    Processing::Bedroom::ptr bedroom_;
     bool stop_flag_;
 };
 

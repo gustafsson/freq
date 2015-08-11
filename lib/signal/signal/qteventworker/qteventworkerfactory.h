@@ -1,7 +1,8 @@
 #ifndef SIGNAL_POLLWORKER_WORKERS_H
 #define SIGNAL_POLLWORKER_WORKERS_H
 
-#include "pollworker.h"
+#include "qteventworker.h"
+#include "bedroomsignaladapter.h"
 #include "signal/processing/ischedule.h"
 #include "signal/computingengine.h"
 #include "signal/processing/bedroom.h"
@@ -12,10 +13,7 @@
 #include <QObject>
 
 namespace Signal {
-namespace Processing {
-class BedroomSignalAdapter;
-}
-namespace PollWorker {
+namespace QtEventWorker {
 
 /**
  * @brief The Schedule class should start and stop computing engines as they
@@ -29,12 +27,12 @@ namespace PollWorker {
  * It should wake up sleeping workers when any work is done to see if they can
  * help out on what's left.
  */
-class PollWorkers: public QObject, public Signal::Processing::IWorkerFactory
+class QtEventWorkerFactory: public QObject, public Signal::Processing::IWorkerFactory
 {
     Q_OBJECT
 public:
-    PollWorkers(Signal::Processing::ISchedule::ptr schedule, Signal::Processing::Bedroom::ptr bedroom);
-    ~PollWorkers();
+    QtEventWorkerFactory(Signal::Processing::ISchedule::ptr schedule, Signal::Processing::Bedroom::ptr bedroom);
+    ~QtEventWorkerFactory();
 
     Signal::Processing::Worker::ptr make_worker(Signal::ComputingEngine::ptr ce) override;
 
@@ -58,7 +56,7 @@ signals:
 private:
     class WorkerWrapper : public Signal::Processing::Worker {
     public:
-        WorkerWrapper(PollWorker* p);
+        WorkerWrapper(QtEventWorker* p);
         ~WorkerWrapper();
 
         void abort() override {p->abort();}
@@ -70,12 +68,12 @@ private:
         void terminate() {p->terminate ();}
 
     private:
-        PollWorker* p; // Managed by Qt
+        QtEventWorker* p; // Managed by Qt
     };
 
     Processing::ISchedule::ptr schedule_;
     Processing::Bedroom::ptr bedroom_;
-    Signal::Processing::BedroomSignalAdapter* notifier_;
+    BedroomSignalAdapter* notifier_;
 
 public:
     static void test();

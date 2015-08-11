@@ -18,15 +18,15 @@ PWD = $$_PRO_FILE_PWD_
 SOURCES += \
     $$PWD/signal/*.cpp \
     $$PWD/signal/processing/*.cpp \
-    $$PWD/signal/pollworker/*.cpp \
-    $$PWD/signal/taskworker/*.cpp \
+    $$PWD/signal/qteventworker/*.cpp \
+    $$PWD/signal/cvworker/*.cpp \
     $$PWD/test/*.cpp \
 
 HEADERS += \
     $$PWD/signal/*.h \
     $$PWD/signal/processing/*.h \
-    $$PWD/signal/pollworker/*.h \
-    $$PWD/signal/taskworker/*.h \
+    $$PWD/signal/qteventworker/*.h \
+    $$PWD/signal/cvworker/*.h \
     $$PWD/test/*.h \
 
 INCLUDEPATH += ../backtrace ../gpumisc ../justmisc

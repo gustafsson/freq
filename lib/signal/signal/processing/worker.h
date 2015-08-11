@@ -1,7 +1,9 @@
 #ifndef SIGNAL_PROCESSING_WORKER_H
 #define SIGNAL_PROCESSING_WORKER_H
 
+#include <memory>
 #include <boost/exception_ptr.hpp>
+#include "signal/computingengine.h"
 
 namespace Signal {
 namespace Processing {

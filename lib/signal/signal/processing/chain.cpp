@@ -5,8 +5,8 @@
 #include "reversegraph.h"
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
-#include "signal/pollworker/pollworkers.h"
-#include "signal/taskworker/taskworkers.h"
+#include "signal/qteventworker/qteventworkerfactory.h"
+#include "signal/cvworker/cvworkerfactory.h"
 
 // backtrace
 #include "demangle.h"
@@ -33,8 +33,8 @@ Chain::ptr Chain::
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
-    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new TaskWorker::TaskWorkers(targetSchedule, bedroom))));
-//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new PollWorker::PollWorkers(targetSchedule, bedroom))));
+    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new CvWorker::CvWorkerFactory(targetSchedule, bedroom))));
+//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorker::QtEventWorkers(targetSchedule, bedroom))));
 
     // Add the 'single instance engine' thread (the 'null worker')
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());

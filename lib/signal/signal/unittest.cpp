@@ -14,10 +14,10 @@
 #include "signal/processing/targets.h"
 #include "signal/processing/targetschedule.h"
 #include "signal/processing/task.h"
-#include "signal/pollworker/pollworker.h"
-#include "signal/pollworker/pollworkers.h"
-#include "signal/taskworker/taskworker.h"
-#include "signal/taskworker/taskworkers.h"
+#include "signal/qteventworker/qteventworker.h"
+#include "signal/qteventworker/qteventworkerfactory.h"
+#include "signal/cvworker/cvworker.h"
+#include "signal/cvworker/cvworkerfactory.h"
 #include "signal/operationwrapper.h"
 
 // common backtrace tools
@@ -64,10 +64,10 @@ int UnitTest::
         RUNTEST(Signal::Processing::Targets);
         RUNTEST(Signal::Processing::TargetSchedule);
         RUNTEST(Signal::Processing::Task);
-        RUNTEST(Signal::PollWorker::PollWorker);
-        RUNTEST(Signal::PollWorker::PollWorkers);
-        RUNTEST(Signal::TaskWorker::TaskWorker);
-        RUNTEST(Signal::TaskWorker::TaskWorkers);
+        RUNTEST(Signal::QtEventWorker::QtEventWorker);
+        RUNTEST(Signal::QtEventWorker::QtEventWorkerFactory);
+        RUNTEST(Signal::CvWorker::CvWorker);
+        RUNTEST(Signal::CvWorker::CvWorkerFactory);
         RUNTEST(Signal::Processing::Chain); // Chain last
         RUNTEST(Signal::OperationDescWrapper);
 

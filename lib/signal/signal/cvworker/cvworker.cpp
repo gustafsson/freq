@@ -1,6 +1,8 @@
-#include "taskworker.h"
+#include "cvworker.h"
 #include "log.h"
 #include "demangle.h"
+#include "signal/processing/task.h"
+#include "tasktimer.h"
 
 #include <thread>
 
@@ -14,9 +16,9 @@ using namespace std;
 using namespace Signal::Processing;
 
 namespace Signal {
-namespace TaskWorker {
+namespace CvWorker {
 
-TaskWorker::TaskWorker(
+CvWorker::CvWorker(
         Signal::ComputingEngine::ptr computing_engine,
         Signal::Processing::Bedroom::ptr bedroom,
         ISchedule::ptr schedule)
@@ -72,20 +74,20 @@ TaskWorker::TaskWorker(
 }
 
 
-TaskWorker::~TaskWorker() {
+CvWorker::~CvWorker() {
     abort();
     join();
 }
 
 
-void TaskWorker::abort()
+void CvWorker::abort()
 {
     abort_ = true;
     bedroom_->wakeup ();
 }
 
 
-void TaskWorker::join()
+void CvWorker::join()
 {
     if (t.joinable ())
     {
@@ -99,14 +101,14 @@ void TaskWorker::join()
 }
 
 
-bool TaskWorker::wait()
+bool CvWorker::wait()
 {
     join();
     return true;
 }
 
 
-bool TaskWorker::wait(unsigned long ms)
+bool CvWorker::wait(unsigned long ms)
 {
     if (!f.valid ())
     {
@@ -123,20 +125,20 @@ bool TaskWorker::wait(unsigned long ms)
 }
 
 
-bool TaskWorker::isRunning()
+bool CvWorker::isRunning()
 {
     wait(0);
     return t.joinable ();
 }
 
 
-std::exception_ptr TaskWorker::caught_exception()
+std::exception_ptr CvWorker::caught_exception()
 {
     return caught_exception_;
 }
 
 
-} // namespace TaskWorker
+} // namespace CvWorker
 } // namespace Signal
 
 #include "detectgdb.h"
@@ -144,7 +146,7 @@ std::exception_ptr TaskWorker::caught_exception()
 #include "expectexception.h"
 
 namespace Signal {
-namespace TaskWorker {
+namespace CvWorker {
 
 class GetTaskMock: public ISchedule {
 public:
@@ -232,7 +234,7 @@ class DummySchedule: public ISchedule {
 };
 
 
-void TaskWorker::
+void CvWorker::
         test()
 {
     // It should start and stop automatically
@@ -241,7 +243,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new GetTaskMock);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         std::this_thread::yield ();
         EXCEPTION_ASSERT( worker.isRunning () );
@@ -253,7 +255,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new GetTaskMock());
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         worker.wait (1);
 
@@ -274,7 +276,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new GetTaskMock);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         EXCEPTION_ASSERT( !worker.wait (1) );
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
@@ -296,7 +298,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new GetTaskSegFaultMock);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         worker.wait (1);
         worker.abort ();
@@ -314,7 +316,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new GetTaskExceptionMock);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         QThread::yieldCurrentThread ();
     }
@@ -325,7 +327,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new GetTaskExceptionMock);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         worker.wait (1);
         worker.abort ();
@@ -351,7 +353,7 @@ void TaskWorker::
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new ImmediateDeadLockMock);
 
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         worker.wait (2);
         worker.abort ();
@@ -370,7 +372,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new DeadLockMock);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         Log("taskworker %d") % __LINE__;
         EXCEPTION_ASSERT( !worker.wait (1) );
@@ -391,7 +393,7 @@ void TaskWorker::
 
         Bedroom::ptr bedroom(new Bedroom);
         ISchedule::ptr gettask(new DummySchedule);
-        TaskWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
+        CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
         bedroom->wakeup ();
         Bedroom::Bed b = bedroom->getBed ();
@@ -407,5 +409,5 @@ void TaskWorker::
     }
 }
 
-} // namespace TaskWorker
+} // namespace CvWorker
 } // namespace Signal

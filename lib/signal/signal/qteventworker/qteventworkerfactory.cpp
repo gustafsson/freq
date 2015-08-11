@@ -1,13 +1,11 @@
-// Include QObject and Boost.Foreach in that order to prevent conflicts with Qt foreach
-#include <QtCore> // QObject
+#include "qteventworkerfactory.h"
 
-#include "pollworkers.h"
-#include "signal/processing/targetschedule.h"
-#include "timer.h"
-#include "signal/processing/bedroomsignaladapter.h"
-#include "demangle.h"
+#include "signal/processing/task.h"
+
 #include "tasktimer.h"
 #include "log.h"
+#include "exceptionassert.h"
+#include "demangle.h"
 
 //#define TIME_TERMINATE
 #define TIME_TERMINATE if(0)
@@ -18,11 +16,11 @@
 using namespace Signal::Processing;
 
 namespace Signal {
-namespace PollWorker {
+namespace QtEventWorker {
 
 
-PollWorkers::WorkerWrapper::
-        WorkerWrapper(PollWorker* p)
+QtEventWorkerFactory::WorkerWrapper::
+        WorkerWrapper(QtEventWorker* p)
     :
       p(p)
 {
@@ -30,17 +28,17 @@ PollWorkers::WorkerWrapper::
 }
 
 
-PollWorkers::WorkerWrapper::
+QtEventWorkerFactory::WorkerWrapper::
         ~WorkerWrapper()
 {
-    // Let Qt delete the PollWorker object later in the event loop of the
+    // Let Qt delete the QtEventWorker object later in the event loop of the
     // thread that owns the object.
     p->deleteLater ();
 }
 
 
-PollWorkers::
-        PollWorkers(ISchedule::ptr schedule, Bedroom::ptr bedroom)
+QtEventWorkerFactory::
+        QtEventWorkerFactory(ISchedule::ptr schedule, Bedroom::ptr bedroom)
     :
       schedule_(schedule),
       bedroom_(bedroom),
@@ -49,8 +47,8 @@ PollWorkers::
 }
 
 
-PollWorkers::
-        ~PollWorkers()
+QtEventWorkerFactory::
+        ~QtEventWorkerFactory()
 {
     try {
         notifier_->quit_and_wait ();
@@ -59,14 +57,14 @@ PollWorkers::
     } catch (const std::exception& x) {
         fflush(stdout);
         fprintf(stderr, "%s",
-                str(boost::format("\nPollWorkers::~PollWorkers destructor swallowed exception: %s\n"
+                str(boost::format("\nQtEventWorkers::~QtEventWorkers destructor swallowed exception: %s\n"
                                   "%s\n\n")
                     % vartype(x) % boost::diagnostic_information(x)).c_str());
         fflush(stderr);
     } catch (...) {
         fflush(stdout);
         fprintf(stderr, "%s",
-                str(boost::format("\nPollWorkers::~PollWorkers destructor swallowed a non std::exception\n"
+                str(boost::format("\nQtEventWorkers::~QtEventWorkers destructor swallowed a non std::exception\n"
                                   "%s\n\n")
                     % boost::current_exception_diagnostic_information ()).c_str());
         fflush(stderr);
@@ -74,11 +72,11 @@ PollWorkers::
 }
 
 
-Signal::Processing::Worker::ptr PollWorkers::
+Signal::Processing::Worker::ptr QtEventWorkerFactory::
         make_worker(Signal::ComputingEngine::ptr ce)
 {
-    PollWorker* w;
-    Worker::ptr wp(new WorkerWrapper(w=new PollWorker(ce, schedule_, false)));
+    QtEventWorker* w;
+    Worker::ptr wp(new WorkerWrapper(w=new QtEventWorker(ce, schedule_, false)));
 
     bool a = QObject::connect(w,
             SIGNAL(finished(std::exception_ptr,Signal::ComputingEngine::ptr)),
@@ -98,7 +96,7 @@ Signal::Processing::Worker::ptr PollWorkers::
 }
 
 
-bool PollWorkers::
+bool QtEventWorkerFactory::
         terminate_workers(Processing::Workers& workers, int timeout)
 {
     TIME_TERMINATE TaskTimer ti("terminate_workers");
@@ -121,12 +119,13 @@ bool PollWorkers::
 
 #include "expectexception.h"
 #include "signal/processing/bedroom.h"
+#include "timer.h"
 
 #include <QtWidgets> // QApplication
 #include <atomic>
 
 namespace Signal {
-namespace PollWorker {
+namespace QtEventWorker {
 
 
 class BlockScheduleMock: public ISchedule {
@@ -172,17 +171,17 @@ class BusyScheduleMock: public BlockScheduleMock {
 };
 
 
-void PollWorkers::
+void QtEventWorkerFactory::
         test()
 {
-    std::string name = "PollWorkers";
+    std::string name = "QtEventWorkers";
     int argc = 1;
     char * argv = &name[0];
     QApplication a(argc,&argv); // takes 0.4 s if this is the first instantiation of QApplication
 
     Workers::test ([](ISchedule::ptr schedule){
         Bedroom::ptr bedroom(new Bedroom);
-        return IWorkerFactory::ptr(new PollWorkers(schedule, bedroom));
+        return IWorkerFactory::ptr(new QtEventWorkerFactory(schedule, bedroom));
     });
 
     {
@@ -201,7 +200,7 @@ void PollWorkers::
                 //TaskInfo ti(boost::format("%s") % vartype(*s));
                 Bedroom::ptr bedroom(new Bedroom);
 
-                Processing::Workers workers(IWorkerFactory::ptr(new PollWorkers(s, bedroom)));
+                Processing::Workers workers(IWorkerFactory::ptr(new QtEventWorkerFactory(s, bedroom)));
                 Bedroom::Bed bed = dynamic_cast<BlockScheduleMock*>(s.get ())->bedroom.getBed();
 
                 workers.addComputingEngine(Signal::ComputingEngine::ptr());
@@ -212,10 +211,10 @@ void PollWorkers::
                 bed.sleep ();
 
                 EXCEPTION_ASSERT_EQUALS(false, workers.remove_all_engines (10));
-                EXCEPTION_ASSERT_EQUALS(true, PollWorkers::terminate_workers (workers, 0));
+                EXCEPTION_ASSERT_EQUALS(true, QtEventWorkerFactory::terminate_workers (workers, 0));
 
                 EXCEPTION_ASSERT_EQUALS(workers.n_workers(), 0u);
-                EXPECT_EXCEPTION(PollWorker::TerminatedException, workers.rethrow_any_worker_exception ());
+                EXPECT_EXCEPTION(QtEventWorker::TerminatedException, workers.rethrow_any_worker_exception ());
                 workers.clean_dead_workers ();
             }
             float elapsed = t.elapsed ();

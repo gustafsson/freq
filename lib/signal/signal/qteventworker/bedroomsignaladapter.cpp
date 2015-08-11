@@ -3,13 +3,13 @@
 #include "tasktimer.h"
 
 namespace Signal {
-namespace Processing {
+namespace QtEventWorker {
 
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
 
 BedroomSignalAdapter::
-        BedroomSignalAdapter(Bedroom::ptr bedroom, QObject* parent)
+        BedroomSignalAdapter(Processing::Bedroom::ptr bedroom, QObject* parent)
     :
     QThread(parent),
     bedroom_(bedroom),
@@ -41,14 +41,14 @@ void BedroomSignalAdapter::
 void BedroomSignalAdapter::
         run ()
 {
-    Bedroom::Bed bed = bedroom_->getBed();
+    auto bed = bedroom_->getBed();
     while (!stop_flag_) {
         DEBUGINFO TaskInfo("BedroomSignalAdapter wakeup");
         emit wakeup();
 
         try {
             bed.sleep ();
-        } catch (const BedroomClosed&) {
+        } catch (const Processing::BedroomClosed&) {
             stop_flag_ = true;
         }
     }

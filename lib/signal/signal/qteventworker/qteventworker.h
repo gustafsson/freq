@@ -14,7 +14,7 @@
 #include <boost/exception_ptr.hpp>
 
 namespace Signal {
-namespace PollWorker {
+namespace QtEventWorker {
 
 /**
  * @brief The Worker class should run tasks as given by the scheduler.
@@ -29,14 +29,14 @@ namespace PollWorker {
  *
  * It should announce when tasks are finished.
  */
-class PollWorker: public QObject, public Processing::Worker
+class QtEventWorker: public QObject, public Processing::Worker
 {
     Q_OBJECT
 public:
     class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
-    PollWorker (Signal::ComputingEngine::ptr computing_eninge, Signal::Processing::ISchedule::ptr schedule, bool wakeuprightaway=true);
-    ~PollWorker ();
+    QtEventWorker (Signal::ComputingEngine::ptr computing_eninge, Signal::Processing::ISchedule::ptr schedule, bool wakeuprightaway=true);
+    ~QtEventWorker ();
 
     void abort() override;
     void terminate();

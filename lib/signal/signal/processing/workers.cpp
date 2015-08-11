@@ -1,7 +1,6 @@
 #include "workers.h"
 #include "signal/processing/targetschedule.h"
 #include "timer.h"
-#include "signal/processing/bedroomsignaladapter.h"
 #include "demangle.h"
 #include "tasktimer.h"
 

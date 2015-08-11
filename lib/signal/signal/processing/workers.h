@@ -2,10 +2,8 @@
 #define SIGNAL_PROCESSING_WORKERS_H
 
 #include "signal/processing/ischedule.h"
-#include "signal/computingengine.h"
-#include "signal/processing/bedroom.h"
 #include "signal/processing/worker.h"
-
+#include "shared_state.h"
 #include <vector>
 #include <map>
 

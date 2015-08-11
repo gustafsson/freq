@@ -12,19 +12,20 @@
 #include <atomic>
 
 namespace Signal {
-namespace TaskWorker {
+namespace CvWorker {
 
 /**
- * @brief The TaskWorker class should execute a task, but what does it really do?
+ * @brief The CvWorker class should execute a task as specified by a scheduler
+ * and wait on a condition variable (Bedroom) when idle.
  */
-class TaskWorker: public Processing::Worker
+class CvWorker: public Processing::Worker
 {
 public:
-    TaskWorker(
+    CvWorker(
             Signal::ComputingEngine::ptr computing_eninge,
             Signal::Processing::Bedroom::ptr bedroom,
             Signal::Processing::ISchedule::ptr schedule);
-    ~TaskWorker();
+    ~CvWorker();
 
     void abort() override;
     // wait returns !isRunning
@@ -46,7 +47,7 @@ public:
     static void test ();
 };
 
-} // namespace TaskWorker
+} // namespace CvWorker
 } // namespace Signal
 
 #endif // TASKWORKER_H
