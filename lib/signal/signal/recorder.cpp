@@ -1,8 +1,8 @@
 #include "recorder.h"
 #include "log.h"
 
-#define LOG_DROPPED_FRAMES
-//#define LOG_DROPPED_FRAMES if(0)
+//#define LOG_DROPPED_FRAMES
+#define LOG_DROPPED_FRAMES if(0)
 
 namespace Signal {
 
