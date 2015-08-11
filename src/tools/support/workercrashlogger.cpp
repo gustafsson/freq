@@ -147,7 +147,7 @@ void WorkerCrashLogger::
         {
             auto s = mi->write ();
             s->mark_as_crashed_and_get_invalidator ();
-            od = s->get_crashed ();
+            od = Step::get_crashed (*mi);
         }
 
         if (od)

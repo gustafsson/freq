@@ -43,7 +43,7 @@ public:
 
     Step(Signal::OperationDesc::ptr operation_desc);
 
-    Signal::OperationDesc::ptr get_crashed() const;
+    static Signal::OperationDesc::ptr get_crashed(const_ptr step);
     Signal::Processing::IInvalidator::ptr mark_as_crashed_and_get_invalidator();
     void undie();
 
@@ -109,13 +109,13 @@ private:
         TaskInfo(int id, Signal::Interval i) : id(id), expected_output(i), valid_output(i) {}
     };
 
-    typedef std::list<TaskInfo> RunningTaskMap;
+    typedef std::list<TaskInfo> RunningTaskList;
 
     Signal::OperationDesc::ptr  died_;
     shared_state<Signal::Cache> cache_;
     int                         task_counter_ = 0;
 
-    RunningTaskMap              running_tasks;
+    RunningTaskList             running_tasks;
 
     Signal::OperationDesc::ptr  operation_desc_;
 

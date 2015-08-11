@@ -75,7 +75,7 @@ void TargetNeeds::
         step->deprecateCache(invalidate);
 
     if (INotifier::ptr notifier = notifier_.lock ())
-        if (invalidate & state_.read ()->needed_samples)
+        if (invalidate & needed())
             notifier->wakeup();
 }
 
@@ -116,7 +116,14 @@ Signal::Intervals TargetNeeds::
 Signal::Intervals TargetNeeds::
         needed() const
 {
-    return state_->needed_samples;
+    Step::const_ptr step = step_.lock ();
+    if (!step)
+        return Signal::Intervals();
+
+    if (Step::get_crashed (step))
+        return Signal::Intervals();
+
+    return state_.write ()->needed_samples;
 }
 
 
