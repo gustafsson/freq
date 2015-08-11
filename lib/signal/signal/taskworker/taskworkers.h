@@ -2,7 +2,7 @@
 #define TASKWORKERS_H
 
 #include <memory>
-#include "signal/processing/workers.h"
+#include "signal/processing/worker.h"
 #include "signal/processing/bedroom.h"
 #include "signal/processing/ischedule.h"
 
@@ -16,23 +16,16 @@ namespace TaskWorker {
  * (iOS will kill an app that averages 150+ wakeups per second over 10
  * minutes).
  */
-class TaskWorkers: public Signal::Processing::Workers
+class TaskWorkers: public Processing::IWorkerFactory
 {
 public:
     TaskWorkers(Processing::ISchedule::ptr schedule, Processing::Bedroom::ptr bedroom);
 
-    void addComputingEngine(ComputingEngine::ptr ce) override;
-    void removeComputingEngine(ComputingEngine::ptr ce) override;
-    const Engines &workers() const override;
-    size_t n_workers() const override;
-    const EngineWorkerMap& workers_map() const override;
-    DeadEngines clean_dead_workers() override;
-    void rethrow_any_worker_exception() override;
-    bool remove_all_engines(int timeout) const override;
-    bool wait(int timeout) const override;
+    Processing::Worker::ptr make_worker(Signal::ComputingEngine::ptr ce) override;
 
 private:
-    void updateWorkers();
+    Processing::ISchedule::ptr schedule_;
+    Processing::Bedroom::ptr bedroom_;
 
 public:
     static void test();

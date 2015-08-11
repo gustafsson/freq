@@ -9,13 +9,13 @@
 
 #include <vector>
 #include <map>
+#include <QObject>
 
 namespace Signal {
 namespace Processing {
 class BedroomSignalAdapter;
 }
 namespace PollWorker {
-
 
 /**
  * @brief The Schedule class should start and stop computing engines as they
@@ -29,39 +29,14 @@ namespace PollWorker {
  * It should wake up sleeping workers when any work is done to see if they can
  * help out on what's left.
  */
-class PollWorkers: public QObject, public Signal::Processing::Workers
+class PollWorkers: public QObject, public Signal::Processing::IWorkerFactory
 {
     Q_OBJECT
 public:
     PollWorkers(Signal::Processing::ISchedule::ptr schedule, Signal::Processing::Bedroom::ptr bedroom);
     ~PollWorkers();
 
-    // Throw exception if already added.
-    // This will spawn a new worker thread for this computing engine.
-    void addComputingEngine(Signal::ComputingEngine::ptr ce) override;
-
-    /**
-     * Prevents the worker for this ComputingEngine to get new work from the
-     * scheduler but doesn't kill the thread. Workers keeps a reference to the
-     * worker until it has finished.
-     *
-     * Does nothing if this engine was never added or already removed. An engine
-     * will be removed if its worker has finished (or crashed with an exception)
-     * and been cleaned by rethrow_any_worker_exception() or clean_dead_workers().
-     */
-    void removeComputingEngine(Signal::ComputingEngine::ptr ce) override;
-
-    const Engines& workers() const override;
-    size_t n_workers() const override;
-    const EngineWorkerMap& workers_map() const override;
-
-    /**
-     * Check if any workers has died. This also cleans any dead workers.
-     * It is only valid to call this method from the same thread as they were
-     * added.
-     */
-    DeadEngines clean_dead_workers() override;
-    void rethrow_any_worker_exception() override;
+    Signal::Processing::Worker::ptr make_worker(Signal::ComputingEngine::ptr ce) override;
 
     /**
      * @brief terminate_workers terminates all worker threads and doesn't
@@ -75,25 +50,32 @@ public:
      *
      * Returns true if all threads were terminated within 'timeout'.
      */
-    bool terminate_workers(int timeout=1000);
-
-    /**
-     * @brief remove_all_engines will ask all workers to not start any new
-     * task from now on.
-     *
-     * Returns true if all threads finished within 'timeout'.
-     */
-    bool remove_all_engines(int timeout=0) const override;
-
-    bool wait(int timeout=1000) const override;
+    static bool terminate_workers(Processing::Workers& workers, int timeout=1000);
 
 signals:
     void worker_quit(std::exception_ptr, Signal::ComputingEngine::ptr);
 
 private:
-    Signal::Processing::BedroomSignalAdapter* notifier_;
+    class WorkerWrapper : public Signal::Processing::Worker {
+    public:
+        WorkerWrapper(PollWorker* p);
+        ~WorkerWrapper();
 
-    void updateWorkers();
+        void abort() override {p->abort();}
+        bool wait() override {return p->wait();}
+        bool wait(unsigned long time_ms) override {return p->wait(time_ms);}
+        bool isRunning()  override {return p->isRunning();}
+        std::exception_ptr caught_exception() override {return p->caught_exception();}
+
+        void terminate() {p->terminate ();}
+
+    private:
+        PollWorker* p; // Managed by Qt
+    };
+
+    Processing::ISchedule::ptr schedule_;
+    Processing::Bedroom::ptr bedroom_;
+    Signal::Processing::BedroomSignalAdapter* notifier_;
 
 public:
     static void test();

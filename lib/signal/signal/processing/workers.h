@@ -13,7 +13,7 @@ namespace Signal {
 namespace Processing {
 
 /**
- * @brief The Schedule class should start and stop computing engines as they
+ * @brief The Workers class should start and stop computing engines as they
  * are added and removed.
  *
  * A started engine is a thread that uses class Worker which queries a GetTask
@@ -24,7 +24,7 @@ namespace Processing {
  * It should wake up sleeping workers when any work is done to see if they can
  * help out on what's left.
  */
-class Workers
+class Workers final
 {
 public:
     typedef shared_state<Workers> ptr;
@@ -36,12 +36,12 @@ public:
     typedef boost::error_info<struct crashed_engine_tag, Signal::ComputingEngine::ptr> crashed_engine;
     typedef boost::error_info<struct crashed_engine_typename_tag, std::string> crashed_engine_typename;
 
-    Workers(Processing::ISchedule::ptr schedule, Processing::Bedroom::ptr bedroom);
-    virtual ~Workers() {}
+    Workers(IWorkerFactory::ptr&& workerfactory);
+    ~Workers();
 
     // Throw exception if already added.
     // This will spawn a new worker thread for this computing engine.
-    virtual void addComputingEngine(Signal::ComputingEngine::ptr ce) = 0;
+    void addComputingEngine(Signal::ComputingEngine::ptr ce);
 
     /**
      * Prevents the worker for this ComputingEngine to get new work from the
@@ -52,19 +52,19 @@ public:
      * will be removed if its worker has finished (or crashed with an exception)
      * and been cleaned by rethrow_any_worker_exception() or clean_dead_workers().
      */
-    virtual void removeComputingEngine(Signal::ComputingEngine::ptr ce) = 0;
+    void removeComputingEngine(Signal::ComputingEngine::ptr ce);
 
-    virtual const Engines& workers() const = 0;
-    virtual size_t n_workers() const = 0;
-    virtual const EngineWorkerMap& workers_map() const = 0;
+    const Engines& workers() const;
+    size_t n_workers() const;
+    const EngineWorkerMap& workers_map() const;
 
     /**
      * Check if any workers has died. This also cleans any dead workers.
      * It is only valid to call this method from the same thread as they were
      * added.
      */
-    virtual DeadEngines clean_dead_workers() = 0;
-    virtual void rethrow_any_worker_exception() = 0;
+    DeadEngines clean_dead_workers();
+    void rethrow_any_worker_exception();
 
     /**
      * @brief remove_all_engines will ask all workers to not start any new
@@ -72,18 +72,24 @@ public:
      *
      * Returns true if all threads finished within 'timeout'.
      */
-    virtual bool remove_all_engines(int timeout=0) const = 0;
+    bool remove_all_engines(int timeout=0) const;
 
-    virtual bool wait(int timeout=1000) const = 0;
+    bool wait(int timeout=1000) const;
+
+    IWorkerFactory* workerfactory() const { return workerfactory_.get (); }
 
     static void print(const DeadEngines&);
 
-protected:
+private:
+    IWorkerFactory::ptr workerfactory_;
+
     Engines workers_;
     EngineWorkerMap workers_map_;
 
-    ISchedule::ptr schedule_;
-    Bedroom::ptr bedroom_;
+    void updateWorkers();
+
+public:
+    static void test(std::function<IWorkerFactory::ptr(ISchedule::ptr)> workerfactoryfactory);
 };
 
 } // namespace Processing

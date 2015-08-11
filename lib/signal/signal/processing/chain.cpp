@@ -33,8 +33,8 @@ Chain::ptr Chain::
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
-    Workers::ptr workers(new TaskWorker::TaskWorkers(targetSchedule, bedroom));
-//    Workers::ptr workers(new PollWorker::PollWorkers(targetSchedule, bedroom));
+    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new TaskWorker::TaskWorkers(targetSchedule, bedroom))));
+//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new PollWorker::PollWorkers(targetSchedule, bedroom))));
 
     // Add the 'single instance engine' thread (the 'null worker')
     workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());

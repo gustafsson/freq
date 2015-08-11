@@ -20,6 +20,16 @@ public:
     virtual std::exception_ptr caught_exception() = 0;
 };
 
+
+class IWorkerFactory {
+public:
+    typedef std::unique_ptr<IWorkerFactory> ptr;
+
+    virtual ~IWorkerFactory() {}
+
+    virtual Worker::ptr make_worker(Signal::ComputingEngine::ptr ce) = 0;
+};
+
 }
 }
 

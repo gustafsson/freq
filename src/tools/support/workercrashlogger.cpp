@@ -27,7 +27,7 @@ WorkerCrashLogger::
       workers_(workers),
       consume_exceptions_(consume_exceptions)
 {
-    EXCEPTION_ASSERTX(dynamic_cast<Signal::PollWorker::PollWorkers*>(workers.raw ()), "WorkerCrashLogger only supports PollWorkers");
+    EXCEPTION_ASSERTX(dynamic_cast<Signal::PollWorker::PollWorkers*>(workers->workerfactory ()), "WorkerCrashLogger only supports PollWorkers");
 
     moveToThread (&thread_);
     // Remove responsibility for event processing for this when the the thread finishes
@@ -36,7 +36,7 @@ WorkerCrashLogger::
 
     auto ww = workers.write ();
     // Log any future worker crashes
-    connect(dynamic_cast<Signal::PollWorker::PollWorkers*>(ww.get()),
+    connect(dynamic_cast<Signal::PollWorker::PollWorkers*>(ww->workerfactory ()),
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             SLOT(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)));
 
@@ -52,7 +52,6 @@ WorkerCrashLogger::
 WorkerCrashLogger::
         ~WorkerCrashLogger()
 {
-    TaskInfo ti("~WorkerCrashLogger");
     thread_.quit ();
     thread_.wait ();
 }
@@ -211,7 +210,7 @@ void addAndWaitForStop(Workers::ptr workers)
 {
     QEventLoop e;
     // Log any future worker crashes
-    QObject::connect(dynamic_cast<Signal::PollWorker::PollWorkers*>(workers.write ().get()),
+    QObject::connect(dynamic_cast<Signal::PollWorker::PollWorkers*>(workers->workerfactory()),
             SIGNAL(worker_quit(std::exception_ptr,Signal::ComputingEngine::ptr)),
             &e, SLOT(quit()));
 
@@ -235,7 +234,7 @@ void WorkerCrashLogger::
         //for (int consume=0; consume<2; consume++)
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new PollWorkers(schedule, bedroom));
+        Workers::ptr workers(new Workers(IWorkerFactory::ptr(new PollWorkers(schedule, bedroom))));
 
         {
             WorkerCrashLogger wcl(workers);
@@ -269,7 +268,7 @@ void WorkerCrashLogger::
 
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new PollWorkers(schedule, bedroom));
+        Workers::ptr workers(new Workers(IWorkerFactory::ptr(new PollWorkers(schedule, bedroom))));
 
         {
             TRACE_PERF("Catch info from a crashed worker as it happens");
@@ -295,7 +294,7 @@ void WorkerCrashLogger::
 
         ISchedule::ptr schedule(new DummyScheduler);
         Bedroom::ptr bedroom(new Bedroom);
-        Workers::ptr workers(new PollWorkers(schedule, bedroom));
+        Workers::ptr workers(new Workers(IWorkerFactory::ptr(new PollWorkers(schedule, bedroom))));
 
         // Catch info from a previously crashed worker
         addAndWaitForStop(workers);
