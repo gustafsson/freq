@@ -7,7 +7,7 @@
 class LogTickFrequency final
 {
 public:
-    LogTickFrequency(std::string title, double loginterval=10);
+    LogTickFrequency(std::string title="tickfrequency", double loginterval=10);
     ~LogTickFrequency();
 
     // return true if loginterval has passed

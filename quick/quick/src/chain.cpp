@@ -77,7 +77,10 @@ void Chain::
 void Chain::handleWindowChanged(QQuickWindow* win)
 {
     if (win)
+    {
         connect(win, SIGNAL(beforeRendering()), this, SLOT(clearOpenGlBackground()), Qt::DirectConnection);
+        connect(win, SIGNAL(afterRendering()), this, SLOT(afterRendering()), Qt::DirectConnection);
+    }
 }
 
 
@@ -120,6 +123,8 @@ void setStates()
 
 void Chain::clearOpenGlBackground()
 {
+    render_timer.restart ();
+
 #ifndef LEGACY_OPENGL
     if (!vertexArray_)
         GlException_SAFE_CALL( glGenVertexArrays(1, &vertexArray_) );
@@ -137,6 +142,17 @@ void Chain::clearOpenGlBackground()
     QColor c = this->window ()->color ();
     GlException_SAFE_CALL( glClearColor(c.redF (), c.greenF (), c.blueF (), c.alphaF ()) );
     GlException_SAFE_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );
+}
+
+
+void Chain::afterRendering()
+{
+    render_time += render_timer.elapsed ();
+    if (ltf.tick(false))
+    {
+        Log("renderchain: %g frames/s, activity %.0f%%") % ltf.hz () % (100*render_time/start_timer.elapsedAndRestart ());
+        render_time = 0;
+    }
 }
 
 

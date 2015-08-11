@@ -42,8 +42,8 @@ CvWorker::CvWorker(
         }
 #endif
 
-        LogTickFrequency ltf_wakeups("cvworker wakeups");
-        LogTickFrequency ltf_tasks("cvworker tasks");
+        LogTickFrequency ltf_wakeups;
+        LogTickFrequency ltf_tasks;
 
         try {
             Bedroom::Bed b = bedroom->getBed ();
@@ -65,7 +65,8 @@ CvWorker::CvWorker(
                     active_time_since_start_ += work_timer.elapsed ();
                     bedroom->wakeup (); // make idle workers wakeup to check if they can do something, won't affect busy workers
 
-                    ltf_tasks.tick(false);
+                    if (ltf_tasks.tick(false))
+                        Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
                 }
                 else
                 {
@@ -146,7 +147,9 @@ bool CvWorker::isRunning()
 
 double CvWorker::activity()
 {
-    return active_time_since_start_ / timer_start_.elapsed ();
+    double a = active_time_since_start_ / timer_start_.elapsedAndRestart ();
+    active_time_since_start_ = 0;
+    return a;
 }
 
 

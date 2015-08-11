@@ -5,6 +5,8 @@
 #include <QOpenGLContext>
 #include "signal/processing/chain.h"
 #include "heightmap/update/updatequeue.h"
+#include "timer.h"
+#include "logtickfrequency.h"
 
 class Chain : public QQuickItem
 {
@@ -28,6 +30,7 @@ private slots:
     void handleWindowChanged(QQuickWindow*);
     void clearOpenGlBackground();
     void setupUpdateConsumer(QOpenGLContext* context);
+    void afterRendering();
 
 private:
     void openRecording();
@@ -38,6 +41,11 @@ private:
     Heightmap::Update::UpdateQueue::ptr update_queue_;
     QPointer<QObject> update_consumer_=0;
     unsigned vertexArray_ = 0;
+
+    LogTickFrequency ltf;
+    Timer start_timer;
+    Timer render_timer;
+    double render_time = 0.;
 };
 
 #endif // CHAIN_H

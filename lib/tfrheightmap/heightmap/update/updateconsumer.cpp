@@ -138,11 +138,18 @@ void UpdateConsumer::
 {
     TfrBlockUpdater block_updater;
     WaveformBlockUpdater waveform_updater;
-    LogTickFrequency ltf_work("updateconsumer");
+    LogTickFrequency ltf_work;
+    LogTickFrequency ltf_tasks;
+
+    Timer start_timer;
+    double work_time = 0.;
 
     while (!isInterruptionRequested ())
       {
-        ltf_work.tick();
+        if (ltf_work.tick(false)) {
+            Log("updateconsumer: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_work.hz () % ltf_tasks.hz () % (100*work_time / start_timer.elapsedAndRestart ());
+            work_time = 0;
+        }
 
         QCoreApplication::processEvents();
 
@@ -153,6 +160,7 @@ void UpdateConsumer::
                 tt.reset (new TaskTimer("updateconsumer: Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
+            Timer work_timer;
 
             auto jobqueue = update_queue->clear ();
 
@@ -162,6 +170,9 @@ void UpdateConsumer::
             size_t num_jobs = jobqueue.size ();
             Timer t;
 
+            for (size_t i=0; i<num_jobs; i++)
+                ltf_tasks.tick (false);
+
             while (!jobqueue.empty ())
             {
                 size_t s = jobqueue.size ();
@@ -169,6 +180,8 @@ void UpdateConsumer::
                 waveform_updater.processJobs (jobqueue);
                 EXCEPTION_ASSERT_LESS(jobqueue.size (), s);
             }
+
+            work_time += work_timer.elapsed();
 
             if (!isInterruptionRequested ())
               {
