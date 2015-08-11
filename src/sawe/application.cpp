@@ -93,6 +93,7 @@ Application::
 {
     QGLFormat glformat = QGLFormat::defaultFormat ();
 #ifndef LEGACY_OPENGL
+    EXCEPTION_ASSERTX(false, "Sonic AWE uses QPainters which doesn't support OpenGL 4. See legacy-opengl.prf");
     glformat.setProfile( QGLFormat::CoreProfile );
     glformat.setVersion( 3, 2 );
 #endif

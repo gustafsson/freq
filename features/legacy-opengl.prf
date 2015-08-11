@@ -1,4 +1,4 @@
-# QPainter does not support OpenGL 4 which is central to QWidget/QGLWidget (tested in Qt 5.5)
+# OpenGL 4 is not supported by QPainter  which is central to QWidget/QGLWidget (tested in Qt 5.5)
 # So define LEGACY_OPENGL when building libraries for Sonic AWE (which is using QWidget)
 
 # most backwards compatibility
