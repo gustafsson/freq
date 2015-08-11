@@ -181,7 +181,7 @@ void PollWorker::
   {
     // the only events sent to this thread are wakeup() or termination events,
     // in order to not pile up a never ending queue make sure to process events as they come
-    while (!QThread::currentThread ()->isInterruptionRequested () && !QCoreApplication::hasPendingEvents ())
+    while (!QCoreApplication::hasPendingEvents ())
       {
         Signal::Processing::Task task;
 
@@ -202,6 +202,10 @@ void PollWorker::
             // Wait for a new wakeup call
             break;
           }
+
+        // run loop at least once to simplify testing when aborting a worker right away
+        if (QThread::currentThread ()->isInterruptionRequested ())
+            break;
       }
   }
 

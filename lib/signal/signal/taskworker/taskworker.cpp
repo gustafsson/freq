@@ -41,7 +41,8 @@ TaskWorker::TaskWorker(
         try {
             Bedroom::Bed b = bedroom->getBed ();
 
-            while (!*abort) {
+            // run loop at least once to simplify testing when aborting a worker right away
+            do {
                 Signal::Processing::Task task;
 
                 {
@@ -58,9 +59,11 @@ TaskWorker::TaskWorker(
                 else
                 {
                     // wakeup when the dag changes
-                    b.sleep ();
+                    if (!*abort)
+                        b.sleep ();
                 }
-            }
+            } while (!*abort);
+
             p.set_value ();
         } catch (...) {
             p.set_exception (std::current_exception ());
