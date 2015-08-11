@@ -290,12 +290,11 @@ void Chain::
         if (d.second)
             TaskInfo(boost::format("%s crashed") % (d.first.get() ? vartype(*d.first.get()) : "ComputingEngine(null)"));
 
-    PollWorker::PollWorkers::EngineWorkerMap engines =
-            dynamic_cast<PollWorker::PollWorkers*>(workers.get ())->workers_map();
+    const Workers::EngineWorkerMap& engines = workers->workers_map();
     if (!engines.empty ())
     {
         TaskInfo ti("Couldn't remove all old workers");
-        for (auto e : engines)
+        for (const auto& e : engines)
             TaskInfo(boost::format("%s") % (e.first.get() ? vartype(*e.first.get()) : "ComputingEngine(null)"));
     }
 
@@ -303,7 +302,7 @@ void Chain::
         workers->addComputingEngine(Signal::ComputingEngine::ptr());
 
     int cpu_workers = 0;
-    for (auto e : engines)
+    for (const auto& e : engines)
         if (dynamic_cast<Signal::ComputingEngine*>(e.first.get()))
             cpu_workers++;
 

@@ -3,6 +3,7 @@
 
 #include "signal/processing/ischedule.h"
 #include "signal/computingengine.h"
+#include "signal/processing/worker.h"
 
 #include "shared_state.h"
 #include "timer.h"
@@ -28,21 +29,21 @@ namespace PollWorker {
  *
  * It should announce when tasks are finished.
  */
-class PollWorker: public QObject
+class PollWorker: public QObject, public Processing::Worker
 {
     Q_OBJECT
 public:
-    typedef QPointer<PollWorker> ptr;
-
     class TerminatedException: virtual public boost::exception, virtual public std::exception {};
 
     PollWorker (Signal::ComputingEngine::ptr computing_eninge, Signal::Processing::ISchedule::ptr schedule, bool wakeuprightaway=true);
     ~PollWorker ();
 
-    void abort();
+    void abort() override;
     void terminate();
-    bool wait(unsigned long time_ms = ULONG_MAX);
-    bool isRunning() const;
+    // wait returns !isRunning
+    bool wait() override;
+    bool wait(unsigned long time_ms) override;
+    bool isRunning() override;
 
     // 'if (caught_exception())' will be true if an exception was caught.
     //
@@ -55,7 +56,7 @@ public:
     //         ... get_error_info<...>(x);
     //         boost::diagnostic_information(x);
     //     }
-    std::exception_ptr caught_exception() const;
+    std::exception_ptr caught_exception() override;
 
 signals:
     void oneTaskDone();

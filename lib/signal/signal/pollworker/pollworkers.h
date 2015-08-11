@@ -33,8 +33,6 @@ class PollWorkers: public QObject, public Signal::Processing::Workers
 {
     Q_OBJECT
 public:
-    typedef std::map<Signal::ComputingEngine::ptr, PollWorker::ptr> EngineWorkerMap;
-
     PollWorkers(Signal::Processing::ISchedule::ptr schedule, Signal::Processing::Bedroom::ptr bedroom);
     ~PollWorkers();
 
@@ -55,7 +53,7 @@ public:
 
     const Engines& workers() const override;
     size_t n_workers() const override;
-    const EngineWorkerMap& workers_map() const;
+    const EngineWorkerMap& workers_map() const override;
 
     /**
      * Check if any workers has died. This also cleans any dead workers.
@@ -77,7 +75,7 @@ public:
      *
      * Returns true if all threads were terminated within 'timeout'.
      */
-    bool terminate_workers(int timeout=1000) override;
+    bool terminate_workers(int timeout=1000);
 
     /**
      * @brief remove_all_engines will ask all workers to not start any new
@@ -87,18 +85,13 @@ public:
      */
     bool remove_all_engines(int timeout=0) const override;
 
-    bool wait(int timeout=1000) override;
+    bool wait(int timeout=1000) const override;
 
 signals:
     void worker_quit(std::exception_ptr, Signal::ComputingEngine::ptr);
 
 private:
-    Signal::Processing::ISchedule::ptr schedule_;
     Signal::Processing::BedroomSignalAdapter* notifier_;
-
-    Engines workers_;
-
-    EngineWorkerMap workers_map_;
 
     void updateWorkers();
 

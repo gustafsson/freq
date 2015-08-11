@@ -94,9 +94,16 @@ void PollWorker::
 
 
 bool PollWorker::
-        isRunning() const
+        isRunning()
 {
     return thread_->isRunning ();
+}
+
+
+bool PollWorker::
+        wait()
+{
+    return wait(ULONG_MAX);
 }
 
 
@@ -108,7 +115,7 @@ bool PollWorker::
 
 
 std::exception_ptr PollWorker::
-        caught_exception() const
+        caught_exception()
 {
     if (isRunning ())
         return std::exception_ptr();

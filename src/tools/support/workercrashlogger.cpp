@@ -107,11 +107,12 @@ void WorkerCrashLogger::
 {
     DEBUG TaskInfo ti("check_all_previously_crashed_without_consuming");
 
-    PollWorkers::EngineWorkerMap workers_map = dynamic_cast<const PollWorkers*>(workers_.read ().get ())->workers_map();
+    auto workers = workers_.read ();
+    const Workers::EngineWorkerMap& workers_map = workers->workers_map();
 
-    for(PollWorkers::EngineWorkerMap::const_iterator i=workers_map.begin (); i != workers_map.end(); ++i)
+    for(auto i=workers_map.begin (); i != workers_map.end(); ++i)
       {
-        PollWorker::ptr worker = i->second;
+        const Worker::ptr& worker = i->second;
 
         if (worker && !worker->isRunning ())
           {
