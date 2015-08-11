@@ -14,6 +14,12 @@
 //#define LOG_DATA
 #define LOG_DATA if(0)
 
+// Without QTMICROPHONETHREAD the microphone callback is processed in the main
+// thread which may not poll the event queue fast enough. Use a separate thread
+// instead so avoid dropping frames if/when the main thread blocks for a
+// fraction of a second for whatever reason.
+#define QTMICROPHONETHREAD
+
 GotData::GotData(
         shared_state<Signal::Recorder::Data> data,
         Signal::Processing::IInvalidator::ptr& invalidator,
@@ -183,6 +189,21 @@ template<class T> T logclosest(const QList<T>& V, T v) {
 QtMicrophone::
         QtMicrophone()
 {
+#ifdef QTMICROPHONETHREAD
+    connect (&audiothread_, SIGNAL(finished()), SLOT(finished()));
+    moveToThread (&audiothread_);
+    audiothread_.start ();
+    // Dispatch
+    QMetaObject::invokeMethod (this, "init", Qt::BlockingQueuedConnection);
+#else
+    init();
+#endif
+}
+
+
+void QtMicrophone::
+        init()
+{
     qRegisterMetaType<QAudio::State>("QAudio::State");
     QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
     QAudioFormat format = info.preferredFormat ();
@@ -194,7 +215,7 @@ QtMicrophone::
     if (!info.isFormatSupported(format))
         format = info.nearestFormat(format);
 
-    audio_.reset (new QAudioInput(info, format));
+    audio_ = new QAudioInput(info, format, this);
 #ifdef TARGET_OS_IPHONE
     audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
     //    audio_->setBufferSize (1<<9); // 512, buffer_size/sample_rate = latency -> 12 ms
@@ -215,44 +236,56 @@ QtMicrophone::
         Log("QtMicrophone error: ") % (int)e;
 
     _data.reset (new Recorder::Data(format.sampleRate (), format.channelCount ()));
-    device_.reset (new GotData(_data, _invalidator, format));
+    device_ = new GotData(_data, _invalidator, format, this);
 }
 
 
 QtMicrophone::
         ~QtMicrophone()
 {
-    // Drop any recorded data not already processed (don't stopRecording()
-    // as it would invoke GotData::writeData which uses invalidator which
-    // in turn uses the dag. But the Dag is locked by the caller of this
-    // destructor.
-
-    // Waiting for recorder to finish
-    audio_->suspend();
-    audio_->reset();
-    audio_->stop();
+    // Waiting for audiothread_ to finish
+#ifdef QTMICROPHONETHREAD
+    audiothread_.quit ();
+    audiothread_.wait ();
+#else
+    finished();
+#endif
 }
 
 
 void QtMicrophone::
         startRecording()
 {
-    audio_->start (device_.data ());
+    if (QThread::currentThread () != this->thread ())
+      {
+        // Dispatch
+        QMetaObject::invokeMethod (this, "startRecording");
+        return;
+      }
+
+    _offset = length();
+    _start_recording.restart ();
+
+    audio_->start (device_);
 
     if (audio_->error () != QAudio::NoError)
     {
         Log("QtMicrophone::startRecording failed: %d") % audio_->error ();
         return;
     }
-
-    _offset = length();
-    _start_recording.restart ();
 }
 
 
 void QtMicrophone::
         stopRecording()
 {
+    if (QThread::currentThread () != this->thread ())
+      {
+        // Dispatch
+        QMetaObject::invokeMethod (this, "stopRecording");
+        return;
+      }
+
     audio_->stop ();
 }
 
@@ -282,4 +315,25 @@ std::string QtMicrophone::
         name()
 {
     return "Microphone";
+}
+
+
+void QtMicrophone::
+        finished()
+{
+    // Drop any recorded data not already processed (don't stopRecording()
+    // as it would invoke GotData::writeData which uses invalidator which
+    // in turn uses the dag. But the Dag is locked by the caller of this
+    // destructor.
+    if (audio_)
+    {
+        audio_->suspend();
+        audio_->reset();
+        audio_->stop();
+    }
+
+#ifdef QTMICROPHONETHREAD
+    // important. otherwise 'audiothread_' will try to delete 'this', but 'this' owns 'audiothread_' -> crash.
+    moveToThread (0);
+#endif
 }

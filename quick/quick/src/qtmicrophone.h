@@ -5,6 +5,7 @@
 #include <QScopedPointer>
 #include <QObject>
 #include <QAudioInput>
+#include <QThread>
 
 class QAudioInput;
 class QIODevice;
@@ -33,21 +34,30 @@ private:
 };
 
 
-class QtMicrophone: public Signal::Recorder
+class QtMicrophone: public QObject, public Signal::Recorder
 {
+    Q_OBJECT
 public:
     QtMicrophone();
     ~QtMicrophone();
 
+public slots:
     void startRecording() override;
     void stopRecording() override;
+
+public:
     bool isStopped() const override;
     bool canRecord() override;
     std::string name() override;
 
+private slots:
+    void init();
+    void finished();
+
 private:
-    QScopedPointer<QAudioInput> audio_;
-    QScopedPointer<QIODevice> device_;
+    QThread audiothread_;
+    QAudioInput* audio_;
+    QIODevice* device_;
 
     void readSamples(unsigned n);
 };
