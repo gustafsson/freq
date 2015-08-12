@@ -34,30 +34,48 @@ private:
 };
 
 
-class QtMicrophone: public QObject, public Signal::Recorder
+class QtAudioObject: public QObject
 {
     Q_OBJECT
+public:
+    QtAudioObject(QAudioDeviceInfo info, QAudioFormat format, QIODevice* device);
+    ~QtAudioObject();
+
+    bool isStopped();
+    bool canRecord();
+
+public slots:
+    void init();
+    void finished();
+    void startRecording();
+    void stopRecording();
+
+private:
+    QAudioDeviceInfo info_;
+    QAudioFormat format_;
+    QIODevice* device_ = 0;
+    QAudioInput* audio_ = 0;
+};
+
+
+class QtMicrophone: public Signal::Recorder
+{
 public:
     QtMicrophone();
     ~QtMicrophone();
 
-public slots:
+public:
     void startRecording() override;
     void stopRecording() override;
-
-public:
     bool isStopped() const override;
     bool canRecord() override;
     std::string name() override;
 
-private slots:
-    void init();
-    void finished();
-
 private:
-    QThread audiothread_;
-    QAudioInput* audio_;
-    QIODevice* device_;
+    void init();
+
+    QThread* audiothread_;
+    QtAudioObject* audioobject_;
 
     void readSamples(unsigned n);
 };
