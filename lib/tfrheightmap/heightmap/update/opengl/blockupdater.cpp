@@ -174,11 +174,13 @@ void BlockUpdater::
     {
         auto chunk = sp.first;
 #endif
-        auto sz = chunk->transform_data->size ();
-        int w = std::min(gl_max_texture_size(), (int)spo2g(sz.width));
-        int h = std::min(gl_max_texture_size(), (int)spo2g(sz.height));
-        int tw = w*int_div_ceil (sz.height-1,h);
-        int th = h*int_div_ceil (sz.width-1,w);
+        bool transpose = chunk->order == Tfr::Chunk::Order_column_major;
+        int data_width  = transpose ? chunk->nScales ()  : chunk->nSamples ();
+        int data_height = transpose ? chunk->nSamples () : chunk->nScales ();
+        int w = std::min(gl_max_texture_size(), (int)spo2g(data_width-1));
+        int h = std::min(gl_max_texture_size(), (int)spo2g(data_height-1));
+        int tw = w*int_div_ceil (data_height-1,h);
+        int th = h*int_div_ceil (data_width-1,w);
         EXCEPTION_ASSERT_LESS_OR_EQUAL(tw, gl_max_texture_size());
         EXCEPTION_ASSERT_LESS_OR_EQUAL(th, gl_max_texture_size());
 
