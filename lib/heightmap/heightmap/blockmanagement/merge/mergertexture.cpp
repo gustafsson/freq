@@ -409,10 +409,7 @@ void MergerTexture::
     glUniformMatrix4fv (uniModelView, 1, false, GLmatrixf(modelview).v ());
 
     glBindTexture( GL_TEXTURE_2D, texture);
-    // disable mipmaps while resampling contents if downsampling, but not when upsampling
-    if (texture) glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
-    if (texture) glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     if (texture) glBindTexture(GL_TEXTURE_2D, 0);
 }
 
