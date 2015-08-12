@@ -34,7 +34,7 @@ public:
         double prio;
     };
 
-    TargetNeeds(shared_state<Step>::weak_ptr step_, INotifier::weak_ptr notifier);
+    TargetNeeds(shared_state<Step>::weak_ptr step, INotifier::weak_ptr notifier);
     ~TargetNeeds();
 
     /**
@@ -82,7 +82,7 @@ public:
     State state() const;
 
     /**
-     * @brief sleep sleeps the caller until all needed_samples have been provided.
+     * @brief sleep sleeps the caller until all needed_samples have been provided (or until the step has crashed).
      * @param sleep_ms number of milliseconds to wait, or -1 to wait indefinitely.
      * @return true if all needed_samples were provided before sleep_ms, false otherwise.
      */

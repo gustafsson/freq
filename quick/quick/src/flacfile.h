@@ -19,7 +19,8 @@ public:
     Signal::Interval requiredInterval( const Signal::Interval& I, Signal::Interval* expectedOutput ) const override;
     Signal::Interval affectedInterval( const Signal::Interval& I ) const override;
     Signal::OperationDesc::ptr copy() const override;
-    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine=0) const override;
+    // Will only read in DiscAccessThread
+    Signal::Operation::ptr createOperation(Signal::ComputingEngine* engine) const override;
     Extent extent() const override;
     QString toString() const override;
     bool operator==(const OperationDesc& d) const override;

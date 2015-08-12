@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "log.h"
 #include "gl.h"
+#include "logtickfrequency.h"
 
 #include <QGLWidget>
 #include <QGLContext>
@@ -66,8 +67,7 @@ UpdateConsumer::
         ~UpdateConsumer()
 {
     requestInterruption ();
-    update_queue->abort_on_empty ();
-    update_queue->clear ();
+    update_queue->close (); // make the thread detect the requestInterruption ()
     QThread::wait ();
 }
 
@@ -138,9 +138,26 @@ void UpdateConsumer::
 {
     TfrBlockUpdater block_updater;
     WaveformBlockUpdater waveform_updater;
+    LogTickFrequency ltf_work;
+    LogTickFrequency ltf_tasks;
+
+    Timer start_timer;
+    Timer last_wakeup;
+    double work_time = 0.;
 
     while (!isInterruptionRequested ())
       {
+        if (ltf_work.tick(false)) {
+            Log("updateconsumer: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_work.hz () % ltf_tasks.hz () % (100*work_time / start_timer.elapsedAndRestart ());
+            work_time = 0;
+        }
+
+        // when there is nothing to work on, wait until the next frame to check again
+        static const double cap_wakeup_interval = 1./60;
+        double force_sleep_interval = cap_wakeup_interval - last_wakeup.elapsed ();
+        if (force_sleep_interval > 0)
+            std::this_thread::sleep_for (std::chrono::microseconds((long)(force_sleep_interval*1e6)));
+
         QCoreApplication::processEvents();
 
         try
@@ -150,6 +167,7 @@ void UpdateConsumer::
                 tt.reset (new TaskTimer("updateconsumer: Waiting for updates"));
             UpdateQueue::Job j = update_queue->pop ();
             tt.reset ();
+            last_wakeup.restart ();
 
             auto jobqueue = update_queue->clear ();
 
@@ -159,6 +177,9 @@ void UpdateConsumer::
             size_t num_jobs = jobqueue.size ();
             Timer t;
 
+            for (size_t i=0; i<num_jobs; i++)
+                ltf_tasks.tick (false);
+
             while (!jobqueue.empty ())
             {
                 size_t s = jobqueue.size ();
@@ -166,6 +187,8 @@ void UpdateConsumer::
                 waveform_updater.processJobs (jobqueue);
                 EXCEPTION_ASSERT_LESS(jobqueue.size (), s);
             }
+
+            work_time += last_wakeup.elapsed();
 
             if (!isInterruptionRequested ())
               {

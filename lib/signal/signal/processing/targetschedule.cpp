@@ -57,7 +57,6 @@ Task TargetSchedule::
                 state.needed_samples,
                 state.work_center,
                 state.preferred_update_size,
-                Workers::ptr(),
                 engine);
 
         if (!task) {
@@ -138,7 +137,6 @@ public:
             Signal::Intervals needed,
             Signal::IntervalType,
             Signal::IntervalType,
-            Workers::ptr,
             Signal::ComputingEngine::ptr) const
     {
         return Task(Step::ptr(new Step(Signal::OperationDesc::ptr())),

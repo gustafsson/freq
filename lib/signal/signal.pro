@@ -18,14 +18,18 @@ PWD = $$_PRO_FILE_PWD_
 SOURCES += \
     $$PWD/signal/*.cpp \
     $$PWD/signal/processing/*.cpp \
+    $$PWD/signal/qteventworker/*.cpp \
+    $$PWD/signal/cvworker/*.cpp \
     $$PWD/test/*.cpp \
 
 HEADERS += \
     $$PWD/signal/*.h \
     $$PWD/signal/processing/*.h \
+    $$PWD/signal/qteventworker/*.h \
+    $$PWD/signal/cvworker/*.h \
     $$PWD/test/*.h \
 
-INCLUDEPATH += ../backtrace ../gpumisc
+INCLUDEPATH += ../backtrace ../gpumisc ../justmisc
 win32: INCLUDEPATH += ../sonicawe-winlib
 
 macx:exists(/opt/local/include/): INCLUDEPATH += /opt/local/include/ # macports

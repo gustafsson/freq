@@ -44,7 +44,6 @@ SOURCES += \
     gluproject_ios.cpp \
     gluunproject.cpp \
     largememorypool.cpp \
-    log.cpp \
     mappedvbovoid.cpp \
     neat_math.cpp \
     redirectstdout.cpp \
@@ -87,7 +86,6 @@ HEADERS += \
     HasSingleton.h \
     InvokeOnDestruction.hpp \
     largememorypool.h \
-    log.h \
     mappedvbo.h \
     mappedvbovoid.h \
     msc_stdc.h \

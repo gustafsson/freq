@@ -53,20 +53,21 @@ bool Bedroom::Bed::
         BOOST_THROW_EXCEPTION(BedroomClosed() << Backtrace::make ());
     }
 
-    bool r = true;
-
-    // Increment usage count
+    // Increment usage count in scope
     Counter b = data->sleepers;
 
     // Wait in a while-loop to cope with spurious wakeups
-    if (ULONG_MAX == ms_timeout)
-        while (!skip_sleep_)
-            data->work.wait ( data_.mutex() );
-    else {
-        data->work.wait_for(data_.mutex(), std::chrono::milliseconds(ms_timeout), [this](){return (bool)skip_sleep_;});
-        r = (bool)skip_sleep_;
+    auto wakeup_condition = [this](){return (bool)skip_sleep_;};
+    if (ULONG_MAX == ms_timeout) {
+        data->work.wait (data_.mutex(),
+                         wakeup_condition );
+    } else {
+        data->work.wait_for (data_.mutex(),
+                             std::chrono::milliseconds(ms_timeout),
+                             wakeup_condition );
     }
 
+    bool r = wakeup_condition();
     skip_sleep_.reset();
 
     return r;

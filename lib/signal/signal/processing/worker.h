@@ -1,47 +1,25 @@
 #ifndef SIGNAL_PROCESSING_WORKER_H
 #define SIGNAL_PROCESSING_WORKER_H
 
-#include "ischedule.h"
-#include "signal/computingengine.h"
-
-#include "shared_state.h"
-
-#include <QtCore> // QObject, QThread, QPointer
-
-#include <boost/exception/all.hpp>
+#include <memory>
 #include <boost/exception_ptr.hpp>
+#include "signal/computingengine.h"
 
 namespace Signal {
 namespace Processing {
 
-/**
- * @brief The Worker class should run tasks as given by the scheduler.
- *
- * It should wait to be dispatched with a wakeup signal if there are no tasks.
- *
- * It should store information about a crashed task (both segfault and
- * std::exception as well as LockFailed) and stop execution.
- *
- * It should not hang if it causes a deadlock.
- * In the sense that Worker.terminate () still works;
- *
- * It should announce when tasks are finished.
- */
-class Worker: public QObject
+class Worker
 {
-    Q_OBJECT
 public:
-    typedef QPointer<Worker> ptr;
+    typedef std::unique_ptr<Worker> ptr;
 
-    class TerminatedException: virtual public boost::exception, virtual public std::exception {};
+    virtual ~Worker() {}
 
-    Worker (Signal::ComputingEngine::ptr computing_eninge, ISchedule::ptr schedule, bool wakeuprightaway=true);
-    ~Worker ();
-
-    void abort();
-    void terminate();
-    bool wait(unsigned long time_ms = ULONG_MAX);
-    bool isRunning() const;
+    virtual void abort() = 0;
+    virtual bool wait() = 0;
+    virtual bool wait(unsigned long time_ms) = 0;
+    virtual bool isRunning() = 0;
+    virtual double activity() = 0;
 
     // 'if (caught_exception())' will be true if an exception was caught.
     //
@@ -54,34 +32,20 @@ public:
     //         ... get_error_info<...>(x);
     //         boost::diagnostic_information(x);
     //     }
-    std::exception_ptr caught_exception() const;
-
-signals:
-    void oneTaskDone();
-    void finished(std::exception_ptr, Signal::ComputingEngine::ptr);
-
-public slots:
-    void wakeup();
-
-private slots:
-    void finished();
-
-private:
-    void loop_while_tasks();
-
-    Signal::ComputingEngine::ptr            computing_engine_;
-    ISchedule::ptr                          schedule_;
-
-    QThread*                                thread_;
-    shared_state<std::exception_ptr>        exception_;
-    std::exception_ptr                      terminated_exception_;
-
-public:
-    static void test ();
+    virtual std::exception_ptr caught_exception() = 0;
 };
 
 
-} // namespace Processing
-} // namespace Signal
+class IWorkerFactory {
+public:
+    typedef std::unique_ptr<IWorkerFactory> ptr;
 
-#endif // SIGNAL_PROCESSING_WORKER_H
+    virtual ~IWorkerFactory() {}
+
+    virtual Worker::ptr make_worker(Signal::ComputingEngine::ptr ce) = 0;
+};
+
+}
+}
+
+#endif

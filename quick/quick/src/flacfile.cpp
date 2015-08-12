@@ -35,10 +35,10 @@ struct FlacFormat {
 };
 
 
-class FileReader : public Operation
+class FlacFileReader : public Operation
 {
 public:
-    FileReader(FLAC__StreamDecoder* decoder, FlacFormat*const fmt)
+    FlacFileReader(FLAC__StreamDecoder* decoder, FlacFormat*const fmt)
         :
           decoder(decoder),
           fmt(fmt)
@@ -225,10 +225,10 @@ OperationDesc::ptr FlacFile::
 Operation::ptr FlacFile::
         createOperation(ComputingEngine* engine) const
 {
-    if (engine)
-        return Operation::ptr();
+    if (dynamic_cast<DiscAccessThread*>(engine))
+        return Operation::ptr(new FlacFileReader((FLAC__StreamDecoder*)decoderp, fmt));
 
-    return Operation::ptr(new FileReader((FLAC__StreamDecoder*)decoderp, fmt));
+    return Operation::ptr();
 }
 
 

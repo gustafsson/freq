@@ -17,11 +17,16 @@ public:
     typedef T value_type;
     typedef std::queue<T> queue;
 
+    blocking_queue(){}
+    blocking_queue(const blocking_queue&)=delete;
+    blocking_queue& operator=(const blocking_queue&)=delete;
+    blocking_queue(blocking_queue&&)=default;
+    blocking_queue& operator=(blocking_queue&&)=default;
+
     class abort_exception : public std::exception {};
 
     ~blocking_queue() {
-        abort_on_empty ();
-        clear ();
+        close ();
     }
 
     queue clear()
@@ -32,9 +37,11 @@ public:
         return p;
     }
 
-    void abort_on_empty() {
+    // this method is used to abort any blocking pop, clear the queue, and disable any future pops
+    void close() {
         std::unique_lock<std::mutex> l(m);
-        abort_on_empty_ = true;
+        abort_ = true;
+        queue().swap (q);
         l.unlock ();
         c.notify_all ();
     }
@@ -47,9 +54,9 @@ public:
     T pop() {
         std::unique_lock<std::mutex> l(m);
 
-        c.wait (l, [this](){return !q.empty() || abort_on_empty_;});
+        c.wait (l, [this](){return !q.empty() || abort_;});
 
-        if (abort_on_empty_)
+        if (abort_)
             throw abort_exception{};
 
         T t( std::move(q.front()) );
@@ -64,10 +71,10 @@ public:
     T pop_for(const std::chrono::duration<Rep, Period>& d) {
         std::unique_lock<std::mutex> l(m);
 
-        if (!c.wait_for (l, d, [this](){return !q.empty() || abort_on_empty_;}))
+        if (!c.wait_for (l, d, [this](){return !q.empty() || abort_;}))
             return T();
 
-        if (abort_on_empty_)
+        if (abort_)
             throw abort_exception{};
 
         T t( std::move(q.front()) );
@@ -104,8 +111,30 @@ public:
         c.notify_one ();
     }
 
+    /**
+     * Waits for the queue to become empty and returns the size of the queue.
+     */
+    template <class Rep, class Period>
+    int wait_for(const std::chrono::duration<Rep, Period>& d) {
+        std::unique_lock<std::mutex> l(m);
+
+        c.wait_for (l, d, [this](){return q.empty();});
+
+        return q.size ();
+    }
+
+    /**
+     * Waits for the queue to become empty and returns the size of the queue.
+     */
+    int wait() {
+        std::unique_lock<std::mutex> l(m);
+
+        c.wait (l, [this](){return q.empty();});
+
+        return q.size ();
+    }
 private:
-    bool abort_on_empty_ = false;
+    bool abort_ = false;
     std::queue<T> q;
     std::mutex m;
     std::condition_variable c;

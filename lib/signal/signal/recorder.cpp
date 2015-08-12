@@ -113,9 +113,9 @@ float Recorder::
     float L = data->samples.spannedInterval().last / data.raw ()->sample_rate;
     float dt = _start_recording.elapsed ();
     float T = dt + _offset;
-    LOG_DROPPED_FRAMES if (T > L) {
+    if (T > L) {
         // dropped samples
-        Log ("recorder: dropped %d frames") % (int)((T-L) * data.raw ()->sample_rate + 0.5f);
+        LOG_DROPPED_FRAMES Log ("recorder: dropped %d frames") % (int)((T-L) * data.raw ()->sample_rate + 0.5f);
         _offset -= T-L;
         T = L;
     }

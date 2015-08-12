@@ -75,7 +75,7 @@ void GraphicsScene::
         rect.setLeft (rect.left ()*dpr);
         rect.setTop (rect.top ()*dpr);
 
-        renderview_->resizeGL( rect, h );
+        renderview_->resizeGL( rect, QSize(w,h) );
 
         // This changes state. Shouldn't be a part of rendering.
         renderview_->model->recompute_extent ();

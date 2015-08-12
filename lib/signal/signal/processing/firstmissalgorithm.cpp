@@ -232,7 +232,6 @@ Task FirstMissAlgorithm::
                 Signal::Intervals needed,
                 Signal::IntervalType center,
                 Signal::IntervalType preferred_size,
-                Workers::ptr /*workers*/,
                 Signal::ComputingEngine::ptr engine) const
 {
     DEBUGINFO std::unique_lock<std::mutex> l(debuginfo_firstmissingalgorithm);
@@ -278,8 +277,8 @@ void FirstMissAlgorithm::
         // Schedule a task
         FirstMissAlgorithm schedule;
         Signal::ComputingEngine::ptr c(new Signal::ComputingCpu);
-        Task t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
-        Task t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, Workers::ptr(), c);
+        Task t1 = schedule.getTask(g, v, Signal::Interval(20,30), 25, Interval::IntervalType_MAX, c);
+        Task t2 = schedule.getTask(g, v, Signal::Interval(10,24) | Signal::Interval(26,30), 25, Interval::IntervalType_MAX, c);
 
 
         // Verify output

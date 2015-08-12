@@ -140,7 +140,7 @@ void neat_math::
         EXCEPTION_ASSERT_EQUALS( align_up(7615252200817428560llu, 3755833054923903685llu), 11267499164771711055llu);
 
         double T_align = t.elapsed();
-        EXCEPTION_ASSERT_LESS (T_align, gdb ? 4500e-6 : 15e-6);
+        EXCEPTION_ASSERT_LESS (T_align, gdb ? 4500e-6 : 17e-6);
 
         long long l = LLONG_MIN;
         EXCEPTION_ASSERT_EQUALS( l, -l );

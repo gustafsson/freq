@@ -59,6 +59,7 @@ OperationDesc::ptr SinkDesc::
 Operation::ptr SinkDesc::
         createOperation(ComputingEngine* engine) const
 {
+    EXCEPTION_ASSERTX(false,"Only supporting the null engine is no longer supported");
     if (0 == engine)
         return sink_;
 

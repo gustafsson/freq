@@ -5,7 +5,8 @@
 #include "reversegraph.h"
 #include "graphinvalidator.h"
 #include "bedroomnotifier.h"
-#include "workers.h"
+#include "signal/qteventworker/qteventworkerfactory.h"
+#include "signal/cvworker/cvworkerfactory.h"
 
 // backtrace
 #include "demangle.h"
@@ -32,16 +33,15 @@ Chain::ptr Chain::
 
     IScheduleAlgorithm::ptr algorithm(new FirstMissAlgorithm());
     ISchedule::ptr targetSchedule(new TargetSchedule(dag, std::move(algorithm), targets));
-    Workers::ptr workers(new Workers(targetSchedule, bedroom));
-
-    // Add the 'single instance engine' thread (the 'null worker')
-    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr());
+    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new CvWorker::CvWorkerFactory(targetSchedule, bedroom))));
+//    Workers::ptr workers(new Workers(IWorkerFactory::ptr(new QtEventWorker::QtEventWorkers(targetSchedule, bedroom))));
 
     // Add worker threads to occupy all kernels
     int reserved_threads = 0;
     reserved_threads++; // OpenGL rendering
-    reserved_threads++; // null worker
-    for (int i=0; i<std::max(2,QThread::idealThreadCount ()-reserved_threads); i++) {
+    reserved_threads++; // 1 ComputingCpu
+    workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
+    for (int i=0; i<QThread::idealThreadCount ()-reserved_threads; i++) {
         workers.write ()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::ComputingCpu));
     }
 
@@ -290,11 +290,11 @@ void Chain::
         if (d.second)
             TaskInfo(boost::format("%s crashed") % (d.first.get() ? vartype(*d.first.get()) : "ComputingEngine(null)"));
 
-    Workers::EngineWorkerMap engines = workers->workers_map();
+    const Workers::EngineWorkerMap& engines = workers->workers_map();
     if (!engines.empty ())
     {
         TaskInfo ti("Couldn't remove all old workers");
-        for (auto e : engines)
+        for (const auto& e : engines)
             TaskInfo(boost::format("%s") % (e.first.get() ? vartype(*e.first.get()) : "ComputingEngine(null)"));
     }
 
@@ -302,7 +302,7 @@ void Chain::
         workers->addComputingEngine(Signal::ComputingEngine::ptr());
 
     int cpu_workers = 0;
-    for (auto e : engines)
+    for (const auto& e : engines)
         if (dynamic_cast<Signal::ComputingEngine*>(e.first.get()))
             cpu_workers++;
 

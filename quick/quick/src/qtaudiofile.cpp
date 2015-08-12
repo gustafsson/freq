@@ -26,10 +26,10 @@ void transpose(const pBuffer& out, const void* vin)
 }
 
 
-class FileReader : public Operation
+class QtAudioFileReader : public Operation
 {
 public:
-    FileReader(const QAudioDecoder* decoder)
+    QtAudioFileReader(const QAudioDecoder* decoder)
         :
           decoder(decoder)
     {
@@ -129,10 +129,10 @@ OperationDesc::ptr QtAudiofile::
 Operation::ptr QtAudiofile::
         createOperation(ComputingEngine* engine) const
 {
-    if (engine)
-        return Operation::ptr();
+    if (dynamic_cast<DiscAccessThread*>(engine))
+        return Operation::ptr(new QtAudioFileReader(&decoder));
 
-    return Operation::ptr(new FileReader(&decoder));
+    return Operation::ptr();
 }
 
 
