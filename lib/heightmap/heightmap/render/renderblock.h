@@ -27,9 +27,6 @@ public:
     private:
         RenderBlock* render_block;
         glProjection gl_projection;
-        unsigned uniModelviewprojection = 0;
-        unsigned uniModelview = 0;
-        unsigned uniNormalMatrix = 0;
         pVbo prev_vbo;
 
         void draw(unsigned tex_height, const pVbo& vbo);
@@ -45,6 +42,10 @@ public:
     void        clearCaches();
     void        setSize( unsigned w, unsigned h);
     unsigned    trianglesPerBlock();
+
+    GLuint uniModelviewprojection=0,
+            uniModelview=0,
+            uniNormalMatrix=0;
 
 private:
     friend class RenderBlock::Renderer;
@@ -66,6 +67,21 @@ private:
     unsigned _mesh_width;
     unsigned _mesh_height;
     pVbo _mesh_position;
+
+    GLint uniVertText0=0,
+            uniVertText2=0,
+            uniColorTextureFactor=0,
+            uniFixedColor=0,
+            uniClearColor=0,
+            uniContourPlot=0,
+            uniFlatness=0,
+            uniYScale=0,
+            uniYOffset=0,
+            uniYNormalize=0,
+            uniLogScale=0,
+            uniScaleTex=0,
+            uniOffsTex=0,
+            uniTexSize=0;
 
     // 1 << (subdivs-1) = max density of pixels per vertex
 #ifdef GL_ES_VERSION_2_0
