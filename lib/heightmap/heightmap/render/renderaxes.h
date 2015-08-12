@@ -46,6 +46,7 @@ private:
     std::unique_ptr<QOpenGLShaderProgram> program_;
     IGlyphs* glyphs_;
     GLuint orthobuffer_=0, vertexbuffer_=0;
+    size_t orthobuffer_size_=0, vertexbuffer_size_=0;
     GLuint uni_ProjectionMatrix, uni_ModelViewMatrix;
 };
 

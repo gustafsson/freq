@@ -697,7 +697,15 @@ void RenderAxes::
         if (!orthobuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &orthobuffer_) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, orthobuffer_) );
-        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0], GL_STATIC_DRAW) );
+        if (orthobuffer_size_ < ae.orthovertices.size () || ae.orthovertices.size () < 4*orthobuffer_size_)
+        {
+            GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0], GL_STREAM_DRAW) );
+            orthobuffer_size_ = ae.orthovertices.size ();
+        }
+        else
+        {
+            glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0]);
+        }
 
         matrixd ortho;
         glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
@@ -717,7 +725,15 @@ void RenderAxes::
         if (!vertexbuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer_) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
-        GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STATIC_DRAW) );
+        if (vertexbuffer_size_ < ae.vertices.size () || ae.vertices.size () < 4*vertexbuffer_size_)
+        {
+            GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STREAM_DRAW) );
+            vertexbuffer_size_ = ae.vertices.size ();
+        }
+        else
+        {
+            glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0]);
+        }
 
         program_->setUniformValue(uni_ProjectionMatrix,
                                   QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
