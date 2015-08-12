@@ -141,8 +141,6 @@ void DrawCollections::
                                                "    gl_FragColor = texture2D(tex, ftex);"
                                                "}");
 
-            m_program->bindAttributeLocation("vertices", 0);
-            m_program->bindAttributeLocation("itex", 1);
             m_program->link();
             m_program->bind();
             m_program->setUniformValue ("tex", 0);
@@ -164,8 +162,8 @@ void DrawCollections::
              0, 1, 0,  ty,
              1, 1, tx, ty
         };
-        m_program->setAttributeArray(0, GL_FLOAT, values, 2, 4*sizeof(float));
-        m_program->setAttributeArray(1, GL_FLOAT, values + 2, 2, 4*sizeof(float));
+        m_program->setAttributeArray("vertices", GL_FLOAT, values, 2, 4*sizeof(float));
+        m_program->setAttributeArray("itex", GL_FLOAT, values + 2, 2, 4*sizeof(float));
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         m_program->disableAttributeArray(0);
         m_program->disableAttributeArray(1);

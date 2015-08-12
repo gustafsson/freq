@@ -259,8 +259,8 @@ void GlyphsFreetypeEmbedded::
                                   QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
 
         glEnableVertexAttribArray (1);
-        glVertexAttribPointer( program_->attributeLocation("qt_ModelViewVertex"), 4, GL_FLOAT, GL_FALSE, sizeof(Glyph), 0 );
-        glVertexAttribPointer( program_->attributeLocation("qt_MultiTexCoord0"), 2, GL_FLOAT, GL_FALSE, sizeof(Glyph), (const void*)sizeof(tvector<4,GLfloat>));
+        program_->setAttributeBuffer("qt_ModelViewVertex", GL_FLOAT, 0, 4, sizeof(Glyph));
+        program_->setAttributeBuffer("qt_MultiTexCoord0", GL_FLOAT, sizeof(tvector<4,GLfloat>), 2, sizeof(Glyph));
 
         glBindTexture (GL_TEXTURE_2D, texid);
         glDrawArrays (GL_TRIANGLES, 0, glyphs.size());

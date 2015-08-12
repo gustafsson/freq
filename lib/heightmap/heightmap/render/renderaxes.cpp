@@ -676,13 +676,6 @@ void RenderAxes::
                                                   gl_FragColor = color;
                                               }
                                           )fragmentshader");
-
-        program_->bindAttributeLocation("qt_Vertex", 0);
-        program_->bindAttributeLocation("colors", 1);
-
-        if (!program_->link())
-            Log("renderaxes: invalid shader\n%s")
-                    % program_->log ().toStdString ();
     }
 
     if (!program_->isLinked ())
@@ -711,9 +704,8 @@ void RenderAxes::
                                   QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
         program_->setUniformValue("qt_ModelViewMatrix",
                                   QMatrix4x4(GLmatrixf::identity ().v ()));
-
-        program_->setAttributeBuffer(0, GL_FLOAT, 0, 4, sizeof(Vertex));
-        program_->setAttributeBuffer(1, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
+        program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
+        program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
     }

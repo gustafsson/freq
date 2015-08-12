@@ -116,11 +116,6 @@ void SelectionRenderer::
                                                    gl_FragColor = rgba;
                                                }
                                            )fragmentshader");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        if (!m_program->link())
-            Log("selectionrenderer: invalid shader\n%s")
-                    % m_program->log ().toStdString ();
     }
 
     if (!m_program->isLinked ())

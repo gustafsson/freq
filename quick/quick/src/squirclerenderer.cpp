@@ -75,10 +75,6 @@ void SquircleRenderer::paint3()
                                                    gl_FragColor = vec4(1,0,0,1);
                                                }
                                             )fragmentshader");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        if (!m_program->link())
-            Log("GLSL failed\n%s") % m_program->log ().toStdString ();
     }
 
     if (!m_program->isLinked ())
@@ -151,10 +147,10 @@ void SquircleRenderer::paint2()
                                                    gl_FragColor = vec4(coords * .5 + .5, i, i);
                                                }
                                            )fragmentshader");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        m_program->link();
     }
+    if (!m_program->isLinked())
+        return;
+
     GlException_SAFE_CALL( m_program->bind() );
 
     GlException_SAFE_CALL( m_program->enableAttributeArray(0) );

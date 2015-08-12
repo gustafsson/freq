@@ -43,7 +43,6 @@ void RenderRegion::
                                            "    gl_FragColor = color;"
                                            "}");
 
-        program_->bindAttributeLocation("vertices", 0);
         program_->link();
     }
 

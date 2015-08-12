@@ -55,11 +55,6 @@ void Wave2Fbo::
                                                    gl_FragColor = rgba*100.0;
                                                }
                                            )fragmentshader");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        if (!m_program->link())
-            Log("wave2fbo: invalid shader\n%s")
-                    % m_program->log ().toStdString ();
     }
 
     if (!m_program->isLinked ())
