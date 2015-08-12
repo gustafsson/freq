@@ -33,6 +33,8 @@ private:
     std::unique_ptr<QOpenGLShaderProgram> m_program;
     JustMisc::zero_on_move<unsigned>    vbo_;
     std::vector<vertex_format_xy>       dv;
+
+    GLuint uniModelViewProjectionMatrix, uniRgba;
 };
 
 } // namespace OpenGL

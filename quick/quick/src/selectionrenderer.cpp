@@ -116,6 +116,9 @@ void SelectionRenderer::
                                                    gl_FragColor = rgba;
                                                }
                                            )fragmentshader");
+
+        uniModelViewProjectionMatrix = m_program->uniformLocation("ModelViewProjectionMatrix");
+        uniRgba = m_program->uniformLocation("rgba");
     }
 
     if (!m_program->isLinked ())
@@ -134,9 +137,8 @@ void SelectionRenderer::
     matrixd modelview = p.modelview;
     modelview *= matrixd::translate (t1,h1,s1);
     modelview *= matrixd::scale (t2-t1,h2-h1,s2-s1);
-    QMatrix4x4 modelviewprojection {GLmatrixf(p.projection*modelview).transpose ().v ()};
-    m_program->setUniformValue("ModelViewProjectionMatrix", modelviewprojection);
-    m_program->setUniformValue("rgba", QVector4D(r,g,b,a));
+    glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(p.projection*modelview).v ());
+    m_program->setUniformValue(uniRgba, QVector4D(r,g,b,a));
 
     // don't write to the depth buffer
     glDepthMask(GL_FALSE);

@@ -29,6 +29,7 @@ private:
     float r=0.0, g=0.0, b=0.0, a=0.5;
     std::unique_ptr<QOpenGLShaderProgram> m_program;
     GLuint vertexbuffer = 0;
+    GLuint uniModelViewProjectionMatrix, uniRgba;
 
     void paint(float t1, float t2, float s1, float s2);
 };

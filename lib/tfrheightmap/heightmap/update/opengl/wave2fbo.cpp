@@ -57,6 +57,9 @@ void Wave2Fbo::
                                                    gl_FragColor = rgba*100.0;
                                                }
                                            )fragmentshader");
+
+        uniModelViewProjectionMatrix = m_program->uniformLocation("ModelViewProjectionMatrix");
+        uniRgba = m_program->uniformLocation("rgba");
     }
 
     if (!m_program->isLinked ())
@@ -71,14 +74,13 @@ void Wave2Fbo::
     matrixd modelview = P.modelview;
     modelview *= matrixd::translate (b->start (), 0.5, 0);
     modelview *= matrixd::scale (1.0/b->sample_rate (), 0.5, 1);
-    QMatrix4x4 modelviewprojection {GLmatrixf(P.projection*modelview).transpose ().v ()};
-    m_program->setUniformValue("ModelViewProjectionMatrix", modelviewprojection);
+    glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
 
     GlException_CHECK_ERROR();
     glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     // Draw clear rectangle
-    m_program->setUniformValue("rgba", QVector4D(0.0,0.0,0.0,1.0));
+    m_program->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
 
     vertex_format_xy* d = &dv[0];
     int N = (int)dv.size ();

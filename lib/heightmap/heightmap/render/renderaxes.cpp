@@ -676,6 +676,8 @@ void RenderAxes::
                                                   gl_FragColor = color;
                                               }
                                           )fragmentshader");
+        uni_ProjectionMatrix = program_->uniformLocation("qt_ProjectionMatrix");
+        uni_ModelViewMatrix = program_->uniformLocation("qt_ModelViewMatrix");
     }
 
     if (!program_->isLinked ())
@@ -700,9 +702,9 @@ void RenderAxes::
         matrixd ortho;
         glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
 
-        program_->setUniformValue("qt_ProjectionMatrix",
+        program_->setUniformValue(uni_ProjectionMatrix,
                                   QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
-        program_->setUniformValue("qt_ModelViewMatrix",
+        program_->setUniformValue(uni_ModelViewMatrix,
                                   QMatrix4x4(GLmatrixf::identity ().v ()));
         program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
         program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
@@ -717,9 +719,9 @@ void RenderAxes::
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STATIC_DRAW) );
 
-        program_->setUniformValue("qt_ProjectionMatrix",
+        program_->setUniformValue(uni_ProjectionMatrix,
                                   QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
-        program_->setUniformValue("qt_ModelViewMatrix",
+        program_->setUniformValue(uni_ModelViewMatrix,
                                   QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
         program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
         program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
