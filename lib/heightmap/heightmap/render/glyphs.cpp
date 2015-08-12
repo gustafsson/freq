@@ -28,4 +28,3 @@ IGlyphs* GlyphFactory::
 
 } // namespace Render
 } // namespace Heightmap
-

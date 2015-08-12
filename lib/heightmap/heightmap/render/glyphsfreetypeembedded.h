@@ -27,6 +27,7 @@ private:
     std::vector<Glyph> glyphs;
     std::vector<tvector<4,GLfloat>> quad_v;
     std::unique_ptr<QOpenGLShaderProgram> program_;
+    std::unique_ptr<QOpenGLShaderProgram> overlay_program_;
 
     GLuint texid;
     GLuint glyphbuffer_=0;
