@@ -721,15 +721,14 @@ void RenderAxes::
                                   QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
         program_->setUniformValue("qt_ModelViewMatrix",
                                   QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
-
-        program_->setAttributeBuffer(0, GL_FLOAT, 0, 4, sizeof(Vertex));
-        program_->setAttributeBuffer(1, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
+        program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
+        program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
     }
 
-    program_->disableAttributeArray (0);
     program_->disableAttributeArray (1);
+    program_->disableAttributeArray (0);
     program_->release();
 
     GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );
