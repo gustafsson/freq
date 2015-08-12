@@ -34,6 +34,9 @@ private:
     size_t glyphbuffer_size = 0;
     GLuint vertexbuffer_=0;
     size_t vertexbuffer_size = 0;
+
+    GLuint program_qt_ProjectionMatrixLocation_ = 0;
+    GLuint overlay_program_qt_ProjectionMatrixLocation_ = 0;
 };
 
 } // namespace Render

@@ -185,6 +185,7 @@ void GlyphsFreetypeEmbedded::
         program_->bind();
         program_->setUniformValue("tex", 0);
         program_->setUniformValue("qt_Color", 0, 0, 0, 0.8);
+        program_qt_ProjectionMatrixLocation_ = program_->uniformLocation("qt_ProjectionMatrix");
         program_->release();
 
         overlay_program_ = ShaderResource::loadGLSLProgramSource (
@@ -209,6 +210,7 @@ void GlyphsFreetypeEmbedded::
 
         overlay_program_->bind();
         overlay_program_->setUniformValue("qt_Color", 1, 1, 1, 0.5);
+        overlay_program_qt_ProjectionMatrixLocation_ = overlay_program_->uniformLocation("qt_ProjectionMatrix");
         overlay_program_->release();
     }
 
@@ -233,7 +235,7 @@ void GlyphsFreetypeEmbedded::
         }
 
         overlay_program_->bind();
-        overlay_program_->setUniformValue("qt_ProjectionMatrix",
+        overlay_program_->setUniformValue(overlay_program_qt_ProjectionMatrixLocation_,
                                   QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
 
         glEnableVertexAttribArray (0);
@@ -255,7 +257,7 @@ void GlyphsFreetypeEmbedded::
 
         program_->bind();
 
-        program_->setUniformValue("qt_ProjectionMatrix",
+        program_->setUniformValue(program_qt_ProjectionMatrixLocation_,
                                   QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
 
         glEnableVertexAttribArray (1);
