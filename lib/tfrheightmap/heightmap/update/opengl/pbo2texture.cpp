@@ -35,26 +35,19 @@ Shader::Shader(ShaderPtr&& programp)
 {
     EXCEPTION_ASSERT( program );
 
-    glBindAttribLocation ( program, 0, "qt_Vertex");
-    glBindAttribLocation ( program, 1, "qt_MultiTexCoord0");
-    glLinkProgram (program);
-
-    int vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
-    int tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
-
     int mytex = -1;
 
-    GlException_SAFE_CALL( glUseProgram(program) );
+    vertex_attrib_ = glGetAttribLocation (program, "qt_Vertex");
+    tex_attrib_ = glGetAttribLocation (program, "qt_MultiTexCoord0");
     GlException_SAFE_CALL( mytex = glGetUniformLocation(program, "mytex") );
     GlException_SAFE_CALL( data_size_loc_ = glGetUniformLocation(program, "data_size") );
     GlException_SAFE_CALL( tex_size_loc_ = glGetUniformLocation(program, "tex_size") );
     GlException_SAFE_CALL( normalization_location_ = glGetUniformLocation(program, "normalization") );
     GlException_SAFE_CALL( amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis") );
     GlException_SAFE_CALL( modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix") );
+    GlException_SAFE_CALL( glUseProgram(program) );
     GlException_SAFE_CALL( glUniform1i(mytex, 0) ); // mytex corresponds to GL_TEXTURE0
     GlException_SAFE_CALL( glUseProgram(0) );
-    EXCEPTION_ASSERT_EQUALS(vertex_attrib, 0);
-    EXCEPTION_ASSERT_EQUALS(tex_attrib, 1);
 }
 
 
@@ -67,7 +60,7 @@ Shader::~Shader()
 
 void Shader::Shader::
         setParams(int data_width, int data_height, int tex_width, int tex_height,
-               float normalization_factor, int amplitude_axis, const glProjection& M)
+               float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
     EXCEPTION_ASSERT( program );
 
@@ -83,6 +76,9 @@ void Shader::Shader::
     if ( 0 <= modelViewProjectionMatrix_location_)
         glUniformMatrix4fv (modelViewProjectionMatrix_location_, 1, false, GLmatrixf(M.projection * M.modelview).v ());
     GlException_SAFE_CALL( glUseProgram(0) );
+
+    vertex_attrib = vertex_attrib_;
+    tex_attrib = tex_attrib_;
 }
 
 
@@ -129,9 +125,9 @@ GlTexture& ShaderTexture::
 
 
 unsigned ShaderTexture::
-        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M) const
+        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
-    shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M);
+    shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     return shader_->program;
 }
 
@@ -343,9 +339,7 @@ Pbo2Texture::ScopeMap Pbo2Texture::
         map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
     Pbo2Texture::ScopeMap r;
-    unsigned program = shader_.getProgram (normalization_factor, amplitude_axis, M);
-    vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
-    tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
+    unsigned program = shader_.getProgram (normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     glUseProgram(program);
     glBindTexture( GL_TEXTURE_2D, shader_.getTexture ().getOpenGlTextureId() );
 

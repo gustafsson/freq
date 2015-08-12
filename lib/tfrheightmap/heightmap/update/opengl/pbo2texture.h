@@ -20,7 +20,8 @@ public:
     ~Shader();
 
     void setParams(int data_width, int data_height, int tex_width, int tex_height,
-                   float normalization_factor, int amplitude_axis, const glProjection& M );
+                   float normalization_factor, int amplitude_axis, const glProjection& M,
+                   int &vertex_attrib, int &tex_attrib) const;
 
     const unsigned program;
 
@@ -30,6 +31,8 @@ private:
     int modelViewProjectionMatrix_location_;
     int data_size_loc_;
     int tex_size_loc_;
+    int vertex_attrib_;
+    int tex_attrib_;
     ShaderPtr programp_;
 };
 
@@ -53,7 +56,7 @@ public:
     void prepareShader (int data_width, int data_height, void* data, bool f32);
 
     GlTexture& getTexture () const;
-    unsigned getProgram (float normalization_factor, int amplitude_axis, const glProjection& M) const;
+    unsigned getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const;
 
 private:
     void prepareShader (int data_width, int data_height, unsigned chunk_pbo, void* data, bool f32);
