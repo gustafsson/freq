@@ -105,6 +105,14 @@ GlTexture::ptr TexturePool::
     glGenTextures (1, &t);
     setupTexture(t, width_, height_, format_ == Float32);
     bool adopt = true; // GlTexture does glDeleteTextures
+
+    glBindTexture(GL_TEXTURE_2D, t);
+    static std::vector<char> zeros;
+    size_t sz = width_*height_*sizeof(float);
+    if (sz > zeros.size ())
+        zeros.resize (sz, 0);
+    glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, width_, height_, GL_RED, GL_FLOAT, zeros.data ());
+    glBindTexture(GL_TEXTURE_2D, 0);
     return GlTexture::ptr(new GlTexture(t, width_, height_, adopt));
 }
 

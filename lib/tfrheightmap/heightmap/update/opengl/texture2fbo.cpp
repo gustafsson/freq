@@ -168,7 +168,7 @@ void Texture2Fbo::
 {
     GlException_CHECK_ERROR ();
 
-    INFO TaskTimer tt("ChunkToBlockDegenerateTexture::mergeChunk");
+    INFO TaskTimer tt("Texture2Fbo::draw");
 
     // Setup drawing with VBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);

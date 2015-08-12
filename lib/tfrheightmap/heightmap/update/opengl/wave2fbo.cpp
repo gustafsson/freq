@@ -22,7 +22,9 @@ Wave2Fbo::
     glGenBuffers (1, &vbo_); // Generate 1 buffer
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
-    glBufferData (GL_ARRAY_BUFFER, sizeof(vertex_format_xy)*(dv.size ()), 0, GL_DYNAMIC_DRAW);
+    size_t s = sizeof(vertex_format_xy) * dv.size ();
+    std::vector<char> zeros(s,0);
+    glBufferData (GL_ARRAY_BUFFER, s, zeros.data (), GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlException_CHECK_ERROR();
