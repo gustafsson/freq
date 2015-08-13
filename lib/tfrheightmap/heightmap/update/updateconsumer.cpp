@@ -210,7 +210,7 @@ UpdateConsumerThread::
 void UpdateConsumerThread::
         threadFinished()
 {
-    TaskInfo ti("UpdateConsumer::threadFinished");
+    TaskInfo ti("updateconsumerthread: threadFinished");
 
     try {
         EXCEPTION_ASSERTX(isInterruptionRequested (), "Thread quit unexpectedly");
@@ -226,6 +226,8 @@ void UpdateConsumerThread::
 void UpdateConsumerThread::
         run()
 {
+    Log("updateconsumerthread: started");
+
     try
       {
         QOpenGLContext context;
