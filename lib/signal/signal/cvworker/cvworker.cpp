@@ -319,7 +319,6 @@ void CvWorker::
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
-    if (false)
     if (!DetectGdb::is_running_through_gdb() && !DetectGdb::was_started_through_gdb ())
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
