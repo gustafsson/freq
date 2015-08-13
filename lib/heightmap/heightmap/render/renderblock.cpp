@@ -363,20 +363,20 @@ void RenderBlock::
     {   // Set default uniform variables parameters for the vertex and pixel shader
         TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
 
-        if (!uniModelviewprojection) uniModelviewprojection = glGetUniformLocation (_shader_prog, "ModelViewProjectionMatrix");
-        if (!uniModelview) uniModelview = glGetUniformLocation (_shader_prog, "ModelViewMatrix");
-        if (!uniNormalMatrix) uniNormalMatrix = glGetUniformLocation (_shader_prog, "NormalMatrix");
+        if (uniModelviewprojection<0) uniModelviewprojection = glGetUniformLocation (_shader_prog, "ModelViewProjectionMatrix");
+        if (uniModelview<0) uniModelview = glGetUniformLocation (_shader_prog, "ModelViewMatrix");
+        if (uniNormalMatrix<0) uniNormalMatrix = glGetUniformLocation (_shader_prog, "NormalMatrix");
 
-        if (!uniVertText0) uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
+        if (uniVertText0<0) uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
         glUniform1i(uniVertText0, 0); // GL_TEXTURE0 + i
 
 //        if (!uniVertText1) uniVertText1 = glGetUniformLocation(_shader_prog, "tex_nearest");
 //        glUniform1i(uniVertText1, _mesh_width*_mesh_height>4 ? 0 : 0);
 
-        if (!uniVertText2) uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
+        if (uniVertText2<0) uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
         glUniform1i(uniVertText2, 2);
 
-        if (!uniFixedColor) uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
+        if (uniFixedColor<0) uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
         switch (render_settings->color_mode)
         {
         case RenderSettings::ColorMode_Grayscale:
@@ -393,11 +393,11 @@ void RenderBlock::
         }
         }
 
-        if (!uniClearColor) uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
+        if (uniClearColor<0) uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
         tvector<4, float> clear_color = render_settings->clear_color;
         glUniform4f(uniClearColor, clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
 
-        if (!uniColorTextureFactor) uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
+        if (uniColorTextureFactor<0) uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
         switch(render_settings->color_mode)
         {
         case RenderSettings::ColorMode_Rainbow:
@@ -412,20 +412,20 @@ void RenderBlock::
             break;
         }
 
-        if (!uniContourPlot) uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
+        if (uniContourPlot<0) uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
         glUniform1f(uniContourPlot, render_settings->draw_contour_plot ? 1.f : 0.f );
 
-        if (!uniFlatness) uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
+        if (uniFlatness<0) uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
         float v = render_settings->draw_flat ? 0 : render_settings->last_ysize;
         glUniform1f(uniFlatness, v);
 
-        if (!uniYScale) uniYScale = glGetUniformLocation(_shader_prog, "yScale");
+        if (uniYScale<0) uniYScale = glGetUniformLocation(_shader_prog, "yScale");
         glUniform1f(uniYScale, render_settings->y_scale);
 
-        if (!uniYOffset) uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
+        if (uniYOffset<0) uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
         glUniform1f(uniYOffset, render_settings->y_offset);
 
-        if (!uniYNormalize) uniYNormalize = glGetUniformLocation(_shader_prog, "yNormalize");
+        if (uniYNormalize<0) uniYNormalize = glGetUniformLocation(_shader_prog, "yNormalize");
         glUniform1f(uniYNormalize, render_settings->y_normalize);
 
         // yOffset specifies 'b' which says which 'v' that should render as 0
@@ -445,7 +445,7 @@ void RenderBlock::
         float x1 = render_settings->y_scale / (log(1.0) - log(b));
         float x2 = - log(b) * x1;
 
-        if (!uniLogScale) uniLogScale = glGetUniformLocation(_shader_prog, "logScale");
+        if (uniLogScale<0) uniLogScale = glGetUniformLocation(_shader_prog, "logScale");
         glUniform3f(uniLogScale, render_settings->log_scale, x1, x2);
 
         float
@@ -455,13 +455,13 @@ void RenderBlock::
                 h = block_size.texels_per_column (),
                 m = block_size.margin ();
 
-        if (!uniScaleTex) uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
+        if (uniScaleTex<0) uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
         glUniform2f(uniScaleTex, vw/w, vh/h);
 
-        if (!uniOffsTex) uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
+        if (uniOffsTex<0) uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
         glUniform2f(uniOffsTex, m/w, m/h);
 
-        if (!uniTexSize) uniTexSize = glGetUniformLocation(_shader_prog, "texSize");
+        if (uniTexSize<0) uniTexSize = glGetUniformLocation(_shader_prog, "texSize");
         glUniform2f(uniTexSize, w, h);
     }
 

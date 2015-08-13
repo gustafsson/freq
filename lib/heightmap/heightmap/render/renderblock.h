@@ -43,9 +43,9 @@ public:
     void        setSize( unsigned w, unsigned h);
     unsigned    trianglesPerBlock();
 
-    GLuint uniModelviewprojection=0,
-            uniModelview=0,
-            uniNormalMatrix=0;
+    GLint uniModelviewprojection=-1,
+            uniModelview=-1,
+            uniNormalMatrix=-1;
 
 private:
     friend class RenderBlock::Renderer;
@@ -68,20 +68,20 @@ private:
     unsigned _mesh_height;
     pVbo _mesh_position;
 
-    GLint uniVertText0=0,
-            uniVertText2=0,
-            uniColorTextureFactor=0,
-            uniFixedColor=0,
-            uniClearColor=0,
-            uniContourPlot=0,
-            uniFlatness=0,
-            uniYScale=0,
-            uniYOffset=0,
-            uniYNormalize=0,
-            uniLogScale=0,
-            uniScaleTex=0,
-            uniOffsTex=0,
-            uniTexSize=0;
+    GLint uniVertText0=-1,
+            uniVertText2=-1,
+            uniColorTextureFactor=-1,
+            uniFixedColor=-1,
+            uniClearColor=-1,
+            uniContourPlot=-1,
+            uniFlatness=-1,
+            uniYScale=-1,
+            uniYOffset=-1,
+            uniYNormalize=-1,
+            uniLogScale=-1,
+            uniScaleTex=-1,
+            uniOffsTex=-1,
+            uniTexSize=-1;
 
     // 1 << (subdivs-1) = max density of pixels per vertex
 #ifdef GL_ES_VERSION_2_0
