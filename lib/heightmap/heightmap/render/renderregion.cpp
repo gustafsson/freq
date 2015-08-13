@@ -78,7 +78,6 @@ void RenderRegion::
     modelview *= matrixd::scale (r.time(), 1, r.scale());
 
     glEnable(GL_BLEND);
-    glBindTexture(GL_TEXTURE_2D, 0);
     glLineWidth(2);
 
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);

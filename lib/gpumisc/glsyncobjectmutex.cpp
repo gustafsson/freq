@@ -142,7 +142,6 @@ void GlSyncObjectMutex::
             GlException_SAFE_CALL( glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, &texture_init[0]) );
             // read with glGetTexImage to create an OpenGL client read state of the texture
             GlException_SAFE_CALL( glGetTexImage (GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &result[0]) );
-            GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
         };
 
         auto copyFromVboToTextureAsync = [&]()
@@ -151,14 +150,12 @@ void GlSyncObjectMutex::
             GlException_SAFE_CALL( glBindBuffer (GL_PIXEL_UNPACK_BUFFER, vbo) );
             GlException_SAFE_CALL( glTexSubImage2D  (GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, 0) );
             GlException_SAFE_CALL( glBindBuffer (GL_PIXEL_UNPACK_BUFFER, 0) );
-            GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
         };
 
         auto copyFromTextureToResult = [&]()
         {
             GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
             GlException_SAFE_CALL( glGetTexImage (GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &result[0]) );
-            GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
         };
 
 

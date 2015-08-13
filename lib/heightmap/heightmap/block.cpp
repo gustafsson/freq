@@ -79,7 +79,7 @@ void Block::
         // use the new_texture_
         texture_ = t;
 
-        auto bind = texture_->getScopeBinding ();
+        texture_->bindTexture ();
         glGenerateMipmap (GL_TEXTURE_2D);
     }
 }

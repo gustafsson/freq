@@ -280,7 +280,6 @@ Signal::Intervals MergerTexture::
     {
         glBindTexture (GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId());
         glGenerateMipmap (GL_TEXTURE_2D);
-        glBindTexture (GL_TEXTURE_2D, 0);
     }
 
     GlException_CHECK_ERROR();
@@ -380,7 +379,6 @@ Signal::Intervals MergerTexture::
         #else
             glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
             GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ()) );
-            glBindTexture(GL_TEXTURE_2D, 0);
         #endif
     }
 #endif
@@ -410,7 +408,6 @@ void MergerTexture::
 
     glBindTexture( GL_TEXTURE_2D, texture);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
-    if (texture) glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 } // namespace Merge
@@ -494,11 +491,10 @@ void MergerTexture::
             //pBlock block(new Block(ref,bl,vp));
             //Log("Inserting overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
             GlTexture::ptr tex = block->texture ();
-            auto ts = tex->getScopeBinding ();
+            tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            (void)ts;
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -522,11 +518,10 @@ void MergerTexture::
 
             pBlock block(new Block(ref.right (),bl,vp));
             GlTexture::ptr tex = block->texture ();
-            auto ts = tex->getScopeBinding ();
+            tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            (void)ts;
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);

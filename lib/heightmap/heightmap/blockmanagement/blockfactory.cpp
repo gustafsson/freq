@@ -58,7 +58,7 @@ void BlockFactory::
         }
     }
 
-    auto ts = block->texture ()->getScopeBinding ();
+    block->texture ()->bindTexture ();
     GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, samples, scales, GL_RED, GL_FLOAT, &p[0]) );
 }
 

@@ -65,14 +65,12 @@ public:
 	*/
 	~GlTexture();
 
-    typedef ReleaseAfterContext<GlTexture> ScopeBinding;
-
     /**
     Binds this texture with glBindTexture and enables 2D texturing
     with glEnable. Then removes the binding and disables 2D texturing
     when the object goes out of scope.
     */
-    ScopeBinding getScopeBinding();
+    void bindTexture();
 
 	/**
 	Returns the OpenGL texture id for this texture. To be used with
@@ -106,6 +104,4 @@ private:
 	*/
     unsigned int textureId;
     unsigned int ownTextureId;
-
-    void unbindTexture2Dwrap();
 };

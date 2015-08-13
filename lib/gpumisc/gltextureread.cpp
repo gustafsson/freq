@@ -88,7 +88,6 @@ DataStorage<float>::ptr GlTextureRead::
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }
@@ -144,7 +143,6 @@ DataStorage<unsigned char>::ptr GlTextureRead::
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }
@@ -178,7 +176,6 @@ DataStorage<float>::ptr GlTextureRead::
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }
@@ -212,7 +209,6 @@ DataStorage<unsigned char>::ptr GlTextureRead::
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }
@@ -252,7 +248,6 @@ DataStorage<float>::ptr GlTextureRead::
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }
@@ -297,7 +292,6 @@ DataStorage<unsigned char>::ptr GlTextureRead::
 
     // restore
     GlException_SAFE_CALL( glPixelStorei (GL_PACK_ALIGNMENT, pack_alignment) );
-    GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
 
     return data;
 }

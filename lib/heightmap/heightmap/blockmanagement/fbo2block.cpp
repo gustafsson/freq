@@ -21,7 +21,6 @@ void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ());
-    glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
 

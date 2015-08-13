@@ -33,7 +33,6 @@ void setupTextureFloat32(unsigned name, unsigned w, unsigned h)
 #else
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
 #endif
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -112,7 +111,6 @@ GlTexture::ptr TexturePool::
     if (sz > zeros.size ())
         zeros.resize (sz, 0);
     glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, width_, height_, GL_RED, GL_FLOAT, zeros.data ());
-    glBindTexture(GL_TEXTURE_2D, 0);
     return GlTexture::ptr(new GlTexture(t, width_, height_, adopt));
 }
 

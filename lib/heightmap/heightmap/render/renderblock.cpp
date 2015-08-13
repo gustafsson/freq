@@ -353,7 +353,7 @@ void RenderBlock::
     //unsigned meshH = collection->scales_per_block();
 
     createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _colorTexture->getOpenGlTextureId ());
     glActiveTexture(GL_TEXTURE0);
 
@@ -374,7 +374,7 @@ void RenderBlock::
 //        glUniform1i(uniVertText1, _mesh_width*_mesh_height>4 ? 0 : 0);
 
         if (uniVertText2<0) uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
-        glUniform1i(uniVertText2, 2);
+        glUniform1i(uniVertText2, 1);
 
         if (uniFixedColor<0) uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
         switch (render_settings->color_mode)
@@ -481,10 +481,6 @@ void RenderBlock::
 
     glBindBuffer (GL_ARRAY_BUFFER, 0);
     glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
-    glActiveTexture (GL_TEXTURE2);
-    glBindTexture (GL_TEXTURE_2D, 0);
-    glActiveTexture (GL_TEXTURE0);
-    glBindTexture (GL_TEXTURE_2D, 0);
 
     int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
     glDisableVertexAttribArray (qt_Vertex);

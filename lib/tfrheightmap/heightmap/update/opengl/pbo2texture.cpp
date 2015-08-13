@@ -201,7 +201,7 @@ void ShaderTexture::
         shader_ = &shaders_.chunktoblock_shader_;
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (1)", tex_width, tex_height);
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        chunk_texture_->bindTexture();
 
 #ifdef LEGACY_OPENGL
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
@@ -221,7 +221,7 @@ void ShaderTexture::
         EXCEPTION_ASSERT_LESS_OR_EQUAL(N,M);
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        chunk_texture_->bindTexture();
 #ifdef LEGACY_OPENGL
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
@@ -272,7 +272,7 @@ void ShaderTexture::
         EXCEPTION_ASSERT_LESS_OR_EQUAL(N,M);
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (3)", tex_width, tex_height);
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        chunk_texture_->bindTexture();
 #ifdef LEGACY_OPENGL
         GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
@@ -357,7 +357,6 @@ Pbo2Texture::ScopeMap::
 Pbo2Texture::ScopeMap::
         ~ScopeMap()
 {
-    glBindTexture( GL_TEXTURE_2D, 0);
     glUseProgram(0);
 }
 

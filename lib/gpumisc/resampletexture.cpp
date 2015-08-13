@@ -122,7 +122,7 @@ void ResampleTexture::
         glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
         glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
-        GlTexture::ScopeBinding texObjBinding = source->getScopeBinding();
+        source->bindTexture();
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);

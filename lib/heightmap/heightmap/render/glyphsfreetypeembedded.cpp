@@ -95,7 +95,6 @@ GlyphsFreetypeEmbedded::
 #endif
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, vera.tex_width, vera.tex_height,
                   0, GL_RED, GL_UNSIGNED_BYTE, vera.tex_data );
-    glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 
@@ -266,7 +265,6 @@ void GlyphsFreetypeEmbedded::
 
         glBindTexture (GL_TEXTURE_2D, texid);
         glDrawArrays (GL_TRIANGLES, 0, glyphs.size());
-        glBindTexture (GL_TEXTURE_2D, 0 );
 
         glDisableVertexAttribArray (1);
         glDisableVertexAttribArray (0);

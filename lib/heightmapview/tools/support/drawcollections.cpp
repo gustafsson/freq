@@ -120,7 +120,7 @@ void DrawCollections::
 
         glDisable(GL_DEPTH_TEST);
         GlTexture t(fbo->getGlTexture(), fbo->getWidth (), fbo->getHeight ());
-        GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
+        t.bindTexture();
 
         if (!m_program) {
             m_program = new QOpenGLShaderProgram();
@@ -172,8 +172,6 @@ void DrawCollections::
         glEnable(GL_DEPTH_TEST);
 
         GlException_CHECK_ERROR();
-
-        (void)texObjBinding; // RAII
     }
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
