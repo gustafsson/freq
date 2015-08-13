@@ -33,7 +33,9 @@ public:
     queue               clear ();
     bool                empty ();
 
-    // this method is used to abort any blocking pop, clear the queue, and disable any future pops
+    // this method is used to abort any blocking pop,
+    // clear the queue, disable any future pops and
+    // discard any future pushes
     void                close ();
 
 private:

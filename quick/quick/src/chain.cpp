@@ -9,6 +9,8 @@
 
 #include <QtQuick>
 
+//#define CHAIN_USEUPDATECONSUMERTHREAD
+
 using namespace Signal;
 
 class NoopOperationImpl: public Operation
@@ -59,7 +61,9 @@ Chain::Chain(QQuickItem *parent) :
 Chain::
         ~Chain()
 {
+    update_queue_->close ();
     chain_->close ();
+    if (update_consumer_p) update_consumer_p->workIfAny ();
     chain_.reset ();
 }
 
@@ -131,8 +135,14 @@ void Chain::clearOpenGlBackground()
     GlException_SAFE_CALL( glBindVertexArray(vertexArray_) );
 #endif
 
-    if (!update_consumer_)
+#ifdef CHAIN_USEUPDATECONSUMERTHREAD
+    if (!update_consumer_thread_)
         setupUpdateConsumer(QOpenGLContext::currentContext());
+#else
+    if (!update_consumer_p)
+        update_consumer_p.reset (new Heightmap::Update::UpdateConsumer(update_queue_));
+    update_consumer_p->workIfAny();
+#endif
 
     // ok as a long as stateless with respect to opengl resources, otherwise this needs a rendering object that is
     // created on window()->beforeSynchronizing and destroyed on window()->sceneGraphInvalidated (as in
@@ -180,6 +190,6 @@ void Chain::setupUpdateConsumer(QOpenGLContext* context)
     }
 
     // UpdateConsumer shares OpenGL context and is owned by this
-    update_consumer_ = new Heightmap::Update::UpdateConsumer(context, update_queue_, this);
-    connect(update_consumer_.data (), SIGNAL(didUpdate()), this->window (), SLOT(update()));
+    update_consumer_thread_ = new Heightmap::Update::UpdateConsumerThread(context, update_queue_, this);
+    connect(update_consumer_thread_.data (), SIGNAL(didUpdate()), this->window (), SLOT(update()));
 }

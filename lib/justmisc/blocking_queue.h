@@ -37,7 +37,9 @@ public:
         return p;
     }
 
-    // this method is used to abort any blocking pop, clear the queue, and disable any future pops
+    // this method is used to abort any blocking pop,
+    // clear the queue, disable any future pops and
+    // discard any future pushes
     void close() {
         std::unique_lock<std::mutex> l(m);
         abort_ = true;
@@ -99,14 +101,16 @@ public:
 
     void push(const T& t) {
         std::unique_lock<std::mutex> l(m);
-        q.push (t);
+        if (!abort_)
+            q.push (t);
         l.unlock ();
         c.notify_one ();
     }
 
     void push(T&& t) {
         std::unique_lock<std::mutex> l(m);
-        q.push (std::move(t));
+        if (!abort_)
+            q.push (std::move(t));
         l.unlock ();
         c.notify_one ();
     }
