@@ -26,7 +26,7 @@ public:
         double timeout() { return 10.0; } // might take a long time if allocating a lot of textures
     };
 
-    explicit BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    explicit BlockTexturesImpl(unsigned width, unsigned height);
     BlockTexturesImpl(const BlockTexturesImpl&)=delete;
     BlockTexturesImpl&operator=(const BlockTexturesImpl&)=delete;
 
@@ -73,13 +73,12 @@ bool BlockTextures::
 
 
 void BlockTextures::
-        init(unsigned width, unsigned height, unsigned initialCapacity)
+        init(unsigned width, unsigned height)
 {
     EXCEPTION_ASSERT(!isInitialized ());
 
     g_width = width;
     g_height = height;
-    (void)initialCapacity;
 }
 
 
@@ -193,13 +192,11 @@ void BlockTextures::
 }
 
 
-BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity)
+BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height)
     :
       width_(width),
       height_(height)
 {
-    if (initialCapacity>0)
-        setCapacity(initialCapacity);
 }
 
 

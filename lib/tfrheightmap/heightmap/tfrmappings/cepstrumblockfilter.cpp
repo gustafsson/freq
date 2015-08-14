@@ -108,7 +108,7 @@ void CepstrumBlockFilter::
             return ref;
         }();
 
-        Render::BlockTextures::Scoped bt(4,4,1);
+        Render::BlockTextures::Scoped bt(4,4);
         pBlock block( new Block(ref, bl, vp));
 
         // Create some data to plot into the block

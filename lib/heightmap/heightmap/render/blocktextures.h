@@ -39,21 +39,21 @@ class BlockTextures
 {
 public:
     static bool isInitialized();
-    static void init(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    static void init(unsigned width, unsigned height);
     static void destroy();
 
     /**
      * @brief Scoped provides a scoped initialization, useful in test environments.
      */
     struct Scoped {
-        Scoped(unsigned width, unsigned height, unsigned initialCapacity = 0) {
-            init(width,height,initialCapacity);
+        Scoped(unsigned width, unsigned height) {
+            init(width,height);
         }
 
         ~Scoped() { destroy(); }
     };
 
-    static void testInit(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    static void testInit(unsigned width, unsigned height);
 
     /**
      * @brief setCapacityHint
