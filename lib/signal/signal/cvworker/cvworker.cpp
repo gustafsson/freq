@@ -314,7 +314,7 @@ void CvWorker::
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
 
         bedroom->wakeup ();
-        worker.wait (1);
+        worker.wait (20);
         EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
     }
 

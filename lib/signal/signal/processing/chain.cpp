@@ -421,7 +421,7 @@ void Chain::
     {
         Timer t;
         Chain::createDefaultChain ();
-        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.01);
+        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.03);
     }
 
     // It should make the signal processing namespace easy to use with a clear
