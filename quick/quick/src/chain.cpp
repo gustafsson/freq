@@ -167,6 +167,18 @@ void Chain::afterRendering()
         Log("renderchain: %g frames/s, activity %.0f%%") % ltf.hz () % (100*render_time/start_timer.elapsedAndRestart ());
         render_time = 0;
     }
+
+    if (auto r = rec_.lock ())
+    {
+        if (!r->isStopped()) {
+            auto c = chain()->targets()->getTargets();
+            for (const auto& t : c) {
+                Signal::IntervalType i = r->number_of_samples();
+                if (t->needed() & Signal::Interval(i,i+1))
+                    QMetaObject::invokeMethod (window(), "update");
+            }
+        }
+    }
 }
 
 
@@ -180,6 +192,8 @@ void Chain::openRecording()
     rec->startRecording();
 
     setTitle (rec->name().c_str());
+
+    rec_ = rec;
 }
 
 

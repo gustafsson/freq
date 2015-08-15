@@ -8,6 +8,7 @@
 #include "heightmap/update/updateconsumer.h"
 #include "timer.h"
 #include "logtickfrequency.h"
+#include "signal/recorder.h"
 
 class Chain : public QQuickItem
 {
@@ -39,6 +40,7 @@ private:
 
     QString title_;
     Signal::Processing::Chain::ptr chain_;
+    Signal::Recorder::ptr::weak_ptr rec_;
     Signal::Processing::TargetMarker::ptr target_marker_;
     Heightmap::Update::UpdateQueue::ptr update_queue_;
     QPointer<QObject> update_consumer_thread_=0;
