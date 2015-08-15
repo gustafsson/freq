@@ -117,11 +117,9 @@ GlFrameBuffer::ScopeBinding GlFrameBuffer::
 void GlFrameBuffer::
         bindFrameBuffer()
 {
-#ifdef _DEBUG
     GlException_SAFE_CALL( glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo_) );
     if (prev_fbo_!=0)
         Log("GlFrameBuffer: detected an existing binding to FBO %d. This requires a glGet which should be avoided") % prev_fbo_;
-#endif
     GlException_SAFE_CALL( glBindFramebuffer(GL_FRAMEBUFFER, fboId_));
 }
 
