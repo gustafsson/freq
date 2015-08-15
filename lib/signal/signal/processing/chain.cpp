@@ -277,6 +277,13 @@ shared_state<const Dag> Chain::
 }
 
 
+Bedroom::ptr Chain::
+        bedroom() const
+{
+    return bedroom_;
+}
+
+
 void Chain::
         resetDefaultWorkers()
 {

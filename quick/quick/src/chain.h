@@ -30,7 +30,8 @@ signals:
 private slots:
     void handleWindowChanged(QQuickWindow*);
     void clearOpenGlBackground();
-    void setupUpdateConsumer(QOpenGLContext* context);
+    void setupBedroomUpdateThread();
+    void setupUpdateConsumerThread(QOpenGLContext* context);
     void afterRendering();
 
 private:

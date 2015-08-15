@@ -2,6 +2,7 @@
 #include "log.h"
 #include "qtmicrophone.h"
 #include "signal/recorderoperation.h"
+#include "signal/qteventworker/bedroomsignaladapter.h"
 #include "heightmap/update/updateconsumer.h"
 #include "heightmap/uncaughtexception.h"
 #include "GlException.h"
@@ -137,10 +138,13 @@ void Chain::clearOpenGlBackground()
 
 #ifdef CHAIN_USEUPDATECONSUMERTHREAD
     if (!update_consumer_thread_)
-        setupUpdateConsumer(QOpenGLContext::currentContext());
+        setupUpdateConsumerThread(QOpenGLContext::currentContext());
 #else
     if (!update_consumer_p)
+    {
         update_consumer_p.reset (new Heightmap::Update::UpdateConsumer(update_queue_));
+        setupBedroomUpdateThread();
+    }
     update_consumer_p->workIfAny();
 #endif
 
@@ -179,17 +183,36 @@ void Chain::openRecording()
 }
 
 
-void Chain::setupUpdateConsumer(QOpenGLContext* context)
+void Chain::setupUpdateConsumerThread(QOpenGLContext* context)
 {
+    EXCEPTION_ASSERT(!update_consumer_p);
+
     if (QThread::currentThread () != this->thread ())
     {
         // Dispatch
         qRegisterMetaType<QOpenGLContext*>("QOpenGLContext*");
-        QMetaObject::invokeMethod (this, "setupUpdateConsumer", Q_ARG(QOpenGLContext*, context));
+        QMetaObject::invokeMethod (this, "setupUpdateConsumerThread", Q_ARG(QOpenGLContext*, context));
         return;
     }
 
-    // UpdateConsumer shares OpenGL context and is owned by this
+    // UpdateConsumerThread shares OpenGL context and is owned by this
     update_consumer_thread_ = new Heightmap::Update::UpdateConsumerThread(context, update_queue_, this);
     connect(update_consumer_thread_.data (), SIGNAL(didUpdate()), this->window (), SLOT(update()));
+}
+
+
+void Chain::setupBedroomUpdateThread()
+{
+    EXCEPTION_ASSERT(!update_consumer_thread_);
+
+    if (QThread::currentThread () != this->thread ())
+    {
+        // Dispatch
+        QMetaObject::invokeMethod (this, "setupBedroomUpdateThread");
+        return;
+    }
+
+    // BedroomSignalAdapter is owned by this
+    auto b = new Signal::QtEventWorker::BedroomSignalAdapter(chain_->bedroom(), this);
+    connect(b, SIGNAL(wakeup()), this->window (), SLOT(update()));
 }

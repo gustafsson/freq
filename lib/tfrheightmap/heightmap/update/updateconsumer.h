@@ -34,8 +34,8 @@ private:
 
 
 /**
- * @brief The UpdateConsumerThread class should update textures in a separate thread
- * from the worker thread.
+ * @brief The UpdateConsumerThread class should update textures in a thread
+ * separate from both workers and rendering.
  */
 class UpdateConsumerThread: public QThread
 {

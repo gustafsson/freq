@@ -71,6 +71,7 @@ public:
     shared_state<Workers> workers() const;
     Targets::ptr targets() const;
     shared_state<const Dag> dag() const;
+    Bedroom::ptr bedroom() const;
 
     void resetDefaultWorkers();
     // Add jumping around with targets later.
