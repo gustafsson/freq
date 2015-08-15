@@ -367,6 +367,8 @@ Signal::Intervals MergerTexture::
     }
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    // detach the texture explicitly, otherwise the texture image will not be detached if the texture is deleted
+    // https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, 0, 0);
 #else

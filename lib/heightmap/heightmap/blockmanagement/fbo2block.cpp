@@ -36,6 +36,8 @@ void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
                            GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
     glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 }
 
@@ -125,6 +127,8 @@ void Fbo2Block::
     if (!drawTexture)
         return;
 
+    // detach the texture explicitly, otherwise the texture image will not be detached if the texture is deleted
+    // https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
 #ifdef GL_ES_VERSION_2_0
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, 0, 0);
