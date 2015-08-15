@@ -116,6 +116,12 @@ void Collection::
     int prev_fbo = 0;
     glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
 
+#ifndef PAINT_BLOCKS_FROM_UPDATE_THREAD
+    block_factory_->updater()->processUpdates (true);
+#endif
+
+    glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+
     for (const BlockCache::cache_t::value_type& b : cache)
     {
         Block* block = b.second.get();
@@ -129,8 +135,6 @@ void Collection::
             blocksToPoke.insert (block->reference ());
         }
     }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
 
     boost::unordered_set<Reference> blocksToPoke2;
 

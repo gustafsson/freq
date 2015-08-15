@@ -24,6 +24,8 @@ public:
       */
     pBlock              createBlock( const Reference& ref );
 
+    BlockUpdater*       updater() { return updater_.get (); }
+
 private:
     /**
      * @brief setDummyValues fills a block with dummy values, used for testing.

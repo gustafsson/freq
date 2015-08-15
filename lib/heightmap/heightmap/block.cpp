@@ -65,10 +65,6 @@ void Block::
 void Block::
         showNewTexture()
 {
-#ifndef PAINT_BLOCKS_FROM_UPDATE_THREAD
-    updater_->processUpdates (true);
-#endif
-
     // release previously replaced texture, see below
     texture_hold_.reset ();
 
