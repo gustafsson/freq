@@ -3,6 +3,7 @@
 #include "log.h"
 #include "fbo2block.h"
 #include "heightmap/render/blocktextures.h"
+#include "glgroupmarker.h"
 
 #include <unordered_map>
 
@@ -27,9 +28,6 @@ BlockUpdater::~BlockUpdater()
 void BlockUpdater::
     processUpdates(bool isMainThread)
 {
-    if (!fbo2block_)
-        fbo2block_.reset (new Fbo2Block);
-
     if (!isMainThread) {
         /**
           * MergerTexture needs to prepare the block when it is about to be rendered.
@@ -50,6 +48,11 @@ void BlockUpdater::
 
     if (q.empty ())
         return;
+
+    GlGroupMarker gpm("ProcessUpdates");
+
+    if (!fbo2block_)
+        fbo2block_.reset (new Fbo2Block);
 
     // draw multiple updates to a block together
     map<pBlock, list<DrawFunc>> p;

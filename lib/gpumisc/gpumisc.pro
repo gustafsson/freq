@@ -33,6 +33,7 @@ SOURCES += \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
+    glgroupmarker.cpp \
     glprojection.cpp \
     glPushContext.cpp \
     glsyncobjectmutex.cpp \
@@ -69,6 +70,7 @@ HEADERS += \
     gl.h \
     GlException.h \
     glframebuffer.h \
+    glgroupmarker.h \
     glinfo.h \
     glprojection.h \
     glPushContext.h \

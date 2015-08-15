@@ -19,6 +19,7 @@
 #include "glPushContext.h"
 #include "tasktimer.h"
 #include "GlTexture.h"
+#include "glgroupmarker.h"
 
 // Qt
 #include <QSettings>
@@ -159,6 +160,7 @@ void Renderer::
 void Renderer::
         drawBlocks(const Render::RenderSet::references_t& R)
 {
+    GlGroupMarker gpm("DrawBlocks");
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawBlocks");
 
     Render::RenderSet::references_t failed;
@@ -205,6 +207,7 @@ void Renderer::
         return;
 
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawReferences");
+    GlGroupMarker gpm("DrawReferences");
 
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);

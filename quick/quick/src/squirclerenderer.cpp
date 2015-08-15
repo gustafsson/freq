@@ -7,6 +7,7 @@
 #include "GlException.h"
 #include "demangle.h"
 #include "heightmap/render/shaderresource.h"
+#include "glgroupmarker.h"
 
 #include <boost/exception/exception.hpp>
 #include <QTimer>
@@ -178,6 +179,8 @@ void SquircleRenderer::paint()
     static bool failed = false;
     if (failed)
         return;
+
+    GlGroupMarker gpm("SquircleRenderer");
 
     try {
 

@@ -14,6 +14,7 @@
 #include "glPushContext.h"
 #include "glprojection.h"
 #include "gluperspective.h"
+#include "glgroupmarker.h"
 
 #include <QGLContext>
 
@@ -186,6 +187,7 @@ void MergerTexture::
     glGenFramebuffers(1, &fbo_);
 
 #ifndef DRAW_STRAIGHT_ONTO_BLOCK
+    // TODO if there's a point in this it should use a renderbuffer instead of a block texture
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
     tex_ = Render::BlockTextures::get1 ();
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -221,6 +223,7 @@ void MergerTexture::
 Signal::Intervals MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    GlGroupMarker gpm("MergerTexture");
     int prev_fbo = 0;
     glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
 

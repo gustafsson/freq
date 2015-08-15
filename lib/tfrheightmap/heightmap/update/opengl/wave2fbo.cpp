@@ -5,6 +5,7 @@
 #include "tasktimer.h"
 #include "log.h"
 #include "heightmap/render/shaderresource.h"
+#include "glgroupmarker.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -42,6 +43,7 @@ Wave2Fbo::
 void Wave2Fbo::
         draw(const glProjection& P, Signal::pMonoBuffer b)
 {
+    GlGroupMarker gpm("Wave2Fbo");
     if (!m_program) {
         m_program = ShaderResource::loadGLSLProgramSource (
                                            R"vertexshader(

@@ -59,6 +59,9 @@ void Block::
 {
     // Keep texture_ until it has been flushed
     new_texture_ = t;
+#if GL_EXT_debug_label
+    glLabelObjectEXT(GL_TEXTURE, new_texture_->getOpenGlTextureId (), 0, (boost::format("%s") % getVisibleRegion ()).str().c_str());
+#endif
 }
 
 

@@ -11,8 +11,8 @@ namespace Update {
 namespace OpenGL {
 
 /**
- * @brief The Texture2Fbo class just draws a waveform. It has nothing
- * to do with any FBO nor any texture.
+ * @brief The Wave2Fbo class just draws a mono buffer as a waveform. It has nothing
+ * to do with any FBO.
  */
 class Wave2Fbo
 {

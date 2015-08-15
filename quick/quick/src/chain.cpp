@@ -7,6 +7,7 @@
 #include "heightmap/uncaughtexception.h"
 #include "GlException.h"
 #include "demangle.h"
+#include "glgroupmarker.h"
 
 #include <QtQuick>
 
@@ -128,6 +129,8 @@ void setStates()
 
 void Chain::clearOpenGlBackground()
 {
+    GlGroupMarker gpm("clearOpenGlBackground");
+
     render_timer.restart ();
 
 #ifndef LEGACY_OPENGL

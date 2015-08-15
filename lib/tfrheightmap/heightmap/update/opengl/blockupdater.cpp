@@ -16,6 +16,7 @@
 #include "neat_math.h"
 #include "lazy.h"
 #include "GlException.h"
+#include "glgroupmarker.h"
 
 #include <thread>
 #include <future>
@@ -123,6 +124,8 @@ void BlockUpdater::
 void BlockUpdater::
         processJobs( vector<UpdateQueue::Job>& myjobs )
 {
+    GlGroupMarker gpm("BlockUpdater");
+
 #ifdef USE_PBO
     // Begin chunk transfer to gpu right away
     // PBOs are not supported on OpenGL ES (< 3.0)
