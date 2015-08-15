@@ -179,8 +179,11 @@ void BlockUpdater::
         int data_height = transpose ? chunk->nSamples () : chunk->nScales ();
         int w = std::min(gl_max_texture_size(), (int)spo2g(data_width-1));
         int h = std::min(gl_max_texture_size(), (int)spo2g(data_height-1));
-        int tw = w*int_div_ceil (data_height-1,h);
-        int th = h*int_div_ceil (data_width-1,w);
+        int tw = w, th = h;
+        if (data_height!=h)
+            tw *= int_div_ceil (data_height,h-1);
+        if (data_width!=w)
+            th *= int_div_ceil (data_width,w-1);
         EXCEPTION_ASSERT_LESS_OR_EQUAL(tw, gl_max_texture_size());
         EXCEPTION_ASSERT_LESS_OR_EQUAL(th, gl_max_texture_size());
 
@@ -210,6 +213,7 @@ void BlockUpdater::
 #endif
     }
 
+    // do flush if separate render thread
     glFlush();
 
     // Draw to each block
