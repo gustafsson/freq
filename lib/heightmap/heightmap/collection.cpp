@@ -99,8 +99,6 @@ void Collection::
     {
         if (!b.unique())
             to_keep.insert (b);
-        else
-            Log("Removing %s") % b->getVisibleRegion();
     }
     to_keep.swap (to_remove_);
     to_keep.clear ();
