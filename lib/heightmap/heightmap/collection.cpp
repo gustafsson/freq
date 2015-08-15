@@ -94,7 +94,16 @@ void Collection::
 void Collection::
         frame_begin()
 {
-    to_remove_.clear ();
+    std::set<pBlock> to_keep;
+    for (auto const& b : to_remove_)
+    {
+        if (!b.unique())
+            to_keep.insert (b);
+        else
+            Log("Removing %s") % b->getVisibleRegion();
+    }
+    to_keep.swap (to_remove_);
+    to_keep.clear ();
 
     BlockCache::cache_t cache = cache_->clone ();
 
