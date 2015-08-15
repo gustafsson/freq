@@ -22,7 +22,7 @@ class Fbo2Block;
 class BlockUpdater
 {
 public:
-    typedef std::shared_ptr<BlockUpdater> Ptr;
+    typedef std::unique_ptr<BlockUpdater> ptr;
     typedef std::function<bool(const glProjection& M)> DrawFunc;
     typedef boost::shared_ptr<Heightmap::Block> pBlock;
 
@@ -46,7 +46,7 @@ private:
     shared_state<std::list<std::pair<pBlock, DrawFunc>>> queue_;
     // keep DrawFunc in q_success_ until next processUpdates to not release resources before glFlush between frames
     std::list<std::pair<pBlock, DrawFunc>> q_success_;
-    Heightmap::BlockManagement::Fbo2Block* fbo2block;
+    std::unique_ptr<Heightmap::BlockManagement::Fbo2Block> fbo2block_;
 };
 
 

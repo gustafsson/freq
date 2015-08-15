@@ -466,7 +466,7 @@ void MergerTexture::
         VisualizationParams::ptr vp(new VisualizationParams);
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        pBlock block(new Block(ref,bl,vp));
+        pBlock block(new Block(ref,bl,vp,0));
         GlTexture::ptr tex = block->texture ();
 
         Log("Source overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
@@ -489,7 +489,7 @@ void MergerTexture::
                               0, 0, 0, 0,
                               0.5, 0, 0, 0};
 
-            pBlock block(new Block(ref.parentHorizontal (),bl,vp));
+            pBlock block(new Block(ref.parentHorizontal (),bl,vp,0));
             //pBlock block(new Block(ref,bl,vp));
             //Log("Inserting overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
             GlTexture::ptr tex = block->texture ();
@@ -518,7 +518,7 @@ void MergerTexture::
                               9, 1.0, 11, 12,
                               13, 14, 15, .16};
 
-            pBlock block(new Block(ref.right (),bl,vp));
+            pBlock block(new Block(ref.right (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
             tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );

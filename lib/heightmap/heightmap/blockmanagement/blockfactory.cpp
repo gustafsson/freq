@@ -20,7 +20,8 @@ BlockFactory::
         BlockFactory(BlockLayout bl, VisualizationParams::const_ptr vp)
     :
       block_layout_(bl),
-      visualization_params_(vp)
+      visualization_params_(vp),
+      updater_(new BlockUpdater)
 {
     EXCEPTION_ASSERT(visualization_params_);
 }
@@ -34,7 +35,8 @@ pBlock BlockFactory::
     pBlock block( new Block(
                      ref,
                      block_layout_,
-                     visualization_params_) );
+                     visualization_params_,
+                     updater_.get()) );
 
     //setDummyValues(block);
 

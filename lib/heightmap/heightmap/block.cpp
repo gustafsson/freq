@@ -14,8 +14,11 @@ namespace Heightmap {
 
 
 Block::
-        Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
-    :
+        Block( Reference ref,
+               BlockLayout block_layout,
+               VisualizationParams::const_ptr visualization_params,
+               Heightmap::BlockManagement::BlockUpdater* updater )
+:
     frame_number_last_used(0),
     ref_(ref),
     block_layout_(block_layout),
@@ -26,7 +29,7 @@ Block::
     sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
     texture_(Render::BlockTextures::get1()),
-    updater_(new BlockManagement::BlockUpdater)
+    updater_(updater)
 {
     if (texture_)
     {
@@ -88,7 +91,8 @@ void Block::
 Heightmap::BlockManagement::BlockUpdater* Block::
         updater()
 {
-    return updater_.get();
+    EXCEPTION_ASSERT(updater_);
+    return updater_;
 }
 
 

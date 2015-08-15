@@ -14,21 +14,22 @@ namespace BlockManagement {
 
 BlockUpdater::BlockUpdater()
     :
-    queue_(new list<pair<Heightmap::pBlock,DrawFunc>>()),
-    fbo2block(new Fbo2Block)
+    queue_(new list<pair<Heightmap::pBlock,DrawFunc>>())
 {
 }
 
 
 BlockUpdater::~BlockUpdater()
 {
-    delete fbo2block;
 }
 
 
 void BlockUpdater::
     processUpdates(bool isMainThread)
 {
+    if (!fbo2block_)
+        fbo2block_.reset (new Fbo2Block);
+
     if (!isMainThread) {
         /**
           * MergerTexture needs to prepare the block when it is about to be rendered.
@@ -68,7 +69,7 @@ void BlockUpdater::
         else
             textures[block] = Heightmap::Render::BlockTextures::get1 ();
 
-        auto fbo_mapping = fbo2block->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
+        auto fbo_mapping = fbo2block_->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto j = i->second.begin (); j != i->second.end (); j++)
         {

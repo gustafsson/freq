@@ -2,6 +2,7 @@
 #define HEIGHTMAP_BLOCKFACTORY_H
 
 #include "heightmap/blockcache.h"
+#include "blockupdater.h"
 #include "GlTexture.h"
 
 namespace Heightmap {
@@ -32,6 +33,7 @@ private:
 
     BlockLayout block_layout_;
     VisualizationParams::const_ptr visualization_params_;
+    BlockUpdater::ptr updater_;
 
 public:
     static void test();
