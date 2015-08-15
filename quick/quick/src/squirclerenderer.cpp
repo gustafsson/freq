@@ -213,7 +213,6 @@ void SquircleRenderer::paint()
 
         GlException_SAFE_CALL( render_view.paintGL () );
 
-        glViewport (0,0,m_window.width (),m_window.height ());
     } catch (const ExceptionAssert& x) {
         char const * const * f = boost::get_error_info<boost::throw_file>(x);
         int const * l = boost::get_error_info<boost::throw_line>(x);
@@ -248,4 +247,3 @@ void SquircleRenderer::paint()
         failed = true;
     }
 }
-
