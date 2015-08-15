@@ -27,6 +27,9 @@ Wave2Fbo::
     std::vector<char> zeros(s,0);
     glBufferData (GL_ARRAY_BUFFER, s, zeros.data (), GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+#if GL_EXT_debug_label
+    GlException_SAFE_CALL( glLabelObjectEXT(GL_BUFFER_OBJECT_EXT, vbo_, 0, "Wave2Fbo") );
+#endif
 
     GlException_CHECK_ERROR();
 }
