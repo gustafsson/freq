@@ -152,6 +152,32 @@ void RenderAxes::
     }
 
 
+    // 3.1 compute units per pixel
+    std::vector<vectord::T> timePerPixel;
+    std::vector<vectord::T> scalePerPixel;
+    vectord::T timePerPixel_closest, scalePerPixel_closest;
+    vectord::T timePerPixel_inside, scalePerPixel_inside;
+    {
+        g->computeUnitsPerPixel( inside, timePerPixel_inside, scalePerPixel_inside );
+        timePerPixel_inside *= scale; scalePerPixel_inside *= scale;
+
+        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
+        timePerPixel_closest *= scale; scalePerPixel_closest *= scale;
+
+        timePerPixel.resize (clippedFrustum.size());
+        scalePerPixel.resize (clippedFrustum.size());
+
+        for (unsigned i=0; i<clippedFrustum.size(); i++)
+        {
+            const vectord& p = clippedFrustum[i];
+            vectord::T tpp, spp;
+            g->computeUnitsPerPixel( p, tpp, spp );
+            timePerPixel[i] = tpp * scale;
+            scalePerPixel[i] = spp * scale;
+        }
+    }
+
+
     // 4 render and decide upon scale
     vectord x(1,0,0), z(0,0,1);
 
@@ -162,64 +188,52 @@ void RenderAxes::
     for (unsigned i=0; i<clippedFrustum.size(); i++)
     {
         unsigned j=(i+1)%clippedFrustum.size();
-        vectord p1 = clippedFrustum[i]; // starting point of side
-        vectord p2 = clippedFrustum[j]; // end point of side
-        vectord v0 = p2-p1;
+        vectord p1_0 = clippedFrustum[i]; // starting point of side
+        vectord p2_0 = clippedFrustum[j]; // end point of side
+        const vectord v0 = p2_0-p1_0;
 
         // decide if this side is a t or f axis
-        vectord::T timePerPixel, scalePerPixel;
-        g->computeUnitsPerPixel( inside, timePerPixel, scalePerPixel );
-        timePerPixel *= scale; scalePerPixel *= scale;
-
-        bool taxis = std::abs(v0[0]*scalePerPixel) > std::abs(v0[2]*timePerPixel);
-
+        bool taxis = std::abs(v0[0]*scalePerPixel_inside) > std::abs(v0[2]*timePerPixel_inside);
 
         // decide in which direction to traverse this edge
-        vectord::T timePerPixel1, scalePerPixel1, timePerPixel2, scalePerPixel2;
-        g->computeUnitsPerPixel( p1, timePerPixel1, scalePerPixel1 );
-        g->computeUnitsPerPixel( p2, timePerPixel2, scalePerPixel2 );
-        timePerPixel1 *= scale; scalePerPixel1 *= scale;
-        timePerPixel2 *= scale; scalePerPixel2 *= scale;
+        vectord::T timePerPixel1 = timePerPixel[i],
+                scalePerPixel1 = scalePerPixel[i],
+                timePerPixel2 = timePerPixel[j],
+                scalePerPixel2 = scalePerPixel[j];
 
         double dscale = 0.001;
-        double hzDelta1= fabs(fa.getFrequencyT( p1[2] + v0[2]*dscale ) - fa.getFrequencyT( p1[2] ));
-        double hzDelta2 = fabs(fa.getFrequencyT( p2[2] - v0[2]*dscale ) - fa.getFrequencyT( p2[2] ));
+        double hzDelta1= fabs(fa.getFrequencyT( p1_0[2] + v0[2]*dscale ) - fa.getFrequencyT( p1_0[2] ));
+        double hzDelta2 = fabs(fa.getFrequencyT( p2_0[2] - v0[2]*dscale ) - fa.getFrequencyT( p2_0[2] ));
 
         if ((taxis && timePerPixel1 > timePerPixel2) || (!taxis && hzDelta1 > hzDelta2))
         {
-            vectord flip = p1;
-            p1 = p2;
-            p2 = flip;
+            std::swap(p1_0, p2_0);
+            std::swap(timePerPixel1, timePerPixel2);
+            std::swap(scalePerPixel1, scalePerPixel1);
         }
 
-        vectord p = p1; // starting point
-        vectord v = p2-p1;
+        if (render_settings.draw_axis_at0==-1)
+            (taxis?p1_0[2]:p1_0[0]) = ((taxis?p1_0[2]:p1_0[0])==0) ? 1 : 0;
+        const vectord& p1 = p1_0;
+        const vectord& p2 = p2_0;
+        const vectord v = p2-p1;
 
         if (!v[0] && !v[2]) // skip if |v| = 0
             continue;
 
-
-        vectord::T timePerPixel_closest, scalePerPixel_closest;
-        g->computeUnitsPerPixel( closest_i, timePerPixel_closest, scalePerPixel_closest );
-        timePerPixel_closest *= scale; scalePerPixel_closest *= scale;
-
-        if (render_settings.draw_axis_at0==-1)
-        {
-            (taxis?p[2]:p[0]) = ((taxis?p[2]:p[0])==0) ? 1 : 0;
-            (taxis?p1[2]:p1[0]) = ((taxis?p1[2]:p1[0])==0) ? 1 : 0;
-        }
-
         // need initial f value
+        vectord p = p1; // starting point
         vectord pp = p;
         double f = fa.getFrequencyT( p[2] );
 
         if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
             (render_settings.draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
-        for (double u=-1; true; )
+        for (double u=0; true; )
         {
-            vectord::T timePerPixel, scalePerPixel;
-            g->computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
-            timePerPixel *= scale; scalePerPixel *= scale;
+            // linear interpolation, false, but good enough. The true value would
+            // be really slow.
+            vectord::T timePerPixel = timePerPixel1 + u*(timePerPixel2-timePerPixel1),
+                       scalePerPixel = scalePerPixel1 + u*(scalePerPixel2-scalePerPixel1);
 
             double ppp=0.4;
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
@@ -487,9 +501,8 @@ void RenderAxes::
 
         if (!taxis && render_settings.draw_piano && (render_settings.draw_axis_at0?p[0]==0:true))
         {
-            vectord::T timePerPixel, scalePerPixel;
-            g->computeUnitsPerPixel( p + v*0.5, timePerPixel, scalePerPixel );
-            timePerPixel *= scale; scalePerPixel *= scale;
+            vectord::T timePerPixel = 0.5*(timePerPixel1 + timePerPixel2),
+                       scalePerPixel = 0.5*(scalePerPixel1 + scalePerPixel2);
 
             double ST = timePerPixel * 750;
             double SF = scalePerPixel * 750;
