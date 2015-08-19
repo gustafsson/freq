@@ -319,6 +319,7 @@ Signal::Intervals MergerTexture::
 #endif
 
     glClear( GL_COLOR_BUFFER_BIT );
+//    clearBlock (r);
 
     if (!disable_merge_)
     {
@@ -374,6 +375,8 @@ Signal::Intervals MergerTexture::
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
     }
+    else
+        missing_details = block->getInterval ();
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
     // detach the texture explicitly, otherwise the texture image will not be detached if the texture is deleted
@@ -401,8 +404,10 @@ Signal::Intervals MergerTexture::
 void MergerTexture::
         clearBlock( const Region& ri )
 {
-    // Read from unbound texture, i.e paint zero
-    mergeBlock(ri,0);
+    // Read from zero texture, don't do this. The zero texture is not
+    // "unbound", it's just a usually incomplete texture object and it is an
+    // error to draw with an incomplete texture. Do glClear instead.
+    mergeBlock(ri, 0);
 }
 
 
