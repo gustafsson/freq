@@ -220,7 +220,7 @@ void BlockTexturesImpl::
 void BlockTexturesImpl::
         setCapacity (unsigned target_capacity)
 {
-    if (target_capacity < textures.size ())
+    if (target_capacity <= textures.size ())
     {
         std::vector<GlTexture::ptr> pick;
         pick.reserve (target_capacity);
