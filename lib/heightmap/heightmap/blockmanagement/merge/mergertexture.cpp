@@ -192,7 +192,7 @@ void MergerTexture::
     tex_ = Render::BlockTextures::get1 ();
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, tex_->getOpenGlTextureId (), 0);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 #endif
 
     glGenBuffers (1, &vbo_);
@@ -265,7 +265,7 @@ Signal::Intervals MergerTexture::
         for (pBlock b : blocks)
             I |= fillBlockFromOthersInternal (b);
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
     }
 
     cache_clone.clear ();
@@ -287,7 +287,7 @@ Signal::Intervals MergerTexture::
 
     GlException_CHECK_ERROR();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_fbo);
 
     return I;
 }
