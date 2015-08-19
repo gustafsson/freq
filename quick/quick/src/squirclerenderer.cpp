@@ -26,6 +26,9 @@ SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
 
 SquircleRenderer::~SquircleRenderer()
 {
+    for (const auto& c : render_view.model->collections()) {
+        c->clear();
+    }
 }
 
 

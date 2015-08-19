@@ -34,6 +34,8 @@ private slots:
     void setupBedroomUpdateThread();
     void setupUpdateConsumerThread(QOpenGLContext* context);
     void afterRendering();
+    void sceneGraphInitialized();
+    void sceneGraphInvalidated();
 
 private:
     void openRecording();

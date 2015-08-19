@@ -41,6 +41,7 @@ public:
      * @param f
      */
     void queueUpdate(pBlock b, DrawFunc && f);
+    void clearQueue();
 
 private:
     shared_state<std::list<std::pair<pBlock, DrawFunc>>> queue_;

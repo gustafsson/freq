@@ -12,6 +12,11 @@ SelectionRenderer::SelectionRenderer(SquircleRenderer* parent) :
 
 SelectionRenderer::~SelectionRenderer()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbo %d") % __FILE__ % vertexbuffer;
+        return;
+    }
+
     if (vertexbuffer)
         glDeleteBuffers (1, &vertexbuffer);
 }

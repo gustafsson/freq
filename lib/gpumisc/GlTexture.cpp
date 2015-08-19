@@ -75,14 +75,13 @@ void GlTexture::
 }
 
 GlTexture::~GlTexture() {
-    // GlException_CHECK_ERROR(); // Windows generates some error prior to this call, why?
-	//GlException_SAFE_CALL( glDeleteTextures(1, &textureId) );
-
     if (ownTextureId) {
-        glDeleteTextures(1, &ownTextureId); // Any GL call "seems to be" an invalid operation on Windows after/during destruction. Might be the result of something else that is broken...
-        glGetError();
+        if (!QOpenGLContext::currentContext ()) {
+            Log ("%s: destruction without gl context leaks tex %d") % __FILE__ % ownTextureId;
+            return;
+        }
 
-        ownTextureId = 0;
+        glDeleteTextures(1, &ownTextureId);
     }
 }
 

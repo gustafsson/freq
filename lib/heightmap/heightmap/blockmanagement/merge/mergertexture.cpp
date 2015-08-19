@@ -168,6 +168,11 @@ MergerTexture::
 MergerTexture::
         ~MergerTexture()
 {
+    if ((vbo_ || fbo_) &&  !QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks fbo %d and vbo %d") % __FILE__ % fbo_ % vbo_;
+        return;
+    }
+
     if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 

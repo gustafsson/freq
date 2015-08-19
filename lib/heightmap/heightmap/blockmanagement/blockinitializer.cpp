@@ -91,7 +91,7 @@ void BlockInitializer::
         r.block_index = Reference::Index(0,0);
 
         Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (), bl.texels_per_column ());
-        pBlock block = BlockFactory (bl, vp).createBlock(r);
+        pBlock block = BlockFactory ().reset(bl, vp).createBlock(r);
         block_initializer.initBlock (block);
         cache->insert (block);
 
@@ -99,7 +99,7 @@ void BlockInitializer::
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom ());
+        pBlock block3 = BlockFactory ().reset(bl, vp).createBlock(r.bottom ());
         block_initializer.initBlock (block3);
         cache->insert (block3);
 

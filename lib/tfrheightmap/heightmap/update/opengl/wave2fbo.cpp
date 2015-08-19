@@ -30,14 +30,17 @@ Wave2Fbo::
 #if GL_EXT_debug_label
     GlException_SAFE_CALL( glLabelObjectEXT(GL_BUFFER_OBJECT_EXT, vbo_, 0, "Wave2Fbo") );
 #endif
-
-    GlException_CHECK_ERROR();
 }
 
 
 Wave2Fbo::
         ~Wave2Fbo()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbo %d") % __FILE__ % unsigned(vbo_);
+        return;
+    }
+
     if (vbo_)
         glDeleteBuffers (1, &vbo_);
 }
@@ -47,6 +50,7 @@ void Wave2Fbo::
         draw(const glProjection& P, Signal::pMonoBuffer b)
 {
     GlGroupMarker gpm("Wave2Fbo");
+
     if (!m_program) {
         m_program = ShaderResource::loadGLSLProgramSource (
                                            R"vertexshader(
@@ -95,7 +99,7 @@ void Wave2Fbo::
     d[2] = vertex_format_xy{ 0, 1 };
     d[3] = vertex_format_xy{ float(S-1), 1 };
     glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(vertex_format_xy)*4, d);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
     // Draw waveform
     glDisable (GL_BLEND); // doesn't have alpha channel

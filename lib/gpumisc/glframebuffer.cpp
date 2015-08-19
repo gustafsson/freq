@@ -82,6 +82,14 @@ GlFrameBuffer::
 GlFrameBuffer::
         ~GlFrameBuffer()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        if (depth_stencil_buffer_)
+            Log ("%s: destruction without gl context leaks fbo %d and rbo %d") % __FILE__ % fboId_ % depth_stencil_buffer_;
+        else
+            Log ("%s: destruction without gl context leaks fbo %d") % __FILE__ % fboId_;
+        return;
+    }
+
     DEBUG_INFO TaskTimer tt("~GlFrameBuffer()");
 
 #ifdef _DEBUG

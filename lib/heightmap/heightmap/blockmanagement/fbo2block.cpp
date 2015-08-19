@@ -65,6 +65,15 @@ Fbo2Block::Fbo2Block ()
 Fbo2Block::
         ~Fbo2Block()
 {
+    if (!QOpenGLContext::currentContext ()) {
+#ifndef GL_ES_VERSION_2_0
+        Log ("%s: destruction without gl context leaks fbo %d and %d") % __FILE__ % readFbo % drawFbo;
+#else
+        Log ("%s: destruction without gl context leaks fbo %d") % __FILE__ % drawFbo;
+#endif
+        return;
+    }
+
     end();
 
 #ifndef GL_ES_VERSION_2_0

@@ -31,6 +31,11 @@ RenderAxes::
 {
     delete glyphs_;
 
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % orthobuffer_ % vertexbuffer_;
+        return;
+    }
+
     if (orthobuffer_)
         glDeleteBuffers (1, &orthobuffer_);
     if (vertexbuffer_)

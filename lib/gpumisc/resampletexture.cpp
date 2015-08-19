@@ -54,6 +54,11 @@ ResampleTexture::
 ResampleTexture::
         ~ResampleTexture()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("resampletexture: destruction without context. leaking %d") % vbo;
+        return;
+    }
+
     glDeleteBuffers (1, &vbo);
 }
 

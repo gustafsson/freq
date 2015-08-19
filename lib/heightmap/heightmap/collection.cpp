@@ -8,7 +8,6 @@
 #include "blockmanagement/garbagecollector.h"
 
 // Gpumisc
-//#include "GlException.h"
 #include "neat_math.h"
 #include "computationkernel.h"
 #include "tasktimer.h"
@@ -45,8 +44,8 @@ Collection::
 :   block_layout_( 2, 2, FLT_MAX ),
     visualization_params_(),
     cache_( new BlockCache ),
-    block_factory_(new BlockManagement::BlockFactory(block_layout, visualization_params)),
-    block_initializer_(new BlockManagement::BlockInitializer(block_layout, visualization_params, cache_)),
+    block_factory_(new BlockManagement::BlockFactory),
+    block_initializer_(),
     _is_visible( true ),
     _frame_counter(0),
     _prev_length(.0f)
@@ -69,6 +68,14 @@ void Collection::
         clear()
 {
     auto C = cache_->clear ();
+    block_factory_->updater()->clearQueue();
+
+    // merge
+    for (auto const r: to_remove_)
+        C[r->reference()] = r;
+    to_remove_.clear ();
+
+    // rebuild to_remove_ if any blocks are still being used, such as if a worker is actively processing data for a block
     for (auto const& v : C)
     {
         pBlock const& b = v.second;
@@ -84,10 +91,21 @@ void Collection::
             TaskInfo(format("%s") % rr.getVisible (b.first));
         }
 
-        TaskInfo("of which recent count %u", C.size ());
+        TaskInfo("of which recent count %u, %d not removed", C.size (), to_remove_.size ());
     }
 
+    C.clear ();
+    Render::BlockTextures::gc (true);
+    INFO_COLLECTION Log ("Render::BlockTextures:gc left %d textures") % Render::BlockTextures::getCapacity ();
+
     failed_allocation_ = false;
+
+    if (visualization_params_)
+    {
+        // Don't delete block_factory_ as it would delete BlockUpdater which might be currently in use by a worker.
+        block_factory_->reset(block_layout_, visualization_params_);
+        block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
+    }
 }
 
 
@@ -113,14 +131,9 @@ void Collection::
 
     boost::unordered_set<Reference> blocksToPoke;
 
-    int prev_fbo = 0;
-    glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
-
 #ifndef PAINT_BLOCKS_FROM_UPDATE_THREAD
     block_factory_->updater()->processUpdates (true);
 #endif
-
-    glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
 
     for (const BlockCache::cache_t::value_type& b : cache)
     {
@@ -414,14 +427,9 @@ void Collection::
 
     block_layout_ = v;
 
-    if (visualization_params_)
-    {
-        block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
-        block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
-    }
-
     _max_sample_size.scale = 1.f;
     length(_prev_length);
+
     clear();
 }
 
@@ -434,9 +442,6 @@ void Collection::
         return;
 
     visualization_params_ = v;
-
-    block_factory_.reset(new BlockManagement::BlockFactory(block_layout_, visualization_params_));
-    block_initializer_.reset(new BlockManagement::BlockInitializer(block_layout_, visualization_params_, cache_));
 
     clear();
 }

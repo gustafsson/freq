@@ -8,6 +8,7 @@
 #include "GlException.h"
 #include "demangle.h"
 #include "glgroupmarker.h"
+#include "tasktimer.h"
 
 #include <QtQuick>
 
@@ -63,10 +64,8 @@ Chain::Chain(QQuickItem *parent) :
 Chain::
         ~Chain()
 {
-    update_queue_->close ();
-    chain_->close ();
-    if (update_consumer_p) update_consumer_p->workIfAny ();
-    chain_.reset ();
+    if (chain_)
+        sceneGraphInvalidated ();
 }
 
 
@@ -86,6 +85,8 @@ void Chain::handleWindowChanged(QQuickWindow* win)
     {
         connect(win, SIGNAL(beforeRendering()), this, SLOT(clearOpenGlBackground()), Qt::DirectConnection);
         connect(win, SIGNAL(afterRendering()), this, SLOT(afterRendering()), Qt::DirectConnection);
+        connect(win, SIGNAL(sceneGraphInitialized()), this, SLOT(sceneGraphInitialized()), Qt::DirectConnection);
+        connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(sceneGraphInvalidated()), Qt::DirectConnection);
     }
 }
 
@@ -148,15 +149,7 @@ void Chain::clearOpenGlBackground()
     GlException_SAFE_CALL( glBindVertexArray(vertexArray_) );
 #endif
 
-#ifdef CHAIN_USEUPDATECONSUMERTHREAD
-    if (!update_consumer_thread_)
-        setupUpdateConsumerThread(QOpenGLContext::currentContext());
-#else
-    if (!update_consumer_p)
-    {
-        update_consumer_p.reset (new Heightmap::Update::UpdateConsumer(update_queue_));
-        setupBedroomUpdateThread();
-    }
+#ifndef CHAIN_USEUPDATECONSUMERTHREAD
     update_consumer_p->workIfAny();
 #endif
 
@@ -203,6 +196,42 @@ void Chain::afterRendering()
             }
         }
     }
+}
+
+
+void Chain::sceneGraphInitialized()
+{
+    TaskInfo ti("Chain::sceneGraphInitialized()");
+    EXCEPTION_ASSERT(QOpenGLContext::currentContext ());
+
+#ifdef CHAIN_USEUPDATECONSUMERTHREAD
+    if (!update_consumer_thread_)
+        setupUpdateConsumerThread(QOpenGLContext::currentContext());
+#else
+    if (!update_consumer_p)
+    {
+        update_consumer_p.reset (new Heightmap::Update::UpdateConsumer(update_queue_));
+        setupBedroomUpdateThread();
+    }
+#endif
+}
+
+
+void Chain::sceneGraphInvalidated()
+{
+    TaskInfo ti("Chain::sceneGraphInvalidated() %p", QOpenGLContext::currentContext());
+    update_queue_->close ();
+    chain_->close ();
+
+    update_consumer_p.reset ();
+
+    if (update_consumer_thread_)
+    {
+        delete update_consumer_thread_;
+        update_consumer_thread_ = 0;
+    }
+
+    chain_.reset ();
 }
 
 

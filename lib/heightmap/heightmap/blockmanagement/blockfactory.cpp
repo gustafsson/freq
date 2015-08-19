@@ -17,19 +17,28 @@ namespace Heightmap {
 namespace BlockManagement {
 
 BlockFactory::
-        BlockFactory(BlockLayout bl, VisualizationParams::const_ptr vp)
+        BlockFactory()
     :
-      block_layout_(bl),
-      visualization_params_(vp),
+      block_layout_( 2, 2, FLT_MAX ),
       updater_(new BlockUpdater)
 {
-    EXCEPTION_ASSERT(visualization_params_);
+
+}
+
+
+BlockFactory& BlockFactory::
+        reset(BlockLayout bl, VisualizationParams::const_ptr vp)
+{
+    block_layout_ = bl;
+    visualization_params_ = vp;
+    return *this;
 }
 
 
 pBlock BlockFactory::
         createBlock( const Reference& ref )
 {
+    EXCEPTION_ASSERT(visualization_params_);
     TIME_BLOCKFACTORY TaskTimer tt(format("New block %s") % ReferenceInfo(ref, block_layout_, visualization_params_));
 
     pBlock block( new Block(
@@ -99,14 +108,14 @@ void BlockFactory::
         r.log2_samples_size = Reference::Scale( floor_log2( max_sample_size.time ), floor_log2( max_sample_size.scale ));
         r.block_index = Reference::Index(0,0);
 
-        pBlock block = BlockFactory(bl, vp).createBlock(r);
+        pBlock block = BlockFactory().reset (bl, vp).createBlock(r);
         cache->insert (block);
 
         EXCEPTION_ASSERT(block);
         EXCEPTION_ASSERT(cache->find(r));
         EXCEPTION_ASSERT(cache->find(r) == block);
 
-        pBlock block3 = BlockFactory(bl, vp).createBlock(r.bottom ());
+        pBlock block3 = BlockFactory().reset(bl, vp).createBlock(r.bottom ());
         cache->insert (block3);
 
         EXCEPTION_ASSERT(block3);

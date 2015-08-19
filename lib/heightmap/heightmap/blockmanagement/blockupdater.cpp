@@ -22,6 +22,7 @@ BlockUpdater::BlockUpdater()
 
 BlockUpdater::~BlockUpdater()
 {
+
 }
 
 
@@ -92,7 +93,7 @@ void BlockUpdater::
     auto w = queue_.write ();
     w->swap (q_failed);
 
-    // if any new updates arrived during processing push them to the back of the queue
+    // if any new updates arrived during processing push any failed draw attempts to the back of the queue
     for (auto& a : q_failed)
         w->push_back (std::move(a));
 }
@@ -103,6 +104,15 @@ void BlockUpdater::
 {
     queue_->push_back(pair<pBlock, DrawFunc>(b,move(f)));
 }
+
+
+void BlockUpdater::
+        clearQueue()
+{
+    queue_->clear();
+    q_success_.clear ();
+}
+
 
 } // namespace BlockManagement
 } // namespace Heightmap

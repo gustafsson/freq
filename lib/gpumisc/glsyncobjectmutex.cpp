@@ -33,6 +33,11 @@ GlSyncObjectMutex::
 GlSyncObjectMutex::
         ~GlSyncObjectMutex()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks sync object %d") % __FILE__ % p->s;
+        return;
+    }
+
     if (p->s)
         glDeleteSync (p->s);
     delete p;

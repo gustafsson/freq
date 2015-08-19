@@ -33,6 +33,11 @@ Source2Pbo::Source2Pbo(
 
 Source2Pbo::~Source2Pbo()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks pbo %d") % __FILE__ % chunk_pbo_;
+        return;
+    }
+
     if (mapped_chunk_data_)
     {
         Log("~Source2Pbo: is waiting for data_transfer before releasing gl resources");

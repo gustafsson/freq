@@ -101,6 +101,11 @@ GlyphsFreetypeEmbedded::
 GlyphsFreetypeEmbedded::
         ~GlyphsFreetypeEmbedded()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % glyphbuffer_ % vertexbuffer_;
+        return;
+    }
+
     if (glyphbuffer_)
         glDeleteBuffers (1, &glyphbuffer_);
     if (vertexbuffer_)

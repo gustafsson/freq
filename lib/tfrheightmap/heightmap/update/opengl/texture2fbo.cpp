@@ -3,6 +3,8 @@
 #include "GlException.h"
 #include "gl.h"
 #include "tasktimer.h"
+#include "glgroupmarker.h"
+#include "log.h"
 
 //#define INFO
 #define INFO if(0)
@@ -158,6 +160,11 @@ Texture2Fbo::Texture2Fbo(
 
 Texture2Fbo::~Texture2Fbo()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbo %d") % __FILE__ % unsigned(vbo_);
+        return;
+    }
+
     if (vbo_)
         glDeleteBuffers (1, &vbo_);
 }
@@ -169,6 +176,7 @@ void Texture2Fbo::
     GlException_CHECK_ERROR ();
 
     INFO TaskTimer tt("Texture2Fbo::draw");
+    GlGroupMarker gpm("Texture2Fbo::draw");
 
     // Setup drawing with VBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);

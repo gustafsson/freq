@@ -11,13 +11,13 @@ namespace BlockManagement {
 /**
  * @brief The BlockFactory class should create new blocks to make them ready
  * for receiving heightmap data and rendering.
- *
- * TODO should take BlockCache::ConstPtr
  */
 class BlockFactory
 {
 public:
-    BlockFactory(BlockLayout, VisualizationParams::const_ptr);
+    BlockFactory();
+
+    BlockFactory& reset(BlockLayout, VisualizationParams::const_ptr);
 
     /**
       Creates a new block.
