@@ -137,7 +137,7 @@ size_t Step::
 Intervals Step::
         not_started() const
 {
-    Intervals I = ~cache_.read ()->samplesDesc() & ~currently_processing();
+    Intervals I = ~(cache_.read ()->samplesDesc() | currently_processing());
     LOG_NOT_STARTED Log("Step: %s not started on %s") % I % operation_name();
     return I;
 }
