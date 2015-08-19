@@ -88,7 +88,6 @@ BlockUpdater::
     :
       p(new BlockUpdaterPrivate)
 {
-    p->texturePool.resize (2);
 }
 
 
@@ -216,8 +215,10 @@ void BlockUpdater::
 #endif
     }
 
+#ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
     // do flush if separate render thread
     glFlush();
+#endif
 
     // Draw to each block
     for (const UpdateQueue::Job& j : myjobs)
