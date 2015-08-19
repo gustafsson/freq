@@ -129,6 +129,15 @@ void setStates()
 
 void Chain::clearOpenGlBackground()
 {
+    static bool failed = false;
+    if (failed)
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        return;
+    }
+
+    try {
+
     GlGroupMarker gpm("clearOpenGlBackground");
 
     render_timer.restart ();
@@ -159,6 +168,17 @@ void Chain::clearOpenGlBackground()
     QColor c = this->window ()->color ();
     GlException_SAFE_CALL( glClearColor(c.redF (), c.greenF (), c.blueF (), c.alphaF ()) );
     GlException_SAFE_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );
+
+    } catch (const std::exception& x) {
+        fflush(stdout);
+        fprintf(stderr, "%s",
+                (boost::format("%s\n"
+                                  "%s\n"
+                                  " FAILED in %s\n\n")
+                    % vartype(x) % boost::diagnostic_information(x) % __FUNCTION__ ).str().c_str());
+        fflush(stderr);
+        failed = true;
+    }
 }
 
 
@@ -173,6 +193,7 @@ void Chain::afterRendering()
 
     if (auto r = rec_.lock ())
     {
+        // keep animating during recording with a full framerate (60 fps) even if tasks are finished at a lower rate
         if (!r->isStopped()) {
             auto c = chain()->targets()->getTargets();
             for (const auto& t : c) {
