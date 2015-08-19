@@ -111,6 +111,7 @@ void BlockUpdater::
 {
     queue_->clear();
     q_success_.clear ();
+    fbo2block_.reset ();
 }
 
 
