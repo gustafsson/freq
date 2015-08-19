@@ -53,8 +53,6 @@ Shader::Shader(ShaderPtr&& programp)
 
 Shader::~Shader()
 {
-    if (program)
-        glDeleteProgram(program);
 }
 
 
