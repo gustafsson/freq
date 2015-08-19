@@ -89,6 +89,7 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     GlException_CHECK_ERROR ();
 
+    glBindTexture (GL_TEXTURE_2D, drawTexture->getOpenGlTextureId ());
 #ifdef GL_ES_VERSION_2_0
     if (srcTexture!=drawTexture)
         texture2texture(srcTexture, drawTexture);

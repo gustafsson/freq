@@ -308,6 +308,7 @@ Signal::Intervals MergerTexture::
     glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId (), 0);
 #endif
