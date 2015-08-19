@@ -1329,14 +1329,16 @@ unsigned Cwt::
         time_support_bin0() const
 {
 //    return wavelet_time_support_samples( fs, j_to_hz( fs, 0 ) );
-    float highest_nf_inBin0;
-    for (unsigned j=0; ;j++)
+    float highest_nf_inBin0 = 0.f;
+    unsigned j;
+    for (j=0; j<1000u;j++)
         if (0 != find_bin(j))
         {
             highest_nf_inBin0 = j_to_nf( j-1 );
             break;
         }
 
+    EXCEPTION_ASSERT_LESS(j,1000u);
     return wavelet_time_support_samples( highest_nf_inBin0 );
 }
 
