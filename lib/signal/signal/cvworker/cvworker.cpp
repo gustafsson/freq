@@ -13,6 +13,9 @@
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
 
+//#define INFO
+#define INFO if(0)
+
 using namespace std;
 using namespace Signal::Processing;
 
@@ -67,8 +70,10 @@ CvWorker::CvWorker(
                     active_time_since_start_ += work_timer.elapsed ();
                     bedroom->wakeup (); // make idle workers wakeup to check if they can do something, won't affect busy workers
 
-                    if (ltf_tasks.tick(false))
-                        Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    INFO {
+                        if (ltf_tasks.tick(false))
+                            Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    }
                 }
                 else
                 {
@@ -83,8 +88,10 @@ CvWorker::CvWorker(
                         b.sleep ();
                     last_wakeup.restart ();
 
-                    if (ltf_wakeups.tick(false))
-                        Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    INFO {
+                        if (ltf_wakeups.tick(false))
+                            Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    }
                 }
             } while (!*abort);
 
