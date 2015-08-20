@@ -60,7 +60,9 @@ void BlockUpdater::
     for (auto i = q.begin (); i != q.end (); i++)
         p[i->first].push_back(move(i->second));
 
+    // release resources bound in function objects
     q_success_.clear ();
+
     list<pair<pBlock, DrawFunc>> q_failed;
     map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto i = p.begin (); i != p.end (); i++)
@@ -79,6 +81,8 @@ void BlockUpdater::
         {
             DrawFunc& draw = *j;
 
+            // try again next frame with draw calls that return false (i.e if a sync object isn'r ready yet)
+            // keep successfull draw calls around to prevent opengl resources from being reused (causing sync or corrupted data) before opengl is done with them
             (draw(M) ? q_success_ : q_failed)
                .push_back (pair<pBlock, DrawFunc>(block,move(*j)));
         }

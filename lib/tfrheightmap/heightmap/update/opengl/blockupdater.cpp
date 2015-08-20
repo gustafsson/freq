@@ -226,7 +226,7 @@ void BlockUpdater::
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
         pBlock b = j.intersecting_blocks.front ();
 
-        auto f =
+        auto draw =
                 [
                     shader = pbo2texture[job->chunk],
                     vbo = vbos[job->chunk],
@@ -247,7 +247,7 @@ void BlockUpdater::
 
         for (pBlock block : j.intersecting_blocks)
         {
-            block->updater ()->queueUpdate (block, f);
+            block->updater ()->queueUpdate (block, [draw](const glProjection& M){return draw(M);});
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
             block->updater ()->processUpdates (false);

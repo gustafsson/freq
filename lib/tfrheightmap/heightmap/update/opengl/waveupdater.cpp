@@ -63,21 +63,12 @@ void WaveUpdater::
         if (!job)
             break;
 
-        auto f =
-                [
-                    wave2fbo = &p->wave2fbo,
-                    b = job->b
-                ]
-                (const glProjection& M) mutable
-                {
-                    wave2fbo->draw (M,b);
-
-                    return true;
-                };
+        auto draw = p->wave2fbo.prep (job->b);
 
         for (pBlock block : j.intersecting_blocks)
         {
-            block->updater ()->queueUpdate (block, f);
+            block->updater ()->queueUpdate (block,
+                        [draw] (const glProjection& M) { return draw(M); });
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
             block->updater ()->processUpdates (false);

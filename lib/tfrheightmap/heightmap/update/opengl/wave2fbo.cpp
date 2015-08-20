@@ -9,6 +9,8 @@
 
 #include <QOpenGLShaderProgram>
 
+using namespace std;
+
 namespace Heightmap {
 namespace Update {
 namespace OpenGL {
@@ -16,43 +18,19 @@ namespace OpenGL {
 Wave2Fbo::
         Wave2Fbo()
     :
-      dv(128*1024) // 1 MB
+      //N(128*1024) // 1 MB
+      N_(8*1024) // 64 KB
 {
-    GlException_CHECK_ERROR();
-
-    glGenBuffers (1, &vbo_); // Generate 1 buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-
-    size_t s = sizeof(vertex_format_xy) * dv.size ();
-    std::vector<char> zeros(s,0);
-    glBufferData (GL_ARRAY_BUFFER, s, zeros.data (), GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-#if GL_EXT_debug_label
-    GlException_SAFE_CALL( glLabelObjectEXT(GL_BUFFER_OBJECT_EXT, vbo_, 0, "Wave2Fbo") );
-#endif
 }
 
 
-Wave2Fbo::
-        ~Wave2Fbo()
-{
-    if (!QOpenGLContext::currentContext ()) {
-        Log ("%s: destruction without gl context leaks vbo %d") % __FILE__ % unsigned(vbo_);
-        return;
-    }
-
-    if (vbo_)
-        glDeleteBuffers (1, &vbo_);
-}
-
-
-void Wave2Fbo::
-        draw(const glProjection& P, Signal::pMonoBuffer b)
+function<bool(const glProjection& glprojection)> Wave2Fbo::
+        prep(Signal::pMonoBuffer b)
 {
     GlGroupMarker gpm("Wave2Fbo");
 
-    if (!m_program) {
-        m_program = ShaderResource::loadGLSLProgramSource (
+    if (!program_) {
+        program_ = ShaderResource::loadGLSLProgramSource (
                                            R"vertexshader(
                                                attribute highp vec4 vertices;
                                                uniform highp mat4 ModelViewProjectionMatrix;
@@ -67,67 +45,141 @@ void Wave2Fbo::
                                                }
                                            )fragmentshader");
 
-        uniModelViewProjectionMatrix = m_program->uniformLocation("ModelViewProjectionMatrix");
-        uniRgba = m_program->uniformLocation("rgba");
+        uniModelViewProjectionMatrix_ = program_->uniformLocation("ModelViewProjectionMatrix");
+        uniRgba_ = program_->uniformLocation("rgba");
     }
 
-    if (!m_program->isLinked ())
-        return;
+    if (!program_->isLinked ())
+        return [](const glProjection& glprojection){return true;};
 
     GlException_CHECK_ERROR();
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    m_program->bind();
-    m_program->enableAttributeArray(0);
-
-    matrixd modelview = P.modelview;
-    modelview *= matrixd::translate (b->start (), 0.5, 0);
-    modelview *= matrixd::scale (1.0/b->sample_rate (), 0.5, 1);
-    glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
-
-    GlException_CHECK_ERROR();
-    glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // Draw clear rectangle
-    m_program->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
-
-    vertex_format_xy* d = &dv[0];
-    int N = (int)dv.size ();
     int S = b->number_of_samples ();
-    d[0] = vertex_format_xy{ 0, -1 };
-    d[1] = vertex_format_xy{ float(S-1), -1 };
-    d[2] = vertex_format_xy{ 0, 1 };
-    d[3] = vertex_format_xy{ float(S-1), 1 };
-    glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(vertex_format_xy)*4, d);
-    glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
-    // Draw waveform
-    glDisable (GL_BLEND); // doesn't have alpha channel
-    glLineWidth(1);
-    m_program->setUniformValue(uniRgba, QVector4D(0.25,0.0,0.0,1.0));
+    shared_ptr<Vbo> first_vbo = getVbo();
+
+    glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
+    vertex_format_xy* d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, min(N_,4+S)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
+
+    // Prepare clear rectangle
+    *d++ = vertex_format_xy{ 0, -1 };
+    *d++ = vertex_format_xy{ float(S-1), -1 };
+    *d++ = vertex_format_xy{ 0, 1 };
+    *d++ = vertex_format_xy{ float(S-1), 1 };
+    int first_j = 4;
 
     float* p = CpuMemoryStorage::ReadOnly<1>(b->waveform_data()).ptr ();
 
-    for (int i=0,j; i<S;)
+    int i=0;
+    for (; i<S && first_j<N_; ++i, ++first_j)
+        *d++ = vertex_format_xy{ float(i), p[i] };
+
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    // glMapBufferRange might cause implicit synchronization (wait for
+    // previous drawArrays to finish) if it updates the actual buffer
+    // right away instead of enqueing the data for update later.
+    // Allocating a new buffer is better, it's generic and fast.
+    // And OpenGL will free the previous buffer later.
+    // https://www.opengl.org/wiki/Buffer_Object_Streaming
+    //glBufferData (GL_ARRAY_BUFFER, N * sizeof(vertex_format_xy), NULL, GL_STREAM_DRAW);
+    vector<pair<shared_ptr<Vbo>,int>> vbos;
+
+    for (; i<S;)
     {
-        if (0<i)
-            --i;
+        --i;
+        int j=0;
+        shared_ptr<Vbo> vbo = getVbo();
+        Log("wave2fbo: full, restarting %d") % int(*vbo);
 
-        for (j=0; i<S && j<N; ++i, ++j)
-            d[j] = vertex_format_xy{ float(i), p[i] };
+        glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+        d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, min(N_,S-i)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
 
-        // might cause implicit synchronization (wait for previous drawArrays
-        // to finish) if it updates the actual buffer right away instead of
-        // enqueing the data for update later
-        glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(vertex_format_xy)*j, d);
-        glDrawArrays(GL_LINE_STRIP, 0, j);
+        for (; i<S && j<N_; ++i, ++j)
+            *d++ = vertex_format_xy{ float(i), p[i] };
+
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+
+        vbos.push_back (pair<shared_ptr<Vbo>,int>(vbo,j));
     }
 
-    m_program->disableAttributeArray (0);
+    std::shared_ptr<QOpenGLShaderProgram> program_ = this->program_;
+    auto uniModelViewProjectionMatrix = this->uniModelViewProjectionMatrix_;
+    auto uniRgba = this->uniRgba_;
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     GlException_CHECK_ERROR();
+
+    return [program_,b,uniModelViewProjectionMatrix,uniRgba,
+            first_vbo,first_j,vbos]
+    (const glProjection& P)
+    {
+        program_->bind();
+        program_->enableAttributeArray(0);
+
+        matrixd modelview = P.modelview;
+        modelview *= matrixd::translate (b->start (), 0.5, 0);
+        modelview *= matrixd::scale (1.0/b->sample_rate (), 0.5, 1);
+        glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
+
+        GlException_CHECK_ERROR();
+
+        // Draw clear rectangle
+        program_->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
+        glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
+        glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
+
+        // Draw waveform
+        glDisable (GL_BLEND); // doesn't have alpha channel
+        glLineWidth(1);
+        program_->setUniformValue(uniRgba, QVector4D(0.25,0.0,0.0,1.0));
+        glDrawArrays(GL_LINE_STRIP, 4, first_j-4);
+
+        for (auto& v : vbos) {
+            glBindBuffer(GL_ARRAY_BUFFER, *v.first);
+            glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+            glDrawArrays(GL_LINE_STRIP, 0, v.second);
+        }
+
+        program_->disableAttributeArray (0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GlException_CHECK_ERROR();
+
+        return true;
+    };
 }
 
+
+shared_ptr<Vbo> Wave2Fbo::getVbo ()
+{
+    shared_ptr<Vbo> r;
+    size_t used = 0;
+    for (auto& v : vbos_) {
+        if (v.unique())
+            r = v;
+        else
+            used++;
+    }
+
+    if (r)
+    {
+        size_t maxsize = used*2+2;
+        if (maxsize < vbos_.size ())
+        {
+            // doesn't matter if dropping vbos in use here
+            vbos_.resize (maxsize);
+        }
+        return r;
+    }
+
+    r.reset(new Vbo(N_ * sizeof(vertex_format_xy), GL_ARRAY_BUFFER, GL_STREAM_DRAW, NULL));
+#if GL_EXT_debug_label
+    GlException_SAFE_CALL( glLabelObjectEXT(GL_BUFFER_OBJECT_EXT, *r, 0, "Wave2Fbo") );
+#endif
+    vbos_.push_back (r);
+    return r;
+}
 
 } // namespace OpenGL
 } // namespace Update

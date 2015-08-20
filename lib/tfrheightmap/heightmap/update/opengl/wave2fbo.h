@@ -2,8 +2,10 @@
 #define HEIGHTMAP_UPDATE_OPENGL_WAVE2FBO_H
 
 #include "signal/buffer.h"
-#include "zero_on_move.h"
 #include "glprojection.h"
+#include "vbo.h"
+#include <vector>
+#include <memory>
 
 class QOpenGLShaderProgram;
 namespace Heightmap {
@@ -14,27 +16,27 @@ namespace OpenGL {
  * @brief The Wave2Fbo class just draws a mono buffer as a waveform. It has nothing
  * to do with any FBO.
  */
-class Wave2Fbo
+class Wave2Fbo final
 {
 public:
     Wave2Fbo();
-    Wave2Fbo(Wave2Fbo&&)=default;
     Wave2Fbo(const Wave2Fbo&)=delete;
     Wave2Fbo& operator=(const Wave2Fbo&)=delete;
-    ~Wave2Fbo();
 
-    void draw(const glProjection& glprojection, Signal::pMonoBuffer b);
+    std::function<bool(const glProjection& M)> prep(Signal::pMonoBuffer b);
 
 private:
     struct vertex_format_xy {
         float x, y;
     };
 
-    std::unique_ptr<QOpenGLShaderProgram> m_program;
-    JustMisc::zero_on_move<GLuint>      vbo_;
-    std::vector<vertex_format_xy>       dv;
+    std::shared_ptr<QOpenGLShaderProgram> program_;
+    std::vector<std::shared_ptr<Vbo>>     vbos_;
+    const int                             N_;
+    GLuint                                uniModelViewProjectionMatrix_,
+                                          uniRgba_;
 
-    GLuint uniModelViewProjectionMatrix, uniRgba;
+    std::shared_ptr<Vbo> getVbo();
 };
 
 } // namespace OpenGL
