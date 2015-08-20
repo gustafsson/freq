@@ -26,10 +26,54 @@ Vbo::Vbo(size_t size, unsigned vbo_type, unsigned access_pattern, void* data)
 }
 
 
+Vbo::Vbo(Vbo &&b)
+{
+    this->_sz = b._sz;
+    this->_vbo = b._vbo;
+
+#ifdef USE_CUDA
+    this->_registered = b._registered;
+#endif
+    this->_vbo_type = b._vbo_type;
+
+    b._sz = 0;
+    b._vbo = 0;
+
+#ifdef USE_CUDA
+    b._registered = 0;
+#endif
+    b._vbo_type = 0;
+}
+
+
+Vbo&Vbo::operator =(Vbo &&b)
+{
+    clear ();
+
+    this->_sz = b._sz;
+    this->_vbo = b._vbo;
+
+#ifdef USE_CUDA
+    this->_registered = b._registered;
+#endif
+    this->_vbo_type = b._vbo_type;
+
+    b._sz = 0;
+    b._vbo = 0;
+
+#ifdef USE_CUDA
+    b._registered = 0;
+#endif
+    b._vbo_type = 0;
+    return *this;
+}
+
+
 Vbo::~Vbo()
 {
     clear();
 }
+
 
 Vbo::
         operator GLuint() const
