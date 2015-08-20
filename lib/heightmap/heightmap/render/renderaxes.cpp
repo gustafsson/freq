@@ -228,12 +228,12 @@ void RenderAxes::
 
         if (((taxis && render_settings.draw_t) || (!taxis && render_settings.draw_hz)) &&
             (render_settings.draw_axis_at0!=0?(taxis?p[2]==0:p[0]==0):true))
-        for (double u=0; true; )
+        for (double u=-1; true; )
         {
             // linear interpolation, false, but good enough. The true value would
             // be really slow.
-            vectord::T timePerPixel = timePerPixel1 + u*(timePerPixel2-timePerPixel1),
-                       scalePerPixel = scalePerPixel1 + u*(scalePerPixel2-scalePerPixel1);
+            vectord::T timePerPixel = timePerPixel1 + (u<0?0:u)*(timePerPixel2-timePerPixel1),
+                       scalePerPixel = scalePerPixel1 + (u<0?0:u)*(scalePerPixel2-scalePerPixel1);
 
             double ppp=0.4;
             timePerPixel = timePerPixel * ppp + timePerPixel_closest * (1.0-ppp);
