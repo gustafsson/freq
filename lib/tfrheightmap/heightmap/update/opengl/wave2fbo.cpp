@@ -9,6 +9,9 @@
 
 #include <QOpenGLShaderProgram>
 
+//#define LOG_FULL_BUFFER
+#define LOG_FULL_BUFFER if(0)
+
 using namespace std;
 
 namespace Heightmap {
@@ -102,7 +105,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         int j=0;
         NewVbo gotvbo = getVbo();
         shared_ptr<Vbo> vbo = move(gotvbo.second);
-        Log("wave2fbo: full, restarting %d") % int(*vbo);
+        LOG_FULL_BUFFER Log("wave2fbo: full, restarting %d") % int(*vbo);
 
         glBindBuffer(GL_ARRAY_BUFFER, *vbo);
         if (gotVbo.first) // see gotVbo.first above
