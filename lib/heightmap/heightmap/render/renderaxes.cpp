@@ -5,7 +5,7 @@
 // gpumisc
 #include "tasktimer.h"
 #include "glPushContext.h"
-#include "gl.h"
+#include "glstate.h"
 #include "GLvector.h"
 #include "gluperspective.h"
 #include "log.h"
@@ -707,8 +707,8 @@ void RenderAxes::
 
     program_->bind();
 
-    program_->enableAttributeArray(0);
-    program_->enableAttributeArray(1);
+    GlState::glEnableVertexAttribArray (0);
+    GlState::glEnableVertexAttribArray (1);
 
     if (!ae.orthovertices.empty ())
     {
@@ -735,7 +735,7 @@ void RenderAxes::
         program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
         program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
     }
 
     if (!ae.vertices.empty ())
@@ -760,11 +760,11 @@ void RenderAxes::
         program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
         program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
     }
 
-    program_->disableAttributeArray (1);
-    program_->disableAttributeArray (0);
+    GlState::glDisableVertexAttribArray (1);
+    GlState::glDisableVertexAttribArray (0);
     program_->release();
 
     GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );

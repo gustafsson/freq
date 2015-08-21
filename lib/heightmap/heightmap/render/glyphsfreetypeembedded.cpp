@@ -16,6 +16,7 @@
 #include "GlException.h"
 #include "shaderresource.h"
 #include "exceptionassert.h"
+#include "glstate.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -244,9 +245,9 @@ void GlyphsFreetypeEmbedded::
         overlay_program_->setUniformValue(overlay_program_qt_ProjectionMatrixLocation_,
                                   QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
 
-        glEnableVertexAttribArray (0);
+        GlState::glEnableVertexAttribArray (0);
         glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, 0, 0 );
-        glDrawArrays (GL_TRIANGLES, 0, quad_v.size());
+        GlState::glDrawArrays (GL_TRIANGLES, 0, quad_v.size());
     }
 
     {
@@ -266,15 +267,15 @@ void GlyphsFreetypeEmbedded::
         program_->setUniformValue(program_qt_ProjectionMatrixLocation_,
                                   QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
 
-        glEnableVertexAttribArray (1);
+        GlState::glEnableVertexAttribArray (1);
         program_->setAttributeBuffer(program_qt_ModelViewVertexLocation_, GL_FLOAT, 0, 4, sizeof(Glyph));
         program_->setAttributeBuffer(program_qt_MultiTexCoord0Location_, GL_FLOAT, sizeof(tvector<4,GLfloat>), 2, sizeof(Glyph));
 
         glBindTexture (GL_TEXTURE_2D, texid);
-        glDrawArrays (GL_TRIANGLES, 0, glyphs.size());
+        GlState::glDrawArrays (GL_TRIANGLES, 0, glyphs.size());
 
-        glDisableVertexAttribArray (1);
-        glDisableVertexAttribArray (0);
+        GlState::glDisableVertexAttribArray (1);
+        GlState::glDisableVertexAttribArray (0);
         glBindBuffer (GL_ARRAY_BUFFER, 0);
         GlException_SAFE_CALL( program_->release() );
     }

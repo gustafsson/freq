@@ -36,6 +36,7 @@ SOURCES += \
     glgroupmarker.cpp \
     glprojection.cpp \
     glPushContext.cpp \
+    glstate.cpp \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
@@ -74,6 +75,7 @@ HEADERS += \
     glinfo.h \
     glprojection.h \
     glPushContext.h \
+    glstate.h \
     glsyncobjectmutex.h \
     GlTexture.h \
     gltextureread.h \

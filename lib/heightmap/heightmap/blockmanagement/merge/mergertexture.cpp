@@ -15,6 +15,7 @@
 #include "glprojection.h"
 #include "gluperspective.h"
 #include "glgroupmarker.h"
+#include "glstate.h"
 
 #include <QGLContext>
 
@@ -251,8 +252,8 @@ Signal::Intervals MergerTexture::
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
-    glEnableVertexAttribArray (qt_Vertex);
-    glEnableVertexAttribArray (qt_MultiTexCoord0);
+    GlState::glEnableVertexAttribArray (qt_Vertex);
+    GlState::glEnableVertexAttribArray (qt_MultiTexCoord0);
     glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
@@ -275,8 +276,8 @@ Signal::Intervals MergerTexture::
 
     cache_clone.clear ();
 
-    glDisableVertexAttribArray (qt_MultiTexCoord0);
-    glDisableVertexAttribArray (qt_Vertex);
+    GlState::glDisableVertexAttribArray (qt_MultiTexCoord0);
+    GlState::glDisableVertexAttribArray (qt_Vertex);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glEnable (GL_DEPTH_TEST);
@@ -423,7 +424,7 @@ void MergerTexture::
     glUniformMatrix4fv (uniModelView, 1, false, GLmatrixf(modelview).v ());
 
     glBindTexture( GL_TEXTURE_2D, texture);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
+    GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
 }
 
 } // namespace Merge

@@ -1,7 +1,7 @@
 #include "renderregion.h"
 
 #include "unused.h"
-#include "gl.h"
+#include "glstate.h"
 #include "glPushContext.h"
 
 #include <QOpenGLShaderProgram>
@@ -48,7 +48,7 @@ void RenderRegion::
 
     program_->bind();
 
-    program_->enableAttributeArray(0);
+    GlState::glEnableVertexAttribArray (0);
 
     float cross_values[] = {
         0, 0, 0,
@@ -83,15 +83,15 @@ void RenderRegion::
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
     program_->setUniformValue("modelviewproj",
                               QMatrix4x4(GLmatrixf(gl_projection_.projection*modelview).transpose ().v ()));
-    glDrawArrays(GL_LINE_STRIP, 0, n_values);
+    GlState::glDrawArrays(GL_LINE_STRIP, 0, n_values);
 
     program_->setUniformValue("color", 0.2, 0.8, 0.8, 0.5);
     program_->setUniformValue("modelviewproj",
                               QMatrix4x4(GLmatrixf(gl_projection_.projection*matrixd::translate (0,y,0)*modelview).transpose ().v ()));
-    glDrawArrays(GL_LINE_STRIP, 0, n_values);
+    GlState::glDrawArrays(GL_LINE_STRIP, 0, n_values);
     glLineWidth(1);
 
-    program_->disableAttributeArray(0);
+    GlState::glDisableVertexAttribArray (0);
     program_->release();
 }
 

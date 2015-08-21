@@ -1,5 +1,6 @@
 #include "drawcollections.h"
 
+#include "glstate.h"
 #include "GlException.h"
 #include "computationkernel.h"
 #include "glPushContext.h"
@@ -151,8 +152,8 @@ void DrawCollections::
         }
 
         m_program->bind();
-        m_program->enableAttributeArray(0);
-        m_program->enableAttributeArray(1);
+        GlState::glEnableVertexAttribArray (0);
+        GlState::glEnableVertexAttribArray (1);
 
         float tx = vp[2]/(float)fbo->getWidth();
         float ty = vp[3]/(float)fbo->getHeight();
@@ -164,9 +165,9 @@ void DrawCollections::
         };
         m_program->setAttributeArray("vertices", GL_FLOAT, values, 2, 4*sizeof(float));
         m_program->setAttributeArray("itex", GL_FLOAT, values + 2, 2, 4*sizeof(float));
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        m_program->disableAttributeArray(0);
-        m_program->disableAttributeArray(1);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDisableVertexAttribArray (1);
+        GlState::glDisableVertexAttribArray (0);
         m_program->release();
 
         glEnable(GL_DEPTH_TEST);

@@ -1,5 +1,5 @@
 #include "wave2fbo.h"
-#include "gl.h"
+#include "glstate.h"
 #include "GlException.h"
 #include "cpumemorystorage.h"
 #include "tasktimer.h"
@@ -130,7 +130,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
     (const glProjection& P)
     {
         program_->bind();
-        program_->enableAttributeArray(0);
+        GlState::glEnableVertexAttribArray (0);
 
         matrixd modelview = P.modelview;
         modelview *= matrixd::translate (b->start (), 0.5, 0);
@@ -143,7 +143,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         program_->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
         glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
         glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
         // Draw waveform
         glDisable (GL_BLEND); // doesn't have alpha channel
@@ -157,7 +157,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
             glDrawArrays(GL_LINE_STRIP, 0, v.second);
         }
 
-        program_->disableAttributeArray (0);
+        GlState::glDisableVertexAttribArray (0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         GlException_CHECK_ERROR();
 

@@ -1,6 +1,7 @@
 #include "selectionrenderer.h"
 #include "log.h"
 #include "GlException.h"
+#include "glstate.h"
 
 SelectionRenderer::SelectionRenderer(SquircleRenderer* parent) :
     QObject(parent)
@@ -131,7 +132,7 @@ void SelectionRenderer::
 
     m_program->bind();
 
-    m_program->enableAttributeArray(0);
+    GlState::glEnableVertexAttribArray (0);
 
     float h1 = -100;
     float h2 = 100;
@@ -157,7 +158,7 @@ void SelectionRenderer::
     glEnable (GL_STENCIL_TEST); // must enable testing for glStencilOp(INVERT) to take effect
     glStencilOp(GL_KEEP, GL_KEEP, GL_INVERT);
     glStencilFunc(GL_ALWAYS, 1, 1);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, N); // <- draw call
+    GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, N); // <- draw call
 
     glDisable (GL_DEPTH_TEST);
     // this flips the stencil once if the camera is inside the selection box
@@ -172,7 +173,7 @@ void SelectionRenderer::
     // flip the stencil bit when the fragment has been drawn
     glStencilFunc(GL_EQUAL, 1, 1);
     glDisable (GL_DEPTH_TEST); // disabled depth test needed if the camera is inside the selection box
-    glDrawArrays (GL_TRIANGLE_STRIP, 0, N); // <- draw call
+    GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, N); // <- draw call
     glEnable (GL_DEPTH_TEST);
 
     // write to the depth buffer again and stop fiddling with the stencil buffer
@@ -180,6 +181,6 @@ void SelectionRenderer::
     glDisable (GL_STENCIL_TEST);
 
     GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
-    m_program->disableAttributeArray(0);
+    GlState::glDisableVertexAttribArray (0);
     m_program->release();
 }

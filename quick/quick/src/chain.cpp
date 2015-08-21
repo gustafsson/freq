@@ -9,6 +9,7 @@
 #include "demangle.h"
 #include "glgroupmarker.h"
 #include "tasktimer.h"
+#include "glstate.h"
 
 #include <QtQuick>
 
@@ -93,6 +94,8 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 
 void setStates()
 {
+    GlState::lost_sync();
+
 #ifdef GL_ES_VERSION_2_0
     GlException_SAFE_CALL( glClearDepthf(1.0f) );
 #else

@@ -5,7 +5,7 @@
 // gpumisc
 #include "computationkernel.h"
 #include "GlException.h"
-#include "gl.h"
+#include "glstate.h"
 #include "tasktimer.h"
 #include "glPushContext.h"
 #include "unused.h"
@@ -101,17 +101,17 @@ void RenderBlock::Renderer::
     size_t n = vbo->size () / sizeof(BLOCKindexType);
 
     if (DRAW_POINTS) {
-        glDrawArrays(GL_POINTS, 0, n);
+        GlState::glDrawArrays(GL_POINTS, 0, n);
     } else if (DRAW_WIREFRAME) {
 #ifdef GL_ES_VERSION_2_0
-        glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
+        GlState::glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
 #else
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
+            GlState::glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
+        GlState::glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
     }
 
     GlException_CHECK_ERROR();
@@ -482,7 +482,7 @@ void RenderBlock::
 
     glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     GLint qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
-    glEnableVertexAttribArray (qt_Vertex);
+    GlState::glEnableVertexAttribArray (qt_Vertex);
     glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     GlException_CHECK_ERROR();
@@ -502,7 +502,7 @@ void RenderBlock::
     glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 
     int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
-    glDisableVertexAttribArray (qt_Vertex);
+    GlState::glDisableVertexAttribArray (qt_Vertex);
 
     GlException_CHECK_ERROR();
 }

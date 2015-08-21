@@ -1,7 +1,7 @@
 #include "texture2fbo.h"
 #include "tfr/chunk.h"
 #include "GlException.h"
-#include "gl.h"
+#include "glstate.h"
 #include "tasktimer.h"
 #include "glgroupmarker.h"
 #include "log.h"
@@ -181,19 +181,19 @@ void Texture2Fbo::
     // Setup drawing with VBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
-    glEnableVertexAttribArray (vertex_attrib);
-    glEnableVertexAttribArray (tex_attrib);
+    GlState::glEnableVertexAttribArray (vertex_attrib);
+    GlState::glEnableVertexAttribArray (tex_attrib);
     glVertexAttribPointer (vertex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (tex_attrib, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
     GlException_CHECK_ERROR();
 
     // Draw with vbo onto block texture with framebuffer rendering
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, num_elements_);
+    GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, num_elements_);
 
     // Finish drawing with VBO
-    glDisableVertexAttribArray (vertex_attrib);
-    glDisableVertexAttribArray (tex_attrib);
+    GlState::glDisableVertexAttribArray (vertex_attrib);
+    GlState::glDisableVertexAttribArray (tex_attrib);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlException_CHECK_ERROR();
