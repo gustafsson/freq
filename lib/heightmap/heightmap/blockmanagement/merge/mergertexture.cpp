@@ -275,8 +275,6 @@ Signal::Intervals MergerTexture::
 
     cache_clone.clear ();
 
-    glUseProgram (0);
-
     glDisableVertexAttribArray (qt_MultiTexCoord0);
     glDisableVertexAttribArray (qt_Vertex);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

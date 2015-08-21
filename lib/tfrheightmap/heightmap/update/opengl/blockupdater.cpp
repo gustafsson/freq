@@ -235,13 +235,12 @@ void BlockUpdater::
                 (const glProjection& M)
                 {
                     int vertex_attrib, tex_attrib;
-                    auto tex_mapping = shader->map(
+                    shader->map(
                                 vbo->normalization_factor(),
                                 amplitude_axis,
                                 M, vertex_attrib, tex_attrib);
 
                     vbo->draw(vertex_attrib, tex_attrib);
-                    (void)tex_mapping; // RAII
                     return true;
                 };
 

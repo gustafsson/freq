@@ -94,21 +94,12 @@ private:
 
 class Pbo2Texture {
 public:
-    class ScopeMap {
-    public:
-        ScopeMap();
-        ScopeMap(ScopeMap&&) = default;
-        ScopeMap(const ScopeMap&) = delete;
-        ScopeMap operator=(const ScopeMap&) = delete;
-        ~ScopeMap();
-    };
-
     Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pChunk chunk, int pbo, bool f32);
     Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pChunk chunk, void *p, bool f32);
     Pbo2Texture(Pbo2Texture&&)=default;
     Pbo2Texture(const Pbo2Texture&)=delete;
 
-    ScopeMap map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const;
+    void map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const;
 
 private:
     ShaderTexture shader_;

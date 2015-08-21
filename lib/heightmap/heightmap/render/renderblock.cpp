@@ -503,7 +503,6 @@ void RenderBlock::
 
     int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
     glDisableVertexAttribArray (qt_Vertex);
-    glUseProgram(0);
 
     GlException_CHECK_ERROR();
 }

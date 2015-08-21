@@ -39,15 +39,15 @@ Shader::Shader(ShaderPtr&& programp)
 
     vertex_attrib_ = glGetAttribLocation (program, "qt_Vertex");
     tex_attrib_ = glGetAttribLocation (program, "qt_MultiTexCoord0");
-    GlException_SAFE_CALL( mytex = glGetUniformLocation(program, "mytex") );
-    GlException_SAFE_CALL( data_size_loc_ = glGetUniformLocation(program, "data_size") );
-    GlException_SAFE_CALL( tex_size_loc_ = glGetUniformLocation(program, "tex_size") );
-    GlException_SAFE_CALL( normalization_location_ = glGetUniformLocation(program, "normalization") );
-    GlException_SAFE_CALL( amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis") );
-    GlException_SAFE_CALL( modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix") );
-    GlException_SAFE_CALL( glUseProgram(program) );
-    GlException_SAFE_CALL( glUniform1i(mytex, 0) ); // mytex corresponds to GL_TEXTURE0
-    GlException_SAFE_CALL( glUseProgram(0) );
+    mytex = glGetUniformLocation(program, "mytex");
+    data_size_loc_ = glGetUniformLocation(program, "data_size");
+    tex_size_loc_ = glGetUniformLocation(program, "tex_size");
+    normalization_location_ = glGetUniformLocation(program, "normalization");
+    amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis");
+    modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix");
+    glUseProgram(program);
+    glUniform1i(mytex, 0); // mytex corresponds to GL_TEXTURE0
+    GlException_CHECK_ERROR();
 }
 
 
@@ -335,28 +335,11 @@ Pbo2Texture::Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pC
 }
 
 
-Pbo2Texture::ScopeMap Pbo2Texture::
+void Pbo2Texture::
         map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
-    Pbo2Texture::ScopeMap r;
     shader_.getProgram (normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     glBindTexture( GL_TEXTURE_2D, shader_.getTexture ().getOpenGlTextureId() );
-
-    return r;
-}
-
-
-Pbo2Texture::ScopeMap::
-        ScopeMap()
-{
-
-}
-
-
-Pbo2Texture::ScopeMap::
-        ~ScopeMap()
-{
-    glUseProgram(0);
 }
 
 } // namespace OpenGL

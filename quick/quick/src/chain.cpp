@@ -156,7 +156,6 @@ void Chain::clearOpenGlBackground()
     // ok as a long as stateless with respect to opengl resources, otherwise this needs a rendering object that is
     // created on window()->beforeSynchronizing and destroyed on window()->sceneGraphInvalidated (as in
     // Squircle/SquircleRenderer)
-    GlException_SAFE_CALL( glUseProgram (0) );
     setStates();
     QColor c = this->window ()->color ();
     GlException_SAFE_CALL( glClearColor(c.redF (), c.greenF (), c.blueF (), c.alphaF ()) );
