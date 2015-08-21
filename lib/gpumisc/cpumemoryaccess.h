@@ -28,9 +28,16 @@ public:
     DataAccessSize<Dimension> numberOfElements() { return sz; }
 
 
+    // clamps 'p' to a valid position
     T& ref( Position p )
     {
         return ptr_[ sz.offset(p) ];
+    }
+
+
+    T& r( Position p )
+    {
+        return ptr_[ sz.o(p) ];
     }
 
 

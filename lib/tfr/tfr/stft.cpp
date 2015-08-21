@@ -691,8 +691,8 @@ DataStorage<float>::ptr Stft::
 #pragma omp parallel for
             for (int w=0; w<windowCount; ++w)
             {
-                float *o = &out.ref(pos) + w*window_size;
-                float *i = &in.ref(pos) + w*increment;
+                float *o = &out.r(pos) + w*window_size;
+                float *i = &in.r(pos) + w*increment;
 
                 for (int x=0; x<window_size; ++x)
                     o[x] = window[x] * i[x] * norm;
@@ -744,7 +744,7 @@ typename DataStorage<T>::ptr Stft::
     {
         for (pos.y=0; pos.y<windowedSignal->size().height; ++pos.y)
         {
-            T *o = &out.ref(pos);
+            T *o = &out.r(pos);
             for (int x=0; x<increment; ++x)
                 if (x>=out0 && x<N+out0) o[x-out0] = 0;
             for (int x=0; x<signal->size().width; ++x)
@@ -752,8 +752,8 @@ typename DataStorage<T>::ptr Stft::
 
             for (int w=0; w<windowCount; ++w)
             {
-                T *o = &out.ref(pos);
-                T *i = &in.ref(pos) + w*window_size;
+                T *o = &out.r(pos);
+                T *i = &in.r(pos) + w*window_size;
 
                 int x0 = w*increment;
                 int x=0;
