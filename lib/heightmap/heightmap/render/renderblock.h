@@ -83,6 +83,27 @@ private:
             uniOffsTex=-1,
             uniTexSize=-1;
 
+    int   u_tex=0,
+          u_tex_color=0;
+    tvector<4, float>
+          u_fixed_color,
+          u_clearColor;
+    float u_colorTextureFactor=0;
+    bool  u_draw_contour_plot=false;
+    float u_flatness=0,
+          u_yScale=0,
+          u_yOffset=0,
+          u_yNormalize=0,
+          u_logScale=0,
+          u_logScale_x1=0,
+          u_logScale_x2=0,
+          u_scale_tex1=0,
+          u_scale_tex2=0,
+          u_offset_tex1=0,
+          u_offset_tex2=0,
+          u_texSize1=0,
+          u_texSize2=0;
+
     // 1 << (subdivs-1) = max density of pixels per vertex
 #ifdef GL_ES_VERSION_2_0
     static const int subdivs = 4;

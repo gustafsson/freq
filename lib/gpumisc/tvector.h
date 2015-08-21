@@ -34,6 +34,9 @@ public:
                 for(int i=N; i--;) r &= v[i] == b[i];
                 return r;
         }
+        bool operator!=(const tvector &b) const {
+            return !(*this==b);
+        }
         tvector operator-(tvector const& b) const {
         tvector r;
                 for(int i=N; i--;) r[i] = v[i] - b[i];
