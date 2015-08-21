@@ -379,10 +379,12 @@ Signal::Intervals MergerTexture::
         missing_details = block->getInterval ();
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
-    // detach the texture explicitly, otherwise the texture image will not be detached if the texture is deleted
-    // https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, 0, 0);
+    // The texture image will not be detached if the texture is deleted but it
+    // doesn't matter if the texture image is still attached.
+    //   https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
+    // Call this to detach:
+    //   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+    //                          GL_TEXTURE_2D, 0, 0);
 #else
     {
         VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getOverlappingRegion ());
