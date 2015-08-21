@@ -11,8 +11,8 @@
  */
 namespace GlState
 {
-    void glEnable (GLenum cap);
-    void glDisable (GLenum cap);
+    void glEnable (GLenum cap, bool now=false);
+    void glDisable (GLenum cap, bool now=false);
 
     void glEnableVertexAttribArray (GLuint index);
     void glDisableVertexAttribArray (GLuint index);

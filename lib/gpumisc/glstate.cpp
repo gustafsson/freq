@@ -24,29 +24,52 @@ struct S {
         for (int i=0; i<0x4;i++)
             enabledAttribArray[i]=false;
     }
-} next, prev;
+} next, current;
 
 bool is_synced=true;
 
-void glEnable (GLenum cap)
+
+void glEnable (GLenum cap, bool now)
 {
-    if (prev.caps.count (cap) == 0)
-        is_synced = false;
-    next.caps.insert (cap);
+    if (now)
+    {
+        if (current.caps.count (cap) == 0)
+        {
+            current.caps.insert (cap);
+            ::glEnable (cap);
+        }
+    }
+    else
+    {
+        if (current.caps.count (cap) == 0)
+            is_synced = false;
+        next.caps.insert (cap);
+    }
 }
 
-void glDisable (GLenum cap)
+void glDisable (GLenum cap, bool now)
 {
-    if (prev.caps.count (cap) == 1)
-        is_synced = false;
-    next.caps.erase (cap);
+    if (now)
+    {
+        if (current.caps.count (cap) == 1)
+        {
+            current.caps.erase (cap);
+            ::glDisable (cap);
+        }
+    }
+    else
+    {
+        if (current.caps.count (cap) == 1)
+            is_synced = false;
+        next.caps.erase (cap);
+    }
 }
 
 void glEnableVertexAttribArray (GLuint index)
 {
     if (index < 4)
     {
-        if (prev.enabledAttribArray[index] == false)
+        if (current.enabledAttribArray[index] == false)
             is_synced = false;
         next.enabledAttribArray[index] = true;
     }
@@ -58,7 +81,7 @@ void glDisableVertexAttribArray (GLuint index)
 {
     if (index < 4)
     {
-        if (prev.enabledAttribArray[index] == true)
+        if (current.enabledAttribArray[index] == true)
             is_synced = false;
         next.enabledAttribArray[index] = false;
     }
@@ -85,9 +108,9 @@ void sync ()
     is_synced = true;
 
     for (int i=0; i<4; i++)
-        if (prev.enabledAttribArray[i] != next.enabledAttribArray[i])
+        if (current.enabledAttribArray[i] != next.enabledAttribArray[i])
         {
-            prev.enabledAttribArray[i] = next.enabledAttribArray[i];
+            current.enabledAttribArray[i] = next.enabledAttribArray[i];
             if (next.enabledAttribArray[i])
                 ::glEnableVertexAttribArray (i);
             else
@@ -97,14 +120,14 @@ void sync ()
     bool enabled_changed = false;
     for (const auto& v : next.caps)
     {
-        if (!prev.caps.count (v))
+        if (!current.caps.count (v))
         {
             enabled_changed = true;
             ::glEnable (v);
         }
     }
 
-    for (const auto& v : prev.caps)
+    for (const auto& v : current.caps)
     {
         if (!next.caps.count (v))
         {
@@ -114,20 +137,20 @@ void sync ()
     }
 
     if (enabled_changed)
-        prev.caps = next.caps;
+        current.caps = next.caps;
 }
 
 void setGlIsEnabled (GLenum cap, bool v)
 {
     if (v)
-        prev.caps.insert(cap);
+        current.caps.insert(cap);
     else
-        prev.caps.erase(cap);
+        current.caps.erase(cap);
 }
 
 void assume_default_gl_states ()
 {
-    prev.reset ();
+    current.reset ();
 }
 
 }
