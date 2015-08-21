@@ -1,15 +1,15 @@
 [submodule "3rdparty/ios"]
 	path = 3rdparty/ios
-	url = git@github.com:gustafsson/freq-ios.git
+	url = https://github.com/gustafsson/freq-ios.git
 [submodule "3rdparty/windows"]
 	path = 3rdparty/windows
-	url = git@github.com:gustafsson/freq-windows.git
+	url = https://github.com/gustafsson/freq-windows.git
 [submodule "3rdparty/ubuntu"]
 	path = 3rdparty/ubuntu
-	url = git@github.com:gustafsson/freq-ubuntu.git
+	url = https://github.com/gustafsson/freq-ubuntu.git
 [submodule "tests/integration"]
 	path = tests/integration
-	url = git@github.com:gustafsson/freq-integration.git
+	url = https://github.com/gustafsson/freq-integration.git
 [submodule "3rdparty/freetype-gl"]
 	path = 3rdparty/freetype-gl
-	url = git@github.com:rougier/freetype-gl.git
+	url = https://github.com/rougier/freetype-gl.git
