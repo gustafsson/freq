@@ -36,7 +36,8 @@ private:
     GLuint                                uniModelViewProjectionMatrix_,
                                           uniRgba_;
 
-    std::shared_ptr<Vbo> getVbo();
+    typedef std::pair<bool,std::shared_ptr<Vbo>> NewVbo;
+    NewVbo getVbo();
 };
 
 } // namespace OpenGL

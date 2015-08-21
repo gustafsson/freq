@@ -56,10 +56,21 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
 
     int S = b->number_of_samples ();
 
-    shared_ptr<Vbo> first_vbo = getVbo();
+    NewVbo gotVbo = getVbo();
+    shared_ptr<Vbo> first_vbo = move(gotVbo.second);
 
     glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
-    vertex_format_xy* d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, min(N_,4+S)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
+    vertex_format_xy* d;
+    if (gotVbo.first)
+    {
+        // map entire buffer when it's first allocated to prevent warnings that parts of the buffer to contain uninitialized buffer data
+        // OpenGL ES doesn't have glMapBuffer, but it does have glMapBufferRange
+        d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, N_*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT);
+    }
+    else
+    {
+        d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, min(N_,4+S)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
+    }
 
     // Prepare clear rectangle
     *d++ = vertex_format_xy{ 0, -1 };
@@ -89,11 +100,15 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
     {
         --i;
         int j=0;
-        shared_ptr<Vbo> vbo = getVbo();
+        NewVbo gotvbo = getVbo();
+        shared_ptr<Vbo> vbo = move(gotvbo.second);
         Log("wave2fbo: full, restarting %d") % int(*vbo);
 
         glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-        d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, min(N_,S-i)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
+        if (gotVbo.first) // see gotVbo.first above
+            d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, N_*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT);
+        else
+            d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, min(N_,S-i)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
 
         for (; i<S && j<N_; ++i, ++j)
             *d++ = vertex_format_xy{ float(i), p[i] };
@@ -151,7 +166,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
 }
 
 
-shared_ptr<Vbo> Wave2Fbo::getVbo ()
+Wave2Fbo::NewVbo Wave2Fbo::getVbo ()
 {
     shared_ptr<Vbo> r;
     size_t used = 0;
@@ -167,10 +182,10 @@ shared_ptr<Vbo> Wave2Fbo::getVbo ()
         size_t maxsize = used*2+2;
         if (maxsize < vbos_.size ())
         {
-            // doesn't matter if dropping vbos in use here
+            // doesn't matter if dropping vbos in use here as their shared_ptr will release them later
             vbos_.resize (maxsize);
         }
-        return r;
+        return NewVbo(false,r);
     }
 
     r.reset(new Vbo(N_ * sizeof(vertex_format_xy), GL_ARRAY_BUFFER, GL_STREAM_DRAW, NULL));
@@ -178,7 +193,7 @@ shared_ptr<Vbo> Wave2Fbo::getVbo ()
     GlException_SAFE_CALL( glLabelObjectEXT(GL_BUFFER_OBJECT_EXT, *r, 0, "Wave2Fbo") );
 #endif
     vbos_.push_back (r);
-    return r;
+    return NewVbo(true,r);
 }
 
 } // namespace OpenGL
