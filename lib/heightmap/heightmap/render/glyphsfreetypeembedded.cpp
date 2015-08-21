@@ -190,6 +190,8 @@ void GlyphsFreetypeEmbedded::
         program_->setUniformValue("tex", 0);
         program_->setUniformValue("qt_Color", 0, 0, 0, 0.8);
         program_qt_ProjectionMatrixLocation_ = program_->uniformLocation("qt_ProjectionMatrix");
+        program_qt_ModelViewVertexLocation_ = program_->attributeLocation("qt_ModelViewVertex");
+        program_qt_MultiTexCoord0Location_ = program_->attributeLocation("qt_MultiTexCoord0");
         program_->release();
 
         overlay_program_ = ShaderResource::loadGLSLProgramSource (
@@ -265,8 +267,8 @@ void GlyphsFreetypeEmbedded::
                                   QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
 
         glEnableVertexAttribArray (1);
-        program_->setAttributeBuffer("qt_ModelViewVertex", GL_FLOAT, 0, 4, sizeof(Glyph));
-        program_->setAttributeBuffer("qt_MultiTexCoord0", GL_FLOAT, sizeof(tvector<4,GLfloat>), 2, sizeof(Glyph));
+        program_->setAttributeBuffer(program_qt_ModelViewVertexLocation_, GL_FLOAT, 0, 4, sizeof(Glyph));
+        program_->setAttributeBuffer(program_qt_MultiTexCoord0Location_, GL_FLOAT, sizeof(tvector<4,GLfloat>), 2, sizeof(Glyph));
 
         glBindTexture (GL_TEXTURE_2D, texid);
         glDrawArrays (GL_TRIANGLES, 0, glyphs.size());

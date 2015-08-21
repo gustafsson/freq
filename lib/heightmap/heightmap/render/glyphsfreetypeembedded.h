@@ -35,8 +35,10 @@ private:
     GLuint vertexbuffer_=0;
     size_t vertexbuffer_size = 0;
 
-    GLuint program_qt_ProjectionMatrixLocation_ = 0;
-    GLuint overlay_program_qt_ProjectionMatrixLocation_ = 0;
+    GLuint program_qt_ProjectionMatrixLocation_ = -1,
+           program_qt_ModelViewVertexLocation_ = -1,
+           program_qt_MultiTexCoord0Location_ = -1,
+           overlay_program_qt_ProjectionMatrixLocation_ = -1;
 };
 
 } // namespace Render
