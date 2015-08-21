@@ -58,22 +58,23 @@ Shader::~Shader()
 
 void Shader::Shader::
         setParams(int data_width, int data_height, int tex_width, int tex_height,
-               float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
+               float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib)
 {
     EXCEPTION_ASSERT( program );
 
-    GlException_SAFE_CALL( glUseProgram(program) );
-    if ( 0 <= data_size_loc_)
-        glUniform2f(data_size_loc_, data_width, data_height);
-    if ( 0 <= tex_size_loc_)
-        glUniform2f(tex_size_loc_, tex_width, tex_height);
-    if ( 0 <= normalization_location_)
-        glUniform1f(normalization_location_, normalization_factor);
-    if ( 0 <= amplitude_axis_location_)
-        glUniform1i(amplitude_axis_location_, amplitude_axis);
-    if ( 0 <= modelViewProjectionMatrix_location_)
+    if ( 0 <= data_size_loc_ && (data_width != this->data_width || data_height != this->data_height))
+        glUniform2f(data_size_loc_, this->data_width = data_width, this->data_height = data_height);
+    if ( 0 <= tex_size_loc_ && (tex_width != this->tex_width || tex_height != this->tex_height))
+        glUniform2f(tex_size_loc_, this->tex_width = tex_width, this->tex_height = tex_height);
+    if ( 0 <= normalization_location_ && normalization_factor != this->normalization_factor)
+        glUniform1f(normalization_location_, this->normalization_factor = normalization_factor);
+    if ( 0 <= amplitude_axis_location_ && amplitude_axis != this->amplitude_axis)
+        glUniform1i(amplitude_axis_location_, this->amplitude_axis = amplitude_axis);
+    if ( 0 <= modelViewProjectionMatrix_location_ && (this->M.projection != M.projection || this->M.modelview != M.modelview))
+    {
+        this->M = M;
         glUniformMatrix4fv (modelViewProjectionMatrix_location_, 1, false, GLmatrixf(M.projection * M.modelview).v ());
-    GlException_SAFE_CALL( glUseProgram(0) );
+    }
 
     vertex_attrib = vertex_attrib_;
     tex_attrib = tex_attrib_;
@@ -125,6 +126,7 @@ GlTexture& ShaderTexture::
 unsigned ShaderTexture::
         getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
+    glUseProgram(shader_->program);
     shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     return shader_->program;
 }
@@ -337,8 +339,7 @@ Pbo2Texture::ScopeMap Pbo2Texture::
         map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
     Pbo2Texture::ScopeMap r;
-    unsigned program = shader_.getProgram (normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
-    glUseProgram(program);
+    shader_.getProgram (normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     glBindTexture( GL_TEXTURE_2D, shader_.getTexture ().getOpenGlTextureId() );
 
     return r;

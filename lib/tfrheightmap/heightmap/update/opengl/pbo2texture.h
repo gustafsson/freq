@@ -19,9 +19,10 @@ public:
     Shader& operator=(const Shader&)=delete;
     ~Shader();
 
+    // call glUseProgram(program) first
     void setParams(int data_width, int data_height, int tex_width, int tex_height,
                    float normalization_factor, int amplitude_axis, const glProjection& M,
-                   int &vertex_attrib, int &tex_attrib) const;
+                   int &vertex_attrib, int &tex_attrib);
 
     const unsigned program;
 
@@ -34,6 +35,14 @@ private:
     int vertex_attrib_;
     int tex_attrib_;
     ShaderPtr programp_;
+
+    int data_width = 0;
+    int data_height = 0;
+    int tex_width = 0;
+    int tex_height = 0;
+    float normalization_factor = 0;
+    int amplitude_axis = 0;
+    glProjection M;
 };
 
 
@@ -56,6 +65,7 @@ public:
     void prepareShader (int data_width, int data_height, void* data, bool f32);
 
     GlTexture& getTexture () const;
+    // the returned program will be currently in use (glUseProgram)
     unsigned getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const;
 
 private:
