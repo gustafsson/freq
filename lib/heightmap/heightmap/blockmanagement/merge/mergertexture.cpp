@@ -242,9 +242,9 @@ Signal::Intervals MergerTexture::
 
     glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
 
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
+    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
+    GlState::glDisable (GL_CULL_FACE);
 
     struct vertex_format {
         float x, y, u, v;
@@ -254,6 +254,7 @@ Signal::Intervals MergerTexture::
 
     GlState::glEnableVertexAttribArray (qt_Vertex);
     GlState::glEnableVertexAttribArray (qt_MultiTexCoord0);
+
     glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
@@ -266,6 +267,7 @@ Signal::Intervals MergerTexture::
     Signal::Intervals I;
 
     {
+        GlState::sync (); // disable depth test before binding framebuffer without depth buffer
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_);
 
         for (pBlock b : blocks)
@@ -280,8 +282,8 @@ Signal::Intervals MergerTexture::
     GlState::glDisableVertexAttribArray (qt_Vertex);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_CULL_FACE);
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_CULL_FACE);
 
     for (pBlock b : blocks)
     {

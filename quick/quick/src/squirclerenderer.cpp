@@ -8,6 +8,7 @@
 #include "demangle.h"
 #include "heightmap/render/shaderresource.h"
 #include "glgroupmarker.h"
+#include "glstate.h"
 
 #include <boost/exception/exception.hpp>
 #include <QTimer>
@@ -165,9 +166,9 @@ void SquircleRenderer::paint2()
 
     GlException_SAFE_CALL( glViewport(m_viewport.x(), m_window.height () - m_viewport.y() - m_viewport.height(), m_viewport.width(), m_viewport.height()) );
 
-    GlException_SAFE_CALL( glDisable(GL_DEPTH_TEST) );
+    GlException_SAFE_CALL( GlState::glDisable (GL_DEPTH_TEST) );
 
-    GlException_SAFE_CALL( glEnable(GL_BLEND) );
+    GlException_SAFE_CALL( GlState::glEnable (GL_BLEND) );
     GlException_SAFE_CALL( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
 
     GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, 4) );

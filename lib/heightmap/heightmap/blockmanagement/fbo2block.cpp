@@ -4,7 +4,7 @@
 #include "GlException.h"
 #include "log.h"
 #include "gluperspective.h"
-#include "gl.h"
+#include "glstate.h"
 #include "exceptionassert.h"
 
 namespace Heightmap {
@@ -98,6 +98,12 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     GlException_CHECK_ERROR ();
 
+    // Disable unwanted capabilities when resampling a texture
+    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
+    GlState::glDisable (GL_CULL_FACE);
+    GlState::sync (); // disable depth test before binding framebuffer without depth buffer
+
     glBindTexture (GL_TEXTURE_2D, drawTexture->getOpenGlTextureId ());
 #ifdef GL_ES_VERSION_2_0
     if (srcTexture!=drawTexture)
@@ -130,11 +136,6 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     GlException_CHECK_ERROR ();
 
-    // Disable unwanted capabilities when resampling a texture
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
-
     return ScopeBinding(*this, &Fbo2Block::end);
 }
 
@@ -159,9 +160,9 @@ void Fbo2Block::
 
     drawTexture.reset ();
 
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_BLEND);
-    glEnable (GL_CULL_FACE);
+    GlState::glEnable(GL_DEPTH_TEST);
+    GlState::glEnable(GL_BLEND);
+    GlState::glEnable(GL_CULL_FACE);
 }
 
 

@@ -1,13 +1,46 @@
 #include "glstate.h"
+#include <set>
 
 namespace GlState
 {
 
 struct S {
+    std::set<GLenum> caps;
     bool enabledAttribArray[4]={false,false,false,false};
+
+    S()
+    {
+        reset();
+    }
+
+    void reset() {
+        caps.clear ();
+        // GL_DITHER and GL_MULTISAMPLE are enabled by default
+        // https://www.opengl.org/sdk/docs/man2/xhtml/glEnable.xml
+        caps.insert (GL_DITHER);
+#ifndef GL_ES_VERSION_2_0
+        caps.insert (GL_MULTISAMPLE);
+#endif
+        for (int i=0; i<0x4;i++)
+            enabledAttribArray[i]=false;
+    }
 } next, prev;
 
 bool is_synced=true;
+
+void glEnable (GLenum cap)
+{
+    if (prev.caps.count (cap) == 0)
+        is_synced = false;
+    next.caps.insert (cap);
+}
+
+void glDisable (GLenum cap)
+{
+    if (prev.caps.count (cap) == 1)
+        is_synced = false;
+    next.caps.erase (cap);
+}
 
 void glEnableVertexAttribArray (GLuint index)
 {
@@ -60,17 +93,41 @@ void sync ()
             else
                 ::glDisableVertexAttribArray (i);
         }
+
+    bool enabled_changed = false;
+    for (const auto& v : next.caps)
+    {
+        if (!prev.caps.count (v))
+        {
+            enabled_changed = true;
+            ::glEnable (v);
+        }
+    }
+
+    for (const auto& v : prev.caps)
+    {
+        if (!next.caps.count (v))
+        {
+            enabled_changed = true;
+            ::glDisable (v);
+        }
+    }
+
+    if (enabled_changed)
+        prev.caps = next.caps;
 }
 
-void lost_sync ()
+void setGlIsEnabled (GLenum cap, bool v)
 {
-    for (int i=0; i<4; i++)
-        if (next.enabledAttribArray[i])
-            ::glEnableVertexAttribArray (i);
-        else
-            ::glDisableVertexAttribArray (i);
+    if (v)
+        prev.caps.insert(cap);
+    else
+        prev.caps.erase(cap);
+}
 
-    prev = next;
+void assume_default_gl_states ()
+{
+    prev.reset ();
 }
 
 }

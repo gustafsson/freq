@@ -125,10 +125,10 @@ void DrawWorking::
     glLoadIdentity();
     glScalef(60, 60, 1);
 
-    glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_DEPTH_TEST);
     glDepthMask (GL_FALSE);
 
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glColor4f(1, 1, 1, 0.5);
@@ -153,7 +153,7 @@ void DrawWorking::
     }
 
 
-    glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
     glDepthMask (GL_TRUE);
 #endif // LEGACY_OPENGL
 }

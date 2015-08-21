@@ -179,7 +179,7 @@ void GlyphsFreetype::
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(4, GL_FLOAT, 0, quad);
     glColor4f(1,1,1,0.5);
-    glDrawArrays(GL_QUADS, 0, quad_i);
+    GlState::glDrawArrays(GL_QUADS, 0, quad_i);
     glDisableClientState(GL_VERTEX_ARRAY);
 #endif // LEGACY_OPENGL
 }

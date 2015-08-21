@@ -111,7 +111,7 @@ void DrawImage::
     glLoadIdentity();
     glOrtho( 0, viewport_width, 0, viewport_height, -1, 1);
 
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable(GL_DEPTH_TEST);
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
@@ -126,9 +126,9 @@ void DrawImage::
 void DrawImage::
         directDraw() const
 {
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_COLOR_MATERIAL);
+    GlState::glDisable(GL_COLOR_MATERIAL);
     glColor4f(1,1,1,1);
 
     glBindBuffer(GL_ARRAY_BUFFER, *postexvbo_);
@@ -139,14 +139,14 @@ void DrawImage::
 
     {
         GlTexture::ScopeBinding bindTexture = img_->getScopeBinding();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glEnable(GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
 
     GlException_CHECK_ERROR();
 #else

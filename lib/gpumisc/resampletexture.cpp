@@ -89,9 +89,9 @@ void ResampleTexture::
         operator ()(GlTexture* source, Area area)
 {
     glPushAttribContext pa(GL_ENABLE_BIT);
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
+    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
+    GlState::glDisable (GL_CULL_FACE);
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -128,7 +128,7 @@ void ResampleTexture::
         glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
         source->bindTexture();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -146,9 +146,9 @@ void ResampleTexture::
         drawColoredArea(Area area, float r, float g, float b, float a)
 {
     glPushAttribContext pa(GL_ENABLE_BIT);
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
+    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
+    GlState::glDisable (GL_CULL_FACE);
 
     GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );
 
@@ -181,7 +181,7 @@ void ResampleTexture::
         glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
         glColorPointer(4, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -214,7 +214,7 @@ void ResampleTexture::
         testInContext()
 {
 #ifdef LEGACY_OPENGL
-    glEnable(GL_TEXTURE_2D);
+    GlState::glEnable(GL_TEXTURE_2D);
 
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
     {

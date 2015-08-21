@@ -49,7 +49,7 @@ void HudGlWidget::
     glPushMatrixContext push_proj( GL_PROJECTION );
     glLoadIdentity();
     glOrtho( 0, 1, 0, 1, -1, 1);
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable(GL_DEPTH_TEST);
 
     glPushMatrixContext push_model( GL_MODELVIEW );
     glLoadIdentity();

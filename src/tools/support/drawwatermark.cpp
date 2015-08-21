@@ -92,15 +92,15 @@ void DrawWatermark::
     glLoadIdentity();
     glOrtho( 0, viewport_width, 0, viewport_height, -1, 1);
 
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable(GL_DEPTH_TEST);
 
     glPushMatrixContext push_model( GL_MODELVIEW );
 
     glLoadIdentity();
 
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_COLOR_MATERIAL);
+    GlState::glDisable(GL_COLOR_MATERIAL);
     glColor4f(1,1,1,1);
 
     {
@@ -112,14 +112,14 @@ void DrawWatermark::
         glTexCoordPointer(2, GL_FLOAT, sizeof(float)*4, 0);
         glVertexPointer(2, GL_FLOAT, sizeof(float)*4, (float*)0 + 2);
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    glEnable(GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
 
     GlException_CHECK_ERROR();
 #else

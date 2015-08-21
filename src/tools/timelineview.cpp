@@ -142,7 +142,7 @@ void TimelineView::
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
 
-    glEnable(GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 #ifdef LEGACY_OPENGL
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -151,19 +151,19 @@ void TimelineView::
     {   // Antialiasing
         // This is not a recommended method for anti-aliasing. Use Multisampling instead.
         // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
-        //glEnable(GL_LINE_SMOOTH);
+        //GlState::glEnable (GL_LINE_SMOOTH);
         //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        //glDisable(GL_POLYGON_SMOOTH);
+        //GlState::glDisable(GL_POLYGON_SMOOTH);
         //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glEnable(GL_BLEND);
+        GlState::glEnable (GL_BLEND);
     }
 
 #ifdef LEGACY_OPENGL
     glShadeModel(GL_SMOOTH);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_COLOR_MATERIAL);
+    GlState::glDisable(GL_LIGHTING);
+    GlState::glDisable(GL_COLOR_MATERIAL);
 #endif // LEGACY_OPENGL
 
     initializeTimeline();

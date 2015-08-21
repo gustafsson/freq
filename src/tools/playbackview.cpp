@@ -155,7 +155,7 @@ void PlaybackView::
         glVertex3f( t, y, z1 );
     glEnd();
 
-    //glDisable(GL_BLEND);
+    //GlState::glDisable(GL_BLEND);
     glDepthMask(true);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

@@ -146,10 +146,9 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
         // Draw waveform
-        glDisable (GL_BLEND); // doesn't have alpha channel
         glLineWidth(1);
         program_->setUniformValue(uniRgba, QVector4D(0.25,0.0,0.0,1.0));
-        glDrawArrays(GL_LINE_STRIP, 4, first_j-4);
+        GlState::glDrawArrays(GL_LINE_STRIP, 4, first_j-4);
 
         for (auto& v : vbos) {
             glBindBuffer(GL_ARRAY_BUFFER, *v.first);

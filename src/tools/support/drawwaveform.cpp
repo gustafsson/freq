@@ -41,7 +41,7 @@ void DrawWaveform::
      float s = 1/max;
      */
     float s = 1;
-    //glEnable(GL_BLEND);
+    //GlState::glEnable (GL_BLEND);
     glDepthMask(false);
     //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -70,7 +70,7 @@ void DrawWaveform::
     }
 
     glDepthMask(true);
-    //glDisable(GL_BLEND);
+    //GlState::glDisable(GL_BLEND);
 #else
     EXCEPTION_ASSERTX(false, "requires LEGACY_OPENGL");
 #endif

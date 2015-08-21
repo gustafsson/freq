@@ -94,7 +94,8 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 
 void setStates()
 {
-    GlState::lost_sync();
+    GlState::assume_default_gl_states ();
+    GlState::setGlIsEnabled(GL_DEPTH_TEST, true);
 
 #ifdef GL_ES_VERSION_2_0
     GlException_SAFE_CALL( glClearDepthf(1.0f) );
@@ -103,12 +104,10 @@ void setStates()
 #endif
 
 #ifdef LEGACY_OPENGL
-    GlException_SAFE_CALL( glEnable(GL_TEXTURE_2D) );
+    GlException_SAFE_CALL( GlState::glEnable (GL_TEXTURE_2D) );
 #endif
 
     GlException_SAFE_CALL( glDepthMask(true) );
-
-    GlException_SAFE_CALL( glEnable(GL_DEPTH_TEST) );
     GlException_SAFE_CALL( glDepthFunc(GL_LEQUAL) );
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #ifdef LEGACY_OPENGL
@@ -119,15 +118,15 @@ void setStates()
     // Antialiasing
     // This is not a recommended method for anti-aliasing. Use Multisampling instead.
     // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
-    //GlException_SAFE_CALL( glEnable(GL_LINE_SMOOTH) );
+    //GlException_SAFE_CALL( GlState::glEnable (GL_LINE_SMOOTH) );
     //GlException_SAFE_CALL( glHint(GL_LINE_SMOOTH_HINT, GL_NICEST) );
-    //GlException_SAFE_CALL( glEnable(GL_POLYGON_SMOOTH) );
+    //GlException_SAFE_CALL( GlState::glEnable (GL_POLYGON_SMOOTH) );
     //GlException_SAFE_CALL( glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST) );
-    //GlException_SAFE_CALL( glDisable(GL_POLYGON_SMOOTH) );
+    //GlException_SAFE_CALL( GlState::glDisable(GL_POLYGON_SMOOTH) );
 #endif
 
     GlException_SAFE_CALL( glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ) );
-    GlException_SAFE_CALL( glEnable(GL_BLEND) );
+    GlException_SAFE_CALL( GlState::glEnable (GL_BLEND) );
 }
 
 

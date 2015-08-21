@@ -155,16 +155,16 @@ void SelectionRenderer::
 
     // set the stencil buffer to 1 where objects in the current scene are inside the selection box
     glClear (GL_STENCIL_BUFFER_BIT);
-    glEnable (GL_STENCIL_TEST); // must enable testing for glStencilOp(INVERT) to take effect
+    GlState::glEnable (GL_STENCIL_TEST); // must enable testing for glStencilOp(INVERT) to take effect
     glStencilOp(GL_KEEP, GL_KEEP, GL_INVERT);
     glStencilFunc(GL_ALWAYS, 1, 1);
     GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, N); // <- draw call
 
-    glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_DEPTH_TEST);
     // this flips the stencil once if the camera is inside the selection box
     // and leaves it unaffected by flipping it twice if the camera is outside of the selection box
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, N); // <- draw call
-    glEnable (GL_DEPTH_TEST);
+    GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, N); // <- draw call
+    GlState::glEnable (GL_DEPTH_TEST);
 
     // write to the color buffer but not to the stencil buffer
     glColorMask (GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
@@ -172,13 +172,13 @@ void SelectionRenderer::
     // draw where exactly one fragment of the selection box was visible
     // flip the stencil bit when the fragment has been drawn
     glStencilFunc(GL_EQUAL, 1, 1);
-    glDisable (GL_DEPTH_TEST); // disabled depth test needed if the camera is inside the selection box
+    GlState::glDisable (GL_DEPTH_TEST); // disabled depth test needed if the camera is inside the selection box
     GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, N); // <- draw call
-    glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
 
     // write to the depth buffer again and stop fiddling with the stencil buffer
     glDepthMask(GL_TRUE);
-    glDisable (GL_STENCIL_TEST);
+    GlState::glDisable (GL_STENCIL_TEST);
 
     GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
     GlState::glDisableVertexAttribArray (0);

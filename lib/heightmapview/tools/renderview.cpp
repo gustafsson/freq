@@ -1,5 +1,5 @@
 // gl
-#include "gl.h"
+#include "glstate.h"
 
 #include "renderview.h"
 
@@ -133,12 +133,12 @@ void RenderView::
 #endif
 
 #ifdef LEGACY_OPENGL
-    GlException_SAFE_CALL( glEnable(GL_TEXTURE_2D) );
+    GlException_SAFE_CALL( GlState::glEnable (GL_TEXTURE_2D) );
 #endif
 
     GlException_SAFE_CALL( glDepthMask(true) );
 
-    GlException_SAFE_CALL( glEnable(GL_DEPTH_TEST) );
+    GlException_SAFE_CALL( GlState::glEnable (GL_DEPTH_TEST) );
     GlException_SAFE_CALL( glDepthFunc(GL_LEQUAL) );
     GlException_SAFE_CALL( glFrontFace( model->render_settings.left_handed_axes ? GL_CCW : GL_CW ) );
     GlException_SAFE_CALL( glCullFace( GL_BACK ) );
@@ -152,15 +152,15 @@ void RenderView::
     // Antialiasing
     // This is not a recommended method for anti-aliasing. Use Multisampling instead.
     // https://www.opengl.org/wiki/Common_Mistakes#glEnable.28GL_POLYGON_SMOOTH.29
-    //glEnable(GL_LINE_SMOOTH);
+    //GlState::glEnable (GL_LINE_SMOOTH);
     //glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    //glEnable(GL_POLYGON_SMOOTH);
+    //GlState::glEnable (GL_POLYGON_SMOOTH);
     //glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
-    //glDisable(GL_POLYGON_SMOOTH);
+    //GlState::glDisable (GL_POLYGON_SMOOTH);
 #endif
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
 
     GlException_CHECK_ERROR();
 }
@@ -171,12 +171,12 @@ void RenderView::
 {
     //glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable (GL_DEPTH_TEST);
 #ifdef LEGACY_OPENGL
-    glDisable(GL_LIGHTING);
-    glDisable(GL_COLOR_MATERIAL);
-    glDisable(GL_LIGHT0);
-    glDisable(GL_NORMALIZE);
+    GlState::glDisable (GL_LIGHTING);
+    GlState::glDisable (GL_COLOR_MATERIAL);
+    GlState::glDisable (GL_LIGHT0);
+    GlState::glDisable (GL_NORMALIZE);
 
     glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER, 0.0f);
     float defaultMaterialSpecular[] = {0.0f, 0.0f, 0.0f, 1.0f};

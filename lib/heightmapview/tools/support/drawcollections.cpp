@@ -119,7 +119,7 @@ void DrawCollections::
 
         glBlendFunc( GL_DST_COLOR, GL_ZERO );
 
-        glDisable(GL_DEPTH_TEST);
+        GlState::glDisable (GL_DEPTH_TEST);
         GlTexture t(fbo->getGlTexture(), fbo->getWidth (), fbo->getHeight ());
         t.bindTexture();
 
@@ -170,7 +170,7 @@ void DrawCollections::
         GlState::glDisableVertexAttribArray (0);
         m_program->release();
 
-        glEnable(GL_DEPTH_TEST);
+        GlState::glEnable (GL_DEPTH_TEST);
 
         GlException_CHECK_ERROR();
     }
@@ -203,11 +203,11 @@ void DrawCollections::
     bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
     if (fixed_color || 0<i)
         model->render_settings.fixed_color = channel_colors[fixed_color ? i : std::max(0,i-1)];
-    glDisable(GL_BLEND);
+    GlState::glDisable (GL_BLEND);
     if (0 != model->camera->r[0])
-        glEnable( GL_CULL_FACE ); // enabled only while drawing collections
+        GlState::glEnable ( GL_CULL_FACE ); // enabled only while drawing collections
     else
-        glEnable( GL_DEPTH_TEST );
+        GlState::glEnable ( GL_DEPTH_TEST );
     float L = model->tfr_mapping().read()->length();
 
     Heightmap::Render::Renderer renderer(model->collections()[i],
@@ -216,8 +216,8 @@ void DrawCollections::
                                          &render_block);
     renderer.draw( yscale, L ); // 0.6 ms
 
-    glDisable( GL_CULL_FACE );
-    glEnable(GL_BLEND);
+    GlState::glDisable ( GL_CULL_FACE );
+    GlState::glEnable (GL_BLEND);
 }
 
 

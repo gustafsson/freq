@@ -11,6 +11,9 @@
  */
 namespace GlState
 {
+    void glEnable (GLenum cap);
+    void glDisable (GLenum cap);
+
     void glEnableVertexAttribArray (GLuint index);
     void glDisableVertexAttribArray (GLuint index);
 
@@ -23,9 +26,18 @@ namespace GlState
     void sync ();
 
     /**
-     * @brief lost_sync resets all state changes being tracked by GlState.
+     * @brief setGlIsEnabled is used to synchronize the internal state of GlState to that of OpenGL
+     * @param cap a glEnable capability
+     * @param v use glIsEnabled (cap) if unsure.
      */
-    void lost_sync ();
+    void setGlIsEnabled (GLenum cap, bool v);
+
+    /**
+     * @brief assume_default_gl_states assumes that all states tracked by
+     * GlState have their default values. Any caps enabled by glstate will be
+     * reenabled on the next sync.
+     */
+    void assume_default_gl_states ();
 }
 
 #endif // GLSTATE_H

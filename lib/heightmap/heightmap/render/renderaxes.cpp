@@ -701,7 +701,7 @@ void RenderAxes::
     if (!program_->isLinked ())
         return;
 
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable (GL_DEPTH_TEST);
     glDepthMask(false);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -769,7 +769,7 @@ void RenderAxes::
 
     GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );
 
-    glEnable(GL_DEPTH_TEST);
+    GlState::glEnable (GL_DEPTH_TEST);
     glDepthMask(true);
 }
 
