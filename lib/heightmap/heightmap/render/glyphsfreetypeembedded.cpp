@@ -88,7 +88,7 @@ GlyphsFreetypeEmbedded::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 #ifdef VERA32
     texture_font_t& vera = vera_32;
 #else
@@ -96,6 +96,7 @@ GlyphsFreetypeEmbedded::
 #endif
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, vera.tex_width, vera.tex_height,
                   0, GL_RED, GL_UNSIGNED_BYTE, vera.tex_data );
+    glGenerateMipmap (GL_TEXTURE_2D);
 }
 
 
