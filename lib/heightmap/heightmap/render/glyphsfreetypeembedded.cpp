@@ -227,7 +227,7 @@ void GlyphsFreetypeEmbedded::
 
     buildGlyphs(data);
 
-    glEnable( GL_BLEND );
+    GlState::glEnable( GL_BLEND );
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     {
@@ -280,6 +280,8 @@ void GlyphsFreetypeEmbedded::
         glBindBuffer (GL_ARRAY_BUFFER, 0);
         GlException_SAFE_CALL( program_->release() );
     }
+
+    GlState::glDisable (GL_BLEND);
 }
 
 

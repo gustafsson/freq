@@ -120,6 +120,7 @@ void DrawWatermark::
     }
 
     GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
 
     GlException_CHECK_ERROR();
 #else

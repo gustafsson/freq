@@ -100,7 +100,6 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     // Disable unwanted capabilities when resampling a texture
     GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
-    GlState::glDisable (GL_BLEND);
     GlState::glDisable (GL_CULL_FACE);
 
     glBindTexture (GL_TEXTURE_2D, drawTexture->getOpenGlTextureId ());
@@ -159,9 +158,8 @@ void Fbo2Block::
 
     drawTexture.reset ();
 
-    GlState::glEnable(GL_DEPTH_TEST);
-    GlState::glEnable(GL_BLEND);
-    GlState::glEnable(GL_CULL_FACE);
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_CULL_FACE);
 }
 
 

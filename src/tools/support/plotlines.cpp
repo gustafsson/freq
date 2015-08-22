@@ -143,7 +143,7 @@ void PlotLines::
     GlException_CHECK_ERROR();
 
     glPushAttribContext ac;
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
 
@@ -181,6 +181,7 @@ void PlotLines::
     glEnd();
     glPointSize( 1.f );
     glDepthMask(true);
+    GlState::glDisable (GL_BLEND);
 
     GlException_CHECK_ERROR();
 }

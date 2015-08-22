@@ -157,7 +157,6 @@ void TimelineView::
         //glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        GlState::glEnable (GL_BLEND);
     }
 
 #ifdef LEGACY_OPENGL

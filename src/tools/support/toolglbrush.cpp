@@ -10,7 +10,7 @@ ToolGlBrush::
 #ifdef LEGACY_OPENGL
     enabled = false;
 
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
     glColor4f( 0, 0, 0, enabled ? .5 : 0.2);
@@ -24,6 +24,7 @@ ToolGlBrush::
     ~ToolGlBrush()
 {
 #ifdef LEGACY_OPENGL
+    GlState::glDisable (GL_BLEND);
     glDepthMask(true);
 #endif // LEGACY_OPENGL
 }

@@ -30,7 +30,7 @@ public:
      * @return A RAII object whose destructor unbinds the framebuffer object
      * and removes the texture binding for to the FBO.
      *
-     * Disables GL_DEPTH_TEST, GL_BLEND, GL_CULL_FACE during bind and enables
+     * Disables GL_DEPTH_TEST, GL_CULL_FACE during bind and enables
      * them afterwards.
      */
     ScopeBinding begin (Region overlapping_region, GlTexture::ptr srcTexture, GlTexture::ptr drawTexture, glProjection& M);

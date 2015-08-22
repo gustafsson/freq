@@ -243,7 +243,6 @@ Signal::Intervals MergerTexture::
     glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
 
     GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
-    GlState::glDisable (GL_BLEND);
     GlState::glDisable (GL_CULL_FACE);
 
     struct vertex_format {

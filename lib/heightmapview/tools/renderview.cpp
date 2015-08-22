@@ -138,7 +138,7 @@ void RenderView::
 
     GlException_SAFE_CALL( glDepthMask(true) );
 
-    GlException_SAFE_CALL( GlState::glEnable (GL_DEPTH_TEST) );
+    GlState::glEnable (GL_DEPTH_TEST);
     GlException_SAFE_CALL( glDepthFunc(GL_LEQUAL) );
     GlException_SAFE_CALL( glFrontFace( model->render_settings.left_handed_axes ? GL_CCW : GL_CW ) );
     GlException_SAFE_CALL( glCullFace( GL_BACK ) );
@@ -160,7 +160,6 @@ void RenderView::
 #endif
 
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    GlState::glEnable (GL_BLEND);
 
     GlException_CHECK_ERROR();
 }

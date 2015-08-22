@@ -203,11 +203,10 @@ void DrawCollections::
     bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
     if (fixed_color || 0<i)
         model->render_settings.fixed_color = channel_colors[fixed_color ? i : std::max(0,i-1)];
-    GlState::glDisable (GL_BLEND);
     if (0 != model->camera->r[0])
-        GlState::glEnable ( GL_CULL_FACE ); // enabled only while drawing collections
+        GlState::glEnable (GL_CULL_FACE); // enabled only while drawing collections
     else
-        GlState::glEnable ( GL_DEPTH_TEST );
+        GlState::glEnable (GL_DEPTH_TEST);
     float L = model->tfr_mapping().read()->length();
 
     Heightmap::Render::Renderer renderer(model->collections()[i],
@@ -217,7 +216,6 @@ void DrawCollections::
     renderer.draw( yscale, L ); // 0.6 ms
 
     GlState::glDisable ( GL_CULL_FACE );
-    GlState::glEnable (GL_BLEND);
 }
 
 

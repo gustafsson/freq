@@ -90,7 +90,6 @@ void ResampleTexture::
 {
     glPushAttribContext pa(GL_ENABLE_BIT);
     GlState::glDisable (GL_DEPTH_TEST);
-    GlState::glDisable (GL_BLEND);
     GlState::glDisable (GL_CULL_FACE);
 
     GLint viewport[4];
@@ -147,7 +146,6 @@ void ResampleTexture::
 {
     glPushAttribContext pa(GL_ENABLE_BIT);
     GlState::glDisable (GL_DEPTH_TEST);
-    GlState::glDisable (GL_BLEND);
     GlState::glDisable (GL_CULL_FACE);
 
     GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );

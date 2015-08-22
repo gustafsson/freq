@@ -147,6 +147,7 @@ void DrawImage::
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
 
     GlException_CHECK_ERROR();
 #else

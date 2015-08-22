@@ -95,7 +95,9 @@ void Chain::handleWindowChanged(QQuickWindow* win)
 void setStates()
 {
     GlState::assume_default_gl_states ();
-    GlState::setGlIsEnabled(GL_DEPTH_TEST, true);
+    GlState::setGlIsEnabled (GL_DEPTH_TEST, true);
+    GlState::setGlIsEnabled (GL_BLEND, true);
+    GlState::glDisable (GL_BLEND);
 
 #ifdef GL_ES_VERSION_2_0
     GlException_SAFE_CALL( glClearDepthf(1.0f) );
@@ -126,7 +128,6 @@ void setStates()
 #endif
 
     GlException_SAFE_CALL( glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ) );
-    GlException_SAFE_CALL( GlState::glEnable (GL_BLEND) );
 }
 
 

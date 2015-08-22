@@ -154,6 +154,7 @@ void DrawWorking::
 
 
     GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_BLEND);
     glDepthMask (GL_TRUE);
 #endif // LEGACY_OPENGL
 }

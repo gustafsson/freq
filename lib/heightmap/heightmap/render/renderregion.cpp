@@ -77,7 +77,7 @@ void RenderRegion::
     modelview *= matrixd::translate (r.a.time, 0, r.a.scale);
     modelview *= matrixd::scale (r.time(), 1, r.scale());
 
-    glEnable(GL_BLEND);
+    GlState::glEnable(GL_BLEND);
     glLineWidth(2);
 
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
@@ -92,6 +92,7 @@ void RenderRegion::
     glLineWidth(1);
 
     GlState::glDisableVertexAttribArray (0);
+    GlState::glDisable(GL_BLEND);
     program_->release();
 }
 
