@@ -53,6 +53,7 @@ void main()
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
     mediump float v = texture2D(tex, texCoord, 0.0).x;
+#ifdef USE_MIPMAP
     if (yNormalize>0.0)
     {
         mediump float f = 1.2;
@@ -76,6 +77,7 @@ void main()
         // normalize, 100 is needed for scale
         v = mix(v, (v - base)/base*100.0, yNormalize);
     }
+#endif
 
     // up until here, 'v' doesn't depend on any render settings (uniforms) and could be
     // precomputed instead (apart from varying projections causing different mipmap
@@ -98,5 +100,5 @@ void main()
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
 
 //    curveColor.w = 1.0; //-saturate(fresnel);
-    gl_FragColor = curveColor;
+    gl_FragColor = max(min(curveColor, 1.0), 0.0);
 }

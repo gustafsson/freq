@@ -1,6 +1,7 @@
 #include "renderblock.h"
 #include "shaderresource.h"
 #include "heightmap/uncaughtexception.h"
+#include "heightmap/render/blocktextures.h"
 
 // gpumisc
 #include "computationkernel.h"
@@ -152,10 +153,14 @@ void RenderBlock::
     initShaders();
 
     // load shader
+    const char* fragTop = 0;
+    if (render_settings->y_normalize > 0 && Render::BlockTextures::mipmaps > 0)
+        fragTop = "#define USE_MIPMAP";
+
     if (render_settings->shadow_shader)
-        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
+        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag", 0, fragTop);
     else
-        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
+        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag", 0, fragTop);
 
     _shader_prog = _shader_progp->programId();
 

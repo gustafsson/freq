@@ -82,8 +82,11 @@ void Block::
         // use the new_texture_
         texture_ = t;
 
-        texture_->bindTexture ();
-        glGenerateMipmap (GL_TEXTURE_2D);
+        if (Render::BlockTextures::mipmaps > 0)
+        {
+            texture_->bindTexture ();
+            glGenerateMipmap (GL_TEXTURE_2D);
+        }
     }
 }
 
