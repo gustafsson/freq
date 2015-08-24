@@ -667,9 +667,14 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, RenderSettin
         count = 6;
         break;
     case RenderSettings::ColorMode_WhiteBlackGray:
-        spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
-        spectrum[1] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
-        count = 1;
+        spectrum[0] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[1] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[2] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[3] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[4] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[5] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
+        spectrum[6] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
+        count = 6;
         break;
     case RenderSettings::ColorMode_Grayscale:
         break;
@@ -747,12 +752,14 @@ void RenderBlock::
     vector<tvector<4,unsigned char> > texture(N);
     for (unsigned i=0; i<N; ++i) {
         tvector<4,float> wc = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
+        // Make UNSIGNED_BYTE. gles can't interpolate GL_FLOAT
         tvector<4,unsigned char> wb;
         wb[0] = 255*wc[0];
         wb[1] = 255*wc[1];
         wb[2] = 255*wc[2];
         wb[3] = 255*wc[3];
         texture[i] = wb;
+//        Log("%d/%d = %g %g %g %g") % i % N % wc[0] % wc[1] % wc[2] % wc[3];
     }
 
     _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, &texture[0][0]));

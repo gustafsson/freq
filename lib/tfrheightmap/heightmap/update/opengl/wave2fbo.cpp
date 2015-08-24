@@ -150,7 +150,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
 
         // Draw waveform
         glLineWidth(1);
-        program_->setUniformValue(uniRgba, QVector4D(0.25,0.0,0.0,1.0));
+        program_->setUniformValue(uniRgba, QVector4D(0.75,0.0,0.0,0.1));
         GlState::glDrawArrays(GL_LINE_STRIP, 4, first_j-4);
 
         for (auto& v : vbos) {
@@ -160,8 +160,8 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         }
 
         GlState::glDisableVertexAttribArray (0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        GlException_CHECK_ERROR();
+        glBindBuffer (GL_ARRAY_BUFFER, 0);
+        GlException_CHECK_ERROR ();
 
         return true;
     };
