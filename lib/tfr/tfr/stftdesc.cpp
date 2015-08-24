@@ -106,7 +106,8 @@ Signal::Interval StftDesc::
         // To compute the inverse we need almost an entire chunk before 'first'
         // rationale: the sample at 'first - chunk_size + 1' might take part
         // in the same fft as the sample at 'first'
-        preload = postload = chunk_size - increment;
+        preload = chunk_size - increment;
+        postload = 1+preload;
         }
     else
         {
@@ -114,7 +115,7 @@ Signal::Interval StftDesc::
         // rationale: the position in time for an stft is defined as
         // 'the first sample in the chunk' + floor(chunk_size/2)
         preload = chunk_size/2;
-        postload = chunk_size - preload; // don't assume chunk_size is even
+        postload = 1+chunk_size - preload; // don't assume chunk_size is even
         }
 
     // align to multiple of increment

@@ -191,6 +191,8 @@ void ShaderTexture::
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::prepTexture data %u x %u <> tex %u x %u")
                       % data_width % data_height % tex_width % tex_height);
+    EXCEPTION_ASSERT_LESS(1,tex_width);
+    EXCEPTION_ASSERT_LESS(1,tex_height);
 
     int sw = int_div_ceil (data_width, (tex_width-1));
     int sh = int_div_ceil (data_height, (tex_height-1));
