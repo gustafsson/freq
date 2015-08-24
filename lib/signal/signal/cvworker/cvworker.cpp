@@ -40,7 +40,7 @@ CvWorker::CvWorker(
 #ifdef __GNUC__
         {
             stringstream ss;
-            ss << "taskworker" << " " << (computing_engine?vartype(*computing_engine):"(null engine)");
+            ss << "cvworker" << " " << (computing_engine?vartype(*computing_engine):"(null engine)");
             pthread_setname_np(ss.str ().c_str ());
         }
 #endif
@@ -58,14 +58,14 @@ CvWorker::CvWorker(
                 Signal::Processing::Task task;
 
                 {
-                    DEBUGINFO TaskTimer tt(boost::format("taskworker: get task %s %s") % vartype(*schedule.get ()) % (computing_engine?vartype(*computing_engine):"(null)") );
+                    DEBUGINFO TaskTimer tt(boost::format("cvworker: get task %s %s") % vartype(*schedule.get ()) % (computing_engine?vartype(*computing_engine):"(null)") );
                     task = schedule->getTask(computing_engine);
                     active_time_since_start_ += work_timer.elapsedAndRestart ();
                 }
 
                 if (task)
                 {
-                    DEBUGINFO TaskTimer tt(boost::format("taskworker: running task %s") % task.expected_output());
+                    DEBUGINFO TaskTimer tt(boost::format("cvworker: running task %s") % task.expected_output());
                     task.run();
                     active_time_since_start_ += work_timer.elapsed ();
                     bedroom->wakeup (); // make idle workers wakeup to check if they can do something, won't affect busy workers
@@ -410,16 +410,10 @@ void CvWorker::
         ISchedule::ptr gettask(new DeadLockMock);
         CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
-        Log("taskworker %d") % __LINE__;
         EXCEPTION_ASSERT( !worker.wait (1) );
-        Log("taskworker %d") % __LINE__;
         worker.abort ();
-        Log("taskworker %d") % __LINE__;
         EXCEPTION_ASSERT( worker.wait (200) );
-        Log("taskworker %d") % __LINE__;
         worker.wait ();
-        Log("taskworker %d") % __LINE__;
-        Log("taskworker %d") % __LINE__;
     }
 #endif // SHARED_STATE_NO_TIMEOUT
 
