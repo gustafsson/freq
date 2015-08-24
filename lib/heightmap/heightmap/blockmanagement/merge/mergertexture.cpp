@@ -376,6 +376,8 @@ Signal::Intervals MergerTexture::
             auto bl = v.second;
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
+
+        missing_details = block->getInterval ();
     }
     else
         missing_details = block->getInterval ();
