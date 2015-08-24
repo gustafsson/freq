@@ -17,6 +17,7 @@
 #include "glPushContext.h"
 #include "glframebuffer.h"
 #include "gluunproject.h"
+#include "glstate.h"
 
 // boost
 #include <boost/assert.hpp>
