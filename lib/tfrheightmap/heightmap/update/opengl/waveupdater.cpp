@@ -63,10 +63,15 @@ void WaveUpdater::
         if (!job)
             break;
 
-        auto draw = p->wave2fbo.prep (job->b);
 
         for (pBlock block : j.intersecting_blocks)
         {
+            std::function<bool(const glProjection& M)> draw;
+            if (block->sample_rate () * 10.f < job->b->sample_rate ())
+                draw = p->wave2fbo.prepTriangleStrip (block,job->b);
+            else
+                draw = p->wave2fbo.prepLineStrip (job->b);
+
             block->updater ()->queueUpdate (block,
                         [draw] (const glProjection& M) { return draw(M); });
 

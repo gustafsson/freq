@@ -22,13 +22,14 @@ Wave2Fbo::
         Wave2Fbo()
     :
       //N(128*1024) // 1 MB
-      N_(8*1024) // 64 KB
+      //N_(8*1024) // 64 KB
+      N_(518) // 2*BlockTextures::getWidth + 4 + 2
 {
 }
 
 
 function<bool(const glProjection& glprojection)> Wave2Fbo::
-        prep(Signal::pMonoBuffer b)
+        prepLineStrip(Signal::pMonoBuffer b)
 {
     GlGroupMarker gpm("Wave2Fbo");
 
@@ -159,6 +160,164 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
             glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
             glDrawArrays(GL_LINE_STRIP, 0, v.second);
         }
+
+        GlState::glDisableVertexAttribArray (0);
+        glBindBuffer (GL_ARRAY_BUFFER, 0);
+        GlException_CHECK_ERROR ();
+
+        return true;
+    };
+}
+
+
+function<bool(const glProjection& glprojection)> Wave2Fbo::
+        prepTriangleStrip(Heightmap::pBlock block, Signal::pMonoBuffer b)
+{
+    GlGroupMarker gpm("Wave2Fbo");
+
+    if (!program_) {
+        program_ = ShaderResource::loadGLSLProgramSource (
+                                           R"vertexshader(
+                                               attribute highp vec4 vertices;
+                                               uniform highp mat4 ModelViewProjectionMatrix;
+                                               void main() {
+                                                   gl_Position = ModelViewProjectionMatrix*vertices;
+                                               }
+                                           )vertexshader",
+                                           R"fragmentshader(
+                                               uniform lowp vec4 rgba;
+                                               void main() {
+                                                   // heightmap.frag: heightValue does v *= 0.01
+                                                   gl_FragColor = rgba;
+                                               }
+                                           )fragmentshader");
+
+        uniModelViewProjectionMatrix_ = program_->uniformLocation("ModelViewProjectionMatrix");
+        uniRgba_ = program_->uniformLocation("rgba");
+    }
+
+    if (!program_->isLinked ())
+        return [](const glProjection& glprojection){return true;};
+
+    GlException_CHECK_ERROR();
+
+    Signal::Interval blockI = block->getInterval ();
+    Signal::Interval bufferI = b->getInterval ();
+    Signal::Interval I = blockI & bufferI;
+    float bufferFs = b->sample_rate ();
+    float blockFs = block->sample_rate ();
+
+    // x-axis coordinate system: seconds since block start (overlapping region)
+    // i: samples from buffer start
+    float timeOffset = block->getOverlappingRegion ().a.time;
+    float timeStep = 1./block->sample_rate ();
+    float timeStart = (I.first - blockI.first) / bufferFs;
+    float timeStop = (I.last - 1 - blockI.first) / bufferFs; // inclusive stop
+
+    // round to nearest texel
+    int texelStart = std::floor(timeStart * blockFs + 0.5);
+    int texelStop = std::floor(timeStop * blockFs + 0.5); // inclusive stop
+    if (texelStart < 0)
+        texelStart = 0;
+    if (texelStop >= block->block_layout ().texels_per_row ())
+        texelStop = block->block_layout ().texels_per_row ()-1;
+    timeStart = (texelStart + 0.5) / blockFs; // point to texel centers
+    timeStop = (texelStop + 0.5) / blockFs;
+    int texelCount = texelStop - texelStart + 1;
+    //timeStep = (timeStop - timeStart) / (texelCount-1);
+//    float timeStep = 1.0f / blockFs; // block->sample_rate () is texels per second
+//    float timeStep2 = timeStep + 2.f*timeStep/(texelCount-1);
+    float t = timeStart; // - timeStep*0.5;
+
+    NewVbo gotVbo = getVbo();
+    shared_ptr<Vbo> first_vbo = move(gotVbo.second);
+
+    glBindBuffer (GL_ARRAY_BUFFER, *first_vbo);
+    vertex_format_xy* d;
+    if (gotVbo.first)
+    {
+        // map entire buffer when it's first allocated to prevent warnings that parts of the buffer to contain uninitialized buffer data
+        // OpenGL ES doesn't have glMapBuffer, but it does have glMapBufferRange
+        d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, N_*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT);
+    }
+    else
+    {
+        EXCEPTION_ASSERT_LESS_OR_EQUAL (4 + 2+2*texelCount, N_);
+        d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, (4+2+2*texelCount)*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
+    }
+
+    float* p = CpuMemoryStorage::ReadOnly<1>(b->waveform_data()).ptr ();
+
+    // Prepare clear rectangle
+    *d++ = vertex_format_xy{ timeStart, -1 };
+    *d++ = vertex_format_xy{ timeStop, -1 };
+    *d++ = vertex_format_xy{ timeStart, 1 };
+    *d++ = vertex_format_xy{ timeStop, 1 };
+    int Si = bufferI.count ();
+    int i = I.first - bufferI.first;
+    int texel_i = texelStart;
+    float bufferOffset = b->start () - timeOffset;
+
+    Region r = block->getVisibleRegion ();
+    float halfTexelHeight = 0.75*r.scale () / block->block_layout ().texels_per_column ();
+    float minv=p[i], maxv=minv;
+    for (; (texel_i-texelStart)<texelCount; texel_i++)
+    {
+        minv = i<Si ? p[i] : 0.f;
+        maxv = minv;
+
+        int next_i = ((texel_i + 1.0)*timeStep - bufferOffset)*bufferFs;
+        if (i < next_i) for (++i; i<Si && i < next_i; ++i)
+        {
+            float v = p[i];
+            if (minv > v)
+                minv = v;
+            else if (maxv < v)
+                maxv = v;
+        }
+        *d++ = vertex_format_xy{ t, maxv + halfTexelHeight };
+        *d++ = vertex_format_xy{ t, minv - halfTexelHeight };
+        t += timeStep;
+    }
+    *d++ = vertex_format_xy{ t, maxv + halfTexelHeight };
+    *d++ = vertex_format_xy{ t, minv - halfTexelHeight };
+    int vertex_count=4+2+texelCount*2;
+//    Log("I = %s, lasti = %d/%d, texelCount = %d+%d/%d") % I % i % Si % texelStart % (texel_i-texelStart) % texelCount;
+//    Log("timeOffset = %g, timeStart = %g, timeStop = %g, timeStep = %g, t = %g") % timeOffset % timeStart % timeStop % timeStep % t;
+
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    std::shared_ptr<QOpenGLShaderProgram> program_ = this->program_;
+    auto uniModelViewProjectionMatrix = this->uniModelViewProjectionMatrix_;
+    auto uniRgba = this->uniRgba_;
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlException_CHECK_ERROR();
+
+    return [program_,timeOffset,uniModelViewProjectionMatrix,uniRgba,
+            first_vbo,vertex_count]
+    (const glProjection& P)
+    {
+        program_->bind();
+        GlState::glEnableVertexAttribArray (0);
+
+        matrixd modelview = P.modelview;
+        modelview *= matrixd::translate (timeOffset, 0.5, 0);
+        modelview *= matrixd::scale (1.0, 0.5, 1);
+        glUniformMatrix4fv (uniModelViewProjectionMatrix, 1, false, GLmatrixf(P.projection*modelview).v ());
+
+        GlException_CHECK_ERROR();
+
+        // Draw clear rectangle
+        program_->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
+        glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
+        glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
+
+        // Draw waveform
+        glLineWidth(1);
+        program_->setUniformValue(uniRgba, QVector4D(0.75,0.0,0.0,0.1));
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 4, vertex_count-4);
 
         GlState::glDisableVertexAttribArray (0);
         glBindBuffer (GL_ARRAY_BUFFER, 0);

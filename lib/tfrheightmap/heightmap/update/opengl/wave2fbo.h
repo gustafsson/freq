@@ -2,6 +2,7 @@
 #define HEIGHTMAP_UPDATE_OPENGL_WAVE2FBO_H
 
 #include "signal/buffer.h"
+#include "heightmap/block.h"
 #include "glprojection.h"
 #include "vbo.h"
 #include <vector>
@@ -23,7 +24,8 @@ public:
     Wave2Fbo(const Wave2Fbo&)=delete;
     Wave2Fbo& operator=(const Wave2Fbo&)=delete;
 
-    std::function<bool(const glProjection& M)> prep(Signal::pMonoBuffer b);
+    std::function<bool(const glProjection& M)> prepTriangleStrip(Heightmap::pBlock block, Signal::pMonoBuffer b);
+    std::function<bool(const glProjection& M)> prepLineStrip(Signal::pMonoBuffer b);
 
 private:
     struct vertex_format_xy {
