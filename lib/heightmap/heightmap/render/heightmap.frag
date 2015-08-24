@@ -25,6 +25,7 @@ mediump float heightValue(mediump float v) {
 }
 
 
+#ifdef USE_MIPMAP
 // https://www.opengl.org/discussion_boards/showthread.php/177520-Mipmap-level-calculation-using-dFdx-dFdy
 mediump float mip_map_level(mediump vec2 texture_coordinate)
 {
@@ -39,6 +40,7 @@ mediump float mip_map_level(mediump vec2 texture_coordinate)
     //return max(0.0, 0.5 * log2(delta_max_sqr) - 1.0); // == log2(sqrt(delta_max_sqr));
     return 0.5 * log2(delta_max_sqr); // == log2(sqrt(delta_max_sqr));
 }
+#endif
 
 
 void main()
