@@ -19,7 +19,8 @@ public:
 
     type v[N];
 	tvector( ) { for(int i=N; i--;) v[i] = 0; }
-    tvector( const tvector &a ) { for(int i=N; i--;) v[i] = a[i]; }
+    tvector( tvector &&a ) = default;
+    tvector( const tvector &a ) = default;
     template<typename t2>
     explicit tvector( const tvector<N, t2> &a ) { for(int i=N; i--;) v[i] = a[i]; }
 	tvector( const baseType *a ) { for(int i=N; i--;) v[i] = a[i]; }
@@ -27,6 +28,8 @@ public:
 	tvector( const type& x, const type& y );
 	tvector( const type& x, const type& y, const type& z );
         tvector( const type& x, const type& y, const type& z, const type& w );
+    tvector& operator=( tvector &&a ) = default;
+    tvector& operator=( const tvector &a ) = default;
         const type& operator[](const unsigned n) const { return v[n];}
         type& operator[](const unsigned n){ return v[n];}
         bool operator==(const tvector &b) const {
