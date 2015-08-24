@@ -79,6 +79,7 @@ void RenderBlock::Renderer::
 
     int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
     int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
+    subdivx = subdivy = 0;
 
     LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
             % lod.t () % lod.s() % subdivx % subdivy;
