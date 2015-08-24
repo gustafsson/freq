@@ -75,7 +75,7 @@ TfrBlockUpdater::Job::Job(Tfr::pChunk chunk, float nf, float largest_fs)
       memory(chunk->transform_data)
 {
     // map to better fit range of float16 (it doesn't harm float32 either)
-    normalization_factor *= 100.f;
+//    normalization_factor *= 100.f;
 
     Tfr::ChunkElement *cp = chunk->transform_data->getCpuMemory ();
     int n = (int)chunk->transform_data->numberOfElements ();

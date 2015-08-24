@@ -44,7 +44,8 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
                                            R"fragmentshader(
                                                uniform lowp vec4 rgba;
                                                void main() {
-                                                   gl_FragColor = rgba*100.0;
+                                                   // heightmap.frag: heightValue does v *= 0.01
+                                                   gl_FragColor = rgba;
                                                }
                                            )fragmentshader");
 

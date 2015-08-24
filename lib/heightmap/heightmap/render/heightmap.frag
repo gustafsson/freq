@@ -16,7 +16,7 @@ uniform mediump vec2 texSize;
 
 
 mediump float heightValue(mediump float v) {
-    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
+//    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
     mediump float h = mix(v*yScale + yOffset,       // linear
                   log(v) * logScale.y + logScale.z, // log
                   logScale.x);                      // choose
