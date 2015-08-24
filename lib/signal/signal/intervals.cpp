@@ -150,7 +150,7 @@ Intervals& Intervals::
         b = b.spanned(*itr);
     }
 
-    base::erase( first, last );
+    last = base::erase( first, last );
     base::insert( last, b );
 
     return *this;
@@ -160,7 +160,7 @@ Intervals& Intervals::
 Intervals& Intervals::
         operator -= (const Intervals& b)
 {
-    for (const Interval& r:  b)
+    for (const Interval& r: b)
         operator-=( r );
     return *this;
 }
@@ -201,7 +201,7 @@ Intervals& Intervals::
                 Interval j(r.last, i.last);
                 itr->last = r.first;
                 itr++;
-                base::insert(itr, j);
+                itr = base::insert(itr, j);
 
             // Else, error
             } else {
