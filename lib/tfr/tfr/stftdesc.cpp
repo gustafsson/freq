@@ -19,6 +19,7 @@ StftDesc::
       _window_type(WindowType_Rectangular)
 {
     compute_redundant( _compute_redundant );
+    prepareWindow();
 }
 
 
@@ -168,10 +169,10 @@ unsigned oksz(unsigned x)
 }
 
 int StftDesc::
-        set_approximate_chunk_size( unsigned preferred_size )
+        set_approximate_chunk_size( int preferred_size )
 {
-    //_window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
-    _window_size = oksz( preferred_size );
+    //window_size = 1 << (unsigned)floor(log2f(preferred_size)+0.5);
+    int window_size = oksz( preferred_size );
 
     size_t free = availableMemoryForSingleAllocation();
 
@@ -181,15 +182,15 @@ int StftDesc::
     multiple++; // overhead during computaion
 
     unsigned slices = 1;
-    if (slices * _window_size*multiple*sizeof(Tfr::ChunkElement) > free)
+    if (slices * window_size*multiple*sizeof(Tfr::ChunkElement) > free)
     {
         size_t max_size = free / (slices*multiple*sizeof(Tfr::ChunkElement));
-        _window_size = Fft().lChunkSizeS((unsigned)max_size+1, 4);
+        window_size = Fft().lChunkSizeS((unsigned)max_size+1, 4);
     }
 
-    _window_size = std::max(4, _window_size);
+    set_exact_chunk_size(std::max(4, window_size));
 
-    return _window_size;
+    return this->chunk_size ();
 
 //    if (_ok_chunk_sizes.empty())
 //        build_performance_statistics(true);
@@ -214,9 +215,13 @@ int StftDesc::
 
 
 void StftDesc::
-        set_exact_chunk_size( unsigned chunk_size )
+        set_exact_chunk_size( int chunk_size )
 {
-    _window_size = chunk_size;
+    if (chunk_size != _window_size)
+    {
+        _window_size = chunk_size;
+        prepareWindow();
+    }
 }
 
 
@@ -275,6 +280,7 @@ void StftDesc::
         enable_inverse(bool value)
 {
     _enable_inverse = value;
+    prepareWindow();
 }
 
 
@@ -345,6 +351,16 @@ void StftDesc::
 {
     _window_type = type;
     _overlap = std::max(0.f, std::min(0.98f, overlap));
+    prepareWindow ();
+}
+
+
+const float* StftDesc::
+        windowData(float &norm) const
+{
+    EXCEPTION_ASSERT_EQUALS(windowfunction.size (),this->chunk_size ());
+    norm = this->norm;
+    return &windowfunction[0];
 }
 
 
@@ -400,6 +416,108 @@ bool StftDesc::
             _overlap == p->_overlap &&
             _window_type == p->_window_type;
 }
+
+
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Hann>( float p )         { return 1.f  + cos(M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Hamming>( float p )      { return 0.54f  + 0.46f*cos(M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Tukey>( float p )        { return std::fabs(p) < 0.5 ? 2.f : 1.f + cos(M_PI*(std::fabs(p)*2.f-1.f)); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Cosine>( float p )       { return cos(M_PI*p*0.5f); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Lanczos>( float p )      { return p==0?1.f:sin(M_PI*p)/(M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Triangular>( float p )   { return 1.f - fabs(p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Gaussian>( float p )     { return exp2f(-6.492127684f*p*p); } // sigma = 1/3
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_BarlettHann>( float p )  { return 0.62f-0.24f*fabs(p)+0.38f*cos(M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Blackman>( float p )     { return 0.42f + 0.5f*cos(M_PI*p) + 0.08f*cos(2.f*M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_Nuttail>( float p )      { return 0.355768f + 0.487396f*cos(M_PI*p) + 0.144232f*cos(2.f*M_PI*p) + 0.012604f*cos(3.f*M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_BlackmanHarris>( float p )  { return 0.35875f + 0.48829*cos(M_PI*p) + 0.14128f*cos(2.f*M_PI*p) + 0.01168f*cos(3.f*M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_BlackmanNuttail>( float p ) { return 0.3635819f + 0.4891775*cos(M_PI*p) + 0.1365995f*cos(2.f*M_PI*p) + 0.0106411f*cos(3.f*M_PI*p); }
+template<> float StftDesc::computeWindowValue<StftDesc::WindowType_FlatTop>( float p ) { return 1.f + 1.93f*cos(M_PI*p) + 1.29f*cos(2.f*M_PI*p) + 0.388f*cos(3.f*M_PI*p) + 0.032f*cos(4.f*M_PI*p); }
+template<StftDesc::WindowType> float StftDesc::computeWindowValue( float )                  { return 1.f; }
+
+
+template<StftDesc::WindowType Type>
+void StftDesc::
+        prepareWindowKernel()
+{
+    windowfunction.resize (chunk_size());
+    float* window = &windowfunction[0];
+    float norm = 0;
+    int window_size = chunk_size();
+    if (StftDesc::applyWindowOnInverse(Type))
+    {
+        for (int x=0;x<window_size; ++x)
+        {
+            float p = 2.f*(x+1)/(window_size+1) - 1.f;
+            float a = computeWindowValue<Type>(p);
+            norm += a*a;
+            window[x] = a;
+        }
+        norm = sqrt(chunk_size() / norm);
+    }
+    else
+    {
+        for (int x=0;x<window_size; ++x)
+        {
+            float p = 2.f*(x+1)/(window_size+1) - 1.f;
+            float a = computeWindowValue<Type>(p);
+            norm += a;
+            window[x] = a;
+        }
+        norm = chunk_size() / norm;
+    }
+    this->norm = norm;
+}
+
+
+void StftDesc::
+        prepareWindow()
+{
+    switch(windowType())
+    {
+    case StftDesc::WindowType_Hann:
+        prepareWindowKernel<StftDesc::WindowType_Hann>();
+        break;
+    case StftDesc::WindowType_Hamming:
+        prepareWindowKernel<StftDesc::WindowType_Hamming>();
+        break;
+    case StftDesc::WindowType_Tukey:
+        prepareWindowKernel<StftDesc::WindowType_Tukey>();
+        break;
+    case StftDesc::WindowType_Cosine:
+        prepareWindowKernel<StftDesc::WindowType_Cosine>();
+        break;
+    case StftDesc::WindowType_Lanczos:
+        prepareWindowKernel<StftDesc::WindowType_Lanczos>();
+        break;
+    case StftDesc::WindowType_Triangular:
+        prepareWindowKernel<StftDesc::WindowType_Triangular>();
+        break;
+    case StftDesc::WindowType_Gaussian:
+        prepareWindowKernel<StftDesc::WindowType_Gaussian>();
+        break;
+    case StftDesc::WindowType_BarlettHann:
+        prepareWindowKernel<StftDesc::WindowType_BarlettHann>();
+        break;
+    case StftDesc::WindowType_Blackman:
+        prepareWindowKernel<StftDesc::WindowType_Blackman>();
+        break;
+    case StftDesc::WindowType_Nuttail:
+        prepareWindowKernel<StftDesc::WindowType_Nuttail>();
+        break;
+    case StftDesc::WindowType_BlackmanHarris:
+        prepareWindowKernel<StftDesc::WindowType_BlackmanHarris>();
+        break;
+    case StftDesc::WindowType_BlackmanNuttail:
+        prepareWindowKernel<StftDesc::WindowType_BlackmanNuttail>();
+        break;
+    case StftDesc::WindowType_FlatTop:
+        prepareWindowKernel<StftDesc::WindowType_FlatTop>();
+        break;
+    default:
+        prepareWindowKernel<StftDesc::WindowType_Rectangular>();
+        break;
+    }
+}
+
 
 } // namespace Tfr
 

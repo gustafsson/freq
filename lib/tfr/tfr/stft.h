@@ -92,8 +92,6 @@ public:
 private:
     const StftDesc p;
     FftImplementation::ptr fft;
-    std::vector<float> windowfunction;
-    float norm;
 
     Tfr::pChunk ComputeChunk(DataStorage<float>::ptr inputbuffer);
 
@@ -103,12 +101,7 @@ private:
     Tfr::pChunk ChunkWithRedundant(DataStorage<float>::ptr inputbuffer);
     virtual Signal::pMonoBuffer inverseWithRedundant( pChunk );
 
-
     static std::vector<unsigned> _ok_chunk_sizes;
-
-    void prepareWindow();
-    template<StftDesc::WindowType>
-    void prepareWindowKernel();
 
     /**
       applyWindow applies the window function to some data, using '_window_type' and '_overlap'.
@@ -120,9 +113,6 @@ private:
     DataStorage<float>::ptr applyWindow( DataStorage<float>::ptr in );
     template<typename T>
     typename DataStorage<T>::ptr reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c );
-
-    template<StftDesc::WindowType>
-    float computeWindowValue( float p );
 };
 
 class StftChunk: public Chunk
