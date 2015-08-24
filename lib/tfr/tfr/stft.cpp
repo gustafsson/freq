@@ -285,7 +285,11 @@ Tfr::pChunk Stft::
 
     DataStorage<float>::ptr windowedInput = applyWindow( b->waveform_data() );
     if (!windowedInput)
+    {
+        TaskInfo("stft: not enough data to operator(b), p.chunk_size() = %d, b = %s, computeredundant = %s",
+                               p.chunk_size(), b->getInterval().toString().c_str(), p.compute_redundant()?"true":"false");
         return Tfr::pChunk();
+    }
 
     // @see compute_redundant()
     Tfr::pChunk chunk;
