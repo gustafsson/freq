@@ -109,8 +109,10 @@ public:
      * @param name
      * @param width
      * @param height
+     * @param mipmaps defaults to mipmaps>0
      */
-    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps=true);
+    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
 
     /**
      * @brief allocated_bytes_per_element
