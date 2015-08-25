@@ -39,7 +39,8 @@ void RenderViewTransform::
         receiveSetTransform_Stft()
 {
     Tfr::StftDesc& stft = render_model.transform_descs()->getParam<Tfr::StftDesc>();
-    stft.setWindow (Tfr::StftDesc::WindowType_Hann, 1 - 1/4.);
+    //stft.setWindow (Tfr::StftDesc::WindowType_Hann, 1 - 1/4.);
+    stft.setWindow (Tfr::StftDesc::WindowType_Gaussian, 1 - 1/16.);
     stft.set_approximate_chunk_size (1<<12);
     stft.enable_inverse (false);
 
