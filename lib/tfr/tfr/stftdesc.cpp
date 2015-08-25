@@ -137,20 +137,17 @@ Signal::Interval StftDesc::
     if (enable_inverse ())
         return requiredInterval(I, 0);
     else
-        {
+      {
         Signal::IntervalType
             increment = _averaging*this->increment(),
             chunk_size = _averaging*this->chunk_size (),
-            first = align_down(clamped_sub(I.first, chunk_size), increment),
-            last = align_up(clamped_add(I.last, chunk_size), increment),
             preload = chunk_size/2,
-            postload = chunk_size - preload; // don't assume chunk_size is even
+            postload = 1+chunk_size - preload, // don't assume chunk_size is even
+            first = align_down(clamped_sub(I.first, postload), increment),
+            last = align_up(clamped_add(I.last, preload), increment);
 
-            Signal::Interval J(first + preload,last - postload);
-            if (J.first>I.first) J.first = Signal::Interval::IntervalType_MIN;
-            if (J.last<I.last) J.last = Signal::Interval::IntervalType_MAX;
-            return J;
-        }
+        return Signal::Interval(first,last);
+      }
 }
 
 
