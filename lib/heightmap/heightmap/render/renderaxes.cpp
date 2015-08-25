@@ -209,7 +209,7 @@ void RenderAxes::
         {
             std::swap(p1_0, p2_0);
             std::swap(timePerPixel1, timePerPixel2);
-            std::swap(scalePerPixel1, scalePerPixel1);
+            std::swap(scalePerPixel1, scalePerPixel2);
         }
 
         if (render_settings.draw_axis_at0==-1)
