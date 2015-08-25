@@ -94,11 +94,10 @@ CvWorker::CvWorker(
                     }
                 }
             } while (!*abort);
-
-            p.set_value ();
         } catch (...) {
-            p.set_exception (std::current_exception ());
+            caught_exception_=std::current_exception ();
         }
+        p.set_value ();
     });
 }
 
@@ -121,11 +120,7 @@ void CvWorker::join()
     if (t.joinable ())
     {
         t.join ();
-        try {
-            f.get ();
-        } catch (...) {
-            this->caught_exception_ = std::current_exception ();
-        }
+        f.get ();
     }
 }
 
