@@ -50,7 +50,7 @@ void TargetNeeds::
 
     state.unlock ();
 
-    DEBUG_INFO TaskInfo(boost::format("needed_samples = %s") % needed_samples);
+    DEBUG_INFO Log("targetneeds: needed_samples = %s") % needed_samples;
 
     Step::const_ptr step = step_.lock ();
     INotifier::ptr notifier = notifier_.lock ();
@@ -69,7 +69,7 @@ void TargetNeeds::
     if (!invalidate)
         return;
 
-    DEBUG_INFO TaskInfo(boost::format("invalidate = %s") % invalidate);
+    DEBUG_INFO Log("targetneeds: invalidate = %s") % invalidate;
 
     if (Step::ptr step = step_.lock ())
         step->deprecateCache(invalidate);
@@ -143,7 +143,7 @@ Signal::Intervals TargetNeeds::
         out_of_date = ~Step::cache (step)->samplesDesc();
 
     Signal::Intervals needed = this->needed ();
-    DEBUG_INFO Log("TargetNeeds::out_of_date: %s = %s & %s")
+    DEBUG_INFO Log("targetneeds: out_of_date: %s = %s & %s")
             % (needed & out_of_date) % needed % out_of_date;
     return needed & out_of_date;
 }
