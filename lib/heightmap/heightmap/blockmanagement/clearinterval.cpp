@@ -18,7 +18,7 @@ ClearInterval::
 std::list<pBlock> ClearInterval::
         discardOutside(Signal::Interval& I)
 {
-    Log("ClearInterval::discardOutside") % I;
+    Log("clearinterval: discardOutside %s") % I;
 
     std::list<pBlock> discarded;
 
