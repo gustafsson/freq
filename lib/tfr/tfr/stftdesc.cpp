@@ -355,7 +355,7 @@ void StftDesc::
 const float* StftDesc::
         windowData(float &norm) const
 {
-    EXCEPTION_ASSERT_EQUALS(windowfunction.size (),this->chunk_size ());
+    EXCEPTION_ASSERT_EQUALS((int)windowfunction.size (),this->chunk_size ());
     norm = this->norm;
     return &windowfunction[0];
 }
