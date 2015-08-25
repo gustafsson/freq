@@ -377,7 +377,8 @@ Signal::Intervals MergerTexture::
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
 
-        missing_details = block->getInterval ();
+        // mergertexture is buggy, but it's still better than nothing
+        // set "missing_details = block->getInterval ()" to recompute the results
     }
     else
         missing_details = block->getInterval ();
