@@ -11,10 +11,12 @@ uniform mediump float yOffset;
 uniform mediump vec3 logScale;
 uniform mediump vec2 scale_tex;
 uniform mediump vec2 offset_tex;
+uniform mediump vec2 tex_delta;
 uniform highp mat4 ModelViewProjectionMatrix;
 uniform highp mat4 ModelViewMatrix;
 uniform highp mat4 NormalMatrix;
 
+#ifdef DRAW3D
 mediump float heightValue(mediump float v) {
 //    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
     mediump float h = mix(v*yScale + yOffset,       // linear
@@ -28,8 +30,8 @@ mediump float heightValue(mediump float v) {
 
 
 mediump float computeShadow(highp vec4 pos, mediump vec2 tex0) {
-    mediump vec2 tex1 = max(tex0 - offset_tex*2.0, offset_tex);
-    mediump vec2 tex2 = min(tex0 + offset_tex*2.0, 1.0-offset_tex);
+    mediump vec2 tex1 = tex0 - tex_delta;
+    mediump vec2 tex2 = tex0 + tex_delta;
     mediump float heightx1     = texture2D(tex, vec2(tex1.x, tex0.y)).x;
     mediump float heightx2     = texture2D(tex, vec2(tex2.x, tex0.y)).x;
     mediump float heighty1     = texture2D(tex, vec2(tex0.x, tex1.y)).x;
@@ -58,11 +60,12 @@ mediump float computeShadow(highp vec4 pos, mediump vec2 tex0) {
 
     highp float facing    = max(0.0, dot(eyeSpaceNormal, -eyeSpacePos));
     highp float diffuse   = max(0.0, worldSpaceNormal.y); // max(0.0, dot(worldSpaceNormalVector, lightDir));
+    highp float ambient   = 0.6;
 
     //shadow = clamp( 0.5 + diffuse+facing + fresnel, 0.5, 1.0);
-    return mix(1.0, min( 0.7 + (diffuse+facing)*0.3, 1.0), flatness);
+    return mix(1.0, min( ambient + (diffuse+facing)*(1.0-ambient), 1.0), flatness);
 }
-
+#endif
 
 void main()
 {
@@ -71,19 +74,24 @@ void main()
 
     texCoord = tex0;
 
+#ifdef DRAW3D
     vertex_height = texture2D(tex, tex0).x;
     //    height = texture2DLod(tex, texCoord, 0.0).x;
     vertex_height = heightValue(vertex_height);
 
-
     highp vec4 pos = qt_Vertex.xzyw; // swizzle
     pos.y = vertex_height; // and set vertex height from texture
 
+#ifndef NOSHADOW
     shadow = computeShadow(pos, tex0);
+#endif
 
     // edge dropout to eliminate visible glitches between blocks
     if (pos.x<0.0 || pos.z<0.0 || pos.x>1.0 || pos.z>1.0)
         pos.y *= 0.0;
+#else
+    highp vec4 pos = qt_Vertex.xzyw; // swizzle
+#endif
 
     // transform to homogeneous clip space
     gl_Position      = ModelViewProjectionMatrix * pos;

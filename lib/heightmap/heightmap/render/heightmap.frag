@@ -76,8 +76,8 @@ void main()
         base *= 0.7; // 1/f^2, f=1.2
         // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
-        // normalize, 100 is needed for scale
-        v = mix(v, (v - base)/base*100.0, yNormalize);
+        // normalize
+        v = mix(v, (v - base)/base, yNormalize);
     }
 #endif
 
@@ -87,6 +87,7 @@ void main()
 
 //    v = mix(clamp(v*0.005,0.0,1.0),heightValue(v),colorTextureFactor);
     v = heightValue(v);
+    mediump float height_value = v;
 
     // rainbow, colorscale or grayscale
     mediump vec4 curveColor = mix(fixedColor, texture2D(tex_color, vec2(v,0)), colorTextureFactor);
@@ -94,12 +95,24 @@ void main()
     v = mix(v, 1.0 - g*g*g, colorTextureFactor);
 
     //float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
+#ifdef DRAW3D
+#ifndef NOSHADOW
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
+#endif
+#endif
     curveColor = mix(clearColor, curveColor, v);
 
+#ifdef DRAWISARITHM
+#ifdef DRAW3D
     mediump float isarithm1 = fract( vertex_height * 25.0) < 0.93 ? 1.0 : 0.8;
     mediump float isarithm2 = fract( vertex_height * 5.0) < 0.93 ? 1.0 : 0.8;
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
+#else
+    mediump float isarithm1 = fract( height_value * 25.0) < 0.93 ? 1.0 : 0.8;
+    mediump float isarithm2 = fract( height_value * 5.0) < 0.93 ? 1.0 : 0.8;
+    curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
+#endif
+#endif
 
 //    curveColor.w = 1.0; //-saturate(fresnel);
     gl_FragColor = max(min(curveColor, 1.0), 0.0);

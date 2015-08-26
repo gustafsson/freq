@@ -43,9 +43,10 @@ public:
     void        setSize( unsigned w, unsigned h);
     unsigned    trianglesPerBlock();
 
-    GLint uniModelviewprojection=-1,
-            uniModelview=-1,
-            uniNormalMatrix=-1;
+    GLint uniModelviewprojection=-2,
+            uniModelview=-2,
+            uniNormalMatrix=-2,
+            attribVertex=-2;
 
 private:
     friend class RenderBlock::Renderer;
@@ -62,47 +63,76 @@ private:
     RenderSettings::ColorMode _color_texture_colors;
     boost::shared_ptr<GlTexture> _colorTexture;
 
-    ShaderPtr _shader_progp;
-    unsigned _shader_prog;
     unsigned _mesh_width;
     unsigned _mesh_height;
     pVbo _mesh_position;
 
-    GLint uniVertText0=-1,
-            uniVertText2=-1,
-            uniColorTextureFactor=-1,
-            uniFixedColor=-1,
-            uniClearColor=-1,
-            uniContourPlot=-1,
-            uniFlatness=-1,
-            uniYScale=-1,
-            uniYOffset=-1,
-            uniYNormalize=-1,
-            uniLogScale=-1,
-            uniScaleTex=-1,
-            uniOffsTex=-1,
-            uniTexSize=-1;
+    struct ShaderData
+    {
+        ShaderData();
+        ShaderData(const char* defines);
 
-    int   u_tex=0,
-          u_tex_color=0;
-    tvector<4, float>
-          u_fixed_color,
-          u_clearColor;
-    float u_colorTextureFactor=0;
-    bool  u_draw_contour_plot=false;
-    float u_flatness=0,
-          u_yScale=0,
-          u_yOffset=0,
-          u_yNormalize=0,
-          u_logScale=0,
-          u_logScale_x1=0,
-          u_logScale_x2=0,
-          u_scale_tex1=0,
-          u_scale_tex2=0,
-          u_offset_tex1=0,
-          u_offset_tex2=0,
-          u_texSize1=0,
-          u_texSize2=0;
+        ShaderPtr _shader_progp;
+        unsigned _shader_prog=0;
+
+        GLint uniModelviewprojection=-2,
+                uniModelview=-2,
+                uniNormalMatrix=-2;
+
+        GLint uniVertText0=-2,
+                uniVertText2=-2,
+                uniColorTextureFactor=-2,
+                uniFixedColor=-2,
+                uniClearColor=-2,
+                uniContourPlot=-2,
+                uniFlatness=-2,
+                uniYScale=-2,
+                uniYOffset=-2,
+                uniYNormalize=-2,
+                uniLogScale=-2,
+                uniScaleTex=-2,
+                uniOffsTex=-2,
+                uniTexDelta=-2,
+                uniTexSize=-2,
+                attribVertex=-2;
+
+        int   u_tex=0,
+              u_tex_color=0;
+        tvector<4, float>
+              u_fixed_color,
+              u_clearColor;
+        float u_colorTextureFactor=0;
+        bool  u_draw_contour_plot=false;
+        float u_flatness=0,
+              u_yScale=0,
+              u_yOffset=0,
+              u_yNormalize=0,
+              u_logScale=0,
+              u_logScale_x1=0,
+              u_logScale_x2=0,
+              u_scale_tex1=0,
+              u_scale_tex2=0,
+              u_offset_tex1=0,
+              u_offset_tex2=0,
+              u_tex_delta1=0,
+              u_tex_delta2=0,
+              u_texSize1=0,
+              u_texSize2=0;
+
+        void prepShader(BlockLayout block_size, RenderSettings* render_settings);
+    };
+
+    struct ShaderSettings
+    {
+        bool use_mipmap = false;
+        bool draw3d = false;
+        bool drawIsarithm = false;
+
+        bool operator<(const ShaderSettings&) const;
+    };
+
+    ShaderData* getShader(ShaderSettings s);
+    std::map<ShaderSettings,ShaderData> shaders;
 
     // 1 << (subdivs-1) = max density of pixels per vertex
 #ifdef GL_ES_VERSION_2_0
