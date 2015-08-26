@@ -626,8 +626,7 @@ DataStorage<float>::ptr Stft::
 
     DataStorage<float>::ptr windowedData(new DataStorage<float>(windowCount*p.chunk_size(), source->size().height, source->size().depth ));
 
-    float norm;
-    const float* window = p.windowData (norm);
+    const float* window = p.windowData ();
     int window_size = p.chunk_size();
 
     CpuMemoryReadOnly<float, 3> in = CpuMemoryStorage::ReadOnly<3>(source);
@@ -648,7 +647,7 @@ DataStorage<float>::ptr Stft::
                 float *i = &in.r(pos) + w*increment;
 
                 for (int x=0; x<window_size; ++x)
-                    o[x] = window[x] * i[x] * norm;
+                    o[x] = window[x] * i[x];
             }
         }
     }
@@ -681,12 +680,9 @@ typename DataStorage<T>::ptr Stft::
 
     typename CpuMemoryWriteOnly<T, 3>::Position pos(0,0,0);
 
-    float norm;
-    const float* window = p.windowData (norm);
+    const float* window = p.windowData ();
 
     bool doapplywindow = StftDesc::applyWindowOnInverse(p.windowType());
-    if (doapplywindow)
-        normalize *= norm;
 
     int out0 = c->first_valid_sample*increment;
     //int out0 = p.chunk_size()/2 - increment/2 + c->first_valid_sample*increment;
@@ -714,7 +710,7 @@ typename DataStorage<T>::ptr Stft::
                 if (doapplywindow)
                 {
                     for (; x<window_size; ++x)
-                        if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += i[x] * (window[x] * normalize);
+                        if (x0+x>=out0 && x0+x<N+out0) o[x0+x-out0] += i[x] * window[x] * normalize;
                 }
                 else
                 {

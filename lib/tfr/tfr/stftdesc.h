@@ -3,6 +3,7 @@
 
 #include "transform.h"
 #include "tfrdll.h"
+#include "datastorage.h"
 #include <vector>
 
 namespace Tfr {
@@ -89,7 +90,7 @@ public:
     WindowType windowType() const;
     std::string windowTypeName() const { return windowTypeName(windowType()); }
     void setWindow(WindowType type, float overlap);
-    const float* windowData(float& norm) const;
+    const float* windowData() const;
 
     /**
       Different windows are more sutiable for applying the window on the inverse as well.
@@ -110,8 +111,8 @@ private:
     float _overlap;
     WindowType _window_type;
 
-    std::vector<float> windowfunction;
-    float norm;
+    DataStorage<float> _windowdata;
+    float* _windowdata_ptr;
 
     void prepareWindow();
     template<StftDesc::WindowType>

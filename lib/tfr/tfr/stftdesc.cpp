@@ -3,6 +3,7 @@
 #include "computationkernel.h"
 #include "demangle.h"
 #include "neat_math.h"
+#include "cpumemorystorage.h"
 
 #include <boost/format.hpp>
 
@@ -16,7 +17,9 @@ StftDesc::
       _averaging(1),
       _enable_inverse(true),
       _overlap(0.f),
-      _window_type(WindowType_Rectangular)
+      _window_type(WindowType_Rectangular),
+      _windowdata(0),
+      _windowdata_ptr(0)
 {
     compute_redundant( _compute_redundant );
     prepareWindow();
@@ -353,11 +356,10 @@ void StftDesc::
 
 
 const float* StftDesc::
-        windowData(float &norm) const
+        windowData() const
 {
-    EXCEPTION_ASSERT_EQUALS((int)windowfunction.size (),this->chunk_size ());
-    norm = this->norm;
-    return &windowfunction[0];
+    EXCEPTION_ASSERT_EQUALS((int)_windowdata.numberOfElements (),this->chunk_size ());
+    return _windowdata_ptr;
 }
 
 
@@ -435,8 +437,8 @@ template<StftDesc::WindowType Type>
 void StftDesc::
         prepareWindowKernel()
 {
-    windowfunction.resize (chunk_size());
-    float* window = &windowfunction[0];
+    _windowdata = DataStorage<float>(chunk_size());
+    float* window = _windowdata_ptr = CpuMemoryStorage::WriteAll<float,1>(&_windowdata).ptr ();
     float norm = 0;
     int window_size = chunk_size();
     if (StftDesc::applyWindowOnInverse(Type))
@@ -461,7 +463,9 @@ void StftDesc::
         }
         norm = chunk_size() / norm;
     }
-    this->norm = norm;
+
+    for (int x=0;x<window_size; ++x)
+        window[x] *= norm;
 }
 
 
