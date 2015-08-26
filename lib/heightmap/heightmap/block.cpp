@@ -67,7 +67,7 @@ void Block::
 
 
 void Block::
-        showNewTexture()
+        showNewTexture(bool use_mipmap)
 {
     // release previously replaced texture, see below
     texture_hold_.reset ();
@@ -81,11 +81,23 @@ void Block::
 
         // use the new_texture_
         texture_ = t;
+    }
 
-        if (Render::BlockTextures::mipmaps > 0)
+    // check if mipmap settings have changed, or if mipmap is needed for a new texture
+    bool has_mipmap = texture_->getMinFilter () == GL_LINEAR_MIPMAP_LINEAR;
+    if (has_mipmap != use_mipmap || (use_mipmap && t))
+    {
+        texture_->bindTexture ();
+        if (use_mipmap)
         {
-            texture_->bindTexture ();
+            // recalculate mipmap if reenabled or got new texture
+            texture_->setMinFilter (GL_LINEAR_MIPMAP_LINEAR);
             glGenerateMipmap (GL_TEXTURE_2D);
+        }
+        else
+        {
+            // disable mipmap
+            texture_->setMinFilter (GL_LINEAR);
         }
     }
 }

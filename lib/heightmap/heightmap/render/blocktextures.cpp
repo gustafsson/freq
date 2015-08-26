@@ -267,7 +267,9 @@ void BlockTexturesImpl::
         setupTexture (t[i], width_, height_);
 
         bool adopt = true; // GlTexture does glDeleteTextures
-        textures.push_back (GlTexture::ptr(new GlTexture(t[i], width_, height_, adopt)));
+        GlTexture::ptr tp(new GlTexture(t[i], width_, height_, adopt));
+        tp->setMinFilter(GL_LINEAR);
+        textures.push_back (move(tp));
     }
 }
 
@@ -342,10 +344,8 @@ void BlockTexturesImpl::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    if (mipmaps)
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-    else
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    // change to a mipmapping filter when mipmaps are built later
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 }
 
 

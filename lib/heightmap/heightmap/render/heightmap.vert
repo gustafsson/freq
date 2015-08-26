@@ -75,12 +75,16 @@ void main()
     texCoord = tex0;
 
 #ifdef DRAW3D
-    vertex_height = texture2D(tex, tex0).x;
+    mediump float height = texture2D(tex, tex0).x;
     //    height = texture2DLod(tex, texCoord, 0.0).x;
-    vertex_height = heightValue(vertex_height);
+    height = heightValue(height);
 
     highp vec4 pos = qt_Vertex.xzyw; // swizzle
-    pos.y = vertex_height; // and set vertex height from texture
+    pos.y = height; // and set vertex height from texture
+
+#ifdef DRAWISARITHM
+    vertex_height = height;
+#endif
 
 #ifndef NOSHADOW
     shadow = computeShadow(pos, tex0);

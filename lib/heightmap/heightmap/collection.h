@@ -143,7 +143,7 @@ public:
 
 
     pBlock      getBlock( const Reference& ref );
-    void        createMissingBlocks(const Render::RenderSet::references_t& R);
+    void        createMissingBlocks(const Render::RenderSet::references_t& R, bool use_mipmap);
     int         runGarbageCollection( bool aggressive=false );
 
 

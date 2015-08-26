@@ -283,13 +283,10 @@ Signal::Intervals MergerTexture::
     GlState::glEnable (GL_DEPTH_TEST);
     GlState::glEnable (GL_CULL_FACE);
 
-    if (Render::BlockTextures::mipmaps > 0)
+    for (pBlock b : blocks)
     {
-        for (pBlock b : blocks)
-        {
-            glBindTexture (GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId());
-            glGenerateMipmap (GL_TEXTURE_2D);
-        }
+        // mark texture as updated
+        b->setTexture (b->texture ());
     }
 
     GlException_CHECK_ERROR();

@@ -153,7 +153,8 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    collection->createMissingBlocks (R);
+    bool use_mipmap = render_settings.y_normalize > 0;
+    collection->createMissingBlocks (R,use_mipmap);
 }
 
 

@@ -88,6 +88,14 @@ public:
 	*/
     unsigned short getHeight() const { return height; }
 
+    /**
+    getMinFilter returns the min_filter previously stored by storeMinFilter.
+    This is used to check if the mipmap levels have been enabled for this texture.
+    The texture must be bound when calling setMinFilter.
+     */
+    unsigned int getMinFilter() { return min_filter; }
+    void setMinFilter(unsigned int f);
+
 private:
     /**
 	Requested texture width of the texture.
@@ -104,4 +112,6 @@ private:
 	*/
     unsigned int textureId;
     unsigned int ownTextureId;
+
+    unsigned int min_filter=0;
 };

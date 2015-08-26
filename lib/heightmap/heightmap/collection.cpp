@@ -139,9 +139,6 @@ void Collection::
     {
         Block* block = b.second.get();
 
-        // Use the most recent texture data
-        block->showNewTexture ();
-
         if (block->frame_number_last_used == _frame_counter)
         {
             // Mark these blocks and surrounding blocks as in-use
@@ -224,26 +221,36 @@ Reference Collection::
 pBlock Collection::
         getBlock( const Reference& ref )
 {
+    Log("collection: using deprecated getBlock");
+
     pBlock block = cache_->find( ref );
     if (block)
         return block;
 
-    createMissingBlocks(Render::RenderSet::makeSet (ref));
+    createMissingBlocks(Render::RenderSet::makeSet (ref), true);
 
     return cache_->find( ref );
 }
 
 
 void Collection::
-         createMissingBlocks(const Render::RenderSet::references_t& R)
+         createMissingBlocks(const Render::RenderSet::references_t& R, bool use_mipmap)
 {
     Render::RenderSet::references_t missing;
 
     {
         BlockCache::cache_t cache = cache_->clone ();
         for (const auto& r : R)
-            if (cache.find(r.first) == cache.end())
+        {
+            auto i = cache.find(r.first);
+            if (i == cache.end())
                 missing.insert (r);
+            else
+            {
+                // Use the most recent texture data
+                i->second->showNewTexture(use_mipmap);
+            }
+        }
     }
 
     if (missing.empty ())
@@ -273,7 +280,13 @@ void Collection::
     missing_data_next_ |= block_initializer_->initBlocks(blocks_to_init);
 
     for (const pBlock& block : blocks_to_init)
+    {
+        // Use the most recent texture data
+        block->showNewTexture (use_mipmap);
+
+        // Make this block available for rendering
         cache_->insert (block);
+    }
 }
 
 

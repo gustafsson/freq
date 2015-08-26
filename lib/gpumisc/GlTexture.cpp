@@ -65,7 +65,7 @@ void GlTexture::
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
     //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
-    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    setMinFilter (GL_LINEAR);
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
@@ -88,4 +88,9 @@ GlTexture::~GlTexture() {
 void GlTexture::bindTexture()
 {
     GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, textureId) );
+}
+
+void GlTexture::setMinFilter (unsigned int f)
+{
+    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter=f) );
 }

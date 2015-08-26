@@ -45,7 +45,7 @@ namespace Heightmap {
         // The block must exist for one whole frame before it can receive
         // updates from another thread. This prevents the texture from being
         // corrupted by having two threads writing to it at the same time.
-        void showNewTexture();
+        void showNewTexture(bool use_mipmap);
 
         Heightmap::BlockManagement::BlockUpdater* updater();
 
