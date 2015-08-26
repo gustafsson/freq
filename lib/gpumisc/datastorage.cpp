@@ -243,6 +243,13 @@ void DataStorageVoid::
 DataStorageVoid& DataStorageVoid::
         operator=(const DataStorageVoid& b)
 {
+    if (size_ != b.size_ || bytesPerElement_ != b.bytesPerElement_)
+    {
+        DiscardAllData(false);
+        size_ = b.size_;
+        bytesPerElement_ = b.bytesPerElement_;
+    }
+
     bool allowCow = false;
     BOOST_FOREACH( DataStorageImplementation* p, b.validContent_ )
     {
@@ -252,6 +259,7 @@ DataStorageVoid& DataStorageVoid::
     BOOST_FOREACH( DataStorageImplementation* p, this->storage_ )
     {
         // All allocated instances in 'this' must support being replaced by 'Cow' copies.
+        // i.e cpu memory does not allow cow if the pointer is borrowed
         allowCow &= p->allowCow();
     }
 
@@ -261,7 +269,10 @@ DataStorageVoid& DataStorageVoid::
                 TaskTimer tt("Adding a COW copy");
 
         // COW, copy on write, postpones copying of data chunks until 'UpdateValidContent'
-        DiscardAllData();
+        DiscardAllData(false);
+
+        size_ = b.size_;
+        bytesPerElement_ = b.bytesPerElement_;
 
         BOOST_FOREACH( DataStorageImplementation* p, b.storage_ )
         {
@@ -282,6 +293,12 @@ void DataStorageVoid::
         DeepCopy(const DataStorageVoid&b)
 {
     validContent_.clear();
+    if (size_ != b.size_ || bytesPerElement_ != b.bytesPerElement_)
+    {
+        DiscardAllData(false);
+        size_ = b.size_;
+        bytesPerElement_ = b.bytesPerElement_;
+    }
 
     DataStorageImplementation* p = CopyStorage(b);
     if (p)
@@ -380,8 +397,8 @@ DataStorageImplementation* DataStorageVoid::
 {
     // Look for anything we have allocated that can use valid content from 'b'
     // Note. if b.validContent_ is empty this operator doesn't do anything.
-    StorageImplementations oldValidContent = validContent_;
-    validContent_.clear();
+    StorageImplementations oldValidContent;
+    oldValidContent.swap (validContent_);
 
     BOOST_FOREACH( DataStorageImplementation* p, oldValidContent )
     {
