@@ -131,6 +131,7 @@ void SelectionRenderer::
         return;
 
     m_program->bind();
+    GlState::glEnable (GL_BLEND);
 
     GlState::glEnableVertexAttribArray (0);
 
@@ -179,6 +180,7 @@ void SelectionRenderer::
     // write to the depth buffer again and stop fiddling with the stencil buffer
     glDepthMask(GL_TRUE);
     GlState::glDisable (GL_STENCIL_TEST);
+    GlState::glDisable (GL_BLEND);
 
     GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
     GlState::glDisableVertexAttribArray (0);
