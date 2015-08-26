@@ -111,7 +111,7 @@ private:
     float _overlap;
     WindowType _window_type;
 
-    DataStorage<float> _windowdata;
+    DataStorage<float>::ptr _windowdata;
     float* _windowdata_ptr;
 
     void prepareWindow();

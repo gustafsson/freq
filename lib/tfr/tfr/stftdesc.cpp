@@ -358,7 +358,7 @@ void StftDesc::
 const float* StftDesc::
         windowData() const
 {
-    EXCEPTION_ASSERT_EQUALS((int)_windowdata.numberOfElements (),this->chunk_size ());
+    EXCEPTION_ASSERT_EQUALS((int)_windowdata->numberOfElements (),this->chunk_size ());
     return _windowdata_ptr;
 }
 
@@ -437,8 +437,8 @@ template<StftDesc::WindowType Type>
 void StftDesc::
         prepareWindowKernel()
 {
-    _windowdata = DataStorage<float>(chunk_size());
-    float* window = _windowdata_ptr = CpuMemoryStorage::WriteAll<float,1>(&_windowdata).ptr ();
+    _windowdata.reset (new DataStorage<float>(chunk_size()));
+    float* window = _windowdata_ptr = CpuMemoryStorage::WriteAll<1>(_windowdata).ptr ();
     float norm = 0;
     int window_size = chunk_size();
     if (StftDesc::applyWindowOnInverse(Type))
