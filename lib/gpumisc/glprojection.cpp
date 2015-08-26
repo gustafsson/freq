@@ -1,5 +1,6 @@
 #include "glprojection.h"
 #include "gluunproject.h"
+#include "gluinvertmatrix.h"
 #include <string.h>
 #include <algorithm>
 #include <limits>
@@ -27,23 +28,30 @@ vectord glProjection::
 void glProjection::
         computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const
 {
+    glProjectionProjecter(projection*modelview, viewport).computeUnitsPerPixel (p,timePerPixel,scalePerPixel);
+}
+
+
+void glProjectionProjecter::
+        computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const
+{
     // Find units per pixel at point 'p' with glUnProject
-    vectord screen = gluProject( p );
+    vectord screen = project( p );
     vectord screenX=screen, screenY=screen;
-    if (screen[0] > viewport[0] + viewport[2]/2)
+    if (screen[0] > viewport_[0] + viewport_[2]/2)
         screenX[0]--;
     else
         screenX[0]++;
 
-    if (screen[1] > viewport[1] + viewport[3]/2)
+    if (screen[1] > viewport_[1] + viewport_[3]/2)
         screenY[1]--;
     else
         screenY[1]++;
 
     vectord
-            wBase = gluUnProject( screen ),
-            w1 = gluUnProject( screenX ),
-            w2 = gluUnProject( screenY );
+            wBase = unProject( screen ),
+            w1 = unProject( screenX ),
+            w2 = unProject( screenY );
 
     // Move out of the screen (towards the viewer along the 'zbuffer-axis' in screen coordinates)
     screen[2]-=1;
@@ -53,9 +61,9 @@ void glProjection::
     // Calculate the ray cast direction for the pixel corresponding to 'p' as well as directions
     // for nearby pixels
     vectord
-            dirBase = gluUnProject( screen )-wBase,
-            dir1 = gluUnProject( screenX )-w1,
-            dir2 = gluUnProject( screenY )-w2;
+            dirBase = unProject( screen )-wBase,
+            dir1 = unProject( screenX )-w1,
+            dir2 = unProject( screenY )-w2;
 
     // A valid projection on the xz-plane exists if dir[1]>0 and wBase[1]>0
     vectord
@@ -89,11 +97,102 @@ void glProjection::
 
 
 vectord::T glProjection::
+    computePixelDistance( vectord p1, vectord p2 ) const
+{
+    return glProjectionProjecter(projection*modelview, viewport).computePixelDistance (p1,p2);
+}
+
+
+
+vectord::T glProjectionProjecter::
         computePixelDistance( vectord p1, vectord p2 ) const
 {
-    vectord screen1 = gluProject( p1 );
-    vectord screen2 = gluProject( p2 );
+    vectord screen1 = project( p1 );
+    vectord screen2 = project( p2 );
     return (screen2-screen1).length();
+}
+
+
+glProjectionProjecter::glProjectionProjecter(const matrixd& mvp, const tvector<4,int>& viewport)
+    :
+      viewport_(viewport),
+      mvp_(mvp),
+      mvp_inverse_(invert(mvp))
+{
+}
+
+
+void glProjectionProjecter::translate(vectord x)
+{
+    mvp_ *= matrixd::translate (x);
+    mvp_inverse_ = matrixd::translate (-x) * mvp_inverse_;
+}
+
+
+void glProjectionProjecter::scale(vectord x)
+{
+    mvp_ *= matrixd::scale (x);
+    mvp_inverse_ = matrixd::scale (1./x[0], 1./x[1], 1./x[2]) * mvp_inverse_;
+}
+
+
+void glProjectionProjecter::rotate(vectord axis, double rad)
+{
+    mvp_ *= matrixd::rot (axis,rad);
+    mvp_inverse_ = matrixd::rot (axis,-rad) * mvp_inverse_;
+}
+
+
+void glProjectionProjecter::mult(matrixd& m)
+{
+    mvp_ *= m;
+    mvp_inverse_ = invert(m) * mvp_inverse_;
+}
+
+
+vectord glProjectionProjecter::project(vectord obj, bool *r) const
+{
+    tvector<4,double> in(obj[0],obj[1],obj[2],1.0);
+    in = mvp_*in;
+    if (in[3]==0.0) { if(r)*r=false; return vectord(); }
+    in[0] /= in[3];
+    in[1] /= in[3];
+    in[2] /= in[3];
+    /* Map x, y and z to range 0-1 */
+    in[0] = in[0] * 0.5 + 0.5;
+    in[1] = in[1] * 0.5 + 0.5;
+    in[2] = in[2] * 0.5 + 0.5;
+
+    /* Map x,y to viewport */
+    in[0] = in[0] * viewport_[2] + viewport_[0];
+    in[1] = in[1] * viewport_[3] + viewport_[1];
+
+    if(r)*r=true;
+    return vectord(in[0],in[1],in[2]);
+}
+
+
+vectord glProjectionProjecter::
+        unProject(vectord win, bool *r) const
+{
+    tvector<4,double> in(win[0],win[1],win[2],1.0);
+
+    /* Map x and y from window coordinates */
+    in[0] = (in[0] - viewport_[0]) / viewport_[2];
+    in[1] = (in[1] - viewport_[1]) / viewport_[3];
+
+    /* Map to range -1 to 1 */
+    in[0] = in[0] * 2 - 1;
+    in[1] = in[1] * 2 - 1;
+    in[2] = in[2] * 2 - 1;
+
+    in = mvp_inverse_*in;
+    if (in[3] == 0.0) {if(r)*r=false;return vectord();}
+    in[0] /= in[3];
+    in[1] /= in[3];
+    in[2] /= in[3];
+    if (r) *r = true;
+    return vectord(in[0],in[1],in[2]);
 }
 
 
