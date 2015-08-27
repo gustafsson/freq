@@ -10,7 +10,7 @@ namespace Render {
 class FrustumClip
 {
 public:
-    FrustumClip(const glProjection& gl_projection, float border_width=0, float border_height=0);
+    FrustumClip(const glProjecter& gl_projection, float border_width=0, float border_height=0);
 
     const vectord& getCamera() const { return camera; }
 
@@ -22,7 +22,7 @@ private:
     vectord camera;
     tvector<4,double> right, left, top, bottom, far, near;
 
-    void update(const glProjection& gl_projection, double w, double h);
+    void update(const glProjecter& gl_projection, double w, double h);
 };
 
 } // namespace Render

@@ -11,39 +11,29 @@ glProjection::
 }
 
 
-vectord glProjection::
-        gluProject(vectord obj, bool *r) const
+glProjecter::glProjecter(const glProjection& g)
+    :
+      viewport(g.viewport),
+      mv_(g.modelview),
+      p_(g.projection),
+      p_inverse_(invert(g.projection))
 {
-    return ::gluProject(obj, modelview.v (), projection.v (), viewport.v, r);
+    mv_inverse_ = invert(mv_);
 }
 
 
-vectord glProjection::
-        gluUnProject(vectord win, bool *r) const
-{
-    return ::gluUnProject(win, modelview.v (), projection.v (), viewport.v, r);
-}
-
-
-void glProjection::
-        computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const
-{
-    glProjectionProjecter(projection*modelview, viewport).computeUnitsPerPixel (p,timePerPixel,scalePerPixel);
-}
-
-
-void glProjectionProjecter::
+void glProjecter::
         computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const
 {
     // Find units per pixel at point 'p' with glUnProject
     vectord screen = project( p );
     vectord screenX=screen, screenY=screen;
-    if (screen[0] > viewport_[0] + viewport_[2]/2)
+    if (screen[0] > viewport[0] + viewport[2]/2)
         screenX[0]--;
     else
         screenX[0]++;
 
-    if (screen[1] > viewport_[1] + viewport_[3]/2)
+    if (screen[1] > viewport[1] + viewport[3]/2)
         screenY[1]--;
     else
         screenY[1]++;
@@ -96,15 +86,7 @@ void glProjectionProjecter::
 }
 
 
-vectord::T glProjection::
-    computePixelDistance( vectord p1, vectord p2 ) const
-{
-    return glProjectionProjecter(projection*modelview, viewport).computePixelDistance (p1,p2);
-}
-
-
-
-vectord::T glProjectionProjecter::
+vectord::T glProjecter::
         computePixelDistance( vectord p1, vectord p2 ) const
 {
     vectord screen1 = project( p1 );
@@ -113,47 +95,96 @@ vectord::T glProjectionProjecter::
 }
 
 
-glProjectionProjecter::glProjectionProjecter(const matrixd& mvp, const tvector<4,int>& viewport)
-    :
-      viewport_(viewport),
-      mvp_(mvp),
-      mvp_inverse_(invert(mvp))
+const matrixd& glProjecter::
+        mvp() const
 {
+    if (!valid_mvp_)
+    {
+        mvp_ = p_ * mv_;
+        valid_mvp_ = true;
+    }
+    return mvp_;
 }
 
 
-void glProjectionProjecter::translate(vectord x)
+const matrixd& glProjecter::
+        mvp_inverse() const
 {
-    mvp_ *= matrixd::translate (x);
-    mvp_inverse_ = matrixd::translate (-x) * mvp_inverse_;
+    if (!valid_mvp_inverse_)
+    {
+        mvp_inverse_ = mv_inverse_ * p_inverse_;
+        valid_mvp_inverse_ = true;
+    }
+    return mvp_inverse_;
 }
 
 
-void glProjectionProjecter::scale(vectord x)
+const matrixd& glProjecter::
+        modelview() const
 {
-    mvp_ *= matrixd::scale (x);
-    mvp_inverse_ = matrixd::scale (1./x[0], 1./x[1], 1./x[2]) * mvp_inverse_;
+    return mv_;
 }
 
 
-void glProjectionProjecter::rotate(vectord axis, double rad)
+const matrixd& glProjecter::
+        modelview_inverse() const
 {
-    mvp_ *= matrixd::rot (axis,rad);
-    mvp_inverse_ = matrixd::rot (axis,-rad) * mvp_inverse_;
+    return mv_inverse_;
 }
 
 
-void glProjectionProjecter::mult(matrixd& m)
+const matrixd& glProjecter::
+        projection() const
 {
-    mvp_ *= m;
-    mvp_inverse_ = invert(m) * mvp_inverse_;
+    return p_;
 }
 
 
-vectord glProjectionProjecter::project(vectord obj, bool *r) const
+const matrixd& glProjecter::
+        projection_inverse() const
+{
+    return p_inverse_;
+}
+
+
+void glProjecter::translate(vectord x)
+{
+    mv_ *= matrixd::translate (x);
+    mv_inverse_ = matrixd::translate (-x) * mv_inverse_;
+    valid_mvp_inverse_ = valid_mvp_ = false;
+}
+
+
+void glProjecter::scale(vectord x)
+{
+    mv_ *= matrixd::scale (x);
+    mv_inverse_ = matrixd::scale (1./x[0], 1./x[1], 1./x[2]) * mv_inverse_;
+    valid_mvp_inverse_ = valid_mvp_ = false;
+}
+
+
+void glProjecter::rotate(vectord axis, double rad)
+{
+    mv_ *= matrixd::rot (axis,rad);
+    mv_inverse_ = matrixd::rot (axis,-rad) * mv_inverse_;
+    valid_mvp_inverse_ = valid_mvp_ = false;
+}
+
+
+void glProjecter::
+        mult(const matrixd& m)
+{
+    mv_ *= m;
+    mv_inverse_ = invert(m) * mv_inverse_;
+    valid_mvp_inverse_ = valid_mvp_ = false;
+}
+
+
+vectord glProjecter::
+        project(vectord obj, bool *r) const
 {
     tvector<4,double> in(obj[0],obj[1],obj[2],1.0);
-    in = mvp_*in;
+    in = mvp()*in;
     if (in[3]==0.0) { if(r)*r=false; return vectord(); }
     in[0] /= in[3];
     in[1] /= in[3];
@@ -164,29 +195,29 @@ vectord glProjectionProjecter::project(vectord obj, bool *r) const
     in[2] = in[2] * 0.5 + 0.5;
 
     /* Map x,y to viewport */
-    in[0] = in[0] * viewport_[2] + viewport_[0];
-    in[1] = in[1] * viewport_[3] + viewport_[1];
+    in[0] = in[0] * viewport[2] + viewport[0];
+    in[1] = in[1] * viewport[3] + viewport[1];
 
     if(r)*r=true;
     return vectord(in[0],in[1],in[2]);
 }
 
 
-vectord glProjectionProjecter::
+vectord glProjecter::
         unProject(vectord win, bool *r) const
 {
     tvector<4,double> in(win[0],win[1],win[2],1.0);
 
     /* Map x and y from window coordinates */
-    in[0] = (in[0] - viewport_[0]) / viewport_[2];
-    in[1] = (in[1] - viewport_[1]) / viewport_[3];
+    in[0] = (in[0] - viewport[0]) / viewport[2];
+    in[1] = (in[1] - viewport[1]) / viewport[3];
 
     /* Map to range -1 to 1 */
     in[0] = in[0] * 2 - 1;
     in[1] = in[1] * 2 - 1;
     in[2] = in[2] * 2 - 1;
 
-    in = mvp_inverse_*in;
+    in = mvp_inverse()*in;
     if (in[3] == 0.0) {if(r)*r=false;return vectord();}
     in[0] /= in[3];
     in[1] /= in[3];

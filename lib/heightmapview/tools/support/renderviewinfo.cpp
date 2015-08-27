@@ -14,7 +14,7 @@ namespace Support {
 RenderViewInfo::RenderViewInfo(const Tools::RenderModel* model)
     :
       model(model),
-      gl_projection(*model->gl_projection.read ())
+      gl_projecter(*model->gl_projection.read ())
 {
 }
 
@@ -24,8 +24,8 @@ QRectF RenderViewInfo::
 {
     // can't translate from bottom-relative offset (viewport) to top-relative offset (widget), assume offset is 0
     int device_height = model->render_settings.device_pixel_height;
-    int y_offset = device_height - gl_projection.viewport[1] - gl_projection.viewport[3];
-    return QRectF(gl_projection.viewport[0], y_offset, gl_projection.viewport[2], gl_projection.viewport[3]);
+    int y_offset = device_height - gl_projecter.viewport[1] - gl_projecter.viewport[3];
+    return QRectF(gl_projecter.viewport[0], y_offset, gl_projecter.viewport[2], gl_projecter.viewport[3]);
 }
 
 
@@ -150,19 +150,19 @@ float RenderViewInfo::
 Heightmap::Reference RenderViewInfo::
         findRefAtCurrentZoomLevel(Heightmap::Position p)
 {
-    return findRefAtCurrentZoomLevel(p, &gl_projection);
+    return findRefAtCurrentZoomLevel(p, &gl_projecter);
 }
 
 
 Heightmap::Reference RenderViewInfo::
-        findRefAtCurrentZoomLevel(Heightmap::Position p, const glProjection* gl_projection)
+        findRefAtCurrentZoomLevel(Heightmap::Position p, const glProjecter* gl_projecter)
 {
     // "collection" isn't needed to compute this, but its convenient
     auto collection = model->collections()[0];
     Heightmap::Reference entireHeightmap = collection.read ()->entireHeightmap();
     Heightmap::BlockLayout bl = collection.read ()->block_layout();
     Heightmap::VisualizationParams::const_ptr vp = collection.read ()->visualization_params();
-    Heightmap::Render::RenderInfo ri(gl_projection, bl, vp, model->render_settings.redundancy);
+    Heightmap::Render::RenderInfo ri(gl_projecter, bl, vp, model->render_settings.redundancy);
     Heightmap::Reference r = Heightmap::Render::RenderSet(&ri, 0).computeRefAt (p, entireHeightmap);
     return r;
 }
@@ -177,15 +177,15 @@ QPointF RenderViewInfo::
     if ((1 != c.orthoview || c.r[0]!=90) && use_heightmap_value)
         objY = getHeightmapValue(pos) * model->render_settings.y_scale * last_ysize;
 
-    vectord win = gl_projection.gluProject (vectord(pos.time, objY, pos.scale));
+    vectord win = gl_projecter.project (vectord(pos.time, objY, pos.scale));
     vectord::T winX = win[0], winY = win[1]; // winZ = win[2];
 
     if (dist)
     {
-        GLint const* const& vp = gl_projection.viewport.v;
+        GLint const* const& vp = gl_projecter.viewport.v;
         float z0 = .1, z1=.2;
-        vectord projectionPlane = gl_projection.gluUnProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
-        vectord projectionNormal = gl_projection.gluUnProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
+        vectord projectionPlane = gl_projecter.unProject ( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z0) );
+        vectord projectionNormal = gl_projecter.unProject( vectord( vp[0] + vp[2]/2, vp[1] + vp[3]/2, z1) ) - projectionPlane;
 
         vectord p;
         p[0] = pos.time;
@@ -218,11 +218,11 @@ QPointF RenderViewInfo::
 
 
 Heightmap::Position RenderViewInfo::
-        getHeightmapPos( QPointF widget_pos, bool useRenderViewContext )
+        getHeightmapPos( QPointF widget_pos )
 {
     const auto c = *model->camera.read ();
     if (1 == c.orthoview)
-        return getPlanePos(widget_pos, 0, useRenderViewContext);
+        return getPlanePos(widget_pos, 0);
 
     TaskTimer tt("RenderViewInfo::getHeightmapPos(%g, %g) Newton raphson", widget_pos.x(), widget_pos.y());
     widget_pos *= model->render_settings.dpifactor;
@@ -231,35 +231,11 @@ Heightmap::Position RenderViewInfo::
     pos.setX( widget_pos.x() + rect().left() );
     pos.setY( model->render_settings.device_pixel_height - 1 - widget_pos.y() - rect().top() );
 
-    const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
-    const GLint* vp = gl_projection.viewport.v;
-#ifndef LEGACY_OPENGL
-    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is only supported on legacy OpenGL");
-#else
-    vectord::T other_m[16], other_proj[16];
-    GLint other_vp[4];
-    if (!useRenderViewContext)
-    {
-        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
-        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
-        glGetIntegerv(GL_VIEWPORT, other_vp);
-        m = other_m;
-        proj = other_proj;
-        vp = other_vp;
-    }
-#endif
-
-    vectord win = gluProject(c.q, m, proj, vp);
-
-    vectord::T objX1, objY1, objZ1;
-    gluUnProject( pos.x(), pos.y(), win[2],
-                m, proj, vp,
-                &objX1, &objY1, &objZ1);
-
-    vectord::T objX2, objY2, objZ2;
-    gluUnProject( pos.x(), pos.y(), win[2]*0.999999,
-                m, proj, vp,
-                &objX2, &objY2, &objZ2);
+    vectord win = gl_projecter.project (c.q);
+    vectord obj1 = gl_projecter.unProject ( vectord(pos.x(), pos.y(), win[2]));
+    vectord obj2 = gl_projecter.unProject ( vectord(pos.x(), pos.y(), win[2]*0.999999));
+    vectord::T objX1 = obj1[0], objY1=obj1[1], objZ1=obj1[2];
+    vectord::T objX2 = obj2[0], objY2=obj2[1], objZ2=obj2[2];
 
     Heightmap::Position p;
     double y = 0;
@@ -303,7 +279,7 @@ Heightmap::Position RenderViewInfo::
 }
 
 Heightmap::Position RenderViewInfo::
-        getPlanePos( QPointF widget_pos, bool* success, bool useRenderViewContext )
+        getPlanePos( QPointF widget_pos, bool* success )
 {
     const auto c = *model->camera.read ();
 
@@ -313,34 +289,11 @@ Heightmap::Position RenderViewInfo::
     pos.setX( widget_pos.x() + rect().left() );
     pos.setY( model->render_settings.device_pixel_height - 1 - widget_pos.y() - rect().top() );
 
-    const vectord::T* m = gl_projection.modelview.v (), *proj = gl_projection.projection.v ();
-    const GLint* vp = gl_projection.viewport.v;
-#ifndef LEGACY_OPENGL
-    EXCEPTION_ASSERTX(useRenderViewContext, "glGetDoublev(*MATRIX) is only supported on legacy OpenGL");
-#else
-    vectord::T other_m[16], other_proj[16];
-    GLint other_vp[4];
-    if (!useRenderViewContext)
-    {
-        glGetDoublev(GL_MODELVIEW_MATRIX, other_m);
-        glGetDoublev(GL_PROJECTION_MATRIX, other_proj);
-        glGetIntegerv(GL_VIEWPORT, other_vp);
-        m = other_m;
-        proj = other_proj;
-        vp = other_vp;
-    }
-#endif
-
-    vectord win = gluProject(c.q, m, proj, vp);
-    vectord::T objX1, objY1, objZ1;
-    gluUnProject( pos.x(), pos.y(), win[2],
-                m, proj, vp,
-                &objX1, &objY1, &objZ1);
-
-    vectord::T objX2, objY2, objZ2;
-    gluUnProject( pos.x(), pos.y(), win[2]*0.999999,
-                m, proj, vp,
-                &objX2, &objY2, &objZ2);
+    vectord win = gl_projecter.project (c.q);
+    vectord obj1 = gl_projecter.unProject ( vectord(pos.x(), pos.y(), win[2]));
+    vectord obj2 = gl_projecter.unProject ( vectord(pos.x(), pos.y(), win[2]*0.999999));
+    vectord::T objX1 = obj1[0], objY1=obj1[1], objZ1=obj1[2];
+    vectord::T objX2 = obj2[0], objY2=obj2[1], objZ2=obj2[2];
 
     double ylevel = 0;
     double s = (ylevel-objY1)/(objY2-objY1);

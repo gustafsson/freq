@@ -316,15 +316,15 @@ void TouchNavigation::
         vectord p(hstart1.time, 0, hstart1.scale);
         vectord::T timePerPixel;
         vectord::T scalePerPixel;
-        glProjection gl_projection = *render_model ()->gl_projection.read ();
-        gl_projection.computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+        glProjecter gl_projecter = *render_model ()->gl_projection.read ();
+        gl_projecter.computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
 
         float dt1 = std::fabs(hstart1.time - selection_->t1 ());
         float dt2 = std::fabs(hstart1.time - selection_->t2 ());
         float ds1 = std::fabs(hstart1.scale - f.getFrequencyScalar (selection_->f1 ()));
         float ds2 = std::fabs(hstart1.scale - f.getFrequencyScalar (selection_->f2 ()));
 
-        int wh = std::min(gl_projection.viewport[2], gl_projection.viewport[3]);
+        int wh = std::min(gl_projecter.viewport[2], gl_projecter.viewport[3]);
         int threshold = wh/8;
 
         if (selection_->valid () && std::min(dt1,dt2) < timePerPixel*threshold && std::min(ds1,ds2) < scalePerPixel*threshold)

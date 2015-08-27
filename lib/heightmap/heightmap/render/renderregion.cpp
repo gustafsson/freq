@@ -3,22 +3,17 @@
 #include "unused.h"
 #include "glstate.h"
 #include "glPushContext.h"
+#include "GlException.h"
 
 #include <QOpenGLShaderProgram>
 
 namespace Heightmap {
 namespace Render {
 
-RenderRegion::RenderRegion(glProjection gl_projection)
+RenderRegion::RenderRegion(const glProjecter& gl_projecter)
     :
-      gl_projection_(gl_projection)
+      gl_projecter_(gl_projecter)
 {
-}
-
-
-RenderRegion::~RenderRegion()
-{
-    delete program_;
 }
 
 
@@ -30,21 +25,21 @@ void RenderRegion::
     float y = 0.5f;
 
     if (!program_) {
-        program_ = new QOpenGLShaderProgram();
-        program_->addShaderFromSourceCode(QOpenGLShader::Vertex,
+        program_ = ShaderResource::loadGLSLProgramSource(
                                            "attribute highp vec4 vertices;"
                                            "uniform highp mat4 modelviewproj;"
                                            "void main() {"
                                            "    gl_Position = modelviewproj*vertices;"
-                                           "}");
-        program_->addShaderFromSourceCode(QOpenGLShader::Fragment,
+                                           "}",
+
                                            "uniform lowp vec4 color;"
                                            "void main() {"
                                            "    gl_FragColor = color;"
                                            "}");
-
-        program_->link();
     }
+
+    if (!program_->isLinked ())
+        return;
 
     program_->bind();
 
@@ -73,27 +68,34 @@ void RenderRegion::
 
     program_->setAttributeArray(0, GL_FLOAT, values, 3);
 
-    matrixd modelview = gl_projection_.modelview;
-    modelview *= matrixd::translate (r.a.time, 0, r.a.scale);
-    modelview *= matrixd::scale (r.time(), 1, r.scale());
+    glProjecter proj = gl_projecter_;
+    proj.translate (vectord(r.a.time, 0, r.a.scale));
+    proj.scale (vectord(r.time(), 1, r.scale()));
+
+    GlException_CHECK_ERROR();
 
     GlState::glEnable(GL_BLEND);
     glLineWidth(2);
 
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
     program_->setUniformValue("modelviewproj",
-                              QMatrix4x4(GLmatrixf(gl_projection_.projection*modelview).transpose ().v ()));
+                              QMatrix4x4(GLmatrixf(proj.mvp ()).transpose ().v ()));
     GlState::glDrawArrays(GL_LINE_STRIP, 0, n_values);
 
+    GlException_CHECK_ERROR();
+
+    proj.translate (vectord(0, y, 0));
     program_->setUniformValue("color", 0.2, 0.8, 0.8, 0.5);
     program_->setUniformValue("modelviewproj",
-                              QMatrix4x4(GLmatrixf(gl_projection_.projection*matrixd::translate (0,y,0)*modelview).transpose ().v ()));
+                              QMatrix4x4(GLmatrixf(proj.mvp()).transpose ().v ()));
     GlState::glDrawArrays(GL_LINE_STRIP, 0, n_values);
     glLineWidth(1);
 
     GlState::glDisableVertexAttribArray (0);
     GlState::glDisable(GL_BLEND);
     program_->release();
+
+    GlException_CHECK_ERROR();
 }
 
 } // namespace Render

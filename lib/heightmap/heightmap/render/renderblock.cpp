@@ -42,10 +42,10 @@ namespace Heightmap {
 namespace Render {
 
 
-RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection)
+RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjecter gl_projecter)
     :
       render_block(render_block),
-      gl_projection(gl_projection)
+      gl_projecter(gl_projecter)
 {
     render_block->beginVboRendering(block_size);
 }
@@ -70,12 +70,12 @@ void RenderBlock::Renderer::
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
 
-    matrixd modelview = gl_projection.modelview;
-    modelview *= matrixd::translate (r.a.time, 0, r.a.scale);
-    modelview *= matrixd::scale (r.time(), 1, r.scale());
-    glUniformMatrix4fv (render_block->uniModelviewprojection, 1, false, GLmatrixf(gl_projection.projection*modelview).v ());
-    glUniformMatrix4fv (render_block->uniModelview, 1, false, GLmatrixf(modelview).v ());
-    glUniformMatrix4fv (render_block->uniNormalMatrix, 1, false, GLmatrixf(invert(modelview)).transpose ().v ());
+    glProjecter blockProj = gl_projecter;
+    blockProj.translate (vectord(r.a.time, 0, r.a.scale));
+    blockProj.scale (vectord(r.time(), 1, r.scale()));
+    glUniformMatrix4fv (render_block->uniModelviewprojection, 1, false, GLmatrixf(blockProj.mvp ()).v ());
+    glUniformMatrix4fv (render_block->uniModelview, 1, false, GLmatrixf(blockProj.modelview ()).v ());
+    glUniformMatrix4fv (render_block->uniNormalMatrix, 1, false, GLmatrixf(blockProj.modelview_inverse ()).transpose ().v ());
 
     int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
     int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
@@ -147,6 +147,7 @@ RenderBlock::ShaderData::ShaderData(const char* defines)
 {
     _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag", defines, defines);
     _shader_prog = _shader_progp->programId();
+    GlException_CHECK_ERROR_MSG(defines);
 }
 
 

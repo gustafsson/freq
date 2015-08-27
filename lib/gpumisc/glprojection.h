@@ -17,36 +17,41 @@ public:
     matrixd           projection;
     tvector<4,int>    viewport;
 
-    vectord gluProject(vectord obj, bool *r=0) const;
-    vectord gluUnProject(vectord win, bool *r=0) const;
-    void computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const;
-    vectord::T computePixelDistance( vectord p1, vectord p2 ) const;
 public:
     static void test();
 };
 
 
-class glProjectionProjecter
+class glProjecter
 {
 public:
-    glProjectionProjecter(const matrixd& mvp, const tvector<4,int>& viewport);
-    const matrixd& mvp() const {return mvp_;}
-    const matrixd& mvp_inverse() const {return mvp_inverse_;}
-    const tvector<4,int>& viewport() const {return viewport_;}
+    glProjecter(const glProjection& p);
+    const matrixd& mvp() const;
+    const matrixd& mvp_inverse() const;
+    const matrixd& modelview() const;
+    const matrixd& modelview_inverse() const;
+    const matrixd& projection() const;
+    const matrixd& projection_inverse() const;
+    const tvector<4,int> viewport;
 
     void translate(vectord x);
     void scale(vectord x);
     void rotate(vectord axis, double rad);
-    void mult(matrixd& m);
+    void mult(const matrixd& m);
 
     vectord project(vectord obj, bool *r=0) const;
     vectord unProject(vectord win, bool *r=0) const;
     void computeUnitsPerPixel( vectord p, vectord::T& timePerPixel, vectord::T& scalePerPixel ) const;
     vectord::T computePixelDistance( vectord p1, vectord p2 ) const;
 private:
-    tvector<4,int> viewport_;
-    matrixd mvp_;
-    matrixd mvp_inverse_;
+    bool mutable valid_mvp_=false;
+    bool mutable valid_mvp_inverse_=false;
+    mutable matrixd mvp_;
+    mutable matrixd mvp_inverse_;
+    matrixd mv_;
+    matrixd mv_inverse_;
+    const matrixd p_;
+    const matrixd p_inverse_;
 };
 
 

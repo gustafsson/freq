@@ -19,14 +19,14 @@ class RenderBlock
 public:
     class Renderer : boost::noncopyable {
     public:
-        Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection);
+        Renderer(RenderBlock* render_block, BlockLayout block_size, glProjecter gl_projecter);
         ~Renderer();
 
         void renderBlock( pBlock ref, LevelOfDetail lod);
 
     private:
         RenderBlock* render_block;
-        glProjection gl_projection;
+        const glProjecter gl_projecter;
         pVbo prev_vbo;
 
         void draw(unsigned tex_height, const pVbo& vbo);

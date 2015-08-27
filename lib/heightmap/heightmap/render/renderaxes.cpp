@@ -91,7 +91,9 @@ void RenderAxes::
     // 2 clip entire sound to frustum
     // 3 decide upon scale
     // 4 draw axis
-    const glProjection* g = gl_projection;
+    const glProjecter gi(*gl_projection);
+    const glProjecter* g = &gi;
+
     unsigned screen_width = g->viewport[2];
     unsigned screen_height = g->viewport[3];
     auto& render_settings = *this->render_settings;

@@ -48,12 +48,12 @@ namespace Render {
 Renderer::Renderer(
         Collection::ptr      collection,
         RenderSettings&      render_settings,
-        glProjection         gl_projection,
+        glProjecter          gl_projecter,
         Render::RenderBlock* render_block)
     :
       collection(collection),
       render_settings(render_settings),
-      gl_projection(gl_projection),
+      gl_projecter(gl_projecter),
       render_block(render_block)
 {
 
@@ -126,7 +126,7 @@ void Renderer::
     render_settings.last_ysize = scaley;
     render_settings.drawn_blocks = 0;
 
-    const auto& v = gl_projection.viewport;
+    const auto& v = gl_projecter.viewport;
     glViewport (v[0], v[1], v[2], v[3]);
 }
 
@@ -137,7 +137,7 @@ Render::RenderSet::references_t Renderer::
     BlockLayout bl                   = collection.read ()->block_layout ();
     Reference ref                    = collection.read ()->entireHeightmap();
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
-    Render::RenderInfo render_info(&gl_projection, bl, vp, render_settings.redundancy);
+    Render::RenderInfo render_info(&gl_projecter, bl, vp, render_settings.redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
     LOG_REFERENCES_TO_RENDER {
@@ -175,7 +175,7 @@ void Renderer::
         // Copy the block list
         auto cache = Collection::cache (this->collection)->clone ();
 
-        Render::RenderBlock::Renderer block_renderer(render_block, bl, gl_projection);
+        Render::RenderBlock::Renderer block_renderer(render_block, bl, gl_projecter);
 
         for (const auto& v : R)
         {
@@ -213,7 +213,7 @@ void Renderer::
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
-    Render::RenderRegion rr(gl_projection);
+    Render::RenderRegion rr(gl_projecter);
 
     for (const auto& r : R)
         rr.render(region.getVisible (r.first), drawcross);
