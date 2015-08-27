@@ -37,7 +37,7 @@ public:
     void translate(vectord x);
     void scale(vectord x);
     void rotate(vectord axis, double rad);
-    void mult(const matrixd& m);
+    void mult(const matrixd& m, const matrixd& m_inverse);
 
     vectord project(vectord obj, bool *r=0) const;
     vectord unProject(vectord win, bool *r=0) const;

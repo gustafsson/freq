@@ -9,6 +9,9 @@ hmm, I'm going to need a matrix class for rotating vectors quite soon...
 
 /**
   See tvectorstring.h
+
+  TODO is "for(int i=N; i--;)" faster than "for(int i=0; i<N; i++)"?
+  Isn't linear access faster?
 */
 template<int N, typename type=float, typename baseType = type>
 class tvector

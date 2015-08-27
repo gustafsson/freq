@@ -11,6 +11,8 @@ template<int rows, typename t, int cols=rows>
 class tmatrix
 {
 public:
+    typedef t T;
+
 	tmatrix( ) {}
 /*	tmatrix( const tmatrix<rows, t, cols -1> &b )
 	{
@@ -81,8 +83,12 @@ public:
 		tmatrix<rows,t,cols2> r;
 		for(int a=0; a<cols2; a++)
 		for(int b=0; b<rows; b++)
-		for(int c=0; c<cols; c++)
-			r[a][b] = r[a][b] + m[c][b]*n[a][c];
+        {
+            t v=0;
+            for(int c=0; c<cols; c++)
+                v += m[c][b]*n[a][c];
+            r[a][b] = v;
+        }
 		return r;
 	}
     tmatrix operator*( const t &v ) const {
@@ -99,6 +105,13 @@ public:
 			r[a][b] = m[a][b]+v;
 		return r;
 	}
+    tmatrix operator-( const tmatrix &v ) const {
+        tmatrix r;
+        for(int a=0; a<cols; a++)
+        for(int b=0; b<rows; b++)
+            r[a][b] = m[a][b]-v[a][b];
+        return r;
+    }
     template< typename t2 >
     tmatrix& operator*=( const tmatrix<cols, t2, rows> &n ) {
         return *this = *this * n;
@@ -122,6 +135,13 @@ public:
             r[b][a] = m[a][b];
         return r;
 	}
+    t norm() const {
+        t n=0;
+        for(int a=0; a<cols; a++)
+        for(int b=0; b<rows; b++)
+            n += m[a][b]*m[a][b];
+        return n;
+    }
     static tmatrix<4,t,4> rotFpsHead( tvector<3, t> r )
 	{
 		return

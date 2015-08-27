@@ -4,6 +4,7 @@
 #include <string.h>
 #include <algorithm>
 #include <limits>
+#include "printmatrix.h"
 
 glProjection::
         glProjection()
@@ -19,6 +20,13 @@ glProjecter::glProjecter(const glProjection& g)
       p_inverse_(invert(g.projection))
 {
     mv_inverse_ = invert(mv_);
+#ifdef _DEBUG
+    if (mv_[0][3] != 0 || mv_[1][3] != 0 || mv_[2][3] != 0 || mv_[3][3] != 1)
+    {
+        PRINTMATRIX(mv_);
+        EXCEPTION_ASSERT(false);
+    }
+#endif
 }
 
 
@@ -149,16 +157,68 @@ const matrixd& glProjecter::
 
 void glProjecter::translate(vectord x)
 {
-    mv_ *= matrixd::translate (x);
-    mv_inverse_ = matrixd::translate (-x) * mv_inverse_;
+    {
+        matrixd::T* v =  (matrixd::T*)&mv_;
+        v[12] += v[0]*x[0] +
+                 v[4]*x[1] +
+                 v[8]*x[2];
+        v[13] += v[1]*x[0] +
+                 v[5]*x[1] +
+                 v[9]*x[2];
+        v[14] += v[2]*x[0] +
+                 v[6]*x[1] +
+                 v[10]*x[2];
+        // assume v[3], v[7], v[11] are zero
+        //v[15] += v[3]*x[0] +
+        //         v[7]*x[1] +
+        //         v[11]*x[2];
+    }
+    {
+        matrixd::T* v =  (matrixd::T*)&mv_inverse_;
+        // http://www.wolframalpha.com/input/?i=invert+%7B%7Bx_00%2Cx_01%2Cx_02%2Cx_03%7D%2C%7Bx_10%2Cx_11%2Cx_12%2Cx_13%7D%2C%7Bx_20%2Cx_21%2Cx_22%2Cx_23%7D%2C%7B0%2C0%2C0%2C1%7D%7D
+        //for (int i=0;i<3;i++)
+        //{
+        //    v[i] -= v[3]*x[i];
+        //    v[4+i] -= v[7]*x[i];
+        //    v[8+i] -= v[11]*x[i];
+        //    v[12+i] -= v[15]*x[i];
+        //}
+        // assume v[3], v[7], v[11] are zero, and v[15]==1
+        v[12] -= x[0];
+        v[13] -= x[1];
+        v[14] -= x[2];
+    }
+
     valid_mvp_inverse_ = valid_mvp_ = false;
 }
 
 
 void glProjecter::scale(vectord x)
 {
-    mv_ *= matrixd::scale (x);
-    mv_inverse_ = matrixd::scale (1./x[0], 1./x[1], 1./x[2]) * mv_inverse_;
+    {
+        matrixd::T* v = (matrixd::T*)&mv_;
+        for (int i=0;i<3;i++)
+        {
+            v[i] *= x[0];
+            v[4+i] *= x[1];
+            v[8+i] *= x[2];
+        }
+    }
+    {
+        matrixd::T* v = (matrixd::T*)&mv_inverse_;
+
+        for (int i=0;i<3;i++)
+            x[i] = matrixd::T(1.)/x[i];
+
+        for (int i=0;i<3;i++)
+        {
+            v[i] *= x[i];
+            v[4+i] *= x[i];
+            v[8+i] *= x[i];
+            v[12+i] *= x[i];
+        }
+    }
+
     valid_mvp_inverse_ = valid_mvp_ = false;
 }
 
@@ -172,10 +232,22 @@ void glProjecter::rotate(vectord axis, double rad)
 
 
 void glProjecter::
-        mult(const matrixd& m)
+        mult(const matrixd& m, const matrixd& m_inverse)
 {
+    // glProjecter assumes that m[3],m[7],m[11]==0 and m[15]=1 in both mv_ and mv_inverse_.
+    if (m[0][3] != 0 || m[1][3] != 0 || m[2][3] != 0 || m[3][3] != 1)
+    {
+        PRINTMATRIX(m);
+        EXCEPTION_ASSERT(false);
+    }
+    if (m_inverse[0][3] != 0 || m_inverse[1][3] != 0 || m_inverse[2][3] != 0 || m_inverse[3][3] != 1)
+    {
+        PRINTMATRIX(m_inverse);
+        EXCEPTION_ASSERT(false);
+    }
+
     mv_ *= m;
-    mv_inverse_ = invert(m) * mv_inverse_;
+    mv_inverse_ = m_inverse * mv_inverse_;
     valid_mvp_inverse_ = valid_mvp_ = false;
 }
 
