@@ -4,6 +4,7 @@
 #include "demangle.h"
 #include "neat_math.h"
 #include "cpumemorystorage.h"
+#include "log.h"
 
 #include <boost/format.hpp>
 
@@ -100,37 +101,45 @@ Signal::Interval StftDesc::
     Signal::IntervalType
             increment = _averaging*this->increment(),
             chunk_size = _averaging*this->chunk_size (),
-            first = I.first,
-            last = I.last,
             preload,
             postload;
 
     if (enable_inverse ())
-        {
+      {
         // To compute the inverse we need almost an entire chunk before 'first'
         // rationale: the sample at 'first - chunk_size + 1' might take part
         // in the same fft as the sample at 'first'
         preload = chunk_size - increment;
-        postload = 1+preload;
-        }
+        postload = preload;
+      }
     else
-        {
+      {
         // To compute the TFR at 'first' we only need half a chunk before
         // rationale: the position in time for an stft is defined as
         // 'the first sample in the chunk' + floor(chunk_size/2)
         preload = chunk_size/2;
-        postload = 1+chunk_size - preload; // don't assume chunk_size is even
-        }
+        postload = chunk_size - preload; // don't assume chunk_size is even
+      }
 
     // align to multiple of increment
     // first or last is allowed to be edge cases of IntervalType
-    first = align_down(clamped_sub(first, preload), increment),
-    last = align_up(clamped_add(last, postload), increment);
+    Signal::Interval out(align_down(I.first, increment), align_up(I.last, increment));
+
+    int n = (out.last-out.first)/increment;
+    int max_bytes = 8 * (1<<20); // 8 MB
+    int max_n = max_bytes/chunk_size/sizeof(float);
+    if (max_n < 2)
+        max_n = 2;
+    if (n > max_n)
+    {
+        Signal::Interval orgOut = out;
+        out.last = out.first + max_n*increment;
+    }
 
     if (expectedOutput)
-        *expectedOutput = Signal::Interval(first + preload, last - postload);
+        *expectedOutput = out;
 
-    return Signal::Interval(first, last);
+    return Signal::Interval(clamped_sub(out.first, preload), clamped_add(out.last, postload));
 }
 
 
@@ -145,7 +154,7 @@ Signal::Interval StftDesc::
             increment = _averaging*this->increment(),
             chunk_size = _averaging*this->chunk_size (),
             preload = chunk_size/2,
-            postload = 1+chunk_size - preload, // don't assume chunk_size is even
+            postload = chunk_size - preload, // don't assume chunk_size is even
             first = align_down(clamped_sub(I.first, postload), increment),
             last = align_up(clamped_add(I.last, preload), increment);
 
