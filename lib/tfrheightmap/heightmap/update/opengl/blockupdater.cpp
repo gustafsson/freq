@@ -140,29 +140,6 @@ void BlockUpdater::
     }
 #endif
 
-    // Begin transfer of vbo data to gpu
-    unordered_map<Texture2Fbo::Params, shared_ptr<Texture2Fbo>> vbos_p;
-    unordered_map<Tfr::pChunk, shared_ptr<Texture2Fbo>> vbos;
-    for (const UpdateQueue::Job& j : myjobs)
-    {
-        auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
-
-        pBlock block = j.intersecting_blocks.front ();
-        {
-            auto vp = block->visualization_params();
-
-            Texture2Fbo::Params p(job->chunk,
-                                  vp->display_scale (),
-                                  block->block_layout ());
-
-            // Most vbo's will look the same, only create as many as needed.
-            if (0==vbos_p.count (p))
-                vbos_p[p].reset(new Texture2Fbo(p, job->normalization_factor));
-
-            vbos[job->chunk] = vbos_p[p];
-        }
-    }
-
     // Prepare to draw with transferred chunk
     unordered_map<Tfr::pChunk, shared_ptr<Pbo2Texture>> pbo2texture;
 #ifndef USE_PBO
@@ -224,29 +201,35 @@ void BlockUpdater::
     for (const UpdateQueue::Job& j : myjobs)
     {
         auto job = dynamic_cast<const TfrBlockUpdater::Job*>(j.updatejob.get ());
-        pBlock b = j.intersecting_blocks.front ();
 
-        auto draw =
-                [
-                    shader = pbo2texture[job->chunk],
-                    vbo = vbos[job->chunk],
-                    amplitude_axis = b->visualization_params()->amplitude_axis ()
-                ]
-                (const glProjection& M)
-                {
-                    int vertex_attrib, tex_attrib;
-                    shader->map(
-                                vbo->normalization_factor(),
-                                amplitude_axis,
-                                M, vertex_attrib, tex_attrib);
-
-                    vbo->draw(vertex_attrib, tex_attrib);
-                    return true;
-                };
-
-        for (pBlock block : j.intersecting_blocks)
+        for (const pBlock& block : j.intersecting_blocks)
         {
-            block->updater ()->queueUpdate (block, [draw](const glProjection& M){return draw(M);});
+            // Begin transfer of vbo data to gpu
+            const auto& vp = block->visualization_params();
+            Texture2Fbo::Params p(job->chunk,
+                                  block->getOverlappingRegion (),
+                                  vp->display_scale (),
+                                  block->block_layout ());
+
+            std::shared_ptr<Texture2Fbo> t2f( new Texture2Fbo(p, job->normalization_factor));
+
+            block->updater ()->queueUpdate (block,
+                                            [
+                                                shader = pbo2texture[job->chunk],
+                                                t2f,
+                                                amplitude_axis = vp->amplitude_axis ()
+                                            ]
+                                            (const glProjection& M)
+                                            {
+                                                int vertex_attrib, tex_attrib;
+                                                shader->map(
+                                                            t2f->normalization_factor(),
+                                                            amplitude_axis,
+                                                            M, vertex_attrib, tex_attrib);
+
+                                                t2f->draw(vertex_attrib, tex_attrib);
+                                                return true;
+                                            });
 
 #ifdef PAINT_BLOCKS_FROM_UPDATE_THREAD
             block->updater ()->processUpdates (false);

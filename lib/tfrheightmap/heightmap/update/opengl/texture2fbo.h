@@ -4,6 +4,7 @@
 #include "heightmap/amplitudeaxis.h"
 #include "heightmap/blocklayout.h"
 #include "heightmap/freqaxis.h"
+#include "heightmap/position.h"
 #include "tfr/freqaxis.h"
 #include "tfr/chunk.h"
 
@@ -29,21 +30,17 @@ public:
     class Params {
     public:
         Params(Tfr::pChunk chunk,
+               Heightmap::Region region,
                Heightmap::FreqAxis display_scale,
                Heightmap::BlockLayout block_layout);
 
-        bool operator==(const Params& p) const {
-            return 0 == memcmp (this, &p, sizeof(Params));
-        }
-
-        int createVbo() const;
-        int numVboElements() const;
+        int createVbo(int& out_num_elements) const;
 
     private:
-        BlockLayout block_layout;
-
-        Heightmap::FreqAxis display_scale;
-        Tfr::FreqAxis chunk_scale;
+        const BlockLayout block_layout;
+        const Heightmap::Region region;
+        const Heightmap::FreqAxis display_scale;
+        const Tfr::FreqAxis chunk_scale;
 
         float a_t, b_t, u0, u1;
         unsigned nScales, nSamples, nValidSamples;
