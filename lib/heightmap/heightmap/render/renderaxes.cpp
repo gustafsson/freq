@@ -755,7 +755,7 @@ void RenderAxes::
 
         if (!orthobuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &orthobuffer_) );
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, orthobuffer_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, orthobuffer_) );
         if (orthobuffer_size_ < ae.orthovertices.size () || ae.orthovertices.size () < 4*orthobuffer_size_)
         {
             GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0], GL_STREAM_DRAW) );
@@ -777,7 +777,7 @@ void RenderAxes::
 
         if (!vertexbuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer_) );
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
         if (vertexbuffer_size_ < ae.vertices.size () || ae.vertices.size () < 4*vertexbuffer_size_)
         {
             GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STREAM_DRAW) );

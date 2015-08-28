@@ -206,11 +206,11 @@ void ShaderTexture::
         chunk_texture_->bindTexture();
 
 #ifdef LEGACY_OPENGL
-        GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
         GlException_SAFE_CALL( glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, data_width, data_height, format, type, p) );
 #ifdef LEGACY_OPENGL
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
     else if (data_width > tex_width && sw*data_height <= tex_height)
@@ -225,7 +225,7 @@ void ShaderTexture::
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);
         chunk_texture_->bindTexture();
 #ifdef LEGACY_OPENGL
-        GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
 
 #ifdef LEGACY_OPENGL
@@ -262,7 +262,7 @@ void ShaderTexture::
           }
 
 #ifdef LEGACY_OPENGL
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
     else if (data_height > tex_height && sh*data_width <= tex_width)
@@ -276,7 +276,7 @@ void ShaderTexture::
         INFO TaskTimer tt("glTexSubImage2D %d x %d (3)", tex_width, tex_height);
         chunk_texture_->bindTexture();
 #ifdef LEGACY_OPENGL
-        GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
 
         for (int i=0; i<sh; ++i)
@@ -289,7 +289,7 @@ void ShaderTexture::
           }
 
 #ifdef LEGACY_OPENGL
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
     else

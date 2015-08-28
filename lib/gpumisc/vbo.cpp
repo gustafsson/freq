@@ -116,9 +116,9 @@ void Vbo::
 
     // create buffer object
     glGenBuffers(1, &_vbo);
-    glBindBuffer(vbo_type, _vbo);
+    GlState::glBindBuffer(vbo_type, _vbo);
     glBufferData(vbo_type, size, data, access_pattern);
-    glBindBuffer(vbo_type, 0);
+    GlState::glBindBuffer(vbo_type, 0);
 
     TIME_VBO TaskInfo("Got vbo %u", _vbo) ;
 

@@ -89,7 +89,7 @@ void RenderBlock::Renderer::
     GLsizei n = pVbo.size () / sizeof(BLOCKindexType);
     if (prev_vbo != vbo)
     {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
+        GlState::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
         prev_vbo = vbo;
     }
     glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
@@ -506,7 +506,7 @@ void RenderBlock::
     uniNormalMatrix=d->uniNormalMatrix;
     attribVertex=d->attribVertex;
 
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
     GlState::glEnableVertexAttribArray (attribVertex);
     glVertexAttribPointer (attribVertex, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -546,8 +546,8 @@ void RenderBlock::
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
 
-    glBindBuffer (GL_ARRAY_BUFFER, 0);
-    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 
     GlState::glDisableVertexAttribArray (attribVertex);
 

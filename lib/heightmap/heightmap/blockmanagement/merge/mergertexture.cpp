@@ -209,9 +209,9 @@ void MergerTexture::
         1, 1, 1, 1,
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 //    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
@@ -249,7 +249,7 @@ Signal::Intervals MergerTexture::
         float x, y, u, v;
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
     GlState::glEnableVertexAttribArray (qt_Vertex);
     GlState::glEnableVertexAttribArray (qt_MultiTexCoord0);
@@ -278,7 +278,7 @@ Signal::Intervals MergerTexture::
 
     GlState::glDisableVertexAttribArray (qt_MultiTexCoord0);
     GlState::glDisableVertexAttribArray (qt_Vertex);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlState::glEnable (GL_DEPTH_TEST);
     GlState::glEnable (GL_CULL_FACE);

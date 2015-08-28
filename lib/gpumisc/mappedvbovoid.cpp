@@ -85,7 +85,7 @@ void MappedVboVoid::
     #endif
 #else
 
-    glBindBuffer(_vbo->vbo_type(), *_vbo);
+    GlState::glBindBuffer(_vbo->vbo_type(), *_vbo);
 #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
 //    #ifndef GL_WRITE_ONLY
 //        #define GL_WRITE_ONLY 0x88B9 // from gl.h
@@ -99,7 +99,7 @@ void MappedVboVoid::
     void* data = glMapBuffer(_vbo->vbo_type(), GL_WRITE_ONLY);
 #endif
     _is_mapped = 0!=data;
-    glBindBuffer(_vbo->vbo_type(), 0);
+    GlState::glBindBuffer(_vbo->vbo_type(), 0);
 
 
     if (!_is_mapped)
@@ -152,13 +152,13 @@ void MappedVboVoid::
         datap->AccessStorage<CpuMemoryStorage>( true, false );
 
         // sync from mem to vbo
-        glBindBuffer(_vbo->vbo_type(), *_vbo);
+        GlState::glBindBuffer(_vbo->vbo_type(), *_vbo);
 #if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
         glUnmapBufferOES(_vbo->vbo_type());
 #else
         glUnmapBuffer(_vbo->vbo_type());
 #endif
-        glBindBuffer(_vbo->vbo_type(), 0);
+        GlState::glBindBuffer(_vbo->vbo_type(), 0);
 
         // release resources
         mapped_gl_mem.reset();

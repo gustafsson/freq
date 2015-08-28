@@ -72,17 +72,17 @@ DataStorage<float>::ptr GlTextureRead::
     GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
     unsigned pbo=0;
     glGenBuffers (1, &pbo);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     glBufferData (GL_PIXEL_PACK_BUFFER, data->numberOfBytes (), NULL, GL_STREAM_READ);
 
     glReadPixels (0, 0, width, height, format, GL_FLOAT, 0);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
 
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
     glDeleteBuffers (1, &pbo);
 
 
@@ -128,16 +128,16 @@ DataStorage<unsigned char>::ptr GlTextureRead::
     GlFrameBuffer::ScopeBinding fbobinding = fb.getScopeBinding();
     unsigned pbo=0;
     glGenBuffers (1, &pbo);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     glBufferData (GL_PIXEL_PACK_BUFFER, data->numberOfBytes (), NULL, GL_STREAM_READ);
     glReadPixels (0, 0, width, height, format, GL_UNSIGNED_BYTE, 0);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
 
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, pbo);
     float *src = (float*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
     memcpy(data->getCpuMemory(), src, data->numberOfBytes ());
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER_ARB);
-    glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
+    GlState::glBindBuffer (GL_PIXEL_PACK_BUFFER, 0);
     glDeleteBuffers (1, &pbo);
 
 

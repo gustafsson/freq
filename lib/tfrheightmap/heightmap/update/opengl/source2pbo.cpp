@@ -55,9 +55,9 @@ std::packaged_task<void()> Source2Pbo::
     // http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-AsynchronousBufferTransfers.pdf
 
     Timer t;
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
+    GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
     mapped_chunk_data_ = (void*)glMapBuffer (GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     if (t.elapsed () > 0.001)
         Log("Source2Pbo: It took %s to map chunk_pbo") % TaskTimer::timeToString (t.elapsed ());
@@ -88,9 +88,9 @@ void Source2Pbo::
             data_transfer.wait ();
         }
 
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
         glUnmapBuffer (GL_PIXEL_UNPACK_BUFFER);
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         mapped_chunk_data_ = 0;
     }
 }
@@ -100,9 +100,9 @@ void Source2Pbo::
         setupPbo ()
 {
     glGenBuffers (1, &chunk_pbo_); // Generate 1 buffer
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
+    GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, n, 0, GL_STREAM_DRAW);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     GlException_CHECK_ERROR();
 }

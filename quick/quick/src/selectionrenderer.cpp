@@ -104,7 +104,7 @@ void SelectionRenderer::
 
     if (!m_program) {
         GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer) );
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(values), values, GL_STATIC_DRAW) );
 
         m_program = Heightmap::ShaderResource::loadGLSLProgramSource (
@@ -138,7 +138,7 @@ void SelectionRenderer::
     float h1 = -100;
     float h2 = 100;
 
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
     m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3);
     glProjection p = *model->gl_projection.read ();
     matrixd modelview = p.modelview;
@@ -182,7 +182,7 @@ void SelectionRenderer::
     GlState::glDisable (GL_STENCIL_TEST);
     GlState::glDisable (GL_BLEND);
 
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, 0) );
     GlState::glDisableVertexAttribArray (0);
     m_program->release();
 }

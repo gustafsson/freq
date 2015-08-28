@@ -62,7 +62,7 @@ void SquircleRenderer::paint3()
         GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer) );
 
         // The following commands will talk about our 'vertexbuffer' buffer
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
 
         // Give our vertices to OpenGL.
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW) );
@@ -92,7 +92,7 @@ void SquircleRenderer::paint3()
     GlException_SAFE_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );
 
     GlException_SAFE_CALL( glEnableVertexAttribArray(0) );
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
     GlException_SAFE_CALL( glVertexAttribPointer(
        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
        3,                  // size
@@ -128,7 +128,7 @@ void SquircleRenderer::paint2()
         GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer) );
 
         // The following commands will talk about our 'vertexbuffer' buffer
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
 
         // Give our vertices to OpenGL.
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(values), values, GL_STATIC_DRAW) );
@@ -160,7 +160,7 @@ void SquircleRenderer::paint2()
 
     GlException_SAFE_CALL( m_program->enableAttributeArray(0) );
 
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
     GlException_SAFE_CALL( m_program->setAttributeBuffer(0, GL_FLOAT, 0, 2) );
     GlException_SAFE_CALL( m_program->setUniformValue("t", (float) m_t) );
 

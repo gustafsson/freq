@@ -64,7 +64,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
     NewVbo gotVbo = getVbo();
     shared_ptr<Vbo> first_vbo = move(gotVbo.second);
 
-    glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
     vertex_format_xy* d;
     if (gotVbo.first)
     {
@@ -109,7 +109,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         shared_ptr<Vbo> vbo = move(gotvbo.second);
         LOG_FULL_BUFFER Log("wave2fbo: full, restarting %d") % int(*vbo);
 
-        glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, *vbo);
         if (gotVbo.first) // see gotVbo.first above
             d = (vertex_format_xy*)glMapBufferRange(GL_ARRAY_BUFFER, 0, N_*sizeof(vertex_format_xy), GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_WRITE_BIT);
         else
@@ -127,7 +127,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
     auto uniModelViewProjectionMatrix = this->uniModelViewProjectionMatrix_;
     auto uniRgba = this->uniRgba_;
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     GlException_CHECK_ERROR();
 
     return [program_,b,uniModelViewProjectionMatrix,uniRgba,
@@ -146,7 +146,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
 
         // Draw clear rectangle
         program_->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
-        glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
         glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
         GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
@@ -156,13 +156,13 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glDrawArrays(GL_LINE_STRIP, 4, first_j-4);
 
         for (auto& v : vbos) {
-            glBindBuffer(GL_ARRAY_BUFFER, *v.first);
+            GlState::glBindBuffer(GL_ARRAY_BUFFER, *v.first);
             glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
             glDrawArrays(GL_LINE_STRIP, 0, v.second);
         }
 
         GlState::glDisableVertexAttribArray (0);
-        glBindBuffer (GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
         GlException_CHECK_ERROR ();
 
         return true;
@@ -232,7 +232,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
     NewVbo gotVbo = getVbo();
     shared_ptr<Vbo> first_vbo = move(gotVbo.second);
 
-    glBindBuffer (GL_ARRAY_BUFFER, *first_vbo);
+    GlState::glBindBuffer (GL_ARRAY_BUFFER, *first_vbo);
     vertex_format_xy* d;
     if (gotVbo.first)
     {
@@ -291,7 +291,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
     auto uniModelViewProjectionMatrix = this->uniModelViewProjectionMatrix_;
     auto uniRgba = this->uniRgba_;
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     GlException_CHECK_ERROR();
 
     return [program_,timeOffset,uniModelViewProjectionMatrix,uniRgba,
@@ -310,7 +310,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
 
         // Draw clear rectangle
         program_->setUniformValue(uniRgba, QVector4D(0.0,0.0,0.0,1.0));
-        glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, *first_vbo);
         glVertexAttribPointer (0, 2, GL_FLOAT, GL_FALSE, 0, 0);
         GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
@@ -320,7 +320,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 4, vertex_count-4);
 
         GlState::glDisableVertexAttribArray (0);
-        glBindBuffer (GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
         GlException_CHECK_ERROR ();
 
         return true;

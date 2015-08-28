@@ -231,7 +231,7 @@ void GlyphsFreetypeEmbedded::
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     {
-        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_);
         if (quad_v.size () > vertexbuffer_size || vertexbuffer_size > quad_v.size ()*4)
         {
             glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0], GL_STREAM_DRAW);
@@ -252,7 +252,7 @@ void GlyphsFreetypeEmbedded::
     }
 
     {
-        glBindBuffer(GL_ARRAY_BUFFER, glyphbuffer_);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, glyphbuffer_);
         if (glyphs.size () > glyphbuffer_size || glyphbuffer_size > glyphs.size ()*4)
         {
             glBufferData(GL_ARRAY_BUFFER, sizeof(Glyph)*glyphs.size (), &glyphs[0], GL_STREAM_DRAW);
@@ -277,7 +277,7 @@ void GlyphsFreetypeEmbedded::
 
         GlState::glDisableVertexAttribArray (1);
         GlState::glDisableVertexAttribArray (0);
-        glBindBuffer (GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
         GlException_SAFE_CALL( program_->release() );
     }
 

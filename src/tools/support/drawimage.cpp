@@ -84,7 +84,7 @@ setupVbo()
     if (!postexvbo_)
         postexvbo_.reset(new Vbo( 2*4*2*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
-    glBindBuffer(postexvbo_->vbo_type(), *postexvbo_);
+    GlState::glBindBuffer(postexvbo_->vbo_type(), *postexvbo_);
     float *p = (float *) glMapBuffer(postexvbo_->vbo_type(), GL_WRITE_ONLY);
 
     for (int y=0; y<2; ++y) for (int x=0; x<2; ++x)
@@ -97,7 +97,7 @@ setupVbo()
     }
 
     glUnmapBuffer(postexvbo_->vbo_type());
-    glBindBuffer(postexvbo_->vbo_type(), 0);
+    GlState::glBindBuffer(postexvbo_->vbo_type(), 0);
 }
 
 
@@ -131,7 +131,7 @@ void DrawImage::
     GlState::glDisable(GL_COLOR_MATERIAL);
     glColor4f(1,1,1,1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, *postexvbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, *postexvbo_);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, sizeof(float)*4, 0);
@@ -144,7 +144,7 @@ void DrawImage::
 
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlState::glEnable (GL_DEPTH_TEST);
     GlState::glDisable (GL_BLEND);

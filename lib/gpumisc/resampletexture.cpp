@@ -117,7 +117,7 @@ void ResampleTexture::
             area.x2, area.y2, 1, 1,
         };
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -131,7 +131,7 @@ void ResampleTexture::
 
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture(), fbo.getWidth (), fbo.getHeight ()).readFloat (), "fbo");
@@ -170,7 +170,7 @@ void ResampleTexture::
             area.x2, area.y1, r, g, b, a,
             area.x2, area.y2, r, g, b, a
         };
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -183,7 +183,7 @@ void ResampleTexture::
 
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture(), fbo.getWidth (), fbo.getHeight ()).readFloat (), "fbo");

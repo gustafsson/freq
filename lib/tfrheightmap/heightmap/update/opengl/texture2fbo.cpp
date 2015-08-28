@@ -76,12 +76,12 @@ int Texture2Fbo::Params::
     // Build VBO contents
     if (vbo)
       {
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo) );
       }
     else
       {
         GlException_SAFE_CALL( glGenBuffers (1, &vbo) ); // Generate 1 buffer
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vbo) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo) );
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_format)*Y*2, 0, GL_STATIC_DRAW) );
       }
     vertex_format* vertices = (vertex_format*)glMapBufferRange(GL_ARRAY_BUFFER, 0, Y*2*sizeof(vertex_format), GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_WRITE_BIT);
@@ -127,7 +127,7 @@ int Texture2Fbo::Params::
       }
 
     glUnmapBuffer(GL_ARRAY_BUFFER);
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, 0) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, 0) );
 
     return vbo;
 }
@@ -167,7 +167,7 @@ void Texture2Fbo::
     GlGroupMarker gpm("Texture2Fbo::draw");
 
     // Setup drawing with VBO
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
     GlState::glEnableVertexAttribArray (vertex_attrib);
     GlState::glEnableVertexAttribArray (tex_attrib);
@@ -182,7 +182,7 @@ void Texture2Fbo::
     // Finish drawing with VBO
     GlState::glDisableVertexAttribArray (vertex_attrib);
     GlState::glDisableVertexAttribArray (tex_attrib);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     GlException_CHECK_ERROR();
 }

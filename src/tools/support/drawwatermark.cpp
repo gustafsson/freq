@@ -58,7 +58,7 @@ void DrawWatermark::
 
         postexvbo.reset(new Vbo( 2*4*2*sizeof(float), GL_ARRAY_BUFFER, GL_STATIC_DRAW ));
 
-        glBindBuffer(postexvbo->vbo_type(), *postexvbo);
+        GlState::glBindBuffer(postexvbo->vbo_type(), *postexvbo);
         float *p = (float *) glMapBuffer(postexvbo->vbo_type(), GL_WRITE_ONLY);
 
         for (int y=0; y<2; ++y) for (int x=0; x<2; ++x)
@@ -75,7 +75,7 @@ void DrawWatermark::
         }
 
         glUnmapBuffer(postexvbo->vbo_type());
-        glBindBuffer(postexvbo->vbo_type(), 0);
+        GlState::glBindBuffer(postexvbo->vbo_type(), 0);
     }
 }
 
@@ -106,7 +106,7 @@ void DrawWatermark::
     {
         GlTexture::ScopeBinding bindTexture = img->getScopeBinding();
 
-        glBindBuffer(GL_ARRAY_BUFFER, *postexvbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, *postexvbo);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, sizeof(float)*4, 0);
@@ -116,7 +116,7 @@ void DrawWatermark::
 
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     GlState::glEnable (GL_DEPTH_TEST);

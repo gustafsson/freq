@@ -7,6 +7,7 @@ namespace GlState
 struct S {
     std::set<GLenum> caps;
     bool enabledAttribArray[4]={false,false,false,false};
+    GLuint arrayBufferBinding;
 
     S()
     {
@@ -23,6 +24,8 @@ struct S {
 #endif
         for (int i=0; i<0x4;i++)
             enabledAttribArray[i]=false;
+
+        arrayBufferBinding = 0;
     }
 } next, current;
 
@@ -63,6 +66,19 @@ void glDisable (GLenum cap, bool now)
         if (current.caps.count (cap) == 1)
             is_synced = false;
         next.caps.erase (cap);
+    }
+}
+
+void glBindBuffer(GLenum target, GLuint buffer)
+{
+    if (target == GL_ARRAY_BUFFER)
+    {
+        if (current.arrayBufferBinding!=buffer && buffer != 0)
+            ::glBindBuffer (target, current.arrayBufferBinding=buffer);
+    }
+    else
+    {
+        ::glBindBuffer (target, buffer);
     }
 }
 
