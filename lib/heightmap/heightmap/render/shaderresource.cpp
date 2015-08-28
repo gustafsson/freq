@@ -30,6 +30,16 @@ ShaderPtr ShaderResource::
 ShaderPtr ShaderResource::
     loadGLSLProgramSource(QString vertShader, QString fragShader, const char* vertTop, const char* fragTop)
 {
+    if (vertTop) {
+        vertShader = "\n" + vertShader;
+        vertShader = vertTop + vertShader;
+    }
+
+    if (fragTop) {
+        fragShader = "\n" + fragShader;
+        fragShader = fragTop + fragShader;
+    }
+
 #ifdef GL_ES_VERSION_2_0
     if (fragShader.contains ("fwidth") || fragShader.contains ("dFdx") || fragShader.contains ("dFdy"))
     {
@@ -55,19 +65,11 @@ ShaderPtr ShaderResource::
     vertShader.replace (QRegExp("\\battribute\\b"),"in");
     vertShader.replace (QRegExp("\\bvarying\\b"),"out");
     vertShader.replace (QRegExp("\\btexture2D\\b"),"texture");
-    if (vertTop) {
-        vertShader = "\n" + vertShader;
-        vertShader = vertTop + vertShader;
-    }
     vertShader = "#version 150\n" + vertShader;
 
     fragShader.replace (QRegExp("\\bvarying\\b"),"in");
     fragShader.replace (QRegExp("\\bgl_FragColor\\b"),"out_FragColor");
     fragShader.replace (QRegExp("\\btexture2D\\b"),"texture");
-    if (fragTop) {
-        fragShader = "\n" + fragShader;
-        fragShader = fragTop + fragShader;
-    }
     fragShader = "out vec4 out_FragColor;\n" + fragShader;
     fragShader = "#version 150\n" + fragShader;
 #endif
