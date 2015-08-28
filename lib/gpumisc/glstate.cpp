@@ -56,6 +56,7 @@ void glDisable (GLenum cap, bool now)
             current.caps.erase (cap);
             ::glDisable (cap);
         }
+        next.caps.erase (cap);
     }
     else
     {
