@@ -27,9 +27,9 @@ public:
     private:
         RenderBlock* render_block;
         const glProjecter gl_projecter;
-        pVbo prev_vbo;
+        unsigned prev_vbo;
 
-        void draw(unsigned tex_height, const pVbo& vbo);
+        void draw(GLsizei n);
     };
 
     RenderBlock(RenderSettings* render_settings);

@@ -696,11 +696,49 @@ void RenderAxes::
                                                   gl_FragColor = color;
                                               }
                                           )fragmentshader");
-        uni_ProjectionMatrix = program_->uniformLocation("qt_ProjectionMatrix");
-        uni_ModelViewMatrix = program_->uniformLocation("qt_ModelViewMatrix");
+        if (program_->isLinked())
+        {
+            uni_ProjectionMatrix = program_->uniformLocation("qt_ProjectionMatrix");
+            uni_ModelViewMatrix = program_->uniformLocation("qt_ModelViewMatrix");
+            attrib_Vertex = program_->attributeLocation("qt_Vertex");
+            attrib_Color = program_->attributeLocation("colors");
+        }
+
+        orthoprogram_ = ShaderResource::loadGLSLProgramSource (
+                                          R"vertexshader(
+                                              attribute highp vec4 qt_Vertex;
+                                              attribute highp vec4 colors;
+                                              uniform highp mat4 qt_ProjectionMatrix;
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_Position = qt_ProjectionMatrix * qt_Vertex;
+                                                  color = colors;
+                                              }
+                                          )vertexshader",
+                                          R"fragmentshader(
+                                              varying highp vec4 color;
+
+                                              void main() {
+                                                  gl_FragColor = color;
+                                              }
+                                          )fragmentshader");
+        if (orthoprogram_->isLinked())
+        {
+            uni_OrthoProjectionMatrix = orthoprogram_->uniformLocation("qt_ProjectionMatrix");
+            attrib_OrthoVertex = orthoprogram_->attributeLocation("qt_Vertex");
+            attrib_OrthoColor = orthoprogram_->attributeLocation("colors");
+
+            matrixd ortho;
+            glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
+
+            orthoprogram_->bind();
+            orthoprogram_->setUniformValue(uni_OrthoProjectionMatrix,
+                                      QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
+        }
     }
 
-    if (!program_->isLinked ())
+    if (!program_->isLinked () || !orthoprogram_->isLinked ())
         return;
 
     GlState::glDisable (GL_DEPTH_TEST);
@@ -708,13 +746,13 @@ void RenderAxes::
     GlState::glEnable (GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    program_->bind();
-
     GlState::glEnableVertexAttribArray (0);
     GlState::glEnableVertexAttribArray (1);
 
-    if (!ae.orthovertices.empty ())
+    if (!ae.orthovertices.empty () && orthoprogram_->isLinked ())
     {
+        orthoprogram_->bind();
+
         if (!orthobuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &orthobuffer_) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, orthobuffer_) );
@@ -722,27 +760,21 @@ void RenderAxes::
         {
             GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0], GL_STREAM_DRAW) );
             orthobuffer_size_ = ae.orthovertices.size ();
+            orthoprogram_->setAttributeBuffer(attrib_OrthoVertex, GL_FLOAT, 0, 4, sizeof(Vertex));
+            orthoprogram_->setAttributeBuffer(attrib_OrthoColor, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
         }
         else
         {
             glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(Vertex)*ae.orthovertices.size (), &ae.orthovertices[0]);
         }
 
-        matrixd ortho;
-        glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
-
-        program_->setUniformValue(uni_ProjectionMatrix,
-                                  QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
-        program_->setUniformValue(uni_ModelViewMatrix,
-                                  QMatrix4x4(GLmatrixf::identity ().v ()));
-        program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
-        program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
-
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.orthovertices.size());
     }
 
-    if (!ae.vertices.empty ())
+    if (!ae.vertices.empty () && program_->isLinked ())
     {
+        program_->bind();
+
         if (!vertexbuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer_) );
         GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_) );
@@ -750,6 +782,8 @@ void RenderAxes::
         {
             GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*ae.vertices.size (), &ae.vertices[0], GL_STREAM_DRAW) );
             vertexbuffer_size_ = ae.vertices.size ();
+            program_->setAttributeBuffer(attrib_Vertex, GL_FLOAT, 0, 4, sizeof(Vertex));
+            program_->setAttributeBuffer(attrib_Color, GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
         }
         else
         {
@@ -760,15 +794,14 @@ void RenderAxes::
                                   QMatrix4x4(GLmatrixf(gl_projection->projection).transpose ().v ()));
         program_->setUniformValue(uni_ModelViewMatrix,
                                   QMatrix4x4(GLmatrixf(gl_projection->modelview).transpose ().v ()));
-        program_->setAttributeBuffer("qt_Vertex", GL_FLOAT, 0, 4, sizeof(Vertex));
-        program_->setAttributeBuffer("colors", GL_FLOAT, sizeof(tvector<4,GLfloat>), 4, sizeof(Vertex));
 
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
     }
 
+    glUseProgram (0);
+
     GlState::glDisableVertexAttribArray (1);
     GlState::glDisableVertexAttribArray (0);
-    program_->release();
 
     GlException_SAFE_CALL( glyphs_->drawGlyphs (*gl_projection, ae.glyphs) );
 

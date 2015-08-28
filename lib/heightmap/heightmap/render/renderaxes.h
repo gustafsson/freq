@@ -43,11 +43,15 @@ private:
     const glProjection* gl_projection;
     FreqAxis display_scale;
     AxesElements ae_;
-    std::unique_ptr<QOpenGLShaderProgram> program_;
+    std::unique_ptr<QOpenGLShaderProgram> program_, orthoprogram_;
     IGlyphs* glyphs_;
     GLuint orthobuffer_=0, vertexbuffer_=0;
     size_t orthobuffer_size_=0, vertexbuffer_size_=0;
-    GLuint uni_ProjectionMatrix, uni_ModelViewMatrix;
+
+    int uni_ProjectionMatrix=-1, uni_ModelViewMatrix=-1,
+        attrib_Vertex=-1, attrib_Color=-1,
+        uni_OrthoProjectionMatrix=-1,
+        attrib_OrthoVertex=-1, attrib_OrthoColor=-1;
 };
 
 } // namespace Render

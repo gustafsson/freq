@@ -84,23 +84,25 @@ void RenderBlock::Renderer::
     LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
             % lod.t () % lod.s() % subdivx % subdivy;
 
-    pVbo vbo = render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
-
-    draw( block->texture ()->getOpenGlTextureId (), vbo);
+    const auto& pVbo = *render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
+    unsigned vbo = pVbo;
+    GLsizei n = pVbo.size () / sizeof(BLOCKindexType);
+    if (prev_vbo != vbo)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
+        prev_vbo = vbo;
+    }
+    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    draw(n);
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
 
 void RenderBlock::Renderer::
-        draw(unsigned tex_height, const pVbo& vbo)
+        draw(GLsizei n)
 {
     GlException_CHECK_ERROR();
-
-    glBindTexture (GL_TEXTURE_2D, tex_height);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *vbo);
-
-    size_t n = vbo->size () / sizeof(BLOCKindexType);
 
     if (DRAW_POINTS) {
         GlState::glDrawArrays(GL_POINTS, 0, n);
