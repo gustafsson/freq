@@ -257,7 +257,7 @@ Signal::Intervals MergerTexture::
     glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
-    glUseProgram (program_);
+    GlState::glUseProgram (program_);
     if (invtexsize) glUniform2f(invtexsize, 1.0/block_layout_.texels_per_row (), 1.0/block_layout_.texels_per_column ());
     glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 

@@ -124,7 +124,7 @@ void GlyphsFreetype::
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
     buildGlyphs(glyphdata);
 
-    glUseProgram( p->text_buffer->shader );
+    GlState::glUseProgram( p->text_buffer->shader );
     {
         glUniformMatrix4fv( glGetUniformLocation( p->text_buffer->shader, "model" ),
                             1, 0, tmatrix<4,float>::identity ().v ());

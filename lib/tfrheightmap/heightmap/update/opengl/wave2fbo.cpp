@@ -134,7 +134,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
             first_vbo,first_j,vbos]
     (const glProjection& P)
     {
-        program_->bind();
+        GlState::glUseProgram (program_->programId());
         GlState::glEnableVertexAttribArray (0);
 
         matrixd modelview = P.modelview;
@@ -298,7 +298,7 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
             first_vbo,vertex_count]
     (const glProjection& P)
     {
-        program_->bind();
+        GlState::glUseProgram (program_->programId());
         GlState::glEnableVertexAttribArray (0);
 
         matrixd modelview = P.modelview;

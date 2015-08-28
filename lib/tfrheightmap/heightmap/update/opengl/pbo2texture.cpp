@@ -9,6 +9,7 @@
 #include "GlException.h"
 #include "tasktimer.h"
 #include "log.h"
+#include "glstate.h"
 
 #include <QResource>
 
@@ -45,7 +46,7 @@ Shader::Shader(ShaderPtr&& programp)
     normalization_location_ = glGetUniformLocation(program, "normalization");
     amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis");
     modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix");
-    glUseProgram(program);
+    GlState::glUseProgram(program);
     glUniform1i(mytex, 0); // mytex corresponds to GL_TEXTURE0
     GlException_CHECK_ERROR();
 }
@@ -126,7 +127,7 @@ GlTexture& ShaderTexture::
 unsigned ShaderTexture::
         getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
-    glUseProgram(shader_->program);
+    GlState::glUseProgram(shader_->program);
     shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     return shader_->program;
 }

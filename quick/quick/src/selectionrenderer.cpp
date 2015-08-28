@@ -130,7 +130,7 @@ void SelectionRenderer::
     if (!m_program->isLinked ())
         return;
 
-    m_program->bind();
+    GlState::glUseProgram (m_program->programId());
     GlState::glEnable (GL_BLEND);
 
     GlState::glEnableVertexAttribArray (0);
@@ -184,5 +184,5 @@ void SelectionRenderer::
 
     GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, 0) );
     GlState::glDisableVertexAttribArray (0);
-    m_program->release();
+    GlState::glUseProgram (0);
 }

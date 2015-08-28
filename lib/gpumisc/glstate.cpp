@@ -8,6 +8,7 @@ struct S {
     std::set<GLenum> caps;
     bool enabledAttribArray[4]={false,false,false,false};
     GLuint arrayBufferBinding;
+    GLuint program;
 
     S()
     {
@@ -26,6 +27,7 @@ struct S {
             enabledAttribArray[i]=false;
 
         arrayBufferBinding = 0;
+        program = 0;
     }
 } next, current;
 
@@ -80,6 +82,12 @@ void glBindBuffer(GLenum target, GLuint buffer)
     {
         ::glBindBuffer (target, buffer);
     }
+}
+
+void glUseProgram(GLuint program)
+{
+    if (program != current.program && program != 0)
+        ::glUseProgram(current.program = program);
 }
 
 void glEnableVertexAttribArray (GLuint index)

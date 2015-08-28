@@ -732,7 +732,7 @@ void RenderAxes::
             matrixd ortho;
             glhOrtho(ortho.v (), 0, 1, 0, 1, -1, 1);
 
-            orthoprogram_->bind();
+            GlState::glUseProgram (orthoprogram_->programId());
             orthoprogram_->setUniformValue(uni_OrthoProjectionMatrix,
                                       QMatrix4x4(GLmatrixf(ortho).transpose ().v ()));
         }
@@ -751,7 +751,7 @@ void RenderAxes::
 
     if (!ae.orthovertices.empty () && orthoprogram_->isLinked ())
     {
-        orthoprogram_->bind();
+        GlState::glUseProgram (orthoprogram_->programId());
 
         if (!orthobuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &orthobuffer_) );
@@ -773,7 +773,7 @@ void RenderAxes::
 
     if (!ae.vertices.empty () && program_->isLinked ())
     {
-        program_->bind();
+        GlState::glUseProgram (program_->programId());
 
         if (!vertexbuffer_)
             GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer_) );
@@ -798,7 +798,7 @@ void RenderAxes::
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, ae.vertices.size());
     }
 
-    glUseProgram (0);
+    GlState::glUseProgram (0);
 
     GlState::glDisableVertexAttribArray (1);
     GlState::glDisableVertexAttribArray (0);

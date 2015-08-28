@@ -352,7 +352,7 @@ void RenderBlock::
 
 void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings* render_settings)
 {
-    glUseProgram(_shader_prog);
+    GlState::glUseProgram(_shader_prog);
 
     // Set default uniform variables parameters for the vertex and pixel shader
     TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");

@@ -41,7 +41,7 @@ void RenderRegion::
     if (!program_->isLinked ())
         return;
 
-    program_->bind();
+    GlState::glUseProgram (program_->programId());
 
     GlState::glEnableVertexAttribArray (0);
 
@@ -93,7 +93,7 @@ void RenderRegion::
 
     GlState::glDisableVertexAttribArray (0);
     GlState::glDisable(GL_BLEND);
-    program_->release();
+    GlState::glUseProgram (0);
 
     GlException_CHECK_ERROR();
 }

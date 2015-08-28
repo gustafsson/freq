@@ -143,15 +143,15 @@ void DrawCollections::
                                                "}");
 
             m_program->link();
-            m_program->bind();
+            GlState::glUseProgram (m_program->programId());
             m_program->setUniformValue ("tex", 0);
             QMatrix4x4 M;
             M.ortho (0,1,0,1,-10,10);
             m_program->setUniformValue ("modelviewprojection", M);
-            m_program->release();
+            GlState::glUseProgram (0);
         }
 
-        m_program->bind();
+        GlState::glUseProgram (m_program->programId());
         GlState::glEnableVertexAttribArray (0);
         GlState::glEnableVertexAttribArray (1);
 
@@ -168,7 +168,7 @@ void DrawCollections::
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         GlState::glDisableVertexAttribArray (1);
         GlState::glDisableVertexAttribArray (0);
-        m_program->release();
+        GlState::glUseProgram (0);
 
         GlState::glEnable (GL_DEPTH_TEST);
 

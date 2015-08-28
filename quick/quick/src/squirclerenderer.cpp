@@ -103,7 +103,7 @@ void SquircleRenderer::paint3()
     ));
 
     // Draw the triangle !
-    GlException_SAFE_CALL( glUseProgram(m_program->programId ()) );
+    GlException_SAFE_CALL( GlState::glUseProgram(m_program->programId ()) );
     GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLES, 0, 3) ); // Starting from vertex 0; 3 vertices total -> 1 triangle
 
     GlException_SAFE_CALL( glDisableVertexAttribArray(0) );
@@ -156,7 +156,7 @@ void SquircleRenderer::paint2()
     if (!m_program->isLinked())
         return;
 
-    GlException_SAFE_CALL( m_program->bind() );
+    GlException_SAFE_CALL( GlState::glUseProgram (m_program->programId()) );
 
     GlException_SAFE_CALL( m_program->enableAttributeArray(0) );
 
@@ -174,7 +174,7 @@ void SquircleRenderer::paint2()
     GlException_SAFE_CALL( GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4) );
 
     GlException_SAFE_CALL( m_program->disableAttributeArray(0) );
-    GlException_SAFE_CALL( m_program->release() );
+    GlException_SAFE_CALL( GlState::glUseProgram (0) );
 }
 
 
