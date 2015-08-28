@@ -151,7 +151,6 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
         // Draw waveform
-        glLineWidth(1);
         program_->setUniformValue(uniRgba, QVector4D(0.75,0.0,0.0,0.1));
         GlState::glDrawArrays(GL_LINE_STRIP, 4, first_j-4);
 
@@ -315,7 +314,6 @@ function<bool(const glProjection& glprojection)> Wave2Fbo::
         GlState::glDrawArrays (GL_TRIANGLE_STRIP, 0, 4);
 
         // Draw waveform
-        glLineWidth(1);
         program_->setUniformValue(uniRgba, QVector4D(0.75,0.0,0.0,0.1));
         GlState::glDrawArrays(GL_TRIANGLE_STRIP, 4, vertex_count-4);
 
