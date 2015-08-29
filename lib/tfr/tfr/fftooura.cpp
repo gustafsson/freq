@@ -38,14 +38,20 @@ namespace Tfr {
 void FftOoura::
         compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, FftDirection direction )
 {
+    EXCEPTION_ASSERT_EQUALS(input->size (), output->size ());
+    *output = *input;
+    computeOoura(output, direction);
+}
+
+
+void FftOoura::
+        computeOoura( Tfr::ChunkData::ptr input_output, FftDirection direction )
+{
     bool expectPrepared = false;
 
     TIME_FFT TaskTimer tt("Fft Ooura");
 
-    int N = output->size().width;
-    int n = input->size().width;
-
-    EXCEPTION_ASSERT( n == N );
+    int N = input_output->size().width;
 
     if ((int)w.size() != N/2 + magicCheck && !expectPrepared)
     {
@@ -63,12 +69,10 @@ void FftOoura::
 
     EXCEPTION_ASSERT( (int)w.size() == N/2 + magicCheck );
 
-    *output = *input;
-    float* q = (float*)CpuMemoryStorage::ReadWrite<1>( output ).ptr();
-
+    float* q = (float*)CpuMemoryStorage::ReadWrite<1>( input_output ).ptr();
 
     {
-        TIME_FFT TaskTimer tt("Computing fft(N=%u, n=%u, direction=%d)", N, n, direction);
+        TIME_FFT TaskTimer tt("Computing fft(N=%u, direction=%d)", N, direction);
         cdft(2*N, direction, &q[0], const_cast<int*>(&ip[0]), const_cast<float*>(&w[0]));
     }
 
@@ -90,18 +94,16 @@ void FftOoura::
    EXCEPTION_ASSERT( denseWidth == redundantWidth/2+1 );
 
     // interleave input to complex data
-    Tfr::ChunkData::ptr complexinput( new Tfr::ChunkData( input->size()));
-    ::stftToComplex( input, complexinput );
-
-    // make room for full output
-    Tfr::ChunkData::ptr redundantOutput( new Tfr::ChunkData( redundantWidth ));
+    // and make room for full output
+    Tfr::ChunkData::ptr input_output( new Tfr::ChunkData( input->size()));
+    ::stftToComplex( input, input_output );
 
     // compute
-    compute(complexinput, redundantOutput, FftDirection_Forward);
+    computeOoura(input_output, FftDirection_Forward);
 
     // discard redundant output
     {
-        Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( redundantOutput ).ptr();
+        Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input_output ).ptr();
         Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( output ).ptr();
         int x;
         for (x=0; x<denseWidth; ++x)
@@ -117,12 +119,13 @@ void FftOoura::
     int redundantWidth = output->size().width;
 
     EXCEPTION_ASSERT( denseWidth == redundantWidth/2+1 );
+    EXCEPTION_ASSERT_EQUALS( input->size().height, 1 );
 
-    Tfr::ChunkData::ptr redundantInput( new Tfr::ChunkData( redundantWidth, input->size().height ));
+    ComplexBuffer buffer( 0, redundantWidth, 1 );
 
     {
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
-        Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( redundantInput ).ptr();
+        Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( buffer.complex_waveform_data ()).ptr();
         int x;
         for (x=0; x<denseWidth; ++x)
             out[x] = in[x];
@@ -130,43 +133,42 @@ void FftOoura::
             out[x] = conj(in[redundantWidth - x]);
     }
 
-    ComplexBuffer buffer( 0, redundantWidth, 1 );
-
-    compute(redundantInput, buffer.complex_waveform_data(), FftDirection_Inverse);
+    computeOoura(buffer.complex_waveform_data(), FftDirection_Inverse);
 
     *output = *buffer.get_real()->waveform_data();
 }
 
 
 void FftOoura::
-        compute( Tfr::ChunkData::ptr inputdata, Tfr::ChunkData::ptr outputdata, DataStorageSize n, FftDirection direction )
+        compute( Tfr::ChunkData::ptr input, Tfr::ChunkData::ptr output, DataStorageSize n, FftDirection direction )
+{
+    EXCEPTION_ASSERT_EQUALS(output->size (), input->size ());
+    *output = *input;
+    computeOoura(output, n, direction);
+}
+
+
+void FftOoura::
+        computeOoura( Tfr::ChunkData::ptr input_output, DataStorageSize n, FftDirection direction )
 {
     TIME_STFT TaskTimer tt("Stft Ooura");
 
-    Tfr::ChunkElement* input = CpuMemoryStorage::ReadOnly<1>( inputdata ).ptr();
-    Tfr::ChunkElement* output = CpuMemoryStorage::WriteAll<1>( outputdata ).ptr();
-
-    EXCEPTION_ASSERT( inputdata->numberOfBytes() >= outputdata->numberOfBytes() );
+    Tfr::ChunkElement* p = CpuMemoryStorage::ReadOnly<1>( input_output ).ptr();
 
     // Transform signal
-
     int i=0;
-    compute(
+    computeOoura(
             CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
-                                                            input + i*n.width),
-            CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
-                                                            output + i*n.width),
+                                                            p + i*n.width),
             direction
     );
 
 #pragma omp parallel for
     for (i=1; i < n.height; ++i)
     {
-        compute(
+        computeOoura(
                 CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
-                                                                input + i*n.width),
-                CpuMemoryStorage::BorrowPtr<Tfr::ChunkElement>( n.width,
-                                                                output + i*n.width),
+                                                                p + i*n.width),
                 direction
         );
     }
@@ -182,21 +184,20 @@ void FftOoura::
 
     DataStorageSize actualSize(n.width/2 + 1, n.height);
 
-    EXCEPTION_ASSERT( (int)output->numberOfElements()/actualSize.width == n.height );
-    EXCEPTION_ASSERT( (int)input->numberOfElements()/n.width == n.height );
+    EXCEPTION_ASSERT_EQUALS( (int)output->numberOfElements(), n.height*actualSize.width );
+    EXCEPTION_ASSERT_EQUALS( (int)input->numberOfElements(), n.height*n.width );
+    EXCEPTION_ASSERT_EQUALS( n.width*actualSize.height, (int)input->numberOfElements ());
 
     // interleave input to complex data
-    Tfr::ChunkData::ptr complexinput( new Tfr::ChunkData( input->size()));
-    ::stftToComplex( input, complexinput );
-
-    // make room for full output
-    Tfr::ChunkData::ptr redundantOutput( new Tfr::ChunkData( n.width*actualSize.height ));
+    // andmake room for full output
+    Tfr::ChunkData::ptr input_output( new Tfr::ChunkData( input->size()));
+    ::stftToComplex( input, input_output );
 
     // compute
-    compute(complexinput, redundantOutput, n, FftDirection_Forward );
+    computeOoura(input_output, n, FftDirection_Forward );
 
     // discard redundant output
-    Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( redundantOutput ).ptr();
+    Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input_output ).ptr();
     Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( output ).ptr();
 
 #pragma omp parallel for
@@ -222,11 +223,11 @@ void FftOoura::
     EXCEPTION_ASSERT( batchcount1 == batchcount2 );
     EXCEPTION_ASSERT( (denseWidth-1)*2 == redundantWidth );
 
-    Tfr::ChunkData::ptr redundantInput( new Tfr::ChunkData( n.height*redundantWidth ));
+    ComplexBuffer buffer( 0, redundantWidth*n.height, 1 );
 
     {
         Tfr::ChunkElement* in = CpuMemoryStorage::ReadOnly<1>( input ).ptr();
-        Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( redundantInput ).ptr();
+        Tfr::ChunkElement* out = CpuMemoryStorage::WriteAll<1>( buffer.complex_waveform_data () ).ptr();
 #pragma omp parallel for
         for (int i=0; i<n.height; ++i)
         {
@@ -238,9 +239,7 @@ void FftOoura::
         }
     }
 
-    ComplexBuffer buffer( 0, redundantWidth*n.height, 1 );
-
-    compute(redundantInput, buffer.complex_waveform_data(), n, FftDirection_Inverse );
+    computeOoura(buffer.complex_waveform_data(), n, FftDirection_Inverse );
 
     *output = *buffer.get_real()->waveform_data();
 

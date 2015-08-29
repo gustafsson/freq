@@ -243,6 +243,9 @@ void DataStorageVoid::
 DataStorageVoid& DataStorageVoid::
         operator=(const DataStorageVoid& b)
 {
+    if (this == &b)
+        return *this;
+
     if (size_ != b.size_ || bytesPerElement_ != b.bytesPerElement_)
     {
         DiscardAllData(false);
