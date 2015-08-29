@@ -239,7 +239,7 @@ void Chain::sceneGraphInvalidated()
 
 void Chain::openRecording()
 {
-    Signal::Recorder::ptr rec(new QtMicrophone);
+    Signal::Recorder::ptr rec(new QtMicrophone(this));
     Signal::OperationDesc::ptr desc(new Signal::MicrophoneRecorderDesc(rec));
     Signal::Processing::IInvalidator::ptr i = chain_->addOperationAt(desc, target_marker_);
 

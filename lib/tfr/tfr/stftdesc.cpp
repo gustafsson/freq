@@ -131,10 +131,7 @@ Signal::Interval StftDesc::
     if (max_n < 2)
         max_n = 2;
     if (n > max_n)
-    {
-        Signal::Interval orgOut = out;
         out.last = out.first + max_n*increment;
-    }
 
     if (expectedOutput)
         *expectedOutput = out;

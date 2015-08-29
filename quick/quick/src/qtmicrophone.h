@@ -61,7 +61,9 @@ private:
 class QtMicrophone: public Signal::Recorder
 {
 public:
-    QtMicrophone();
+    // If the recording isn't stopped in the destructor then the recording will
+    // be stopped at the latest when threadOwner is stopped.
+    QtMicrophone(QObject* threadOwner);
     ~QtMicrophone();
 
 public:
@@ -74,8 +76,8 @@ public:
 private:
     void init();
 
-    QThread* audiothread_;
-    QtAudioObject* audioobject_;
+    QPointer<QThread> audiothread_; // owned by threadOwner
+    QPointer<QtAudioObject> audioobject_; // deleted upon thread exit
 
     void readSamples(unsigned n);
 };

@@ -47,6 +47,9 @@ public:
     }
 };
 
+
+int run();
+
 int main(int argc, char *argv[])
 {
     for (int i=0; i<argc; i++)
@@ -68,6 +71,15 @@ int main(int argc, char *argv[])
     qmlRegisterType<OptimalTimeFrequencyResolution>("OpenGLUnderQML", 1, 0, "OptimalTimeFrequencyResolution");
     qmlRegisterType<ShowProcessing>("OpenGLUnderQML", 1, 0, "ShowProcessing");
 
+    int r = run();
+    app.processEvents ();
+    QThread::currentThread ()->eventDispatcher ()->processEvents (QEventLoop::AllEvents);
+    return r;
+}
+
+
+int run()
+{
     int r = 1;
     QWindow* window;
     QQmlEngine* engine;
@@ -107,9 +119,9 @@ int main(int argc, char *argv[])
         f.setSamples(4);
         window->setFormat(f);
 
-        QObject::connect(engine, SIGNAL(quit()), &app, SLOT(quit()));
+        QObject::connect(engine, SIGNAL(quit()), QCoreApplication::instance (), SLOT(quit()));
         window->show();
-        r = app.exec();
+        r = QCoreApplication::instance ()->exec ();
     }
 
     Log("Closing app");

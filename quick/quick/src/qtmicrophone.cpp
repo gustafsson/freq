@@ -305,9 +305,7 @@ void QtAudioObject::
 
 
 QtMicrophone::
-        QtMicrophone()
-    :
-      audioobject_(0)
+        QtMicrophone(QObject* threadOwner)
 {
     qRegisterMetaType<QAudio::State>("QAudio::State");
     QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
@@ -327,8 +325,10 @@ QtMicrophone::
 
 #ifdef QTMICROPHONETHREAD
     audiothread_ = new QThread;
+    // When threadOwner is destroyed destroy the audio object -> when done stop the thread -> when done destroy the thread object
+    QObject::connect (threadOwner, SIGNAL(destroyed(QObject*)), audioobject_, SLOT(deleteLater()));
+    QObject::connect (audioobject_, SIGNAL(destroyed(QObject*)), audiothread_, SLOT(quit()));
     QObject::connect (audiothread_, SIGNAL(finished()), audiothread_, SLOT(deleteLater()));
-    QObject::connect (audiothread_, SIGNAL(finished()), audioobject_, SLOT(finished()));
     audioobject_->moveToThread (audiothread_);
     audiothread_->start ();
     // Dispatch
@@ -343,12 +343,15 @@ QtMicrophone::
         ~QtMicrophone()
 {
 #ifdef QTMICROPHONETHREAD
-    Log("~QtMicrophone()");
     _invalidator.reset ();
     // Can't wait for audiothread_ to finish becuase it might be using the Dag
     // which is locked by the caller of this destructor but audiothread_ will
     // delete itself when finished
-    audiothread_->quit ();
+    if (audiothread_)
+    {
+        audiothread_->quit ();
+        audiothread_->deleteLater ();
+    }
 #else
     audioobject_->finished ();
     delete audioobject_;
@@ -361,20 +364,22 @@ void QtMicrophone::
 {
     _offset = length();
     _start_recording.restart ();
-    audioobject_->startRecording ();
+    if (audioobject_) audioobject_->startRecording ();
 }
 
 
 void QtMicrophone::
         stopRecording()
 {
-    audioobject_->stopRecording ();
+    if (audioobject_) audioobject_->stopRecording ();
 }
 
 
 bool QtMicrophone::
         isStopped() const
 {
+    if (!audioobject_)
+        return true;
     return audioobject_->isStopped();
 }
 
@@ -382,6 +387,8 @@ bool QtMicrophone::
 bool QtMicrophone::
         canRecord()
 {
+    if (!audioobject_)
+        return false;
     return audioobject_->isStopped ();
 }
 
