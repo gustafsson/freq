@@ -33,6 +33,8 @@
 //#define LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS
 #define LOG_BLOCK_USAGE_WHEN_DISCARDING_BLOCKS if(0)
 
+//#define DEBUG_FRAME_ON_FIRST_MISSING_BLOCK
+
 using namespace Signal;
 using namespace boost;
 
@@ -278,6 +280,14 @@ void Collection::
         block->frame_number_last_used = _frame_counter;
 
     missing_data_next_ |= block_initializer_->initBlocks(blocks_to_init);
+
+#ifdef DEBUG_FRAME_ON_FIRST_MISSING_BLOCK
+    static int misscount = 0;
+    if (!missing.empty ())
+        misscount++;
+    if (misscount==10 && !missing.empty ())
+        glInsertEventMarkerEXT(0, "com.apple.GPUTools.event.debug-frame");
+#endif
 
     for (const pBlock& block : blocks_to_init)
     {
