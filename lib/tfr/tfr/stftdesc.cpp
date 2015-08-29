@@ -127,7 +127,7 @@ Signal::Interval StftDesc::
 
     int n = (out.last-out.first)/increment;
     int max_bytes = 8 * (1<<20); // 8 MB
-    int max_n = max_bytes/chunk_size/sizeof(float);
+    int max_n = max_bytes/chunk_size/sizeof(ChunkElement);
     if (max_n < 2)
         max_n = 2;
     if (n > max_n)
