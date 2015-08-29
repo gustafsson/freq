@@ -106,6 +106,8 @@ GlTexture::ptr TexturePool::
     glGenTextures (1, &t);
     setupTexture(t, width_, height_, format_ == Float32);
 
+#ifdef _DEBUG
+    // squish warning that some sections of the texture is undefined, but this takes a lot of time
     glBindTexture(GL_TEXTURE_2D, t);
     static std::vector<char> zeros;
     size_t sz = width_*height_*sizeof(float);
@@ -113,6 +115,7 @@ GlTexture::ptr TexturePool::
         zeros.resize (sz, 0);
 
     glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, width_, height_, GL_RED, GL_FLOAT, zeros.data ());
+#endif
 
     bool adopt = true; // GlTexture does glDeleteTextures
     return GlTexture::ptr(new GlTexture(t, width_, height_, adopt));
