@@ -31,6 +31,35 @@ Item {
         property real timezoom: 1
     }
 
+    DropArea {
+        id: dropArea
+        anchors.fill: parent
+
+        onEntered: {
+            drag.accept (Qt.CopyAction);
+        }
+        onDropped: {
+            if (drop.hasUrls && 1===drop.urls.length)
+            {
+                openurl.openUrl(drop.urls[0]);
+                drop.accept (Qt.CopyAction);
+            }
+        }
+        onExited: {
+        }
+
+        OpenUrl {
+            id: openurl
+            chain: chain
+            signal openUrl(url p)
+
+            onOpenFileInfo: {
+                text.text = infoText;
+                textAnimation.restart();
+            }
+        }
+    }
+
     ColumnLayout {
         objectName: "row layout"
         anchors.fill: parent
@@ -81,30 +110,6 @@ Item {
         }
     }
 
-    DropArea {
-        id: dropArea
-        anchors.fill: parent
-
-        onEntered: {
-            drag.accept (Qt.CopyAction);
-        }
-        onDropped: {
-            if (drop.hasUrls && 1===drop.urls.length)
-            {
-                openurl.openUrl(drop.urls[0]);
-                drop.accept (Qt.CopyAction);
-            }
-        }
-        onExited: {
-        }
-
-        OpenUrl {
-            id: openurl
-            chain: chain
-            signal openUrl(url p)
-        }
-    }
-
     ColumnLayout {
         anchors.left: parent.left
         anchors.top : parent.top
@@ -123,6 +128,9 @@ Item {
             text: "Scroll by dragging, rotate with two fingers together, zoom with two fingers in different directions. http://freq.consulting"
 
             SequentialAnimation on opacity {
+                id: textAnimation
+                ScriptAction { script: text.visible=true; }
+                NumberAnimation { to: 0.75; duration: 200; easing.type: Easing.InQuart }
                 PauseAnimation { duration: 15000 }
                 NumberAnimation { to: 0; duration: 5000; easing.type: Easing.InQuart }
                 ScriptAction { script: text.visible=false; }
