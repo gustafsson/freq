@@ -170,6 +170,9 @@ bool QtAudiofile::
 void QtAudiofile::
         durationChanged(qint64 duration)
 {
-    this->getInvalidator ()->deprecateCache (Interval(old_duration, duration));
+    if (duration == old_duration)
+        return;
+
+    this->getInvalidator ()->deprecateCache (Interval(std::min(old_duration, duration),std::max(old_duration, duration)));
     old_duration = duration;
 }
