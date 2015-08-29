@@ -42,7 +42,7 @@ Signal::OperationDesc::ptr parseFile(QUrl url)
 {
     Signal::OperationDesc::ptr d;
     try {
-#ifndef TARGET_IPHONE_SIMULATOR
+#if !defined(TARGET_IPHONE_SIMULATOR) || !TARGET_IPHONE_SIMULATOR
         d.reset(new FlacFile(url));
         if (d->extent().sample_rate.is_initialized ())
             return d;

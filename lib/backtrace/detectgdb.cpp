@@ -32,15 +32,15 @@
 static bool was_started_through_gdb_ = DetectGdb::is_running_through_gdb ();
 
 
-#ifdef TARGET_OS_IPHONE
+#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 // No implementation for detecting IOS debugger
 bool DetectGdb::
         is_running_through_gdb()
 {
     #ifdef _DEBUG
-        return false;
-    #else
         return true;
+    #else
+        return false;
     #endif
 }
 

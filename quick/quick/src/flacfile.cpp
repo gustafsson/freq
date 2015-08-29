@@ -1,5 +1,5 @@
 #include "flacfile.h"
-#ifndef TARGET_IPHONE_SIMULATOR
+#if !defined(TARGET_IPHONE_SIMULATOR) || !TARGET_IPHONE_SIMULATOR
 #include "cpumemorystorage.h"
 #include "log.h"
 #include <limits>

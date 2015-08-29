@@ -13,7 +13,7 @@
 #ifdef __APPLE__
 # include <TargetConditionals.h>
 # define GL_ARB_ES2_compatibility
-# if !defined(LEGACY_OPENGL) && !defined(TARGET_OS_IPHONE)
+# if !defined(LEGACY_OPENGL) && (!defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE)
 #  define __gl_h_ // prevent deprecated OpenGL, use only gl3.h
 # endif
 # include <QtGui> // include <QtGui/qopengl.h> by including the QtGui framework

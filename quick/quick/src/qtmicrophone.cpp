@@ -262,14 +262,14 @@ void QtAudioObject::
         init()
 {
     audio_ = new QAudioInput(info_, format_, this);
-#ifdef TARGET_OS_IPHONE
+#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
     audio_->setBufferSize (1<<12); // 4096, buffer_size/sample_rate = latency -> 93 ms
     //    audio_->setBufferSize (1<<9); // 512, buffer_size/sample_rate = latency -> 12 ms
 #else
     #ifdef _DEBUG
-        audio_->setBufferSize ( lpo2s(format.sampleRate ()/10) ); // latency -> 1/10 s
+        audio_->setBufferSize ( lpo2s(format_.sampleRate ()/10) ); // latency -> 1/10 s
     #else
-        audio_->setBufferSize ( lpo2s(format.sampleRate ()/60/2) ); // latency -> 1/120 s
+        audio_->setBufferSize ( lpo2s(format_.sampleRate ()/60/2) ); // latency -> 1/120 s
     #endif
 #endif
 
