@@ -235,8 +235,8 @@ void TouchNavigation::
             if (rpoint1.x () > rpoint2.x ()) std::swap(dx1,dx2);
             if (rpoint1.y () > rpoint2.y ()) std::swap(dy1,dy2);
 
-            c.xscale *= clamp(0.95, 1.05, 1 - (dx1-dx2)/100);
-            c.zscale *= clamp(0.95, 1.05, 1 - (dy1-dy2)/100);
+            c.xscale *= clamp(0.95, 1.05, 1 - (dx1-dx2)/10);
+            c.zscale *= clamp(0.95, 1.05, 1 - (dy1-dy2)/10);
 
             // Also pan
             //double dtime1 = hpos1.time - hstart1.time;
