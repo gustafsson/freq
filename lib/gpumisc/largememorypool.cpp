@@ -155,10 +155,14 @@ private:
 };
 
 
-LargeMemoryPool pool {1 << 10};
+//LargeMemoryPool pool {1 << 10};
+LargeMemoryPool pool {0};
 
 void* lmp_malloc(size_t n) {
     LOG_ALLOCATION_SUMMARY request_summary[spo2g (n-1)]++;
+
+    if (n > 16 * (1<<20))
+        Log("allocating %s") % DataStorageVoid::getMemorySizeText(n);
 
     if (n<=pool.N_threshold)
         return new char[n];
