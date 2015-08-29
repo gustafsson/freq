@@ -264,6 +264,7 @@ void TouchNavigation::
     auto viewport = render_model()->gl_projection.read ()->viewport;
     float aspect = viewport[2]/(float)viewport[3];
     float zmin = std::min(0.5,0.4/(c.zscale/-c.p[2]*aspect));
+    zmin = 0; // bah!
     float zmax = 1-zmin;
 
     // limit camera position along scale and limit rotation
