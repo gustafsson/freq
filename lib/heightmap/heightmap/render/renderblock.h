@@ -8,6 +8,7 @@
 #include "glprojection.h"
 #include "renderinfo.h"
 #include "shaderresource.h"
+#include "renderregion.h"
 
 typedef boost::shared_ptr<Vbo> pVbo;
 
@@ -43,6 +44,8 @@ public:
     void        setSize( unsigned w, unsigned h);
     unsigned    trianglesPerBlock();
 
+    RenderRegion* renderRegion() { return &_render_region; }
+
     GLint uniModelviewprojection=-2,
             uniModelview=-2,
             uniNormalMatrix=-2,
@@ -66,6 +69,7 @@ private:
     unsigned _mesh_width;
     unsigned _mesh_height;
     pVbo _mesh_position;
+    RenderRegion _render_region;
 
     struct ShaderData
     {

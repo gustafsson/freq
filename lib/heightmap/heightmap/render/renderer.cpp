@@ -213,10 +213,10 @@ void Renderer::
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
-    Render::RenderRegion rr(gl_projecter);
+    Render::RenderRegion* rr = render_block->renderRegion ();
 
     for (const auto& r : R)
-        rr.render(region.getVisible (r.first), drawcross);
+        rr->render(gl_projecter, region.getVisible (r.first), drawcross);
 }
 
 

@@ -12,9 +12,8 @@ namespace Heightmap {
 namespace Render {
 
 RenderRegion::
-        RenderRegion(const glProjecter& gl_projecter)
+        RenderRegion()
     :
-      gl_projecter_(gl_projecter),
       vbo_(0)
 {
 }
@@ -34,30 +33,11 @@ RenderRegion::
 
 
 void RenderRegion::
-        render(Region r, bool drawcross)
+        render(const glProjecter& gl_projecter, Region r, bool drawcross)
 {
     GlException_CHECK_ERROR();
 
     float y = 0.5f;
-
-    static float values[] = {
-        // cross_values
-        0, 0, 0,
-        1, 0, 1,
-        1, 0, 0,
-        0, 0, 1,
-        0, 0, 0,
-        1, 0, 0,
-        1, 0, 1,
-        0, 0, 1,
-
-        // nocross_values
-        0, 0, 0,
-        1, 0, 0,
-        1, 0, 1,
-        0, 0, 1,
-        0, 0, 0
-    };
 
     if (!program_) {
         program_ = ShaderResource::loadGLSLProgramSource(
@@ -72,11 +52,29 @@ void RenderRegion::
                                            "    gl_FragColor = color;"
                                            "}");
 
+        static float values[] = {
+            // cross_values
+            0, 0, 0,
+            1, 0, 1,
+            1, 0, 0,
+            0, 0, 1,
+            0, 0, 0,
+            1, 0, 0,
+            1, 0, 1,
+            0, 0, 1,
+
+            // nocross_values
+            0, 0, 0,
+            1, 0, 0,
+            1, 0, 1,
+            0, 0, 1,
+            0, 0, 0
+        };
+
         glGenBuffers (1,&vbo_);
         GlState::glBindBuffer (GL_ARRAY_BUFFER, vbo_);
         glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<3,GLfloat>)*13, values, GL_STATIC_DRAW);
         GlState::glUseProgram (program_->programId());
-        glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
     }
 
     if (!program_->isLinked ())
@@ -84,14 +82,14 @@ void RenderRegion::
 
     GlState::glUseProgram (program_->programId());
 
-    GlState::glEnableVertexAttribArray (0);
     GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glEnable(GL_BLEND);
+    GlState::glEnableVertexAttribArray (0);
+    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 
-    glProjecter proj = gl_projecter_;
+    glProjecter proj = gl_projecter;
     proj.translate (vectord(r.a.time, 0, r.a.scale));
     proj.scale (vectord(r.time(), 1, r.scale()));
-
-    GlState::glEnable(GL_BLEND);
 
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
     program_->setUniformValue("modelviewproj",
