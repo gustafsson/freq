@@ -9,6 +9,7 @@
 #include "channelcolors.h"
 #include "tools/rendermodel.h"
 #include "heightmap/render/renderer.h"
+#include "heightmap/render/shaderresource.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -34,7 +35,6 @@ DrawCollections::DrawCollections(RenderModel* model)
 
 DrawCollections::~DrawCollections()
 {
-    delete m_program;
 }
 
 
@@ -124,23 +124,23 @@ void DrawCollections::
         t.bindTexture();
 
         if (!m_program) {
-            m_program = new QOpenGLShaderProgram();
-            m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
-                                               "attribute highp vec4 vertices;"
-                                               "attribute highp vec2 itex;"
-                                               "uniform mat4 modelviewprojection;"
-                                               "varying highp vec2 ftex;"
-                                               "void main() {"
-                                               "    gl_Position = modelviewprojection * vertices;"
-                                               "    ftex = itex;"
-                                               "}");
-            m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
-                                               "uniform lowp float t;"
-                                               "uniform sampler2D tex;"
-                                               "varying highp vec2 ftex;"
-                                               "void main() {"
-                                               "    gl_FragColor = texture2D(tex, ftex);"
-                                               "}");
+            m_program = Heightmap::ShaderResource::loadGLSLProgramSource (
+                                            R"vertexshader(
+                                               attribute highp vec4 vertices;
+                                               attribute highp vec2 itex;
+                                               uniform mat4 modelviewprojection;
+                                               varying highp vec2 ftex;
+                                               void main() {
+                                                   gl_Position = modelviewprojection * vertices;
+                                                   ftex = itex;
+                                               })vertexshader",
+                                            R"fragmentshader(
+                                               uniform lowp float t;
+                                               uniform sampler2D tex;
+                                               varying highp vec2 ftex;
+                                               void main() {
+                                                   gl_FragColor = texture2D(tex, ftex);
+                                               })fragmentshader");
 
             m_program->link();
             GlState::glUseProgram (m_program->programId());
