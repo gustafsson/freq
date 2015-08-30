@@ -280,7 +280,8 @@ void TfrMapping::
 
     LOGINFO TaskInfo ti("Number of channels: %d", v);
 
-    collections_.clear ();
+    for (auto c : collections_)
+        old_collections_.push_back (std::move(c));
 
     Collections new_collections(v);
 
@@ -290,7 +291,7 @@ void TfrMapping::
         c->length( length_samples_ );
     }
 
-    collections_ = new_collections;
+    collections_.swap (new_collections);
 }
 
 
@@ -299,6 +300,14 @@ TfrMapping::Collections TfrMapping::
 {
     return collections_;
 }
+
+
+void TfrMapping::
+        gc()
+{
+    old_collections_.clear ();
+}
+
 
 
 void TfrMapping::

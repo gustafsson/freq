@@ -302,12 +302,7 @@ void RenderView::
 
     try
     {
-    for ( auto c : collections )
-    {
-        // Release blocks that weren't used since last next_frame
-        // Update blocks with textures from updateconsumer
-        c->frame_begin();
-    }
+    model->frame_begin();
 
     bool update_queue_has_work = !model->update_queue()->empty ();
 

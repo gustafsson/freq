@@ -363,4 +363,20 @@ Heightmap::Position RenderModel::
     return Heightmap::Position(c->q[0], c->q[2]);
 }
 
+
+void RenderModel::
+        frame_begin ()
+{
+    auto tfrmap = tfr_map_.write ();
+    tfrmap->gc();
+    auto collections = tfrmap->collections();
+    tfrmap.unlock ();
+
+    for ( auto c : collections )
+    {
+        // Release blocks that weren't used since last next_frame
+        // Update blocks with textures from updateconsumer
+        c->frame_begin();
+    }
+}
 } // namespace Tools
