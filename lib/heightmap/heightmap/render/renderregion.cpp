@@ -4,25 +4,60 @@
 #include "glstate.h"
 #include "glPushContext.h"
 #include "GlException.h"
+#include "log.h"
 
 #include <QOpenGLShaderProgram>
 
 namespace Heightmap {
 namespace Render {
 
-RenderRegion::RenderRegion(const glProjecter& gl_projecter)
+RenderRegion::
+        RenderRegion(const glProjecter& gl_projecter)
     :
-      gl_projecter_(gl_projecter)
+      gl_projecter_(gl_projecter),
+      vbo_(0)
 {
+}
+
+
+RenderRegion::
+        ~RenderRegion()
+{
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % vbo_;
+        return;
+    }
+
+    if (vbo_)
+        glDeleteBuffers (1,&vbo_);
 }
 
 
 void RenderRegion::
         render(Region r, bool drawcross)
 {
-    // if (!renderBlock(...) && (0 == "render red warning cross" || render_settings->y_scale < yscalelimit))
-    //float y = _frustum_clip.projectionPlane[1]*.05;
+    GlException_CHECK_ERROR();
+
     float y = 0.5f;
+
+    static float values[] = {
+        // cross_values
+        0, 0, 0,
+        1, 0, 1,
+        1, 0, 0,
+        0, 0, 1,
+        0, 0, 0,
+        1, 0, 0,
+        1, 0, 1,
+        0, 0, 1,
+
+        // nocross_values
+        0, 0, 0,
+        1, 0, 0,
+        1, 0, 1,
+        0, 0, 1,
+        0, 0, 0
+    };
 
     if (!program_) {
         program_ = ShaderResource::loadGLSLProgramSource(
@@ -36,6 +71,12 @@ void RenderRegion::
                                            "void main() {"
                                            "    gl_FragColor = color;"
                                            "}");
+
+        glGenBuffers (1,&vbo_);
+        GlState::glBindBuffer (GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<3,GLfloat>)*13, values, GL_STATIC_DRAW);
+        GlState::glUseProgram (program_->programId());
+        glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
     }
 
     if (!program_->isLinked ())
@@ -44,56 +85,31 @@ void RenderRegion::
     GlState::glUseProgram (program_->programId());
 
     GlState::glEnableVertexAttribArray (0);
-
-    float cross_values[] = {
-        0, 0, 0,
-        1, 0, 1,
-        1, 0, 0,
-        0, 0, 1,
-        0, 0, 0,
-        1, 0, 0,
-        1, 0, 1,
-        0, 0, 1 };
-
-    float nocross_values[] = {
-        0, 0, 0,
-        1, 0, 0,
-        1, 0, 1,
-        0, 0, 1,
-        0, 0, 0
-    };
-
-    float* values = drawcross ? cross_values : nocross_values;
-    int n_values = drawcross ? 8 : 5;
-
-    program_->setAttributeArray(0, GL_FLOAT, values, 3);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
     glProjecter proj = gl_projecter_;
     proj.translate (vectord(r.a.time, 0, r.a.scale));
     proj.scale (vectord(r.time(), 1, r.scale()));
 
-    GlException_CHECK_ERROR();
-
     GlState::glEnable(GL_BLEND);
-    glLineWidth(2);
 
     program_->setUniformValue("color", 0.8, 0.2, 0.2, 0.5);
     program_->setUniformValue("modelviewproj",
                               QMatrix4x4(GLmatrixf(proj.mvp ()).transpose ().v ()));
-    GlState::glDrawArrays(GL_LINE_STRIP, 0, n_values);
-
-    GlException_CHECK_ERROR();
+    int value_offs = drawcross ? 0 : 8;
+    int n_values = drawcross ? 8 : 5;
+    GlState::glDrawArrays(GL_LINE_STRIP, value_offs, n_values);
 
     proj.translate (vectord(0, y, 0));
     program_->setUniformValue("color", 0.2, 0.8, 0.8, 0.5);
     program_->setUniformValue("modelviewproj",
                               QMatrix4x4(GLmatrixf(proj.mvp()).transpose ().v ()));
-    GlState::glDrawArrays(GL_LINE_STRIP, 0, n_values);
-    glLineWidth(1);
+    GlState::glDrawArrays(GL_LINE_STRIP, value_offs, n_values);
 
     GlState::glDisableVertexAttribArray (0);
     GlState::glDisable(GL_BLEND);
     GlState::glUseProgram (0);
+    GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
 
     GlException_CHECK_ERROR();
 }
