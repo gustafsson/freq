@@ -43,6 +43,7 @@ void glEnable (GLenum cap, bool now)
             current.caps.insert (cap);
             ::glEnable (cap);
         }
+        next.caps.insert (cap);
     }
     else
     {
