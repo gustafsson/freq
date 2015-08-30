@@ -24,12 +24,18 @@ class OperationDesc;
 /**
  * @brief The Operation class should describe the interface for performing signal processing on signal data.
  *
+ * Operation is recreated for each new task.
+ *
  * 'process' should only be called from one thread.
  */
 class SignalDll Operation
 {
 public:
     typedef std::shared_ptr<Operation> ptr;
+
+    Operation(){}
+    Operation(const Operation&)=delete;
+    Operation&operator=(const Operation&)=delete;
 
     /**
       Virtual housekeeping.

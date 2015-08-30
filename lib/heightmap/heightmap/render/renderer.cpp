@@ -19,6 +19,7 @@
 #include "glPushContext.h"
 #include "tasktimer.h"
 #include "GlTexture.h"
+#include "glgroupmarker.h"
 
 // Qt
 #include <QSettings>
@@ -47,12 +48,12 @@ namespace Render {
 Renderer::Renderer(
         Collection::ptr      collection,
         RenderSettings&      render_settings,
-        glProjection         gl_projection,
+        glProjecter          gl_projecter,
         Render::RenderBlock* render_block)
     :
       collection(collection),
       render_settings(render_settings),
-      gl_projection(gl_projection),
+      gl_projecter(gl_projecter),
       render_block(render_block)
 {
 
@@ -125,7 +126,7 @@ void Renderer::
     render_settings.last_ysize = scaley;
     render_settings.drawn_blocks = 0;
 
-    const auto& v = gl_projection.viewport;
+    const auto& v = gl_projecter.viewport;
     glViewport (v[0], v[1], v[2], v[3]);
 }
 
@@ -136,7 +137,7 @@ Render::RenderSet::references_t Renderer::
     BlockLayout bl                   = collection.read ()->block_layout ();
     Reference ref                    = collection.read ()->entireHeightmap();
     VisualizationParams::const_ptr vp = collection.read ()->visualization_params ();
-    Render::RenderInfo render_info(&gl_projection, bl, vp, render_settings.redundancy);
+    Render::RenderInfo render_info(&gl_projecter, bl, vp, render_settings.redundancy);
     Render::RenderSet::references_t R = Render::RenderSet(&render_info, L).computeRenderSet( ref );
 
     LOG_REFERENCES_TO_RENDER {
@@ -152,13 +153,15 @@ Render::RenderSet::references_t Renderer::
 void Renderer::
         createMissingBlocks(const Render::RenderSet::references_t& R)
 {
-    collection->createMissingBlocks (R);
+    bool use_mipmap = render_settings.y_normalize > 0;
+    collection->createMissingBlocks (R,use_mipmap);
 }
 
 
 void Renderer::
         drawBlocks(const Render::RenderSet::references_t& R)
 {
+    GlGroupMarker gpm("DrawBlocks");
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawBlocks");
 
     Render::RenderSet::references_t failed;
@@ -172,7 +175,7 @@ void Renderer::
         // Copy the block list
         auto cache = Collection::cache (this->collection)->clone ();
 
-        Render::RenderBlock::Renderer block_renderer(render_block, bl, gl_projection);
+        Render::RenderBlock::Renderer block_renderer(render_block, bl, gl_projecter);
 
         for (const auto& v : R)
         {
@@ -205,14 +208,15 @@ void Renderer::
         return;
 
     TIME_RENDERER_DETAILS TaskTimer tt("Renderer::drawReferences");
+    GlGroupMarker gpm("DrawReferences");
 
     BlockLayout bl = collection.read ()->block_layout ();
     RegionFactory region(bl);
 
-    Render::RenderRegion rr(gl_projection);
+    Render::RenderRegion* rr = render_block->renderRegion ();
 
     for (const auto& r : R)
-        rr.render(region.getVisible (r.first), drawcross);
+        rr->render(gl_projecter, region.getVisible (r.first), drawcross);
 }
 
 

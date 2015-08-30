@@ -65,14 +65,12 @@ public:
 	*/
 	~GlTexture();
 
-    typedef ReleaseAfterContext<GlTexture> ScopeBinding;
-
     /**
     Binds this texture with glBindTexture and enables 2D texturing
     with glEnable. Then removes the binding and disables 2D texturing
     when the object goes out of scope.
     */
-    ScopeBinding getScopeBinding();
+    void bindTexture();
 
 	/**
 	Returns the OpenGL texture id for this texture. To be used with
@@ -89,6 +87,14 @@ public:
 	Returns the height of the texture.
 	*/
     unsigned short getHeight() const { return height; }
+
+    /**
+    getMinFilter returns the min_filter previously stored by storeMinFilter.
+    This is used to check if the mipmap levels have been enabled for this texture.
+    The texture must be bound when calling setMinFilter.
+     */
+    unsigned int getMinFilter() { return min_filter; }
+    void setMinFilter(unsigned int f);
 
 private:
     /**
@@ -107,5 +113,5 @@ private:
     unsigned int textureId;
     unsigned int ownTextureId;
 
-    void unbindTexture2Dwrap();
+    unsigned int min_filter=0;
 };

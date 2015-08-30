@@ -1075,7 +1075,7 @@ void RenderController::
     int n_update_consumers = 1;
     for (int i=0; i<n_update_consumers; i++)
     {
-        auto uc = new Heightmap::Update::UpdateConsumer(view->glwidget, update_queue);
+        auto uc = new Heightmap::Update::UpdateConsumerThread(view->glwidget, update_queue);
         connect(uc, SIGNAL(didUpdate()), view.data (), SLOT(redraw()));
     }
 

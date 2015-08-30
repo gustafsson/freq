@@ -86,6 +86,8 @@ namespace Tools
         void setPosition( Heightmap::Position pos );
         Heightmap::Position position() const;
 
+        void frame_begin();
+
     private:
         friend class RenderView; // todo remove
         friend class RenderController; // todo remove

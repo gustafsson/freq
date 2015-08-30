@@ -101,27 +101,18 @@ private:
     Tfr::pChunk ChunkWithRedundant(DataStorage<float>::ptr inputbuffer);
     virtual Signal::pMonoBuffer inverseWithRedundant( pChunk );
 
-
     static std::vector<unsigned> _ok_chunk_sizes;
 
-
     /**
-      prepareWindow applies the window function to some data, using '_window_type' and '_overlap'.
+      applyWindow applies the window function to some data, using '_window_type' and '_overlap'.
       Will not pad the data with zeros and thus all input data will only be used if it fits
       the overlap function exactly on the sample.
+
+      reduceWindow does the inverse.
       */
-    DataStorage<float>::ptr prepareWindow( DataStorage<float>::ptr );
+    DataStorage<float>::ptr applyWindow( DataStorage<float>::ptr in );
     template<typename T>
     typename DataStorage<T>::ptr reduceWindow( boost::shared_ptr<DataStorage<T> > windowedSignal, const StftChunk* c );
-
-    template<StftDesc::WindowType>
-    void prepareWindowKernel( DataStorage<float>::ptr in, DataStorage<float>::ptr out );
-
-    template<StftDesc::WindowType, typename T>
-    void reduceWindowKernel( boost::shared_ptr<DataStorage<T> > in, typename DataStorage<T>::ptr out, const StftChunk* c );
-
-    template<StftDesc::WindowType>
-    float computeWindowValue( float p );
 };
 
 class StftChunk: public Chunk

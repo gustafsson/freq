@@ -1,13 +1,16 @@
 #include "drawcollections.h"
 
+#include "glstate.h"
 #include "GlException.h"
 #include "computationkernel.h"
 #include "glPushContext.h"
 #include "tasktimer.h"
+#include "log.h"
 
 #include "channelcolors.h"
 #include "tools/rendermodel.h"
 #include "heightmap/render/renderer.h"
+#include "heightmap/render/shaderresource.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -26,14 +29,21 @@ namespace Support {
 DrawCollections::DrawCollections(RenderModel* model)
     :
       model(model),
-      render_block(&model->render_settings)
+      render_block(&model->render_settings),
+      vbo_(0)
 {
 }
 
 
 DrawCollections::~DrawCollections()
 {
-    delete m_program;
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % vbo_;
+        return;
+    }
+
+    if (vbo_)
+        glDeleteBuffers (1,&vbo_);
 }
 
 
@@ -47,7 +57,13 @@ void DrawCollections::
     if (!render_block.isInitialized())
         return;
 
-    unsigned N = model->collections().size();
+    const auto collections = model->collections ();
+    unsigned N = collections.size();
+    if (N>1)
+        model->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_FixedColor;
+    else
+        model->render_settings.color_mode = Heightmap::Render::RenderSettings::ColorMode_Rainbow;
+
     bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
     if (N - !fixed_color != channel_colors.size ())
         channel_colors = Support::ChannelColors::compute(N - !fixed_color);
@@ -62,8 +78,7 @@ void DrawCollections::
         vp[2], vp[3]);
 
     unsigned i=0;
-
-    const Heightmap::TfrMapping::Collections collections = model->collections ();
+    float L = model->tfr_mapping().read()->length();
 
     // Draw the first channel without a frame buffer
     for (; i < N; ++i)
@@ -71,90 +86,82 @@ void DrawCollections::
         if (!collections[i].read ()->isVisible())
             continue;
 
-        drawCollection(gl_projection, i, yscale);
+        drawCollection(gl_projection, collections[i], i, yscale, L);
         ++i;
         break;
     }
 
 
-    bool hasValidatedFboSize = false;
+    if (i<N)
+    {
+        // drawCollections is called for several different viewports each frame.
+        // GlFrameBuffer will query the current viewport to determine the size
+        // of the fbo for this iteration.
+        if (vp[2] > fbo->getWidth ()
+            || vp[3] > fbo->getHeight()
+            || vp[2]*2 < fbo->getWidth()
+            || vp[3]*2 < fbo->getHeight())
+        {
+            TaskInfo("new fbo");
+            fbo->recreate(vp[2]*1.5, vp[3]*1.5);
+        }
+    }
 
     for (; i<N; ++i)
     {
         if (!collections[i].read ()->isVisible())
             continue;
 
-        if (!hasValidatedFboSize)
-        {
-            // drawCollections is called for several different viewports each frame.
-            // GlFrameBuffer will query the current viewport to determine the size
-            // of the fbo for this iteration.
-            if (vp[2] > fbo->getWidth ()
-                || vp[3] > fbo->getHeight()
-                || vp[2]*2 < fbo->getWidth()
-                || vp[3]*2 < fbo->getHeight())
-            {
-                TaskInfo("new fbo");
-                fbo->recreate(vp[2]*1.5, vp[3]*1.5);
-            }
-
-            hasValidatedFboSize = true;
-        }
-
         GlException_CHECK_ERROR();
 
         {
             GlFrameBuffer::ScopeBinding fboBinding = fbo->getScopeBinding();
             glViewport(0, 0, vp[2], vp[3]);
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             auto gl_projection2 = gl_projection;
             gl_projection2.viewport = tvector<4,int>(0, 0, vp[2], vp[3]);
 
-            drawCollection(gl_projection, i, yscale);
+            drawCollection(gl_projection2, collections[i], i, yscale, L);
         }
 
-        glViewport(vp[0], vp[1],
-                   vp[2], vp[3]);
-
-        glBlendFunc( GL_DST_COLOR, GL_ZERO );
-
-        glDisable(GL_DEPTH_TEST);
-        GlTexture t(fbo->getGlTexture(), fbo->getWidth (), fbo->getHeight ());
-        GlTexture::ScopeBinding texObjBinding = t.getScopeBinding();
 
         if (!m_program) {
-            m_program = new QOpenGLShaderProgram();
-            m_program->addShaderFromSourceCode(QOpenGLShader::Vertex,
-                                               "attribute highp vec4 vertices;"
-                                               "attribute highp vec2 itex;"
-                                               "uniform mat4 modelviewprojection;"
-                                               "varying highp vec2 ftex;"
-                                               "void main() {"
-                                               "    gl_Position = modelviewprojection * vertices;"
-                                               "    ftex = itex;"
-                                               "}");
-            m_program->addShaderFromSourceCode(QOpenGLShader::Fragment,
-                                               "uniform lowp float t;"
-                                               "uniform sampler2D tex;"
-                                               "varying highp vec2 ftex;"
-                                               "void main() {"
-                                               "    gl_FragColor = texture2D(tex, ftex);"
-                                               "}");
+            m_program = Heightmap::ShaderResource::loadGLSLProgramSource (
+                                            R"vertexshader(
+                                               attribute highp vec4 vertices;
+                                               attribute highp vec2 itex;
+                                               uniform mat4 modelviewprojection;
+                                               varying highp vec2 ftex;
+                                               void main() {
+                                                   gl_Position = modelviewprojection * vertices;
+                                                   ftex = itex;
+                                               })vertexshader",
+                                            R"fragmentshader(
+                                               uniform lowp float t;
+                                               uniform sampler2D tex;
+                                               varying highp vec2 ftex;
+                                               void main() {
+                                                   gl_FragColor = texture2D(tex, ftex);
+                                               })fragmentshader");
 
-            m_program->bindAttributeLocation("vertices", 0);
-            m_program->bindAttributeLocation("itex", 1);
-            m_program->link();
-            m_program->bind();
+            GlState::glUseProgram (m_program->programId());
             m_program->setUniformValue ("tex", 0);
             QMatrix4x4 M;
             M.ortho (0,1,0,1,-10,10);
             m_program->setUniformValue ("modelviewprojection", M);
-            m_program->release();
+
+            glGenBuffers (1,&vbo_);
+            GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+            glBufferData (GL_ARRAY_BUFFER, 4*4*sizeof(float), 0, GL_STREAM_DRAW);
+
+            attribVertices = m_program->attributeLocation("vertices");
+            attribTex = m_program->attributeLocation("itex");
         }
 
-        m_program->bind();
-        m_program->enableAttributeArray(0);
-        m_program->enableAttributeArray(1);
+        GlState::glUseProgram (m_program->programId());
+        GlState::glEnableVertexAttribArray (0);
+        GlState::glEnableVertexAttribArray (1);
 
         float tx = vp[2]/(float)fbo->getWidth();
         float ty = vp[3]/(float)fbo->getHeight();
@@ -164,18 +171,31 @@ void DrawCollections::
              0, 1, 0,  ty,
              1, 1, tx, ty
         };
-        m_program->setAttributeArray(0, GL_FLOAT, values, 2, 4*sizeof(float));
-        m_program->setAttributeArray(1, GL_FLOAT, values + 2, 2, 4*sizeof(float));
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        m_program->disableAttributeArray(0);
-        m_program->disableAttributeArray(1);
-        m_program->release();
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferSubData (GL_ARRAY_BUFFER, 0, 4*4*sizeof(float), values);
+        m_program->setAttributeBuffer(attribVertices, GL_FLOAT, 0, 2, 4*sizeof(float));
+        m_program->setAttributeBuffer(attribTex, GL_FLOAT, 2*sizeof(float), 2, 4*sizeof(float));
+        GlState::glDisable (GL_DEPTH_TEST);
+        GlState::glEnable (GL_BLEND);
+        glBlendFunc( GL_DST_COLOR, GL_ZERO );
 
-        glEnable(GL_DEPTH_TEST);
+        glViewport(vp[0], vp[1],
+                   vp[2], vp[3]);
+
+        glBindTexture( GL_TEXTURE_2D, fbo->getGlTexture());
+
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        GlState::glDisableVertexAttribArray (1);
+        GlState::glDisableVertexAttribArray (0);
+        GlState::glUseProgram (0);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        GlState::glDisable (GL_BLEND);
+        GlState::glEnable (GL_DEPTH_TEST);
 
         GlException_CHECK_ERROR();
-
-        (void)texObjBinding; // RAII
     }
 
     TIME_PAINTGL_DETAILS ComputationCheckError();
@@ -201,26 +221,23 @@ void DrawCollections::
 
 
 void DrawCollections::
-        drawCollection(const glProjection& gl_projection, int i, float yscale )
+        drawCollection(const glProjection& gl_projection, Heightmap::Collection::ptr c, int collection_i, float yscale, float L )
 {
     bool fixed_color = model->render_settings.color_mode == Heightmap::Render::RenderSettings::ColorMode_FixedColor;
-    if (fixed_color || 0<i)
-        model->render_settings.fixed_color = channel_colors[fixed_color ? i : std::max(0,i-1)];
-    glDisable(GL_BLEND);
+    if (fixed_color || 0<collection_i)
+        model->render_settings.fixed_color = channel_colors[fixed_color ? collection_i : std::max(0,collection_i-1)];
     if (0 != model->camera->r[0])
-        glEnable( GL_CULL_FACE ); // enabled only while drawing collections
+        GlState::glEnable (GL_CULL_FACE); // enabled only while drawing collections
     else
-        glEnable( GL_DEPTH_TEST );
-    float L = model->tfr_mapping().read()->length();
+        GlState::glEnable (GL_DEPTH_TEST);
 
-    Heightmap::Render::Renderer renderer(model->collections()[i],
+    Heightmap::Render::Renderer renderer(c,
                                          model->render_settings,
                                          gl_projection,
                                          &render_block);
     renderer.draw( yscale, L ); // 0.6 ms
 
-    glDisable( GL_CULL_FACE );
-    glEnable(GL_BLEND);
+    GlState::glDisable ( GL_CULL_FACE );
 }
 
 

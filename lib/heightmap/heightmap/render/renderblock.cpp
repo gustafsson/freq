@@ -1,11 +1,12 @@
 #include "renderblock.h"
 #include "shaderresource.h"
 #include "heightmap/uncaughtexception.h"
+#include "heightmap/render/blocktextures.h"
 
 // gpumisc
 #include "computationkernel.h"
 #include "GlException.h"
-#include "gl.h"
+#include "glstate.h"
 #include "tasktimer.h"
 #include "glPushContext.h"
 #include "unused.h"
@@ -41,15 +42,12 @@ namespace Heightmap {
 namespace Render {
 
 
-RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjection gl_projection)
+RenderBlock::Renderer::Renderer(RenderBlock* render_block, BlockLayout block_size, glProjecter gl_projecter)
     :
       render_block(render_block),
-      gl_projection(gl_projection)
+      gl_projecter(gl_projecter)
 {
     render_block->beginVboRendering(block_size);
-    uniModelviewprojection = glGetUniformLocation (render_block->_shader_prog, "ModelViewProjectionMatrix");
-    uniModelview = glGetUniformLocation (render_block->_shader_prog, "ModelViewMatrix");
-    uniNormalMatrix = glGetUniformLocation (render_block->_shader_prog, "NormalMatrix");
 }
 
 
@@ -72,49 +70,52 @@ void RenderBlock::Renderer::
 
     TIME_RENDERER_BLOCKS TaskTimer tt(boost::format("renderBlock %s") % r);
 
-    matrixd modelview = gl_projection.modelview;
-    modelview *= matrixd::translate (r.a.time, 0, r.a.scale);
-    modelview *= matrixd::scale (r.time(), 1, r.scale());
-    glUniformMatrix4fv (uniModelviewprojection, 1, false, GLmatrixf(gl_projection.projection*modelview).v ());
-    glUniformMatrix4fv (uniModelview, 1, false, GLmatrixf(modelview).v ());
-    glUniformMatrix4fv (uniNormalMatrix, 1, false, GLmatrixf(invert(modelview)).transpose ().v ());
+    glProjecter blockProj = gl_projecter;
+    blockProj.translate (vectord(r.a.time, 0, r.a.scale));
+    blockProj.scale (vectord(r.time(), 1, r.scale()));
+    glUniformMatrix4fv (render_block->uniModelviewprojection, 1, false, GLmatrixf(blockProj.mvp ()).v ());
+    glUniformMatrix4fv (render_block->uniModelview, 1, false, GLmatrixf(blockProj.modelview ()).v ());
+    glUniformMatrix4fv (render_block->uniNormalMatrix, 1, false, GLmatrixf(blockProj.modelview_inverse ()).transpose ().v ());
 
     int subdivx = (int)max (0., subdivs - 1 - log2 (max (1., lod.t ()))); // t or s might be 0
     int subdivy = (int)max (0., subdivs - 1 - log2 (max (1., lod.s ())));
+    subdivx = subdivy = 0;
 
     LOG_DIVS Log("%s / %g x %g -> %d x %d") % block->getVisibleRegion ()
             % lod.t () % lod.s() % subdivx % subdivy;
 
-    pVbo vbo = render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
-
-    draw( block->texture ()->getOpenGlTextureId (), vbo);
+    const auto& pVbo = *render_block->_mesh_index_buffer[subdivy*subdivs+subdivx];
+    unsigned vbo = pVbo;
+    GLsizei n = pVbo.size () / sizeof(BLOCKindexType);
+    if (prev_vbo != vbo)
+    {
+        GlState::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
+        prev_vbo = vbo;
+    }
+    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
+    draw(n);
 
     TIME_RENDERER_BLOCKS GlException_CHECK_ERROR();
 }
 
 
 void RenderBlock::Renderer::
-        draw(unsigned tex_height, const pVbo& vbo)
+        draw(GLsizei n)
 {
     GlException_CHECK_ERROR();
 
-    glBindTexture (GL_TEXTURE_2D, tex_height);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *vbo);
-
-    size_t n = vbo->size () / sizeof(BLOCKindexType);
-
     if (DRAW_POINTS) {
-        glDrawArrays(GL_POINTS, 0, n);
+        GlState::glDrawArrays(GL_POINTS, 0, n);
     } else if (DRAW_WIREFRAME) {
 #ifdef GL_ES_VERSION_2_0
-        glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
+        GlState::glDrawElements(GL_LINE_STRIP, n, BLOCK_INDEX_TYPE, 0);
 #else
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE );
-            glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
+            GlState::glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
     } else {
-        glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
+        GlState::glDrawElements(GL_TRIANGLE_STRIP, n, BLOCK_INDEX_TYPE, 0);
     }
 
     GlException_CHECK_ERROR();
@@ -127,7 +128,6 @@ RenderBlock::
       _initialized( NotInitialized ),
         render_settings( render_settings ),
         _color_texture_colors( (RenderSettings::ColorMode)-1 ),
-        _shader_prog(0),
       _mesh_width(0),
       _mesh_height(0)
 {
@@ -137,7 +137,19 @@ RenderBlock::
 RenderBlock::
         ~RenderBlock()
 {
+}
 
+
+RenderBlock::ShaderData::ShaderData()
+{
+}
+
+
+RenderBlock::ShaderData::ShaderData(const char* defines)
+{
+    _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag", defines, defines);
+    _shader_prog = _shader_progp->programId();
+    GlException_CHECK_ERROR_MSG(defines);
 }
 
 
@@ -154,18 +166,8 @@ void RenderBlock::
 
     initShaders();
 
-    // load shader
-    if (render_settings->shadow_shader)
-        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap.vert", ":/shaders/heightmap.frag");
-    else
-        _shader_progp = ShaderResource::loadGLSLProgram(":/shaders/heightmap_noshadow.vert", ":/shaders/heightmap.frag");
-
-    _shader_prog = _shader_progp->programId();
-
     // default, expected to be overwritten
     setSize (2, 2);
-
-    //drawBlocks(Render::RenderSet::references_t());
 
     GlException_CHECK_ERROR();
 
@@ -348,6 +350,137 @@ void RenderBlock::
 #endif
 
 
+void RenderBlock::ShaderData::prepShader(BlockLayout block_size, RenderSettings* render_settings)
+{
+    GlState::glUseProgram(_shader_prog);
+
+    // Set default uniform variables parameters for the vertex and pixel shader
+    TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
+
+    if (uniModelviewprojection<-1) uniModelviewprojection = glGetUniformLocation (_shader_prog, "ModelViewProjectionMatrix");
+    if (uniModelview<-1) uniModelview = glGetUniformLocation (_shader_prog, "ModelViewMatrix");
+    if (uniNormalMatrix<-1) uniNormalMatrix = glGetUniformLocation (_shader_prog, "NormalMatrix");
+
+    if (uniVertText0<-1) uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
+    if (uniVertText0>=0) if (u_tex != 0) glUniform1i(uniVertText0, u_tex=0); // GL_TEXTURE0 + i
+
+    if (uniVertText2<-1) uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
+    if (u_tex_color != 1) glUniform1i(uniVertText2, u_tex_color=1);
+
+    if (uniFixedColor<-1) uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
+    tvector<4, float> fixed_color;
+    switch (render_settings->color_mode)
+    {
+    case RenderSettings::ColorMode_Grayscale:
+        fixed_color = tvector<4, float>(0,0,0,0);
+        break;
+    case RenderSettings::ColorMode_BlackGrayscale:
+        fixed_color = tvector<4, float>(1,1,1,0);
+        break;
+    default:
+        fixed_color = render_settings->fixed_color;
+        break;
+    }
+    if (fixed_color != u_fixed_color)
+    {
+        u_fixed_color = fixed_color;
+        if (uniFixedColor>=0) glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
+    }
+
+    if (uniClearColor<-1) uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
+    if (u_clearColor != render_settings->clear_color)
+    {
+        u_clearColor = render_settings->clear_color;
+        if (uniClearColor>=0) glUniform4f(uniClearColor, u_clearColor[0], u_clearColor[1], u_clearColor[2], u_clearColor[3]);
+    }
+
+    if (uniColorTextureFactor<-1) uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
+    float colorTextureFactor;
+    switch(render_settings->color_mode)
+    {
+    case RenderSettings::ColorMode_Rainbow:
+    case RenderSettings::ColorMode_GreenRed:
+    case RenderSettings::ColorMode_GreenWhite:
+    case RenderSettings::ColorMode_Green:
+    case RenderSettings::ColorMode_WhiteBlackGray:
+        colorTextureFactor = 1.f;
+        break;
+    default:
+        colorTextureFactor = 0.f;
+        break;
+    }
+    if (u_colorTextureFactor != colorTextureFactor)
+        if (uniColorTextureFactor>=0) glUniform1f(uniColorTextureFactor, u_colorTextureFactor = colorTextureFactor);
+
+    if (uniContourPlot<-1) uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
+    if (u_draw_contour_plot != render_settings->draw_contour_plot)
+        if (uniContourPlot>=0) glUniform1f(uniContourPlot, (u_draw_contour_plot=render_settings->draw_contour_plot) ? 1.f : 0.f );
+
+    if (uniFlatness<-1) uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
+    float v = render_settings->draw_flat ? 0 : render_settings->last_ysize;
+    if (u_flatness != v)
+        if (uniFlatness>=0) glUniform1f(uniFlatness, u_flatness=v);
+
+    if (uniYScale<-1) uniYScale = glGetUniformLocation(_shader_prog, "yScale");
+    if (u_yScale != render_settings->y_scale)
+        if (uniYScale>=0) glUniform1f(uniYScale, u_yScale = render_settings->y_scale);
+
+    if (uniYOffset<-1) uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
+    if (u_yOffset != render_settings->y_offset)
+        if (uniYOffset>=0) glUniform1f(uniYOffset, u_yOffset = render_settings->y_offset);
+
+    if (uniYNormalize<-1) uniYNormalize = glGetUniformLocation(_shader_prog, "yNormalize");
+    if (u_yNormalize != render_settings->y_normalize)
+        if (uniYNormalize>=0) glUniform1f(uniYNormalize, u_yNormalize = render_settings->y_normalize);
+
+    // yOffset specifies 'b' which says which 'v' that should render as 0
+    // yOffset=-1 => v>1 => fragColor>0
+    // yOffset=0  => v>L => fragColor>0
+    // yOffset=1  => v>0 => fragColor>0
+    float L = 0.00001;
+    float tb = 1.0/L - 1.0;
+    float tc = L/(1.0 - tb);
+    float ta = L - tc;
+    float b = ta * exp(-render_settings->y_offset * log(tb)) + tc;
+
+    // yScale specifies which intensity 'v=1' should have
+    // v<1 => fragColor < yScale
+    // v=1 => fragColor = yScale
+    // v>1 => fragColor > yScale
+    float x1 = render_settings->y_scale / (log(1.0) - log(b));
+    float x2 = - log(b) * x1;
+
+    if (uniLogScale<-1) uniLogScale = glGetUniformLocation(_shader_prog, "logScale");
+    if (u_logScale != render_settings->log_scale || u_logScale_x1 != x1 || u_logScale_x2 != x2)
+        if (uniLogScale>=0) glUniform3f(uniLogScale, u_logScale=render_settings->log_scale, u_logScale_x1 = x1, u_logScale_x2 = x2);
+
+    float
+            vw = block_size.visible_texels_per_row (),
+            vh = block_size.visible_texels_per_column (),
+            w = block_size.texels_per_row (),
+            h = block_size.texels_per_column (),
+            m = block_size.margin ();
+
+    if (uniScaleTex<-1) uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
+    if (u_scale_tex1 != vw/w || u_scale_tex2 != vh/h)
+        if (uniScaleTex>=0) glUniform2f(uniScaleTex, u_scale_tex1=vw/w, u_scale_tex2=vh/h);
+
+    if (uniOffsTex<-1) uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
+    if (u_offset_tex1 != m/w || u_offset_tex2 != m/h)
+        if (uniOffsTex>=0) glUniform2f(uniOffsTex, u_offset_tex1=m/w, u_offset_tex2=m/h);
+
+    if (uniTexDelta<-1) uniTexDelta = glGetUniformLocation(_shader_prog, "tex_delta");
+    if (u_tex_delta1 != 1.f/w || u_tex_delta2 != 1.f/h)
+        if (uniTexDelta>=0) glUniform2f(uniTexDelta, u_tex_delta1=1.f/w, u_tex_delta2=1.f/h);
+
+    if (uniTexSize<-1) uniTexSize = glGetUniformLocation(_shader_prog, "texSize");
+    if (u_texSize1 != w || u_texSize2 != h)
+        if (uniTexSize>=0) glUniform2f(uniTexSize, u_texSize1=w, u_texSize2=h);
+
+    if (attribVertex<-1) attribVertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
+}
+
+
 void RenderBlock::
         beginVboRendering(BlockLayout block_size)
 {
@@ -356,133 +489,51 @@ void RenderBlock::
     //unsigned meshH = collection->scales_per_block();
 
     createColorTexture(24); // These will be linearly interpolated when rendering, so a high resolution texture is not needed
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, _colorTexture->getOpenGlTextureId ());
     glActiveTexture(GL_TEXTURE0);
 
-    glUseProgram(_shader_prog);
 
-    // TODO check if this takes any time
-    {   // Set default uniform variables parameters for the vertex and pixel shader
-        TIME_RENDERER_BLOCKS TaskTimer tt("Setting shader parameters");
-        GLint uniVertText0,
-                uniVertText2,
-                uniColorTextureFactor,
-                uniFixedColor,
-                uniClearColor,
-                uniContourPlot,
-                uniFlatness,
-                uniYScale,
-                uniYOffset,
-                uniYNormalize,
-                uniLogScale,
-                uniScaleTex,
-                uniOffsTex;
+    ShaderSettings shadersettings;
+    shadersettings.use_mipmap = render_settings->y_normalize > 0 && Render::BlockTextures::mipmaps > 0;
+    shadersettings.draw3d = !render_settings->draw_flat;
+    shadersettings.drawIsarithm = render_settings->draw_contour_plot;
+    ShaderData* d=getShader(shadersettings);
 
-        uniVertText0 = glGetUniformLocation(_shader_prog, "tex");
-        glUniform1i(uniVertText0, 0); // GL_TEXTURE0 + i
+    d->prepShader(block_size, render_settings);
+    uniModelviewprojection=d->uniModelviewprojection;
+    uniModelview=d->uniModelview;
+    uniNormalMatrix=d->uniNormalMatrix;
+    attribVertex=d->attribVertex;
 
-//        uniVertText1 = glGetUniformLocation(_shader_prog, "tex_nearest");
-//        glUniform1i(uniVertText1, _mesh_width*_mesh_height>4 ? 0 : 0);
-
-        uniVertText2 = glGetUniformLocation(_shader_prog, "tex_color");
-        glUniform1i(uniVertText2, 2);
-
-        uniFixedColor = glGetUniformLocation(_shader_prog, "fixedColor");
-        switch (render_settings->color_mode)
-        {
-        case RenderSettings::ColorMode_Grayscale:
-            glUniform4f(uniFixedColor, 0.f, 0.f, 0.f, 0.f);
-            break;
-        case RenderSettings::ColorMode_BlackGrayscale:
-            glUniform4f(uniFixedColor, 1.f, 1.f, 1.f, 0.f);
-            break;
-        default:
-        {
-            tvector<4, float> fixed_color = render_settings->fixed_color;
-            glUniform4f(uniFixedColor, fixed_color[0], fixed_color[1], fixed_color[2], fixed_color[3]);
-            break;
-        }
-        }
-
-        uniClearColor = glGetUniformLocation(_shader_prog, "clearColor");
-        tvector<4, float> clear_color = render_settings->clear_color;
-        glUniform4f(uniClearColor, clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
-
-        uniColorTextureFactor = glGetUniformLocation(_shader_prog, "colorTextureFactor");
-        switch(render_settings->color_mode)
-        {
-        case RenderSettings::ColorMode_Rainbow:
-        case RenderSettings::ColorMode_GreenRed:
-        case RenderSettings::ColorMode_GreenWhite:
-        case RenderSettings::ColorMode_Green:
-        case RenderSettings::ColorMode_WhiteBlackGray:
-            glUniform1f(uniColorTextureFactor, 1.f);
-            break;
-        default:
-            glUniform1f(uniColorTextureFactor, 0.f);
-            break;
-        }
-
-        uniContourPlot = glGetUniformLocation(_shader_prog, "contourPlot");
-        glUniform1f(uniContourPlot, render_settings->draw_contour_plot ? 1.f : 0.f );
-
-        uniFlatness = glGetUniformLocation(_shader_prog, "flatness");
-        float v = render_settings->draw_flat ? 0 : render_settings->last_ysize;
-        glUniform1f(uniFlatness, v);
-
-        uniYScale = glGetUniformLocation(_shader_prog, "yScale");
-        glUniform1f(uniYScale, render_settings->y_scale);
-
-        uniYOffset = glGetUniformLocation(_shader_prog, "yOffset");
-        glUniform1f(uniYOffset, render_settings->y_offset);
-
-        uniYNormalize = glGetUniformLocation(_shader_prog, "yNormalize");
-        glUniform1f(uniYNormalize, render_settings->y_normalize);
-
-        // yOffset specifies 'b' which says which 'v' that should render as 0
-        // yOffset=-1 => v>1 => fragColor>0
-        // yOffset=0  => v>L => fragColor>0
-        // yOffset=1  => v>0 => fragColor>0
-        float L = 0.00001;
-        float tb = 1.0/L - 1.0;
-        float tc = L/(1.0 - tb);
-        float ta = L - tc;
-        float b = ta * exp(-render_settings->y_offset * log(tb)) + tc;
-
-        // yScale specifies which intensity 'v=1' should have
-        // v<1 => fragColor < yScale
-        // v=1 => fragColor = yScale
-        // v>1 => fragColor > yScale
-        float x1 = render_settings->y_scale / (log(1.0) - log(b));
-        float x2 = - log(b) * x1;
-
-        uniLogScale = glGetUniformLocation(_shader_prog, "logScale");
-        glUniform3f(uniLogScale, render_settings->log_scale, x1, x2);
-
-        float
-                vw = block_size.visible_texels_per_row (),
-                vh = block_size.visible_texels_per_column (),
-                w = block_size.texels_per_row (),
-                h = block_size.texels_per_column (),
-                m = block_size.margin ();
-
-        uniScaleTex = glGetUniformLocation(_shader_prog, "scale_tex");
-        glUniform2f(uniScaleTex, vw/w, vh/h);
-
-        uniOffsTex = glGetUniformLocation(_shader_prog, "offset_tex");
-        glUniform2f(uniOffsTex, m/w, m/h);
-
-        uniOffsTex = glGetUniformLocation(_shader_prog, "texSize");
-        glUniform2f(uniOffsTex, w, h);
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
-    GLint qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
-    glEnableVertexAttribArray (qt_Vertex);
-    glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, *_mesh_position);
+    GlState::glEnableVertexAttribArray (attribVertex);
+    glVertexAttribPointer (attribVertex, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     GlException_CHECK_ERROR();
+}
+
+
+bool RenderBlock::ShaderSettings::operator<(const ShaderSettings& b) const
+{
+    return memcmp (this,&b,sizeof(ShaderSettings)) < 0;
+}
+
+
+RenderBlock::ShaderData* RenderBlock::
+        getShader(ShaderSettings s)
+{
+    auto i = shaders.find (s);
+    if (i==shaders.end ())
+    {
+        std::string defines;
+        if (s.draw3d) defines += "#define DRAW3D\n";
+        if (s.drawIsarithm) defines += "#define DRAWISARITHM\n";
+        if (s.use_mipmap) defines += "#define USE_MIPMAP\n";
+        auto pi = shaders.insert (pair<ShaderSettings,ShaderData>(s, ShaderData(defines.c_str ())));
+        i = pi.first;
+    }
+    return &i->second;
 }
 
 
@@ -491,16 +542,14 @@ void RenderBlock::
 {
     GlException_CHECK_ERROR();
 
-    glBindBuffer (GL_ARRAY_BUFFER, 0);
-    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
-    glActiveTexture (GL_TEXTURE2);
-    glBindTexture (GL_TEXTURE_2D, 0);
-    glActiveTexture (GL_TEXTURE0);
-    glBindTexture (GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
 
-    int qt_Vertex = glGetAttribLocation (_shader_prog, "qt_Vertex");
-    glDisableVertexAttribArray (qt_Vertex);
-    glUseProgram(0);
+    GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    GlState::glDisableVertexAttribArray (attribVertex);
 
     GlException_CHECK_ERROR();
 }
@@ -660,9 +709,14 @@ tvector<4,float> getWavelengthColorCompute( float wavelengthScalar, RenderSettin
         count = 6;
         break;
     case RenderSettings::ColorMode_WhiteBlackGray:
-        spectrum[0] = tvector<4,float>( 0, 0, 0, 0 );
-        spectrum[1] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
-        count = 1;
+        spectrum[0] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[1] = tvector<4,float>( 1, 1, 1, 0 );
+        spectrum[2] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[3] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[4] = tvector<4,float>( 0, 0, 0, 0 );
+        spectrum[5] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
+        spectrum[6] = tvector<4,float>( 0.5, 0.5, 0.5, 0 );
+        count = 6;
         break;
     case RenderSettings::ColorMode_Grayscale:
         break;
@@ -740,12 +794,14 @@ void RenderBlock::
     vector<tvector<4,unsigned char> > texture(N);
     for (unsigned i=0; i<N; ++i) {
         tvector<4,float> wc = getWavelengthColorCompute( i/(float)(N-1), _color_texture_colors );
+        // Make UNSIGNED_BYTE. gles can't interpolate GL_FLOAT
         tvector<4,unsigned char> wb;
         wb[0] = 255*wc[0];
         wb[1] = 255*wc[1];
         wb[2] = 255*wc[2];
         wb[3] = 255*wc[3];
         texture[i] = wb;
+//        Log("%d/%d = %g %g %g %g") % i % N % wc[0] % wc[1] % wc[2] % wc[3];
     }
 
     _colorTexture.reset( new GlTexture(N,1, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, &texture[0][0]));

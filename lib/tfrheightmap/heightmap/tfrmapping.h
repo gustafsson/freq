@@ -64,10 +64,12 @@ public:
     typedef std::vector<pCollection> Collections;
     Collections collections() const;
 
+    void gc();
 private:
     void updateCollections();
 
     Collections                 collections_;
+    Collections                 old_collections_;
     BlockLayout                 block_layout_;
     VisualizationParams::ptr    visualization_params_;
     Signal::IntervalType        length_samples_;

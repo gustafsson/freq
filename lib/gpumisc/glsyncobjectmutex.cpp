@@ -6,6 +6,7 @@
 #include "tasktimer.h"
 #include "log.h"
 #include "GlException.h"
+#include "glstate.h"
 
 #include <mutex>
 #include <thread>
@@ -33,6 +34,11 @@ GlSyncObjectMutex::
 GlSyncObjectMutex::
         ~GlSyncObjectMutex()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks sync object %d") % __FILE__ % p->s;
+        return;
+    }
+
     if (p->s)
         glDeleteSync (p->s);
     delete p;
@@ -134,31 +140,28 @@ void GlSyncObjectMutex::
                 texture_update[i] = 3 + i;
             }
 
-            GlException_SAFE_CALL( glBindBuffer (GL_ARRAY_BUFFER, vbo) );
+            GlException_SAFE_CALL( GlState::glBindBuffer (GL_ARRAY_BUFFER, vbo) );
             GlException_SAFE_CALL( glBufferData (GL_ARRAY_BUFFER, sizeof(float)*N, &texture_update[0], GL_DYNAMIC_COPY) );
-            GlException_SAFE_CALL( glBindBuffer (GL_ARRAY_BUFFER, 0) );
+            GlException_SAFE_CALL( GlState::glBindBuffer (GL_ARRAY_BUFFER, 0) );
 
             GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
             GlException_SAFE_CALL( glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, &texture_init[0]) );
             // read with glGetTexImage to create an OpenGL client read state of the texture
             GlException_SAFE_CALL( glGetTexImage (GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &result[0]) );
-            GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
         };
 
         auto copyFromVboToTextureAsync = [&]()
         {
             GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
-            GlException_SAFE_CALL( glBindBuffer (GL_PIXEL_UNPACK_BUFFER, vbo) );
+            GlException_SAFE_CALL( GlState::glBindBuffer (GL_PIXEL_UNPACK_BUFFER, vbo) );
             GlException_SAFE_CALL( glTexSubImage2D  (GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, 0) );
-            GlException_SAFE_CALL( glBindBuffer (GL_PIXEL_UNPACK_BUFFER, 0) );
-            GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
+            GlException_SAFE_CALL( GlState::glBindBuffer (GL_PIXEL_UNPACK_BUFFER, 0) );
         };
 
         auto copyFromTextureToResult = [&]()
         {
             GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, texture) );
             GlException_SAFE_CALL( glGetTexImage (GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, &result[0]) );
-            GlException_SAFE_CALL( glBindTexture (GL_TEXTURE_2D, 0) );
         };
 
 

@@ -14,6 +14,8 @@
 #include "glPushContext.h"
 #include "glprojection.h"
 #include "gluperspective.h"
+#include "glgroupmarker.h"
+#include "glstate.h"
 
 #include <QGLContext>
 
@@ -167,6 +169,11 @@ MergerTexture::
 MergerTexture::
         ~MergerTexture()
 {
+    if ((vbo_ || fbo_) &&  !QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks fbo %d and vbo %d") % __FILE__ % fbo_ % vbo_;
+        return;
+    }
+
     if (vbo_) glDeleteBuffers (1, &vbo_);
     vbo_ = 0;
 
@@ -186,11 +193,12 @@ void MergerTexture::
     glGenFramebuffers(1, &fbo_);
 
 #ifndef DRAW_STRAIGHT_ONTO_BLOCK
+    // TODO if there's a point in this it should use a renderbuffer instead of a block texture
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
     tex_ = Render::BlockTextures::get1 ();
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, tex_->getOpenGlTextureId (), 0);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 #endif
 
     glGenBuffers (1, &vbo_);
@@ -201,9 +209,9 @@ void MergerTexture::
         1, 1, 1, 1,
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     //    program_ = ShaderResource::loadGLSLProgram("", ":/shaders/mergertexture.frag");
 //    program_ = ShaderResource::loadGLSLProgram(":/shaders/mergertexture.vert", ":/shaders/mergertexture0.frag");
@@ -221,6 +229,7 @@ void MergerTexture::
 Signal::Intervals MergerTexture::
         fillBlocksFromOthers( const std::vector<pBlock>& blocks )
 {
+    GlGroupMarker gpm("MergerTexture");
     int prev_fbo = 0;
     glGetIntegerv (GL_FRAMEBUFFER_BINDING, &prev_fbo);
 
@@ -233,22 +242,22 @@ Signal::Intervals MergerTexture::
 
     glViewport(0, 0, block_layout_.texels_per_row (), block_layout_.texels_per_column () );
 
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
+    GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
+    GlState::glDisable (GL_CULL_FACE);
 
     struct vertex_format {
         float x, y, u, v;
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 
-    glEnableVertexAttribArray (qt_Vertex);
-    glEnableVertexAttribArray (qt_MultiTexCoord0);
+    GlState::glEnableVertexAttribArray (qt_Vertex);
+    GlState::glEnableVertexAttribArray (qt_MultiTexCoord0);
+
     glVertexAttribPointer (qt_Vertex, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), 0);
     glVertexAttribPointer (qt_MultiTexCoord0, 2, GL_FLOAT, GL_TRUE, sizeof(vertex_format), (float*)0 + 2);
 
-    glUseProgram (program_);
+    GlState::glUseProgram (program_);
     if (invtexsize) glUniform2f(invtexsize, 1.0/block_layout_.texels_per_row (), 1.0/block_layout_.texels_per_column ());
     glUniform1i(qt_Texture0, 0); // GL_TEXTURE0 + i
 
@@ -262,30 +271,27 @@ Signal::Intervals MergerTexture::
         for (pBlock b : blocks)
             I |= fillBlockFromOthersInternal (b);
 
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
     }
 
     cache_clone.clear ();
 
-    glUseProgram (0);
+    GlState::glDisableVertexAttribArray (qt_MultiTexCoord0);
+    GlState::glDisableVertexAttribArray (qt_Vertex);
+    GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glDisableVertexAttribArray (qt_MultiTexCoord0);
-    glDisableVertexAttribArray (qt_Vertex);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_CULL_FACE);
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_CULL_FACE);
 
     for (pBlock b : blocks)
     {
-        glBindTexture (GL_TEXTURE_2D, b->texture ()->getOpenGlTextureId());
-        glGenerateMipmap (GL_TEXTURE_2D);
-        glBindTexture (GL_TEXTURE_2D, 0);
+        // mark texture as updated
+        b->setTexture (b->texture ());
     }
 
     GlException_CHECK_ERROR();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, prev_fbo);
 
     return I;
 }
@@ -306,11 +312,13 @@ Signal::Intervals MergerTexture::
     glUniformMatrix4fv (uniProjection, 1, false, GLmatrixf(projection).v ());
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
+    glBindTexture (GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId ());
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, block->texture ()->getOpenGlTextureId (), 0);
 #endif
 
     glClear( GL_COLOR_BUFFER_BIT );
+//    clearBlock (r);
 
     if (!disable_merge_)
     {
@@ -365,11 +373,20 @@ Signal::Intervals MergerTexture::
             auto bl = v.second;
             mergeBlock( bl->getOverlappingRegion (), bl->texture ()->getOpenGlTextureId () );
         }
+
+        // mergertexture is buggy, but it's still better than nothing
+        // set "missing_details = block->getInterval ()" to recompute the results
     }
+    else
+        missing_details = block->getInterval ();
 
 #ifdef DRAW_STRAIGHT_ONTO_BLOCK
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, 0, 0);
+    // The texture image will not be detached if the texture is deleted but it
+    // doesn't matter if the texture image is still attached.
+    //   https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
+    // Call this to detach:
+    //   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+    //                          GL_TEXTURE_2D, 0, 0);
 #else
     {
         VERBOSE_COLLECTION TaskTimer tt(boost::format("Filled %s") % block->getOverlappingRegion ());
@@ -380,7 +397,6 @@ Signal::Intervals MergerTexture::
         #else
             glBindTexture(GL_TEXTURE_2D, t->getOpenGlTextureId ());
             GlException_SAFE_CALL( glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, t->getWidth (), t->getHeight ()) );
-            glBindTexture(GL_TEXTURE_2D, 0);
         #endif
     }
 #endif
@@ -392,8 +408,10 @@ Signal::Intervals MergerTexture::
 void MergerTexture::
         clearBlock( const Region& ri )
 {
-    // Read from unbound texture, i.e paint zero
-    mergeBlock(ri,0);
+    // Read from zero texture, don't do this. The zero texture is not
+    // "unbound", it's just a usually incomplete texture object and it is an
+    // error to draw with an incomplete texture. Do glClear instead.
+    mergeBlock(ri, 0);
 }
 
 
@@ -409,11 +427,7 @@ void MergerTexture::
     glUniformMatrix4fv (uniModelView, 1, false, GLmatrixf(modelview).v ());
 
     glBindTexture( GL_TEXTURE_2D, texture);
-    // disable mipmaps while resampling contents if downsampling, but not when upsampling
-    if (texture) glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
-    if (texture) glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    if (texture) glBindTexture(GL_TEXTURE_2D, 0);
+    GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4); // Paint new contents over it
 }
 
 } // namespace Merge
@@ -470,7 +484,7 @@ void MergerTexture::
         VisualizationParams::ptr vp(new VisualizationParams);
 
         // VisualizationParams has only things that have nothing to do with MergerTexture.
-        pBlock block(new Block(ref,bl,vp));
+        pBlock block(new Block(ref,bl,vp,0));
         GlTexture::ptr tex = block->texture ();
 
         Log("Source overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
@@ -493,15 +507,14 @@ void MergerTexture::
                               0, 0, 0, 0,
                               0.5, 0, 0, 0};
 
-            pBlock block(new Block(ref.parentHorizontal (),bl,vp));
+            pBlock block(new Block(ref.parentHorizontal (),bl,vp,0));
             //pBlock block(new Block(ref,bl,vp));
             //Log("Inserting overlapping %s, visible %s") % block->getOverlappingRegion () % block->getVisibleRegion ();
             GlTexture::ptr tex = block->texture ();
-            auto ts = tex->getScopeBinding ();
+            tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            (void)ts;
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);
@@ -523,13 +536,12 @@ void MergerTexture::
                               9, 1.0, 11, 12,
                               13, 14, 15, .16};
 
-            pBlock block(new Block(ref.right (),bl,vp));
+            pBlock block(new Block(ref.right (),bl,vp,0));
             GlTexture::ptr tex = block->texture ();
-            auto ts = tex->getScopeBinding ();
+            tex->bindTexture ();
             GlException_SAFE_CALL( glTexSubImage2D(GL_TEXTURE_2D,0,0,0, 4, 4, GL_RED, GL_FLOAT, srcdata) );
 
             cache->insert(block);
-            (void)ts;
         }
 
         MergerTexture(cache, bl).fillBlockFromOthers(block);

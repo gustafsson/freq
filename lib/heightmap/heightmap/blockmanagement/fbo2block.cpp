@@ -4,7 +4,7 @@
 #include "GlException.h"
 #include "log.h"
 #include "gluperspective.h"
-#include "gl.h"
+#include "glstate.h"
 #include "exceptionassert.h"
 
 namespace Heightmap {
@@ -21,8 +21,7 @@ void fbo2Texture(unsigned fbo, GlTexture::ptr dst)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, dst->getOpenGlTextureId ());
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, 0,0, dst->getWidth (), dst->getHeight ());
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 }
 
 void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
@@ -37,7 +36,9 @@ void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
                            GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
     glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, 0, 0);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 }
 
 //void texture2texture(GlTexture::ptr src, GlTexture::ptr dst, unsigned copyfbo)
@@ -46,7 +47,7 @@ void blitTexture(GlTexture::ptr src, unsigned& copyfbo)
 //    glBindFramebuffer(GL_READ_FRAMEBUFFER, copyfbo);
 //    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 //                           GL_TEXTURE_2D, src->getOpenGlTextureId (), 0);
-//    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+//    glBindFramebuffer(GL_READ_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 //    fbo2Texture(copyfbo, dst);
 //}
 #endif
@@ -64,6 +65,15 @@ Fbo2Block::Fbo2Block ()
 Fbo2Block::
         ~Fbo2Block()
 {
+    if (!QOpenGLContext::currentContext ()) {
+#ifndef GL_ES_VERSION_2_0
+        Log ("%s: destruction without gl context leaks fbo %d and %d") % __FILE__ % readFbo % drawFbo;
+#else
+        Log ("%s: destruction without gl context leaks fbo %d") % __FILE__ % drawFbo;
+#endif
+        return;
+    }
+
     end();
 
 #ifndef GL_ES_VERSION_2_0
@@ -88,16 +98,29 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     GlException_CHECK_ERROR ();
 
+    // Disable unwanted capabilities when resampling a texture
+    GlState::glDisable (GL_DEPTH_TEST, true); // disable depth test before binding framebuffer without depth buffer
+    GlState::glDisable (GL_CULL_FACE);
+
+    glBindTexture (GL_TEXTURE_2D, drawTexture->getOpenGlTextureId ());
 #ifdef GL_ES_VERSION_2_0
     if (srcTexture!=drawTexture)
         texture2texture(srcTexture, drawTexture);
-    glBindFramebuffer(GL_FRAMEBUFFER, drawFbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+
+    #ifndef GL_ES_VERSION_3_0
+        glBindFramebuffer(GL_FRAMEBUFFER, drawFbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+    #else
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+    #endif
 #else
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFbo);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, drawTexture->getOpenGlTextureId (), 0);
+
     if (srcTexture!=drawTexture)
         blitTexture(srcTexture, readFbo);
 #endif
@@ -111,11 +134,6 @@ Fbo2Block::ScopeBinding Fbo2Block::
 
     GlException_CHECK_ERROR ();
 
-    // Disable unwanted capabilities when resampling a texture
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
-
     return ScopeBinding(*this, &Fbo2Block::end);
 }
 
@@ -126,21 +144,22 @@ void Fbo2Block::
     if (!drawTexture)
         return;
 
-#ifdef GL_ES_VERSION_2_0
+    // detach the texture explicitly, otherwise the texture image will not be detached if the texture is deleted
+    // https://www.khronos.org/opengles/sdk/docs/man/xhtml/glFramebufferTexture2D.xml
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, 0, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 #else
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D, 0, 0);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, QOpenGLContext::currentContext ()->defaultFramebufferObject ());
 #endif
 
     drawTexture.reset ();
 
-    glEnable (GL_DEPTH_TEST);
-    glEnable (GL_BLEND);
-    glEnable (GL_CULL_FACE);
+    GlState::glEnable (GL_DEPTH_TEST);
+    GlState::glEnable (GL_CULL_FACE);
 }
 
 

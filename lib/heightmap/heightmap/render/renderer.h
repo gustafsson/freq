@@ -27,7 +27,7 @@ class Renderer
 public:
     Renderer(shared_state<Collection>        collection,
              RenderSettings&                 render_settings,
-             glProjection                    gl_projection,
+             glProjecter                     gl_projecter,
              Render::RenderBlock*            render_block);
 
     /**
@@ -40,7 +40,7 @@ public:
 private:
     shared_state<Collection>        collection;
     RenderSettings&                 render_settings;
-    glProjection                    gl_projection;
+    const glProjecter               gl_projecter;
     Render::RenderBlock*            render_block;
 
     void setupGlStates(float scaley);

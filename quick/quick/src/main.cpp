@@ -47,6 +47,9 @@ public:
     }
 };
 
+
+int run();
+
 int main(int argc, char *argv[])
 {
     for (int i=0; i<argc; i++)
@@ -68,6 +71,15 @@ int main(int argc, char *argv[])
     qmlRegisterType<OptimalTimeFrequencyResolution>("OpenGLUnderQML", 1, 0, "OptimalTimeFrequencyResolution");
     qmlRegisterType<ShowProcessing>("OpenGLUnderQML", 1, 0, "ShowProcessing");
 
+    int r = run();
+    app.processEvents ();
+    QThread::currentThread ()->eventDispatcher ()->processEvents (QEventLoop::AllEvents);
+    return r;
+}
+
+
+int run()
+{
     int r = 1;
     QWindow* window;
     QQmlEngine* engine;
@@ -95,20 +107,21 @@ int main(int argc, char *argv[])
 
     if (window)
     {
+        QSurfaceFormat f = window->format();
 #if !defined(LEGACY_OPENGL) && !defined(GL_ES_VERSION_2_0)
         // http://qt-project.org/wiki/How_to_use_OpenGL_Core_Profile_with_Qt
-        QSurfaceFormat f = window->format();
         // OS X has either a modern OpenGL (3.2+) with core profile or legacy OpenGL 2.1.
         // There is no compatibility profile and no other versions. Which version of modern
         // OpenGL you get depends on your hardware and version of OS X. I got 4.1 on 10.10 for instance.
         f.setProfile(QSurfaceFormat::CoreProfile);
         f.setVersion(3, 2);
-        window->setFormat(f);
 #endif
+        f.setSamples(4);
+        window->setFormat(f);
 
-        QObject::connect(engine, SIGNAL(quit()), &app, SLOT(quit()));
+        QObject::connect(engine, SIGNAL(quit()), QCoreApplication::instance (), SLOT(quit()));
         window->show();
-        r = app.exec();
+        r = QCoreApplication::instance ()->exec ();
     }
 
     Log("Closing app");

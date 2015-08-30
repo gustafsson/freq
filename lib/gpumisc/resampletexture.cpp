@@ -54,6 +54,11 @@ ResampleTexture::
 ResampleTexture::
         ~ResampleTexture()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("resampletexture: destruction without context. leaking %d") % vbo;
+        return;
+    }
+
     glDeleteBuffers (1, &vbo);
 }
 
@@ -84,9 +89,8 @@ void ResampleTexture::
         operator ()(GlTexture* source, Area area)
 {
     glPushAttribContext pa(GL_ENABLE_BIT);
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
+    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_CULL_FACE);
 
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -113,7 +117,7 @@ void ResampleTexture::
             area.x2, area.y2, 1, 1,
         };
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
 
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -122,12 +126,12 @@ void ResampleTexture::
         glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
         glTexCoordPointer(2, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
-        GlTexture::ScopeBinding texObjBinding = source->getScopeBinding();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        source->bindTexture();
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture(), fbo.getWidth (), fbo.getHeight ()).readFloat (), "fbo");
@@ -141,9 +145,8 @@ void ResampleTexture::
         drawColoredArea(Area area, float r, float g, float b, float a)
 {
     glPushAttribContext pa(GL_ENABLE_BIT);
-    glDisable (GL_DEPTH_TEST);
-    glDisable (GL_BLEND);
-    glDisable (GL_CULL_FACE);
+    GlState::glDisable (GL_DEPTH_TEST);
+    GlState::glDisable (GL_CULL_FACE);
 
     GlException_SAFE_CALL( glViewport(0, 0, fbo.getWidth (), fbo.getHeight () ) );
 
@@ -167,7 +170,7 @@ void ResampleTexture::
             area.x2, area.y1, r, g, b, a,
             area.x2, area.y2, r, g, b, a
         };
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -176,11 +179,11 @@ void ResampleTexture::
         glVertexPointer(2, GL_FLOAT, sizeof(vertex_format), 0);
         glColorPointer(4, GL_FLOAT, sizeof(vertex_format), (float*)0 + 2);
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     PRINT_TEXTURES PRINT_DATASTORAGE(GlTextureRead(fbo.getGlTexture(), fbo.getWidth (), fbo.getHeight ()).readFloat (), "fbo");
@@ -209,7 +212,7 @@ void ResampleTexture::
         testInContext()
 {
 #ifdef LEGACY_OPENGL
-    glEnable(GL_TEXTURE_2D);
+    GlState::glEnable(GL_TEXTURE_2D);
 
     // It should paint a texture on top of another texture. (with GL_UNSIGNED_BYTE)
     {

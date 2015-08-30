@@ -33,7 +33,6 @@ void setupTextureFloat32(unsigned name, unsigned w, unsigned h)
 #else
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, 0) );
 #endif
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -77,7 +76,8 @@ void TexturePool::
         if (!t)
             t = newTexture();
 
-    INFO Log("texturepool: n=%d, %dx%d using %s") % n % width_ % height_
+    INFO Log("texturepool: n=%d, id[back]=%d, %dx%d using %s")
+            % n % pool.back ()->getOpenGlTextureId() % width_ % height_
             % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8)*n);
 }
 
@@ -90,10 +90,11 @@ GlTexture::ptr TexturePool::
         if (t.unique ())
             return t;
 
-    INFO Log("texturepool: n=%d+1, %dx%d using %s") % pool.size () % width_ % height_
+    GlTexture::ptr t = newTexture();
+    INFO Log("texturepool: n=%d+1, id=%d, %dx%d using %s") % pool.size () % t->getOpenGlTextureId() % width_ % height_
             % DataStorageVoid::getMemorySizeText (width_*height_*(format_/8)*(pool.size ()+1));
 
-    pool.push_back (newTexture());
+    pool.push_back (t);
     return pool.back ();
 }
 
@@ -104,6 +105,18 @@ GlTexture::ptr TexturePool::
     GLuint t;
     glGenTextures (1, &t);
     setupTexture(t, width_, height_, format_ == Float32);
+
+#ifdef _DEBUG
+    // squish warning that some sections of the texture is undefined, but this takes a lot of time
+    glBindTexture(GL_TEXTURE_2D, t);
+    static std::vector<char> zeros;
+    size_t sz = width_*height_*sizeof(float);
+    if (sz > zeros.size ())
+        zeros.resize (sz, 0);
+
+    glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, width_, height_, GL_RED, GL_FLOAT, zeros.data ());
+#endif
+
     bool adopt = true; // GlTexture does glDeleteTextures
     return GlTexture::ptr(new GlTexture(t, width_, height_, adopt));
 }

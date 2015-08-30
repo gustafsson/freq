@@ -16,7 +16,7 @@ using namespace std;
 namespace Heightmap {
 
 ShaderPtr ShaderResource::
-        loadGLSLProgram(const char *vertFileName, const char *fragFileName)
+        loadGLSLProgram(const char *vertFileName, const char *fragFileName, const char* vertTop, const char* fragTop)
 {
     QString vertShader, fragShader;
     if (vertFileName!=0 && *vertFileName!=0)
@@ -24,12 +24,22 @@ ShaderPtr ShaderResource::
     if (fragFileName!=0 && *fragFileName!=0)
         fragShader = (const char*)QResource(fragFileName).data ();
 
-    return loadGLSLProgramSource(vertShader, fragShader);
+    return loadGLSLProgramSource(vertShader, fragShader, vertTop, fragTop);
 }
 
 ShaderPtr ShaderResource::
-    loadGLSLProgramSource(QString vertShader, QString fragShader)
+    loadGLSLProgramSource(QString vertShader, QString fragShader, const char* vertTop, const char* fragTop)
 {
+    if (vertTop) {
+        vertShader = "\n" + vertShader;
+        vertShader = vertTop + vertShader;
+    }
+
+    if (fragTop) {
+        fragShader = "\n" + fragShader;
+        fragShader = fragTop + fragShader;
+    }
+
 #ifdef GL_ES_VERSION_2_0
     if (fragShader.contains ("fwidth") || fragShader.contains ("dFdx") || fragShader.contains ("dFdy"))
     {

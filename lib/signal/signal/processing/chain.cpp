@@ -277,6 +277,13 @@ shared_state<const Dag> Chain::
 }
 
 
+Bedroom::ptr Chain::
+        bedroom() const
+{
+    return bedroom_;
+}
+
+
 void Chain::
         resetDefaultWorkers()
 {
@@ -421,7 +428,7 @@ void Chain::
     {
         Timer t;
         Chain::createDefaultChain ();
-        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.01);
+        EXCEPTION_ASSERT_LESS (t.elapsed (), 0.03);
     }
 
     // It should make the signal processing namespace easy to use with a clear

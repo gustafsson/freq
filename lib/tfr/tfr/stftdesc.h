@@ -3,6 +3,8 @@
 
 #include "transform.h"
 #include "tfrdll.h"
+#include "datastorage.h"
+#include <vector>
 
 namespace Tfr {
 
@@ -52,10 +54,10 @@ public:
 
     int increment() const;
     int chunk_size() const;
-    int set_approximate_chunk_size( unsigned preferred_size );
+    int set_approximate_chunk_size( int preferred_size );
 
-    /// @ Try to use set_approximate_chunk_size(unsigned) unless you need an explicit stft size
-    void set_exact_chunk_size( unsigned chunk_size );
+    /// @ Try to use set_approximate_chunk_size(int) unless you need an explicit stft size
+    void set_exact_chunk_size( int chunk_size );
 
     /**
         If false (default), operator() will do a real-to-complex transform
@@ -88,6 +90,7 @@ public:
     WindowType windowType() const;
     std::string windowTypeName() const { return windowTypeName(windowType()); }
     void setWindow(WindowType type, float overlap);
+    const float* windowData() const;
 
     /**
       Different windows are more sutiable for applying the window on the inverse as well.
@@ -108,6 +111,14 @@ private:
     float _overlap;
     WindowType _window_type;
 
+    DataStorage<float>::ptr _windowdata;
+    float* _windowdata_ptr;
+
+    void prepareWindow();
+    template<StftDesc::WindowType>
+    void prepareWindowKernel();
+    template<StftDesc::WindowType>
+    float computeWindowValue( float p );
 public:
     static void test();
 };

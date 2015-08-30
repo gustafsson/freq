@@ -95,9 +95,6 @@ public slots:
 private slots:
     void handleWindowChanged(QQuickWindow *win);
 
-protected:
-    void componentComplete() override;
-
 private:
     Tools::RenderModel render_model;
     QString displayed_transform_ = "stft";

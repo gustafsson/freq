@@ -42,11 +42,11 @@ Task TargetSchedule::
         TargetNeeds::State& state = targetstate.second;
         Step::ptr& step = targetstate.first;
         if (!step) {
-            DEBUGINFO TaskInfo("No target needs anything right now");
+            DEBUGINFO TaskInfo("targetschedule: No target needs anything right now");
             return Task();
         }
 
-        DEBUGINFO TaskTimer tt(boost::format("getTask(%s,%g)") % state.needed_samples % state.work_center);
+        DEBUGINFO TaskTimer tt(boost::format("targetschedule: getTask(%s, center: %g)") % state.needed_samples % state.work_center);
 
         GraphVertex vertex = dag->getVertex(step);
         EXCEPTION_ASSERT(vertex);
@@ -70,7 +70,7 @@ Task TargetSchedule::
         }
         else
         {
-            DEBUGINFO Log("task->expected_output() = %s") % task.expected_output();
+            DEBUGINFO Log("targetschedule: task->expected_output() = %s") % task.expected_output();
             return task;
         }
     }
@@ -92,18 +92,19 @@ TargetSchedule::TargetState TargetSchedule::
         if (!step)
             continue;
 
-        Signal::Intervals step_needed = step.read()->not_started();
-        if (!step_needed)
+        Signal::Intervals not_started = step.read()->not_started();
+        if (!not_started)
             continue;
 
         TargetNeeds::State state = t->state ();
-        double needed = state.needed_samples.count ();
-        state.needed_samples &= step_needed;
+        //double needed = state.needed_samples.count ();
+        state.needed_samples &= not_started;
         double missing = state.needed_samples.count ();
 
-        DEBUGINFO Log("targetschedule: %s needs %s") % Step::operation_desc (step)->toString().toStdString() % state.needed_samples;
+        DEBUGINFO Log("targetschedule: %s (prio %g) not_started %s, needs %s")
+                % Step::operation_desc (step)->toString().toStdString() % state.prio % not_started % state.needed_samples;
 
-        double urgency = missing/needed*exp(state.prio);
+        double urgency = missing*exp(state.prio);
         if (urgency > most_urgent)
         {
             most_urgent = urgency;

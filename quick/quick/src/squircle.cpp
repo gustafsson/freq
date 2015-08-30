@@ -1,5 +1,6 @@
 #include "squircle.h"
 
+#include "heightmap/collection.h"
 #include "tools/support/heightmapprocessingpublisher.h"
 #include "tools/support/renderviewupdateadapter.h"
 #include "renderviewtransform.h"
@@ -78,10 +79,11 @@ void Squircle::
 void Squircle::handleWindowChanged(QQuickWindow *win)
 {
     if (win) {
+        win->screen ()->setOrientationUpdateMask (Qt::ScreenOrientations(~0));
+
         connect(win, SIGNAL(beforeSynchronizing()), this, SLOT(sync()), Qt::DirectConnection);
         connect(win, SIGNAL(sceneGraphInvalidated()), this, SLOT(cleanup()), Qt::DirectConnection);
         connect(this, SIGNAL(refresh()), win, SLOT(update()));
-        win->screen ()->setOrientationUpdateMask (Qt::ScreenOrientations(~0));
         connect (win->screen (), SIGNAL(orientationChanged(Qt::ScreenOrientation)), this, SIGNAL(refresh()));
 
         auto v = render_model.render_settings.clear_color;
@@ -280,15 +282,6 @@ void Squircle::cleanup()
         delete m_renderer;
         m_renderer = 0;
     }
-}
-
-
-void Squircle::componentComplete()
-{
-    QQuickItem::componentComplete();
-
-    if (window ())
-        handleWindowChanged(window ());
 }
 
 

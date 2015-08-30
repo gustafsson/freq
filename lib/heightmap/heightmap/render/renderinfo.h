@@ -68,13 +68,13 @@ private:
 class RenderInfo
 {
 public:
-    RenderInfo(const glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy);
+    RenderInfo(const glProjecter* gl_projecter, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy);
 
     LevelOfDetail       testLod (Reference ref) const;
     Region              visible_region (Reference ref) const;
 
 private:
-    const glProjection* gl_projection;
+    const glProjecter* gl_projecter;
     BlockLayout bl;
     VisualizationParams::const_ptr vp;
     float redundancy;

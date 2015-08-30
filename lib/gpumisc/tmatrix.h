@@ -11,6 +11,8 @@ template<int rows, typename t, int cols=rows>
 class tmatrix
 {
 public:
+    typedef t T;
+
 	tmatrix( ) {}
 /*	tmatrix( const tmatrix<rows, t, cols -1> &b )
 	{
@@ -36,6 +38,7 @@ public:
 		for(int i=0; i<cols; i++)
             m[i] = b + i*rows;
 	}
+    tmatrix( tmatrix &&a ) = default;
     tmatrix( const tmatrix &b )
     {
         for(int i=0; i<cols; i++)
@@ -58,7 +61,7 @@ public:
 	tvector<rows, t>& operator[](unsigned i){return m[i];}
 	const tvector<rows, t>& operator[] (unsigned i)const {return m[i];}
 
-	tmatrix( const tvector<rows, t> &b );
+    tmatrix( tvector<rows, t> &&b );
 	operator tvector<rows, t>&();
 	operator tvector<rows-1, t>();
 
@@ -80,8 +83,12 @@ public:
 		tmatrix<rows,t,cols2> r;
 		for(int a=0; a<cols2; a++)
 		for(int b=0; b<rows; b++)
-		for(int c=0; c<cols; c++)
-			r[a][b] = r[a][b] + m[c][b]*n[a][c];
+        {
+            t v=0;
+            for(int c=0; c<cols; c++)
+                v += m[c][b]*n[a][c];
+            r[a][b] = v;
+        }
 		return r;
 	}
     tmatrix operator*( const t &v ) const {
@@ -98,6 +105,13 @@ public:
 			r[a][b] = m[a][b]+v;
 		return r;
 	}
+    tmatrix operator-( const tmatrix &v ) const {
+        tmatrix r;
+        for(int a=0; a<cols; a++)
+        for(int b=0; b<rows; b++)
+            r[a][b] = m[a][b]-v[a][b];
+        return r;
+    }
     template< typename t2 >
     tmatrix& operator*=( const tmatrix<cols, t2, rows> &n ) {
         return *this = *this * n;
@@ -121,6 +135,13 @@ public:
             r[b][a] = m[a][b];
         return r;
 	}
+    t norm() const {
+        t n=0;
+        for(int a=0; a<cols; a++)
+        for(int b=0; b<rows; b++)
+            n += m[a][b]*m[a][b];
+        return n;
+    }
     static tmatrix<4,t,4> rotFpsHead( tvector<3, t> r )
 	{
 		return
@@ -205,24 +226,24 @@ private:
 };
 
 template<>
-inline tmatrix<3,double,1>::tmatrix( const tvector<3, double> &b )
+inline tmatrix<3,double,1>::tmatrix( tvector<3, double> &&b )
+    : m{b}
 {
-	m[0] = b;
 }
 template<>
-inline tmatrix<3,float,1>::tmatrix( const tvector<3, float> &b )
+inline tmatrix<3,float,1>::tmatrix( tvector<3, float> &&b )
+    : m{b}
 {
-	m[0] = b;
 }
 template<>
-inline tmatrix<4,double,1>::tmatrix( const tvector<4, double> &b )
+inline tmatrix<4,double,1>::tmatrix( tvector<4, double> &&b )
+    : m{b}
 {
-    m[0] = b;
 }
 template<>
-inline tmatrix<4,float,1>::tmatrix( const tvector<4, float> &b )
+inline tmatrix<4,float,1>::tmatrix( tvector<4, float> &&b )
+    : m{b}
 {
-    m[0] = b;
 }
 template<>
 inline tmatrix<4,double,1>::operator tvector<4, double>&()

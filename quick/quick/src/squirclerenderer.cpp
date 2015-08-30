@@ -7,6 +7,8 @@
 #include "GlException.h"
 #include "demangle.h"
 #include "heightmap/render/shaderresource.h"
+#include "glgroupmarker.h"
+#include "glstate.h"
 
 #include <boost/exception/exception.hpp>
 #include <QTimer>
@@ -25,6 +27,9 @@ SquircleRenderer::SquircleRenderer(Tools::RenderModel* render_model)
 
 SquircleRenderer::~SquircleRenderer()
 {
+    for (const auto& c : render_view.model->collections()) {
+        c->clear();
+    }
 }
 
 
@@ -57,7 +62,7 @@ void SquircleRenderer::paint3()
         GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer) );
 
         // The following commands will talk about our 'vertexbuffer' buffer
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
 
         // Give our vertices to OpenGL.
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW) );
@@ -75,10 +80,6 @@ void SquircleRenderer::paint3()
                                                    gl_FragColor = vec4(1,0,0,1);
                                                }
                                             )fragmentshader");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        if (!m_program->link())
-            Log("GLSL failed\n%s") % m_program->log ().toStdString ();
     }
 
     if (!m_program->isLinked ())
@@ -91,7 +92,7 @@ void SquircleRenderer::paint3()
     GlException_SAFE_CALL( glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) );
 
     GlException_SAFE_CALL( glEnableVertexAttribArray(0) );
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
     GlException_SAFE_CALL( glVertexAttribPointer(
        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
        3,                  // size
@@ -102,7 +103,7 @@ void SquircleRenderer::paint3()
     ));
 
     // Draw the triangle !
-    GlException_SAFE_CALL( glUseProgram(m_program->programId ()) );
+    GlException_SAFE_CALL( GlState::glUseProgram(m_program->programId ()) );
     GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLES, 0, 3) ); // Starting from vertex 0; 3 vertices total -> 1 triangle
 
     GlException_SAFE_CALL( glDisableVertexAttribArray(0) );
@@ -127,7 +128,7 @@ void SquircleRenderer::paint2()
         GlException_SAFE_CALL( glGenBuffers(1, &vertexbuffer) );
 
         // The following commands will talk about our 'vertexbuffer' buffer
-        GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
 
         // Give our vertices to OpenGL.
         GlException_SAFE_CALL( glBufferData(GL_ARRAY_BUFFER, sizeof(values), values, GL_STATIC_DRAW) );
@@ -151,29 +152,29 @@ void SquircleRenderer::paint2()
                                                    gl_FragColor = vec4(coords * .5 + .5, i, i);
                                                }
                                            )fragmentshader");
-
-        m_program->bindAttributeLocation("vertices", 0);
-        m_program->link();
     }
-    GlException_SAFE_CALL( m_program->bind() );
+    if (!m_program->isLinked())
+        return;
+
+    GlException_SAFE_CALL( GlState::glUseProgram (m_program->programId()) );
 
     GlException_SAFE_CALL( m_program->enableAttributeArray(0) );
 
-    GlException_SAFE_CALL( glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
+    GlException_SAFE_CALL( GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer) );
     GlException_SAFE_CALL( m_program->setAttributeBuffer(0, GL_FLOAT, 0, 2) );
     GlException_SAFE_CALL( m_program->setUniformValue("t", (float) m_t) );
 
     GlException_SAFE_CALL( glViewport(m_viewport.x(), m_window.height () - m_viewport.y() - m_viewport.height(), m_viewport.width(), m_viewport.height()) );
 
-    GlException_SAFE_CALL( glDisable(GL_DEPTH_TEST) );
+    GlException_SAFE_CALL( GlState::glDisable (GL_DEPTH_TEST) );
 
-    GlException_SAFE_CALL( glEnable(GL_BLEND) );
+    GlException_SAFE_CALL( GlState::glEnable (GL_BLEND) );
     GlException_SAFE_CALL( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
 
-    GlException_SAFE_CALL( glDrawArrays(GL_TRIANGLE_STRIP, 0, 4) );
+    GlException_SAFE_CALL( GlState::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4) );
 
     GlException_SAFE_CALL( m_program->disableAttributeArray(0) );
-    GlException_SAFE_CALL( m_program->release() );
+    GlException_SAFE_CALL( GlState::glUseProgram (0) );
 }
 
 
@@ -183,14 +184,16 @@ void SquircleRenderer::paint()
     if (failed)
         return;
 
+    GlGroupMarker gpm("SquircleRenderer");
+
     try {
 
         GlException_CHECK_ERROR();
 
         if (m_viewport.height ()==0 || m_viewport.width ()==0)
         {
-            for ( auto c : renderView ()->model->tfr_mapping ()->collections() )
-                c->frame_begin(); // increment frame_number and keep garbage collection running
+            // increment frame_number and keep garbage collection running
+            renderView ()->model->frame_begin ();
             return;
         }
 
@@ -214,21 +217,6 @@ void SquircleRenderer::paint()
 
         GlException_SAFE_CALL( render_view.paintGL () );
 
-        glViewport (0,0,m_window.width (),m_window.height ());
-    } catch (const ExceptionAssert& x) {
-        char const * const * f = boost::get_error_info<boost::throw_file>(x);
-        int const * l = boost::get_error_info<boost::throw_line>(x);
-        char const * const * c = boost::get_error_info<ExceptionAssert::ExceptionAssert_condition>(x);
-        std::string const * m = boost::get_error_info<ExceptionAssert::ExceptionAssert_message>(x);
-
-        fflush(stdout);
-        fprintf(stderr, "%s",
-                (boost::format("%s:%d: %s. %s\n"
-                                  "%s\n"
-                                  " FAILED in %s\n\n")
-                    % (f?*f:0) % (l?*l:-1) % (c?*c:0) % (m?*m:0) % boost::diagnostic_information(x) % __FUNCTION__ ).str().c_str());
-        fflush(stderr);
-        failed = true;
     } catch (const std::exception& x) {
         fflush(stdout);
         fprintf(stderr, "%s",
@@ -238,15 +226,5 @@ void SquircleRenderer::paint()
                     % vartype(x) % boost::diagnostic_information(x) % __FUNCTION__ ).str().c_str());
         fflush(stderr);
         failed = true;
-    } catch (...) {
-        fflush(stdout);
-        fprintf(stderr, "%s",
-                (boost::format("Not an std::exception\n"
-                                  "%s\n"
-                                  " FAILED in %s\n\n")
-                    % boost::current_exception_diagnostic_information () % __FUNCTION__ ).str().c_str());
-        fflush(stderr);
-        failed = true;
     }
 }
-

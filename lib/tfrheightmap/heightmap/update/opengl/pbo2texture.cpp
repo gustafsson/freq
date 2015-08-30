@@ -9,6 +9,7 @@
 #include "GlException.h"
 #include "tasktimer.h"
 #include "log.h"
+#include "glstate.h"
 
 #include <QResource>
 
@@ -35,54 +36,49 @@ Shader::Shader(ShaderPtr&& programp)
 {
     EXCEPTION_ASSERT( program );
 
-    glBindAttribLocation ( program, 0, "qt_Vertex");
-    glBindAttribLocation ( program, 1, "qt_MultiTexCoord0");
-    glLinkProgram (program);
-
-    int vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
-    int tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
-
     int mytex = -1;
 
-    GlException_SAFE_CALL( glUseProgram(program) );
-    GlException_SAFE_CALL( mytex = glGetUniformLocation(program, "mytex") );
-    GlException_SAFE_CALL( data_size_loc_ = glGetUniformLocation(program, "data_size") );
-    GlException_SAFE_CALL( tex_size_loc_ = glGetUniformLocation(program, "tex_size") );
-    GlException_SAFE_CALL( normalization_location_ = glGetUniformLocation(program, "normalization") );
-    GlException_SAFE_CALL( amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis") );
-    GlException_SAFE_CALL( modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix") );
-    GlException_SAFE_CALL( glUniform1i(mytex, 0) ); // mytex corresponds to GL_TEXTURE0
-    GlException_SAFE_CALL( glUseProgram(0) );
-    EXCEPTION_ASSERT_EQUALS(vertex_attrib, 0);
-    EXCEPTION_ASSERT_EQUALS(tex_attrib, 1);
+    vertex_attrib_ = glGetAttribLocation (program, "qt_Vertex");
+    tex_attrib_ = glGetAttribLocation (program, "qt_MultiTexCoord0");
+    mytex = glGetUniformLocation(program, "mytex");
+    data_size_loc_ = glGetUniformLocation(program, "data_size");
+    tex_size_loc_ = glGetUniformLocation(program, "tex_size");
+    normalization_location_ = glGetUniformLocation(program, "normalization");
+    amplitude_axis_location_ = glGetUniformLocation(program, "amplitude_axis");
+    modelViewProjectionMatrix_location_ = glGetUniformLocation (program, "qt_ModelViewProjectionMatrix");
+    GlState::glUseProgram(program);
+    glUniform1i(mytex, 0); // mytex corresponds to GL_TEXTURE0
+    GlException_CHECK_ERROR();
 }
 
 
 Shader::~Shader()
 {
-    if (program)
-        glDeleteProgram(program);
 }
 
 
 void Shader::Shader::
         setParams(int data_width, int data_height, int tex_width, int tex_height,
-               float normalization_factor, int amplitude_axis, const glProjection& M)
+               float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib)
 {
     EXCEPTION_ASSERT( program );
 
-    GlException_SAFE_CALL( glUseProgram(program) );
-    if ( 0 <= data_size_loc_)
-        glUniform2f(data_size_loc_, data_width, data_height);
-    if ( 0 <= tex_size_loc_)
-        glUniform2f(tex_size_loc_, tex_width, tex_height);
-    if ( 0 <= normalization_location_)
-        glUniform1f(normalization_location_, normalization_factor);
-    if ( 0 <= amplitude_axis_location_)
-        glUniform1i(amplitude_axis_location_, amplitude_axis);
-    if ( 0 <= modelViewProjectionMatrix_location_)
+    if ( 0 <= data_size_loc_ && (data_width != this->data_width || data_height != this->data_height))
+        glUniform2f(data_size_loc_, this->data_width = data_width, this->data_height = data_height);
+    if ( 0 <= tex_size_loc_ && (tex_width != this->tex_width || tex_height != this->tex_height))
+        glUniform2f(tex_size_loc_, this->tex_width = tex_width, this->tex_height = tex_height);
+    if ( 0 <= normalization_location_ && normalization_factor != this->normalization_factor)
+        glUniform1f(normalization_location_, this->normalization_factor = normalization_factor);
+    if ( 0 <= amplitude_axis_location_ && amplitude_axis != this->amplitude_axis)
+        glUniform1i(amplitude_axis_location_, this->amplitude_axis = amplitude_axis);
+    if ( 0 <= modelViewProjectionMatrix_location_ && (this->M.projection != M.projection || this->M.modelview != M.modelview))
+    {
+        this->M = M;
         glUniformMatrix4fv (modelViewProjectionMatrix_location_, 1, false, GLmatrixf(M.projection * M.modelview).v ());
-    GlException_SAFE_CALL( glUseProgram(0) );
+    }
+
+    vertex_attrib = vertex_attrib_;
+    tex_attrib = tex_attrib_;
 }
 
 
@@ -129,9 +125,10 @@ GlTexture& ShaderTexture::
 
 
 unsigned ShaderTexture::
-        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M) const
+        getProgram (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
-    shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M);
+    GlState::glUseProgram(shader_->program);
+    shader_->setParams (data_width, data_height, tex_width, tex_height, normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     return shader_->program;
 }
 
@@ -195,6 +192,8 @@ void ShaderTexture::
 
     INFO TaskTimer tt(boost::format("ChunkToBlockDegenerateTexture::prepTexture data %u x %u <> tex %u x %u")
                       % data_width % data_height % tex_width % tex_height);
+    EXCEPTION_ASSERT_LESS(1,tex_width);
+    EXCEPTION_ASSERT_LESS(1,tex_height);
 
     int sw = int_div_ceil (data_width, (tex_width-1));
     int sh = int_div_ceil (data_height, (tex_height-1));
@@ -205,14 +204,14 @@ void ShaderTexture::
         shader_ = &shaders_.chunktoblock_shader_;
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (1)", tex_width, tex_height);
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        chunk_texture_->bindTexture();
 
 #ifdef LEGACY_OPENGL
-        GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
         GlException_SAFE_CALL( glTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, data_width, data_height, format, type, p) );
 #ifdef LEGACY_OPENGL
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
     else if (data_width > tex_width && sw*data_height <= tex_height)
@@ -225,9 +224,9 @@ void ShaderTexture::
         EXCEPTION_ASSERT_LESS_OR_EQUAL(N,M);
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (2)", tex_width, tex_height);
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        chunk_texture_->bindTexture();
 #ifdef LEGACY_OPENGL
-        GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
 
 #ifdef LEGACY_OPENGL
@@ -264,7 +263,7 @@ void ShaderTexture::
           }
 
 #ifdef LEGACY_OPENGL
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
     else if (data_height > tex_height && sh*data_width <= tex_width)
@@ -276,9 +275,9 @@ void ShaderTexture::
         EXCEPTION_ASSERT_LESS_OR_EQUAL(N,M);
 
         INFO TaskTimer tt("glTexSubImage2D %d x %d (3)", tex_width, tex_height);
-        GlTexture::ScopeBinding texObjBinding = chunk_texture_->getScopeBinding();
+        chunk_texture_->bindTexture();
 #ifdef LEGACY_OPENGL
-        GlException_SAFE_CALL( glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
+        GlException_SAFE_CALL( GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, chunk_pbo_) );
 #endif
 
         for (int i=0; i<sh; ++i)
@@ -291,7 +290,7 @@ void ShaderTexture::
           }
 
 #ifdef LEGACY_OPENGL
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        GlState::glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 #endif
       }
     else
@@ -339,32 +338,11 @@ Pbo2Texture::Pbo2Texture(Shaders& shaders, GlTexture::ptr chunk_texture, Tfr::pC
 }
 
 
-Pbo2Texture::ScopeMap Pbo2Texture::
+void Pbo2Texture::
         map (float normalization_factor, int amplitude_axis, const glProjection& M, int &vertex_attrib, int &tex_attrib) const
 {
-    Pbo2Texture::ScopeMap r;
-    unsigned program = shader_.getProgram (normalization_factor, amplitude_axis, M);
-    vertex_attrib = glGetAttribLocation (program, "qt_Vertex");
-    tex_attrib = glGetAttribLocation (program, "qt_MultiTexCoord0");
-    glUseProgram(program);
+    shader_.getProgram (normalization_factor, amplitude_axis, M, vertex_attrib, tex_attrib);
     glBindTexture( GL_TEXTURE_2D, shader_.getTexture ().getOpenGlTextureId() );
-
-    return r;
-}
-
-
-Pbo2Texture::ScopeMap::
-        ScopeMap()
-{
-
-}
-
-
-Pbo2Texture::ScopeMap::
-        ~ScopeMap()
-{
-    glBindTexture( GL_TEXTURE_2D, 0);
-    glUseProgram(0);
 }
 
 } // namespace OpenGL

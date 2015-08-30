@@ -26,7 +26,7 @@ namespace Heightmap {
     public:
         typedef std::shared_ptr<GlTexture> pGlTexture;
 
-        Block( Reference, BlockLayout, VisualizationParams::const_ptr);
+        Block( Reference, BlockLayout, VisualizationParams::const_ptr, Heightmap::BlockManagement::BlockUpdater* updater);
         Block( const Block&)=delete;
         Block& operator=( const Block&)=delete;
 
@@ -45,7 +45,7 @@ namespace Heightmap {
         // The block must exist for one whole frame before it can receive
         // updates from another thread. This prevents the texture from being
         // corrupted by having two threads writing to it at the same time.
-        void showNewTexture();
+        void showNewTexture(bool use_mipmap);
 
         Heightmap::BlockManagement::BlockUpdater* updater();
 
@@ -74,7 +74,7 @@ namespace Heightmap {
         pGlTexture new_texture_;
         pGlTexture texture_;
         pGlTexture texture_hold_; // @see setTextureReady
-        std::shared_ptr<Heightmap::BlockManagement::BlockUpdater> updater_;
+        Heightmap::BlockManagement::BlockUpdater* updater_;
 
     public:
         static void test();

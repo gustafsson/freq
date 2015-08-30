@@ -26,7 +26,7 @@ public:
         double timeout() { return 10.0; } // might take a long time if allocating a lot of textures
     };
 
-    explicit BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    explicit BlockTexturesImpl(unsigned width, unsigned height);
     BlockTexturesImpl(const BlockTexturesImpl&)=delete;
     BlockTexturesImpl&operator=(const BlockTexturesImpl&)=delete;
 
@@ -40,7 +40,8 @@ public:
     unsigned getWidth() const { return width_; }
     unsigned getHeight() const { return height_; }
 
-    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps=true);
+    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
     static unsigned allocated_bytes_per_element();
 
 private:
@@ -73,13 +74,12 @@ bool BlockTextures::
 
 
 void BlockTextures::
-        init(unsigned width, unsigned height, unsigned initialCapacity)
+        init(unsigned width, unsigned height)
 {
     EXCEPTION_ASSERT(!isInitialized ());
 
     g_width = width;
     g_height = height;
-    (void)initialCapacity;
 }
 
 
@@ -172,6 +172,14 @@ unsigned BlockTextures::
     return global_block_textures_impl().read ()->getHeight();
 }
 
+
+void BlockTextures::
+        setupTexture(unsigned name, unsigned width, unsigned height)
+{
+    BlockTexturesImpl::setupTexture (name,width,height);
+}
+
+
 void BlockTextures::
         setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps)
 {
@@ -193,13 +201,11 @@ void BlockTextures::
 }
 
 
-BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height, unsigned initialCapacity)
+BlockTexturesImpl::BlockTexturesImpl(unsigned width, unsigned height)
     :
       width_(width),
       height_(height)
 {
-    if (initialCapacity>0)
-        setCapacity(initialCapacity);
 }
 
 
@@ -223,7 +229,7 @@ void BlockTexturesImpl::
 void BlockTexturesImpl::
         setCapacity (unsigned target_capacity)
 {
-    if (target_capacity < textures.size ())
+    if (target_capacity <= textures.size ())
     {
         std::vector<GlTexture::ptr> pick;
         pick.reserve (target_capacity);
@@ -261,7 +267,9 @@ void BlockTexturesImpl::
         setupTexture (t[i], width_, height_);
 
         bool adopt = true; // GlTexture does glDeleteTextures
-        textures.push_back (GlTexture::ptr(new GlTexture(t[i], width_, height_, adopt)));
+        GlTexture::ptr tp(new GlTexture(t[i], width_, height_, adopt));
+        tp->setMinFilter(GL_LINEAR);
+        textures.push_back (move(tp));
     }
 }
 
@@ -304,6 +312,13 @@ int BlockTexturesImpl::
 
 
 void BlockTexturesImpl::
+        setupTexture(unsigned name, unsigned w, unsigned h)
+{
+    setupTexture(name, w, h, BlockTextures::mipmaps > 0);
+}
+
+
+void BlockTexturesImpl::
         setupTexture(unsigned name, unsigned w, unsigned h, bool mipmaps)
 {
     glBindTexture(GL_TEXTURE_2D, name);
@@ -329,9 +344,8 @@ void BlockTexturesImpl::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // change to a mipmapping filter when mipmaps are built later
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 }
 
 

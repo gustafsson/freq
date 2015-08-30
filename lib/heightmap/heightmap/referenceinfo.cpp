@@ -1,5 +1,6 @@
 #include "referenceinfo.h"
 #include "exceptionassert.h"
+#include "log.h"
 
 #include <sstream>
 
@@ -176,7 +177,7 @@ Signal::Interval ReferenceInfo::
 
     long double FS = block_layout_.targetSampleRate();
 
-    Signal::Interval i( std::max(0.l,floor(overlapping.a.time * FS)), std::max(0.l,ceil(overlapping.b.time * FS)) );
+    Signal::Interval i( floor(overlapping.a.time * FS), ceil(overlapping.b.time * FS) );
     return i;
 }
 

@@ -36,11 +36,11 @@ void RenderFrustum::
 
     glPushAttribContext ac;
 
-    glDisable(GL_DEPTH_TEST);
+    GlState::glDisable (GL_DEPTH_TEST);
 
     glPushMatrixContext mc(GL_MODELVIEW);
 
-    glEnable(GL_BLEND);
+    GlState::glEnable (GL_BLEND);
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, &clippedFrustum[0]);
 
@@ -50,7 +50,7 @@ void RenderFrustum::
     glColor4f( darkness, darkness, darkness, 1 );
     glBlendEquation( GL_FUNC_REVERSE_SUBTRACT );
     glBlendFunc( GL_ONE_MINUS_DST_COLOR, GL_ONE );
-    glDrawArrays( GL_TRIANGLE_FAN, 0, clippedFrustum.size() );
+    GlState::glDrawArrays( GL_TRIANGLE_FAN, 0, clippedFrustum.size() );
     glBlendEquation( GL_FUNC_ADD );
 
 
@@ -58,11 +58,11 @@ void RenderFrustum::
     glColor4f( 0, 0, 0, 0.5 );
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glLineWidth( 0.5 );
-    glDrawArrays(GL_LINE_LOOP, 0, clippedFrustum.size());
+    GlState::glDrawArrays(GL_LINE_LOOP, 0, clippedFrustum.size());
 
 
     glDisableClientState(GL_VERTEX_ARRAY);
-    glDisable(GL_BLEND);
+    GlState::glDisable (GL_BLEND);
 #endif // LEGACY_OPENGL
 }
 

@@ -48,9 +48,8 @@ Flow {
     ComboBox {
         visible: transformCheckbox.checked
         width: 150
-        currentIndex: 1
+        currentIndex: 0
         model: ListModel {
-            ListElement { text: "Waveform"; name: "waveform" }
             ListElement { text: "Spectrogram"; name: "stft" }
             ListElement { text: "Wavelet"; name: "wavelet" }
         }

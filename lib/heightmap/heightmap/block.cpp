@@ -14,8 +14,11 @@ namespace Heightmap {
 
 
 Block::
-        Block( Reference ref, BlockLayout block_layout, VisualizationParams::const_ptr visualization_params)
-    :
+        Block( Reference ref,
+               BlockLayout block_layout,
+               VisualizationParams::const_ptr visualization_params,
+               Heightmap::BlockManagement::BlockUpdater* updater )
+:
     frame_number_last_used(0),
     ref_(ref),
     block_layout_(block_layout),
@@ -26,7 +29,7 @@ Block::
     sample_rate_( ReferenceInfo(ref, block_layout, visualization_params).sample_rate() ),
     visualization_params_(visualization_params),
     texture_(Render::BlockTextures::get1()),
-    updater_(new BlockManagement::BlockUpdater)
+    updater_(updater)
 {
     if (texture_)
     {
@@ -56,16 +59,16 @@ void Block::
 {
     // Keep texture_ until it has been flushed
     new_texture_ = t;
+#if GL_EXT_debug_label
+    if (texture_ != t)
+        glLabelObjectEXT(GL_TEXTURE, new_texture_->getOpenGlTextureId (), 0, (boost::format("%s") % getVisibleRegion ()).str().c_str());
+#endif
 }
 
 
 void Block::
-        showNewTexture()
+        showNewTexture(bool use_mipmap)
 {
-#ifndef PAINT_BLOCKS_FROM_UPDATE_THREAD
-    updater_->processUpdates (true);
-#endif
-
     // release previously replaced texture, see below
     texture_hold_.reset ();
 
@@ -78,9 +81,24 @@ void Block::
 
         // use the new_texture_
         texture_ = t;
+    }
 
-        auto bind = texture_->getScopeBinding ();
-        glGenerateMipmap (GL_TEXTURE_2D);
+    // check if mipmap settings have changed, or if mipmap is needed for a new texture
+    bool has_mipmap = texture_->getMinFilter () == GL_LINEAR_MIPMAP_LINEAR;
+    if (has_mipmap != use_mipmap || (use_mipmap && t))
+    {
+        texture_->bindTexture ();
+        if (use_mipmap)
+        {
+            // recalculate mipmap if reenabled or got new texture
+            texture_->setMinFilter (GL_LINEAR_MIPMAP_LINEAR);
+            glGenerateMipmap (GL_TEXTURE_2D);
+        }
+        else
+        {
+            // disable mipmap
+            texture_->setMinFilter (GL_LINEAR);
+        }
     }
 }
 
@@ -88,7 +106,8 @@ void Block::
 Heightmap::BlockManagement::BlockUpdater* Block::
         updater()
 {
-    return updater_.get();
+    EXCEPTION_ASSERT(updater_);
+    return updater_;
 }
 
 

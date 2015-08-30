@@ -86,11 +86,13 @@ MergeChunk::ptr CwtBlockFilterDesc::
 #include "signal/computingengine.h"
 #include "test/randombuffer.h"
 #include "heightmap/render/blocktextures.h"
+#include "heightmap/blockmanagement/blockupdater.h"
 
 #include <QtWidgets> // QApplication
 #include <QtOpenGL> // QGLWidget
 
 namespace Heightmap {
+using namespace BlockManagement;
 namespace TfrMappings {
 
 void CwtBlockFilter::
@@ -136,8 +138,9 @@ void CwtBlockFilter::
             return ref;
         }();
 
-        Render::BlockTextures::Scoped bt(4,4,1);
-        pBlock block( new Block(ref, bl, vp));
+        Render::BlockTextures::Scoped bt(4,4);
+        BlockUpdater::ptr updater(new BlockUpdater);
+        pBlock block( new Block(ref, bl, vp, updater.get()));
 
         // Create some data to plot into the block
         Tfr::ChunkAndInverse cai;

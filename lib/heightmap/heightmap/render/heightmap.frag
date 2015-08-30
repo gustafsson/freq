@@ -16,7 +16,7 @@ uniform mediump vec2 texSize;
 
 
 mediump float heightValue(mediump float v) {
-    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
+//    v *= 0.01; // map from small range of float16 to float32 (TfrBlockUpdater)
     mediump float h = mix(v*yScale + yOffset,       // linear
                   log(v) * logScale.y + logScale.z, // log
                   logScale.x);                      // choose
@@ -25,6 +25,7 @@ mediump float heightValue(mediump float v) {
 }
 
 
+#ifdef USE_MIPMAP
 // https://www.opengl.org/discussion_boards/showthread.php/177520-Mipmap-level-calculation-using-dFdx-dFdy
 mediump float mip_map_level(mediump vec2 texture_coordinate)
 {
@@ -39,6 +40,7 @@ mediump float mip_map_level(mediump vec2 texture_coordinate)
     //return max(0.0, 0.5 * log2(delta_max_sqr) - 1.0); // == log2(sqrt(delta_max_sqr));
     return 0.5 * log2(delta_max_sqr); // == log2(sqrt(delta_max_sqr));
 }
+#endif
 
 
 void main()
@@ -53,6 +55,7 @@ void main()
     //float v = (v4.x + v4.y + v4.z + v4.w) / 4.0;
 
     mediump float v = texture2D(tex, texCoord, 0.0).x;
+#ifdef USE_MIPMAP
     if (yNormalize>0.0)
     {
         mediump float f = 1.2;
@@ -73,9 +76,10 @@ void main()
         base *= 0.7; // 1/f^2, f=1.2
         // know base <= v, base==v if all mipmaps are > v/f, in which case this is a deep local minima
 
-        // normalize, 100 is needed for scale
-        v = mix(v, (v - base)/base*100.0, yNormalize);
+        // normalize
+        v = mix(v, (v - base)/base, yNormalize);
     }
+#endif
 
     // up until here, 'v' doesn't depend on any render settings (uniforms) and could be
     // precomputed instead (apart from varying projections causing different mipmap
@@ -83,6 +87,7 @@ void main()
 
 //    v = mix(clamp(v*0.005,0.0,1.0),heightValue(v),colorTextureFactor);
     v = heightValue(v);
+    mediump float height_value = v;
 
     // rainbow, colorscale or grayscale
     mediump vec4 curveColor = mix(fixedColor, texture2D(tex_color, vec2(v,0)), colorTextureFactor);
@@ -90,13 +95,25 @@ void main()
     v = mix(v, 1.0 - g*g*g, colorTextureFactor);
 
     //float fresnel   = pow(1.0 - facing, 5.0); // Fresnel approximation
+#ifdef DRAW3D
+#ifndef NOSHADOW
     curveColor *= shadow; // curveColor*shadow + vec4(fresnel);
+#endif
+#endif
     curveColor = mix(clearColor, curveColor, v);
 
+#ifdef DRAWISARITHM
+#ifdef DRAW3D
     mediump float isarithm1 = fract( vertex_height * 25.0) < 0.93 ? 1.0 : 0.8;
     mediump float isarithm2 = fract( vertex_height * 5.0) < 0.93 ? 1.0 : 0.8;
     curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
+#else
+    mediump float isarithm1 = fract( height_value * 25.0) < 0.93 ? 1.0 : 0.8;
+    mediump float isarithm2 = fract( height_value * 5.0) < 0.93 ? 1.0 : 0.8;
+    curveColor = mix( curveColor, curveColor* isarithm1 * isarithm2*isarithm2, contourPlot);
+#endif
+#endif
 
 //    curveColor.w = 1.0; //-saturate(fresnel);
-    gl_FragColor = curveColor;
+    gl_FragColor = max(min(curveColor, 1.0), 0.0);
 }

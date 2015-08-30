@@ -69,22 +69,26 @@ void UpdateProducer::
         F.push_back (std::move(f));
     }
 
-    // Wait for these to finish
-    // If this worker thread doesn't wait it might produce jobs faster than
-    // they can be consumed.
-    try
-    {
-        for (std::future<void>& f : F)
-            f.get();
-    }
-    catch (const std::logic_error&)
-    {
-        pchunk.abort = true;
-        // The queue may be emptied before the task has been processed
-        //Log("Discarded job: %s") % chunk_interval;
-    }
+    // Could wait for these to finish if the workers produce jobs faster than
+    // they can be consumed. But this should hardly ever be an issue. Besides,
+    // blocking the worker will prevent a bedroom wakeup that signals that this
+    // task is done. Which is necessary if UpdateConsumer runs in the
+    // renderthread instead of a separate thread.
+    //
+    // However, if the UpdateConsumer runs in its own thread it will produce a
+    // signal to update the target view when a job is finished.
 
-    // The target view will be refreshed when a job is finished
+//    try
+//    {
+//        for (std::future<void>& f : F)
+//            f.get();
+//    }
+//    catch (const std::logic_error&)
+//    {
+//        pchunk.abort = true;
+//        // The queue may be emptied before the task has been processed
+//        //Log("Discarded job: %s") % chunk_interval;
+//    }
 }
 
 

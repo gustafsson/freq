@@ -17,6 +17,7 @@ public:
 
 signals:
     void chainChanged();
+    void openFileInfo(QString infoText);
 
 private slots:
     // bound to qml signal openUrl(QUrl)

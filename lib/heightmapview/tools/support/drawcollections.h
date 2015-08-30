@@ -5,6 +5,8 @@
 #include "glprojection.h"
 #include "heightmap/render/renderblock.h"
 
+namespace Heightmap { class Collection; }
+
 class QOpenGLShaderProgram;
 namespace Tools {
 class RenderModel;
@@ -24,10 +26,11 @@ public:
 private:
     RenderModel* model;
     std::vector<tvector<4> > channel_colors;
-    QOpenGLShaderProgram* m_program = 0;
+    std::unique_ptr<QOpenGLShaderProgram> m_program = 0;
     Heightmap::Render::RenderBlock render_block;
+    GLuint vbo_, attribVertices, attribTex;
 
-    void drawCollection(const glProjection& gl_projection, int channel, float yscale);
+    void drawCollection(const glProjection& gl_projection, shared_state<Heightmap::Collection> collection, int collection_i, float yscale, float L);
 };
 
 } // namespace Support

@@ -16,9 +16,9 @@ namespace Heightmap {
 namespace Render {
 
 FrustumClip::
-        FrustumClip(const glProjection& gl_projection, float border_width, float border_height)
+        FrustumClip(const glProjecter& gl_projecter, float border_width, float border_height)
 {
-    update(gl_projection, border_width, border_height);
+    update(gl_projecter, border_width, border_height);
 }
 
 void NormalizePlane(tvector<4,double> & plane)
@@ -33,13 +33,10 @@ tvector<3,T> planeNormal(const tvector<4,T>& p) {
 }
 
 void FrustumClip::
-        update(const glProjection& gl_projection, double border_width, double border_height)
+        update(const glProjecter& gl_projecter, double border_width, double border_height)
 {
     // http://web.archive.org/web/20120531231005/http://crazyjoke.free.fr/doc/3D/plane%20extraction.pdf
-
-    const tmatrix<4, double>& modelview = gl_projection.modelview;
-    const tmatrix<4, double>& projection = gl_projection.projection;
-    tmatrix<4, double> M = projection*modelview;
+    tmatrix<4, double> M = gl_projecter.mvp ();
     M = M.transpose ();
     border_width = 1.f + 2.f*border_width;
     border_height = 1.f + 2.f*border_height;

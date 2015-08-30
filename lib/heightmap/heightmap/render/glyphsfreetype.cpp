@@ -120,11 +120,11 @@ void GlyphsFreetype::
     glMatrixMode(GL_MODELVIEW);
 #endif // LEGACY_OPENGL
 
-    glEnable( GL_BLEND );
+    GlState::glEnable( GL_BLEND, true ); // use with text_buffer_render
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
     buildGlyphs(glyphdata);
 
-    glUseProgram( p->text_buffer->shader );
+    GlState::glUseProgram( p->text_buffer->shader );
     {
         glUniformMatrix4fv( glGetUniformLocation( p->text_buffer->shader, "model" ),
                             1, 0, tmatrix<4,float>::identity ().v ());
@@ -134,6 +134,8 @@ void GlyphsFreetype::
                             1, 0, GLmatrixf(gl_projection.projection).v ());
         text_buffer_render( p->text_buffer );
     }
+
+    GlState::glDisable( GL_BLEND );
 }
 
 
@@ -179,7 +181,7 @@ void GlyphsFreetype::
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(4, GL_FLOAT, 0, quad);
     glColor4f(1,1,1,0.5);
-    glDrawArrays(GL_QUADS, 0, quad_i);
+    GlState::glDrawArrays(GL_QUADS, 0, quad_i);
     glDisableClientState(GL_VERTEX_ARRAY);
 #endif // LEGACY_OPENGL
 }

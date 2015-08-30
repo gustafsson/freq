@@ -3,6 +3,7 @@
 #include "log.h"
 #include "fbo2block.h"
 #include "heightmap/render/blocktextures.h"
+#include "glgroupmarker.h"
 
 #include <unordered_map>
 
@@ -14,15 +15,14 @@ namespace BlockManagement {
 
 BlockUpdater::BlockUpdater()
     :
-    queue_(new list<pair<Heightmap::pBlock,DrawFunc>>()),
-    fbo2block(new Fbo2Block)
+    queue_(new list<pair<Heightmap::pBlock,DrawFunc>>())
 {
 }
 
 
 BlockUpdater::~BlockUpdater()
 {
-    delete fbo2block;
+
 }
 
 
@@ -50,12 +50,19 @@ void BlockUpdater::
     if (q.empty ())
         return;
 
+    GlGroupMarker gpm("ProcessUpdates");
+
+    if (!fbo2block_)
+        fbo2block_.reset (new Fbo2Block);
+
     // draw multiple updates to a block together
     map<pBlock, list<DrawFunc>> p;
     for (auto i = q.begin (); i != q.end (); i++)
         p[i->first].push_back(move(i->second));
 
+    // release resources bound in function objects
     q_success_.clear ();
+
     list<pair<pBlock, DrawFunc>> q_failed;
     map<Heightmap::pBlock,GlTexture::ptr> textures;
     for (auto i = p.begin (); i != p.end (); i++)
@@ -68,12 +75,14 @@ void BlockUpdater::
         else
             textures[block] = Heightmap::Render::BlockTextures::get1 ();
 
-        auto fbo_mapping = fbo2block->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
+        auto fbo_mapping = fbo2block_->begin (block->getOverlappingRegion (), block->sourceTexture (), textures[block], M);
 
         for (auto j = i->second.begin (); j != i->second.end (); j++)
         {
             DrawFunc& draw = *j;
 
+            // try again next frame with draw calls that return false (i.e if a sync object isn'r ready yet)
+            // keep successfull draw calls around to prevent opengl resources from being reused (causing sync or corrupted data) before opengl is done with them
             (draw(M) ? q_success_ : q_failed)
                .push_back (pair<pBlock, DrawFunc>(block,move(*j)));
         }
@@ -88,7 +97,7 @@ void BlockUpdater::
     auto w = queue_.write ();
     w->swap (q_failed);
 
-    // if any new updates arrived during processing push them to the back of the queue
+    // if any new updates arrived during processing push any failed draw attempts to the back of the queue
     for (auto& a : q_failed)
         w->push_back (std::move(a));
 }
@@ -99,6 +108,16 @@ void BlockUpdater::
 {
     queue_->push_back(pair<pBlock, DrawFunc>(b,move(f)));
 }
+
+
+void BlockUpdater::
+        clearQueue()
+{
+    queue_->clear();
+    q_success_.clear ();
+    fbo2block_.reset ();
+}
+
 
 } // namespace BlockManagement
 } // namespace Heightmap

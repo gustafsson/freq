@@ -16,6 +16,7 @@
 #include "GlException.h"
 #include "shaderresource.h"
 #include "exceptionassert.h"
+#include "glstate.h"
 
 #include <QOpenGLShaderProgram>
 
@@ -58,11 +59,12 @@ float GlyphsFreetypeEmbedded::
         {
             continue;
         }
+
         float x = pen_x + glyph->offset_x;
         float y = pen_y + glyph->offset_y;
         float w  = glyph->width;
         float h  = glyph->height;
-        add( glyph->s0, glyph->t0, x, y );
+        add( glyph->s0, glyph->t0, x,   y );
         add( glyph->s0, glyph->t1, x,   y-h );
         add( glyph->s1, glyph->t1, x+w, y-h );
         add( glyph->s0, glyph->t0, x,   y );
@@ -70,7 +72,6 @@ float GlyphsFreetypeEmbedded::
         add( glyph->s1, glyph->t0, x+w, y );
         pen_x += glyph->advance_x * ( 1.f + letter_spacing );
         pen_y += glyph->advance_y;
-
     }
 
     return pen_x;
@@ -87,7 +88,7 @@ GlyphsFreetypeEmbedded::
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 #ifdef VERA32
     texture_font_t& vera = vera_32;
 #else
@@ -95,13 +96,18 @@ GlyphsFreetypeEmbedded::
 #endif
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, vera.tex_width, vera.tex_height,
                   0, GL_RED, GL_UNSIGNED_BYTE, vera.tex_data );
-    glBindTexture( GL_TEXTURE_2D, 0 );
+    glGenerateMipmap (GL_TEXTURE_2D);
 }
 
 
 GlyphsFreetypeEmbedded::
         ~GlyphsFreetypeEmbedded()
 {
+    if (!QOpenGLContext::currentContext ()) {
+        Log ("%s: destruction without gl context leaks vbos %d and %d") % __FILE__ % glyphbuffer_ % vertexbuffer_;
+        return;
+    }
+
     if (glyphbuffer_)
         glDeleteBuffers (1, &glyphbuffer_);
     if (vertexbuffer_)
@@ -182,13 +188,38 @@ void GlyphsFreetypeEmbedded::
                                                   gl_FragColor = c;
                                               }
                                            )fragmentshader");
+        GlState::glUseProgram (program_->programId());
+        program_->setUniformValue("tex", 0);
+        program_->setUniformValue("qt_Color", 0, 0, 0, 0.8);
+        program_qt_ProjectionMatrixLocation_ = program_->uniformLocation("qt_ProjectionMatrix");
+        program_qt_ModelViewVertexLocation_ = program_->attributeLocation("qt_ModelViewVertex");
+        program_qt_MultiTexCoord0Location_ = program_->attributeLocation("qt_MultiTexCoord0");
+        GlState::glUseProgram (0);
 
-        program_->bindAttributeLocation("qt_ModelViewVertex", 0);
-        program_->bindAttributeLocation("qt_MultiTexCoord0", 1);
+        overlay_program_ = ShaderResource::loadGLSLProgramSource (
+                                          R"vertexshader(
+                                              attribute highp vec4 qt_ModelViewVertex;
+                                              uniform highp mat4 qt_ProjectionMatrix;
+                                              varying highp vec2 texcoord;
 
-        if (!program_->link())
-            Log("glyphsfreetypeembedded: invalid shader\n%s")
-                    % program_->log ().toStdString ();
+                                              void main() {
+                                                  gl_Position = qt_ProjectionMatrix * qt_ModelViewVertex;
+                                              }
+
+                                          )vertexshader",
+                                          R"fragmentshader(
+                                              uniform highp vec4 qt_Color;
+
+                                              void main() {
+                                                  highp vec4 c = qt_Color;
+                                                  gl_FragColor = c;
+                                              }
+                                           )fragmentshader");
+
+        GlState::glUseProgram (overlay_program_->programId());
+        overlay_program_->setUniformValue("qt_Color", 1, 1, 1, 0.5);
+        overlay_program_qt_ProjectionMatrixLocation_ = overlay_program_->uniformLocation("qt_ProjectionMatrix");
+        GlState::glUseProgram (0);
     }
 
     if (!program_ || !program_->isLinked ())
@@ -196,60 +227,62 @@ void GlyphsFreetypeEmbedded::
 
     buildGlyphs(data);
 
-    glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-    program_->bind();
-
-    program_->setUniformValue("tex", 0);
-    program_->setUniformValue("qt_ProjectionMatrix",
-                              QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
-
-    program_->enableAttributeArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_);
-    if (quad_v.size () > vertexbuffer_size || vertexbuffer_size > quad_v.size ()*4)
-    {
-        glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0], GL_STREAM_DRAW);
-        vertexbuffer_size = quad_v.size ();
-    }
-    else
-    {
-        glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0]);
-    }
-    glBindTexture (GL_TEXTURE_2D, 0 );
-    program_->setUniformValue("qt_Color", 1, 1, 1, 0.5);
-    glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, 0, 0 );
-    glBlendColor (0,0,0,0.5);
-    glBlendFunc (GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA );
-    glDrawArrays (GL_TRIANGLES, 0, quad_v.size());
-    glBlendColor (0,0,0,0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, glyphbuffer_);
-    if (glyphs.size () > glyphbuffer_size || glyphbuffer_size > glyphs.size ()*4)
-    {
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Glyph)*glyphs.size (), &glyphs[0], GL_STREAM_DRAW);
-        glyphbuffer_size = glyphs.size ();
-    }
-    else
-    {
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Glyph)*glyphs.size (), &glyphs[0]);
-    }
-
-    program_->enableAttributeArray(1);
-    glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof(Glyph), 0 );
-    glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof(Glyph), (const void*)sizeof(tvector<4,GLfloat>));
-
-    glBindTexture (GL_TEXTURE_2D, texid);
-    program_->setUniformValue("qt_Color", 0, 0, 0, 0.8);
+    GlState::glEnable( GL_BLEND );
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    glDrawArrays (GL_TRIANGLES, 0, glyphs.size());
-    glBindTexture (GL_TEXTURE_2D, 0 );
 
-    program_->disableAttributeArray (1);
-    program_->disableAttributeArray (0);
-    glBindBuffer (GL_ARRAY_BUFFER, 0);
-    GlException_SAFE_CALL( program_->release() );
+    {
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_);
+        if (quad_v.size () > vertexbuffer_size || vertexbuffer_size > quad_v.size ()*4)
+        {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0], GL_STREAM_DRAW);
+            vertexbuffer_size = quad_v.size ();
+        }
+        else
+        {
+            glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof(tvector<4,GLfloat>)*quad_v.size (), &quad_v[0]);
+        }
+
+        GlState::glUseProgram (overlay_program_->programId());
+        overlay_program_->setUniformValue(overlay_program_qt_ProjectionMatrixLocation_,
+                                  QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
+
+        GlState::glEnableVertexAttribArray (0);
+        glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, 0, 0 );
+        GlState::glDrawArrays (GL_TRIANGLES, 0, quad_v.size());
+    }
+
+    {
+        GlState::glBindBuffer(GL_ARRAY_BUFFER, glyphbuffer_);
+        if (glyphs.size () > glyphbuffer_size || glyphbuffer_size > glyphs.size ()*4)
+        {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Glyph)*glyphs.size (), &glyphs[0], GL_STREAM_DRAW);
+            glyphbuffer_size = glyphs.size ();
+        }
+        else
+        {
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Glyph)*glyphs.size (), &glyphs[0]);
+        }
+
+        GlState::glUseProgram (program_->programId());
+
+        program_->setUniformValue(program_qt_ProjectionMatrixLocation_,
+                                  QMatrix4x4(GLmatrixf(gl_projection.projection).transpose ().v ()));
+
+        GlState::glEnableVertexAttribArray (1);
+        program_->setAttributeBuffer(program_qt_ModelViewVertexLocation_, GL_FLOAT, 0, 4, sizeof(Glyph));
+        program_->setAttributeBuffer(program_qt_MultiTexCoord0Location_, GL_FLOAT, sizeof(tvector<4,GLfloat>), 2, sizeof(Glyph));
+
+        glBindTexture (GL_TEXTURE_2D, texid);
+        GlState::glDrawArrays (GL_TRIANGLES, 0, glyphs.size());
+
+        GlState::glDisableVertexAttribArray (1);
+        GlState::glDisableVertexAttribArray (0);
+        GlState::glBindBuffer (GL_ARRAY_BUFFER, 0);
+    }
+
+    GlException_SAFE_CALL( GlState::glUseProgram (0) );
+
+    GlState::glDisable (GL_BLEND);
 }
 
 

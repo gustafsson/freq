@@ -2,6 +2,7 @@
 #define HEIGHTMAP_RENDER_RENDERREGION_H
 
 #include "heightmap/position.h"
+#include "shaderresource.h"
 #include "glprojection.h"
 
 class QOpenGLShaderProgram;
@@ -12,16 +13,17 @@ namespace Render {
 class RenderRegion
 {
 public:
-    RenderRegion(glProjection gl_projection);
-    virtual ~RenderRegion();
+    RenderRegion();
     RenderRegion(const RenderRegion&)=delete;
+    ~RenderRegion();
+
     RenderRegion& operator=(const RenderRegion&)=delete;
 
-    void render(Region r, bool drawcross=true);
+    void render(const glProjecter& gl_projecter, Region r, bool drawcross=true);
 
 private:
-    glProjection gl_projection_;
-    QOpenGLShaderProgram* program_ = 0;
+    GLuint vbo_=0;
+    ShaderPtr program_;
 };
 
 } // namespace Render

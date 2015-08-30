@@ -2,7 +2,7 @@
 #define FLACFILE_H
 
 #include <TargetConditionals.h>
-#ifndef TARGET_IPHONE_SIMULATOR
+#if !defined(TARGET_IPHONE_SIMULATOR) || !TARGET_IPHONE_SIMULATOR
 #include "signal/operation.h"
 #include "signal/cache.h"
 #include <QUrl>

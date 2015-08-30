@@ -130,7 +130,7 @@ void ChainInfo::
         EXCEPTION_ASSERT( !c.hasWork () );
         n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
-        QThread::msleep (10);
+        QThread::msleep (25);
         EXCEPTION_ASSERT( !c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
     }
@@ -148,7 +148,7 @@ void ChainInfo::
         EXCEPTION_ASSERT( !c.hasWork () );
         EXCEPTION_ASSERT_EQUALS( 0, c.dead_workers () );
         n->updateNeeds(Signal::Interval(0,10));
-        EXCEPTION_ASSERT( n->sleep (12) );
+        EXCEPTION_ASSERT( n->sleep (25) );
         EXCEPTION_ASSERT( !c.hasWork () );
         QThread::msleep (1);
         EXCEPTION_ASSERT_EQUALS( 1, c.dead_workers () );
@@ -167,7 +167,7 @@ void ChainInfo::
         EXCEPTION_ASSERT( !c.hasWork () );
         n->updateNeeds(Signal::Interval(0,10));
         EXCEPTION_ASSERT( c.hasWork () );
-        QThread::msleep (10);
+        QThread::msleep (20);
         a.processEvents (); // a crashed worker announces 'wakeup' to the others through the application eventloop
         EXCEPTION_ASSERT( n->sleep (10) );
         EXCEPTION_ASSERT( !c.hasWork () );

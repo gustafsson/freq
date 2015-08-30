@@ -42,7 +42,7 @@ Signal::OperationDesc::ptr parseFile(QUrl url)
 {
     Signal::OperationDesc::ptr d;
     try {
-#ifndef TARGET_IPHONE_SIMULATOR
+#if !defined(TARGET_IPHONE_SIMULATOR) || !TARGET_IPHONE_SIMULATOR
         d.reset(new FlacFile(url));
         if (d->extent().sample_rate.is_initialized ())
             return d;
@@ -80,7 +80,10 @@ void OpenUrl::
     // first see if this was a valid file
     Signal::OperationDesc::ptr desc = parseFile(url);
     if (!desc)
+    {
+        emit openFileInfo(QString("Failed to open %1").arg (url.toString ()));
         return;
+    }
 
     // purge target
     chain_->chain ()->removeOperationsAt(chain_->target_marker ());
@@ -88,4 +91,6 @@ void OpenUrl::
     chain_->chain ()->addOperationAt(desc, chain_->target_marker ());
     chain_->setTitle (url.fileName ());
     chain_->chain ()->workers()->addComputingEngine(Signal::ComputingEngine::ptr(new Signal::DiscAccessThread));
+
+    emit openFileInfo(url.toString ());
 }

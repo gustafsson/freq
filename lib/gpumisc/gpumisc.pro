@@ -33,8 +33,10 @@ SOURCES += \
     GlException.cpp \
     glframebuffer.cpp \
     glinfo.cpp \
+    glgroupmarker.cpp \
     glprojection.cpp \
     glPushContext.cpp \
+    glstate.cpp \
     glsyncobjectmutex.cpp \
     GlTexture.cpp \
     gltextureread.cpp \
@@ -69,9 +71,11 @@ HEADERS += \
     gl.h \
     GlException.h \
     glframebuffer.h \
+    glgroupmarker.h \
     glinfo.h \
     glprojection.h \
     glPushContext.h \
+    glstate.h \
     glsyncobjectmutex.h \
     GlTexture.h \
     gltextureread.h \

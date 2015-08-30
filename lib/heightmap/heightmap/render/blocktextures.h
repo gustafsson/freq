@@ -1,6 +1,7 @@
 #ifndef HEIGHTMAP_RENDER_BLOCKTEXTURES_H
 #define HEIGHTMAP_RENDER_BLOCKTEXTURES_H
 
+#include "gl.h"
 #include "GlTexture.h"
 #include <memory>
 #include <vector>
@@ -39,21 +40,21 @@ class BlockTextures
 {
 public:
     static bool isInitialized();
-    static void init(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    static void init(unsigned width, unsigned height);
     static void destroy();
 
     /**
      * @brief Scoped provides a scoped initialization, useful in test environments.
      */
     struct Scoped {
-        Scoped(unsigned width, unsigned height, unsigned initialCapacity = 0) {
-            init(width,height,initialCapacity);
+        Scoped(unsigned width, unsigned height) {
+            init(width,height);
         }
 
         ~Scoped() { destroy(); }
     };
 
-    static void testInit(unsigned width, unsigned height, unsigned initialCapacity = 0);
+    static void testInit(unsigned width, unsigned height);
 
     /**
      * @brief setCapacityHint
@@ -96,15 +97,22 @@ public:
      * @brief mipmaps should match how the number of mipmap levels being used
      * in heightmap.frag.
      */
+#if defined(GL_ES_VERSION_2_0) && !defined(GL_ES_VERSION_3_0)
+    // slow GPU
+    static const int mipmaps=0;
+#else
     static const int mipmaps=5;
+#endif
 
     /**
      * @brief setupTexture
      * @param name
      * @param width
      * @param height
+     * @param mipmaps defaults to mipmaps>0
      */
-    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps=true);
+    static void setupTexture(unsigned name, unsigned width, unsigned height);
+    static void setupTexture(unsigned name, unsigned width, unsigned height, bool mipmaps);
 
     /**
      * @brief allocated_bytes_per_element

@@ -114,8 +114,8 @@ void BlockCache::
         BlockLayout bl(2,2,1);
         Render::BlockTextures::Scoped bt_raii(bl.texels_per_row (),bl.texels_per_column ());
         VisualizationParams::ptr vp;
-        pBlock b1(new Block(r1, bl, vp));
-        pBlock b2(new Block(r2, bl, vp));
+        pBlock b1(new Block(r1, bl, vp, 0));
+        pBlock b2(new Block(r2, bl, vp, 0));
 
         BlockCache c;
         c.insert (b1);

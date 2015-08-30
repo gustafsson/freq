@@ -13,6 +13,9 @@
 //#define DEBUGINFO
 #define DEBUGINFO if(0)
 
+//#define INFO
+#define INFO if(0)
+
 using namespace std;
 using namespace Signal::Processing;
 
@@ -37,7 +40,7 @@ CvWorker::CvWorker(
 #ifdef __GNUC__
         {
             stringstream ss;
-            ss << "taskworker" << " " << (computing_engine?vartype(*computing_engine):"(null engine)");
+            ss << "cvworker" << " " << (computing_engine?vartype(*computing_engine):"(null engine)");
             pthread_setname_np(ss.str ().c_str ());
         }
 #endif
@@ -55,20 +58,22 @@ CvWorker::CvWorker(
                 Signal::Processing::Task task;
 
                 {
-                    DEBUGINFO TaskTimer tt(boost::format("taskworker: get task %s %s") % vartype(*schedule.get ()) % (computing_engine?vartype(*computing_engine):"(null)") );
+                    DEBUGINFO TaskTimer tt(boost::format("cvworker: get task %s %s") % vartype(*schedule.get ()) % (computing_engine?vartype(*computing_engine):"(null)") );
                     task = schedule->getTask(computing_engine);
                     active_time_since_start_ += work_timer.elapsedAndRestart ();
                 }
 
                 if (task)
                 {
-                    DEBUGINFO TaskTimer tt(boost::format("taskworker: running task %s") % task.expected_output());
+                    DEBUGINFO TaskTimer tt(boost::format("cvworker: running task %s") % task.expected_output());
                     task.run();
                     active_time_since_start_ += work_timer.elapsed ();
                     bedroom->wakeup (); // make idle workers wakeup to check if they can do something, won't affect busy workers
 
-                    if (ltf_tasks.tick(false))
-                        Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    INFO {
+                        if (ltf_tasks.tick(false))
+                            Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    }
                 }
                 else
                 {
@@ -83,15 +88,16 @@ CvWorker::CvWorker(
                         b.sleep ();
                     last_wakeup.restart ();
 
-                    if (ltf_wakeups.tick(false))
-                        Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    INFO {
+                        if (ltf_wakeups.tick(false))
+                            Log("cvworker: %g wakeups/s, %g tasks/s, activity %.0f%%") % ltf_wakeups.hz () % ltf_tasks.hz () % (100*this->activity ());
+                    }
                 }
             } while (!*abort);
-
-            p.set_value ();
         } catch (...) {
-            p.set_exception (std::current_exception ());
+            caught_exception_=std::current_exception ();
         }
+        p.set_value ();
     });
 }
 
@@ -114,11 +120,7 @@ void CvWorker::join()
     if (t.joinable ())
     {
         t.join ();
-        try {
-            f.get ();
-        } catch (...) {
-            this->caught_exception_ = std::current_exception ();
-        }
+        f.get ();
     }
 }
 
@@ -314,12 +316,11 @@ void CvWorker::
         EXCEPTION_ASSERT_EQUALS( 1, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
 
         bedroom->wakeup ();
-        worker.wait (1);
+        worker.wait (20);
         EXCEPTION_ASSERT_EQUALS( 2, dynamic_cast<GetTaskMock*>(&*gettask)->get_task_count );
     }
 
     // It should store information about a crashed task (segfault) and stop execution.
-    if (false)
     if (!DetectGdb::is_running_through_gdb() && !DetectGdb::was_started_through_gdb ())
     {
         UNITTEST_STEPS TaskTimer tt("It should store information about a crashed task (segfault) and stop execution");
@@ -404,16 +405,10 @@ void CvWorker::
         ISchedule::ptr gettask(new DeadLockMock);
         CvWorker worker(Signal::ComputingEngine::ptr(), bedroom, gettask);
 
-        Log("taskworker %d") % __LINE__;
         EXCEPTION_ASSERT( !worker.wait (1) );
-        Log("taskworker %d") % __LINE__;
         worker.abort ();
-        Log("taskworker %d") % __LINE__;
         EXCEPTION_ASSERT( worker.wait (200) );
-        Log("taskworker %d") % __LINE__;
         worker.wait ();
-        Log("taskworker %d") % __LINE__;
-        Log("taskworker %d") % __LINE__;
     }
 #endif // SHARED_STATE_NO_TIMEOUT
 

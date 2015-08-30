@@ -280,17 +280,18 @@ void TfrMapping::
 
     LOGINFO TaskInfo ti("Number of channels: %d", v);
 
-    collections_.clear ();
+    for (auto c : collections_)
+        old_collections_.push_back (std::move(c));
 
     Collections new_collections(v);
 
     for (pCollection& c : new_collections)
     {
         c = Heightmap::Collection::ptr( new Heightmap::Collection(block_layout_, visualization_params_));
-        c->length( length_samples_ );
+        c->length( length() );
     }
 
-    collections_ = new_collections;
+    collections_.swap (new_collections);
 }
 
 
@@ -299,6 +300,14 @@ TfrMapping::Collections TfrMapping::
 {
     return collections_;
 }
+
+
+void TfrMapping::
+        gc()
+{
+    old_collections_.clear ();
+}
+
 
 
 void TfrMapping::

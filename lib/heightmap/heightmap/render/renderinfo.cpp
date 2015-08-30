@@ -36,9 +36,9 @@ bool LevelOfDetail::
 
 
 RenderInfo::
-        RenderInfo(const glProjection* gl_projection, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy)
+        RenderInfo(const glProjecter* gl_projecter, BlockLayout bl, VisualizationParams::const_ptr vp, float redundancy)
     :
-      gl_projection(gl_projection),
+      gl_projecter(gl_projecter),
       bl(bl),
       vp(vp),
       redundancy(redundancy)
@@ -92,7 +92,7 @@ bool RenderInfo::
 {
     const Position p[2] = { r.a, r.b };
 
-    Render::FrustumClip frustum_clip(*gl_projection);
+    Render::FrustumClip frustum_clip(*gl_projecter);
     double y[]={0, frustum_clip.getCamera()[1]*.5};
     for (unsigned i=0; i<sizeof(y)/sizeof(y[0]); ++i)
     {
@@ -119,8 +119,8 @@ bool RenderInfo::
         vectord scalePoint = closest_i + vectord(0,0,deltaScale);
 
         // time/scalepixels is approximately the number of pixels in ref along the time/scale axis
-        vectord::T pixelsPerTime = gl_projection->computePixelDistance (closest_i, timePoint) / deltaTime;
-        vectord::T pixelsPerScale = gl_projection->computePixelDistance (closest_i, scalePoint) / deltaScale;
+        vectord::T pixelsPerTime = gl_projecter->computePixelDistance (closest_i, timePoint) / deltaTime;
+        vectord::T pixelsPerScale = gl_projecter->computePixelDistance (closest_i, scalePoint) / deltaScale;
         timePixels = pixelsPerTime * r.time ();
         scalePixels = pixelsPerScale * r.scale ();
 

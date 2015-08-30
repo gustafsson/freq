@@ -65,35 +65,32 @@ void GlTexture::
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) );
 	GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) );
     //GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) );
-    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    setMinFilter (GL_LINEAR);
     GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
     int gl_max_texture_size = 0;
     glGetIntegerv (GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
     EXCEPTION_ASSERT_LESS(width, gl_max_texture_size);
     EXCEPTION_ASSERT_LESS(height, gl_max_texture_size);
     GlException_SAFE_CALL( glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, pixelFormat, type, data) );
-
-    GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, 0) );
 }
 
 GlTexture::~GlTexture() {
-    // GlException_CHECK_ERROR(); // Windows generates some error prior to this call, why?
-	//GlException_SAFE_CALL( glDeleteTextures(1, &textureId) );
-
     if (ownTextureId) {
-        glDeleteTextures(1, &ownTextureId); // Any GL call "seems to be" an invalid operation on Windows after/during destruction. Might be the result of something else that is broken...
-        glGetError();
+        if (!QOpenGLContext::currentContext ()) {
+            Log ("%s: destruction without gl context leaks tex %d") % __FILE__ % ownTextureId;
+            return;
+        }
 
-        ownTextureId = 0;
+        glDeleteTextures(1, &ownTextureId);
     }
 }
 
-GlTexture::ScopeBinding GlTexture::getScopeBinding()
+void GlTexture::bindTexture()
 {
     GlException_SAFE_CALL( glBindTexture( GL_TEXTURE_2D, textureId) );
-    return ScopeBinding(*this, &GlTexture::unbindTexture2Dwrap);
 }
 
-void GlTexture::unbindTexture2Dwrap() {
-    glBindTexture( GL_TEXTURE_2D, 0);
+void GlTexture::setMinFilter (unsigned int f)
+{
+    GlException_SAFE_CALL( glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter=f) );
 }

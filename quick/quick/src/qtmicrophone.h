@@ -34,30 +34,50 @@ private:
 };
 
 
-class QtMicrophone: public QObject, public Signal::Recorder
+class QtAudioObject: public QObject
 {
     Q_OBJECT
 public:
-    QtMicrophone();
-    ~QtMicrophone();
+    QtAudioObject(QAudioDeviceInfo info, QAudioFormat format, QIODevice* device);
+    ~QtAudioObject();
+
+    bool isStopped();
+    bool canRecord();
 
 public slots:
-    void startRecording() override;
-    void stopRecording() override;
+    void init();
+    void finished();
+    void startRecording();
+    void stopRecording();
+
+private:
+    QAudioDeviceInfo info_;
+    QAudioFormat format_;
+    QIODevice* device_ = 0;
+    QAudioInput* audio_ = 0;
+};
+
+
+class QtMicrophone: public Signal::Recorder
+{
+public:
+    // If the recording isn't stopped in the destructor then the recording will
+    // be stopped at the latest when threadOwner is stopped.
+    QtMicrophone(QObject* threadOwner);
+    ~QtMicrophone();
 
 public:
+    void startRecording() override;
+    void stopRecording() override;
     bool isStopped() const override;
     bool canRecord() override;
     std::string name() override;
 
-private slots:
-    void init();
-    void finished();
-
 private:
-    QThread audiothread_;
-    QAudioInput* audio_;
-    QIODevice* device_;
+    void init();
+
+    QPointer<QThread> audiothread_; // owned by threadOwner
+    QPointer<QtAudioObject> audioobject_; // deleted upon thread exit
 
     void readSamples(unsigned n);
 };

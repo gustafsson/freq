@@ -11,17 +11,39 @@ class QOffscreenSurface;
 namespace Heightmap {
 namespace Update {
 
+class UpdateConsumerPrivate;
 /**
- * @brief The UpdateConsumer class should update textures in a separate thread
- * from the worker thread.
+ * @brief The UpdateConsumer class should update textures.
+ *
+ * UpdateConsumer is used by UpdateConsumerThread to do the actual work.
+ *
+ * UpdateConsumer can also be used from the render thread.
  */
-class UpdateConsumer: public QThread
+class UpdateConsumer final
+{
+public:
+    UpdateConsumer(UpdateQueue::ptr update_queue);
+    ~UpdateConsumer();
+
+    bool workIfAny();
+    void blockUntilWork();
+
+private:
+    std::unique_ptr<UpdateConsumerPrivate> p;
+};
+
+
+/**
+ * @brief The UpdateConsumerThread class should update textures in a thread
+ * separate from both workers and rendering.
+ */
+class UpdateConsumerThread: public QThread
 {
     Q_OBJECT
 public:
-    UpdateConsumer(QGLWidget* parent_and_shared_gl_context, UpdateQueue::ptr update_queue);
-    UpdateConsumer(QOpenGLContext* shared_opengl_context, UpdateQueue::ptr update_queue, QObject* parent);
-    ~UpdateConsumer();
+    UpdateConsumerThread(QGLWidget* parent_and_shared_gl_context, UpdateQueue::ptr update_queue);
+    UpdateConsumerThread(QOpenGLContext* shared_opengl_context, UpdateQueue::ptr update_queue, QObject* parent);
+    ~UpdateConsumerThread();
 
 signals:
     void didUpdate();
@@ -35,7 +57,6 @@ private:
     UpdateQueue::ptr update_queue;
 
     void        run();
-    void        work();
 
 public:
     static void test();

@@ -17,7 +17,7 @@ namespace OpenGL {
  * Similar to class Heightmap::Render::BlockTextures but less complex, and not
  * global. Will use Heightmap::Render::BlockTextures::setupTexture for setup.
  */
-class TexturePool
+class TexturePool final
 {
 public:
     enum FloatSize {

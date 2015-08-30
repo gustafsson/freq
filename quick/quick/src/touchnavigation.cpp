@@ -55,7 +55,8 @@ double TouchNavigation::max_t ()
 //    tvector<4,int> viewport = render_model ()->gl_projection.read ()->viewport;
 //    double aspect = viewport[2]/(float)viewport[3];
     double aspect = 1.;
-    double s = -c.p[2]*aspect/c.xscale * sin(DEG_TO_RAD(c.r[0]));
+//    double s = -c.p[2]*aspect/c.xscale * sin(DEG_TO_RAD(c.r[0]));
+    double s = -c.p[2]*aspect/c.xscale;
     double L = sL - s*0.25;
     return L;
 }
@@ -235,8 +236,8 @@ void TouchNavigation::
             if (rpoint1.x () > rpoint2.x ()) std::swap(dx1,dx2);
             if (rpoint1.y () > rpoint2.y ()) std::swap(dy1,dy2);
 
-            c.xscale *= clamp(0.95, 1.05, 1 - (dx1-dx2)/100);
-            c.zscale *= clamp(0.95, 1.05, 1 - (dy1-dy2)/100);
+            c.xscale *= clamp(0.95, 1.05, 1 - (dx1-dx2)/10);
+            c.zscale *= clamp(0.95, 1.05, 1 - (dy1-dy2)/10);
 
             // Also pan
             //double dtime1 = hpos1.time - hstart1.time;
@@ -264,6 +265,7 @@ void TouchNavigation::
     auto viewport = render_model()->gl_projection.read ()->viewport;
     float aspect = viewport[2]/(float)viewport[3];
     float zmin = std::min(0.5,0.4/(c.zscale/-c.p[2]*aspect));
+    zmin = 0; // bah!
     float zmax = 1-zmin;
 
     // limit camera position along scale and limit rotation
@@ -316,15 +318,15 @@ void TouchNavigation::
         vectord p(hstart1.time, 0, hstart1.scale);
         vectord::T timePerPixel;
         vectord::T scalePerPixel;
-        glProjection gl_projection = *render_model ()->gl_projection.read ();
-        gl_projection.computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
+        glProjecter gl_projecter = *render_model ()->gl_projection.read ();
+        gl_projecter.computeUnitsPerPixel( p, timePerPixel, scalePerPixel );
 
         float dt1 = std::fabs(hstart1.time - selection_->t1 ());
         float dt2 = std::fabs(hstart1.time - selection_->t2 ());
         float ds1 = std::fabs(hstart1.scale - f.getFrequencyScalar (selection_->f1 ()));
         float ds2 = std::fabs(hstart1.scale - f.getFrequencyScalar (selection_->f2 ()));
 
-        int wh = std::min(gl_projection.viewport[2], gl_projection.viewport[3]);
+        int wh = std::min(gl_projecter.viewport[2], gl_projecter.viewport[3]);
         int threshold = wh/8;
 
         if (selection_->valid () && std::min(dt1,dt2) < timePerPixel*threshold && std::min(ds1,ds2) < scalePerPixel*threshold)
