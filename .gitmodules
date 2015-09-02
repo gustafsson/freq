@@ -12,4 +12,4 @@
 	url = https://github.com/gustafsson/freq-integration.git
 [submodule "3rdparty/freetype-gl"]
 	path = 3rdparty/freetype-gl
-	url = https://github.com/rougier/freetype-gl.git
+	url = https://github.com/gustafsson/freetype-gl.git
