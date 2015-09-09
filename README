@@ -1,101 +1,13 @@
-Sonic AWE source code
+Freq source code
 /===================\
 |Scalograms are cool|
 \===================/
 
-The intention of this document is to explain how to fetch the source code with all the dependencies, how to setup a functional development environment, how to build the source code, how to run Sonic AWE and eventually how to distribute an installer.
+The intention of this document is to explain how to fetch the source code with all the dependencies, how to setup a functional development environment, how to build the source code, how to run Freq and eventually how to distribute an installer.
 
 Setting up the development environment requires quite a few steps. Please read through this document in its entirety.
 
-Make sure you have a public release of Sonic AWE up an running on your computer before you start, to make sure your computer can actually run the program.
-
-We're using git for revision control and to download the source code. It's strongly recommended to take a look at the links in the "Learning GIT" section below even if you have previously been using git.
-
-
-
-Learning git
-------------
-If you don't already know git, take a crash course:
-http://git-scm.com/book/ch1-3.html
-
-How to branch, merge, and rebase:
-http://nvie.com/posts/a-successful-git-branching-model/?
-http://www.mail-archive.com/dri-devel@lists.sourceforge.net/msg39091.html
-https://github.com/nvie/gitflow
-
-Random tips and tricks:
-http://wiki.videolan.org/Git
-
-For reference:
-http://git-scm.com/doc
-http://git-scm.com/book
-git help 'command'
-
-
-
-Install git in OS X
--------------------
-git is included in the "Command line tools" for Xcode.
-
-Tip: you could use the following prompt to know which branch you're currently on:
-source /usr/share/git-core/git-completion.bash
-PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
-PS2='\[\e[0;2m\]\t\[\e[m\]> '
-Add those three lines to your ~/.bash_profile to make the prompt stay that way.
-
-OS X specific: "git gui" and other neat git tools are not automatically added to your path. Add this line to your ~/.bash_profile:
-PATH=$PATH:/usr/local/git/libexec/git-core
-
-
-Install GIT in Windows
-----------------------
-Install git from:
-http://git-scm.com/downloads
-
-Select default settings for everything except when it comes to "Adjusting your PATH environment" select "Run Git from Windows Command Prompt". Make sure you leave line-endings to their default as well (Checkout Windows-style, commit Unix-style).
-git is most easily accessible through "Git Bash" which is installed to your start menu.
-
-All commands that follow in this document are intended to be typed in "Git Bash". But you still need to adjust your PATH environment variable, if you didn't do so in the installer make sure you add 'C:\Program Files (x86)\Git\cmd'.
-
-
-Install GIT in Ubuntu
----------------------
-Run
-sudo apt-get install git
-
-Tip: you could use the following prompt to know which branch you're currently on:
-PS1='\[\e[0;2m\]\t\[\e[m\]\w$(__git_ps1 " \[\e[0;33m\]%s\[\e[m\]")\$ '
-PS2='\[\e[0;2m\]\t\[\e[m\]> '
-Add those two lines to your ~/.bash_aliases to make the prompt stay that way.
-
-
-Configure bitbucket access
---------------------------
-Setup name and email to identify your commits:
-git config --global user.name "Given_name Family_name"
-git config --global user.email "given_name.family_name@muchdifferent.com"
-
-Create an account at bitbucket and send your username to someone in the team. You also need to give your computer SSH access to your bitbucket user. Create/locate SSH keys for your computer and add them to your bitbucket account on the account->settings->SSH page.
-https://help.github.com/articles/generating-ssh-keys
-https://help.github.com/articles/working-with-ssh-key-passphrases
-
-
-Get the code
-------------
-git clone git@bitbucket.org:MuchDifferent/sonicawe.git
-cd sonicawe
-ls
-
-When running clone you might this message:
-> Permission denied (publickey).
-> fatal: The remote end hung up unexpectedly
-If you get this message it probably means your bitbucket account haven't been given access to the source code yet. You also get this if your system's public SSH key doesn't match the SSH key you added to your bitbucket account.
-
-When getting new code from the server you want to rebase in most cases. To simplify this you can create an alias, like so:
-git config --global alias.up "pull --rebase"
-
-And to get new commits, run:
-git up
+Make sure you have a public release of Freq up an running on your computer before you start, to make sure your computer can actually run the program.
 
 
 CUDA
@@ -146,17 +58,13 @@ http://qt.nokia.com/downloads/downloads#qt-creator
 
 Build environment for OS X
 --------------------------
-Make sure "Command line tools for Xcode" are installed (see "Install GIT in OS X" above).
+Make sure "Command line tools for Xcode" are installed.
 
 Install Nokia open source QT Libraries 5.1 and QT Creator
 http://qt.nokia.com/downloads/downloads#qt-lib
 http://qt.nokia.com/downloads/downloads#qt-creator
 
-Edit, build and debug using Qt Creator. Refer to 'Developing Sonic AWE' below for details.
-
-Copy the mkspecs folders to your Qt installation and build with QMAKESPEC='macx-sonicawe-clang'. You might want to add "export QMAKESPEC='macx-sonicawe-clang'" to your ~/.bash_profile.
-
-To build with openmp (which makes Sonic AWE way faster and is required for creating distribution packages) you need to get a later version of g++/clang than Xcode provides. To build with g++ 4.9 or later, install macports, install gcc49 and use QMAKESPEC='macx-sonicawe-g++49'.
+Edit, build and debug using Qt Creator. Refer to 'Developing Freq' below for details.
 
 Required libraries will be initialized during 'Build and run'.
 
@@ -179,9 +87,9 @@ PATH=$PATH:/c/Qt/4.8.2/bin
 You might find it handy to also add an alias in ~/.bashrc for your favourite editor, like so:
 alias edit='"C:\Program Files (x86)\Notepad++\notepad++.exe"'
 
-Edit using qt creator. Build using Visual C++ 2008 Express for Win32. Other versions of Visual C++ than 2008 requires you to get the equivalent versions of the libraries in sonicawe-winlib and might not support OpenMP.
+Edit using qt creator. Build using Visual C++ 2008 Express for Win32. Other versions of Visual C++ than 2008 requires you to get the equivalent versions of the libraries in freq-winlib and might not support OpenMP.
 
-Refer to 'Developing Sonic AWE' and 'Developing Sonic AWE in Windows' below for details on how to work with Qt Libraries, Qt Creator, and Visual C++.
+Refer to 'Developing Freq' and 'Developing Freq in Windows' below for details on how to work with Qt Libraries, Qt Creator, and Visual C++.
 
 Optional: There is a Qt integration for Visual Studio but it doesn't work with the Express version;
 http://qt.nokia.com/downloads/visual-studio-add-in
@@ -190,22 +98,21 @@ http://qt-project.org/faq/answer/what_is_the_qt_visual_studio_add-in
 
 Build and run
 -------------
-The default branch after a 'git clone' is 'master', this branch should contain the last stable release of Sonic AWE. All development is however based on a branch named 'develop'. See 'a-successful-git-branching-model' under 'Learning git' above. To change branch run:
-git checkout develop
+The default branch after a 'git clone' is 'master', this branch should contain the last stable release of Freq. All development is however based on a branch named 'develop'. See 'a-successful-git-branching-model'.
 
-This command will fetch the required libraries for your system and then build and run Sonic AWE (this command performs initial setup. To build during everyday development it's recommended to follow "Developing Sonic AWE" further down instead):
+This command will fetch the required libraries for your system and then build and run Freq (this command performs initial setup. To build during everyday development it's recommended to follow "Developing Freq" further down instead):
 ./buildandrun.sh
 
 Press enter to accept the default answer to the 4 initial questions about verifying repositories, making a clean build and uploading a compiled package.
 
 In Linux you will be asked for your password when 'buildandrun.sh' tries to perform a 'sudo apt-get install' for required libraries the first time you run it.
 
-When 'buildandrun.sh' has finished compiling it will start Sonic AWE. A complete rebuild may take between 1 and 15 minutes depending on the performance of your computer.
+When 'buildandrun.sh' has finished compiling it will start Freq. A complete rebuild may take between 1 and 15 minutes depending on the performance of your computer.
 
-The intention of this document is that if you get an error while running this (i.e if 'buildandrun.sh' doesn't start Sonic AWE), the instructions above are missing something. Please document a fix if you find one, or document under what circumstances this guide doesn't work.
+The intention of this document is that if you get an error while running this (i.e if 'buildandrun.sh' doesn't start Freq), the instructions above are missing something. Please document a fix if you find one, or document under what circumstances this guide doesn't work.
 
 
-Developing Sonic AWE
+Developing Freq
 --------------------
 We use Qt Creator to edit the source code, the Qt framework for cross-platform GUI and cross-platform project configurations.
 
@@ -213,8 +120,8 @@ Strongly recommended reading (it's short): http://classes.soe.ucsc.edu/cmps160/F
 
 Projects based on the Qt framework are defined by .pro-files. These are then compiled by 'qmake' into other platform-specific projects before they are sent to the compiler; i.e into Makefiles for the GNU Toolchain and into .vcproj or .vcxproj projects for Visual C++.
 
-When you first open the project in Qt Creator it will create some user specific build preferences. In Windows it doesn't matter what you choose as you don't build within Qt Creator. Under OS X and Ubuntu it does however matter. Different preferences may work, but the most convenient setup for Sonic AWE development is probably to select options like this (note that different versions of Qt Creator look different):
-- Select a toolchain that is known to work with Sonic AWE on your platform. (i.e most toolchains under Ubuntu but only 'GCC (x86 32bit)' under OS X).
+When you first open the project in Qt Creator it will create some user specific build preferences. In Windows it doesn't matter what you choose as you don't build within Qt Creator. Under OS X and Ubuntu it does however matter. Different preferences may work, but the most convenient setup for Freq development is probably to select options like this (note that different versions of Qt Creator look different):
+- Select a toolchain that is known to work with Freq on your platform. (i.e most toolchains under Ubuntu but only 'GCC (x86 32bit)' under OS X).
 - Select "Desktop" to do setup a desktop build.
 - If it asks for you to import a build don't.
 - Create build configurations: select "For Each Qt Version One Debug and And One Release".
@@ -224,7 +131,7 @@ When you first open the project in Qt Creator it will create some user specific 
 Note that builds created through the deploy scripts (in the 'dist' folder) have explicit settings and build configurations for pretty much everything to ensure that two releases from the same code base behave the same. This is not the case for your user settings in Qt Creator or builds from within Visual C++. Another difference is that the deploy scripts are adding some extra predefined C/C++ DEFINES in addition to your local 'default' build.
 
 
-Developing Sonic AWE in OS X
+Developing Freq in OS X
 ----------------------------
 We're using the GNU Toolchain on Mac, we're not using Xcode. qmake is however capable of generating .xcodeproj files for Xcode and defaults to that on Mac. So if you see such files it's an indication that something is wrong with your .pro files. You may of course feel free to experiment with the Xcode environment if you prefer that. We're using the GNU Toolchain simply because it is less work to maintain due to all the similarities to the equivalent toolchain under Linux (Ubuntu).
 
@@ -235,9 +142,9 @@ Build and debug using Qt Creator.
 It's suggested to use Qt Creator to edit as well.
 
 
-Developing Sonic AWE in Windows
+Developing Freq in Windows
 -------------------------------
-You need to manually run qmake whenever you've changed the Qt .pro project files to generate new project files for Visual C++ (this can be done from within Qt Creator as well as running 'qmake' in a 'git bash' window). These files are linked to by the Visual C++ solution at '/path/to/sonicawe/src/sonicawe.sln'. Open the solution to build the project in Visual C++. Visual C++ project files should be regared as temporary files.
+You need to manually run qmake whenever you've changed the Qt .pro project files to generate new project files for Visual C++ (this can be done from within Qt Creator as well as running 'qmake' in a 'git bash' window). These files are linked to by the Visual C++ solution at '/path/to/freq/quick/freq.sln'. Open the solution to build the project in Visual C++. Visual C++ project files should be regared as temporary files.
 
 Run qmake using Qt Creator whenever the project has changed. This needs to be done for each subproject (gpumisc.pro and src.pro). The project is also changed when it's build configuration changes (i.e switching between building for CUDA to OpenCL to CPU or switching target from default to reader to hast). See more below regarding build configurations.
 
@@ -245,7 +152,7 @@ Build and debug using Visual C++.
 It's suggested to use Qt Creator to edit.
 
 
-Developing Sonic AWE in Ubuntu
+Developing Freq in Ubuntu
 ------------------------------
 Build and debug using Qt Creator.
 It's suggested to use Qt Creator to edit as well.
@@ -279,15 +186,15 @@ http://wiz0u.free.fr/prog/nsisXML/
 
 Build configurations
 --------------------
-Sonic AWE is build with several different build targets during a full deployment. For instance Sonic AWE is built as 'reader' and the full default version among others (see 'dist/deploy-all-targets.sh').
+Freq is build with several different build targets during a full deployment. For instance Freq is built as 'reader' and the full default version among others (see 'dist/deploy-all-targets.sh').
 
 You can select a target other than the default target by adding to qmake (for the 'reader' target): CONFIG+=TARGET_reader
 
-Sonic AWE is also built with CUDA support, OpenCL support and CPU fallback independently. This will likely change in the future. For instance, to build with cuda support add this to qmake: CONFIG+=usecuda
+Freq is also built with CUDA support, OpenCL support and CPU fallback independently. This will likely change in the future. For instance, to build with cuda support add this to qmake: CONFIG+=usecuda
 
 The the arguments to qmake change you need to do the same change to gpumisc (and to test projects or other projects based on those assumptions that you're working with). Remember in Windows that you need to run qmake for each project separately to create new Visual C++ project files.
 
 
 Further questions
 -----------------
-Our mailing list is sonicawe@googlegroups.com
+Maintainer: johan@freq.consulting

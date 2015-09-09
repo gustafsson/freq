@@ -1,8 +1,7 @@
-Sonic AWE: A Cross-Platform Digital Audio Visualizer
-Maintainer: info@sonicawe.com
+Freq: A Cross-Platform Digital Audio Visualizer
+Maintainer: johan@freq.consulting
 
 --------------------------------------------------------------------------
-
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -10,9 +9,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 --------------------------------------------------------------------------
 
+The source code of Freq is licensed under GPLv3.0. Please refer to
+gpl-3.0.txt.
 
-Sonic AWE is developed by MuchDifferent. Sonic AWE makes use of
-the following libraries (in alphabetic order with system 
+Freq makes use of the following libraries (in alphabetic order with system
 libraries excluded):
 
  * cuda
